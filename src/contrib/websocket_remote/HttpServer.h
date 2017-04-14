@@ -32,39 +32,36 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "LocalQueryBase.h"
+#pragma once
 
-#include <core/library/ILibrary.h>
-#include <core/library/track/Track.h>
+#include <microhttpd.h>
+#include "Context.h"
+#include <condition_variable>
+#include <mutex>
 
-namespace musik { namespace core { namespace db { namespace local {
-
-class TrackMetadataQuery : public LocalQueryBase {
+class HttpServer {
     public:
-        enum class Type : int {
-            AllMetadata,
-            UriOnly
-        };
+        HttpServer(Context& context);
+        ~HttpServer();
 
-        TrackMetadataQuery(
-            musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
-            Type type = Type::AllMetadata);
-
-        virtual ~TrackMetadataQuery() { }
-
-        TrackPtr Result() {
-            return this->result;
-        }
-
-    protected:
-        virtual bool OnRun(musik::core::db::Connection& db);
-        virtual std::string Name() { return "TrackMetadataQuery"; }
+        bool Start();
+        bool Stop();
+        void Wait();
 
     private:
-        ILibraryPtr library;
-        TrackPtr result;
-        Type type;
-};
+        static int HandleRequest(
+            void *cls,
+            struct MHD_Connection *connection,
+            const char *url,
+            const char *method,
+            const char *version,
+            const char *upload_data,
+            size_t *upload_data_size,
+            void **con_cls);
 
-} } } }
+        struct MHD_Daemon *httpServer;
+        Context& context;
+        volatile bool running;
+        std::condition_variable exitCondition;
+        std::mutex exitMutex;
+};

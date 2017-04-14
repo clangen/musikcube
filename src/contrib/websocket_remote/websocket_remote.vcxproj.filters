@@ -8,10 +8,85 @@
     <Filter Include="websocketpp">
       <UniqueIdentifier>{bb67dd4b-bdf7-4821-a714-c1606bd1a1a6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="microhttpd">
+      <UniqueIdentifier>{603bc1b6-0f8e-4b1d-b853-76135fb93750}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="microhttpd\include">
+      <UniqueIdentifier>{726007ee-0a00-46fc-85ce-63e014c524b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="microhttpd\src">
+      <UniqueIdentifier>{3666adb8-1e14-4442-b703-97a9734b1e2b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="WebSocketServer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpServer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Util.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\tsearch.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\base64.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\basicauth.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\connection.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\daemon.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\digestauth.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\internal.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\md5.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\memorypool.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_compat.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_itc.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_mono_clock.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_sockets.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_str.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_threads.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\postprocessor.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\reason_phrase.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\response.c">
+      <Filter>microhttpd\src</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\sysfdsetsize.c">
+      <Filter>microhttpd\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -293,6 +368,90 @@
     </ClInclude>
     <ClInclude Include="3rdparty\include\websocketpp\processors\processor.hpp">
       <Filter>websocketpp</Filter>
+    </ClInclude>
+    <ClInclude Include="WebSocketServer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="Constants.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="Context.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpServer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_include\mhd_options.h">
+      <Filter>microhttpd\include</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_include\microhttpd.h">
+      <Filter>microhttpd\include</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_include\platform.h">
+      <Filter>microhttpd\include</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_include\autoinit_funcs.h">
+      <Filter>microhttpd\include</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_include\MHD_config.h">
+      <Filter>microhttpd\include</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\tsearch.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\base64.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\connection.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\internal.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\md5.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\memorypool.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_byteorder.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_compat.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_itc.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_itc_types.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_limits.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_locks.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_mono_clock.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_sockets.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_str.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_threads.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\response.h">
+      <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\win32_src\microhttpd\sysfdsetsize.h">
+      <Filter>microhttpd\src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,9 +1,13 @@
 set (websocket_remote_SOURCES
+  HttpServer.cpp
   main.cpp
+  WebSocketServer.cpp
+  Util.cpp
 )
 
 set (BOOST_LIBS
   system
+  filesystem
   thread
 )
 
@@ -22,4 +26,11 @@ include_directories (
 )
 
 add_library(websocket_remote SHARED ${websocket_remote_SOURCES})
-target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} z)
+
+# prefer static libraries on mac to make redist easier
+if (${LINK_STATICALLY} MATCHES "true")
+  find_library(MICROHTTPDLIB NAMES libmicrohttpd.a microhttpd)
+  target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} ${MICROHTTPDLIB} z)
+else()
+  target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} microhttpd z)
+endif()

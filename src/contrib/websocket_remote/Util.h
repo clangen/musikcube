@@ -32,39 +32,53 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "LocalQueryBase.h"
+#pragma once
 
-#include <core/library/ILibrary.h>
-#include <core/library/track/Track.h>
+#include <string>
+#include <boost/bimap.hpp>
 
-namespace musik { namespace core { namespace db { namespace local {
+#include <core/sdk/constants.h>
+#include <core/sdk/IPreferences.h>
 
-class TrackMetadataQuery : public LocalQueryBase {
-    public:
-        enum class Type : int {
-            AllMetadata,
-            UriOnly
-        };
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
-        TrackMetadataQuery(
-            musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
-            Type type = Type::AllMetadata);
+#ifdef __APPLE__
+extern __thread char threadLocalBuffer[4096];
+#else
+extern thread_local char threadLocalBuffer[4096];
+#endif
 
-        virtual ~TrackMetadataQuery() { }
+template <typename L, typename R>
+boost::bimap<L, R>
+static makeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+    /* http://stackoverflow.com/a/31841462 */
+    return boost::bimap<L, R>(list.begin(), list.end());
+}
 
-        TrackPtr Result() {
-            return this->result;
-        }
+static std::string GetPreferenceString(
+    musik::core::sdk::IPreferences* prefs,
+    const std::string& key,
+    const std::string& defaultValue)
+{
+    prefs->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer), defaultValue.c_str());
+    return std::string(threadLocalBuffer);
+}
 
-    protected:
-        virtual bool OnRun(musik::core::db::Connection& db);
-        virtual std::string Name() { return "TrackMetadataQuery"; }
+template <typename MetadataT>
+static std::string GetMetadataString(MetadataT* metadata, const std::string& key) {
+    metadata->GetValue(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
+    return std::string(threadLocalBuffer);
+}
 
-    private:
-        ILibraryPtr library;
-        TrackPtr result;
-        Type type;
-};
-
-} } } }
+#ifdef WIN32
+static inline std::wstring utf8to16(const char* utf8) {
+    int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
+    wchar_t* buffer = new wchar_t[size];
+    MultiByteToWideChar(CP_UTF8, 0, utf8, -1, buffer, size);
+    std::wstring utf16fn(buffer);
+    delete[] buffer;
+    return utf16fn;
+}
+#endif

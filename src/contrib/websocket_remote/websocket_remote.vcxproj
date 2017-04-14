@@ -83,8 +83,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>3rdparty/include;../../3rdparty/win32_include;../../../../boost_1_64_0_b2;../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;ZLIB_WINAPI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>3rdparty/include;3rdparty/win32_include;../../3rdparty/win32_include;../../../../boost_1_64_0_b2;../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;ZLIB_WINAPI;MHD_W32LIB;BUILDING_MHD_LIB;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -110,8 +110,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>3rdparty/include;../../3rdparty/win32_include;../../../../boost_1_64_0_b2;../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;ZLIB_WINAPI;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>3rdparty/include;3rdparty/win32_include;../../3rdparty/win32_include;../../../../boost_1_64_0_b2;../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;NOMINMAX;ZLIB_WINAPI;MHD_W32LIB;BUILDING_MHD_LIB;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>None</DebugInformationFormat>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
@@ -144,7 +144,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="3rdparty\win32_src\microhttpd\base64.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\basicauth.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\connection.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\daemon.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\digestauth.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\internal.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\md5.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\memorypool.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_compat.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_itc.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_mono_clock.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_sockets.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_str.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\mhd_threads.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\postprocessor.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\reason_phrase.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\response.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\sysfdsetsize.c" />
+    <ClCompile Include="3rdparty\win32_src\microhttpd\tsearch.c" />
+    <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Util.cpp" />
+    <ClCompile Include="WebSocketServer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdparty\include\websocketpp\base64\base64.hpp" />
@@ -240,6 +262,34 @@
     <ClInclude Include="3rdparty\include\websocketpp\utf8_validator.hpp" />
     <ClInclude Include="3rdparty\include\websocketpp\utilities.hpp" />
     <ClInclude Include="3rdparty\include\websocketpp\version.hpp" />
+    <ClInclude Include="3rdparty\win32_include\autoinit_funcs.h" />
+    <ClInclude Include="3rdparty\win32_include\MHD_config.h" />
+    <ClInclude Include="3rdparty\win32_include\mhd_options.h" />
+    <ClInclude Include="3rdparty\win32_include\microhttpd.h" />
+    <ClInclude Include="3rdparty\win32_include\platform.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\base64.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\connection.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\internal.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\md5.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\memorypool.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_byteorder.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_compat.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_itc.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_itc_types.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_limits.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_locks.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_mono_clock.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_sockets.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_str.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\mhd_threads.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\response.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\sysfdsetsize.h" />
+    <ClInclude Include="3rdparty\win32_src\microhttpd\tsearch.h" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="Context.h" />
+    <ClInclude Include="HttpServer.h" />
+    <ClInclude Include="Util.h" />
+    <ClInclude Include="WebSocketServer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

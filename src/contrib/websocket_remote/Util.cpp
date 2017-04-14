@@ -32,39 +32,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "LocalQueryBase.h"
+#include "Util.h"
 
-#include <core/library/ILibrary.h>
-#include <core/library/track/Track.h>
-
-namespace musik { namespace core { namespace db { namespace local {
-
-class TrackMetadataQuery : public LocalQueryBase {
-    public:
-        enum class Type : int {
-            AllMetadata,
-            UriOnly
-        };
-
-        TrackMetadataQuery(
-            musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
-            Type type = Type::AllMetadata);
-
-        virtual ~TrackMetadataQuery() { }
-
-        TrackPtr Result() {
-            return this->result;
-        }
-
-    protected:
-        virtual bool OnRun(musik::core::db::Connection& db);
-        virtual std::string Name() { return "TrackMetadataQuery"; }
-
-    private:
-        ILibraryPtr library;
-        TrackPtr result;
-        Type type;
-};
-
-} } } }
+#ifdef __APPLE__
+__thread char threadLocalBuffer[4096];
+#else
+thread_local char threadLocalBuffer[4096];
+#endif

@@ -51,6 +51,8 @@ namespace musik { namespace core { namespace db { namespace local {
                     int limit = -1,
                     int offset = 0);
 
+            virtual musik::core::sdk::IRetainedTrack* QueryTrack(unsigned long long trackId);
+
             virtual musik::core::sdk::ITrackList*
                 QueryTracksByCategory(
                     const char* categoryType,

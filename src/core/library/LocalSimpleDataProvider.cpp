@@ -42,7 +42,11 @@
 #include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/SearchTrackListQuery.h>
 #include <core/library/query/local/GetPlaylistQuery.h>
+#include <core/library/query/local/TrackMetadataQuery.h>
+#include <core/library/track/LibraryTrack.h>
+#include <core/library/track/RetainedTrack.h>
 #include <core/library/LocalLibraryConstants.h>
+
 
 #define TAG "LocalSimpleDataProvider"
 
@@ -78,6 +82,26 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, i
     }
     catch (...) {
         musik::debug::err(TAG, "QueryTracks failed");
+    }
+
+    return nullptr;
+}
+
+IRetainedTrack* LocalSimpleDataProvider::QueryTrack(unsigned long long trackId) {
+    try {
+        TrackPtr target(new LibraryTrack(trackId, this->library));
+
+        std::shared_ptr<TrackMetadataQuery> search(
+            new TrackMetadataQuery(target, this->library));
+
+        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+
+        if (search->GetStatus() == IQuery::Finished) {
+            return new RetainedTrack(target);
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "QueryTrack failed");
     }
 
     return nullptr;

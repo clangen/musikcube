@@ -32,39 +32,44 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "LocalQueryBase.h"
+#pragma once
 
-#include <core/library/ILibrary.h>
-#include <core/library/track/Track.h>
+#include <core/sdk/ISimpleDataProvider.h>
+#include <core/sdk/IPreferences.h>
+#include <core/sdk/IPlaybackService.h>
 
-namespace musik { namespace core { namespace db { namespace local {
+#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread/locks.hpp>
 
-class TrackMetadataQuery : public LocalQueryBase {
+class ReadWriteLock {
+    typedef boost::shared_mutex Mutex;
+    typedef boost::unique_lock<Mutex> WriteLock;
+    typedef boost::shared_lock<Mutex> ReadLock;
+
     public:
-        enum class Type : int {
-            AllMetadata,
-            UriOnly
-        };
-
-        TrackMetadataQuery(
-            musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
-            Type type = Type::AllMetadata);
-
-        virtual ~TrackMetadataQuery() { }
-
-        TrackPtr Result() {
-            return this->result;
+        WriteLock Write() {
+            WriteLock wl(stateMutex);
+            return std::move(wl);
         }
 
-    protected:
-        virtual bool OnRun(musik::core::db::Connection& db);
-        virtual std::string Name() { return "TrackMetadataQuery"; }
+        ReadLock Read() {
+            ReadLock rl(stateMutex);
+            return std::move(rl);
+        }
 
     private:
-        ILibraryPtr library;
-        TrackPtr result;
-        Type type;
+        Mutex stateMutex;
 };
 
-} } } }
+struct Context {
+    Context() {
+        this->dataProvider = nullptr;
+        this->prefs = nullptr;
+        this->playback = nullptr;
+    }
+
+    musik::core::sdk::ISimpleDataProvider* dataProvider;
+    musik::core::sdk::IPreferences* prefs;
+    musik::core::sdk::IPlaybackService* playback;
+    ReadWriteLock lock;
+};

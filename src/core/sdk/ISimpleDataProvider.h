@@ -37,6 +37,7 @@
 #include "ITrackList.h"
 #include "IMetadataValueList.h"
 #include "IMetadataMapList.h"
+#include "IRetainedTrack.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -46,6 +47,8 @@ namespace musik { namespace core { namespace sdk {
                 const char* query = nullptr,
                 int limit = -1,
                 int offset = 0) = 0;
+
+            virtual IRetainedTrack* QueryTrack(unsigned long long trackId) = 0;
 
             virtual ITrackList* QueryTracksByCategory(
                 const char* categoryType,
