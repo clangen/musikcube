@@ -48,7 +48,9 @@ namespace musik { namespace core { namespace sdk {
                 int limit = -1,
                 int offset = 0) = 0;
 
-            virtual IRetainedTrack* QueryTrack(unsigned long long trackId) = 0;
+            virtual IRetainedTrack* QueryTrackById(unsigned long long trackId) = 0;
+
+            virtual IRetainedTrack* QueryTrackByExternalId(const char* externalId) = 0;
 
             virtual ITrackList* QueryTracksByCategory(
                 const char* categoryType,

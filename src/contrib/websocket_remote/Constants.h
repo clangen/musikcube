@@ -141,6 +141,8 @@ namespace request {
 
 namespace fragment {
     static const std::string audio = "audio";
+    static const std::string id = "id";
+    static const std::string external_id = "external_id";
 }
 
 namespace broadcast {

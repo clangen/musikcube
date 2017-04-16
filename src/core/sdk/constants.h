@@ -120,7 +120,9 @@ namespace musik {
                 static const char* ArtistId = "visual_artist_id";
                 static const char* AlbumArtistId = "album_artist_id";
                 static const char* AlbumId = "album_id";
+                static const char* SourceId = "source_id";
+                static const char* ExternalId = "external_id";
             }
 
-            static const int SdkVersion = 5;
+            static const int SdkVersion = 6;
 } } }

@@ -41,15 +41,9 @@ namespace musik { namespace core { namespace db { namespace local {
 
 class TrackMetadataQuery : public LocalQueryBase {
     public:
-        enum class Type : int {
-            AllMetadata,
-            UriOnly
-        };
-
         TrackMetadataQuery(
             musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
-            Type type = Type::AllMetadata);
+            musik::core::ILibraryPtr library);
 
         virtual ~TrackMetadataQuery() { }
 
@@ -64,7 +58,6 @@ class TrackMetadataQuery : public LocalQueryBase {
     private:
         ILibraryPtr library;
         TrackPtr result;
-        Type type;
 };
 
 } } } }

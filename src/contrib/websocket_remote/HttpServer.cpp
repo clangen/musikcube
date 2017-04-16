@@ -100,6 +100,74 @@ static std::string contentType(const std::string& fn) {
     return "application/octet-stream";
 }
 
+/* toHex, urlEncode, fromHex, urlDecode are stilen from here:
+http://dlib.net/dlib/server/server_http.cpp.html */
+static inline unsigned char toHex(unsigned char x) {
+    return x + (x > 9 ? ('A' - 10) : '0');
+}
+
+std::string urlEncode(const std::string& s) {
+    std::ostringstream os;
+
+    for (std::string::const_iterator ci = s.begin(); ci != s.end(); ++ci) {
+        if ((*ci >= 'a' && *ci <= 'z') ||
+            (*ci >= 'A' && *ci <= 'Z') ||
+            (*ci >= '0' && *ci <= '9'))
+        { // allowed
+            os << *ci;
+        }
+        else if (*ci == ' ') {
+            os << '+';
+        }
+        else {
+            os << '%' << toHex(*ci >> 4) << toHex(*ci % 16);
+        }
+    }
+
+    return os.str();
+}
+
+inline unsigned char from_hex(unsigned char ch) {
+    if (ch <= '9' && ch >= '0') {
+        ch -= '0';
+    }
+    else if (ch <= 'f' && ch >= 'a') {
+        ch -= 'a' - 10;
+    }
+    else if (ch <= 'F' && ch >= 'A') {
+        ch -= 'A' - 10;
+    }
+    else {
+        ch = 0;
+    }
+
+    return ch;
+}
+
+std::string urlDecode(const std::string& str) {
+    using namespace std;
+    string result;
+    string::size_type i;
+
+    for (i = 0; i < str.size(); ++i) {
+        if (str[i] == '+') {
+            result += ' ';
+        }
+        else if (str[i] == '%' && str.size() > i + 2) {
+            const unsigned char ch1 = from_hex(str[i + 1]);
+            const unsigned char ch2 = from_hex(str[i + 2]);
+            const unsigned char ch = (ch1 << 4) | ch2;
+            result += ch;
+            i += 2;
+        }
+        else {
+            result += str[i];
+        }
+    }
+
+    return result;
+}
+
 static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) {
     Range* range = static_cast<Range*>(cls);
 
@@ -192,6 +260,9 @@ bool HttpServer::Start() {
             nullptr,
             &HttpServer::HandleRequest,
             this,
+            MHD_OPTION_UNESCAPE_CALLBACK,
+            &HttpServer::HandleUnescape,
+            this,
             MHD_OPTION_END);
 
         this->running = (httpServer != nullptr);
@@ -211,6 +282,12 @@ bool HttpServer::Stop() {
     this->exitCondition.notify_all();
 
     return true;
+}
+
+size_t HttpServer::HandleUnescape(void * cls, struct MHD_Connection *c, char *s) {
+    /* don't do anything. the default implementation will decode the
+    entire path, which breaks if we have individually decoded segments. */
+    return strlen(s);
 }
 
 int HttpServer::HandleRequest(
@@ -237,9 +314,18 @@ int HttpServer::HandleRequest(
         std::vector<std::string> parts;
         boost::split(parts, urlStr, boost::is_any_of("/"));
         if (parts.size() > 0) {
-            if (parts.at(0) == fragment::audio && parts.size() == 2) {
-                unsigned long long id = std::stoull(parts.at(1));
-                IRetainedTrack* track = server->context.dataProvider->QueryTrack(id);
+            if (parts.at(0) == fragment::audio && parts.size() == 3) {
+                IRetainedTrack* track = nullptr;
+
+                if (parts.at(1) == fragment::id) {
+                    unsigned long long id = std::stoull(urlDecode(parts.at(2)));
+                    track = server->context.dataProvider->QueryTrackById(id);
+                }
+                else if (parts.at(1) == fragment::external_id) {
+                    std::string externalId = urlDecode(parts.at(2));
+                    track = server->context.dataProvider->QueryTrackByExternalId(externalId.c_str());
+                }
+
                 if (track) {
                     std::string filename = GetMetadataString(track, key::filename);
                     track->Release();
@@ -267,6 +353,7 @@ int HttpServer::HandleRequest(
                             fclose(file);
                         }
                     }
+
                 }
             }
         }

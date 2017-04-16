@@ -41,59 +41,68 @@ using namespace musik::core::db::local;
 using namespace musik::core;
 using namespace musik::core::library;
 
-static const std::string ALL_METADATA_QUERY =
-    "SELECT DISTINCT t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id "
-    "FROM tracks t, albums al, artists alar, artists ar, genres gn "
-    "WHERE t.id=? AND t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
+static const std::string COLUMNS = "t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id";
+static const std::string TABLES = "tracks t, albums al, artists alar, artists ar, genres gn";
+static const std::string PREDICATE = "t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id";
 
-static const std::string URI_ONLY_QUERY =
-    "SELECT DISTINCT filename "
-    "FROM tracks "
-    "WHERE t.id=? ";
+static const std::string ALL_METADATA_QUERY_BY_ID =
+    "SELECT DISTINCT " + COLUMNS + " " +
+    "FROM " + TABLES + " " +
+    "WHERE t.id=? AND " + PREDICATE;
 
-TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Type type) {
+static const std::string ALL_METADATA_QUERY_BY_EXTERNAL_ID =
+    "SELECT DISTINCT " + COLUMNS + " " +
+    "FROM " + TABLES + " " +
+    "WHERE t.external_id=? AND " + PREDICATE;
+
+TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library) {
     this->result = target;
     this->library = library;
-    this->type = type;
 }
 
 bool TrackMetadataQuery::OnRun(Connection& db) {
-    if (this->type == Type::AllMetadata) {
-        Statement trackQuery(ALL_METADATA_QUERY.c_str(), db);
-        trackQuery.BindInt(0, (uint64) this->result->GetId());
+    bool queryById = this->result->GetId() != 0;
 
-        if (trackQuery.Step() == Row) {
-            result->SetValue(constants::Track::TRACK_NUM, trackQuery.ColumnText(0));
-            result->SetValue(constants::Track::DISC_NUM, trackQuery.ColumnText(1));
-            result->SetValue(constants::Track::BPM, trackQuery.ColumnText(2));
-            result->SetValue(constants::Track::DURATION, trackQuery.ColumnText(3));
-            result->SetValue(constants::Track::FILESIZE, trackQuery.ColumnText(4));
-            result->SetValue(constants::Track::YEAR, trackQuery.ColumnText(5));
-            result->SetValue(constants::Track::TITLE, trackQuery.ColumnText(6));
-            result->SetValue(constants::Track::FILENAME, trackQuery.ColumnText(7));
-            result->SetValue(constants::Track::THUMBNAIL_ID, trackQuery.ColumnText(8));
-            result->SetValue(constants::Track::ALBUM, trackQuery.ColumnText(9));
-            result->SetValue(constants::Track::ALBUM_ARTIST, trackQuery.ColumnText(10));
-            result->SetValue(constants::Track::GENRE, trackQuery.ColumnText(11));
-            result->SetValue(constants::Track::ARTIST, trackQuery.ColumnText(12));
-            result->SetValue(constants::Track::FILETIME, trackQuery.ColumnText(13));
-            result->SetValue(constants::Track::GENRE_ID, trackQuery.ColumnText(14));
-            result->SetValue(constants::Track::ARTIST_ID, trackQuery.ColumnText(15));
-            result->SetValue(constants::Track::ALBUM_ARTIST_ID, trackQuery.ColumnText(16));
-            result->SetValue(constants::Track::ALBUM_ID, trackQuery.ColumnText(17));
-            result->SetValue(constants::Track::SOURCE_ID, trackQuery.ColumnText(18));
-            result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(19));
-            return true;
-        }
+    const std::string& query = queryById
+        ? ALL_METADATA_QUERY_BY_ID
+        : ALL_METADATA_QUERY_BY_EXTERNAL_ID;
+
+    Statement trackQuery(query.c_str(), db);
+
+    if (queryById) {
+        trackQuery.BindInt(0, (uint64) this->result->GetId());
     }
     else {
-        Statement trackQuery(URI_ONLY_QUERY.c_str(), db);
-        trackQuery.BindInt(0, (uint64) this->result->GetId());
-
-        if (trackQuery.Step() == Row) {
-            result->SetValue(constants::Track::FILENAME, trackQuery.ColumnText(0));
-            return true;
+        const std::string& externalId = this->result->GetValue("external_id");
+        if (!externalId.size()) {
+            return false;
         }
+
+        trackQuery.BindText(0, externalId);
+    }
+
+    if (trackQuery.Step() == Row) {
+        result->SetValue(constants::Track::TRACK_NUM, trackQuery.ColumnText(0));
+        result->SetValue(constants::Track::DISC_NUM, trackQuery.ColumnText(1));
+        result->SetValue(constants::Track::BPM, trackQuery.ColumnText(2));
+        result->SetValue(constants::Track::DURATION, trackQuery.ColumnText(3));
+        result->SetValue(constants::Track::FILESIZE, trackQuery.ColumnText(4));
+        result->SetValue(constants::Track::YEAR, trackQuery.ColumnText(5));
+        result->SetValue(constants::Track::TITLE, trackQuery.ColumnText(6));
+        result->SetValue(constants::Track::FILENAME, trackQuery.ColumnText(7));
+        result->SetValue(constants::Track::THUMBNAIL_ID, trackQuery.ColumnText(8));
+        result->SetValue(constants::Track::ALBUM, trackQuery.ColumnText(9));
+        result->SetValue(constants::Track::ALBUM_ARTIST, trackQuery.ColumnText(10));
+        result->SetValue(constants::Track::GENRE, trackQuery.ColumnText(11));
+        result->SetValue(constants::Track::ARTIST, trackQuery.ColumnText(12));
+        result->SetValue(constants::Track::FILETIME, trackQuery.ColumnText(13));
+        result->SetValue(constants::Track::GENRE_ID, trackQuery.ColumnText(14));
+        result->SetValue(constants::Track::ARTIST_ID, trackQuery.ColumnText(15));
+        result->SetValue(constants::Track::ALBUM_ARTIST_ID, trackQuery.ColumnText(16));
+        result->SetValue(constants::Track::ALBUM_ID, trackQuery.ColumnText(17));
+        result->SetValue(constants::Track::SOURCE_ID, trackQuery.ColumnText(18));
+        result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(19));
+        return true;
     }
 
     return false;

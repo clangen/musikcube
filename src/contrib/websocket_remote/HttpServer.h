@@ -59,6 +59,11 @@ class HttpServer {
             size_t *upload_data_size,
             void **con_cls);
 
+        static size_t HandleUnescape(
+            void * cls,
+            struct MHD_Connection *c,
+            char *s);
+
         struct MHD_Daemon *httpServer;
         Context& context;
         volatile bool running;

@@ -87,7 +87,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, i
     return nullptr;
 }
 
-IRetainedTrack* LocalSimpleDataProvider::QueryTrack(unsigned long long trackId) {
+IRetainedTrack* LocalSimpleDataProvider::QueryTrackById(unsigned long long trackId) {
     try {
         TrackPtr target(new LibraryTrack(trackId, this->library));
 
@@ -101,7 +101,30 @@ IRetainedTrack* LocalSimpleDataProvider::QueryTrack(unsigned long long trackId) 
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryTrack failed");
+        musik::debug::err(TAG, "QueryTrackById failed");
+    }
+
+    return nullptr;
+}
+
+IRetainedTrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* externalId) {
+    if (strlen(externalId)) {
+        try {
+            TrackPtr target(new LibraryTrack(0, this->library));
+            target->SetValue("external_id", externalId);
+
+            std::shared_ptr<TrackMetadataQuery> search(
+                new TrackMetadataQuery(target, this->library));
+
+            this->library->Enqueue(search, ILibrary::QuerySynchronous);
+
+            if (search->GetStatus() == IQuery::Finished) {
+                return new RetainedTrack(target);
+            }
+        }
+        catch (...) {
+            musik::debug::err(TAG, "QueryTrackByExternalId failed");
+        }
     }
 
     return nullptr;
