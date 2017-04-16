@@ -65,7 +65,7 @@
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 2;
 static const size_t TRANSACTION_INTERVAL = 300;
-static std::atomic<unsigned long long> nextExternalId = 1;
+static std::atomic<unsigned long long> nextExternalId;
 
 using namespace musik::core;
 using namespace musik::core::sdk;

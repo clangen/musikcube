@@ -100,7 +100,7 @@ static std::string contentType(const std::string& fn) {
     return "application/octet-stream";
 }
 
-/* toHex, urlEncode, fromHex, urlDecode are stilen from here:
+/* toHex, urlEncode, fromHex, urlDecode are stolen from here:
 http://dlib.net/dlib/server/server_http.cpp.html */
 static inline unsigned char toHex(unsigned char x) {
     return x + (x > 9 ? ('A' - 10) : '0');
@@ -127,7 +127,7 @@ std::string urlEncode(const std::string& s) {
     return os.str();
 }
 
-inline unsigned char from_hex(unsigned char ch) {
+inline unsigned char fromHex(unsigned char ch) {
     if (ch <= '9' && ch >= '0') {
         ch -= '0';
     }
@@ -154,8 +154,8 @@ std::string urlDecode(const std::string& str) {
             result += ' ';
         }
         else if (str[i] == '%' && str.size() > i + 2) {
-            const unsigned char ch1 = from_hex(str[i + 1]);
-            const unsigned char ch2 = from_hex(str[i + 2]);
+            const unsigned char ch1 = fromHex(str[i + 1]);
+            const unsigned char ch2 = fromHex(str[i + 2]);
             const unsigned char ch = (ch1 << 4) | ch2;
             result += ch;
             i += 2;
