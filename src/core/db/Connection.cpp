@@ -154,8 +154,8 @@ void Connection::Checkpoint() {
     sqlite3_wal_checkpoint(this->connection, nullptr);
 }
 
-int Connection::LastInsertedId() {
-    return (int) sqlite3_last_insert_rowid(this->connection);
+unsigned long long Connection::LastInsertedId() {
+    return sqlite3_last_insert_rowid(this->connection);
 }
 
 int Connection::LastModifiedRowCount() {
@@ -163,6 +163,7 @@ int Connection::LastModifiedRowCount() {
 }
 
 void Connection::Initialize(unsigned int cache) {
+    sqlite3_enable_shared_cache(1);
     sqlite3_busy_timeout(this->connection, 10000);
 
     sqlite3_exec(this->connection, "PRAGMA optimize", nullptr, nullptr, nullptr);           // Optimize the database when applicable

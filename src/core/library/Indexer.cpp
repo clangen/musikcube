@@ -57,12 +57,15 @@
 #include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
+#include <atomic>
+
 #define MULTI_THREADED_INDEXER 0
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 2;
 static const size_t TRANSACTION_INTERVAL = 300;
+static std::atomic<unsigned long long> nextExternalId = 1;
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -70,6 +73,10 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 
 using Thread = std::unique_ptr<boost::thread>;
+
+using MetadataDeleter = PluginFactory::DestroyDeleter<IMetadataReader>;
+using DecoderDeleter = PluginFactory::DestroyDeleter<IDecoderFactory>;
+using SourceDeleter = PluginFactory::DestroyDeleter<IIndexerSource>;
 
 static std::string normalizeDir(std::string path) {
     path = boost::filesystem::path(path).make_preferred().string();
@@ -93,6 +100,15 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , state(StateIdle)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
+    this->metadataReaders = PluginFactory::Instance()
+        .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
+
+    this->audioDecoders = PluginFactory::Instance()
+        .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
+
+    this->sources = PluginFactory::Instance()
+        .QueryInterface<IIndexerSource, SourceDeleter>("GetIndexerSource");
+
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
     this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
@@ -179,27 +195,14 @@ void Indexer::RemovePath(const std::string& path) {
 }
 
 void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
-    /* load plugins required by the indexer (metadata readers, decoder
-    factories, and indexer sources) */
-    typedef PluginFactory::DestroyDeleter<IMetadataReader> MetadataDeleter;
-    typedef PluginFactory::DestroyDeleter<IDecoderFactory> DecoderDeleter;
-    typedef PluginFactory::DestroyDeleter<IIndexerSource> SourceDeleter;
-
-    this->metadataReaders = PluginFactory::Instance()
-        .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
-
-    this->audioDecoders = PluginFactory::Instance()
-        .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
-
-    this->sources = PluginFactory::Instance()
-        .QueryInterface<IIndexerSource, SourceDeleter>("GetIndexerSource");
-
     this->ProcessAddRemoveQueue();
 
     this->filesSaved = 0;
 
     auto type = context.type;
     auto sourceId = context.sourceId;
+
+    LocalLibrary::DropIndexes(this->dbConnection);
 
     /* process ALL IIndexerSource plugins, if applicable */
 
@@ -243,6 +246,16 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     /* process local files */
     if (type == SyncType::All || type == SyncType::Local) {
+        /* resolve our next external id. we do this once before starting so
+        we don't need to make a bunch of additional queries while indexing. */
+        {
+            db::Statement stmt("SELECT MAX(id) FROM tracks", this->dbConnection);
+            if (stmt.Step() == db::Row) {
+                auto id = std::max(1ULL, stmt.ColumnInt64(0));
+                nextExternalId.store(id);
+            }
+        }
+
         std::vector<std::string> paths;
         std::vector<DBID> pathIds;
 
@@ -273,6 +286,9 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         /* close any pending transaction */
 
         this->trackTransaction->CommitAndRestart();
+
+        /* re-index */
+        LocalLibrary::CreateIndexes(this->dbConnection);
     }
 }
 
@@ -360,6 +376,9 @@ void Indexer::ReadMetadataFromFile(
 
         /* write it to the db, if read successfully */
         if (saveToDb) {
+            std::string externalId = "local://" + std::to_string(nextExternalId.fetch_add(1));
+            track.SetValue("external_id", externalId.c_str());
+
             track.SetValue("path_id", pathId.c_str());
             track.Save(this->dbConnection, this->libraryPath);
 
@@ -602,8 +621,28 @@ void Indexer::SyncCleanup() {
     this->dbConnection.Execute("DELETE FROM meta_values WHERE id NOT IN (SELECT DISTINCT(meta_value_id) FROM track_meta)");
     this->dbConnection.Execute("DELETE FROM meta_keys WHERE id NOT IN (SELECT DISTINCT(meta_key_id) FROM meta_values)");
 
-    /* orphaned playlist tracks */
-    this->dbConnection.Execute("DELETE FROM playlist_tracks WHERE track_id NOT IN (SELECT id FROM tracks)");
+    /* orphaned playlist tracks (local tracks only. let tracks from external
+    sources continue to exist */
+    this->dbConnection.Execute("DELETE FROM playlist_tracks WHERE source_id=0 AND track_external_id NOT IN (SELECT DISTINCT external_id FROM tracks WHERE source_id == 0)");
+
+    /* orphaned playlist tracks from source plugins that do not have stable
+    ids need to be cleaned up. */
+    for (auto source : this->sources) {
+        if (!source->HasStableIds()) {
+            std::string query =
+                "DELETE FROM playlist_tracks "
+                "WHERE source_id=? AND track_external_id NOT IN ( "
+                "  SELECT DISTINCT external_id "
+                "  FROM tracks "
+                "  WHERE source_id == ?)";
+
+            db::Statement stmt(query.c_str(), this->dbConnection);
+            stmt.BindInt(0, source->SourceId());
+            stmt.BindInt(1, source->SourceId());
+            stmt.Step();
+        }
+    }
+
 
     /* optimize and shrink */
     this->dbConnection.Execute("VACUUM");
@@ -786,19 +825,18 @@ bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track, const ch
         return false;
     }
 
+    if (!externalId || strlen(externalId) == 0) {
+        return false;
+    }
+
     /* two levels of unpacking with dynamic_casts. don't tell anyone,
     it'll be our little secret. */
     RetainedTrackWriter* rtw = dynamic_cast<RetainedTrackWriter*>(track);
     if (rtw) {
         IndexerTrack* it = rtw->As<IndexerTrack*>();
         if (it) {
-            if (externalId && strlen(externalId)) {
-                it->SetValue(constants::Track::EXTERNAL_ID, externalId);
-            }
-
-            std::string id = std::to_string(source->SourceId());
-            it->SetValue(constants::Track::SOURCE_ID, id.c_str());
-
+            it->SetValue(constants::Track::EXTERNAL_ID, externalId);
+            it->SetValue(constants::Track::SOURCE_ID, std::to_string(source->SourceId()).c_str());
             return it->Save(this->dbConnection, this->libraryPath);
         }
     }
@@ -807,6 +845,10 @@ bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track, const ch
 
 bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
     if (source->SourceId() == 0) {
+        return false;
+    }
+
+    if (!uri || strlen(uri) == 0) {
         return false;
     }
 
@@ -822,6 +864,10 @@ bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
 
 bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
     if (source->SourceId() == 0) {
+        return false;
+    }
+
+    if (!id || strlen(id) == 0) {
         return false;
     }
 

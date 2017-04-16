@@ -46,7 +46,7 @@ static std::string CREATE_PLAYLIST_QUERY =
     "INSERT INTO playlists (name) VALUES (?);";
 
 static std::string INSERT_PLAYLIST_TRACK_QUERY =
-    "INSERT INTO playlist_tracks (track_id, playlist_id, sort_order) VALUES (?, ?, ?);";
+    "INSERT INTO playlist_tracks (track_external_id, source_id, playlist_id, sort_order) VALUES (?, ?, ?, ?);";
 
 static std::string DELETE_PLAYLIST_TRACKS_QUERY =
     "DELETE FROM playlist_tracks WHERE playlist_id=?;";
@@ -114,9 +114,10 @@ bool SavePlaylistQuery::AddTracksToPlaylist(musik::core::db::Connection &db, DBI
     for (size_t i = 0; i < tracks.Count(); i++) {
         track = tracks.Get(i);
         insertTrack.Reset();
-        insertTrack.BindInt(0, (uint64) track->GetId());
-        insertTrack.BindInt(1, playlistId);
-        insertTrack.BindInt(2, (int) i);
+        insertTrack.BindText(0, track->GetValue("external_id"));
+        insertTrack.BindText(1, track->GetValue("source_id"));
+        insertTrack.BindInt(2, playlistId);
+        insertTrack.BindInt(3, (int) i);
 
         if (insertTrack.Step() == db::Error) {
             return false;

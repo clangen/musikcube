@@ -49,6 +49,7 @@ using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 
+#define DATABASE_VERSION 2
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -249,6 +250,43 @@ musik::core::IIndexer* LocalLibrary::Indexer() {
     return this->indexer;
 }
 
+static void upgradeV1toV2(db::Connection &db) {
+    /* ensure each track has an external_id */
+    {
+        db::ScopedTransaction transaction(db);
+        unsigned long long id;
+
+        db::Statement update("UPDATE tracks SET external_id=? WHERE id=?", db);
+        db::Statement query("SELECT id FROM tracks WHERE coalesce(external_id, '') == ''", db);
+        while (query.Step() == db::Row) {
+            id = query.ColumnInt64(0);
+            update.Reset();
+            update.BindText(0, "local://" + std::to_string(id));
+            update.BindInt(1, id);
+            update.Step();
+        }
+    }
+
+    /* update playlist_tracks.track_external_id */
+    std::string externalIdUpdate =
+        "UPDATE playlist_tracks "
+        "SET track_external_id = ( "
+        "  SELECT tracks.external_id"
+        "  FROM tracks"
+        "  WHERE playlist_tracks.track_id = tracks.id);";
+
+    db::Statement update(externalIdUpdate.c_str(), db);
+    update.Step();
+}
+
+static void setVersion(db::Connection& db, int version) {
+    db.Execute("DELETE FROM version");
+
+    db::Statement stmt("INSERT INTO version VALUES(?)", db);
+    stmt.BindInt(0, version);
+    stmt.Step();
+}
+
 void LocalLibrary::CreateDatabase(db::Connection &db){
     /* tracks */
     db.Execute(
@@ -340,7 +378,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute(
         "CREATE TABLE IF NOT EXISTS thumbnails ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "filename TEXT default '',"
+            "filename TEXT DEFAULT '',"
             "filesize INTEGER DEFAULT 0,"
             "checksum INTEGER DEFAULT 0"
             ")");
@@ -356,29 +394,29 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     /* playlist tracks */
     db.Execute(
         "CREATE TABLE IF NOT EXISTS playlist_tracks ("
-            "track_id INTEGER DEFAULT 0,"
             "playlist_id INTEGER DEFAULT 0,"
+            "track_external_id TEXT NOT NULL DEFAULT '',"
+            "source_id INTEGER DEFAULT 0,"
             "sort_order INTEGER DEFAULT 0"
             ")");
 
-    /* indexes */
-    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS users_index ON users (login)");
-    db.Execute("CREATE UNIQUE INDEX IF NOT EXISTS paths_index ON paths (path)");
-    db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
-    db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
+    /* version */
+    db.Execute("CREATE TABLE IF NOT EXISTS version (version INTEGER default 1)");
 
-    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index2 ON track_genres (genre_id,track_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index1 ON track_artists (track_id,artist_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index2 ON track_artists (artist_id,track_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
-    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
+    int lastVersion = 1;
 
-    db.Execute("CREATE INDEX IF NOT EXISTS playlist_index ON playlist_tracks (playlist_id,sort_order)");
+    {
+        db::Statement stmt("SELECT * FROM version", db);
+
+        if (stmt.Step() != db::Row) {
+            /* create the initial version if one doesn't exist */
+            db::Statement stmt("INSERT INTO version VALUES(1)", db);
+            stmt.Step();
+        }
+        else {
+            lastVersion = stmt.ColumnInt(0);
+        }
+    }
 
     /* upgrade 1: add "source_id", "visible", and "external_id" columns to tracks table */
     int result = db.Execute("ALTER TABLE tracks ADD COLUMN source_id INTEGER DEFAULT 0");
@@ -394,7 +432,6 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     }
 
     result = db.Execute("ALTER TABLE tracks ADD COLUMN external_id TEXT DEFAULT null");
-    db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)");
 
     /* create our simplified, de-normalized track table view */
     db.Execute("DROP VIEW IF EXISTS tracks_view");
@@ -403,11 +440,73 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
         "CREATE VIEW tracks_view AS "
         "SELECT DISTINCT "
             " t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, "
-            " t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, "
+            " t.thumbnail_id, t.external_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, "
             " ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id "
         "FROM "
             " tracks t, albums al, artists alar, artists ar, genres gn "
         "WHERE "
             " t.album_id=al.id AND t.album_artist_id=alar.id AND "
             " t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ");
+
+    /* ensure the 'track_external_id' column exists, then create the indexes */
+    db.Execute("ALTER TABLE playlist_tracks ADD COLUMN track_external_id TEXT NOT NULL DEFAULT ''");
+    db.Execute("ALTER TABLE playlist_tracks ADD COLUMN source_id INTEGER DEFAULT 0");
+
+    /* upgrade playlist tracks table */
+    if (lastVersion == 1) {
+        upgradeV1toV2(db);
+    }
+
+    /* ensure our version is set correctly */
+    setVersion(db, DATABASE_VERSION);
+
+    CreateIndexes(db);
+}
+
+void LocalLibrary::DropIndexes(db::Connection &db) {
+    db.Execute("DROP INDEX IF EXISTS paths_index");
+
+    db.Execute("DROP INDEX IF EXISTS genre_index");
+    db.Execute("DROP INDEX IF EXISTS artist_index");
+    db.Execute("DROP INDEX IF EXISTS album_index");
+    db.Execute("DROP INDEX IF EXISTS thumbnail_index");
+
+    db.Execute("DROP INDEX IF EXISTS trackgenre_index1");
+    db.Execute("DROP INDEX IF EXISTS trackgenre_index2");
+    db.Execute("DROP INDEX IF EXISTS trackartist_index1");
+    db.Execute("DROP INDEX IF EXISTS trackartist_index2");
+    db.Execute("DROP INDEX IF EXISTS trackmeta_index1");
+    db.Execute("DROP INDEX IF EXISTS trackmeta_index2");
+    db.Execute("DROP INDEX IF EXISTS metakey_index1");
+    db.Execute("DROP INDEX IF EXISTS metavalues_index1");
+
+    db.Execute("DROP INDEX IF EXISTS tracks_external_id_index");
+
+    db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_1");
+    db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_2");
+    db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_3");
+}
+
+void LocalLibrary::CreateIndexes(db::Connection &db) {
+    db.Execute("CREATE INDEX IF NOT EXISTS paths_index ON paths (path)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS genre_index ON genres (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS artist_index ON artists (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS album_index ON albums (sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS thumbnail_index ON thumbnails (filesize)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index1 ON track_genres (track_id,genre_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackgenre_index2 ON track_genres (genre_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index1 ON track_artists (track_id,artist_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackartist_index2 ON track_artists (artist_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)");
+
+    db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_1 ON playlist_tracks (track_external_id,playlist_id,sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_2 ON playlist_tracks (track_external_id,sort_order)");
+    db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_3 ON playlist_tracks (track_external_id)");
 }

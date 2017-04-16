@@ -152,6 +152,24 @@ ScanResult CddaIndexerSource::Scan(IIndexerWriter* indexer) {
         }
     }
 
+    //for (int i = 1; i < 10; i++) {
+    //    auto track = indexer->CreateWriter();
+    //    std::string label = "[http]";
+    //    std::string title = "[http] " + std::to_string(i);
+    //    std::string filename = "http://casey.io/m/0" + std::to_string(i) + ".mp3";
+
+    //    track->SetValue("album", label.c_str());
+    //    track->SetValue("artist", label.c_str());
+    //    track->SetValue("album_artist", label.c_str());
+    //    track->SetValue("genre", label.c_str());
+    //    track->SetValue("title", title.c_str());
+    //    track->SetValue("filename", filename.c_str());
+    //    track->SetValue("track", std::to_string(i).c_str());
+
+    //    indexer->Save(this, track, filename.c_str());
+    //    track->Release();
+    //}
+
     return ScanCommit;
 }
 

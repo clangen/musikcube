@@ -57,6 +57,8 @@ namespace musik { namespace core { namespace sdk {
 
             virtual void Interrupt() = 0;
 
+            virtual bool HasStableIds() = 0;
+
             virtual int SourceId() = 0;
     };
 

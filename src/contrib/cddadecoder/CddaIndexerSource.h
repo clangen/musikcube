@@ -60,6 +60,7 @@ class CddaIndexerSource :
             const char* externalId);
 
         virtual void Interrupt();
+        virtual bool HasStableIds() { return true; }
 
         /* CddaDataModel::EventListener */
         virtual void OnAudioDiscInsertedOrRemoved();

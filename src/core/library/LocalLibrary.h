@@ -88,6 +88,10 @@ namespace musik { namespace core { namespace library {
             std::string GetDatabaseFilename();
             static void CreateDatabase(db::Connection &db);
 
+            /* indexes */
+            static void DropIndexes(db::Connection &db);
+            static void CreateIndexes(db::Connection &db);
+
         private:
             typedef std::list<LocalQueryPtr> QueryList;
 
