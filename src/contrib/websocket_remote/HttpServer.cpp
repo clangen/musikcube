@@ -171,14 +171,20 @@ std::string urlDecode(const std::string& str) {
 static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) {
     Range* range = static_cast<Range*>(cls);
 
-    size_t offset = std::min((size_t) pos, range->to);
+    size_t offset = (size_t) pos + range->from;
+    offset = std::min(range->to, offset);
+
     size_t avail = range->total - offset;
     size_t count = std::min(avail, max);
 
-    fseek(range->file, offset, SEEK_SET);
-    count = fread(buf, 1, count, range->file);
+    if (fseek(range->file, offset, SEEK_SET) == 0) {
+        count = fread(buf, 1, count, range->file);
+        if (count > 0) {
+            return count;
+        }
+    }
 
-    return (count == 0) ? MHD_CONTENT_READER_END_OF_STREAM : count;
+    return MHD_CONTENT_READER_END_OF_STREAM;
 }
 
 static void fileFreeCallback(void *cls) {
@@ -304,6 +310,7 @@ int HttpServer::HandleRequest(
 
     struct MHD_Response* response = nullptr;
     int ret = MHD_NO;
+    int status = MHD_HTTP_OK;
 
     try {
         std::string urlStr(url);
@@ -340,14 +347,24 @@ int HttpServer::HandleRequest(
 
                         Range* range = parseRange(file, rangeVal);
 
+                        size_t length = (range->to - range->from);
+
                         response = MHD_create_response_from_callback(
-                            range->total, 4096, &fileReadCallback, range, &fileFreeCallback);
+                            length == 0 ? 0 : length + 1,
+                            4096,
+                            &fileReadCallback,
+                            range,
+                            &fileFreeCallback);
 
                         if (response) {
                             MHD_add_response_header(response, "Accept-Ranges", "bytes");
                             MHD_add_response_header(response, "Content-Type", contentType(filename).c_str());
-                            MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
                             MHD_add_response_header(response, "Server", "musikcube websocket_remote");
+
+                            if ((rangeVal && strlen(rangeVal)) || range->from > 0) {
+                                MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
+                                status = MHD_HTTP_PARTIAL_CONTENT;
+                            }
                         }
                         else {
                             fclose(file);
@@ -362,7 +379,7 @@ int HttpServer::HandleRequest(
     }
 
     if (response) {
-        ret = MHD_queue_response(connection, MHD_HTTP_OK, response);
+        ret = MHD_queue_response(connection, status, response);
         MHD_destroy_response(response);
     }
 
