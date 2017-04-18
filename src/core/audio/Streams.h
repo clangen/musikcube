@@ -49,6 +49,9 @@ namespace musik { namespace core { namespace audio {
         std::shared_ptr<musik::core::sdk::IDecoder>
             GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
 
+        musik::core::sdk::IDecoder*
+            GetDecoderForDataStream(musik::core::sdk::IDataStream* stream);
+
         std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
     };
 

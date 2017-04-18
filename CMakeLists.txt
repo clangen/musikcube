@@ -86,6 +86,7 @@ add_subdirectory(src/contrib/nomaddecoder)
 add_subdirectory(src/contrib/flacdecoder)
 add_subdirectory(src/contrib/nullout)
 add_subdirectory(src/contrib/websocket_remote)
+add_subdirectory(src/contrib/httpdatastream)
 
 add_dependencies(taglibreader taglib)
 

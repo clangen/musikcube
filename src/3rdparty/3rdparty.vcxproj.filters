@@ -14,6 +14,12 @@
     <Filter Include="src\pdcurses">
       <UniqueIdentifier>{2a6ed669-412a-4c0a-9874-ef170a0952ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\curl">
+      <UniqueIdentifier>{6442fc4a-15e8-4522-a12a-54963c8b1cb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\openssl">
+      <UniqueIdentifier>{ac39b793-9ca0-43de-8a2e-71272dfe0709}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\sqlite\sqlite3.c">
@@ -196,6 +202,258 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="include\kiss_fftr.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\typecheck-gcc.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\curl.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\curlbuild.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\curlrules.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\curlver.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\easy.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\mprintf.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\multi.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curl\stdcheaders.h">
+      <Filter>src\curl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\conf_api.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\crypto.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\curve25519.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\des.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\dh.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\dsa.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\dso.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\dtls1.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ec.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ecdh.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ecdsa.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\engine.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\err.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\evp.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\gost.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\hmac.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\idea.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\lhash.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\md4.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\md5.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\modes.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\obj_mac.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\objects.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ocsp.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\opensslconf.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\opensslfeatures.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\opensslv.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ossl_typ.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\pem.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\pem2.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\pkcs7.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\pkcs12.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\poly1305.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\rand.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\rc2.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\rc4.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ripemd.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\rsa.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\safestack.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\sha.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\srtp.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ssl.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ssl2.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ssl3.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ssl23.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\stack.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\tls1.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ts.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\txt_db.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ui.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\ui_compat.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\whrlpool.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\x509.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\x509_vfy.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\x509v3.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\aes.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\asn1.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\asn1_mac.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\asn1t.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\bio.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\blowfish.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\bn.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\buffer.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\camellia.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\cast.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\chacha.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\cmac.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\comp.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\openssl\conf.h">
+      <Filter>src\openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\curses.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\panel.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\pqueue.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\tls.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\zconf.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="win32_include\zlib.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

@@ -254,6 +254,7 @@ static void upgradeV1toV2(db::Connection &db) {
     /* ensure each track has an external_id */
     {
         db::ScopedTransaction transaction(db);
+
         uint64_t id;
 
         db::Statement update("UPDATE tracks SET external_id=? WHERE id=?", db);

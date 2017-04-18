@@ -163,13 +163,16 @@ void Player::Play() {
 
 void Player::Destroy() {
     {
+        if (this->stream) {
+            this->stream->Interrupt();
+        }
+
         std::unique_lock<std::mutex> lock(this->queueMutex);
 
         if (this->state == Player::Quit && !this->thread) {
             return; /* already terminated (or terminating) */
         }
 
-        this->stream->Interrupt();
         this->state = Player::Quit;
         this->writeToOutputCondition.notify_all();
         this->thread->detach();

@@ -36,13 +36,46 @@
 #include "Plugins.h"
 #include "PluginFactory.h"
 
+#include <core/support/Common.h>
 #include <core/support/Preferences.h>
+
+#include <core/io/DataStreamFactory.h>
+#include <core/audio/Streams.h>
+
 #include <core/library/LocalSimpleDataProvider.h>
+
 #include <core/sdk/IIndexerNotifier.h>
+#include <core/sdk/IEnvironment.h>
 
 using namespace musik::core;
+using namespace musik::core::audio;
 using namespace musik::core::db::local;
+using namespace musik::core::io;
 using namespace musik::core::sdk;
+
+static class Environment : public IEnvironment {
+    public:
+        virtual size_t GetPath(PathType type, char* dst, int size) override {
+            std::string path;
+            switch (type) {
+                case PathUserHome: path = GetHomeDirectory(); break;
+                case PathData: path = GetDataDirectory(); break;
+                case PathApplication: path = GetApplicationDirectory(); break;
+                case PathPlugins: path = GetPluginDirectory(); break;
+            }
+            return CopyString(path, dst, size);
+        }
+
+        virtual IDataStream* GetDataStream(const char* uri) override {
+            return DataStreamFactory::OpenDataStream(uri);
+        }
+
+        virtual IDecoder* GetDecoder(IDataStream* stream) override {
+            return streams::GetDecoderForDataStream(stream);
+        }
+} environment;
+
+typedef void(*SetEnvironment)(IEnvironment*);
 
 typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
 LocalSimpleDataProvider* dataProvider = nullptr;
@@ -74,6 +107,13 @@ namespace musik { namespace core { namespace plugin {
             [indexerNotifier](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
                 func(indexerNotifier);
             });
+
+        /* environment */
+        PluginFactory::Instance().QueryFunction<SetEnvironment>(
+            "SetEnvironment",
+            [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
+                func(&environment);
+            });
     }
 
     void UninstallDependencies() {
@@ -94,6 +134,13 @@ namespace musik { namespace core { namespace plugin {
         PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
             "SetIndexerNotifier",
                 [](musik::core::sdk::IPlugin* plugin, SetIndexerNotifier func) {
+                func(nullptr);
+            });
+
+        /* environment */
+        PluginFactory::Instance().QueryFunction<SetEnvironment>(
+            "SetEnvironment",
+            [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
                 func(nullptr);
             });
     }

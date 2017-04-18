@@ -49,6 +49,8 @@ using musik::core::PluginFactory;
 using DataStreamPtr = musik::core::io::DataStreamFactory::DataStreamPtr;
 using DecoderFactoryList = std::vector<std::shared_ptr<IDecoderFactory > >;
 using DspList = std::vector<std::shared_ptr<IDSP > >;
+using Deleter = PluginFactory::DestroyDeleter<IDecoder>;
+using DecoderPtr = std::shared_ptr<IDecoder>;
 
 static std::mutex initLock;
 static DecoderFactoryList decoders;
@@ -66,19 +68,19 @@ static void init() {
 namespace musik { namespace core { namespace audio {
 
     namespace streams {
-        std::shared_ptr<IDecoder> GetDecoderForDataStream(DataStreamPtr dataStream) {
+        IDecoder* GetDecoderForDataStream(IDataStream* dataStream) {
             init();
 
-            std::shared_ptr<IDecoder> result;
+            IDecoder* decoder = nullptr;
 
             /* find a DecoderFactory we can use for this type of data*/
             DecoderFactoryList::iterator factories = decoders.begin();
             DecoderFactoryList::iterator end = decoders.end();
             std::shared_ptr<IDecoderFactory> factory;
 
-            for ( ; factories != end && !factory; ++factories) {
+            for (; factories != end && !factory; ++factories) {
                 if ((*factories)->CanHandle(dataStream->Type())) {
-                    factory  = (*factories);
+                    factory = (*factories);
                 }
             }
 
@@ -87,29 +89,32 @@ namespace musik { namespace core { namespace audio {
             if (!factory) {
                 /* nothing can decode this type of file */
                 musik::debug::err(TAG, "nothing could open " + uri);
-                return result;
+                return nullptr;
             }
 
-            IDecoder *decoder = factory->CreateDecoder();
+            decoder = factory->CreateDecoder();
+
             if (!decoder) {
                 /* shouldn't ever happen, the factory said it can handle this file */
-                return result;
+                return nullptr;
             }
 
             /* ask the decoder to open the data stream. if it returns true we're
             good to start pulling data out of it! */
-            typedef PluginFactory::DestroyDeleter<IDecoder> Deleter;
-
-            result.reset(decoder, Deleter());
-            if (!result->Open(dataStream.get())) {
+            if (!decoder->Open(dataStream)) {
                 musik::debug::err(TAG, "open ok, but decode failed " + uri);
-                result.reset();
-                return result;
+                decoder->Destroy();
+                return nullptr;
             }
 
             musik::debug::info(TAG, "about ready to play: " + uri);
 
-            return result;
+            return decoder;
+        }
+
+        std::shared_ptr<IDecoder> GetDecoderForDataStream(DataStreamPtr dataStream) {
+            auto decoder = GetDecoderForDataStream(dataStream.get());
+            return decoder ? DecoderPtr(decoder, Deleter()) : DecoderPtr();
         }
 
         DspList GetDspPlugins() {

@@ -58,6 +58,8 @@ using musik::core::ILibraryPtr;
 using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
 
+#undef DEBUG_USE_HTTP_URIS
+
 #define NO_POSITION (size_t) -1
 #define START_OVER (size_t) -2
 
@@ -291,7 +293,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                         return;
                     }
 
-                    if (this->GetTrackAtIndex(this->nextIndex)->Uri() == streamMessage->GetUri()) {
+                    if (this->UriAtIndex(this->nextIndex) == streamMessage->GetUri()) {
                         this->index = this->nextIndex;
                         this->nextIndex = NO_POSITION;
                     }
@@ -898,9 +900,15 @@ void PlaybackService::Editor::Release() {
 }
 
 std::string PlaybackService::UriAtIndex(size_t index) {
-    auto track = this->playlist.Get(index);
-    if (track) {
-        return track->Uri();
+    if (index < this->playlist.Count()) {
+        auto track = this->playlist.Get(index);
+        if (track) {
+#ifdef DEBUG_USE_HTTP_URIS
+            return "http://localhost:7906/audio/" + std::to_string(track->GetId());
+#else
+            return track->Uri();
+#endif
+        }
     }
     return "";
 }

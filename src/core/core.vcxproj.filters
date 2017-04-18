@@ -453,5 +453,8 @@
     <ClInclude Include="sdk\IIndexerNotifier.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\IEnvironment.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

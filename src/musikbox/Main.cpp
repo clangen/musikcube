@@ -90,11 +90,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmd
     _main(0, 0);
 }
 
-int _main(int argc, wchar_t* argv[])
+int _main(int argc, wchar_t* argv[]) {
 #else
-int main(int argc, char* argv[])
+int main(int argc, char* argv[]) {
 #endif
-{
     srand((unsigned int) time(0));
 
     /* the following allows boost::filesystem to use utf8 on Windows */

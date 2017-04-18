@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{f9e1d5f4-2b16-4312-bdba-45d853fb9b7f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="httpdatastream_plugin.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpDataStream.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpDataStreamFactory.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="LruDiskCache.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpDataStreamFactory.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpDataStream.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="RingBuffer.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="LruDiskCache.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

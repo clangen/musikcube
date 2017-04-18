@@ -52,7 +52,14 @@ static off_t nomadSeek(void *datasource, off_t offset, int whence) {
     IDataStream *stream = static_cast<IDataStream*>(datasource);
 
     if (whence == SEEK_END && stream->Length() > 0) {
-        stream->SetPosition(stream->Length() - offset);
+        /* the only time nomad ever seeks to the end is when it's trying to
+        determine the length in bytes. this optimization allows us to play
+        mp3 files over HTTP without needing to wait until the entire file
+        is downloaded. it also prevents unnecessary fseek() calls. */
+        if (stream->Length() > 0) {
+            return stream->Length();
+        }
+        return (off_t) -1;
     }
     else {
         PositionType pos = (whence == SEEK_SET)

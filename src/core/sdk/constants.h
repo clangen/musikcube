@@ -85,6 +85,13 @@ namespace musik {
                 TimeChangeScrub
             };
 
+            enum PathType {
+                PathUserHome,
+                PathData,
+                PathApplication,
+                PathPlugins
+            };
+
             enum class Capability : int {
                 Prebuffer = 0x01
             };
