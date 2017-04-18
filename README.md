@@ -49,7 +49,7 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 ### manual
 
-- `brew install cmake boost libogg libvorbis flac faad2`
+- `brew install cmake boost libogg libvorbis flac faad2 libmicrohttpd`
 - `git clone https://github.com/clangen/musikcube.git`
 - `cd musikcube`
 - `cmake .`
@@ -59,7 +59,7 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 ## linux
 
-- install the following libraries and their development packages: `cmake boost libogg vorbis flac faad2 ncurses zlib asound pulse`
+- install the following libraries and their development packages: `cmake boost libogg vorbis flac faad2 ncurses zlib asound pulse libcurl libmicrohttpd`
 - `git clone https://github.com/clangen/musikcube.git`
 - `cd musikcube`
 - `cmake .`
