@@ -82,7 +82,7 @@ CategoryListView::~CategoryListView() {
 void CategoryListView::RequeryWithField(
     const std::string& fieldName,
     const std::string& filter,
-    const musik_uint64 selectAfterQuery)
+    const uint64_t selectAfterQuery)
 {
     if (this->activeQuery) {
         this->activeQuery->Cancel();
@@ -94,7 +94,7 @@ void CategoryListView::RequeryWithField(
     this->library->Enqueue(activeQuery);
 }
 
-void CategoryListView::Requery(const std::string& filter, const musik_uint64 selectAfterQuery) {
+void CategoryListView::Requery(const std::string& filter, const uint64_t selectAfterQuery) {
     this->RequeryWithField(this->fieldName, filter, selectAfterQuery);
 }
 
@@ -103,7 +103,7 @@ void CategoryListView::Reset() {
     this->OnAdapterChanged();
 }
 
-musik_uint64 CategoryListView::GetSelectedId() {
+uint64_t CategoryListView::GetSelectedId() {
     size_t index = this->GetSelectedIndex();
     if (index != NO_SELECTION && this->metadata && index < this->metadata->size()) {
         return this->metadata->at(index)->id;
@@ -152,7 +152,7 @@ void CategoryListView::ScrollToPlaying() {
 
 bool CategoryListView::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        musik_uint64 id = this->GetSelectedId();
+        uint64_t id = this->GetSelectedId();
         if (id != -1) {
             PlayQueueOverlays::ShowAddCategoryOverlay(
                 this->playback,
@@ -220,7 +220,7 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::Scrollabl
 
     bool selected = index == parent.GetSelectedIndex();
 
-    musik_int64 attrs = selected
+    int64_t attrs = selected
         ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
         : CURSESPP_DEFAULT_COLOR;
 

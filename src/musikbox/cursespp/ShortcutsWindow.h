@@ -53,7 +53,7 @@ namespace cursespp {
             void AddShortcut(
                 const std::string& key,
                 const std::string& description,
-                musik_int64 attrs = -1);
+                int64_t attrs = -1);
 
             void RemoveAll();
             void SetActive(const std::string& key);
@@ -65,7 +65,7 @@ namespace cursespp {
             size_t CalculateLeftPadding();
 
             struct Entry {
-                Entry(const std::string& key, const std::string& desc, musik_int64 attrs = -1) {
+                Entry(const std::string& key, const std::string& desc, int64_t attrs = -1) {
                     this->key = key;
                     this->description = desc;
                     this->attrs = attrs;
@@ -73,7 +73,7 @@ namespace cursespp {
 
                 std::string key;
                 std::string description;
-                musik_int64 attrs;
+                int64_t attrs;
             };
 
             typedef std::vector<std::shared_ptr<Entry> > EntryList;

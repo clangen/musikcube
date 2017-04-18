@@ -40,8 +40,8 @@ using namespace musik::core::runtime;
 IMessagePtr Message::Create(
     IMessageTarget* target,
     int messageType,
-    musik_int64 data1,
-    musik_int64 data2)
+    int64_t data1,
+    int64_t data2)
 {
     return IMessagePtr(new Message(target, messageType, data1, data2));
 }
@@ -49,8 +49,8 @@ IMessagePtr Message::Create(
 Message::Message(
     IMessageTarget* target,
     int messageType,
-    musik_int64 data1,
-    musik_int64 data2)
+    int64_t data1,
+    int64_t data2)
 {
     this->target = target;
     this->messageType = messageType;
@@ -66,10 +66,10 @@ int Message::Type() {
     return this->messageType;
 }
 
-musik_int64 Message::UserData1() {
+int64_t Message::UserData1() {
     return this->data1;
 }
 
-musik_int64 Message::UserData2() {
+int64_t Message::UserData2() {
     return this->data2;
 }

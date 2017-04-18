@@ -42,7 +42,7 @@ using namespace musik::core;
 Track::~Track() {
 }
 
-musik_uint64 Track::GetId() {
+uint64_t Track::GetId() {
     return 0;
 }
 

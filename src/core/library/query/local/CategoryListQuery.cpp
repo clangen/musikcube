@@ -171,7 +171,7 @@ musik::core::sdk::IMetadataValueList* CategoryListQuery::GetSdkResult() {
     return new MetadataList(this->result);
 }
 
-int CategoryListQuery::GetIndexOf(musik_uint64 id) {
+int CategoryListQuery::GetIndexOf(uint64_t id) {
     auto result = this->GetResult();
     for (size_t i = 0; i < result->size(); i++) {
         if (id == (*result)[i]->id) {

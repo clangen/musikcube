@@ -34,14 +34,7 @@
 
 #pragma once
 
-#ifdef WIN32
-    typedef __int64 musik_int64;
-    typedef unsigned __int64 musik_uint64;
-#else
-    #include <stdint.h>
-    typedef uint64_t musik_uint64;
-    typedef int64_t musik_int64;
-#endif
+#include <stdint.h>
 
 namespace musik {
     namespace core {

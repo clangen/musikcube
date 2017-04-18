@@ -63,7 +63,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
-    const musik_uint64 playlistId,
+    const uint64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
     return std::shared_ptr<SavePlaylistQuery>(
@@ -71,7 +71,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
-    const musik_uint64 playlistId,
+    const uint64_t playlistId,
     const std::string& playlistName)
 {
     return std::shared_ptr<SavePlaylistQuery>(
@@ -88,7 +88,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    const musik_uint64 playlistId,
+    const uint64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
     this->playlistId = playlistId;
@@ -96,7 +96,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
-    const musik_uint64 playlistId,
+    const uint64_t playlistId,
     const std::string& playlistName)
 {
     this->playlistId = playlistId;
@@ -106,7 +106,7 @@ SavePlaylistQuery::SavePlaylistQuery(
 SavePlaylistQuery::~SavePlaylistQuery() {
 }
 
-bool SavePlaylistQuery::AddTracksToPlaylist(musik::core::db::Connection &db, musik_uint64 playlistId) {
+bool SavePlaylistQuery::AddTracksToPlaylist(musik::core::db::Connection &db, uint64_t playlistId) {
     Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
 
     TrackPtr track;
@@ -139,7 +139,7 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
         return false;
     }
 
-    musik_uint64 playlistId = db.LastInsertedId();
+    uint64_t playlistId = db.LastInsertedId();
 
     /* add tracks to playlist */
     if (!this->AddTracksToPlaylist(db, playlistId)) {

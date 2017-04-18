@@ -46,8 +46,8 @@ namespace musik { namespace core { namespace runtime {
             virtual ~IMessage() { }
             virtual IMessageTarget* Target() = 0;
             virtual int Type() = 0;
-            virtual musik_int64 UserData1() = 0;
-            virtual musik_int64 UserData2() = 0;
+            virtual int64_t UserData1() = 0;
+            virtual int64_t UserData2() = 0;
     };
 
     typedef std::shared_ptr<IMessage> IMessagePtr;

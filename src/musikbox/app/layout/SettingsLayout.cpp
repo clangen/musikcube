@@ -248,7 +248,7 @@ void SettingsLayout::RefreshAddedPaths() {
     this->addedPathsList->OnAdapterChanged();
 }
 
-musik_int64 SettingsLayout::ListItemDecorator(
+int64_t SettingsLayout::ListItemDecorator(
     ScrollableWindow* scrollable,
     size_t index,
     size_t line,

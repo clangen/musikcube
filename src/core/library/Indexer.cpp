@@ -65,7 +65,7 @@
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 2;
 static const size_t TRANSACTION_INTERVAL = 300;
-static std::atomic<musik_uint64> nextExternalId;
+static std::atomic<uint64_t> nextExternalId;
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -251,20 +251,20 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         {
             db::Statement stmt("SELECT MAX(id) FROM tracks", this->dbConnection);
             if (stmt.Step() == db::Row) {
-                auto id = std::max((musik_uint64) 1, stmt.ColumnUint64(0));
+                auto id = std::max((uint64_t) 1, stmt.ColumnUint64(0));
                 nextExternalId.store(id);
             }
         }
 
         std::vector<std::string> paths;
-        std::vector<musik_uint64> pathIds;
+        std::vector<uint64_t> pathIds;
 
         /* resolve all the path and path ids (required for local files */
         db::Statement stmt("SELECT id, path FROM paths", this->dbConnection);
 
         while (stmt.Step() == db::Row) {
             try {
-                musik_uint64 id = stmt.ColumnUint64(0);
+                uint64_t id = stmt.ColumnUint64(0);
                 std::string path = stmt.ColumnText(1);
                 boost::filesystem::path dir(path);
 
@@ -415,7 +415,7 @@ void Indexer::SyncDirectory(
     boost::asio::io_service* io,
     const std::string &syncRoot,
     const std::string &currentPath,
-    musik_uint64 pathId)
+    uint64_t pathId)
 {
     if (this->Exited()) {
         return;
@@ -732,7 +732,7 @@ void Indexer::RunAnalyzers() {
 
     /* for each track... */
 
-    musik_uint64 trackId = 0;
+    uint64_t trackId = 0;
 
     db::Statement getNextTrack(
         "SELECT id FROM tracks WHERE id>? ORDER BY id LIMIT 1",

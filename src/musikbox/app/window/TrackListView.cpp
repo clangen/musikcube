@@ -173,7 +173,7 @@ size_t TrackListView::Count() {
 
 void TrackListView::ScrollToPlaying() {
     if (this->playing && this->tracks) {
-        musik_uint64 id = this->playing->GetId();
+        uint64_t id = this->playing->GetId();
         for (size_t i = 0; i < this->tracks->Count(); i++) {
             if (this->tracks->GetId(i) == id) {
                 size_t rawIndex = headers.TrackListToAdapterIndex(i);
@@ -392,7 +392,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         return entry;
     }
 
-    musik_int64 attrs = CURSESPP_DEFAULT_COLOR;
+    int64_t attrs = CURSESPP_DEFAULT_COLOR;
 
     if (parent.decorator) {
         attrs = parent.decorator(track, trackIndex);

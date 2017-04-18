@@ -131,7 +131,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
         size_t count = entry->GetLineCount();
 
         for (size_t i = 0; i < count && drawnLines < this->height; i++) {
-            musik_int64 attrs = -1;
+            int64_t attrs = -1;
 
             if (this->decorator) {
                 attrs = this->decorator(scrollable, topIndex + e, i, entry);

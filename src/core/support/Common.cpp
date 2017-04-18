@@ -185,11 +185,11 @@ std::string musik::core::GetPath(const std::string &sFile) {
     return sPath;
 }
 
-musik_uint64 musik::core::Checksum(char *data,unsigned int bytes) {
-    musik_uint64 sum = 0;
+uint64_t musik::core::Checksum(char *data,unsigned int bytes) {
+    uint64_t sum = 0;
     for(unsigned int i = 0; i < bytes; ++i) {
         char ch = *(data + i);
-        sum += (musik_uint64) ch;
+        sum += (uint64_t) ch;
     }
     return sum;
 }

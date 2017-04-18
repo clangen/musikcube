@@ -49,12 +49,12 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::db::local;
 
-GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, musik_uint64 playlistId) {
+GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, uint64_t playlistId) {
     this->library = library;
     this->playlistId = playlistId;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
-    this->hash = std::hash<musik_uint64>()(this->playlistId);
+    this->hash = std::hash<uint64_t>()(this->playlistId);
 }
 
 GetPlaylistQuery::~GetPlaylistQuery() {

@@ -325,7 +325,7 @@ int HttpServer::HandleRequest(
                 IRetainedTrack* track = nullptr;
 
                 if (parts.at(1) == fragment::id) {
-                    musik_uint64 id = std::stoull(urlDecode(parts.at(2)));
+                    uint64_t id = std::stoull(urlDecode(parts.at(2)));
                     track = server->context.dataProvider->QueryTrackById(id);
                 }
                 else if (parts.at(1) == fragment::external_id) {

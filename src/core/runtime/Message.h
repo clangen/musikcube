@@ -42,27 +42,27 @@ namespace musik { namespace core { namespace runtime {
             Message(
                 IMessageTarget* target,
                 int messageType,
-                musik_int64 data1,
-                musik_int64 data2);
+                int64_t data1,
+                int64_t data2);
 
         public:
             static IMessagePtr Create(
                 IMessageTarget* target,
                 int messageType,
-                musik_int64 data1 = 0LL,
-                musik_int64 data2 = 0LL);
+                int64_t data1 = 0LL,
+                int64_t data2 = 0LL);
 
             virtual ~Message() {
             }
 
             virtual IMessageTarget* Target();
             virtual int Type();
-            virtual musik_int64 UserData1();
-            virtual musik_int64 UserData2();
+            virtual int64_t UserData1();
+            virtual int64_t UserData2();
 
         private:
             IMessageTarget* target;
             int messageType;
-            musik_int64 data1, data2;
+            int64_t data1, data2;
     };
 } } }

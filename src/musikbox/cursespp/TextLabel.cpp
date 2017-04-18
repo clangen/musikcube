@@ -57,7 +57,7 @@ void TextLabel::OnRedraw() {
 
     WINDOW* c = this->GetContent();
 
-    musik_int64 attrs = this->GetContentColor();
+    int64_t attrs = this->GetContentColor();
     if (attrs != -1) {
         wbkgd(c, COLOR_PAIR(attrs));
     }

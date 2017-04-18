@@ -38,7 +38,7 @@
 
 using namespace cursespp;
 
-MultiLineEntry::MultiLineEntry(const std::string& value, musik_int64 attrs) {
+MultiLineEntry::MultiLineEntry(const std::string& value, int64_t attrs) {
     this->value = value;
     this->charCount = value.size();
     this->width = -1;
@@ -53,7 +53,7 @@ std::string MultiLineEntry::GetLine(size_t n) {
     return this->lines.at(n);
 }
 
-musik_int64 MultiLineEntry::GetAttrs(size_t line) {
+int64_t MultiLineEntry::GetAttrs(size_t line) {
     return this->attrs;
 }
 

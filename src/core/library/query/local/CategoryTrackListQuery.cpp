@@ -66,7 +66,7 @@ static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
 CategoryTrackListQuery::CategoryTrackListQuery(
     ILibraryPtr library,
     const std::string& column,
-    musik_uint64 id,
+    uint64_t id,
     const std::string& filter)
 {
     this->library = library;
@@ -145,7 +145,7 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
     }
 
     while (trackQuery.Step() == Row) {
-        musik_uint64 id = trackQuery.ColumnUint64(0);
+        uint64_t id = trackQuery.ColumnUint64(0);
         std::string album = trackQuery.ColumnText(1);
 
         if (album != lastAlbum) {

@@ -47,7 +47,7 @@ namespace musik { namespace core { namespace db { namespace local {
             /* note we implement the SDK's IMetadataValue interface so
             we can return data to plugins! */
             struct Result : public musik::core::sdk::IMetadataValue {
-                virtual musik_uint64 GetId() {
+                virtual uint64_t GetId() {
                     return this->id;
                 }
 
@@ -60,7 +60,7 @@ namespace musik { namespace core { namespace db { namespace local {
                 }
 
                 std::string displayValue;
-                musik_uint64 id;
+                uint64_t id;
             };
 
             typedef std::shared_ptr<std::vector<
@@ -75,7 +75,7 @@ namespace musik { namespace core { namespace db { namespace local {
             std::string Name() { return "CategoryListQuery"; }
 
             virtual ResultList GetResult();
-            virtual int GetIndexOf(musik_uint64 id);
+            virtual int GetIndexOf(uint64_t id);
 
             musik::core::sdk::IMetadataValueList* GetSdkResult();
 

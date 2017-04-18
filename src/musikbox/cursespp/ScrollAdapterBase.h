@@ -41,7 +41,7 @@
 namespace cursespp {
     class ScrollAdapterBase : public IScrollAdapter {
         public:
-            typedef std::function<musik_int64(
+            typedef std::function<int64_t(
                 ScrollableWindow*,
                 size_t,
                 size_t,

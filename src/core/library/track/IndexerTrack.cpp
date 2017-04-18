@@ -59,13 +59,13 @@ using namespace musik::core;
 #define ARTIST_TRACK_FOREIGN_KEY "artist_id"
 
 static std::mutex trackWriteLock;
-static std::unordered_map<std::string, musik_int64> metadataIdCache;
+static std::unordered_map<std::string, int64_t> metadataIdCache;
 
 void IndexerTrack::ResetIdCache() {
     metadataIdCache.clear();
 }
 
-IndexerTrack::IndexerTrack(musik_uint64 id)
+IndexerTrack::IndexerTrack(uint64_t id)
 : internalMetadata(new IndexerTrack::MetadataWithThumbnail())
 , id(id)
 {
@@ -87,7 +87,7 @@ std::string IndexerTrack::GetValue(const char* metakey) {
     return "";
 }
 
-musik_uint64 IndexerTrack::GetUint64(const char* key, musik_uint64 defaultValue) {
+uint64_t IndexerTrack::GetUint64(const char* key, uint64_t defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
@@ -197,7 +197,7 @@ Track::MetadataIteratorRange IndexerTrack::GetAllValues() {
     return Track::MetadataIteratorRange();
 }
 
-musik_uint64 IndexerTrack::GetId() {
+uint64_t IndexerTrack::GetId() {
     return this->id;
 }
 
@@ -245,7 +245,7 @@ bool IndexerTrack::NeedsToBeIndexed(
     return true;
 }
 
-static musik_uint64 writeToTracksTable(
+static uint64_t writeToTracksTable(
     db::Connection &dbConnection,
     IndexerTrack& track)
 {
@@ -286,7 +286,7 @@ static musik_uint64 writeToTracksTable(
     stmt.BindText(11, track.GetValue("external_id"));
 
     if (track.GetId() != 0) {
-        stmt.BindUint64(0, (musik_uint64) track.GetId());
+        stmt.BindUint64(0, (uint64_t) track.GetId());
     }
 
     if (stmt.Step() == db::Done) {
@@ -301,7 +301,7 @@ static musik_uint64 writeToTracksTable(
 static void removeRelation(
     db::Connection& connection,
     const std::string& field,
-    musik_uint64 trackId)
+    uint64_t trackId)
 {
     std::string query = boost::str(boost::format("DELETE FROM %1% WHERE track_id=?") % field);
     db::Statement stmt(query.c_str(), connection);
@@ -331,11 +331,11 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("visible");
 }
 
-musik_uint64 IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
-    musik_uint64 thumbnailId = 0;
+uint64_t IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
+    uint64_t thumbnailId = 0;
 
     if (this->internalMetadata->thumbnailData) {
-        musik_uint64 sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
+        uint64_t sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
 
         db::Statement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?", connection);
         thumbs.BindInt32(0, this->internalMetadata->thumbnailSize);
@@ -386,7 +386,7 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
     MetadataMap::const_iterator it = unknownFields.begin();
     for ( ; it != unknownFields.end(); ++it){
-        musik_uint64 keyId = 0;
+        uint64_t keyId = 0;
         std::string key;
 
         /* lookup the ID for the key; insert if it doesn't exist.. */
@@ -417,7 +417,7 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         /* see if we already have the value as a normalized row in our table.
         if we don't, insert it. */
 
-        musik_uint64 valueId = 0;
+        uint64_t valueId = 0;
 
         if (metadataIdCache.find("metaValue-" + it->second) != metadataIdCache.end()) {
             valueId = metadataIdCache["metaValue-" + it->second];
@@ -455,12 +455,12 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     }
 }
 
-musik_uint64 IndexerTrack::SaveSingleValueField(
+uint64_t IndexerTrack::SaveSingleValueField(
     db::Connection& dbConnection,
     const std::string& trackMetadataKeyName,
     const std::string& fieldTableName)
 {
-    musik_uint64 id = 0;
+    uint64_t id = 0;
 
     std::string selectQuery = boost::str(boost::format(
         "SELECT id FROM %1% WHERE name=?") % fieldTableName);
@@ -494,7 +494,7 @@ musik_uint64 IndexerTrack::SaveSingleValueField(
     return id;
 }
 
-musik_uint64 IndexerTrack::SaveMultiValueField(
+uint64_t IndexerTrack::SaveMultiValueField(
     db::Connection& connection,
     const std::string& tracksTableColumnName,
     const std::string& fieldTableName,
@@ -502,7 +502,7 @@ musik_uint64 IndexerTrack::SaveMultiValueField(
     const std::string& junctionTableForeignKeyColumnName)
 {
     std::string aggregatedValue;
-    musik_uint64 fieldId = 0;
+    uint64_t fieldId = 0;
     int count = 0;
 
     std::set<std::string> processed; /* for deduping */
@@ -545,7 +545,7 @@ musik_uint64 IndexerTrack::SaveMultiValueField(
     return fieldId;
 }
 
-musik_uint64 IndexerTrack::SaveGenre(db::Connection& dbConnection) {
+uint64_t IndexerTrack::SaveGenre(db::Connection& dbConnection) {
     return this->SaveMultiValueField(
         dbConnection,
         GENRE_TRACK_COLUMN_NAME,
@@ -554,7 +554,7 @@ musik_uint64 IndexerTrack::SaveGenre(db::Connection& dbConnection) {
         GENRE_TRACK_FOREIGN_KEY);
 }
 
-musik_uint64 IndexerTrack::SaveArtist(db::Connection& dbConnection) {
+uint64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
     return this->SaveMultiValueField(
         dbConnection,
         ARTIST_TRACK_COLUMN_NAME,
@@ -582,11 +582,11 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     this->id = writeToTracksTable(dbConnection, *this);
 
-    musik_uint64 albumId = this->SaveSingleValueField(dbConnection, "album", "albums");
-    musik_uint64 genreId = this->SaveGenre(dbConnection);
-    musik_uint64 artistId = this->SaveArtist(dbConnection);
-    musik_uint64 albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
-    musik_uint64 thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
+    uint64_t albumId = this->SaveSingleValueField(dbConnection, "album", "albums");
+    uint64_t genreId = this->SaveGenre(dbConnection);
+    uint64_t artistId = this->SaveArtist(dbConnection);
+    uint64_t albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
+    uint64_t thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
 
     /* ensure we have a correct source id */
     int sourceId = 0;
@@ -624,7 +624,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     return true;
 }
 
-musik_uint64 IndexerTrack::SaveNormalizedFieldValue(
+uint64_t IndexerTrack::SaveNormalizedFieldValue(
     db::Connection &dbConnection,
     const std::string& tableName,
     const std::string& fieldValue,
@@ -632,7 +632,7 @@ musik_uint64 IndexerTrack::SaveNormalizedFieldValue(
     const std::string& relationJunctionTableName,
     const std::string& relationJunctionTableColumn)
 {
-    musik_uint64 fieldId = 0;
+    uint64_t fieldId = 0;
 
     /* find by value */
 

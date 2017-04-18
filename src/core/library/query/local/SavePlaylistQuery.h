@@ -48,11 +48,11 @@ namespace musik { namespace core { namespace db { namespace local {
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             static std::shared_ptr<SavePlaylistQuery> Replace(
-                const musik_uint64 playlistId,
+                const uint64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             static std::shared_ptr<SavePlaylistQuery> Rename(
-                const musik_uint64 playlistId,
+                const uint64_t playlistId,
                 const std::string& playlistName);
 
             virtual std::string Name() { return "SavePlaylistQuery"; }
@@ -68,20 +68,20 @@ namespace musik { namespace core { namespace db { namespace local {
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             SavePlaylistQuery(
-                const musik_uint64 playlistId,
+                const uint64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             SavePlaylistQuery(
-                const musik_uint64 playlistId,
+                const uint64_t playlistId,
                 const std::string& newName);
 
             bool CreatePlaylist(musik::core::db::Connection &db);
             bool RenamePlaylist(musik::core::db::Connection &db);
             bool ReplacePlaylist(musik::core::db::Connection &db);
-            bool AddTracksToPlaylist(musik::core::db::Connection &db, musik_uint64 playlistId);
+            bool AddTracksToPlaylist(musik::core::db::Connection &db, uint64_t playlistId);
 
             std::string playlistName;
-            musik_uint64 playlistId;
+            uint64_t playlistId;
             std::shared_ptr<musik::core::TrackList> tracks;
     };
 

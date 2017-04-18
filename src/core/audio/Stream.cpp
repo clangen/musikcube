@@ -97,7 +97,7 @@ double Stream::SetPosition(double requestedSeconds) {
         double rate = (double) this->decoderSampleRate;
 
         this->decoderSamplePosition =
-            (musik_uint64)(actualSeconds * rate) * this->decoderChannels;
+            (uint64_t)(actualSeconds * rate) * this->decoderChannels;
 
         /* move all the filled buffers back to the recycled queue */
         auto it = this->filledBuffers.begin();

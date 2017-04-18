@@ -84,7 +84,7 @@ namespace musik {
                 void SetVolume(float volume);
                 void Help();
 
-                void WriteOutput(const std::string& str, musik_int64 attrs = -1);
+                void WriteOutput(const std::string& str, int64_t attrs = -1);
 
                 std::shared_ptr<LogWindow> logs;
                 std::shared_ptr<cursespp::TextInput> commands;

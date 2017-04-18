@@ -125,7 +125,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     }
 
     while (trackQuery.Step() == Row) {
-        musik_uint64 id = trackQuery.ColumnUint64(0);
+        uint64_t id = trackQuery.ColumnUint64(0);
         std::string album = trackQuery.ColumnText(1);
 
         if (!album.size()) {

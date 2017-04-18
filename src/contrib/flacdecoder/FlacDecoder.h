@@ -102,7 +102,7 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
 
         long channels;
         long sampleRate;
-        musik_uint64 totalSamples;
+        uint64_t totalSamples;
         int bitsPerSample;
         double duration;
 

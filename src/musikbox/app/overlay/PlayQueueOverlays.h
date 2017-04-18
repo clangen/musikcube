@@ -43,7 +43,7 @@ namespace musik {
     namespace box {
         class PlayQueueOverlays {
             public:
-                using PlaylistSelectedCallback = std::function<void(musik_uint64)>;
+                using PlaylistSelectedCallback = std::function<void(uint64_t)>;
 
                 static void ShowAddTrackOverlay(
                     musik::core::runtime::IMessageQueue& messageQueue,
@@ -54,7 +54,7 @@ namespace musik {
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
                     const std::string& fieldColumn,
-                    musik_uint64 fieldId);
+                    uint64_t fieldId);
 
                 static void ShowAlbumDividerOverlay(
                     musik::core::runtime::IMessageQueue& messageQueue,
@@ -70,7 +70,7 @@ namespace musik {
                 static void ShowSavePlaylistOverlay(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
-                    musik_uint64 selectedPlaylistId = -1);
+                    uint64_t selectedPlaylistId = -1);
 
                 static void ShowRenamePlaylistOverlay(
                     musik::core::ILibraryPtr library);

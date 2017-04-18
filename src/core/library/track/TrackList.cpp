@@ -65,11 +65,11 @@ size_t TrackList::Count() const {
     return ids.size();
 }
 
-void TrackList::Add(const musik_uint64 id) {
+void TrackList::Add(const uint64_t id) {
     this->ids.push_back(id);
 }
 
-bool TrackList::Insert(musik_uint64 id, size_t index) {
+bool TrackList::Insert(uint64_t id, size_t index) {
     if (index < (int) this->ids.size()) {
         this->ids.insert(this->ids.begin() + index, id);
         return true;
@@ -143,7 +143,7 @@ ITrack* TrackList::GetTrack(size_t index) const {
     return this->Get(index).get();
 }
 
-musik_uint64 TrackList::GetId(size_t index) const {
+uint64_t TrackList::GetId(size_t index) const {
     return this->ids.at(index);
 }
 
@@ -156,7 +156,7 @@ void TrackList::CopyFrom(const TrackList& from) {
         std::back_inserter(this->ids));
 }
 
-int TrackList::IndexOf(musik_uint64 id) const {
+int TrackList::IndexOf(uint64_t id) const {
     auto it = std::find(this->ids.begin(), this->ids.end(), id);
     return (it == this->ids.end()) ? -1 : it - this->ids.begin();
 }
@@ -179,7 +179,7 @@ void TrackList::Swap(TrackList& tl) {
     std::swap(tl.ids, this->ids);
 }
 
-TrackPtr TrackList::GetFromCache(musik_uint64 key) const {
+TrackPtr TrackList::GetFromCache(uint64_t key) const {
     auto it = this->cacheMap.find(key);
     if (it != this->cacheMap.end()) {
         this->cacheList.splice( /* promote to front */
@@ -193,7 +193,7 @@ TrackPtr TrackList::GetFromCache(musik_uint64 key) const {
     return TrackPtr();
 }
 
-void TrackList::AddToCache(musik_uint64 key, TrackPtr value) const {
+void TrackList::AddToCache(uint64_t key, TrackPtr value) const {
     auto it = this->cacheMap.find(key);
     if (it != this->cacheMap.end()) {
         cacheList.erase(it->second.second);

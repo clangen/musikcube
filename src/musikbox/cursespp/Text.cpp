@@ -295,12 +295,12 @@ namespace cursespp {
             return (it != KEY_MAPPING.end()) ? it->second : kn;
         }
 
-        std::string Read(musik_int64 ch) {
+        std::string Read(int64_t ch) {
             std::string kn = keyname((int)ch);
 
             /* convert +ESC to M- sequences */
             if (kn == "^[") {
-                musik_int64 next = getch();
+                int64_t next = getch();
                 if (next != -1) {
                     kn = std::string("M-") + std::string(keyname((int)next));
                 }

@@ -59,7 +59,7 @@ void ShortcutsWindow::SetAlignment(text::TextAlign align) {
 void ShortcutsWindow::AddShortcut(
     const std::string& key,
     const std::string& description,
-    musik_int64 attrs)
+    int64_t attrs)
 {
     this->entries.push_back(
         std::shared_ptr<Entry>(new Entry(key, description, attrs)));
@@ -103,8 +103,8 @@ size_t ShortcutsWindow::CalculateLeftPadding() {
 void ShortcutsWindow::OnRedraw() {
     this->Clear();
 
-    musik_int64 normalAttrs = COLOR_PAIR(CURSESPP_BUTTON_NORMAL);
-    musik_int64 activeAttrs = COLOR_PAIR(CURSESPP_BUTTON_HIGHLIGHTED);
+    int64_t normalAttrs = COLOR_PAIR(CURSESPP_BUTTON_NORMAL);
+    int64_t activeAttrs = COLOR_PAIR(CURSESPP_BUTTON_HIGHLIGHTED);
 
     WINDOW* c = this->GetContent();
 
@@ -115,7 +115,7 @@ void ShortcutsWindow::OnRedraw() {
     for (size_t i = 0; i < this->entries.size() && remaining > 0; i++) {
         auto e = this->entries[i];
 
-        musik_int64 keyAttrs = (e->attrs == -1) ? normalAttrs : COLOR_PAIR(e->attrs);
+        int64_t keyAttrs = (e->attrs == -1) ? normalAttrs : COLOR_PAIR(e->attrs);
         keyAttrs = (e->key == this->activeKey) ? activeAttrs : keyAttrs;
 
         wprintw(c, " ");

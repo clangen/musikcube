@@ -39,19 +39,19 @@
 namespace cursespp {
     class MultiLineEntry : public IScrollAdapter::IEntry {
         public:
-            MultiLineEntry(const std::string& value, musik_int64 attrs = -1);
+            MultiLineEntry(const std::string& value, int64_t attrs = -1);
             virtual ~MultiLineEntry() { }
 
             virtual size_t GetLineCount();
             virtual std::string GetLine(size_t line);
             virtual void SetWidth(size_t width);
-            virtual musik_int64 GetAttrs(size_t line);
+            virtual int64_t GetAttrs(size_t line);
 
         private:
             std::string value;
             std::vector<std::string> lines;
             size_t charCount;
-            musik_int64 attrs;
+            int64_t attrs;
             size_t width;
     };
 }

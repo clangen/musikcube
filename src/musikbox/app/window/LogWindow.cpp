@@ -95,7 +95,7 @@ void LogWindow::Update() {
     }
 
     for (size_t i = 0; i < pending.size(); i++) {
-        musik_int64 attrs = COLOR_PAIR(CURSESPP_TEXT_DEFAULT);
+        int64_t attrs = COLOR_PAIR(CURSESPP_TEXT_DEFAULT);
 
         LogEntry* entry = pending[i];
 

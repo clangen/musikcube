@@ -864,7 +864,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
        long extra=b->sample_count-vb->granulepos;
 
         /* we use ogg_int64_t for granule positions because a
-           musik_uint64 isn't universally available.  Unfortunately,
+           uint64_t isn't universally available.  Unfortunately,
            that means granposes can be 'negative' and result in
            extra being negative */
         if(extra<0)
@@ -912,7 +912,7 @@ int vorbis_synthesis_blockin(vorbis_dsp_state *v,vorbis_block *vb){
               extra = (v->pcm_current - v->pcm_returned)<<hs;
 
             /* we use ogg_int64_t for granule positions because a
-               musik_uint64 isn't universally available.  Unfortunately,
+               uint64_t isn't universally available.  Unfortunately,
                that means granposes can be 'negative' and result in
                extra being negative */
             if(extra<0)

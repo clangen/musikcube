@@ -68,7 +68,7 @@ int RetainedTrack::Uri(char* dst, int size) {
     return track->Uri(dst, size);
 }
 
-musik_uint64 RetainedTrack::GetUint64(const char* key, musik_uint64 defaultValue) {
+uint64_t RetainedTrack::GetUint64(const char* key, uint64_t defaultValue) {
     return track->GetUint64(key, defaultValue);
 }
 
@@ -88,7 +88,7 @@ double RetainedTrack::GetDouble(const char* key, double defaultValue) {
     return track->GetDouble(key, defaultValue);
 }
 
-musik_uint64 RetainedTrack::GetId() {
+uint64_t RetainedTrack::GetId() {
     return track->GetId();
 }
 

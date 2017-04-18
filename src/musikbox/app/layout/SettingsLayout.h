@@ -102,7 +102,7 @@ namespace musik {
                 void OnThemeDropdownActivate(cursespp::TextLabel* label);
                 void OnLocaleDropdownActivate(cursespp::TextLabel* label);
 
-                musik_int64 ListItemDecorator(
+                int64_t ListItemDecorator(
                     cursespp::ScrollableWindow* w,
                     size_t index,
                     size_t line,

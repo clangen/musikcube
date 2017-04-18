@@ -55,8 +55,8 @@ namespace musik { namespace core { namespace db {
 
             void BindInt32(int position, int bindInt);
             void BindUint32(int position, size_t bindInt);
-            void BindInt64(int position, musik_int64 bindInt);
-            void BindUint64(int position, musik_uint64 bindInt);
+            void BindInt64(int position, int64_t bindInt);
+            void BindUint64(int position, uint64_t bindInt);
             void BindText(int position, const char* bindText);
             void BindText(int position, const std::string &bindText);
             void BindTextW(int position, const wchar_t* bindText);
@@ -65,8 +65,8 @@ namespace musik { namespace core { namespace db {
 
             int ColumnInt32(int column);
             size_t ColumnUint32(int column);
-            musik_uint64 ColumnUint64(int column);
-            musik_int64 ColumnInt64(int column);
+            uint64_t ColumnUint64(int column);
+            int64_t ColumnInt64(int column);
             const char* ColumnText(int column);
             const wchar_t* ColumnTextW(int column);
 

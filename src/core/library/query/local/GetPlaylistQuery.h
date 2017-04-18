@@ -46,7 +46,7 @@ namespace musik { namespace core { namespace db { namespace local {
         public:
             GetPlaylistQuery(
                 musik::core::ILibraryPtr library,
-                musik_uint64 playlistId);
+                uint64_t playlistId);
 
             virtual ~GetPlaylistQuery();
 
@@ -63,7 +63,7 @@ namespace musik { namespace core { namespace db { namespace local {
             musik::core::ILibraryPtr library;
             Result result;
             Headers headers;
-            musik_uint64 playlistId;
+            uint64_t playlistId;
             size_t hash;
     };
 

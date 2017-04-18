@@ -47,7 +47,7 @@ namespace musik { namespace core {
     {
         public:
             MetadataMap(
-                musik_uint64 id,
+                uint64_t id,
                 const std::string& description,
                 const std::string& type);
 
@@ -55,12 +55,12 @@ namespace musik { namespace core {
 
             /* IMetadataMap */
             virtual void Release();
-            virtual musik_uint64 GetId();
+            virtual uint64_t GetId();
             virtual const char* GetDescription();
             virtual const char* GetType();
 
             virtual int GetValue(const char* key, char* dst, int size);
-            virtual musik_uint64 GetUint64(const char* key, musik_uint64 defaultValue = 0ULL);
+            virtual uint64_t GetUint64(const char* key, uint64_t defaultValue = 0ULL);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
@@ -72,7 +72,7 @@ namespace musik { namespace core {
             musik::core::sdk::IMetadataMap* GetSdkValue();
 
         private:
-            musik_uint64 id;
+            uint64_t id;
             std::string type, description;
             std::unordered_map<std::string, std::string> metadata;
     };

@@ -48,7 +48,7 @@ static std::string DELETE_PLAYLIST_TRACKS_QUERY =
 static std::string DELETE_PLAYLIST_QUERY =
     "DELETE FROM playlists WHERE id=?;";
 
-DeletePlaylistQuery::DeletePlaylistQuery(const musik_uint64 playlistId) {
+DeletePlaylistQuery::DeletePlaylistQuery(const uint64_t playlistId) {
     this->playlistId = playlistId;
 }
 

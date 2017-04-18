@@ -51,14 +51,14 @@ namespace musik { namespace core { namespace db { namespace local {
                     int limit = -1,
                     int offset = 0);
 
-            virtual musik::core::sdk::IRetainedTrack* QueryTrackById(musik_uint64 trackId);
+            virtual musik::core::sdk::IRetainedTrack* QueryTrackById(uint64_t trackId);
 
             virtual musik::core::sdk::IRetainedTrack* QueryTrackByExternalId(const char* externalId);
 
             virtual musik::core::sdk::ITrackList*
                 QueryTracksByCategory(
                     const char* categoryType,
-                    musik_uint64 selectedId,
+                    uint64_t selectedId,
                     const char* filter = "",
                     int limit = -1,
                     int offset = 0);
@@ -73,7 +73,7 @@ namespace musik { namespace core { namespace db { namespace local {
 
             virtual musik::core::sdk::IMetadataMapList* QueryAlbums(
                 const char* categoryIdName,
-                musik_uint64 categoryIdValue,
+                uint64_t categoryIdValue,
                 const char* filter = "");
 
         private:
