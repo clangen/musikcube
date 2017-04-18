@@ -149,5 +149,7 @@ metadata-related:
 networking:
 * [websocketpp](https://github.com/zaphoyd/websocketpp)
 * [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/)
+* [libcurl](https://curl.haxx.se/libcurl/)
+* [libressl](https://www.libressl.org/)
 * [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client)
 * [okhttp](http://square.github.io/okhttp/)
