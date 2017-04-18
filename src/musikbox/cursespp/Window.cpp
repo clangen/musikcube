@@ -175,7 +175,7 @@ void Window::SendToBottom() {
     }
 }
 
-void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay) {
+void Window::PostMessage(int messageType, musik_int64 user1, musik_int64 user2, musik_int64 delay) {
     messageQueue.Post(
         Message::Create(
             this,
@@ -185,7 +185,7 @@ void Window::PostMessage(int messageType, int64 user1, int64 user2, int64 delay)
         delay);
 }
 
-void Window::DebounceMessage(int messageType, int64 user1, int64 user2, int64 delay) {
+void Window::DebounceMessage(int messageType, musik_int64 user1, musik_int64 user2, musik_int64 delay) {
     messageQueue.Debounce(
         Message::Create(
             this,
@@ -352,28 +352,28 @@ int Window::GetY() const {
     return this->y;
 }
 
-void Window::SetContentColor(int64 color) {
+void Window::SetContentColor(musik_int64 color) {
     this->contentColor = (color == CURSESPP_DEFAULT_COLOR)
         ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
 
     this->RepaintBackground();
 }
 
-void Window::SetFocusedContentColor(int64 color) {
+void Window::SetFocusedContentColor(musik_int64 color) {
     this->focusedContentColor = (color == CURSESPP_DEFAULT_COLOR)
         ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
 
     this->RepaintBackground();
 }
 
-void Window::SetFrameColor(int64 color) {
+void Window::SetFrameColor(musik_int64 color) {
     this->frameColor = (color == CURSESPP_DEFAULT_COLOR)
         ? CURSESPP_DEFAULT_FRAME_COLOR : color;
 
     this->RepaintBackground();
 }
 
-void Window::SetFocusedFrameColor(int64 color) {
+void Window::SetFocusedFrameColor(musik_int64 color) {
     this->focusedFrameColor = (color == CURSESPP_DEFAULT_COLOR)
         ? CURSESPP_FOCUSED_FRAME_COLOR : color;
 
@@ -568,10 +568,10 @@ void Window::Create() {
 
         bool focused = this->IsFocused();
 
-        int64 currentFrameColor = focused
+        musik_int64 currentFrameColor = focused
             ? this->focusedFrameColor : this->frameColor;
 
-        int64 currentContentColor = focused
+        musik_int64 currentContentColor = focused
             ? this->focusedContentColor : this->contentColor;
 
         /* create the corresponding panel. required for z-ordering. */
@@ -680,8 +680,8 @@ void Window::Clear() {
     wmove(this->content, 0, 0);
 
     bool focused = this->IsFocused();
-    int64 contentColor = isFocused ? this->focusedContentColor : this->contentColor;
-    int64 frameColor = isFocused ? this->focusedFrameColor : this->frameColor;
+    musik_int64 contentColor = isFocused ? this->focusedContentColor : this->contentColor;
+    musik_int64 frameColor = isFocused ? this->focusedFrameColor : this->frameColor;
 
     if (this->content == this->frame) {
         wbkgd(this->frame, COLOR_PAIR(contentColor));

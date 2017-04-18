@@ -55,9 +55,9 @@ namespace {
         public:
             SdkWrapper(MetadataMapPtr wrapped) { this->wrapped = wrapped; };
             virtual void Release() { this->wrapped.reset(); }
-            virtual unsigned long long GetId() { return this->wrapped->GetId(); }
+            virtual musik_uint64 GetId() { return this->wrapped->GetId(); }
             virtual int GetValue(const char* key, char* dst, int size) { return this->wrapped->GetValue(key, dst, size); }
-            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue) { return this->wrapped->GetUint64(key, defaultValue); }
+            virtual musik_uint64 GetUint64(const char* key, musik_uint64 defaultValue) { return this->wrapped->GetUint64(key, defaultValue); }
             virtual long long GetInt64(const char* key, long long defaultValue) { return this->wrapped->GetInt64(key, defaultValue); }
             virtual unsigned int GetUint32(const char* key, unsigned long defaultValue) { return this->wrapped->GetUint32(key, defaultValue); }
             virtual int GetInt32(const char* key, unsigned int defaultValue) { return this->wrapped->GetInt32(key, defaultValue); }
@@ -69,7 +69,7 @@ namespace {
 }
 
 MetadataMap::MetadataMap(
-    unsigned long long id,
+    musik_uint64 id,
     const std::string& description,
     const std::string& type)
 {
@@ -86,7 +86,7 @@ void MetadataMap::Release() {
     /* nothing... */
 }
 
-unsigned long long MetadataMap::GetId() {
+musik_uint64 MetadataMap::GetId() {
     return this->id;
 }
 
@@ -111,7 +111,7 @@ std::string MetadataMap::GetValue(const char* key) {
     return "";
 }
 
-unsigned long long MetadataMap::GetUint64(const char* key, unsigned long long defaultValue) {
+musik_uint64 MetadataMap::GetUint64(const char* key, musik_uint64 defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {

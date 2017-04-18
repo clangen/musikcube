@@ -64,7 +64,7 @@ namespace cursespp {
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
 
-            static int64 Now();
+            static musik_int64 Now();
             static OverlayStack& Overlays();
 
         private:

@@ -66,7 +66,7 @@ namespace musik {
                 virtual cursespp::IWindowPtr GetFocus();
                 virtual bool KeyPress(const std::string& key);
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-                void ScrollTo(const std::string& fieldType, DBID fieldId);
+                void ScrollTo(const std::string& fieldType, musik_uint64 fieldId);
 
             protected:
                 virtual void OnLayout();

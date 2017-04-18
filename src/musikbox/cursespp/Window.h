@@ -68,15 +68,15 @@ namespace cursespp {
             virtual void Focus();
             virtual void Blur();
 
-            virtual void SetContentColor(int64 color);
-            virtual void SetFrameColor(int64 color);
-            virtual void SetFocusedContentColor(int64 color);
-            virtual void SetFocusedFrameColor(int64 color);
+            virtual void SetContentColor(musik_int64 color);
+            virtual void SetFrameColor(musik_int64 color);
+            virtual void SetFocusedContentColor(musik_int64 color);
+            virtual void SetFocusedFrameColor(musik_int64 color);
 
-            virtual int64 GetContentColor() { return this->contentColor; }
-            virtual int64 GetFrameColor() { return this->frameColor; }
-            virtual int64 GetFocusedContentColor() { return this->focusedContentColor; }
-            virtual int64 GetFocusedFrameColor() { return this->focusedFrameColor; }
+            virtual musik_int64 GetContentColor() { return this->contentColor; }
+            virtual musik_int64 GetFrameColor() { return this->frameColor; }
+            virtual musik_int64 GetFocusedContentColor() { return this->focusedContentColor; }
+            virtual musik_int64 GetFocusedFrameColor() { return this->focusedFrameColor; }
 
             virtual void SetSize(int width, int height);
             virtual void SetPosition(int x, int y);
@@ -121,8 +121,8 @@ namespace cursespp {
         protected:
             IWindow* GetParent() const;
 
-            void PostMessage(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
-            void DebounceMessage(int messageType, int64 user1 = 0, int64 user2 = 0, int64 delay = 0);
+            void PostMessage(int messageType, musik_int64 user1 = 0, musik_int64 user2 = 0, musik_int64 delay = 0);
+            void DebounceMessage(int messageType, musik_int64 user1 = 0, musik_int64 user2 = 0, musik_int64 delay = 0);
             void RemoveMessage(int messageType);
 
             void Create();
@@ -152,8 +152,8 @@ namespace cursespp {
             bool isVisible, isFocused, isDirty;
             int focusOrder;
             int id;
-            int64 contentColor, frameColor;
-            int64 focusedContentColor, focusedFrameColor;
+            musik_int64 contentColor, frameColor;
+            musik_int64 focusedContentColor, focusedFrameColor;
             int width, height, x, y;
             int lastAbsoluteX, lastAbsoluteY;
     };

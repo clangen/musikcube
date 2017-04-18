@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace db { namespace local {
 
     class DeletePlaylistQuery : public musik::core::db::LocalQueryBase {
         public:
-            DeletePlaylistQuery(const DBID playlistId);
+            DeletePlaylistQuery(const musik_uint64 playlistId);
             virtual ~DeletePlaylistQuery();
 
             virtual std::string Name() { return "DeletePlaylistQuery"; }
@@ -50,7 +50,7 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
-            DBID playlistId;
+            musik_uint64 playlistId;
     };
 
 } } } }

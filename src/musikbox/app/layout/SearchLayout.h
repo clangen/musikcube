@@ -57,7 +57,7 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                sigslot::signal3<SearchLayout*, std::string, DBID> SearchResultSelected;
+                sigslot::signal3<SearchLayout*, std::string, musik_uint64> SearchResultSelected;
 
                 SearchLayout(
                     musik::core::audio::PlaybackService& playback,

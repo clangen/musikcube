@@ -85,10 +85,10 @@ NowPlayingLayout::~NowPlayingLayout() {
 
 }
 
-int64 NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
+musik_int64 NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
     bool selected = index == trackListView->GetSelectedIndex();
 
-    int64 attrs = selected
+    musik_int64 attrs = selected
         ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
         : CURSESPP_DEFAULT_COLOR;
 
@@ -207,7 +207,7 @@ void NowPlayingLayout::RequeryTrackList() {
     this->OnTrackListRequeried(nullptr);
 }
 
-void NowPlayingLayout::OnPlaylistSelected(DBID playlistId) {
+void NowPlayingLayout::OnPlaylistSelected(musik_uint64 playlistId) {
     auto query = std::shared_ptr<GetPlaylistQuery>(
         new GetPlaylistQuery(library, playlistId));
 

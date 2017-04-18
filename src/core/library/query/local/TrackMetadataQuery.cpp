@@ -70,7 +70,7 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
     Statement trackQuery(query.c_str(), db);
 
     if (queryById) {
-        trackQuery.BindInt(0, (uint64) this->result->GetId());
+        trackQuery.BindUint64(0, (musik_uint64) this->result->GetId());
     }
     else {
         const std::string& externalId = this->result->GetValue("external_id");

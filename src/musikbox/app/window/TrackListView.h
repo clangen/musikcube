@@ -63,7 +63,7 @@ namespace musik {
                 typedef std::function<std::string(
                     musik::core::TrackPtr, size_t)> RowFormatter;
 
-                typedef std::function<int64(
+                typedef std::function<musik_int64(
                     musik::core::TrackPtr, size_t)> RowDecorator;
 
                 typedef std::shared_ptr<std::set<size_t> > Headers;

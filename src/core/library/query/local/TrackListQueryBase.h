@@ -97,11 +97,11 @@ namespace musik { namespace core { namespace db { namespace local {
                         return this->wrapped->GetRetainedTrack(index);
                     }
 
-                    virtual unsigned long long GetId(size_t index) const {
+                    virtual musik_uint64 GetId(size_t index) const {
                         return this->wrapped->GetId(index);
                     }
 
-                    virtual int IndexOf(unsigned long long id) const {
+                    virtual int IndexOf(musik_uint64 id) const {
                         return this->wrapped->IndexOf(id);
                     }
 

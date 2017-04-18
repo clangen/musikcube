@@ -42,7 +42,7 @@ namespace musik { namespace core {
 
     class IndexerTrack : public Track {
         public:
-            IndexerTrack(DBID id);
+            IndexerTrack(musik_uint64 id);
             virtual ~IndexerTrack(void);
 
             /* IWritableTrack */
@@ -53,7 +53,7 @@ namespace musik { namespace core {
             /* ITrack */
             virtual std::string GetValue(const char* metakey);
             virtual int GetValue(const char* key, char* dst, int size);
-            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);
+            virtual musik_uint64 GetUint64(const char* key, musik_uint64 defaultValue = 0ULL);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
@@ -66,8 +66,8 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetAllValues();
             virtual TrackPtr Copy();
 
-            virtual unsigned long long GetId();
-            virtual void SetId(DBID id) { this->id = id; }
+            virtual musik_uint64 GetId();
+            virtual void SetId(musik_uint64 id) { this->id = id; }
 
             bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,
@@ -80,7 +80,7 @@ namespace musik { namespace core {
             static void ResetIdCache();
 
         private:
-            DBID id;
+            musik_uint64 id;
 
         private:
             class MetadataWithThumbnail {
@@ -95,27 +95,27 @@ namespace musik { namespace core {
 
             MetadataWithThumbnail *internalMetadata;
 
-            DBID SaveThumbnail(
+            musik_uint64 SaveThumbnail(
                 db::Connection& connection,
                 const std::string& libraryDirectory);
 
-            DBID SaveGenre(db::Connection& connection);
+            musik_uint64 SaveGenre(db::Connection& connection);
 
-            DBID SaveArtist(db::Connection& connection);
+            musik_uint64 SaveArtist(db::Connection& connection);
 
-            DBID SaveSingleValueField(
+            musik_uint64 SaveSingleValueField(
                 db::Connection& connection,
                 const std::string& trackMetadataKeyName,
                 const std::string& fieldTableName);
 
-            DBID SaveMultiValueField(
+            musik_uint64 SaveMultiValueField(
                 db::Connection& connection,
                 const std::string& tracksTableColumnName,
                 const std::string& fieldTableName,
                 const std::string& junctionTableName,
                 const std::string& junctionTableForeignKeyColumnName);
 
-            DBID SaveNormalizedFieldValue(
+            musik_uint64 SaveNormalizedFieldValue(
                 db::Connection& dbConnection,
                 const std::string& tableName,
                 const std::string& fieldValue,

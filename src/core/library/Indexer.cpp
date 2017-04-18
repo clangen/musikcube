@@ -65,7 +65,7 @@
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 2;
 static const size_t TRANSACTION_INTERVAL = 300;
-static std::atomic<unsigned long long> nextExternalId;
+static std::atomic<musik_uint64> nextExternalId;
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -251,20 +251,20 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         {
             db::Statement stmt("SELECT MAX(id) FROM tracks", this->dbConnection);
             if (stmt.Step() == db::Row) {
-                auto id = std::max(1ULL, stmt.ColumnInt64(0));
+                auto id = std::max((musik_uint64) 1, stmt.ColumnUint64(0));
                 nextExternalId.store(id);
             }
         }
 
         std::vector<std::string> paths;
-        std::vector<DBID> pathIds;
+        std::vector<musik_uint64> pathIds;
 
         /* resolve all the path and path ids (required for local files */
         db::Statement stmt("SELECT id, path FROM paths", this->dbConnection);
 
         while (stmt.Step() == db::Row) {
             try {
-                DBID id = stmt.ColumnInt(0);
+                musik_uint64 id = stmt.ColumnUint64(0);
                 std::string path = stmt.ColumnText(1);
                 boost::filesystem::path dir(path);
 
@@ -415,7 +415,7 @@ void Indexer::SyncDirectory(
     boost::asio::io_service* io,
     const std::string &syncRoot,
     const std::string &currentPath,
-    DBID pathId)
+    musik_uint64 pathId)
 {
     if (this->Exited()) {
         return;
@@ -485,9 +485,9 @@ ScanResult Indexer::SyncSource(IIndexerSource* source) {
             "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
             this->dbConnection);
 
-        tracks.BindInt(0, source->SourceId());
+        tracks.BindInt32(0, source->SourceId());
         while (tracks.Step() == db::Row) {
-            TrackPtr track(new IndexerTrack(tracks.ColumnInt(0)));
+            TrackPtr track(new IndexerTrack(tracks.ColumnUint64(0)));
             track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
             source->ScanTrack(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
         }
@@ -596,7 +596,7 @@ void Indexer::SyncDelete() {
             }
 
             if (remove) {
-                stmtRemove.BindInt(0, allTracks.ColumnInt(0));
+                stmtRemove.BindInt32(0, allTracks.ColumnInt32(0));
                 stmtRemove.Step();
                 stmtRemove.Reset();
             }
@@ -637,8 +637,8 @@ void Indexer::SyncCleanup() {
                 "  WHERE source_id == ?)";
 
             db::Statement stmt(query.c_str(), this->dbConnection);
-            stmt.BindInt(0, source->SourceId());
-            stmt.BindInt(1, source->SourceId());
+            stmt.BindInt32(0, source->SourceId());
+            stmt.BindInt32(1, source->SourceId());
             stmt.Step();
         }
     }
@@ -669,8 +669,8 @@ static int optimize(
 
     int count = 0;
     while (outerStmt.Step() == db::Row) {
-        innerStmt.BindInt(0, count);
-        innerStmt.BindInt(1, outerStmt.ColumnInt(0));
+        innerStmt.BindInt32(0, count);
+        innerStmt.BindUint64(1, outerStmt.ColumnUint64(0));
         innerStmt.Step();
         innerStmt.Reset();
         ++count;
@@ -732,16 +732,16 @@ void Indexer::RunAnalyzers() {
 
     /* for each track... */
 
-    DBID trackId = 0;
+    musik_uint64 trackId = 0;
 
     db::Statement getNextTrack(
         "SELECT id FROM tracks WHERE id>? ORDER BY id LIMIT 1",
         this->dbConnection);
 
-    getNextTrack.BindInt(0, trackId);
+    getNextTrack.BindUint64(0, trackId);
 
     while(getNextTrack.Step() == db::Row ) {
-        trackId = getNextTrack.ColumnInt(0);
+        trackId = getNextTrack.ColumnUint64(0);
 
         getNextTrack.Reset();
         getNextTrack.UnbindAll();
@@ -802,11 +802,11 @@ void Indexer::RunAnalyzers() {
             }
         }
 
-        if (this->Exited()){
+        if (this->Exited()) {
             return;
         }
 
-        getNextTrack.BindInt(0, trackId);
+        getNextTrack.BindUint64(0, trackId);
     }
 }
 
@@ -856,7 +856,7 @@ bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
         "DELETE FROM tracks WHERE source_id=? AND filename=?",
         this->dbConnection);
 
-    stmt.BindInt(0, source->SourceId());
+    stmt.BindInt32(0, source->SourceId());
     stmt.BindText(1, uri);
 
     return (stmt.Step() == db::Okay);
@@ -875,7 +875,7 @@ bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
         "DELETE FROM tracks WHERE source_id=? AND external_id=?",
         this->dbConnection);
 
-    stmt.BindInt(0, source->SourceId());
+    stmt.BindInt32(0, source->SourceId());
     stmt.BindText(1, id);
 
     return (stmt.Step() == db::Okay);
@@ -890,7 +890,7 @@ int Indexer::RemoveAll(IIndexerSource* source) {
         "DELETE FROM tracks WHERE source_id=?",
         this->dbConnection);
 
-    stmt.BindInt(0, source->SourceId());
+    stmt.BindInt32(0, source->SourceId());
 
     if (stmt.Step() == db::Okay) {
         return dbConnection.LastModifiedRowCount();

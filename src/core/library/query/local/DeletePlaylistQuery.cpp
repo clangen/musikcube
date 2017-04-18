@@ -48,7 +48,7 @@ static std::string DELETE_PLAYLIST_TRACKS_QUERY =
 static std::string DELETE_PLAYLIST_QUERY =
     "DELETE FROM playlists WHERE id=?;";
 
-DeletePlaylistQuery::DeletePlaylistQuery(const DBID playlistId) {
+DeletePlaylistQuery::DeletePlaylistQuery(const musik_uint64 playlistId) {
     this->playlistId = playlistId;
 }
 
@@ -60,7 +60,7 @@ bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
 
     /* create playlist */
     Statement deleteTracks(DELETE_PLAYLIST_TRACKS_QUERY.c_str(), db);
-    deleteTracks.BindInt(0, this->playlistId);
+    deleteTracks.BindUint64(0, this->playlistId);
 
     if (deleteTracks.Step() == db::Error) {
         transaction.Cancel();
@@ -69,7 +69,7 @@ bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
 
     /* add tracks to playlist */
     Statement deletePlaylist(DELETE_PLAYLIST_QUERY.c_str(), db);
-    deletePlaylist.BindInt(0, this->playlistId);
+    deletePlaylist.BindUint64(0, this->playlistId);
 
     if (deletePlaylist.Step() == db::Error) {
         transaction.Cancel();

@@ -35,6 +35,7 @@
 #pragma once
 
 #include "utfutil.h"
+#include "sdk/constants.h"
 
 #include <memory>
 
@@ -49,14 +50,5 @@
         #define NOMINMAX
     #endif
 
-    typedef __int64 int64;
-    typedef unsigned __int64 uint64;
-
     #include <windows.h>
-#else
-    typedef __uint64_t uint64;
-    typedef __int64_t int64;
 #endif
-
-typedef uint64 DBID;
-typedef uint64 DBTIME;

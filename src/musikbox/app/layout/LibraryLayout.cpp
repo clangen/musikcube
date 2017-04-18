@@ -219,7 +219,7 @@ void LibraryLayout::OnRemovedFromParent(IWindow* parent) {
 }
 
 void LibraryLayout::OnSearchResultSelected(
-    SearchLayout* layout, std::string fieldType, DBID fieldId)
+    SearchLayout* layout, std::string fieldType, musik_uint64 fieldId)
 {
     this->ShowBrowse();
     this->browseLayout->ScrollTo(fieldType, fieldId);

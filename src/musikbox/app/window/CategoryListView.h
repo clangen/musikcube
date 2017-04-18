@@ -68,17 +68,17 @@ namespace musik {
                 void RequeryWithField(
                     const std::string& fieldName,
                     const std::string& filter = "",
-                    const DBID selectAfterQuery = 0);
+                    const musik_uint64 selectAfterQuery = 0);
 
                 void Requery(
                     const std::string& filter = "",
-                    const DBID selectAfterQuery = 0);
+                    const musik_uint64 selectAfterQuery = 0);
 
                 virtual bool KeyPress(const std::string& key);
 
                 void Reset();
 
-                DBID GetSelectedId();
+                musik_uint64 GetSelectedId();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
 
@@ -113,7 +113,7 @@ namespace musik {
                 musik::core::TrackPtr playing;
 
                 std::string fieldName;
-                DBID selectAfterQuery;
+                musik_uint64 selectAfterQuery;
                 musik::core::db::local::CategoryListQuery::ResultList metadata;
         };
     }

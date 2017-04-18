@@ -146,7 +146,7 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     LayoutBase::ProcessMessage(message);
 }
 
-void BrowseLayout::ScrollTo(const std::string& fieldType, DBID fieldId) {
+void BrowseLayout::ScrollTo(const std::string& fieldType, musik_uint64 fieldId) {
     this->SetFocus(this->trackList);
     this->categoryList->RequeryWithField(fieldType, "", fieldId);
 
@@ -172,7 +172,7 @@ void BrowseLayout::OnIndexerProgress(int count) {
 
 void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
-        DBID selectedId = this->categoryList->GetSelectedId();
+        musik_uint64 selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
             this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
                 new CategoryTrackListQuery(

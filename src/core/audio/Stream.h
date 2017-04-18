@@ -83,7 +83,7 @@ namespace musik { namespace core { namespace audio {
 
             long decoderSampleRate;
             long decoderChannels;
-            uint64 decoderSamplePosition;
+            musik_uint64 decoderSamplePosition;
             std::string uri;
             musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
 

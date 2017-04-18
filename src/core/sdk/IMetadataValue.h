@@ -40,7 +40,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IMetadataValue {
         public:
-            virtual unsigned long long GetId() = 0;
+            virtual musik_uint64 GetId() = 0;
             virtual const char* GetValue() = 0;
             virtual int GetValue(char* dst, size_t size) = 0;
     };

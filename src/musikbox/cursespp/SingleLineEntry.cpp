@@ -46,11 +46,11 @@ void SingleLineEntry::SetWidth(size_t width) {
     this->width = width;
 }
 
-int64 SingleLineEntry::GetAttrs(size_t line) {
+musik_int64 SingleLineEntry::GetAttrs(size_t line) {
     return this->attrs;
 }
 
-void SingleLineEntry::SetAttrs(int64 attrs) {
+void SingleLineEntry::SetAttrs(musik_int64 attrs) {
     this->attrs = attrs;
 }
 

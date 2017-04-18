@@ -45,14 +45,14 @@ namespace musik { namespace core {
     class LibraryTrack : public Track {
         public:
             LibraryTrack();
-            LibraryTrack(DBID id, int libraryId);
-            LibraryTrack(DBID id, musik::core::ILibraryPtr library);
+            LibraryTrack(musik_uint64 id, int libraryId);
+            LibraryTrack(musik_uint64 id, musik::core::ILibraryPtr library);
             virtual ~LibraryTrack();
 
             virtual int LibraryId();
 
-            virtual unsigned long long GetId();
-            virtual void SetId(DBID id) { this->id = id; }
+            virtual musik_uint64 GetId();
+            virtual void SetId(musik_uint64 id) { this->id = id; }
 
             virtual std::string GetValue(const char* metakey);
             virtual std::string Uri();
@@ -63,7 +63,7 @@ namespace musik { namespace core {
             virtual void SetThumbnail(const char *data, long size);
 
             /* ITrack */
-            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);
+            virtual musik_uint64 GetUint64(const char* key, musik_uint64 defaultValue = 0ULL);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
@@ -78,7 +78,7 @@ namespace musik { namespace core {
             static bool Load(Track *target, db::Connection &db);
 
         private:
-            DBID id;
+            musik_uint64 id;
             int libraryId;
 
             struct LibraryData {

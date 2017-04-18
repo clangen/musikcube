@@ -254,15 +254,15 @@ static void upgradeV1toV2(db::Connection &db) {
     /* ensure each track has an external_id */
     {
         db::ScopedTransaction transaction(db);
-        unsigned long long id;
+        musik_uint64 id;
 
         db::Statement update("UPDATE tracks SET external_id=? WHERE id=?", db);
         db::Statement query("SELECT id FROM tracks WHERE coalesce(external_id, '') == ''", db);
         while (query.Step() == db::Row) {
-            id = query.ColumnInt64(0);
+            id = query.ColumnUint64(0);
             update.Reset();
             update.BindText(0, "local://" + std::to_string(id));
-            update.BindInt(1, id);
+            update.BindUint64(1, id);
             update.Step();
         }
     }
@@ -283,7 +283,7 @@ static void setVersion(db::Connection& db, int version) {
     db.Execute("DELETE FROM version");
 
     db::Statement stmt("INSERT INTO version VALUES(?)", db);
-    stmt.BindInt(0, version);
+    stmt.BindInt32(0, version);
     stmt.Step();
 }
 
@@ -414,7 +414,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             stmt.Step();
         }
         else {
-            lastVersion = stmt.ColumnInt(0);
+            lastVersion = stmt.ColumnInt32(0);
         }
     }
 

@@ -131,11 +131,11 @@ namespace musik { namespace core { namespace audio {
                     ~Editor();
 
                     /* ITrackListEditor */
-                    virtual bool Insert(unsigned long long id, size_t index);
+                    virtual bool Insert(musik_uint64 id, size_t index);
                     virtual bool Swap(size_t index1, size_t index2);
                     virtual bool Move(size_t from, size_t to);
                     virtual bool Delete(size_t index);
-                    virtual void Add(const unsigned long long id);
+                    virtual void Add(const musik_uint64 id);
                     virtual void Clear();
                     virtual void Shuffle();
                     virtual void Release();

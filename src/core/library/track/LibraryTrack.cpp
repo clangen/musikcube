@@ -49,12 +49,12 @@ LibraryTrack::LibraryTrack()
 , libraryId(0) {
 }
 
-LibraryTrack::LibraryTrack(DBID id, int libraryId)
+LibraryTrack::LibraryTrack(musik_uint64 id, int libraryId)
 : id(id)
 , libraryId(libraryId) {
 }
 
-LibraryTrack::LibraryTrack(DBID id, musik::core::ILibraryPtr library)
+LibraryTrack::LibraryTrack(musik_uint64 id, musik::core::ILibraryPtr library)
 : id(id)
 , libraryId(library->Id()) {
 }
@@ -71,7 +71,7 @@ std::string LibraryTrack::GetValue(const char* metakey) {
     return "";
 }
 
-unsigned long long LibraryTrack::GetUint64(const char* key, unsigned long long defaultValue) {
+musik_uint64 LibraryTrack::GetUint64(const char* key, musik_uint64 defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
@@ -174,7 +174,7 @@ Track::MetadataIteratorRange LibraryTrack::GetAllValues() {
     return Track::MetadataIteratorRange();
 }
 
-unsigned long long LibraryTrack::GetId() {
+musik_uint64 LibraryTrack::GetId() {
     return this->id;
 }
 
@@ -208,7 +208,7 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
             return false;
         }
 
-        target->SetId(idFromFn.ColumnInt(0));
+        target->SetId(idFromFn.ColumnUint64(0));
     }
 
     db::Statement genresQuery(
@@ -234,7 +234,7 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         "FROM tracks t, paths p, albums al " \
         "WHERE t.id=? AND t.album_id=al.id", db);
 
-    trackQuery.BindInt(0, (uint64) target->GetId());
+    trackQuery.BindUint64(0, (musik_uint64) target->GetId());
     if (trackQuery.Step() == db::Row) {
         target->SetValue("track", trackQuery.ColumnText(0));
         target->SetValue("disc", trackQuery.ColumnText(1));
@@ -252,17 +252,17 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         target->SetValue("album_artist_id", trackQuery.ColumnText(13));
         target->SetValue("album_id", trackQuery.ColumnText(14));
 
-        genresQuery.BindInt(0, (uint64) target->GetId());
+        genresQuery.BindUint64(0, (musik_uint64) target->GetId());
         while (genresQuery.Step() == db::Row) {
             target->SetValue("genre", genresQuery.ColumnText(0));
         }
 
-        artistsQuery.BindInt(0, (uint64) target->GetId());
+        artistsQuery.BindUint64(0, (musik_uint64) target->GetId());
         while (artistsQuery.Step() == db::Row) {
             target->SetValue("artist", artistsQuery.ColumnText(0));
         }
 
-        allMetadataQuery.BindInt(0, (uint64) target->GetId());
+        allMetadataQuery.BindUint64(0, (musik_uint64) target->GetId());
         while (allMetadataQuery.Step() == db::Row) {
             target->SetValue(allMetadataQuery.ColumnText(1), allMetadataQuery.ColumnText(0));
         }

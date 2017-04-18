@@ -77,12 +77,20 @@ int Statement::Step() {
     return result;
 }
 
-void Statement::BindInt(int position, int bindInt) {
+void Statement::BindInt32(int position, int bindInt) {
     sqlite3_bind_int(this->stmt, position + 1, bindInt);
 }
 
-void Statement::BindInt(int position, uint64 bindInt) {
-    sqlite3_bind_int64(this->stmt, position + 1, bindInt);
+void Statement::BindUint32(int position, size_t bindInt) {
+    sqlite3_bind_int(this->stmt, position + 1, (int) bindInt);
+}
+
+void Statement::BindInt64(int position, musik_int64 bindInt) {
+    sqlite3_bind_int64(this->stmt, position + 1, (sqlite3_int64) bindInt);
+}
+
+void Statement::BindUint64(int position, musik_uint64 bindInt) {
+    sqlite3_bind_int64(this->stmt, position + 1, (sqlite3_int64) bindInt);
 }
 
 void Statement::BindText(int position, const char* bindText) {
@@ -124,12 +132,20 @@ void Statement::BindNull(int position) {
     sqlite3_bind_null(this->stmt, position + 1);
 }
 
-int Statement::ColumnInt(int column) {
+int Statement::ColumnInt32(int column) {
     return sqlite3_column_int(this->stmt, column);
 }
 
-uint64 Statement::ColumnInt64(int column) {
+size_t Statement::ColumnUint32(int column) {
+    return (size_t) sqlite3_column_int(this->stmt, column);
+}
+
+musik_int64 Statement::ColumnInt64(int column) {
     return sqlite3_column_int64(this->stmt, column);
+}
+
+musik_uint64 Statement::ColumnUint64(int column) {
+    return (musik_uint64) sqlite3_column_int64(this->stmt, column);
 }
 
 const char* Statement::ColumnText(int column) {

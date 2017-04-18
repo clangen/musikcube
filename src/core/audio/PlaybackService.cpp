@@ -234,7 +234,7 @@ void PlaybackService::ToggleShuffle() {
 
     /* remember the ID of the playing track -- we're going to need to look
     it up after the shuffle */
-    DBID id = -1;
+    musik_uint64 id = -1;
     if (this->index < this->playlist.Count()) {
         id = this->playlist.GetId(this->index);
     }
@@ -271,7 +271,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     if (type == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
 
-        int64 eventType = streamMessage->GetEventType();
+        musik_int64 eventType = streamMessage->GetEventType();
 
         if (eventType == StreamPlaying) {
             TrackPtr track;
@@ -310,7 +310,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == MESSAGE_PLAYBACK_EVENT) {
-        int64 eventType = message.UserData1();
+        musik_int64 eventType = message.UserData1();
 
         if (eventType == PlaybackStopped) {
             this->OnTrackChanged(NO_POSITION, TrackPtr());
@@ -794,7 +794,7 @@ PlaybackService::Editor::~Editor() {
     /* implicitly unlocks the mutex when this block exists */
 }
 
-bool PlaybackService::Editor::Insert(unsigned long long id, size_t index) {
+bool PlaybackService::Editor::Insert(musik_uint64 id, size_t index) {
     if ((this->edited = this->tracks.Insert(id, index))) {
         if (index == this->playIndex) {
             ++this->playIndex;
@@ -862,7 +862,7 @@ bool PlaybackService::Editor::Delete(size_t index) {
     return false;
 }
 
-void PlaybackService::Editor::Add(const unsigned long long id) {
+void PlaybackService::Editor::Add(const musik_uint64 id) {
     this->tracks.Add(id);
 
     if (this->playback.Count() - 1 == this->playIndex + 1) {

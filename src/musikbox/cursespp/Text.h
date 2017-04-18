@@ -52,6 +52,6 @@ namespace cursespp {
 
     namespace key {
         std::string Normalize(const std::string& keyname);
-        std::string Read(int64 ch);
+        std::string Read(musik_int64 ch);
     }
 }

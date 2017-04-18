@@ -93,7 +93,7 @@ AlbumListQuery::AlbumListQuery(const std::string& filter)
 
 AlbumListQuery::AlbumListQuery(
     const std::string& fieldIdName,
-    unsigned long long fieldIdValue,
+    musik_uint64 fieldIdValue,
     const std::string& filter)
 : filter(filter)
 , fieldIdValue(fieldIdValue) {
@@ -143,12 +143,12 @@ bool AlbumListQuery::OnRun(Connection& db) {
     }
 
     if (category) {
-        stmt.BindInt(bindIndex, (uint64) this->fieldIdValue);
+        stmt.BindUint64(bindIndex, this->fieldIdValue);
     }
 
     while (stmt.Step() == Row) {
         std::shared_ptr<MetadataMap> row(new MetadataMap(
-            (unsigned long long) stmt.ColumnInt64(0),
+            stmt.ColumnUint64(0),
             stmt.ColumnText(1),
             "album"));
 

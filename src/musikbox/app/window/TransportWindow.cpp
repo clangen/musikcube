@@ -77,7 +77,7 @@ using namespace cursespp;
 #define MIN_HEIGHT 2
 
 #define DEBOUNCE_REFRESH(mode, delay) \
-    this->DebounceMessage(message::RefreshTransport, (int64) mode, 0, delay);
+    this->DebounceMessage(message::RefreshTransport, (musik_int64) mode, 0, delay);
 
 #define ON(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattron(w, a); }
 #define OFF(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattroff(w, a); }
@@ -233,15 +233,15 @@ static size_t writePlayingFormat(
     TokenList tokens;
     tokenize(Strings.PLAYING_FORMAT, tokens);
 
-    int64 dim = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
-    int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
+    musik_int64 dim = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
+    musik_int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     size_t remaining = width;
 
     auto it = tokens.begin();
     while (it != tokens.end() && remaining > 0) {
         Token *token = it->get();
 
-        int64 attr = dim;
+        musik_int64 attr = dim;
         std::string value;
         size_t cols;
 
@@ -454,10 +454,10 @@ void TransportWindow::Update(TimeMode timeMode) {
     bool stopped = (transport.GetPlaybackState() == PlaybackStopped);
     bool muted = transport.IsMuted();
 
-    int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
-    int64 disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
+    musik_int64 gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
+    musik_int64 disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
 
-    int64 volumeAttrs = CURSESPP_DEFAULT_COLOR;
+    musik_int64 volumeAttrs = CURSESPP_DEFAULT_COLOR;
     if (this->focus == FocusVolume) {
         volumeAttrs = COLOR_PAIR(CURSESPP_TEXT_FOCUSED);
     }
@@ -465,7 +465,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         volumeAttrs = gb;
     }
 
-    int64 timerAttrs = (this->focus == FocusTime)
+    musik_int64 timerAttrs = (this->focus == FocusTime)
         ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : CURSESPP_DEFAULT_COLOR;
 
     /* prepare the "shuffle" label */
@@ -487,7 +487,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     wmove(c, 0, cx - shuffleLabelLen);
-    int64 shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
+    musik_int64 shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
     wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
@@ -519,7 +519,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     RepeatMode mode = this->playback.GetRepeatMode();
     std::string repeatModeLabel;
-    int64 repeatAttrs = CURSESPP_DEFAULT_COLOR;
+    musik_int64 repeatAttrs = CURSESPP_DEFAULT_COLOR;
     switch (mode) {
         case RepeatList:
             repeatModeLabel += Strings.REPEAT_LIST;
@@ -537,10 +537,10 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* time slider */
 
-    int64 currentTimeAttrs = timerAttrs;
+    musik_int64 currentTimeAttrs = timerAttrs;
 
     if (paused) { /* blink the track if paused */
-        int64 now = duration_cast<seconds>(
+        musik_int64 now = duration_cast<seconds>(
             system_clock::now().time_since_epoch()).count();
 
         if (now % 2 == 0) {

@@ -35,6 +35,8 @@
 #include "WebSocketServer.h"
 #include "Constants.h"
 
+#include <core/sdk/constants.h>
+
 #include <boost/format.hpp>
 
 using websocketpp::lib::placeholders::_1;
@@ -519,7 +521,7 @@ void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& re
 
         std::string filter = options.value(key::filter, "");
         std::string category = options.value(key::category, "");
-        unsigned long long categoryId = options.value(key::category_id, -1);
+        musik_uint64 categoryId = options.value(key::category_id, -1);
 
         IMetadataMapList* albumList = context.dataProvider
             ->QueryAlbums(category.c_str(), categoryId, filter.c_str());
@@ -589,7 +591,7 @@ ITrackList* WebSocketServer::QueryTracksByCategory(json& request, int& limit, in
         json& options = request[message::options];
 
         std::string category = options[key::category];
-        unsigned long long selectedId = options[key::id];
+        musik_uint64 selectedId = options[key::id];
 
         std::string filter = options.value(key::filter, "");
 

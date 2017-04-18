@@ -66,13 +66,13 @@ namespace musik { namespace core {
             /* ITrackList */
             virtual size_t Count() const;
             virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) const;
-            virtual unsigned long long GetId(size_t index) const;
-            virtual int IndexOf(unsigned long long id) const;
+            virtual musik_uint64 GetId(size_t index) const;
+            virtual int IndexOf(musik_uint64 id) const;
             virtual musik::core::sdk::ITrack* GetTrack(size_t index) const;
 
             /* ITrackListEditor */
-            virtual void Add(const unsigned long long id);
-            virtual bool Insert(unsigned long long id, size_t index);
+            virtual void Add(const musik_uint64 id);
+            virtual bool Insert(musik_uint64 id, size_t index);
             virtual bool Swap(size_t index1, size_t index2);
             virtual bool Move(size_t from, size_t to);
             virtual bool Delete(size_t index);
@@ -86,18 +86,18 @@ namespace musik { namespace core {
             void CopyFrom(const TrackList& from);
 
         private:
-            typedef std::list<DBID> CacheList;
+            typedef std::list<musik_uint64> CacheList;
             typedef std::pair<TrackPtr, CacheList::iterator> CacheValue;
-            typedef std::unordered_map<DBID, CacheValue> CacheMap;
+            typedef std::unordered_map<musik_uint64, CacheValue> CacheMap;
 
-            TrackPtr GetFromCache(DBID key) const;
-            void AddToCache(DBID key, TrackPtr value) const;
+            TrackPtr GetFromCache(musik_uint64 key) const;
+            void AddToCache(musik_uint64 key, TrackPtr value) const;
 
             /* lru cache structures */
             mutable CacheList cacheList;
             mutable CacheMap cacheMap;
 
-            std::vector<DBID> ids;
+            std::vector<musik_uint64> ids;
             ILibraryPtr library;
     };
 } }

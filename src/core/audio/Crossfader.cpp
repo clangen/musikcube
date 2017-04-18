@@ -296,7 +296,7 @@ void Crossfader::ProcessMessage(IMessage &message) {
             }
             else {
                 auto end = system_clock::now().time_since_epoch();
-                int64 duration = duration_cast<milliseconds>(end - start).count();
+                musik_int64 duration = duration_cast<milliseconds>(end - start).count();
                 ENQUEUE_ADJUSTED_TICK(TICK_TIME_MILLIS - duration);
             }
         }

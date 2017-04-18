@@ -75,7 +75,7 @@ void MessageQueue::Dispatch() {
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
-    int64 nextTime = nextMessageTime.load();
+    musik_int64 nextTime = nextMessageTime.load();
 
     if (nextTime > now.count() || nextTime < 0) {
         return; /* short circuit before any iteration. */
@@ -182,7 +182,7 @@ bool MessageQueue::Contains(IMessageTarget *target, int type) {
     return false;
 }
 
-void MessageQueue::Broadcast(IMessagePtr message, int64 delayMs) {
+void MessageQueue::Broadcast(IMessagePtr message, musik_int64 delayMs) {
     if (message->Target()) {
         throw new std::runtime_error("broadcasts cannot have a target!");
     }
@@ -190,10 +190,10 @@ void MessageQueue::Broadcast(IMessagePtr message, int64 delayMs) {
     this->Post(message, delayMs);
 }
 
-void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
+void MessageQueue::Post(IMessagePtr message, musik_int64 delayMs) {
     LockT lock(this->queueMutex);
 
-    delayMs = std::max((int64) 0, delayMs);
+    delayMs = std::max((musik_int64) 0, delayMs);
 
     milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
@@ -230,7 +230,7 @@ void MessageQueue::Post(IMessagePtr message, int64 delayMs) {
     }
 }
 
-void MessageQueue::Debounce(IMessagePtr message, int64 delayMs) {
+void MessageQueue::Debounce(IMessagePtr message, musik_int64 delayMs) {
     Remove(message->Target(), message->Type());
     Post(message, delayMs);
 }

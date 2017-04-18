@@ -154,7 +154,7 @@ void Connection::Checkpoint() {
     sqlite3_wal_checkpoint(this->connection, nullptr);
 }
 
-unsigned long long Connection::LastInsertedId() {
+musik_uint64 Connection::LastInsertedId() {
     return sqlite3_last_insert_rowid(this->connection);
 }
 

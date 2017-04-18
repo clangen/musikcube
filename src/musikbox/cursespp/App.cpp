@@ -57,7 +57,7 @@ using namespace std::chrono;
 
 static OverlayStack overlays;
 static bool disconnected = false;
-static int64 resizeAt = 0;
+static musik_int64 resizeAt = 0;
 
 #ifndef WIN32
 static void hangupHandler(int signal) {
@@ -169,7 +169,7 @@ void App::Run(ILayoutPtr layout) {
         Colors::SetTheme(this->colorTheme);
     }
 
-    int64 ch;
+    musik_int64 ch;
 
     bool quit = false;
 
@@ -358,7 +358,7 @@ void App::FocusPrevInLayout() {
     this->UpdateFocusedWindow(this->state.ActiveLayout()->FocusPrev());
 }
 
-int64 App::Now() {
+musik_int64 App::Now() {
     return duration_cast<milliseconds>(
         system_clock::now().time_since_epoch()).count();
 }

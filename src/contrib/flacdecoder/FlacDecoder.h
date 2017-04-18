@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <core/sdk/constants.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDataStream.h>
 #include <FLAC/stream_decoder.h>
@@ -101,7 +102,7 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
 
         long channels;
         long sampleRate;
-        unsigned long long totalSamples;
+        musik_uint64 totalSamples;
         int bitsPerSample;
         double duration;
 

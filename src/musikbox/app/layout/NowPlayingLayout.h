@@ -74,8 +74,8 @@ namespace musik {
 
                 /* callbacks */
                 void OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query);
-                int64 RowDecorator(musik::core::TrackPtr track, size_t index);
-                void OnPlaylistSelected(DBID playlistId);
+                musik_int64 RowDecorator(musik::core::TrackPtr track, size_t index);
+                void OnPlaylistSelected(musik_uint64 playlistId);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;

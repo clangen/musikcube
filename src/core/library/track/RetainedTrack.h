@@ -49,9 +49,9 @@ namespace musik { namespace core {
             virtual void Retain();
 
             /* ITrack */
-            virtual unsigned long long GetId();
+            virtual musik_uint64 GetId();
             virtual int GetValue(const char* key, char* dst, int size);
-            virtual unsigned long long GetUint64(const char* key, unsigned long long defaultValue = 0ULL);
+            virtual musik_uint64 GetUint64(const char* key, musik_uint64 defaultValue = 0ULL);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
@@ -68,7 +68,7 @@ namespace musik { namespace core {
             RetainedTrackWriter(TrackPtr track);
             virtual ~RetainedTrackWriter();
 
-            template <typename T> T As() { 
+            template <typename T> T As() {
                 return dynamic_cast<T>(track.get());
             }
 

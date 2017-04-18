@@ -43,15 +43,15 @@ namespace cursespp {
             virtual ~SingleLineEntry() { }
 
             virtual void SetWidth(size_t width);
-            virtual int64 GetAttrs(size_t line);
+            virtual musik_int64 GetAttrs(size_t line);
             virtual size_t GetLineCount();
             virtual std::string GetLine(size_t line);
 
-            void SetAttrs(int64 attrs);
+            void SetAttrs(musik_int64 attrs);
 
         private:
             size_t width;
             std::string value;
-            int64 attrs;
+            musik_int64 attrs;
     };
 }

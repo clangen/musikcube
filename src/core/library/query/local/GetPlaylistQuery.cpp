@@ -49,12 +49,12 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::db::local;
 
-GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, DBID playlistId) {
+GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, musik_uint64 playlistId) {
     this->library = library;
     this->playlistId = playlistId;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
-    this->hash = std::hash<DBID>()(this->playlistId);
+    this->hash = std::hash<musik_uint64>()(this->playlistId);
 }
 
 GetPlaylistQuery::~GetPlaylistQuery() {
@@ -87,10 +87,10 @@ bool GetPlaylistQuery::OnRun(Connection& db) {
         this->GetLimitAndOffset();
 
     Statement trackQuery(query.c_str(), db);
-    trackQuery.BindInt(0, this->playlistId);
+    trackQuery.BindUint64(0, this->playlistId);
 
     while (trackQuery.Step() == Row) {
-        result->Add(trackQuery.ColumnInt64(0));
+        result->Add(trackQuery.ColumnUint64(0));
     }
 
     return true;

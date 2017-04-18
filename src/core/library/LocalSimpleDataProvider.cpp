@@ -87,7 +87,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, i
     return nullptr;
 }
 
-IRetainedTrack* LocalSimpleDataProvider::QueryTrackById(unsigned long long trackId) {
+IRetainedTrack* LocalSimpleDataProvider::QueryTrackById(musik_uint64 trackId) {
     try {
         TrackPtr target(new LibraryTrack(trackId, this->library));
 
@@ -132,7 +132,7 @@ IRetainedTrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* exte
 
 ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
     const char* categoryType,
-    unsigned long long selectedId,
+    musik_uint64 selectedId,
     const char* filter,
     int limit,
     int offset)
@@ -185,7 +185,7 @@ IMetadataValueList* LocalSimpleDataProvider::QueryCategory(const char* type, con
 
 IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(
     const char* categoryIdName,
-    unsigned long long categoryIdValue,
+    musik_uint64 categoryIdValue,
     const char* filter)
 {
     try {

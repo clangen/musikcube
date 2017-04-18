@@ -120,7 +120,7 @@ void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     }
 }
 
-void ConsoleLayout::WriteOutput(const std::string& str, int64 attrs) {
+void ConsoleLayout::WriteOutput(const std::string& str, musik_int64 attrs) {
     this->outputAdapter->AddEntry(EntryPtr(new MultiLineEntry(str, attrs)));
     this->output->OnAdapterChanged();
 }
@@ -165,7 +165,7 @@ void ConsoleLayout::SetVolume(float volume) {
 }
 
 void ConsoleLayout::Help() {
-    int64 s = -1;
+    musik_int64 s = -1;
 
     this->WriteOutput("help:\n", s);
     this->WriteOutput("  <tab> to switch between windows", s);
