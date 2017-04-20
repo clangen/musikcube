@@ -71,10 +71,15 @@ static std::string createExternalId(const char driveLetter, const std::string& c
     return "audiocd/" + std::string(1, driveLetter) + "/" + cddbId + "/" + std::to_string(track);
 }
 
-static bool exists(DiscIdList& discs, const std::string& externalId) {
+static bool exists(DiscIdList& discs, CddaDataModel& model, const std::string& externalId) {
     std::vector<std::string> tokens = tokenize(externalId);
 
     if (tokens.size() < 4) { /* see format above */
+        return false;
+    }
+
+    /* find by drive letter. */
+    if (!model.GetAudioDisc(tolower(tokens.at(1)[0]))) {
         return false;
     }
 
@@ -152,24 +157,6 @@ ScanResult CddaIndexerSource::Scan(IIndexerWriter* indexer) {
         }
     }
 
-    //for (int i = 1; i < 10; i++) {
-    //    auto track = indexer->CreateWriter();
-    //    std::string label = "[http]";
-    //    std::string title = "[http] " + std::to_string(i);
-    //    std::string filename = "http://casey.io/m/0" + std::to_string(i) + ".mp3";
-
-    //    track->SetValue("album", label.c_str());
-    //    track->SetValue("artist", label.c_str());
-    //    track->SetValue("album_artist", label.c_str());
-    //    track->SetValue("genre", label.c_str());
-    //    track->SetValue("title", title.c_str());
-    //    track->SetValue("filename", filename.c_str());
-    //    track->SetValue("track", std::to_string(i).c_str());
-
-    //    indexer->Save(this, track, filename.c_str());
-    //    track->Release();
-    //}
-
     return ScanCommit;
 }
 
@@ -182,7 +169,7 @@ void CddaIndexerSource::ScanTrack(
     IRetainedTrackWriter* track,
     const char* externalId)
 {
-    if (!exists(this->discIds, externalId)) {
+    if (!exists(this->discIds, this->model, externalId)) {
         indexer->RemoveByExternalId(this, externalId);
     }
 }
