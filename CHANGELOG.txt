@@ -1,3 +1,32 @@
+0.12.0
+
+user-facing:
+
+* fixed bug where "sync on startup" was not working properly
+* fixed musikdroid bug where ui may get drawn in a weird state if the playing
+  track has an empty album name.
+* fixed a bug in CddaIndexerSource that may cause tracks to linger in the
+  library longer than they should if the drive letter changed.
+* added an http server to the `websocket_remote` plugin to serve audio data. 
+  this completes most work required to support external, thin clients.
+  metadata can be queried via websocket, audio streamed over http. powered by
+  libmicrohttpd. 
+
+low-level:
+
+* added HttpDataStream! finally! uses libcurl and libressl. audio data can now
+  be played over http/https!
+* performance optimizations to metadata indexing -- drop indexes before a full
+  resync, then re-add them after. 
+* playlist tracks are now stored by external ids! this means tracks added from
+  third party indexer sources can be added to playlists and persisted across
+  rescans. 
+* IIndexerSources can be interrupted, and failed sources can have their changes
+  rolled back.
+* upgraded to Windows 10 SDK and VS141 tooling
+
+--------------------------------------------------------------------------------
+
 0.11.0
 
 user-facing:
