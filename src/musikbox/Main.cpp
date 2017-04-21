@@ -104,6 +104,10 @@ int main(int argc, char* argv[]) {
     /* ensure we have the correct locale loaded */
     musik::core::i18n::Locale::Instance().Initialize(musik::core::GetApplicationDirectory() + "/locales/");
 
+#ifdef WIN32
+    AddDllDirectory(u8to16(musik::core::GetPluginDirectory()).c_str());
+#endif
+
 #ifndef WIN32
     #if 1 /*DEBUG*/
         freopen("/tmp/musikbox.log", "w", stderr);

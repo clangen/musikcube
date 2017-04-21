@@ -89,7 +89,7 @@
 xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)plugins" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -129,7 +129,7 @@ xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)" /Y /e</Command>
 xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)plugins" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
