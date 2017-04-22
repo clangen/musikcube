@@ -250,6 +250,7 @@ static uint64_t writeToTracksTable(
     IndexerTrack& track)
 {
     std::string externalId = track.GetValue("external_id");
+    uint64_t id = track.GetId();
 
     if (externalId.size() == 0) {
         return 0;
@@ -260,42 +261,70 @@ static uint64_t writeToTracksTable(
     /* if there's no ID specified, but we have an external ID, let's
     see if we can find the corresponding ID. this can happen when
     IInputSource plugins are reading/writing track data. */
-    if (track.GetId() == 0 && sourceId != 0) {
-        db::Statement stmt("SELECT id FROM tracks WHERE source_id=? AND external_id=?", dbConnection);
-        stmt.BindInt32(0, sourceId);
-        stmt.BindText(1, externalId);
-        if (stmt.Step() == db::Row) {
-            track.SetId(stmt.ColumnUint64(0));
+    if (id == 0) {
+        if (sourceId == 0) {
+            db::Statement stmt("SELECT id FROM tracks WHERE source_id=? AND external_id=?", dbConnection);
+            stmt.BindInt32(0, sourceId);
+            stmt.BindText(1, externalId);
+            if (stmt.Step() == db::Row) {
+                track.SetId(stmt.ColumnUint64(0));
+            }
+        }
+        else {
+            std::string fn = track.GetValue("filename");
+            if (fn.size()) {
+                db::Statement stmt("SELECT id, external_id FROM tracks WHERE filename=?", dbConnection);
+                stmt.BindText(0, track.GetValue("filename"));
+                if (stmt.Step() == db::Row) {
+                    id = stmt.ColumnUint64(0);
+                    track.SetId(id);
+                    track.SetValue("external_id", stmt.ColumnText(1));
+                }
+            }
         }
     }
 
-    db::Statement stmt("INSERT OR REPLACE INTO tracks " \
-        "(id, track, disc, bpm, duration, filesize, year, title, filename, filetime, path_id, external_id) " \
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", dbConnection);
+    std::string query;
 
-    stmt.BindText(1, track.GetValue("track"));
-    stmt.BindText(2, track.GetValue("disc"));
-    stmt.BindText(3, track.GetValue("bpm"));
-    stmt.BindInt32(4, track.GetInt32("duration"));
-    stmt.BindInt32(5, track.GetInt32("filesize"));
-    stmt.BindText(6, track.GetValue("year"));
-    stmt.BindText(7, track.GetValue("title"));
-    stmt.BindText(8, track.GetValue("filename"));
-    stmt.BindInt32(9, track.GetInt32("filetime"));
-    stmt.BindUint64(10, track.GetInt64("path_id"));
-    stmt.BindText(11, track.GetValue("external_id"));
+    if (id != 0) {
+        query =
+            "UPDATE tracks "
+            "SET track=?, disc=?, bpm=?, duration=?, filesize=?, year=?, "
+            "    title=?, filename=?, filetime=?, path_id=?, external_id=? "
+            "WHERE id=?";
+    }
+    else {
+        query =
+            "INSERT INTO tracks "
+            "(track, disc, bpm, duration, filesize, year, title, filename, filetime, path_id, external_id) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    }
 
-    if (track.GetId() != 0) {
-        stmt.BindUint64(0, (uint64_t) track.GetId());
+    db::Statement stmt(query.c_str(), dbConnection);
+
+    stmt.BindText(0, track.GetValue("track"));
+    stmt.BindText(1, track.GetValue("disc"));
+    stmt.BindText(2, track.GetValue("bpm"));
+    stmt.BindInt32(3, track.GetInt32("duration"));
+    stmt.BindInt32(4, track.GetInt32("filesize"));
+    stmt.BindText(5, track.GetValue("year"));
+    stmt.BindText(6, track.GetValue("title"));
+    stmt.BindText(7, track.GetValue("filename"));
+    stmt.BindInt32(8, track.GetInt32("filetime"));
+    stmt.BindUint64(9, track.GetInt64("path_id"));
+    stmt.BindText(10, track.GetValue("external_id"));
+
+    if (id != 0) {
+        stmt.BindUint64(11, id);
     }
 
     if (stmt.Step() == db::Done) {
-        if (track.GetId() == 0) {
+        if (id == 0) {
             return dbConnection.LastInsertedId();
         }
     }
 
-    return track.GetId();
+    return id;
 }
 
 static void removeRelation(
