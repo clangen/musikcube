@@ -117,11 +117,12 @@ public final class AlbumArtModel {
             String requestUrl;
 
             try {
-                final String sanitizedAlbum = removeBadAlbumSuffixes(album);
+                final String sanitizedAlbum = removeKnownJunkFromMetadata(album);
+                final String sanitizedArtist = removeKnownJunkFromMetadata(artist);
 
                 requestUrl = String.format(
                     LAST_FM_ALBUM_INFO,
-                    URLEncoder.encode(artist, "UTF-8"),
+                    URLEncoder.encode(sanitizedArtist, "UTF-8"),
                     URLEncoder.encode(sanitizedAlbum, "UTF-8"));
             }
             catch (Exception ex) {
@@ -179,6 +180,7 @@ public final class AlbumArtModel {
     }
 
     private static final Pattern[] BAD_PATTERNS = {
+        Pattern.compile("(?i)^" + Pattern.quote("[") + "CD" + Pattern.quote("]")),
         Pattern.compile("(?i)" + Pattern.quote("(") + "disc \\d*" + Pattern.quote(")") + "$"),
         Pattern.compile("(?i)" + Pattern.quote("[") + "disc \\d*" + Pattern.quote("]") + "$"),
         Pattern.compile("(?i)" + Pattern.quote("(+") + "video" + Pattern.quote(")") + "$"),
@@ -188,7 +190,7 @@ public final class AlbumArtModel {
         Pattern.compile("(?i)" + Pattern.quote("[+") + "digital booklet" + Pattern.quote("]") + "$")
     };
 
-    private static String removeBadAlbumSuffixes(final String album) {
+    private static String removeKnownJunkFromMetadata(final String album) {
         String result = album;
         for (Pattern pattern : BAD_PATTERNS) {
             result = pattern.matcher(result).replaceAll("");
