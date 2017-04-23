@@ -95,6 +95,7 @@
 
         "tracklist_unknown_album": "[unknown album]",
 
+        "main_syncing_banner_start": "syncing metadata...",
         "main_syncing_banner": "syncing metadata (%d tracks processed)"
     },
 

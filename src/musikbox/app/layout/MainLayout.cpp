@@ -53,8 +53,15 @@ using namespace cursespp;
 
 static void updateSyncingText(TextLabel* label, int updates) {
     try {
-        label->SetText(boost::str(boost::format(
-            _TSTR("main_syncing_banner")) % updates), cursespp::text::AlignCenter);
+        if (updates <= 0) {
+            label->SetText(
+                _TSTR("main_syncing_banner_start"),
+                cursespp::text::AlignCenter);
+        }
+        else {
+            label->SetText(boost::str(boost::format(
+                _TSTR("main_syncing_banner")) % updates), cursespp::text::AlignCenter);
+        }
     }
     catch (...) {
         /* swallow. incomplete locale. don't crash. */
