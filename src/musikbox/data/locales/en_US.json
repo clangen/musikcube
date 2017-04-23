@@ -45,6 +45,7 @@
         "playback_overlay_invalid_transport": "the selected output device (%s) doesn't support crossfading.",
         "playback_overlay_no_output_plugins_mesage": "no output plugins found!",
 
+        "playqueue_overlay_add_to_start": "add to beginning",
         "playqueue_overlay_add_to_end": "add to end",
         "playqueue_overlay_add_as_next": "add as next",
         "playqueue_overlay_new": "new...",
@@ -62,10 +63,11 @@
         "playqueue_overlay_album_header_actions_title": "album actions",
         "playqueue_overlay_album_jump_to": "jump to album in library",
         "playqueue_overlay_artist_jump_to": "jump to artist in library",
+        "playqueue_overlay_album_play": "play album",
         "playqueue_overlay_genre_jump_to": "jump to genre in library",
+        "playqueue_overlay_add_to_start_of_queue": "add to beginning of play queue",
         "playqueue_overlay_add_to_end_in_queue": "add to end of play queue",
         "playqueue_overlay_add_as_next_in_queue": "add as next in play queue",
-
 
         "visualizer_overlay_title": "visualizers",
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",
