@@ -77,6 +77,7 @@ class CddaDataModel {
                 AudioDisc(char driveLetter);
 
                 std::string GetCddbId();
+                std::string GetCddbQueryString();
 
                 void SetLeadout(DiscTrackPtr leadout);
                 void AddTrack(DiscTrackPtr track);

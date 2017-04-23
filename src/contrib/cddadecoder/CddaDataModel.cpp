@@ -343,6 +343,30 @@ std::string CddaDataModel::AudioDisc::GetCddbId() {
     return std::string(buffer);
 }
 
+std::string CddaDataModel::AudioDisc::GetCddbQueryString() {
+    std::string query = "cmd=cddb+query+" + this->GetCddbId() + "+";
+    query += std::to_string(this->GetTrackCount());
+
+    /* tracks */
+    for (auto track : this->tracks) {
+        size_t frames =
+            track->GetFrames() +
+            (track->GetSeconds() * FRAMES_PER_SECOND) +
+            (track->GetMinutes()) * FRAMES_PER_MINUTE;
+
+        query += "+" + std::to_string(frames);
+    }
+
+    size_t leadoutOffset =
+        leadout->GetFrames() +
+        (leadout->GetSeconds() * FRAMES_PER_SECOND) +
+        (leadout->GetMinutes()) * FRAMES_PER_MINUTE;
+
+    query += "+" + std::to_string(leadoutOffset / FRAMES_PER_SECOND);
+
+    return query;
+}
+
 void CddaDataModel::AudioDisc::SetLeadout(DiscTrackPtr leadout) {
     this->leadout = leadout;
 }

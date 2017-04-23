@@ -364,20 +364,22 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         auto trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
         TrackPtr track = parent.tracks->Get(trackIndex);
 
-        std::string album = track->GetValue(constants::Track::ALBUM);
+        if (track) {
+            std::string album = track->GetValue(constants::Track::ALBUM);
 
-        if (!album.size()) {
-            album = _TSTR("tracklist_unknown_album");
+            if (!album.size()) {
+                album = _TSTR("tracklist_unknown_album");
+            }
+
+            std::shared_ptr<TrackListEntry> entry(new
+                TrackListEntry(album, trackIndex, RowType::Separator));
+
+            entry->SetAttrs(selected
+                ? COLOR_PAIR(CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER)
+                : COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER));
+
+            return entry;
         }
-
-        std::shared_ptr<TrackListEntry> entry(new
-            TrackListEntry(album, trackIndex, RowType::Separator));
-
-        entry->SetAttrs(selected
-            ? COLOR_PAIR(CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER)
-            : COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER));
-
-        return entry;
     }
 
     size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
