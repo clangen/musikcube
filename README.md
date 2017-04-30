@@ -133,6 +133,7 @@ decoders:
 * [ogg/vorbis](http://www.vorbis.com/)
 * [mad](http://www.underbit.com/products/mad/) + [nomad](https://github.com/cmus/cmus/tree/master/ip)
 * [faad2](http://www.audiocoding.com/faad2.html)
+* [exoplayer](https://github.com/google/ExoPlayer)
 
 outputs:
 * [pulseaudio](https://www.freedesktop.org/wiki/Software/PulseAudio/)
