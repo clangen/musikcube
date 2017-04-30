@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.pluscubed.recyclerfastscroll.RecyclerFastScroller;
+
 import org.json.JSONObject;
 
 import io.casey.musikcube.remote.R;
@@ -47,12 +49,14 @@ public class PlayQueueActivity extends WebSocketActivityBase {
         Views.enableUpNavigation(this);
 
         this.adapter = new Adapter();
-        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
 
-        Views.setupDefaultRecyclerView(this, recyclerView, adapter);
+        final RecyclerFastScroller fastScroller = (RecyclerFastScroller) findViewById(R.id.fast_scroller);
+        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
 
         this.tracks = new TrackListSlidingWindow<>(
             recyclerView,
+            fastScroller,
             this.wss,
             this.playback.getPlaylistQueryFactory(),
             (JSONObject obj) -> obj);

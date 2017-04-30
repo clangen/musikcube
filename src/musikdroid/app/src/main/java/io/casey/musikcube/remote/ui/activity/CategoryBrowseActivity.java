@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.pluscubed.recyclerfastscroll.RecyclerFastScroller;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -88,9 +90,9 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
             setTitle(CATEGORY_NAME_TO_TITLE.get(category));
         }
 
+        final RecyclerFastScroller fastScroller = (RecyclerFastScroller) findViewById(R.id.fast_scroller);
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-
-        Views.setupDefaultRecyclerView(this, recyclerView, this.adapter);
+        Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
 
         transport = Views.addTransportFragment(this,
             (TransportFragment fragment) -> adapter.notifyDataSetChanged());

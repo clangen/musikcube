@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.pluscubed.recyclerfastscroll.RecyclerFastScroller;
+
 import org.json.JSONObject;
 
 import io.casey.musikcube.remote.R;
@@ -79,11 +81,16 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
             createCategoryQueryFactory(categoryType, categoryId);
 
         final Adapter adapter = new Adapter();
+        final RecyclerFastScroller fastScroller = (RecyclerFastScroller) findViewById(R.id.fast_scroller);
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        Views.setupDefaultRecyclerView(this, recyclerView, adapter);
+        Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
 
         tracks = new TrackListSlidingWindow<>(
-            recyclerView, getWebSocketService(), queryFactory, (JSONObject track) -> track);
+            recyclerView,
+            fastScroller,
+            getWebSocketService(),
+            queryFactory,
+            (JSONObject track) -> track);
 
         transport = Views.addTransportFragment(this,
             (TransportFragment fragment) -> adapter.notifyDataSetChanged());

@@ -17,6 +17,8 @@ import android.view.ViewPropertyAnimator;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
+import com.pluscubed.recyclerfastscroll.RecyclerFastScroller;
+
 import io.casey.musikcube.remote.R;
 import io.casey.musikcube.remote.ui.activity.Filterable;
 import io.casey.musikcube.remote.ui.fragment.TransportFragment;
@@ -35,11 +37,13 @@ public final class Views {
 
     public static void setupDefaultRecyclerView(final Context context,
                                                 final RecyclerView recyclerView,
+                                                final RecyclerFastScroller fastScroller,
                                                 final RecyclerView.Adapter adapter) {
         final LinearLayoutManager layoutManager = new LinearLayoutManager(context);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         recyclerView.setAdapter(adapter);
+        fastScroller.attachRecyclerView(recyclerView);
 
         final DividerItemDecoration dividerItemDecoration =
             new DividerItemDecoration(context, layoutManager.getOrientation());

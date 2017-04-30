@@ -1,6 +1,10 @@
 package io.casey.musikcube.remote.ui.model;
 
 import android.support.v7.widget.RecyclerView;
+import android.view.MotionEvent;
+import android.view.View;
+
+import com.pluscubed.recyclerfastscroll.RecyclerFastScroller;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,10 +22,12 @@ public class TrackListSlidingWindow<TrackType> {
 
     private int count = 0;
     private RecyclerView recyclerView;
+    private RecyclerFastScroller fastScroller;
     private WebSocketService wss;
     private Mapper<TrackType> mapper;
     private QueryFactory queryFactory;
     private int scrollState = RecyclerView.SCROLL_STATE_IDLE;
+    private boolean fastScrollActive = false;
     private int queryOffset = -1, queryLimit = -1;
     private int initialPosition = -1;
     private int windowSize = DEFAULT_WINDOW_SIZE;
@@ -54,28 +60,30 @@ public class TrackListSlidingWindow<TrackType> {
     }
 
     public TrackListSlidingWindow(RecyclerView recyclerView,
+                                  RecyclerFastScroller fastScroller,
                                   WebSocketService wss,
                                   QueryFactory queryFactory,
                                   Mapper<TrackType> mapper) {
         this.recyclerView = recyclerView;
+        this.fastScroller = fastScroller;
         this.wss = wss;
         this.queryFactory = queryFactory;
         this.mapper = mapper;
     }
 
-    public TrackListSlidingWindow(WebSocketService wss,
-                                  QueryFactory queryFactory,
-                                  Mapper<TrackType> mapper) {
-        this.recyclerView = null;
-        this.wss = wss;
-        this.queryFactory = queryFactory;
-        this.mapper = mapper;
-    }
-
-    public void setQueryFactory(final QueryFactory factory) {
-        this.queryFactory = factory;
-        requery();
-    }
+    private View.OnTouchListener fastScrollerTouch = (view, event) -> {
+        if (event != null) {
+            final int type = event.getActionMasked();
+            if (type == MotionEvent.ACTION_DOWN) {
+                fastScrollActive = true;
+            }
+            else if (type == MotionEvent.ACTION_UP) {
+                fastScrollActive = false;
+                requery();
+            }
+        }
+        return false;
+    };
 
     public void requery() {
         if (connected) {
@@ -118,6 +126,10 @@ public class TrackListSlidingWindow<TrackType> {
         if (this.recyclerView != null) {
             this.recyclerView.removeOnScrollListener(scrollListener);
         }
+
+        if (this.fastScroller != null) {
+            fastScroller.setOnHandleTouchListener(null);
+        }
     }
 
     public void resume() {
@@ -125,8 +137,13 @@ public class TrackListSlidingWindow<TrackType> {
             this.recyclerView.addOnScrollListener(scrollListener);
         }
 
+        if (this.fastScroller != null) {
+            fastScroller.setOnHandleTouchListener(fastScrollerTouch);
+        }
+
         this.wss.addClient(this.client);
         connected = true;
+        fastScrollActive = false;
     }
 
     public void setInitialPosition(int initialIndex) {
@@ -177,7 +194,7 @@ public class TrackListSlidingWindow<TrackType> {
     }
 
     private void getPageAround(int index) {
-        if (!connected) {
+        if (!connected || scrolling()) {
             return;
         }
 
@@ -234,11 +251,15 @@ public class TrackListSlidingWindow<TrackType> {
         }
     }
 
+    private boolean scrolling() {
+        return scrollState != RecyclerView.SCROLL_STATE_IDLE || fastScrollActive;
+    }
+
     private RecyclerView.OnScrollListener scrollListener = new RecyclerView.OnScrollListener() {
         @Override
         public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
             scrollState = newState;
-            if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+            if (!scrolling()) {
                 notifyAdapterChanged();
             }
         }

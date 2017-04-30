@@ -9,6 +9,7 @@ import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
@@ -19,16 +20,20 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
-import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
+import java.io.File;
+
 import io.casey.musikcube.remote.Application;
+import okhttp3.Cache;
+import okhttp3.OkHttpClient;
 
 public class ExoPlayerWrapper extends PlayerWrapper {
-    private BandwidthMeter bandwidth;
+    private static OkHttpClient audioStreamClient = null;
+    private DefaultBandwidthMeter bandwidth;
     private DataSource.Factory datasources;
     private ExtractorsFactory extractors;
     private MediaSource source;
@@ -41,13 +46,38 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         final TrackSelection.Factory trackFactory = new AdaptiveTrackSelection.Factory(bandwidth);
         final TrackSelector trackSelector = new DefaultTrackSelector(trackFactory);
         this.player = ExoPlayerFactory.newSimpleInstance(c, trackSelector);
-        this.datasources = new DefaultDataSourceFactory(c, Util.getUserAgent(c, "musikdroid"));
         this.extractors = new DefaultExtractorsFactory();
         this.player.addListener(eventListener);
     }
 
+    private void initDataSourceFactory(final String uri) {
+        final Context context = Application.getInstance();
+
+        synchronized (ExoPlayerWrapper.class) {
+            if (audioStreamClient == null) {
+                final File path = new File(context.getExternalCacheDir(), "audio");
+
+                audioStreamClient = new OkHttpClient.Builder()
+                    .cache(new Cache(path, 1048576 * 256)) /* 256 meg cache */
+                    .build();
+            }
+        }
+
+        if (uri.startsWith("http")) {
+            this.datasources = new OkHttpDataSourceFactory(
+                audioStreamClient,
+                Util.getUserAgent(context, "musikdroid"),
+                bandwidth);
+        }
+        else {
+            this.datasources = new DefaultDataSourceFactory(
+                context, Util.getUserAgent(context, "musikdroid"));
+        }
+    }
+
     @Override
     public void play(String uri) {
+        initDataSourceFactory(uri);
         this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
         this.player.setPlayWhenReady(true);
         this.player.prepare(this.source);
@@ -57,6 +87,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     @Override
     public void prefetch(String uri) {
+        initDataSourceFactory(uri);
         this.prefetch = true;
         this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
         this.player.setPlayWhenReady(false);

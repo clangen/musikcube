@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.pluscubed.recyclerfastscroll.RecyclerFastScroller;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -89,9 +91,9 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
         this.wss = getWebSocketService();
         this.adapter = new Adapter();
 
+        final RecyclerFastScroller fastScroller = (RecyclerFastScroller) findViewById(R.id.fast_scroller);
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-
-        Views.setupDefaultRecyclerView(this, recyclerView, adapter);
+        Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
 
         transport = Views.addTransportFragment(this,
             (TransportFragment fragment) -> adapter.notifyDataSetChanged());
