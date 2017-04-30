@@ -90,6 +90,7 @@ namespace key {
     static const std::string limit = "limit";
     static const std::string offset = "offset";
     static const std::string count_only = "count_only";
+    static const std::string ids_only = "ids_only";
     static const std::string count = "count";
     static const std::string success = "success";
     static const std::string index = "index";

@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.websocket;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,6 +10,7 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
@@ -25,15 +26,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.casey.musikcube.remote.util.Preconditions;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.annotations.NonNull;
+
 import static android.content.Context.CONNECTIVITY_SERVICE;
 
 public class WebSocketService {
+    private static final String TAG = "WebSocketService";
+
     private static final int AUTO_RECONNECT_INTERVAL_MILLIS = 2000;
     private static final int CALLBACK_TIMEOUT_MILLIS = 30000;
     private static final int CONNECTION_TIMEOUT_MILLIS = 5000;
     private static final int PING_INTERVAL_MILLIS = 3500;
     private static final int AUTO_CONNECT_FAILSAFE_DELAY_MILLIS = 2000;
-    private static final int AUTO_DISCONNECT_DELAY_MILLIS = 5000;
+    private static final int AUTO_DISCONNECT_DELAY_MILLIS = 10000;
     private static final int FLAG_AUTHENTICATION_FAILED = 0xbeef;
     private static final int WEBSOCKET_FLAG_POLICY_VIOLATION = 1008;
 
@@ -171,12 +180,12 @@ public class WebSocketService {
         if (!this.clients.contains(client)) {
             this.clients.add(client);
 
-            if (this.clients.size() == 1) {
+            if (this.clients.size() >= 0 && state == State.Disconnected) {
                 registerReceiverAndScheduleFailsafe();
                 reconnect();
-                handler.removeCallbacks(autoDisconnectRunnable);
             }
 
+            handler.removeCallbacks(autoDisconnectRunnable);
             client.onStateChanged(getState(), getState());
         }
     }
@@ -274,6 +283,47 @@ public class WebSocketService {
         return -1;
     }
 
+    public Observable<SocketMessage> send(final SocketMessage message, Client client) {
+        return Observable.create(new ObservableOnSubscribe<SocketMessage>() {
+            @Override
+            public void subscribe(@NonNull ObservableEmitter<SocketMessage> emitter) throws Exception {
+                try {
+                    Preconditions.throwIfNotOnMainThread();
+
+                    if (socket != null) {
+                        /* it seems that sometimes the socket dies, but the onDisconnected() event is not
+                        raised. unclear if this is our bug or a bug in the library. disconnect and trigger
+                        a reconnect until we can find a better root cause. this is very difficult to repro */
+                        if (!socket.isOpen()) {
+                            disconnect(true);
+                            throw new Exception("socket disconnected");
+                        }
+                        else {
+                            if (!clients.contains(client) && client != INTERNAL_CLIENT) {
+                                throw new IllegalArgumentException("client is not registered");
+                            }
+
+                            final MessageResultDescriptor mrd = new MessageResultDescriptor();
+                            mrd.id = NEXT_ID.incrementAndGet();
+                            mrd.enqueueTime = System.currentTimeMillis();
+                            mrd.client = client;
+                            mrd.callback = (SocketMessage message) -> {
+                                emitter.onNext(message);
+                                emitter.onComplete();
+                            };
+
+                            messageCallbacks.put(message.getId(), mrd);
+                            socket.sendText(message.toString());
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    emitter.onError(ex);
+                }
+            }
+        });
+    }
+
     public boolean hasValidConnection() {
         final String addr = prefs.getString("address", "");
         final int port = prefs.getInt("port", -1);
@@ -364,6 +414,8 @@ public class WebSocketService {
 
     private void setState(State state) {
         Preconditions.throwIfNotOnMainThread();
+
+        Log.d(TAG, "state = " + state);
 
         if (this.state != state) {
             State old = this.state;

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="streaming_mode_array">
+        <item>remote</item>
+        <item>streaming</item>
+    </string-array>
+</resources>

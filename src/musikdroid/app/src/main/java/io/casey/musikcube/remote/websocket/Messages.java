@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.websocket;
 
 public class Messages {
     public enum Request {
@@ -83,15 +83,6 @@ public class Messages {
         String DATA = "data";
         String ID = "id";
         String IDS = "ids";
-        String TITLE = "title";
-        String ALBUM = "album";
-        String ALBUM_ID = "album_id";
-        String ALBUM_ARTIST = "album_artist";
-        String ALBUM_ARTIST_ID = "album_artist_id";
-        String GENRE = "genre";
-        String GENRE_ID = "visual_genre_id";
-        String ARTIST = "artist";
-        String ARTIST_ID = "visual_artist_id";
         String COUNT = "count";
         String COUNT_ONLY = "count_only";
         String OFFSET = "offset";

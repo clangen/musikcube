@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.util;
 
 import android.app.SearchManager;
 import android.app.SearchableInfo;
@@ -16,6 +16,11 @@ import android.view.View;
 import android.view.ViewPropertyAnimator;
 import android.widget.CheckBox;
 import android.widget.EditText;
+
+import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.ui.activity.Filterable;
+import io.casey.musikcube.remote.ui.fragment.TransportFragment;
+import io.casey.musikcube.remote.util.Strings;
 
 public final class Views {
     public static String EXTRA_TITLE = "extra_title";

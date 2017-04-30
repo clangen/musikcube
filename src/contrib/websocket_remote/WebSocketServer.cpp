@@ -394,6 +394,7 @@ bool WebSocketServer::RespondWithTracks(
 {
     json& options = request[message::options];
     bool countOnly = options.value(key::count_only, false);
+    bool idsOnly = options.value(key::ids_only, false);
 
     if (tracks) {
         if (countOnly) {
@@ -409,10 +410,16 @@ bool WebSocketServer::RespondWithTracks(
         else {
             json data = json::array();
 
-            IRetainedTrack* track;
-            for (int i = 0; i < (int)tracks->Count(); i++) {
-                track = tracks->GetRetainedTrack((size_t)i);
-                data.push_back(this->ReadTrackMetadata(track));
+            IRetainedTrack* track = nullptr;
+            for (size_t i = 0; i < tracks->Count(); i++) {
+                if (idsOnly) {
+                    data.push_back({ {key::id, tracks->GetId(i) } });
+                }
+                else {
+                    track = tracks->GetRetainedTrack(i);
+                    data.push_back(this->ReadTrackMetadata(track));
+                }
+
                 track->Release();
             }
 

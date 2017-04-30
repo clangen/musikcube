@@ -31,11 +31,29 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.casey.musikcube.remote.playback.Metadata;
+import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.playback.PlaybackState;
+import io.casey.musikcube.remote.playback.RepeatMode;
+import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity;
+import io.casey.musikcube.remote.ui.activity.CategoryBrowseActivity;
+import io.casey.musikcube.remote.ui.activity.PlayQueueActivity;
+import io.casey.musikcube.remote.ui.activity.SettingsActivity;
+import io.casey.musikcube.remote.ui.activity.TrackListActivity;
+import io.casey.musikcube.remote.ui.activity.WebSocketActivityBase;
+import io.casey.musikcube.remote.ui.fragment.InvalidPasswordDialogFragment;
+import io.casey.musikcube.remote.ui.model.AlbumArtModel;
+import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.ui.view.LongPressTextView;
+import io.casey.musikcube.remote.util.Strings;
+import io.casey.musikcube.remote.websocket.Messages;
+import io.casey.musikcube.remote.websocket.SocketMessage;
+import io.casey.musikcube.remote.websocket.WebSocketService;
+
 public class MainActivity extends WebSocketActivityBase {
-    private static Map<TransportModel.RepeatMode, Integer> REPEAT_TO_STRING_ID;
+    private static Map<RepeatMode, Integer> REPEAT_TO_STRING_ID;
 
     private WebSocketService wss = null;
-    private TransportModel model = new TransportModel();
 
     private SharedPreferences prefs;
     private TextView title, artist, album, playPause, volume;
@@ -45,6 +63,7 @@ public class MainActivity extends WebSocketActivityBase {
     private CheckBox shuffleCb, muteCb, repeatCb;
     private View disconnectedOverlay;
     private Handler handler = new Handler();
+    private PlaybackService playback;
 
     /* ugh, artwork related */
     private enum DisplayMode { Artwork, NoArtwork, Stopped }
@@ -55,9 +74,9 @@ public class MainActivity extends WebSocketActivityBase {
 
     static {
         REPEAT_TO_STRING_ID = new HashMap<>();
-        REPEAT_TO_STRING_ID.put(TransportModel.RepeatMode.None, R.string.button_repeat_off);
-        REPEAT_TO_STRING_ID.put(TransportModel.RepeatMode.List, R.string.button_repeat_list);
-        REPEAT_TO_STRING_ID.put(TransportModel.RepeatMode.Track, R.string.button_repeat_track);
+        REPEAT_TO_STRING_ID.put(RepeatMode.None, R.string.button_repeat_off);
+        REPEAT_TO_STRING_ID.put(RepeatMode.List, R.string.button_repeat_list);
+        REPEAT_TO_STRING_ID.put(RepeatMode.Track, R.string.button_repeat_track);
     }
 
     public static Intent getStartIntent(final Context context) {
@@ -71,6 +90,7 @@ public class MainActivity extends WebSocketActivityBase {
 
         this.prefs = this.getSharedPreferences("prefs", Context.MODE_PRIVATE);
         this.wss = getWebSocketService();
+        this.playback = getPlaybackService();
 
         setContentView(R.layout.activity_main);
         bindEventListeners();
@@ -89,6 +109,7 @@ public class MainActivity extends WebSocketActivityBase {
     @Override
     protected void onResume() {
         super.onResume();
+        this.playback = getPlaybackService();
         bindCheckBoxEventListeners();
         rebindUi();
     }
@@ -137,6 +158,11 @@ public class MainActivity extends WebSocketActivityBase {
         return this.serviceClient;
     }
 
+    @Override
+    protected PlaybackService.EventListener getPlaybackServiceEventListener() {
+        return this.playbackEvents;
+    }
+
     private void bindCheckBoxEventListeners() {
         this.shuffleCb.setOnCheckedChangeListener(shuffleListener);
         this.muteCb.setOnCheckedChangeListener(muteListener);
@@ -177,53 +203,30 @@ public class MainActivity extends WebSocketActivityBase {
         this.mainTrackMetadataNoAlbumArt.setAlpha(0.0f);
         this.mainTrackMetadataWithAlbumArt.setAlpha(0.0f);
 
-        findViewById(R.id.button_prev).setOnClickListener((View view) ->
-            wss.send(SocketMessage.Builder.request(
-                Messages.Request.Previous).build()));
+        findViewById(R.id.button_prev).setOnClickListener((View view) -> playback.prev());
 
         final LongPressTextView seekBack = (LongPressTextView) findViewById(R.id.button_seek_back);
-        seekBack.setOnTickListener((View view) ->
-            wss.send(SocketMessage.Builder
-                .request(Messages.Request.SeekRelative)
-                .addOption(Messages.Key.DELTA, -5.0f).build()));
+        seekBack.setOnTickListener((View view) -> playback.seekBackward());
 
         findViewById(R.id.button_play_pause).setOnClickListener((View view) -> {
-            if (model.getPlaybackState() == TransportModel.PlaybackState.Stopped) {
-                wss.send(SocketMessage.Builder.request(
-                    Messages.Request.PlayAllTracks).build());
+            if (playback.getPlaybackState() == PlaybackState.Stopped) {
+                playback.playAll();
             }
             else {
-                wss.send(SocketMessage.Builder.request(
-                    Messages.Request.PauseOrResume).build());
+                playback.pauseOrResume();
             }
         });
 
-        findViewById(R.id.button_next).setOnClickListener((View view) -> {
-            wss.send(SocketMessage.Builder.request(
-                Messages.Request.Next).build());
-        });
+        findViewById(R.id.button_next).setOnClickListener((View view) -> playback.next());
 
         final LongPressTextView seekForward = (LongPressTextView) findViewById(R.id.button_seek_forward);
-        seekForward.setOnTickListener((View view) ->
-            wss.send(SocketMessage.Builder
-                .request(Messages.Request.SeekRelative)
-                .addOption(Messages.Key.DELTA, 5.0f).build()));
+        seekForward.setOnTickListener((View view) -> playback.seekForward());
 
         final LongPressTextView volumeUp = (LongPressTextView) findViewById(R.id.button_vol_up);
-        volumeUp.setOnTickListener((View view) -> {
-            wss.send(SocketMessage.Builder
-                .request(Messages.Request.SetVolume)
-                .addOption(Messages.Key.RELATIVE, Messages.Value.UP)
-                .build());
-        });
+        volumeUp.setOnTickListener((View view) -> playback.volumeUp());
 
         final LongPressTextView volumeDown = (LongPressTextView) findViewById(R.id.button_vol_down);
-        volumeDown.setOnTickListener((View view) -> {
-            wss.send(SocketMessage.Builder
-                .request(Messages.Request.SetVolume)
-                .addOption(Messages.Key.RELATIVE, Messages.Value.DOWN)
-                .build());
-        });
+        volumeDown.setOnTickListener((View view) -> playback.volumeDown());
 
         notPlayingOrDisconnected.setOnClickListener((view) -> {
             if (wss.getState() != WebSocketService.State.Connected) {
@@ -246,7 +249,7 @@ public class MainActivity extends WebSocketActivityBase {
         findViewById(R.id.button_play_queue).setOnClickListener((view) -> navigateToPlayQueue());
 
         findViewById(R.id.metadata_container).setOnClickListener((view) -> {
-            if (model.getQueueCount() > 0) {
+            if (playback.getQueueCount() > 0) {
                 navigateToPlayQueue();
             }
         });
@@ -260,8 +263,8 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void rebindAlbumArtistWithArtTextView() {
-        final String artist = model.getTrackValueString(TransportModel.Key.ARTIST, getString(R.string.unknown_artist));
-        final String album = model.getTrackValueString(TransportModel.Key.ALBUM, getString(R.string.unknown_album));
+        final String artist = playback.getTrackString(Metadata.Track.ARTIST, getString(R.string.unknown_artist));
+        final String album = playback.getTrackString(Metadata.Track.ALBUM, getString(R.string.unknown_album));
 
         final ForegroundColorSpan albumColor =
             new ForegroundColorSpan(getResources().getColor(R.color.theme_orange));
@@ -307,20 +310,25 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void rebindUi() {
+        if (this.playback == null) {
+            throw new IllegalStateException();
+        }
+
         /* state management for UI stuff is starting to get out of hand. we should
         refactor things pretty soon before they're completely out of control */
 
+        final boolean streaming = prefs.getBoolean("streaming_playback", false);
         final WebSocketService.State state = wss.getState();
 
         final boolean connected = state == WebSocketService.State.Connected;
 
-        final boolean playing = (model.getPlaybackState() == TransportModel.PlaybackState.Playing);
+        final boolean playing = (playback.getPlaybackState() == PlaybackState.Playing);
         this.playPause.setText(playing ? R.string.button_pause : R.string.button_play);
 
-        final boolean stopped = (model.getPlaybackState() == TransportModel.PlaybackState.Stopped);
+        final boolean stopped = (playback.getPlaybackState() == PlaybackState.Stopped);
         notPlayingOrDisconnected.setVisibility(stopped ? View.VISIBLE : View.GONE);
 
-        final boolean stateIsValidForArtwork = !stopped && connected && model.isValid();
+        final boolean stateIsValidForArtwork = !stopped && connected && playback.getQueueCount() > 0;
 
         this.connected.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
         this.disconnectedOverlay.setVisibility(connected ? View.GONE : View.VISIBLE);
@@ -337,10 +345,10 @@ public class MainActivity extends WebSocketActivityBase {
             notPlayingOrDisconnected.setVisibility(View.GONE);
         }
 
-        final String artist = model.getTrackValueString(TransportModel.Key.ARTIST, "");
-        final String album = model.getTrackValueString(TransportModel.Key.ALBUM, "");
-        final String title = model.getTrackValueString(TransportModel.Key.TITLE, "");
-        final String volume = getString(R.string.status_volume, Math.round(model.getVolume() * 100));
+        final String artist = playback.getTrackString(Metadata.Track.ARTIST, "");
+        final String album = playback.getTrackString(Metadata.Track.ALBUM, "");
+        final String title = playback.getTrackString(Metadata.Track.TITLE, "");
+        final String volume = getString(R.string.status_volume, Math.round(playback.getVolume() * 100));
 
         this.title.setText(Strings.empty(title) ? getString(R.string.unknown_title) : title);
         this.artist.setText(Strings.empty(artist) ? getString(R.string.unknown_artist) : artist);
@@ -351,13 +359,15 @@ public class MainActivity extends WebSocketActivityBase {
         this.titleWithArt.setText(Strings.empty(title) ? getString(R.string.unknown_title) : title);
         this.volumeWithArt.setText(volume);
 
-        final TransportModel.RepeatMode repeatMode = model.getRepeatMode();
-        final boolean repeatChecked = (repeatMode != TransportModel.RepeatMode.None);
+        final RepeatMode repeatMode = playback.getRepeatMode();
+        final boolean repeatChecked = (repeatMode != RepeatMode.None);
         repeatCb.setText(REPEAT_TO_STRING_ID.get(repeatMode));
         Views.setCheckWithoutEvent(repeatCb, repeatChecked, this.repeatListener);
 
-        Views.setCheckWithoutEvent(this.shuffleCb, model.isShuffled(), this.shuffleListener);
-        Views.setCheckWithoutEvent(this.muteCb, model.isMuted(), this.muteListener);
+        this.shuffleCb.setText(streaming ? R.string.button_random : R.string.button_shuffle);
+
+        Views.setCheckWithoutEvent(this.shuffleCb, playback.isShuffled(), this.shuffleListener);
+        Views.setCheckWithoutEvent(this.muteCb, playback.isMuted(), this.muteListener);
 
         boolean albumArtEnabledInSettings = this.prefs.getBoolean("album_art_enabled", true);
 
@@ -378,7 +388,6 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void clearUi() {
-        model.reset();
         albumArtModel = new AlbumArtModel();
         updateAlbumArt();
         rebindUi();
@@ -409,7 +418,7 @@ public class MainActivity extends WebSocketActivityBase {
     private void preloadNextImage() {
         final SocketMessage request = SocketMessage.Builder
                 .request(Messages.Request.QueryPlayQueueTracks)
-                .addOption(Messages.Key.OFFSET, this.model.getQueuePosition() + 1)
+                .addOption(Messages.Key.OFFSET, this.playback.getQueuePosition() + 1)
                 .addOption(Messages.Key.LIMIT, 1)
                 .build();
 
@@ -417,8 +426,8 @@ public class MainActivity extends WebSocketActivityBase {
             final JSONArray data = response.getJsonArrayOption(Messages.Key.DATA, new JSONArray());
             if (data.length() > 0) {
                 JSONObject track = data.optJSONObject(0);
-                final String artist = track.optString(TransportModel.Key.ARTIST, "");
-                final String album = track.optString(TransportModel.Key.ALBUM, "");
+                final String artist = track.optString(Metadata.Track.ARTIST, "");
+                final String album = track.optString(Metadata.Track.ALBUM, "");
 
                 if (!albumArtModel.is(artist, album)) {
                     new AlbumArtModel("", artist, album, (info, url) -> {
@@ -432,7 +441,7 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void updateAlbumArt() {
-        if (model.getPlaybackState() == TransportModel.PlaybackState.Stopped) {
+        if (playback.getPlaybackState() == PlaybackState.Stopped) {
             setMetadataDisplayMode(DisplayMode.NoArtwork);
         }
 
@@ -485,25 +494,25 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void navigateToCurrentArtist() {
-        final long artistId = model.getTrackValueLong(TransportModel.Key.ARTIST_ID, -1);
+        final long artistId = playback.getTrackLong(Metadata.Track.ARTIST_ID, -1);
         if (artistId != -1) {
-            final String artistName = model.getTrackValueString(TransportModel.Key.ARTIST, "");
+            final String artistName = playback.getTrackString(Metadata.Track.ARTIST, "");
             startActivity(AlbumBrowseActivity.getStartIntent(
                 MainActivity.this, Messages.Category.ARTIST, artistId, artistName));
         }
     }
 
     private void navigateToCurrentAlbum() {
-        final long albumId = model.getTrackValueLong(TransportModel.Key.ALBUM_ID, -1);
+        final long albumId = playback.getTrackLong(Metadata.Track.ALBUM_ID, -1);
         if (albumId != -1) {
-            final String albumName = model.getTrackValueString(TransportModel.Key.ALBUM, "");
+            final String albumName = playback.getTrackString(Metadata.Track.ALBUM, "");
             startActivity(TrackListActivity.getStartIntent(
                 MainActivity.this, Messages.Category.ALBUM, albumId, albumName));
         }
     }
 
     private void navigateToPlayQueue() {
-        startActivity(PlayQueueActivity.getStartIntent(MainActivity.this, model.getQueuePosition()));
+        startActivity(PlayQueueActivity.getStartIntent(MainActivity.this, playback.getQueuePosition()));
     }
 
     private AlbumArtModel.AlbumArtCallback albumArtRetrieved = (model, url) -> {
@@ -521,41 +530,44 @@ public class MainActivity extends WebSocketActivityBase {
 
     private CheckBox.OnCheckedChangeListener muteListener =
         (CompoundButton compoundButton, boolean b) -> {
-            if (b != model.isMuted()) {
-                wss.send(SocketMessage.Builder
-                    .request(Messages.Request.ToggleMute).build());
+            if (b != playback.isMuted()) {
+                playback.toggleMute();
             }
         };
 
     private CheckBox.OnCheckedChangeListener shuffleListener =
         (CompoundButton compoundButton, boolean b) -> {
-            if (b != model.isShuffled()) {
-                wss.send(SocketMessage.Builder
-                    .request(Messages.Request.ToggleShuffle).build());
+            if (b != playback.isShuffled()) {
+                playback.toggleShuffle();
             }
         };
 
     final CheckBox.OnCheckedChangeListener repeatListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-            final TransportModel.RepeatMode currentMode = model.getRepeatMode();
+            final RepeatMode currentMode = playback.getRepeatMode();
 
-            TransportModel.RepeatMode newMode = TransportModel.RepeatMode.None;
+            RepeatMode newMode = RepeatMode.None;
 
-            if (currentMode == TransportModel.RepeatMode.None) {
-                newMode = TransportModel.RepeatMode.List;
+            if (currentMode == RepeatMode.None) {
+                newMode = RepeatMode.List;
             }
-            else if (currentMode == TransportModel.RepeatMode.List) {
-                newMode = TransportModel.RepeatMode.Track;
+            else if (currentMode == RepeatMode.List) {
+                newMode = RepeatMode.Track;
             }
 
-            final boolean checked = (newMode != TransportModel.RepeatMode.None);
+            final boolean checked = (newMode != RepeatMode.None);
             compoundButton.setText(REPEAT_TO_STRING_ID.get(newMode));
             Views.setCheckWithoutEvent(repeatCb, checked, this);
 
-            wss.send(SocketMessage.Builder
-                .request(Messages.Request.ToggleRepeat)
-                .build());
+            playback.toggleRepeatMode();
+        }
+    };
+
+    private PlaybackService.EventListener playbackEvents = new PlaybackService.EventListener() {
+        @Override
+        public void onStateUpdated() {
+            rebindUi();
         }
     };
 
@@ -563,9 +575,6 @@ public class MainActivity extends WebSocketActivityBase {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
             if (newState == WebSocketService.State.Connected) {
-                wss.send(SocketMessage.Builder.request(
-                    Messages.Request.GetPlaybackOverview.toString()).build());
-
                 rebindUi();
             }
             else if (newState == WebSocketService.State.Disconnected) {
@@ -575,11 +584,6 @@ public class MainActivity extends WebSocketActivityBase {
 
         @Override
         public void onMessageReceived(SocketMessage message) {
-            if (model.canHandle(message)) {
-                if (model.update(message)) {
-                    rebindUi();
-                }
-            }
         }
 
         @Override

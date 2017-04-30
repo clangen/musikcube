@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +17,18 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.playback.Metadata;
+import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.ui.fragment.TransportFragment;
+import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.util.Debouncer;
+import io.casey.musikcube.remote.util.Navigation;
+import io.casey.musikcube.remote.util.Strings;
+import io.casey.musikcube.remote.websocket.Messages;
+import io.casey.musikcube.remote.websocket.SocketMessage;
+import io.casey.musikcube.remote.websocket.WebSocketService;
+
 public class CategoryBrowseActivity extends WebSocketActivityBase implements Filterable {
     private static final String EXTRA_CATEGORY = "extra_category";
     private static final String EXTRA_DEEP_LINK_TYPE = "extra_deep_link_type";
@@ -30,11 +42,11 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
     private static final Map<String, Integer> CATEGORY_NAME_TO_TITLE = new HashMap<>();
 
     static {
-        CATEGORY_NAME_TO_ID.put(Messages.Category.ALBUM_ARTIST, Messages.Key.ALBUM_ARTIST_ID);
-        CATEGORY_NAME_TO_ID.put(Messages.Category.GENRE, Messages.Key.GENRE_ID);
-        CATEGORY_NAME_TO_ID.put(Messages.Category.ARTIST, Messages.Key.ARTIST_ID);
-        CATEGORY_NAME_TO_ID.put(Messages.Category.ALBUM, Messages.Key.ALBUM_ID);
-        CATEGORY_NAME_TO_ID.put(Messages.Category.PLAYLISTS, Messages.Key.ALBUM_ID);
+        CATEGORY_NAME_TO_ID.put(Messages.Category.ALBUM_ARTIST, Metadata.Track.ALBUM_ARTIST_ID);
+        CATEGORY_NAME_TO_ID.put(Messages.Category.GENRE, Metadata.Track.GENRE_ID);
+        CATEGORY_NAME_TO_ID.put(Messages.Category.ARTIST, Metadata.Track.ARTIST_ID);
+        CATEGORY_NAME_TO_ID.put(Messages.Category.ALBUM, Metadata.Track.ALBUM_ID);
+        CATEGORY_NAME_TO_ID.put(Messages.Category.PLAYLISTS, Metadata.Track.ALBUM_ID);
 
         CATEGORY_NAME_TO_TITLE.put(Messages.Category.ALBUM_ARTIST, R.string.artists_title);
         CATEGORY_NAME_TO_TITLE.put(Messages.Category.GENRE, R.string.genres_title);
@@ -112,6 +124,11 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
     @Override
     protected WebSocketService.Client getWebSocketServiceClient() {
         return socketClient;
+    }
+
+    @Override
+    protected PlaybackService.EventListener getPlaybackServiceEventListener() {
+        return null;
     }
 
     private void requery() {
@@ -205,7 +222,7 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
 
             final String idKey = CATEGORY_NAME_TO_ID.get(category);
             if (idKey != null && idKey.length() > 0) {
-                playingId = transport.getModel().getTrackValueLong(idKey, -1);
+                playingId = transport.getPlaybackService().getTrackLong(idKey, -1);
             }
 
             int titleColor = R.color.theme_foreground;

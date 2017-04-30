@@ -266,7 +266,7 @@
                 android:layout_marginTop="2dp"
                 android:orientation="horizontal">
 
-                <io.casey.musikcube.remote.LongPressTextView
+                <io.casey.musikcube.remote.ui.view.LongPressTextView
                     style="@style/PlaybackButton"
                     android:layout_weight="1.0"
                     android:id="@+id/button_vol_down"
@@ -278,7 +278,7 @@
                     android:layout_width="2dp"
                     android:layout_height="0dp" />
 
-                <io.casey.musikcube.remote.LongPressTextView
+                <io.casey.musikcube.remote.ui.view.LongPressTextView
                     style="@style/PlaybackButton"
                     android:layout_weight="1.0"
                     android:id="@+id/button_seek_back"
@@ -290,7 +290,7 @@
                     android:layout_width="2dp"
                     android:layout_height="0dp" />
 
-                <io.casey.musikcube.remote.LongPressTextView
+                <io.casey.musikcube.remote.ui.view.LongPressTextView
                     style="@style/PlaybackButton"
                     android:layout_weight="1.0"
                     android:id="@+id/button_seek_forward"
@@ -302,7 +302,7 @@
                     android:layout_width="2dp"
                     android:layout_height="0dp" />
 
-                <io.casey.musikcube.remote.LongPressTextView
+                <io.casey.musikcube.remote.ui.view.LongPressTextView
                     style="@style/PlaybackButton"
                     android:layout_weight="1.0"
                     android:id="@+id/button_vol_up"

@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.model;
 
 import android.util.LruCache;
 
@@ -12,6 +12,7 @@ import java.net.URLEncoder;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import io.casey.musikcube.remote.util.Strings;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Interceptor;

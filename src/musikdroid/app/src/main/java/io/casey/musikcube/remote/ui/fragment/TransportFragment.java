@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -9,6 +9,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import io.casey.musikcube.remote.MainActivity;
+import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.playback.Metadata;
+import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
+import io.casey.musikcube.remote.playback.PlaybackState;
+import io.casey.musikcube.remote.ui.activity.PlayQueueActivity;
+
 public class TransportFragment extends Fragment {
     public static final String TAG = "TransportFragment";
 
@@ -16,10 +24,9 @@ public class TransportFragment extends Fragment {
         return new TransportFragment();
     }
 
-    private WebSocketService wss;
     private View rootView;
     private TextView title, playPause;
-    private TransportModel transportModel = new TransportModel();
+    private PlaybackService playback;
     private OnModelChangedListener modelChangedListener;
 
     public interface OnModelChangedListener {
@@ -41,24 +48,23 @@ public class TransportFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.wss = WebSocketService.getInstance(getActivity());
+        this.playback = PlaybackServiceFactory.instance(getActivity());
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        this.wss.removeClient(socketClient);
-
+        this.playback.disconnect(this.playbackListener);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        this.wss.addClient(socketClient);
+        this.playback.connect(this.playbackListener);
     }
 
-    public TransportModel getModel() {
-        return transportModel;
+    public PlaybackService getPlaybackService() {
+        return playback;
     }
 
     public void setModelChangedListener(OnModelChangedListener modelChangedListener) {
@@ -69,9 +75,9 @@ public class TransportFragment extends Fragment {
         this.title = (TextView) this.rootView.findViewById(R.id.track_title);
 
         this.title.setOnClickListener((View view) -> {
-            if (transportModel.getPlaybackState() != TransportModel.PlaybackState.Stopped) {
+            if (playback.getPlaybackState() != PlaybackState.Stopped) {
                 final Intent intent = PlayQueueActivity
-                    .getStartIntent(getActivity(), transportModel.getQueuePosition())
+                    .getStartIntent(getActivity(), playback.getQueuePosition())
                     .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
                 startActivity(intent);
@@ -83,70 +89,46 @@ public class TransportFragment extends Fragment {
             return true;
         });
 
-        this.rootView.findViewById(R.id.button_prev).setOnClickListener((View view) -> {
-            wss.send(SocketMessage.Builder.request(
-                Messages.Request.Previous).build());
-        });
+        this.rootView.findViewById(R.id.button_prev).setOnClickListener((View view) -> playback.prev());
 
         this.playPause = (TextView) this.rootView.findViewById(R.id.button_play_pause);
 
         this.playPause.setOnClickListener((View view) -> {
-            if (transportModel.getPlaybackState() == TransportModel.PlaybackState.Stopped) {
-                wss.send(SocketMessage.Builder.request(
-                    Messages.Request.PlayAllTracks).build());
+            if (playback.getPlaybackState() == PlaybackState.Stopped) {
+                playback.playAll();
             }
             else {
-                wss.send(SocketMessage.Builder.request(
-                    Messages.Request.PauseOrResume).build());
+                playback.pauseOrResume();
             }
         });
 
-        this.rootView.findViewById(R.id.button_next).setOnClickListener((View view) -> {
-            wss.send(SocketMessage.Builder.request(
-                Messages.Request.Next).build());
-        });
+        this.rootView.findViewById(R.id.button_next).setOnClickListener((View view) -> playback.next());
     }
 
     private void rebindUi() {
-        TransportModel.PlaybackState state = transportModel.getPlaybackState();
+        PlaybackState state = playback.getPlaybackState();
 
-        final boolean playing = (state == TransportModel.PlaybackState.Playing);
+        final boolean playing = (state == PlaybackState.Playing);
         this.playPause.setText(playing ? R.string.button_pause : R.string.button_play);
 
-        if (state == TransportModel.PlaybackState.Stopped) {
+        if (state == PlaybackState.Stopped) {
             title.setTextColor(getActivity().getResources().getColor(R.color.theme_disabled_foreground));
             title.setText(R.string.transport_not_playing);
         }
         else {
             title.setTextColor(getActivity().getResources().getColor(R.color.theme_green));
-            title.setText(transportModel.getTrackValueString(TransportModel.Key.TITLE, "(unknown title)"));
+            title.setText(playback.getTrackString(Metadata.Track.TITLE, "(unknown title)"));
         }
     }
 
-    private WebSocketService.Client socketClient = new WebSocketService.Client() {
+    private PlaybackService.EventListener playbackListener = new PlaybackService.EventListener() {
         @Override
-        public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
-            if (newState == WebSocketService.State.Connected) {
-                wss.send(SocketMessage.Builder.request(
-                    Messages.Request.GetPlaybackOverview.toString()).build());
+        public void onStateUpdated() {
+            rebindUi();
+
+            if (modelChangedListener != null) {
+                modelChangedListener.onChanged(TransportFragment.this);
             }
-        }
-
-        @Override
-        public void onMessageReceived(SocketMessage message) {
-            if (transportModel.canHandle(message)) {
-                if (transportModel.update(message)) {
-                    rebindUi();
-
-                    if (modelChangedListener != null) {
-                        modelChangedListener.onChanged(TransportFragment.this);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void onInvalidPassword() {
         }
     };
 }

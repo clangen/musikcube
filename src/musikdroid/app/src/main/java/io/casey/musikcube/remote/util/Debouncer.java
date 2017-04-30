@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.util;
 
 import android.os.Handler;
 import android.os.Looper;

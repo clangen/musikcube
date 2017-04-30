@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.websocket;
 
 import android.util.Log;
 
@@ -209,6 +209,20 @@ public class SocketMessage {
         }
     }
 
+    public Builder buildUpon() {
+        try {
+            final Builder builder = new Builder();
+            builder.name = name;
+            builder.type = type;
+            builder.id = id;
+            builder.options = new JSONObject(options.toString());
+            return builder;
+        }
+        catch (JSONException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     public static class Builder {
         private static AtomicInteger nextId = new AtomicInteger();
 
@@ -264,6 +278,11 @@ public class SocketMessage {
             catch (JSONException ex) {
                 throw new RuntimeException("addOption failed??");
             }
+            return this;
+        }
+
+        public Builder removeOption(final String key) {
+            options.remove(key);
             return this;
         }
 

@@ -1,9 +1,12 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.fragment;
 
 import android.app.Dialog;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+
+import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.ui.activity.SettingsActivity;
 
 public class InvalidPasswordDialogFragment extends DialogFragment {
     public static final String TAG = "InvalidPasswordDialogFragment";

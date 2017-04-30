@@ -1,5 +1,8 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.activity;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -10,17 +13,26 @@ import com.uacf.taskrunner.LifecycleDelegate;
 import com.uacf.taskrunner.Runner;
 import com.uacf.taskrunner.Task;
 
+import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
+import io.casey.musikcube.remote.websocket.WebSocketService;
+
 public abstract class WebSocketActivityBase extends AppCompatActivity implements Runner.TaskCallbacks {
     private WebSocketService wss;
     private boolean paused = true;
     private LifecycleDelegate runnerDelegate;
+    private PlaybackService playback;
+    private SharedPreferences prefs;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         this.runnerDelegate = new LifecycleDelegate(this, this, getClass(), null);
         this.runnerDelegate.onCreate(savedInstanceState);
         this.wss = WebSocketService.getInstance(this);
+        this.playback = PlaybackServiceFactory.instance(this);
+        this.prefs = getSharedPreferences("prefs", Context.MODE_PRIVATE);
     }
 
     @Override
@@ -28,6 +40,7 @@ public abstract class WebSocketActivityBase extends AppCompatActivity implements
         super.onPause();
         this.runnerDelegate.onPause();
         this.wss.removeClient(getWebSocketServiceClient());
+        this.playback.disconnect(getPlaybackServiceEventListener());
         this.paused = true;
     }
 
@@ -35,6 +48,8 @@ public abstract class WebSocketActivityBase extends AppCompatActivity implements
     protected void onResume() {
         super.onResume();
         this.runnerDelegate.onResume();
+        this.playback = PlaybackServiceFactory.instance(this);
+        this.playback.connect(getPlaybackServiceEventListener());
         this.wss.addClient(getWebSocketServiceClient());
         this.paused = false;
     }
@@ -53,20 +68,18 @@ public abstract class WebSocketActivityBase extends AppCompatActivity implements
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            wss.send(SocketMessage.Builder
-                .request(Messages.Request.SetVolume)
-                .addOption(Messages.Key.RELATIVE, Messages.Value.DOWN)
-                 .build());
-            return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            wss.send(SocketMessage.Builder
-                .request(Messages.Request.SetVolume)
-                .addOption(Messages.Key.RELATIVE, Messages.Value.UP)
-                .build());
+        boolean streaming = prefs.getBoolean("streaming_playback", false);
 
-            return true;
+        /* if we're not streaming we want the hardware buttons to go out to the system */
+        if (!streaming) {
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                playback.volumeDown();
+                return true;
+            }
+            else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                playback.volumeUp();
+                return true;
+            }
         }
 
         return super.onKeyDown(keyCode, event);
@@ -104,5 +117,10 @@ public abstract class WebSocketActivityBase extends AppCompatActivity implements
         return this.wss;
     }
 
+    protected final PlaybackService getPlaybackService() {
+        return this.playback;
+    }
+
     protected abstract WebSocketService.Client getWebSocketServiceClient();
+    protected abstract PlaybackService.EventListener getPlaybackServiceEventListener();
 }

@@ -153,3 +153,7 @@ networking:
 * [libressl](https://www.libressl.org/)
 * [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client)
 * [okhttp](http://square.github.io/okhttp/)
+
+miscellaneous
+* [rxjava](https://github.com/ReactiveX/RxJava)
+* [rxandroid](https://github.com/ReactiveX/RxAndroid)

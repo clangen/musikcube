@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -14,7 +14,19 @@ import android.widget.TextView;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import static io.casey.musikcube.remote.Messages.Key;
+import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.playback.Metadata;
+import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.ui.fragment.TransportFragment;
+import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.util.Debouncer;
+import io.casey.musikcube.remote.util.Navigation;
+import io.casey.musikcube.remote.util.Strings;
+import io.casey.musikcube.remote.websocket.Messages;
+import io.casey.musikcube.remote.websocket.SocketMessage;
+import io.casey.musikcube.remote.websocket.WebSocketService;
+
+import static io.casey.musikcube.remote.websocket.Messages.Key;
 
 public class AlbumBrowseActivity extends WebSocketActivityBase implements Filterable {
     private static final String EXTRA_CATEGORY_NAME = "extra_category_name";
@@ -103,6 +115,11 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
     }
 
     @Override
+    protected PlaybackService.EventListener getPlaybackServiceEventListener() {
+        return null;
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Navigation.ResponseCode.PLAYBACK_STARTED) {
             setResult(Navigation.ResponseCode.PLAYBACK_STARTED);
@@ -156,7 +173,7 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
     private View.OnClickListener onItemClickListener = (View view) -> {
         final JSONObject album = (JSONObject) view.getTag();
         final long id = album.optLong(Key.ID);
-        final String title = album.optString(Key.TITLE, "");
+        final String title = album.optString(Metadata.Album.TITLE, "");
 
         final Intent intent = TrackListActivity.getStartIntent(
             AlbumBrowseActivity.this, Messages.Category.ALBUM, id, title);
@@ -175,7 +192,7 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
         }
 
         void bind(JSONObject entry) {
-            long playingId = transport.getModel().getTrackValueLong(Key.ALBUM_ID, -1);
+            long playingId = transport.getPlaybackService().getTrackLong(Metadata.Track.ALBUM_ID, -1);
             long entryId = entry.optLong(Key.ID);
 
             int titleColor = R.color.theme_foreground;
@@ -186,10 +203,10 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
                 subtitleColor = R.color.theme_yellow;
             }
 
-            title.setText(entry.optString(Key.TITLE, "-"));
+            title.setText(entry.optString(Metadata.Album.TITLE, "-"));
             title.setTextColor(getResources().getColor(titleColor));
 
-            subtitle.setText(entry.optString(Key.ALBUM_ARTIST, "-"));
+            subtitle.setText(entry.optString(Metadata.Album.ALBUM_ARTIST, "-"));
             subtitle.setTextColor(getResources().getColor(subtitleColor));
 
             itemView.setTag(entry);

@@ -63,6 +63,22 @@
                 android:layout_marginLeft="24dp">
 
                 <EditText
+                    android:id="@+id/http_port"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:hint="@string/edit_connection_http_port"
+                    android:inputType="number" />
+
+            </android.support.design.widget.TextInputLayout>
+
+            <android.support.design.widget.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:layout_marginLeft="24dp">
+
+                <EditText
                     android:id="@+id/password"
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
@@ -76,11 +92,37 @@
                 android:layout_width="0dp"
                 android:layout_height="8dp"/>
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="8dp"
+                android:text="@string/settings_playback_mode"/>
+
+            <Spinner
+                android:id="@+id/playback_mode_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="24dp"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="8dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/settings_general"/>
+
             <CheckBox
                 android:id="@+id/album_art_checkbox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/theme_foreground"
+                android:layout_marginLeft="24dp"
                 android:text="@string/settings_enable_album_art"/>
 
             <CheckBox
@@ -88,7 +130,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/theme_foreground"
+                android:layout_marginLeft="24dp"
                 android:text="@string/settings_enable_message_compression"/>
+
+            <CheckBox
+                android:id="@+id/software_volume"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/theme_foreground"
+                android:layout_marginLeft="24dp"
+                android:text="@string/settings_enable_software_volume"/>
 
         </LinearLayout>
 

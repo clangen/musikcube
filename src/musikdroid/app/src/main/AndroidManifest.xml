@@ -5,11 +5,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
 
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:name=".Application"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
 
@@ -22,19 +25,19 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".AlbumBrowseActivity"
+        <activity android:name=".ui.activity.AlbumBrowseActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity android:name=".SettingsActivity"
+        <activity android:name=".ui.activity.SettingsActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize|stateHidden" />
 
-        <activity android:name=".PlayQueueActivity"
+        <activity android:name=".ui.activity.PlayQueueActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity android:name=".TrackListActivity"
+        <activity android:name=".ui.activity.TrackListActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
 
@@ -48,9 +51,22 @@
 
         </activity>
 
-        <activity android:name=".CategoryBrowseActivity"
+        <activity android:name=".ui.activity.CategoryBrowseActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
+
+        <service android:name=".playback.SystemService">
+            <intent-filter>
+                <action android:name="io.casey.musikcube.remote.WAKE_UP" />
+                <action android:name="io.casey.musikcube.remote.SHUT_DOWN" />
+            </intent-filter>
+        </service>
+
+        <receiver android:name=".playback.MediaButtonReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

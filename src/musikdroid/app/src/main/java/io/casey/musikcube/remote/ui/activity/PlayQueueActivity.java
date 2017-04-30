@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +12,15 @@ import android.widget.TextView;
 
 import org.json.JSONObject;
 
+import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.playback.Metadata;
+import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow;
+import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.websocket.Messages;
+import io.casey.musikcube.remote.websocket.SocketMessage;
+import io.casey.musikcube.remote.websocket.WebSocketService;
+
 public class PlayQueueActivity extends WebSocketActivityBase {
     private static String EXTRA_PLAYING_INDEX = "extra_playing_index";
 
@@ -21,8 +30,8 @@ public class PlayQueueActivity extends WebSocketActivityBase {
     }
 
     private WebSocketService wss;
-    private TrackListScrollCache<JSONObject> tracks;
-    private TransportModel transportModel = new TransportModel();
+    private TrackListSlidingWindow<JSONObject> tracks;
+    private PlaybackService playback;
     private Adapter adapter;
 
     @Override
@@ -30,6 +39,7 @@ public class PlayQueueActivity extends WebSocketActivityBase {
         super.onCreate(savedInstanceState);
 
         this.wss = getWebSocketService();
+        this.playback = getPlaybackService();
 
         setContentView(R.layout.recycler_view_activity);
 
@@ -41,8 +51,11 @@ public class PlayQueueActivity extends WebSocketActivityBase {
 
         Views.setupDefaultRecyclerView(this, recyclerView, adapter);
 
-        this.tracks = new TrackListScrollCache<>(
-            recyclerView, adapter, this.wss, this.queryFactory, (JSONObject obj) -> obj);
+        this.tracks = new TrackListSlidingWindow<>(
+            recyclerView,
+            this.wss,
+            this.playback.getPlaylistQueryFactory(),
+            (JSONObject obj) -> obj);
 
         this.tracks.setInitialPosition(
             getIntent().getIntExtra(EXTRA_PLAYING_INDEX, -1));
@@ -68,42 +81,25 @@ public class PlayQueueActivity extends WebSocketActivityBase {
         return webSocketClient;
     }
 
-    private void updatePlaybackModel(final SocketMessage message) {
-        transportModel.update(message);
-        adapter.notifyDataSetChanged();
+    @Override
+    protected PlaybackService.EventListener getPlaybackServiceEventListener() {
+        return this.playbackEvents;
     }
-
-    private final TrackListScrollCache.QueryFactory queryFactory
-        = new TrackListScrollCache.QueryFactory() {
-            @Override
-            public SocketMessage getRequeryMessage() {
-                return SocketMessage.Builder
-                    .request(Messages.Request.QueryPlayQueueTracks)
-                    .addOption(Messages.Key.COUNT_ONLY, true)
-                    .build();
-            }
-
-            @Override
-            public SocketMessage getPageAroundMessage(int offset, int limit) {
-                return SocketMessage.Builder
-                    .request(Messages.Request.QueryPlayQueueTracks)
-                    .addOption(Messages.Key.OFFSET, offset)
-                    .addOption(Messages.Key.LIMIT, limit)
-                    .build();
-            }
-        };
 
     private final View.OnClickListener onItemClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             if (v.getTag() instanceof Integer) {
                 final int index = (Integer) v.getTag();
-
-                wss.send(SocketMessage
-                    .Builder.request(Messages.Request.PlayAtIndex)
-                    .addOption(Messages.Key.INDEX, index)
-                    .build());
+                playback.playAt(index);
             }
+        }
+    };
+
+    private final PlaybackService.EventListener playbackEvents = new PlaybackService.EventListener() {
+        @Override
+        public void onStateUpdated() {
+            adapter.notifyDataSetChanged();
         }
     };
 
@@ -111,20 +107,12 @@ public class PlayQueueActivity extends WebSocketActivityBase {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
             if (newState == WebSocketService.State.Connected) {
-                final SocketMessage overview = SocketMessage.Builder
-                    .request(Messages.Request.GetPlaybackOverview).build();
-
-                wss.send(overview, this, (SocketMessage response) -> updatePlaybackModel(response));
-
                 tracks.requery();
             }
         }
 
         @Override
         public void onMessageReceived(SocketMessage broadcast) {
-            if (Messages.Broadcast.PlaybackOverviewChanged.is(broadcast.getName())) {
-                updatePlaybackModel(broadcast);
-            }
         }
 
         @Override
@@ -155,7 +143,7 @@ public class PlayQueueActivity extends WebSocketActivityBase {
                 subtitle.setText("-");
             }
             else {
-                long playingId = transportModel.getTrackValueLong(Messages.Key.ID, -1);
+                long playingId = playback.getTrackLong(Messages.Key.ID, -1);
                 long entryId = entry.optLong(Messages.Key.ID, -1);
 
                 if (entryId != -1 && playingId == entryId) {
@@ -163,8 +151,8 @@ public class PlayQueueActivity extends WebSocketActivityBase {
                     subtitleColor = R.color.theme_yellow;
                 }
 
-                title.setText(entry.optString(Messages.Key.TITLE, "-"));
-                subtitle.setText(entry.optString(Messages.Key.ALBUM_ARTIST, "-"));
+                title.setText(entry.optString(Metadata.Track.TITLE, "-"));
+                subtitle.setText(entry.optString(Metadata.Track.ALBUM_ARTIST, "-"));
             }
 
             title.setTextColor(getResources().getColor(titleColor));

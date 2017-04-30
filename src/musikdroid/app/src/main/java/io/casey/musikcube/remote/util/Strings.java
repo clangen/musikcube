@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.util;
 
 public class Strings {
     public static boolean empty(final String s) {

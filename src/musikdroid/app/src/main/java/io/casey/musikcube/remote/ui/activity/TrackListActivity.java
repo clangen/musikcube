@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.activity;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +13,20 @@ import android.widget.TextView;
 
 import org.json.JSONObject;
 
-import static io.casey.musikcube.remote.TrackListScrollCache.QueryFactory;
+import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.playback.Metadata;
+import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.ui.fragment.TransportFragment;
+import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow;
+import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.util.Debouncer;
+import io.casey.musikcube.remote.util.Navigation;
+import io.casey.musikcube.remote.util.Strings;
+import io.casey.musikcube.remote.websocket.Messages;
+import io.casey.musikcube.remote.websocket.SocketMessage;
+import io.casey.musikcube.remote.websocket.WebSocketService;
+
+import static io.casey.musikcube.remote.ui.model.TrackListSlidingWindow.QueryFactory;
 
 public class TrackListActivity extends WebSocketActivityBase implements Filterable {
     private static String EXTRA_CATEGORY_TYPE = "extra_category_type";
@@ -44,7 +57,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         return new Intent(context, TrackListActivity.class);
     }
 
-    private TrackListScrollCache<JSONObject> tracks;
+    private TrackListSlidingWindow<JSONObject> tracks;
     private TransportFragment transport;
     private String categoryType;
     private long categoryId;
@@ -69,8 +82,8 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         Views.setupDefaultRecyclerView(this, recyclerView, adapter);
 
-        tracks = new TrackListScrollCache<>(
-            recyclerView, adapter, getWebSocketService(), queryFactory, (JSONObject track) -> track);
+        tracks = new TrackListSlidingWindow<>(
+            recyclerView, getWebSocketService(), queryFactory, (JSONObject track) -> track);
 
         transport = Views.addTransportFragment(this,
             (TransportFragment fragment) -> adapter.notifyDataSetChanged());
@@ -99,6 +112,11 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     @Override
     protected WebSocketService.Client getWebSocketServiceClient() {
         return socketServiceClient;
+    }
+
+    @Override
+    protected PlaybackService.EventListener getPlaybackServiceEventListener() {
+        return null;
     }
 
     @Override
@@ -136,29 +154,16 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
 
     private View.OnClickListener onItemClickListener = (View view) -> {
         int index = (Integer) view.getTag();
-        SocketMessage request;
 
         if (isValidCategory(categoryType, categoryId)) {
-            request = SocketMessage.Builder
-                .request(Messages.Request.PlayTracksByCategory)
-                .addOption(Messages.Key.CATEGORY, categoryType)
-                .addOption(Messages.Key.ID, categoryId)
-                .addOption(Messages.Key.INDEX, index)
-                .addOption(Messages.Key.FILTER, lastFilter)
-                .build();
+            getPlaybackService().play(categoryType, categoryId, index, lastFilter);
         }
         else {
-            request = SocketMessage.Builder
-                .request(Messages.Request.PlayAllTracks)
-                .addOption(Messages.Key.INDEX, index)
-                .addOption(Messages.Key.FILTER, lastFilter)
-                .build();
+            getPlaybackService().playAll(index, lastFilter);
         }
 
-        getWebSocketService().send(request, socketServiceClient, (SocketMessage response) -> {
-            setResult(Navigation.ResponseCode.PLAYBACK_STARTED);
-            finish();
-        });
+        setResult(Navigation.ResponseCode.PLAYBACK_STARTED);
+        finish();
     };
 
     private class ViewHolder extends RecyclerView.ViewHolder {
@@ -180,7 +185,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
             int subtitleColor = R.color.theme_disabled_foreground;
 
             if (entry != null) {
-                long playingId = transport.getModel().getTrackValueLong(Messages.Key.ID, -1);
+                long playingId = transport.getPlaybackService().getTrackLong(Messages.Key.ID, -1);
                 long entryId = entry.optLong(Messages.Key.ID, -1);
 
                 if (entryId != -1 && playingId == entryId) {
@@ -188,8 +193,8 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
                     subtitleColor = R.color.theme_yellow;
                 }
 
-                title.setText(entry.optString(Messages.Key.TITLE, "-"));
-                subtitle.setText(entry.optString(Messages.Key.ALBUM_ARTIST, "-"));
+                title.setText(entry.optString(Metadata.Track.TITLE, "-"));
+                subtitle.setText(entry.optString(Metadata.Track.ALBUM_ARTIST, "-"));
             }
             else {
                 title.setText("-");

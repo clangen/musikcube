@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote;
+package io.casey.musikcube.remote.ui.view;
 
 import android.content.Context;
 import android.os.Handler;

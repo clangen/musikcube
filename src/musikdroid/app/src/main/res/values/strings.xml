@@ -23,6 +23,7 @@
     <string name="button_vol_up">vol +</string>
     <string name="button_vol_down">vol -</string>
     <string name="button_shuffle">shuffle</string>
+    <string name="button_random">random</string>
     <string name="button_mute">mute</string>
     <string name="button_repeat_off">repeat off</string>
     <string name="button_repeat_list">repeat list</string>
@@ -38,7 +39,8 @@
     <string name="status_volume">volume %1d%%</string>
     <string name="edit_connection_info">connection info:</string>
     <string name="edit_connection_hostname">ip address or hostname</string>
-    <string name="edit_connection_port">port (default 7905)</string>
+    <string name="edit_connection_port">main server port (default 7905)</string>
+    <string name="edit_connection_http_port">audio streaming port (default 7906)</string>
     <string name="edit_connection_password">password (default empty)</string>
     <string name="transport_not_playing">not playing</string>
     <string name="search_hint">search</string>
@@ -46,8 +48,12 @@
     <string name="menu_genres">genres</string>
     <string name="menu_playlists">playlists</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
+    <string name="settings_playback_mode">playback mode:</string>
+    <string name="settings_general">general:</string>
     <string name="settings_enable_album_art">enable album art (uses last.fm)</string>
     <string name="settings_enable_message_compression">enable message compression</string>
+    <string name="settings_enable_streaming_playback">enable streaming playback</string>
+    <string name="settings_enable_software_volume">use software volume while streaming</string>
     <string name="unknown_artist">[unknown artist]</string>
     <string name="unknown_album">[unknown album]</string>
     <string name="unknown_title">[unknown title]</string>
