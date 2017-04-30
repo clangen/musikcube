@@ -158,3 +158,4 @@ networking:
 miscellaneous
 * [rxjava](https://github.com/ReactiveX/RxJava)
 * [rxandroid](https://github.com/ReactiveX/RxAndroid)
+* [recycler-fast-scroll](https://github.com/plusCubed/recycler-fast-scroll)
