@@ -1,3 +1,19 @@
+0.12.1
+
+user-facing:
+
+* huge update to `musikdroid` -- it is now able to stream music  from any
+  `musikbox` installation! see settings > playback mode.
+* added cddb (actually, freedb) lookup for audio CDs
+* added new "add to beginning of play queue" and "play album" context menu
+  options
+
+low-level:
+
+* fixed database upsert logic to be faster and more reliable
+
+--------------------------------------------------------------------------------
+
 0.12.0
 
 user-facing:
