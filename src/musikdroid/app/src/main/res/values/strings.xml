@@ -31,6 +31,8 @@
     <string name="button_save">save</string>
     <string name="button_settings">settings</string>
     <string name="button_close">close</string>
+    <string name="button_enable">enable</string>
+    <string name="button_disable">disable</string>
     <string name="button_ok">ok</string>
     <string name="button_learn_more">learn more</string>
     <string name="invalid_password_dialog_title">invalid password</string>
@@ -57,6 +59,7 @@
     <string name="settings_enable_message_compression">enable message compression</string>
     <string name="settings_enable_streaming_playback">enable streaming playback</string>
     <string name="settings_enable_software_volume">use software volume while streaming</string>
+    <string name="settings_disable_cert_validation">disable ssl certificate validation</string>
     <string name="settings_ssl_dialog_title">ssl information</string>
     <string name="settings_ssl_dialog_message">the musikcube server doesn\'t support ssl by default. it does, however, work very well with nginx and ssl termination. press \'learn more\' for configuration information.</string>
     <string name="unknown_artist">[unknown artist]</string>

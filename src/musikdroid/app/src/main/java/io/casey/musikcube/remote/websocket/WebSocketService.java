@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.casey.musikcube.remote.util.NetworkUtil;
 import io.casey.musikcube.remote.util.Preconditions;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -496,6 +497,10 @@ public class WebSocketService {
 
             try {
                 final WebSocketFactory factory = new WebSocketFactory();
+
+                if (prefs.getBoolean("cert_validation_disabled", false)) {
+                    NetworkUtil.disableCertificateValidation(factory);
+                }
 
                 final String protocol = prefs.getBoolean("ssl_enabled", false) ? "wss" : "ws";
 

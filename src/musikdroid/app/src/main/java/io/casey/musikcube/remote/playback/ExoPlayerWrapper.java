@@ -1,6 +1,7 @@
 package io.casey.musikcube.remote.playback;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
@@ -28,26 +29,40 @@ import com.google.android.exoplayer2.util.Util;
 import java.io.File;
 
 import io.casey.musikcube.remote.Application;
+import io.casey.musikcube.remote.util.NetworkUtil;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 
 public class ExoPlayerWrapper extends PlayerWrapper {
     private static OkHttpClient audioStreamClient = null;
+    private static boolean certValidationDisabled = false;
+
     private DefaultBandwidthMeter bandwidth;
     private DataSource.Factory datasources;
     private ExtractorsFactory extractors;
     private MediaSource source;
     private SimpleExoPlayer player;
     private boolean prefetch;
+    private Context context;
+    private SharedPreferences prefs;
 
     public ExoPlayerWrapper() {
-        final Context c = Application.getInstance();
+        this.context = Application.getInstance();
+        this.prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE);
         this.bandwidth = new DefaultBandwidthMeter();
         final TrackSelection.Factory trackFactory = new AdaptiveTrackSelection.Factory(bandwidth);
         final TrackSelector trackSelector = new DefaultTrackSelector(trackFactory);
-        this.player = ExoPlayerFactory.newSimpleInstance(c, trackSelector);
+        this.player = ExoPlayerFactory.newSimpleInstance(this.context, trackSelector);
         this.extractors = new DefaultExtractorsFactory();
         this.player.addListener(eventListener);
+
+        synchronized (ExoPlayerWrapper.class) {
+            final boolean disabled = this.prefs.getBoolean("cert_validation_disabled", false);
+            if (disabled != certValidationDisabled) {
+                audioStreamClient = null;
+                certValidationDisabled = disabled;
+            }
+        }
     }
 
     private void initDataSourceFactory(final String uri) {
@@ -57,9 +72,14 @@ public class ExoPlayerWrapper extends PlayerWrapper {
             if (audioStreamClient == null) {
                 final File path = new File(context.getExternalCacheDir(), "audio");
 
-                audioStreamClient = new OkHttpClient.Builder()
-                    .cache(new Cache(path, 1048576 * 256)) /* 256 meg cache */
-                    .build();
+                OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                    .cache(new Cache(path, 1048576 * 256)); /* 256 meg cache */
+
+                if (certValidationDisabled) {
+                    NetworkUtil.disableCertificateValidation(builder);
+                }
+
+                audioStreamClient = builder.build();
             }
         }
 

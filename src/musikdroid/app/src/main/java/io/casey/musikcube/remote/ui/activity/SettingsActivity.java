@@ -29,7 +29,7 @@ import io.casey.musikcube.remote.websocket.WebSocketService;
 public class SettingsActivity extends AppCompatActivity {
     private EditText addressText, portText, httpPortText, passwordText;
     private CheckBox albumArtCheckbox, messageCompressionCheckbox, softwareVolume;
-    private CheckBox sslCheckbox;
+    private CheckBox sslCheckbox, certCheckbox;
     private Spinner playbackModeSpinner;
     private SharedPreferences prefs;
 
@@ -74,6 +74,7 @@ public class SettingsActivity extends AppCompatActivity {
         this.albumArtCheckbox.setChecked(this.prefs.getBoolean("album_art_enabled", true));
         this.messageCompressionCheckbox.setChecked(this.prefs.getBoolean("message_compression_enabled", true));
         this.softwareVolume.setChecked(this.prefs.getBoolean("software_volume", false));
+        this.certCheckbox.setChecked(this.prefs.getBoolean("cert_validation_disabled", false));
 
         Views.setCheckWithoutEvent(
             this.sslCheckbox,
@@ -89,6 +90,10 @@ public class SettingsActivity extends AppCompatActivity {
 
     private boolean isStreamingSelected() {
         return this.playbackModeSpinner.getSelectedItemPosition() == 1;
+    }
+
+    private void onDisableSslFromDialog() {
+        Views.setCheckWithoutEvent(this.sslCheckbox, false, sslCheckChanged);
     }
 
     private CheckBox.OnCheckedChangeListener sslCheckChanged = (button, value) -> {
@@ -109,6 +114,7 @@ public class SettingsActivity extends AppCompatActivity {
         this.softwareVolume = (CheckBox) findViewById(R.id.software_volume);
         this.playbackModeSpinner = (Spinner) findViewById(R.id.playback_mode_spinner);
         this.sslCheckbox = (CheckBox) findViewById(R.id.ssl_checkbox);
+        this.certCheckbox = (CheckBox) findViewById(R.id.cert_validation);
 
         final boolean wasStreaming = isStreamingEnabled();
 
@@ -128,6 +134,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .putBoolean("streaming_playback", isStreamingSelected())
                 .putBoolean("software_volume", softwareVolume.isChecked())
                 .putBoolean("ssl_enabled", sslCheckbox.isChecked())
+                .putBoolean("cert_validation_disabled", certCheckbox.isChecked())
                 .apply();
 
             if (!softwareVolume.isChecked()) {
@@ -154,10 +161,13 @@ public class SettingsActivity extends AppCompatActivity {
 
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            return new AlertDialog.Builder(getActivity())
+            final AlertDialog dlg = new AlertDialog.Builder(getActivity())
                 .setTitle(R.string.settings_ssl_dialog_title)
                 .setMessage(R.string.settings_ssl_dialog_message)
-                .setPositiveButton(R.string.button_ok, null)
+                .setPositiveButton(R.string.button_enable, null)
+                .setNegativeButton(R.string.button_disable, (dialog, which) -> {
+                    ((SettingsActivity) getActivity()).onDisableSslFromDialog();
+                })
                 .setNeutralButton(R.string.button_learn_more, (dialog, which) -> {
                     try {
                         final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(LEARN_MORE_URL));
@@ -167,6 +177,9 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                 })
                 .create();
+
+            dlg.setCancelable(false);
+            return dlg;
         }
     }
 }

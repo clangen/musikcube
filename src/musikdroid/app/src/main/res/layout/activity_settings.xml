@@ -134,6 +134,15 @@
                 android:text="@string/settings_use_ssl"/>
 
             <CheckBox
+                android:id="@+id/cert_validation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/theme_foreground"
+                android:layout_marginLeft="24dp"
+                android:visibility="visible"
+                android:text="@string/settings_disable_cert_validation"/>
+
+            <CheckBox
                 android:id="@+id/message_compression"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
