@@ -1,10 +1,15 @@
 package io.casey.musikcube.remote.ui.activity;
 
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,7 +22,6 @@ import java.util.Locale;
 
 import io.casey.musikcube.remote.R;
 import io.casey.musikcube.remote.playback.MediaPlayerWrapper;
-import io.casey.musikcube.remote.playback.PlaybackService;
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
 import io.casey.musikcube.remote.ui.util.Views;
 import io.casey.musikcube.remote.websocket.WebSocketService;
@@ -25,6 +29,7 @@ import io.casey.musikcube.remote.websocket.WebSocketService;
 public class SettingsActivity extends AppCompatActivity {
     private EditText addressText, portText, httpPortText, passwordText;
     private CheckBox albumArtCheckbox, messageCompressionCheckbox, softwareVolume;
+    private CheckBox sslCheckbox;
     private Spinner playbackModeSpinner;
     private SharedPreferences prefs;
 
@@ -70,6 +75,11 @@ public class SettingsActivity extends AppCompatActivity {
         this.messageCompressionCheckbox.setChecked(this.prefs.getBoolean("message_compression_enabled", true));
         this.softwareVolume.setChecked(this.prefs.getBoolean("software_volume", false));
 
+        Views.setCheckWithoutEvent(
+            this.sslCheckbox,
+            this.prefs.getBoolean("ssl_enabled", false),
+            sslCheckChanged);
+
         Views.enableUpNavigation(this);
     }
 
@@ -81,6 +91,14 @@ public class SettingsActivity extends AppCompatActivity {
         return this.playbackModeSpinner.getSelectedItemPosition() == 1;
     }
 
+    private CheckBox.OnCheckedChangeListener sslCheckChanged = (button, value) -> {
+        if (value) {
+            if (getSupportFragmentManager().findFragmentByTag(SslAlertDialog.TAG) == null) {
+                SslAlertDialog.newInstance().show(getSupportFragmentManager(), SslAlertDialog.TAG);
+            }
+        }
+    };
+
     private void bindEventListeners() {
         this.addressText = (EditText) this.findViewById(R.id.address);
         this.portText = (EditText) this.findViewById(R.id.port);
@@ -90,6 +108,7 @@ public class SettingsActivity extends AppCompatActivity {
         this.messageCompressionCheckbox = (CheckBox) findViewById(R.id.message_compression);
         this.softwareVolume = (CheckBox) findViewById(R.id.software_volume);
         this.playbackModeSpinner = (Spinner) findViewById(R.id.playback_mode_spinner);
+        this.sslCheckbox = (CheckBox) findViewById(R.id.ssl_checkbox);
 
         final boolean wasStreaming = isStreamingEnabled();
 
@@ -108,6 +127,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .putBoolean("message_compression_enabled", messageCompressionCheckbox.isChecked())
                 .putBoolean("streaming_playback", isStreamingSelected())
                 .putBoolean("software_volume", softwareVolume.isChecked())
+                .putBoolean("ssl_enabled", sslCheckbox.isChecked())
                 .apply();
 
             if (!softwareVolume.isChecked()) {
@@ -122,5 +142,31 @@ public class SettingsActivity extends AppCompatActivity {
 
             finish();
         });
+    }
+
+    public static class SslAlertDialog extends DialogFragment {
+        private static final String LEARN_MORE_URL = "https://github.com/clangen/musikcube/wiki/ssl-server-setup";
+        public static final String TAG = "ssl_alert_dialog_tag";
+
+        public static SslAlertDialog newInstance() {
+            return new SslAlertDialog();
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new AlertDialog.Builder(getActivity())
+                .setTitle(R.string.settings_ssl_dialog_title)
+                .setMessage(R.string.settings_ssl_dialog_message)
+                .setPositiveButton(R.string.button_ok, null)
+                .setNeutralButton(R.string.button_learn_more, (dialog, which) -> {
+                    try {
+                        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(LEARN_MORE_URL));
+                        startActivity(intent);
+                    }
+                    catch (Exception ex) {
+                    }
+                })
+                .create();
+        }
     }
 }

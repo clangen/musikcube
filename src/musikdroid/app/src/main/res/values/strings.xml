@@ -31,6 +31,8 @@
     <string name="button_save">save</string>
     <string name="button_settings">settings</string>
     <string name="button_close">close</string>
+    <string name="button_ok">ok</string>
+    <string name="button_learn_more">learn more</string>
     <string name="invalid_password_dialog_title">invalid password</string>
     <string name="invalid_password_dialog_message">the server rejected your password.\n\nchange the password in the settings screen.</string>
     <string name="status_connecting">connecting</string>
@@ -50,10 +52,13 @@
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="settings_playback_mode">playback mode:</string>
     <string name="settings_general">general:</string>
+    <string name="settings_use_ssl">use ssl for server connections</string>
     <string name="settings_enable_album_art">enable album art (uses last.fm)</string>
     <string name="settings_enable_message_compression">enable message compression</string>
     <string name="settings_enable_streaming_playback">enable streaming playback</string>
     <string name="settings_enable_software_volume">use software volume while streaming</string>
+    <string name="settings_ssl_dialog_title">ssl information</string>
+    <string name="settings_ssl_dialog_message">the musikcube server doesn\'t support ssl by default. it does, however, work very well with nginx and ssl termination. press \'learn more\' for configuration information.</string>
     <string name="unknown_artist">[unknown artist]</string>
     <string name="unknown_album">[unknown album]</string>
     <string name="unknown_title">[unknown title]</string>

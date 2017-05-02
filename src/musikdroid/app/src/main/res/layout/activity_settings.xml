@@ -126,11 +126,20 @@
                 android:text="@string/settings_enable_album_art"/>
 
             <CheckBox
+                android:id="@+id/ssl_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/theme_foreground"
+                android:layout_marginLeft="24dp"
+                android:text="@string/settings_use_ssl"/>
+
+            <CheckBox
                 android:id="@+id/message_compression"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/theme_foreground"
                 android:layout_marginLeft="24dp"
+                android:visibility="gone"
                 android:text="@string/settings_enable_message_compression"/>
 
             <CheckBox

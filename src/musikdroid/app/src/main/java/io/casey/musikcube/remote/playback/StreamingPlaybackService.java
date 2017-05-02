@@ -535,9 +535,12 @@ public class StreamingPlaybackService implements PlaybackService {
         if (track != null) {
             final long trackId = track.optLong("id", -1);
             if (trackId != -1) {
+                final String protocol = prefs.getBoolean("ssl_enabled", false) ? "https" : "http";
+
                 return String.format(
                     Locale.ENGLISH,
-                    "http://%s:%d/audio/id/%d",
+                    "%s://%s:%d/audio/id/%d",
+                    protocol,
                     prefs.getString("address", "192.168.1.100"),
                     prefs.getInt("http_port", 7906),
                     trackId);

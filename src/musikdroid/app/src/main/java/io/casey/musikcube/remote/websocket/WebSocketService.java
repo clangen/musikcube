@@ -497,9 +497,12 @@ public class WebSocketService {
             try {
                 final WebSocketFactory factory = new WebSocketFactory();
 
+                final String protocol = prefs.getBoolean("ssl_enabled", false) ? "wss" : "ws";
+
                 final String host = String.format(
                     Locale.ENGLISH,
-                    "ws://%s:%d",
+                    "%s://%s:%d",
+                    protocol,
                     prefs.getString("address", "192.168.1.100"),
                     prefs.getInt("port", 7905));
 
