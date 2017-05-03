@@ -49,7 +49,7 @@ using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 
-#define DATABASE_VERSION 2
+#define DATABASE_VERSION 3
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -280,6 +280,18 @@ static void upgradeV1toV2(db::Connection &db) {
     update.Step();
 }
 
+static void upgradeV2ToV3(db::Connection& db) {
+    db.Execute("DROP TABLE IF EXISTS albums");
+    db.Execute("DELETE from tracks");
+
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS albums ("
+        "id INTEGER PRIMARY KEY,"
+        "name TEXT default '',"
+        "thumbnail_id INTEGER default 0,"
+        "sort_order INTEGER DEFAULT 0)");
+}
+
 static void setVersion(db::Connection& db, int version) {
     db.Execute("DELETE FROM version");
 
@@ -363,7 +375,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     /* albums */
     db.Execute(
         "CREATE TABLE IF NOT EXISTS albums ("
-            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "id INTEGER PRIMARY KEY,"
             "name TEXT default '',"
             "thumbnail_id INTEGER default 0,"
             "sort_order INTEGER DEFAULT 0)");
@@ -456,6 +468,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     /* upgrade playlist tracks table */
     if (lastVersion == 1) {
         upgradeV1toV2(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 3) {
+        upgradeV2ToV3(db);
     }
 
     /* ensure our version is set correctly */

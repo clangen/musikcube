@@ -484,6 +484,29 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     }
 }
 
+uint64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
+    std::string album = this->GetValue("album");
+    std::string value = album + "-" + this->GetValue("album_artist");
+    uint64_t id = std::hash<std::string>()(value);
+
+    std::string cacheKey = "album-" + value;
+    if (metadataIdCache.find(cacheKey) != metadataIdCache.end()) {
+        return metadataIdCache[cacheKey];
+    }
+    else {
+        std::string insertStatement = "INSERT INTO albums (id, name) VALUES (?, ?)";
+        db::Statement insertValue(insertStatement.c_str(), dbConnection);
+        insertValue.BindUint64(0, id);
+        insertValue.BindText(1, album);
+
+        if (insertValue.Step() == db::Done) {
+            metadataIdCache[cacheKey] = id;
+        }
+    }
+
+    return id;
+}
+
 uint64_t IndexerTrack::SaveSingleValueField(
     db::Connection& dbConnection,
     const std::string& trackMetadataKeyName,
@@ -611,7 +634,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     this->id = writeToTracksTable(dbConnection, *this);
 
-    uint64_t albumId = this->SaveSingleValueField(dbConnection, "album", "albums");
+    uint64_t albumId = this->SaveAlbum(dbConnection);
     uint64_t genreId = this->SaveGenre(dbConnection);
     uint64_t artistId = this->SaveArtist(dbConnection);
     uint64_t albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");

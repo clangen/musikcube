@@ -103,6 +103,8 @@ namespace musik { namespace core {
 
             uint64_t SaveArtist(db::Connection& connection);
 
+            uint64_t SaveAlbum(db::Connection& connection);
+
             uint64_t SaveSingleValueField(
                 db::Connection& connection,
                 const std::string& trackMetadataKeyName,
