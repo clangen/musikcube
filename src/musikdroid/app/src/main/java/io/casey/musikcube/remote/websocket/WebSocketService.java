@@ -65,6 +65,10 @@ public class WebSocketService {
         void onMessageResult(final SocketMessage response);
     }
 
+    private interface MessageErrorCallback {
+        void onMessageError();
+    }
+
     private interface Predicate1<T> {
         boolean check(T value);
     }
@@ -115,6 +119,10 @@ public class WebSocketService {
                             client.onMessageReceived(msg);
                         }
                     }
+
+                    if (mdr != null) {
+                        mdr.error = null;
+                    }
                 }
                 return true;
             }
@@ -146,6 +154,7 @@ public class WebSocketService {
         long enqueueTime;
         Client client;
         MessageResultCallback callback;
+        MessageErrorCallback error;
     }
 
     private static WebSocketService INSTANCE;
@@ -308,9 +317,16 @@ public class WebSocketService {
                             mrd.id = NEXT_ID.incrementAndGet();
                             mrd.enqueueTime = System.currentTimeMillis();
                             mrd.client = client;
+
                             mrd.callback = (SocketMessage message) -> {
                                 emitter.onNext(message);
                                 emitter.onComplete();
+                            };
+
+                            mrd.error = () -> {
+                                final Exception ex = new Exception();
+                                ex.fillInStackTrace();
+                                emitter.onError(ex);
                             };
 
                             messageCallbacks.put(message.getId(), mrd);
@@ -383,7 +399,11 @@ public class WebSocketService {
 
         while (it.hasNext()) {
             final Map.Entry<String, MessageResultDescriptor> entry = it.next();
-            if (predicate.check(entry.getValue())) {
+            final MessageResultDescriptor mdr = entry.getValue();
+            if (predicate.check(mdr)) {
+                if (mdr.error != null) {
+                    mdr.error.onMessageError();
+                }
                 it.remove();
             }
         }
