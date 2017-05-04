@@ -45,6 +45,7 @@ namespace musik { namespace core { namespace sdk {
             virtual size_t GetPath(PathType type, char* dst, int size) = 0;
             virtual IDataStream* GetDataStream(const char* uri) = 0;
             virtual IDecoder* GetDecoder(IDataStream* stream) = 0;
+            virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) = 0;
     };
 
 } } }

@@ -70,6 +70,7 @@ class DrainBuffer :
         virtual void SetSamples(long samples) { this->samples = samples; }
         virtual long Bytes() const { return this->samples * sizeof(float); }
         virtual void OnBufferProcessed(IBuffer *buffer) { }
+        virtual void Destroy() { delete this; }
 
     private:
         int channels, samples, rate;

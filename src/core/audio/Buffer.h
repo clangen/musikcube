@@ -56,16 +56,17 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~Buffer();
 
-            virtual long SampleRate() const;
-            virtual void SetSampleRate(long sampleRate);
-            virtual int Channels() const;
-            virtual void SetChannels(int channels);
-            virtual float* BufferPointer() const;
-            virtual long Samples() const;
-            virtual void SetSamples(long samples);
-            virtual long Bytes() const;
-            virtual double Position() const;
+            virtual long SampleRate() const override;
+            virtual void SetSampleRate(long sampleRate) override;
+            virtual int Channels() const override;
+            virtual void SetChannels(int channels) override;
+            virtual float* BufferPointer() const override;
+            virtual long Samples() const override;
+            virtual void SetSamples(long samples) override;
+            virtual long Bytes() const override;
+            virtual void Destroy() override { delete this; }
 
+            double Position() const;
             void SetPosition(double position);
             void Copy(float* buffer, long samples);
             void Append(float* buffer, long samples);

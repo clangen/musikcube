@@ -46,6 +46,7 @@ namespace musik { namespace core { namespace sdk {
             virtual long Samples() const = 0;
             virtual void SetSamples(long samples) = 0;
             virtual long Bytes() const = 0;
+            virtual void Destroy() = 0;
     };
 
 } } }

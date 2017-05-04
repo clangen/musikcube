@@ -40,6 +40,7 @@
 #include <core/support/Preferences.h>
 
 #include <core/io/DataStreamFactory.h>
+#include <core/audio/Buffer.h>
 #include <core/audio/Streams.h>
 
 #include <core/library/LocalSimpleDataProvider.h>
@@ -72,6 +73,14 @@ static class Environment : public IEnvironment {
 
         virtual IDecoder* GetDecoder(IDataStream* stream) override {
             return streams::GetDecoderForDataStream(stream);
+        }
+
+        virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) override {
+            musik::core::audio::Buffer* buffer = new Buffer();
+            buffer->SetChannels(2);
+            buffer->SetSampleRate(rate);
+            buffer->SetSamples(samples);
+            return buffer;
         }
 } environment;
 
