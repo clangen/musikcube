@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="transcode_bitrate_array">
+        <item>disabled</item>
+        <item>64</item>
+        <item>96</item>
+        <item>128</item>
+        <item>196</item>
+        <item>256</item>
+        <item>320</item>
+    </string-array>
+</resources>

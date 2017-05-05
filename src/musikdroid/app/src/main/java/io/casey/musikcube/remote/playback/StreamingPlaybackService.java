@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.playback;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.media.AudioManager;
 import android.os.Handler;
@@ -22,6 +23,7 @@ import java.util.Random;
 import java.util.Set;
 
 import io.casey.musikcube.remote.Application;
+import io.casey.musikcube.remote.R;
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow;
 import io.casey.musikcube.remote.util.Strings;
 import io.casey.musikcube.remote.websocket.Messages;
@@ -537,13 +539,26 @@ public class StreamingPlaybackService implements PlaybackService {
             if (trackId != -1) {
                 final String protocol = prefs.getBoolean("ssl_enabled", false) ? "https" : "http";
 
+                /* transcoding bitrate, if selected by the user */
+                String bitrateQueryParam = "";
+                final int bitrateIndex = prefs.getInt("transcoder_bitrate_index", 0);
+                if (bitrateIndex > 0) {
+                    final Resources r = Application.getInstance().getResources();
+
+                    bitrateQueryParam = String.format(
+                        Locale.ENGLISH,
+                        "?bitrate=%s",
+                        r.getStringArray(R.array.transcode_bitrate_array)[bitrateIndex]);
+                }
+
                 return String.format(
                     Locale.ENGLISH,
-                    "%s://%s:%d/audio/id/%d",
+                    "%s://%s:%d/audio/id/%d%s",
                     protocol,
                     prefs.getString("address", "192.168.1.100"),
                     prefs.getInt("http_port", 7906),
-                    trackId);
+                    trackId,
+                    bitrateQueryParam);
             }
         }
         return null;

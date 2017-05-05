@@ -85,10 +85,10 @@ static class PlaybackRemote : public IPlaybackRemote {
         }
 
         void CheckRunningStatus() {
-            if (!thread && context.playback && context.prefs && context.dataProvider) {
+            if (!thread && context.environment && context.playback && context.prefs && context.dataProvider) {
                 thread.reset(new std::thread(std::bind(&PlaybackRemote::ThreadProc, this)));
             }
-            else if (thread && (!context.playback || !context.prefs || !context.dataProvider)) {
+            else if (thread && (!context.environment || !context.playback || !context.prefs || !context.dataProvider)) {
                 httpServer.Stop();
                 webSocketServer.Stop();
                 this->thread->join();
@@ -144,6 +144,12 @@ extern "C" DLL_EXPORT IPlaybackRemote* GetPlaybackRemote() {
     return &remote;
 }
 
+extern "C" DLL_EXPORT void SetEnvironment(musik::core::sdk::IEnvironment* env) {
+    auto wl = context.lock.Write();
+    context.environment = env;
+    remote.CheckRunningStatus();
+}
+
 extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     auto wl = context.lock.Write();
     context.prefs = prefs;
@@ -153,6 +159,9 @@ extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs)
         prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port);
         prefs->GetBool(prefs::http_server_enabled.c_str(), true);
         prefs->GetString(key::password.c_str(), nullptr, 0, defaults::password.c_str());
+        prefs->GetInt(prefs::http_server_transcoder_cache_count.c_str(), defaults::http_server_transcoder_cache_count);
+        prefs->GetBool(prefs::http_server_transcoder_synchronous.c_str(), defaults::http_server_transcoder_synchronous);
+        prefs->GetBool(prefs::http_server_transcoder_synchronous_fallback.c_str(), defaults::http_server_transcoder_synchronous_fallback);
         prefs->Save();
     }
 

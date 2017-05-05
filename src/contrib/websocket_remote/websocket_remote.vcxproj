@@ -88,8 +88,8 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>../../../../boost_1_64_0_b2/lib32-msvc-14.1;../../3rdparty/win32_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>zlibstatD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../../boost_1_64_0_b2/lib32-msvc-14.1;../../3rdparty/win32_lib;./3rdparty/win32_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlibstatD.lib;libmp3lameD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -120,8 +120,8 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>../../../../boost_1_64_0_b2/lib32-msvc-14.1;../../3rdparty/win32_lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../../../boost_1_64_0_b2/lib32-msvc-14.1;../../3rdparty/win32_lib;./3rdparty/win32_lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>zlibstat.lib;libmp3lame.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
     </Link>
@@ -165,6 +165,8 @@
     <ClCompile Include="3rdparty\win32_src\microhttpd\tsearch.c" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Transcoder.cpp" />
+    <ClCompile Include="TranscodingDataStream.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="WebSocketServer.cpp" />
   </ItemGroup>
@@ -288,6 +290,8 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Context.h" />
     <ClInclude Include="HttpServer.h" />
+    <ClInclude Include="Transcoder.h" />
+    <ClInclude Include="TranscodingDataStream.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="WebSocketServer.h" />
   </ItemGroup>

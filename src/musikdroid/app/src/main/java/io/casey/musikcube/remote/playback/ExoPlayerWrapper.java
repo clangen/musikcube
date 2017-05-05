@@ -24,6 +24,7 @@ import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 
 import java.io.File;
@@ -218,13 +219,30 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
         @Override
         public void onPlayerError(ExoPlaybackException error) {
+            /* if we're transcoding the size of the response will be inexact, so the player
+            will try to pick up the last few bytes and be left with an HTTP 416. if that happens,
+            and we're towards the end of the track, just move to the next one */
+           if (error.getCause() instanceof HttpDataSource.InvalidResponseCodeException) {
+                final HttpDataSource.InvalidResponseCodeException ex
+                    = (HttpDataSource.InvalidResponseCodeException) error.getCause();
+
+                if (ex.responseCode == 416) {
+                    if (Math.abs(getDuration() - getPosition()) < 2000) {
+                        setState(State.Finished);
+                        dispose();
+                        return;
+                    }
+                }
+            }
+
             switch (getState()) {
                 case Preparing:
                 case Prepared:
                 case Playing:
                 case Paused:
-                setState(State.Error);
-                dispose();
+                    setState(State.Error);
+                    dispose();
+                    break;
             }
         }
 

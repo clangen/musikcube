@@ -88,6 +88,12 @@
     <ClCompile Include="3rdparty\win32_src\microhttpd\sysfdsetsize.c">
       <Filter>microhttpd\src</Filter>
     </ClCompile>
+    <ClCompile Include="TranscodingDataStream.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="Transcoder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdparty\include\websocketpp\random\none.hpp">
@@ -452,6 +458,12 @@
     </ClInclude>
     <ClInclude Include="3rdparty\win32_src\microhttpd\sysfdsetsize.h">
       <Filter>microhttpd\src</Filter>
+    </ClInclude>
+    <ClInclude Include="TranscodingDataStream.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="Transcoder.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

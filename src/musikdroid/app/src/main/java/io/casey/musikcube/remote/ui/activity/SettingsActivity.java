@@ -2,7 +2,6 @@ package io.casey.musikcube.remote.ui.activity;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -30,7 +29,7 @@ public class SettingsActivity extends AppCompatActivity {
     private EditText addressText, portText, httpPortText, passwordText;
     private CheckBox albumArtCheckbox, messageCompressionCheckbox, softwareVolume;
     private CheckBox sslCheckbox, certCheckbox;
-    private Spinner playbackModeSpinner;
+    private Spinner playbackModeSpinner, bitrateSpinner;
     private SharedPreferences prefs;
 
     public static Intent getStartIntent(final Context context) {
@@ -68,8 +67,14 @@ public class SettingsActivity extends AppCompatActivity {
 
         playbackModes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         playbackModeSpinner.setAdapter(playbackModes);
-
         playbackModeSpinner.setSelection(isStreamingEnabled() ? 1 : 0);
+
+        final ArrayAdapter<CharSequence> bitrates = ArrayAdapter.createFromResource(
+            this, R.array.transcode_bitrate_array, android.R.layout.simple_spinner_item);
+
+        bitrates.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        bitrateSpinner.setAdapter(bitrates);
+        bitrateSpinner.setSelection(prefs.getInt("transcoder_bitrate_index", 0));
 
         this.albumArtCheckbox.setChecked(this.prefs.getBoolean("album_art_enabled", true));
         this.messageCompressionCheckbox.setChecked(this.prefs.getBoolean("message_compression_enabled", true));
@@ -80,6 +85,11 @@ public class SettingsActivity extends AppCompatActivity {
             this.sslCheckbox,
             this.prefs.getBoolean("ssl_enabled", false),
             sslCheckChanged);
+
+        Views.setCheckWithoutEvent(
+            this.certCheckbox,
+            this.prefs.getBoolean("cert_validation_disabled", false),
+            certValidationChanged);
 
         Views.enableUpNavigation(this);
     }
@@ -96,10 +106,23 @@ public class SettingsActivity extends AppCompatActivity {
         Views.setCheckWithoutEvent(this.sslCheckbox, false, sslCheckChanged);
     }
 
+    private void onDisableCertValidationFromDialog() {
+        Views.setCheckWithoutEvent(this.certCheckbox, false, certValidationChanged);
+    }
+
     private CheckBox.OnCheckedChangeListener sslCheckChanged = (button, value) -> {
         if (value) {
             if (getSupportFragmentManager().findFragmentByTag(SslAlertDialog.TAG) == null) {
                 SslAlertDialog.newInstance().show(getSupportFragmentManager(), SslAlertDialog.TAG);
+            }
+        }
+    };
+
+    private CheckBox.OnCheckedChangeListener certValidationChanged = (button, value) -> {
+        if (value) {
+            if (getSupportFragmentManager().findFragmentByTag(DisableCertValidationAlertDialog.TAG) == null) {
+                DisableCertValidationAlertDialog.newInstance().show(
+                    getSupportFragmentManager(), DisableCertValidationAlertDialog.TAG);
             }
         }
     };
@@ -113,6 +136,7 @@ public class SettingsActivity extends AppCompatActivity {
         this.messageCompressionCheckbox = (CheckBox) findViewById(R.id.message_compression);
         this.softwareVolume = (CheckBox) findViewById(R.id.software_volume);
         this.playbackModeSpinner = (Spinner) findViewById(R.id.playback_mode_spinner);
+        this.bitrateSpinner = (Spinner) findViewById(R.id.transcoder_bitrate_spinner);
         this.sslCheckbox = (CheckBox) findViewById(R.id.ssl_checkbox);
         this.certCheckbox = (CheckBox) findViewById(R.id.cert_validation);
 
@@ -135,6 +159,7 @@ public class SettingsActivity extends AppCompatActivity {
                 .putBoolean("software_volume", softwareVolume.isChecked())
                 .putBoolean("ssl_enabled", sslCheckbox.isChecked())
                 .putBoolean("cert_validation_disabled", certCheckbox.isChecked())
+                .putInt("transcoder_bitrate_index", bitrateSpinner.getSelectedItemPosition())
                 .apply();
 
             if (!softwareVolume.isChecked()) {
@@ -175,6 +200,29 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                     catch (Exception ex) {
                     }
+                })
+                .create();
+
+            dlg.setCancelable(false);
+            return dlg;
+        }
+    }
+
+    public static class DisableCertValidationAlertDialog extends DialogFragment {
+        public static final String TAG = "disable_cert_verify_dialog";
+
+        public static DisableCertValidationAlertDialog newInstance() {
+            return new DisableCertValidationAlertDialog();
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final AlertDialog dlg = new AlertDialog.Builder(getActivity())
+                .setTitle(R.string.settings_disable_cert_validation_title)
+                .setMessage(R.string.settings_disable_cert_validation_message)
+                .setPositiveButton(R.string.button_enable, null)
+                .setNegativeButton(R.string.button_disable, (dialog, which) -> {
+                    ((SettingsActivity) getActivity()).onDisableCertValidationFromDialog();
                 })
                 .create();
 

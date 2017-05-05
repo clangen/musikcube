@@ -34,54 +34,30 @@
 
 #pragma once
 
-#include <string>
-#include <boost/bimap.hpp>
-
+#include "Context.h"
 #include <core/sdk/constants.h>
-#include <core/sdk/IPreferences.h>
+#include <core/sdk/IDataStream.h>
+#include <core/sdk/IDecoder.h>
+#include <string>
 
-#ifdef WIN32
-#include <Windows.h>
-#endif
+class Transcoder {
+    public:
+        using IDataStream = musik::core::sdk::IDataStream;
 
-#ifdef __APPLE__
-extern __thread char threadLocalBuffer[4096];
-#else
-extern thread_local char threadLocalBuffer[4096];
-#endif
+        static void RemoveTempTranscodeFiles(Context& context);
 
-template <typename L, typename R>
-boost::bimap<L, R>
-static makeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
-    /* http://stackoverflow.com/a/31841462 */
-    return boost::bimap<L, R>(list.begin(), list.end());
-}
+        static void PruneTranscodeCache(Context& context);
 
-static std::string GetPreferenceString(
-    musik::core::sdk::IPreferences* prefs,
-    const std::string& key,
-    const std::string& defaultValue)
-{
-    prefs->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer), defaultValue.c_str());
-    return std::string(threadLocalBuffer);
-}
+        static IDataStream* Transcode(
+            Context& context, const std::string& uri, size_t bitrate = 96);
 
-template <typename MetadataT>
-static std::string GetMetadataString(MetadataT* metadata, const std::string& key) {
-    metadata->GetValue(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
-    return std::string(threadLocalBuffer);
-}
+        static IDataStream* TranscodeAndWait(
+            Context& context, const std::string& uri, size_t bitrate = 96);
 
-#ifdef WIN32
-static inline std::wstring utf8to16(const char* utf8) {
-    int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
-    wchar_t* buffer = new wchar_t[size];
-    MultiByteToWideChar(CP_UTF8, 0, utf8, -1, buffer, size);
-    std::wstring utf16fn(buffer);
-    delete[] buffer;
-    return utf16fn;
-}
-#endif
+        static IDataStream* TranscodeOnDemand(
+            Context& context, const std::string& uri, size_t bitrate = 96);
 
-std::string urlEncode(const std::string& s);
-std::string urlDecode(const std::string& str);
+    private:
+        Transcoder() { }
+        ~Transcoder() { }
+};

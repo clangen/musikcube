@@ -1,8 +1,10 @@
 set (websocket_remote_SOURCES
   HttpServer.cpp
   main.cpp
-  WebSocketServer.cpp
+  Transcoder.cpp
+  TranscodingDataStream.cpp
   Util.cpp
+  WebSocketServer.cpp
 )
 
 set (BOOST_LIBS
@@ -30,7 +32,8 @@ add_library(websocket_remote SHARED ${websocket_remote_SOURCES})
 # prefer static libraries on mac to make redist easier
 if (${LINK_STATICALLY} MATCHES "true")
   find_library(MICROHTTPDLIB NAMES libmicrohttpd.a microhttpd)
-  target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} ${MICROHTTPDLIB} z)
+  find_library(MP3LAMELIB NAMES libmp3lame.a mp3lame)
+  target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} ${MICROHTTPDLIB} ${MP3LAMELIB} z)
 else()
-  target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} microhttpd z)
+  target_link_libraries(websocket_remote ${websocket_remote_LINK_LIBS} microhttpd mp3lame z)
 endif()

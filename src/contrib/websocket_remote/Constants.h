@@ -41,12 +41,18 @@ namespace defaults {
     static const int websocket_server_port = 7905;
     static const int http_server_port = 7906;
     static const std::string password = "";
+    static const int http_server_transcoder_cache_count = 50;
+    static const bool http_server_transcoder_synchronous = false;
+    static const bool http_server_transcoder_synchronous_fallback = true;
 }
 
 namespace prefs {
     static const std::string websocket_server_port = "websocket_server_port";
     static const std::string http_server_enabled = "http_server_enabled";
     static const std::string http_server_port = "http_server_port";
+    static const std::string http_server_transcoder_cache_count = "http_server_transcoder_cache_count";
+    static const std::string http_server_transcoder_synchronous = "http_server_transcoder_synchronous";
+    static const std::string http_server_transcoder_synchronous_fallback = "http_server_transcoder_synchronous_fallback";
 }
 
 namespace message {

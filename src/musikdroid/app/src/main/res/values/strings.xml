@@ -53,6 +53,7 @@
     <string name="menu_playlists">playlists</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="settings_playback_mode">playback mode:</string>
+    <string name="settings_transcoder_bitrate">transcoder bitrate:</string>
     <string name="settings_general">general:</string>
     <string name="settings_use_ssl">use ssl for server connections</string>
     <string name="settings_enable_album_art">enable album art (uses last.fm)</string>
@@ -62,6 +63,8 @@
     <string name="settings_disable_cert_validation">disable ssl certificate validation</string>
     <string name="settings_ssl_dialog_title">ssl information</string>
     <string name="settings_ssl_dialog_message">the musikcube server doesn\'t support ssl by default. it does, however, work very well with nginx and ssl termination. press \'learn more\' for configuration information.</string>
+    <string name="settings_disable_cert_validation_title">certificate verification</string>
+    <string name="settings_disable_cert_validation_message">there is really no reason to enable this setting. ssl without certificate validation opens you up to man-in-the-middle attacks, and only adds a false sense of security.\n\nare you sure you want to enable this setting?</string>
     <string name="unknown_artist">[unknown artist]</string>
     <string name="unknown_album">[unknown album]</string>
     <string name="unknown_title">[unknown title]</string>

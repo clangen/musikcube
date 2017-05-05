@@ -35,6 +35,8 @@
 #include "HttpServer.h"
 #include "Constants.h"
 #include "Util.h"
+#include "Transcoder.h"
+#include "TranscodingDataStream.h"
 
 #include <core/sdk/IRetainedTrack.h>
 
@@ -77,7 +79,7 @@ struct Range {
     size_t from;
     size_t to;
     size_t total;
-    FILE* file;
+    IDataStream* file;
 
     std::string HeaderValue() {
         return "bytes " + std::to_string(from) + "-" + std::to_string(to) + "/" + std::to_string(total);
@@ -100,88 +102,24 @@ static std::string contentType(const std::string& fn) {
     return "application/octet-stream";
 }
 
-/* toHex, urlEncode, fromHex, urlDecode are stolen from here:
-http://dlib.net/dlib/server/server_http.cpp.html */
-static inline unsigned char toHex(unsigned char x) {
-    return x + (x > 9 ? ('A' - 10) : '0');
-}
-
-std::string urlEncode(const std::string& s) {
-    std::ostringstream os;
-
-    for (std::string::const_iterator ci = s.begin(); ci != s.end(); ++ci) {
-        if ((*ci >= 'a' && *ci <= 'z') ||
-            (*ci >= 'A' && *ci <= 'Z') ||
-            (*ci >= '0' && *ci <= '9'))
-        { // allowed
-            os << *ci;
-        }
-        else if (*ci == ' ') {
-            os << '+';
-        }
-        else {
-            os << '%' << toHex(*ci >> 4) << toHex(*ci % 16);
-        }
-    }
-
-    return os.str();
-}
-
-inline unsigned char fromHex(unsigned char ch) {
-    if (ch <= '9' && ch >= '0') {
-        ch -= '0';
-    }
-    else if (ch <= 'f' && ch >= 'a') {
-        ch -= 'a' - 10;
-    }
-    else if (ch <= 'F' && ch >= 'A') {
-        ch -= 'A' - 10;
-    }
-    else {
-        ch = 0;
-    }
-
-    return ch;
-}
-
-std::string urlDecode(const std::string& str) {
-    using namespace std;
-    string result;
-    string::size_type i;
-
-    for (i = 0; i < str.size(); ++i) {
-        if (str[i] == '+') {
-            result += ' ';
-        }
-        else if (str[i] == '%' && str.size() > i + 2) {
-            const unsigned char ch1 = fromHex(str[i + 1]);
-            const unsigned char ch2 = fromHex(str[i + 2]);
-            const unsigned char ch = (ch1 << 4) | ch2;
-            result += ch;
-            i += 2;
-        }
-        else {
-            result += str[i];
-        }
-    }
-
-    return result;
-}
-
 static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) {
     Range* range = static_cast<Range*>(cls);
 
     size_t offset = (size_t) pos + range->from;
-    offset = std::min(range->to, offset);
+    offset = std::min(range->to ? range->to : SIZE_MAX, offset);
 
-    size_t avail = range->total - offset;
+    size_t avail = range->total ? (range->total - offset) : SIZE_MAX;
     size_t count = std::min(avail, max);
 
-    if (fseek(range->file, offset, SEEK_SET) == 0) {
-        count = fread(buf, 1, count, range->file);
-        if (count > 0) {
-            return count;
+    if (range->file->Seekable()) {
+        if (!range->file->SetPosition(offset)) {
+            return MHD_CONTENT_READER_END_OF_STREAM;
         }
+    }
+
+    count = range->file->Read(buf, count);
+    if (count > 0) {
+        return count;
     }
 
     return MHD_CONTENT_READER_END_OF_STREAM;
@@ -189,16 +127,16 @@ static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) 
 
 static void fileFreeCallback(void *cls) {
     Range* range = static_cast<Range*>(cls);
-    fclose(range->file);
+    if (range->file) {
+        range->file->Close();
+    }
     delete range;
 }
 
-static Range* parseRange(FILE* file, const char* range) {
+static Range* parseRange(IDataStream* file, const char* range) {
     Range* result = new Range();
 
-    fseek(file, 0, SEEK_END);
-    size_t size = ftell(file);
-    fseek(file, 0, SEEK_SET);
+    size_t size = file ? file->Length() : 0;
 
     result->file = file;
     result->total = size;
@@ -236,6 +174,29 @@ static Range* parseRange(FILE* file, const char* range) {
     return result;
 }
 
+static size_t getUnsignedUrlParam(
+    struct MHD_Connection *connection,
+    const std::string& argument,
+    size_t defaultValue)
+{
+    const char* stringValue =
+        MHD_lookup_connection_value(
+            connection,
+            MHD_GET_ARGUMENT_KIND,
+            "bitrate");
+
+    if (stringValue != 0) {
+        try {
+            return std::stoul(urlDecode(stringValue));
+        }
+        catch (...) {
+            /* invalid bitrate */
+        }
+    }
+
+    return defaultValue;
+}
+
 HttpServer::HttpServer(Context& context)
 : context(context)
 , running(false) {
@@ -255,6 +216,8 @@ void HttpServer::Wait() {
 
 bool HttpServer::Start() {
     if (this->Stop()) {
+        Transcoder::RemoveTempTranscodeFiles(this->context);
+
         httpServer = MHD_start_daemon(
 #if MHD_VERSION >= 0x00095300
             MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD,
@@ -314,6 +277,7 @@ int HttpServer::HandleRequest(
 
     try {
         std::string urlStr(url);
+
         if (urlStr[0] == '/') {
             urlStr = urlStr.substr(1);
         }
@@ -336,41 +300,80 @@ int HttpServer::HandleRequest(
                 if (track) {
                     std::string filename = GetMetadataString(track, key::filename);
                     track->Release();
-#ifdef WIN32
-                    FILE* file = _wfopen(utf8to16(filename.c_str()).c_str(), L"rb");
-#else
-                    FILE* file = fopen(filename.c_str(), "rb");
-#endif
+
+                    size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
+
+                    IDataStream* file = (bitrate == 0)
+                        ? server->context.environment->GetDataStream(filename.c_str())
+                        : Transcoder::Transcode(server->context, filename, bitrate);
+
+                    const char* rangeVal = MHD_lookup_connection_value(
+                        connection, MHD_HEADER_KIND, "Range");
+
+                    Range* range = parseRange(file, rangeVal);
+
+                    /* ehh... */
+                    bool isOnDemandTranscoder = !!dynamic_cast<TranscodingDataStream*>(file);
+
+                    /* gotta be careful with request ranges if we're transcoding. don't
+                    allow any custom ranges other than from 0 to end. */
+                    if (isOnDemandTranscoder && rangeVal && strlen(rangeVal)) {
+                        if (range->from != 0 || range->to != range->total - 1) {
+                            delete range;
+
+                            if (file) {
+                                file->Close();
+                                file->Destroy();
+                                file = nullptr;
+                            }
+
+                            if (false && server->context.prefs->GetBool(
+                                prefs::http_server_transcoder_synchronous_fallback.c_str(),
+                                defaults::http_server_transcoder_synchronous_fallback))
+                            {
+                                /* if we're allowed, fall back to synchronous transcoding. we'll block
+                                here until the entire file has been converted and cached */
+                                file = Transcoder::TranscodeAndWait(server->context, filename, bitrate);
+                                range = parseRange(file, rangeVal);
+                            }
+                            else {
+                                /* otherwise fail with a "range not satisfiable" status */
+                                status = 416;
+                                char empty[1];
+                                response = MHD_create_response_from_buffer(0, empty, MHD_RESPMEM_PERSISTENT);
+                            }
+                        }
+                    }
+
                     if (file) {
-                        const char* rangeVal = MHD_lookup_connection_value(
-                            connection, MHD_HEADER_KIND, "Range");
-
-                        Range* range = parseRange(file, rangeVal);
-
                         size_t length = (range->to - range->from);
 
                         response = MHD_create_response_from_callback(
-                            length == 0 ? 0 : length + 1,
+                            length == 0 ? MHD_SIZE_UNKNOWN : length + 1,
                             4096,
                             &fileReadCallback,
                             range,
                             &fileFreeCallback);
 
                         if (response) {
-                            MHD_add_response_header(response, "Accept-Ranges", "bytes");
+                            if (!isOnDemandTranscoder) {
+                                MHD_add_response_header(response, "Accept-Ranges", "bytes");
+                            }
+
                             MHD_add_response_header(response, "Content-Type", contentType(filename).c_str());
                             MHD_add_response_header(response, "Server", "musikcube websocket_remote");
 
                             if ((rangeVal && strlen(rangeVal)) || range->from > 0) {
-                                MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
-                                status = MHD_HTTP_PARTIAL_CONTENT;
+                                if (range->total > 0) {
+                                    MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
+                                    status = MHD_HTTP_PARTIAL_CONTENT;
+                                }
                             }
                         }
                         else {
-                            fclose(file);
+                            file->Close();
                         }
                     }
-
                 }
             }
         }

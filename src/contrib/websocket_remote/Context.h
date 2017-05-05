@@ -37,6 +37,7 @@
 #include <core/sdk/ISimpleDataProvider.h>
 #include <core/sdk/IPreferences.h>
 #include <core/sdk/IPlaybackService.h>
+#include <core/sdk/IEnvironment.h>
 
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
@@ -71,5 +72,6 @@ struct Context {
     musik::core::sdk::ISimpleDataProvider* dataProvider;
     musik::core::sdk::IPreferences* prefs;
     musik::core::sdk::IPlaybackService* playback;
+    musik::core::sdk::IEnvironment* environment;
     ReadWriteLock lock;
 };
