@@ -484,10 +484,25 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     }
 }
 
+/* http://stackoverflow.com/a/2351171 */
+static size_t hash32(const char* str) {
+    unsigned int h;
+    unsigned char *p;
+    h = 0;
+    for (p = (unsigned char*)str; *p != '\0'; p++) {
+        h = 37 * h + *p;
+    }
+    h += (h >> 5);
+    return h;
+}
+
 uint64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
     std::string album = this->GetValue("album");
     std::string value = album + "-" + this->GetValue("album_artist");
-    uint64_t id = std::hash<std::string>()(value);
+
+    /* ideally we'd use std::hash<>, but on some platforms this returns a 64-bit
+    unsigned number, which cannot be easily used with sqlite3. */
+    size_t id = hash32(value.c_str());
 
     std::string cacheKey = "album-" + value;
     if (metadataIdCache.find(cacheKey) != metadataIdCache.end()) {

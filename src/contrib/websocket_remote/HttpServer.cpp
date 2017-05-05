@@ -106,7 +106,7 @@ static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) 
     Range* range = static_cast<Range*>(cls);
 
     size_t offset = (size_t) pos + range->from;
-    offset = std::min(range->to ? range->to : SIZE_MAX, offset);
+    offset = std::min(range->to ? range->to : (size_t) SIZE_MAX, offset);
 
     size_t avail = range->total ? (range->total - offset) : SIZE_MAX;
     size_t count = std::min(avail, max);
