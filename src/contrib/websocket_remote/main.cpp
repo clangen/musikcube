@@ -159,9 +159,9 @@ extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs)
         prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port);
         prefs->GetBool(prefs::http_server_enabled.c_str(), true);
         prefs->GetString(key::password.c_str(), nullptr, 0, defaults::password.c_str());
-        prefs->GetInt(prefs::http_server_transcoder_cache_count.c_str(), defaults::http_server_transcoder_cache_count);
-        prefs->GetBool(prefs::http_server_transcoder_synchronous.c_str(), defaults::http_server_transcoder_synchronous);
-        prefs->GetBool(prefs::http_server_transcoder_synchronous_fallback.c_str(), defaults::http_server_transcoder_synchronous_fallback);
+        prefs->GetInt(prefs::transcoder_cache_count.c_str(), defaults::transcoder_cache_count);
+        prefs->GetBool(prefs::transcoder_synchronous.c_str(), defaults::transcoder_synchronous);
+        prefs->GetBool(prefs::transcoder_synchronous_fallback.c_str(), defaults::transcoder_synchronous_fallback);
         prefs->Save();
     }
 

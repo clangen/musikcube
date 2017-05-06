@@ -128,7 +128,7 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
             size_t offset, length, rawLength;
         };
 
-        ByteBuffer decodedBytes;
+        ByteBuffer encodedBytes;
         ByteBuffer spillover;
         size_t bitrate;
         bool eof;

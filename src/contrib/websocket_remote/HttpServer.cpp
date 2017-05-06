@@ -328,8 +328,8 @@ int HttpServer::HandleRequest(
                             }
 
                             if (false && server->context.prefs->GetBool(
-                                prefs::http_server_transcoder_synchronous_fallback.c_str(),
-                                defaults::http_server_transcoder_synchronous_fallback))
+                                prefs::transcoder_synchronous_fallback.c_str(),
+                                defaults::transcoder_synchronous_fallback))
                             {
                                 /* if we're allowed, fall back to synchronous transcoding. we'll block
                                 here until the entire file has been converted and cached */

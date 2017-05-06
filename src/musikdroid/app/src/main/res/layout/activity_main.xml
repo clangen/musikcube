@@ -60,6 +60,14 @@
             android:paddingTop="2dp"
             android:paddingBottom="2dp">
 
+            <ProgressBar
+                android:id="@+id/with_art_buffering"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_marginTop="2dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"/>
+
             <TextView
                 style="@style/LightDropShadow"
                 android:id="@+id/with_art_track_title"
@@ -102,6 +110,14 @@
             android:paddingRight="24dp"
             android:paddingTop="6dp"
             android:paddingBottom="6dp">
+
+            <ProgressBar
+                android:id="@+id/buffering"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_marginTop="2dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"/>
 
             <TextView
                 android:id="@+id/track_title"

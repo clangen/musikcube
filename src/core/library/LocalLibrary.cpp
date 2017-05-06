@@ -44,6 +44,7 @@
 #include <core/debug.h>
 
 static const std::string TAG = "LocalLibrary";
+static bool scheduleSyncDueToDbUpgrade = false;
 
 using namespace musik::core;
 using namespace musik::core::library;
@@ -89,6 +90,10 @@ LocalLibrary::LocalLibrary(std::string name,int id)
     this->indexer = new core::Indexer(
         this->GetLibraryDirectory(),
         this->GetDatabaseFilename());
+
+    if (scheduleSyncDueToDbUpgrade) {
+        this->indexer->Schedule(IIndexer::SyncType::Local);
+    }
 
     this->thread = new std::thread(std::bind(&LocalLibrary::ThreadProc, this));
 }
@@ -290,6 +295,8 @@ static void upgradeV2ToV3(db::Connection& db) {
         "name TEXT default '',"
         "thumbnail_id INTEGER default 0,"
         "sort_order INTEGER DEFAULT 0)");
+
+    scheduleSyncDueToDbUpgrade = true;
 }
 
 static void setVersion(db::Connection& db, int version) {

@@ -46,17 +46,15 @@ static std::string cachePath(Context& context) {
     context.environment->GetPath(PathType::PathData, buf, sizeof(buf));
     std::string path = std::string(buf) + "/transcode/";
 
-    if (!boost::filesystem::exists(path)) {
-        boost::filesystem::create_directories(path);
+    if (!exists(path)) {
+        create_directories(path);
     }
 
     return path;
 }
 
-static void iterateTranscodeCache(Context& context, std::function<void(boost::filesystem::path)> cb) {
+static void iterateTranscodeCache(Context& context, std::function<void(path)> cb) {
     if (cb) {
-        using namespace boost::filesystem;
-
         directory_iterator end;
         directory_iterator file(cachePath(context));
 
@@ -70,32 +68,32 @@ static void iterateTranscodeCache(Context& context, std::function<void(boost::fi
 }
 
 void Transcoder::RemoveTempTranscodeFiles(Context& context) {
-    iterateTranscodeCache(context, [](boost::filesystem::path p) {
+    iterateTranscodeCache(context, [](path p) {
         if (p.extension().string() == ".tmp") {
             boost::system::error_code ec;
-            boost::filesystem::remove(p, ec);
+            remove(p, ec);
         }
     });
 }
 
 void Transcoder::PruneTranscodeCache(Context& context) {
-    std::map<time_t, boost::filesystem::path> sorted;
+    std::map<time_t, path> sorted;
 
     boost::system::error_code ec;
-    iterateTranscodeCache(context, [&sorted, &ec](boost::filesystem::path p) {
-        sorted[boost::filesystem::last_write_time(p, ec)] = p;
+    iterateTranscodeCache(context, [&sorted, &ec](path p) {
+        sorted[last_write_time(p, ec)] = p;
     });
 
     int maxSize = context.prefs->GetInt(
-        prefs::http_server_transcoder_cache_count.c_str(),
-        defaults::http_server_transcoder_cache_count);
+        prefs::transcoder_cache_count.c_str(),
+        defaults::transcoder_cache_count);
 
     int extra = (int) sorted.size() - (maxSize - 1);
     auto it = sorted.begin();
     while (extra > 0 && it != sorted.end()) {
         auto p = it->second;
         boost::system::error_code ec;
-        if (boost::filesystem::remove(p, ec)) {
+        if (remove(p, ec)) {
             --extra;
         }
     }
@@ -116,15 +114,15 @@ static void getTempAndFinalFilename(
 
     do {
         tempFn = finalFn + "." + std::to_string(rand()) + ".tmp";
-    } while (boost::filesystem::exists(tempFn));
+    } while (exists(tempFn));
 }
 
 IDataStream* Transcoder::Transcode(
     Context& context, const std::string& uri, size_t bitrate)
 {
     if (context.prefs->GetBool(
-        prefs::http_server_transcoder_synchronous.c_str(),
-        defaults::http_server_transcoder_synchronous))
+        prefs::transcoder_synchronous.c_str(),
+        defaults::transcoder_synchronous))
     {
         return TranscodeAndWait(context, uri, bitrate);
     }

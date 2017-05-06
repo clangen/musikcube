@@ -59,6 +59,7 @@ public class MainActivity extends WebSocketActivityBase {
     private TextView title, artist, album, playPause, volume;
     private TextView titleWithArt, artistAndAlbumWithArt, volumeWithArt;
     private TextView notPlayingOrDisconnected;
+    private View buffering, bufferingWithArt;
     private View connected;
     private CheckBox shuffleCb, muteCb, repeatCb;
     private View disconnectedOverlay;
@@ -182,10 +183,12 @@ public class MainActivity extends WebSocketActivityBase {
         this.artist = (TextView) findViewById(R.id.track_artist);
         this.album = (TextView) findViewById(R.id.track_album);
         this.volume = (TextView) findViewById(R.id.volume);
+        this.buffering = findViewById(R.id.buffering);
 
         this.titleWithArt = (TextView) findViewById(R.id.with_art_track_title);
         this.artistAndAlbumWithArt = (TextView) findViewById(R.id.with_art_artist_and_album);
         this.volumeWithArt = (TextView) findViewById(R.id.with_art_volume);
+        this.bufferingWithArt = findViewById(R.id.with_art_buffering);
 
         this.playPause = (TextView) findViewById(R.id.button_play_pause);
         this.shuffleCb = (CheckBox) findViewById(R.id.check_shuffle);
@@ -263,8 +266,13 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void rebindAlbumArtistWithArtTextView() {
-        final String artist = playback.getTrackString(Metadata.Track.ARTIST, getString(R.string.unknown_artist));
-        final String album = playback.getTrackString(Metadata.Track.ALBUM, getString(R.string.unknown_album));
+        final boolean buffering = playback.getPlaybackState() == PlaybackState.Buffering;
+
+        final String artist = playback.getTrackString(
+            Metadata.Track.ARTIST, getString(buffering ? R.string.buffering : R.string.unknown_artist));
+
+        final String album = playback.getTrackString(
+            Metadata.Track.ALBUM, getString(buffering ? R.string.buffering : R.string.unknown_album));
 
         final ForegroundColorSpan albumColor =
             new ForegroundColorSpan(getResources().getColor(R.color.theme_orange));
@@ -328,6 +336,8 @@ public class MainActivity extends WebSocketActivityBase {
         final boolean stopped = (playback.getPlaybackState() == PlaybackState.Stopped);
         notPlayingOrDisconnected.setVisibility(stopped ? View.VISIBLE : View.GONE);
 
+        boolean buffering = playback.getPlaybackState() == PlaybackState.Buffering;
+
         final boolean stateIsValidForArtwork = !stopped && connected && playback.getQueueCount() > 0;
 
         this.connected.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
@@ -350,14 +360,17 @@ public class MainActivity extends WebSocketActivityBase {
         final String title = playback.getTrackString(Metadata.Track.TITLE, "");
         final String volume = getString(R.string.status_volume, Math.round(playback.getVolume() * 100));
 
-        this.title.setText(Strings.empty(title) ? getString(R.string.unknown_title) : title);
-        this.artist.setText(Strings.empty(artist) ? getString(R.string.unknown_artist) : artist);
-        this.album.setText(Strings.empty(album) ? getString(R.string.unknown_album) : album);
+        this.title.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
+        this.artist.setText(Strings.empty(artist) ? getString(buffering ? R.string.buffering : R.string.unknown_artist) : artist);
+        this.album.setText(Strings.empty(album) ? getString(buffering ? R.string.buffering : R.string.unknown_album) : album);
         this.volume.setText(volume);
 
         this.rebindAlbumArtistWithArtTextView();
-        this.titleWithArt.setText(Strings.empty(title) ? getString(R.string.unknown_title) : title);
+        this.titleWithArt.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
         this.volumeWithArt.setText(volume);
+
+        this.buffering.setVisibility(buffering ? View.VISIBLE : View.GONE);
+        this.bufferingWithArt.setVisibility(buffering ? View.VISIBLE : View.GONE);
 
         final RepeatMode repeatMode = playback.getRepeatMode();
         final boolean repeatChecked = (repeatMode != RepeatMode.None);
@@ -381,7 +394,6 @@ public class MainActivity extends WebSocketActivityBase {
                     this.albumArtModel.destroy();
                     this.albumArtModel = new AlbumArtModel(title, artist, album, albumArtRetrieved);
                 }
-
                 updateAlbumArt();
             }
         }

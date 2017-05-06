@@ -18,13 +18,10 @@
 
     <style name="TransportPlaying">
         <item name="android:layout_margin">0dp</item>
-        <item name="android:paddingLeft">4dp</item>
-        <item name="android:paddingRight">4dp</item>
         <item name="android:paddingTop">6dp</item>
         <item name="android:paddingBottom">6dp</item>
         <item name="android:gravity">center</item>
         <item name="android:textColor">@color/theme_foreground</item>
-        <item name="android:background">@drawable/category_button</item>
         <item name="android:clickable">true</item>
     </style>
 

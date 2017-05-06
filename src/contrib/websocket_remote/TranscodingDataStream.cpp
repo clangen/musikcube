@@ -176,43 +176,43 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
         size_t numSamples = pcmBuffer->Samples() / pcmBuffer->Channels();
         size_t requiredBytes = (size_t) (1.25 * (float)numSamples + 7200.0);
 
-        decodedBytes.realloc(requiredBytes);
+        encodedBytes.realloc(requiredBytes);
 
-        /* decode PCM -> MP3 */
-        int decodeCount =
+        /* encode PCM -> MP3 */
+        int encodeCount =
             lame_encode_buffer_interleaved_ieee_float(
                 lame,
                 pcmBuffer->BufferPointer(),
                 numSamples,
-                decodedBytes.data,
-                decodedBytes.length);
+                encodedBytes.data,
+                encodedBytes.length);
 
-        if (decodeCount < 0) {
+        if (encodeCount < 0) {
             goto internal_error;
         }
 
-        decodedBytes.length = (size_t) decodeCount;
+        encodedBytes.length = (size_t)encodeCount;
 
         /* if we got something, let's write it to the output buffer */
-        if (decodedBytes.length) {
+        if (encodedBytes.length) {
             size_t toWrite = std::min(
-                decodedBytes.length,
+                encodedBytes.length,
                 (size_t)(bytesToRead - bytesWritten));
 
-            memcpy(dst + bytesWritten, decodedBytes.data, toWrite);
+            memcpy(dst + bytesWritten, encodedBytes.data, toWrite);
 
             if (this->outFile) {
-                fwrite(decodedBytes.data, 1, toWrite, this->outFile);
+                fwrite(encodedBytes.data, 1, toWrite, this->outFile);
             }
 
-            decodedBytes.inc(toWrite);
+            encodedBytes.inc(toWrite);
             bytesWritten += toWrite;
 
             /* if we have decoded bytes still available, that means the
             output buffer is exhausted. swap it into the spillover buffer
             so it can be finalized the next time through. */
-            if (decodedBytes.avail()) {
-                spillover.swap(decodedBytes);
+            if (encodedBytes.avail()) {
+                spillover.swap(encodedBytes);
                 this->position += bytesWritten;
                 return bytesWritten;
             }
@@ -228,17 +228,17 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
 
     /* finalize */
     if (bytesWritten == 0) {
-        decodedBytes.reset();
+        encodedBytes.reset();
 
         size_t count = lame_encode_flush(
             lame,
-            decodedBytes.data,
-            decodedBytes.length);
+            encodedBytes.data,
+            encodedBytes.length);
 
-        memcpy(dst + bytesWritten, decodedBytes.data, count);
+        memcpy(dst + bytesWritten, encodedBytes.data, count);
 
         if (this->outFile) {
-            fwrite(decodedBytes.data, 1, count, this->outFile);
+            fwrite(encodedBytes.data, 1, count, this->outFile);
             fclose(this->outFile);
             this->outFile = nullptr;
 

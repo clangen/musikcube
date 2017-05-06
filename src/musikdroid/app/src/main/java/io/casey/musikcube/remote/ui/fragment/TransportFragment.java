@@ -24,7 +24,7 @@ public class TransportFragment extends Fragment {
         return new TransportFragment();
     }
 
-    private View rootView;
+    private View rootView, buffering;
     private TextView title, playPause;
     private PlaybackService playback;
     private OnModelChangedListener modelChangedListener;
@@ -60,6 +60,7 @@ public class TransportFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        rebindUi();
         this.playback.connect(this.playbackListener);
     }
 
@@ -73,8 +74,10 @@ public class TransportFragment extends Fragment {
 
     private void bindEventHandlers() {
         this.title = (TextView) this.rootView.findViewById(R.id.track_title);
+        this.buffering = this.rootView.findViewById(R.id.buffering);
 
-        this.title.setOnClickListener((View view) -> {
+        final View titleBar = this.rootView.findViewById(R.id.title_bar);
+        titleBar.setOnClickListener((View view) -> {
             if (playback.getPlaybackState() != PlaybackState.Stopped) {
                 final Intent intent = PlayQueueActivity
                     .getStartIntent(getActivity(), playback.getQueuePosition())
@@ -109,7 +112,10 @@ public class TransportFragment extends Fragment {
         PlaybackState state = playback.getPlaybackState();
 
         final boolean playing = (state == PlaybackState.Playing);
+        final boolean buffering = (state == PlaybackState.Buffering);
+
         this.playPause.setText(playing ? R.string.button_pause : R.string.button_play);
+        this.buffering.setVisibility(buffering ? View.VISIBLE : View.GONE);
 
         if (state == PlaybackState.Stopped) {
             title.setTextColor(getActivity().getResources().getColor(R.color.theme_disabled_foreground));
@@ -117,7 +123,9 @@ public class TransportFragment extends Fragment {
         }
         else {
             title.setTextColor(getActivity().getResources().getColor(R.color.theme_green));
-            title.setText(playback.getTrackString(Metadata.Track.TITLE, "(unknown title)"));
+
+            final String defaultValue = getString(buffering ? R.string.buffering : R.string.unknown_title);
+            title.setText(playback.getTrackString(Metadata.Track.TITLE, defaultValue));
         }
     }
 

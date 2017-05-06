@@ -764,6 +764,7 @@ public class StreamingPlaybackService implements PlaybackService {
             .doOnComplete(() -> {
                 if (StreamingPlaybackService.this.params == params) {
                     StreamingPlaybackService.this.context = context;
+                    notifyEventListeners();
                     onPlayQueueLoaded();
                 }
             })

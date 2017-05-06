@@ -51,15 +51,42 @@
         android:layout_width="0dp"
         android:layout_height="2dp"/>
 
-    <TextView
-        style="@style/TransportPlaying"
-        android:id="@+id/track_title"
+    <FrameLayout
+        android:id="@+id/title_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:textColor="@color/theme_disabled_foreground"
-        android:text="@string/transport_not_playing"/>
+        android:background="@drawable/category_button"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="horizontal">
+
+            <ProgressBar
+                android:id="@+id/buffering"
+                style="?android:attr/progressBarStyleSmall"
+                android:paddingRight="6dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"/>
+
+            <TextView
+                style="@style/TransportPlaying"
+                android:id="@+id/track_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/theme_disabled_foreground"
+                android:text="@string/transport_not_playing"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
 
 </LinearLayout>
