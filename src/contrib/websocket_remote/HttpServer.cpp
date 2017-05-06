@@ -128,7 +128,8 @@ static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) 
 static void fileFreeCallback(void *cls) {
     Range* range = static_cast<Range*>(cls);
     if (range->file) {
-        range->file->Close();
+        range->file->Destroy();
+        range->file = nullptr;
     }
     delete range;
 }
@@ -322,7 +323,6 @@ int HttpServer::HandleRequest(
                             delete range;
 
                             if (file) {
-                                file->Close();
                                 file->Destroy();
                                 file = nullptr;
                             }
@@ -371,7 +371,8 @@ int HttpServer::HandleRequest(
                             }
                         }
                         else {
-                            file->Close();
+                            file->Destroy();
+                            file = nullptr;
                         }
                     }
                 }

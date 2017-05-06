@@ -110,6 +110,11 @@ bool TranscodingDataStream::Close() {
         this->input = nullptr;
     }
 
+    if (this->lame) {
+        lame_close(this->lame);
+        this->lame = nullptr;
+    }
+
     if (this->outFile) {
         fclose(this->outFile);
         this->outFile = nullptr;
