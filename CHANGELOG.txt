@@ -1,3 +1,22 @@
+0.13.0
+
+user-facing:
+
+* added on-demand audio transcoding (downsampling) to the http server. users
+  can configure transcoding in the `musikdroid` client.
+* fixed a bug in album id handling to properly support multiple albums with the
+  same name by different artists (this was only half working before).
+* added ssl support to the `musikdroid` client, and instructions on the wiki
+  for enabling ssl on the server-side.
+* added `buffering` indicators to `musikdroid`.
+
+low-level:
+
+* added missing IBuffer::Destroy method, and added IEnvironment::GetBuffer so
+  plugins can decode audio data.
+
+--------------------------------------------------------------------------------
+
 0.12.1
 
 user-facing:
