@@ -121,6 +121,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/liboggdecoder.so
       bin/plugins/libtaglibreader.so
       bin/plugins/libwebsocket_remote.so
+      bin/plugins/libhttpdatastream.so
     DESTINATION share/musikcube/plugins
   )
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -135,6 +136,7 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/liboggdecoder.dylib
       bin/plugins/libtaglibreader.dylib
       bin/plugins/libwebsocket_remote.dylib
+      bin/plugins/libhttpdatastream.dylib
     DESTINATION share/musikcube/plugins
   )
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
