@@ -49,11 +49,9 @@ namespace musik { namespace core {
             virtual void Retain();
 
             /* ITrack */
-            virtual uint64_t GetId();
+            virtual int64_t GetId();
             virtual int GetValue(const char* key, char* dst, int size);
-            virtual uint64_t GetUint64(const char* key, uint64_t defaultValue = 0ULL);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
-            virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
             virtual int Uri(char* dst, int size);

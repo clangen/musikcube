@@ -260,15 +260,15 @@ static void upgradeV1toV2(db::Connection &db) {
     {
         db::ScopedTransaction transaction(db);
 
-        uint64_t id;
+        int64_t id;
 
         db::Statement update("UPDATE tracks SET external_id=? WHERE id=?", db);
         db::Statement query("SELECT id FROM tracks WHERE coalesce(external_id, '') == ''", db);
         while (query.Step() == db::Row) {
-            id = query.ColumnUint64(0);
+            id = query.ColumnInt64(0);
             update.Reset();
             update.BindText(0, "local://" + std::to_string(id));
-            update.BindUint64(1, id);
+            update.BindInt64(1, id);
             update.Step();
         }
     }

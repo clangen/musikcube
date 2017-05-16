@@ -207,7 +207,7 @@ void NowPlayingLayout::RequeryTrackList() {
     this->OnTrackListRequeried(nullptr);
 }
 
-void NowPlayingLayout::OnPlaylistSelected(uint64_t playlistId) {
+void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
     auto query = std::shared_ptr<GetPlaylistQuery>(
         new GetPlaylistQuery(library, playlistId));
 

@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace db { namespace local {
         public:
             AlbumListQuery(
                 const std::string& fieldIdName,
-                uint64_t fieldIdValue,
+                int64_t fieldIdValue,
                 const std::string& filter = "");
 
             AlbumListQuery(
@@ -62,7 +62,7 @@ namespace musik { namespace core { namespace db { namespace local {
 
             std::string filter;
             std::string fieldIdName;
-            uint64_t fieldIdValue;
+            int64_t fieldIdValue;
             musik::core::MetadataMapListPtr result;
     };
 

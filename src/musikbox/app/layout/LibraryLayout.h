@@ -84,7 +84,7 @@ namespace musik {
                 void OnSearchResultSelected(
                     SearchLayout* layout,
                     std::string fieldType,
-                    uint64_t fieldId);
+                    int64_t fieldId);
 
                 void OnMainLayoutFocusTerminated(
                     LayoutBase::FocusDirection direction);

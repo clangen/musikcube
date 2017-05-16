@@ -82,7 +82,7 @@ CategoryListView::~CategoryListView() {
 void CategoryListView::RequeryWithField(
     const std::string& fieldName,
     const std::string& filter,
-    const uint64_t selectAfterQuery)
+    const int64_t selectAfterQuery)
 {
     if (this->activeQuery) {
         this->activeQuery->Cancel();
@@ -94,7 +94,7 @@ void CategoryListView::RequeryWithField(
     this->library->Enqueue(activeQuery);
 }
 
-void CategoryListView::Requery(const std::string& filter, const uint64_t selectAfterQuery) {
+void CategoryListView::Requery(const std::string& filter, const int64_t selectAfterQuery) {
     this->RequeryWithField(this->fieldName, filter, selectAfterQuery);
 }
 
@@ -103,7 +103,7 @@ void CategoryListView::Reset() {
     this->OnAdapterChanged();
 }
 
-uint64_t CategoryListView::GetSelectedId() {
+int64_t CategoryListView::GetSelectedId() {
     size_t index = this->GetSelectedIndex();
     if (index != NO_SELECTION && this->metadata && index < this->metadata->size()) {
         return this->metadata->at(index)->id;
@@ -152,7 +152,7 @@ void CategoryListView::ScrollToPlaying() {
 
 bool CategoryListView::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        uint64_t id = this->GetSelectedId();
+        int64_t id = this->GetSelectedId();
         if (id != -1) {
             PlayQueueOverlays::ShowAddCategoryOverlay(
                 this->playback,

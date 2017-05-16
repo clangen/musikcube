@@ -236,7 +236,7 @@ void PlaybackService::ToggleShuffle() {
 
     /* remember the ID of the playing track -- we're going to need to look
     it up after the shuffle */
-    uint64_t id = -1;
+    int64_t id = -1;
     if (this->index < this->playlist.Count()) {
         id = this->playlist.GetId(this->index);
     }
@@ -796,7 +796,7 @@ PlaybackService::Editor::~Editor() {
     /* implicitly unlocks the mutex when this block exists */
 }
 
-bool PlaybackService::Editor::Insert(uint64_t id, size_t index) {
+bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
     if ((this->edited = this->tracks.Insert(id, index))) {
         if (index == this->playIndex) {
             ++this->playIndex;
@@ -864,7 +864,7 @@ bool PlaybackService::Editor::Delete(size_t index) {
     return false;
 }
 
-void PlaybackService::Editor::Add(const uint64_t id) {
+void PlaybackService::Editor::Add(const int64_t id) {
     this->tracks.Add(id);
 
     if (this->playback.Count() - 1 == this->playIndex + 1) {

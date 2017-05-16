@@ -65,7 +65,7 @@ void IndexerTrack::ResetIdCache() {
     metadataIdCache.clear();
 }
 
-IndexerTrack::IndexerTrack(uint64_t id)
+IndexerTrack::IndexerTrack(int64_t id)
 : internalMetadata(new IndexerTrack::MetadataWithThumbnail())
 , id(id)
 {
@@ -87,33 +87,11 @@ std::string IndexerTrack::GetValue(const char* metakey) {
     return "";
 }
 
-uint64_t IndexerTrack::GetUint64(const char* key, uint64_t defaultValue) {
-    try {
-        std::string value = GetValue(key);
-        if (value.size()) {
-            return std::stoull(GetValue(key));
-        }
-    } catch (...) {
-    }
-    return defaultValue;
-}
-
 long long IndexerTrack::GetInt64(const char* key, long long defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
             return std::stoll(GetValue(key));
-        }
-    } catch (...) {
-    }
-    return defaultValue;
-}
-
-unsigned int IndexerTrack::GetUint32(const char* key, unsigned long defaultValue) {
-    try {
-        std::string value = GetValue(key);
-        if (value.size()) {
-            return std::stoul(GetValue(key));
         }
     } catch (...) {
     }
@@ -197,7 +175,7 @@ Track::MetadataIteratorRange IndexerTrack::GetAllValues() {
     return Track::MetadataIteratorRange();
 }
 
-uint64_t IndexerTrack::GetId() {
+int64_t IndexerTrack::GetId() {
     return this->id;
 }
 
@@ -230,7 +208,7 @@ bool IndexerTrack::NeedsToBeIndexed(
         bool fileDifferent = true;
 
         if (stmt.Step() == db::Row) {
-            this->id = stmt.ColumnUint64(0);
+            this->id = stmt.ColumnInt64(0);
             int dbFileSize = stmt.ColumnInt32(2);
             int dbFileTime = stmt.ColumnInt32(3);
 
@@ -245,12 +223,12 @@ bool IndexerTrack::NeedsToBeIndexed(
     return true;
 }
 
-static uint64_t writeToTracksTable(
+static int64_t writeToTracksTable(
     db::Connection &dbConnection,
     IndexerTrack& track)
 {
     std::string externalId = track.GetValue("external_id");
-    uint64_t id = track.GetId();
+    int64_t id = track.GetId();
 
     if (externalId.size() == 0) {
         return 0;
@@ -267,7 +245,7 @@ static uint64_t writeToTracksTable(
             stmt.BindInt32(0, sourceId);
             stmt.BindText(1, externalId);
             if (stmt.Step() == db::Row) {
-                track.SetId(stmt.ColumnUint64(0));
+                track.SetId(stmt.ColumnInt64(0));
             }
         }
         else {
@@ -276,7 +254,7 @@ static uint64_t writeToTracksTable(
                 db::Statement stmt("SELECT id, external_id FROM tracks WHERE filename=?", dbConnection);
                 stmt.BindText(0, track.GetValue("filename"));
                 if (stmt.Step() == db::Row) {
-                    id = stmt.ColumnUint64(0);
+                    id = stmt.ColumnInt64(0);
                     track.SetId(id);
                     track.SetValue("external_id", stmt.ColumnText(1));
                 }
@@ -311,11 +289,11 @@ static uint64_t writeToTracksTable(
     stmt.BindText(6, track.GetValue("title"));
     stmt.BindText(7, track.GetValue("filename"));
     stmt.BindInt32(8, track.GetInt32("filetime"));
-    stmt.BindUint64(9, track.GetInt64("path_id"));
+    stmt.BindInt64(9, track.GetInt64("path_id"));
     stmt.BindText(10, track.GetValue("external_id"));
 
     if (id != 0) {
-        stmt.BindUint64(11, id);
+        stmt.BindInt64(11, id);
     }
 
     if (stmt.Step() == db::Done) {
@@ -330,11 +308,11 @@ static uint64_t writeToTracksTable(
 static void removeRelation(
     db::Connection& connection,
     const std::string& field,
-    uint64_t trackId)
+    int64_t trackId)
 {
     std::string query = boost::str(boost::format("DELETE FROM %1% WHERE track_id=?") % field);
     db::Statement stmt(query.c_str(), connection);
-    stmt.BindUint64(0, trackId);
+    stmt.BindInt64(0, trackId);
     stmt.Step();
 }
 
@@ -360,24 +338,24 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("visible");
 }
 
-uint64_t IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
-    uint64_t thumbnailId = 0;
+int64_t IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
+    int64_t thumbnailId = 0;
 
     if (this->internalMetadata->thumbnailData) {
-        uint64_t sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
+        int64_t sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
 
         db::Statement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?", connection);
         thumbs.BindInt32(0, this->internalMetadata->thumbnailSize);
-        thumbs.BindUint64(1, sum);
+        thumbs.BindInt64(1, sum);
 
         if (thumbs.Step() == db::Row) {
-            thumbnailId = thumbs.ColumnUint64(0); /* thumbnail already exists */
+            thumbnailId = thumbs.ColumnInt64(0); /* thumbnail already exists */
         }
 
         if (thumbnailId == 0) { /* doesn't exist yet, let's insert the record and write the file */
             db::Statement insertThumb("INSERT INTO thumbnails (filesize,checksum) VALUES (?,?)", connection);
             insertThumb.BindInt32(0, this->internalMetadata->thumbnailSize);
-            insertThumb.BindUint64(1, sum);
+            insertThumb.BindInt64(1, sum);
 
             if (insertThumb.Step() == db::Done) {
                 thumbnailId = connection.LastInsertedId();
@@ -415,7 +393,7 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
     MetadataMap::const_iterator it = unknownFields.begin();
     for ( ; it != unknownFields.end(); ++it){
-        uint64_t keyId = 0;
+        int64_t keyId = 0;
         std::string key;
 
         /* lookup the ID for the key; insert if it doesn't exist.. */
@@ -425,7 +403,7 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         else {
             selectMetaKey.BindText(0, it->first);
             if (selectMetaKey.Step() == db::Row) {
-                keyId = selectMetaKey.ColumnUint64(0);
+                keyId = selectMetaKey.ColumnInt64(0);
             }
             else {
                 insertMetaKey.BindText(0, it->first);
@@ -446,20 +424,20 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         /* see if we already have the value as a normalized row in our table.
         if we don't, insert it. */
 
-        uint64_t valueId = 0;
+        int64_t valueId = 0;
 
         if (metadataIdCache.find("metaValue-" + it->second) != metadataIdCache.end()) {
             valueId = metadataIdCache["metaValue-" + it->second];
         }
         else {
-            selectMetaValue.BindUint64(0, keyId);
+            selectMetaValue.BindInt64(0, keyId);
             selectMetaValue.BindText(1, it->second);
 
             if (selectMetaValue.Step() == db::Row) {
-                valueId = selectMetaValue.ColumnUint64(0);
+                valueId = selectMetaValue.ColumnInt64(0);
             }
             else {
-                insertMetaValue.BindUint64(0, keyId);
+                insertMetaValue.BindInt64(0, keyId);
                 insertMetaValue.BindText(1, it->second);
 
                 if (insertMetaValue.Step() == db::Done) {
@@ -476,8 +454,8 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         /* now that we have a keyId and a valueId, create the relationship */
 
         if (valueId != 0) {
-            insertTrackMeta.BindUint64(0, this->id);
-            insertTrackMeta.BindUint64(1, valueId);
+            insertTrackMeta.BindInt64(0, this->id);
+            insertTrackMeta.BindInt64(1, valueId);
             insertTrackMeta.Step();
             insertTrackMeta.Reset();
         }
@@ -496,7 +474,7 @@ static size_t hash32(const char* str) {
     return h;
 }
 
-uint64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
+int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
     std::string album = this->GetValue("album");
     std::string value = album + "-" + this->GetValue("album_artist");
 
@@ -511,7 +489,7 @@ uint64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
     else {
         std::string insertStatement = "INSERT INTO albums (id, name) VALUES (?, ?)";
         db::Statement insertValue(insertStatement.c_str(), dbConnection);
-        insertValue.BindUint64(0, id);
+        insertValue.BindInt64(0, id);
         insertValue.BindText(1, album);
 
         if (insertValue.Step() == db::Done) {
@@ -522,12 +500,12 @@ uint64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
     return id;
 }
 
-uint64_t IndexerTrack::SaveSingleValueField(
+int64_t IndexerTrack::SaveSingleValueField(
     db::Connection& dbConnection,
     const std::string& trackMetadataKeyName,
     const std::string& fieldTableName)
 {
-    uint64_t id = 0;
+    int64_t id = 0;
 
     std::string selectQuery = boost::str(boost::format(
         "SELECT id FROM %1% WHERE name=?") % fieldTableName);
@@ -541,7 +519,7 @@ uint64_t IndexerTrack::SaveSingleValueField(
     else {
         stmt.BindText(0, value);
         if (stmt.Step() == db::Row) {
-            id = stmt.ColumnUint64(0);
+            id = stmt.ColumnInt64(0);
         }
         else {
             std::string insertStatement = boost::str(boost::format(
@@ -561,7 +539,7 @@ uint64_t IndexerTrack::SaveSingleValueField(
     return id;
 }
 
-uint64_t IndexerTrack::SaveMultiValueField(
+int64_t IndexerTrack::SaveMultiValueField(
     db::Connection& connection,
     const std::string& tracksTableColumnName,
     const std::string& fieldTableName,
@@ -569,7 +547,7 @@ uint64_t IndexerTrack::SaveMultiValueField(
     const std::string& junctionTableForeignKeyColumnName)
 {
     std::string aggregatedValue;
-    uint64_t fieldId = 0;
+    int64_t fieldId = 0;
     int count = 0;
 
     std::set<std::string> processed; /* for deduping */
@@ -612,7 +590,7 @@ uint64_t IndexerTrack::SaveMultiValueField(
     return fieldId;
 }
 
-uint64_t IndexerTrack::SaveGenre(db::Connection& dbConnection) {
+int64_t IndexerTrack::SaveGenre(db::Connection& dbConnection) {
     return this->SaveMultiValueField(
         dbConnection,
         GENRE_TRACK_COLUMN_NAME,
@@ -621,7 +599,7 @@ uint64_t IndexerTrack::SaveGenre(db::Connection& dbConnection) {
         GENRE_TRACK_FOREIGN_KEY);
 }
 
-uint64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
+int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
     return this->SaveMultiValueField(
         dbConnection,
         ARTIST_TRACK_COLUMN_NAME,
@@ -649,11 +627,11 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     this->id = writeToTracksTable(dbConnection, *this);
 
-    uint64_t albumId = this->SaveAlbum(dbConnection);
-    uint64_t genreId = this->SaveGenre(dbConnection);
-    uint64_t artistId = this->SaveArtist(dbConnection);
-    uint64_t albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
-    uint64_t thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
+    int64_t albumId = this->SaveAlbum(dbConnection);
+    int64_t genreId = this->SaveGenre(dbConnection);
+    int64_t artistId = this->SaveArtist(dbConnection);
+    int64_t albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
+    int64_t thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
 
     /* ensure we have a correct source id */
     int sourceId = 0;
@@ -676,13 +654,13 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
             "SET album_id=?, visual_genre_id=?, visual_artist_id=?, album_artist_id=?, thumbnail_id=?, source_id=? " \
             "WHERE id=?", dbConnection);
 
-        stmt.BindUint64(0, albumId);
-        stmt.BindUint64(1, genreId);
-        stmt.BindUint64(2, artistId);
-        stmt.BindUint64(3, albumArtistId);
-        stmt.BindUint64(4, thumbnailId);
-        stmt.BindUint64(5, sourceId);
-        stmt.BindUint64(6, this->id);
+        stmt.BindInt64(0, albumId);
+        stmt.BindInt64(1, genreId);
+        stmt.BindInt64(2, artistId);
+        stmt.BindInt64(3, albumArtistId);
+        stmt.BindInt64(4, thumbnailId);
+        stmt.BindInt64(5, sourceId);
+        stmt.BindInt64(6, this->id);
         stmt.Step();
     }
 
@@ -691,7 +669,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     return true;
 }
 
-uint64_t IndexerTrack::SaveNormalizedFieldValue(
+int64_t IndexerTrack::SaveNormalizedFieldValue(
     db::Connection &dbConnection,
     const std::string& tableName,
     const std::string& fieldValue,
@@ -699,7 +677,7 @@ uint64_t IndexerTrack::SaveNormalizedFieldValue(
     const std::string& relationJunctionTableName,
     const std::string& relationJunctionTableColumn)
 {
-    uint64_t fieldId = 0;
+    int64_t fieldId = 0;
 
     /* find by value */
 
@@ -713,7 +691,7 @@ uint64_t IndexerTrack::SaveNormalizedFieldValue(
             stmt.BindText(0, fieldValue);
 
             if (stmt.Step() == db::Row) {
-                fieldId = stmt.ColumnUint64(0);
+                fieldId = stmt.ColumnInt64(0);
                 metadataIdCache[tableName + "-" + fieldValue] = fieldId;
             }
         }
@@ -743,8 +721,8 @@ uint64_t IndexerTrack::SaveNormalizedFieldValue(
             % relationJunctionTableName % relationJunctionTableColumn);
 
         db::Statement stmt(query.c_str(), dbConnection);
-        stmt.BindUint64(0, this->id);
-        stmt.BindUint64(1, fieldId);
+        stmt.BindInt64(0, this->id);
+        stmt.BindInt64(1, fieldId);
         stmt.Step();
     }
 

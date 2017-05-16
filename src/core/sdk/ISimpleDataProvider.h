@@ -48,13 +48,13 @@ namespace musik { namespace core { namespace sdk {
                 int limit = -1,
                 int offset = 0) = 0;
 
-            virtual IRetainedTrack* QueryTrackById(uint64_t trackId) = 0;
+            virtual IRetainedTrack* QueryTrackById(int64_t trackId) = 0;
 
             virtual IRetainedTrack* QueryTrackByExternalId(const char* externalId) = 0;
 
             virtual ITrackList* QueryTracksByCategory(
                 const char* categoryType,
-                uint64_t selectedId,
+                int64_t selectedId,
                 const char* filter = "",
                 int limit = -1,
                 int offset = 0) = 0;
@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace sdk {
 
             virtual IMetadataMapList* QueryAlbums(
                 const char* categoryIdName,
-                uint64_t categoryIdValue,
+                int64_t categoryIdValue,
                 const char* filter = "") = 0;
     };
 

@@ -57,8 +57,8 @@ namespace musik { namespace core {
 
             virtual ~Track();
 
-            virtual uint64_t GetId();
-            virtual void SetId(uint64_t id) = 0;
+            virtual int64_t GetId();
+            virtual void SetId(int64_t id) = 0;
 
             virtual musik::core::ILibraryPtr Library();
             virtual int LibraryId();
@@ -73,9 +73,7 @@ namespace musik { namespace core {
 
             /* ITrack */
             virtual int GetValue(const char* key, char* dst, int size) = 0;
-            virtual uint64_t GetUint64(const char* key, uint64_t defaultValue = 0ULL) = 0;
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
-            virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0) = 0;
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
             virtual int Uri(char* dst, int size) = 0;

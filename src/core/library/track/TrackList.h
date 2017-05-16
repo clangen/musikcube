@@ -66,13 +66,13 @@ namespace musik { namespace core {
             /* ITrackList */
             virtual size_t Count() const;
             virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) const;
-            virtual uint64_t GetId(size_t index) const;
-            virtual int IndexOf(uint64_t id) const;
+            virtual int64_t GetId(size_t index) const;
+            virtual int IndexOf(int64_t id) const;
             virtual musik::core::sdk::ITrack* GetTrack(size_t index) const;
 
             /* ITrackListEditor */
-            virtual void Add(const uint64_t id);
-            virtual bool Insert(uint64_t id, size_t index);
+            virtual void Add(const int64_t id);
+            virtual bool Insert(int64_t id, size_t index);
             virtual bool Swap(size_t index1, size_t index2);
             virtual bool Move(size_t from, size_t to);
             virtual bool Delete(size_t index);
@@ -86,18 +86,18 @@ namespace musik { namespace core {
             void CopyFrom(const TrackList& from);
 
         private:
-            typedef std::list<uint64_t> CacheList;
+            typedef std::list<int64_t> CacheList;
             typedef std::pair<TrackPtr, CacheList::iterator> CacheValue;
-            typedef std::unordered_map<uint64_t, CacheValue> CacheMap;
+            typedef std::unordered_map<int64_t, CacheValue> CacheMap;
 
-            TrackPtr GetFromCache(uint64_t key) const;
-            void AddToCache(uint64_t key, TrackPtr value) const;
+            TrackPtr GetFromCache(int64_t key) const;
+            void AddToCache(int64_t key, TrackPtr value) const;
 
             /* lru cache structures */
             mutable CacheList cacheList;
             mutable CacheMap cacheMap;
 
-            std::vector<uint64_t> ids;
+            std::vector<int64_t> ids;
             ILibraryPtr library;
     };
 } }

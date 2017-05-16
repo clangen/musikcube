@@ -154,7 +154,7 @@ void Connection::Checkpoint() {
     sqlite3_wal_checkpoint(this->connection, nullptr);
 }
 
-uint64_t Connection::LastInsertedId() {
+int64_t Connection::LastInsertedId() {
     return sqlite3_last_insert_rowid(this->connection);
 }
 

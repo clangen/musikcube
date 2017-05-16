@@ -119,7 +119,7 @@ static void showPlaylistListOverlay(
 static void confirmOverwritePlaylist(
     musik::core::ILibraryPtr library,
     const std::string& playlistName,
-    const uint64_t playlistId,
+    const int64_t playlistId,
     std::shared_ptr<TrackList> tracks)
 {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -162,7 +162,7 @@ static void createNewPlaylist(
 
 static void renamePlaylist(
     musik::core::ILibraryPtr library,
-    const uint64_t playlistId,
+    const int64_t playlistId,
     const std::string& oldName)
 {
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
@@ -183,7 +183,7 @@ static void renamePlaylist(
 static void confirmDeletePlaylist(
     musik::core::ILibraryPtr library,
     const std::string& playlistName,
-    const uint64_t playlistId)
+    const int64_t playlistId)
 {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -220,7 +220,7 @@ static void handleAddCategorySelection(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library,
     const std::string& fieldColumn,
-    uint64_t fieldId,
+    int64_t fieldId,
     size_t type)
 {
     std::shared_ptr<CategoryTrackListQuery> query(
@@ -256,20 +256,20 @@ static void handleJumpTo(
     musik::core::runtime::IMessageQueue& messageQueue,
     musik::core::TrackPtr track)
 {
-    uint64_t type;
-    uint64_t id;
+    int64_t type;
+    int64_t id;
 
     if (index == 0) {
         type = message::category::Album;
-        id = track->GetUint64(library::constants::Track::ALBUM_ID);
+        id = track->GetInt64(library::constants::Track::ALBUM_ID);
     }
     else if (index == 1) {
         type = message::category::Artist;
-        id = track->GetUint64(library::constants::Track::ARTIST_ID);
+        id = track->GetInt64(library::constants::Track::ARTIST_ID);
     }
     else if (index == 2) {
         type = message::category::Genre;
-        id = track->GetUint64(library::constants::Track::GENRE_ID);
+        id = track->GetInt64(library::constants::Track::GENRE_ID);
     }
 
     messageQueue.Broadcast(runtime::Message::Create(
@@ -330,7 +330,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library,
     const std::string& fieldColumn,
-    uint64_t fieldId)
+    int64_t fieldId)
 {
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_start"));
@@ -387,7 +387,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
             }
 
             auto albumColumn = library::constants::Track::ALBUM;
-            auto albumId = firstTrack->GetUint64(library::constants::Track::ALBUM_ID);
+            auto albumId = firstTrack->GetInt64(library::constants::Track::ALBUM_ID);
 
             /* items 0, 1, and 2 jump to category */
             if (index <= 2) {
@@ -435,7 +435,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
         [library, result, callback]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION && callback) {
-                uint64_t playlistId = (*result)[index]->id;
+                int64_t playlistId = (*result)[index]->id;
                 callback(playlistId);
             }
         });
@@ -444,7 +444,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
 void PlayQueueOverlays::ShowSavePlaylistOverlay(
     musik::core::audio::PlaybackService& playback,
     musik::core::ILibraryPtr library,
-    uint64_t selectedPlaylistId)
+    int64_t selectedPlaylistId)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
@@ -479,7 +479,7 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
             }
             else { /* replace existing */
                 --index;
-                uint64_t playlistId = (*result)[index]->id;
+                int64_t playlistId = (*result)[index]->id;
                 std::string playlistName = (*result)[index]->displayValue;
                 confirmOverwritePlaylist(library, playlistName, playlistId, tracks);
             }
@@ -505,7 +505,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr libra
         adapter,
         [library, result](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
-                uint64_t playlistId = (*result)[index]->id;
+                int64_t playlistId = (*result)[index]->id;
                 std::string playlistName = (*result)[index]->displayValue;
                 renamePlaylist(library, playlistId, playlistName);
             }
@@ -531,7 +531,7 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr libra
         [library, result]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
-                uint64_t playlistId = (*result)[index]->id;
+                int64_t playlistId = (*result)[index]->id;
                 std::string playlistName = (*result)[index]->displayValue;
                 confirmDeletePlaylist(library, playlistName, playlistId);
             }

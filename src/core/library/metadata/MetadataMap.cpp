@@ -55,11 +55,9 @@ namespace {
         public:
             SdkWrapper(MetadataMapPtr wrapped) { this->wrapped = wrapped; };
             virtual void Release() { this->wrapped.reset(); }
-            virtual uint64_t GetId() { return this->wrapped->GetId(); }
+            virtual int64_t GetId() { return this->wrapped->GetId(); }
             virtual int GetValue(const char* key, char* dst, int size) { return this->wrapped->GetValue(key, dst, size); }
-            virtual uint64_t GetUint64(const char* key, uint64_t defaultValue) { return this->wrapped->GetUint64(key, defaultValue); }
             virtual long long GetInt64(const char* key, long long defaultValue) { return this->wrapped->GetInt64(key, defaultValue); }
-            virtual unsigned int GetUint32(const char* key, unsigned long defaultValue) { return this->wrapped->GetUint32(key, defaultValue); }
             virtual int GetInt32(const char* key, unsigned int defaultValue) { return this->wrapped->GetInt32(key, defaultValue); }
             virtual double GetDouble(const char* key, double defaultValue) { return this->wrapped->GetDouble(key, defaultValue); }
             virtual const char* GetDescription() { return this->wrapped->GetDescription(); }
@@ -69,7 +67,7 @@ namespace {
 }
 
 MetadataMap::MetadataMap(
-    uint64_t id,
+    int64_t id,
     const std::string& description,
     const std::string& type)
 {
@@ -86,7 +84,7 @@ void MetadataMap::Release() {
     /* nothing... */
 }
 
-uint64_t MetadataMap::GetId() {
+int64_t MetadataMap::GetId() {
     return this->id;
 }
 
@@ -111,35 +109,11 @@ std::string MetadataMap::GetValue(const char* key) {
     return "";
 }
 
-uint64_t MetadataMap::GetUint64(const char* key, uint64_t defaultValue) {
-    try {
-        std::string value = GetValue(key);
-        if (value.size()) {
-            return std::stoull(GetValue(key));
-        }
-    }
-    catch (...) {
-    }
-    return defaultValue;
-}
-
 long long MetadataMap::GetInt64(const char* key, long long defaultValue) {
     try {
         std::string value = GetValue(key);
         if (value.size()) {
             return std::stoll(GetValue(key));
-        }
-    }
-    catch (...) {
-    }
-    return defaultValue;
-}
-
-unsigned int MetadataMap::GetUint32(const char* key, unsigned long defaultValue) {
-    try {
-        std::string value = GetValue(key);
-        if (value.size()) {
-            return std::stoul(GetValue(key));
         }
     }
     catch (...) {

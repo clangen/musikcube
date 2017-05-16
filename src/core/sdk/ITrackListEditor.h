@@ -42,11 +42,11 @@ namespace musik {
 
             class ITrackListEditor {
                 public:
-                    virtual bool Insert(uint64_t id, size_t index) = 0;
+                    virtual bool Insert(int64_t id, size_t index) = 0;
                     virtual bool Swap(size_t index1, size_t index2) = 0;
                     virtual bool Move(size_t from, size_t to) = 0;
                     virtual bool Delete(size_t index) = 0;
-                    virtual void Add(const uint64_t id) = 0;
+                    virtual void Add(const int64_t id) = 0;
                     virtual void Clear() = 0;
                     virtual void Shuffle() = 0;
                     virtual void Release() = 0;

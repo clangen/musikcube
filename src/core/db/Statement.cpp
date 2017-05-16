@@ -81,15 +81,7 @@ void Statement::BindInt32(int position, int bindInt) {
     sqlite3_bind_int(this->stmt, position + 1, bindInt);
 }
 
-void Statement::BindUint32(int position, size_t bindInt) {
-    sqlite3_bind_int(this->stmt, position + 1, (int) bindInt);
-}
-
 void Statement::BindInt64(int position, int64_t bindInt) {
-    sqlite3_bind_int64(this->stmt, position + 1, (sqlite3_int64) bindInt);
-}
-
-void Statement::BindUint64(int position, uint64_t bindInt) {
     sqlite3_bind_int64(this->stmt, position + 1, (sqlite3_int64) bindInt);
 }
 
@@ -136,16 +128,8 @@ int Statement::ColumnInt32(int column) {
     return sqlite3_column_int(this->stmt, column);
 }
 
-size_t Statement::ColumnUint32(int column) {
-    return (size_t) sqlite3_column_int(this->stmt, column);
-}
-
 int64_t Statement::ColumnInt64(int column) {
     return sqlite3_column_int64(this->stmt, column);
-}
-
-uint64_t Statement::ColumnUint64(int column) {
-    return (uint64_t) sqlite3_column_int64(this->stmt, column);
 }
 
 const char* Statement::ColumnText(int column) {

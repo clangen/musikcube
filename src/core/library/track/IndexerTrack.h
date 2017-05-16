@@ -42,7 +42,7 @@ namespace musik { namespace core {
 
     class IndexerTrack : public Track {
         public:
-            IndexerTrack(uint64_t id);
+            IndexerTrack(int64_t id);
             virtual ~IndexerTrack(void);
 
             /* IWritableTrack */
@@ -53,9 +53,7 @@ namespace musik { namespace core {
             /* ITrack */
             virtual std::string GetValue(const char* metakey);
             virtual int GetValue(const char* key, char* dst, int size);
-            virtual uint64_t GetUint64(const char* key, uint64_t defaultValue = 0ULL);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
-            virtual unsigned int GetUint32(const char* key, unsigned long defaultValue = 0);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
 
@@ -66,8 +64,8 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetAllValues();
             virtual TrackPtr Copy();
 
-            virtual uint64_t GetId();
-            virtual void SetId(uint64_t id) { this->id = id; }
+            virtual int64_t GetId();
+            virtual void SetId(int64_t id) { this->id = id; }
 
             bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,
@@ -80,7 +78,7 @@ namespace musik { namespace core {
             static void ResetIdCache();
 
         private:
-            uint64_t id;
+            int64_t id;
 
         private:
             class MetadataWithThumbnail {
@@ -95,29 +93,29 @@ namespace musik { namespace core {
 
             MetadataWithThumbnail *internalMetadata;
 
-            uint64_t SaveThumbnail(
+            int64_t SaveThumbnail(
                 db::Connection& connection,
                 const std::string& libraryDirectory);
 
-            uint64_t SaveGenre(db::Connection& connection);
+            int64_t SaveGenre(db::Connection& connection);
 
-            uint64_t SaveArtist(db::Connection& connection);
+            int64_t SaveArtist(db::Connection& connection);
 
-            uint64_t SaveAlbum(db::Connection& connection);
+            int64_t SaveAlbum(db::Connection& connection);
 
-            uint64_t SaveSingleValueField(
+            int64_t SaveSingleValueField(
                 db::Connection& connection,
                 const std::string& trackMetadataKeyName,
                 const std::string& fieldTableName);
 
-            uint64_t SaveMultiValueField(
+            int64_t SaveMultiValueField(
                 db::Connection& connection,
                 const std::string& tracksTableColumnName,
                 const std::string& fieldTableName,
                 const std::string& junctionTableName,
                 const std::string& junctionTableForeignKeyColumnName);
 
-            uint64_t SaveNormalizedFieldValue(
+            int64_t SaveNormalizedFieldValue(
                 db::Connection& dbConnection,
                 const std::string& tableName,
                 const std::string& fieldValue,

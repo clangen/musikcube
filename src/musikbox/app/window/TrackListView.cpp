@@ -173,7 +173,7 @@ size_t TrackListView::Count() {
 
 void TrackListView::ScrollToPlaying() {
     if (this->playing && this->tracks) {
-        uint64_t id = this->playing->GetId();
+        int64_t id = this->playing->GetId();
         for (size_t i = 0; i < this->tracks->Count(); i++) {
             if (this->tracks->GetId(i) == id) {
                 size_t rawIndex = headers.TrackListToAdapterIndex(i);

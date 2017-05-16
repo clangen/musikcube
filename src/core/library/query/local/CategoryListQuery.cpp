@@ -171,7 +171,7 @@ musik::core::sdk::IMetadataValueList* CategoryListQuery::GetSdkResult() {
     return new MetadataList(this->result);
 }
 
-int CategoryListQuery::GetIndexOf(uint64_t id) {
+int CategoryListQuery::GetIndexOf(int64_t id) {
     auto result = this->GetResult();
     for (size_t i = 0; i < result->size(); i++) {
         if (id == (*result)[i]->id) {
@@ -202,7 +202,7 @@ bool CategoryListQuery::OnRun(Connection& db) {
 
     while (stmt.Step() == Row) {
         std::shared_ptr<Result> row(new Result());
-        row->id = stmt.ColumnUint64(0);
+        row->id = stmt.ColumnInt64(0);
         row->displayValue = stmt.ColumnText(1);
         result->push_back(row);
     }
