@@ -35,7 +35,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 public class StreamingPlaybackService implements PlaybackService {
     private static final String TAG = "StreamingPlayback";
     private static final String REPEAT_MODE_PREF = "streaming_playback_repeat_mode";
-    private static final int PREV_TRACK_GRACE_PERIOD_MILLIS = 2000;
+    private static final int PREV_TRACK_GRACE_PERIOD_MILLIS = 3500;
     private static final int MAX_TRACK_METADATA_CACHE_SIZE = 50;
     private static final int PRECACHE_METADATA_SIZE = 10;
     private static final int PAUSED_SERVICE_SHUTDOWN_DELAY_MS = 1000 * 60; /* 1 minute */

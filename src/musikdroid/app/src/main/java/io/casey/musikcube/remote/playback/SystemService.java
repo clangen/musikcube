@@ -2,9 +2,12 @@ package io.casey.musikcube.remote.playback;
 
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
@@ -18,6 +21,7 @@ import android.view.KeyEvent;
 import io.casey.musikcube.remote.Application;
 import io.casey.musikcube.remote.MainActivity;
 import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.util.Debouncer;
 import io.casey.musikcube.remote.util.Strings;
 
 /* basically a stub service that exists to keep a connection active to the
@@ -26,6 +30,7 @@ a partial wakelock to keep the radio from going to sleep. */
 public class SystemService extends Service {
     private static final String TAG = "SystemService";
     private static final int NOTIFICATION_ID = 0xdeadbeef;
+    private static final int HEADSET_HOOK_DEBOUNCE_MS = 500;
     private static final String ACTION_NOTIFICATION_PLAY = "io.casey.musikcube.remote.NOTIFICATION_PLAY";
     private static final String ACTION_NOTIFICATION_PAUSE = "io.casey.musikcube.remote.NOTIFICATION_PAUSE";
     private static final String ACTION_NOTIFICATION_NEXT = "io.casey.musikcube.remote.NOTIFICATION_NEXT";
@@ -45,6 +50,7 @@ public class SystemService extends Service {
     private PowerManager.WakeLock wakeLock;
     private PowerManager powerManager;
     private MediaSessionCompat mediaSession;
+    private int headsetHookPressCount = 0;
 
     public static void wakeup() {
         final Context c = Application.getInstance();
@@ -64,11 +70,13 @@ public class SystemService extends Service {
     public void onCreate() {
         super.onCreate();
         powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        registerReceivers();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        unregisterReceivers();
     }
 
     @Override
@@ -138,6 +146,20 @@ public class SystemService extends Service {
 
         updateMediaSessionPlaybackState();
         mediaSession.setActive(true);
+    }
+
+    private void registerReceivers() {
+        final IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        registerReceiver(headsetUnpluggedReceiver, filter);
+    }
+
+    private void unregisterReceivers() {
+        try {
+            unregisterReceiver(headsetUnpluggedReceiver);
+        }
+        catch (Exception ex) {
+            Log.e(TAG, "unable to unregister headset (un)plugged BroadcastReceiver");
+        }
     }
 
     private void updateMediaSessionPlaybackState() {
@@ -287,6 +309,22 @@ public class SystemService extends Service {
         return false;
     }
 
+    private Debouncer<Void> headsetHookDebouncer = new Debouncer<Void>(HEADSET_HOOK_DEBOUNCE_MS) {
+        @Override
+        protected void onDebounced(Void caller) {
+            if (headsetHookPressCount == 1) {
+                playback.pauseOrResume();
+            }
+            else if (headsetHookPressCount == 2) {
+                playback.next();
+            }
+            else if (headsetHookPressCount > 2) {
+                playback.prev();
+            }
+            headsetHookPressCount = 0;
+        }
+    };
+
     private MediaSessionCompat.Callback mediaSessionCallback = new MediaSessionCompat.Callback() {
         @Override
         public boolean onMediaButtonEvent(Intent mediaButtonEvent) {
@@ -301,7 +339,9 @@ public class SystemService extends Service {
                 if (event.getRepeatCount() == 0 && action == KeyEvent.ACTION_DOWN) {
                     switch (keycode) {
                         case KeyEvent.KEYCODE_HEADSETHOOK:
-                            return false;
+                            ++headsetHookPressCount;
+                            headsetHookDebouncer.call();
+                            return true;
                         case KeyEvent.KEYCODE_MEDIA_STOP:
                             playback.pause();
                             SystemService.shutdown();
@@ -371,5 +411,16 @@ public class SystemService extends Service {
 
     private PlaybackService.EventListener listener = () -> {
         updateMediaSessionPlaybackState();
+    };
+
+    private BroadcastReceiver headsetUnpluggedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(AudioManager.ACTION_AUDIO_BECOMING_NOISY)) {
+                if (playback != null) {
+                    playback.pause();
+                }
+            }
+        }
     };
 }
