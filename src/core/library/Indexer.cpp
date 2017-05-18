@@ -607,9 +607,8 @@ void Indexer::SyncCleanup() {
     this->dbConnection.Execute("DELETE FROM meta_values WHERE id NOT IN (SELECT DISTINCT(meta_value_id) FROM track_meta)");
     this->dbConnection.Execute("DELETE FROM meta_keys WHERE id NOT IN (SELECT DISTINCT(meta_key_id) FROM meta_values)");
 
-    /* orphaned playlist tracks (local tracks only. let tracks from external
-    sources continue to exist */
-    this->dbConnection.Execute("DELETE FROM playlist_tracks WHERE source_id=0 AND track_external_id NOT IN (SELECT DISTINCT external_id FROM tracks WHERE source_id == 0)");
+    /* NOTE: we used to remove orphaned local library tracks here, but we don't anymore because
+    the indexer generates stable external ids by hashing various file and metadata fields */
 
     /* orphaned playlist tracks from source plugins that do not have stable
     ids need to be cleaned up. */
@@ -628,7 +627,6 @@ void Indexer::SyncCleanup() {
             stmt.Step();
         }
     }
-
 
     /* optimize and shrink */
     this->dbConnection.Execute("VACUUM");
