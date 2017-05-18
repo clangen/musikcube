@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="disk_cache_array">
+        <item>disabled</item>
+        <item>0.5 gb</item>
+        <item>1 gb</item>
+        <item>2 gb</item>
+        <item>3 gb</item>
+        <item>4 gb</item>
+    </string-array>
+</resources>

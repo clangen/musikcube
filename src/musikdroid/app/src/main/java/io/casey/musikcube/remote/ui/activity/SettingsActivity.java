@@ -10,8 +10,10 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -20,6 +22,7 @@ import android.widget.Spinner;
 import java.util.Locale;
 
 import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.playback.ExoPlayerWrapper;
 import io.casey.musikcube.remote.playback.MediaPlayerWrapper;
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
 import io.casey.musikcube.remote.ui.util.Views;
@@ -29,8 +32,9 @@ public class SettingsActivity extends AppCompatActivity {
     private EditText addressText, portText, httpPortText, passwordText;
     private CheckBox albumArtCheckbox, messageCompressionCheckbox, softwareVolume;
     private CheckBox sslCheckbox, certCheckbox;
-    private Spinner playbackModeSpinner, bitrateSpinner;
+    private Spinner playbackModeSpinner, bitrateSpinner, cacheSpinner;
     private SharedPreferences prefs;
+    private boolean wasStreaming;
 
     public static Intent getStartIntent(final Context context) {
         return new Intent(context, SettingsActivity.class);
@@ -42,14 +46,25 @@ public class SettingsActivity extends AppCompatActivity {
         prefs = this.getSharedPreferences("prefs", MODE_PRIVATE);
         setContentView(R.layout.activity_settings);
         setTitle(R.string.settings_title);
+        wasStreaming = isStreamingEnabled();
         bindEventListeners();
         rebindUi();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.settings_menu, menu);
+        return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             finish();
+            return true;
+        }
+        else if (item.getItemId() == R.id.action_save) {
+            save();
             return true;
         }
 
@@ -75,6 +90,13 @@ public class SettingsActivity extends AppCompatActivity {
         bitrates.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         bitrateSpinner.setAdapter(bitrates);
         bitrateSpinner.setSelection(prefs.getInt("transcoder_bitrate_index", 0));
+
+        final ArrayAdapter<CharSequence> cacheSizes = ArrayAdapter.createFromResource(
+            this, R.array.disk_cache_array, android.R.layout.simple_spinner_item);
+
+        cacheSizes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        cacheSpinner.setAdapter(cacheSizes);
+        cacheSpinner.setSelection(prefs.getInt("disk_cache_size_index", 0));
 
         this.albumArtCheckbox.setChecked(this.prefs.getBoolean("album_art_enabled", true));
         this.messageCompressionCheckbox.setChecked(this.prefs.getBoolean("message_compression_enabled", true));
@@ -137,43 +159,58 @@ public class SettingsActivity extends AppCompatActivity {
         this.softwareVolume = (CheckBox) findViewById(R.id.software_volume);
         this.playbackModeSpinner = (Spinner) findViewById(R.id.playback_mode_spinner);
         this.bitrateSpinner = (Spinner) findViewById(R.id.transcoder_bitrate_spinner);
+        this.cacheSpinner = (Spinner) findViewById(R.id.streaming_disk_cache_spinner);
         this.sslCheckbox = (CheckBox) findViewById(R.id.ssl_checkbox);
         this.certCheckbox = (CheckBox) findViewById(R.id.cert_validation);
 
-        final boolean wasStreaming = isStreamingEnabled();
-
-        this.findViewById(R.id.button_connect).setOnClickListener((View v) -> {
-            final String addr = addressText.getText().toString();
-            final String port = portText.getText().toString();
-            final String httpPort = httpPortText.getText().toString();
-            final String password = passwordText.getText().toString();
-
-            prefs.edit()
-                .putString("address", addr)
-                .putInt("port", (port.length() > 0) ? Integer.valueOf(port) : 0)
-                .putInt("http_port", (httpPort.length() > 0) ? Integer.valueOf(httpPort) : 0)
-                .putString("password", password)
-                .putBoolean("album_art_enabled", albumArtCheckbox.isChecked())
-                .putBoolean("message_compression_enabled", messageCompressionCheckbox.isChecked())
-                .putBoolean("streaming_playback", isStreamingSelected())
-                .putBoolean("software_volume", softwareVolume.isChecked())
-                .putBoolean("ssl_enabled", sslCheckbox.isChecked())
-                .putBoolean("cert_validation_disabled", certCheckbox.isChecked())
-                .putInt("transcoder_bitrate_index", bitrateSpinner.getSelectedItemPosition())
-                .apply();
-
-            if (!softwareVolume.isChecked()) {
-                MediaPlayerWrapper.setGlobalVolume(1.0f);
+        this.playbackModeSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int selectedIndex, long l) {
+                final boolean streaming = (selectedIndex == 1);
+                bitrateSpinner.setEnabled(streaming);
+                cacheSpinner.setEnabled(streaming);
             }
 
-            if (wasStreaming && !isStreamingEnabled()) {
-                PlaybackServiceFactory.streaming(this).stop();
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
             }
-
-            WebSocketService.getInstance(this).disconnect();
-
-            finish();
         });
+   }
+
+    private void save() {
+        final String addr = addressText.getText().toString();
+        final String port = portText.getText().toString();
+        final String httpPort = httpPortText.getText().toString();
+        final String password = passwordText.getText().toString();
+
+        prefs.edit()
+            .putString("address", addr)
+            .putInt("port", (port.length() > 0) ? Integer.valueOf(port) : 0)
+            .putInt("http_port", (httpPort.length() > 0) ? Integer.valueOf(httpPort) : 0)
+            .putString("password", password)
+            .putBoolean("album_art_enabled", albumArtCheckbox.isChecked())
+            .putBoolean("message_compression_enabled", messageCompressionCheckbox.isChecked())
+            .putBoolean("streaming_playback", isStreamingSelected())
+            .putBoolean("software_volume", softwareVolume.isChecked())
+            .putBoolean("ssl_enabled", sslCheckbox.isChecked())
+            .putBoolean("cert_validation_disabled", certCheckbox.isChecked())
+            .putInt("transcoder_bitrate_index", bitrateSpinner.getSelectedItemPosition())
+            .putInt("disk_cache_size_index", cacheSpinner.getSelectedItemPosition())
+            .apply();
+
+        if (!softwareVolume.isChecked()) {
+            MediaPlayerWrapper.setGlobalVolume(1.0f);
+        }
+
+        if (wasStreaming && !isStreamingEnabled()) {
+            PlaybackServiceFactory.streaming(this).stop();
+        }
+
+        ExoPlayerWrapper.invalidateSettings();
+        WebSocketService.getInstance(this).disconnect();
+
+        finish();
     }
 
     public static class SslAlertDialog extends DialogFragment {

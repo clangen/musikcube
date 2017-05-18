@@ -727,6 +727,7 @@ void WebSocketServer::BroadcastPlayQueueChanged() {
 json WebSocketServer::WebSocketServer::ReadTrackMetadata(IRetainedTrack* track) {
     return {
         { key::id, track->GetId() },
+        { key::external_id, GetMetadataString(track, key::external_id) },
         { key::title, GetMetadataString(track, key::title) },
         { key::album, GetMetadataString(track, key::album) },
         { key::album_id, track->GetInt64(key::album_id.c_str()) },

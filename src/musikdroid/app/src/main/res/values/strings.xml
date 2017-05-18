@@ -53,8 +53,9 @@
     <string name="menu_playlists">playlists</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="settings_playback_mode">playback mode:</string>
-    <string name="settings_transcoder_bitrate">transcoder bitrate:</string>
-    <string name="settings_general">general:</string>
+    <string name="settings_transcoder_bitrate">streaming downsampler bitrate:</string>
+    <string name="settings_cache_size">streaming disk cache size:</string>
+    <string name="settings_advanced">advanced:</string>
     <string name="settings_use_ssl">use ssl for server connections</string>
     <string name="settings_enable_album_art">enable album art (uses last.fm)</string>
     <string name="settings_enable_message_compression">enable message compression</string>

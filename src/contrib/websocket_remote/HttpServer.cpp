@@ -288,14 +288,15 @@ int HttpServer::HandleRequest(
         if (parts.size() > 0) {
             if (parts.at(0) == fragment::audio && parts.size() == 3) {
                 IRetainedTrack* track = nullptr;
+                bool byExternalId = (parts.at(1) == fragment::external_id);
 
-                if (parts.at(1) == fragment::id) {
-                    uint64_t id = std::stoull(urlDecode(parts.at(2)));
-                    track = server->context.dataProvider->QueryTrackById(id);
-                }
-                else if (parts.at(1) == fragment::external_id) {
+                if (byExternalId) {
                     std::string externalId = urlDecode(parts.at(2));
                     track = server->context.dataProvider->QueryTrackByExternalId(externalId.c_str());
+                }
+                else if (parts.at(1) == fragment::id) {
+                    uint64_t id = std::stoull(urlDecode(parts.at(2)));
+                    track = server->context.dataProvider->QueryTrackById(id);
                 }
 
                 if (track) {
@@ -358,6 +359,13 @@ int HttpServer::HandleRequest(
                         if (response) {
                             if (!isOnDemandTranscoder) {
                                 MHD_add_response_header(response, "Accept-Ranges", "bytes");
+                            }
+
+                            if (byExternalId) {
+                                /* if we're using an on-demand transcoder, ensure the client does not cache the
+                                result because we have to guess the content length. */
+                                std::string value = isOnDemandTranscoder ? "no-cache" : "public, max-age=31536000";
+                                MHD_add_response_header(response, "Cache-Control", value.c_str());
                             }
 
                             MHD_add_response_header(response, "Content-Type", contentType(filename).c_str());

@@ -43,7 +43,9 @@
 #include <core/io/DataStreamFactory.h>
 
 #include <boost/lexical_cast.hpp>
-
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <unordered_map>
 
 using namespace musik::core;
@@ -60,6 +62,7 @@ using namespace musik::core;
 
 static std::mutex trackWriteLock;
 static std::unordered_map<std::string, int64_t> metadataIdCache;
+static auto uuids = boost::uuids::random_generator();
 
 void IndexerTrack::ResetIdCache() {
     metadataIdCache.clear();
@@ -613,6 +616,10 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     if (this->GetValue("album_artist") == "") {
         this->SetValue("album_artist", this->GetValue("artist").c_str());
+    }
+
+    if (this->GetValue("external_id") == "") {
+        this->SetValue("external_id", boost::uuids::to_string(uuids()).c_str());
     }
 
     /* remove existing relations -- we're going to update them with fresh data */

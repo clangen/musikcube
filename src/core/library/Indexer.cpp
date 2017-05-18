@@ -65,7 +65,6 @@
 static const std::string TAG = "Indexer";
 static const int MAX_THREADS = 2;
 static const size_t TRANSACTION_INTERVAL = 300;
-static std::atomic<int64_t> nextExternalId;
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -246,16 +245,6 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     /* process local files */
     if (type == SyncType::All || type == SyncType::Local) {
-        /* resolve our next external id. we do this once before starting so
-        we don't need to make a bunch of additional queries while indexing. */
-        {
-            db::Statement stmt("SELECT MAX(id) FROM tracks", this->dbConnection);
-            if (stmt.Step() == db::Row) {
-                auto id = std::max((int64_t) 1, stmt.ColumnInt64(0));
-                nextExternalId.store(id);
-            }
-        }
-
         std::vector<std::string> paths;
         std::vector<int64_t> pathIds;
 
@@ -376,9 +365,6 @@ void Indexer::ReadMetadataFromFile(
 
         /* write it to the db, if read successfully */
         if (saveToDb) {
-            std::string externalId = "local://" + std::to_string(nextExternalId.fetch_add(1));
-            track.SetValue("external_id", externalId.c_str());
-
             track.SetValue("path_id", pathId.c_str());
             track.Save(this->dbConnection, this->libraryPath);
 

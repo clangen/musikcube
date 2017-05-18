@@ -28,6 +28,8 @@ import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.casey.musikcube.remote.Application;
 import io.casey.musikcube.remote.util.NetworkUtil;
@@ -35,8 +37,21 @@ import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 
 public class ExoPlayerWrapper extends PlayerWrapper {
-    private static OkHttpClient audioStreamClient = null;
-    private static boolean certValidationDisabled = false;
+    private static OkHttpClient audioStreamHttpClient = null;
+
+    private static final long BYTES_PER_MEGABYTE = 1048576L;
+    private static final long BYTES_PER_GIGABYTE = 1073741824L;
+    private static final Map<Integer, Long> CACHE_SETTING_TO_BYTES;
+
+    static {
+        CACHE_SETTING_TO_BYTES = new HashMap<>();
+        CACHE_SETTING_TO_BYTES.put(0, BYTES_PER_MEGABYTE * 32);
+        CACHE_SETTING_TO_BYTES.put(1, BYTES_PER_GIGABYTE / 2);
+        CACHE_SETTING_TO_BYTES.put(2, BYTES_PER_GIGABYTE);
+        CACHE_SETTING_TO_BYTES.put(3, BYTES_PER_GIGABYTE * 2);
+        CACHE_SETTING_TO_BYTES.put(4, BYTES_PER_GIGABYTE * 3);
+        CACHE_SETTING_TO_BYTES.put(5, BYTES_PER_GIGABYTE * 4);
+    }
 
     private DefaultBandwidthMeter bandwidth;
     private DataSource.Factory datasources;
@@ -47,6 +62,12 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     private Context context;
     private SharedPreferences prefs;
 
+    public static void invalidateSettings() {
+        synchronized (ExoPlayerWrapper.class) {
+            audioStreamHttpClient = null;
+        }
+    }
+
     public ExoPlayerWrapper() {
         this.context = Application.getInstance();
         this.prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE);
@@ -56,37 +77,34 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         this.player = ExoPlayerFactory.newSimpleInstance(this.context, trackSelector);
         this.extractors = new DefaultExtractorsFactory();
         this.player.addListener(eventListener);
-
-        synchronized (ExoPlayerWrapper.class) {
-            final boolean disabled = this.prefs.getBoolean("cert_validation_disabled", false);
-            if (disabled != certValidationDisabled) {
-                audioStreamClient = null;
-                certValidationDisabled = disabled;
-            }
-        }
     }
 
-    private void initDataSourceFactory(final String uri) {
+    private void initHttpClient(final String uri) {
         final Context context = Application.getInstance();
 
         synchronized (ExoPlayerWrapper.class) {
-            if (audioStreamClient == null) {
+            if (audioStreamHttpClient == null) {
                 final File path = new File(context.getExternalCacheDir(), "audio");
 
-                OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                    .cache(new Cache(path, 1048576 * 256)); /* 256 meg cache */
+                int diskCacheIndex = this.prefs.getInt("disk_cache_size_index", 0);
+                if (diskCacheIndex < 0 || diskCacheIndex > CACHE_SETTING_TO_BYTES.size()) {
+                    diskCacheIndex = 0;
+                }
 
-                if (certValidationDisabled) {
+                OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                    .cache(new Cache(path, CACHE_SETTING_TO_BYTES.get(diskCacheIndex)));
+
+                if (this.prefs.getBoolean("cert_validation_disabled", false)) {
                     NetworkUtil.disableCertificateValidation(builder);
                 }
 
-                audioStreamClient = builder.build();
+                audioStreamHttpClient = builder.build();
             }
         }
 
         if (uri.startsWith("http")) {
             this.datasources = new OkHttpDataSourceFactory(
-                audioStreamClient,
+                audioStreamHttpClient,
                 Util.getUserAgent(context, "musikdroid"),
                 bandwidth);
         }
@@ -98,7 +116,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     @Override
     public void play(String uri) {
-        initDataSourceFactory(uri);
+        initHttpClient(uri);
         this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
         this.player.setPlayWhenReady(true);
         this.player.prepare(this.source);
@@ -108,7 +126,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     @Override
     public void prefetch(String uri) {
-        initDataSourceFactory(uri);
+        initHttpClient(uri);
         this.prefetch = true;
         this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
         this.player.setPlayWhenReady(false);

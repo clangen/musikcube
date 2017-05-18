@@ -13,6 +13,7 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -535,8 +536,8 @@ public class StreamingPlaybackService implements PlaybackService {
 
     private String getUri(final JSONObject track) {
         if (track != null) {
-            final long trackId = track.optLong("id", -1);
-            if (trackId != -1) {
+            final String externalId = track.optString("external_id", "");
+            if (Strings.notEmpty(externalId)) {
                 final String protocol = prefs.getBoolean("ssl_enabled", false) ? "https" : "http";
 
                 /* transcoding bitrate, if selected by the user */
@@ -553,11 +554,11 @@ public class StreamingPlaybackService implements PlaybackService {
 
                 return String.format(
                     Locale.ENGLISH,
-                    "%s://%s:%d/audio/id/%d%s",
+                    "%s://%s:%d/audio/external_id/%s%s",
                     protocol,
                     prefs.getString("address", "192.168.1.100"),
                     prefs.getInt("http_port", 7906),
-                    trackId,
+                    URLEncoder.encode(externalId),
                     bitrateQueryParam);
             }
         }

@@ -50,7 +50,7 @@ using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 
-#define DATABASE_VERSION 3
+#define DATABASE_VERSION 4
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -299,6 +299,11 @@ static void upgradeV2ToV3(db::Connection& db) {
     scheduleSyncDueToDbUpgrade = true;
 }
 
+static void upgradeV3ToV4(db::Connection& db) {
+    db.Execute("DELETE from tracks");
+    scheduleSyncDueToDbUpgrade = true;
+}
+
 static void setVersion(db::Connection& db, int version) {
     db.Execute("DELETE FROM version");
 
@@ -479,6 +484,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     if (lastVersion >= 1 && lastVersion < 3) {
         upgradeV2ToV3(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 4) {
+        upgradeV3ToV4(db);
     }
 
     /* ensure our version is set correctly */

@@ -76,6 +76,7 @@ namespace key {
     static const std::string playing_current_time = "playing_current_time";
     static const std::string playing_track = "playing_track";
     static const std::string title = "title";
+    static const std::string external_id = "external_id";
     static const std::string filename = "filename";
     static const std::string artist = "artist";
     static const std::string album = "album";
