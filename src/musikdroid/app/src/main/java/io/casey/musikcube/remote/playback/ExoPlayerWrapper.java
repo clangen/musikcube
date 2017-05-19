@@ -211,15 +211,17 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     public void dispose() {
         Preconditions.throwIfNotOnMainThread();
 
-        setState(State.Killing);
-        removeActivePlayer(this);
-        if (this.player != null) {
-            this.player.setPlayWhenReady(false);
-            this.player.removeListener(eventListener);
-            this.player.stop();
-            this.player.release();
+        if (!dead()) {
+            setState(State.Killing);
+            removeActivePlayer(this);
+            if (this.player != null) {
+                this.player.setPlayWhenReady(false);
+                this.player.removeListener(eventListener);
+                this.player.stop();
+                this.player.release();
+            }
+            setState(State.Disposed);
         }
-        setState(State.Disposed);
     }
 
     @Override

@@ -90,6 +90,7 @@ public class StreamingPlaybackService implements PlaybackService {
 
             if (nextMetadata != null && nextPlayer != null) {
                 if (currentPlayer != null) {
+                    currentPlayer.setOnStateChangedListener(null);
                     currentPlayer.dispose();
                 }
 

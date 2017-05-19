@@ -58,22 +58,26 @@ public class MainActivity extends WebSocketActivityBase {
     private WebSocketService wss = null;
 
     private SharedPreferences prefs;
+    private PlaybackService playback;
+    private Handler handler = new Handler();
+
     private TextView title, artist, album, playPause, volume;
     private TextView titleWithArt, artistAndAlbumWithArt, volumeWithArt;
+    private View mainTrackMetadataWithAlbumArt, mainTrackMetadataNoAlbumArt;
     private TextView notPlayingOrDisconnected;
     private View buffering, bufferingWithArt;
     private View connected;
     private CheckBox shuffleCb, muteCb, repeatCb;
     private View disconnectedOverlay;
-    private Handler handler = new Handler();
-    private PlaybackService playback;
+    private ImageView albumArtImageView;
+
+    private ViewPropertyAnimator metadataAnim1, metadataAnim2;
 
     /* ugh, artwork related */
     private enum DisplayMode { Artwork, NoArtwork, Stopped }
-    private View mainTrackMetadataWithAlbumArt, mainTrackMetadataNoAlbumArt;
-    private ViewPropertyAnimator metadataAnim1, metadataAnim2;
     private AlbumArtModel albumArtModel = AlbumArtModel.empty();
-    private ImageView albumArtImageView;
+    private DisplayMode lastDisplayMode = DisplayMode.Stopped;
+    private String lastArtworkUrl = null;
 
     static {
         REPEAT_TO_STRING_ID = new HashMap<>();
@@ -338,7 +342,7 @@ public class MainActivity extends WebSocketActivityBase {
         this.playPause.setText(playing ? R.string.button_pause : R.string.button_play);
 
         final boolean stopped = (playback.getPlaybackState() == PlaybackState.Stopped);
-        notPlayingOrDisconnected.setVisibility(stopped ? View.VISIBLE : View.GONE);
+        notPlayingOrDisconnected.setVisibility(!connected || stopped ? View.VISIBLE : View.GONE);
 
         boolean buffering = playback.getPlaybackState() == PlaybackState.Buffering;
 
@@ -413,6 +417,8 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void setMetadataDisplayMode(DisplayMode mode) {
+        lastDisplayMode = mode;
+
         if (metadataAnim1 != null) {
             metadataAnim1.cancel();
             metadataAnim2.cancel();
@@ -467,11 +473,13 @@ public class MainActivity extends WebSocketActivityBase {
         final String url = albumArtModel.getUrl();
 
         if (Strings.empty(url)) {
+            this.lastArtworkUrl = null;
             albumArtModel.fetch();
             setMetadataDisplayMode(DisplayMode.NoArtwork);
         }
-        else {
+        else if (!url.equals(lastArtworkUrl) || lastDisplayMode == DisplayMode.Stopped) {
             final int loadId = albumArtModel.getId();
+            this.lastArtworkUrl = url;
 
             Glide.with(this)
                 .load(url)
@@ -484,6 +492,7 @@ public class MainActivity extends WebSocketActivityBase {
                                                boolean isFirstResource)
                     {
                         setMetadataDisplayMode(DisplayMode.NoArtwork);
+                        lastArtworkUrl = null;
                         return false;
                     }
 
@@ -510,6 +519,9 @@ public class MainActivity extends WebSocketActivityBase {
                     }
                 })
                 .into(albumArtImageView);
+        }
+        else {
+            setMetadataDisplayMode(lastDisplayMode);
         }
     }
 

@@ -43,7 +43,7 @@ namespace defaults {
     static const std::string password = "";
     static const int transcoder_cache_count = 50;
     static const bool transcoder_synchronous = false;
-    static const bool transcoder_synchronous_fallback = true;
+    static const bool transcoder_synchronous_fallback = false;
 }
 
 namespace prefs {
