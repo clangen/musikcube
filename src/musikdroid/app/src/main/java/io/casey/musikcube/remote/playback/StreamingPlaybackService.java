@@ -28,6 +28,7 @@ import io.casey.musikcube.remote.R;
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow;
 import io.casey.musikcube.remote.util.Strings;
 import io.casey.musikcube.remote.websocket.Messages;
+import io.casey.musikcube.remote.websocket.Prefs;
 import io.casey.musikcube.remote.websocket.SocketMessage;
 import io.casey.musikcube.remote.websocket.WebSocketService;
 import io.reactivex.Observable;
@@ -67,15 +68,10 @@ public class StreamingPlaybackService implements PlaybackService {
         int currentIndex = -1, nextIndex = -1;
         boolean nextPlayerScheduled;
 
-        public void stopPlayback() {
+        public void stopPlaybackAndReset() {
             reset(currentPlayer);
             reset(nextPlayer);
-            nextPlayerScheduled = false;
-        }
-
-        public void stopPlaybackAndReset() {
-            stopPlayback();
-            this.currentPlayer = this.nextPlayer = null;
+            nextPlayerScheduled = false;            this.currentPlayer = this.nextPlayer = null;
             this.currentMetadata = this.nextMetadata = null;
             this.currentIndex = this.nextIndex = -1;
         }
@@ -156,7 +152,7 @@ public class StreamingPlaybackService implements PlaybackService {
 
     public StreamingPlaybackService(final Context context) {
         this.wss = WebSocketService.getInstance(context.getApplicationContext());
-        this.prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE);
+        this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
         this.audioManager = (AudioManager) Application.getInstance().getSystemService(Context.AUDIO_SERVICE);
         this.lastSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         this.repeatMode = RepeatMode.from(this.prefs.getString(REPEAT_MODE_PREF, RepeatMode.None.toString()));
@@ -208,7 +204,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public void playAt(int index) {
         if (requestAudioFocus()) {
-            this.context.stopPlayback();
+            this.context.stopPlaybackAndReset();
             loadQueueAndPlay(this.params, index);
         }
     }
@@ -316,7 +312,7 @@ public class StreamingPlaybackService implements PlaybackService {
 
     @Override
     public double getVolume() {
-        if (prefs.getBoolean("software_volume", false)) {
+        if (prefs.getBoolean(Prefs.Key.SOFTWARE_VOLUME, Prefs.Default.SOFTWARE_VOLUME)) {
             return PlayerWrapper.getGlobalVolume();
         }
 
@@ -409,7 +405,7 @@ public class StreamingPlaybackService implements PlaybackService {
     }
 
     private float getVolumeStep() {
-        if (prefs.getBoolean("software_volume", false)) {
+        if (prefs.getBoolean(Prefs.Key.SOFTWARE_VOLUME, Prefs.Default.SOFTWARE_VOLUME)) {
             return 0.1f;
         }
         return 1.0f / getMaxSystemVolume();
@@ -420,7 +416,7 @@ public class StreamingPlaybackService implements PlaybackService {
             toggleMute();
         }
 
-        final boolean softwareVolume = prefs.getBoolean("software_volume", false);
+        final boolean softwareVolume = prefs.getBoolean(Prefs.Key.SOFTWARE_VOLUME, Prefs.Default.SOFTWARE_VOLUME);
         float current = softwareVolume ? PlayerWrapper.getGlobalVolume() : getSystemVolume();
 
         current += delta;
@@ -538,11 +534,15 @@ public class StreamingPlaybackService implements PlaybackService {
         if (track != null) {
             final String externalId = track.optString("external_id", "");
             if (Strings.notEmpty(externalId)) {
-                final String protocol = prefs.getBoolean("ssl_enabled", false) ? "https" : "http";
+                final String protocol = prefs.getBoolean(
+                    Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED) ? "https" : "http";
 
                 /* transcoding bitrate, if selected by the user */
                 String bitrateQueryParam = "";
-                final int bitrateIndex = prefs.getInt("transcoder_bitrate_index", 0);
+                final int bitrateIndex = prefs.getInt(
+                    Prefs.Key.TRANSCODER_BITRATE_INDEX,
+                    Prefs.Default.TRANSCODER_BITRATE_INDEX);
+
                 if (bitrateIndex > 0) {
                     final Resources r = Application.getInstance().getResources();
 
@@ -556,32 +556,13 @@ public class StreamingPlaybackService implements PlaybackService {
                     Locale.ENGLISH,
                     "%s://%s:%d/audio/external_id/%s%s",
                     protocol,
-                    prefs.getString("address", "192.168.1.100"),
-                    prefs.getInt("http_port", 7906),
+                    prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS),
+                    prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT),
                     URLEncoder.encode(externalId),
                     bitrateQueryParam);
             }
         }
         return null;
-    }
-
-    private void playCurrentTrack() {
-        this.context.stopPlayback();
-
-        final String uri = getUri(this.context.currentMetadata);
-
-        if (uri != null) {
-            this.context.currentPlayer = PlayerWrapper.newInstance();
-            this.context.currentPlayer.setOnStateChangedListener(onCurrentPlayerStateChanged);
-            this.context.currentPlayer.play(uri);
-            setState(PlaybackState.Buffering);
-        }
-    }
-
-    private void onPlayQueueLoaded() {
-        if (this.state == PlaybackState.Buffering) {
-            playCurrentTrack();
-        }
     }
 
     private int resolvePrevIndex(final int currentIndex, final int count) {
@@ -741,9 +722,10 @@ public class StreamingPlaybackService implements PlaybackService {
         cancelScheduledPausedShutdown();
         SystemService.wakeup();
 
-        this.context.stopPlayback();
+        this.context.stopPlaybackAndReset();
         final PlaybackContext context = new PlaybackContext();
-       context.currentIndex = startIndex;
+        this.context = context;
+        context.currentIndex = startIndex;
 
         this.params = params;
         final SocketMessage countMessage = queryFactory.getRequeryMessage();
@@ -763,10 +745,15 @@ public class StreamingPlaybackService implements PlaybackService {
                 }
             })
             .doOnComplete(() -> {
-                if (StreamingPlaybackService.this.params == params) {
-                    StreamingPlaybackService.this.context = context;
+                if (this.params == params && this.context == context) {
                     notifyEventListeners();
-                    onPlayQueueLoaded();
+
+                    final String uri = getUri(this.context.currentMetadata);
+                    if (uri != null) {
+                        this.context.currentPlayer = PlayerWrapper.newInstance();
+                        this.context.currentPlayer.setOnStateChangedListener(onCurrentPlayerStateChanged);
+                        this.context.currentPlayer.play(uri);
+                    }
                 }
             })
             .subscribe();

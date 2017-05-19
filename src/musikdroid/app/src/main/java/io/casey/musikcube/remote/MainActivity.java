@@ -21,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.resource.drawable.GlideDrawable;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
@@ -47,6 +48,7 @@ import io.casey.musikcube.remote.ui.util.Views;
 import io.casey.musikcube.remote.ui.view.LongPressTextView;
 import io.casey.musikcube.remote.util.Strings;
 import io.casey.musikcube.remote.websocket.Messages;
+import io.casey.musikcube.remote.websocket.Prefs;
 import io.casey.musikcube.remote.websocket.SocketMessage;
 import io.casey.musikcube.remote.websocket.WebSocketService;
 
@@ -70,7 +72,7 @@ public class MainActivity extends WebSocketActivityBase {
     private enum DisplayMode { Artwork, NoArtwork, Stopped }
     private View mainTrackMetadataWithAlbumArt, mainTrackMetadataNoAlbumArt;
     private ViewPropertyAnimator metadataAnim1, metadataAnim2;
-    private AlbumArtModel albumArtModel = new AlbumArtModel();
+    private AlbumArtModel albumArtModel = AlbumArtModel.empty();
     private ImageView albumArtImageView;
 
     static {
@@ -89,7 +91,7 @@ public class MainActivity extends WebSocketActivityBase {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        this.prefs = this.getSharedPreferences("prefs", Context.MODE_PRIVATE);
+        this.prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
         this.wss = getWebSocketService();
         this.playback = getPlaybackService();
 
@@ -325,7 +327,9 @@ public class MainActivity extends WebSocketActivityBase {
         /* state management for UI stuff is starting to get out of hand. we should
         refactor things pretty soon before they're completely out of control */
 
-        final boolean streaming = prefs.getBoolean("streaming_playback", false);
+        final boolean streaming = prefs.getBoolean(
+            Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK);
+
         final WebSocketService.State state = wss.getState();
 
         final boolean connected = state == WebSocketService.State.Connected;
@@ -382,17 +386,20 @@ public class MainActivity extends WebSocketActivityBase {
         Views.setCheckWithoutEvent(this.shuffleCb, playback.isShuffled(), this.shuffleListener);
         Views.setCheckWithoutEvent(this.muteCb, playback.isMuted(), this.muteListener);
 
-        boolean albumArtEnabledInSettings = this.prefs.getBoolean("album_art_enabled", true);
+        boolean albumArtEnabledInSettings = this.prefs.getBoolean(
+            Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED);
 
         if (stateIsValidForArtwork) {
             if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
-                this.albumArtModel = new AlbumArtModel();
+                this.albumArtModel = AlbumArtModel.empty();
                 setMetadataDisplayMode(DisplayMode.NoArtwork);
             }
             else {
                 if (!this.albumArtModel.is(artist, album)) {
                     this.albumArtModel.destroy();
-                    this.albumArtModel = new AlbumArtModel(title, artist, album, albumArtRetrieved);
+
+                    this.albumArtModel = new AlbumArtModel(
+                        title, artist, album, AlbumArtModel.Size.Mega, albumArtRetrieved);
                 }
                 updateAlbumArt();
             }
@@ -400,7 +407,7 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void clearUi() {
-        albumArtModel = new AlbumArtModel();
+        albumArtModel = AlbumArtModel.empty();
         updateAlbumArt();
         rebindUi();
     }
@@ -442,7 +449,7 @@ public class MainActivity extends WebSocketActivityBase {
                 final String album = track.optString(Metadata.Track.ALBUM, "");
 
                 if (!albumArtModel.is(artist, album)) {
-                    new AlbumArtModel("", artist, album, (info, url) -> {
+                    new AlbumArtModel("", artist, album, AlbumArtModel.Size.Mega, (info, url) -> {
                         int width = albumArtImageView.getWidth();
                         int height = albumArtImageView.getHeight();
                         Glide.with(MainActivity.this).load(url).downloadOnly(width, height);
@@ -468,6 +475,7 @@ public class MainActivity extends WebSocketActivityBase {
 
             Glide.with(this)
                 .load(url)
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .listener(new RequestListener<String, GlideDrawable>() {
                     @Override
                     public boolean onException(Exception e,
@@ -576,12 +584,7 @@ public class MainActivity extends WebSocketActivityBase {
         }
     };
 
-    private PlaybackService.EventListener playbackEvents = new PlaybackService.EventListener() {
-        @Override
-        public void onStateUpdated() {
-            rebindUi();
-        }
-    };
+    private PlaybackService.EventListener playbackEvents = () -> rebindUi();
 
     private WebSocketService.Client serviceClient = new WebSocketService.Client() {
         @Override

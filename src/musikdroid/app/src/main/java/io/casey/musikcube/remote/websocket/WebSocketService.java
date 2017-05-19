@@ -180,7 +180,7 @@ public class WebSocketService {
 
     private WebSocketService(final Context context) {
         this.context = context.getApplicationContext();
-        this.prefs = this.context.getSharedPreferences("prefs", Context.MODE_PRIVATE);
+        this.prefs = this.context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
         handler.sendEmptyMessageDelayed(MESSAGE_REMOVE_OLD_CALLBACKS, CALLBACK_TIMEOUT_MILLIS);
     }
 
@@ -342,8 +342,8 @@ public class WebSocketService {
     }
 
     public boolean hasValidConnection() {
-        final String addr = prefs.getString("address", "");
-        final int port = prefs.getInt("port", -1);
+        final String addr = prefs.getString(Prefs.Key.ADDRESS, "");
+        final int port = prefs.getInt(Prefs.Key.MAIN_PORT, -1);
         return (addr.length() > 0 && port >= 0);
     }
 
@@ -518,23 +518,24 @@ public class WebSocketService {
             try {
                 final WebSocketFactory factory = new WebSocketFactory();
 
-                if (prefs.getBoolean("cert_validation_disabled", false)) {
+                if (prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
                     NetworkUtil.disableCertificateValidation(factory);
                 }
 
-                final String protocol = prefs.getBoolean("ssl_enabled", false) ? "wss" : "ws";
+                final String protocol = prefs.getBoolean(
+                    Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED) ? "wss" : "ws";
 
                 final String host = String.format(
                     Locale.ENGLISH,
                     "%s://%s:%d",
                     protocol,
-                    prefs.getString("address", "192.168.1.100"),
-                    prefs.getInt("port", 7905));
+                    prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS),
+                    prefs.getInt(Prefs.Key.MAIN_PORT, Prefs.Default.MAIN_PORT));
 
                 socket = factory.createSocket(host, CONNECTION_TIMEOUT_MILLIS);
                 socket.addListener(webSocketAdapter);
 
-                if (prefs.getBoolean("message_compression_enabled", true)) {
+                if (prefs.getBoolean(Prefs.Key.MESSAGE_COMPRESSION_ENABLED, Prefs.Default.MESSAGE_COMPRESSION_ENABLED)) {
                     socket.addExtension(WebSocketExtension.PERMESSAGE_DEFLATE);
                 }
 
@@ -544,7 +545,7 @@ public class WebSocketService {
                 /* authenticate */
                 final String auth = SocketMessage.Builder
                     .request(Messages.Request.Authenticate)
-                    .addOption("password", prefs.getString("password", ""))
+                    .addOption("password", prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD))
                     .build()
                     .toString();
 

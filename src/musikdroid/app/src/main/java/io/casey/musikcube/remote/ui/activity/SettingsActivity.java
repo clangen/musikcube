@@ -26,6 +26,7 @@ import io.casey.musikcube.remote.playback.ExoPlayerWrapper;
 import io.casey.musikcube.remote.playback.MediaPlayerWrapper;
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
 import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.websocket.Prefs;
 import io.casey.musikcube.remote.websocket.WebSocketService;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -43,7 +44,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        prefs = this.getSharedPreferences("prefs", MODE_PRIVATE);
+        prefs = this.getSharedPreferences(Prefs.NAME, MODE_PRIVATE);
         setContentView(R.layout.activity_settings);
         setTitle(R.string.settings_title);
         wasStreaming = isStreamingEnabled();
@@ -72,10 +73,10 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void rebindUi() {
-        Views.setTextAndMoveCursorToEnd(this.addressText, prefs.getString("address", "192.168.1.100"));
-        Views.setTextAndMoveCursorToEnd(this.portText, String.format(Locale.ENGLISH, "%d", prefs.getInt("port", 7905)));
-        Views.setTextAndMoveCursorToEnd(this.httpPortText, String.format(Locale.ENGLISH, "%d", prefs.getInt("http_port", 7906)));
-        Views.setTextAndMoveCursorToEnd(this.passwordText, prefs.getString("password", ""));
+        Views.setTextAndMoveCursorToEnd(this.addressText, prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS));
+        Views.setTextAndMoveCursorToEnd(this.portText, String.format(Locale.ENGLISH, "%d", prefs.getInt(Prefs.Key.MAIN_PORT, Prefs.Default.MAIN_PORT)));
+        Views.setTextAndMoveCursorToEnd(this.httpPortText, String.format(Locale.ENGLISH, "%d", prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT)));
+        Views.setTextAndMoveCursorToEnd(this.passwordText, prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD));
 
         final ArrayAdapter<CharSequence> playbackModes = ArrayAdapter.createFromResource(
             this, R.array.streaming_mode_array, android.R.layout.simple_spinner_item);
@@ -89,35 +90,38 @@ public class SettingsActivity extends AppCompatActivity {
 
         bitrates.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         bitrateSpinner.setAdapter(bitrates);
-        bitrateSpinner.setSelection(prefs.getInt("transcoder_bitrate_index", 0));
+        bitrateSpinner.setSelection(prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, Prefs.Default.TRANSCODER_BITRATE_INDEX));
 
         final ArrayAdapter<CharSequence> cacheSizes = ArrayAdapter.createFromResource(
             this, R.array.disk_cache_array, android.R.layout.simple_spinner_item);
 
         cacheSizes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         cacheSpinner.setAdapter(cacheSizes);
-        cacheSpinner.setSelection(prefs.getInt("disk_cache_size_index", 0));
+        cacheSpinner.setSelection(prefs.getInt(Prefs.Key.DISK_CACHE_SIZE_INDEX, Prefs.Default.DISK_CACHE_SIZE_INDEX));
 
-        this.albumArtCheckbox.setChecked(this.prefs.getBoolean("album_art_enabled", true));
-        this.messageCompressionCheckbox.setChecked(this.prefs.getBoolean("message_compression_enabled", true));
-        this.softwareVolume.setChecked(this.prefs.getBoolean("software_volume", false));
-        this.certCheckbox.setChecked(this.prefs.getBoolean("cert_validation_disabled", false));
+        this.albumArtCheckbox.setChecked(this.prefs.getBoolean(Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED));
+        this.messageCompressionCheckbox.setChecked(this.prefs.getBoolean(Prefs.Key.MESSAGE_COMPRESSION_ENABLED, Prefs.Default.MESSAGE_COMPRESSION_ENABLED));
+        this.softwareVolume.setChecked(this.prefs.getBoolean(Prefs.Key.SOFTWARE_VOLUME, Prefs.Default.SOFTWARE_VOLUME));
 
         Views.setCheckWithoutEvent(
             this.sslCheckbox,
-            this.prefs.getBoolean("ssl_enabled", false),
+            this.prefs.getBoolean(
+                Prefs.Key.SSL_ENABLED,
+                Prefs.Default.SSL_ENABLED),
             sslCheckChanged);
 
         Views.setCheckWithoutEvent(
             this.certCheckbox,
-            this.prefs.getBoolean("cert_validation_disabled", false),
+            this.prefs.getBoolean(
+                Prefs.Key.CERT_VALIDATION_DISABLED,
+                Prefs.Default.CERT_VALIDATION_DISABLED),
             certValidationChanged);
 
         Views.enableUpNavigation(this);
     }
 
     private boolean isStreamingEnabled() {
-        return this.prefs.getBoolean("streaming_playback", false);
+        return this.prefs.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK);
     }
 
     private boolean isStreamingSelected() {
@@ -185,18 +189,18 @@ public class SettingsActivity extends AppCompatActivity {
         final String password = passwordText.getText().toString();
 
         prefs.edit()
-            .putString("address", addr)
-            .putInt("port", (port.length() > 0) ? Integer.valueOf(port) : 0)
-            .putInt("http_port", (httpPort.length() > 0) ? Integer.valueOf(httpPort) : 0)
-            .putString("password", password)
-            .putBoolean("album_art_enabled", albumArtCheckbox.isChecked())
-            .putBoolean("message_compression_enabled", messageCompressionCheckbox.isChecked())
-            .putBoolean("streaming_playback", isStreamingSelected())
-            .putBoolean("software_volume", softwareVolume.isChecked())
-            .putBoolean("ssl_enabled", sslCheckbox.isChecked())
-            .putBoolean("cert_validation_disabled", certCheckbox.isChecked())
-            .putInt("transcoder_bitrate_index", bitrateSpinner.getSelectedItemPosition())
-            .putInt("disk_cache_size_index", cacheSpinner.getSelectedItemPosition())
+            .putString(Prefs.Key.ADDRESS, addr)
+            .putInt(Prefs.Key.MAIN_PORT, (port.length() > 0) ? Integer.valueOf(port) : 0)
+            .putInt(Prefs.Key.AUDIO_PORT, (httpPort.length() > 0) ? Integer.valueOf(httpPort) : 0)
+            .putString(Prefs.Key.PASSWORD, password)
+            .putBoolean(Prefs.Key.ALBUM_ART_ENABLED, albumArtCheckbox.isChecked())
+            .putBoolean(Prefs.Key.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked())
+            .putBoolean(Prefs.Key.STREAMING_PLAYBACK, isStreamingSelected())
+            .putBoolean(Prefs.Key.SOFTWARE_VOLUME, softwareVolume.isChecked())
+            .putBoolean(Prefs.Key.SSL_ENABLED, sslCheckbox.isChecked())
+            .putBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, certCheckbox.isChecked())
+            .putInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, bitrateSpinner.getSelectedItemPosition())
+            .putInt(Prefs.Key.DISK_CACHE_SIZE_INDEX, cacheSpinner.getSelectedItemPosition())
             .apply();
 
         if (!softwareVolume.isChecked()) {

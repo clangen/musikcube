@@ -15,6 +15,7 @@ import com.uacf.taskrunner.Task;
 
 import io.casey.musikcube.remote.playback.PlaybackService;
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
+import io.casey.musikcube.remote.websocket.Prefs;
 import io.casey.musikcube.remote.websocket.WebSocketService;
 
 public abstract class WebSocketActivityBase extends AppCompatActivity implements Runner.TaskCallbacks {
@@ -32,7 +33,7 @@ public abstract class WebSocketActivityBase extends AppCompatActivity implements
         this.runnerDelegate.onCreate(savedInstanceState);
         this.wss = WebSocketService.getInstance(this);
         this.playback = PlaybackServiceFactory.instance(this);
-        this.prefs = getSharedPreferences("prefs", Context.MODE_PRIVATE);
+        this.prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
     }
 
     @Override
@@ -68,7 +69,8 @@ public abstract class WebSocketActivityBase extends AppCompatActivity implements
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        boolean streaming = prefs.getBoolean("streaming_playback", false);
+        boolean streaming = prefs.getBoolean(
+            Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK);
 
         /* if we're not streaming we want the hardware buttons to go out to the system */
         if (!streaming) {

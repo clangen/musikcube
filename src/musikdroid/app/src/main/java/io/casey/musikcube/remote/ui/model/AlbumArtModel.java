@@ -9,6 +9,10 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -59,19 +63,55 @@ public final class AlbumArtModel {
     private AlbumArtCallback callback;
     private boolean fetching;
     private boolean noart;
-    private long loadTime = 0;
     private int id;
+    private Size desiredSize;
 
-    public AlbumArtModel() {
-        this("", "", "", null);
+    public enum Size {
+        Small("small", 0),
+        Medium("medium", 1),
+        Large("large", 2),
+        ExtraLarge("extralarge", 3),
+        Mega("mega", 4);
+
+        final String name;
+        final int order;
+
+        static Size from(final String value) {
+            for (Size size : values()) {
+                if (size.name.equals(value)) {
+                    return size;
+                }
+            }
+            return null;
+        }
+
+        Size(String name, int order) {
+            this.name = name;
+            this.order = order;
+        }
     }
 
-    public AlbumArtModel(String track, String artist, String album, AlbumArtCallback callback) {
+    public static class Image {
+        final String url;
+        final Size size;
+
+        public Image(final Size size, final String url) {
+            this.url = url;
+            this.size = size;
+        }
+    }
+
+    public static AlbumArtModel empty() {
+        return new AlbumArtModel("", "", "", Size.Small, null);
+    }
+
+    public AlbumArtModel(String track, String artist, String album, Size size, AlbumArtCallback callback) {
         this.track = track;
         this.artist = artist;
         this.album = album;
         this.callback = callback != null ? callback : (info, url) -> { };
-        this.id = (artist + album).hashCode();
+        this.desiredSize = size;
+        this.id = (artist + album + size.name).hashCode();
 
         synchronized (this) {
             this.url = URL_CACHE.get(id);
@@ -99,18 +139,15 @@ public final class AlbumArtModel {
         return this.url;
     }
 
-    public synchronized long getLoadTimeMillis() {
-        return this.loadTime;
-    }
-
     public int getId() {
         return id;
     }
 
-    public synchronized void fetch() {
+    public synchronized AlbumArtModel fetch() {
         if (this.fetching || this.noart) {
-            return;
+            return this;
         }
+
         if (!Strings.empty(this.url)) {
             callback.onFinished(this, this.url);
         }
@@ -130,7 +167,6 @@ public final class AlbumArtModel {
                 throw new RuntimeException(ex);
             }
 
-            final long start = System.currentTimeMillis();
             this.fetching = true;
             final Request request = new Request.Builder().url(requestUrl).build();
 
@@ -144,27 +180,53 @@ public final class AlbumArtModel {
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     synchronized (AlbumArtModel.this) {
+                        List<Image> imageList = new ArrayList<>();
+
                         try {
                             final JSONObject json = new JSONObject(response.body().string());
-                            final JSONArray images = json.getJSONObject("album").getJSONArray("image");
-                            for (int i = images.length() - 1; i >= 0; i--) {
-                                final JSONObject image = images.getJSONObject(i);
-                                final String size = image.optString("size", "");
-                                if (size != null && size.length() > 0) {
-                                    final String resolvedUrl = image.optString("#text", "");
-                                    if (resolvedUrl != null && resolvedUrl.length() > 0) {
-                                        synchronized (AlbumArtModel.this) {
-                                            URL_CACHE.put(id, resolvedUrl);
-                                        }
-
-                                        AlbumArtModel.this.url = resolvedUrl;
-                                        loadTime = System.currentTimeMillis() - start;
-                                        callback.onFinished(AlbumArtModel.this, resolvedUrl);
-                                        return;
+                            final JSONArray imagesJson = json.getJSONObject("album").getJSONArray("image");
+                            for (int i = 0; i < imagesJson.length(); i++) {
+                                final JSONObject imageJson = imagesJson.getJSONObject(i);
+                                final Size size = Size.from(imageJson.optString("size", ""));
+                                if (size != null) {
+                                    final String resolvedUrl = imageJson.optString("#text", "");
+                                    if (Strings.notEmpty(resolvedUrl)) {
+                                        imageList.add(new Image(size, resolvedUrl));
                                     }
                                 }
                             }
-                        } catch (JSONException ex) {
+
+                            if (imageList.size() > 0) {
+                                /* find the image with the closest to the requested size.
+                                exact match preferred. */
+                                Size desiredSize = Size.Mega;
+                                Image closest = imageList.get(0);
+                                int lastDelta = Integer.MAX_VALUE;
+                                for (final Image check : imageList) {
+                                    if (check.size == desiredSize) {
+                                        closest = check;
+                                        break;
+                                    }
+                                    else {
+                                        int delta = Math.abs(desiredSize.order - check.size.order);
+                                        if (lastDelta > delta) {
+                                            closest = check;
+                                            lastDelta = delta;
+                                        }
+                                    }
+                                }
+
+                                synchronized (AlbumArtModel.this) {
+                                    URL_CACHE.put(id, closest.url);
+                                }
+
+                                fetching = false;
+                                AlbumArtModel.this.url = closest.url;
+                                callback.onFinished(AlbumArtModel.this, closest.url);
+                                return;
+                            }
+                        }
+                        catch (JSONException ex) {
                         }
 
                         noart = true; /* got a response, but it was invalid. we won't try again */
@@ -178,6 +240,8 @@ public final class AlbumArtModel {
         else {
             callback.onFinished(this, null);
         }
+
+        return this;
     }
 
     private static final Pattern[] BAD_PATTERNS = {

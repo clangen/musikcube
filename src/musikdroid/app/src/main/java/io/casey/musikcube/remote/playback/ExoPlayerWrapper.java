@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.playback;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.util.Log;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -33,6 +34,8 @@ import java.util.Map;
 
 import io.casey.musikcube.remote.Application;
 import io.casey.musikcube.remote.util.NetworkUtil;
+import io.casey.musikcube.remote.util.Preconditions;
+import io.casey.musikcube.remote.websocket.Prefs;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 
@@ -70,7 +73,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     public ExoPlayerWrapper() {
         this.context = Application.getInstance();
-        this.prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE);
+        this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
         this.bandwidth = new DefaultBandwidthMeter();
         final TrackSelection.Factory trackFactory = new AdaptiveTrackSelection.Factory(bandwidth);
         final TrackSelector trackSelector = new DefaultTrackSelector(trackFactory);
@@ -86,7 +89,9 @@ public class ExoPlayerWrapper extends PlayerWrapper {
             if (audioStreamHttpClient == null) {
                 final File path = new File(context.getExternalCacheDir(), "audio");
 
-                int diskCacheIndex = this.prefs.getInt("disk_cache_size_index", 0);
+                int diskCacheIndex = this.prefs.getInt(
+                    Prefs.Key.DISK_CACHE_SIZE_INDEX, Prefs.Default.DISK_CACHE_SIZE_INDEX);
+
                 if (diskCacheIndex < 0 || diskCacheIndex > CACHE_SETTING_TO_BYTES.size()) {
                     diskCacheIndex = 0;
                 }
@@ -94,7 +99,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
                 OkHttpClient.Builder builder = new OkHttpClient.Builder()
                     .cache(new Cache(path, CACHE_SETTING_TO_BYTES.get(diskCacheIndex)));
 
-                if (this.prefs.getBoolean("cert_validation_disabled", false)) {
+                if (this.prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
                     NetworkUtil.disableCertificateValidation(builder);
                 }
 
@@ -116,27 +121,37 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     @Override
     public void play(String uri) {
-        initHttpClient(uri);
-        this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
-        this.player.setPlayWhenReady(true);
-        this.player.prepare(this.source);
-        addActivePlayer(this);
-        setState(State.Preparing);
+        Preconditions.throwIfNotOnMainThread();
+
+        if (!dead()) {
+            initHttpClient(uri);
+            this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
+            this.player.setPlayWhenReady(true);
+            this.player.prepare(this.source);
+            addActivePlayer(this);
+            setState(State.Preparing);
+        }
     }
 
     @Override
     public void prefetch(String uri) {
-        initHttpClient(uri);
-        this.prefetch = true;
-        this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
-        this.player.setPlayWhenReady(false);
-        this.player.prepare(this.source);
-        addActivePlayer(this);
-        setState(State.Preparing);
+        Preconditions.throwIfNotOnMainThread();
+
+        if (!dead()) {
+            initHttpClient(uri);
+            this.prefetch = true;
+            this.source = new ExtractorMediaSource(Uri.parse(uri), datasources, extractors, null, null);
+            this.player.setPlayWhenReady(false);
+            this.player.prepare(this.source);
+            addActivePlayer(this);
+            setState(State.Preparing);
+        }
     }
 
     @Override
     public void pause() {
+        Preconditions.throwIfNotOnMainThread();
+
         this.prefetch = true;
 
         if (this.getState() == State.Playing) {
@@ -147,6 +162,8 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     @Override
     public void resume() {
+        Preconditions.throwIfNotOnMainThread();
+
         if (this.getState() == State.Paused || this.getState() == State.Prepared) {
             this.player.setPlayWhenReady(true);
             setState(State.Playing);
@@ -157,6 +174,8 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     @Override
     public void setPosition(int millis) {
+        Preconditions.throwIfNotOnMainThread();
+
         if (this.player.getPlaybackState() != ExoPlayer.STATE_IDLE) {
             this.player.seekTo(millis);
         }
@@ -164,38 +183,53 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
     @Override
     public int getPosition() {
+        Preconditions.throwIfNotOnMainThread();
+
         return (int) this.player.getCurrentPosition();
     }
 
     @Override
     public int getDuration() {
+        Preconditions.throwIfNotOnMainThread();
+
         return (int) this.player.getDuration();
     }
 
     @Override
     public void updateVolume() {
+        Preconditions.throwIfNotOnMainThread();
+
         this.player.setVolume(getGlobalVolume());
     }
 
     @Override
     public void setNextMediaPlayer(PlayerWrapper wrapper) {
-
+        Preconditions.throwIfNotOnMainThread();
     }
 
     @Override
     public void dispose() {
-        if (getState() != State.Disposed) {
-            removeActivePlayer(this);
-            setState(State.Killing);
+        Preconditions.throwIfNotOnMainThread();
+
+        setState(State.Killing);
+        removeActivePlayer(this);
+        if (this.player != null) {
+            this.player.setPlayWhenReady(false);
+            this.player.removeListener(eventListener);
             this.player.stop();
             this.player.release();
-            setState(State.Disposed);
         }
+        setState(State.Disposed);
     }
 
     @Override
     public void setOnStateChangedListener(OnStateChangedListener listener) {
         super.setOnStateChangedListener(listener);
+    }
+
+    private boolean dead() {
+        final State state = getState();
+        return (state == State.Killing || state == State.Disposed);
     }
 
     private ExoPlayer.EventListener eventListener = new ExoPlayer.EventListener() {
@@ -216,17 +250,24 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+            Preconditions.throwIfNotOnMainThread();
+
             if (playbackState == ExoPlayer.STATE_READY) {
-                setState(State.Prepared);
-
-                player.setVolume(getGlobalVolume());
-
-                if (!prefetch) {
-                    player.setPlayWhenReady(true);
-                    setState(State.Playing);
+                if (dead()) {
+                    dispose();
                 }
                 else {
-                    setState(State.Paused);
+                    setState(State.Prepared);
+
+                    player.setVolume(getGlobalVolume());
+
+                    if (!prefetch) {
+                        player.setPlayWhenReady(true);
+                        setState(State.Playing);
+                    }
+                    else {
+                        setState(State.Paused);
+                    }
                 }
             }
             else if (playbackState == ExoPlayer.STATE_ENDED) {
@@ -237,6 +278,8 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
         @Override
         public void onPlayerError(ExoPlaybackException error) {
+            Preconditions.throwIfNotOnMainThread();
+
             /* if we're transcoding the size of the response will be inexact, so the player
             will try to pick up the last few bytes and be left with an HTTP 416. if that happens,
             and we're towards the end of the track, just move to the next one */

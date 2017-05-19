@@ -3,6 +3,8 @@ package io.casey.musikcube.remote.playback;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import io.casey.musikcube.remote.websocket.Prefs;
+
 public class PlaybackServiceFactory {
     private static StreamingPlaybackService streaming;
     private static RemotePlaybackService remote;
@@ -11,7 +13,7 @@ public class PlaybackServiceFactory {
     public static synchronized PlaybackService instance(final Context context) {
         init(context);
 
-        if (prefs.getBoolean("streaming_playback", true)) {
+        if (prefs.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)) {
             return streaming;
         }
 
@@ -30,7 +32,7 @@ public class PlaybackServiceFactory {
 
     private static void init(final Context context) {
         if (streaming == null || remote == null || prefs == null) {
-            prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE);
+            prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
             streaming = new StreamingPlaybackService(context);
             remote = new RemotePlaybackService(context);
         }

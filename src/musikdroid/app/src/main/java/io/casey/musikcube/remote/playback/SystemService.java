@@ -7,7 +7,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.annotation.Nullable;
@@ -18,11 +21,19 @@ import android.support.v7.app.NotificationCompat;
 import android.util.Log;
 import android.view.KeyEvent;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
+
 import io.casey.musikcube.remote.Application;
 import io.casey.musikcube.remote.MainActivity;
 import io.casey.musikcube.remote.R;
+import io.casey.musikcube.remote.ui.model.AlbumArtModel;
 import io.casey.musikcube.remote.util.Debouncer;
 import io.casey.musikcube.remote.util.Strings;
+import io.casey.musikcube.remote.websocket.Prefs;
 
 /* basically a stub service that exists to keep a connection active to the
 StreamingPlaybackService, which keeps music playing. TODO: should also hold
@@ -46,11 +57,17 @@ public class SystemService extends Service {
         PlaybackStateCompat.ACTION_FAST_FORWARD |
         PlaybackStateCompat.ACTION_REWIND;
 
+    private Handler handler = new Handler();
+    private SharedPreferences prefs;
     private StreamingPlaybackService playback;
     private PowerManager.WakeLock wakeLock;
     private PowerManager powerManager;
     private MediaSessionCompat mediaSession;
     private int headsetHookPressCount = 0;
+
+    private AlbumArtModel albumArtModel = AlbumArtModel.empty();
+    private Bitmap albumArt = null;
+    private SimpleTarget<Bitmap> albumArtRequest;
 
     public static void wakeup() {
         final Context c = Application.getInstance();
@@ -69,6 +86,7 @@ public class SystemService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
         powerManager = (PowerManager) getSystemService(POWER_SERVICE);
         registerReceivers();
     }
@@ -76,6 +94,7 @@ public class SystemService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        recycleAlbumArt();
         unregisterReceivers();
     }
 
@@ -189,7 +208,7 @@ public class SystemService extends Service {
             duration = (int) (playback.getDuration() * 1000);
         }
 
-        updateMetadata(title, artist, album, duration);
+        updateMetadata(title, artist, album, null, duration);
         updateNotification(title, artist, album, mediaSessionState);
 
         mediaSession.setPlaybackState(new PlaybackStateCompat.Builder()
@@ -198,14 +217,73 @@ public class SystemService extends Service {
             .build());
     }
 
-    private void updateMetadata(final String title, final String artist, final String album, int duration) {
+    private synchronized void recycleAlbumArt() {
+        if (albumArt != null) {
+            //albumArt.recycle();
+            albumArt = null;
+        }
+    }
+
+    private void downloadAlbumArt(final String title, final String artist, final String album, final int duration) {
+        recycleAlbumArt();
+
+        albumArtModel = new AlbumArtModel(title, artist, album, AlbumArtModel.Size.Mega, (info, url) -> {
+            if (albumArtModel.is(artist, album)) {
+                handler.post(() -> {
+                    if (albumArtRequest != null && albumArtRequest.getRequest() != null) {
+                        albumArtRequest.getRequest().clear();
+                    }
+
+                    albumArtRequest = Glide
+                        .with(getApplicationContext())
+                        .load(url)
+                        .asBitmap()
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .into(new SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
+                            @Override
+                            public void onResourceReady(final Bitmap bitmap, GlideAnimation glideAnimation) {
+                                albumArtRequest = null;
+                                if (albumArtModel.is(artist, album)) {
+                                    albumArt = bitmap;
+                                    updateMetadata(title, artist, album, bitmap, duration);
+                                }
+                            }
+                        });
+                });
+            }
+        });
+
+        albumArtModel.fetch();
+    }
+
+    private void updateMetadata(final String title, final String artist, final String album, Bitmap image, final int duration) {
+        boolean albumArtEnabledInSettings = this.prefs.getBoolean(
+            Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED);
+
+        if (albumArtEnabledInSettings) {
+            if (!"-".equals(artist) && !"-".equals(album) && !albumArtModel.is(artist, album)) {
+                downloadAlbumArt(title, artist, album, duration);
+            }
+            else if (albumArtModel.is(artist, album)) {
+                if (image == null && Strings.notEmpty(albumArtModel.getUrl())) {
+                /* lookup may have failed -- try again. if the fetch is already in
+                progress this will be a no-op */
+                    albumArtModel.fetch();
+                }
+
+                image = albumArt;
+            }
+            else {
+                recycleAlbumArt();
+            }
+        }
+
         mediaSession.setMetadata(new MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
             .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album)
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
-//            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART,
-//                BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, image)
             .build());
     }
 
