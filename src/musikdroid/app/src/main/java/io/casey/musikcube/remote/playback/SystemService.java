@@ -379,7 +379,7 @@ public class SystemService extends Service {
                     return true;
 
                 case ACTION_NOTIFICATION_STOP:
-                    this.playback.pause();
+                    this.playback.stop();
                     SystemService.shutdown();
                     return true;
             }

@@ -41,6 +41,7 @@
     <string name="status_disconnected">disconnected</string>
     <string name="status_connected">connected to %1$s</string>
     <string name="status_volume">volume %1d%%</string>
+    <string name="button_connected">connected</string>
     <string name="edit_connection_info">connection info:</string>
     <string name="edit_connection_hostname">ip address or hostname</string>
     <string name="edit_connection_port">main server port (default 7905)</string>
