@@ -85,7 +85,7 @@ public class MainActivity extends WebSocketActivityBase {
     protected void onResume() {
         super.onResume();
         this.playback = getPlaybackService();
-        metadataView.onResume(playback);
+        metadataView.onResume();
         bindCheckBoxEventListeners();
         rebindUi();
     }

@@ -9,8 +9,8 @@ android {
         applicationId "io.casey.musikcube.remote"
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 7
-        versionName "0.7.0"
+        versionCode 8
+        versionName "0.7.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
@@ -38,7 +38,6 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-
 
     compile(name:'android-taskrunner-0.5', ext:'aar')
 

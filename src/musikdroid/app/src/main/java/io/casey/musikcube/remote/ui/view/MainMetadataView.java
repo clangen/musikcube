@@ -33,6 +33,7 @@ import org.json.JSONObject;
 import io.casey.musikcube.remote.R;
 import io.casey.musikcube.remote.playback.Metadata;
 import io.casey.musikcube.remote.playback.PlaybackService;
+import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
 import io.casey.musikcube.remote.playback.PlaybackState;
 import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity;
 import io.casey.musikcube.remote.ui.activity.TrackListActivity;
@@ -46,7 +47,6 @@ import io.casey.musikcube.remote.websocket.WebSocketService;
 
 public class MainMetadataView extends FrameLayout {
     private Handler handler = new Handler();
-    private PlaybackService playback;
     private WebSocketService wss = null;
     private SharedPreferences prefs;
 
@@ -79,9 +79,8 @@ public class MainMetadataView extends FrameLayout {
         init();
     }
 
-    public void onResume(final PlaybackService playback) {
+    public void onResume() {
         this.wss.addClient(wssClient);
-        this.playback = playback;
         isPaused = false;
     }
 
@@ -91,8 +90,10 @@ public class MainMetadataView extends FrameLayout {
     }
 
     public void clear() {
-        albumArtModel = AlbumArtModel.empty();
-        updateAlbumArt();
+        if (!isPaused) {
+            albumArtModel = AlbumArtModel.empty();
+            updateAlbumArt();
+        }
     }
 
     public void hide() {
@@ -100,43 +101,50 @@ public class MainMetadataView extends FrameLayout {
     }
 
     public void refresh() {
-        setVisibility(View.VISIBLE);
+        if (!isPaused) {
+            setVisibility(View.VISIBLE);
 
-        final boolean buffering = playback.getPlaybackState() == PlaybackState.Buffering;
+            final PlaybackService playback = getPlaybackService();
 
-        final String artist = playback.getTrackString(Metadata.Track.ARTIST, "");
-        final String album = playback.getTrackString(Metadata.Track.ALBUM, "");
-        final String title = playback.getTrackString(Metadata.Track.TITLE, "");
-        final String volume = getString(R.string.status_volume, Math.round(playback.getVolume() * 100));
+            final boolean buffering = playback.getPlaybackState() == PlaybackState.Buffering;
 
-        this.title.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
-        this.artist.setText(Strings.empty(artist) ? getString(buffering ? R.string.buffering : R.string.unknown_artist) : artist);
-        this.album.setText(Strings.empty(album) ? getString(buffering ? R.string.buffering : R.string.unknown_album) : album);
-        this.volume.setText(volume);
+            final String artist = playback.getTrackString(Metadata.Track.ARTIST, "");
+            final String album = playback.getTrackString(Metadata.Track.ALBUM, "");
+            final String title = playback.getTrackString(Metadata.Track.TITLE, "");
+            final String volume = getString(R.string.status_volume, Math.round(playback.getVolume() * 100));
 
-        this.rebindAlbumArtistWithArtTextView();
-        this.titleWithArt.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
-        this.volumeWithArt.setText(volume);
+            this.title.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
+            this.artist.setText(Strings.empty(artist) ? getString(buffering ? R.string.buffering : R.string.unknown_artist) : artist);
+            this.album.setText(Strings.empty(album) ? getString(buffering ? R.string.buffering : R.string.unknown_album) : album);
+            this.volume.setText(volume);
 
-        this.buffering.setVisibility(buffering ? View.VISIBLE : View.GONE);
-        this.bufferingWithArt.setVisibility(buffering ? View.VISIBLE : View.GONE);
+            this.rebindAlbumArtistWithArtTextView(playback);
+            this.titleWithArt.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
+            this.volumeWithArt.setText(volume);
 
-        boolean albumArtEnabledInSettings = this.prefs.getBoolean(
-            Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED);
+            this.buffering.setVisibility(buffering ? View.VISIBLE : View.GONE);
+            this.bufferingWithArt.setVisibility(buffering ? View.VISIBLE : View.GONE);
 
-        if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
-            this.albumArtModel = AlbumArtModel.empty();
-            setMetadataDisplayMode(DisplayMode.NoArtwork);
-        }
-        else {
-            if (!this.albumArtModel.is(artist, album)) {
-                this.albumArtModel.destroy();
+            boolean albumArtEnabledInSettings = this.prefs.getBoolean(
+                Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED);
 
-                this.albumArtModel = new AlbumArtModel(
-                    title, artist, album, AlbumArtModel.Size.Mega, albumArtRetrieved);
+            if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
+                this.albumArtModel = AlbumArtModel.empty();
+                setMetadataDisplayMode(DisplayMode.NoArtwork);
+            } else {
+                if (!this.albumArtModel.is(artist, album)) {
+                    this.albumArtModel.destroy();
+
+                    this.albumArtModel = new AlbumArtModel(
+                        title, artist, album, AlbumArtModel.Size.Mega, albumArtRetrieved);
+                }
+                updateAlbumArt();
             }
-            updateAlbumArt();
         }
+    }
+
+    private PlaybackService getPlaybackService() {
+        return PlaybackServiceFactory.instance(getContext());
     }
 
     private String getString(int resId) {
@@ -171,7 +179,7 @@ public class MainMetadataView extends FrameLayout {
         }
     }
 
-    private void rebindAlbumArtistWithArtTextView() {
+    private void rebindAlbumArtistWithArtTextView(final PlaybackService playback) {
         final boolean buffering = playback.getPlaybackState() == PlaybackState.Buffering;
 
         final String artist = playback.getTrackString(
@@ -224,7 +232,7 @@ public class MainMetadataView extends FrameLayout {
     }
 
     private void updateAlbumArt() {
-        if (playback.getPlaybackState() == PlaybackState.Stopped) {
+        if (getPlaybackService().getPlaybackState() == PlaybackState.Stopped) {
             setMetadataDisplayMode(DisplayMode.NoArtwork);
         }
 
@@ -278,7 +286,7 @@ public class MainMetadataView extends FrameLayout {
     private void preloadNextImage() {
         final SocketMessage request = SocketMessage.Builder
             .request(Messages.Request.QueryPlayQueueTracks)
-            .addOption(Messages.Key.OFFSET, this.playback.getQueuePosition() + 1)
+            .addOption(Messages.Key.OFFSET, getPlaybackService().getQueuePosition() + 1)
             .addOption(Messages.Key.LIMIT, 1)
             .build();
 
@@ -333,20 +341,26 @@ public class MainMetadataView extends FrameLayout {
     }
 
     private void navigateToCurrentArtist() {
+        final Context context = getContext();
+        final PlaybackService playback = getPlaybackService();
+
         final long artistId = playback.getTrackLong(Metadata.Track.ARTIST_ID, -1);
         if (artistId != -1) {
             final String artistName = playback.getTrackString(Metadata.Track.ARTIST, "");
-            getContext().startActivity(AlbumBrowseActivity.getStartIntent(
-                getContext(), Messages.Category.ARTIST, artistId, artistName));
+            context.startActivity(AlbumBrowseActivity.getStartIntent(
+                context, Messages.Category.ARTIST, artistId, artistName));
         }
     }
 
     private void navigateToCurrentAlbum() {
+        final Context context = getContext();
+        final PlaybackService playback = getPlaybackService();
+
         final long albumId = playback.getTrackLong(Metadata.Track.ALBUM_ID, -1);
         if (albumId != -1) {
             final String albumName = playback.getTrackString(Metadata.Track.ALBUM, "");
-            getContext().startActivity(TrackListActivity.getStartIntent(
-                getContext(), Messages.Category.ALBUM, albumId, albumName));
+            context.startActivity(TrackListActivity.getStartIntent(
+                context, Messages.Category.ALBUM, albumId, albumName));
         }
     }
 

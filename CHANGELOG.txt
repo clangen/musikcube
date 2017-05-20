@@ -10,7 +10,6 @@ user-facing:
   - added the ability to control streaming disk cache size
 * `websocket_remote` plugin:
   - added Cache-Control headers to responses
-  - 
 * `core`: 
   - found a really bad bug in the way we handle tracks in playlists. the fix 
     requires a rebuild of the tracks metadata, which will clear playlists, but
