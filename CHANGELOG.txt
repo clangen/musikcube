@@ -1,3 +1,30 @@
+0.14.0
+
+user-facing:
+
+* `musikdroid` enhancements:
+  - `pause` when headphones are disconnected
+  - `double tap` headset button to go to next track
+  - `triple tap` headset button to go to prev track
+  - added album art to lock screen controls
+  - added the ability to control streaming disk cache size
+* `websocket_remote` plugin:
+  - added Cache-Control headers to responses
+  - 
+* `core`: 
+  - found a really bad bug in the way we handle tracks in playlists. the fix 
+    requires a rebuild of the tracks metadata, which will clear playlists, but
+    ensures this will never happen again in the future.
+
+low-level:
+
+* cleaned up more SDK interfaces, removed support for uint64 and uint32 types, 
+  only support int64 and int32.
+* fixed bugs in playlist track handling; playlist contents can now survive track
+  table rebuilds!
+
+--------------------------------------------------------------------------------
+
 0.13.0
 
 user-facing:

@@ -57,7 +57,7 @@ static class Plugin : public IPlugin {
     public:
         virtual void Destroy() { }
         virtual const char* Name() { return "WebSockets IPlaybackRemote"; }
-        virtual const char* Version() { return "0.5.0"; }
+        virtual const char* Version() { return "0.6.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 } plugin;
