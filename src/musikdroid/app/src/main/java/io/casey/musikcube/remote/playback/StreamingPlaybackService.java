@@ -52,6 +52,7 @@ public class StreamingPlaybackService implements PlaybackService {
     private AudioManager audioManager;
     private SharedPreferences prefs;
     private int lastSystemVolume;
+    private boolean pausedByTransientLoss = false;
     private Random random = new Random();
     private Handler handler = new Handler();
 
@@ -238,6 +239,7 @@ public class StreamingPlaybackService implements PlaybackService {
             cancelScheduledPausedShutdown();
             context.currentPlayer.resume();
             setState(PlaybackState.Playing);
+            pausedByTransientLoss = false;
         }
     }
 
@@ -403,6 +405,14 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public TrackListSlidingWindow.QueryFactory getPlaylistQueryFactory() {
         return this.queryFactory;
+    }
+
+    private void pauseTransient() {
+        if (state != PlaybackState.Paused) {
+            pausedByTransientLoss = true;
+            setState(PlaybackState.Paused);
+            context.currentPlayer.pause();
+        }
     }
 
     private float getVolumeStep() {
@@ -723,6 +733,7 @@ public class StreamingPlaybackService implements PlaybackService {
         cancelScheduledPausedShutdown();
         SystemService.wakeup();
 
+        this.pausedByTransientLoss = false;
         this.context.stopPlaybackAndReset();
         final PlaybackContext context = new PlaybackContext();
         this.context = context;
@@ -865,11 +876,24 @@ public class StreamingPlaybackService implements PlaybackService {
             case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE:
             case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
                 PlayerWrapper.unduck();
+                if (pausedByTransientLoss) {
+                    pausedByTransientLoss = false;
+                    resume();
+                }
                 break;
 
             case AudioManager.AUDIOFOCUS_LOSS:
-            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                 killAudioFocus();
+                pause();
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                switch (getPlaybackState()) {
+                    case Playing:
+                    case Buffering:
+                        pauseTransient();
+                        break;
+                }
                 break;
 
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
