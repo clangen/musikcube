@@ -77,10 +77,6 @@ public class SystemService extends Service {
     public static void shutdown() {
         final Context c = Application.getInstance();
         c.startService(new Intent(c, SystemService.class).setAction(ACTION_SHUT_DOWN));
-
-        final Exception ex = new Exception();
-        ex.fillInStackTrace();
-        ex.printStackTrace();
     }
 
     @Override
@@ -266,8 +262,8 @@ public class SystemService extends Service {
             }
             else if (albumArtModel.is(artist, album)) {
                 if (image == null && Strings.notEmpty(albumArtModel.getUrl())) {
-                /* lookup may have failed -- try again. if the fetch is already in
-                progress this will be a no-op */
+                    /* lookup may have failed -- try again. if the fetch is already in
+                    progress this will be a no-op */
                     albumArtModel.fetch();
                 }
 

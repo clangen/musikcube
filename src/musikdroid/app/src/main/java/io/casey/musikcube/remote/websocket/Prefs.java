@@ -16,6 +16,7 @@ public interface Prefs {
         String CERT_VALIDATION_DISABLED = "cert_validation_disabled";
         String TRANSCODER_BITRATE_INDEX = "transcoder_bitrate_index";
         String DISK_CACHE_SIZE_INDEX = "disk_cache_size_index";
+        String SYSTEM_SERVICE_FOR_REMOTE = "system_service_for_remote";
     }
 
     interface Default {
@@ -31,5 +32,6 @@ public interface Prefs {
         boolean CERT_VALIDATION_DISABLED = false;
         int TRANSCODER_BITRATE_INDEX = 0;
         int DISK_CACHE_SIZE_INDEX = 0;
+        boolean SYSTEM_SERVICE_FOR_REMOTE = false;
     }
 }

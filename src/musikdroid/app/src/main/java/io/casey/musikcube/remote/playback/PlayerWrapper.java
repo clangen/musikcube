@@ -9,6 +9,8 @@ import io.casey.musikcube.remote.util.Preconditions;
 
 public abstract class PlayerWrapper {
     private static final String TAG = "MediaPlayerWrapper";
+    private static final float DUCK_COEF = 0.2f; /* volume = 20% when ducked */
+    private static final float DUCK_NONE = -1.0f;
 
     public enum State {
         Stopped,
@@ -29,19 +31,52 @@ public abstract class PlayerWrapper {
     private static Set<PlayerWrapper> activePlayers = new HashSet<>();
     private static float globalVolume = 1.0f;
     private static boolean globalMuted = false;
+    private static float preDuckGlobalVolume = DUCK_NONE;
 
-    public static void setGlobalVolume(final float volume) {
+    public static void duck() {
         Preconditions.throwIfNotOnMainThread();
 
-        globalVolume = volume;
-        for (final PlayerWrapper w : activePlayers) {
-            w.updateVolume();
+        if (preDuckGlobalVolume == DUCK_NONE) {
+            final float lastVolume = globalVolume;
+            setGlobalVolume(globalVolume * DUCK_COEF);
+            preDuckGlobalVolume = lastVolume;
+        }
+    }
+
+    public static void unduck() {
+        Preconditions.throwIfNotOnMainThread();
+
+        if (preDuckGlobalVolume != DUCK_NONE) {
+            final float temp = preDuckGlobalVolume;
+            preDuckGlobalVolume = DUCK_NONE;
+            setGlobalVolume(temp);
+        }
+    }
+
+    public static void setGlobalVolume(float volume) {
+        Preconditions.throwIfNotOnMainThread();
+
+        if (preDuckGlobalVolume != DUCK_NONE) {
+            preDuckGlobalVolume = volume;
+            volume = volume * DUCK_COEF;
+        }
+
+        if (volume != globalVolume) {
+            globalVolume = volume;
+            for (final PlayerWrapper w : activePlayers) {
+                w.updateVolume();
+            }
         }
     }
 
     public static float getGlobalVolume() {
         Preconditions.throwIfNotOnMainThread();
-        return globalMuted ? 0 : globalVolume;
+
+        if (globalMuted) {
+            return 0;
+        }
+
+        return (preDuckGlobalVolume == DUCK_NONE) ? globalVolume : preDuckGlobalVolume;
     }
 
     public static void setGlobalMute(final boolean muted) {

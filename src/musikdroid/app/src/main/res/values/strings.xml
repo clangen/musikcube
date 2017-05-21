@@ -67,6 +67,7 @@
     <string name="settings_ssl_dialog_message">the musikcube server doesn\'t support ssl by default. it does, however, work very well with nginx and ssl termination. press \'learn more\' for configuration information.</string>
     <string name="settings_disable_cert_validation_title">certificate verification</string>
     <string name="settings_disable_cert_validation_message">there is really no reason to enable this setting. ssl without certificate validation opens you up to man-in-the-middle attacks, and only adds a false sense of security.\n\nare you sure you want to enable this setting?</string>
+    <string name="settings_enable_notification_for_remote_playback">enable lock screen integration for remote playback</string>
     <string name="unknown_artist">[unknown artist]</string>
     <string name="unknown_album">[unknown album]</string>
     <string name="unknown_title">[unknown title]</string>

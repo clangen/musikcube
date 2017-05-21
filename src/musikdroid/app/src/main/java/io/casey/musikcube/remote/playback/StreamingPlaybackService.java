@@ -858,23 +858,23 @@ public class StreamingPlaybackService implements PlaybackService {
 
     private Runnable pauseServiceShutdownRunnable = () -> SystemService.shutdown();
 
-    private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener
-        = new AudioManager.OnAudioFocusChangeListener() {
-        @Override
-        public void onAudioFocusChange(int flag) {
-            switch (flag) {
-                case AudioManager.AUDIOFOCUS_GAIN:
-                case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
-                case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE:
-                case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
-                    break;
+    private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = (flag) -> {
+        switch (flag) {
+            case AudioManager.AUDIOFOCUS_GAIN:
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE:
+            case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
+                PlayerWrapper.unduck();
+                break;
 
-                case AudioManager.AUDIOFOCUS_LOSS:
-                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                    killAudioFocus();
-                    break;
-            }
+            case AudioManager.AUDIOFOCUS_LOSS:
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                killAudioFocus();
+                break;
+
+            case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                PlayerWrapper.duck();
+                break;
         }
     };
 
