@@ -163,9 +163,18 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     public void resume() {
         Preconditions.throwIfNotOnMainThread();
 
-        if (this.getState() == State.Paused || this.getState() == State.Prepared) {
-            this.player.setPlayWhenReady(true);
-            setState(State.Playing);
+        switch (this.getState()) {
+            case Paused:
+            case Prepared:
+                this.player.setPlayWhenReady(true);
+                setState(State.Playing);
+                break;
+
+            case Error:
+                this.player.setPlayWhenReady(true);
+                this.player.prepare(this.source);
+                setState(State.Preparing);
+                break;
         }
 
         this.prefetch = false;
@@ -294,6 +303,10 @@ public class ExoPlayerWrapper extends PlayerWrapper {
                         dispose();
                         return;
                     }
+                    else {
+                        player.setPlayWhenReady(false);
+                        setPosition(0);
+                    }
                 }
             }
 
@@ -303,7 +316,6 @@ public class ExoPlayerWrapper extends PlayerWrapper {
                 case Playing:
                 case Paused:
                     setState(State.Error);
-                    dispose();
                     break;
             }
         }

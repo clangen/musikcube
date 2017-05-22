@@ -20,6 +20,7 @@
             android:id="@+id/fast_scroller"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            app:rfs_touchTargetWidth="32dp"
             android:paddingLeft="8dp"
             android:layout_alignParentRight="true" />
 
