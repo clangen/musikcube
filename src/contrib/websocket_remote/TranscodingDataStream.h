@@ -78,6 +78,7 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
         musik::core::sdk::IDecoder* decoder;
         musik::core::sdk::IBuffer* pcmBuffer;
 
+        template <typename T>
         struct ByteBuffer {
             ByteBuffer() {
                 data = nullptr;
@@ -89,7 +90,7 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
             void realloc(size_t newLength) {
                 if (newLength > rawLength) {
                     delete[] data;
-                    data = new unsigned char[newLength];
+                    data = new T[newLength];
                     rawLength = length = newLength;
                 }
                 offset = 0;
@@ -103,7 +104,7 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
             size_t avail() {
                 return (length > offset) ? length - offset : 0;
             }
-            unsigned char* pos() {
+            T* pos() {
                 return data + offset;
             }
             void inc(size_t count) {
@@ -114,7 +115,7 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
             }
             void swap(ByteBuffer& with) {
                 size_t off = offset, len = length, raw = rawLength;
-                unsigned char* d = data;
+                T* d = data;
                 this->data = with.data;
                 this->length = with.length;
                 this->rawLength = with.rawLength;
@@ -124,12 +125,13 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
                 with.rawLength = raw;
                 with.offset = offset;
             }
-            unsigned char *data;
+            T *data;
             size_t offset, length, rawLength;
         };
 
-        ByteBuffer encodedBytes;
-        ByteBuffer spillover;
+        ByteBuffer<unsigned char> encodedBytes;
+        ByteBuffer<unsigned char> spillover;
+        ByteBuffer<float> downmux;
         size_t bitrate;
         bool eof;
         std::mutex mutex;

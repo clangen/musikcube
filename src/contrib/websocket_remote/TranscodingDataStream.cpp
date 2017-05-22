@@ -178,19 +178,62 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
 
     while (hasBuffer && bytesWritten < (size_t) bytesToRead) {
         /* calculated according to lame.h */
-        size_t numSamples = pcmBuffer->Samples() / pcmBuffer->Channels();
+        size_t channels = pcmBuffer->Channels();
+        size_t numSamples = pcmBuffer->Samples() / channels;
         size_t requiredBytes = (size_t) (1.25 * (float)numSamples + 7200.0);
 
         encodedBytes.realloc(requiredBytes);
 
         /* encode PCM -> MP3 */
-        int encodeCount =
-            lame_encode_buffer_interleaved_ieee_float(
-                lame,
-                pcmBuffer->BufferPointer(),
-                numSamples,
-                encodedBytes.data,
-                encodedBytes.length);
+        int encodeCount = -1;
+
+        /* stereo is easy, just make sure we send to to the encoder as
+        interleaved! */
+        if (pcmBuffer->Channels() == 2) {
+            encodeCount =
+                lame_encode_buffer_interleaved_ieee_float(
+                    lame,
+                    pcmBuffer->BufferPointer(),
+                    numSamples,
+                    encodedBytes.data,
+                    encodedBytes.length);
+        }
+        /* the non-stereo case needs to be downmuxed. our downmuxing is simple,
+        we just use the stereo channels. in the case of mono, we duplicate the
+        to left and right */
+        else {
+            downmux.realloc(numSamples * 2);
+
+            float* from = pcmBuffer->BufferPointer();
+            float* to = downmux.data;
+
+            if (channels == 1) {
+                /* mono -> stereo */
+                for (size_t i = 0; i < numSamples; i++) {
+                    *(to + 0) = *from;
+                    *(to + 1) = *from;
+                    to += 2;
+                    ++from;
+                }
+            }
+            else {
+                /* 3+ channels -> stereo */
+                for (size_t i = 0; i < numSamples; i++) {
+                    *(to + 0) = *(from + 0);
+                    *(to + 1) = *(from + 1);
+                    to += 2;
+                    from += channels;
+                }
+            }
+
+            encodeCount =
+                lame_encode_buffer_interleaved_ieee_float(
+                    lame,
+                    downmux.data,
+                    numSamples,
+                    encodedBytes.data,
+                    encodedBytes.length);
+        }
 
         if (encodeCount < 0) {
             goto internal_error;
