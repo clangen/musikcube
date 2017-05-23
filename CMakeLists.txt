@@ -14,11 +14,11 @@ set (musikbox_VERSION "${musikbox_VERSION_MAJOR}.${musikbox_VERSION_MINOR}.${mus
 include(ExternalProject)
 
 ExternalProject_Add(taglib
-    SOURCE_DIR "${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11"
+    SOURCE_DIR "${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
     BUILD_IN_SOURCE 0
     DOWNLOAD_COMMAND ""
     UPDATE_COMMAND ""
-    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/"
+    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
     INSTALL_COMMAND make install
 )
 
@@ -53,7 +53,7 @@ set (EXECUTABLE_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin)
 
 link_directories (
   ${musikbox_SOURCE_DIR}/bin/plugins
-  ${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/lib
+  ${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib
 )
 
 set (musikbox_LINK_LIBS
@@ -67,7 +67,7 @@ include_directories (
   "${musikbox_SOURCE_DIR}/src/core"
   "${musikbox_SOURCE_DIR}/src/musikbox"
   "${musikbox_SOURCE_DIR}/src/3rdparty/include"
-  "${musikbox_SOURCE_DIR}/src/contrib/taglib_plugin/taglib-1.11/stage/include"
+  "${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include"
 )
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
@@ -79,23 +79,23 @@ endif ()
 add_subdirectory(src/core)
 add_subdirectory(src/glue)
 add_subdirectory(src/musikbox)
-add_subdirectory(src/contrib/taglib_plugin)
-add_subdirectory(src/contrib/m4adecoder)
-add_subdirectory(src/contrib/oggdecoder)
-add_subdirectory(src/contrib/nomaddecoder)
-add_subdirectory(src/contrib/flacdecoder)
-add_subdirectory(src/contrib/nullout)
-add_subdirectory(src/contrib/websocket_remote)
-add_subdirectory(src/contrib/httpdatastream)
+add_subdirectory(src/plugins/taglib_plugin)
+add_subdirectory(src/plugins/m4adecoder)
+add_subdirectory(src/plugins/oggdecoder)
+add_subdirectory(src/plugins/nomaddecoder)
+add_subdirectory(src/plugins/flacdecoder)
+add_subdirectory(src/plugins/nullout)
+add_subdirectory(src/plugins/websocket_remote)
+add_subdirectory(src/plugins/httpdatastream)
 
 add_dependencies(taglibreader taglib)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  add_subdirectory(src/contrib/alsaout)
-  add_subdirectory(src/contrib/pulseout)
+  add_subdirectory(src/plugins/alsaout)
+  add_subdirectory(src/plugins/pulseout)
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
   # macos
-  add_subdirectory(src/contrib/coreaudioout)
+  add_subdirectory(src/plugins/coreaudioout)
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 # install the binary

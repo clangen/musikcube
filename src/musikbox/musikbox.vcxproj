@@ -90,7 +90,7 @@ xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)plugins" /Y /e
-xcopy "$(SolutionDir)src\contrib\websocket_remote\3rdparty\win32_bin\$(Configuration)\*" "$(TargetDir)plugins" /Y /e</Command>
+xcopy "$(SolutionDir)src\plugins\websocket_remote\3rdparty\win32_bin\$(Configuration)\*" "$(TargetDir)plugins" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -131,7 +131,7 @@ xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)plugins" /Y /e
-xcopy "$(SolutionDir)src\contrib\websocket_remote\3rdparty\win32_bin\$(Configuration)\*" "$(TargetDir)plugins" /Y /e</Command>
+xcopy "$(SolutionDir)src\plugins\websocket_remote\3rdparty\win32_bin\$(Configuration)\*" "$(TargetDir)plugins" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
