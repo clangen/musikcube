@@ -43,6 +43,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <websocketpp/base64/base64.hpp>
+
 #include <unordered_map>
 #include <string>
 
@@ -198,6 +200,31 @@ static size_t getUnsignedUrlParam(
     return defaultValue;
 }
 
+static bool isAuthenticated(MHD_Connection *connection, Context& context) {
+    const char* authPtr = MHD_lookup_connection_value(
+        connection, MHD_HEADER_KIND, "Authorization");
+
+    if (authPtr && strlen(authPtr)) {
+        std::string auth(authPtr);
+        if (auth.find("Basic ") == 0) {
+            std::string encoded = auth.substr(6);
+            if (encoded.size()) {
+                std::string decoded = websocketpp::base64_decode(encoded);
+
+                std::vector<std::string> userPass;
+                boost::split(userPass, decoded, boost::is_any_of(":"));
+
+                if (userPass.size() == 2) {
+                    std::string password = GetPreferenceString(context.prefs, key::password, defaults::password);
+                    return userPass[0] == "default" && userPass[1] == password;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 HttpServer::HttpServer(Context& context)
 : context(context)
 , running(false) {
@@ -277,110 +304,118 @@ int HttpServer::HandleRequest(
     int status = MHD_HTTP_OK;
 
     try {
-        std::string urlStr(url);
-
-        if (urlStr[0] == '/') {
-            urlStr = urlStr.substr(1);
+        if (!isAuthenticated(connection, server->context)) {
+            status = 401; /* unauthorized */
+            static const char* error = "unauthorized";
+            response = MHD_create_response_from_buffer(strlen(error), (void*) error, MHD_RESPMEM_PERSISTENT);
         }
+        else {
+            /* if we get here we're authenticated */
+            std::string urlStr(url);
 
-        std::vector<std::string> parts;
-        boost::split(parts, urlStr, boost::is_any_of("/"));
-        if (parts.size() > 0) {
-            if (parts.at(0) == fragment::audio && parts.size() == 3) {
-                IRetainedTrack* track = nullptr;
-                bool byExternalId = (parts.at(1) == fragment::external_id);
+            if (urlStr[0] == '/') {
+                urlStr = urlStr.substr(1);
+            }
 
-                if (byExternalId) {
-                    std::string externalId = urlDecode(parts.at(2));
-                    track = server->context.dataProvider->QueryTrackByExternalId(externalId.c_str());
-                }
-                else if (parts.at(1) == fragment::id) {
-                    uint64_t id = std::stoull(urlDecode(parts.at(2)));
-                    track = server->context.dataProvider->QueryTrackById(id);
-                }
+            std::vector<std::string> parts;
+            boost::split(parts, urlStr, boost::is_any_of("/"));
+            if (parts.size() > 0) {
+                if (parts.at(0) == fragment::audio && parts.size() == 3) {
+                    IRetainedTrack* track = nullptr;
+                    bool byExternalId = (parts.at(1) == fragment::external_id);
 
-                if (track) {
-                    std::string filename = GetMetadataString(track, key::filename);
-                    track->Release();
-
-                    size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
-
-                    IDataStream* file = (bitrate == 0)
-                        ? server->context.environment->GetDataStream(filename.c_str())
-                        : Transcoder::Transcode(server->context, filename, bitrate);
-
-                    const char* rangeVal = MHD_lookup_connection_value(
-                        connection, MHD_HEADER_KIND, "Range");
-
-                    Range* range = parseRange(file, rangeVal);
-
-                    /* ehh... */
-                    bool isOnDemandTranscoder = !!dynamic_cast<TranscodingDataStream*>(file);
-
-                    /* gotta be careful with request ranges if we're transcoding. don't
-                    allow any custom ranges other than from 0 to end. */
-                    if (isOnDemandTranscoder && rangeVal && strlen(rangeVal)) {
-                        if (range->from != 0 || range->to != range->total - 1) {
-                            delete range;
-
-                            if (file) {
-                                file->Destroy();
-                                file = nullptr;
-                            }
-
-                            if (false && server->context.prefs->GetBool(
-                                prefs::transcoder_synchronous_fallback.c_str(),
-                                defaults::transcoder_synchronous_fallback))
-                            {
-                                /* if we're allowed, fall back to synchronous transcoding. we'll block
-                                here until the entire file has been converted and cached */
-                                file = Transcoder::TranscodeAndWait(server->context, filename, bitrate);
-                                range = parseRange(file, rangeVal);
-                            }
-                            else {
-                                /* otherwise fail with a "range not satisfiable" status */
-                                status = 416;
-                                char empty[1];
-                                response = MHD_create_response_from_buffer(0, empty, MHD_RESPMEM_PERSISTENT);
-                            }
-                        }
+                    if (byExternalId) {
+                        std::string externalId = urlDecode(parts.at(2));
+                        track = server->context.dataProvider->QueryTrackByExternalId(externalId.c_str());
+                    }
+                    else if (parts.at(1) == fragment::id) {
+                        uint64_t id = std::stoull(urlDecode(parts.at(2)));
+                        track = server->context.dataProvider->QueryTrackById(id);
                     }
 
-                    if (file) {
-                        size_t length = (range->to - range->from);
+                    if (track) {
+                        std::string filename = GetMetadataString(track, key::filename);
+                        track->Release();
 
-                        response = MHD_create_response_from_callback(
-                            length == 0 ? MHD_SIZE_UNKNOWN : length + 1,
-                            4096,
-                            &fileReadCallback,
-                            range,
-                            &fileFreeCallback);
+                        size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
 
-                        if (response) {
-                            if (!isOnDemandTranscoder) {
-                                MHD_add_response_header(response, "Accept-Ranges", "bytes");
-                            }
+                        IDataStream* file = (bitrate == 0)
+                            ? server->context.environment->GetDataStream(filename.c_str())
+                            : Transcoder::Transcode(server->context, filename, bitrate);
 
-                            if (byExternalId) {
-                                /* if we're using an on-demand transcoder, ensure the client does not cache the
-                                result because we have to guess the content length. */
-                                std::string value = isOnDemandTranscoder ? "no-cache" : "public, max-age=31536000";
-                                MHD_add_response_header(response, "Cache-Control", value.c_str());
-                            }
+                        const char* rangeVal = MHD_lookup_connection_value(
+                            connection, MHD_HEADER_KIND, "Range");
 
-                            MHD_add_response_header(response, "Content-Type", contentType(filename).c_str());
-                            MHD_add_response_header(response, "Server", "musikcube websocket_remote");
+                        Range* range = parseRange(file, rangeVal);
 
-                            if ((rangeVal && strlen(rangeVal)) || range->from > 0) {
-                                if (range->total > 0) {
-                                    MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
-                                    status = MHD_HTTP_PARTIAL_CONTENT;
+                        /* ehh... */
+                        bool isOnDemandTranscoder = !!dynamic_cast<TranscodingDataStream*>(file);
+
+                        /* gotta be careful with request ranges if we're transcoding. don't
+                        allow any custom ranges other than from 0 to end. */
+                        if (isOnDemandTranscoder && rangeVal && strlen(rangeVal)) {
+                            if (range->from != 0 || range->to != range->total - 1) {
+                                delete range;
+
+                                if (file) {
+                                    file->Destroy();
+                                    file = nullptr;
+                                }
+
+                                if (false && server->context.prefs->GetBool(
+                                    prefs::transcoder_synchronous_fallback.c_str(),
+                                    defaults::transcoder_synchronous_fallback))
+                                {
+                                    /* if we're allowed, fall back to synchronous transcoding. we'll block
+                                    here until the entire file has been converted and cached */
+                                    file = Transcoder::TranscodeAndWait(server->context, filename, bitrate);
+                                    range = parseRange(file, rangeVal);
+                                }
+                                else {
+                                    /* otherwise fail with a "range not satisfiable" status */
+                                    status = 416;
+                                    char empty[1];
+                                    response = MHD_create_response_from_buffer(0, empty, MHD_RESPMEM_PERSISTENT);
                                 }
                             }
                         }
-                        else {
-                            file->Destroy();
-                            file = nullptr;
+
+                        if (file) {
+                            size_t length = (range->to - range->from);
+
+                            response = MHD_create_response_from_callback(
+                                length == 0 ? MHD_SIZE_UNKNOWN : length + 1,
+                                4096,
+                                &fileReadCallback,
+                                range,
+                                &fileFreeCallback);
+
+                            if (response) {
+                                if (!isOnDemandTranscoder) {
+                                    MHD_add_response_header(response, "Accept-Ranges", "bytes");
+                                }
+
+                                if (byExternalId) {
+                                    /* if we're using an on-demand transcoder, ensure the client does not cache the
+                                    result because we have to guess the content length. */
+                                    std::string value = isOnDemandTranscoder ? "no-cache" : "public, max-age=31536000";
+                                    MHD_add_response_header(response, "Cache-Control", value.c_str());
+                                }
+
+                                MHD_add_response_header(response, "Content-Type", contentType(filename).c_str());
+                                MHD_add_response_header(response, "Server", "musikcube websocket_remote");
+
+                                if ((rangeVal && strlen(rangeVal)) || range->from > 0) {
+                                    if (range->total > 0) {
+                                        MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
+                                        status = MHD_HTTP_PARTIAL_CONTENT;
+                                    }
+                                }
+                            }
+                            else {
+                                file->Destroy();
+                                file = nullptr;
+                            }
                         }
                     }
                 }

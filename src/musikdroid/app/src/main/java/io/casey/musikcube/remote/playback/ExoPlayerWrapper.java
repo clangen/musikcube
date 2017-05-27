@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.playback;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.util.Base64;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -28,6 +29,7 @@ import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,7 +38,10 @@ import io.casey.musikcube.remote.util.NetworkUtil;
 import io.casey.musikcube.remote.util.Preconditions;
 import io.casey.musikcube.remote.websocket.Prefs;
 import okhttp3.Cache;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class ExoPlayerWrapper extends PlayerWrapper {
     private static OkHttpClient audioStreamHttpClient = null;
@@ -86,6 +91,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
         synchronized (ExoPlayerWrapper.class) {
             if (audioStreamHttpClient == null) {
+                final SharedPreferences prefs = ExoPlayerWrapper.this.prefs;
                 final File path = new File(context.getExternalCacheDir(), "audio");
 
                 int diskCacheIndex = this.prefs.getInt(
@@ -95,8 +101,15 @@ public class ExoPlayerWrapper extends PlayerWrapper {
                     diskCacheIndex = 0;
                 }
 
-                OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                    .cache(new Cache(path, CACHE_SETTING_TO_BYTES.get(diskCacheIndex)));
+                final OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                    .cache(new Cache(path, CACHE_SETTING_TO_BYTES.get(diskCacheIndex)))
+                    .addInterceptor((chain) -> {
+                        Request request = chain.request();
+                        final String userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD);
+                        final String encoded = Base64.encodeToString(userPass.getBytes(), Base64.NO_WRAP);
+                        request = request.newBuilder().addHeader("Authorization", "Basic " + encoded).build();
+                        return chain.proceed(request);
+                    });
 
                 if (this.prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
                     NetworkUtil.disableCertificateValidation(builder);

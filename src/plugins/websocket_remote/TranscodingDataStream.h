@@ -131,7 +131,7 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
 
         ByteBuffer<unsigned char> encodedBytes;
         ByteBuffer<unsigned char> spillover;
-        ByteBuffer<float> downmux;
+        ByteBuffer<float> downmix;
         size_t bitrate;
         bool eof;
         std::mutex mutex;

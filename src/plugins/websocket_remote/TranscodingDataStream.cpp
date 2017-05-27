@@ -198,14 +198,14 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
                     encodedBytes.data,
                     encodedBytes.length);
         }
-        /* the non-stereo case needs to be downmuxed. our downmuxing is simple,
+        /* the non-stereo case needs to be downmuxed. our downmixing is simple,
         we just use the stereo channels. in the case of mono, we duplicate the
         to left and right */
         else {
-            downmux.realloc(numSamples * 2);
+            downmix.realloc(numSamples * 2);
 
             float* from = pcmBuffer->BufferPointer();
-            float* to = downmux.data;
+            float* to = downmix.data;
 
             if (channels == 1) {
                 /* mono -> stereo */
@@ -229,7 +229,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
             encodeCount =
                 lame_encode_buffer_interleaved_ieee_float(
                     lame,
-                    downmux.data,
+                    downmix.data,
                     numSamples,
                     encodedBytes.data,
                     encodedBytes.length);
