@@ -43,6 +43,8 @@ namespace musik { namespace box { namespace prefs {
         extern const std::string UsePaletteColors;
         extern const std::string FirstRunSettingsDisplayed;
         extern const std::string ColorTheme;
+        extern const std::string MinimizeToTray;
+        extern const std::string StartMinimized;
     }
 
 } } }

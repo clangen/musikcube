@@ -56,6 +56,9 @@ namespace cursespp {
             void SetColorTheme(const std::string& fn);
             void SetMinimumSize(int width, int height);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
+            void SetMinimizeToTray(bool minimizeToTray);
+            void Minimize();
+            void Restore();
 
 #ifdef WIN32
             void SetIcon(int resourceId);

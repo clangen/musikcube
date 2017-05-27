@@ -34,6 +34,8 @@
         "settings_needs_restart": "you will need to restart musikbox for this change to take effect.",
         "settings_selected_locale": "locale: ",
         "settings_seek_not_scrub": "seek playback (don't scrub)",
+        "settings_minimize_to_tray": "minimize to tray",
+        "settings_start_minimized": "start minimized",
 
         "locale_overlay_select_title": "select locale",
 

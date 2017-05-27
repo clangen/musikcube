@@ -36,11 +36,20 @@
 
 #include "stdafx.h"
 #include <Windows.h>
+#include <Commctrl.h>
+#include <shellapi.h>
 
 #ifdef WIN32
 
+#define WM_TRAYICON (WM_USER + 2000)
+
 static std::basic_string<TCHAR> className = L"Curses_App";
 static HWND mainWindow = nullptr;
+static WNDPROC oldWndProc = nullptr;
+static std::unique_ptr<NOTIFYICONDATA> trayIcon;
+static bool minimizeToTray = false, minimizedToTray = false;
+static std::string appTitle;
+static HICON icon16 = nullptr, icon32 = nullptr;
 
 static void findMainWindow() {
     static TCHAR buffer[256];
@@ -73,6 +82,51 @@ static HICON loadIcon(int resourceId, int size) {
         0);
 }
 
+static void initTrayIcon(HWND hwnd) {
+    if (!trayIcon) {
+        trayIcon.reset(new NOTIFYICONDATA());
+        SecureZeroMemory(trayIcon.get(), sizeof(*trayIcon));
+        trayIcon->hWnd = hwnd;
+        trayIcon->uID = 0;
+        trayIcon->uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+        trayIcon->uCallbackMessage = WM_TRAYICON;
+        trayIcon->hIcon = icon16;
+
+        std::wstring title = u8to16(appTitle);
+        ::wcscpy_s(trayIcon->szTip, 255, title.c_str());
+    }
+}
+
+static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR data) {
+    if (minimizeToTray) {
+        if ((msg == WM_SIZE && wparam == SIZE_MINIMIZED) ||
+            (msg == WM_SYSCOMMAND && wparam == SC_MINIMIZE))
+        {
+            if (!minimizedToTray) {
+                initTrayIcon(hwnd);
+                minimizedToTray = (Shell_NotifyIcon(NIM_ADD, trayIcon.get()) != 0);
+                if (minimizedToTray) {
+                    ShowWindow(hwnd, SW_HIDE);
+                    trayIcon->uVersion = NOTIFYICON_VERSION;
+                    ::Shell_NotifyIcon(NIM_SETVERSION, trayIcon.get());
+                    return 1;
+                }
+            }
+        }
+    }
+
+    if (msg == WM_TRAYICON) {
+        if (LOWORD(lparam) == WM_LBUTTONUP) {
+            Shell_NotifyIcon(NIM_DELETE, trayIcon.get());
+            minimizedToTray = false;
+            ShowWindow(hwnd, SW_SHOWNORMAL);
+            return 1;
+        }
+    }
+
+    return DefSubclassProc(hwnd, msg, wparam, lparam);
+}
+
 namespace cursespp {
     namespace win32 {
         void ShowMainWindow() {
@@ -89,6 +143,13 @@ namespace cursespp {
             }
         }
 
+        void Minimize() {
+            findMainWindow();
+            if (mainWindow) {
+                ShowWindow(mainWindow, SW_SHOWMINIMIZED);
+            }
+        }
+
         HWND GetMainWindow() {
             findMainWindow();
             return mainWindow;
@@ -96,10 +157,25 @@ namespace cursespp {
 
         void SetIcon(int resourceId) {
             const HWND hwnd = GetMainWindow();
-            const HICON icon16 = loadIcon(resourceId, 16);
-            const HICON icon32 = loadIcon(resourceId, 48);
+            icon16 = loadIcon(resourceId, 16);
+            icon32 = loadIcon(resourceId, 48);
             SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) icon16);
             SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) icon32);
+        }
+
+        void InterceptWndProc() {
+            HWND hwnd = GetMainWindow();
+            if (hwnd) {
+                SetWindowSubclass(hwnd, wndProc, 1001, 0);
+            }
+        }
+
+        void SetMinimizeToTray(bool enabled) {
+            minimizeToTray = enabled;
+        }
+
+        void SetAppTitle(const std::string& title) {
+            appTitle = title;
         }
     }
 }

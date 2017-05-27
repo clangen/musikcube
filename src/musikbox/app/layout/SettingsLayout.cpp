@@ -71,6 +71,10 @@ using namespace std::placeholders;
 #define ENABLE_256_COLOR_OPTION
 #endif
 
+#ifdef WIN32
+#define ENABLE_MINIMIZE_TO_TRAY
+#endif
+
 #define LABEL_HEIGHT 1
 #define INPUT_HEIGHT 3
 #define HOTKEY_INPUT_WIDTH 20
@@ -91,15 +95,17 @@ static const std::string arrow = "\xe2\x96\xba ";
 static bool showDotfiles = false;
 
 SettingsLayout::SettingsLayout(
+    cursespp::App& app,
     musik::core::ILibraryPtr library,
     musik::core::sdk::IPlaybackService& playback,
     musik::glue::audio::MasterTransport& transport)
-: LayoutBase()
-, library(library)
-, indexer(library->Indexer())
-, transport(transport)
-, playback(playback)
-, pathsUpdated(false) {
+    : LayoutBase()
+    , app(app)
+    , library(library)
+    , indexer(library->Indexer())
+    , transport(transport)
+    , playback(playback)
+    , pathsUpdated(false) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->browseAdapter.reset(new DirectoryAdapter());
     this->addedPathsAdapter.reset(new SimpleScrollAdapter());
@@ -125,7 +131,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
     else if (cb == seekScrubCheckbox.get()) {
         TimeChangeMode mode = cb->IsChecked() ? TimeChangeSeek : TimeChangeScrub;
-        this->prefs->SetInt(core::prefs::keys::TimeChangeMode, (int) mode);
+        this->prefs->SetInt(core::prefs::keys::TimeChangeMode, (int)mode);
         this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode) == (int)TimeChangeSeek);
         this->playback.SetTimeChangeMode(mode);
     }
@@ -134,8 +140,17 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         ColorThemeOverlay::Show256ColorsInfo(
             checked,
             [this]() {
-                this->LoadPreferences();
-            });
+            this->LoadPreferences();
+        });
+    }
+#endif
+#ifdef ENABLE_MINIMIZE_TO_TRAY
+    else if (cb == minimizeToTrayCheckbox.get()) {
+        app.SetMinimizeToTray(checked);
+        this->prefs->SetBool(box::prefs::keys::MinimizeToTray, checked);
+    }
+    else if (cb == startMinimizedCheckbox.get()) {
+        this->prefs->SetBool(box::prefs::keys::StartMinimized, checked);
     }
 #endif
 }
@@ -231,6 +246,10 @@ void SettingsLayout::OnLayout() {
     this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->seekScrubCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+#ifdef ENABLE_MINIMIZE_TO_TRAY
+    this->minimizeToTrayCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+#endif
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -305,9 +324,6 @@ void SettingsLayout::InitializeWindows() {
     this->themeDropdown.reset(new TextLabel());
     this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + _TSTR("settings_default_theme_name"));
     this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
-#ifdef ENABLE_256_COLOR_OPTION
-    CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
-#endif
 
     this->hotkeyDropdown.reset(new TextLabel());
     this->hotkeyDropdown->SetText(arrow + _TSTR("settings_hotkey_tester"));
@@ -317,6 +333,14 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
     CREATE_CHECKBOX(this->seekScrubCheckbox, _TSTR("settings_seek_not_scrub"));
+
+#ifdef ENABLE_256_COLOR_OPTION
+    CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
+#endif
+#ifdef ENABLE_MINIMIZE_TO_TRAY
+    CREATE_CHECKBOX(this->minimizeToTrayCheckbox, _TSTR("settings_minimize_to_tray"));
+    CREATE_CHECKBOX(this->startMinimizedCheckbox, _TSTR("settings_start_minimized"));
+#endif
 
     int order = 0;
     this->browseList->SetFocusOrder(order++);
@@ -334,6 +358,10 @@ void SettingsLayout::InitializeWindows() {
     this->syncOnStartupCheckbox->SetFocusOrder(order++);
     this->removeCheckbox->SetFocusOrder(order++);
     this->seekScrubCheckbox->SetFocusOrder(order++);
+#ifdef ENABLE_MINIMIZE_TO_TRAY
+    this->minimizeToTrayCheckbox->SetFocusOrder(order++);
+    this->startMinimizedCheckbox->SetFocusOrder(order++);
+#endif
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -352,6 +380,10 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->syncOnStartupCheckbox);
     this->AddWindow(this->removeCheckbox);
     this->AddWindow(this->seekScrubCheckbox);
+#ifdef ENABLE_MINIMIZE_TO_TRAY
+    this->AddWindow(this->minimizeToTrayCheckbox);
+    this->AddWindow(this->startMinimizedCheckbox);
+#endif
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -435,9 +467,13 @@ void SettingsLayout::LoadPreferences() {
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->CheckChanged.disconnect(this);
-    this->paletteCheckbox->SetChecked(
-        this->prefs->GetBool(box::prefs::keys::UsePaletteColors, true));
+    this->paletteCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::UsePaletteColors, true));
     this->paletteCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
+#endif
+
+#ifdef ENABLE_MINIMIZE_TO_TRAY
+    this->minimizeToTrayCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::MinimizeToTray, false));
+    this->startMinimizedCheckbox->SetChecked(this->prefs->GetBool(box::prefs::keys::StartMinimized, false));
 #endif
 
     /* output plugin */

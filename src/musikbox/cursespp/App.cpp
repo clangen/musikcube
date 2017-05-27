@@ -100,6 +100,8 @@ App::App(const std::string& title) {
 
 #ifdef __PDCURSES__
     PDC_set_title(title.c_str());
+    win32::InterceptWndProc();
+    win32::SetAppTitle(title);
 #endif
 }
 
@@ -136,6 +138,24 @@ void App::SetIcon(int resourceId) {
     }
 }
 #endif
+
+void App::SetMinimizeToTray(bool minimizeToTray) {
+#ifdef WIN32
+    win32::SetMinimizeToTray(minimizeToTray);
+#endif
+}
+
+void App::Minimize() {
+#ifdef WIN32
+    win32::Minimize();
+#endif
+}
+
+void App::Restore() {
+#ifdef WIN32
+    win32::ShowMainWindow();
+#endif
+}
 
 void App::OnResized() {
     int cx = Screen::GetWidth();

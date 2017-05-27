@@ -170,6 +170,12 @@ int main(int argc, char* argv[]) {
             app.SetColorTheme(colorTheme);
         }
 
+        /* tray icon options */
+        app.SetMinimizeToTray(prefs->GetBool(musik::box::prefs::keys::MinimizeToTray, false));
+        if (prefs->GetBool(musik::box::prefs::keys::StartMinimized, false)) {
+            app.Minimize();
+        }
+
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
         using Layout = std::shared_ptr<LayoutBase>;
@@ -177,7 +183,7 @@ int main(int argc, char* argv[]) {
 
         Layout libraryLayout(new LibraryLayout(playback, library));
         Layout consoleLayout(new ConsoleLayout(transport, library));
-        Layout settingsLayout(new SettingsLayout(library, playback, transport));
+        Layout settingsLayout(new SettingsLayout(app, library, playback, transport));
 
         Main mainLayout(new MainLayout(library));
 

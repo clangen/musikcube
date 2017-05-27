@@ -40,10 +40,14 @@
 
 namespace cursespp {
     namespace win32 {
+        void InterceptWndProc();
         void ShowMainWindow();
         void HideMainWindow();
+        void Minimize();
         HWND GetMainWindow();
         void SetIcon(int resourceId);
+        void SetAppTitle(const std::string& title);
+        void SetMinimizeToTray(bool enabled);
     }
 }
 

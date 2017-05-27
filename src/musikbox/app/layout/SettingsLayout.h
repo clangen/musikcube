@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <cursespp/App.h>
 #include <cursespp/Checkbox.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
@@ -68,6 +69,7 @@ namespace musik {
         {
             public:
                 SettingsLayout(
+                    cursespp::App& app,
                     musik::core::ILibraryPtr library,
                     musik::core::sdk::IPlaybackService& playback,
                     musik::glue::audio::MasterTransport& transport);
@@ -108,6 +110,7 @@ namespace musik {
                     size_t line,
                     cursespp::IScrollAdapter::EntryPtr entry);
 
+                cursespp::App& app;
                 musik::core::ILibraryPtr library;
                 musik::core::IIndexer* indexer;
                 musik::core::sdk::IPlaybackService& playback;
@@ -128,6 +131,8 @@ namespace musik {
                 std::shared_ptr<cursespp::Checkbox> syncOnStartupCheckbox;
                 std::shared_ptr<cursespp::Checkbox> removeCheckbox;
                 std::shared_ptr<cursespp::Checkbox> seekScrubCheckbox;
+                std::shared_ptr<cursespp::Checkbox> minimizeToTrayCheckbox;
+                std::shared_ptr<cursespp::Checkbox> startMinimizedCheckbox;
 
                 std::shared_ptr<cursespp::TextLabel> browseLabel;
                 std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
