@@ -55,6 +55,10 @@ class OggDecoderPlugin : public musik::core::sdk::IPlugin {
         virtual const char* Name() { return "Ogg IDecoder"; }
         virtual const char* Version() { return "0.4.0"; }
         virtual const char* Author() { return "Björn Olievier, clangen"; }
+        virtual const char* Guid() { return "0a012b43-f6bd-4252-9f92-5170848f3f92"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

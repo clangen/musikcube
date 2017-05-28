@@ -54,6 +54,10 @@ class HttpDataStreamPlugin : public musik::core::sdk::IPlugin {
     virtual const char* Name() { return "HTTP IDataStream"; }
     virtual const char* Version() { return "0.1.0"; }
     virtual const char* Author() { return "clangen"; }
+    virtual const char* Guid() { return "b153adad-ee98-4331-ad32-4ff7f34828cd"; }
+    virtual bool Configurable() { return false; }
+    virtual void Configure() { }
+    virtual void Reload() { }
     virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

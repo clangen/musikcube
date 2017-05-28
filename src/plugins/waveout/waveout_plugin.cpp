@@ -40,9 +40,13 @@
 class WaveOutPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
-        virtual const char* Name() { return "WaveOut IOutput"; };
-        virtual const char* Version() { return "0.6.0"; };
-        virtual const char* Author() { return "Bj\xC3\xB6rn Olievier, clangen"; };
+        virtual const char* Name() { return "WaveOut IOutput"; }
+        virtual const char* Version() { return "0.6.0"; }
+        virtual const char* Author() { return "Bj\xC3\xB6rn Olievier, clangen"; }
+        virtual const char* Guid() { return "bec5bf30-0208-4db0-af0a-2722d9de8421"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

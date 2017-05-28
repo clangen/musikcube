@@ -56,6 +56,10 @@ class NomadPlugin : public musik::core::sdk::IPlugin {
     virtual const char* Name() { return "nomad IDecoder"; }
     virtual const char* Version() { return "0.2.0"; }
     virtual const char* Author() { return "clangen"; }
+    virtual const char* Guid() { return "b3b86cef-8ea0-4114-828e-ed07cf41398a"; }
+    virtual bool Configurable() { return false; }
+    virtual void Configure() { }
+    virtual void Reload() { }
     virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

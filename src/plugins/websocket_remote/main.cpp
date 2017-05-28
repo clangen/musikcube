@@ -59,6 +59,10 @@ static class Plugin : public IPlugin {
         virtual const char* Name() { return "WebSockets IPlaybackRemote"; }
         virtual const char* Version() { return "0.6.0"; }
         virtual const char* Author() { return "clangen"; }
+        virtual const char* Guid() { return "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 } plugin;
 

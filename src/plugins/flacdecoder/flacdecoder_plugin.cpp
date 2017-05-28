@@ -57,6 +57,10 @@ class FlacPlugin : public musik::core::sdk::IPlugin {
         virtual const char* Name() { return "FLAC IDecoder"; }
         virtual const char* Version() { return "0.4.0"; }
         virtual const char* Author() { return "Daniel Önnerby, clangen"; }
+        virtual const char* Guid() { return "f2acfbbc-b910-42ec-a568-6f4705d22b73"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

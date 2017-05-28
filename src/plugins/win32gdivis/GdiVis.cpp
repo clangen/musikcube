@@ -204,9 +204,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved) {
 class VisualizerPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
-        virtual const char* Name() { return "GdiVis"; };
-        virtual const char* Version() { return "0.2.0"; };
-        virtual const char* Author() { return "clangen"; };
+        virtual const char* Name() { return "GdiVis"; }
+        virtual const char* Version() { return "0.2.0"; }
+        virtual const char* Author() { return "clangen"; }
+        virtual const char* Guid() { return "4b0f37f7-96fe-438c-acf2-bbdd53ce1ddf"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

@@ -54,6 +54,10 @@ class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
     virtual const char* Name() { return PLUGIN_NAME; }
     virtual const char* Version() { return "0.5.0"; }
     virtual const char* Author() { return "Björn Olievier, clangen"; }
+    virtual const char* Guid() { return "0862b76d-67cd-4e54-b5d1-6a2c8e5101a4"; }
+    virtual bool Configurable() { return false; }
+    virtual void Configure() { }
+    virtual void Reload() { }
     virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

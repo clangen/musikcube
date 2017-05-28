@@ -57,6 +57,10 @@ class AacDecoderPlugin : public musik::core::sdk::IPlugin {
         virtual const char* Name() { return "M4A IDecoder"; };
         virtual const char* Version() { return "0.4.0"; };
         virtual const char* Author() { return "Björn Olievier, clangen"; };
+        virtual const char* Guid() { return "8f62c9d6-225d-4c46-be7a-f5f61f9d0b17"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

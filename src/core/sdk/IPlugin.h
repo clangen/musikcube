@@ -42,6 +42,10 @@ namespace musik { namespace core { namespace sdk {
             virtual const char* Name() = 0;
             virtual const char* Version() = 0;
             virtual const char* Author() = 0;
+            virtual const char* Guid() = 0;
+            virtual bool Configurable() = 0;
+            virtual void Configure() = 0;
+            virtual void Reload() = 0;
             virtual int SdkVersion() = 0;
     };
 

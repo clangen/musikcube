@@ -47,11 +47,11 @@ class CddaDecoder : public IDecoder {
         CddaDecoder();
         ~CddaDecoder();
 
-        bool Open(IDataStream* data);
-        void Destroy();
-        double SetPosition(double seconds);
-        double GetDuration();
-        bool GetBuffer(IBuffer *buffer);
+        virtual bool Open(IDataStream* data);
+        virtual void Destroy();
+        virtual double SetPosition(double seconds);
+        virtual double GetDuration();
+        virtual bool GetBuffer(IBuffer *buffer);
 
     private:
         CddaDataStream* data;

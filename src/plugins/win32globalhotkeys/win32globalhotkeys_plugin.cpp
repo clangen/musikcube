@@ -172,6 +172,20 @@ class MMShellHook:
                 return "clangen";
             }
 
+            virtual const char* Guid() {
+                return "e2678930-ecd4-43b8-85e0-e41d634445b2";
+            }
+
+            virtual bool Configurable() {
+                return false;
+            }
+
+            virtual void Configure() {
+            }
+
+            virtual void Reload() {
+            }
+
             virtual int SdkVersion() {
                 return musik::core::sdk::SdkVersion;
             }
