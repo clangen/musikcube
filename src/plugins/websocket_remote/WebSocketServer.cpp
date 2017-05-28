@@ -198,36 +198,55 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
         }
         if (name == request::pause_or_resume) {
             context.playback->PauseOrResume();
+            this->RespondWithSuccess(connection, request);
             return;
         }
         else if (name == request::stop) {
             context.playback->Stop();
+            this->RespondWithSuccess(connection, request);
             return;
         }
         else if (name == request::previous) {
-            context.playback->Previous();
+            if (context.playback->Previous()) {
+                this->RespondWithSuccess(connection, request);
+            }
+            else {
+                this->RespondWithFailure(connection, request);
+            }
             return;
         }
         else if (name == request::next) {
-            context.playback->Next();
+            if (context.playback->Next()) {
+                this->RespondWithSuccess(connection, request);
+            }
+            else {
+                this->RespondWithFailure(connection, request);
+            }
             return;
         }
         else if (name == request::play_at_index) {
             if (options.find(key::index) != options.end()) {
                 context.playback->Play(options[key::index]);
+                this->RespondWithSuccess(connection, request);
+            }
+            else {
+                this->RespondWithFailure(connection, request);
             }
             return;
         }
         else if (name == request::toggle_shuffle) {
             context.playback->ToggleShuffle();
+            this->RespondWithSuccess(connection, request);
             return;
         }
         else if (name == request::toggle_repeat) {
             context.playback->ToggleRepeatMode();
+            this->RespondWithSuccess(connection, request);
             return;
         }
         else if (name == request::toggle_mute) {
             context.playback->ToggleMute();
+            this->RespondWithSuccess(connection, request);
             return;
         }
         else if (name == request::set_volume) {
@@ -237,6 +256,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
         else if (name == request::seek_to) {
             if (options.find(key::position) != options.end()) {
                 context.playback->SetPosition(options[key::position]);
+                this->RespondWithSuccess(connection, request);
+            }
+            else {
+                this->RespondWithFailure(connection, request);
             }
             return;
         }
@@ -244,6 +267,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             double delta = options.value(key::delta, 0.0f);
             if (delta != 0.0f) {
                 context.playback->SetPosition(context.playback->GetPosition() + delta);
+                this->RespondWithSuccess(connection, request);
+            }
+            else {
+                this->RespondWithFailure(connection, request);
             }
             return;
         }
@@ -348,11 +375,22 @@ void WebSocketServer::RespondWithSuccess(connection_hdl connection, json& reques
 
 void WebSocketServer::RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id)
 {
-    json error = {
+    json success = {
         { message::name, name },
         { message::id, id },
         { message::type, type::response },
         { message::options,{ key::success, true } }
+    };
+
+    wss.send(connection, success.dump().c_str(), websocketpp::frame::opcode::text);
+}
+
+void WebSocketServer::RespondWithFailure(connection_hdl connection, json& request) {
+    json error = {
+        { message::name, request[message::name] },
+        { message::id, request[message::id] },
+        { message::type, type::response },
+        { message::options,{ key::success, false } }
     };
 
     wss.send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);

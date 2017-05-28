@@ -126,9 +126,6 @@ class WebSocketServer {
         void Broadcast(const std::string& name, json& options);
         void RespondWithOptions(connection_hdl connection, json& request, json& options);
         void RespondWithOptions(connection_hdl connection, json& request, json&& options = json({}));
-        void RespondWithInvalidRequest(connection_hdl connection, const std::string& name, const std::string& id);
-        void RespondWithSuccess(connection_hdl connection, json& request);
-        void RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id);
         void RespondWithSetVolume(connection_hdl connection, json& request);
         void RespondWithPlaybackOverview(connection_hdl connection, json& reuest);
         bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);
@@ -137,7 +134,12 @@ class WebSocketServer {
         void RespondWithPlayQueueTracks(connection_hdl connection, json& request);
         void RespondWithQueryAlbums(connection_hdl connection, json& request);
         void RespondWithPlayTracks(connection_hdl connection, json& request);
-        ITrackList* QueryTracksByCategory(json& request, int& limit, int& offset);
+
+        void RespondWithInvalidRequest(connection_hdl connection, const std::string& name, const std::string& id);
+        void RespondWithSuccess(connection_hdl connection, json& request);
+        void RespondWithFailure(connection_hdl connection, json& request);
+        void RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id);
+
         void RespondWithQueryTracksByCategory(connection_hdl connection, json& request);
         void RespondWithQueryCategory(connection_hdl connection, json& request);
         void RespondWithPlayAllTracks(connection_hdl connection, json& request);
@@ -145,8 +147,10 @@ class WebSocketServer {
         void RespondWithEnvironment(connection_hdl connection, json& request);
         void BroadcastPlaybackOverview();
         void BroadcastPlayQueueChanged();
+        ITrackList* QueryTracksByCategory(json& request, int& limit, int& offset);
         json ReadTrackMetadata(IRetainedTrack* track);
         void BuildPlaybackOverview(json& options);
+
         void OnOpen(connection_hdl connection);
         void OnClose(connection_hdl connection);
         void OnMessage(server* s, connection_hdl hdl, message_ptr msg);
