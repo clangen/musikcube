@@ -46,6 +46,10 @@ class AlsaPlugin : public musik::core::sdk::IPlugin {
         virtual const char* Name() { return "AlsaOut IOutput"; }
         virtual const char* Version() { return "0.3"; }
         virtual const char* Author() { return "Julian Cromarty, clangen"; }
+        virtual const char* Guid() { return "668a75e6-1816-4c75-a361-a9d48906f23f"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 

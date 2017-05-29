@@ -44,6 +44,10 @@ class CoreAudioPlugin : public musik::core::sdk::IPlugin {
         virtual const char* Name() { return "CoreAudio IOutput"; }
         virtual const char* Version() { return "0.3"; }
         virtual const char* Author() { return "clangen"; }
+        virtual const char* Guid() { return "7277a19f-a5f7-4123-ac2d-c36273097b72"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
