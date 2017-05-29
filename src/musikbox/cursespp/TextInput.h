@@ -48,40 +48,46 @@ namespace cursespp {
         public std::enable_shared_from_this<TextInput>,
 #endif
         public cursespp::IInput {
-        public:
-            sigslot::signal1<TextInput*> EnterPressed;
-            sigslot::signal2<TextInput*, std::string> TextChanged;
+            public:
+                sigslot::signal1<TextInput*> EnterPressed;
+                sigslot::signal2<TextInput*, std::string> TextChanged;
 
-            TextInput(InputMode inputMode = IInput::InputNormal);
-            virtual ~TextInput();
+                enum Style { StyleBox, StyleLine };
 
-            virtual void OnRedraw();
+                TextInput(InputMode inputMode = IInput::InputNormal);
+                TextInput(Style style, InputMode inputMode = IInput::InputNormal);
 
-            virtual bool Write(const std::string& key);
-            virtual size_t Length();
-            virtual size_t Position();
+                virtual ~TextInput();
 
-            virtual void SetInputMode(InputMode inputMode) {
-                this->inputMode = inputMode;
-            };
+                virtual void OnRedraw();
 
-            virtual InputMode GetInputMode() { return this->inputMode; }
+                virtual bool Write(const std::string& key);
+                virtual size_t Length();
+                virtual size_t Position();
 
-            virtual bool KeyPress(const std::string& key);
+                virtual void SetInputMode(InputMode inputMode) {
+                    this->inputMode = inputMode;
+                };
 
-            virtual void SetText(const std::string& value);
-            virtual std::string GetText() { return this->buffer; }
+                virtual InputMode GetInputMode() { return this->inputMode; }
 
-            void SetHint(const std::string& hint);
-            void SetEnterEnabled(bool enabled);
+                virtual bool KeyPress(const std::string& key);
 
-        private:
-            bool OffsetPosition(int delta);
+                virtual void SetText(const std::string& value);
+                virtual std::string GetText() { return this->buffer; }
 
-            std::string buffer, hintText;
-            int position;
-            bool enterEnabled;
-            size_t bufferLength;
-            InputMode inputMode;
+                void SetHint(const std::string& hint);
+                void SetEnterEnabled(bool enabled);
+                Style GetStyle() { return style; }
+
+            private:
+                bool OffsetPosition(int delta);
+
+                std::string buffer, hintText;
+                int position;
+                bool enterEnabled;
+                size_t bufferLength;
+                Style style;
+                InputMode inputMode;
     };
 }

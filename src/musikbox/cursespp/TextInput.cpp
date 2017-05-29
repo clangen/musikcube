@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <limits.h>
 
 #include "Screen.h"
 #include "Colors.h"
@@ -63,12 +64,20 @@ inline static bool removeUtf8Char(std::string& value, size_t position) {
     return false;
 }
 
-TextInput::TextInput(IInput::InputMode inputMode)
+TextInput::TextInput(TextInput::Style style, IInput::InputMode inputMode)
 : Window()
 , bufferLength(0)
 , position(0)
+, style(style)
 , inputMode(inputMode)
 , enterEnabled(true) {
+    if (style == StyleLine) {
+        this->SetFrameVisible(false);
+    }
+}
+
+TextInput::TextInput(IInput::InputMode inputMode)
+: TextInput(TextInput::StyleBox, inputMode) {
 }
 
 TextInput::~TextInput() {
@@ -78,18 +87,41 @@ void TextInput::OnRedraw() {
     WINDOW* c = this->GetContent();
     werase(c);
 
-    if (buffer.size()) {
-        if (inputMode == InputPassword) {
-            size_t count = u8cols(buffer);
-            std::string masked(count, '*');
-            waddstr(c, masked.c_str());
-        }
-        else {
-            waddstr(c, buffer.c_str());
-        }
+    std::string trimmed;
+    int contentWidth = GetContentWidth();
+    int columns = u8cols(buffer);
+
+    /* if the string is larger than our width, we gotta trim it for
+    display purposes... */
+    if (position > contentWidth) {
+        trimmed = u8substr(this->buffer, position - contentWidth, INT_MAX);
     }
-    else if (!this->IsFocused() && hintText.size()) {
-        waddstr(c, hintText.c_str());
+    else {
+        trimmed = buffer;
+    }
+
+    if (!this->IsFocused() && !columns && hintText.size()) {
+        /* draw the hint if we have one and there's no string yet */
+        waddstr(c, u8substr(hintText, 0, columns).c_str());
+    }
+    else {
+        /* mask the string if we're in password mode */
+        if (inputMode == InputPassword) {
+            trimmed = std::string(columns, '*');
+        }
+
+        /* if we're in "Line" mode and the string is short, pad the
+        end with a bunch of underscores */
+        if (style == StyleLine) {
+            int remaining = contentWidth - columns;
+            if (remaining > 0) {
+                trimmed += std::string(remaining, '_');
+            }
+        }
+
+        /* finally, draw the offset/trimmed, potentially masked, padded
+        string to the output */
+        waddstr(c, trimmed.c_str());
     }
 }
 
@@ -180,7 +212,6 @@ bool TextInput::KeyPress(const std::string& key) {
             removeUtf8Char(this->buffer, this->position + 1);
             this->bufferLength = u8len(buffer);
             this->Redraw();
-
             return true;
         }
     }
