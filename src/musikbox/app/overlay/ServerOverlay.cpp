@@ -61,10 +61,8 @@ static const char* KEY_TRANSCODER_SYNCHRONOUS = "transcoder_synchronous";
 static const char* KEY_PASSWORD = "password";
 
 #define VERTICAL_PADDING 1
-#define DEFAULT_HEIGHT 18
+#define DEFAULT_HEIGHT 17
 #define DEFAULT_WIDTH 45
-#define PORT_INPUT_WIDTH 10
-#define PORT_INPUT_HEIGHT 3
 
 #define STYLE_OVERLAY_LABEL(x) \
     x->SetContentColor(CURSESPP_OVERLAY_CONTENT);
@@ -74,10 +72,16 @@ static const char* KEY_PASSWORD = "password";
     x->SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
 
 #define STYLE_OVERLAY_INPUT(x) \
-    x->SetFrameColor(CURSESPP_OVERLAY_FRAME); \
-    x->SetContentColor(CURSESPP_OVERLAY_CONTENT); \
-    x->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME); \
-    x->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+    if (x->GetStyle() == TextInput::StyleBox) { \
+        x->SetFrameColor(CURSESPP_OVERLAY_FRAME); \
+        x->SetContentColor(CURSESPP_OVERLAY_CONTENT); \
+        x->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME); \
+        x->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT); \
+    } \
+    else { \
+        x->SetContentColor(CURSESPP_OVERLAY_CONTENT); \
+        x->SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED); \
+    }
 
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
@@ -154,24 +158,29 @@ void ServerOverlay::InitViews() {
     this->enableWssCb->SetText(_TSTR("settings_server_enable_websockets"));
 
     this->wssPortLabel.reset(new TextLabel());
-    this->wssPortLabel->SetText(_TSTR("settings_server_metadata_port"), text::AlignRight);
-    this->wssPortInput.reset(new TextInput());
+    this->wssPortLabel->SetText(_TSTR("settings_server_port"), text::AlignRight);
+    this->wssPortInput.reset(new TextInput(TextInput::StyleLine));
 
     /* http server */
     this->enableHttpCb.reset(new Checkbox());
     this->enableHttpCb->SetText(_TSTR("settings_server_enable_http"));
     this->httpPortLabel.reset(new TextLabel());
-    this->httpPortLabel->SetText(_TSTR("settings_server_audio_port"), text::AlignRight);
-    this->httpPortInput.reset(new TextInput());
+    this->httpPortLabel->SetText(_TSTR("settings_server_port"), text::AlignRight);
+    this->httpPortInput.reset(new TextInput(TextInput::StyleLine));
 
     /* transcoder */
     this->enableSyncTransCb.reset(new Checkbox());
     this->enableSyncTransCb->SetText(_TSTR("settings_server_transcoder_synchronous"));
 
+    this->transCacheLabel.reset(new TextLabel());
+    this->transCacheLabel->SetText(_TSTR("settings_server_transcoder_cache_count"));
+
+    this->transCacheInput.reset(new TextInput(TextInput::StyleLine));
+
     /* password */
     this->pwLabel.reset(new TextLabel());
     this->pwLabel->SetText(_TSTR("settings_server_password"), text::AlignRight);
-    this->pwInput.reset(new TextInput(IInput::InputPassword));
+    this->pwInput.reset(new TextInput(TextInput::StyleLine, IInput::InputPassword));
 
     /* style 'em */
     STYLE_OVERLAY_LABEL(this->titleLabel);
@@ -182,18 +191,22 @@ void ServerOverlay::InitViews() {
     STYLE_OVERLAY_LABEL(this->httpPortLabel);
     STYLE_OVERLAY_INPUT(this->httpPortInput);
     STYLE_OVERLAY_CHECKBOX(this->enableSyncTransCb);
+    STYLE_OVERLAY_LABEL(this->transCacheLabel);
+    STYLE_OVERLAY_INPUT(this->transCacheInput);
     STYLE_OVERLAY_LABEL(this->pwLabel);
     STYLE_OVERLAY_INPUT(this->pwInput);
 
     /* add 'em */
     this->AddWindow(this->titleLabel);
     this->AddWindow(this->enableWssCb);
-    this->AddWindow(this->enableHttpCb);
-    this->AddWindow(this->enableSyncTransCb);
     this->AddWindow(this->wssPortLabel);
     this->AddWindow(this->wssPortInput);
+    this->AddWindow(this->enableHttpCb);
     this->AddWindow(this->httpPortLabel);
     this->AddWindow(this->httpPortInput);
+    this->AddWindow(this->enableSyncTransCb);
+    this->AddWindow(this->transCacheLabel);
+    this->AddWindow(this->transCacheInput);
     this->AddWindow(this->pwLabel);
     this->AddWindow(this->pwInput);
     this->AddWindow(this->shortcuts);
@@ -201,10 +214,11 @@ void ServerOverlay::InitViews() {
     /* focus order */
     int order = 0;
     this->enableWssCb->SetFocusOrder(order++);
-    this->enableHttpCb->SetFocusOrder(order++);
-    this->enableSyncTransCb->SetFocusOrder(order++);
     this->wssPortInput->SetFocusOrder(order++);
+    this->enableHttpCb->SetFocusOrder(order++);
     this->httpPortInput->SetFocusOrder(order++);
+    this->enableSyncTransCb->SetFocusOrder(order++);
+    this->transCacheInput->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
 }
 
@@ -222,24 +236,27 @@ void ServerOverlay::Layout() {
     int y = 2;
     clientWidth -= 2;
 
-    int labelWidth = std::max(TEXT_WIDTH(this->wssPortLabel), TEXT_WIDTH(this->httpPortLabel));
-    labelWidth = std::max(labelWidth, TEXT_WIDTH(this->pwLabel));
-    int inputWidth = clientWidth - labelWidth - 1;
-
+    const int wssPortLabelWidth = TEXT_WIDTH(wssPortLabel);
     this->enableWssCb->MoveAndResize(x, y++, clientWidth, 1);
+    this->wssPortLabel->MoveAndResize(x + 4, y, wssPortLabelWidth, 1);
+    this->wssPortInput->MoveAndResize(x + 4 + wssPortLabelWidth + 1, y, 8, 1);
+    y += 2;
+
+    const int httpPortLabelWidth = TEXT_WIDTH(httpPortLabel);
     this->enableHttpCb->MoveAndResize(x, y++, clientWidth, 1);
+    this->httpPortLabel->MoveAndResize(x + 4, y, httpPortLabelWidth, 1);
+    this->httpPortInput->MoveAndResize(x + 4 + httpPortLabelWidth + 1, y, 8, 1);
+    y += 2;
+
+    const int transCcacheLabelWidth = TEXT_WIDTH(transCacheLabel);
     this->enableSyncTransCb->MoveAndResize(x, y++, clientWidth, 1);
+    this->transCacheLabel->MoveAndResize(x, y, transCcacheLabelWidth, 1);
+    this->transCacheInput->MoveAndResize(x + transCcacheLabelWidth + 1, y, 5, 1);
+    y += 2;
 
-    this->wssPortLabel->MoveAndResize(x, y + 1, labelWidth, 1);
-    this->wssPortInput->MoveAndResize(labelWidth + 2, y, inputWidth, PORT_INPUT_HEIGHT);
-    y += 3;
-
-    this->httpPortLabel->MoveAndResize(x, y + 1, labelWidth, 1);
-    this->httpPortInput->MoveAndResize(labelWidth + 2, y, inputWidth, PORT_INPUT_HEIGHT);
-    y += 3;
-
-    this->pwLabel->MoveAndResize(x, y + 1, labelWidth, 1);
-    this->pwInput->MoveAndResize(labelWidth + 2, y, inputWidth, PORT_INPUT_HEIGHT);
+    const int pwLabelWidth = TEXT_WIDTH(pwLabel);
+    this->pwLabel->MoveAndResize(x, y, pwLabelWidth, 1);
+    this->pwInput->MoveAndResize(pwLabelWidth + 2, y, clientWidth - pwLabelWidth - 1, 1);
 }
 
 void ServerOverlay::Show(Callback callback) {
@@ -268,14 +285,16 @@ void ServerOverlay::Load() {
 
     this->wssPortInput->SetText(settingIntToString(prefs, KEY_METADATA_SERVER_PORT, 7905));
     this->httpPortInput->SetText(settingIntToString(prefs, KEY_AUDIO_SERVER_PORT, 7906));
+    this->transCacheInput->SetText(settingIntToString(prefs, KEY_TRANSCODER_CACHE_COUNT, 50));
     this->pwInput->SetText(prefs->GetString(KEY_PASSWORD, ""));
 }
 
 bool ServerOverlay::Save() {
     int wssPort = getIntFromTextInput(this->wssPortInput.get());
     int httpPort = getIntFromTextInput(this->httpPortInput.get());
+    int cacheCount = getIntFromTextInput(this->transCacheInput.get());
 
-    if (wssPort <= 0 || httpPort <= 0) {
+    if (wssPort <= 0 || httpPort <= 0 || cacheCount < 0) {
         return false;
     }
 
@@ -284,6 +303,7 @@ bool ServerOverlay::Save() {
     this->prefs->SetBool(KEY_TRANSCODER_SYNCHRONOUS, this->enableSyncTransCb->IsChecked());
     this->prefs->SetInt(KEY_METADATA_SERVER_PORT, wssPort);
     this->prefs->SetInt(KEY_AUDIO_SERVER_PORT, httpPort);
+    this->prefs->SetInt(KEY_TRANSCODER_CACHE_COUNT, cacheCount);
     this->prefs->SetString(KEY_PASSWORD, this->pwInput->GetText().c_str());
 
     this->prefs->Save();

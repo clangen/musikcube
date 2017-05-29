@@ -5,12 +5,18 @@ user-facing:
 * added `minimize to tray` and `start minimized` options to the windows build
 * a handful of small `musikdroid` bug fixes, mostly related to audio focus
   and ducking.
+* documented the `websocket_remote` api on the wiki
 
 low-level:
 * added authentication support to the the `websocket_remote` audio server
 * found and fixed a handful of missing `websocket_remote` metadata responses
 * added the ability to hot-reload plugins
 * modified `IPlugin` -- every plugin must now supply a unique `guid`
+* fixed a bug in Transcoder if the number of cache files was set to 0
+* fixed a number of bugs that could result in undefined behavior or crashes if
+  views are drawn outside of their parents (or screen) bounds
+* fixed a bug where input fields may stop drawing properly if the value entered
+  by the user exceeds the window bounds
 
 --------------------------------------------------------------------------------
 

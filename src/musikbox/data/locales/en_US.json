@@ -41,11 +41,10 @@
         "settings_server_setup": "server setup",
 
         "settings_server_enable_websockets": "metadata server enabled",
-        "settings_server_metadata_port": "metadata port:",
         "settings_server_enable_http": "audio streaming enabled",
-        "settings_server_audio_port": "audio port:",
+        "settings_server_port": "port:",
         "settings_server_transcoder_synchronous": "synchronous transcoding",
-        "settings_server_transcoder_cache_size": "transcoder file cache count",
+        "settings_server_transcoder_cache_count": "transcoder file cache count:",
         "settings_server_password": "password:",
         "settings_server_invalid_settings_title": "invalid settings",
         "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",

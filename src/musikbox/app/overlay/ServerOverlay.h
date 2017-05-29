@@ -78,8 +78,8 @@ namespace musik {
 
             std::shared_ptr<cursespp::TextLabel> titleLabel;
             std::shared_ptr<cursespp::Checkbox> enableWssCb, enableHttpCb, enableSyncTransCb;
-            std::shared_ptr<cursespp::TextLabel> wssPortLabel, httpPortLabel, pwLabel;
-            std::shared_ptr<cursespp::TextInput> wssPortInput, httpPortInput, pwInput;
+            std::shared_ptr<cursespp::TextLabel> wssPortLabel, httpPortLabel, pwLabel, transCacheLabel;
+            std::shared_ptr<cursespp::TextInput> wssPortInput, httpPortInput, pwInput, transCacheInput;
             std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
         };
     }
