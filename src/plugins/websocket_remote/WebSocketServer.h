@@ -113,8 +113,8 @@ class WebSocketServer {
         /* vars */
         Context& context;
         ConnectionList connections;
-        server wss;
         ReadWriteLock connectionLock;
+        std::shared_ptr<server> wss;
         std::shared_ptr<std::thread> thread;
         std::mutex exitMutex;
         std::condition_variable exitCondition;

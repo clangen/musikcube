@@ -52,6 +52,7 @@
 #include <app/overlay/LocaleOverlay.h>
 #include <app/overlay/PlaybackOverlays.h>
 #include <app/overlay/PluginOverlay.h>
+#include <app/overlay/ServerOverlay.h>
 
 #include <boost/format.hpp>
 
@@ -99,16 +100,17 @@ SettingsLayout::SettingsLayout(
     musik::core::ILibraryPtr library,
     musik::core::sdk::IPlaybackService& playback,
     musik::glue::audio::MasterTransport& transport)
-    : LayoutBase()
-    , app(app)
-    , library(library)
-    , indexer(library->Indexer())
-    , transport(transport)
-    , playback(playback)
-    , pathsUpdated(false) {
+: LayoutBase()
+, app(app)
+, library(library)
+, indexer(library->Indexer())
+, transport(transport)
+, playback(playback)
+, pathsUpdated(false) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->browseAdapter.reset(new DirectoryAdapter());
     this->addedPathsAdapter.reset(new SimpleScrollAdapter());
+    this->UpdateServerAvailability();
     this->InitializeWindows();
 }
 
@@ -201,6 +203,10 @@ void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
     App::Overlays().Push(overlay);
 }
 
+void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
+    ServerOverlay::Show([this]() { /* nothing, for now */ });
+}
+
 void SettingsLayout::OnThemeDropdownActivate(cursespp::TextLabel* label) {
     ColorThemeOverlay::Show([this]() { this->LoadPreferences(); });
 }
@@ -237,6 +243,10 @@ void SettingsLayout::OnLayout() {
     this->pluginsDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+
+    if (serverAvailable) {
+        this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    }
 
     y = BOTTOM(this->browseList);
 #ifdef ENABLE_256_COLOR_OPTION
@@ -329,6 +339,12 @@ void SettingsLayout::InitializeWindows() {
     this->hotkeyDropdown->SetText(arrow + _TSTR("settings_hotkey_tester"));
     this->hotkeyDropdown->Activated.connect(this, &SettingsLayout::OnHotkeyDropdownActivate);
 
+    if (this->serverAvailable) {
+        this->serverDropdown.reset(new TextLabel());
+        this->serverDropdown->SetText(arrow + _TSTR("settings_server_setup"));
+        this->serverDropdown->Activated.connect(this, &SettingsLayout::OnServerDropdownActivate);
+    }
+
     CREATE_CHECKBOX(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
@@ -351,6 +367,11 @@ void SettingsLayout::InitializeWindows() {
     this->pluginsDropdown->SetFocusOrder(order++);
     this->themeDropdown->SetFocusOrder(order++);
     this->hotkeyDropdown->SetFocusOrder(order++);
+
+    if (this->serverAvailable) {
+        this->serverDropdown->SetFocusOrder(order++);
+    }
+
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->SetFocusOrder(order++);
 #endif
@@ -372,6 +393,11 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->pluginsDropdown);
     this->AddWindow(this->themeDropdown);
+
+    if (this->serverAvailable) {
+        this->AddWindow(this->serverDropdown);
+    }
+
 #ifdef ENABLE_256_COLOR_OPTION
     this->AddWindow(this->paletteCheckbox);
 #endif
@@ -524,6 +550,10 @@ void SettingsLayout::DrillIntoSelectedDirectory() {
     this->browseList->OnAdapterChanged();
     this->browseList->SetSelectedIndex(selectIndexAt);
     this->browseList->ScrollTo(selectIndexAt);
+}
+
+void SettingsLayout::UpdateServerAvailability() {
+    this->serverAvailable = !!ServerOverlay::FindServerPlugin().get();
 }
 
 bool SettingsLayout::KeyPress(const std::string& key) {

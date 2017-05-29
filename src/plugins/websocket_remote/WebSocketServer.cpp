@@ -79,25 +79,27 @@ bool WebSocketServer::Start() {
 
 void WebSocketServer::ThreadProc() {
     try {
+        wss.reset(new server());
+
         if (context.prefs->GetBool("debug")) {
-            wss.get_alog().set_ostream(&std::cerr);
-            wss.get_elog().set_ostream(&std::cerr);
-            wss.set_access_channels(websocketpp::log::alevel::all);
-            wss.clear_access_channels(websocketpp::log::alevel::frame_payload);
+            wss->get_alog().set_ostream(&std::cerr);
+            wss->get_elog().set_ostream(&std::cerr);
+            wss->set_access_channels(websocketpp::log::alevel::all);
+            wss->clear_access_channels(websocketpp::log::alevel::frame_payload);
         }
         else {
-            wss.set_access_channels(websocketpp::log::alevel::none);
-            wss.clear_access_channels(websocketpp::log::alevel::none);
+            wss->set_access_channels(websocketpp::log::alevel::none);
+            wss->clear_access_channels(websocketpp::log::alevel::none);
         }
 
-        wss.init_asio();
-        wss.set_message_handler(std::bind(&WebSocketServer::OnMessage, this, &wss, ::_1, ::_2));
-        wss.set_open_handler(std::bind(&WebSocketServer::OnOpen, this, ::_1));
-        wss.set_close_handler(std::bind(&WebSocketServer::OnClose, this, ::_1));
-        wss.listen(context.prefs->GetInt(prefs::websocket_server_port.c_str(), defaults::websocket_server_port));
-        wss.start_accept();
+        wss->init_asio();
+        wss->set_message_handler(std::bind(&WebSocketServer::OnMessage, this, wss.get(), ::_1, ::_2));
+        wss->set_open_handler(std::bind(&WebSocketServer::OnOpen, this, ::_1));
+        wss->set_close_handler(std::bind(&WebSocketServer::OnClose, this, ::_1));
+        wss->listen(context.prefs->GetInt(prefs::websocket_server_port.c_str(), defaults::websocket_server_port));
+        wss->start_accept();
 
-        wss.run();
+        wss->run();
     }
     catch (websocketpp::exception const & e) {
         std::cerr << e.what() << std::endl;
@@ -109,13 +111,17 @@ void WebSocketServer::ThreadProc() {
         std::cerr << "unknown exception" << std::endl;
     }
 
+    this->wss.reset();
     this->running = false;
     this->exitCondition.notify_all();
 }
 
 bool WebSocketServer::Stop() {
     if (this->thread) {
-        wss.stop();
+        if (this->wss) {
+            wss->stop();
+        }
+
         this->thread->join();
         this->thread.reset();
     }
@@ -167,7 +173,7 @@ void WebSocketServer::HandleAuthentication(connection_hdl connection, json& requ
         }
     }
 
-    this->wss.close(
+    this->wss->close(
         connection,
         websocketpp::close::status::policy_violation,
         value::unauthenticated);
@@ -329,7 +335,7 @@ void WebSocketServer::Broadcast(const std::string& name, json& options) {
 
     auto rl = connectionLock.Read();
     for (const auto &keyValue : this->connections) {
-        wss.send(keyValue.first, str.c_str(), websocketpp::frame::opcode::text);
+        wss->send(keyValue.first, str.c_str(), websocketpp::frame::opcode::text);
     }
 }
 
@@ -341,7 +347,7 @@ void WebSocketServer::RespondWithOptions(connection_hdl connection, json& reques
         { message::options, options }
     };
 
-    wss.send(connection, response.dump().c_str(), websocketpp::frame::opcode::text);
+    wss->send(connection, response.dump().c_str(), websocketpp::frame::opcode::text);
 }
 
 void WebSocketServer::RespondWithOptions(connection_hdl connection, json& request, json&& options) {
@@ -352,7 +358,7 @@ void WebSocketServer::RespondWithOptions(connection_hdl connection, json& reques
         { message::options, options }
     };
 
-    wss.send(connection, response.dump().c_str(), websocketpp::frame::opcode::text);
+    wss->send(connection, response.dump().c_str(), websocketpp::frame::opcode::text);
 }
 
 void WebSocketServer::RespondWithInvalidRequest(connection_hdl connection, const std::string& name, const std::string& id)
@@ -364,7 +370,7 @@ void WebSocketServer::RespondWithInvalidRequest(connection_hdl connection, const
             { key::error, value::invalid }
         } }
     };
-    wss.send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
+    wss->send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
 }
 
 void WebSocketServer::RespondWithSuccess(connection_hdl connection, json& request) {
@@ -382,7 +388,7 @@ void WebSocketServer::RespondWithSuccess(connection_hdl connection, const std::s
         { message::options,{ key::success, true } }
     };
 
-    wss.send(connection, success.dump().c_str(), websocketpp::frame::opcode::text);
+    wss->send(connection, success.dump().c_str(), websocketpp::frame::opcode::text);
 }
 
 void WebSocketServer::RespondWithFailure(connection_hdl connection, json& request) {
@@ -393,7 +399,7 @@ void WebSocketServer::RespondWithFailure(connection_hdl connection, json& reques
         { message::options,{ key::success, false } }
     };
 
-    wss.send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
+    wss->send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
 }
 
 void WebSocketServer::RespondWithSetVolume(connection_hdl connection, json& request) {

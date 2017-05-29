@@ -41,7 +41,6 @@
 #include <core/config.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IPreferences.h>
-
 #include <json.hpp>
 
 namespace musik { namespace core {
@@ -55,6 +54,9 @@ namespace musik { namespace core {
 
             static void LoadPluginPreferences();
             static void SavePluginPreferences();
+
+            static std::shared_ptr<Preferences>
+                ForPlugin(const std::string& pluginName);
 
             static std::shared_ptr<Preferences>
                 ForComponent(const std::string& c, Mode mode = ModeAutoSave);

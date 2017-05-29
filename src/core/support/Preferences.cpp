@@ -98,28 +98,37 @@ static bool stringToFile(const std::string& fn, const std::string& str) {
     return (written == str.size());
 }
 
+static std::string pluginFilename(std::string name) {
+    name.erase(std::remove_if(name.begin(), name.end(), ::isspace), name.end());
+    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+    name = "plugin_" + name; /* filename = nowhitespace(tolower(name)).json */
+    return name;
+}
+
 void Preferences::LoadPluginPreferences() {
     typedef void(*SetPreferencesPlugin)(musik::core::sdk::IPreferences*);
 
     PluginFactory::Instance().QueryFunction<SetPreferencesPlugin>(
         "SetPreferences",
         [](musik::core::sdk::IPlugin* plugin, SetPreferencesPlugin func) {
-            std::string name = plugin->Name();
-            name.erase(std::remove_if(name.begin(), name.end(), ::isspace), name.end());
-            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-            name = "plugin_" + name; /* filename = nowhitespace(tolower(name)).json */
-
-            if (pluginCache.find(name) == pluginCache.end()) {
-                pluginCache[name] = std::shared_ptr<Preferences>(
-                    new Preferences(name, Preferences::ModeAutoSave));
-            }
-
-            func(pluginCache[name].get());
+            auto prefs = Preferences::ForPlugin(plugin->Name());
+            func(prefs.get());
         });
 }
 
 void Preferences::SavePluginPreferences() {
     pluginCache.clear(); /* dtors will save */
+}
+
+std::shared_ptr<Preferences> Preferences::ForPlugin(const std::string& pluginName) {
+    std::string name = pluginFilename(pluginName);
+
+    if (pluginCache.find(name) == pluginCache.end()) {
+        pluginCache[name] = std::shared_ptr<Preferences>(
+            new Preferences(name, Preferences::ModeAutoSave));
+    }
+
+    return pluginCache[name];
 }
 
 std::shared_ptr<Preferences> Preferences::ForComponent(

@@ -67,7 +67,8 @@ TextInput::TextInput(IInput::InputMode inputMode)
 : Window()
 , bufferLength(0)
 , position(0)
-, inputMode(inputMode) {
+, inputMode(inputMode)
+, enterEnabled(true) {
 }
 
 TextInput::~TextInput() {
@@ -76,7 +77,20 @@ TextInput::~TextInput() {
 void TextInput::OnRedraw() {
     WINDOW* c = this->GetContent();
     werase(c);
-    waddstr(c, buffer.c_str());
+
+    if (buffer.size()) {
+        if (inputMode == InputPassword) {
+            size_t count = u8cols(buffer);
+            std::string masked(count, '*');
+            waddstr(c, masked.c_str());
+        }
+        else {
+            waddstr(c, buffer.c_str());
+        }
+    }
+    else if (!this->IsFocused() && hintText.size()) {
+        waddstr(c, hintText.c_str());
+    }
 }
 
 size_t TextInput::Length() {
@@ -116,6 +130,10 @@ bool TextInput::Write(const std::string& key) {
     return false;
 }
 
+void TextInput::SetEnterEnabled(bool enabled) {
+    this->enterEnabled = enabled;
+}
+
 bool TextInput::KeyPress(const std::string& key) {
     if (key == "M-KEY_BACKSPACE") {
         this->SetText("");
@@ -133,8 +151,13 @@ bool TextInput::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "KEY_ENTER") {
-        this->EnterPressed(this);
-        return true;
+        if (enterEnabled) {
+            this->EnterPressed(this);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
     else if (key == "KEY_LEFT") {
         return this->OffsetPosition(-1);
@@ -186,4 +209,9 @@ void TextInput::SetText(const std::string& value) {
         this->TextChanged(this, this->buffer);
         this->Redraw();
     }
+}
+
+void TextInput::SetHint(const std::string& hint) {
+    this->hintText = hint;
+    this->Redraw();
 }

@@ -142,7 +142,7 @@ void Window::ProcessMessage(musik::core::runtime::IMessage &message) {
 }
 
 bool Window::IsVisible() {
-    return this->isVisible;
+    return !this->badBounds && this->isVisible;
 }
 
 bool Window::IsFocused() {
@@ -245,12 +245,22 @@ void Window::MoveAndResize(int x, int y, int width, int height) {
         absX != this->lastAbsoluteX ||
         absY != this->lastAbsoluteY;
 
-    if (sizeChanged || positionChanged) {
+    if (sizeChanged || positionChanged || badBounds) {
         this->lastAbsoluteX = absX;
         this->lastAbsoluteY = absY;
         this->width = width;
         this->height = height;
         this->RecreateForUpdatedDimensions();
+    }
+    else {
+        this->DestroyIfBadBounds();
+    }
+}
+
+void Window::DestroyIfBadBounds() {
+    if (this->CheckForBoundsError()) {
+        this->badBounds = true;
+        this->Destroy();
     }
 }
 
@@ -259,6 +269,9 @@ void Window::SetSize(int width, int height) {
         this->width = width;
         this->height = height;
         this->RecreateForUpdatedDimensions();
+    }
+    else {
+        this->DestroyIfBadBounds();
     }
 }
 
@@ -272,6 +285,9 @@ void Window::SetPosition(int x, int y) {
         this->lastAbsoluteX = absX;
         this->lastAbsoluteY = absY;
         this->RecreateForUpdatedDimensions();
+    }
+    else {
+        this->DestroyIfBadBounds();
     }
 }
 
@@ -510,9 +526,17 @@ bool Window::CheckForBoundsError() {
         return false;
     }
 
-    if (this->width > this->parent->GetContentWidth() ||
-        this->height > this->parent->GetContentHeight())
-    {
+    const int parentWidth = this->parent->GetContentWidth();
+    const int parentHeight = this->parent->GetContentHeight();
+
+    if (this->width > parentWidth || this->height > parentHeight) {
+        return true;
+    }
+
+    const int right = this->x + cx;
+    const int bottom = this->y + cy;
+
+    if (right > parentWidth || bottom > parentHeight) {
         return true;
     }
 

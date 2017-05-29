@@ -131,6 +131,7 @@ namespace cursespp {
             void Clear();
             void RepaintBackground();
             void RecreateForUpdatedDimensions();
+            void DestroyIfBadBounds();
 
             bool CheckForBoundsError();
 

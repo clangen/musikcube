@@ -49,6 +49,7 @@ Checkbox::Checkbox()
 : Window()
 , checked(false) {
     this->SetFrameVisible(false);
+    this->SetFocusedContentColor(CURSESPP_TEXT_FOCUSED);
 }
 
 Checkbox::~Checkbox() {
@@ -81,7 +82,9 @@ void Checkbox::OnRedraw() {
         std::string symbol = (this->checked ? CHECKED : UNCHECKED);
         std::string ellipsized = text::Ellipsize(symbol + " " + this->buffer, cx);
 
-        int64_t attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : CURSESPP_DEFAULT_COLOR;
+        int64_t attrs = this->IsFocused()
+            ? this->GetFocusedContentColor()
+            : this->GetContentColor();
 
         if (attrs != -1) {
             wattron(c, COLOR_PAIR(attrs));

@@ -15,6 +15,7 @@ set (BOX_SRCS
 	./app/overlay/PlaybackOverlays.cpp
 	./app/overlay/PlayQueueOverlays.cpp
 	./app/overlay/PluginOverlay.cpp
+	./app/overlay/ServerOverlay.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/Hotkeys.cpp
 	./app/util/GlobalHotkeys.cpp

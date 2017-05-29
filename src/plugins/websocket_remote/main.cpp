@@ -53,19 +53,6 @@ using namespace musik::core::sdk;
 
 static Context context;
 
-static class Plugin : public IPlugin {
-    public:
-        virtual void Destroy() { }
-        virtual const char* Name() { return "WebSockets IPlaybackRemote"; }
-        virtual const char* Version() { return "0.6.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
-} plugin;
-
 static class PlaybackRemote : public IPlaybackRemote {
     private:
         HttpServer httpServer;
@@ -78,14 +65,16 @@ static class PlaybackRemote : public IPlaybackRemote {
         }
 
         virtual ~PlaybackRemote() {
-            if (this->thread) {
-                httpServer.Stop();
-                webSocketServer.Stop();
-                this->thread->join();
-            }
+            this->Stop();
         }
 
         virtual void Destroy() {
+        }
+
+        void Reload() {
+            auto wl = context.lock.Write();
+            this->Stop();
+            this->CheckRunningStatus();
         }
 
         void CheckRunningStatus() {
@@ -93,10 +82,7 @@ static class PlaybackRemote : public IPlaybackRemote {
                 thread.reset(new std::thread(std::bind(&PlaybackRemote::ThreadProc, this)));
             }
             else if (thread && (!context.environment || !context.playback || !context.prefs || !context.dataProvider)) {
-                httpServer.Stop();
-                webSocketServer.Stop();
-                this->thread->join();
-                this->thread.reset();
+                this->Stop();
             }
         }
 
@@ -132,13 +118,39 @@ static class PlaybackRemote : public IPlaybackRemote {
                 httpServer.Start();
             }
 
-            webSocketServer.Start();
+            if (context.prefs->GetBool(prefs::websocket_server_enabled.c_str(), true)) {
+                webSocketServer.Start();
+            }
+
             httpServer.Wait();
             webSocketServer.Wait();
         }
 
+        void Stop() {
+            httpServer.Stop();
+            webSocketServer.Stop();
+
+            if (this->thread) {
+                this->thread->join();
+                this->thread.reset();
+            }
+        }
+
         std::shared_ptr<std::thread> thread;
 } remote;
+
+static class Plugin : public IPlugin {
+    public:
+        virtual void Destroy() { }
+        virtual const char* Name() { return "WebSockets IPlaybackRemote"; }
+        virtual const char* Version() { return "0.6.0"; }
+        virtual const char* Author() { return "clangen"; }
+        virtual const char* Guid() { return "9fc897a3-dfd5-4524-a0fc-b02f46aea4a9"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { remote.Reload(); }
+        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+} plugin;
 
 extern "C" DLL_EXPORT IPlugin* GetPlugin() {
     return &plugin;
@@ -159,6 +171,7 @@ extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs)
     context.prefs = prefs;
 
     if (prefs) {
+        prefs->GetBool(prefs::websocket_server_enabled.c_str(), true);
         prefs->GetInt(prefs::websocket_server_port.c_str(), defaults::websocket_server_port);
         prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port);
         prefs->GetBool(prefs::http_server_enabled.c_str(), true);

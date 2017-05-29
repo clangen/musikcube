@@ -47,6 +47,7 @@ namespace defaults {
 }
 
 namespace prefs {
+    static const std::string websocket_server_enabled = "websocket_server_enabled";
     static const std::string websocket_server_port = "websocket_server_port";
     static const std::string http_server_enabled = "http_server_enabled";
     static const std::string http_server_port = "http_server_port";

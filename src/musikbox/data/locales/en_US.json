@@ -6,6 +6,8 @@
         "button_ok": "ok",
         "button_yes": "yes",
         "button_no": "no",
+        "button_save": "save",
+        "button_cancel": "cancel",
 
         "browse_title_artists": "artists",
         "browse_title_albums": "albums",
@@ -36,6 +38,17 @@
         "settings_seek_not_scrub": "seek playback (don't scrub)",
         "settings_minimize_to_tray": "minimize to tray",
         "settings_start_minimized": "start minimized",
+        "settings_server_setup": "server setup",
+
+        "settings_server_enable_websockets": "metadata server enabled",
+        "settings_server_metadata_port": "metadata port:",
+        "settings_server_enable_http": "audio streaming enabled",
+        "settings_server_audio_port": "audio port:",
+        "settings_server_transcoder_synchronous": "synchronous transcoding",
+        "settings_server_transcoder_cache_size": "transcoder file cache count",
+        "settings_server_password": "password:",
+        "settings_server_invalid_settings_title": "invalid settings",
+        "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",
 
         "locale_overlay_select_title": "select locale",
 
@@ -107,6 +120,7 @@
         "playqueue_album_header_overlay": 35,
         "playqueue_playlist_add_to_queue_overlay": 35,
         "playqueue_playlist_list_overlay": 35,
-        "playqueue_playlist_name_overlay": 35
+        "playqueue_playlist_name_overlay": 35,
+        "server_overlay_width": 45
     }
 }

@@ -34,54 +34,53 @@
 
 #pragma once
 
-#include <cursespp/curses_config.h>
-#include <cursespp/Window.h>
-#include <cursespp/IInput.h>
-#include <cursespp/IKeyHandler.h>
-#include <sigslot/sigslot.h>
+#include <functional>
 
-namespace cursespp {
-    class TextInput :
-        public cursespp::Window,
-        public cursespp::IKeyHandler,
+#include <core/sdk/IPlugin.h>
+#include <core/support/Preferences.h>
+
+#include <cursespp/Checkbox.h>
+#include <cursespp/TextInput.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/OverlayBase.h>
+#include <cursespp/ShortcutsWindow.h>
+
+namespace musik {
+    namespace box {
+        class ServerOverlay : public cursespp::OverlayBase, public sigslot::has_slots<>
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-        public std::enable_shared_from_this<TextInput>,
+            , public std::enable_shared_from_this<ServerOverlay>
 #endif
-        public cursespp::IInput {
+        {
         public:
-            sigslot::signal1<TextInput*> EnterPressed;
-            sigslot::signal2<TextInput*, std::string> TextChanged;
+            using Callback = std::function<void()>;
+            using Plugin = std::shared_ptr<musik::core::sdk::IPlugin>;
+            using Prefs = std::shared_ptr<musik::core::Preferences>;
 
-            TextInput(InputMode inputMode = IInput::InputNormal);
-            virtual ~TextInput();
+            static void Show(Callback callback);
+            static std::shared_ptr<musik::core::sdk::IPlugin> FindServerPlugin();
 
-            virtual void OnRedraw();
-
-            virtual bool Write(const std::string& key);
-            virtual size_t Length();
-            virtual size_t Position();
-
-            virtual void SetInputMode(InputMode inputMode) {
-                this->inputMode = inputMode;
-            };
-
-            virtual InputMode GetInputMode() { return this->inputMode; }
-
+            virtual void Layout();
             virtual bool KeyPress(const std::string& key);
 
-            virtual void SetText(const std::string& value);
-            virtual std::string GetText() { return this->buffer; }
-
-            void SetHint(const std::string& hint);
-            void SetEnterEnabled(bool enabled);
-
         private:
-            bool OffsetPosition(int delta);
+            ServerOverlay(Callback callback, Plugin plugin);
 
-            std::string buffer, hintText;
-            int position;
-            bool enterEnabled;
-            size_t bufferLength;
-            InputMode inputMode;
-    };
+            void RecalculateSize();
+            void InitViews();
+            bool Save();
+            void Load();
+
+            Callback callback;
+            Plugin plugin;
+            Prefs prefs;
+            int width, height, x, y;
+
+            std::shared_ptr<cursespp::TextLabel> titleLabel;
+            std::shared_ptr<cursespp::Checkbox> enableWssCb, enableHttpCb, enableSyncTransCb;
+            std::shared_ptr<cursespp::TextLabel> wssPortLabel, httpPortLabel, pwLabel;
+            std::shared_ptr<cursespp::TextInput> wssPortInput, httpPortInput, pwInput;
+            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
+        };
+    }
 }

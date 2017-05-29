@@ -54,26 +54,27 @@ indicies we'll use to store them */
 #define THEME_COLOR_OVERLAY_FOREGROUND 26
 #define THEME_COLOR_OVERLAY_BORDER 27
 #define THEME_COLOR_OVERLAY_FOCUSED_BORDER 28
-#define THEME_COLOR_SHORTCUTS_BACKGROUND 29
-#define THEME_COLOR_SHORTCUTS_FOREGROUND 30
-#define THEME_COLOR_SHORTCUTS_BACKGROUND_FOCUSED 31
-#define THEME_COLOR_SHORTCUTS_FOREGROUND_FOCUSED 32
-#define THEME_COLOR_BUTTON_BACKGROUND_NORMAL 33
-#define THEME_COLOR_BUTTON_FOREGROUND_NORMAL 34
-#define THEME_COLOR_BUTTON_BACKGROUND_ACTIVE 35
-#define THEME_COLOR_BUTTON_FOREGROUND_ACTIVE 36
-#define THEME_COLOR_BANNER_BACKGROUND 37
-#define THEME_COLOR_BANNER_FOREGROUND 38
-#define THEME_COLOR_LIST_HEADER_BACKGROUND 39
-#define THEME_COLOR_LIST_HEADER_FOREGROUND 40
-#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND 41
-#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND 42
-#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND 43
-#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND 44
-#define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 45
-#define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 46
-#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 47
-#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 48
+#define THEME_COLOR_OVERLAY_FOCUSED_TEXT 29
+#define THEME_COLOR_SHORTCUTS_BACKGROUND 30
+#define THEME_COLOR_SHORTCUTS_FOREGROUND 31
+#define THEME_COLOR_SHORTCUTS_BACKGROUND_FOCUSED 32
+#define THEME_COLOR_SHORTCUTS_FOREGROUND_FOCUSED 33
+#define THEME_COLOR_BUTTON_BACKGROUND_NORMAL 34
+#define THEME_COLOR_BUTTON_FOREGROUND_NORMAL 35
+#define THEME_COLOR_BUTTON_BACKGROUND_ACTIVE 36
+#define THEME_COLOR_BUTTON_FOREGROUND_ACTIVE 37
+#define THEME_COLOR_BANNER_BACKGROUND 38
+#define THEME_COLOR_BANNER_FOREGROUND 39
+#define THEME_COLOR_LIST_HEADER_BACKGROUND 40
+#define THEME_COLOR_LIST_HEADER_FOREGROUND 41
+#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND 42
+#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND 43
+#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND 44
+#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND 45
+#define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 46
+#define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 47
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 48
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 49
 
 /* user-readable names for the color identifiers above. these are
 used as key names in the config files */
@@ -90,6 +91,7 @@ used as key names in the config files */
 #define JSON_KEY_COLOR_OVERLAY_FOREGROUND "overlay_foreground"
 #define JSON_KEY_COLOR_OVERLAY_BORDER "overlay_border"
 #define JSON_KEY_COLOR_OVERLAY_FOCUSED_BORDER "overlay_focused_border"
+#define JSON_KEY_COLOR_OVERLAY_FOCUSED_TEXT "overlay_focused_text"
 #define JSON_KEY_COLOR_SHORTCUTS_BACKGROUND "shortcuts_background"
 #define JSON_KEY_COLOR_SHORTCUTS_FOREGROUND "shortcuts_foreground"
 #define JSON_KEY_COLOR_SHORTCUTS_BACKGROUND_FOCUSED "shortcuts_background_focused"
@@ -266,6 +268,7 @@ struct Theme {
         overlayForeground.Set(THEME_COLOR_OVERLAY_FOREGROUND, 220, 220, 220, COLOR_256_OFFWHITE);
         overlayBorder.Set(THEME_COLOR_OVERLAY_BORDER, 102, 217, 238, COLOR_256_BLUE);
         overlayFocusedBorder.Set(THEME_COLOR_OVERLAY_FOCUSED_BORDER, 220, 82, 86, COLOR_256_RED);
+        overlayFocusedText.Set(THEME_COLOR_OVERLAY_FOCUSED_TEXT, 220, 82, 86, COLOR_256_RED);
 
         /* shortcut bar */
         shortcutsBackground.Set(THEME_COLOR_SHORTCUTS_BACKGROUND, 66, 66, 56, COLOR_256_MEDIUM_GRAY);
@@ -330,6 +333,7 @@ struct Theme {
                     this->overlayForeground.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOREGROUND, unset));
                     this->overlayBorder.Set(colors.value(JSON_KEY_COLOR_OVERLAY_BORDER, unset));
                     this->overlayFocusedBorder.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOCUSED_BORDER, unset));
+                    this->overlayFocusedText.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOCUSED_TEXT, unset));
                     this->shortcutsBackground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_BACKGROUND, unset));
                     this->shortcutsForeground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_FOREGROUND, unset));
                     this->focusedShortcutsBackground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_BACKGROUND_FOCUSED, unset));
@@ -387,6 +391,7 @@ struct Theme {
         init_pair(CURSESPP_OVERLAY_FRAME, overlayBorder.Id(mode, COLOR_BLUE), overlayBgId);
         init_pair(CURSESPP_OVERLAY_CONTENT, overlayForeground.Id(mode, -1), overlayBgId);
         init_pair(CURSESPP_OVERLAY_INPUT_FRAME, overlayFocusedBorder.Id(mode, COLOR_RED), overlayBgId);
+        init_pair(CURSESPP_OVERLAY_TEXT_FOCUSED, overlayFocusedText.Id(mode, COLOR_RED), overlayBgId);
 
         /* shortcuts */
         init_pair(
@@ -466,6 +471,7 @@ struct Theme {
     Color overlayForeground;
     Color overlayBorder;
     Color overlayFocusedBorder;
+    Color overlayFocusedText;
 
     /* shortcut bar */
     Color shortcutsBackground;

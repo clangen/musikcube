@@ -54,6 +54,10 @@
       "hex": "#dc322f",
       "palette": 160
     },
+    "overlay_focused_text": {
+      "hex": "#dc322f",
+      "palette": 160
+    },
     "shortcuts_background": {
       "hex": "#586e75",
       "palette": 240

@@ -41,7 +41,8 @@ namespace cursespp {
         public:
             enum InputMode {
                 InputRaw,
-                InputNormal
+                InputNormal,
+                InputPassword
             };
 
             virtual ~IInput() { }

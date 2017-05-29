@@ -41,6 +41,10 @@
 namespace cursespp {
     class OverlayBase : public LayoutBase, public IOverlay {
         public:
+            OverlayBase() : LayoutBase() {
+
+            }
+
             virtual ~OverlayBase() {
                 this->stack = nullptr;
             }

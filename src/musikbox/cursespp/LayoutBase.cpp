@@ -348,7 +348,10 @@ IWindowPtr LayoutBase::FocusLast() {
 
 IWindowPtr LayoutBase::GetFocus() {
     if (this->focused >= 0 && this->focusable.size() > 0) {
-        return this->focusable[this->focused];
+        auto view = this->focusable[this->focused];
+        if (view->IsVisible()) {
+            return view;
+        }
     }
 
     return IWindowPtr();
