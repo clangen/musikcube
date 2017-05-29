@@ -1,3 +1,19 @@
+0.15.0
+
+user-facing:
+* added `server settings` configuration panel to the settings screen
+* added `minimize to tray` and `start minimized` options to the windows build
+* a handful of small `musikdroid` bug fixes, mostly related to audio focus
+  and ducking.
+
+low-level:
+* added authentication support to the the `websocket_remote` audio server
+* found and fixed a handful of missing `websocket_remote` metadata responses
+* added the ability to hot-reload plugins
+* modified `IPlugin` -- every plugin must now supply a unique `guid`
+
+--------------------------------------------------------------------------------
+
 0.14.0
 
 user-facing:
