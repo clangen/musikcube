@@ -133,20 +133,30 @@ IDataStream* Transcoder::Transcode(
 }
 
 IDataStream* Transcoder::TranscodeOnDemand(Context& context, const std::string& uri, size_t bitrate) {
+    /* see if it already exists in the cache. if it does, just return it. */
     std::string expectedFilename, tempFilename;
     getTempAndFinalFilename(context, uri, bitrate, tempFilename, expectedFilename);
 
-    /* already exists? */
     if (exists(expectedFilename)) {
         boost::system::error_code ec;
         last_write_time(expectedFilename, time(nullptr), ec);
         return context.environment->GetDataStream(expectedFilename.c_str());
     }
 
-    PruneTranscodeCache(context);
+    /* if it doesn't exist, check to see if the cache is enabled. */
+    int cacheCount = context.prefs->GetInt(
+        prefs::transcoder_cache_count.c_str(),
+        defaults::transcoder_cache_count);
 
-    return new TranscodingDataStream(
-        context, uri, tempFilename, expectedFilename, bitrate);
+    if (cacheCount > 0) {
+        PruneTranscodeCache(context);
+
+        return new TranscodingDataStream(
+            context, uri, tempFilename, expectedFilename, bitrate);
+    }
+    else {
+        return new TranscodingDataStream(context, uri, bitrate);
+    }
 }
 
 IDataStream* Transcoder::TranscodeAndWait(Context& context, const std::string& uri, size_t bitrate) {
