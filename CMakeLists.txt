@@ -11,6 +11,8 @@ set (musikbox_VERSION_MINOR 15)
 set (musikbox_VERSION_PATCH 0)
 set (musikbox_VERSION "${musikbox_VERSION_MAJOR}.${musikbox_VERSION_MINOR}.${musikbox_VERSION_PATCH}")
 
+include(CMakeToolsHelpers OPTIONAL)
+
 include(ExternalProject)
 
 ExternalProject_Add(taglib
