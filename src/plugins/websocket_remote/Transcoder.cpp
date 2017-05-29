@@ -96,6 +96,7 @@ void Transcoder::PruneTranscodeCache(Context& context) {
         if (remove(p, ec)) {
             --extra;
         }
+        ++it;
     }
 }
 
