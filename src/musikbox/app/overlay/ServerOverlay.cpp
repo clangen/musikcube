@@ -82,12 +82,6 @@ static const char* KEY_PASSWORD = "password";
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
 
-#ifdef WIN32
-#define SAVE_KEY "^S"
-#else
-#define SAVE_KEY "M-s"
-#endif
-
 using Callback = ServerOverlay::Callback;
 using Prefs = ServerOverlay::Prefs;
 
@@ -153,7 +147,7 @@ void ServerOverlay::InitViews() {
     this->shortcuts.reset(new ShortcutsWindow());
     this->shortcuts->SetAlignment(text::AlignRight);
     this->shortcuts->AddShortcut("ESC", _TSTR("button_cancel"));
-    this->shortcuts->AddShortcut(SAVE_KEY, _TSTR("button_save"));
+    this->shortcuts->AddShortcut("M-s", _TSTR("button_save"));
 
     /* web socket server */
     this->enableWssCb.reset(new Checkbox());
@@ -303,7 +297,7 @@ bool ServerOverlay::KeyPress(const std::string& key) {
         this->Dismiss();
         return true;
     }
-    else if (key == SAVE_KEY) {
+    else if (key == "M-s") {
         if (Save()) {
             this->Dismiss();
         }
