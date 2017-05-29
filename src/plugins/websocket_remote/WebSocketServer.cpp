@@ -35,6 +35,8 @@
 #include "WebSocketServer.h"
 #include "Constants.h"
 
+#include <iostream>
+
 #include <core/sdk/constants.h>
 
 #include <boost/format.hpp>
@@ -334,8 +336,15 @@ void WebSocketServer::Broadcast(const std::string& name, json& options) {
     std::string str = msg.dump();
 
     auto rl = connectionLock.Read();
-    for (const auto &keyValue : this->connections) {
-        wss->send(keyValue.first, str.c_str(), websocketpp::frame::opcode::text);
+    try {
+        if (wss) {
+            for (const auto &keyValue : this->connections) {
+                wss->send(keyValue.first, str.c_str(), websocketpp::frame::opcode::text);
+            }
+        }
+    }
+    catch (...) {
+        std::cerr << "broadcast failed (stale connection?)\n";
     }
 }
 

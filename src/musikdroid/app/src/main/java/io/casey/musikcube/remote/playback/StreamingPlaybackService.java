@@ -228,7 +228,11 @@ public class StreamingPlaybackService implements PlaybackService {
         if (state != PlaybackState.Paused) {
             schedulePausedShutdown();
             killAudioFocus();
-            context.currentPlayer.pause();
+
+            if (context.currentPlayer != null) {
+                context.currentPlayer.pause();
+            }
+
             setState(PlaybackState.Paused);
         }
     }
