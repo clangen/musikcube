@@ -26,7 +26,7 @@ you can also stream audio from, or remote control musikbox using the `musikdroid
 
 # raspberry pi
 
-interested in running musikbox on a raspberry pi, connected to you home stereo? [see here](https://github.com/clangen/musikcube/wiki/raspberry-pi).
+want to run musikbox on a raspberry pi, connected to you home stereo? [see here](https://github.com/clangen/musikcube/wiki/raspberry-pi).
 
 # streaming server documentation
 
