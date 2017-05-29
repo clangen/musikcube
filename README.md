@@ -1,22 +1,22 @@
 # musikcube
 
-a cross-platform audio engine and player written in C++.
+a cross-platform audio engine and player written in c++.
 
 # musikbox
 
 a curses frontend to musikcube.
 
-musicbox compiles and runs easily on Windows, macOS and Linux.
+musicbox compiles and runs easily on windows, macos and linux. it also runs well on a raspberry pi with raspbian, and can be setup as a streaming audio server.
 
 it looks something like this on windows:
 
 ![windows screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/windows.png)
 
-and this on macOS:
+and this on macos:
 
 ![osx screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/osx.png)
 
-and linux:
+and on linux:
 
 ![linux screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/linux.png)
 
@@ -26,7 +26,11 @@ you can also stream audio from, or remote control musikbox using the `musikdroid
 
 # raspberry pi
 
-interested in running musikbox on a raspberry pi, connected to you home stereo? [see here](https://github.com/clangen/musikcube/wiki/raspberry-pi)!
+interested in running musikbox on a raspberry pi, connected to you home stereo? [see here](https://github.com/clangen/musikcube/wiki/raspberry-pi).
+
+# streaming server documentation
+
+if you're interested in writing your own frontend, [api documentation is available here](https://github.com/clangen/musikcube/wiki/remote-api-documentation). the streaming server api uses a combination of websockets and vanilla http, and is included in every `musikbox` distribution.
 
 # compiling
 
