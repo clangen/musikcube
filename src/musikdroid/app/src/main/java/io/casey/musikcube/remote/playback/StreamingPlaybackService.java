@@ -726,6 +726,9 @@ public class StreamingPlaybackService implements PlaybackService {
                             }
                         }
                     })
+                    .doOnError(error -> {
+                        Log.e(TAG, "failed to prefetch next track!", error);
+                    })
                     .subscribe();
             }
         }
@@ -772,6 +775,10 @@ public class StreamingPlaybackService implements PlaybackService {
                     }
                 }
             })
+            .doOnError(error -> {
+                Log.e(TAG, "failed to load track to play!", error);
+                setState(PlaybackState.Stopped);
+            })
             .subscribe();
     }
 
@@ -798,6 +805,9 @@ public class StreamingPlaybackService implements PlaybackService {
                         trackMetadataCache.put(start + i, data.getJSONObject(i));
                     }
                 }
+            })
+            .doOnError(error -> {
+                Log.e(TAG, "failed to prefetch track metadata!", error);
             })
             .subscribe();
     }
