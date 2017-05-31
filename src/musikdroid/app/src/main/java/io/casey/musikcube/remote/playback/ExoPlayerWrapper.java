@@ -22,7 +22,6 @@ import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
-import com.google.android.exoplayer2.upstream.HttpDataSource;
 import com.google.android.exoplayer2.util.Util;
 
 import io.casey.musikcube.remote.Application;
@@ -35,6 +34,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     private SimpleExoPlayer player;
     private boolean prefetch;
     private Context context;
+    private long lastPosition = -1;
 
     public ExoPlayerWrapper() {
         this.context = Application.getInstance();
@@ -100,7 +100,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
                 break;
 
             case Error:
-                this.player.setPlayWhenReady(true);
+                this.player.setPlayWhenReady(this.lastPosition == -1);
                 this.player.prepare(this.source);
                 setState(State.Preparing);
                 break;
@@ -113,6 +113,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     public void setPosition(int millis) {
         Preconditions.throwIfNotOnMainThread();
 
+        this.lastPosition = -1;
         if (this.player.getPlaybackState() != ExoPlayer.STATE_IDLE) {
             if (this.player.isCurrentWindowSeekable()) {
                 this.player.seekTo(millis);
@@ -201,6 +202,11 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
                     player.setVolume(getGlobalVolume());
 
+                    if (lastPosition != -1) {
+                        player.seekTo(lastPosition);
+                        lastPosition = -1;
+                    }
+
                     if (!prefetch) {
                         player.setPlayWhenReady(true);
                         setState(State.Playing);
@@ -219,6 +225,8 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         @Override
         public void onPlayerError(ExoPlaybackException error) {
             Preconditions.throwIfNotOnMainThread();
+
+            lastPosition = player.getCurrentPosition();
 
             switch (getState()) {
                 case Preparing:

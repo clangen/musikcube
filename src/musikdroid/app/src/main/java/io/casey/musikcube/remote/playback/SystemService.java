@@ -49,6 +49,7 @@ public class SystemService extends Service {
     public static final String ACTION_NOTIFICATION_STOP = "io.casey.musikcube.remote.PAUSE_SHUT_DOWN";
     public static String ACTION_WAKE_UP = "io.casey.musikcube.remote.WAKE_UP";
     public static String ACTION_SHUT_DOWN = "io.casey.musikcube.remote.SHUT_DOWN";
+    public static String ACTION_SLEEP = "io.casey.musikcube.remote.SLEEP";
 
     private final static long MEDIA_SESSION_ACTIONS =
         PlaybackStateCompat.ACTION_PLAY_PAUSE |
@@ -79,6 +80,11 @@ public class SystemService extends Service {
         c.startService(new Intent(c, SystemService.class).setAction(ACTION_SHUT_DOWN));
     }
 
+    public static void sleep() {
+        final Context c = Application.getInstance();
+        c.startService(new Intent(c, SystemService.class).setAction(ACTION_SLEEP));
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -99,42 +105,16 @@ public class SystemService extends Service {
         if (intent != null) {
             final String action = intent.getAction();
             if (ACTION_WAKE_UP.equals(action)) {
-                Log.d(TAG, "SystemService WAKE_UP");
-
-                if (playback == null) {
-                    playback = PlaybackServiceFactory.streaming(this);
-                    playback.connect(listener);
-                    initMediaSession();
-                }
-
-                if (wakeLock == null) {
-                    wakeLock = powerManager.newWakeLock(
-                        PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService");
-
-                    wakeLock.setReferenceCounted(false);
-                    wakeLock.acquire();
-                }
+                wakeupNow();
             }
             else if (ACTION_SHUT_DOWN.equals(action)) {
-                Log.d(TAG, "SystemService SHUT_DOWN");
-
-                if (mediaSession != null) {
-                    mediaSession.release();
-                }
-
-                if (playback != null) {
-                    playback.disconnect(listener);
-                    playback = null;
-                }
-
-                if (wakeLock != null) {
-                    wakeLock.release();
-                    wakeLock = null;
-                }
-
-                stopSelf();
+                shutdownNow();
+            }
+            else if (ACTION_SLEEP.equals(action)) {
+               sleepNow();
             }
             else if (handlePlaybackAction(action)) {
+                wakeupNow();
                 return super.onStartCommand(intent, flags, startId);
             }
         }
@@ -146,6 +126,62 @@ public class SystemService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    private void wakeupNow() {
+        Log.d(TAG, "SystemService WAKE_UP");
+
+        final boolean sleeping = (playback == null || wakeLock == null);
+
+        if (playback == null) {
+            playback = PlaybackServiceFactory.streaming(this);
+        }
+
+        if (wakeLock == null) {
+            wakeLock = powerManager.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService");
+
+            wakeLock.setReferenceCounted(false);
+            wakeLock.acquire();
+        }
+
+        if (sleeping) {
+            playback.connect(listener);
+            initMediaSession();
+        }
+    }
+
+    private void shutdownNow() {
+        Log.d(TAG, "SystemService SHUT_DOWN");
+
+        if (mediaSession != null) {
+            mediaSession.release();
+        }
+
+        if (playback != null) {
+            playback.disconnect(listener);
+            playback = null;
+        }
+
+        if (wakeLock != null) {
+            wakeLock.release();
+            wakeLock = null;
+        }
+
+        stopSelf();
+    }
+
+    private void sleepNow() {
+        Log.d(TAG, "SystemService SLEEP");
+
+        if (wakeLock != null) {
+            wakeLock.release();
+            wakeLock = null;
+        }
+
+        if (playback != null) {
+            playback.disconnect(listener);
+        }
     }
 
     private void initMediaSession() {

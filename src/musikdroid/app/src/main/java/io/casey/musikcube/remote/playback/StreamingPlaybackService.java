@@ -40,7 +40,7 @@ public class StreamingPlaybackService implements PlaybackService {
     private static final int PREV_TRACK_GRACE_PERIOD_MILLIS = 3500;
     private static final int MAX_TRACK_METADATA_CACHE_SIZE = 50;
     private static final int PRECACHE_METADATA_SIZE = 10;
-    private static final int PAUSED_SERVICE_SHUTDOWN_DELAY_MS = 1000 * 60; /* 1 minute */
+    private static final int PAUSED_SERVICE_SLEEP_DELAY_MS = 1000 * 60 * 5; /* 5 minutes */
 
     private WebSocketService wss;
     private Set<EventListener> listeners = new HashSet<>();
@@ -72,7 +72,8 @@ public class StreamingPlaybackService implements PlaybackService {
         public void stopPlaybackAndReset() {
             reset(currentPlayer);
             reset(nextPlayer);
-            nextPlayerScheduled = false;            this.currentPlayer = this.nextPlayer = null;
+            nextPlayerScheduled = false;
+            this.currentPlayer = this.nextPlayer = null;
             this.currentMetadata = this.nextMetadata = null;
             this.currentIndex = this.nextIndex = -1;
         }
@@ -226,7 +227,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public void pause() {
         if (state != PlaybackState.Paused) {
-            schedulePausedShutdown();
+            schedulePausedSleep();
             killAudioFocus();
 
             if (context.currentPlayer != null) {
@@ -240,7 +241,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public void resume() {
         if (requestAudioFocus()) {
-            cancelScheduledPausedShutdown();
+            cancelScheduledPausedSleep();
             context.currentPlayer.resume();
             setState(PlaybackState.Playing);
             pausedByTransientLoss = false;
@@ -259,7 +260,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public void prev() {
         if (requestAudioFocus()) {
-            cancelScheduledPausedShutdown();
+            cancelScheduledPausedSleep();
 
             if (context.currentPlayer != null) {
                 if (context.currentPlayer.getPosition() > PREV_TRACK_GRACE_PERIOD_MILLIS) {
@@ -274,7 +275,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public void next() {
         if (requestAudioFocus()) {
-            cancelScheduledPausedShutdown();
+            cancelScheduledPausedSleep();
             moveToNextTrack(true);
         }
     }
@@ -503,7 +504,7 @@ public class StreamingPlaybackService implements PlaybackService {
             case Playing:
                 setState(PlaybackState.Playing);
                 prefetchNextTrackAudio();
-                cancelScheduledPausedShutdown();
+                cancelScheduledPausedSleep();
                 precacheTrackMetadata(context.currentIndex, PRECACHE_METADATA_SIZE);
                 break;
 
@@ -737,7 +738,7 @@ public class StreamingPlaybackService implements PlaybackService {
     private void loadQueueAndPlay(final QueueParams params, int startIndex) {
         setState(PlaybackState.Buffering);
 
-        cancelScheduledPausedShutdown();
+        cancelScheduledPausedSleep();
         SystemService.wakeup();
 
         this.pausedByTransientLoss = false;
@@ -782,13 +783,13 @@ public class StreamingPlaybackService implements PlaybackService {
             .subscribe();
     }
 
-    private void cancelScheduledPausedShutdown() {
+    private void cancelScheduledPausedSleep() {
         SystemService.wakeup();
-        handler.removeCallbacks(pauseServiceShutdownRunnable);
+        handler.removeCallbacks(pauseServiceSleepRunnable);
     }
 
-    private void schedulePausedShutdown() {
-        handler.postDelayed(pauseServiceShutdownRunnable, PAUSED_SERVICE_SHUTDOWN_DELAY_MS);
+    private void schedulePausedSleep() {
+        handler.postDelayed(pauseServiceSleepRunnable, PAUSED_SERVICE_SLEEP_DELAY_MS);
     }
 
     private void precacheTrackMetadata(final int start, final int count) {
@@ -881,7 +882,7 @@ public class StreamingPlaybackService implements PlaybackService {
         }
     };
 
-    private Runnable pauseServiceShutdownRunnable = () -> SystemService.shutdown();
+    private Runnable pauseServiceSleepRunnable = () -> SystemService.sleep();
 
     private AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = (flag) -> {
         switch (flag) {
