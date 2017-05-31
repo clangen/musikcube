@@ -57,6 +57,8 @@
 
 #include <vector>
 
+#define HTTP_416_DISABLED true
+
 using namespace musik::core::sdk;
 
 std::unordered_map<std::string, std::string> CONTENT_TYPE_MAP = {
@@ -357,25 +359,35 @@ int HttpServer::HandleRequest(
                             if (range->from != 0 || range->to != range->total - 1) {
                                 delete range;
 
-                                if (file) {
-                                    file->Destroy();
-                                    file = nullptr;
-                                }
-
-                                if (false && server->context.prefs->GetBool(
-                                    prefs::transcoder_synchronous_fallback.c_str(),
-                                    defaults::transcoder_synchronous_fallback))
-                                {
-                                    /* if we're allowed, fall back to synchronous transcoding. we'll block
-                                    here until the entire file has been converted and cached */
-                                    file = Transcoder::TranscodeAndWait(server->context, filename, bitrate);
-                                    range = parseRange(file, rangeVal);
+                                if (HTTP_416_DISABLED) {
+                                    /* lots of clients don't seem to be to deal with 416 properly;
+                                    instead, ignore the range header and return the whole file,
+                                    and a 200 (not 206) */
+                                    if (file) {
+                                        range = parseRange(file, nullptr);
+                                    }
                                 }
                                 else {
-                                    /* otherwise fail with a "range not satisfiable" status */
-                                    status = 416;
-                                    char empty[1];
-                                    response = MHD_create_response_from_buffer(0, empty, MHD_RESPMEM_PERSISTENT);
+                                    if (file) {
+                                        file->Destroy();
+                                        file = nullptr;
+                                    }
+
+                                    if (false && server->context.prefs->GetBool(
+                                        prefs::transcoder_synchronous_fallback.c_str(),
+                                        defaults::transcoder_synchronous_fallback))
+                                    {
+                                        /* if we're allowed, fall back to synchronous transcoding. we'll block
+                                        here until the entire file has been converted and cached */
+                                        file = Transcoder::TranscodeAndWait(server->context, filename, bitrate);
+                                        range = parseRange(file, rangeVal);
+                                    }
+                                    else {
+                                        /* otherwise fail with a "range not satisfiable" status */
+                                        status = 416;
+                                        char empty[1];
+                                        response = MHD_create_response_from_buffer(0, empty, MHD_RESPMEM_PERSISTENT);
+                                    }
                                 }
                             }
                         }
@@ -393,6 +405,9 @@ int HttpServer::HandleRequest(
                             if (response) {
                                 if (!isOnDemandTranscoder) {
                                     MHD_add_response_header(response, "Accept-Ranges", "bytes");
+                                }
+                                else {
+                                    MHD_add_response_header(response, "X-musikcube-Estimated-Content-Length", "true");
                                 }
 
                                 if (byExternalId) {

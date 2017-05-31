@@ -22,9 +22,9 @@ import android.widget.Spinner;
 import java.util.Locale;
 
 import io.casey.musikcube.remote.R;
-import io.casey.musikcube.remote.playback.ExoPlayerWrapper;
 import io.casey.musikcube.remote.playback.MediaPlayerWrapper;
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
+import io.casey.musikcube.remote.playback.StreamProxy;
 import io.casey.musikcube.remote.ui.util.Views;
 import io.casey.musikcube.remote.websocket.Prefs;
 import io.casey.musikcube.remote.websocket.WebSocketService;
@@ -211,7 +211,7 @@ public class SettingsActivity extends AppCompatActivity {
             PlaybackServiceFactory.streaming(this).stop();
         }
 
-        ExoPlayerWrapper.invalidateSettings();
+        StreamProxy.reload();
         WebSocketService.getInstance(this).disconnect();
 
         finish();

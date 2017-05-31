@@ -4,6 +4,8 @@ import com.neovisionaries.ws.client.WebSocketFactory;
 
 import java.security.cert.CertificateException;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -13,11 +15,31 @@ import okhttp3.OkHttpClient;
 
 public class NetworkUtil {
     private static SSLContext sslContext;
-    private static SSLSocketFactory sslSocketFactory;
+    private static SSLSocketFactory insecureSslSocketFactory;
+
+    private static SSLSocketFactory originalHttpsUrlConnectionSocketFactory;
+    private static HostnameVerifier originalHttpsUrlConnectionHostnameVerifier;
+
+    public synchronized static void init() {
+        if (originalHttpsUrlConnectionHostnameVerifier == null) {
+            originalHttpsUrlConnectionSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
+            originalHttpsUrlConnectionHostnameVerifier = HttpsURLConnection.getDefaultHostnameVerifier();
+        }
+
+        if (sslContext == null) {
+            try {
+                sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+                insecureSslSocketFactory = sslContext.getSocketFactory();
+            }
+            catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    }
 
     public static void disableCertificateValidation(final OkHttpClient.Builder okHttpClient) {
-        init();
-        okHttpClient.sslSocketFactory(sslSocketFactory, (X509TrustManager)trustAllCerts[0]);
+        okHttpClient.sslSocketFactory(insecureSslSocketFactory, (X509TrustManager)trustAllCerts[0]);
         okHttpClient.hostnameVerifier((hostname, session) -> true);
     }
 
@@ -25,14 +47,23 @@ public class NetworkUtil {
         socketFactory.setSSLContext(sslContext);
     }
 
-    private synchronized static void init() {
+    public static void disableCertificateValidation() {
         try {
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-            sslSocketFactory = sslContext.getSocketFactory();
+            HttpsURLConnection.setDefaultSSLSocketFactory(insecureSslSocketFactory);
+            HttpsURLConnection.setDefaultHostnameVerifier((url, session) -> true);
         }
-        catch (Exception ex) {
-            throw new RuntimeException (ex);
+        catch (Exception e) {
+            throw new RuntimeException("should never happen");
+        }
+    }
+
+    public static void enableCertificateValidation() {
+        try {
+            HttpsURLConnection.setDefaultSSLSocketFactory(originalHttpsUrlConnectionSocketFactory);
+            HttpsURLConnection.setDefaultHostnameVerifier(originalHttpsUrlConnectionHostnameVerifier);
+        }
+        catch (Exception e) {
+            throw new RuntimeException("should never happen");
         }
     }
 
