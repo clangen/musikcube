@@ -142,6 +142,10 @@ void WebSocketServer::OnPlaybackStateChanged(PlaybackState state) {
     this->BroadcastPlaybackOverview();
 }
 
+void WebSocketServer::OnPlaybackTimeChanged(double time) {
+    this->BroadcastPlaybackOverview();
+}
+
 void WebSocketServer::OnVolumeChanged(double volume) {
     this->BroadcastPlaybackOverview();
 }
@@ -320,6 +324,11 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
         }
         else if (name == request::get_environment) {
             this->RespondWithEnvironment(connection, request);
+            return;
+        }
+        else if (name == request::get_current_time) {
+            this->RespondWithCurrentTime(connection, request);
+            return;
         }
     }
 
@@ -749,6 +758,15 @@ void WebSocketServer::RespondWithEnvironment(connection_hdl connection, json& re
     this->RespondWithOptions(connection, request, {
         { prefs::http_server_enabled, context.prefs->GetBool(prefs::http_server_enabled.c_str()) },
         { prefs::http_server_port, context.prefs->GetInt(prefs::http_server_port.c_str()) }
+    });
+}
+
+void WebSocketServer::RespondWithCurrentTime(connection_hdl connection, json& request) {
+    auto track = context.playback->GetPlayingTrack();
+
+    this->RespondWithOptions(connection, request, {
+        { key::playing_current_time, context.playback->GetPosition() },
+        { key::id, track ? track->GetId() : -1 }
     });
 }
 

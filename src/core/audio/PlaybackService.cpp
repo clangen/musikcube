@@ -353,6 +353,10 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
     else if (type == MESSAGE_TIME_CHANGED) {
         this->TimeChanged(transport.Position());
+        double volume = transport.Volume();
+        for (auto remote : this->remotes) {
+            remote->OnPlaybackTimeChanged(transport.Position());
+        }
     }
     else if (type == MESSAGE_NOTIFY_EDITED ||
              type == MESSAGE_NOTIFY_RESET)

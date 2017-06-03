@@ -45,6 +45,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetPlaybackService(IPlaybackService* playback) = 0;
             virtual void OnTrackChanged(ITrack* track) = 0;
             virtual void OnPlaybackStateChanged(PlaybackState state) = 0;
+            virtual void OnPlaybackTimeChanged(double time) = 0;
             virtual void OnVolumeChanged(double volume) = 0;
             virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled) = 0;
             virtual void OnPlayQueueChanged() = 0;

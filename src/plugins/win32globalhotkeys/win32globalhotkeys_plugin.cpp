@@ -208,6 +208,10 @@ class MMShellHook:
 
             }
 
+            virtual void OnPlaybackTimeChanged(double time) {
+
+            }
+
             virtual void OnVolumeChanged(double volume) {
 
             }

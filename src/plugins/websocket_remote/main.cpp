@@ -104,6 +104,10 @@ static class PlaybackRemote : public IPlaybackRemote {
             webSocketServer.OnVolumeChanged(volume);
         }
 
+        virtual void OnPlaybackTimeChanged(double time) {
+            webSocketServer.OnPlaybackTimeChanged(time);
+        }
+
         virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled) {
             webSocketServer.OnModeChanged(repeatMode, shuffled);
         }

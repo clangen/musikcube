@@ -58,6 +58,7 @@ class WebSocketServer {
 
         void OnTrackChanged(musik::core::sdk::ITrack* track);
         void OnPlaybackStateChanged(musik::core::sdk::PlaybackState state);
+        void OnPlaybackTimeChanged(double time);
         void OnVolumeChanged(double volume);
         void OnModeChanged(musik::core::sdk::RepeatMode repeatMode, bool shuffled);
         void OnPlayQueueChanged();
@@ -123,30 +124,33 @@ class WebSocketServer {
         void ThreadProc();
         void HandleAuthentication(connection_hdl connection, json& request);
         void HandleRequest(connection_hdl connection, json& request);
+
         void Broadcast(const std::string& name, json& options);
         void RespondWithOptions(connection_hdl connection, json& request, json& options);
         void RespondWithOptions(connection_hdl connection, json& request, json&& options = json({}));
-        void RespondWithSetVolume(connection_hdl connection, json& request);
-        void RespondWithPlaybackOverview(connection_hdl connection, json& reuest);
-        bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);
-        void GetLimitAndOffset(json& options, int& limit, int& offset);
-        void RespondWithQueryTracks(connection_hdl connection, json& request);
-        void RespondWithPlayQueueTracks(connection_hdl connection, json& request);
-        void RespondWithQueryAlbums(connection_hdl connection, json& request);
-        void RespondWithPlayTracks(connection_hdl connection, json& request);
-
         void RespondWithInvalidRequest(connection_hdl connection, const std::string& name, const std::string& id);
         void RespondWithSuccess(connection_hdl connection, json& request);
         void RespondWithFailure(connection_hdl connection, json& request);
         void RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id);
 
+        void RespondWithSetVolume(connection_hdl connection, json& request);
+        void RespondWithPlaybackOverview(connection_hdl connection, json& reuest);
+        bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);
+        void RespondWithQueryTracks(connection_hdl connection, json& request);
+        void RespondWithPlayQueueTracks(connection_hdl connection, json& request);
+        void RespondWithQueryAlbums(connection_hdl connection, json& request);
+        void RespondWithPlayTracks(connection_hdl connection, json& request);
         void RespondWithQueryTracksByCategory(connection_hdl connection, json& request);
         void RespondWithQueryCategory(connection_hdl connection, json& request);
         void RespondWithPlayAllTracks(connection_hdl connection, json& request);
         void RespondWithPlayTracksByCategory(connection_hdl connection, json& request);
         void RespondWithEnvironment(connection_hdl connection, json& request);
+        void RespondWithCurrentTime(connection_hdl connection, json& request);
+
         void BroadcastPlaybackOverview();
         void BroadcastPlayQueueChanged();
+
+        void GetLimitAndOffset(json& options, int& limit, int& offset);
         ITrackList* QueryTracksByCategory(json& request, int& limit, int& offset);
         json ReadTrackMetadata(IRetainedTrack* track);
         void BuildPlaybackOverview(json& options);
