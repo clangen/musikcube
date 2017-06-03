@@ -35,6 +35,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     private boolean prefetch;
     private Context context;
     private long lastPosition = -1;
+    private String uri, proxyUri;
 
     public ExoPlayerWrapper() {
         this.context = Application.getInstance();
@@ -52,7 +53,8 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         Preconditions.throwIfNotOnMainThread();
 
         if (!dead()) {
-            final String proxyUri = StreamProxy.getProxyUrl(context, uri);
+            this.uri = uri;
+            this.proxyUri = StreamProxy.getProxyUrl(context, uri);
             this.source = new ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null);
             this.player.setPlayWhenReady(true);
             this.player.prepare(this.source);
@@ -66,8 +68,9 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         Preconditions.throwIfNotOnMainThread();
 
         if (!dead()) {
+            this.uri = uri;
             this.prefetch = true;
-            final String proxyUri = StreamProxy.getProxyUrl(context, uri);
+            this.proxyUri = StreamProxy.getProxyUrl(context, uri);
             this.source = new ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null);
             this.player.setPlayWhenReady(false);
             this.player.prepare(this.source);

@@ -2,12 +2,17 @@ package io.casey.musikcube.remote.playback;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.util.Base64;
 
+import com.danikula.videocache.CacheListener;
 import com.danikula.videocache.HttpProxyCacheServer;
+import com.danikula.videocache.file.FileNameGenerator;
+import com.danikula.videocache.file.Md5FileNameGenerator;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.casey.musikcube.remote.util.NetworkUtil;
@@ -17,6 +22,7 @@ public class StreamProxy {
     private static final long BYTES_PER_MEGABYTE = 1048576L;
     private static final long BYTES_PER_GIGABYTE = 1073741824L;
     private static final Map<Integer, Long> CACHE_SETTING_TO_BYTES;
+    private static final FileNameGenerator DEFAULT_FILENAME_GENERATOR = new Md5FileNameGenerator();
 
     static {
         CACHE_SETTING_TO_BYTES = new HashMap<>();
@@ -61,12 +67,39 @@ public class StreamProxy {
                 final String encoded = Base64.encodeToString(userPass.getBytes(), Base64.NO_WRAP);
                 headers.put("Authorization", "Basic " + encoded);
                 return headers;
-            }).build();
+            })
+            .fileNameGenerator((url) -> {
+                try {
+                    final Uri uri = Uri.parse(url);
+                    /* format is: audio/external_id/<id> */
+                    final List<String> segments = uri.getPathSegments();
+                    if (segments.size() == 3 && "external_id".equals(segments.get(1))) {
+                        return segments.get(2); /* id, should be globally unique. */
+                    }
+                }
+                catch (Exception ex) {
+                    /* eh... */
+                }
+                return DEFAULT_FILENAME_GENERATOR.generate(url);
+            })
+            .build();
     }
 
     public static synchronized void init(final Context context) {
         if (INSTANCE == null) {
             INSTANCE = new StreamProxy(context.getApplicationContext());
+        }
+    }
+
+    public static synchronized void registerCacheListener(final CacheListener cl, final String uri) {
+        if (INSTANCE != null && cl != null) {
+            INSTANCE.proxy.registerCacheListener(cl, uri); /* let it throw */
+        }
+    }
+
+    public static synchronized void unregisterCacheListener(final CacheListener cl) {
+        if (INSTANCE != null && cl != null) {
+            INSTANCE.proxy.unregisterCacheListener(cl);
         }
     }
 
