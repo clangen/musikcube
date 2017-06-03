@@ -4,6 +4,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_remote_toggle"
+        app:showAsAction="always"
+        android:title="@string/menu_remote_toggle"
+        android:icon="@mipmap/ic_toolbar_remote" />
+
+    <item
         android:id="@+id/action_playlists"
         app:showAsAction="never"
         android:title="@string/menu_playlists"/>

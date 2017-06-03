@@ -107,6 +107,14 @@ public abstract class WebSocketActivityBase extends AppCompatActivity implements
 
     }
 
+    protected void reloadPlaybackService() {
+        if (!paused && this.playback != null) {
+            this.playback.disconnect(getPlaybackServiceEventListener());
+            this.playback = PlaybackServiceFactory.instance(this);
+            this.playback.connect(getPlaybackServiceEventListener());
+        }
+    }
+
     protected final Runner runner() {
         return this.runnerDelegate.runner();
     }

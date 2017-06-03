@@ -109,14 +109,24 @@ public class MainActivity extends WebSocketActivityBase {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         boolean connected = wss.getState() == WebSocketService.State.Connected;
+        boolean streaming = isStreamingSelected();
+
         menu.findItem(R.id.action_playlists).setEnabled(connected);
         menu.findItem(R.id.action_genres).setEnabled(connected);
+
+        menu.findItem(R.id.action_remote_toggle).setIcon(
+            streaming ? R.mipmap.ic_toolbar_streaming : R.mipmap.ic_toolbar_remote);
+
         return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_remote_toggle:
+                togglePlaybackService();
+                return true;
+
             case R.id.action_settings:
                 startActivity(SettingsActivity.getStartIntent(this));
                 return true;
@@ -142,6 +152,28 @@ public class MainActivity extends WebSocketActivityBase {
     @Override
     protected PlaybackService.EventListener getPlaybackServiceEventListener() {
         return this.playbackEvents;
+    }
+
+    private boolean isStreamingSelected() {
+        return prefs.getBoolean(
+            Prefs.Key.STREAMING_PLAYBACK,
+            Prefs.Default.STREAMING_PLAYBACK);
+    }
+
+    private void togglePlaybackService() {
+        final boolean streaming = isStreamingSelected();
+
+        if (streaming) {
+            playback.stop();
+        }
+
+        prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !streaming).apply();
+
+        reloadPlaybackService();
+        this.playback = getPlaybackService();
+
+        supportInvalidateOptionsMenu();
+        rebindUi();
     }
 
     private void bindCheckBoxEventListeners() {

@@ -52,6 +52,7 @@
     <string name="menu_settings">settings</string>
     <string name="menu_genres">genres</string>
     <string name="menu_playlists">playlists</string>
+    <string name="menu_remote_toggle">remote playback</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="settings_playback_mode">playback mode:</string>
     <string name="settings_transcoder_bitrate">streaming downsampler bitrate:</string>
