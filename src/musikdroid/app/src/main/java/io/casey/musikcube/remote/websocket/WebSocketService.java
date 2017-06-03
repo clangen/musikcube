@@ -213,6 +213,11 @@ public class WebSocketService {
         }
     }
 
+    public boolean hasClient(Client client) {
+        Preconditions.throwIfNotOnMainThread();
+        return this.clients.contains(client);
+    }
+
     public void reconnect() {
         Preconditions.throwIfNotOnMainThread();
         autoReconnect = true;

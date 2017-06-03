@@ -129,6 +129,21 @@ public class SocketMessage {
         return defaultValue;
     }
 
+    public long getLongOption(final String key) {
+        return getLongOption(key, 0);
+    }
+
+    public long getLongOption(final String key, final long defaultValue) {
+        if (options.has(key)) {
+            try {
+                return options.getLong(key);
+            }
+            catch (JSONException ex) {
+
+            }
+        }
+        return defaultValue;
+    }
 
     public double getDoubleOption(final String key) {
         return getDoubleOption(key, 0.0);

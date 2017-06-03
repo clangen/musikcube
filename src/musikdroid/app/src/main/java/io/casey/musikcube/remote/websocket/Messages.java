@@ -4,6 +4,7 @@ public class Messages {
     public enum Request {
         Authenticate("authenticate"),
         Ping("ping"),
+        GetCurrentTime("get_current_time"),
         GetPlaybackOverview("get_playback_overview"),
         PauseOrResume("pause_or_resume"),
         Stop("stop"),
@@ -44,6 +45,10 @@ public class Messages {
             }
 
             return null;
+        }
+
+        public boolean is(final String name) {
+            return rawValue.equals(name);
         }
     }
 
@@ -92,6 +97,7 @@ public class Messages {
         String VALUE = "value";
         String FILTER = "filter";
         String RELATIVE = "relative";
+        String PLAYING_CURRENT_TIME = "playing_current_time";
     }
 
     public interface Value {

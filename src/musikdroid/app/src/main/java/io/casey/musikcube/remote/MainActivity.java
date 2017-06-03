@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +28,7 @@ import io.casey.musikcube.remote.ui.fragment.InvalidPasswordDialogFragment;
 import io.casey.musikcube.remote.ui.util.Views;
 import io.casey.musikcube.remote.ui.view.LongPressTextView;
 import io.casey.musikcube.remote.ui.view.MainMetadataView;
+import io.casey.musikcube.remote.util.Duration;
 import io.casey.musikcube.remote.websocket.Messages;
 import io.casey.musikcube.remote.websocket.Prefs;
 import io.casey.musikcube.remote.websocket.SocketMessage;
@@ -37,11 +39,12 @@ public class MainActivity extends WebSocketActivityBase {
 
     private WebSocketService wss = null;
 
+    private Handler handler = new Handler();
     private SharedPreferences prefs;
     private PlaybackService playback;
 
     private MainMetadataView metadataView;
-    private TextView playPause;
+    private TextView playPause, currentTime, totalTime;
     private View connectedNotPlaying, disconnectedButton;
     private CheckBox shuffleCb, muteCb, repeatCb;
     private View disconnectedOverlay;
@@ -79,6 +82,7 @@ public class MainActivity extends WebSocketActivityBase {
         super.onPause();
         metadataView.onPause();
         unbindCheckboxEventListeners();
+        handler.removeCallbacks(updateTimeRunnable);
     }
 
     @Override
@@ -88,6 +92,7 @@ public class MainActivity extends WebSocketActivityBase {
         metadataView.onResume();
         bindCheckBoxEventListeners();
         rebindUi();
+        scheduleUpdateTime(true);
     }
 
     @Override
@@ -162,6 +167,8 @@ public class MainActivity extends WebSocketActivityBase {
         this.disconnectedButton = findViewById(R.id.disconnected);
         this.disconnectedOverlay = findViewById(R.id.disconnected_overlay);
         this.playPause = (TextView) findViewById(R.id.button_play_pause);
+        this.currentTime = (TextView) findViewById(R.id.current_time);
+        this.totalTime = (TextView) findViewById(R.id.total_time);
 
         findViewById(R.id.button_prev).setOnClickListener((View view) -> playback.prev());
 
@@ -271,6 +278,17 @@ public class MainActivity extends WebSocketActivityBase {
     private void navigateToPlayQueue() {
         startActivity(PlayQueueActivity.getStartIntent(MainActivity.this, playback.getQueuePosition()));
     }
+
+    private void scheduleUpdateTime(boolean immediate) {
+        handler.removeCallbacks(updateTimeRunnable);
+        handler.postDelayed(updateTimeRunnable, immediate ? 0 : 1000);
+    }
+
+    private Runnable updateTimeRunnable = () -> {
+        currentTime.setText(Duration.format(playback.getCurrentTime()));
+        totalTime.setText(Duration.format(playback.getDuration()));
+        scheduleUpdateTime(false);
+    };
 
     private CheckBox.OnCheckedChangeListener muteListener =
         (CompoundButton compoundButton, boolean b) -> {

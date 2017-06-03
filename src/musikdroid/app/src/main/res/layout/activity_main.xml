@@ -6,67 +6,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:clipToPadding="false"
     tools:context="io.casey.musikcube.remote.MainActivity">
 
     <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/play_controls">
-
-        <LinearLayout
-            android:id="@+id/connected_not_playing"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_gravity="center">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textColor="@color/theme_green"
-                android:text="@string/button_connected"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:textSize="@dimen/text_size_large"
-                android:textColor="@color/theme_disabled_foreground"
-                android:text="@string/transport_not_playing"/>
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/disconnected"
-            android:visibility="gone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:textSize="@dimen/text_size_large"
-            android:textColor="@color/theme_disabled_foreground"
-            android:padding="8dp"
-            android:clickable="true"
-            android:background="@drawable/not_playing_button"
-            android:text="@string/status_disconnected"/>
-
-        <io.casey.musikcube.remote.ui.view.MainMetadataView
-            android:id="@+id/main_metadata_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-    </FrameLayout>
-
-    <FrameLayout
+        android:background="@color/theme_background"
         android:id="@+id/play_controls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:elevation="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
+            <android.support.v4.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="2dp" />
+
+            <FrameLayout
+                android:background="@drawable/playback_button"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/current_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:gravity="left"
+                    android:text="0:00"/>
+
+                <TextView
+                    android:id="@+id/total_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:gravity="right"
+                    android:text="0:00"/>
+
+            </FrameLayout>
 
             <android.support.v4.widget.Space
                 android:layout_width="0dp"
@@ -274,5 +259,53 @@
 
     </FrameLayout>
 
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/play_controls">
+
+        <LinearLayout
+            android:id="@+id/connected_not_playing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_green"
+                android:text="@string/button_connected"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textSize="@dimen/text_size_large"
+                android:textColor="@color/theme_disabled_foreground"
+                android:text="@string/transport_not_playing"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/disconnected"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="@dimen/text_size_large"
+            android:textColor="@color/theme_disabled_foreground"
+            android:padding="8dp"
+            android:clickable="true"
+            android:background="@drawable/not_playing_button"
+            android:text="@string/status_disconnected"/>
+
+        <io.casey.musikcube.remote.ui.view.MainMetadataView
+            android:id="@+id/main_metadata_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+    </FrameLayout>
 
 </RelativeLayout>

@@ -1,6 +1,7 @@
 package io.casey.musikcube.remote.playback;
 
 import android.content.Context;
+import android.os.Handler;
 
 import org.json.JSONObject;
 
@@ -13,7 +14,8 @@ import io.casey.musikcube.remote.websocket.SocketMessage;
 import io.casey.musikcube.remote.websocket.WebSocketService;
 
 public class RemotePlaybackService implements PlaybackService {
-    private WebSocketService wss;
+    private static final double NANOSECONDS_PER_SECOND = 1000000000.0;
+    private static final long SYNC_TIME_INTERVAL_MS = 5000L;
 
     private interface Key {
         String STATE = "state";
@@ -28,6 +30,71 @@ public class RemotePlaybackService implements PlaybackService {
         String PLAYING_TRACK = "playing_track";
     }
 
+    /**
+     * an annoying little class that maintains and updates state that estimates
+     * the currently playing time. remember, here we're a remote control, so we
+     * don't know the exact position of the play head! we update every 5 seconds
+     * and estimate.
+     */
+    private static class EstimatedPosition {
+        double lastTime = 0.0, pauseTime = 0.0;
+        long trackId = -1;
+        long queryTime = 0;
+
+        double get(final JSONObject track) {
+            if (track != null && track.optLong(Metadata.Track.ID, -1L) == trackId && trackId != -1) {
+                if (pauseTime != 0) {
+                    return pauseTime;
+                }
+                else {
+                    return estimatedTime();
+                }
+            }
+            return 0;
+        }
+
+        void update(final SocketMessage message) {
+            queryTime = System.nanoTime();
+            lastTime = message.getDoubleOption(Messages.Key.PLAYING_CURRENT_TIME, 0);
+            trackId = message.getLongOption(Messages.Key.ID, -1);
+        }
+
+        void pause() {
+            pauseTime = estimatedTime();
+        }
+
+        void resume() {
+            lastTime = pauseTime;
+            queryTime = System.nanoTime();
+            pauseTime = 0.0;
+        }
+
+        void update(final double time, final long id) {
+            queryTime = System.nanoTime();
+            lastTime = time;
+            trackId = id;
+
+            if (pauseTime != 0) {
+                pauseTime = time; /* ehh... */
+            }
+        }
+
+        void reset() {
+            lastTime = pauseTime = 0.0;
+            queryTime = System.nanoTime();
+            trackId = -1;
+        }
+
+        double estimatedTime() {
+            final long diff = System.nanoTime() - queryTime;
+            final double seconds = (double) diff / NANOSECONDS_PER_SECOND;
+            return lastTime + seconds;
+        }
+    }
+
+    private Handler handler = new Handler();
+    private WebSocketService wss;
+    private EstimatedPosition currentTime = new EstimatedPosition();
     private PlaybackState playbackState = PlaybackState.Unknown;
     private Set<EventListener> listeners = new HashSet<>();
     private RepeatMode repeatMode;
@@ -37,7 +104,6 @@ public class RemotePlaybackService implements PlaybackService {
     private int queueCount;
     private int queuePosition;
     private double duration;
-    private double currentTime;
     private JSONObject track = new JSONObject();
 
     public RemotePlaybackService(final Context context) {
@@ -170,6 +236,7 @@ public class RemotePlaybackService implements PlaybackService {
 
             if (listeners.size() == 1) {
                 wss.addClient(client);
+                scheduleTimeSyncMessage();
             }
         }
     }
@@ -181,6 +248,7 @@ public class RemotePlaybackService implements PlaybackService {
 
             if (listeners.size() == 0) {
                 wss.removeClient(client);
+                handler.removeCallbacks(syncTimeRunnable);
             }
         }
     }
@@ -226,7 +294,7 @@ public class RemotePlaybackService implements PlaybackService {
 
     @Override
     public double getCurrentTime() {
-        return currentTime;
+        return currentTime.get(track);
     }
 
     @Override
@@ -256,11 +324,11 @@ public class RemotePlaybackService implements PlaybackService {
         shuffled = muted = false;
         volume = 0.0f;
         queueCount = queuePosition = 0;
-        duration = currentTime = 0.0f;
         track = new JSONObject();
+        currentTime.reset();
     }
 
-    private boolean canHandle(SocketMessage socketMessage) {
+    private boolean isPlaybackOverviewMessage(SocketMessage socketMessage) {
         if (socketMessage == null) {
             return false;
         }
@@ -269,10 +337,10 @@ public class RemotePlaybackService implements PlaybackService {
 
         return
             name.equals(Messages.Broadcast.PlaybackOverviewChanged.toString()) ||
-                name.equals(Messages.Request.GetPlaybackOverview.toString());
+            name.equals(Messages.Request.GetPlaybackOverview.toString());
     }
 
-    private boolean update(SocketMessage message) {
+    private boolean updatePlaybackOverview(SocketMessage message) {
         if (message == null) {
             reset();
             return false;
@@ -287,6 +355,17 @@ public class RemotePlaybackService implements PlaybackService {
         }
 
         playbackState = PlaybackState.from(message.getStringOption(Key.STATE));
+
+        switch (playbackState) {
+            case Paused:
+                currentTime.pause();
+                break;
+            case Playing:
+                currentTime.resume();
+                scheduleTimeSyncMessage();
+                break;
+        }
+
         repeatMode = RepeatMode.from(message.getStringOption(Key.REPEAT_MODE));
         shuffled = message.getBooleanOption(Key.SHUFFLED);
         muted = message.getBooleanOption(Key.MUTED);
@@ -294,8 +373,13 @@ public class RemotePlaybackService implements PlaybackService {
         queueCount = message.getIntOption(Key.PLAY_QUEUE_COUNT);
         queuePosition = message.getIntOption(Key.PLAY_QUEUE_POSITION);
         duration = message.getDoubleOption(Key.PLAYING_DURATION);
-        currentTime = message.getDoubleOption(Key.PLAYING_CURRENT_TIME);
         track = message.getJsonObjectOption(Key.PLAYING_TRACK, new JSONObject());
+
+        if (track != null) {
+            currentTime.update(
+                message.getDoubleOption(Key.PLAYING_CURRENT_TIME, -1),
+                track.optLong(Metadata.Track.ID, -1));
+        }
 
         notifyStateUpdated();
 
@@ -307,6 +391,21 @@ public class RemotePlaybackService implements PlaybackService {
             listener.onStateUpdated();
         }
     }
+
+    private void scheduleTimeSyncMessage() {
+        handler.removeCallbacks(syncTimeRunnable);
+
+        if (getPlaybackState() == PlaybackState.Playing) {
+            handler.postDelayed(syncTimeRunnable, SYNC_TIME_INTERVAL_MS);
+        }
+    }
+
+    private final Runnable syncTimeRunnable = () -> {
+        if (this.wss.hasClient(this.client)) {
+            this.wss.send(SocketMessage.Builder
+                .request(Messages.Request.GetCurrentTime).build());
+        }
+    };
 
     private final TrackListSlidingWindow.QueryFactory queryFactory
         = new TrackListSlidingWindow.QueryFactory() {
@@ -343,8 +442,12 @@ public class RemotePlaybackService implements PlaybackService {
 
         @Override
         public void onMessageReceived(SocketMessage message) {
-            if (canHandle(message)) {
-                update(message);
+            if (isPlaybackOverviewMessage(message)) {
+                updatePlaybackOverview(message);
+            }
+            else if (Messages.Request.GetCurrentTime.is(message.getName())) {
+                currentTime.update(message);
+                scheduleTimeSyncMessage();
             }
         }
 
