@@ -37,6 +37,8 @@
 #include <string>
 #include "Util.h"
 
+//#define ENABLE_DEBUG 1
+
 namespace defaults {
     static const int websocket_server_port = 7905;
     static const int http_server_port = 7906;

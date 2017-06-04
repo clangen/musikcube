@@ -62,6 +62,9 @@ static class PlaybackRemote : public IPlaybackRemote {
         PlaybackRemote()
         : httpServer(context)
         , webSocketServer(context) {
+#ifdef ENABLE_DEBUG
+            freopen("z:\\webserver.log", "w", stderr);
+#endif
         }
 
         virtual ~PlaybackRemote() {

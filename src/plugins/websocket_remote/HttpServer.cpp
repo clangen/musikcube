@@ -299,6 +299,10 @@ int HttpServer::HandleRequest(
     size_t *upload_data_size,
     void **con_cls)
 {
+#ifdef ENABLE_DEBUG
+    std::cerr << "******** REQUEST START ********\n";
+#endif
+
     HttpServer* server = static_cast<HttpServer*>(cls);
 
     struct MHD_Response* response = nullptr;
@@ -310,6 +314,10 @@ int HttpServer::HandleRequest(
             status = 401; /* unauthorized */
             static const char* error = "unauthorized";
             response = MHD_create_response_from_buffer(strlen(error), (void*) error, MHD_RESPMEM_PERSISTENT);
+
+#ifdef ENABLE_DEBUG
+            std::cerr << "unauthorized\n";
+#endif
         }
         else {
             /* if we get here we're authenticated */
@@ -329,6 +337,11 @@ int HttpServer::HandleRequest(
                     if (byExternalId) {
                         std::string externalId = urlDecode(parts.at(2));
                         track = server->context.dataProvider->QueryTrackByExternalId(externalId.c_str());
+
+#ifdef ENABLE_DEBUG
+                        std::cerr << "externalId: " << externalId<< "\n";
+                        std::cerr << "title: " << GetMetadataString(track, "title") << std::endl;
+#endif
                     }
                     else if (parts.at(1) == fragment::id) {
                         uint64_t id = std::stoull(urlDecode(parts.at(2)));
@@ -348,10 +361,25 @@ int HttpServer::HandleRequest(
                         const char* rangeVal = MHD_lookup_connection_value(
                             connection, MHD_HEADER_KIND, "Range");
 
+#ifdef ENABLE_DEBUG
+                        if (rangeVal) {
+                            std::cerr << "range header: " << rangeVal << "\n";
+                        }
+#endif
+
                         Range* range = parseRange(file, rangeVal);
+
+#ifdef ENABLE_DEBUG
+                        std::cerr << "potential response hader : " << range->HeaderValue() << std::endl;
+#endif
 
                         /* ehh... */
                         bool isOnDemandTranscoder = !!dynamic_cast<TranscodingDataStream*>(file);
+
+#ifdef ENABLE_DEBUG
+                        std::cerr << "on demand? " << isOnDemandTranscoder << std::endl;
+                        std::cerr << "file: " << file << std::endl;
+#endif
 
                         /* gotta be careful with request ranges if we're transcoding. don't
                         allow any custom ranges other than from 0 to end. */
@@ -359,7 +387,13 @@ int HttpServer::HandleRequest(
                             if (range->from != 0 || range->to != range->total - 1) {
                                 delete range;
 
+#ifdef ENABLE_DEBUG
+                                std::cerr << "removing range header, seek requested with ondemand transcoder\n";
+#endif
+
                                 if (HTTP_416_DISABLED) {
+                                    rangeVal = nullptr; /* ignore the header from here on out. */
+
                                     /* lots of clients don't seem to be to deal with 416 properly;
                                     instead, ignore the range header and return the whole file,
                                     and a 200 (not 206) */
@@ -402,6 +436,10 @@ int HttpServer::HandleRequest(
                                 range,
                                 &fileFreeCallback);
 
+#ifdef ENABLE_DEBUG
+                            std::cerr << "response length: " << length << "\n";
+#endif
+
                             if (response) {
                                 if (!isOnDemandTranscoder) {
                                     MHD_add_response_header(response, "Accept-Ranges", "bytes");
@@ -424,6 +462,11 @@ int HttpServer::HandleRequest(
                                     if (range->total > 0) {
                                         MHD_add_response_header(response, "Content-Range", range->HeaderValue().c_str());
                                         status = MHD_HTTP_PARTIAL_CONTENT;
+#ifdef ENABLE_DEBUG
+                                        if (rangeVal) {
+                                            std::cerr << "selected partial content! " << range->HeaderValue() << "\n";
+                                        }
+#endif
                                     }
                                 }
                             }
@@ -441,9 +484,17 @@ int HttpServer::HandleRequest(
     }
 
     if (response) {
+#ifdef ENABLE_DEBUG
+        std::cerr << "returning with http code: " << status << std::endl;
+#endif
+
         ret = MHD_queue_response(connection, status, response);
         MHD_destroy_response(response);
     }
+
+#ifdef ENABLE_DEBUG
+    std::cerr << "******** REQUEST END ********\n\n";
+#endif
 
     return ret;
 }
