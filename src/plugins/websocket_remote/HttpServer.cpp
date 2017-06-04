@@ -349,7 +349,9 @@ int HttpServer::HandleRequest(
                     }
 
                     if (track) {
+                        std::string duration = GetMetadataString(track, key::duration);
                         std::string filename = GetMetadataString(track, key::filename);
+
                         track->Release();
 
                         size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
@@ -446,6 +448,11 @@ int HttpServer::HandleRequest(
                                 }
                                 else {
                                     MHD_add_response_header(response, "X-musikcube-Estimated-Content-Length", "true");
+                                }
+
+                                if (duration.size()) {
+                                    MHD_add_response_header(response, "X-Content-Duration", duration.c_str());
+                                    MHD_add_response_header(response, "Content-Duration", duration.c_str());
                                 }
 
                                 if (byExternalId) {

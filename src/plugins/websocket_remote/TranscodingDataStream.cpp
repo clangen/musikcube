@@ -61,7 +61,11 @@ TranscodingDataStream::TranscodingDataStream(
         this->decoder = context.environment->GetDecoder(this->input);
         if (this->decoder) {
             this->pcmBuffer = context.environment->GetBuffer(SAMPLES_PER_BUFFER);
-            this->length = (PositionType)(this->decoder->GetDuration() * 1000.0 * (float)bitrate / 8.0);
+
+            /*  note that we purposely under-estimate the content length by a couple
+            seconds. we do this because http clients seem to be more likely to be
+            throw a fit if we over estimate, instead of under-estimate. */
+            this->length = (PositionType)((this->decoder->GetDuration() - 2.0) * 1000.0 * (float)bitrate / 8.0);
         }
     }
 }
