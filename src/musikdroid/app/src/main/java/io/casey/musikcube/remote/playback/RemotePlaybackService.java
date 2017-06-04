@@ -210,6 +210,15 @@ public class RemotePlaybackService implements PlaybackService {
     }
 
     @Override
+    public void seekTo(double seconds) {
+        wss.send(SocketMessage.Builder
+            .request(Messages.Request.SeekTo)
+            .addOption(Messages.Key.POSITION, seconds).build());
+
+        currentTime.update(seconds, currentTime.trackId);
+    }
+
+    @Override
     public int getQueueCount() {
         return queueCount;
     }

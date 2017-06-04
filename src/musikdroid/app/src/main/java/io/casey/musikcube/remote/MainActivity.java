@@ -5,11 +5,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.util.HashMap;
@@ -26,7 +30,6 @@ import io.casey.musikcube.remote.ui.activity.TrackListActivity;
 import io.casey.musikcube.remote.ui.activity.WebSocketActivityBase;
 import io.casey.musikcube.remote.ui.fragment.InvalidPasswordDialogFragment;
 import io.casey.musikcube.remote.ui.util.Views;
-import io.casey.musikcube.remote.ui.view.LongPressTextView;
 import io.casey.musikcube.remote.ui.view.MainMetadataView;
 import io.casey.musikcube.remote.util.Duration;
 import io.casey.musikcube.remote.websocket.Messages;
@@ -43,11 +46,14 @@ public class MainActivity extends WebSocketActivityBase {
     private SharedPreferences prefs;
     private PlaybackService playback;
 
+    private View mainLayout;
     private MainMetadataView metadataView;
     private TextView playPause, currentTime, totalTime;
     private View connectedNotPlaying, disconnectedButton;
     private CheckBox shuffleCb, muteCb, repeatCb;
     private View disconnectedOverlay;
+    private SeekBar seekbar;
+    private int seekbarValue = -1;
 
     static {
         REPEAT_TO_STRING_ID = new HashMap<>();
@@ -169,11 +175,26 @@ public class MainActivity extends WebSocketActivityBase {
 
         prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !streaming).apply();
 
+        final int messageId = streaming
+            ? R.string.snackbar_remote_enabled
+            : R.string.snackbar_streaming_enabled;
+
+        showSnackbar(messageId);
+
         reloadPlaybackService();
         this.playback = getPlaybackService();
 
         supportInvalidateOptionsMenu();
         rebindUi();
+    }
+
+    private void showSnackbar(int stringId) {
+        final Snackbar sb = Snackbar.make(mainLayout, stringId, Snackbar.LENGTH_LONG);
+        final View sbView = sb.getView();
+        sbView.setBackgroundColor(ContextCompat.getColor(this, R.color.color_primary));
+        final TextView tv = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+        tv.setTextColor(ContextCompat.getColor(this, R.color.theme_foreground));
+        sb.show();
     }
 
     private void bindCheckBoxEventListeners() {
@@ -191,6 +212,7 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private void bindEventListeners() {
+        this.mainLayout = findViewById(R.id.activity_main);
         this.metadataView = (MainMetadataView) findViewById(R.id.main_metadata_view);
         this.shuffleCb = (CheckBox) findViewById(R.id.check_shuffle);
         this.muteCb = (CheckBox) findViewById(R.id.check_mute);
@@ -201,11 +223,9 @@ public class MainActivity extends WebSocketActivityBase {
         this.playPause = (TextView) findViewById(R.id.button_play_pause);
         this.currentTime = (TextView) findViewById(R.id.current_time);
         this.totalTime = (TextView) findViewById(R.id.total_time);
+        this.seekbar = (SeekBar) findViewById(R.id.seekbar);
 
         findViewById(R.id.button_prev).setOnClickListener((View view) -> playback.prev());
-
-        final LongPressTextView seekBack = (LongPressTextView) findViewById(R.id.button_seek_back);
-        seekBack.setOnTickListener((View view) -> playback.seekBackward());
 
         findViewById(R.id.button_play_pause).setOnClickListener((View view) -> {
             if (playback.getPlaybackState() == PlaybackState.Stopped) {
@@ -218,17 +238,31 @@ public class MainActivity extends WebSocketActivityBase {
 
         findViewById(R.id.button_next).setOnClickListener((View view) -> playback.next());
 
-        final LongPressTextView seekForward = (LongPressTextView) findViewById(R.id.button_seek_forward);
-        seekForward.setOnTickListener((View view) -> playback.seekForward());
-
-        final LongPressTextView volumeUp = (LongPressTextView) findViewById(R.id.button_vol_up);
-        volumeUp.setOnTickListener((View view) -> playback.volumeUp());
-
-        final LongPressTextView volumeDown = (LongPressTextView) findViewById(R.id.button_vol_down);
-        volumeDown.setOnTickListener((View view) -> playback.volumeDown());
-
         disconnectedButton.setOnClickListener((view) -> {
             wss.reconnect();
+        });
+
+        seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    seekbarValue = progress;
+                    currentTime.setText(Duration.format(seekbarValue));
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if (seekbarValue != -1) {
+                    playback.seekTo((double) seekbarValue);
+                    seekbarValue = -1;
+                }
+            }
         });
 
         findViewById(R.id.button_artists).setOnClickListener((View view) -> {
@@ -265,10 +299,11 @@ public class MainActivity extends WebSocketActivityBase {
         final boolean connected = (wss.getState() == WebSocketService.State.Connected);
         final boolean stopped = (playback.getPlaybackState() == PlaybackState.Stopped);
         final boolean playing = (playback.getPlaybackState() == PlaybackState.Playing);
+        final boolean buffering = (playback.getPlaybackState() == PlaybackState.Buffering);
         final boolean showMetadataView = !stopped && connected && playback.getQueueCount() > 0;
 
         /* bottom section: transport controls */
-        this.playPause.setText(playing ? R.string.button_pause : R.string.button_play);
+        this.playPause.setText(playing || buffering ? R.string.button_pause : R.string.button_play);
 
         this.connectedNotPlaying.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
         this.disconnectedOverlay.setVisibility(connected ? View.GONE : View.VISIBLE);
@@ -317,8 +352,15 @@ public class MainActivity extends WebSocketActivityBase {
     }
 
     private Runnable updateTimeRunnable = () -> {
-        currentTime.setText(Duration.format(playback.getCurrentTime()));
-        totalTime.setText(Duration.format(playback.getDuration()));
+        final double duration = playback.getDuration();
+        final double current = (seekbarValue == -1) ? playback.getCurrentTime() : seekbarValue;
+
+        currentTime.setText(Duration.format(current));
+        totalTime.setText(Duration.format(duration));
+
+        seekbar.setMax((int) duration);
+        seekbar.setProgress((int) current);
+
         scheduleUpdateTime(false);
     };
 

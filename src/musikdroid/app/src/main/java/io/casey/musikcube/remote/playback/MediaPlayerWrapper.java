@@ -1,15 +1,21 @@
 package io.casey.musikcube.remote.playback;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.PowerManager;
+import android.util.Base64;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.casey.musikcube.remote.Application;
 import io.casey.musikcube.remote.util.Preconditions;
+import io.casey.musikcube.remote.websocket.Prefs;
 
 public class MediaPlayerWrapper extends PlayerWrapper {
     private static final String TAG = "MediaPlayerWrapper";
@@ -17,6 +23,12 @@ public class MediaPlayerWrapper extends PlayerWrapper {
     private MediaPlayer player = new MediaPlayer();
     private int seekTo;
     private boolean prefetching;
+    private Context context = Application.getInstance();
+    private SharedPreferences prefs;
+
+    public MediaPlayerWrapper() {
+        this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
+    }
 
     @Override
     public void play(final String uri) {
@@ -24,7 +36,17 @@ public class MediaPlayerWrapper extends PlayerWrapper {
 
         try {
             setState(State.Preparing);
-            player.setDataSource(Application.getInstance(), Uri.parse(uri));
+
+            final String userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD);
+            final String encoded = Base64.encodeToString(userPass.getBytes(), Base64.NO_WRAP);
+            final Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Basic " + encoded);
+
+            player.setDataSource(
+                context,
+                Uri.parse(StreamProxy.getProxyUrl(context, uri)),
+                headers);
+
             player.setAudioStreamType(AudioManager.STREAM_MUSIC);
             player.setOnPreparedListener(onPrepared);
             player.setOnErrorListener(onError);

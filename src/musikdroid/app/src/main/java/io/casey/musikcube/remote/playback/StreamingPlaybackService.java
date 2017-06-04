@@ -215,7 +215,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public void pauseOrResume() {
         if (context.currentPlayer != null) {
-            if (state == PlaybackState.Playing) {
+            if (state == PlaybackState.Playing || state == PlaybackState.Buffering) {
                 pause();
             }
             else {
@@ -304,6 +304,15 @@ public class StreamingPlaybackService implements PlaybackService {
         if (requestAudioFocus()) {
             if (context.currentPlayer != null) {
                 context.currentPlayer.setPosition(context.currentPlayer.getPosition() - 5000);
+            }
+        }
+    }
+
+    @Override
+    public void seekTo(double seconds) {
+        if (requestAudioFocus()) {
+            if (context.currentPlayer != null) {
+                context.currentPlayer.setPosition((int)(seconds * 1000));
             }
         }
     }
@@ -506,6 +515,10 @@ public class StreamingPlaybackService implements PlaybackService {
                 prefetchNextTrackAudio();
                 cancelScheduledPausedSleep();
                 precacheTrackMetadata(context.currentIndex, PRECACHE_METADATA_SIZE);
+                break;
+
+            case Buffering:
+                setState(PlaybackState.Buffering);
                 break;
 
             case Paused:

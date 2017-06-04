@@ -94,6 +94,7 @@ public class Messages {
         String LIMIT = "limit";
         String INDEX = "index";
         String DELTA = "delta";
+        String POSITION = "position";
         String VALUE = "value";
         String FILTER = "filter";
         String RELATIVE = "relative";

@@ -19,9 +19,10 @@ import io.casey.musikcube.remote.util.NetworkUtil;
 import io.casey.musikcube.remote.websocket.Prefs;
 
 public class StreamProxy {
-    private static final long BYTES_PER_MEGABYTE = 1048576L;
-    private static final long BYTES_PER_GIGABYTE = 1073741824L;
-    private static final Map<Integer, Long> CACHE_SETTING_TO_BYTES;
+    public static final boolean ENABLED = true;
+    public static final long BYTES_PER_MEGABYTE = 1048576L;
+    public static final long BYTES_PER_GIGABYTE = 1073741824L;
+    public static final Map<Integer, Long> CACHE_SETTING_TO_BYTES;
     private static final FileNameGenerator DEFAULT_FILENAME_GENERATOR = new Md5FileNameGenerator();
 
     static {
@@ -105,7 +106,7 @@ public class StreamProxy {
 
     public static synchronized String getProxyUrl(final Context context, final String url) {
         init(context);
-        return INSTANCE.proxy.getProxyUrl(url);
+        return ENABLED ? INSTANCE.proxy.getProxyUrl(url) : url;
     }
 
     public static synchronized void reload() {

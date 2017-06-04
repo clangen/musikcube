@@ -26,37 +26,6 @@
                 android:layout_width="0dp"
                 android:layout_height="2dp" />
 
-            <FrameLayout
-                android:background="@drawable/playback_button"
-                android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
-                    android:id="@+id/current_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:gravity="left"
-                    android:text="0:00"/>
-
-                <TextView
-                    android:id="@+id/total_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="right"
-                    android:gravity="right"
-                    android:text="0:00"/>
-
-            </FrameLayout>
-
-            <android.support.v4.widget.Space
-                android:layout_width="0dp"
-                android:layout_height="2dp" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -155,55 +124,39 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
+                android:background="@drawable/playback_button"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:layout_marginTop="2dp"
-                android:orientation="horizontal">
+                android:clipToPadding="false"
+                android:clipChildren="false"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-                <io.casey.musikcube.remote.ui.view.LongPressTextView
-                    style="@style/PlaybackButton"
-                    android:layout_weight="1.0"
-                    android:id="@+id/button_vol_down"
+                <TextView
+                    android:id="@+id/current_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="48dp"
+                    android:gravity="center"
+                    android:text="0:00"/>
+
+                <SeekBar
+                    android:id="@+id/seekbar"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/button_vol_down"/>
+                    android:layout_gravity="center"
+                    android:layout_weight="1.0"/>
 
-                <android.support.v4.widget.Space
-                    android:layout_width="2dp"
-                    android:layout_height="0dp" />
-
-                <io.casey.musikcube.remote.ui.view.LongPressTextView
-                    style="@style/PlaybackButton"
-                    android:layout_weight="1.0"
-                    android:id="@+id/button_seek_back"
-                    android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/total_time"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/button_seek_back"/>
-
-                <android.support.v4.widget.Space
-                    android:layout_width="2dp"
-                    android:layout_height="0dp" />
-
-                <io.casey.musikcube.remote.ui.view.LongPressTextView
-                    style="@style/PlaybackButton"
-                    android:layout_weight="1.0"
-                    android:id="@+id/button_seek_forward"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/button_seek_forward"/>
-
-                <android.support.v4.widget.Space
-                    android:layout_width="2dp"
-                    android:layout_height="0dp" />
-
-                <io.casey.musikcube.remote.ui.view.LongPressTextView
-                    style="@style/PlaybackButton"
-                    android:layout_weight="1.0"
-                    android:id="@+id/button_vol_up"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/button_vol_up"/>
+                    android:minWidth="48dp"
+                    android:gravity="center"
+                    android:text="0:00"/>
 
             </LinearLayout>
 

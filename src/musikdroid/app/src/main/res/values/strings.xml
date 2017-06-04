@@ -54,6 +54,8 @@
     <string name="menu_playlists">playlists</string>
     <string name="menu_remote_toggle">remote playback</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
+    <string name="snackbar_streaming_enabled">switched to streaming mode</string>
+    <string name="snackbar_remote_enabled">switched to remote control mode</string>
     <string name="settings_playback_mode">playback mode:</string>
     <string name="settings_transcoder_bitrate">streaming downsampler bitrate:</string>
     <string name="settings_cache_size">streaming disk cache size:</string>

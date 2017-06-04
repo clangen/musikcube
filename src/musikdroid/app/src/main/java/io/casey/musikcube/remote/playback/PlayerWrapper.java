@@ -1,14 +1,14 @@
 package io.casey.musikcube.remote.playback;
 
-import android.util.Log;
-
 import java.util.HashSet;
 import java.util.Set;
 
 import io.casey.musikcube.remote.util.Preconditions;
 
 public abstract class PlayerWrapper {
-    private static final String TAG = "MediaPlayerWrapper";
+    private enum Type { MediaPlayer, ExoPlayer }
+
+    private static final Type TYPE = Type.ExoPlayer;
     private static final float DUCK_COEF = 0.2f; /* volume = 20% when ducked */
     private static final float DUCK_NONE = -1.0f;
 
@@ -17,6 +17,7 @@ public abstract class PlayerWrapper {
         Preparing,
         Prepared,
         Playing,
+        Buffering,
         Paused,
         Error,
         Finished,
@@ -92,8 +93,9 @@ public abstract class PlayerWrapper {
     }
 
     public static PlayerWrapper newInstance() {
-        //return new MediaPlayerWrapper();
-        return new ExoPlayerWrapper();
+        return TYPE == Type.ExoPlayer
+            ? new ExoPlayerWrapper()
+            : new MediaPlayerWrapper();
     }
 
     protected static void addActivePlayer(final PlayerWrapper player) {

@@ -1,7 +1,9 @@
 package io.casey.musikcube.remote.playback;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.Uri;
+import android.util.Base64;
 
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -9,6 +11,7 @@ import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
@@ -24,10 +27,19 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
+import java.io.File;
+
 import io.casey.musikcube.remote.Application;
+import io.casey.musikcube.remote.util.NetworkUtil;
 import io.casey.musikcube.remote.util.Preconditions;
+import io.casey.musikcube.remote.websocket.Prefs;
+import okhttp3.Cache;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 
 public class ExoPlayerWrapper extends PlayerWrapper {
+    private static OkHttpClient audioStreamHttpClient = null;
+
     private DataSource.Factory datasources;
     private ExtractorsFactory extractors;
     private MediaSource source;
@@ -35,7 +47,56 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     private boolean prefetch;
     private Context context;
     private long lastPosition = -1;
-    private String uri, proxyUri;
+    private String originalUri, resolvedUri;
+
+    private void initHttpClient(final String uri) {
+        if (StreamProxy.ENABLED) {
+            return;
+        }
+
+        synchronized (ExoPlayerWrapper.class) {
+            if (audioStreamHttpClient == null) {
+                final SharedPreferences prefs = Application.getInstance()
+                    .getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
+
+                final File path = new File(context.getExternalCacheDir(), "audio");
+
+                int diskCacheIndex = prefs.getInt(
+                    Prefs.Key.DISK_CACHE_SIZE_INDEX, Prefs.Default.DISK_CACHE_SIZE_INDEX);
+
+                if (diskCacheIndex < 0 || diskCacheIndex > StreamProxy.CACHE_SETTING_TO_BYTES.size()) {
+                    diskCacheIndex = 0;
+                }
+
+                final OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                    .cache(new Cache(path, StreamProxy.CACHE_SETTING_TO_BYTES.get(diskCacheIndex)))
+                    .addInterceptor((chain) -> {
+                        Request request = chain.request();
+                        final String userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD);
+                        final String encoded = Base64.encodeToString(userPass.getBytes(), Base64.NO_WRAP);
+                        request = request.newBuilder().addHeader("Authorization", "Basic " + encoded).build();
+                        return chain.proceed(request);
+                    });
+
+                if (prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
+                    NetworkUtil.disableCertificateValidation(builder);
+                }
+
+                audioStreamHttpClient = builder.build();
+            }
+        }
+
+        if (uri.startsWith("http")) {
+            this.datasources = new OkHttpDataSourceFactory(
+                audioStreamHttpClient,
+                Util.getUserAgent(context, "musikdroid"),
+                new DefaultBandwidthMeter());
+        }
+        else {
+            this.datasources = new DefaultDataSourceFactory(
+                context, Util.getUserAgent(context, "musikdroid"));
+        }
+    }
 
     public ExoPlayerWrapper() {
         this.context = Application.getInstance();
@@ -53,9 +114,10 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         Preconditions.throwIfNotOnMainThread();
 
         if (!dead()) {
-            this.uri = uri;
-            this.proxyUri = StreamProxy.getProxyUrl(context, uri);
-            this.source = new ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null);
+            initHttpClient(uri);
+            this.originalUri = uri;
+            this.resolvedUri = StreamProxy.getProxyUrl(context, uri);
+            this.source = new ExtractorMediaSource(Uri.parse(resolvedUri), datasources, extractors, null, null);
             this.player.setPlayWhenReady(true);
             this.player.prepare(this.source);
             addActivePlayer(this);
@@ -68,10 +130,11 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         Preconditions.throwIfNotOnMainThread();
 
         if (!dead()) {
-            this.uri = uri;
+            initHttpClient(uri);
+            this.originalUri = uri;
             this.prefetch = true;
-            this.proxyUri = StreamProxy.getProxyUrl(context, uri);
-            this.source = new ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null);
+            this.resolvedUri = StreamProxy.getProxyUrl(context, uri);
+            this.source = new ExtractorMediaSource(Uri.parse(resolvedUri), datasources, extractors, null, null);
             this.player.setPlayWhenReady(false);
             this.player.prepare(this.source);
             addActivePlayer(this);
@@ -119,6 +182,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         this.lastPosition = -1;
         if (this.player.getPlaybackState() != ExoPlayer.STATE_IDLE) {
             if (this.player.isCurrentWindowSeekable()) {
+                this.lastPosition = millis;
                 this.player.seekTo(millis);
             }
         }
@@ -196,7 +260,10 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
             Preconditions.throwIfNotOnMainThread();
 
-            if (playbackState == ExoPlayer.STATE_READY) {
+            if (playbackState == ExoPlayer.STATE_BUFFERING) {
+                setState(State.Buffering);
+            }
+            else if (playbackState == ExoPlayer.STATE_READY) {
                 if (dead()) {
                     dispose();
                 }

@@ -32,8 +32,10 @@ public interface PlaybackService {
 
     void volumeUp();
     void volumeDown();
+
     void seekForward();
     void seekBackward();
+    void seekTo(double seconds);
 
     int getQueueCount();
     int getQueuePosition();
