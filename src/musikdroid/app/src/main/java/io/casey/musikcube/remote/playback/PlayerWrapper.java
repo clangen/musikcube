@@ -122,6 +122,7 @@ public abstract class PlayerWrapper {
     public abstract void updateVolume();
     public abstract void setNextMediaPlayer(final PlayerWrapper wrapper);
     public abstract void dispose();
+    public abstract int getBufferedPercent();
 
     public void setOnStateChangedListener(OnStateChangedListener listener) {
         Preconditions.throwIfNotOnMainThread();

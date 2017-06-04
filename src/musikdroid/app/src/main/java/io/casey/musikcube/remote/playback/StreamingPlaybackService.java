@@ -417,6 +417,15 @@ public class StreamingPlaybackService implements PlaybackService {
     }
 
     @Override
+    public double getBufferedTime() {
+        if (context.currentPlayer != null) {
+            float percent = (float) context.currentPlayer.getBufferedPercent() / 100.0f;
+            return percent * (float) context.currentPlayer.getDuration() / 1000.0f; /* ms -> sec */
+        }
+        return 0;
+    }
+
+    @Override
     public TrackListSlidingWindow.QueryFactory getPlaylistQueryFactory() {
         return this.queryFactory;
     }

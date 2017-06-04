@@ -307,6 +307,11 @@ public class RemotePlaybackService implements PlaybackService {
     }
 
     @Override
+    public double getBufferedTime() {
+        return getDuration();
+    }
+
+    @Override
     public String getTrackString(String key, String defaultValue) {
         if (track.has(key)) {
             return track.optString(key, defaultValue);

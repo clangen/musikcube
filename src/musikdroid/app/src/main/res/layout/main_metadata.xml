@@ -12,55 +12,61 @@
         android:scaleType="centerCrop"/>
 
     <LinearLayout
-        android:id="@+id/main_track_metadata_with_art"
-        android:background="@color/main_playback_metadata"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:orientation="vertical"
-        android:paddingLeft="24dp"
-        android:paddingRight="24dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp">
+        android:orientation="vertical">
 
         <ProgressBar
-            android:id="@+id/with_art_buffering"
+            android:id="@+id/buffering"
             style="?android:attr/progressBarStyleSmall"
-            android:layout_marginTop="2dp"
+            android:padding="8dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"/>
 
-        <TextView
-            style="@style/LightDropShadow"
-            android:id="@+id/with_art_track_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/main_track_metadata_with_art"
+            android:background="@color/main_playback_metadata"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:textColor="@color/theme_green"
-            android:text="-"/>
+            android:orientation="vertical"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
 
-        <TextView
-            style="@style/LightDropShadow"
-            android:id="@+id/with_art_artist_and_album"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:textColor="@color/theme_yellow"
-            android:text="-"/>
+            <TextView
+                style="@style/LightDropShadow"
+                android:id="@+id/with_art_track_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_green"
+                android:text="-"/>
 
-        <TextView
-            style="@style/LightDropShadow"
-            android:id="@+id/with_art_volume"
-            android:textSize="@dimen/text_size_small"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_gravity="center"
-            android:layout_marginBottom="2dp"
-            android:text=""/>
+            <TextView
+                style="@style/LightDropShadow"
+                android:id="@+id/with_art_artist_and_album"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:textColor="@color/theme_yellow"
+                android:text="-"/>
+
+            <TextView
+                style="@style/LightDropShadow"
+                android:id="@+id/with_art_volume"
+                android:textSize="@dimen/text_size_small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_marginBottom="2dp"
+                android:text=""/>
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -73,14 +79,6 @@
         android:paddingRight="24dp"
         android:paddingTop="6dp"
         android:paddingBottom="6dp">
-
-        <ProgressBar
-            android:id="@+id/buffering"
-            style="?android:attr/progressBarStyleSmall"
-            android:layout_marginTop="2dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"/>
 
         <TextView
             android:id="@+id/track_title"

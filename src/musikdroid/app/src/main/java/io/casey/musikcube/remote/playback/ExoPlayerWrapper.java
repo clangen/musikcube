@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Base64;
 
+import com.danikula.videocache.CacheListener;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -40,6 +41,7 @@ import okhttp3.Request;
 public class ExoPlayerWrapper extends PlayerWrapper {
     private static OkHttpClient audioStreamHttpClient = null;
 
+    private final SharedPreferences prefs;
     private DataSource.Factory datasources;
     private ExtractorsFactory extractors;
     private MediaSource source;
@@ -47,7 +49,9 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     private boolean prefetch;
     private Context context;
     private long lastPosition = -1;
+    private int percentAvailable = 0;
     private String originalUri, resolvedUri;
+    private boolean transcoding;
 
     private void initHttpClient(final String uri) {
         if (StreamProxy.ENABLED) {
@@ -56,9 +60,6 @@ public class ExoPlayerWrapper extends PlayerWrapper {
 
         synchronized (ExoPlayerWrapper.class) {
             if (audioStreamHttpClient == null) {
-                final SharedPreferences prefs = Application.getInstance()
-                    .getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
-
                 final File path = new File(context.getExternalCacheDir(), "audio");
 
                 int diskCacheIndex = prefs.getInt(
@@ -107,6 +108,8 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         this.extractors = new DefaultExtractorsFactory();
         this.player.addListener(eventListener);
         this.datasources = new DefaultDataSourceFactory(context, Util.getUserAgent(context, "musikdroid"));
+        this.prefs = Application.getInstance().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
+        this.transcoding = this.prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0;
     }
 
     @Override
@@ -117,6 +120,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
             initHttpClient(uri);
             this.originalUri = uri;
             this.resolvedUri = StreamProxy.getProxyUrl(context, uri);
+            addCacheListener();
             this.source = new ExtractorMediaSource(Uri.parse(resolvedUri), datasources, extractors, null, null);
             this.player.setPlayWhenReady(true);
             this.player.prepare(this.source);
@@ -134,6 +138,7 @@ public class ExoPlayerWrapper extends PlayerWrapper {
             this.originalUri = uri;
             this.prefetch = true;
             this.resolvedUri = StreamProxy.getProxyUrl(context, uri);
+            addCacheListener();
             this.source = new ExtractorMediaSource(Uri.parse(resolvedUri), datasources, extractors, null, null);
             this.player.setPlayWhenReady(false);
             this.player.prepare(this.source);
@@ -182,8 +187,20 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         this.lastPosition = -1;
         if (this.player.getPlaybackState() != ExoPlayer.STATE_IDLE) {
             if (this.player.isCurrentWindowSeekable()) {
-                this.lastPosition = millis;
-                this.player.seekTo(millis);
+                long offset = millis;
+
+                /* if we're transcoding we don't want to seek arbitrarily because it may put
+                a lot of pressure on the backend. just allow seeking up to what we currently
+                have buffered! */
+                if (transcoding && percentAvailable != 100) {
+                    /* give ourselves 2% wiggle room! */
+                    float percent = (float) Math.max(0, percentAvailable - 2) / 100.0f;
+                    long totalMs = this.player.getDuration();
+                    long available = (long) ((float) totalMs * percent);
+                    offset = Math.min(millis, available);
+                }
+
+                this.player.seekTo(offset);
             }
         }
     }
@@ -191,21 +208,18 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     @Override
     public int getPosition() {
         Preconditions.throwIfNotOnMainThread();
-
         return (int) this.player.getCurrentPosition();
     }
 
     @Override
     public int getDuration() {
         Preconditions.throwIfNotOnMainThread();
-
         return (int) this.player.getDuration();
     }
 
     @Override
     public void updateVolume() {
         Preconditions.throwIfNotOnMainThread();
-
         this.player.setVolume(getGlobalVolume());
     }
 
@@ -215,12 +229,18 @@ public class ExoPlayerWrapper extends PlayerWrapper {
     }
 
     @Override
+    public int getBufferedPercent() {
+        return transcoding ? percentAvailable : 100;
+    }
+
+    @Override
     public void dispose() {
         Preconditions.throwIfNotOnMainThread();
 
         if (!dead()) {
             setState(State.Killing);
             removeActivePlayer(this);
+            removeCacheListener();
             if (this.player != null) {
                 this.player.setPlayWhenReady(false);
                 this.player.removeListener(eventListener);
@@ -240,6 +260,31 @@ public class ExoPlayerWrapper extends PlayerWrapper {
         final State state = getState();
         return (state == State.Killing || state == State.Disposed);
     }
+
+    private void addCacheListener() {
+        if (StreamProxy.ENABLED) {
+            if (StreamProxy.isCached(this.originalUri)) {
+                percentAvailable = 100;
+            }
+            else {
+                StreamProxy.registerCacheListener(this.cacheListener, this.originalUri);
+            }
+        }
+        else {
+            percentAvailable = 100;
+        }
+    }
+
+    private void removeCacheListener() {
+        if (StreamProxy.ENABLED) {
+            StreamProxy.unregisterCacheListener(this.cacheListener);
+        }
+    }
+
+    private CacheListener cacheListener = (file, uri, percent) -> {
+        //Log.e("CLCLCL", String.format("%d", percent));
+        percentAvailable = percent;
+    };
 
     private ExoPlayer.EventListener eventListener = new ExoPlayer.EventListener() {
         @Override

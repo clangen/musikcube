@@ -104,6 +104,10 @@ public class StreamProxy {
         }
     }
 
+    public static synchronized boolean isCached(final String url) {
+        return INSTANCE != null && INSTANCE.proxy.isCached(url);
+    }
+
     public static synchronized String getProxyUrl(final Context context, final String url) {
         init(context);
         return ENABLED ? INSTANCE.proxy.getProxyUrl(url) : url;

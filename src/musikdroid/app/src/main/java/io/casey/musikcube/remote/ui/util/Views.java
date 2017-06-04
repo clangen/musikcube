@@ -13,7 +13,6 @@ import android.support.v7.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewPropertyAnimator;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
@@ -120,12 +119,6 @@ public final class Views {
     public static void setTextAndMoveCursorToEnd(final EditText editText, final String text) {
         editText.setText(text);
         editText.setSelection(editText.getText().length());
-    }
-
-    public static ViewPropertyAnimator animateAlpha(final View view, final float value) {
-        final ViewPropertyAnimator animator = view.animate().alpha(value).setDuration(300);
-        animator.start();
-        return animator;
     }
 
     public static void enableUpNavigation(final AppCompatActivity activity) {

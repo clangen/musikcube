@@ -43,6 +43,7 @@ public interface PlaybackService {
     double getVolume();
     double getDuration();
     double getCurrentTime();
+    double getBufferedTime();
 
     PlaybackState getPlaybackState();
 

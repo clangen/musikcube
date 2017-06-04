@@ -25,6 +25,7 @@ public class MediaPlayerWrapper extends PlayerWrapper {
     private boolean prefetching;
     private Context context = Application.getInstance();
     private SharedPreferences prefs;
+    private int bufferedPercent;
 
     public MediaPlayerWrapper() {
         this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
@@ -51,6 +52,7 @@ public class MediaPlayerWrapper extends PlayerWrapper {
             player.setOnPreparedListener(onPrepared);
             player.setOnErrorListener(onError);
             player.setOnCompletionListener(onCompleted);
+            player.setOnBufferingUpdateListener(onBuffering);
             player.setWakeMode(Application.getInstance(), PowerManager.PARTIAL_WAKE_LOCK);
             player.prepareAsync();
         }
@@ -149,6 +151,11 @@ public class MediaPlayerWrapper extends PlayerWrapper {
         }
     }
 
+    @Override
+    public int getBufferedPercent() {
+        return bufferedPercent;
+    }
+
     private boolean isPreparedOrPlaying() {
         final State state = getState();
         return state == State.Playing || state == State.Prepared;
@@ -227,5 +234,9 @@ public class MediaPlayerWrapper extends PlayerWrapper {
     private MediaPlayer.OnCompletionListener onCompleted = (mp) -> {
         setState(State.Finished);
         dispose();
+    };
+
+    private MediaPlayer.OnBufferingUpdateListener onBuffering = (mp, percent) -> {
+        bufferedPercent = percent;
     };
 }

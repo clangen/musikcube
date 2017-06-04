@@ -16,7 +16,6 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewPropertyAnimator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -35,10 +34,10 @@ import io.casey.musikcube.remote.playback.Metadata;
 import io.casey.musikcube.remote.playback.PlaybackService;
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
 import io.casey.musikcube.remote.playback.PlaybackState;
+import io.casey.musikcube.remote.playback.StreamingPlaybackService;
 import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity;
 import io.casey.musikcube.remote.ui.activity.TrackListActivity;
 import io.casey.musikcube.remote.ui.model.AlbumArtModel;
-import io.casey.musikcube.remote.ui.util.Views;
 import io.casey.musikcube.remote.util.Strings;
 import io.casey.musikcube.remote.websocket.Messages;
 import io.casey.musikcube.remote.websocket.Prefs;
@@ -55,10 +54,9 @@ public class MainMetadataView extends FrameLayout {
     private TextView title, artist, album, volume;
     private TextView titleWithArt, artistAndAlbumWithArt, volumeWithArt;
     private View mainTrackMetadataWithAlbumArt, mainTrackMetadataNoAlbumArt;
-    private View buffering, bufferingWithArt;
+    private View buffering;
     private ImageView albumArtImageView;
 
-    private ViewPropertyAnimator metadataAnim1, metadataAnim2;
     private enum DisplayMode { Artwork, NoArtwork, Stopped }
     private AlbumArtModel albumArtModel = AlbumArtModel.empty();
     private DisplayMode lastDisplayMode = DisplayMode.Stopped;
@@ -107,23 +105,34 @@ public class MainMetadataView extends FrameLayout {
             final PlaybackService playback = getPlaybackService();
 
             final boolean buffering = playback.getPlaybackState() == PlaybackState.Buffering;
+            final boolean streaming = playback instanceof StreamingPlaybackService;
 
             final String artist = playback.getTrackString(Metadata.Track.ARTIST, "");
             final String album = playback.getTrackString(Metadata.Track.ALBUM, "");
             final String title = playback.getTrackString(Metadata.Track.TITLE, "");
-            final String volume = getString(R.string.status_volume, Math.round(playback.getVolume() * 100));
+
+            /* we don't display the volume amount when we're streaming -- the system has
+            overlays for drawing volume. */
+            if (streaming) {
+                this.volume.setVisibility(View.GONE);
+                this.volumeWithArt.setVisibility(View.GONE);
+            }
+            else {
+                final String volume = getString(R.string.status_volume, Math.round(playback.getVolume() * 100));
+                this.volume.setVisibility(View.VISIBLE);
+                this.volumeWithArt.setVisibility(View.VISIBLE);
+                this.volume.setText(volume);
+                this.volumeWithArt.setText(volume);
+            }
 
             this.title.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
             this.artist.setText(Strings.empty(artist) ? getString(buffering ? R.string.buffering : R.string.unknown_artist) : artist);
             this.album.setText(Strings.empty(album) ? getString(buffering ? R.string.buffering : R.string.unknown_album) : album);
-            this.volume.setText(volume);
 
             this.rebindAlbumArtistWithArtTextView(playback);
             this.titleWithArt.setText(Strings.empty(title) ? getString(buffering ? R.string.buffering : R.string.unknown_title) : title);
-            this.volumeWithArt.setText(volume);
 
             this.buffering.setVisibility(buffering ? View.VISIBLE : View.GONE);
-            this.bufferingWithArt.setVisibility(buffering ? View.VISIBLE : View.GONE);
 
             boolean albumArtEnabledInSettings = this.prefs.getBoolean(
                 Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED);
@@ -131,7 +140,8 @@ public class MainMetadataView extends FrameLayout {
             if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
                 this.albumArtModel = AlbumArtModel.empty();
                 setMetadataDisplayMode(DisplayMode.NoArtwork);
-            } else {
+            }
+            else {
                 if (!this.albumArtModel.is(artist, album)) {
                     this.albumArtModel.destroy();
 
@@ -158,24 +168,19 @@ public class MainMetadataView extends FrameLayout {
     private void setMetadataDisplayMode(DisplayMode mode) {
         lastDisplayMode = mode;
 
-        if (metadataAnim1 != null) {
-            metadataAnim1.cancel();
-            metadataAnim2.cancel();
-        }
-
         if (mode == DisplayMode.Stopped) {
             albumArtImageView.setImageDrawable(null);
-            metadataAnim1 = Views.animateAlpha(mainTrackMetadataWithAlbumArt, 0.0f);
-            metadataAnim2 = Views.animateAlpha(mainTrackMetadataNoAlbumArt, 0.0f);
+            mainTrackMetadataWithAlbumArt.setVisibility(View.GONE);
+            mainTrackMetadataNoAlbumArt.setVisibility(View.GONE);
         }
         else if (mode == DisplayMode.Artwork) {
-            metadataAnim1 = Views.animateAlpha(mainTrackMetadataWithAlbumArt, 1.0f);
-            metadataAnim2 = Views.animateAlpha(mainTrackMetadataNoAlbumArt, 0.0f);
+            mainTrackMetadataWithAlbumArt.setVisibility(View.VISIBLE);
+            mainTrackMetadataNoAlbumArt.setVisibility(View.GONE);
         }
         else {
             albumArtImageView.setImageDrawable(null);
-            metadataAnim1 = Views.animateAlpha(mainTrackMetadataWithAlbumArt, 0.0f);
-            metadataAnim2 = Views.animateAlpha(mainTrackMetadataNoAlbumArt, 1.0f);
+            mainTrackMetadataWithAlbumArt.setVisibility(View.GONE);
+            mainTrackMetadataNoAlbumArt.setVisibility(View.VISIBLE);
         }
     }
 
@@ -326,15 +331,10 @@ public class MainMetadataView extends FrameLayout {
         this.titleWithArt = (TextView) findViewById(R.id.with_art_track_title);
         this.artistAndAlbumWithArt = (TextView) findViewById(R.id.with_art_artist_and_album);
         this.volumeWithArt = (TextView) findViewById(R.id.with_art_volume);
-        this.bufferingWithArt = findViewById(R.id.with_art_buffering);
 
         this.mainTrackMetadataWithAlbumArt = findViewById(R.id.main_track_metadata_with_art);
         this.mainTrackMetadataNoAlbumArt = findViewById(R.id.main_track_metadata_without_art);
         this.albumArtImageView = (ImageView) findViewById(R.id.album_art);
-
-        /* these will get faded in as appropriate */
-        this.mainTrackMetadataNoAlbumArt.setAlpha(0.0f);
-        this.mainTrackMetadataWithAlbumArt.setAlpha(0.0f);
 
         this.album.setOnClickListener((view) -> navigateToCurrentAlbum());
         this.artist.setOnClickListener((view) -> navigateToCurrentArtist());
