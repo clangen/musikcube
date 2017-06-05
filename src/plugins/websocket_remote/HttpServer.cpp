@@ -132,6 +132,10 @@ static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) 
 static void fileFreeCallback(void *cls) {
     Range* range = static_cast<Range*>(cls);
     if (range->file) {
+#ifdef ENABLE_DEBUG
+        std::cerr << "******** REQUEST CLOSE: " << range->file << " ********\n\n";
+#endif
+
         range->file->Destroy();
         range->file = nullptr;
     }
@@ -146,7 +150,7 @@ static Range* parseRange(IDataStream* file, const char* range) {
     result->file = file;
     result->total = size;
     result->from = 0;
-    result->to = (size == 0) ? 0 : size - 1;
+    result->to = (size <= 0) ? 0 : size - 1;
 
     if (range) {
         std::string str(range);
@@ -166,8 +170,10 @@ static Range* parseRange(IDataStream* file, const char* range) {
                         to = std::stoul(boost::algorithm::trim_copy(parts[1]));
                     }
 
-                    result->from = from;
-                    result->to = (to == 0) ? 0 : to - 1;
+                    if (to > from) {
+                        result->from = from;
+                        result->to = (to == 0) ? 0 : to - 1;
+                    }
                 }
                 catch (...) {
                     /* return false below */
@@ -372,7 +378,7 @@ int HttpServer::HandleRequest(
                         Range* range = parseRange(file, rangeVal);
 
 #ifdef ENABLE_DEBUG
-                        std::cerr << "potential response hader : " << range->HeaderValue() << std::endl;
+                        std::cerr << "potential response header : " << range->HeaderValue() << std::endl;
 #endif
 
                         /* ehh... */
@@ -380,7 +386,6 @@ int HttpServer::HandleRequest(
 
 #ifdef ENABLE_DEBUG
                         std::cerr << "on demand? " << isOnDemandTranscoder << std::endl;
-                        std::cerr << "file: " << file << std::endl;
 #endif
 
                         /* gotta be careful with request ranges if we're transcoding. don't
@@ -439,7 +444,8 @@ int HttpServer::HandleRequest(
                                 &fileFreeCallback);
 
 #ifdef ENABLE_DEBUG
-                            std::cerr << "response length: " << length << "\n";
+                            std::cerr << "response length: " << ((length == 0) ? 0 : length + 1) << "\n";
+                            std::cerr << "id: " << file << "\n";
 #endif
 
                             if (response) {
@@ -471,7 +477,7 @@ int HttpServer::HandleRequest(
                                         status = MHD_HTTP_PARTIAL_CONTENT;
 #ifdef ENABLE_DEBUG
                                         if (rangeVal) {
-                                            std::cerr << "selected partial content! " << range->HeaderValue() << "\n";
+                                            std::cerr << "actual range header: " << range->HeaderValue() << "\n";
                                         }
 #endif
                                     }
@@ -500,7 +506,7 @@ int HttpServer::HandleRequest(
     }
 
 #ifdef ENABLE_DEBUG
-    std::cerr << "******** REQUEST END ********\n\n";
+    std::cerr << "*******************************\n\n";
 #endif
 
     return ret;

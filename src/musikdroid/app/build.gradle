@@ -52,6 +52,7 @@ dependencies {
     compile 'com.google.android.exoplayer:exoplayer:r2.4.1'
     compile 'com.google.android.exoplayer:extension-okhttp:r2.4.1'
     compile 'com.github.pluscubed:recycler-fast-scroll:0.3.2@aar'
+    compile 'com.facebook.stetho:stetho:1.5.0'
 
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support:recyclerview-v7:25.3.1'
