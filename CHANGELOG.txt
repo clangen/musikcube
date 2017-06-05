@@ -1,6 +1,31 @@
+0.16.0
+
+user-facing:
+* added a toggle in the `musikdroid` toolbar for quickly switching between
+  remote and streaming mode
+* removed volume and seek buttons; replaced with a seekbar, current and
+  total time indicators.
+* revamped loading indicators to be less jarring
+
+low-level:
+
+* integrated with a customized version of the `AndroidVideoCache` library to
+  (hopefully) improve caching reliability. 
+* improved battery usage in `musikdroid`'s `SystemService`
+* fixed bug where `websocket_remote` was not letting clients know when seeking
+  has occurred.
+* deliberately under-estimate calculated `Content-Length` header when doing
+  on-demand transcoding. http clients seem to be more ok with this, as compared
+  to over-estimating.
+* fixed a bug where `websocket_remote` audio server would incorrectly return a
+  216 status instead of a 200, confusing clients
+
+--------------------------------------------------------------------------------
+
 0.15.0
 
 user-facing:
+
 * added `server settings` configuration panel to the settings screen
 * added `minimize to tray` and `start minimized` options to the windows build
 * a handful of small `musikdroid` bug fixes, mostly related to audio focus
@@ -8,6 +33,7 @@ user-facing:
 * documented the `websocket_remote` api on the wiki
 
 low-level:
+
 * added authentication support to the the `websocket_remote` audio server
 * found and fixed a handful of missing `websocket_remote` metadata responses
 * added the ability to hot-reload plugins
