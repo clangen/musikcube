@@ -3,14 +3,14 @@ apply plugin: 'me.tatarka.retrolambda'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "io.casey.musikcube.remote"
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 10
-        versionName "0.8"
+        versionCode 11
+        versionName "0.9"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 

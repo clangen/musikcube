@@ -361,6 +361,14 @@ public class MainActivity extends WebSocketActivityBase {
         seekbar.setProgress((int) current);
         seekbar.setSecondaryProgress((int) playback.getBufferedTime());
 
+        if (playback.getPlaybackState() == PlaybackState.Paused) {
+            final boolean visible = currentTime.getVisibility() == View.VISIBLE;
+            currentTime.setVisibility(visible ? View.INVISIBLE : View.VISIBLE);
+        }
+        else {
+            currentTime.setVisibility(View.VISIBLE);
+        }
+
         scheduleUpdateTime(false);
     };
 
