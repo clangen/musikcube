@@ -53,6 +53,7 @@ public class MainActivity extends WebSocketActivityBase {
     private View disconnectedOverlay;
     private SeekBar seekbar;
     private int seekbarValue = -1;
+    private int blink = 0;
 
     static {
         REPEAT_TO_STRING_ID = new HashMap<>();
@@ -361,13 +362,14 @@ public class MainActivity extends WebSocketActivityBase {
         seekbar.setProgress((int) current);
         seekbar.setSecondaryProgress((int) playback.getBufferedTime());
 
+        int currentTimeColor = R.color.theme_foreground;
         if (playback.getPlaybackState() == PlaybackState.Paused) {
-            final boolean visible = currentTime.getVisibility() == View.VISIBLE;
-            currentTime.setVisibility(visible ? View.INVISIBLE : View.VISIBLE);
+            currentTimeColor = ++blink % 2 == 0
+                ? R.color.theme_foreground
+                : R.color.theme_blink_foreground;
         }
-        else {
-            currentTime.setVisibility(View.VISIBLE);
-        }
+
+        currentTime.setTextColor(ContextCompat.getColor(this, currentTimeColor));
 
         scheduleUpdateTime(false);
     };

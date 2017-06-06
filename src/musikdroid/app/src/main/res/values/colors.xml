@@ -3,13 +3,13 @@
     <color name="color_primary">#44661f</color>
     <color name="color_primary_dark">#2c4214</color>
     <color name="color_accent">#d1ff9f</color>
-
     <color name="theme_red">#DC5256</color>
     <color name="theme_green">#A6E22E</color>
     <color name="theme_yellow">#E6DC74</color>
     <color name="theme_orange">#FF9620</color>
     <color name="theme_blue">#66D9EE</color>
     <color name="theme_disabled_foreground">#808080</color>
+    <color name="theme_blink_foreground">#606060</color>
     <color name="theme_foreground">#E6E6E6</color>
     <color name="theme_selected_background">#424238</color>
     <color name="theme_button_background">#303030</color>
