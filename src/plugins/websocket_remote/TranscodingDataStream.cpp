@@ -146,6 +146,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
     unsigned char* dst = (unsigned char*)buffer;
     bool hasBuffer = false;
 
+    /* init */
     if (this->decoder && !this->lame) {
         hasBuffer = this->decoder->GetBuffer(this->pcmBuffer);
         if (hasBuffer) {
@@ -180,6 +181,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
         hasBuffer = this->decoder->GetBuffer(this->pcmBuffer);
     }
 
+    /* done with spillover. read new data... */
     while (hasBuffer && bytesWritten < (size_t) bytesToRead) {
         /* calculated according to lame.h */
         size_t channels = pcmBuffer->Channels();
@@ -188,11 +190,9 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
 
         encodedBytes.realloc(requiredBytes);
 
-        /* encode PCM -> MP3 */
         int encodeCount = -1;
 
-        /* stereo is easy, just make sure we send to to the encoder as
-        interleaved! */
+        /* stereo */
         if (pcmBuffer->Channels() == 2) {
             encodeCount =
                 lame_encode_buffer_interleaved_ieee_float(
@@ -202,9 +202,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
                     encodedBytes.data,
                     encodedBytes.length);
         }
-        /* the non-stereo case needs to be downmuxed. our downmixing is simple,
-        we just use the stereo channels. in the case of mono, we duplicate the
-        to left and right */
+        /* non-stereo. convert to stereo! */
         else {
             downmix.realloc(numSamples * 2);
 
@@ -212,7 +210,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
             float* to = downmix.data;
 
             if (channels == 1) {
-                /* mono -> stereo */
+                /* mono: duplicate the channel to L and R */
                 for (size_t i = 0; i < numSamples; i++) {
                     *(to + 0) = *from;
                     *(to + 1) = *from;
@@ -221,7 +219,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
                 }
             }
             else {
-                /* 3+ channels -> stereo */
+                /* 3+ channels: only take the first two channels */
                 for (size_t i = 0; i < numSamples; i++) {
                     *(to + 0) = *(from + 0);
                     *(to + 1) = *(from + 1);
@@ -245,7 +243,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
 
         encodedBytes.length = (size_t)encodeCount;
 
-        /* if we got something, let's write it to the output buffer */
+        /* write to the output buffer */
         if (encodedBytes.length) {
             size_t toWrite = std::min(
                 encodedBytes.length,
@@ -271,7 +269,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
         }
 
         /* if we get here we still need to write some more data to
-        the output buffer. get our next buffer of MP3 data and go
+        the output buffer. get our next buffer of pcm data and go
         through the loop again. */
         hasBuffer =
             ((size_t) bytesToRead > bytesWritten) &&
