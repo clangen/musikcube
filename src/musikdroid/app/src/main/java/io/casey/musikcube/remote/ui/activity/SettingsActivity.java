@@ -22,8 +22,8 @@ import android.widget.Spinner;
 import java.util.Locale;
 
 import io.casey.musikcube.remote.R;
-import io.casey.musikcube.remote.playback.MediaPlayerWrapper;
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory;
+import io.casey.musikcube.remote.playback.PlayerWrapper;
 import io.casey.musikcube.remote.playback.StreamProxy;
 import io.casey.musikcube.remote.ui.util.Views;
 import io.casey.musikcube.remote.websocket.Prefs;
@@ -204,7 +204,7 @@ public class SettingsActivity extends AppCompatActivity {
             .apply();
 
         if (!softwareVolume.isChecked()) {
-            MediaPlayerWrapper.setGlobalVolume(1.0f);
+            PlayerWrapper.Companion.setVolume(1.0f);
         }
 
         if (wasStreaming && !isStreamingEnabled()) {

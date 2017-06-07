@@ -22,12 +22,13 @@ public class StreamProxy {
     public static final boolean ENABLED = true;
     public static final long BYTES_PER_MEGABYTE = 1048576L;
     public static final long BYTES_PER_GIGABYTE = 1073741824L;
+    public static final long MINIMUM_CACHE_SIZE_BYTES = BYTES_PER_MEGABYTE * 32;
     public static final Map<Integer, Long> CACHE_SETTING_TO_BYTES;
     private static final FileNameGenerator DEFAULT_FILENAME_GENERATOR = new Md5FileNameGenerator();
 
     static {
         CACHE_SETTING_TO_BYTES = new HashMap<>();
-        CACHE_SETTING_TO_BYTES.put(0, BYTES_PER_MEGABYTE * 32);
+        CACHE_SETTING_TO_BYTES.put(0, MINIMUM_CACHE_SIZE_BYTES);
         CACHE_SETTING_TO_BYTES.put(1, BYTES_PER_GIGABYTE / 2);
         CACHE_SETTING_TO_BYTES.put(2, BYTES_PER_GIGABYTE);
         CACHE_SETTING_TO_BYTES.put(3, BYTES_PER_GIGABYTE * 2);

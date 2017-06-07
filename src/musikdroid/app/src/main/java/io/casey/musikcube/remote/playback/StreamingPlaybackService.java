@@ -330,7 +330,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public double getVolume() {
         if (prefs.getBoolean(Prefs.Key.SOFTWARE_VOLUME, Prefs.Default.SOFTWARE_VOLUME)) {
-            return PlayerWrapper.getGlobalVolume();
+            return PlayerWrapper.Companion.getVolume();
         }
 
         return getSystemVolume();
@@ -374,7 +374,7 @@ public class StreamingPlaybackService implements PlaybackService {
     @Override
     public void toggleMute() {
         muted = !muted;
-        PlayerWrapper.setGlobalMute(muted);
+        PlayerWrapper.Companion.setMute(muted);
         notifyEventListeners();
     }
 
@@ -451,14 +451,14 @@ public class StreamingPlaybackService implements PlaybackService {
         }
 
         final boolean softwareVolume = prefs.getBoolean(Prefs.Key.SOFTWARE_VOLUME, Prefs.Default.SOFTWARE_VOLUME);
-        float current = softwareVolume ? PlayerWrapper.getGlobalVolume() : getSystemVolume();
+        float current = softwareVolume ? PlayerWrapper.Companion.getVolume() : getSystemVolume();
 
         current += delta;
         if (current > 1.0) current = 1.0f;
         if (current < 0.0) current = 0.0f;
 
         if (softwareVolume) {
-            PlayerWrapper.setGlobalVolume(current);
+            PlayerWrapper.Companion.setVolume(current);
         }
         else {
             final int actual = Math.round(current * getMaxSystemVolume());
@@ -699,7 +699,7 @@ public class StreamingPlaybackService implements PlaybackService {
 
             if (uri != null) {
                 this.context.reset(this.context.nextPlayer);
-                this.context.nextPlayer = PlayerWrapper.newInstance();
+                this.context.nextPlayer = PlayerWrapper.Companion.newInstance();
                 this.context.nextPlayer.setOnStateChangedListener(onNextPlayerStateChanged);
                 this.context.nextPlayer.prefetch(uri);
             }
@@ -792,7 +792,7 @@ public class StreamingPlaybackService implements PlaybackService {
 
                     final String uri = getUri(this.context.currentMetadata);
                     if (uri != null) {
-                        this.context.currentPlayer = PlayerWrapper.newInstance();
+                        this.context.currentPlayer = PlayerWrapper.Companion.newInstance();
                         this.context.currentPlayer.setOnStateChangedListener(onCurrentPlayerStateChanged);
                         this.context.currentPlayer.play(uri);
                     }
@@ -912,7 +912,7 @@ public class StreamingPlaybackService implements PlaybackService {
             case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
             case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE:
             case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
-                PlayerWrapper.unduck();
+                PlayerWrapper.Companion.unduck();
                 if (pausedByTransientLoss) {
                     pausedByTransientLoss = false;
                     resume();
@@ -934,7 +934,7 @@ public class StreamingPlaybackService implements PlaybackService {
                 break;
 
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                PlayerWrapper.duck();
+                PlayerWrapper.Companion.duck();
                 break;
         }
     };
