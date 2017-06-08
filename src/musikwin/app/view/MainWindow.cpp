@@ -53,7 +53,7 @@ class MainWindow::Win32MessageQueue : public MessageQueue {
             this->nextTimerTime = -1;
         }
 
-        virtual void Post(IMessagePtr message, int64 delayMs = 0) {
+        virtual void Post(IMessagePtr message, int64_t delayMs = 0) {
             MessageQueue::Post(message, delayMs);
             ::PostMessage(hwnd, WM_SCHEDULE_CORE_DISPATCH, 0, 0);
         }
@@ -64,17 +64,17 @@ class MainWindow::Win32MessageQueue : public MessageQueue {
         }
 
         void ScheduleNext() {
-            int64 now = duration_cast<milliseconds>(
+            int64_t now = duration_cast<milliseconds>(
                 system_clock::now().time_since_epoch()).count();
 
-            int64 next = this->GetNextMessageTime();
+            int64_t next = this->GetNextMessageTime();
 
             bool dispatch =
                 (nextTimerTime > 0 && next < this->nextTimerTime) ||
                 (next > 0 && nextTimerTime <= 0);
 
             if (dispatch) {
-                int64 delayMs = next - now;
+                int64_t delayMs = next - now;
                 if (delayMs > 0) {
                     ::SetTimer(hwnd, DISPATCH_TIMER_ID, (UINT)delayMs, nullptr);
                     this->nextTimerTime = next;
@@ -88,7 +88,7 @@ class MainWindow::Win32MessageQueue : public MessageQueue {
         }
 
     private:
-        int64 nextTimerTime;
+        int64_t nextTimerTime;
         HWND hwnd;
 };
 
