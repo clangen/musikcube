@@ -95,7 +95,7 @@ abstract class PlayerWrapper {
 
             if (preDuckGlobalVolume != DUCK_NONE) {
                 preDuckGlobalVolume = volume
-                volume = volume * DUCK_COEF
+                volume *= DUCK_COEF
             }
 
             if (volume != globalVolume) {

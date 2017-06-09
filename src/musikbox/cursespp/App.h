@@ -62,6 +62,7 @@ namespace cursespp {
 
 #ifdef WIN32
             void SetIcon(int resourceId);
+            void SetSingleInstanceId(const std::string& uniqueId);
 #endif
 
             void Run(ILayoutPtr layout);
@@ -110,6 +111,7 @@ namespace cursespp {
 
 #ifdef WIN32
             int iconId;
+            std::string uniqueId;
 #endif
     };
 }

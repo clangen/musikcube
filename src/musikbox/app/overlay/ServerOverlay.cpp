@@ -64,24 +64,27 @@ static const char* KEY_PASSWORD = "password";
 #define DEFAULT_HEIGHT 17
 #define DEFAULT_WIDTH 45
 
-#define STYLE_OVERLAY_LABEL(x) \
-    x->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+static void applyLabelOverlayStyle(TextLabel& label) {
+    label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+}
 
-#define STYLE_OVERLAY_CHECKBOX(x) \
-    x->SetContentColor(CURSESPP_OVERLAY_CONTENT); \
-    x->SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
+static void applyCheckboxOverlayStyle(Checkbox& cb) {
+    cb.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    cb.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
+}
 
-#define STYLE_OVERLAY_INPUT(x) \
-    if (x->GetStyle() == TextInput::StyleBox) { \
-        x->SetFrameColor(CURSESPP_OVERLAY_FRAME); \
-        x->SetContentColor(CURSESPP_OVERLAY_CONTENT); \
-        x->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME); \
-        x->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT); \
-    } \
-    else { \
-        x->SetContentColor(CURSESPP_OVERLAY_CONTENT); \
-        x->SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED); \
+static void applyInputOverlayStyle(TextInput& input) {
+    if (input.GetStyle() == TextInput::StyleBox) {
+        input.SetFrameColor(CURSESPP_OVERLAY_FRAME);
+        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+        input.SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
+        input.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
     }
+    else {
+        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+        input.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
+    }
+}
 
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
@@ -183,18 +186,18 @@ void ServerOverlay::InitViews() {
     this->pwInput.reset(new TextInput(TextInput::StyleLine, IInput::InputPassword));
 
     /* style 'em */
-    STYLE_OVERLAY_LABEL(this->titleLabel);
-    STYLE_OVERLAY_CHECKBOX(this->enableWssCb);
-    STYLE_OVERLAY_LABEL(this->wssPortLabel);
-    STYLE_OVERLAY_INPUT(this->wssPortInput);
-    STYLE_OVERLAY_CHECKBOX(this->enableHttpCb);
-    STYLE_OVERLAY_LABEL(this->httpPortLabel);
-    STYLE_OVERLAY_INPUT(this->httpPortInput);
-    STYLE_OVERLAY_CHECKBOX(this->enableSyncTransCb);
-    STYLE_OVERLAY_LABEL(this->transCacheLabel);
-    STYLE_OVERLAY_INPUT(this->transCacheInput);
-    STYLE_OVERLAY_LABEL(this->pwLabel);
-    STYLE_OVERLAY_INPUT(this->pwInput);
+    applyLabelOverlayStyle(*this->titleLabel);
+    applyCheckboxOverlayStyle(*this->enableWssCb);
+    applyLabelOverlayStyle(*this->wssPortLabel);
+    applyInputOverlayStyle(*this->wssPortInput);
+    applyCheckboxOverlayStyle(*this->enableHttpCb);
+    applyLabelOverlayStyle(*this->httpPortLabel);
+    applyInputOverlayStyle(*this->httpPortInput);
+    applyCheckboxOverlayStyle(*this->enableSyncTransCb);
+    applyLabelOverlayStyle(*this->transCacheLabel);
+    applyInputOverlayStyle(*this->transCacheInput);
+    applyLabelOverlayStyle(*this->pwLabel);
+    applyInputOverlayStyle(*this->pwInput);
 
     /* add 'em */
     this->AddWindow(this->titleLabel);

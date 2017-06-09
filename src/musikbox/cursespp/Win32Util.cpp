@@ -35,6 +35,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "Win32Util.h"
 #include <Windows.h>
 #include <Commctrl.h>
 #include <shellapi.h>
@@ -42,6 +43,7 @@
 #ifdef WIN32
 
 #define WM_TRAYICON (WM_USER + 2000)
+#define WM_SHOW_OTHER_INSTANCE (WM_USER + 2001)
 
 static std::basic_string<TCHAR> className = L"Curses_App";
 static HWND mainWindow = nullptr;
@@ -50,8 +52,10 @@ static std::unique_ptr<NOTIFYICONDATA> trayIcon;
 static bool minimizeToTray = false, minimizedToTray = false;
 static std::string appTitle;
 static HICON icon16 = nullptr, icon32 = nullptr;
+static HANDLE runningMutex;
+static DWORD runningMutexLastError = 0;
 
-static void findMainWindow() {
+static HWND findThisProcessMainWindow() {
     static TCHAR buffer[256];
 
     if (mainWindow == nullptr) {
@@ -64,12 +68,39 @@ static void findMainWindow() {
                 GetClassName(hWnd, buffer, sizeof(buffer));
                 if (className == std::basic_string<TCHAR>(buffer)) {
                     mainWindow = hWnd;
-                    return;
+                    return hWnd;
                 }
             }
             hWnd = GetNextWindow(hWnd, GW_HWNDNEXT);
         }
     }
+
+    return nullptr;
+}
+
+static HWND findOtherProcessMainWindow() {
+    static TCHAR buffer[256];
+
+    DWORD dwProcID = GetCurrentProcessId();
+    HWND hWnd = GetTopWindow(GetDesktopWindow());
+
+    while (hWnd) {
+        DWORD dwWndProcID = 0;
+        GetWindowThreadProcessId(hWnd, &dwWndProcID);
+        if (dwWndProcID != dwProcID) { /* not in this process */
+            GetClassName(hWnd, buffer, sizeof(buffer));
+            if (className == std::basic_string<TCHAR>(buffer)) {
+                ::GetWindowText(hWnd, buffer, sizeof(buffer));
+                if (appTitle == u16to8(buffer)) { /* title must match*/
+                    return hWnd;
+                }
+            }
+        }
+
+        hWnd = GetNextWindow(hWnd, GW_HWNDNEXT);
+    }
+
+    return nullptr;
 }
 
 static HICON loadIcon(int resourceId, int size) {
@@ -97,6 +128,19 @@ static void initTrayIcon(HWND hwnd) {
     }
 }
 
+static void restoreFromTray(HWND hwnd) {
+    Shell_NotifyIcon(NIM_DELETE, trayIcon.get());
+    minimizedToTray = false;
+    ShowWindow(hwnd, SW_SHOWNORMAL);
+
+}
+
+static void resetMutex() {
+    CloseHandle(runningMutex);
+    runningMutex = nullptr;
+    runningMutexLastError = 0;
+}
+
 static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR data) {
     if (minimizeToTray) {
         if ((msg == WM_SIZE && wparam == SIZE_MINIMIZED) ||
@@ -117,11 +161,19 @@ static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
 
     if (msg == WM_TRAYICON) {
         if (LOWORD(lparam) == WM_LBUTTONUP) {
-            Shell_NotifyIcon(NIM_DELETE, trayIcon.get());
-            minimizedToTray = false;
-            ShowWindow(hwnd, SW_SHOWNORMAL);
+            restoreFromTray(hwnd);
             return 1;
         }
+    }
+
+    if (msg == WM_SHOW_OTHER_INSTANCE) {
+        cursespp::win32::ShowMainWindow();
+        restoreFromTray(hwnd);
+        return 1;
+    }
+
+    if (msg == WM_QUIT) {
+        resetMutex();
     }
 
     return DefSubclassProc(hwnd, msg, wparam, lparam);
@@ -130,28 +182,28 @@ static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
 namespace cursespp {
     namespace win32 {
         void ShowMainWindow() {
-            findMainWindow();
+            findThisProcessMainWindow();
             if (mainWindow) {
                 ShowWindow(mainWindow, SW_SHOWNORMAL);
             }
         }
 
         void HideMainWindow() {
-            findMainWindow();
+            findThisProcessMainWindow();
             if (mainWindow) {
                 ShowWindow(mainWindow, SW_HIDE);
             }
         }
 
         void Minimize() {
-            findMainWindow();
+            findThisProcessMainWindow();
             if (mainWindow) {
                 ShowWindow(mainWindow, SW_SHOWMINIMIZED);
             }
         }
 
         HWND GetMainWindow() {
-            findMainWindow();
+            findThisProcessMainWindow();
             return mainWindow;
         }
 
@@ -176,6 +228,29 @@ namespace cursespp {
 
         void SetAppTitle(const std::string& title) {
             appTitle = title;
+        }
+
+        bool AlreadyRunning() {
+            return !IsDebuggerPresent() && (runningMutexLastError == ERROR_ALREADY_EXISTS);
+        }
+
+        void ShowOtherInstance() {
+            HWND otherHwnd = findOtherProcessMainWindow();
+            if (otherHwnd) {
+                SendMessage(otherHwnd, WM_SHOW_OTHER_INSTANCE, 0, 0);
+                ::SetForegroundWindow(otherHwnd);
+            }
+        }
+
+        void EnableSingleInstance(const std::string& uniqueId) {
+            if (uniqueId.size() && !runningMutex) {
+                std::string mutexName = "cursespp::" + uniqueId;
+                runningMutex = CreateMutexA(nullptr, false, mutexName.c_str());
+                runningMutexLastError = GetLastError();
+            }
+            else {
+                resetMutex();
+            }
         }
     }
 }

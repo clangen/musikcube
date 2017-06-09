@@ -48,6 +48,9 @@ namespace cursespp {
         void SetIcon(int resourceId);
         void SetAppTitle(const std::string& title);
         void SetMinimizeToTray(bool enabled);
+        void EnableSingleInstance(const std::string& uniqueId);
+        bool AlreadyRunning();
+        void ShowOtherInstance();
     }
 }
 

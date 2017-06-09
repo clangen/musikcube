@@ -143,6 +143,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef WIN32
         app.SetIcon(IDI_ICON1);
+        app.SetSingleInstanceId("musikbox");
 #endif
         /* fire up the indexer if configured to run on startup */
         if (prefs->GetBool(musik::core::prefs::keys::SyncOnStartup, true)) {

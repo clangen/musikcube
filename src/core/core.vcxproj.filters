@@ -44,6 +44,21 @@
     <Filter Include="src\i18n">
       <UniqueIdentifier>{a8776591-b7ad-4f6f-a927-c4bfaaa1e8c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\sdk\audio">
+      <UniqueIdentifier>{fe28fe15-6cf7-40e0-bec5-9ca46932d279}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sdk\vis">
+      <UniqueIdentifier>{dd68aae0-9c01-4915-a4b3-c5e5b5ff8058}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sdk\io">
+      <UniqueIdentifier>{578b0af6-0dc3-4a69-a784-5e0293a5708a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sdk\library">
+      <UniqueIdentifier>{a39a447a-65ad-465c-839d-b96cc4a8e2e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sdk\indexer">
+      <UniqueIdentifier>{d35af273-0f2b-4669-aa83-d7eee8c2c5c5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -201,30 +216,6 @@
     <ClInclude Include="audio\Player.h">
       <Filter>src\audio</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IDecoder.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IDecoderFactory.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IDSP.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IOutput.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IAnalyzer.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IBuffer.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IDataStream.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IDataStreamFactory.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="io\LocalFileStream.h">
       <Filter>src\io</Filter>
     </ClInclude>
@@ -258,13 +249,7 @@
     <ClInclude Include="plugin\PluginFactory.h">
       <Filter>src\plugin</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IMetadataReader.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IPlugin.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IBufferProvider.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="debug.h">
@@ -294,34 +279,13 @@
     <ClInclude Include="support\PreferenceKeys.h">
       <Filter>src\support</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IPcmVisualizer.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\ISpectrumVisualizer.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="audio\Visualizer.h">
       <Filter>src\audio</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IVisualizer.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IPlaybackRemote.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IPlaybackService.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\ITrack.h">
-      <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="utfutil.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="sdk\constants.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IRetainedTrack.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="library\track\RetainedTrack.h">
@@ -366,19 +330,7 @@
     <ClInclude Include="library\track\TrackList.h">
       <Filter>src\library\track</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\ITrackListEditor.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\ITrackList.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IPreferences.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataValue.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataValueList.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="library\query\local\CategoryTrackListQuery.h">
@@ -405,9 +357,6 @@
     <ClInclude Include="library\query\local\CategoryListQuery.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\ISimpleDataProvider.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="Library\query\local\LocalQueryBase.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
@@ -416,15 +365,6 @@
     </ClInclude>
     <ClInclude Include="plugin\Plugins.h">
       <Filter>src\plugin</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataMapList.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataMap.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\ITrackWriter.h">
-      <Filter>src\sdk</Filter>
     </ClInclude>
     <ClInclude Include="library\metadata\MetadataMapList.h">
       <Filter>src\library\metadata</Filter>
@@ -438,23 +378,98 @@
     <ClInclude Include="i18n\Locale.h">
       <Filter>src\i18n</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IIndexerSource.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IRetainedTrackWriter.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="library\query\local\TrackMetadataQuery.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IIndexerWriter.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IIndexerNotifier.h">
-      <Filter>src\sdk</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IEnvironment.h">
       <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDSP.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDecoderFactory.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDecoder.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IOutput.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IBuffer.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IBufferProvider.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDataStreamFactory.h">
+      <Filter>src\sdk\io</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IDataStream.h">
+      <Filter>src\sdk\io</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IVisualizer.h">
+      <Filter>src\sdk\vis</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPcmVisualizer.h">
+      <Filter>src\sdk\vis</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ISpectrumVisualizer.h">
+      <Filter>src\sdk\vis</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ISimpleDataProvider.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPlaybackRemote.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataReader.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IPlaybackService.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IAnalyzer.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerNotifier.h">
+      <Filter>src\sdk\indexer</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerSource.h">
+      <Filter>src\sdk\indexer</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IIndexerWriter.h">
+      <Filter>src\sdk\indexer</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITrackWriter.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITrackListEditor.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITrackList.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITrack.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IRetainedTrackWriter.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IRetainedTrack.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataMap.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataMapList.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataValue.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataValueList.h">
+      <Filter>src\sdk\library</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -137,6 +137,10 @@ void App::SetIcon(int resourceId) {
         win32::SetIcon(resourceId);
     }
 }
+
+void App::SetSingleInstanceId(const std::string& uniqueId) {
+    this->uniqueId = uniqueId;
+}
 #endif
 
 void App::SetMinimizeToTray(bool minimizeToTray) {
@@ -183,6 +187,17 @@ void App::OnResized() {
 }
 
 void App::Run(ILayoutPtr layout) {
+#ifdef WIN32
+    if (this->uniqueId.size()) {
+        win32::EnableSingleInstance(uniqueId);
+
+        if (win32::AlreadyRunning()) {
+            win32::ShowOtherInstance();
+            return;
+        }
+    }
+#endif
+
     Colors::Init(this->colorMode);
 
     if (this->colorTheme.size()) {
