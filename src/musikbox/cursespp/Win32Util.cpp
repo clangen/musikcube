@@ -52,6 +52,8 @@ static std::unique_ptr<NOTIFYICONDATA> trayIcon;
 static bool minimizeToTray = false, minimizedToTray = false;
 static std::string appTitle;
 static HICON icon16 = nullptr, icon32 = nullptr;
+
+static std::string runingMutexName;
 static HANDLE runningMutex;
 static DWORD runningMutexLastError = 0;
 
@@ -78,7 +80,7 @@ static HWND findThisProcessMainWindow() {
     return nullptr;
 }
 
-static HWND findOtherProcessMainWindow() {
+static HWND findOtherProcessMainWindow(const std::string& title) {
     static TCHAR buffer[256];
 
     DWORD dwProcID = GetCurrentProcessId();
@@ -91,7 +93,7 @@ static HWND findOtherProcessMainWindow() {
             GetClassName(hWnd, buffer, sizeof(buffer));
             if (className == std::basic_string<TCHAR>(buffer)) {
                 ::GetWindowText(hWnd, buffer, sizeof(buffer));
-                if (appTitle == u16to8(buffer)) { /* title must match*/
+                if (title == u16to8(buffer)) { /* title must match*/
                     return hWnd;
                 }
             }
@@ -231,11 +233,11 @@ namespace cursespp {
         }
 
         bool AlreadyRunning() {
-            return !IsDebuggerPresent() && (runningMutexLastError == ERROR_ALREADY_EXISTS);
+            return /*!IsDebuggerPresent() &&*/ (runningMutexLastError == ERROR_ALREADY_EXISTS);
         }
 
-        void ShowOtherInstance() {
-            HWND otherHwnd = findOtherProcessMainWindow();
+        void ShowOtherInstance(const std::string& title) {
+            HWND otherHwnd = findOtherProcessMainWindow(title);
             if (otherHwnd) {
                 SendMessage(otherHwnd, WM_SHOW_OTHER_INSTANCE, 0, 0);
                 ::SetForegroundWindow(otherHwnd);
@@ -243,13 +245,17 @@ namespace cursespp {
         }
 
         void EnableSingleInstance(const std::string& uniqueId) {
-            if (uniqueId.size() && !runningMutex) {
-                std::string mutexName = "cursespp::" + uniqueId;
-                runningMutex = CreateMutexA(nullptr, false, mutexName.c_str());
-                runningMutexLastError = GetLastError();
-            }
-            else {
+            if (!uniqueId.size()) {
                 resetMutex();
+                return;
+            }
+
+            std::string mutexName = "cursespp::" + uniqueId;
+            if (mutexName != runingMutexName) {
+                resetMutex();
+                runingMutexName = mutexName;
+                runningMutex = CreateMutexA(nullptr, false, runingMutexName.c_str());
+                runningMutexLastError = GetLastError();
             }
         }
 

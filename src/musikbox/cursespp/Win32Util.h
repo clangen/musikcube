@@ -50,7 +50,7 @@ namespace cursespp {
         void SetMinimizeToTray(bool enabled);
         void EnableSingleInstance(const std::string& uniqueId);
         bool AlreadyRunning();
-        void ShowOtherInstance();
+        void ShowOtherInstance(const std::string& title);
         void ConfigureDpiAwareness();
     }
 }

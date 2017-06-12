@@ -61,6 +61,8 @@ namespace cursespp {
             void Restore();
 
 #ifdef WIN32
+            static bool Running(const std::string& uniqueId, const std::string& title);
+            static bool Running(const std::string& title);
             void SetIcon(int resourceId);
             void SetSingleInstanceId(const std::string& uniqueId);
 #endif
@@ -111,7 +113,7 @@ namespace cursespp {
 
 #ifdef WIN32
             int iconId;
-            std::string uniqueId;
+            std::string uniqueId, appTitle;
 #endif
     };
 }

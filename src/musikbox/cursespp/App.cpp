@@ -75,6 +75,7 @@ App::App(const std::string& title) {
 
 #ifdef WIN32
     this->iconId = 0;
+    this->appTitle = title;
     win32::ConfigureDpiAwareness();
 #else
     setlocale(LC_ALL, "");
@@ -187,15 +188,27 @@ void App::OnResized() {
     }
 }
 
+#ifdef WIN32
+bool App::Running(const std::string& uniqueId) {
+    return App::Running(uniqueId, uniqueId);
+}
+
+bool App::Running(const std::string& uniqueId, const std::string& title) {
+    if (uniqueId.size()) {
+        win32::EnableSingleInstance(uniqueId);
+        if (win32::AlreadyRunning()) {
+            win32::ShowOtherInstance(title);
+            return true;
+        }
+    }
+    return false;
+}
+#endif
+
 void App::Run(ILayoutPtr layout) {
 #ifdef WIN32
-    if (this->uniqueId.size()) {
-        win32::EnableSingleInstance(uniqueId);
-
-        if (win32::AlreadyRunning()) {
-            win32::ShowOtherInstance();
-            return;
-        }
+    if (App::Running(this->uniqueId, this->appTitle)) {
+        return;
     }
 #endif
 
