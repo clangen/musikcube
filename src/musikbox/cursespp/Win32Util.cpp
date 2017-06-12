@@ -252,6 +252,21 @@ namespace cursespp {
                 resetMutex();
             }
         }
+
+        void ConfigureDpiAwareness() {
+            typedef HRESULT(__stdcall *SetProcessDpiAwarenessProc)(int);
+            static const int ADJUST_DPI_PER_MONITOR = 2;
+
+            HMODULE dll = LoadLibrary(L"shcore.dll");
+            if (dll) {
+                SetProcessDpiAwarenessProc setDpiAwareness =
+                    (SetProcessDpiAwarenessProc) GetProcAddress(dll, "SetProcessDpiAwareness");
+
+                if (setDpiAwareness) {
+                    setDpiAwareness(ADJUST_DPI_PER_MONITOR);
+                }
+            }
+        }
     }
 }
 

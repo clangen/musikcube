@@ -75,6 +75,7 @@ App::App(const std::string& title) {
 
 #ifdef WIN32
     this->iconId = 0;
+    win32::ConfigureDpiAwareness();
 #else
     setlocale(LC_ALL, "");
     std::signal(SIGWINCH, resizedHandler);

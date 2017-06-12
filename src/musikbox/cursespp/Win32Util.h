@@ -51,6 +51,7 @@ namespace cursespp {
         void EnableSingleInstance(const std::string& uniqueId);
         bool AlreadyRunning();
         void ShowOtherInstance();
+        void ConfigureDpiAwareness();
     }
 }
 
