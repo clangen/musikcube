@@ -257,14 +257,16 @@ namespace cursespp {
             typedef HRESULT(__stdcall *SetProcessDpiAwarenessProc)(int);
             static const int ADJUST_DPI_PER_MONITOR = 2;
 
-            HMODULE dll = LoadLibrary(L"shcore.dll");
-            if (dll) {
+            HMODULE shcoreDll = LoadLibrary(L"shcore.dll");
+            if (shcoreDll) {
                 SetProcessDpiAwarenessProc setDpiAwareness =
-                    (SetProcessDpiAwarenessProc) GetProcAddress(dll, "SetProcessDpiAwareness");
+                    (SetProcessDpiAwarenessProc) GetProcAddress(shcoreDll, "SetProcessDpiAwareness");
 
                 if (setDpiAwareness) {
                     setDpiAwareness(ADJUST_DPI_PER_MONITOR);
                 }
+
+                FreeLibrary(shcoreDll);
             }
         }
     }
