@@ -39,7 +39,6 @@
 
 #define BUFFER_SIZE 8192
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
-#define DETACH_TOLERANCE_BYTES 131072 /* 2^17, ~131k */
 
 using PositionType = TranscodingDataStream::PositionType;
 
@@ -56,6 +55,7 @@ TranscodingDataStream::TranscodingDataStream(
     this->eof = false;
     this->lame = nullptr;
     this->outFile = nullptr;
+    this->detachTolerance = 0;
 
     this->input = context.environment->GetDataStream(uri.c_str());
     if (this->input) {
@@ -63,10 +63,15 @@ TranscodingDataStream::TranscodingDataStream(
         if (this->decoder) {
             this->pcmBuffer = context.environment->GetBuffer(SAMPLES_PER_BUFFER);
 
-            /*  note that we purposely under-estimate the content length by a couple
-            seconds. we do this because http clients seem to be more likely to be
+            /*  note that we purposely under-estimate the content length by 0.2
+            seconds; we do this because http clients seem to be more likely to be
             throw a fit if we over estimate, instead of under-estimate. */
             this->length = (PositionType)((this->decoder->GetDuration() - 0.2) * 1000.0 * (float)bitrate / 8.0);
+
+            /* after the stream ends we allow decoding for up to an additional 2
+            seconds to account for rounding errors in length estimation and decoder
+            duration calculation. */
+            this->detachTolerance = (PositionType)((2.0) * 1000.0 * (float)bitrate / 8.0);
         }
     }
 }
@@ -107,10 +112,9 @@ bool TranscodingDataStream::Close() {
             char buffer[8192];
             int count = 0;
             int last = 0;
-            while (!Eof() && count < DETACH_TOLERANCE_BYTES) {
+            while (!Eof() && count < detachTolerance) {
                 last = Read(buffer, sizeof(buffer));
                 count += last;
-                std::this_thread::yield();
             }
 
             if (last != 0 && this->outFile) {

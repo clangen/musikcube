@@ -142,4 +142,5 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
         std::string tempFilename, finalFilename;
         bool interrupted;
         lame_t lame;
+        long detachTolerance;
 };
