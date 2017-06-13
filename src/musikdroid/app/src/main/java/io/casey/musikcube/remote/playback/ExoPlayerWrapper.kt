@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
+import com.danikula.videocache.CacheListener
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
@@ -61,7 +62,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
                 }
 
                 val builder = OkHttpClient.Builder()
-                        .cache(Cache(path, CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: MINIMUM_CACHE_SIZE_BYTES))
+                        .cache(Cache(path, StreamProxy.CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: StreamProxy.MINIMUM_CACHE_SIZE_BYTES))
                         .addInterceptor { chain ->
                             var request = chain.request()
                             val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
@@ -110,7 +111,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
 
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = StreamProxy.getProxyUrl(context, uri)
+            this.proxyUri = StreamProxy.getProxyUrl(uri)
             Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
 
             addCacheListener()
@@ -131,7 +132,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
 
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = StreamProxy.getProxyUrl(context, uri)
+            this.proxyUri = StreamProxy.getProxyUrl(uri)
             Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
 
             this.prefetch = true
@@ -251,7 +252,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
 
     private fun addCacheListener() {
         if (StreamProxy.ENABLED) {
-            if (StreamProxy.isCached(this.originalUri)) {
+            if (StreamProxy.isCached(this.originalUri!!)) {
                 percentAvailable = 100
 
                 if (originalUri != null && metadata != null) {
@@ -259,7 +260,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
                 }
             }
             else {
-                StreamProxy.registerCacheListener(this.cacheListener, this.originalUri)
+                StreamProxy.registerCacheListener(this.cacheListener, this.originalUri!!)
             }
         }
         else {
@@ -273,13 +274,13 @@ class ExoPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    private val cacheListener = { _: File, _: String, percent: Int ->
+    private val cacheListener = CacheListener { _: File, _: String, percent: Int ->
         //Log.e("CLCLCL", String.format("%d", percent));
         percentAvailable = percent
 
         if (percentAvailable >= 100) {
             if (originalUri != null && metadata != null) {
-                PlayerWrapper.storeOffline(originalUri!!, metadata!!)
+                storeOffline(originalUri!!, metadata!!)
             }
         }
     }

@@ -44,7 +44,7 @@ public abstract class OfflineDb extends RoomDatabase {
             List<String> toDelete = new ArrayList<>();
 
             for (final String uri : uris) {
-                if (!StreamProxy.isCached(uri)) {
+                if (!StreamProxy.Companion.isCached(uri)) {
                     toDelete.add(uri);
                 }
             }

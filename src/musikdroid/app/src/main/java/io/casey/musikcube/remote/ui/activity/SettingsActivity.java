@@ -211,7 +211,7 @@ public class SettingsActivity extends AppCompatActivity {
             PlaybackServiceFactory.streaming(this).stop();
         }
 
-        StreamProxy.reload();
+        StreamProxy.Companion.reload();
         WebSocketService.getInstance(this).disconnect();
 
         finish();
