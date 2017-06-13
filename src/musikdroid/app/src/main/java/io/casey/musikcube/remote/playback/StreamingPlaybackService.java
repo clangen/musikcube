@@ -156,7 +156,7 @@ public class StreamingPlaybackService implements PlaybackService {
     public StreamingPlaybackService(final Context context) {
         this.wss = WebSocketService.getInstance(context.getApplicationContext());
         this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
-        this.audioManager = (AudioManager) Application.getInstance().getSystemService(Context.AUDIO_SERVICE);
+        this.audioManager = (AudioManager) Application.Companion.getInstance().getSystemService(Context.AUDIO_SERVICE);
         this.lastSystemVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         this.repeatMode = RepeatMode.from(this.prefs.getString(REPEAT_MODE_PREF, RepeatMode.None.toString()));
         this.audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -570,7 +570,12 @@ public class StreamingPlaybackService implements PlaybackService {
 
     private String getUri(final JSONObject track) {
         if (track != null) {
-            final String externalId = track.optString("external_id", "");
+            final String existingUri = track.optString(Metadata.Track.URI, "");
+            if (Strings.notEmpty(existingUri)) {
+                return existingUri;
+            }
+
+            final String externalId = track.optString(Metadata.Track.EXTERNAL_ID, "");
             if (Strings.notEmpty(externalId)) {
                 final String protocol = prefs.getBoolean(
                     Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED) ? "https" : "http";
@@ -582,7 +587,7 @@ public class StreamingPlaybackService implements PlaybackService {
                     Prefs.Default.TRANSCODER_BITRATE_INDEX);
 
                 if (bitrateIndex > 0) {
-                    final Resources r = Application.getInstance().getResources();
+                    final Resources r = Application.Companion.getInstance().getResources();
 
                     bitrateQueryParam = String.format(
                         Locale.ENGLISH,
@@ -701,7 +706,7 @@ public class StreamingPlaybackService implements PlaybackService {
                 this.context.reset(this.context.nextPlayer);
                 this.context.nextPlayer = PlayerWrapper.Companion.newInstance();
                 this.context.nextPlayer.setOnStateChangedListener(onNextPlayerStateChanged);
-                this.context.nextPlayer.prefetch(uri);
+                this.context.nextPlayer.prefetch(uri, this.context.nextMetadata);
             }
         }
     }
@@ -794,7 +799,7 @@ public class StreamingPlaybackService implements PlaybackService {
                     if (uri != null) {
                         this.context.currentPlayer = PlayerWrapper.Companion.newInstance();
                         this.context.currentPlayer.setOnStateChangedListener(onCurrentPlayerStateChanged);
-                        this.context.currentPlayer.play(uri);
+                        this.context.currentPlayer.play(uri, this.context.currentMetadata);
                     }
                 }
             })
@@ -884,6 +889,11 @@ public class StreamingPlaybackService implements PlaybackService {
             }
 
             return null;
+        }
+
+        @Override
+        public boolean connectionRequired() {
+            return true;
         }
     };
 

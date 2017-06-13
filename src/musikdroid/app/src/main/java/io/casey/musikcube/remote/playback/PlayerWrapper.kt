@@ -1,8 +1,14 @@
 package io.casey.musikcube.remote.playback
 
+import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.offline.OfflineTrack
 import java.util.HashSet
 
 import io.casey.musikcube.remote.util.Preconditions
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import org.json.JSONObject
 
 abstract class PlayerWrapper {
     private enum class Type {
@@ -38,8 +44,8 @@ abstract class PlayerWrapper {
             }
         }
 
-    abstract fun play(uri: String)
-    abstract fun prefetch(uri: String)
+    abstract fun play(uri: String, metadata: JSONObject)
+    abstract fun prefetch(uri: String, metadata: JSONObject)
     abstract fun pause()
     abstract fun resume()
     abstract fun updateVolume()
@@ -68,6 +74,19 @@ abstract class PlayerWrapper {
         private var globalVolume = 1.0f
         private var globalMuted = false
         private var preDuckGlobalVolume = DUCK_NONE
+
+        fun storeOffline(uri: String, json: JSONObject) {
+            Single.fromCallable {
+                val track = OfflineTrack()
+                if (track.fromJSONObject(uri, json)) {
+                    Application.offlineDb?.trackDao()?.insertTrack(track)
+                    Application.offlineDb?.prune()
+                }
+            }
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe()
+        }
 
         fun duck() {
             Preconditions.throwIfNotOnMainThread()

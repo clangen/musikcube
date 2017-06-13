@@ -1,7 +1,6 @@
 package io.casey.musikcube.remote.playback;
 
 public enum PlaybackState {
-    Unknown("unknown"),
     Stopped("stopped"),
     Buffering("buffering"), /* streaming only */
     Playing("playing"),
@@ -19,7 +18,7 @@ public enum PlaybackState {
     }
 
     static PlaybackState from(final String rawValue) {
-        if (Stopped.rawValue.equals(rawValue)) {
+        if (Stopped.rawValue.equals(rawValue) || "unknown".equals(rawValue)) {
             return Stopped;
         }
         else if (Playing.rawValue.equals(rawValue)) {

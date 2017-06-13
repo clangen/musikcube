@@ -95,7 +95,7 @@ public class RemotePlaybackService implements PlaybackService {
     private Handler handler = new Handler();
     private WebSocketService wss;
     private EstimatedPosition currentTime = new EstimatedPosition();
-    private PlaybackState playbackState = PlaybackState.Unknown;
+    private PlaybackState playbackState = PlaybackState.Stopped;
     private Set<EventListener> listeners = new HashSet<>();
     private RepeatMode repeatMode;
     private boolean shuffled;
@@ -333,7 +333,7 @@ public class RemotePlaybackService implements PlaybackService {
     }
 
     private void reset() {
-        playbackState = PlaybackState.Unknown;
+        playbackState = PlaybackState.Stopped;
         repeatMode = RepeatMode.None;
         shuffled = muted = false;
         volume = 0.0f;
@@ -438,6 +438,11 @@ public class RemotePlaybackService implements PlaybackService {
                 .addOption(Messages.Key.OFFSET, offset)
                 .addOption(Messages.Key.LIMIT, limit)
                 .build();
+        }
+
+        @Override
+        public boolean connectionRequired() {
+            return true;
         }
     };
 

@@ -23,6 +23,8 @@ import io.casey.musikcube.remote.websocket.Messages;
 import io.casey.musikcube.remote.websocket.SocketMessage;
 import io.casey.musikcube.remote.websocket.WebSocketService;
 
+import static io.casey.musikcube.remote.ui.model.TrackListSlidingWindow.QueryFactory;
+
 public class PlayQueueActivity extends WebSocketActivityBase {
     private static String EXTRA_PLAYING_INDEX = "extra_playing_index";
 
@@ -35,6 +37,7 @@ public class PlayQueueActivity extends WebSocketActivityBase {
     private TrackListSlidingWindow<JSONObject> tracks;
     private PlaybackService playback;
     private Adapter adapter;
+    private boolean offlineQueue;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,11 +57,16 @@ public class PlayQueueActivity extends WebSocketActivityBase {
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
 
+        final QueryFactory queryFactory = this.playback.getPlaylistQueryFactory();
+
+        offlineQueue = Messages.Category.OFFLINE.equals(
+            queryFactory.getRequeryMessage().getStringOption(Messages.Key.CATEGORY));
+
         this.tracks = new TrackListSlidingWindow<>(
             recyclerView,
             fastScroller,
             this.wss,
-            this.playback.getPlaylistQueryFactory(),
+            queryFactory,
             (JSONObject obj) -> obj);
 
         this.tracks.setInitialPosition(
@@ -110,7 +118,7 @@ public class PlayQueueActivity extends WebSocketActivityBase {
     private final WebSocketService.Client webSocketClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
-            if (newState == WebSocketService.State.Connected) {
+            if (newState == WebSocketService.State.Connected || offlineQueue) {
                 tracks.requery();
             }
         }
@@ -147,10 +155,13 @@ public class PlayQueueActivity extends WebSocketActivityBase {
                 subtitle.setText("-");
             }
             else {
-                long playingId = playback.getTrackLong(Messages.Key.ID, -1);
-                long entryId = entry.optLong(Messages.Key.ID, -1);
+                final String entryExternalId = entry
+                    .optString(Metadata.Track.EXTERNAL_ID, "");
 
-                if (entryId != -1 && playingId == entryId) {
+                final String playingExternalId = playback
+                    .getTrackString(Metadata.Track.EXTERNAL_ID, "");
+
+                if (entryExternalId.equals(playingExternalId)) {
                     titleColor = R.color.theme_green;
                     subtitleColor = R.color.theme_yellow;
                 }

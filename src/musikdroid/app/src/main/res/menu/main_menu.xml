@@ -24,4 +24,9 @@
         app:showAsAction="never"
         android:title="@string/menu_settings"/>
 
+    <item
+        android:id="@+id/action_offline_tracks"
+        app:showAsAction="never"
+        android:title="@string/menu_offline_tracks"/>
+
 </menu>

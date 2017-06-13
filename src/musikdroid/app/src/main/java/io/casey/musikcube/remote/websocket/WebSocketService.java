@@ -73,6 +73,14 @@ public class WebSocketService {
         boolean check(T value);
     }
 
+    public interface Interceptor {
+        boolean process(SocketMessage message, Responder responder);
+    }
+
+    public interface Responder {
+        void respond(SocketMessage response);
+    }
+
     public enum State {
         Connecting,
         Connected,
@@ -169,6 +177,7 @@ public class WebSocketService {
     private boolean autoReconnect = false;
     private NetworkChangedReceiver networkChanged = new NetworkChangedReceiver();
     private ConnectThread thread;
+    private Set<Interceptor> interceptors = new HashSet<>();
 
     public static synchronized WebSocketService getInstance(final Context context) {
         if (INSTANCE == null) {
@@ -182,6 +191,16 @@ public class WebSocketService {
         this.context = context.getApplicationContext();
         this.prefs = this.context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE);
         handler.sendEmptyMessageDelayed(MESSAGE_REMOVE_OLD_CALLBACKS, CALLBACK_TIMEOUT_MILLIS);
+    }
+
+    public void addInterceptor(final Interceptor interceptor) {
+        Preconditions.throwIfNotOnMainThread();
+        interceptors.add(interceptor);
+    }
+
+    public void removeInterceptor(final Interceptor interceptor) {
+        Preconditions.throwIfNotOnMainThread();
+        interceptors.remove(interceptor);
     }
 
     public void addClient(Client client) {
@@ -267,35 +286,47 @@ public class WebSocketService {
     public long send(final SocketMessage message, Client client, MessageResultCallback callback) {
         Preconditions.throwIfNotOnMainThread();
 
-        if (this.socket != null) {
-            /* it seems that sometimes the socket dies, but the onDisconnected() event is not
-            raised. unclear if this is our bug or a bug in the library. disconnect and trigger
-            a reconnect until we can find a better root cause. this is very difficult to repro */
-            if (!this.socket.isOpen()) {
-                this.disconnect(true);
-            }
-            else {
-                long id = NEXT_ID.incrementAndGet();
+        boolean intercepted = false;
 
-                if (callback != null) {
-                    if (!clients.contains(client) && client != INTERNAL_CLIENT) {
-                        throw new IllegalArgumentException("client is not registered");
-                    }
-
-                    final MessageResultDescriptor mrd = new MessageResultDescriptor();
-                    mrd.id = id;
-                    mrd.enqueueTime = System.currentTimeMillis();
-                    mrd.client = client;
-                    mrd.callback = callback;
-                    messageCallbacks.put(message.getId(), mrd);
-                }
-
-                this.socket.sendText(message.toString());
-                return id;
+        for (final Interceptor i : interceptors) {
+            if (i.process(message, responder)) {
+                intercepted = true;
             }
         }
 
-        return -1;
+        if (!intercepted) {
+            /* it seems that sometimes the socket dies, but the onDisconnected() event is not
+            raised. unclear if this is our bug or a bug in the library. disconnect and trigger
+            a reconnect until we can find a better root cause. this is very difficult to repro */
+            if (this.socket != null && !this.socket.isOpen()) {
+                this.disconnect(true);
+                return -1;
+            }
+            else if (this.socket == null) {
+                return -1;
+            }
+        }
+
+        final long id = NEXT_ID.incrementAndGet();
+
+        if (callback != null) {
+            if (!clients.contains(client) && client != INTERNAL_CLIENT) {
+                throw new IllegalArgumentException("client is not registered");
+            }
+
+            final MessageResultDescriptor mrd = new MessageResultDescriptor();
+            mrd.id = id;
+            mrd.enqueueTime = System.currentTimeMillis();
+            mrd.client = client;
+            mrd.callback = callback;
+            messageCallbacks.put(message.getId(), mrd);
+        }
+
+        if (!intercepted) {
+            this.socket.sendText(message.toString());
+        }
+
+        return id;
     }
 
     public Observable<SocketMessage> send(final SocketMessage message, Client client) {
@@ -305,38 +336,51 @@ public class WebSocketService {
                 try {
                     Preconditions.throwIfNotOnMainThread();
 
-                    if (socket != null) {
+                    boolean intercepted = false;
+
+                    for (final Interceptor i : interceptors) {
+                        if (i.process(message, responder)) {
+                            intercepted = true;
+                        }
+                    }
+
+                    if (!intercepted) {
                         /* it seems that sometimes the socket dies, but the onDisconnected() event is not
                         raised. unclear if this is our bug or a bug in the library. disconnect and trigger
                         a reconnect until we can find a better root cause. this is very difficult to repro */
-                        if (!socket.isOpen()) {
+                        if (socket != null && !socket.isOpen()) {
                             disconnect(true);
                             throw new Exception("socket disconnected");
                         }
-                        else {
-                            if (!clients.contains(client) && client != INTERNAL_CLIENT) {
-                                throw new IllegalArgumentException("client is not registered");
-                            }
-
-                            final MessageResultDescriptor mrd = new MessageResultDescriptor();
-                            mrd.id = NEXT_ID.incrementAndGet();
-                            mrd.enqueueTime = System.currentTimeMillis();
-                            mrd.client = client;
-
-                            mrd.callback = (SocketMessage message) -> {
-                                emitter.onNext(message);
-                                emitter.onComplete();
-                            };
-
-                            mrd.error = () -> {
-                                final Exception ex = new Exception();
-                                ex.fillInStackTrace();
-                                emitter.onError(ex);
-                            };
-
-                            messageCallbacks.put(message.getId(), mrd);
-                            socket.sendText(message.toString());
+                        else if (socket == null) {
+                            throw new Exception("socket not connected");
                         }
+                    }
+
+                    if (!clients.contains(client) && client != INTERNAL_CLIENT) {
+                        throw new IllegalArgumentException("client is not registered");
+                    }
+
+                    final MessageResultDescriptor mrd = new MessageResultDescriptor();
+                    mrd.id = NEXT_ID.incrementAndGet();
+                    mrd.enqueueTime = System.currentTimeMillis();
+                    mrd.client = client;
+
+                    mrd.callback = (SocketMessage message) -> {
+                        emitter.onNext(message);
+                        emitter.onComplete();
+                    };
+
+                    mrd.error = () -> {
+                        final Exception ex = new Exception();
+                        ex.fillInStackTrace();
+                        emitter.onError(ex);
+                    };
+
+                    messageCallbacks.put(message.getId(), mrd);
+
+                    if (!intercepted) {
+                        socket.sendText(message.toString());
                     }
                 }
                 catch (Exception ex) {
@@ -485,6 +529,14 @@ public class WebSocketService {
     };
 
     private Runnable autoDisconnectRunnable = () -> disconnect();
+
+    private Responder responder = (response) -> {
+        /* post to the back of the queue in case the interceptor responded immediately;
+        we need to ensure all of the request book-keeping has been finished. */
+        handler.post(() -> {
+            handler.sendMessage(Message.obtain(handler, MESSAGE_MESSAGE_RECEIVED, response));
+        });
+    };
 
     private WebSocketAdapter webSocketAdapter = new WebSocketAdapter() {
         @Override

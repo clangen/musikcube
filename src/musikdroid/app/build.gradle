@@ -30,6 +30,7 @@ android {
 repositories {
     flatDir { dirs 'libs' }
     maven { url "https://jitpack.io" }
+    maven { url 'https://maven.google.com' }
     mavenCentral()
 }
 
@@ -44,6 +45,9 @@ dependencies {
 
     compile(name:'videocache-2.8.0-pre', ext:'aar')
     compile 'org.slf4j:slf4j-android:1.7.21'
+
+    compile "android.arch.persistence.room:runtime:1.0.0-alpha2"
+    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-alpha2"
 
     compile 'com.neovisionaries:nv-websocket-client:1.31'
     compile 'com.squareup.okhttp3:okhttp:3.8.0'

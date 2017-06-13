@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Base64
+import android.util.Log
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.ext.okhttp.OkHttpDataSourceFactory
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
@@ -25,6 +26,7 @@ import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.playback.StreamProxy.*
 import okhttp3.Cache
 import okhttp3.OkHttpClient
+import org.json.JSONObject
 import java.io.File
 
 class ExoPlayerWrapper : PlayerWrapper() {
@@ -33,12 +35,13 @@ class ExoPlayerWrapper : PlayerWrapper() {
     private val extractors: ExtractorsFactory
     private var source: MediaSource? = null
     private val player: SimpleExoPlayer?
+    private var metadata: JSONObject? = null
     private var prefetch: Boolean = false
     private val context: Context
     private var lastPosition: Long = -1
     private var percentAvailable = 0
     private var originalUri: String? = null
-    private var resolvedUri: String? = null
+    private var proxyUri: String? = null
     private val transcoding: Boolean
 
     private fun initHttpClient(uri: String) {
@@ -88,26 +91,31 @@ class ExoPlayerWrapper : PlayerWrapper() {
     }
 
     init {
-        this.context = Application.getInstance()
+        this.context = Application.instance!!
         val bandwidth = DefaultBandwidthMeter()
         val trackFactory = AdaptiveTrackSelection.Factory(bandwidth)
         val trackSelector = DefaultTrackSelector(trackFactory)
         this.player = ExoPlayerFactory.newSimpleInstance(this.context, trackSelector)
         this.extractors = DefaultExtractorsFactory()
         this.datasources = DefaultDataSourceFactory(context, Util.getUserAgent(context, "musikdroid"))
-        this.prefs = Application.getInstance().getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        this.prefs = Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         this.transcoding = this.prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
-    override fun play(uri: String) {
+    override fun play(uri: String, metadata: JSONObject) {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {
             initHttpClient(uri)
+
+            this.metadata = metadata
             this.originalUri = uri
-            this.resolvedUri = StreamProxy.getProxyUrl(context, uri)
+            this.proxyUri = StreamProxy.getProxyUrl(context, uri)
+            Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
+
             addCacheListener()
-            this.source = ExtractorMediaSource(Uri.parse(resolvedUri), datasources, extractors, null, null)
+
+            this.source = ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null)
             this.player!!.playWhenReady = true
             this.player.prepare(this.source)
             PlayerWrapper.addActivePlayer(this)
@@ -115,16 +123,22 @@ class ExoPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    override fun prefetch(uri: String) {
+    override fun prefetch(uri: String, metadata: JSONObject) {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {
             initHttpClient(uri)
+
+            this.metadata = metadata
             this.originalUri = uri
+            this.proxyUri = StreamProxy.getProxyUrl(context, uri)
+            Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
+
             this.prefetch = true
-            this.resolvedUri = StreamProxy.getProxyUrl(context, uri)
+
             addCacheListener()
-            this.source = ExtractorMediaSource(Uri.parse(resolvedUri), datasources, extractors, null, null)
+
+            this.source = ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null)
             this.player!!.playWhenReady = false
             this.player.prepare(this.source)
             PlayerWrapper.addActivePlayer(this)
@@ -239,6 +253,10 @@ class ExoPlayerWrapper : PlayerWrapper() {
         if (StreamProxy.ENABLED) {
             if (StreamProxy.isCached(this.originalUri)) {
                 percentAvailable = 100
+
+                if (originalUri != null && metadata != null) {
+                    PlayerWrapper.storeOffline(originalUri!!, metadata!!)
+                }
             }
             else {
                 StreamProxy.registerCacheListener(this.cacheListener, this.originalUri)
@@ -258,6 +276,12 @@ class ExoPlayerWrapper : PlayerWrapper() {
     private val cacheListener = { _: File, _: String, percent: Int ->
         //Log.e("CLCLCL", String.format("%d", percent));
         percentAvailable = percent
+
+        if (percentAvailable >= 100) {
+            if (originalUri != null && metadata != null) {
+                PlayerWrapper.storeOffline(originalUri!!, metadata!!)
+            }
+        }
     }
 
     private var eventListener = object : ExoPlayer.EventListener {
@@ -293,7 +317,8 @@ class ExoPlayerWrapper : PlayerWrapper() {
                     if (!prefetch) {
                         player.playWhenReady = true
                         state = State.Playing
-                    } else {
+                    }
+                    else {
                         state = State.Paused
                     }
                 }

@@ -40,6 +40,10 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
             .putExtra(EXTRA_SELECTED_ID, id);
     }
 
+    public static Intent getOfflineStartIntent(final Context context) {
+        return getStartIntent(context, Messages.Category.OFFLINE, 0);
+    }
+
     public static Intent getStartIntent(final Context context,
                                         final String type,
                                         final long id,
@@ -135,7 +139,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     private WebSocketService.Client socketServiceClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
-            if (newState == WebSocketService.State.Connected) {
+            if (canRequery()) {
                 filterDebouncer.cancel();
                 tracks.requery();
             }
@@ -192,10 +196,13 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
             int subtitleColor = R.color.theme_disabled_foreground;
 
             if (entry != null) {
-                long playingId = transport.getPlaybackService().getTrackLong(Messages.Key.ID, -1);
-                long entryId = entry.optLong(Messages.Key.ID, -1);
+                final String entryExternalId = entry
+                    .optString(Metadata.Track.EXTERNAL_ID, "");
 
-                if (entryId != -1 && playingId == entryId) {
+                final String playingExternalId = transport.getPlaybackService()
+                    .getTrackString(Metadata.Track.EXTERNAL_ID, "");
+
+                if (entryExternalId.equals(playingExternalId)) {
                     titleColor = R.color.theme_green;
                     subtitleColor = R.color.theme_yellow;
                 }
@@ -237,6 +244,12 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         return categoryType != null && categoryType.length() > 0 && categoryId != -1;
     }
 
+    private boolean canRequery() {
+        return
+            getWebSocketService().getState() == WebSocketService.State.Connected ||
+            Messages.Category.OFFLINE.equals(categoryType);
+    }
+
     private QueryFactory createCategoryQueryFactory(
         final String categoryType, long categoryId) {
 
@@ -264,6 +277,11 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
                         .addOption(Messages.Key.LIMIT, limit)
                         .addOption(Messages.Key.FILTER, lastFilter)
                         .build();
+                }
+
+                @Override
+                public boolean connectionRequired() {
+                    return Messages.Category.OFFLINE.equals(categoryType);
                 }
             };
         }

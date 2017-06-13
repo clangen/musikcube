@@ -286,6 +286,16 @@ public class SocketMessage {
             return builder;
         }
 
+        public Builder withOptions(final JSONObject options) {
+            if (options == null) {
+                this.options = new JSONObject();
+            }
+            else {
+                this.options = options;
+            }
+            return this;
+        }
+
         public Builder addOption(final String key, final Object value) {
             try {
                 options.put(key, value);

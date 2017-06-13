@@ -123,6 +123,8 @@ public class MainActivity extends WebSocketActivityBase {
         menu.findItem(R.id.action_remote_toggle).setIcon(
             streaming ? R.mipmap.ic_toolbar_streaming : R.mipmap.ic_toolbar_remote);
 
+        menu.findItem(R.id.action_offline_tracks).setEnabled(streaming);
+
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -144,6 +146,10 @@ public class MainActivity extends WebSocketActivityBase {
             case R.id.action_playlists:
                 startActivity(CategoryBrowseActivity.getStartIntent(
                     this, Messages.Category.PLAYLISTS, CategoryBrowseActivity.DeepLink.TRACKS));
+                return true;
+
+            case R.id.action_offline_tracks:
+                startActivity(TrackListActivity.getOfflineStartIntent(this));
                 return true;
         }
 
@@ -295,18 +301,19 @@ public class MainActivity extends WebSocketActivityBase {
             throw new IllegalStateException();
         }
 
+        final PlaybackState playbackState = playback.getPlaybackState();
         final boolean streaming = prefs.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK);
         final boolean connected = (wss.getState() == WebSocketService.State.Connected);
-        final boolean stopped = (playback.getPlaybackState() == PlaybackState.Stopped);
-        final boolean playing = (playback.getPlaybackState() == PlaybackState.Playing);
-        final boolean buffering = (playback.getPlaybackState() == PlaybackState.Buffering);
-        final boolean showMetadataView = !stopped && connected && playback.getQueueCount() > 0;
+        final boolean stopped = (playbackState == PlaybackState.Stopped);
+        final boolean playing = (playbackState == PlaybackState.Playing);
+        final boolean buffering = (playbackState == PlaybackState.Buffering);
+        final boolean showMetadataView = !stopped && /*connected &&*/ playback.getQueueCount() > 0;
 
         /* bottom section: transport controls */
         this.playPause.setText(playing || buffering ? R.string.button_pause : R.string.button_play);
 
         this.connectedNotPlaying.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
-        this.disconnectedOverlay.setVisibility(connected ? View.GONE : View.VISIBLE);
+        this.disconnectedOverlay.setVisibility(connected || !stopped ? View.GONE : View.VISIBLE);
 
         final RepeatMode repeatMode = playback.getRepeatMode();
         final boolean repeatChecked = (repeatMode != RepeatMode.None);

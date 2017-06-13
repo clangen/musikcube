@@ -15,21 +15,24 @@ import java.util.HashMap
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.util.Preconditions
 import io.casey.musikcube.remote.websocket.Prefs
+import org.json.JSONObject
 
 class MediaPlayerWrapper : PlayerWrapper() {
-
     private val player = MediaPlayer()
     private var seekTo: Int = 0
     private var prefetching: Boolean = false
-    private val context = Application.getInstance()
+    private val context = Application.instance
     private val prefs: SharedPreferences
+    private var metadata: JSONObject? = null
+    private var proxyUri: String? = null
+    private var originalUri: String? = null
     override var bufferedPercent: Int = 0
 
     init {
-        this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        this.prefs = context!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     }
 
-    override fun play(uri: String) {
+    override fun play(uri: String, metadata: JSONObject) {
         Preconditions.throwIfNotOnMainThread()
 
         try {
@@ -40,17 +43,17 @@ class MediaPlayerWrapper : PlayerWrapper() {
             val headers = HashMap<String, String>()
             headers.put("Authorization", "Basic " + encoded)
 
-            player.setDataSource(
-                context,
-                Uri.parse(StreamProxy.getProxyUrl(context, uri)),
-                headers)
+            this.metadata = metadata
+            this.originalUri = uri
+            this.proxyUri = StreamProxy.getProxyUrl(context, uri)
 
+            player.setDataSource(context, Uri.parse(proxyUri), headers)
             player.setAudioStreamType(AudioManager.STREAM_MUSIC)
             player.setOnPreparedListener(onPrepared)
             player.setOnErrorListener(onError)
             player.setOnCompletionListener(onCompleted)
             player.setOnBufferingUpdateListener(onBuffering)
-            player.setWakeMode(Application.getInstance(), PowerManager.PARTIAL_WAKE_LOCK)
+            player.setWakeMode(Application.instance, PowerManager.PARTIAL_WAKE_LOCK)
             player.prepareAsync()
         }
         catch (e: IOException) {
@@ -58,11 +61,11 @@ class MediaPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    override fun prefetch(uri: String) {
+    override fun prefetch(uri: String, metadata: JSONObject) {
         Preconditions.throwIfNotOnMainThread()
 
         this.prefetching = true
-        play(uri)
+        play(uri, metadata)
     }
 
     override fun pause() {
@@ -186,7 +189,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    private val onPrepared = { mediaPlayer: MediaPlayer ->
+    private val onPrepared = { _: MediaPlayer ->
         if (this.state === State.Killing) {
             dispose()
         }
@@ -224,7 +227,15 @@ class MediaPlayerWrapper : PlayerWrapper() {
         dispose()
     }
 
-    private val onBuffering = { _: MediaPlayer, percent: Int -> bufferedPercent = percent }
+    private val onBuffering = { _: MediaPlayer, percent: Int ->
+        bufferedPercent = percent
+
+        if (bufferedPercent >= 100) {
+            if (originalUri != null && metadata != null) {
+                PlayerWrapper.storeOffline(originalUri!!, metadata!!)
+            }
+        }
+    }
 
     companion object {
         private val TAG = "MediaPlayerWrapper"

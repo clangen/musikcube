@@ -71,17 +71,17 @@ public class SystemService extends Service {
     private SimpleTarget<Bitmap> albumArtRequest;
 
     public static void wakeup() {
-        final Context c = Application.getInstance();
+        final Context c = Application.Companion.getInstance();
         c.startService(new Intent(c, SystemService.class).setAction(ACTION_WAKE_UP));
     }
 
     public static void shutdown() {
-        final Context c = Application.getInstance();
+        final Context c = Application.Companion.getInstance();
         c.startService(new Intent(c, SystemService.class).setAction(ACTION_SHUT_DOWN));
     }
 
     public static void sleep() {
-        final Context c = Application.getInstance();
+        final Context c = Application.Companion.getInstance();
         c.startService(new Intent(c, SystemService.class).setAction(ACTION_SLEEP));
     }
 

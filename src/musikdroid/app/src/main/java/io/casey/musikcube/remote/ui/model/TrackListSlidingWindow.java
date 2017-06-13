@@ -54,9 +54,13 @@ public class TrackListSlidingWindow<TrackType> {
         void onReloaded(int count);
     }
 
-    public interface QueryFactory {
-        SocketMessage getRequeryMessage();
-        SocketMessage getPageAroundMessage(int offset, int limit);
+    public static abstract class QueryFactory {
+        public abstract SocketMessage getRequeryMessage();
+        public abstract SocketMessage getPageAroundMessage(int offset, int limit);
+
+        public boolean connectionRequired() {
+            return false;
+        }
     }
 
     public TrackListSlidingWindow(RecyclerView recyclerView,
@@ -86,7 +90,9 @@ public class TrackListSlidingWindow<TrackType> {
     };
 
     public void requery() {
-        if (connected) {
+         boolean connectionRequired = (queryFactory != null) && queryFactory.connectionRequired();
+
+        if (!connectionRequired || connected) {
             cancelMessages();
 
             boolean queried = false;

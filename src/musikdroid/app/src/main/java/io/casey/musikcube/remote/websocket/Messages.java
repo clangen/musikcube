@@ -108,6 +108,7 @@ public class Messages {
     }
 
     public interface Category {
+        String OFFLINE = "offline";
         String ALBUM = "album";
         String ARTIST = "artist";
         String ALBUM_ARTIST = "album_artist";
