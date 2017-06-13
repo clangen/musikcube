@@ -38,42 +38,43 @@ class StreamProxy private constructor(context: Context) {
         val cachePath = File(context.externalCacheDir, "audio")
 
         proxy = HttpProxyCacheServer.Builder(context.applicationContext)
-                .cacheDirectory(cachePath)
-                .maxCacheSize(CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: MINIMUM_CACHE_SIZE_BYTES)
-                .headerInjector { url ->
-                    val headers = HashMap<String, String>()
-                    val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
-                    val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
-                    headers.put("Authorization", "Basic " + encoded)
-                    headers
-                }
-                .fileNameGenerator { url ->
-                    try {
-                        val uri = Uri.parse(url)
-                        /* format is: audio/external_id/<id> */
-                        val segments = uri.pathSegments
-                        if (segments.size == 3 && "external_id" == segments[1]) {
-                            /* url params, hyphen separated */
-                            var params = uri.query
-                            if (Strings.notEmpty(params)) {
-                                params = "-" + params
-                                    .replace("?", "-")
-                                    .replace("&", "-")
-                                    .replace("=", "-")
-                            }
-                            else {
-                                params = ""
-                            }
-
-                            "${segments[2]}-$params"
+            .cacheDirectory(cachePath)
+            .maxCacheSize(CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: MINIMUM_CACHE_SIZE_BYTES)
+            .headerInjector { url ->
+                val headers = HashMap<String, String>()
+                val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
+                val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
+                headers.put("Authorization", "Basic " + encoded)
+                headers
+            }
+            .fileNameGenerator gen@ { url ->
+                try {
+                    val uri = Uri.parse(url)
+                    /* format is: audio/external_id/<id> */
+                    val segments = uri.pathSegments
+                    if (segments.size == 3 && "external_id" == segments[1]) {
+                        /* url params, hyphen separated */
+                        var params = uri.query
+                        if (Strings.notEmpty(params)) {
+                            params = "-" + params
+                                .replace("?", "-")
+                                .replace("&", "-")
+                                .replace("=", "-")
                         }
-                    } catch (ex: Exception) {
-                        /* eh... */
-                    }
+                        else {
+                            params = ""
+                        }
 
-                    DEFAULT_FILENAME_GENERATOR.generate(url)
+                        return@gen "${segments[2]}$params"
+                    }
                 }
-                .build()
+                catch (ex: Exception) {
+                    /* eh... */
+                }
+
+                return@gen DEFAULT_FILENAME_GENERATOR.generate(url)
+            }
+            .build()
     }
 
     companion object {
