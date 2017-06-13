@@ -11,6 +11,7 @@ import java.util.List;
 
 import io.casey.musikcube.remote.Application;
 import io.casey.musikcube.remote.playback.StreamProxy;
+import io.casey.musikcube.remote.util.Strings;
 import io.casey.musikcube.remote.websocket.Messages;
 import io.casey.musikcube.remote.websocket.SocketMessage;
 import io.casey.musikcube.remote.websocket.WebSocketService;
@@ -65,19 +66,29 @@ public abstract class OfflineDb extends RoomDatabase {
             final OfflineTrackDao dao = trackDao();
 
             final boolean countOnly = message.getBooleanOption(Messages.Key.COUNT_ONLY, false);
+            final String filter = message.getStringOption(Messages.Key.FILTER, "");
 
             final JSONArray tracks = new JSONArray();
             final JSONObject options = new JSONObject();
 
             if (countOnly) {
-                options.put(Messages.Key.COUNT, dao.countTracks());
+                final int count = Strings.empty(filter) ? dao.countTracks() : dao.countTracks(filter);
+                options.put(Messages.Key.COUNT, count);
             }
             else {
                 final int offset = message.getIntOption(Messages.Key.OFFSET, -1);
                 final int limit = message.getIntOption(Messages.Key.LIMIT, -1);
 
-                final List<OfflineTrack> offlineTracks = (offset == -1 || limit == -1)
-                    ? dao.queryTracks() : dao.queryTracks(limit, offset);
+                List<OfflineTrack> offlineTracks;
+
+                if (Strings.empty(filter)) {
+                    offlineTracks = (offset == -1 || limit == -1)
+                        ? dao.queryTracks() : dao.queryTracks(limit, offset);
+                }
+                else {
+                    offlineTracks = (offset == -1 || limit == -1)
+                        ? dao.queryTracks(filter) : dao.queryTracks(filter, limit, offset);
+                }
 
                 for (final OfflineTrack track : offlineTracks) {
                     tracks.put(track.toJSONObject());
