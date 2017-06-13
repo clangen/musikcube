@@ -65,7 +65,7 @@ TranscodingDataStream::TranscodingDataStream(
             /*  note that we purposely under-estimate the content length by a couple
             seconds. we do this because http clients seem to be more likely to be
             throw a fit if we over estimate, instead of under-estimate. */
-            this->length = (PositionType)((this->decoder->GetDuration() - 2.0) * 1000.0 * (float)bitrate / 8.0);
+            this->length = (PositionType)((this->decoder->GetDuration() - 1.0) * 1000.0 * (float)bitrate / 8.0);
         }
     }
 }

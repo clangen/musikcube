@@ -118,6 +118,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     protected void onResume() {
         this.tracks.resume(); /* needs to happen before */
         super.onResume();
+        requeryIfViewingOfflineCache();
     }
 
     @Override
@@ -139,7 +140,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     private WebSocketService.Client socketServiceClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
-            if (canRequery()) {
+            if (getWebSocketService().getState() == WebSocketService.State.Connected) {
                 filterDebouncer.cancel();
                 tracks.requery();
             }
@@ -240,14 +241,14 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         }
     }
 
-    private static boolean isValidCategory(final String categoryType, long categoryId) {
-        return categoryType != null && categoryType.length() > 0 && categoryId != -1;
+    private void requeryIfViewingOfflineCache() {
+        if (Messages.Category.OFFLINE.equals(categoryType)) {
+            tracks.requery();
+        }
     }
 
-    private boolean canRequery() {
-        return
-            getWebSocketService().getState() == WebSocketService.State.Connected ||
-            Messages.Category.OFFLINE.equals(categoryType);
+    private static boolean isValidCategory(final String categoryType, long categoryId) {
+        return categoryType != null && categoryType.length() > 0 && categoryId != -1;
     }
 
     private QueryFactory createCategoryQueryFactory(

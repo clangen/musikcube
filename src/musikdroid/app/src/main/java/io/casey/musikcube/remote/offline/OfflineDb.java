@@ -27,8 +27,8 @@ public abstract class OfflineDb extends RoomDatabase {
                     final String category = message.getStringOption(Messages.Key.CATEGORY);
                     if (Messages.Category.OFFLINE.equals(category)) {
                         queryTracks(message, responder);
+                        return true;
                     }
-                    return true;
                 }
                 return false;
             });
@@ -73,7 +73,6 @@ public abstract class OfflineDb extends RoomDatabase {
                 options.put(Messages.Key.COUNT, dao.countTracks());
             }
             else {
-
                 final int offset = message.getIntOption(Messages.Key.OFFSET, -1);
                 final int limit = message.getIntOption(Messages.Key.LIMIT, -1);
 
@@ -90,8 +89,10 @@ public abstract class OfflineDb extends RoomDatabase {
 
             options.put(Messages.Key.DATA, tracks);
 
-            responder.respond(SocketMessage.Builder
-                .respondTo(message).withOptions(options).build());
+            final SocketMessage response = SocketMessage.Builder
+                .respondTo(message).withOptions(options).build();
+
+            responder.respond(response);
 
             return true;
         })

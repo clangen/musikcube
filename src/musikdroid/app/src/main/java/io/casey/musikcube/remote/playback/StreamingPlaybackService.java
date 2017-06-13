@@ -12,6 +12,8 @@ import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -474,7 +476,6 @@ public class StreamingPlaybackService implements PlaybackService {
         return current / getMaxSystemVolume();
     }
 
-
     private float getMaxSystemVolume() {
         return audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
     }
@@ -745,19 +746,20 @@ public class StreamingPlaybackService implements PlaybackService {
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(AndroidSchedulers.mainThread())
                     .map(StreamingPlaybackService::extractTrackFromMessage)
-                    .doOnNext(track -> {
-                        if (params == this.params && context.currentIndex == currentIndex) {
-                            if (context.nextMetadata == null) {
-                                context.nextIndex = nextIndex;
-                                context.nextMetadata = track;
-                                prefetchNextTrackAudio();
+                    .subscribe(
+                        (track) -> {
+                            if (params == StreamingPlaybackService.this.params && context.currentIndex == currentIndex) {
+                                if (context.nextMetadata == null) {
+                                    context.nextIndex = nextIndex;
+                                    context.nextMetadata = track;
+                                    prefetchNextTrackAudio();
+                                }
                             }
-                        }
-                    })
-                    .doOnError(error -> {
-                        Log.e(TAG, "failed to prefetch next track!", error);
-                    })
-                    .subscribe();
+                        },
+
+                        (error) -> {
+                            Log.e(TAG, "failed to prefetch next track!", error);
+                        });
             }
         }
     }
@@ -783,31 +785,37 @@ public class StreamingPlaybackService implements PlaybackService {
             .flatMap(response -> getQueueCount(context, response))
             .concatMap(count -> getCurrentAndNextTrackMessages(context, count))
             .map(StreamingPlaybackService::extractTrackFromMessage)
-            .doOnNext(track -> {
-                if (context.currentMetadata == null) {
-                    context.currentMetadata = track;
-                }
-                else {
-                    context.nextMetadata = track;
-                }
-            })
-            .doOnComplete(() -> {
-                if (this.params == params && this.context == context) {
-                    notifyEventListeners();
-
-                    final String uri = getUri(this.context.currentMetadata);
-                    if (uri != null) {
-                        this.context.currentPlayer = PlayerWrapper.Companion.newInstance();
-                        this.context.currentPlayer.setOnStateChangedListener(onCurrentPlayerStateChanged);
-                        this.context.currentPlayer.play(uri, this.context.currentMetadata);
+            .subscribe(
+                track -> {
+                    if (context.currentMetadata == null) {
+                        context.currentMetadata = track;
                     }
-                }
-            })
-            .doOnError(error -> {
-                Log.e(TAG, "failed to load track to play!", error);
-                setState(PlaybackState.Stopped);
-            })
-            .subscribe();
+                    else {
+                        context.nextMetadata = track;
+                    }
+                },
+
+                error -> {
+                    Log.e(TAG, "failed to load track to play!", error);
+                    setState(PlaybackState.Stopped);
+                },
+
+                () -> {
+                    if (this.params == params && this.context == context) {
+                        notifyEventListeners();
+
+                        final String uri = getUri(this.context.currentMetadata);
+
+                        if (uri != null) {
+                            this.context.currentPlayer = PlayerWrapper.Companion.newInstance();
+                            this.context.currentPlayer.setOnStateChangedListener(onCurrentPlayerStateChanged);
+                            this.context.currentPlayer.play(uri, this.context.currentMetadata);
+                        }
+                    }
+                    else {
+                        Log.d(TAG, "onComplete fired, but params/context changed. discarding!");
+                    }
+                });
     }
 
     private void cancelScheduledPausedSleep() {
@@ -826,18 +834,19 @@ public class StreamingPlaybackService implements PlaybackService {
         this.wss.send(query, this.wssClient)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(AndroidSchedulers.mainThread())
-            .doOnNext(response -> {
-                if (params == this.params) {
-                    final JSONArray data = response.getJsonArrayOption(Messages.Key.DATA);
-                    for (int i = 0; i < data.length(); i++) {
-                        trackMetadataCache.put(start + i, data.getJSONObject(i));
+            .subscribe(
+                response -> {
+                    if (params == this.params) {
+                        final JSONArray data = response.getJsonArrayOption(Messages.Key.DATA);
+                        for (int i = 0; i < data.length(); i++) {
+                            trackMetadataCache.put(start + i, data.getJSONObject(i));
+                        }
                     }
-                }
-            })
-            .doOnError(error -> {
-                Log.e(TAG, "failed to prefetch track metadata!", error);
-            })
-            .subscribe();
+                },
+
+                error -> {
+                    Log.e(TAG, "failed to prefetch track metadata!", error);
+                });
     }
 
     private TrackListSlidingWindow.QueryFactory queryFactory = new TrackListSlidingWindow.QueryFactory() {

@@ -86,6 +86,10 @@ public class PlayQueueActivity extends WebSocketActivityBase {
     protected void onResume() {
         this.tracks.resume(); /* needs to happen before */
         super.onResume();
+
+        if (offlineQueue) {
+            tracks.requery();
+        }
     }
 
     @Override
@@ -118,7 +122,7 @@ public class PlayQueueActivity extends WebSocketActivityBase {
     private final WebSocketService.Client webSocketClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
-            if (newState == WebSocketService.State.Connected || offlineQueue) {
+            if (newState == WebSocketService.State.Connected) {
                 tracks.requery();
             }
         }

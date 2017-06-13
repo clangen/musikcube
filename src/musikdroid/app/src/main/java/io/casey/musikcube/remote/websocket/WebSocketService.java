@@ -49,7 +49,7 @@ public class WebSocketService {
 
     private static final int MESSAGE_BASE = 0xcafedead;
     private static final int MESSAGE_CONNECT_THREAD_FINISHED = MESSAGE_BASE + 0;
-    private static final int MESSAGE_MESSAGE_RECEIVED = MESSAGE_BASE + 1;
+    private static final int MESSAGE_RECEIVED = MESSAGE_BASE + 1;
     private static final int MESSAGE_REMOVE_OLD_CALLBACKS = MESSAGE_BASE + 2;
     private static final int MESSAGE_AUTO_RECONNECT = MESSAGE_BASE + 3;
     private static final int MESSAGE_SCHEDULE_PING = MESSAGE_BASE + 4;
@@ -108,7 +108,7 @@ public class WebSocketService {
                 }
                 return true;
             }
-            else if (message.what == MESSAGE_MESSAGE_RECEIVED) {
+            else if (message.what == MESSAGE_RECEIVED) {
                 if (clients != null) {
                     final SocketMessage msg = (SocketMessage) message.obj;
 
@@ -160,6 +160,7 @@ public class WebSocketService {
     private static class MessageResultDescriptor {
         long id;
         long enqueueTime;
+        boolean intercepted;
         Client client;
         MessageResultCallback callback;
         MessageErrorCallback error;
@@ -319,11 +320,15 @@ public class WebSocketService {
             mrd.enqueueTime = System.currentTimeMillis();
             mrd.client = client;
             mrd.callback = callback;
+            mrd.intercepted = intercepted;
             messageCallbacks.put(message.getId(), mrd);
         }
 
         if (!intercepted) {
             this.socket.sendText(message.toString());
+        }
+        else {
+            Log.d(TAG, "send: message intercepted with id " + String.valueOf(id));
         }
 
         return id;
@@ -365,6 +370,7 @@ public class WebSocketService {
                     mrd.id = NEXT_ID.incrementAndGet();
                     mrd.enqueueTime = System.currentTimeMillis();
                     mrd.client = client;
+                    mrd.intercepted = intercepted;
 
                     mrd.callback = (SocketMessage message) -> {
                         emitter.onNext(message);
@@ -414,7 +420,7 @@ public class WebSocketService {
             this.socket = null;
         }
 
-        this.messageCallbacks.clear();
+        removeNonInterceptedCallbacks();
         setState(State.Disconnected);
 
         if (autoReconnect) {
@@ -425,6 +431,10 @@ public class WebSocketService {
         else {
             this.handler.removeMessages(MESSAGE_AUTO_RECONNECT);
         }
+    }
+
+    private void removeNonInterceptedCallbacks() {
+        removeCallbacks((mrd) -> !mrd.intercepted);
     }
 
     private void removeInternalCallbacks() {
@@ -453,6 +463,7 @@ public class WebSocketService {
                 if (mdr.error != null) {
                     mdr.error.onMessageError();
                 }
+
                 it.remove();
             }
         }
@@ -534,7 +545,7 @@ public class WebSocketService {
         /* post to the back of the queue in case the interceptor responded immediately;
         we need to ensure all of the request book-keeping has been finished. */
         handler.post(() -> {
-            handler.sendMessage(Message.obtain(handler, MESSAGE_MESSAGE_RECEIVED, response));
+            handler.sendMessage(Message.obtain(handler, MESSAGE_RECEIVED, response));
         });
     };
 
@@ -548,7 +559,7 @@ public class WebSocketService {
                         handler, MESSAGE_CONNECT_THREAD_FINISHED, websocket));
                 }
                 else {
-                    handler.sendMessage(Message.obtain(handler, MESSAGE_MESSAGE_RECEIVED, message));
+                    handler.sendMessage(Message.obtain(handler, MESSAGE_RECEIVED, message));
                 }
             }
         }
