@@ -800,6 +800,7 @@ json WebSocketServer::WebSocketServer::ReadTrackMetadata(IRetainedTrack* track) 
         { key::id, track->GetId() },
         { key::external_id, GetMetadataString(track, key::external_id) },
         { key::title, GetMetadataString(track, key::title) },
+        { key::track_num, track->GetInt32(key::track_num.c_str(), 0) },
         { key::album, GetMetadataString(track, key::album) },
         { key::album_id, track->GetInt64(key::album_id.c_str()) },
         { key::album_artist, GetMetadataString(track, key::album_artist) },
