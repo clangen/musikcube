@@ -39,6 +39,7 @@
 
 #define BUFFER_SIZE 8192
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
+#define DETACH_TOLERANCE_BYTES 131072 /* 2^17, ~131k */
 
 using PositionType = TranscodingDataStream::PositionType;
 
@@ -65,7 +66,7 @@ TranscodingDataStream::TranscodingDataStream(
             /*  note that we purposely under-estimate the content length by a couple
             seconds. we do this because http clients seem to be more likely to be
             throw a fit if we over estimate, instead of under-estimate. */
-            this->length = (PositionType)((this->decoder->GetDuration() - 1.0) * 1000.0 * (float)bitrate / 8.0);
+            this->length = (PositionType)((this->decoder->GetDuration() - 0.2) * 1000.0 * (float)bitrate / 8.0);
         }
     }
 }
@@ -91,7 +92,6 @@ TranscodingDataStream::TranscodingDataStream(
 }
 
 TranscodingDataStream::~TranscodingDataStream() {
-    this->Close();
 }
 
 bool TranscodingDataStream::Open(const char *uri, unsigned int options) {
@@ -99,17 +99,47 @@ bool TranscodingDataStream::Open(const char *uri, unsigned int options) {
 }
 
 bool TranscodingDataStream::Close() {
+    if (this->eof) {
+        this->Dispose();
+    }
+    else {
+        std::thread([this]() { /* detach and finish. hopefully. */
+            char buffer[8192];
+            int count = 0;
+            int last = 0;
+            while (!Eof() && count < DETACH_TOLERANCE_BYTES) {
+                last = Read(buffer, sizeof(buffer));
+                count += last;
+                std::this_thread::yield();
+            }
+
+            if (last != 0 && this->outFile) {
+                /* incomplete, delete... */
+                fclose(this->outFile);
+                this->outFile = nullptr;
+                boost::system::error_code ec;
+                boost::filesystem::remove(this->tempFilename, ec);
+            }
+
+            Dispose();
+        }).detach();
+    }
+
+    return true;
+}
+
+void TranscodingDataStream::Dispose() {
     if (this->pcmBuffer) {
         this->pcmBuffer->Destroy();
         this->pcmBuffer = nullptr;
     }
 
-    if (this->decoder != nullptr) {
+    if (this->decoder) {
         this->decoder->Destroy();
         this->decoder = nullptr;
     }
 
-    if (this->input != nullptr) {
+    if (this->input) {
         this->input->Destroy();
         this->input = nullptr;
     }
@@ -126,7 +156,7 @@ bool TranscodingDataStream::Close() {
         boost::filesystem::remove(this->tempFilename, ec);
     }
 
-    return true;
+    delete this;
 }
 
 void TranscodingDataStream::Interrupt() {
@@ -134,7 +164,7 @@ void TranscodingDataStream::Interrupt() {
 }
 
 void TranscodingDataStream::Destroy() {
-    delete this;
+    this->Dispose();
 }
 
 PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead) {

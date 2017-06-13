@@ -136,7 +136,7 @@ static void fileFreeCallback(void *cls) {
         std::cerr << "******** REQUEST CLOSE: " << range->file << " ********\n\n";
 #endif
 
-        range->file->Destroy();
+        range->file->Close(); /* lazy destroy */
         range->file = nullptr;
     }
     delete range;

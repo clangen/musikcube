@@ -18,15 +18,13 @@
         android:id="@+id/action_genres"
         app:showAsAction="never"
         android:title="@string/menu_genres"/>
-
-    <item
-        android:id="@+id/action_settings"
-        app:showAsAction="never"
-        android:title="@string/menu_settings"/>
-
     <item
         android:id="@+id/action_offline_tracks"
         app:showAsAction="never"
         android:title="@string/menu_offline_tracks"/>
 
+    <item
+        android:id="@+id/action_settings"
+        app:showAsAction="never"
+        android:title="@string/menu_settings"/>
 </menu>

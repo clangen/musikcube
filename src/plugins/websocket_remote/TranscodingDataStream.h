@@ -78,6 +78,8 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
         musik::core::sdk::IDecoder* decoder;
         musik::core::sdk::IBuffer* pcmBuffer;
 
+        void Dispose();
+
         template <typename T>
         struct ByteBuffer {
             ByteBuffer() {
