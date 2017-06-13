@@ -1,3 +1,21 @@
+0.17.0
+
+* added code to win32 build that ensures only a single instance is running
+* fixed auto-dpi scaling in windows so `musikbox` displays properly out of the
+  box on high dpi (4k) displays
+* added the ability to browse and play cached tracks in `musikdroid` while 
+  offline. 
+* fixed a bug that was preventing the transcoder cache from functioning properly
+
+low-level:
+
+* updated to boost 1.64.0
+* started converting some `musikdroid` sources to `kotlin`
+* added missing `track_num` field to track resources in `websocket_remote`
+* fixed local cache filename generation in `musikdroid`
+
+--------------------------------------------------------------------------------
+
 0.16.0
 
 user-facing:
