@@ -33,6 +33,7 @@ import static io.casey.musikcube.remote.ui.model.TrackListSlidingWindow.QueryFac
 public class TrackListActivity extends WebSocketActivityBase implements Filterable {
     private static String EXTRA_CATEGORY_TYPE = "extra_category_type";
     private static String EXTRA_SELECTED_ID = "extra_selected_id";
+    private static String EXTRA_TITLE_ID = "extra_title_id";
 
     public static Intent getStartIntent(final Context context, final String type, final long id) {
         return new Intent(context, TrackListActivity.class)
@@ -41,7 +42,8 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     }
 
     public static Intent getOfflineStartIntent(final Context context) {
-        return getStartIntent(context, Messages.Category.OFFLINE, 0);
+        return getStartIntent(context, Messages.Category.OFFLINE, 0)
+            .putExtra(Intent.EXTRA_TITLE, R.string.offline_tracks_title);
     }
 
     public static Intent getStartIntent(final Context context,
@@ -78,7 +80,8 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
 
         setContentView(R.layout.recycler_view_activity);
 
-        Views.setTitle(this, R.string.songs_title);
+        final int titleId = getIntent().getIntExtra(Intent.EXTRA_TITLE, R.string.songs_title);
+        Views.setTitle(this, titleId);
         Views.enableUpNavigation(this);
 
         final QueryFactory queryFactory =
