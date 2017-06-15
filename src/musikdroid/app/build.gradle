@@ -52,16 +52,16 @@ dependencies {
     compile 'com.neovisionaries:nv-websocket-client:1.31'
     compile 'com.squareup.okhttp3:okhttp:3.8.0'
     compile 'com.github.bumptech.glide:glide:3.8.0'
-    compile 'io.reactivex.rxjava2:rxjava:2.0.9'
+    compile 'io.reactivex.rxjava2:rxjava:2.1.0'
     compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
-    compile 'com.google.android.exoplayer:exoplayer:r2.4.1'
-    compile 'com.google.android.exoplayer:extension-okhttp:r2.4.1'
+    compile 'com.google.android.exoplayer:exoplayer:r2.4.2'
+    compile 'com.google.android.exoplayer:extension-okhttp:r2.4.2'
     compile 'com.github.pluscubed:recycler-fast-scroll:0.3.2@aar'
     compile 'com.facebook.stetho:stetho:1.5.0'
 
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:recyclerview-v7:25.3.1'
-    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:appcompat-v7:25.4.0'
+    compile 'com.android.support:recyclerview-v7:25.4.0'
+    compile 'com.android.support:design:25.4.0'
 
     testCompile 'junit:junit:4.12'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
