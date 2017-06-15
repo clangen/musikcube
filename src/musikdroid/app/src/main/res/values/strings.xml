@@ -35,6 +35,8 @@
     <string name="button_enable">enable</string>
     <string name="button_disable">disable</string>
     <string name="button_ok">ok</string>
+    <string name="button_yes">yes</string>
+    <string name="button_no">no</string>
     <string name="button_learn_more">learn more</string>
     <string name="invalid_password_dialog_title">invalid password</string>
     <string name="invalid_password_dialog_message">the server rejected your password.\n\nchange the password in the settings screen.</string>
@@ -58,6 +60,8 @@
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>
     <string name="snackbar_remote_enabled">switched to remote control mode</string>
+    <string name="main_switch_to_streaming_title">switch to streaming mode?</string>
+    <string name="main_switch_to_streaming_message">playing offline tracks requires you to switch from remote mode to streaming mode.\n\ndo you want to switch now?</string>
     <string name="settings_playback_mode">playback mode:</string>
     <string name="settings_transcoder_bitrate">streaming downsampler bitrate:</string>
     <string name="settings_cache_size">streaming disk cache size:</string>

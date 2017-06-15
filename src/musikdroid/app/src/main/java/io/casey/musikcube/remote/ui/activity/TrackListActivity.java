@@ -43,7 +43,7 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
 
     public static Intent getOfflineStartIntent(final Context context) {
         return getStartIntent(context, Messages.Category.OFFLINE, 0)
-            .putExtra(Intent.EXTRA_TITLE, R.string.offline_tracks_title);
+            .putExtra(EXTRA_TITLE_ID, R.string.offline_tracks_title);
     }
 
     public static Intent getStartIntent(final Context context,
@@ -75,12 +75,13 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        categoryType = getIntent().getStringExtra(EXTRA_CATEGORY_TYPE);
-        categoryId = getIntent().getLongExtra(EXTRA_SELECTED_ID, 0);
+        final Intent intent = getIntent();
+        categoryType = intent.getStringExtra(EXTRA_CATEGORY_TYPE);
+        categoryId = intent.getLongExtra(EXTRA_SELECTED_ID, 0);
+        final int titleId = intent.getIntExtra(EXTRA_TITLE_ID, R.string.songs_title);
 
         setContentView(R.layout.recycler_view_activity);
 
-        final int titleId = getIntent().getIntExtra(Intent.EXTRA_TITLE, R.string.songs_title);
         Views.setTitle(this, titleId);
         Views.enableUpNavigation(this);
 

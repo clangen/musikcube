@@ -1,12 +1,15 @@
 package io.casey.musikcube.remote;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -123,8 +126,6 @@ public class MainActivity extends WebSocketActivityBase {
         menu.findItem(R.id.action_remote_toggle).setIcon(
             streaming ? R.mipmap.ic_toolbar_streaming : R.mipmap.ic_toolbar_remote);
 
-        menu.findItem(R.id.action_offline_tracks).setEnabled(streaming);
-
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -145,11 +146,11 @@ public class MainActivity extends WebSocketActivityBase {
 
             case R.id.action_playlists:
                 startActivity(CategoryBrowseActivity.getStartIntent(
-                    this, Messages.Category.PLAYLISTS, CategoryBrowseActivity.DeepLink.TRACKS));
+                        this, Messages.Category.PLAYLISTS, CategoryBrowseActivity.DeepLink.TRACKS));
                 return true;
 
             case R.id.action_offline_tracks:
-                startActivity(TrackListActivity.getOfflineStartIntent(this));
+                onOfflineTracksSelected();
                 return true;
         }
 
@@ -164,6 +165,23 @@ public class MainActivity extends WebSocketActivityBase {
     @Override
     protected PlaybackService.EventListener getPlaybackServiceEventListener() {
         return this.playbackEvents;
+    }
+
+    private void onOfflineTracksSelected() {
+        if (isStreamingSelected()) {
+            startActivity(TrackListActivity.getOfflineStartIntent(this));
+        }
+        else {
+            final String tag = SwitchToOfflineTracksDialog.TAG;
+            if (getSupportFragmentManager().findFragmentByTag(tag) == null) {
+                SwitchToOfflineTracksDialog.newInstance().show(getSupportFragmentManager(), tag);
+            }
+        }
+    }
+
+    private void onConfirmSwitchToOfflineTracks() {
+        togglePlaybackService();
+        onOfflineTracksSelected();
     }
 
     private boolean isStreamingSelected() {
@@ -438,9 +456,31 @@ public class MainActivity extends WebSocketActivityBase {
         public void onInvalidPassword() {
             final String tag = InvalidPasswordDialogFragment.TAG;
             if (getSupportFragmentManager().findFragmentByTag(tag) == null) {
-                InvalidPasswordDialogFragment
-                    .newInstance().show(getSupportFragmentManager(), tag);
+                InvalidPasswordDialogFragment.newInstance().show(getSupportFragmentManager(), tag);
             }
         }
     };
+
+    public static class SwitchToOfflineTracksDialog extends DialogFragment {
+        public static final String TAG = "switch_to_offline_tracks_dialog";
+
+        public static SwitchToOfflineTracksDialog newInstance() {
+            return new SwitchToOfflineTracksDialog();
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            final AlertDialog dlg = new AlertDialog.Builder(getActivity())
+                    .setTitle(R.string.main_switch_to_streaming_title)
+                    .setMessage(R.string.main_switch_to_streaming_message)
+                    .setNegativeButton(R.string.button_no, null)
+                    .setPositiveButton(R.string.button_yes, (dialog, which) -> {
+                        ((MainActivity) getActivity()).onConfirmSwitchToOfflineTracks();
+                    })
+                    .create();
+
+            dlg.setCancelable(false);
+            return dlg;
+        }
+    }
 }

@@ -32,8 +32,8 @@ abstract class PlayerWrapper {
         fun onStateChanged(mpw: PlayerWrapper, state: State)
     }
 
-
     private var listener: OnStateChangedListener? = null
+
     var state = State.Stopped
         protected set(state) {
             if (this.state != state) {
@@ -149,9 +149,7 @@ abstract class PlayerWrapper {
 
         fun newInstance(): PlayerWrapper {
             return if (TYPE == Type.ExoPlayer)
-                ExoPlayerWrapper()
-            else
-                MediaPlayerWrapper()
+                ExoPlayerWrapper() else MediaPlayerWrapper()
         }
 
         fun addActivePlayer(player: PlayerWrapper) {
