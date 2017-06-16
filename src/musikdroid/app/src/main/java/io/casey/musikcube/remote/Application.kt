@@ -2,10 +2,12 @@ package io.casey.musikcube.remote
 
 import android.arch.persistence.room.Room
 import android.content.Context
+import com.crashlytics.android.Crashlytics
 import com.facebook.stetho.Stetho
 import io.casey.musikcube.remote.offline.OfflineDb
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.util.NetworkUtil
+import io.fabric.sdk.android.Fabric
 
 class Application : android.app.Application() {
 
@@ -13,6 +15,8 @@ class Application : android.app.Application() {
         instance = this
 
         super.onCreate()
+
+        Fabric.with(this, Crashlytics())
 
         if (BuildConfig.DEBUG) {
             Stetho.initializeWithDefaults(this)
