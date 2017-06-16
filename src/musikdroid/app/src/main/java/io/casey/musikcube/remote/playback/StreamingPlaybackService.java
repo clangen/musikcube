@@ -871,7 +871,10 @@ public class StreamingPlaybackService implements PlaybackService {
                 }
             }
 
-            return null;
+            return SocketMessage.Builder
+                .request(Messages.Request.QueryTracks)
+                .addOption(Messages.Key.COUNT_ONLY, true)
+                .build();
         }
 
         @Override
