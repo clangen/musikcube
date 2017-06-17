@@ -21,6 +21,7 @@ import io.casey.musikcube.remote.playback.PlaybackService;
 import io.casey.musikcube.remote.ui.fragment.TransportFragment;
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow;
 import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.ui.view.EmptyListView;
 import io.casey.musikcube.remote.util.Debouncer;
 import io.casey.musikcube.remote.util.Navigation;
 import io.casey.musikcube.remote.util.Strings;
@@ -28,6 +29,7 @@ import io.casey.musikcube.remote.websocket.Messages;
 import io.casey.musikcube.remote.websocket.SocketMessage;
 import io.casey.musikcube.remote.websocket.WebSocketService;
 
+import static io.casey.musikcube.remote.ui.view.EmptyListView.Capability;
 import static io.casey.musikcube.remote.ui.model.TrackListSlidingWindow.QueryFactory;
 
 public class TrackListActivity extends WebSocketActivityBase implements Filterable {
@@ -66,10 +68,12 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     }
 
     private TrackListSlidingWindow<JSONObject> tracks;
+    private EmptyListView emptyView;
     private TransportFragment transport;
     private String categoryType;
     private long categoryId;
     private String lastFilter = "";
+    private Adapter adapter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -88,10 +92,15 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         final QueryFactory queryFactory =
             createCategoryQueryFactory(categoryType, categoryId);
 
-        final Adapter adapter = new Adapter();
+        adapter = new Adapter();
         final RecyclerFastScroller fastScroller = (RecyclerFastScroller) findViewById(R.id.fast_scroller);
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
+
+        emptyView = (EmptyListView) findViewById(R.id.empty_list_view);
+        emptyView.setCapability(isOfflineTracks() ? Capability.OfflineOk : Capability.OnlineOnly);
+        emptyView.setEmptyMessage(getEmptyMessage());
+        emptyView.setAlternateView(recyclerView);
 
         tracks = new TrackListSlidingWindow<>(
             recyclerView,
@@ -99,6 +108,8 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
             getWebSocketService(),
             queryFactory,
             (JSONObject track) -> track);
+
+        tracks.setOnMetadataLoadedListener(slidingWindowListener);
 
         transport = Views.addTransportFragment(this,
             (TransportFragment fragment) -> adapter.notifyDataSetChanged());
@@ -144,9 +155,12 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
     private WebSocketService.Client socketServiceClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
-            if (getWebSocketService().getState() == WebSocketService.State.Connected) {
+            if (newState == WebSocketService.State.Connected) {
                 filterDebouncer.cancel();
                 tracks.requery();
+            }
+            else {
+                emptyView.update(newState, adapter.getItemCount());
             }
         }
 
@@ -245,8 +259,20 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
         }
     }
 
+    private String getEmptyMessage() {
+        if (isOfflineTracks()) {
+            return getString(R.string.empty_no_offline_tracks_message);
+        }
+
+        return getString(R.string.empty_no_items_format, getString(R.string.browse_type_tracks));
+    }
+
+    private boolean isOfflineTracks() {
+        return Messages.Category.OFFLINE.equals(categoryType);
+    }
+
     private void requeryIfViewingOfflineCache() {
-        if (Messages.Category.OFFLINE.equals(categoryType)) {
+        if (isOfflineTracks()) {
             tracks.requery();
         }
     }
@@ -314,4 +340,14 @@ public class TrackListActivity extends WebSocketActivityBase implements Filterab
             };
         }
     }
+
+    private TrackListSlidingWindow.OnMetadataLoadedListener slidingWindowListener
+        = new TrackListSlidingWindow.OnMetadataLoadedListener() {
+            public void onReloaded(int count) {
+                emptyView.update(getWebSocketService().getState(), count);
+            }
+
+            public void onMetadataLoaded(int offset, int count) {
+            }
+        };
 }

@@ -16,10 +16,11 @@ class Application : android.app.Application() {
 
         super.onCreate()
 
-        Fabric.with(this, Crashlytics())
-
         if (BuildConfig.DEBUG) {
             Stetho.initializeWithDefaults(this)
+        }
+        else {
+            Fabric.with(this, Crashlytics())
         }
 
         NetworkUtil.init()

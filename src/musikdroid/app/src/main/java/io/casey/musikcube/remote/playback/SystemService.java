@@ -69,6 +69,7 @@ public class SystemService extends Service {
     private AlbumArtModel albumArtModel = AlbumArtModel.empty();
     private Bitmap albumArt = null;
     private SimpleTarget<Bitmap> albumArtRequest;
+    private Runnable delayedSleep;
 
     public static void wakeup() {
         final Context c = Application.Companion.getInstance();
@@ -139,7 +140,7 @@ public class SystemService extends Service {
 
         if (wakeLock == null) {
             wakeLock = powerManager.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService");
+                PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService");
 
             wakeLock.setReferenceCounted(false);
             wakeLock.acquire();

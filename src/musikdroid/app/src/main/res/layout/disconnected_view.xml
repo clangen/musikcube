@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/offline_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+    <TextView
+        style="@style/DisconnectedButton"
+        android:id="@+id/disconnected_button"
+        android:text="@string/status_disconnected" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingBottom="16dp"
+        android:paddingTop="8dp"
+        android:text="@string/empty_show_offline_tracks_message" />
+
+    <TextView
+        android:id="@+id/offline_tracks_button"
+        style="@style/PlaybackButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/empty_show_offline_tracks_button" />
+
+</LinearLayout>

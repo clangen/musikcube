@@ -242,9 +242,12 @@ public class StreamingPlaybackService implements PlaybackService {
     public void resume() {
         if (requestAudioFocus()) {
             cancelScheduledPausedSleep();
-            context.currentPlayer.resume();
-            setState(PlaybackState.Playing);
             pausedByTransientLoss = false;
+
+            if (context.currentPlayer != null) {
+                context.currentPlayer.resume();
+                setState(PlaybackState.Playing);
+            }
         }
     }
 
@@ -910,17 +913,14 @@ public class StreamingPlaybackService implements PlaybackService {
     private WebSocketService.Client wssClient = new WebSocketService.Client() {
         @Override
         public void onStateChanged(WebSocketService.State newState, WebSocketService.State oldState) {
-
         }
 
         @Override
         public void onMessageReceived(SocketMessage message) {
-
         }
 
         @Override
         public void onInvalidPassword() {
-
         }
     };
 

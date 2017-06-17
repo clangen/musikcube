@@ -21,6 +21,7 @@ import io.casey.musikcube.remote.playback.Metadata;
 import io.casey.musikcube.remote.playback.PlaybackService;
 import io.casey.musikcube.remote.ui.fragment.TransportFragment;
 import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.ui.view.EmptyListView;
 import io.casey.musikcube.remote.util.Debouncer;
 import io.casey.musikcube.remote.util.Navigation;
 import io.casey.musikcube.remote.util.Strings;
@@ -75,6 +76,7 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
     private String categoryName;
     private long categoryId;
     private String lastFilter = "";
+    private EmptyListView emptyView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -94,6 +96,11 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
         final RecyclerFastScroller fastScroller = (RecyclerFastScroller) findViewById(R.id.fast_scroller);
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
+
+        emptyView = (EmptyListView) findViewById(R.id.empty_list_view);
+        emptyView.setCapability(EmptyListView.Capability.OnlineOnly);
+        emptyView.setEmptyMessage(getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums)));
+        emptyView.setAlternateView(recyclerView);
 
         transport = Views.addTransportFragment(this,
             (TransportFragment fragment) -> adapter.notifyDataSetChanged());
@@ -140,10 +147,11 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
                 .addOption(Key.FILTER, lastFilter)
                 .build();
 
-        wss.send(message, socketClient, (SocketMessage response) ->
-            adapter.setModel(response.getJsonArrayOption(Messages.Key.DATA)));
+        wss.send(message, socketClient, (SocketMessage response) -> {
+            adapter.setModel(response.getJsonArrayOption(Messages.Key.DATA));
+            emptyView.update(wss.getState(), adapter.getItemCount());
+        });
     }
-
 
     private final Debouncer<String> filterDebouncer = new Debouncer<String>(350) {
         @Override
@@ -160,6 +168,9 @@ public class AlbumBrowseActivity extends WebSocketActivityBase implements Filter
             if (newState == WebSocketService.State.Connected) {
                 filterDebouncer.call();
                 requery();
+            }
+            else {
+                emptyView.update(newState, adapter.getItemCount());
             }
         }
 

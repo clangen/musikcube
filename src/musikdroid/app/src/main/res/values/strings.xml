@@ -77,6 +77,15 @@
     <string name="settings_disable_cert_validation_title">certificate verification</string>
     <string name="settings_disable_cert_validation_message">there is really no reason to enable this setting. ssl without certificate validation opens you up to man-in-the-middle attacks, and only adds a false sense of security.\n\nare you sure you want to enable this setting?</string>
     <string name="settings_enable_notification_for_remote_playback">enable lock screen integration for remote playback</string>
+    <string name="empty_show_offline_tracks_message">if you\'ve streamed music in the past you probably have some songs hanging around in the offline cache; you can play these songs until your device is back online.</string>
+    <string name="empty_show_offline_tracks_button">show offline songs</string>
+    <string name="empty_no_offline_tracks_message">oops, you don\'t seem to have any songs available offline.\n\nnext time you\'re connected, stream some music!</string>
+    <string name="empty_no_items_format">you don\'t seem to have any %s here.</string>
+    <string name="browse_type_tracks">songs</string>
+    <string name="browse_type_albums">albums</string>
+    <string name="browse_type_artists">artists</string>
+    <string name="browse_type_genres">genres</string>
+    <string name="browse_type_playlists">playlists</string>
     <string name="unknown_artist">[unknown artist]</string>
     <string name="unknown_album">[unknown album]</string>
     <string name="unknown_title">[unknown title]</string>

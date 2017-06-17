@@ -24,6 +24,7 @@ import io.casey.musikcube.remote.playback.Metadata;
 import io.casey.musikcube.remote.playback.PlaybackService;
 import io.casey.musikcube.remote.ui.fragment.TransportFragment;
 import io.casey.musikcube.remote.ui.util.Views;
+import io.casey.musikcube.remote.ui.view.EmptyListView;
 import io.casey.musikcube.remote.util.Debouncer;
 import io.casey.musikcube.remote.util.Navigation;
 import io.casey.musikcube.remote.util.Strings;
@@ -42,6 +43,7 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
 
     private static final Map<String, String> CATEGORY_NAME_TO_ID = new HashMap<>();
     private static final Map<String, Integer> CATEGORY_NAME_TO_TITLE = new HashMap<>();
+    private static final Map<String, Integer> CATEGORY_NAME_TO_EMPTY_TYPE = new HashMap<>();
 
     static {
         CATEGORY_NAME_TO_ID.put(Messages.Category.ALBUM_ARTIST, Metadata.Track.ALBUM_ARTIST_ID);
@@ -55,6 +57,12 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
         CATEGORY_NAME_TO_TITLE.put(Messages.Category.ARTIST, R.string.artists_title);
         CATEGORY_NAME_TO_TITLE.put(Messages.Category.ALBUM, R.string.albums_title);
         CATEGORY_NAME_TO_TITLE.put(Messages.Category.PLAYLISTS, R.string.playlists_title);
+
+        CATEGORY_NAME_TO_EMPTY_TYPE.put(Messages.Category.ALBUM_ARTIST, R.string.browse_type_artists);
+        CATEGORY_NAME_TO_EMPTY_TYPE.put(Messages.Category.GENRE, R.string.browse_type_genres);
+        CATEGORY_NAME_TO_EMPTY_TYPE.put(Messages.Category.ARTIST, R.string.browse_type_artists);
+        CATEGORY_NAME_TO_EMPTY_TYPE.put(Messages.Category.ALBUM, R.string.browse_type_albums);
+        CATEGORY_NAME_TO_EMPTY_TYPE.put(Messages.Category.PLAYLISTS, R.string.browse_type_playlists);
     }
 
     public static Intent getStartIntent(final Context context, final String category) {
@@ -73,6 +81,7 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
     private String lastFilter;
     private TransportFragment transport;
     private int deepLinkType;
+    private EmptyListView emptyView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -84,8 +93,6 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
 
         setContentView(R.layout.recycler_view_activity);
 
-        Views.enableUpNavigation(this);
-
         if (CATEGORY_NAME_TO_TITLE.containsKey(category)) {
             setTitle(CATEGORY_NAME_TO_TITLE.get(category));
         }
@@ -93,6 +100,13 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
         final RecyclerFastScroller fastScroller = (RecyclerFastScroller) findViewById(R.id.fast_scroller);
         final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         Views.setupDefaultRecyclerView(this, recyclerView, fastScroller, adapter);
+
+        emptyView = (EmptyListView) findViewById(R.id.empty_list_view);
+        emptyView.setCapability(EmptyListView.Capability.OnlineOnly);
+        emptyView.setEmptyMessage(getString(R.string.empty_no_items_format, getString(CATEGORY_NAME_TO_EMPTY_TYPE.get(category))));
+        emptyView.setAlternateView(recyclerView);
+
+        Views.enableUpNavigation(this);
 
         transport = Views.addTransportFragment(this,
             (TransportFragment fragment) -> adapter.notifyDataSetChanged());
@@ -145,6 +159,8 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
             if (data != null && data.length() > 0) {
                 adapter.setModel(data);
             }
+
+            emptyView.update(getWebSocketService().getState(), adapter.getItemCount());
         });
     }
 
@@ -163,6 +179,9 @@ public class CategoryBrowseActivity extends WebSocketActivityBase implements Fil
             if (newState == WebSocketService.State.Connected) {
                 filterDebouncer.cancel();
                 requery();
+            }
+            else if (newState == WebSocketService.State.Disconnected) {
+                emptyView.update(getWebSocketService().getState(), adapter.getItemCount());
             }
         }
 

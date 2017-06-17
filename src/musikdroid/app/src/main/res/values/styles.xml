@@ -16,6 +16,17 @@
         <item name="android:clickable">true</item>
     </style>
 
+    <style name="DisconnectedButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:textSize">@dimen/text_size_large</item>
+        <item name="android:textColor">@color/theme_disabled_foreground</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:background">@drawable/not_playing_button</item>
+    </style>
+
     <style name="TransportPlaying">
         <item name="android:layout_margin">0dp</item>
         <item name="android:paddingTop">6dp</item>

@@ -51,7 +51,8 @@ public class MainActivity extends WebSocketActivityBase {
     private View mainLayout;
     private MainMetadataView metadataView;
     private TextView playPause, currentTime, totalTime;
-    private View connectedNotPlaying, disconnectedButton;
+    private View connectedNotPlayingContainer, disconnectedButton, showOfflineButton;
+    private View disconnectedContainer;
     private CheckBox shuffleCb, muteCb, repeatCb;
     private View disconnectedOverlay;
     private SeekBar seekbar;
@@ -241,9 +242,11 @@ public class MainActivity extends WebSocketActivityBase {
         this.shuffleCb = (CheckBox) findViewById(R.id.check_shuffle);
         this.muteCb = (CheckBox) findViewById(R.id.check_mute);
         this.repeatCb = (CheckBox) findViewById(R.id.check_repeat);
-        this.connectedNotPlaying = findViewById(R.id.connected_not_playing);
-        this.disconnectedButton = findViewById(R.id.disconnected);
+        this.connectedNotPlayingContainer = findViewById(R.id.connected_not_playing);
+        this.disconnectedButton = findViewById(R.id.disconnected_button);
+        this.disconnectedContainer = findViewById(R.id.disconnected_container);
         this.disconnectedOverlay = findViewById(R.id.disconnected_overlay);
+        this.showOfflineButton = findViewById(R.id.offline_tracks_button);
         this.playPause = (TextView) findViewById(R.id.button_play_pause);
         this.currentTime = (TextView) findViewById(R.id.current_time);
         this.totalTime = (TextView) findViewById(R.id.total_time);
@@ -309,9 +312,11 @@ public class MainActivity extends WebSocketActivityBase {
             }
         });
 
-        disconnectedOverlay.setOnClickListener((view) -> {
+        disconnectedOverlay.setOnClickListener(view -> {
             /* swallow input so user can't click on things while disconnected */
         });
+
+        showOfflineButton.setOnClickListener(view -> onOfflineTracksSelected());
     }
 
     private void rebindUi() {
@@ -330,7 +335,7 @@ public class MainActivity extends WebSocketActivityBase {
         /* bottom section: transport controls */
         this.playPause.setText(playing || buffering ? R.string.button_pause : R.string.button_play);
 
-        this.connectedNotPlaying.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
+        this.connectedNotPlayingContainer.setVisibility((connected && stopped) ? View.VISIBLE : View.GONE);
         this.disconnectedOverlay.setVisibility(connected || !stopped ? View.GONE : View.VISIBLE);
 
         final RepeatMode repeatMode = playback.getRepeatMode();
@@ -344,17 +349,17 @@ public class MainActivity extends WebSocketActivityBase {
         Views.setCheckWithoutEvent(this.muteCb, playback.isMuted(), this.muteListener);
 
         /* middle section: connected, disconnected, and metadata views */
-        connectedNotPlaying.setVisibility(View.GONE);
-        disconnectedButton.setVisibility(View.GONE);
+        connectedNotPlayingContainer.setVisibility(View.GONE);
+        disconnectedContainer.setVisibility(View.GONE);
 
         if (!showMetadataView) {
             metadataView.hide();
 
             if (!connected) {
-                disconnectedButton.setVisibility(View.VISIBLE);
+                disconnectedContainer.setVisibility(View.VISIBLE);
             }
             else if (stopped) {
-                connectedNotPlaying.setVisibility(View.VISIBLE);
+                connectedNotPlayingContainer.setVisibility(View.VISIBLE);
             }
         }
         else {

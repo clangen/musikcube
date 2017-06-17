@@ -138,6 +138,12 @@ public final class Views {
         }
     }
 
+    public static void setVisible(View view, boolean visible) {
+        if (view != null) {
+            view.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
     private Views() {
 
     }

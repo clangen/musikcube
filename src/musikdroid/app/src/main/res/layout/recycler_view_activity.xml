@@ -6,25 +6,37 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <RelativeLayout
+    <FrameLayout
         android:layout_weight="1"
-        android:layout_width="match_parent"
-        android:layout_height="0dp">
+        android:layout_height="0dp"
+        android:layout_width="match_parent">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/recycler_view"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
 
-        <com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-            android:id="@+id/fast_scroller"
-            android:layout_width="wrap_content"
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <com.pluscubed.recyclerfastscroll.RecyclerFastScroller
+                android:id="@+id/fast_scroller"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                app:rfs_touchTargetWidth="32dp"
+                android:paddingLeft="8dp"
+                android:layout_alignParentRight="true" />
+
+        </RelativeLayout>
+
+        <io.casey.musikcube.remote.ui.view.EmptyListView
+            android:id="@+id/empty_list_view"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:rfs_touchTargetWidth="32dp"
-            android:paddingLeft="8dp"
-            android:layout_alignParentRight="true" />
+            android:visibility="gone"/>
 
-    </RelativeLayout>
+    </FrameLayout>
 
     <FrameLayout
         android:id="@+id/transport_container"
