@@ -116,16 +116,18 @@ these only work in the `play queue` view:
 - `M-x` delete a previously saved playlist
 - `M-r` rename a playlist
 
-* **note 1**: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
-* **note 2**: `ALT` is the `M`odifier key in Windows
+a couple important **notes**:
+
+- on macos make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta"
+- `ALT` is the `M`odifier key in the windows build
 
 # sdk
 
-musikcube is built around its own SDK interfaces. they're still in the process of being refined. you can see what they look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
+the musikcube sdk is a set of small, pure-virtual c++ classes and a handful of enums and constants. they're still in the process of being refined. you can see what they currently look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
 
 # dependencies
 
-musikcube would not be possible without the following excellent free, open source, and (in the case of some macOS and win32 APIs) non-free projects and libraries:
+musikcube would not be possible without the following excellent free, open source, and (in the case of some macos and win32 APIs) non-free projects and libraries:
 
 core:
 * [boost](http://www.boost.org/)
