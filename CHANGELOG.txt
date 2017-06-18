@@ -6,6 +6,9 @@
 * added the ability to browse and play cached tracks in `musikdroid` while 
   offline. 
 * fixed a bug that was preventing the transcoder cache from functioning properly
+* integrated `fabric.io` into `musikdroid` for crash reporting
+* added new "empty" and "offline" view states to all screens in `musikdroid`
+* fixed a couple `musikdroid` crashes in playback-related code
 
 low-level:
 

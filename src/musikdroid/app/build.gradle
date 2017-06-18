@@ -20,8 +20,8 @@ android {
         applicationId "io.casey.musikcube.remote"
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 12
-        versionName "0.10"
+        versionCode 13
+        versionName "0.10.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
@@ -58,8 +58,8 @@ dependencies {
     compile(name:'videocache-2.8.0-pre', ext:'aar')
     compile 'org.slf4j:slf4j-android:1.7.21'
 
-    compile "android.arch.persistence.room:runtime:1.0.0-alpha2"
-    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-alpha2"
+    compile "android.arch.persistence.room:runtime:1.0.0-alpha3"
+    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-alpha3"
 
     compile 'com.neovisionaries:nv-websocket-client:1.31'
     compile 'com.squareup.okhttp3:okhttp:3.8.0'
