@@ -53,7 +53,7 @@ you'll need [homebrew](http://brew.sh/) to install the required dependencies.
 
 ### manual
 
-- `brew install cmake boost libogg libvorbis flac faad2 libmicrohttpd`
+- `brew install cmake boost libogg libvorbis flac faad2 libmicrohttpd lame`
 - `git clone https://github.com/clangen/musikcube.git`
 - `cd musikcube`
 - `cmake .`
@@ -97,7 +97,7 @@ you may also change hotkeys by editing `~/.musikcube/hotkeys.json` and restartin
 - `CTRL+x` stop (unload streams, free resources)
 - `CTRL+d` quit 
 
-and a couple hotkeys that are specific to the library view: 
+and a couple hotkeys that are specific to the `library` view: 
 
 - `b` show browse view
 - `n` show play queue
@@ -109,7 +109,15 @@ and a couple hotkeys that are specific to the library view:
 - `x` jump to playing artist/album/genre in browse view
 - `SPACE` pause/resume
 
-*important*: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
+these only work in the `play queue` view:
+
+- `M-s` save current queue as a playlist
+- `M-l` load a previously saved playlist
+- `M-x` delete a previously saved playlist
+- `M-r` rename a playlist
+
+**note 1**: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
+**note 2**: `ALT` is the `M`odifier key in Windows
 
 # sdk
 
