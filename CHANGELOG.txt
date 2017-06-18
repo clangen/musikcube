@@ -1,3 +1,10 @@
+0.17.1
+
+win32-only release to correct startup issues on computers that do not have the
+visual c++ 14 runtime installed.
+
+--------------------------------------------------------------------------------
+
 0.17.0
 
 * added code to win32 build that ensures only a single instance is running
