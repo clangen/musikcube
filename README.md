@@ -107,6 +107,7 @@ and a couple hotkeys that are specific to the `library` view:
 - `2` browse by album
 - `3` browse by genre
 - `x` jump to playing artist/album/genre in browse view
+- `M-ENTER` show a context menu for the currently selected item (album, artist, genre, track)
 - `SPACE` pause/resume
 
 these only work in the `play queue` view:
@@ -115,6 +116,9 @@ these only work in the `play queue` view:
 - `M-l` load a previously saved playlist
 - `M-x` delete a previously saved playlist
 - `M-r` rename a playlist
+- `M-UP` move the selected track up
+- `M-DOWN` move the selected track down
+- `DEL` delete the selected track
 
 a couple important **notes**:
 
