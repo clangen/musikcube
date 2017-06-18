@@ -75,8 +75,8 @@ extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
         cachePath = std::string(buffer) + "/cache/httpclient/";
 
         boost::filesystem::path p(cachePath);
-        if (!boost::filesystem::exists(cachePath)) {
-            boost::filesystem::create_directories(cachePath);
+        if (!boost::filesystem::exists(p)) {
+            boost::filesystem::create_directories(p);
         }
     }
 }

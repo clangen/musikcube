@@ -39,6 +39,9 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+
 #ifdef WIN32
     BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
         return true;
@@ -49,20 +52,28 @@
     #define DLLEXPORT
 #endif
 
-class HttpDataStreamPlugin : public musik::core::sdk::IPlugin {
-    virtual void Destroy() { delete this; };
-    virtual const char* Name() { return "HTTP IDataStream"; }
-    virtual const char* Version() { return "0.1.0"; }
-    virtual const char* Author() { return "clangen"; }
-    virtual const char* Guid() { return "b153adad-ee98-4331-ad32-4ff7f34828cd"; }
-    virtual bool Configurable() { return false; }
-    virtual void Configure() { }
-    virtual void Reload() { }
-    virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
-};
+static class HttpDataStreamPlugin : public musik::core::sdk::IPlugin {
+    public:
+        HttpDataStreamPlugin() {
+            /* enable utf8 filesystem (required in windows, maybe not macos/linux */
+            std::locale locale = std::locale();
+            std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
+            boost::filesystem::path::imbue(utf8Locale);
+        }
+
+        virtual void Destroy() { };
+        virtual const char* Name() { return "HTTP IDataStream"; }
+        virtual const char* Version() { return "0.1.0"; }
+        virtual const char* Author() { return "clangen"; }
+        virtual const char* Guid() { return "b153adad-ee98-4331-ad32-4ff7f34828cd"; }
+        virtual bool Configurable() { return false; }
+        virtual void Configure() { }
+        virtual void Reload() { }
+        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+} plugin;
 
 extern "C" DLLEXPORT IPlugin* GetPlugin() {
-    return new HttpDataStreamPlugin();
+    return &plugin;
 }
 
 extern "C" DLLEXPORT IDataStreamFactory* GetDataStreamFactory() {

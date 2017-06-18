@@ -1,7 +1,11 @@
-0.17.1
+0.17.2
 
-win32-only release to correct startup issues on computers that do not have the
-visual c++ 14 runtime installed.
+user-facing:
+
+* fixed a bug where usernames with non-latin characters may cause the 
+  `websocket_remote` and `httpdatastream` plugins to crash during startup.
+* fixed startup issues on windows computers that do not have the visual c++ 14 
+  runtime installed.
 
 --------------------------------------------------------------------------------
 

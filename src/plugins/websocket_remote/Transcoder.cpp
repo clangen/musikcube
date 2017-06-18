@@ -45,9 +45,9 @@ static std::string cachePath(Context& context) {
     char buf[4096];
     context.environment->GetPath(PathType::PathData, buf, sizeof(buf));
     std::string path = std::string(buf) + "/cache/transcoder/";
-
-    if (!exists(path)) {
-        create_directories(path);
+	boost::filesystem::path boostPath(path);
+    if (!exists(boostPath)) {
+        create_directories(boostPath);
     }
 
     return path;
