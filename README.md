@@ -116,8 +116,8 @@ these only work in the `play queue` view:
 - `M-x` delete a previously saved playlist
 - `M-r` rename a playlist
 
-**note 1**: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
-**note 2**: `ALT` is the `M`odifier key in Windows
+* **note 1**: on OSX make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta".
+* **note 2**: `ALT` is the `M`odifier key in Windows
 
 # sdk
 
