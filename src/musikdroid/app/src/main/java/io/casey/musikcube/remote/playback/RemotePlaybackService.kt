@@ -2,15 +2,12 @@ package io.casey.musikcube.remote.playback
 
 import android.content.Context
 import android.os.Handler
-
-import org.json.JSONObject
-
-import java.util.HashSet
-
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
+import org.json.JSONObject
+import java.util.*
 
 class RemotePlaybackService(context: Context) : PlaybackService {
     private interface Key {

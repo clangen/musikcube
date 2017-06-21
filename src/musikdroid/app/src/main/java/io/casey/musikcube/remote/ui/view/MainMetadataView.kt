@@ -25,6 +25,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.*
 import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
+import io.casey.musikcube.remote.ui.extension.getColorCompat
 import io.casey.musikcube.remote.ui.model.AlbumArtModel
 import io.casey.musikcube.remote.ui.model.AlbumArtModel.AlbumArtCallback
 import io.casey.musikcube.remote.util.Strings
@@ -186,9 +187,9 @@ class MainMetadataView : FrameLayout {
         val album = playback.getTrackString(
             Metadata.Track.ALBUM, getString(if (buffering) R.string.buffering else R.string.unknown_album))
 
-        val albumColor = ForegroundColorSpan(resources.getColor(R.color.theme_orange))
+        val albumColor = ForegroundColorSpan(getColorCompat(R.color.theme_orange))
 
-        val artistColor = ForegroundColorSpan(resources.getColor(R.color.theme_yellow))
+        val artistColor = ForegroundColorSpan(getColorCompat(R.color.theme_yellow))
 
         val builder = SpannableStringBuilder().append(album).append(" - ").append(artist)
 

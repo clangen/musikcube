@@ -2,12 +2,6 @@ package io.casey.musikcube.remote.offline
 
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
-
-import org.json.JSONArray
-import org.json.JSONObject
-
-import java.util.ArrayList
-
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.util.Strings
@@ -17,6 +11,9 @@ import io.casey.musikcube.remote.websocket.WebSocketService
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.*
 
 @Database(entities = arrayOf(OfflineTrack::class), version = 1)
 abstract class OfflineDb : RoomDatabase() {

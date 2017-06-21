@@ -1,6 +1,6 @@
 package io.casey.musikcube.remote.util
 
-import java.util.Locale
+import java.util.*
 
 object Duration {
     fun format(seconds: Double): String {

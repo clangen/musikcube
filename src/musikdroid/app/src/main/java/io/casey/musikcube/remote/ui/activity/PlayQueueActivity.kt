@@ -8,20 +8,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-
-import org.json.JSONObject
-
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.playback.PlaybackService
-import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.extension.*
+import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.view.EmptyListView
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
+import org.json.JSONObject
 
 class PlayQueueActivity : WebSocketActivityBase() {
     private var tracks: TrackListSlidingWindow? = null
@@ -89,6 +86,9 @@ class PlayQueueActivity : WebSocketActivityBase() {
     }
 
     private val playbackEvents = {
+        if (adapter.itemCount == 0) {
+            tracks?.requery()
+        }
         adapter.notifyDataSetChanged()
     }
 
@@ -135,8 +135,8 @@ class PlayQueueActivity : WebSocketActivityBase() {
                 subtitle.text = entry.optString(Metadata.Track.ALBUM_ARTIST, "-")
             }
 
-            title.setTextColor(resources.getColor(titleColor))
-            subtitle.setTextColor(resources.getColor(subtitleColor))
+            title.setTextColor(getColorCompat(titleColor))
+            subtitle.setTextColor(getColorCompat(subtitleColor))
         }
     }
 

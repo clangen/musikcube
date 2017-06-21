@@ -2,12 +2,7 @@ package io.casey.musikcube.remote.playback
 
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.SharedPreferences
+import android.content.*
 import android.graphics.Bitmap
 import android.media.AudioManager
 import android.os.Handler
@@ -16,17 +11,14 @@ import android.os.PowerManager
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.support.v4.app.NotificationCompat.Action as NotifAction
 import android.support.v7.app.NotificationCompat
 import android.util.Log
 import android.view.KeyEvent
-
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.animation.GlideAnimation
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.target.Target
-
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.MainActivity
 import io.casey.musikcube.remote.R
@@ -34,6 +26,7 @@ import io.casey.musikcube.remote.ui.model.AlbumArtModel
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
+import android.support.v4.app.NotificationCompat.Action as NotifAction
 
 /* basically a stub service that exists to keep a connection active to the
 StreamingPlaybackService, which keeps music playing. TODO: should also hold

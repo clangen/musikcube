@@ -167,8 +167,8 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
                 subtitle.text = "-"
             }
 
-            title.setTextColor(resources.getColor(titleColor))
-            subtitle.setTextColor(resources.getColor(subtitleColor))
+            title.setTextColor(getColorCompat(titleColor))
+            subtitle.setTextColor(getColorCompat(subtitleColor))
         }
     }
 

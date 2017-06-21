@@ -9,26 +9,21 @@ import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-
-import org.json.JSONArray
-import org.json.JSONObject
-
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.Metadata
-import io.casey.musikcube.remote.playback.PlaybackService
-import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.extension.*
+import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.view.EmptyListView
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Navigation
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
+import io.casey.musikcube.remote.websocket.Messages.Key
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
-
-import io.casey.musikcube.remote.websocket.Messages.Key
+import org.json.JSONArray
+import org.json.JSONObject
 
 class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
     private var adapter: Adapter = Adapter()
@@ -156,11 +151,10 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
             }
 
             title.text = entry.optString(Metadata.Album.TITLE, "-")
-            title.setTextColor(resources.getColor(titleColor))
+            title.setTextColor(getColorCompat(titleColor))
 
             subtitle.text = entry.optString(Metadata.Album.ALBUM_ARTIST, "-")
-            subtitle.setTextColor(resources.getColor(subtitleColor))
-
+            subtitle.setTextColor(getColorCompat(subtitleColor))
             itemView.tag = entry
         }
     }

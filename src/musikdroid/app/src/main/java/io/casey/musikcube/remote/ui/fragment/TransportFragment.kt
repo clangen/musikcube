@@ -15,6 +15,7 @@ import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.ui.activity.PlayQueueActivity
+import io.casey.musikcube.remote.ui.extension.getColorCompat
 
 class TransportFragment : Fragment() {
     private var rootView: View? = null
@@ -107,11 +108,11 @@ class TransportFragment : Fragment() {
         this.buffering?.visibility = if (buffering) View.VISIBLE else View.GONE
 
         if (state == PlaybackState.Stopped) {
-            title?.setTextColor(activity.resources.getColor(R.color.theme_disabled_foreground))
+            title?.setTextColor(getColorCompat(R.color.theme_disabled_foreground))
             title?.setText(R.string.transport_not_playing)
         }
         else {
-            title?.setTextColor(activity.resources.getColor(R.color.theme_green))
+            title?.setTextColor(getColorCompat(R.color.theme_green))
 
             val defaultValue = getString(if (buffering) R.string.buffering else R.string.unknown_title)
             title?.text = playbackService?.getTrackString(Metadata.Track.TITLE, defaultValue)

@@ -12,10 +12,7 @@ import android.widget.TextView
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.Metadata
-import io.casey.musikcube.remote.ui.extension.addTransportFragment
-import io.casey.musikcube.remote.ui.extension.enableUpNavigation
-import io.casey.musikcube.remote.ui.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.view.EmptyListView
 import io.casey.musikcube.remote.util.Debouncer
@@ -208,7 +205,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
             value = if (Strings.empty(value)) getString(R.string.unknown_value) else value
 
             title.text = value
-            title.setTextColor(resources.getColor(titleColor))
+            title.setTextColor(getColorCompat(titleColor))
 
             itemView.tag = entry
         }

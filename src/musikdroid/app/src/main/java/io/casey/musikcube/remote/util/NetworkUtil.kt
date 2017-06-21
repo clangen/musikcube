@@ -1,17 +1,9 @@
 package io.casey.musikcube.remote.util
 
 import com.neovisionaries.ws.client.WebSocketFactory
-
-import java.security.cert.CertificateException
-
-import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.HttpsURLConnection
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
-
 import okhttp3.OkHttpClient
+import java.security.cert.CertificateException
+import javax.net.ssl.*
 
 object NetworkUtil {
     private var sslContext: SSLContext? = null

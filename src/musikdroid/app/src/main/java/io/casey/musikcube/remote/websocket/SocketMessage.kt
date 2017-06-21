@@ -1,12 +1,10 @@
 package io.casey.musikcube.remote.websocket
 
 import android.util.Log
-
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class SocketMessage private constructor(val name: String, val id: String, val type: SocketMessage.Type, options: JSONObject?) {

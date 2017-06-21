@@ -8,14 +8,12 @@ import android.net.Uri
 import android.os.PowerManager
 import android.util.Base64
 import android.util.Log
-
-import java.io.IOException
-import java.util.HashMap
-
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.util.Preconditions
 import io.casey.musikcube.remote.websocket.Prefs
 import org.json.JSONObject
+import java.io.IOException
+import java.util.*
 
 class MediaPlayerWrapper : PlayerWrapper() {
     private val player = MediaPlayer()

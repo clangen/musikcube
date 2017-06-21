@@ -24,7 +24,6 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
 import io.casey.musikcube.remote.websocket.Prefs
-import io.casey.musikcube.remote.playback.StreamProxy.*
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import org.json.JSONObject

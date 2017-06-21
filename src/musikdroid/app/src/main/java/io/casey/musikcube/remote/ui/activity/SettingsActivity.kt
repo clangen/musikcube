@@ -13,18 +13,18 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
-
-import java.util.Locale
-
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.PlayerWrapper
 import io.casey.musikcube.remote.playback.StreamProxy
-import io.casey.musikcube.remote.ui.extension.*
+import io.casey.musikcube.remote.ui.extension.enableUpNavigation
+import io.casey.musikcube.remote.ui.extension.setCheckWithoutEvent
+import io.casey.musikcube.remote.ui.extension.setTextAndMoveCursorToEnd
 import io.casey.musikcube.remote.websocket.Prefs
+import io.casey.musikcube.remote.websocket.WebSocketService
+import java.util.*
 import io.casey.musikcube.remote.websocket.Prefs.Default as Defaults
 import io.casey.musikcube.remote.websocket.Prefs.Key as Keys
-import io.casey.musikcube.remote.websocket.WebSocketService
 
 class SettingsActivity : AppCompatActivity() {
     private var addressText: EditText? = null

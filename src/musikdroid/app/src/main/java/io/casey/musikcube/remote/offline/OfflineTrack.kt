@@ -2,12 +2,10 @@ package io.casey.musikcube.remote.offline
 
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
-
-import org.json.JSONException
-import org.json.JSONObject
-
 import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.util.Strings
+import org.json.JSONException
+import org.json.JSONObject
 
 @Entity
 class OfflineTrack {

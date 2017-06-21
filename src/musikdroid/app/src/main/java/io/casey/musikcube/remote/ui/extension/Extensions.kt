@@ -2,6 +2,8 @@ package io.casey.musikcube.remote.ui.extension
 
 import android.app.SearchManager
 import android.content.Context
+import android.support.v4.app.Fragment
+import android.support.v4.content.ContextCompat
 import android.support.v4.view.MenuItemCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DividerItemDecoration
@@ -34,6 +36,18 @@ fun AppCompatActivity.setupDefaultRecyclerView(
     val dividerItemDecoration = DividerItemDecoration(this, layoutManager.orientation)
 
     recyclerView.addItemDecoration(dividerItemDecoration)
+}
+
+fun View.getColorCompat(resourceId: Int): Int {
+    return ContextCompat.getColor(context, resourceId)
+}
+
+fun Fragment.getColorCompat(resourceId: Int): Int {
+    return ContextCompat.getColor(activity, resourceId)
+}
+
+fun AppCompatActivity.getColorCompat(resourceId: Int): Int {
+    return ContextCompat.getColor(this, resourceId)
 }
 
 fun AppCompatActivity.enableUpNavigation() {

@@ -11,7 +11,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.StreamingPlaybackService
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
-import io.casey.musikcube.remote.ui.extension.*
+import io.casey.musikcube.remote.ui.extension.setVisible
 import io.casey.musikcube.remote.websocket.WebSocketService
 import io.casey.musikcube.remote.websocket.WebSocketService.State as WebSocketState
 

@@ -2,13 +2,12 @@ package io.casey.musikcube.remote.playback
 
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.offline.OfflineTrack
-import java.util.HashSet
-
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import org.json.JSONObject
+import java.util.*
 
 abstract class PlayerWrapper {
     private enum class Type {

@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
-import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
 import android.view.Menu
 import android.view.MenuItem
@@ -17,18 +16,13 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.SeekBar
 import android.widget.TextView
-
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.playback.RepeatMode
-import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.activity.CategoryBrowseActivity
-import io.casey.musikcube.remote.ui.activity.PlayQueueActivity
-import io.casey.musikcube.remote.ui.activity.SettingsActivity
-import io.casey.musikcube.remote.ui.activity.TrackListActivity
-import io.casey.musikcube.remote.ui.activity.WebSocketActivityBase
+import io.casey.musikcube.remote.ui.activity.*
+import io.casey.musikcube.remote.ui.extension.getColorCompat
+import io.casey.musikcube.remote.ui.extension.setCheckWithoutEvent
 import io.casey.musikcube.remote.ui.fragment.InvalidPasswordDialogFragment
-import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.view.MainMetadataView
 import io.casey.musikcube.remote.util.Duration
 import io.casey.musikcube.remote.websocket.Messages
@@ -196,9 +190,9 @@ class MainActivity : WebSocketActivityBase() {
     private fun showSnackbar(stringId: Int) {
         val sb = Snackbar.make(mainLayout!!, stringId, Snackbar.LENGTH_LONG)
         val sbView = sb.view
-        sbView.setBackgroundColor(ContextCompat.getColor(this, R.color.color_primary))
+        sbView.setBackgroundColor(getColorCompat(R.color.color_primary))
         val tv = sbView.findViewById(android.support.design.R.id.snackbar_text) as TextView
-        tv.setTextColor(ContextCompat.getColor(this, R.color.theme_foreground))
+        tv.setTextColor(getColorCompat(R.color.theme_foreground))
         sb.show()
     }
 
@@ -368,7 +362,7 @@ class MainActivity : WebSocketActivityBase() {
                     else R.color.theme_blink_foreground
             }
 
-            currentTime?.setTextColor(ContextCompat.getColor(this@MainActivity, currentTimeColor))
+            currentTime?.setTextColor(getColorCompat(currentTimeColor))
 
             scheduleUpdateTime(false)
         }
