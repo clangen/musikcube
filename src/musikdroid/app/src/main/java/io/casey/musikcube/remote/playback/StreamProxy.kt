@@ -16,11 +16,9 @@ import java.util.*
 
 class StreamProxy private constructor(context: Context) {
     private val proxy: HttpProxyCacheServer
-    private val prefs: SharedPreferences
+    private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
     init {
-        prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-
         if (this.prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
             NetworkUtil.disableCertificateValidation()
         }
@@ -40,7 +38,7 @@ class StreamProxy private constructor(context: Context) {
         proxy = HttpProxyCacheServer.Builder(context.applicationContext)
             .cacheDirectory(cachePath)
             .maxCacheSize(CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: MINIMUM_CACHE_SIZE_BYTES)
-            .headerInjector { url ->
+            .headerInjector { _ ->
                 val headers = HashMap<String, String>()
                 val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
                 val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
@@ -50,7 +48,7 @@ class StreamProxy private constructor(context: Context) {
             .fileNameGenerator gen@ { url ->
                 try {
                     val uri = Uri.parse(url)
-                    /* format is: audio/external_id/<id> */
+                    /* format matches: audio/external_id/<id> */
                     val segments = uri.pathSegments
                     if (segments.size == 3 && "external_id" == segments[1]) {
                         /* url params, hyphen separated */
@@ -82,18 +80,16 @@ class StreamProxy private constructor(context: Context) {
         val BYTES_PER_MEGABYTE = 1048576L
         val BYTES_PER_GIGABYTE = 1073741824L
         val MINIMUM_CACHE_SIZE_BYTES = BYTES_PER_MEGABYTE * 128
-        val CACHE_SETTING_TO_BYTES: MutableMap<Int, Long>
-        private val DEFAULT_FILENAME_GENERATOR = Md5FileNameGenerator()
 
-        init {
-            CACHE_SETTING_TO_BYTES = HashMap<Int, Long>()
-            CACHE_SETTING_TO_BYTES.put(0, MINIMUM_CACHE_SIZE_BYTES)
-            CACHE_SETTING_TO_BYTES.put(1, BYTES_PER_GIGABYTE / 2)
-            CACHE_SETTING_TO_BYTES.put(2, BYTES_PER_GIGABYTE)
-            CACHE_SETTING_TO_BYTES.put(3, BYTES_PER_GIGABYTE * 2)
-            CACHE_SETTING_TO_BYTES.put(4, BYTES_PER_GIGABYTE * 3)
-            CACHE_SETTING_TO_BYTES.put(5, BYTES_PER_GIGABYTE * 4)
-        }
+        val CACHE_SETTING_TO_BYTES: MutableMap<Int, Long> = mutableMapOf(
+            0 to MINIMUM_CACHE_SIZE_BYTES,
+            1 to BYTES_PER_GIGABYTE / 2,
+            2 to BYTES_PER_GIGABYTE,
+            3 to BYTES_PER_GIGABYTE * 2,
+            4 to BYTES_PER_GIGABYTE * 3,
+            5 to BYTES_PER_GIGABYTE * 4)
+
+        private val DEFAULT_FILENAME_GENERATOR = Md5FileNameGenerator()
 
         private var INSTANCE: StreamProxy? = null
 
@@ -104,31 +100,25 @@ class StreamProxy private constructor(context: Context) {
         }
 
         @Synchronized fun registerCacheListener(cl: CacheListener, uri: String) {
-            if (INSTANCE != null) {
-                INSTANCE!!.proxy.registerCacheListener(cl, uri) /* let it throw */
-            }
+            INSTANCE?.proxy?.registerCacheListener(cl, uri) /* let it throw */
         }
 
         @Synchronized fun unregisterCacheListener(cl: CacheListener) {
-            if (INSTANCE != null) {
-                INSTANCE!!.proxy.unregisterCacheListener(cl)
-            }
+            INSTANCE?.proxy?.unregisterCacheListener(cl)
         }
 
         @Synchronized fun isCached(url: String): Boolean {
-            return INSTANCE != null && INSTANCE!!.proxy.isCached(url)
+            return INSTANCE?.proxy?.isCached(url)!!
         }
 
         @Synchronized fun getProxyUrl(url: String): String {
             init(Application.instance!!)
-            return if (ENABLED) INSTANCE!!.proxy.getProxyUrl(url) else url
+            return if (ENABLED) INSTANCE?.proxy?.getProxyUrl(url)!! else url
         }
 
         @Synchronized fun reload() {
-            if (INSTANCE != null) {
-                INSTANCE!!.proxy.shutdown()
-                INSTANCE = null
-            }
+            INSTANCE?.proxy?.shutdown()
+            INSTANCE = null
         }
     }
 }

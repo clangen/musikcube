@@ -10,7 +10,6 @@ import io.casey.musikcube.remote.util.NetworkUtil
 import io.fabric.sdk.android.Fabric
 
 class Application : android.app.Application() {
-
     override fun onCreate() {
         instance = this
 

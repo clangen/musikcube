@@ -28,19 +28,13 @@ abstract class PlayerWrapper {
         Disposed
     }
 
-    interface OnStateChangedListener {
-        fun onStateChanged(mpw: PlayerWrapper, state: State)
-    }
-
-    private var listener: OnStateChangedListener? = null
+    private var listener: ((PlayerWrapper, State) -> Unit)? = null
 
     var state = State.Stopped
         protected set(state) {
             if (this.state != state) {
                 field = state
-                if (listener != null) {
-                    this.listener!!.onStateChanged(this, state)
-                }
+                listener?.invoke(this,state)
             }
         }
 
@@ -55,14 +49,10 @@ abstract class PlayerWrapper {
     abstract val duration: Int
     abstract val bufferedPercent: Int
 
-    open fun setOnStateChangedListener(listener: OnStateChangedListener?) {
+    open fun setOnStateChangedListener(listener: ((PlayerWrapper, State) -> Unit)?) {
         Preconditions.throwIfNotOnMainThread()
-
         this.listener = listener
-
-        if (listener != null) {
-            this.listener!!.onStateChanged(this, this.state)
-        }
+        this.listener?.invoke(this, this.state)
     }
 
     companion object {
@@ -109,16 +99,16 @@ abstract class PlayerWrapper {
         }
 
         fun setVolume(volume: Float) {
-            var volume = volume
+            var computedVolume = volume
             Preconditions.throwIfNotOnMainThread()
 
             if (preDuckGlobalVolume != DUCK_NONE) {
                 preDuckGlobalVolume = volume
-                volume *= DUCK_COEF
+                computedVolume *= DUCK_COEF
             }
 
-            if (volume != globalVolume) {
-                globalVolume = volume
+            if (computedVolume != globalVolume) {
+                globalVolume = computedVolume
                 for (w in activePlayers) {
                     w.updateVolume()
                 }

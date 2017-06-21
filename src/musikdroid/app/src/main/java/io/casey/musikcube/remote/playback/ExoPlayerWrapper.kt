@@ -161,20 +161,24 @@ class ExoPlayerWrapper : PlayerWrapper() {
     override fun resume() {
         Preconditions.throwIfNotOnMainThread()
 
-        when (this.state) {
-            State.Paused, State.Prepared -> {
-                this.player!!.playWhenReady = true
+        prefetch = false
+
+        when (state) {
+            State.Paused,
+            State.Prepared -> {
+                player!!.playWhenReady = true
                 state = State.Playing
             }
 
             State.Error -> {
-                this.player!!.playWhenReady = this.lastPosition == -1L
-                this.player.prepare(this.source)
+                player!!.playWhenReady = lastPosition == -1L
+                player.prepare(source)
                 state = State.Preparing
             }
+
+            else -> { }
         }
 
-        this.prefetch = false
     }
 
     override var position: Int
@@ -239,10 +243,6 @@ class ExoPlayerWrapper : PlayerWrapper() {
             this.player?.release()
             state = State.Disposed
         }
-    }
-
-    override fun setOnStateChangedListener(listener: PlayerWrapper.OnStateChangedListener?) {
-        super.setOnStateChangedListener(listener)
     }
 
     private fun dead(): Boolean {
@@ -341,6 +341,8 @@ class ExoPlayerWrapper : PlayerWrapper() {
                 State.Playing,
                 State.Paused ->
                     state = State.Error
+
+                else -> { }
             }
         }
 

@@ -11,7 +11,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.StreamingPlaybackService
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
-import io.casey.musikcube.remote.ui.util.Views
+import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.websocket.WebSocketService
 import io.casey.musikcube.remote.websocket.WebSocketService.State as WebSocketState
 
@@ -73,8 +73,8 @@ class EmptyListView : FrameLayout {
                 PlaybackServiceFactory.instance(context) is StreamingPlaybackService &&
                 state != WebSocketState.Connected
 
-            Views.setVisible(offlineContainer, showOfflineContainer)
-            Views.setVisible(emptyContainer, !showOfflineContainer)
+            offlineContainer?.setVisible(showOfflineContainer)
+            emptyContainer?.setVisible(!showOfflineContainer)
         }
 
         alternateView?.visibility = if (visibility == View.GONE) View.VISIBLE else View.GONE
