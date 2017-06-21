@@ -85,6 +85,7 @@
     <string name="browse_type_albums">albums</string>
     <string name="browse_type_artists">artists</string>
     <string name="browse_type_genres">genres</string>
+    <string name="play_queue_empty">the play queue is empty.\n\ngo find some music to play!</string>
     <string name="browse_type_playlists">playlists</string>
     <string name="unknown_artist">[unknown artist]</string>
     <string name="unknown_album">[unknown album]</string>

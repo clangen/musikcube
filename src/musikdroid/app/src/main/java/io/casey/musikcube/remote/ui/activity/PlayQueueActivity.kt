@@ -18,6 +18,7 @@ import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.extension.*
+import io.casey.musikcube.remote.ui.view.EmptyListView
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
@@ -27,6 +28,7 @@ class PlayQueueActivity : WebSocketActivityBase() {
     private var playback: PlaybackService? = null
     private var adapter: Adapter = Adapter()
     private var offlineQueue: Boolean = false
+    private var emptyView: EmptyListView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,13 +41,19 @@ class PlayQueueActivity : WebSocketActivityBase() {
         val recyclerView = findViewById(R.id.recycler_view) as RecyclerView
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
-        val queryFactory = playback?.playlistQueryFactory
-        val message: SocketMessage? = queryFactory?.getRequeryMessage()
+        val queryFactory = playback!!.playlistQueryFactory
+        val message: SocketMessage? = queryFactory.getRequeryMessage()
+
+        emptyView = findViewById(R.id.empty_list_view) as EmptyListView
+        emptyView?.capability = EmptyListView.Capability.OfflineOk
+        emptyView?.emptyMessage = getString(R.string.play_queue_empty)
+        emptyView?.alternateView = recyclerView
 
         offlineQueue = (Messages.Category.OFFLINE == message?.getStringOption(Messages.Key.CATEGORY))
 
         tracks = TrackListSlidingWindow(recyclerView, fastScroller, getWebSocketService(), queryFactory)
         tracks?.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
+        tracks?.setOnMetadataLoadedListener(slidingWindowListener)
 
         setTitleFromIntent(R.string.play_queue_title)
         addTransportFragment()
@@ -88,6 +96,9 @@ class PlayQueueActivity : WebSocketActivityBase() {
         override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
             if (newState == WebSocketService.State.Connected) {
                 tracks?.requery()
+            }
+            else {
+                emptyView?.update(newState, adapter.itemCount)
             }
         }
 
@@ -144,6 +155,14 @@ class PlayQueueActivity : WebSocketActivityBase() {
         override fun getItemCount(): Int {
             return tracks?.count ?: 0
         }
+    }
+
+    private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
+        override fun onReloaded(count: Int) {
+            emptyView?.update(getWebSocketService().state, count)
+        }
+
+        override fun onMetadataLoaded(offset: Int, count: Int) {}
     }
 
     companion object {

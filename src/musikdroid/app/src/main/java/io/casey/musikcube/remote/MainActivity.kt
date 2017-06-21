@@ -350,27 +350,28 @@ class MainActivity : WebSocketActivityBase() {
         handler.postDelayed(updateTimeRunnable, (if (immediate) 0 else 1000).toLong())
     }
 
-    private val updateTimeRunnable = {
-        val duration = playback?.duration ?: 0.0
-        val current: Double = if (seekbarValue == -1) playback?.currentTime ?: 0.0 else seekbarValue.toDouble()
+    private val updateTimeRunnable = object: Runnable {
+        override fun run() {
+            val duration = playback?.duration ?: 0.0
+            val current: Double = if (seekbarValue == -1) playback?.currentTime ?: 0.0 else seekbarValue.toDouble()
 
-        currentTime?.text = Duration.format(current)
-        totalTime?.text = Duration.format(duration)
-        seekbar?.max = duration.toInt()
-        seekbar?.progress = current.toInt()
-        seekbar?.secondaryProgress = playback?.bufferedTime?.toInt() ?: 0
+            currentTime?.text = Duration.format(current)
+            totalTime?.text = Duration.format(duration)
+            seekbar?.max = duration.toInt()
+            seekbar?.progress = current.toInt()
+            seekbar?.secondaryProgress = playback?.bufferedTime?.toInt() ?: 0
 
-        var currentTimeColor = R.color.theme_foreground
-        if (playback?.playbackState === PlaybackState.Paused) {
-            currentTimeColor = if (++blink % 2 == 0)
-                R.color.theme_foreground
-            else
-                R.color.theme_blink_foreground
+            var currentTimeColor = R.color.theme_foreground
+            if (playback?.playbackState === PlaybackState.Paused) {
+                currentTimeColor =
+                    if (++blink % 2 == 0) R.color.theme_foreground
+                    else R.color.theme_blink_foreground
+            }
+
+            currentTime?.setTextColor(ContextCompat.getColor(this@MainActivity, currentTimeColor))
+
+            scheduleUpdateTime(false)
         }
-
-        currentTime?.setTextColor(ContextCompat.getColor(this, currentTimeColor))
-
-        scheduleUpdateTime(false)
     }
 
     private val muteListener = { _: CompoundButton, b: Boolean ->

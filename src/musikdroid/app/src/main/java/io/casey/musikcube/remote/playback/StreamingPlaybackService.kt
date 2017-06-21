@@ -570,13 +570,19 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         }
     }
 
-    private fun getMetadataQuery(index: Int): SocketMessage {
-        return playlistQueryFactory.getRequeryMessage()!!
-            .buildUpon()
-            .removeOption(Messages.Key.COUNT_ONLY)
-            .addOption(Messages.Key.LIMIT, 1)
-            .addOption(Messages.Key.OFFSET, index)
-            .build()
+    private fun getMetadataQuery(index: Int): SocketMessage? {
+        val message = playlistQueryFactory.getRequeryMessage()
+
+        if (message != null) {
+            return message
+                .buildUpon()
+                .removeOption(Messages.Key.COUNT_ONLY)
+                .addOption(Messages.Key.LIMIT, 1)
+                .addOption(Messages.Key.OFFSET, index)
+                .build()
+        }
+
+        return null
     }
 
     private fun getCurrentAndNextTrackMessages(context: PlaybackContext, queueCount: Int): Observable<SocketMessage> {
@@ -587,7 +593,10 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
                 context.currentMetadata = trackMetadataCache[context.currentIndex]
             }
             else {
-                tracks.add(wss.sendObserve(getMetadataQuery(context.currentIndex), wssClient))
+                val query = getMetadataQuery(context.currentIndex)
+                if (query != null) {
+                    tracks.add(wss.sendObserve(query, wssClient))
+                }
             }
 
             if (queueCount > 1) { /* let's prefetch the next track as well */
@@ -598,7 +607,10 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
                         context.nextMetadata = trackMetadataCache[context.nextIndex]
                     }
                     else {
-                        tracks.add(wss.sendObserve(getMetadataQuery(context.nextIndex), wssClient))
+                        val query = getMetadataQuery(context.nextIndex)
+                        if (query != null) {
+                            tracks.add(wss.sendObserve(query, wssClient))
+                        }
                     }
                 }
             }
@@ -636,8 +648,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
 
     private fun prefetchNextTrackMetadata() {
         if (playContext.nextMetadata == null) {
-            val params = this.params
-
+            val originalParams = params
             val nextIndex = resolveNextIndex(playContext.currentIndex, playContext.queueCount, false)
 
             if (trackMetadataCache.containsKey(nextIndex)) {
@@ -647,24 +658,27 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
             }
             else if (nextIndex >= 0) {
                 val currentIndex = playContext.currentIndex
+                val query = getMetadataQuery(nextIndex)
 
-                this.wss.sendObserve(getMetadataQuery(nextIndex), this.wssClient)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(AndroidSchedulers.mainThread())
-                    .map { message -> extractTrackFromMessage(message) }
-                    .subscribe(
-                        { track ->
-                            if (params === this@StreamingPlaybackService.params && playContext.currentIndex == currentIndex) {
-                                if (playContext.nextMetadata == null) {
-                                    playContext.nextIndex = nextIndex
-                                    playContext.nextMetadata = track
-                                    prefetchNextTrackAudio()
+                if (query != null) {
+                    this.wss.sendObserve(query, this.wssClient)
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribeOn(AndroidSchedulers.mainThread())
+                        .map { message -> extractTrackFromMessage(message) }
+                        .subscribe(
+                            { track ->
+                                if (originalParams === params && playContext.currentIndex == currentIndex) {
+                                    if (playContext.nextMetadata == null) {
+                                        playContext.nextIndex = nextIndex
+                                        playContext.nextMetadata = track
+                                        prefetchNextTrackAudio()
+                                    }
                                 }
-                            }
-                        },
-                        { error ->
-                            Log.e(TAG, "failed to prefetch next track!", error)
-                        })
+                            },
+                            { error ->
+                                Log.e(TAG, "failed to prefetch next track!", error)
+                            })
+                }
             }
         }
     }
@@ -756,7 +770,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
     }
 
     override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
-        override fun getRequeryMessage(): SocketMessage {
+        override fun getRequeryMessage(): SocketMessage? {
             if (params != null) {
                 if (Strings.notEmpty(params?.category) && (params?.categoryId ?: -1) >= 0) {
                     return SocketMessage.Builder
@@ -776,10 +790,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
                 }
             }
 
-            return SocketMessage.Builder
-                .request(Messages.Request.QueryTracks)
-                .addOption(Messages.Key.COUNT_ONLY, true)
-                .build()
+            return null
         }
 
         override fun getPageAroundMessage(offset: Int, limit: Int): SocketMessage? {

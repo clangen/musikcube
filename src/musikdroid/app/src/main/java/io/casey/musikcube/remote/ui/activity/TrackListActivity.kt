@@ -9,27 +9,22 @@ import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-
-import org.json.JSONObject
-
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.Metadata
-import io.casey.musikcube.remote.playback.PlaybackService
+import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
-import io.casey.musikcube.remote.ui.extension.*
+import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow.QueryFactory
 import io.casey.musikcube.remote.ui.view.EmptyListView
+import io.casey.musikcube.remote.ui.view.EmptyListView.Capability
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Navigation
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
-
-import io.casey.musikcube.remote.ui.view.EmptyListView.Capability
-import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow.QueryFactory
+import org.json.JSONObject
 
 class TrackListActivity : WebSocketActivityBase(), Filterable {
     private var tracks: TrackListSlidingWindow? = null
