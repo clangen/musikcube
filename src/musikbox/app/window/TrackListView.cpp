@@ -132,11 +132,11 @@ void TrackListView::OnQueryCompleted(IQuery* query) {
     }
 }
 
-std::shared_ptr<const TrackList> TrackListView::GetTrackList() {
+std::shared_ptr<TrackList> TrackListView::GetTrackList() {
     return this->tracks;
 }
 
-void TrackListView::SetTrackList(std::shared_ptr<const TrackList> trackList) {
+void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
     if (this->tracks != trackList) {
         this->tracks = trackList;
         this->ScrollToTop();
@@ -159,16 +159,19 @@ TrackPtr TrackListView::GetSelectedTrack() {
 }
 
 size_t TrackListView::GetSelectedTrackIndex() {
-    auto i = this->GetSelectedIndex();
-    if (i != ListWindow::NO_SELECTION) {
-        auto entry = adapter->GetEntry(this, i);
-        return static_cast<TrackListEntry*>(entry.get())->GetIndex();
-    }
-    return ListWindow::NO_SELECTION;
+    return this->headers.AdapterToTrackListIndex(this->GetSelectedIndex());
 }
 
-size_t TrackListView::Count() {
+size_t TrackListView::TrackIndexToAdapterIndex(size_t index) {
+    return this->headers.TrackListToAdapterIndex(index);
+}
+
+size_t TrackListView::TrackCount() {
     return this->tracks ? this->tracks->Count() : 0;
+}
+
+size_t TrackListView::EntryCount() {
+    return this->GetScrollAdapter().GetEntryCount();
 }
 
 void TrackListView::ScrollToPlaying() {

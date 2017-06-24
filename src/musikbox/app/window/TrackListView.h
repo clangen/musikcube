@@ -56,37 +56,16 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                typedef musik::core::TrackPtr TrackPtr;
+                typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
+
                 /* events */
                 sigslot::signal1<musik::core::db::local::TrackListQueryBase*> Requeried;
 
                 /* types */
-                typedef std::function<std::string(
-                    musik::core::TrackPtr, size_t)> RowFormatter;
-
-                typedef std::function<int64_t(
-                    musik::core::TrackPtr, size_t)> RowDecorator;
-
+                typedef std::function<std::string(TrackPtr, size_t)> RowFormatter;
+                typedef std::function<int64_t(TrackPtr, size_t)> RowDecorator;
                 typedef std::shared_ptr<std::set<size_t> > Headers;
-
-                enum class RowType : char { Track = 't', Separator = 's' };
-
-                /* our special type of list entry */
-                class TrackListEntry : public cursespp::SingleLineEntry {
-                    public:
-                        TrackListEntry(const std::string& str, int index, RowType type)
-                        : cursespp::SingleLineEntry(str), index(index), type(type) { }
-
-                        virtual ~TrackListEntry() { }
-
-                        RowType GetType() { return type; }
-                        int GetIndex() { return index; }
-
-                    private:
-                        RowType type;
-                        int index;
-                };
-
-                typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
 
                 /* ctor, dtor */
                 TrackListView(
@@ -102,12 +81,14 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key);
 
                 /* regular methods */
-                std::shared_ptr<const musik::core::TrackList> GetTrackList();
-                void SetTrackList(std::shared_ptr<const musik::core::TrackList> trackList);
+                std::shared_ptr<musik::core::TrackList> GetTrackList();
+                void SetTrackList(std::shared_ptr<musik::core::TrackList> trackList);
                 musik::core::TrackPtr GetSelectedTrack();
                 size_t GetSelectedTrackIndex();
+                size_t TrackIndexToAdapterIndex(size_t index);
                 void Clear();
-                size_t Count();
+                size_t TrackCount();
+                size_t EntryCount();
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
 
@@ -115,6 +96,26 @@ namespace musik {
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
                 void OnQueryCompleted(musik::core::db::IQuery* query);
 
+                /* this view has headers and track entry types */
+                enum class RowType : char { Track = 't', Separator = 's' };
+
+                /* our special type of list entry */
+                class TrackListEntry : public cursespp::SingleLineEntry {
+                    public:
+                        TrackListEntry(const std::string& str, int index, RowType type)
+                            : cursespp::SingleLineEntry(str), index(index), type(type) { }
+
+                        virtual ~TrackListEntry() { }
+
+                        RowType GetType() { return type; }
+                        int GetIndex() { return index; }
+
+                    private:
+                        RowType type;
+                        int index;
+                };
+
+                /* our adapter */
                 class Adapter : public cursespp::ScrollAdapterBase {
                     public:
                         Adapter(TrackListView &parent);
@@ -151,7 +152,7 @@ namespace musik {
                 void SelectFirstTrack();
 
                 std::shared_ptr<TrackListQueryBase> query;
-                std::shared_ptr<const musik::core::TrackList> tracks;
+                std::shared_ptr<musik::core::TrackList> tracks;
                 HeaderCalculator headers;
                 Adapter* adapter;
                 musik::core::audio::PlaybackService& playback;

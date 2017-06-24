@@ -179,7 +179,7 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
         else {
             /* ensure the correct index is selected, and that it's properly
             scrolled into view */
-            this->reselectIndex = std::min((int) this->trackListView->Count() - 1, this->reselectIndex);
+            this->reselectIndex = std::min((int) this->trackListView->TrackCount() - 1, this->reselectIndex);
             this->trackListView->SetSelectedIndex((size_t)this->reselectIndex);
 
             if (!this->trackListView->IsEntryVisible((size_t) this->reselectIndex)) {
@@ -192,7 +192,7 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
         /* if after a bunch of monkeying around there's still nothing
         selected, but we have contents, let's just select the first item */
         auto sel = this->trackListView->GetSelectedIndex();
-        if (sel == ListWindow::NO_SELECTION || sel >= this->trackListView->Count()) {
+        if (sel == ListWindow::NO_SELECTION || sel >= this->trackListView->TrackCount()) {
             this->trackListView->SetSelectedIndex(0);
             this->trackListView->ScrollTo(0);
         }
@@ -203,7 +203,8 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQue
 }
 
 void NowPlayingLayout::RequeryTrackList() {
-    this->trackListView->SetTrackList(this->playback.GetTrackList());
+    auto noconst = std::const_pointer_cast<TrackList>(this->playback.GetTrackList());
+    this->trackListView->SetTrackList(noconst);
     this->OnTrackListRequeried(nullptr);
 }
 

@@ -50,6 +50,7 @@ namespace musik {
                     NavigateLibraryBrowseAlbums,
                     NavigateLibraryBrowseGenres,
                     NavigateLibraryBrowseAlbumArtists,
+                    NavigateLibraryBrowsePlaylists,
                     NavigateLibraryFilter,
                     NavigateLibraryTracks,
                     NavigateLibraryPlayQueue,

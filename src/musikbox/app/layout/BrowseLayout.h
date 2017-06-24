@@ -74,7 +74,7 @@ namespace musik {
             private:
                 void InitializeWindows();
 
-                void SetCategory(const std::string& fieldName);
+                void SwitchCategory(const std::string& fieldName);
 
                 void OnIndexerProgress(int count);
                 void RequeryTrackList(cursespp::ListWindow *view);
@@ -84,6 +84,8 @@ namespace musik {
 
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
+
+                bool BrowseLayout::ProcessEditOperation(const std::string& key);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;

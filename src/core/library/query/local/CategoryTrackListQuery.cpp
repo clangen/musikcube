@@ -33,7 +33,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+
 #include "CategoryTrackListQuery.h"
+#include "GetPlaylistQuery.h"
 
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -55,13 +57,13 @@ using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
 using namespace boost::algorithm;
 
-static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY =
-    {
-        std::make_pair(Track::ALBUM, Track::ALBUM_ID),
-        std::make_pair(Track::ARTIST, Track::ARTIST_ID),
-        std::make_pair(Track::GENRE, Track::GENRE_ID),
-        std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID)
-    };
+static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY = {
+    std::make_pair(Track::ALBUM, Track::ALBUM_ID),
+    std::make_pair(Track::ARTIST, Track::ARTIST_ID),
+    std::make_pair(Track::GENRE, Track::GENRE_ID),
+    std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID),
+    std::make_pair(Playlists::TABLE_NAME, Playlists::TABLE_NAME)
+};
 
 CategoryTrackListQuery::CategoryTrackListQuery(
     ILibraryPtr library,
@@ -115,47 +117,58 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
         headers.reset(new std::set<size_t>());
     }
 
-    std::string lastAlbum;
-    size_t index = 0;
+    if (this->column == Playlists::TABLE_NAME) {
+        /* playlists are a special case. we already have a query for this, so
+        delegate to that. */
 
-    std::string query =
-        "SELECT DISTINCT t.id, al.name "
-        "FROM tracks t, albums al, artists ar, genres gn "
-        "WHERE t.visible=1 AND t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
-
-    if (this->filter.size()) {
-        query += " AND (t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
-    }
-
-    query += "ORDER BY al.name, disc, track, ar.name %s";
-
-    query = boost::str(boost::format(query) % this->column % this->GetLimitAndOffset());
-
-    Statement trackQuery(query.c_str(), db);
-
-    if (this->filter.size()) {
-        trackQuery.BindInt64(0, this->id);
-        trackQuery.BindText(1, this->filter);
-        trackQuery.BindText(2, this->filter);
-        trackQuery.BindText(3, this->filter);
-        trackQuery.BindText(4, this->filter);
+        GetPlaylistQuery query(this->library, this->id);
+        query.Run(db);
+        this->result = query.GetResult();
     }
     else {
-        trackQuery.BindInt64(0, this->id);
-    }
+        /* regular old category query... */
 
-    while (trackQuery.Step() == Row) {
-        int64_t id = trackQuery.ColumnInt64(0);
-        std::string album = trackQuery.ColumnText(1);
+        std::string lastAlbum;
+        size_t index = 0;
 
-        if (album != lastAlbum) {
-            headers->insert(index);
-            lastAlbum = album;
+        std::string query =
+            "SELECT DISTINCT t.id, al.name "
+            "FROM tracks t, albums al, artists ar, genres gn "
+            "WHERE t.visible=1 AND t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
+
+        if (this->filter.size()) {
+            query += " AND (t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
         }
 
-        result->Add(id);
-        ++index;
-    }
+        query += "ORDER BY al.name, disc, track, ar.name %s";
 
+        query = boost::str(boost::format(query) % this->column % this->GetLimitAndOffset());
+
+        Statement trackQuery(query.c_str(), db);
+
+        if (this->filter.size()) {
+            trackQuery.BindInt64(0, this->id);
+            trackQuery.BindText(1, this->filter);
+            trackQuery.BindText(2, this->filter);
+            trackQuery.BindText(3, this->filter);
+            trackQuery.BindText(4, this->filter);
+        }
+        else {
+            trackQuery.BindInt64(0, this->id);
+        }
+
+        while (trackQuery.Step() == Row) {
+            int64_t id = trackQuery.ColumnInt64(0);
+            std::string album = trackQuery.ColumnText(1);
+
+            if (album != lastAlbum) {
+                headers->insert(index);
+                lastAlbum = album;
+            }
+
+            result->Add(id);
+            ++index;
+        }
+    }
     return true;
 }

@@ -60,11 +60,14 @@ static int MIN_LIST_TITLE_HEIGHT = 26;
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
 
+static std::set<std::string> EDIT_KEYS;
+
 static std::map <std::string, std::string> FIELD_TO_TITLE{
     std::make_pair(constants::Track::ARTIST, "browse_title_artists"),
     std::make_pair(constants::Track::ALBUM, "browse_title_albums"),
     std::make_pair(constants::Track::GENRE, "browse_title_genres"),
-    std::make_pair(constants::Track::ALBUM_ARTIST, "browse_title_album_artists")
+    std::make_pair(constants::Track::ALBUM_ARTIST, "browse_title_album_artists"),
+    std::make_pair(constants::Playlists::TABLE_NAME, "browse_title_playlists")
 };
 
 static std::string getTitleForCategory(const std::string& fieldName) {
@@ -77,6 +80,12 @@ BrowseLayout::BrowseLayout(
     ILibraryPtr library)
 : LayoutBase()
 , playback(playback) {
+    EDIT_KEYS = {
+        Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
+        Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
+        Hotkeys::Get(Hotkeys::PlayQueueDelete)
+    };
+
     this->library = library;
     this->library->Indexer()->Progress.connect(this, &BrowseLayout::OnIndexerProgress);
     this->library->Indexer()->Finished.connect(this, &BrowseLayout::OnIndexerProgress);
@@ -196,7 +205,7 @@ void BrowseLayout::OnCategoryViewInvalidated(
     this->RequeryTrackList(view);
 }
 
-void BrowseLayout::SetCategory(const std::string& fieldName) {
+void BrowseLayout::SwitchCategory(const std::string& fieldName) {
     this->categoryList->SetFieldName(fieldName);
 
     std::string title = getTitleForCategory(fieldName);
@@ -220,21 +229,78 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
-        this->SetCategory(constants::Track::ARTIST);
+        this->SwitchCategory(constants::Track::ARTIST);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
-        this->SetCategory(constants::Track::ALBUM);
+        this->SwitchCategory(constants::Track::ALBUM);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
-        this->SetCategory(constants::Track::GENRE);
+        this->SwitchCategory(constants::Track::GENRE);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
-        this->SetCategory(constants::Track::ALBUM_ARTIST);
+        this->SwitchCategory(constants::Track::ALBUM_ARTIST);
         return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowsePlaylists, key)) {
+        this->SwitchCategory(constants::Playlists::TABLE_NAME);
+        return true;
+    }
+    else if (this->GetFocus() == this->trackList && EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
+        if (this->ProcessEditOperation(key)) {
+            return true;
+        }
     }
 
     return LayoutBase::KeyPress(key);
+}
+
+bool BrowseLayout::ProcessEditOperation(const std::string& key) {
+    /* if there are headers the track count and item count won't match. if
+    this is the case, bail. we currently don't support rearranging tracks
+    in this case because it'll screw up header calculation logic, unless
+    we re-index. but re-indexing may take a while on large lists. */
+    if (this->trackList->TrackCount() != this->trackList->EntryCount()) {
+        return false;
+    }
+
+    std::shared_ptr<TrackList> tracks = this->trackList->GetTrackList();
+    if (tracks && EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
+        size_t selected = this->trackList->GetSelectedTrackIndex();
+        size_t to = -1;
+
+        {
+            if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
+                if (selected > 0) {
+                    to = selected - 1;
+                    tracks->Move(selected, to);
+                }
+                else {
+                    to = selected;
+                }
+            }
+            else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
+                if (selected < tracks->Count() - 1) {
+                    to = selected + 1;
+                    tracks->Move(selected, to);
+                }
+                else {
+                    to = selected;
+                }
+            }
+            else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
+                tracks->Delete(selected);
+                to = selected;
+            }
+        }
+
+        trackList->OnAdapterChanged();
+        trackList->SetSelectedIndex(trackList->TrackIndexToAdapterIndex(to));
+
+        return true;
+    }
+
+    return false;
 }
