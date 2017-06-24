@@ -37,6 +37,7 @@
 #include <core/library/query/local/LocalQueryBase.h>
 #include <core/library/track/TrackList.h>
 #include <core/db/Connection.h>
+#include <core/library/ILibrary.h>
 #include <memory>
 
 namespace musik { namespace core { namespace db { namespace local {
@@ -47,6 +48,12 @@ namespace musik { namespace core { namespace db { namespace local {
                 const std::string& playlistName,
                 std::shared_ptr<musik::core::TrackList> tracks);
 
+            static std::shared_ptr<SavePlaylistQuery> Save(
+                musik::core::ILibraryPtr library,
+                const std::string& playlistName,
+                const std::string& categoryType,
+                int64_t categoryId);
+
             static std::shared_ptr<SavePlaylistQuery> Replace(
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
@@ -54,6 +61,16 @@ namespace musik { namespace core { namespace db { namespace local {
             static std::shared_ptr<SavePlaylistQuery> Rename(
                 const int64_t playlistId,
                 const std::string& playlistName);
+
+            static std::shared_ptr<SavePlaylistQuery> Append(
+                const int64_t playlistId,
+                std::shared_ptr<musik::core::TrackList> tracks);
+
+            static std::shared_ptr<SavePlaylistQuery> Append(
+                musik::core::ILibraryPtr library,
+                const int64_t playlistId,
+                const std::string& categoryType,
+                int64_t categoryId);
 
             virtual std::string Name() { return "SavePlaylistQuery"; }
 
@@ -68,20 +85,43 @@ namespace musik { namespace core { namespace db { namespace local {
                 std::shared_ptr<musik::core::TrackList> tracks);
 
             SavePlaylistQuery(
+                musik::core::ILibraryPtr library,
+                const std::string& playlistName,
+                const std::string& categoryType,
+                int64_t categoryId);
+
+            SavePlaylistQuery(
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks);
+
+            SavePlaylistQuery(
+                musik::core::ILibraryPtr library,
+                const int64_t playlistId,
+                const std::string& categoryType,
+                int64_t categoryId);
 
             SavePlaylistQuery(
                 const int64_t playlistId,
                 const std::string& newName);
 
+            enum Operation { CreateOp, RenameOp, ReplaceOp, AppendOp };
+
             bool CreatePlaylist(musik::core::db::Connection &db);
             bool RenamePlaylist(musik::core::db::Connection &db);
             bool ReplacePlaylist(musik::core::db::Connection &db);
-            bool AddTracksToPlaylist(musik::core::db::Connection &db, int64_t playlistId);
+            bool AppendToPlaylist(musik::core::db::Connection &db);
 
-            std::string playlistName;
-            int64_t playlistId;
+            bool AddCategoryTracksToPlaylist(musik::core::db::Connection &db, int64_t playlistId);
+
+            bool AddTracksToPlaylist(
+                musik::core::db::Connection &db,
+                int64_t playlistId,
+                std::shared_ptr<musik::core::TrackList> tracks);
+
+            Operation op;
+            musik::core::ILibraryPtr library;
+            std::string playlistName, categoryType;
+            int64_t playlistId, categoryId;
             std::shared_ptr<musik::core::TrackList> tracks;
     };
 

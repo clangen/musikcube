@@ -83,6 +83,8 @@
         "playqueue_overlay_add_to_start_of_queue": "add to beginning of play queue",
         "playqueue_overlay_add_to_end_in_queue": "add to end of play queue",
         "playqueue_overlay_add_as_next_in_queue": "add as next in play queue",
+        "playqueue_overlay_add_to_playlist": "add to playlist",
+        "playqueue_overlay_select_playlist_title": "select a playlist",
 
         "visualizer_overlay_title": "visualizers",
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",

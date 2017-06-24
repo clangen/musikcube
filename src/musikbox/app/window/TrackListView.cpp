@@ -159,7 +159,12 @@ TrackPtr TrackListView::GetSelectedTrack() {
 }
 
 size_t TrackListView::GetSelectedTrackIndex() {
-    return this->headers.AdapterToTrackListIndex(this->GetSelectedIndex());
+    auto i = this->GetSelectedIndex();
+    if (i != ListWindow::NO_SELECTION) {
+        auto entry = adapter->GetEntry(this, i);
+        return static_cast<TrackListEntry*>(entry.get())->GetIndex();
+    }
+    return ListWindow::NO_SELECTION;
 }
 
 size_t TrackListView::TrackIndexToAdapterIndex(size_t index) {
@@ -219,7 +224,8 @@ bool TrackListView::KeyPress(const std::string& key) {
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
             TrackPtr track = this->GetSelectedTrack();
             if (track) {
-                PlayQueueOverlays::ShowAddTrackOverlay(MessageQueue(), this->playback, track);
+                PlayQueueOverlays::ShowAddTrackOverlay(
+                    MessageQueue(), this->library, this->playback, track);
                 handled = true;
             }
         }

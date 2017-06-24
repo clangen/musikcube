@@ -47,6 +47,7 @@ namespace musik {
 
                 static void ShowAddTrackOverlay(
                     musik::core::runtime::IMessageQueue& messageQueue,
+                    musik::core::ILibraryPtr library,
                     musik::core::audio::PlaybackService& playback,
                     musik::core::TrackPtr track);
 

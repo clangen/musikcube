@@ -296,8 +296,14 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
             }
         }
 
+        to = trackList->TrackIndexToAdapterIndex(to);
         trackList->OnAdapterChanged();
-        trackList->SetSelectedIndex(trackList->TrackIndexToAdapterIndex(to));
+
+        if (!trackList->IsEntryVisible(to)) {
+            trackList->ScrollTo(to);
+        }
+
+        trackList->SetSelectedIndex(to);
 
         return true;
     }

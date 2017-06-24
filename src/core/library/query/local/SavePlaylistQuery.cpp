@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 #include "SavePlaylistQuery.h"
+#include "CategoryTrackListQuery.h"
 
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Statement.h>
@@ -54,12 +55,25 @@ static std::string DELETE_PLAYLIST_TRACKS_QUERY =
 static std::string RENAME_PLAYLIST_QUERY =
     "UPDATE playlists SET name=? WHERE id=?";
 
+static std::string GET_MAX_SORT_ORDER_QUERY =
+    "SELECT MAX(sort_order) from playlist_tracks where playlist_id = ?";
+
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
     return std::shared_ptr<SavePlaylistQuery>(
         new SavePlaylistQuery(playlistName, tracks));
+}
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
+    musik::core::ILibraryPtr library,
+    const std::string& playlistName,
+    const std::string& categoryType,
+    int64_t categoryId)
+{
+    return std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(library, playlistName, categoryType, categoryId));
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
@@ -71,11 +85,35 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
-    const int64_t playlistId,
-    const std::string& playlistName)
+    const int64_t playlistId, const std::string& playlistName)
 {
     return std::shared_ptr<SavePlaylistQuery>(
         new SavePlaylistQuery(playlistId, playlistName));
+}
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
+    const int64_t playlistId, std::shared_ptr<musik::core::TrackList> tracks)
+{
+    auto result = std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(playlistId, tracks));
+
+    result->op = AppendOp;
+
+    return result;
+}
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
+    musik::core::ILibraryPtr library,
+    const int64_t playlistId,
+    const std::string& categoryType,
+    int64_t categoryId)
+{
+    auto result = std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(library, playlistId, categoryType, categoryId));
+
+    result->op = AppendOp;
+
+    return result;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -83,8 +121,25 @@ SavePlaylistQuery::SavePlaylistQuery(
     std::shared_ptr<musik::core::TrackList> tracks)
 {
     this->playlistId = -1;
+    this->categoryId = -1;
     this->playlistName = playlistName;
     this->tracks = tracks;
+    this->op = CreateOp;
+}
+
+
+SavePlaylistQuery::SavePlaylistQuery(
+    musik::core::ILibraryPtr library,
+    const std::string& playlistName,
+    const std::string& categoryType,
+    int64_t categoryId)
+{
+    this->library = library;
+    this->playlistId = -1;
+    this->categoryId = categoryId;
+    this->categoryType = categoryType;
+    this->playlistName = playlistName;
+    this->op = CreateOp;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -93,31 +148,62 @@ SavePlaylistQuery::SavePlaylistQuery(
 {
     this->playlistId = playlistId;
     this->tracks = tracks;
+    this->op = ReplaceOp;
+}
+
+SavePlaylistQuery::SavePlaylistQuery(
+    musik::core::ILibraryPtr library,
+    const int64_t playlistId,
+    const std::string& categoryType,
+    int64_t categoryId)
+{
+    this->library = library;
+    this->playlistId = playlistId;
+    this->categoryId = categoryId;
+    this->categoryType = categoryType;
+    this->tracks = tracks;
+    this->op = AppendOp;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
     const int64_t playlistId,
     const std::string& playlistName)
 {
+    this->categoryId = -1;
     this->playlistId = playlistId;
     this->playlistName = playlistName;
+    this->op = RenameOp;
 }
 
 SavePlaylistQuery::~SavePlaylistQuery() {
 }
 
-bool SavePlaylistQuery::AddTracksToPlaylist(musik::core::db::Connection &db, int64_t playlistId) {
+bool SavePlaylistQuery::AddTracksToPlaylist(
+    musik::core::db::Connection &db,
+    int64_t playlistId,
+    std::shared_ptr<musik::core::TrackList> tracks)
+{
+    int offset = 0;
+
+    /* get the max offset, we're appending to the end and don't want
+    to screw up our sort order! */
+    Statement queryMax(GET_MAX_SORT_ORDER_QUERY.c_str(), db);
+    queryMax.BindInt64(0, playlistId);
+    if (queryMax.Step() == db::Row) {
+        offset = queryMax.ColumnInt32(0);
+    }
+
+    /* insert all the tracks. */
     Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
 
     TrackPtr track;
-    TrackList& tracks = *this->tracks;
-    for (size_t i = 0; i < tracks.Count(); i++) {
-        track = tracks.Get(i);
+    for (size_t i = 0; i < tracks->Count(); i++) {
+        track = tracks->Get(i);
         insertTrack.Reset();
         insertTrack.BindText(0, track->GetValue("external_id"));
         insertTrack.BindText(1, track->GetValue("source_id"));
         insertTrack.BindInt64(2, playlistId);
-        insertTrack.BindInt32(3, (int) i);
+        insertTrack.BindInt32(3, offset++);
 
         if (insertTrack.Step() == db::Error) {
             return false;
@@ -125,6 +211,26 @@ bool SavePlaylistQuery::AddTracksToPlaylist(musik::core::db::Connection &db, int
     }
 
     return true;
+}
+
+bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
+    musik::core::db::Connection &db, int64_t playlistId)
+{
+    auto query = std::shared_ptr<CategoryTrackListQuery>(
+        new CategoryTrackListQuery(library, categoryType, categoryId));
+
+    this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+    if (query->GetStatus() == IQuery::Finished) {
+        auto tracks = query->GetResult();
+        ScopedTransaction transaction(db);
+        if (this->AddTracksToPlaylist(db, playlistId, tracks)) {
+            return true;
+        }
+        transaction.Cancel();
+    }
+
+    return false;
 }
 
 bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
@@ -142,9 +248,17 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
     int64_t playlistId = db.LastInsertedId();
 
     /* add tracks to playlist */
-    if (!this->AddTracksToPlaylist(db, playlistId)) {
-        transaction.Cancel();
-        return false;
+    if (this->tracks) {
+        if (!this->AddTracksToPlaylist(db, playlistId, this->tracks)) {
+            transaction.Cancel();
+            return false;
+        }
+    }
+    else {
+        if (!this->AddCategoryTracksToPlaylist(db, playlistId)) {
+            transaction.Cancel();
+            return false;
+        }
     }
 
     return true;
@@ -170,7 +284,7 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
     }
 
     /* add tracks to playlist */
-    if (!this->AddTracksToPlaylist(db, playlistId)) {
+    if (!this->AddTracksToPlaylist(db, playlistId, this->tracks)) {
         transaction.Cancel();
         return false;
     }
@@ -178,13 +292,18 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
     return true;
 }
 
-bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
-    if (playlistName.size() && playlistId != -1) {
-        return this->RenamePlaylist(db);
-    }
-    else if (playlistId != -1) {
-        return this->ReplacePlaylist(db);
-    }
+bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
+    return this->tracks
+        ? this->AddTracksToPlaylist(db, this->playlistId, this->tracks)
+        : this->AddCategoryTracksToPlaylist(db, this->playlistId);
+}
 
-    return this->CreatePlaylist(db);
+bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
+    switch (this->op) {
+        case RenameOp: return this->RenamePlaylist(db);
+        case ReplaceOp: return this->ReplacePlaylist(db);
+        case CreateOp: return this->CreatePlaylist(db);
+        case AppendOp: return this->AppendToPlaylist(db);
+    }
+    return false;
 }
