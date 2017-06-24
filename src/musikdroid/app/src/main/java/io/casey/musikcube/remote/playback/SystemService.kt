@@ -203,8 +203,8 @@ class SystemService : Service() {
     private fun downloadAlbumArt(title: String, artist: String, album: String, duration: Int) {
         recycleAlbumArt()
 
-        albumArtModel = AlbumArtModel(title, artist, album, AlbumArtModel.Size.Mega, object: AlbumArtModel.AlbumArtCallback {
-            override fun onFinished(model: AlbumArtModel, url: String?) {
+        albumArtModel = AlbumArtModel(title, artist, album, AlbumArtModel.Size.Mega) {
+            _: AlbumArtModel, url: String? ->
                 if (albumArtModel.matches(artist, album)) {
                     handler.post {
                         if (albumArtRequest != null && albumArtRequest?.request != null) {
@@ -227,8 +227,7 @@ class SystemService : Service() {
                             })
                     }
                 }
-            }
-        })
+        }
 
         albumArtModel.fetch()
     }

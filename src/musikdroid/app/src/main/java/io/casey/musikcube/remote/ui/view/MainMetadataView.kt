@@ -27,7 +27,6 @@ import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.extension.getColorCompat
 import io.casey.musikcube.remote.ui.model.AlbumArtModel
-import io.casey.musikcube.remote.ui.model.AlbumArtModel.AlbumArtCallback
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.Prefs
@@ -241,13 +240,17 @@ class MainMetadataView : FrameLayout {
                 .load(url)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .listener(object : RequestListener<String, GlideDrawable> {
-                    override fun onException(e: Exception, model: String, target: Target<GlideDrawable>, first: Boolean): Boolean {
+                    override fun onException(
+                            e: Exception, model: String, target: Target<GlideDrawable>,
+                            first: Boolean): Boolean {
                         setMetadataDisplayMode(DisplayMode.NoArtwork)
                         lastArtworkUrl = null
                         return false
                     }
 
-                    override fun onResourceReady(resource: GlideDrawable, model: String, target: Target<GlideDrawable>, memory: Boolean, first: Boolean): Boolean {
+                    override fun onResourceReady(
+                            resource: GlideDrawable, model: String, target: Target<GlideDrawable>,
+                            memory: Boolean, first: Boolean): Boolean {
                         if (!isPaused) {
                             preloadNextImage()
                         }
@@ -285,16 +288,15 @@ class MainMetadataView : FrameLayout {
                 val album = track.optString(Metadata.Track.ALBUM, "")
 
                 if (!albumArtModel.matches(artist, album)) {
-                    AlbumArtModel("", artist, album, AlbumArtModel.Size.Mega, object: AlbumArtCallback {
-                        override fun onFinished(model: AlbumArtModel, url: String?) {
+                    AlbumArtModel("", artist, album, AlbumArtModel.Size.Mega) {
+                                _: AlbumArtModel, url: String? ->
                             val width = albumArtImageView!!.width
                             val height = albumArtImageView!!.height
                             Glide.with(context).load(url).downloadOnly(width, height)
                         }
-                    })
+                    }
                 }
             }
-        }
     }
 
     private fun init() {
@@ -353,16 +355,15 @@ class MainMetadataView : FrameLayout {
         override fun onInvalidPassword() {}
     }
 
-    private var albumArtRetrieved = object : AlbumArtCallback {
-        override fun onFinished(model: AlbumArtModel, url: String?) {
-            handler.post {
-                if (model === albumArtModel) {
-                    if (Strings.empty(model.url)) {
-                        setMetadataDisplayMode(DisplayMode.NoArtwork)
-                    }
-                    else {
-                        updateAlbumArt()
-                    }
+    private var albumArtRetrieved: (AlbumArtModel, String?) -> Unit = {
+            model: AlbumArtModel, _: String? ->
+        handler.post {
+            if (model === albumArtModel) {
+                if (Strings.empty(model.url)) {
+                    setMetadataDisplayMode(DisplayMode.NoArtwork)
+                }
+                else {
+                    updateAlbumArt()
                 }
             }
         }

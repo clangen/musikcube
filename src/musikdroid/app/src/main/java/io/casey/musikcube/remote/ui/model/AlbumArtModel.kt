@@ -15,10 +15,9 @@ import java.util.regex.Pattern
 class AlbumArtModel(val track: String,
                     private val artist: String = "",
                     private val album: String = "",
-                    desiredSize: AlbumArtModel.Size,
-                    callback: AlbumArtModel.AlbumArtCallback?)
+                    private val desiredSize: AlbumArtModel.Size,
+                    private var callback: ((AlbumArtModel, String?) -> Unit)? = null)
 {
-    private var callback: AlbumArtCallback? = null
     private var fetching: Boolean = false
     private var noart: Boolean = false
 
@@ -61,17 +60,13 @@ class AlbumArtModel(val track: String,
            this.album.equals(album, ignoreCase = true)
     }
 
-    interface AlbumArtCallback { /* TODO: remove this after converting everything to Kotlin */
-        fun onFinished(model: AlbumArtModel, url: String?)
-    }
-
     @Synchronized fun fetch(): AlbumArtModel {
         if (this.fetching || this.noart) {
             return this
         }
 
         if (!Strings.empty(this.url)) {
-            callback?.onFinished(this, this.url)
+            callback?.invoke(this, this.url)
         }
         else if (Strings.notEmpty(this.artist) && Strings.notEmpty(this.album)) {
             val requestUrl: String
@@ -95,7 +90,7 @@ class AlbumArtModel(val track: String,
             OK_HTTP.newCall(request).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     fetching = false
-                    callback?.onFinished(this@AlbumArtModel, null)
+                    callback?.invoke(this@AlbumArtModel, null)
                 }
 
                 @Throws(IOException::class)
@@ -120,7 +115,6 @@ class AlbumArtModel(val track: String,
                             if (imageList.size > 0) {
                                 /* find the image with the closest to the requested size.
                                 exact match preferred. */
-                                val desiredSize = Size.Mega
                                 var closest = imageList[0]
                                 var lastDelta = Integer.MAX_VALUE
                                 for (check in imageList) {
@@ -143,7 +137,7 @@ class AlbumArtModel(val track: String,
 
                                 fetching = false
                                 this@AlbumArtModel.url = closest.url
-                                callback?.onFinished(this@AlbumArtModel, closest.url)
+                                callback?.invoke(this@AlbumArtModel, closest.url)
                                 return
                             }
                         }
@@ -154,12 +148,12 @@ class AlbumArtModel(val track: String,
                         fetching = false
                     }
 
-                    callback?.onFinished(this@AlbumArtModel, null)
+                    callback?.invoke(this@AlbumArtModel, null)
                 }
             })
         }
         else {
-            callback?.onFinished(this, null)
+            callback?.invoke(this, null)
         }
 
         return this
@@ -175,10 +169,7 @@ class AlbumArtModel(val track: String,
         private var OK_HTTP: OkHttpClient
         private val URL_CACHE = LruCache<Int, String>(500)
 
-        private val DEFAULT_CALLBACK = object : AlbumArtCallback {
-            override fun onFinished(model: AlbumArtModel, url: String?) {
-            }
-        }
+        private val DEFAULT_CALLBACK: (AlbumArtModel, String?) -> Unit = { _, _ -> }
 
         init {
             OK_HTTP = OkHttpClient.Builder()
@@ -223,7 +214,7 @@ class AlbumArtModel(val track: String,
             for (pattern in BAD_PATTERNS) {
                 result = pattern.matcher(result).replaceAll("")
             }
-            return result.trim { it <= ' ' }
+            return result.trim { it.isWhitespace() }
         }
     }
 }
