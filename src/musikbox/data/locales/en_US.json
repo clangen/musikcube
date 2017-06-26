@@ -61,6 +61,8 @@
         "playback_overlay_invalid_transport": "the selected output device (%s) doesn't support crossfading.",
         "playback_overlay_no_output_plugins_mesage": "no output plugins found!",
 
+        "playqueue_title": "play queue",
+
         "playqueue_overlay_add_to_start": "add to beginning",
         "playqueue_overlay_add_to_end": "add to end",
         "playqueue_overlay_add_as_next": "add as next",

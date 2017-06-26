@@ -92,6 +92,9 @@ namespace cursespp {
             virtual int GetAbsoluteY() const;
             virtual int GetId() const;
 
+            virtual void SetFrameTitle(const std::string& title);
+            virtual std::string GetFrameTitle() const;
+
             virtual void BringToTop();
             virtual void SendToBottom();
 
@@ -155,6 +158,7 @@ namespace cursespp {
             int id;
             int64_t contentColor, frameColor;
             int64_t focusedContentColor, focusedFrameColor;
+            std::string title;
             int width, height, x, y;
             int lastAbsoluteX, lastAbsoluteY;
     };

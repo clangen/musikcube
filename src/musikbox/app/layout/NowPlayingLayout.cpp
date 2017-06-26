@@ -130,6 +130,7 @@ void NowPlayingLayout::InitializeWindows() {
         std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2),
         std::bind(&NowPlayingLayout::RowDecorator, this, std::placeholders::_1, std::placeholders::_2)));
 
+    this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
     this->trackListView->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
     this->AddWindow(this->trackListView);
 }

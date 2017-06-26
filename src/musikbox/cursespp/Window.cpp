@@ -38,6 +38,7 @@
 #include "IInput.h"
 #include "Colors.h"
 #include "Screen.h"
+#include "Text.h"
 
 #include <core/runtime/Message.h>
 #include <core/runtime/MessageQueue.h>
@@ -481,8 +482,6 @@ void Window::OnParentVisibilityChanged(bool visible) {
         if (this->framePanel) {
             this->Destroy();
         }
-
-        //this->OnVisibilityChanged(false);
     }
     else if (visible && this->isVisible) {
         if (this->framePanel) {
@@ -491,8 +490,6 @@ void Window::OnParentVisibilityChanged(bool visible) {
         else {
             this->Recreate();
         }
-
-        //this->OnVisibilityChanged(true);
     }
 }
 
@@ -549,6 +546,16 @@ int Window::GetAbsoluteX() const {
 
 int Window::GetAbsoluteY() const {
     return this->parent ? (this->y + parent->GetAbsoluteY()) : this->y;
+}
+
+void Window::SetFrameTitle(const std::string& title) {
+    this->title = title;
+    this->Destroy();
+    this->Redraw();
+}
+
+std::string Window::GetFrameTitle() const {
+    return this->title;
 }
 
 void Window::Create() {
@@ -640,6 +647,17 @@ void Window::Create() {
 
             if (currentContentColor != CURSESPP_DEFAULT_COLOR) {
                 wbkgd(this->content, COLOR_PAIR(currentContentColor));
+            }
+
+            /* draw the title, if one is specified */
+            size_t titleLen = u8len(this->title);
+            if (titleLen > 0) {
+                int max = this->width - 4; /* 4 = corner + space + space + corner */
+                if (max > 3) { /* 3 = first character plus ellipse (e.g. 'F..')*/
+                    std::string adjusted = " " + text::Ellipsize(this->title, (size_t) max - 2) + " ";
+                    wmove(this->frame, 0, 2);
+                    waddstr(this->frame, adjusted.c_str());
+                }
             }
         }
 

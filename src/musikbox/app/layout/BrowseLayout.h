@@ -94,8 +94,6 @@ namespace musik {
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
-                std::shared_ptr<cursespp::TextLabel> categoryTitle;
-                std::shared_ptr<cursespp::TextLabel> tracksTitle;
                 std::shared_ptr<cursespp::TextLabel> modifiedLabel;
         };
     }

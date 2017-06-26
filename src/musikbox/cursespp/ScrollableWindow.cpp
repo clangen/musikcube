@@ -141,7 +141,7 @@ bool ScrollableWindow::KeyPress(const std::string& key) {
     return false;
 }
 
-void ScrollableWindow::Redraw() {
+void ScrollableWindow::OnRedraw() {
     IScrollAdapter *adapter = &GetScrollAdapter();
     ScrollPos &pos = this->GetMutableScrollPosition();
     adapter->DrawPage(this, pos.firstVisibleEntryIndex, pos);

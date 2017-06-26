@@ -114,23 +114,6 @@ void BrowseLayout::OnLayout() {
 
     size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
 
-    if (Screen::GetHeight() > MIN_LIST_TITLE_HEIGHT) {
-        ++y;
-
-        this->categoryTitle->MoveAndResize(x, y, categoryWidth, 1);
-        this->categoryTitle->Show();
-
-        this->tracksTitle->MoveAndResize(x + categoryWidth, y, cx - categoryWidth, 1);
-        this->tracksTitle->Show();
-
-        ++y;
-        cy -= 2;
-    }
-    else {
-        this->categoryTitle->Hide();
-        this->tracksTitle->Hide();
-    }
-
     this->categoryList->MoveAndResize(x, y, categoryWidth, cy);
 
     if (this->playlistModified) {
@@ -150,22 +133,17 @@ void BrowseLayout::OnLayout() {
 }
 
 void BrowseLayout::InitializeWindows() {
-    this->categoryTitle.reset(new TextLabel());
-    this->categoryTitle->SetText(_TSTR(DEFAULT_CATEGORY_NAME), text::AlignCenter);
-    this->categoryTitle->Hide();
     this->categoryList.reset(new CategoryListView(this->playback, this->library, DEFAULT_CATEGORY));
+    this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
-    this->tracksTitle.reset(new TextLabel());
-    this->tracksTitle->SetText(_TSTR("browse_title_tracks"), text::AlignCenter);
     this->trackList.reset(new TrackListView(this->playback, this->library));
+    this->trackList->SetFrameTitle(_TSTR("browse_title_tracks"));
 
     this->modifiedLabel.reset(new TextLabel());
     this->modifiedLabel->SetText(getModifiedText(), text::AlignCenter);
     this->modifiedLabel->SetContentColor(CURSESPP_BANNER);
     this->modifiedLabel->Hide();
 
-    this->AddWindow(this->categoryTitle);
-    this->AddWindow(this->tracksTitle);
     this->AddWindow(this->categoryList);
     this->AddWindow(this->trackList);
     this->AddWindow(this->modifiedLabel);
@@ -188,9 +166,7 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
 void BrowseLayout::ScrollTo(const std::string& fieldType, int64_t fieldId) {
     this->SetFocus(this->trackList);
     this->categoryList->RequeryWithField(fieldType, "", fieldId);
-
-    std::string title = getTitleForCategory(fieldType);
-    this->categoryTitle->SetText(title, text::AlignCenter);
+    this->categoryList->SetFrameTitle(getTitleForCategory(fieldType));
 }
 
 void BrowseLayout::OnVisibilityChanged(bool visible) {
@@ -243,9 +219,7 @@ void BrowseLayout::OnCategoryViewInvalidated(
 
 void BrowseLayout::SwitchCategory(const std::string& fieldName) {
     this->categoryList->SetFieldName(fieldName);
-
-    std::string title = getTitleForCategory(fieldName);
-    this->categoryTitle->SetText(title, text::AlignCenter);
+    this->categoryList->SetFrameTitle(getTitleForCategory(fieldName));
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {

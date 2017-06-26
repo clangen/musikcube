@@ -76,7 +76,6 @@ namespace cursespp {
             virtual void Blur();
 
             virtual void OnAdapterChanged();
-            virtual void Redraw();
 
             void SetAllowArrowKeyPropagation(bool allow = true);
 
@@ -85,6 +84,7 @@ namespace cursespp {
         protected:
             virtual IScrollAdapter& GetScrollAdapter();
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
+            virtual void OnRedraw();
 
             size_t GetPreviousPageEntryIndex();
             bool IsLastItemVisible();
