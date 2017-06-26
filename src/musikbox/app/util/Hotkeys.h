@@ -79,11 +79,16 @@ namespace musik {
                     PlayQueueMoveUp,
                     PlayQueueMoveDown,
                     PlayQueueDelete,
-                    PlayQueuePlaylistNew,
                     PlayQueuePlaylistLoad,
                     PlayQueuePlaylistSave,
                     PlayQueuePlaylistRename,
                     PlayQueuePlaylistDelete,
+
+                    /* browse ->playlists */
+                    BrowsePlaylistsNew,
+                    BrowsePlaylistsSave,
+                    BrowsePlaylistsRename,
+                    BrowsePlaylistsDelete,
 
                     /* indexer */
                     RescanMetadata,

@@ -75,7 +75,11 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "play_queue_playlist_save", Id::PlayQueuePlaylistSave },
     { "play_queue_playlist_rename", Id::PlayQueuePlaylistRename },
     { "play_queue_playlist_delete", Id::PlayQueuePlaylistDelete },
-    { "play_queue_playlist_new", Id::PlayQueuePlaylistNew },
+
+    { "browse_playlists_new", Id::BrowsePlaylistsNew },
+    { "browse_playlists_save", Id::BrowsePlaylistsSave },
+    { "browse_playlists_rename", Id::BrowsePlaylistsRename },
+    { "browse_playlists_delete", Id::BrowsePlaylistsDelete },
 
     { "playback_toggle_mute", Id::ToggleMute },
     { "playback_toggle_pause", Id::TogglePause },
@@ -129,7 +133,15 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::PlayQueuePlaylistSave, "M-s" },
     { Id::PlayQueuePlaylistRename, "M-r" },
     { Id::PlayQueuePlaylistDelete, "M-x" },
-    { Id::PlayQueuePlaylistNew, "M-n" },
+
+    { Id::BrowsePlaylistsSave, "M-s" },
+    { Id::BrowsePlaylistsNew, "M-n" },
+    { Id::BrowsePlaylistsRename, "M-r" },
+#ifdef __APPLE__
+    { Id::BrowsePlaylistsDelete, "KEY_BACKSPACE" },
+#else
+    { Id::BrowsePlaylistsDelete, "KEY_DC" },
+#endif
 
     { Id::ToggleMute, "m" },
     { Id::TogglePause, "^P" },

@@ -182,10 +182,11 @@ static void createNewPlaylist(
     cursespp::App::Overlays().Push(dialog);
 }
 
-static void renamePlaylist(
+void PlayQueueOverlays::ShowRenamePlaylistOverlay(
     musik::core::ILibraryPtr library,
     const int64_t playlistId,
-    const std::string& oldName)
+    const std::string& oldName,
+    QueryCallback callback)
 {
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
@@ -193,19 +194,20 @@ static void renamePlaylist(
         .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetText(oldName)
         .SetInputAcceptedCallback(
-            [library, playlistId](const std::string& name) {
+            [library, playlistId, callback](const std::string& name) {
                 if (name.size()) {
-                    library->Enqueue(SavePlaylistQuery::Rename(playlistId, name));
+                    library->Enqueue(SavePlaylistQuery::Rename(playlistId, name), 0, callback);
                 }
             });
 
     cursespp::App::Overlays().Push(dialog);
 }
 
-static void confirmDeletePlaylist(
+void PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
     musik::core::ILibraryPtr library,
     const std::string& playlistName,
-    const int64_t playlistId)
+    const int64_t playlistId,
+    QueryCallback callback )
 {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -219,9 +221,9 @@ static void confirmDeletePlaylist(
             "KEY_ENTER",
             "ENTER",
             _TSTR("button_yes"),
-            [library, playlistId](const std::string& str) {
+            [library, playlistId, callback](const std::string& str) {
                 library->Enqueue(std::shared_ptr<DeletePlaylistQuery>(
-                    new DeletePlaylistQuery(playlistId)));
+                    new DeletePlaylistQuery(playlistId)), 0, callback);
             });
 
     App::Overlays().Push(dialog);
@@ -605,7 +607,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr libra
             if (index != ListWindow::NO_SELECTION) {
                 int64_t playlistId = (*result)[index]->id;
                 std::string playlistName = (*result)[index]->displayValue;
-                renamePlaylist(library, playlistId, playlistName);
+                ShowRenamePlaylistOverlay(library, playlistId, playlistName);
             }
         });
 }
@@ -631,7 +633,7 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr libra
             if (index != ListWindow::NO_SELECTION) {
                 int64_t playlistId = (*result)[index]->id;
                 std::string playlistName = (*result)[index]->displayValue;
-                confirmDeletePlaylist(library, playlistName, playlistId);
+                ShowConfirmDeletePlaylistOverlay(library, playlistName, playlistId);
             }
         });
 }

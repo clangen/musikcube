@@ -79,6 +79,7 @@ namespace musik {
                 void Reset();
 
                 int64_t GetSelectedId();
+                std::string GetSelectedValue();
                 std::string GetFilter();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);

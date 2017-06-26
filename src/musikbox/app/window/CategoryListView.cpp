@@ -112,6 +112,14 @@ int64_t CategoryListView::GetSelectedId() {
     return -1;
 }
 
+std::string CategoryListView::GetSelectedValue() {
+    size_t index = this->GetSelectedIndex();
+    if (index != NO_SELECTION && this->metadata && index < this->metadata->size()) {
+        return this->metadata->at(index)->displayValue;
+    }
+    return "";
+}
+
 std::string CategoryListView::GetFieldName() {
     return this->fieldName;
 }

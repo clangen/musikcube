@@ -63,7 +63,6 @@ namespace musik {
                 virtual ~BrowseLayout();
 
                 virtual void OnVisibilityChanged(bool visible);
-                virtual cursespp::IWindowPtr GetFocus();
                 virtual bool KeyPress(const std::string& key);
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 void ScrollTo(const std::string& fieldType, int64_t fieldId);
@@ -98,7 +97,6 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> categoryTitle;
                 std::shared_ptr<cursespp::TextLabel> tracksTitle;
                 std::shared_ptr<cursespp::TextLabel> modifiedLabel;
-                cursespp::IWindowPtr focused;
         };
     }
 }

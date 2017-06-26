@@ -193,10 +193,6 @@ void BrowseLayout::ScrollTo(const std::string& fieldType, int64_t fieldId) {
     this->categoryTitle->SetText(title, text::AlignCenter);
 }
 
-IWindowPtr BrowseLayout::GetFocus() {
-    return this->focused ? this->focused : LayoutBase::GetFocus();
-}
-
 void BrowseLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
@@ -296,20 +292,42 @@ bool BrowseLayout::IsEditable() {
 
 bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
     if (IsEditable()) {
-        if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistNew, key)) {
+        if (Hotkeys::Is(Hotkeys::BrowsePlaylistsNew, key)) {
             auto lastId = this->categoryList->GetSelectedId();
             PlayQueueOverlays::ShowCreatePlaylistOverlay(library, [this, lastId](auto query) {
                 this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
             });
             return true;
         }
-        else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistSave, key)) {
+        else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsSave, key)) {
             this->ShowModifiedLabel(false);
             auto tracks = this->trackList->GetTrackList().get();
             this->library->Enqueue(SavePlaylistQuery::Replace(
                 this->categoryList->GetSelectedId(),
                 std::shared_ptr<TrackList>(new TrackList(tracks))));
             return true;
+        }
+        else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsRename, key)) {
+            auto id = this->categoryList->GetSelectedId();
+            if (id != -1) {
+                PlayQueueOverlays::ShowRenamePlaylistOverlay(
+                    library, id, this->categoryList->GetSelectedValue(),
+                    [this, id](auto query) {
+                        this->categoryList->Requery(this->categoryList->GetFilter(), id);
+                    });
+            }
+        }
+        else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsDelete, key)) {
+            if (this->GetFocus() == this->categoryList) {
+                auto id = this->categoryList->GetSelectedId();
+                if (id != -1) {
+                    PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
+                        library, this->categoryList->GetSelectedValue(), id,
+                        [this](auto query) {
+                            this->categoryList->Requery();
+                        });
+                }
+            }
         }
     }
 
