@@ -224,12 +224,20 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
 }
 
 void BrowseLayout::OnCategoryViewSelectionChanged(
-    ListWindow *view, size_t newIndex, size_t oldIndex) {
+    ListWindow *view, size_t newIndex, size_t oldIndex)
+{
     this->RequeryTrackList(view);
 }
 
 void BrowseLayout::OnCategoryViewInvalidated(
-    ListWindow *view, size_t selectedIndex) {
+    ListWindow *view, size_t selectedIndex)
+{
+    /* this can happen during sync. if the user managed to modify a
+    playlist in this state, just ignore the refresh */
+    if (IsEditable() && this->playlistModified) {
+        return;
+    }
+
     this->RequeryTrackList(view);
 }
 
