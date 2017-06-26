@@ -90,7 +90,8 @@ void CategoryListView::RequeryWithField(
 
     this->fieldName = fieldName;
     this->selectAfterQuery = selectAfterQuery;
-    this->activeQuery.reset(new CategoryListQuery(this->fieldName, filter));
+    this->filter = filter;
+    this->activeQuery.reset(new CategoryListQuery(fieldName, filter));
     this->library->Enqueue(activeQuery);
 }
 
@@ -113,6 +114,10 @@ int64_t CategoryListView::GetSelectedId() {
 
 std::string CategoryListView::GetFieldName() {
     return this->fieldName;
+}
+
+std::string CategoryListView::GetFilter() {
+    return this->filter;
 }
 
 void CategoryListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {

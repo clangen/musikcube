@@ -44,6 +44,7 @@ namespace musik {
         class PlayQueueOverlays {
             public:
                 using PlaylistSelectedCallback = std::function<void(int64_t)>;
+                using QueryCallback = musik::core::ILibrary::Callback;
 
                 static void ShowAddTrackOverlay(
                     musik::core::runtime::IMessageQueue& messageQueue,
@@ -78,6 +79,10 @@ namespace musik {
 
                 static void ShowDeletePlaylistOverlay(
                     musik::core::ILibraryPtr library);
+
+                static void ShowCreatePlaylistOverlay(
+                    musik::core::ILibraryPtr library,
+                    QueryCallback callback = QueryCallback());
 
             private:
                 PlayQueueOverlays();

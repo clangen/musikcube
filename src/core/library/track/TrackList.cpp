@@ -57,6 +57,12 @@ TrackList::TrackList(ILibraryPtr library) {
     this->library = library;
 }
 
+TrackList::TrackList(TrackList* other)
+: ids(other->ids)
+, library(other->library) {
+    this->library = library;
+}
+
 TrackList::~TrackList() {
 
 }
@@ -210,4 +216,3 @@ void TrackList::AddToCache(int64_t key, TrackPtr value) const {
         cacheList.erase(last);
     }
 }
-

@@ -143,7 +143,8 @@ static void confirmOverwritePlaylist(
 
 static void createNewPlaylist(
     std::shared_ptr<TrackList> tracks,
-    musik::core::ILibraryPtr library)
+    musik::core::ILibraryPtr library,
+    musik::core::ILibrary::Callback callback = musik::core::ILibrary::Callback())
 {
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
@@ -151,9 +152,9 @@ static void createNewPlaylist(
         .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetText("")
         .SetInputAcceptedCallback(
-            [tracks, library](const std::string& name) {
+            [tracks, library, callback](const std::string& name) {
                 if (name.size()) {
-                    library->Enqueue(SavePlaylistQuery::Save(name, tracks));
+                    library->Enqueue(SavePlaylistQuery::Save(name, tracks), 0, callback);
                 }
             });
 
@@ -633,4 +634,10 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr libra
                 confirmDeletePlaylist(library, playlistName, playlistId);
             }
         });
+}
+
+void PlayQueueOverlays::ShowCreatePlaylistOverlay(
+    musik::core::ILibraryPtr library, QueryCallback callback)
+{
+    createNewPlaylist(std::make_shared<TrackList>(library), library, callback);
 }

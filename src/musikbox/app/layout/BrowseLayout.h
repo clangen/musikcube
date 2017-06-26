@@ -85,14 +85,19 @@ namespace musik {
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
 
-                bool BrowseLayout::ProcessEditOperation(const std::string& key);
+                bool IsEditable();
+                bool ProcessEditOperation(const std::string& key);
+                bool ProcessPlaylistOperation(const std::string& key);
+                void ShowModifiedLabel(bool show);
 
+                bool playlistModified;
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextLabel> categoryTitle;
                 std::shared_ptr<cursespp::TextLabel> tracksTitle;
+                std::shared_ptr<cursespp::TextLabel> modifiedLabel;
                 cursespp::IWindowPtr focused;
         };
     }

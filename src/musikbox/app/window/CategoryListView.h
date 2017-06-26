@@ -79,6 +79,7 @@ namespace musik {
                 void Reset();
 
                 int64_t GetSelectedId();
+                std::string GetFilter();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
 
@@ -113,6 +114,7 @@ namespace musik {
                 musik::core::TrackPtr playing;
 
                 std::string fieldName;
+                std::string filter;
                 int64_t selectAfterQuery;
                 musik::core::db::local::CategoryListQuery::ResultList metadata;
         };

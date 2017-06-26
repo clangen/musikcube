@@ -54,22 +54,22 @@ using namespace musik::core::runtime;
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
-class QueryCompletedMessage : public Message {
+class LocalLibrary::QueryCompletedMessage: public Message {
     public:
-        using IQueryPtr = std::shared_ptr<musik::core::db::IQuery>;
+        using QueryContextPtr = LocalLibrary::QueryContextPtr;
 
-        QueryCompletedMessage(IMessageTarget* target, IQueryPtr query)
+        QueryCompletedMessage(IMessageTarget* target, QueryContextPtr context)
         : Message(target, MESSAGE_QUERY_COMPLETED, 0, 0) {
-            this->query = query;
+            this->context = context;
         }
 
         virtual ~QueryCompletedMessage() {
         }
 
-        IQueryPtr GetQuery() { return this->query; }
+        QueryContextPtr GetContext() { return this->context; }
 
     private:
-        IQueryPtr query;
+        QueryContextPtr context;
 };
 
 ILibraryPtr LocalLibrary::Create(std::string name, int id) {
@@ -157,7 +157,7 @@ std::string LocalLibrary::GetDatabaseFilename() {
     return this->GetLibraryDirectory() + "musik.db";
 }
 
-int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
+int LocalLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
     LocalQueryPtr localQuery = std::dynamic_pointer_cast<LocalQuery>(query);
 
     if (localQuery) {
@@ -167,11 +167,15 @@ int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
             return -1;
         }
 
+        auto context = std::make_shared<QueryContext>();
+        context->query = localQuery;
+        context->callback = callback;
+
         if (options & ILibrary::QuerySynchronous) {
-            this->RunQuery(localQuery, false); /* false = do not notify via QueryCompleted */
+            this->RunQuery(context, false); /* false = do not notify via QueryCompleted */
         }
         else {
-            queryQueue.push_back(localQuery);
+            queryQueue.push_back(context);
             queueCondition.notify_all();
 
             if (VERBOSE_LOGGING) {
@@ -186,17 +190,17 @@ int LocalLibrary::Enqueue(IQueryPtr query, unsigned int options) {
 }
 
 
-LocalLibrary::LocalQueryPtr LocalLibrary::GetNextQuery() {
+LocalLibrary::QueryContextPtr LocalLibrary::GetNextQuery() {
     std::unique_lock<std::mutex> lock(this->mutex);
     while (!this->queryQueue.size() && !this->exit) {
         this->queueCondition.wait(lock);
     }
 
     if (this->exit) {
-        return LocalQueryPtr();
+        return QueryContextPtr();
     }
     else {
-        LocalQueryPtr front = queryQueue.front();
+        auto front = queryQueue.front();
         queryQueue.pop_front();
         return front;
     }
@@ -204,15 +208,17 @@ LocalLibrary::LocalQueryPtr LocalLibrary::GetNextQuery() {
 
 void LocalLibrary::ThreadProc() {
     while (!this->exit) {
-        LocalQueryPtr query = GetNextQuery();
+        auto query = GetNextQuery();
         if (query) {
             this->RunQuery(query);
         }
     }
 }
 
-void LocalLibrary::RunQuery(LocalQueryPtr query, bool notify) {
-    if (query) {
+void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
+    if (context) {
+        auto query = context->query;
+
         if (VERBOSE_LOGGING) {
             musik::debug::info(TAG, "query '" + query->Name() + "' running");
         }
@@ -223,7 +229,7 @@ void LocalLibrary::RunQuery(LocalQueryPtr query, bool notify) {
             if (this->messageQueue) {
                 this->messageQueue->Post(
                     std::shared_ptr<QueryCompletedMessage>(
-                        new QueryCompletedMessage(this, query)));
+                        new QueryCompletedMessage(this, context)));
             }
             else {
                 this->QueryCompleted(query.get());
@@ -247,7 +253,14 @@ void LocalLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
 
 void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
-        this->QueryCompleted(static_cast<QueryCompletedMessage*>(&message)->GetQuery().get());
+        auto context = static_cast<QueryCompletedMessage*>(&message)->GetContext();
+        auto query = context->query;
+
+        this->QueryCompleted(context->query.get());
+
+        if (context->callback) {
+            context->callback(query);
+        }
     }
 }
 

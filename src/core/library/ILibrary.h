@@ -45,6 +45,9 @@ namespace musik { namespace core {
 
     class ILibrary {
         public:
+            using QueryPtr = std::shared_ptr<musik::core::db::IQuery>;
+            using Callback = std::function<void(QueryPtr)>;
+
             sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
 
             enum QueryFlag {
@@ -54,8 +57,9 @@ namespace musik { namespace core {
             virtual ~ILibrary() { }
 
             virtual int Enqueue(
-                std::shared_ptr<musik::core::db::IQuery> query,
-                unsigned int options = 0) = 0;
+                QueryPtr query,
+                unsigned int options = 0,
+                Callback = Callback()) = 0;
 
             virtual IIndexer *Indexer() = 0;
             virtual int Id() = 0;

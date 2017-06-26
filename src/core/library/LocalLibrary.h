@@ -63,7 +63,6 @@ namespace musik { namespace core { namespace library {
         boost::noncopyable
     {
         public:
-            using IQueryPtr = std::shared_ptr<musik::core::db::IQuery>;
             using LocalQuery = musik::core::db::LocalQueryBase;
             using LocalQueryPtr = std::shared_ptr<LocalQuery>;
 
@@ -72,16 +71,19 @@ namespace musik { namespace core { namespace library {
             virtual ~LocalLibrary();
 
             /* ILibrary */
-            virtual int Enqueue(IQueryPtr query, unsigned int options = 0);
+            virtual int Enqueue(
+                QueryPtr query, 
+                unsigned int options = 0,
+                Callback = Callback()) override;
 
-            virtual musik::core::IIndexer *Indexer();
-            virtual int Id();
-            virtual const std::string& Name();
-            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue);
-            virtual void Close();
+            virtual musik::core::IIndexer *Indexer() override;
+            virtual int Id() override;
+            virtual const std::string& Name() override;
+            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            virtual void Close() override;
 
             /* IMessageTarget */
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* implementation specific */
             std::string GetLibraryDirectory();
@@ -93,13 +95,21 @@ namespace musik { namespace core { namespace library {
             static void CreateIndexes(db::Connection &db);
 
         private:
-            typedef std::list<LocalQueryPtr> QueryList;
+            class QueryCompletedMessage;
+
+            struct QueryContext {
+                LocalQueryPtr query;
+                Callback callback;
+            };
+
+            using QueryContextPtr = std::shared_ptr<QueryContext>;
+            using QueryList = std::list<QueryContextPtr>;
 
             LocalLibrary(std::string name, int id); /* ctor */
 
-            void RunQuery(LocalQueryPtr query, bool notify = true);
+            void RunQuery(QueryContextPtr context, bool notify = true);
             void ThreadProc();
-            LocalQueryPtr GetNextQuery();
+            QueryContextPtr GetNextQuery();
 
             QueryList queryQueue;
 

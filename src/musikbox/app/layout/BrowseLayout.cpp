@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
+#include <core/library/query/local/SavePlaylistQuery.h>
 #include <core/i18n/Locale.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
@@ -70,7 +71,18 @@ static std::map <std::string, std::string> FIELD_TO_TITLE{
     std::make_pair(constants::Playlists::TABLE_NAME, "browse_title_playlists")
 };
 
-static std::string getTitleForCategory(const std::string& fieldName) {
+static inline std::string getModifiedText() {
+    try {
+        return boost::str(
+            boost::format(_TSTR("browse_playlist_modified"))
+            % Hotkeys::Get(Hotkeys::PlayQueuePlaylistSave));
+    }
+    catch (...) {
+        return _TSTR("browse_playlist_modified");
+    }
+}
+
+static inline std::string getTitleForCategory(const std::string& fieldName) {
     return FIELD_TO_TITLE.find(fieldName) == FIELD_TO_TITLE.end()
         ? _TSTR("browse_title_category") : _TSTR(FIELD_TO_TITLE[fieldName]);
 }
@@ -79,6 +91,7 @@ BrowseLayout::BrowseLayout(
     musik::core::audio::PlaybackService& playback,
     ILibraryPtr library)
 : LayoutBase()
+, playlistModified(false)
 , playback(playback) {
     EDIT_KEYS = {
         Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
@@ -119,6 +132,17 @@ void BrowseLayout::OnLayout() {
     }
 
     this->categoryList->MoveAndResize(x, y, categoryWidth, cy);
+
+    if (this->playlistModified) {
+        this->modifiedLabel->Show();
+        this->modifiedLabel->MoveAndResize(x + categoryWidth, y, cx - categoryWidth, 1);
+        ++y;
+        --cy;
+    }
+    else {
+        this->modifiedLabel->Hide();
+    }
+
     this->trackList->MoveAndResize(x + categoryWidth, y, cx - categoryWidth, cy);
 
     this->categoryList->SetFocusOrder(0);
@@ -135,10 +159,16 @@ void BrowseLayout::InitializeWindows() {
     this->tracksTitle->SetText(_TSTR("browse_title_tracks"), text::AlignCenter);
     this->trackList.reset(new TrackListView(this->playback, this->library));
 
+    this->modifiedLabel.reset(new TextLabel());
+    this->modifiedLabel->SetText(getModifiedText(), text::AlignCenter);
+    this->modifiedLabel->SetContentColor(CURSESPP_BANNER);
+    this->modifiedLabel->Hide();
+
     this->AddWindow(this->categoryTitle);
     this->AddWindow(this->tracksTitle);
     this->AddWindow(this->categoryList);
     this->AddWindow(this->trackList);
+    this->AddWindow(this->modifiedLabel);
 
     this->categoryList->SelectionChanged.connect(
         this, &BrowseLayout::OnCategoryViewSelectionChanged);
@@ -192,6 +222,8 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
         else {
             this->trackList->Clear();
         }
+
+        this->ShowModifiedLabel(false);
     }
 }
 
@@ -248,21 +280,48 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         this->SwitchCategory(constants::Playlists::TABLE_NAME);
         return true;
     }
-    else if (this->GetFocus() == this->trackList && EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
-        if (this->ProcessEditOperation(key)) {
-            return true;
-        }
+    else if (ProcessPlaylistOperation(key)) {
+        return true;
+    }
+    else if (this->ProcessEditOperation(key)) {
+        return true;
     }
 
     return LayoutBase::KeyPress(key);
 }
 
+bool BrowseLayout::IsEditable() {
+    return this->categoryList->GetFieldName() == Playlists::TABLE_NAME;
+}
+
+bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
+    if (IsEditable()) {
+        if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistNew, key)) {
+            auto lastId = this->categoryList->GetSelectedId();
+            PlayQueueOverlays::ShowCreatePlaylistOverlay(library, [this, lastId](auto query) {
+                this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
+            });
+            return true;
+        }
+        else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistSave, key)) {
+            this->ShowModifiedLabel(false);
+            auto tracks = this->trackList->GetTrackList().get();
+            this->library->Enqueue(SavePlaylistQuery::Replace(
+                this->categoryList->GetSelectedId(),
+                std::shared_ptr<TrackList>(new TrackList(tracks))));
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool BrowseLayout::ProcessEditOperation(const std::string& key) {
-    /* if there are headers the track count and item count won't match. if
-    this is the case, bail. we currently don't support rearranging tracks
-    in this case because it'll screw up header calculation logic, unless
-    we re-index. but re-indexing may take a while on large lists. */
-    if (this->trackList->TrackCount() != this->trackList->EntryCount()) {
+    if (this->GetFocus() != this->trackList || EDIT_KEYS.find(key) == EDIT_KEYS.end()) {
+        return false;
+    }
+
+    if (!this->IsEditable()) {
         return false;
     }
 
@@ -270,31 +329,36 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
     if (tracks && EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
         size_t selected = this->trackList->GetSelectedTrackIndex();
         size_t to = -1;
+        bool modified = this->playlistModified;
 
-        {
-            if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
-                if (selected > 0) {
-                    to = selected - 1;
-                    tracks->Move(selected, to);
-                }
-                else {
-                    to = selected;
-                }
+        if (selected == ListWindow::NO_SELECTION) {
+            return false;
+        }
+
+        if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
+            if (selected > 0) {
+                to = selected - 1;
+                modified |= tracks->Move(selected, to);
             }
-            else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
-                if (selected < tracks->Count() - 1) {
-                    to = selected + 1;
-                    tracks->Move(selected, to);
-                }
-                else {
-                    to = selected;
-                }
-            }
-            else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
-                tracks->Delete(selected);
+            else {
                 to = selected;
             }
         }
+        else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
+            if (selected < tracks->Count() - 1) {
+                to = selected + 1;
+                modified |= tracks->Move(selected, to);
+            }
+            else {
+                to = selected;
+            }
+        }
+        else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
+            modified |= tracks->Delete(selected);
+            to = selected;
+        }
+
+        this->ShowModifiedLabel(modified);
 
         to = trackList->TrackIndexToAdapterIndex(to);
         trackList->OnAdapterChanged();
@@ -309,4 +373,11 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
     }
 
     return false;
+}
+
+void BrowseLayout::ShowModifiedLabel(bool show) {
+    if (show != this->playlistModified) {
+        this->playlistModified = show;
+        this->Layout();
+    }
 }

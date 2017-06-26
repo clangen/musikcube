@@ -79,6 +79,7 @@ namespace musik {
                     PlayQueueMoveUp,
                     PlayQueueMoveDown,
                     PlayQueueDelete,
+                    PlayQueuePlaylistNew,
                     PlayQueuePlaylistLoad,
                     PlayQueuePlaylistSave,
                     PlayQueuePlaylistRename,
