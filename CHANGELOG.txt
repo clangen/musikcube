@@ -1,3 +1,21 @@
+0.18.0
+
+user-facing:
+
+* added first-class support for browse playlists:
+  - press `5` in browse view to view playlists
+  - press `M-r` to rename the selected playlist
+  - press `M-s` to save the selected playlist
+  - highlight the left pane, and press `DEL` (`BACKSPACE` on macos) to delete
+    the selected playlist
+  - press `M-up` to move the selected track up
+  - press `M-down` to move the selected track down
+  - highlight the right pane, and press `DEL` (`BACKSPACE` on macos) to delete
+    the selected track from the playlist
+* added view titles in library browse mode
+
+--------------------------------------------------------------------------------
+
 0.17.2
 
 user-facing:

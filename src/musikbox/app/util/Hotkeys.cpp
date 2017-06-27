@@ -226,13 +226,10 @@ bool Hotkeys::Is(Id id, const std::string& kn) {
         return (custom->second == kn);
     }
 
-    /* otherwise, let's compare against the default key, assuming the
-    input key doesn't match ANY that the user has customized */
-    if (customKeys.find(kn) == customKeys.end()) {
-        auto it = ID_TO_DEFAULT.find(id);
-        if (it != ID_TO_DEFAULT.end() && it->second == kn) {
-            return true;
-        }
+    /* otherwise, let's compare against the default key */
+    auto it = ID_TO_DEFAULT.find(id);
+    if (it != ID_TO_DEFAULT.end() && it->second == kn) {
+        return true;
     }
 
     return false;

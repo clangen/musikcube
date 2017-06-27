@@ -199,14 +199,16 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
     TrackPtr track;
     for (size_t i = 0; i < tracks->Count(); i++) {
         track = tracks->Get(i);
-        insertTrack.Reset();
-        insertTrack.BindText(0, track->GetValue("external_id"));
-        insertTrack.BindText(1, track->GetValue("source_id"));
-        insertTrack.BindInt64(2, playlistId);
-        insertTrack.BindInt32(3, offset++);
+        if (track) {
+            insertTrack.Reset();
+            insertTrack.BindText(0, track->GetValue("external_id"));
+            insertTrack.BindText(1, track->GetValue("source_id"));
+            insertTrack.BindInt64(2, playlistId);
+            insertTrack.BindInt32(3, offset++);
 
-        if (insertTrack.Step() == db::Error) {
-            return false;
+            if (insertTrack.Step() == db::Error) {
+                return false;
+            }
         }
     }
 

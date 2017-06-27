@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(musikbox)
 set (musikbox_VERSION_MAJOR 0)
-set (musikbox_VERSION_MINOR 17)
-set (musikbox_VERSION_PATCH 2)
+set (musikbox_VERSION_MINOR 18)
+set (musikbox_VERSION_PATCH 0)
 set (musikbox_VERSION "${musikbox_VERSION_MAJOR}.${musikbox_VERSION_MINOR}.${musikbox_VERSION_PATCH}")
 
 include(CMakeToolsHelpers OPTIONAL)
@@ -24,7 +24,7 @@ ExternalProject_Add(taglib
     INSTALL_COMMAND make install
 )
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -Wno-unused-result -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++14 -Wno-unused-result -Wno-deprecated-declarations")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
