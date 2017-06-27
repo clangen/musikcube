@@ -106,19 +106,28 @@ and a couple hotkeys that are specific to the `library` view:
 - `1` browse by artist
 - `2` browse by album
 - `3` browse by genre
+- `4` browse by album artist
+- `5` browse by playlist
+    - `M-n` create a new empty playlist
+    - `M-s` save the currently selected playlist
+    - `DEL` (`BACKSPACE` on macos) in the playlists pane: delete the selected playlist
+    - `M-r` rename the selected playlist
+    - `M-UP` (`CTRL-UP` on macos) move the selected track up
+    - `M-DOWN` (`CTRL-DOWN` on macos) move the selected track down
+    - `DEL` (`BACKSPACE` on macos) in the tracks pane: delete the selected track
 - `x` jump to playing artist/album/genre in browse view
 - `M-ENTER` show a context menu for the currently selected item (album, artist, genre, track)
 - `SPACE` pause/resume
 
-these only work in the `play queue` view:
+you can manipulate the play `play queue` as follows:
 
 - `M-s` save current queue as a playlist
 - `M-l` load a previously saved playlist
 - `M-x` delete a previously saved playlist
 - `M-r` rename a playlist
-- `M-UP` move the selected track up
-- `M-DOWN` move the selected track down
-- `DEL` delete the selected track
+- `M-UP` (`CTRL-UP` on macos) move the selected track up
+- `M-DOWN` (`CTRL-DOWN` on macos) move the selected track down
+- `DEL` (`BACKSPACE` on macos) delete the selected track
 
 a couple important **notes**:
 

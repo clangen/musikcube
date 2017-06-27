@@ -8,8 +8,8 @@ user-facing:
   - press `M-s` to save the selected playlist
   - highlight the left pane, and press `DEL` (`BACKSPACE` on macos) to delete
     the selected playlist
-  - press `M-up` to move the selected track up
-  - press `M-down` to move the selected track down
+  - press `M-up` (`CTRL-UP` on macos) to move the selected track up
+  - press `M-down` (`CTRL-DOWN` on macos) to move the selected track down
   - highlight the right pane, and press `DEL` (`BACKSPACE` on macos) to delete
     the selected track from the playlist
 * added view titles in library browse mode
