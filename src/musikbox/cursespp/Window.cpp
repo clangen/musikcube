@@ -121,7 +121,7 @@ Window::Window(IWindow *parent) {
     this->focusedContentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
     this->focusedFrameColor = CURSESPP_FOCUSED_FRAME_COLOR;
     this->drawFrame = true;
-    this->isVisible = false;
+    this->isVisibleInParent = false;
     this->isFocused = false;
     this->isDirty = true;
     this->focusOrder = -1;
@@ -143,7 +143,7 @@ void Window::ProcessMessage(musik::core::runtime::IMessage &message) {
 }
 
 bool Window::IsVisible() {
-    return !this->badBounds && this->isVisible;
+    return !this->badBounds && this->isVisibleInParent;
 }
 
 bool Window::IsFocused() {
@@ -223,7 +223,7 @@ void Window::SetParent(IWindow* parent) {
 
 void Window::RecreateForUpdatedDimensions() {
     bool hasFrame = !!this->frame;
-    if (hasFrame || this->isVisible) {
+    if (hasFrame || this->isVisibleInParent) {
         this->Recreate();
 
         if (!hasFrame) {
@@ -319,7 +319,7 @@ void Window::OnRemovedFromParent(IWindow* oldParent) {
 void Window::Redraw() {
     this->isDirty = true;
 
-    if (this->IsVisible()) {
+    if (this->IsVisible() && this->IsParentVisible()) {
         if (this->parent && !this->parent->IsVisible()) {
             return;
         }
@@ -435,7 +435,7 @@ void Window::Show() {
     if (parent && !parent->IsVisible()) {
         /* remember that someone tried to make us visible, but don't do
         anything because we could corrupt the display */
-        this->isVisible = true;
+        this->isVisibleInParent = true;
         return;
     }
 
@@ -445,19 +445,19 @@ void Window::Show() {
             this->badBounds = false;
         }
 
-        this->isVisible = true;
+        this->isVisibleInParent = true;
         return;
     }
 
     if (this->framePanel) {
-        if (!this->isVisible) {
+        if (!this->isVisibleInParent) {
             show_panel(this->framePanel);
 
             if (this->framePanel != this->contentPanel) {
                 show_panel(this->contentPanel);
             }
 
-            this->isVisible = true;
+            this->isVisibleInParent = true;
             drawPending = true;
 
             this->OnVisibilityChanged(true);
@@ -478,12 +478,12 @@ void Window::Recreate() {
 }
 
 void Window::OnParentVisibilityChanged(bool visible) {
-    if (!visible && this->isVisible) {
+    if (!visible && this->isVisibleInParent) {
         if (this->framePanel) {
             this->Destroy();
         }
     }
-    else if (visible && this->isVisible) {
+    else if (visible && this->isVisibleInParent) {
         if (this->framePanel) {
             this->Redraw();
         }
@@ -563,6 +563,10 @@ void Window::Create() {
     assert(this->content == nullptr);
     assert(this->framePanel == nullptr);
     assert(this->contentPanel == nullptr);
+
+    if (this->parent && !this->parent->IsVisible()) {
+        return;
+    }
 
     bool hadBadBounds = this->badBounds;
     this->badBounds = this->CheckForBoundsError();
@@ -663,7 +667,7 @@ void Window::Create() {
 
         this->Show();
 
-        if (hadBadBounds && this->isVisible) {
+        if (hadBadBounds && this->isVisibleInParent) {
             this->OnVisibilityChanged(true);
         }
     }
@@ -671,14 +675,14 @@ void Window::Create() {
 
 void Window::Hide() {
     if (this->frame) {
-        if (this->isVisible) {
+        if (this->isVisibleInParent) {
             this->Destroy();
-            this->isVisible = false;
+            this->isVisibleInParent = false;
             this->OnVisibilityChanged(false);
         }
     }
     else {
-        this->isVisible = false;
+        this->isVisibleInParent = false;
     }
 }
 
@@ -735,11 +739,27 @@ void Window::Clear() {
 }
 
 void Window::Invalidate() {
-    if (this->isVisible) {
+    if (this->isVisibleInParent) {
         if (this->frame) {
             drawPending = true;
         }
     }
+}
+
+bool Window::IsParentVisible() {
+    if (this->parent == nullptr) {
+        return true;
+    }
+
+    auto p = this->GetParent();
+    while (p) {
+        if (!p->IsVisible()) {
+            return false;
+        }
+        p = p->GetParent();
+    }
+
+    return true;
 }
 
 void Window::Focus() {

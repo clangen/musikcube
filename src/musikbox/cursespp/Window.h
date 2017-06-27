@@ -110,6 +110,7 @@ namespace cursespp {
             virtual bool IsFocused();
             virtual bool IsTop();
 
+            virtual IWindow* GetParent() const;
             virtual void OnParentVisibilityChanged(bool visible);
 
             bool HasBadBounds() { return this->badBounds; }
@@ -122,19 +123,19 @@ namespace cursespp {
             static musik::core::runtime::IMessageQueue& MessageQueue();
 
         protected:
-            IWindow* GetParent() const;
 
             void PostMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void DebounceMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void RemoveMessage(int messageType);
 
-            void Create();
-            void Destroy();
+            virtual void Create();
+            virtual void Destroy();
             void Recreate();
             void Clear();
             void RepaintBackground();
             void RecreateForUpdatedDimensions();
             void DestroyIfBadBounds();
+            bool IsParentVisible();
 
             bool CheckForBoundsError();
 
@@ -153,7 +154,7 @@ namespace cursespp {
             WINDOW* content;
             bool badBounds;
             bool drawFrame;
-            bool isVisible, isFocused, isDirty;
+            bool isVisibleInParent, isFocused, isDirty;
             int focusOrder;
             int id;
             int64_t contentColor, frameColor;
