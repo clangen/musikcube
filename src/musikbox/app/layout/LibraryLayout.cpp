@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 
 #include <core/library/LocalLibraryConstants.h>
+#include <core/runtime/Message.h>
 
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/Hotkeys.h>
@@ -48,6 +49,7 @@
 #include "LibraryLayout.h"
 
 using namespace musik::core::library::constants;
+using namespace musik::core::runtime;
 
 #define TRANSPORT_HEIGHT 3
 
@@ -280,17 +282,30 @@ bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
 }
 
 void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == message::JumpToCategory) {
-        static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
-            { message::category::Album, constants::Track::ALBUM },
-            { message::category::Artist, constants::Track::ARTIST },
-            { message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
-            { message::category::Genre, constants::Track::GENRE }
-        };
+    switch (message.Type()) {
+        case message::JumpToCategory: {
+            static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
+                { message::category::Album, constants::Track::ALBUM },
+                { message::category::Artist, constants::Track::ARTIST },
+                { message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
+                { message::category::Genre, constants::Track::GENRE }
+            };
 
-        auto type = JUMP_TYPE_TO_COLUMN[(int) message.UserData1()];
-        auto id = message.UserData2();
-        this->OnSearchResultSelected(nullptr, type, id);
+            auto type = JUMP_TYPE_TO_COLUMN[(int)message.UserData1()];
+            auto id = message.UserData2();
+            this->OnSearchResultSelected(nullptr, type, id);
+        }
+        break;
+
+        case message::TracksAddedToPlaylist:
+        case message::PlaylistCreated: {
+            MessageQueue().Post(Message::Create(
+                this->browseLayout.get(),
+                message.Type(),
+                message.UserData1(),
+                message.UserData2()));
+        }
+        break;
     }
 
     LayoutBase::ProcessMessage(message);

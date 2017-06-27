@@ -190,7 +190,7 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
     Statement queryMax(GET_MAX_SORT_ORDER_QUERY.c_str(), db);
     queryMax.BindInt64(0, playlistId);
     if (queryMax.Step() == db::Row) {
-        offset = queryMax.ColumnInt32(0);
+        offset = queryMax.ColumnInt32(0) + 1;
     }
 
     /* insert all the tracks. */
@@ -225,11 +225,9 @@ bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
 
     if (query->GetStatus() == IQuery::Finished) {
         auto tracks = query->GetResult();
-        ScopedTransaction transaction(db);
         if (this->AddTracksToPlaylist(db, playlistId, tracks)) {
             return true;
         }
-        transaction.Cancel();
     }
 
     return false;
@@ -295,9 +293,17 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
 }
 
 bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
-    return this->tracks
+    ScopedTransaction transaction(db);
+
+    bool result = this->tracks
         ? this->AddTracksToPlaylist(db, this->playlistId, this->tracks)
         : this->AddCategoryTracksToPlaylist(db, this->playlistId);
+
+    if (!result) {
+        transaction.Cancel();
+    }
+
+    return result;
 }
 
 bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {

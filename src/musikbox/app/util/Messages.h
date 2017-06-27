@@ -60,6 +60,9 @@ namespace musik {
             static const int RefreshTransport = 1029;
 
             static const int RefreshLogs = 1030;
+
+            static const int TracksAddedToPlaylist = 1031;
+            static const int PlaylistCreated = 1032;
         }
     }
 }

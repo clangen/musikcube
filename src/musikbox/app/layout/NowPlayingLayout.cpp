@@ -233,7 +233,8 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistSave, key)) {
-        PlayQueueOverlays::ShowSavePlaylistOverlay(this->playback, this->library);
+        PlayQueueOverlays::ShowSavePlaylistOverlay(
+            this->MessageQueue(), this->playback, this->library);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistRename, key)) {

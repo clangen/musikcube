@@ -159,6 +159,19 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == message::IndexerProgress) {
         this->categoryList->Requery();
     }
+    else if (message.Type() == message::TracksAddedToPlaylist) {
+        if (this->IsPlaylist() && 
+            this->categoryList->GetSelectedId() == message.UserData1()) 
+        {
+            this->RequeryTrackList(this->categoryList.get());
+        }
+    }
+    else if (message.Type() == message::PlaylistCreated) {
+        if (this->IsPlaylist()) {
+            auto lastId = this->categoryList->GetSelectedId();
+            this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
+        }
+    }
 
     LayoutBase::ProcessMessage(message);
 }
@@ -210,7 +223,7 @@ void BrowseLayout::OnCategoryViewInvalidated(
 {
     /* this can happen during sync. if the user managed to modify a
     playlist in this state, just ignore the refresh */
-    if (IsEditable() && this->playlistModified) {
+    if (IsPlaylist() && this->playlistModified) {
         return;
     }
 
@@ -268,17 +281,17 @@ bool BrowseLayout::KeyPress(const std::string& key) {
     return LayoutBase::KeyPress(key);
 }
 
-bool BrowseLayout::IsEditable() {
+bool BrowseLayout::IsPlaylist() {
     return this->categoryList->GetFieldName() == Playlists::TABLE_NAME;
 }
 
 bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
-    if (IsEditable()) {
+    if (IsPlaylist()) {
         if (Hotkeys::Is(Hotkeys::BrowsePlaylistsNew, key)) {
-            auto lastId = this->categoryList->GetSelectedId();
-            PlayQueueOverlays::ShowCreatePlaylistOverlay(library, [this, lastId](auto query) {
-                this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
-            });
+            /* note: no callback here, will handle this in ProcessMessage so
+            we can still create new playlists from the context menu, out of
+            band. */
+            PlayQueueOverlays::ShowCreatePlaylistOverlay(this->MessageQueue(), library);
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsSave, key)) {
@@ -321,7 +334,7 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
         return false;
     }
 
-    if (!this->IsEditable()) {
+    if (!this->IsPlaylist()) {
         return false;
     }
 
@@ -367,6 +380,7 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
             trackList->ScrollTo(to);
         }
 
+        to = std::min(tracks->Count() - 1, to);
         trackList->SetSelectedIndex(to);
 
         return true;

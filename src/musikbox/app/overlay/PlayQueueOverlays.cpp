@@ -61,6 +61,7 @@ using namespace musik::core::audio;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
+using namespace musik::core::runtime;
 using namespace musik::box;
 using namespace cursespp;
 
@@ -76,7 +77,7 @@ static std::string stringWithFormat(const std::string& key, const std::string& v
     return message;
 }
 
-static std::shared_ptr<CategoryListQuery> queryPlaylists(musik::core::ILibraryPtr library) {
+static std::shared_ptr<CategoryListQuery> queryPlaylists(ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query(
         new CategoryListQuery(Playlists::TABLE_NAME, ""));
 
@@ -100,10 +101,10 @@ static void addPlaylistsToAdapter(
 }
 
 static void showPlaylistListOverlay(
-        const std::string& title,
-        std::shared_ptr<Adapter> adapter,
-        ListOverlay::ItemSelectedCallback callback,
-        size_t selectedIndex = 0)
+    const std::string& title,
+    std::shared_ptr<Adapter> adapter,
+    ListOverlay::ItemSelectedCallback callback,
+    size_t selectedIndex = 0)
 {
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -117,7 +118,7 @@ static void showPlaylistListOverlay(
 }
 
 static void confirmOverwritePlaylist(
-    musik::core::ILibraryPtr library,
+    ILibraryPtr library,
     const std::string& playlistName,
     const int64_t playlistId,
     std::shared_ptr<TrackList> tracks)
@@ -142,9 +143,10 @@ static void confirmOverwritePlaylist(
 }
 
 static void createNewPlaylist(
+    IMessageQueue& queue,
     std::shared_ptr<TrackList> tracks,
-    musik::core::ILibraryPtr library,
-    musik::core::ILibrary::Callback callback = musik::core::ILibrary::Callback())
+    ILibraryPtr library,
+    ILibrary::Callback callback = ILibrary::Callback())
 {
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
@@ -152,9 +154,16 @@ static void createNewPlaylist(
         .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetText("")
         .SetInputAcceptedCallback(
-            [tracks, library, callback](const std::string& name) {
+            [&queue, tracks, library, callback](const std::string& name) {
                 if (name.size()) {
-                    library->Enqueue(SavePlaylistQuery::Save(name, tracks), 0, callback);
+                    auto query = SavePlaylistQuery::Save(name, tracks);
+                    library->Enqueue(query, 0, [&queue, callback](auto query) {
+                        queue.Post(Message::Create(nullptr, message::PlaylistCreated));
+
+                        if (callback) {
+                            callback(query);
+                        }
+                    });
                 }
             });
 
@@ -162,7 +171,8 @@ static void createNewPlaylist(
 }
 
 static void createNewPlaylist(
-    musik::core::ILibraryPtr library,
+    IMessageQueue& queue,
+    ILibraryPtr library,
     const std::string& categoryType,
     int64_t categoryId)
 {
@@ -172,18 +182,20 @@ static void createNewPlaylist(
         .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetText("")
         .SetInputAcceptedCallback(
-            [library, categoryType, categoryId](const std::string& name) {
-        if (name.size()) {
-            library->Enqueue(SavePlaylistQuery::Save(
-                library, name, categoryType, categoryId));
-        }
-    });
+            [&queue, library, categoryType, categoryId](const std::string& name) {
+            if (name.size()) {
+                auto query = SavePlaylistQuery::Save(library, name, categoryType, categoryId);
+                library->Enqueue(query, 0, [&queue](auto query) {
+                    queue.Post(Message::Create(nullptr, message::PlaylistCreated));
+                });
+            }
+        });
 
     cursespp::App::Overlays().Push(dialog);
 }
 
 void PlayQueueOverlays::ShowRenamePlaylistOverlay(
-    musik::core::ILibraryPtr library,
+    ILibraryPtr library,
     const int64_t playlistId,
     const std::string& oldName,
     QueryCallback callback)
@@ -204,10 +216,10 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(
 }
 
 void PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
-    musik::core::ILibraryPtr library,
+    ILibraryPtr library,
     const std::string& playlistName,
     const int64_t playlistId,
-    QueryCallback callback )
+    QueryCallback callback)
 {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -241,8 +253,8 @@ static void showNoPlaylistsDialog() {
 }
 
 static void handleAddCategorySelectionToPlayQueue(
-    musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library,
+    PlaybackService& playback,
+    ILibraryPtr library,
     const std::string& fieldColumn,
     int64_t fieldId,
     size_t type)
@@ -277,8 +289,8 @@ static void handleAddCategorySelectionToPlayQueue(
 
 static void handleJumpTo(
     size_t index,
-    musik::core::runtime::IMessageQueue& messageQueue,
-    musik::core::TrackPtr track)
+    IMessageQueue& messageQueue,
+    TrackPtr track)
 {
     int64_t type;
     int64_t id;
@@ -301,7 +313,10 @@ static void handleJumpTo(
 }
 
 static void showAddCategorySelectionToPlaylistOverlay(
-    musik::core::ILibraryPtr library, const std::string& categoryType, int64_t categoryId)
+    IMessageQueue& queue,
+    ILibraryPtr library,
+    const std::string& categoryType, 
+    int64_t categoryId)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
@@ -314,24 +329,29 @@ static void showAddCategorySelectionToPlaylistOverlay(
     showPlaylistListOverlay(
         _TSTR("playqueue_overlay_select_playlist_title"),
         adapter,
-        [library, categoryType, categoryId, result]
+        [&queue, library, categoryType, categoryId, result]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
                 if (index == 0) { /* new playlist */
-                    createNewPlaylist(library, categoryType, categoryId);
+                    createNewPlaylist(queue, library, categoryType, categoryId);
                 }
                 else { /* add to existing */
                     int64_t playlistId = (*result)[index - 1]->id;
 
-                    library->Enqueue(SavePlaylistQuery::Append(
-                        library, playlistId, categoryType, categoryId));
+                    auto query = SavePlaylistQuery::Append(
+                        library, playlistId, categoryType, categoryId);
+
+                    library->Enqueue(query, 0, [&queue, playlistId](auto query) {
+                        /* the nesting is real... */
+                        queue.Post(Message::Create(nullptr, message::TracksAddedToPlaylist, playlistId));
+                    });
                 }
             }
     });
 }
 
 static void showAddTrackToPlaylistOverlay(
-    musik::core::ILibraryPtr library, musik::core::TrackPtr track)
+    IMessageQueue& queue, ILibraryPtr library, TrackPtr track)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
@@ -344,18 +364,22 @@ static void showAddTrackToPlaylistOverlay(
     showPlaylistListOverlay(
         _TSTR("playqueue_overlay_select_playlist_title"),
         adapter,
-        [library, track, result]
+        [library, track, &queue, result]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
                 std::shared_ptr<TrackList> list(new TrackList(library));
                 list->Add(track->GetId());
 
                 if (index == 0) { /* new playlist */
-                    createNewPlaylist(list, library);
+                    createNewPlaylist(queue, list, library);
                 }
                 else { /* add to existing */
                     int64_t playlistId = (*result)[index - 1]->id;
-                    library->Enqueue(SavePlaylistQuery::Append(playlistId, list));
+                    library->Enqueue(SavePlaylistQuery::Append(playlistId, list), 0,
+                        [&queue, playlistId](auto query) {
+                            /* the nesting is real... */
+                            queue.Post(Message::Create(nullptr, message::TracksAddedToPlaylist, playlistId));
+                        });
                 }
             }
     });
@@ -365,10 +389,10 @@ PlayQueueOverlays::PlayQueueOverlays() {
 }
 
 void PlayQueueOverlays::ShowAddTrackOverlay(
-    runtime::IMessageQueue& messageQueue,
-    musik::core::ILibraryPtr library,
+    IMessageQueue& messageQueue,
+    ILibraryPtr library,
     PlaybackService& playback,
-    musik::core::TrackPtr track)
+    TrackPtr track)
 {
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("playqueue_overlay_album_jump_to"));
@@ -394,7 +418,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
                     handleJumpTo(index, messageQueue, track);
                 }
                 else if (index == 3) {
-                    showAddTrackToPlaylistOverlay(library, track);
+                    showAddTrackToPlaylistOverlay(messageQueue, library, track);
                 }
                 else if (index == 4) { /* start */
                     editor.Insert(track->GetId(), 0);
@@ -417,8 +441,9 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
 }
 
 void PlayQueueOverlays::ShowAddCategoryOverlay(
-    musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library,
+    IMessageQueue& messageQueue,
+    PlaybackService& playback,
+    ILibraryPtr library,
     const std::string& fieldColumn,
     int64_t fieldId)
 {
@@ -436,16 +461,18 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
-            [&playback, library, fieldColumn, fieldId]
+            [&playback, &messageQueue, library, fieldColumn, fieldId]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index == ListWindow::NO_SELECTION) {
                     return;
                 }
                 else if (index == 0) {
-                    showAddCategorySelectionToPlaylistOverlay(library, fieldColumn, fieldId);
+                    showAddCategorySelectionToPlaylistOverlay(
+                        messageQueue, library, fieldColumn, fieldId);
                 }
                 else {
-                    handleAddCategorySelectionToPlayQueue(playback, library, fieldColumn, fieldId, index - 1);
+                    handleAddCategorySelectionToPlayQueue(
+                        playback, library, fieldColumn, fieldId, index - 1);
                 }
             });
 
@@ -453,10 +480,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
 }
 
 void PlayQueueOverlays::ShowAlbumDividerOverlay(
-    musik::core::runtime::IMessageQueue& messageQueue,
-    musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library,
-    musik::core::TrackPtr firstTrack)
+    IMessageQueue& messageQueue, PlaybackService& playback, ILibraryPtr library, TrackPtr firstTrack)
 {
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("playqueue_overlay_album_jump_to"));
@@ -501,11 +525,13 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
             }
             /* add to playlist */
             else if (index == 4) {
-                showAddCategorySelectionToPlaylistOverlay(library, albumColumn, albumId);
+                showAddCategorySelectionToPlaylistOverlay(
+                    messageQueue, library, albumColumn, albumId);
             }
             /* the other are our standard play queue operations */
             else {
-                handleAddCategorySelectionToPlayQueue(playback, library, albumColumn, albumId, index - 5);
+                handleAddCategorySelectionToPlayQueue(
+                    playback, library, albumColumn, albumId, index - 5);
             }
     });
 
@@ -513,9 +539,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
 }
 
 void PlayQueueOverlays::ShowLoadPlaylistOverlay(
-    musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library,
-    PlaylistSelectedCallback callback)
+    PlaybackService& playback, ILibraryPtr library, PlaylistSelectedCallback callback)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
@@ -542,8 +566,9 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
 }
 
 void PlayQueueOverlays::ShowSavePlaylistOverlay(
-    musik::core::audio::PlaybackService& playback,
-    musik::core::ILibraryPtr library,
+    IMessageQueue& queue,
+    PlaybackService& playback, 
+    ILibraryPtr library, 
     int64_t selectedPlaylistId)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
@@ -569,13 +594,13 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
     showPlaylistListOverlay(
         _TSTR("playqueue_overlay_save_playlist_title"),
         adapter,
-        [&playback, library, result]
+        [&queue, &playback, library, result]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             std::shared_ptr<TrackList> tracks(new TrackList(library));
             playback.CopyTo(*tracks);
 
             if (index == 0) { /* create new */
-                createNewPlaylist(tracks, library);
+                createNewPlaylist(queue, tracks, library);
             }
             else { /* replace existing */
                 --index;
@@ -587,7 +612,7 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
         selectedIndex);
 }
 
-void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr library) {
+void PlayQueueOverlays::ShowRenamePlaylistOverlay(ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
 
@@ -612,7 +637,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(musik::core::ILibraryPtr libra
         });
 }
 
-void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr library) {
+void PlayQueueOverlays::ShowDeletePlaylistOverlay(ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
 
@@ -639,7 +664,8 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(musik::core::ILibraryPtr libra
 }
 
 void PlayQueueOverlays::ShowCreatePlaylistOverlay(
-    musik::core::ILibraryPtr library, QueryCallback callback)
+    IMessageQueue& queue, ILibraryPtr library, QueryCallback callback)
 {
-    createNewPlaylist(std::make_shared<TrackList>(library), library, callback);
+    auto tracks = std::make_shared<TrackList>(library);
+    createNewPlaylist(queue, tracks, library, callback);
 }

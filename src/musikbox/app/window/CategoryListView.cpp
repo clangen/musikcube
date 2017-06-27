@@ -168,6 +168,7 @@ bool CategoryListView::KeyPress(const std::string& key) {
         int64_t id = this->GetSelectedId();
         if (id != -1) {
             PlayQueueOverlays::ShowAddCategoryOverlay(
+                this->MessageQueue(),
                 this->playback,
                 this->library,
                 this->fieldName,

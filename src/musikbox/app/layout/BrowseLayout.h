@@ -84,7 +84,7 @@ namespace musik {
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
 
-                bool IsEditable();
+                bool IsPlaylist();
                 bool ProcessEditOperation(const std::string& key);
                 bool ProcessPlaylistOperation(const std::string& key);
                 void ShowModifiedLabel(bool show);

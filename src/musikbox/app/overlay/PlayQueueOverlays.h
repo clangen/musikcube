@@ -53,6 +53,7 @@ namespace musik {
                     musik::core::TrackPtr track);
 
                 static void ShowAddCategoryOverlay(
+                    musik::core::runtime::IMessageQueue& messageQueue,
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
                     const std::string& fieldColumn,
@@ -70,6 +71,7 @@ namespace musik {
                     PlaylistSelectedCallback callback);
 
                 static void ShowSavePlaylistOverlay(
+                    musik::core::runtime::IMessageQueue& queue,
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
                     int64_t selectedPlaylistId = -1);
@@ -93,6 +95,7 @@ namespace musik {
                     QueryCallback callback = QueryCallback());
 
                 static void ShowCreatePlaylistOverlay(
+                    musik::core::runtime::IMessageQueue& queue,
                     musik::core::ILibraryPtr library,
                     QueryCallback callback = QueryCallback());
 
