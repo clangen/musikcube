@@ -48,6 +48,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
+#include <app/util/UpdateCheck.h>
 #include <app/overlay/ColorThemeOverlay.h>
 #include <app/overlay/LocaleOverlay.h>
 #include <app/overlay/PlaybackOverlays.h>
@@ -95,6 +96,8 @@ using EntryPtr = IScrollAdapter::EntryPtr;
 static const std::string arrow = "\xe2\x96\xba ";
 static bool showDotfiles = false;
 
+static UpdateCheck updateCheck;
+
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
@@ -115,6 +118,7 @@ SettingsLayout::SettingsLayout(
 }
 
 SettingsLayout::~SettingsLayout() {
+    updateCheck.Cancel();
 }
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
@@ -207,6 +211,17 @@ void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
     ServerOverlay::Show([this]() { /* nothing, for now */ });
 }
 
+void SettingsLayout::OnUpdateDropdownActivate(cursespp::TextLabel* label) {
+    updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
+        if (updateRequired) {
+            UpdateCheck::ShowUpgradeAvailableOverlay(version, url, false);
+        }
+        else {
+            UpdateCheck::ShowNoUpgradeFoundOverlay();
+        }
+    });
+}
+
 void SettingsLayout::OnThemeDropdownActivate(cursespp::TextLabel* label) {
     ColorThemeOverlay::Show([this]() { this->LoadPreferences(); });
 }
@@ -260,6 +275,9 @@ void SettingsLayout::OnLayout() {
     this->minimizeToTrayCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
+
+    ++y;
+    this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -358,6 +376,10 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->startMinimizedCheckbox, _TSTR("settings_start_minimized"));
 #endif
 
+    this->updateDropdown.reset(new TextLabel());
+    this->updateDropdown->SetText(arrow + _TSTR("settings_check_for_updates"));
+    this->updateDropdown->Activated.connect(this, &SettingsLayout::OnUpdateDropdownActivate);
+
     int order = 0;
     this->browseList->SetFocusOrder(order++);
     this->addedPathsList->SetFocusOrder(order++);
@@ -383,6 +405,7 @@ void SettingsLayout::InitializeWindows() {
     this->minimizeToTrayCheckbox->SetFocusOrder(order++);
     this->startMinimizedCheckbox->SetFocusOrder(order++);
 #endif
+    this->updateDropdown->SetFocusOrder(order++);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -410,6 +433,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->minimizeToTrayCheckbox);
     this->AddWindow(this->startMinimizedCheckbox);
 #endif
+    this->AddWindow(updateDropdown);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {

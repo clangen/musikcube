@@ -105,6 +105,7 @@ namespace musik {
                 void OnThemeDropdownActivate(cursespp::TextLabel* label);
                 void OnLocaleDropdownActivate(cursespp::TextLabel* label);
                 void OnServerDropdownActivate(cursespp::TextLabel* label);
+                void OnUpdateDropdownActivate(cursespp::TextLabel* label);
 
                 int64_t ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -126,6 +127,7 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> pluginsDropdown;
                 std::shared_ptr<cursespp::TextLabel> hotkeyDropdown;
                 std::shared_ptr<cursespp::TextLabel> serverDropdown;
+                std::shared_ptr<cursespp::TextLabel> updateDropdown;
 
                 std::shared_ptr<cursespp::TextLabel> themeDropdown;
                 std::shared_ptr<cursespp::Checkbox> paletteCheckbox;

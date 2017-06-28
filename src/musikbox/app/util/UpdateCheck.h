@@ -43,6 +43,11 @@ namespace musik { namespace box {
             /* args = updateRequired, version, url */
             using Callback = std::function<void(bool, std::string, std::string)>;
 
+            static void ShowUpgradeAvailableOverlay(
+                const std::string& version, const std::string& url, bool silent = true);
+
+            static void ShowNoUpgradeFoundOverlay();
+
             UpdateCheck();
             bool Run(Callback callback);
             void Cancel();

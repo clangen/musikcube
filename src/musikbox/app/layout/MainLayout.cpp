@@ -293,27 +293,7 @@ void MainLayout::OnIndexerFinished(int count) {
 void MainLayout::RunUpdateCheck() {
     updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
         if (updateRequired) {
-            std::string prefKey = prefs::keys::LastAcknowledgedUpdateVersion;
-            std::string acknowledged = this->prefs->GetString(prefKey);
-            if (acknowledged != version) {
-                std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
-
-                std::string message = boost::str(boost::format(
-                    _TSTR("update_check_dialog_message")) % version % url);
-
-                (*dialog)
-                    .SetTitle(_TSTR("update_check_dialog_title"))
-                    .SetMessage(message)
-                    .AddButton(
-                        "KEY_ENTER", "ENTER", _TSTR("button_dont_remind_me"), 
-                        [this, prefKey, version](std::string key) {
-                            this->prefs->SetString(prefKey.c_str(), version.c_str());
-                            this->prefs->Save();
-                        })
-                    .AddButton("^[", "ESC", _TSTR("button_remind_me_later"));
-
-                App::Overlays().Push(dialog);
-            }
+            UpdateCheck::ShowUpgradeAvailableOverlay(version, url);
         }
     });
 }

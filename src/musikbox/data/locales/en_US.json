@@ -44,6 +44,7 @@
         "settings_minimize_to_tray": "minimize to tray",
         "settings_start_minimized": "start minimized",
         "settings_server_setup": "server setup",
+        "settings_check_for_updates": "check for updates",
 
         "settings_server_enable_websockets": "metadata server enabled",
         "settings_server_enable_http": "audio streaming enabled",
@@ -124,7 +125,9 @@
         "main_syncing_banner": "syncing metadata (%d tracks processed)",
 
         "update_check_dialog_title": "new version available!",
-        "update_check_dialog_message": "musikbox version '%s' is now available for download. a changelog and binaries are available at:\n\n%s"
+        "update_check_dialog_message": "musikbox version '%s' is now available for download. a changelog and binaries are available at:\n\n%s",
+        "update_check_no_updates_title": "update check",
+        "update_check_no_updates_message": "no updates found at this time."
     },
 
     "dimensions": {

@@ -36,14 +36,21 @@
 #include "UpdateCheck.h"
 #include <json.hpp>
 
+#include <cursespp/App.h>
 #include <cursespp/Window.h>
-#include <app/util/Messages.h>
-#include <app/util/Version.h>
+#include <cursespp/DialogOverlay.h>
+
 #include <core/runtime/Message.h>
+
+#include <app/util/Messages.h>
+#include <app/util/PreferenceKeys.h>
+#include <app/util/Version.h>
 
 using namespace nlohmann;
 using namespace musik::box;
+using namespace musik::core;
 using namespace musik::core::runtime;
+using namespace cursespp;
 
 static const std::string UPDATE_CHECK_URL = "https://musikcube.com/version";
 static const std::string LATEST = "latest";
@@ -189,4 +196,49 @@ void UpdateCheck::ProcessMessage(IMessage &message) {
             callback(updateRequired, this->latestVersion, this->updateUrl);
         }
     }
+}
+
+void UpdateCheck::ShowUpgradeAvailableOverlay(
+    const std::string& version, const std::string& url, bool silent)
+{
+    auto prefs = Preferences::ForComponent("settings");
+    std::string prefKey = prefs::keys::LastAcknowledgedUpdateVersion;
+    std::string acknowledged = prefs->GetString(prefKey);
+    if (!silent || acknowledged != version) {
+        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+        std::string message = boost::str(boost::format(
+            _TSTR("update_check_dialog_message")) % version % url);
+
+        (*dialog)
+            .SetTitle(_TSTR("update_check_dialog_title"))
+            .SetMessage(message);
+
+        if (silent) {
+            dialog->AddButton(
+                "KEY_ENTER", "ENTER", _TSTR("button_dont_remind_me"),
+                [prefs, prefKey, version](std::string key) {
+                    prefs->SetString(prefKey.c_str(), version.c_str());
+                    prefs->Save();
+                });
+
+            dialog->AddButton("^[", "ESC", _TSTR("button_remind_me_later"));
+        }
+        else {
+            dialog->AddButton("KEY_ENTER", "ENTER", _TSTR("ok"));
+        }
+
+        App::Overlays().Push(dialog);
+    }
+}
+
+void UpdateCheck::ShowNoUpgradeFoundOverlay() {
+        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+        (*dialog)
+            .SetTitle(_TSTR("update_check_no_updates_title"))
+            .SetMessage(_TSTR("update_check_no_updates_message"))
+            .AddButton("KEY_ENTER", "ENTER", _TSTR("button_close"));
+
+        App::Overlays().Push(dialog);
 }

@@ -62,6 +62,7 @@ set (musikbox_LINK_LIBS
   ${linux_LINK_LIBS}
   ${BOOST_LINK_LIBS}
   dl
+  curl
 )
 
 include_directories (
