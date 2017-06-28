@@ -255,9 +255,9 @@ void SettingsLayout::OnLayout() {
     this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->transportDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->pluginsDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->pluginsDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
 
     if (serverAvailable) {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -276,7 +276,6 @@ void SettingsLayout::OnLayout() {
     this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
 
-    ++y;
     this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
@@ -345,10 +344,6 @@ void SettingsLayout::InitializeWindows() {
     this->transportDropdown.reset(new TextLabel());
     this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
 
-    this->pluginsDropdown.reset(new TextLabel());
-    this->pluginsDropdown->SetText(arrow + _TSTR("settings_enable_disable_plugins"));
-    this->pluginsDropdown->Activated.connect(this, &SettingsLayout::OnPluginsDropdownActivate);
-
     this->themeDropdown.reset(new TextLabel());
     this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + _TSTR("settings_default_theme_name"));
     this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
@@ -356,6 +351,10 @@ void SettingsLayout::InitializeWindows() {
     this->hotkeyDropdown.reset(new TextLabel());
     this->hotkeyDropdown->SetText(arrow + _TSTR("settings_hotkey_tester"));
     this->hotkeyDropdown->Activated.connect(this, &SettingsLayout::OnHotkeyDropdownActivate);
+
+    this->pluginsDropdown.reset(new TextLabel());
+    this->pluginsDropdown->SetText(arrow + _TSTR("settings_enable_disable_plugins"));
+    this->pluginsDropdown->Activated.connect(this, &SettingsLayout::OnPluginsDropdownActivate);
 
     if (this->serverAvailable) {
         this->serverDropdown.reset(new TextLabel());
@@ -386,9 +385,9 @@ void SettingsLayout::InitializeWindows() {
     this->localeDropdown->SetFocusOrder(order++);
     this->outputDropdown->SetFocusOrder(order++);
     this->transportDropdown->SetFocusOrder(order++);
-    this->pluginsDropdown->SetFocusOrder(order++);
     this->themeDropdown->SetFocusOrder(order++);
     this->hotkeyDropdown->SetFocusOrder(order++);
+    this->pluginsDropdown->SetFocusOrder(order++);
 
     if (this->serverAvailable) {
         this->serverDropdown->SetFocusOrder(order++);
@@ -414,7 +413,6 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->localeDropdown);
     this->AddWindow(this->outputDropdown);
     this->AddWindow(this->transportDropdown);
-    this->AddWindow(this->pluginsDropdown);
     this->AddWindow(this->themeDropdown);
 
     if (this->serverAvailable) {
@@ -425,6 +423,8 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->paletteCheckbox);
 #endif
     this->AddWindow(this->hotkeyDropdown);
+    this->AddWindow(this->pluginsDropdown);
+    
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->syncOnStartupCheckbox);
     this->AddWindow(this->removeCheckbox);

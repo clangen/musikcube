@@ -78,6 +78,12 @@ static inline std::string formattedVersion(short major, short minor, short patch
     return boost::str(boost::format("%d.%d.%d") % major % minor % patch);
 }
 
+static inline std::string getUserAgent() {
+    return boost::str(boost::format("musikbox %s (%s)")
+        % formattedVersion(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
+        % PLATFORM);
+}
+
 size_t UpdateCheck::curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     if (ptr && userdata) {
         UpdateCheck* context = static_cast<UpdateCheck*>(userdata);
@@ -113,7 +119,7 @@ bool UpdateCheck::Run(Callback callback) {
     curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
     curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "musikcube UpdateCheck");
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, getUserAgent().c_str());
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &curlWriteCallback);

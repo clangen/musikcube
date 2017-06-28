@@ -27,7 +27,7 @@
 
         "settings_space_to_add": "browse (SPACE to add)",
         "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
-        "settings_enable_disable_plugins": "enable/disable plugins",
+        "settings_enable_disable_plugins": "plugin manager",
         "settings_color_theme": "color theme: ",
         "settings_hotkey_tester": "hotkey tester",
         "settings_output_device": "output device: ",
@@ -102,7 +102,7 @@
         "visualizer_overlay_title": "visualizers",
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",
 
-        "plugin_overlay_title": "plugins",
+        "plugin_overlay_title": "configure plugins",
 
         "shortcuts_settings": "settings",
         "shortcuts_library": "library",
