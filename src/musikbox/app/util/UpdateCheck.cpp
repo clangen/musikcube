@@ -84,7 +84,7 @@ static inline std::string getUserAgent() {
         % PLATFORM);
 }
 
-size_t UpdateCheck::curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+size_t UpdateCheck::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     if (ptr && userdata) {
         UpdateCheck* context = static_cast<UpdateCheck*>(userdata);
 
@@ -95,6 +95,16 @@ size_t UpdateCheck::curlWriteCallback(char *ptr, size_t size, size_t nmemb, void
         context->result += std::string(ptr, size * nmemb);
     }
     return size * nmemb;
+}
+
+int UpdateCheck::CurlTransferCallback(
+    void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow)
+{
+    UpdateCheck* context = static_cast<UpdateCheck*>(ptr);
+    if (context->cancel) {
+        return -1; /* kill the stream */
+    }
+    return 0; /* ok! */
 }
 
 UpdateCheck::UpdateCheck() {
@@ -118,17 +128,18 @@ bool UpdateCheck::Run(Callback callback) {
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
     curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
     curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, getUserAgent().c_str());
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &curlWriteCallback);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3000);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 7500);
     curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 500);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &CurlWriteCallback);
+    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
+    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &CurlTransferCallback);
 
     this->thread.reset(new std::thread([this] {
         bool needsUpdate = false;

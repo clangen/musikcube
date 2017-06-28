@@ -55,8 +55,8 @@ namespace musik { namespace box {
         private:
             void Reset();
 
-            static size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
-
+            static size_t CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
+            static int CurlTransferCallback(void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
             virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
             std::recursive_mutex mutex;

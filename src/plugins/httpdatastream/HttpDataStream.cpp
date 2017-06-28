@@ -259,7 +259,6 @@ bool HttpDataStream::Open(const char *uri, unsigned int options) {
         curl_easy_setopt(this->curlEasy, CURLOPT_FOLLOWLOCATION, 1);
         curl_easy_setopt(this->curlEasy, CURLOPT_AUTOREFERER, 1);
         curl_easy_setopt(this->curlEasy, CURLOPT_FAILONERROR, 1);
-        curl_easy_setopt(this->curlEasy, CURLOPT_NOPROGRESS, 1);
         curl_easy_setopt(this->curlEasy, CURLOPT_USERAGENT, "musikcube HttpDataStream");
         curl_easy_setopt(this->curlEasy, CURLOPT_NOPROGRESS, 0);
         curl_easy_setopt(this->curlEasy, CURLOPT_WRITEHEADER, this);

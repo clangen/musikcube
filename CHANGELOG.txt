@@ -3,7 +3,7 @@
 user-facing:
 
 * added first-class support for browse playlists:
-  - press `5` in browse view to view playlists
+  - press `5` in library browse view to switch to playlists
   - press `M-r` to rename the selected playlist
   - press `M-s` to save the selected playlist
   - highlight the left pane, and press `DEL` (`BACKSPACE` on macos) to delete
@@ -12,7 +12,10 @@ user-facing:
   - press `M-down` (`CTRL-DOWN` on macos) to move the selected track down
   - highlight the right pane, and press `DEL` (`BACKSPACE` on macos) to delete
     the selected track from the playlist
-* added view titles in library browse mode
+* added view titles in library browse mode, now playing, and search views
+* added auto-update check functionality to notify users when a new version is
+  available. also added manual update check to settings
+* rearranged some items on the settings screen
 
 --------------------------------------------------------------------------------
 
