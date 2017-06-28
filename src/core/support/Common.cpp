@@ -137,6 +137,21 @@ std::string musik::core::GetDataDirectory(bool create) {
     return directory;
 }
 
+inline void silentDelete(const std::string fn) {
+    boost::system::error_code ec;
+    boost::filesystem::remove(boost::filesystem::path(fn), ec);
+}
+
+void musik::core::RemoveOldDlls() {
+#ifdef WIN32
+    std::string path = GetPluginDirectory();
+    silentDelete(path + "libcurl.dll");
+    silentDelete(path + "crypto-41.dll");
+    silentDelete(path + "ssl-43.dll");
+    silentDelete(path + "tls-15.dll");
+#endif
+}
+
 void musik::core::MigrateOldDataDirectory() {
     std::string oldDirectory =
 

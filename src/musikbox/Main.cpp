@@ -106,6 +106,7 @@ int main(int argc, char* argv[]) {
     musik::core::i18n::Locale::Instance().Initialize(musik::core::GetApplicationDirectory() + "/locales/");
 
 #ifdef WIN32
+    musik::core::RemoveOldDlls();
     AddDllDirectory(u8to16(musik::core::GetPluginDirectory()).c_str());
 #endif
 

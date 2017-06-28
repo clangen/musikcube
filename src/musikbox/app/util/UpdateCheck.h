@@ -32,18 +32,35 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "PreferenceKeys.h"
+#include <curl/curl.h>
+#include <thread>
+#include <mutex>
+#include <core/runtime/IMessageTarget.h>
 
-namespace musik { namespace box { namespace prefs {
+namespace musik { namespace box {
+    class UpdateCheck : private musik::core::runtime::IMessageTarget {
+        public:
+            /* args = updateRequired, version, url */
+            using Callback = std::function<void(bool, std::string, std::string)>;
 
-    const std::string keys::DisableCustomColors = "DisableCustomColors";
-    const std::string keys::UsePaletteColors = "UsePaletteColors";
-    const std::string keys::FirstRunSettingsDisplayed = "FirstRunSettingsDisplayed";
-    const std::string keys::ColorTheme = "ColorTheme";
-    const std::string keys::MinimizeToTray = "MinimizeToTray";
-    const std::string keys::StartMinimized = "StartMinimized";
-    const std::string keys::LastAcknowledgedUpdateVersion = "LastAcknowledgedUpdateVersion";
+            UpdateCheck();
+            bool Run(Callback callback);
+            void Cancel();
 
-} } }
+        private:
+            void Reset();
 
+            static size_t curlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
+
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+
+            std::recursive_mutex mutex;
+            std::shared_ptr<std::thread> thread;
+
+            Callback callback;
+            std::string result, latestVersion, updateUrl;
+            bool cancel;
+            CURL* curl;
+    };
+
+} }

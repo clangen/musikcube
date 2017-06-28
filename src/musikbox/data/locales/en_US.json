@@ -8,6 +8,9 @@
         "button_no": "no",
         "button_save": "save",
         "button_cancel": "cancel",
+        "button_close": "close",
+        "button_dont_remind_me": "don't remind me again",
+        "button_remind_me_later": "remind me later",
 
         "browse_title_artists": "artists",
         "browse_title_albums": "albums",
@@ -118,7 +121,10 @@
         "tracklist_unknown_album": "[unknown album]",
 
         "main_syncing_banner_start": "syncing metadata...",
-        "main_syncing_banner": "syncing metadata (%d tracks processed)"
+        "main_syncing_banner": "syncing metadata (%d tracks processed)",
+
+        "update_check_dialog_title": "new version available!",
+        "update_check_dialog_message": "musikbox version '%s' is now available for download. a changelog and binaries are available at:\n\n%s"
     },
 
     "dimensions": {

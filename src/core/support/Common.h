@@ -50,5 +50,6 @@ namespace musik { namespace core {
 
     /* renames ~/.mC2 -> ~/.musikcube */
     void MigrateOldDataDirectory();
+    void RemoveOldDlls();
 
 } }

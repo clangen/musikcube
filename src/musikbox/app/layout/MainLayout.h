@@ -77,9 +77,10 @@ namespace musik {
                 void OnIndexerStarted();
                 void OnIndexerProgress(int count);
                 void OnIndexerFinished(int count);
-
-
+                
                 void Initialize();
+                void RunUpdateCheck();
+
                 cursespp::IWindowPtr BlurShortcuts();
                 void FocusShortcuts();
 

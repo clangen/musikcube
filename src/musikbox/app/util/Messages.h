@@ -63,6 +63,8 @@ namespace musik {
 
             static const int TracksAddedToPlaylist = 1031;
             static const int PlaylistCreated = 1032;
+
+            static const int UpdateCheckFinished = 1033;
         }
     }
 }

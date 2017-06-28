@@ -41,6 +41,7 @@
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
+#include <app/util/UpdateCheck.h>
 
 #include "SettingsLayout.h"
 #include "MainLayout.h"
@@ -50,6 +51,8 @@ using namespace musik::box;
 using namespace musik::core;
 using namespace musik::core::runtime;
 using namespace cursespp;
+
+static UpdateCheck updateCheck;
 
 static void updateSyncingText(TextLabel* label, int updates) {
     try {
@@ -82,9 +85,12 @@ MainLayout::MainLayout(ILibraryPtr library)
     library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
     library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
+
+    this->RunUpdateCheck();
 }
 
 MainLayout::~MainLayout() {
+    updateCheck.Cancel();
 }
 
 void MainLayout::ResizeToViewport() {
@@ -282,4 +288,32 @@ void MainLayout::OnIndexerProgress(int count) {
 
 void MainLayout::OnIndexerFinished(int count) {
     this->PostMessage(message::IndexerFinished);
+}
+
+void MainLayout::RunUpdateCheck() {
+    updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
+        if (updateRequired) {
+            std::string prefKey = prefs::keys::LastAcknowledgedUpdateVersion;
+            std::string acknowledged = this->prefs->GetString(prefKey);
+            if (acknowledged != version) {
+                std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+                std::string message = boost::str(boost::format(
+                    _TSTR("update_check_dialog_message")) % version % url);
+
+                (*dialog)
+                    .SetTitle(_TSTR("update_check_dialog_title"))
+                    .SetMessage(message)
+                    .AddButton(
+                        "KEY_ENTER", "ENTER", _TSTR("button_dont_remind_me"), 
+                        [this, prefKey, version](std::string key) {
+                            this->prefs->SetString(prefKey.c_str(), version.c_str());
+                            this->prefs->Save();
+                        })
+                    .AddButton("^[", "ESC", _TSTR("button_remind_me_later"));
+
+                App::Overlays().Push(dialog);
+            }
+        }
+    });
 }

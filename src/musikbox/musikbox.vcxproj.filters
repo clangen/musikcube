@@ -138,6 +138,9 @@
     <ClCompile Include="app\overlay\ServerOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\UpdateCheck.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -324,6 +327,9 @@
     </ClInclude>
     <ClInclude Include="app\overlay\ServerOverlay.h">
       <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\UpdateCheck.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

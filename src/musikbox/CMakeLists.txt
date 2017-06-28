@@ -21,6 +21,7 @@ set (BOX_SRCS
 	./app/util/GlobalHotkeys.cpp
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
+	./app/util/UpdateCheck.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/LogWindow.cpp
 	./app/window/TrackListView.cpp
