@@ -73,8 +73,11 @@ ConsoleLayout::ConsoleLayout(ITransport& transport, ILibraryPtr library)
     this->outputAdapter->SetMaxEntries(500);
 
     this->logs.reset(new LogWindow(this));
+    this->logs->SetFrameTitle(_TSTR("console_debug_logs_title"));
     this->output.reset(new ScrollableWindow(this->outputAdapter, this));
+    this->output->SetFrameTitle(_TSTR("console_command_output_title"));
     this->commands.reset(new cursespp::TextInput());
+    this->commands->SetFrameTitle(_TSTR("console_command_title"));
 
     this->commands->SetFocusOrder(0);
     this->output->SetFocusOrder(1);

@@ -21,6 +21,10 @@
         "browse_title_playlists": "playlists",
         "browse_playlist_modified": "playlist modified. press '%s' to save.",
 
+        "console_command_output_title": "command output",
+        "console_debug_logs_title": "debug logs",
+        "console_command_title": "command",
+
         "settings_space_to_add": "browse (SPACE to add)",
         "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
         "settings_enable_disable_plugins": "enable/disable plugins",
@@ -54,6 +58,8 @@
         "settings_server_password": "password:",
         "settings_server_invalid_settings_title": "invalid settings",
         "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",
+
+        "track_filter_title": "track filter results",
 
         "locale_overlay_select_title": "select locale",
 

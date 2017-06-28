@@ -84,11 +84,8 @@ namespace musik {
                     std::string value);
 
                 musik::core::ILibraryPtr library;
-                std::shared_ptr<cursespp::TextLabel> albumsLabel;
                 std::shared_ptr<CategoryListView> albums;
-                std::shared_ptr<cursespp::TextLabel> artistsLabel;
                 std::shared_ptr<CategoryListView> artists;
-                std::shared_ptr<cursespp::TextLabel> genresLabel;
                 std::shared_ptr<CategoryListView> genres;
                 std::shared_ptr<cursespp::TextInput> input;
         };

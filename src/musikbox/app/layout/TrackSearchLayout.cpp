@@ -82,6 +82,8 @@ void TrackSearchLayout::OnLayout() {
         y + SEARCH_HEIGHT,
         this->GetWidth(),
         this->GetHeight() - SEARCH_HEIGHT);
+
+    this->trackList->SetFrameTitle(_TSTR("track_filter_title"));
 }
 
 void TrackSearchLayout::InitializeWindows() {
@@ -90,7 +92,7 @@ void TrackSearchLayout::InitializeWindows() {
     this->input->EnterPressed.connect(this, &TrackSearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
-
+    
     this->trackList.reset(new TrackListView(this->playback, this->library));
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
