@@ -134,3 +134,7 @@ fun EditText.setTextAndMoveCursorToEnd(text: String) {
 fun View.setVisible(visible: Boolean) {
     this.visibility = if (visible) View.VISIBLE else View.GONE
 }
+
+fun AppCompatActivity.dpToPx(dp: Float): Float {
+    return dp * this.resources.displayMetrics.density
+}

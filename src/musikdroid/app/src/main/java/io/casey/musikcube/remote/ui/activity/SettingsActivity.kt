@@ -11,10 +11,8 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.widget.*
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.PlayerWrapper
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.ui.extension.enableUpNavigation
@@ -36,18 +34,15 @@ class SettingsActivity : AppCompatActivity() {
     private var softwareVolume: CheckBox? = null
     private var sslCheckbox: CheckBox? = null
     private var certCheckbox: CheckBox? = null
-    private var playbackModeSpinner: Spinner? = null
     private var bitrateSpinner: Spinner? = null
     private var cacheSpinner: Spinner? = null
     private var prefs: SharedPreferences? = null
-    private var wasStreaming: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         setContentView(R.layout.activity_settings)
         setTitle(R.string.settings_title)
-        wasStreaming = isStreamingEnabled
         bindEventListeners()
         rebindUi()
     }
@@ -80,14 +75,6 @@ class SettingsActivity : AppCompatActivity() {
             Locale.ENGLISH, "%d", prefs!!.getInt(Keys.AUDIO_PORT, Defaults.AUDIO_PORT)))
 
         passwordText?.setTextAndMoveCursorToEnd(prefs!!.getString(Keys.PASSWORD, Defaults.PASSWORD))
-
-        val playbackModes = ArrayAdapter.createFromResource(
-            this, R.array.streaming_mode_array, android.R.layout.simple_spinner_item)
-
-        /* playback mode */
-        playbackModes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        playbackModeSpinner?.adapter = playbackModes
-        playbackModeSpinner?.setSelection(if (isStreamingEnabled) 1 else 0)
 
         /* bitrate */
         val bitrates = ArrayAdapter.createFromResource(
@@ -127,12 +114,6 @@ class SettingsActivity : AppCompatActivity() {
         enableUpNavigation()
     }
 
-    private val isStreamingEnabled: Boolean
-        get() = this.prefs!!.getBoolean(Keys.STREAMING_PLAYBACK, Defaults.STREAMING_PLAYBACK)
-
-    private val isStreamingSelected: Boolean
-        get() = this.playbackModeSpinner?.selectedItemPosition == 1
-
     private fun onDisableSslFromDialog() {
         sslCheckbox?.setCheckWithoutEvent(false, sslCheckChanged)
     }
@@ -166,22 +147,10 @@ class SettingsActivity : AppCompatActivity() {
         this.albumArtCheckbox = findViewById(R.id.album_art_checkbox) as CheckBox
         this.messageCompressionCheckbox = findViewById(R.id.message_compression) as CheckBox
         this.softwareVolume = findViewById(R.id.software_volume) as CheckBox
-        this.playbackModeSpinner = findViewById(R.id.playback_mode_spinner) as Spinner
         this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner) as Spinner
         this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner) as Spinner
         this.sslCheckbox = findViewById(R.id.ssl_checkbox) as CheckBox
         this.certCheckbox = findViewById(R.id.cert_validation) as CheckBox
-
-        this.playbackModeSpinner?.onItemSelectedListener = (object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val streaming = position == 1
-                bitrateSpinner?.isEnabled = streaming
-                cacheSpinner?.isEnabled = streaming
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-            }
-        })
     }
 
     private fun save() {
@@ -197,7 +166,6 @@ class SettingsActivity : AppCompatActivity() {
             .putString(Keys.PASSWORD, password)
             .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox!!.isChecked)
             .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox!!.isChecked)
-            .putBoolean(Keys.STREAMING_PLAYBACK, isStreamingSelected)
             .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume!!.isChecked)
             .putBoolean(Keys.SSL_ENABLED, sslCheckbox!!.isChecked)
             .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox!!.isChecked)
@@ -207,10 +175,6 @@ class SettingsActivity : AppCompatActivity() {
 
         if (!softwareVolume!!.isChecked) {
             PlayerWrapper.setVolume(1.0f)
-        }
-
-        if (wasStreaming && !isStreamingEnabled) {
-            PlaybackServiceFactory.streaming(this).stop()
         }
 
         StreamProxy.reload()

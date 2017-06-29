@@ -33,9 +33,8 @@ class Prefs {
             val SSL_ENABLED = false
             val CERT_VALIDATION_DISABLED = false
             val TRANSCODER_BITRATE_INDEX = 0
-            val DISK_CACHE_SIZE_INDEX = 0
+            val DISK_CACHE_SIZE_INDEX = 2
             val SYSTEM_SERVICE_FOR_REMOTE = false
-            val UPDATE_DIALOG_SUPPRESSED_VERSION = ""
         }
     }
 

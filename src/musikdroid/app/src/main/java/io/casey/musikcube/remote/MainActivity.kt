@@ -462,7 +462,6 @@ class MainActivity : WebSocketActivityBase() {
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.update_check_dialog_title)
                 .setMessage(getString(R.string.update_check_dialog_message, version))
-                .setView(view)
                 .setNegativeButton(R.string.button_no, { _, _ ->
                     if (checkbox.isChecked) {
                         silence()
@@ -479,9 +478,13 @@ class MainActivity : WebSocketActivityBase() {
                     catch (ex: Exception) {
                     }
                 }
+                .setCancelable(false)
                 .create()
 
+            dlg.setView(view)
             dlg.setCancelable(false)
+            dlg.setCanceledOnTouchOutside(false)
+
             return dlg
         }
 
