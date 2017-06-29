@@ -16,6 +16,11 @@ user-facing:
 * added auto-update check functionality to notify users when a new version is
   available. also added manual update check to settings
 * rearranged some items on the settings screen
+* removed "playback mode" from musikdroid settings screen. we have a quick
+  toggle now!
+
+low-level:
+* ported musikdroid to kotlin. goodbye, java.
 
 --------------------------------------------------------------------------------
 
