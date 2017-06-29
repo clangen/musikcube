@@ -16,6 +16,7 @@ class Prefs {
             val TRANSCODER_BITRATE_INDEX = "transcoder_bitrate_index"
             val DISK_CACHE_SIZE_INDEX = "disk_cache_size_index"
             val SYSTEM_SERVICE_FOR_REMOTE = "system_service_for_remote"
+            val UPDATE_DIALOG_SUPPRESSED_VERSION = "update_dialog_suppressed_version"
         }
     }
 
@@ -34,6 +35,7 @@ class Prefs {
             val TRANSCODER_BITRATE_INDEX = 0
             val DISK_CACHE_SIZE_INDEX = 0
             val SYSTEM_SERVICE_FOR_REMOTE = false
+            val UPDATE_DIALOG_SUPPRESSED_VERSION = ""
         }
     }
 

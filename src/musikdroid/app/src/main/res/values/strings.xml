@@ -90,5 +90,8 @@
     <string name="unknown_artist">[unknown artist]</string>
     <string name="unknown_album">[unknown album]</string>
     <string name="unknown_title">[unknown title]</string>
+    <string name="update_check_dialog_title">update available</string>
+    <string name="update_check_dialog_message">\nmusikbox version \'%s\' is now available. would you like to download it now?</string>
+    <string name="update_check_dont_ask_again">don\'t ask me again for this version</string>
     <string name="buffering">buffering</string>
 </resources>

@@ -4,18 +4,17 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.CheckBox
-import android.widget.CompoundButton
-import android.widget.SeekBar
-import android.widget.TextView
+import android.widget.*
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.playback.RepeatMode
@@ -23,6 +22,7 @@ import io.casey.musikcube.remote.ui.activity.*
 import io.casey.musikcube.remote.ui.extension.getColorCompat
 import io.casey.musikcube.remote.ui.extension.setCheckWithoutEvent
 import io.casey.musikcube.remote.ui.fragment.InvalidPasswordDialogFragment
+import io.casey.musikcube.remote.ui.model.UpdateCheck
 import io.casey.musikcube.remote.ui.view.MainMetadataView
 import io.casey.musikcube.remote.util.Duration
 import io.casey.musikcube.remote.websocket.Messages
@@ -35,6 +35,7 @@ class MainActivity : WebSocketActivityBase() {
     private var prefs: SharedPreferences? = null
     private var playback: PlaybackService? = null
 
+    private var updateCheck: UpdateCheck = UpdateCheck()
     private var mainLayout: View? = null
     private var metadataView: MainMetadataView? = null
     private var playPause: TextView? = null
@@ -80,6 +81,7 @@ class MainActivity : WebSocketActivityBase() {
         bindCheckBoxEventListeners()
         rebindUi()
         scheduleUpdateTime(true)
+        runUpdateCheck()
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -399,6 +401,23 @@ class MainActivity : WebSocketActivityBase() {
         playback?.toggleRepeatMode()
     }
 
+    private fun runUpdateCheck() {
+        if (!UpdateAvailableDialog.displayed) {
+            updateCheck.run { required, version, url ->
+                if (required) {
+                    val suppressed = prefs?.getString(Prefs.Key.UPDATE_DIALOG_SUPPRESSED_VERSION, "")
+                    if (!UpdateAvailableDialog.displayed && suppressed != version) {
+                        val tag = UpdateAvailableDialog.TAG
+                        if (supportFragmentManager.findFragmentByTag(tag) == null) {
+                            UpdateAvailableDialog.newInstance(version, url).show(supportFragmentManager, tag)
+                            UpdateAvailableDialog.displayed = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private val repeatListener = { _: CompoundButton, _: Boolean ->
         onRepeatListener()
     }
@@ -425,8 +444,66 @@ class MainActivity : WebSocketActivityBase() {
         }
     }
 
-    class SwitchToOfflineTracksDialog : DialogFragment() {
+    class UpdateAvailableDialog: DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val inflater = LayoutInflater.from(activity)
+            val view = inflater.inflate(R.layout.dialog_checkbox, null)
+            val checkbox = view.findViewById(R.id.checkbox) as CheckBox
+            checkbox.setText(R.string.update_check_dont_ask_again)
 
+            val version = arguments?.getString(EXTRA_VERSION)
+            val url = arguments?.getString(EXTRA_URL)
+
+            val silence: () -> Unit = {
+                val prefs = activity.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+                prefs.edit().putString(Prefs.Key.UPDATE_DIALOG_SUPPRESSED_VERSION, version).apply()
+            }
+
+            val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.update_check_dialog_title)
+                .setMessage(getString(R.string.update_check_dialog_message, version))
+                .setView(view)
+                .setNegativeButton(R.string.button_no, { _, _ ->
+                    if (checkbox.isChecked) {
+                        silence()
+                    }
+                })
+                .setPositiveButton(R.string.button_yes) { _, _ ->
+                    if (checkbox.isChecked) {
+                        silence()
+                    }
+
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    }
+                    catch (ex: Exception) {
+                    }
+                }
+                .create()
+
+            dlg.setCancelable(false)
+            return dlg
+        }
+
+        companion object {
+            val TAG = "update_available_dialog"
+            val EXTRA_VERSION = "extra_version"
+            val EXTRA_URL = "extra_url"
+
+            var displayed: Boolean = false
+
+            fun newInstance(version: String, url: String): UpdateAvailableDialog {
+                val args = Bundle()
+                args.putString(EXTRA_VERSION, version)
+                args.putString(EXTRA_URL, url)
+                val dialog = UpdateAvailableDialog()
+                dialog.arguments = args
+                return dialog
+            }
+        }
+    }
+
+    class SwitchToOfflineTracksDialog : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.main_switch_to_streaming_title)
