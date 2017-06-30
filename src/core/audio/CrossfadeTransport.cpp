@@ -171,6 +171,10 @@ void CrossfadeTransport::SetPosition(double seconds) {
         }
     }
 
+    if (this->state == PlaybackPaused) {
+        SetPlaybackState(PlaybackPlaying);
+    }
+
     if (this->active.player) {
         this->TimeChanged(seconds);
     }
