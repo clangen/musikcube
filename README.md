@@ -24,52 +24,34 @@ you can also stream audio from, or remote control musikbox using the `musikdroid
 
 ![android screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/android.png)
 
-# raspberry pi
+# installation
 
-want to run musikbox on a raspberry pi, connected to you home stereo? [see here](https://github.com/clangen/musikcube/wiki/raspberry-pi).
+binaries are available in the [releases](https://github.com/clangen/musikcube/releases) page. 
 
-# streaming server documentation
-
-if you're interested in writing your own frontend, [api documentation is available here](https://github.com/clangen/musikcube/wiki/remote-api-documentation). the streaming server api uses a combination of websockets and vanilla http, and is included in every `musikbox` distribution.
-
-# compiling
-
-## windows
-
-- grab the [Visual Studio 2017 Community Edition](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx) and install the 32-bit c++ compiler.
-- clone the musikcube sources: `git clone https://github.com/clangen/musikcube.git`
-- install the [32 bit version of boost 1.64](https://sourceforge.net/projects/boost/files/boost-binaries/1.64.0/boost_1_64_0-msvc-14.1-32.exe/download). ensure it shares the same parent directory with musikcube. e.g: `c:\src\musikcube` and `c:\src\boost_1_64_0` -- the project's solution will reference it via relative path.
-- open `musikcube.sln` and build/run. 
-
-## mac
-
-you'll need [homebrew](http://brew.sh/) to install the required dependencies. 
-
-### automatic
+while macos binaries are provided, you can also install via homebrew as follows:
 
 - `brew tap clangen/musikbox`
 - `brew install musikbox`
 - `musikbox`
 
-### manual
+# raspberry pi
 
-- `brew install cmake boost libogg libvorbis flac faad2 libmicrohttpd lame`
-- `git clone https://github.com/clangen/musikcube.git`
-- `cd musikcube`
-- `cmake .`
-- `make`
-- `cd bin`
-- `./musikbox`
+musikbox runs well on a raspberry pi, connected to you home stereo. [see here for detailed setup instructions](https://github.com/clangen/musikcube/wiki/raspberry-pi).
 
-## linux
+# compiling
 
-- install the following libraries and their development packages: `cmake boost libogg vorbis flac faad2 ncurses zlib asound pulse libcurl libmicrohttpd libmp3lame`
-- `git clone https://github.com/clangen/musikcube.git`
-- `cd musikcube`
-- `cmake .`
-- `make`
-- `sudo make install`
-- `musikbox`
+if you'd like to compile the project yourself, you can check out the [build instructions](https://github.com/clangen/musikcube/wiki/building).
+
+# streaming server
+
+**it's important to understand that, out of the box, the remote api should NOT be considered safe for use outside of a local network**. the websockets service only supports a simple password challenge, and the audio http server just handles Basic authorization. it does not provide ssl or tls.
+
+the server also stores the password in plain text in a settings file on the local machine.
+
+you can fix some of this using a reverse proxy to provide ssl termination. details in the [ssl-server-setup section](https://github.com/clangen/musikcube/wiki/ssl-server-setup). while this improves things, you should exercise caution exposing these services over the internet.
+
+if you're interested in writing your own frontend, [api documentation is available here](https://github.com/clangen/musikcube/wiki/remote-api-documentation). the streaming server api uses a combination of websockets and vanilla http, and is included in every `musikbox` distribution.
+
 
 ## keyboard shortcuts
 
