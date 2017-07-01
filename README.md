@@ -142,47 +142,12 @@ the musikcube sdk is a set of small, pure-virtual c++ classes and a handful of e
 
 musikcube would not be possible without the following excellent free, open source, and (in the case of some macos and win32 APIs) non-free projects and libraries:
 
-core:
-* [boost](http://www.boost.org/)
-* [sqlite](https://www.sqlite.org/)
-* [utfcpp](https://github.com/nemtrif/utfcpp)
-* [json.hpp](https://github.com/nlohmann/json)
-* [kissfft](http://kissfft.sourceforge.net/)
-* [sigslot](http://sigslot.sourceforge.net/)
-* [wcwidth.c](http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c)
-
-ui:
-* [ncurses](https://www.gnu.org/software/ncurses/)
-* [pdcurses (win32a variant)](https://www.projectpluto.com/win32a.htm)
-
-decoders:
-* [flac](https://xiph.org/flac/)
-* [ogg/vorbis](http://www.vorbis.com/)
-* [mad](http://www.underbit.com/products/mad/) + [nomad](https://github.com/cmus/cmus/tree/master/ip)
-* [faad2](http://www.audiocoding.com/faad2.html)
-* [exoplayer](https://github.com/google/ExoPlayer)
-
-outputs:
-* [pulseaudio](https://www.freedesktop.org/wiki/Software/PulseAudio/)
-* [alsa](https://www.alsa-project.org)
-* [core audio](https://developer.apple.com/library/content/documentation/MusicAudio/Conceptual/CoreAudioOverview/Introduction/Introduction.html)
-* [wasapi](https://msdn.microsoft.com/en-us/library/windows/desktop/dd371455(v=vs.85).aspx)
-* [directsound](https://msdn.microsoft.com/en-us/library/windows/desktop/ee416960(v=vs.85).aspx)
-* [waveout](https://msdn.microsoft.com/en-us/library/windows/desktop/dd743876(v=vs.85).aspx)
-
-metadata-related:
-* [taglib](http://taglib.org/)
-* [glide](https://github.com/bumptech/glide)
-
-networking:
-* [websocketpp](https://github.com/zaphoyd/websocketpp)
-* [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/)
-* [libcurl](https://curl.haxx.se/libcurl/)
-* [libressl](https://www.libressl.org/)
-* [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client)
-* [okhttp](http://square.github.io/okhttp/)
-
-miscellaneous
-* [rxjava](https://github.com/ReactiveX/RxJava)
-* [rxandroid](https://github.com/ReactiveX/RxAndroid)
-* [recycler-fast-scroll](https://github.com/plusCubed/recycler-fast-scroll)
+| core                                                      | decoders                                                                                            | outputs                                                                                                                                        | metadata                                   | networking                                                                     | miscellaneous                                                             | ui                                                                   | 
+|-----------------------------------------------------------|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|--------------------------------------------------------------------------------|---------------------------------------------------------------------------|----------------------------------------------------------------------| 
+| [boost](http://www.boost.org/)                            | [flac](https://xiph.org/flac/)                                                                      | [alsa](https://www.alsa-project.org)                                                                                                           | [taglib](http://taglib.org/)               | [websocketpp](https://github.com/zaphoyd/websocketpp)                          | [rxjava](https://github.com/ReactiveX/RxJava)                             | [ncurses](https://www.gnu.org/software/ncurses/)                     | 
+| [sqlite](https://www.sqlite.org/)                         | [ogg/vorbis](http://www.vorbis.com/)                                                                | [pulseaudio](https://www.freedesktop.org/wiki/Software/PulseAudio/)                                                                            | [glide](https://github.com/bumptech/glide) | [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/)                   | [rxandroid](https://github.com/ReactiveX/RxAndroid)                       | [pdcurses (win32a variant)](https://www.projectpluto.com/win32a.htm) | 
+| [utfcpp](https://github.com/nemtrif/utfcpp)               | [mad](http://www.underbit.com/products/mad/) + [nomad](https://github.com/cmus/cmus/tree/master/ip) | [core audio](https://developer.apple.com/library/content/documentation/MusicAudio/Conceptual/CoreAudioOverview/Introduction/Introduction.html) |                                            | [libcurl](https://curl.haxx.se/libcurl/)                                       | [recycler-fast-scroll](https://github.com/plusCubed/recycler-fast-scroll) |                                                                      | 
+| [json.hpp](https://github.com/nlohmann/json)              | [faad2](http://www.audiocoding.com/faad2.html)                                                      | [wasapi](https://msdn.microsoft.com/en-us/library/windows/desktop/dd371455(v=vs.85).aspx)                                                      |                                            | [libressl](https://www.libressl.org/)                                          |                                                                           |                                                                      | 
+| [kissfft](http://kissfft.sourceforge.net/)                | [exoplayer](https://github.com/google/ExoPlayer)                                                    | [directsound](https://msdn.microsoft.com/en-us/library/windows/desktop/ee416960(v=vs.85).aspx)                                                 |                                            | [nv-websocket-client](https://github.com/TakahikoKawasaki/nv-websocket-client) |                                                                           |                                                                      | 
+| [sigslot](http://sigslot.sourceforge.net/)                |                                                                                                     | [waveout](https://msdn.microsoft.com/en-us/library/windows/desktop/dd743876(v=vs.85).aspx)                                                     |                                            | [okhttp](http://square.github.io/okhttp/)                                      |                                                                           |                                                                      | 
+| [wcwidth.c](http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c) |                                                                                                     |                                                                                                                                                |                                            |                                                                                |                                                                           |                                                                      | 
