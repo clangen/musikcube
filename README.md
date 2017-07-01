@@ -42,7 +42,7 @@ musikbox runs well on a raspberry pi, connected to you home stereo. [see here fo
 
 if you'd like to compile the project yourself, you can check out the [build instructions](https://github.com/clangen/musikcube/wiki/building).
 
-## keyboard shortcuts
+# keyboard shortcuts
 
 a list of all keyboard shortcuts can be found in the [user guide](https://github.com/clangen/musikcube/wiki/user-guide)
 
