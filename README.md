@@ -54,7 +54,7 @@ musikbox ships with a streaming audio server enabled by default. it runs a webso
 
 you can fix some of this using a reverse proxy to provide ssl termination. details in the [ssl-server-setup section](https://github.com/clangen/musikcube/wiki/ssl-server-setup). while this improves things, you should exercise caution exposing these services over the internet.
 
-if you're interested in writing your own frontend, [api documentation is available here](https://github.com/clangen/musikcube/wiki/remote-api-documentation). the streaming server api uses a combination of websockets and vanilla http, and is included in every `musikbox` distribution.
+if you're interested in writing your own frontend, [api documentation is available here](https://github.com/clangen/musikcube/wiki/remote-api-documentation).
 
 # sdk
 
