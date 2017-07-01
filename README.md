@@ -55,70 +55,11 @@ if you're interested in writing your own frontend, [api documentation is availab
 
 ## keyboard shortcuts
 
-the hotkeys listed below can generally be used at any time; however, if an input field is focused some may not work. you can enter command mode by pressing `ESC`, which will highlight the bottom command bar and accept all hotkeys. command mode may be deactivated by pressing `ESC` again.
-
-you may also change hotkeys by editing `~/.musikcube/hotkeys.json` and restarting the app. a hotkey tester is provided in the settings screen.
-
-- `TAB` select next window
-- `SHIFT+TAB` select previous window
-- `~` switch to console view
-- `a` switch to library view
-- `s` switch to settings view
-- `i` volume up 5%
-- `k` volume down 5%
-- `m` toggle volume mute
-- `j` previous track
-- `l` next track
-- `u` back 10 seconds
-- `o` forward 10 seconds
-- `v` show / hide visualizer
-- `r` repaint the screen
-- `.` toggle repeat mode (off/track/list)
-- `,` (un)shuffle play queue
-- `CTRL+p` pause/resume (globally)
-- `CTRL+x` stop (unload streams, free resources)
-- `CTRL+d` quit 
-
-and a couple hotkeys that are specific to the `library` view: 
-
-- `b` show browse view
-- `n` show play queue
-- `f` show album/artist/genre search
-- `t` show track search
-- `1` browse by artist
-- `2` browse by album
-- `3` browse by genre
-- `4` browse by album artist
-- `5` browse by playlist
-    - `M-n` create a new empty playlist
-    - `M-s` save the currently selected playlist
-    - `DEL` (`BACKSPACE` on macos) in the playlists pane: delete the selected playlist
-    - `M-r` rename the selected playlist
-    - `M-UP` (`CTRL-UP` on macos) move the selected track up
-    - `M-DOWN` (`CTRL-DOWN` on macos) move the selected track down
-    - `DEL` (`BACKSPACE` on macos) in the tracks pane: delete the selected track
-- `x` jump to playing artist/album/genre in browse view
-- `M-ENTER` show a context menu for the currently selected item (album, artist, genre, track)
-- `SPACE` pause/resume
-
-you can manipulate the play `play queue` as follows:
-
-- `M-s` save current queue as a playlist
-- `M-l` load a previously saved playlist
-- `M-x` delete a previously saved playlist
-- `M-r` rename a playlist
-- `M-UP` (`CTRL-UP` on macos) move the selected track up
-- `M-DOWN` (`CTRL-DOWN` on macos) move the selected track down
-- `DEL` (`BACKSPACE` on macos) delete the selected track
-
-a couple important **notes**:
-
-- on macos make sure you configure your terminal emulator to treat your left alt key as "+Esc" or "Meta"
-- `ALT` is the `M`odifier key in the windows build
+a list of all keyboard shortcuts can be found in the [user guide](https://github.com/clangen/musikcube/wiki/user-guide)
 
 # sdk
 
-the musikcube sdk is a set of small, pure-virtual c++ classes and a handful of enums and constants. they're still in the process of being refined. you can see what they currently look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
+the musikcube sdk is a set of small, pure-virtual c++ classes and a handful of enums and constants. they're still in the process of being slimmed down. you can see what they currently look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
 
 # dependencies
 
