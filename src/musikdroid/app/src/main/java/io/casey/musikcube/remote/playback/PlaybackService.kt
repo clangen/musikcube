@@ -23,7 +23,7 @@ interface PlaybackService {
     fun pause()
     fun resume()
     fun prev()
-    operator fun next()
+    fun next()
     fun stop()
 
     fun volumeUp()

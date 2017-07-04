@@ -78,12 +78,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
     override var position: Int
         get() {
             Preconditions.throwIfNotOnMainThread()
-
-            if (isPreparedOrPlaying) {
-                return this.player.currentPosition
-            }
-
-            return 0
+            return if (isPreparedOrPlaying) this.player.currentPosition else 0
         }
         set(millis) {
             Preconditions.throwIfNotOnMainThread()
@@ -100,12 +95,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
     override val duration: Int
         get() {
             Preconditions.throwIfNotOnMainThread()
-
-            if (isPreparedOrPlaying) {
-                return this.player.duration
-            }
-
-            return 0
+            return if (isPreparedOrPlaying) this.player.duration else 0
         }
 
     override fun resume() {

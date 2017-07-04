@@ -274,7 +274,6 @@ class ExoPlayerWrapper : PlayerWrapper() {
     }
 
     private val cacheListener = CacheListener { _: File, _: String, percent: Int ->
-        //Log.e("CLCLCL", String.format("%d", percent));
         percentAvailable = percent
 
         if (percentAvailable >= 100) {
