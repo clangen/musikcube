@@ -114,7 +114,7 @@ namespace musik {
                 musik::core::ILibraryPtr library;
                 musik::core::TrackPtr playing;
 
-                std::string fieldName;
+                std::string fieldName, fieldIdColumn;
                 std::string filter;
                 int64_t selectAfterQuery;
                 musik::core::db::local::CategoryListQuery::ResultList metadata;

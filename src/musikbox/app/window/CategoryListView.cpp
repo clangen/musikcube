@@ -56,16 +56,29 @@ using namespace musik::core::runtime;
 using namespace musik::box;
 using namespace cursespp;
 
+static std::map<std::string, std::string> FIELD_TO_ID_MAP = {
+    { library::constants::Track::ALBUM, library::constants::Track::ALBUM_ID },
+    { library::constants::Track::ARTIST, library::constants::Track::ARTIST_ID },
+    { library::constants::Track::ALBUM_ARTIST, library::constants::Track::ALBUM_ARTIST_ID },
+    { library::constants::Track::GENRE,  library::constants::Track::GENRE_ID }
+};
+
+static std::string getFieldIdColumn(const std::string& fieldId) {
+    auto id = FIELD_TO_ID_MAP.find(fieldId);
+    return id == FIELD_TO_ID_MAP.end() ? "" : id->second;
+}
+
 CategoryListView::CategoryListView(
     musik::core::audio::PlaybackService& playback,
     ILibraryPtr library,
     const std::string& fieldName)
-: ListWindow(NULL)
+: ListWindow(nullptr)
 , playback(playback) {
     this->selectAfterQuery = 0;
     this->library = library;
     this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
     this->fieldName = fieldName;
+    this->fieldIdColumn = getFieldIdColumn(fieldName);
     this->adapter = new Adapter(*this);
     this->playback.TrackChanged.connect(this, &CategoryListView::OnTrackChanged);
 
@@ -89,6 +102,7 @@ void CategoryListView::RequeryWithField(
     }
 
     this->fieldName = fieldName;
+    this->fieldIdColumn = getFieldIdColumn(fieldName);
     this->selectAfterQuery = selectAfterQuery;
     this->filter = filter;
     this->activeQuery.reset(new CategoryListQuery(fieldName, filter));
@@ -129,8 +143,8 @@ std::string CategoryListView::GetFilter() {
 }
 
 void CategoryListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
-    this->playing = track;
-    this->OnAdapterChanged();
+this->playing = track;
+this->OnAdapterChanged();
 }
 
 void CategoryListView::SetFieldName(const std::string& fieldName) {
@@ -148,18 +162,36 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
 
 void CategoryListView::ScrollToPlaying() {
     if (this->playing) {
-        std::string value = this->playing->GetValue(this->fieldName.c_str());
-        if (value.size()) {
-            /* binary search would be better, but need to research if sqlite
-            properly sorts utf8 strings. */
+        size_t selected = this->GetSelectedIndex();
+
+        /* by ID: preferred. */
+        if (fieldIdColumn.size()) {
+            int64_t id = this->playing->GetInt64(fieldIdColumn.c_str(), 0);
             for (size_t i = 0; i < this->metadata->size(); i++) {
-                if (this->metadata->at(i)->displayValue == value) {
-                    this->SetSelectedIndex(i);
-                    this->ScrollTo(i);
+                if (this->metadata->at(i)->id == id) {
+                    selected = i;
                     break;
                 }
             }
         }
+        /* by name: slower. also, not currently used, but will be in the near
+        future when we open up category browsing to other types of metadata */
+        else {
+            std::string value = this->playing->GetValue(this->fieldName.c_str());
+            if (value.size()) {
+                /* binary search would be better, but need to research if sqlite
+                properly sorts utf8 strings. */
+                for (size_t i = 0; i < this->metadata->size(); i++) {
+                    if (this->metadata->at(i)->displayValue == value) {
+                        selected = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        this->SetSelectedIndex(selected);
+        this->ScrollTo(selected);
     }
 }
 
@@ -218,7 +250,7 @@ IScrollAdapter& CategoryListView::GetScrollAdapter() {
 }
 
 CategoryListView::Adapter::Adapter(CategoryListView &parent)
-: parent(parent) {
+    : parent(parent) {
 }
 
 size_t CategoryListView::Adapter::GetEntryCount() {
@@ -228,11 +260,20 @@ size_t CategoryListView::Adapter::GetEntryCount() {
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     std::string value = parent.metadata->at(index)->displayValue;
 
-    bool playing =
-        parent.playing &&
-        parent.playing->GetValue(parent.fieldName.c_str()) == value;
+    bool playing = false;
 
-    bool selected = index == parent.GetSelectedIndex();
+    if (parent.playing) {
+        /* we should generally be able to match by ID; if not, fall back to by name */
+        if (parent.fieldIdColumn.size()) {
+            auto playingId = parent.playing->GetInt64(parent.fieldIdColumn.c_str(), 0);
+            playing = (playingId == parent.metadata->at(index)->id);
+        }
+        else {
+            playing = parent.playing->GetValue(parent.fieldName.c_str()) == value;
+        }
+    }
+
+    bool selected = (index == parent.GetSelectedIndex());
 
     int64_t attrs = selected
         ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
