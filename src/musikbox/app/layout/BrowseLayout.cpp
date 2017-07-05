@@ -157,11 +157,13 @@ void BrowseLayout::InitializeWindows() {
 
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == message::IndexerProgress) {
-        this->categoryList->Requery();
+        int64_t id = this->categoryList->GetSelectedId();
+        auto filter = this->categoryList->GetFilter();
+        this->categoryList->Requery(filter, id);
     }
     else if (message.Type() == message::TracksAddedToPlaylist) {
-        if (this->IsPlaylist() && 
-            this->categoryList->GetSelectedId() == message.UserData1()) 
+        if (this->IsPlaylist() &&
+            this->categoryList->GetSelectedId() == message.UserData1())
         {
             this->RequeryTrackList(this->categoryList.get());
         }
