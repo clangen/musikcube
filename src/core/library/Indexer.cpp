@@ -102,7 +102,8 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , tracksScanned(0)
 , exit(false)
 , state(StateIdle)
-, prefs(Preferences::ForComponent(prefs::components::Settings)) {
+, prefs(Preferences::ForComponent(prefs::components::Settings))
+, readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
     this->metadataReaders = PluginFactory::Instance()
         .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
 
@@ -395,6 +396,10 @@ void Indexer::ReadMetadataFromFile(
     }
 
     this->IncrementTracksScanned();
+
+#ifdef MULTI_THREADED_INDEXER
+    this->readSemaphore.post();
+#endif
 }
 
 inline void Indexer::IncrementTracksScanned(size_t delta) {
@@ -444,6 +449,8 @@ void Indexer::SyncDirectory(
             }
             else {
                 if (io) {
+                    this->readSemaphore.wait();
+
                     io->post(boost::bind(
                         &Indexer::ReadMetadataFromFile,
                         this,

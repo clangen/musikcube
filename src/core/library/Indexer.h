@@ -48,6 +48,7 @@
 #include <boost/thread/condition.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio/io_service.hpp>
+#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include <deque>
 #include <vector>
@@ -156,6 +157,7 @@ namespace musik { namespace core {
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
             std::vector<std::string> paths;
             std::shared_ptr<musik::core::sdk::IIndexerSource> currentSource;
+            boost::interprocess::interprocess_semaphore readSemaphore;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;
