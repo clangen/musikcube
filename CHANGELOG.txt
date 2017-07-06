@@ -1,3 +1,12 @@
+0.19.1
+
+* re-introduced the multi-threaded indexer! this makes metadata scanning quite
+  a bit faster on some systems
+* fixed a bug where the selected item in browse view may change during the
+  indexing process if more music is added to the library
+
+--------------------------------------------------------------------------------
+
 0.19.0
 
 * fixed a bug where the wrong (or multiple) items may be highlighted in browse
