@@ -63,8 +63,13 @@
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
-static const int MAX_THREADS = 2;
 static const size_t TRANSACTION_INTERVAL = 300;
+
+#ifdef __arm__
+static const int MAX_THREADS = 2;
+#else
+static const int MAX_THREADS = 4;
+#endif
 
 using namespace musik::core;
 using namespace musik::core::sdk;
