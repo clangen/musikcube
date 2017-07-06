@@ -771,20 +771,21 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
 
     override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
         override fun getRequeryMessage(): SocketMessage? {
+            val params = params
             if (params != null) {
-                if (Strings.notEmpty(params?.category) && (params?.categoryId ?: -1) >= 0) {
+                if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
                     return SocketMessage.Builder
                         .request(Messages.Request.QueryTracksByCategory)
-                        .addOption(Messages.Key.CATEGORY, params?.category)
-                        .addOption(Messages.Key.ID, params?.categoryId)
-                        .addOption(Messages.Key.FILTER, params?.filter)
+                        .addOption(Messages.Key.CATEGORY, params.category)
+                        .addOption(Messages.Key.ID, params.categoryId)
+                        .addOption(Messages.Key.FILTER, params.filter)
                         .addOption(Messages.Key.COUNT_ONLY, true)
                         .build()
                 }
                 else {
                     return SocketMessage.Builder
                         .request(Messages.Request.QueryTracks)
-                        .addOption(Messages.Key.FILTER, params?.filter)
+                        .addOption(Messages.Key.FILTER, params.filter)
                         .addOption(Messages.Key.COUNT_ONLY, true)
                         .build()
                 }
@@ -794,13 +795,14 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         }
 
         override fun getPageAroundMessage(offset: Int, limit: Int): SocketMessage? {
+            val params = params
             if (params != null) {
-                if (Strings.notEmpty(params?.category) && (params?.categoryId ?: -1) >= 0) {
+                if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
                     return SocketMessage.Builder
                         .request(Messages.Request.QueryTracksByCategory)
-                        .addOption(Messages.Key.CATEGORY, params?.category)
-                        .addOption(Messages.Key.ID, params?.categoryId)
-                        .addOption(Messages.Key.FILTER, params?.filter)
+                        .addOption(Messages.Key.CATEGORY, params.category)
+                        .addOption(Messages.Key.ID, params.categoryId)
+                        .addOption(Messages.Key.FILTER, params.filter)
                         .addOption(Messages.Key.LIMIT, limit)
                         .addOption(Messages.Key.OFFSET, offset)
                         .build()
@@ -808,7 +810,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
                 else {
                     return SocketMessage.Builder
                         .request(Messages.Request.QueryTracks)
-                        .addOption(Messages.Key.FILTER, params?.filter)
+                        .addOption(Messages.Key.FILTER, params.filter)
                         .addOption(Messages.Key.LIMIT, limit)
                         .addOption(Messages.Key.OFFSET, offset)
                         .build()

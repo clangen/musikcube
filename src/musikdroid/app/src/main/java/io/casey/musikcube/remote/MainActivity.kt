@@ -14,7 +14,10 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.*
+import android.widget.CheckBox
+import android.widget.CompoundButton
+import android.widget.SeekBar
+import android.widget.TextView
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.playback.RepeatMode
