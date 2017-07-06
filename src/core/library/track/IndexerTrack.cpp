@@ -57,7 +57,7 @@ using namespace musik::core;
 #define ARTIST_TRACK_JUNCTION_TABLE_NAME "track_artists"
 #define ARTIST_TRACK_FOREIGN_KEY "artist_id"
 
-static std::mutex trackWriteLock;
+std::mutex IndexerTrack::sharedWriteMutex;
 static std::unordered_map<std::string, int64_t> metadataIdCache;
 
 void IndexerTrack::ResetIdCache() {
@@ -622,7 +622,7 @@ int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 }
 
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
-    std::unique_lock<std::mutex> lock(trackWriteLock);
+    std::unique_lock<std::mutex> lock(sharedWriteMutex);
 
     if (this->GetValue("album_artist") == "") {
         this->SetValue("album_artist", this->GetValue("artist").c_str());

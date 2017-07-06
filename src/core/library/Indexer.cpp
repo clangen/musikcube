@@ -59,7 +59,7 @@
 
 #include <atomic>
 
-#define MULTI_THREADED_INDEXER 0
+#define MULTI_THREADED_INDEXER 1
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
@@ -94,11 +94,10 @@ static std::string normalizePath(const std::string& path) {
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
-, filesSaved(0)
+, tracksScanned(0)
 , exit(false)
 , state(StateIdle)
-, prefs(Preferences::ForComponent(prefs::components::Settings))
-, readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
+, prefs(Preferences::ForComponent(prefs::components::Settings)) {
     this->metadataReaders = PluginFactory::Instance()
         .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
 
@@ -196,7 +195,7 @@ void Indexer::RemovePath(const std::string& path) {
 void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
     this->ProcessAddRemoveQueue();
 
-    this->filesSaved = 0;
+    this->tracksScanned = 0;
 
     auto type = context.type;
     auto sourceId = context.sourceId;
@@ -308,7 +307,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
     }
 
     /* notify observers */
-    this->Progress(this->filesSaved);
+    this->Progress(this->tracksScanned);
 
     /* run analyzers. */
     this->RunAnalyzers();
@@ -390,11 +389,19 @@ void Indexer::ReadMetadataFromFile(
         }
     }
 
-    ++this->filesSaved;
+    this->IncrementTracksScanned();
+}
 
-#if MULTI_THREADED_INDEXER
-    this->readSemaphore.post();
-#endif
+inline void Indexer::IncrementTracksScanned(size_t delta) {
+    std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
+
+    this->tracksScanned.fetch_add(delta);
+
+    if (this->tracksScanned > TRANSACTION_INTERVAL) {
+        this->trackTransaction->CommitAndRestart();
+        this->Progress(this->tracksScanned);
+        this->tracksScanned = 0;
+    }
 }
 
 void Indexer::SyncDirectory(
@@ -425,11 +432,6 @@ void Indexer::SyncDirectory(
         std::vector<Thread> threads;
 
         for( ; file != end && !this->Exited(); file++) {
-            if (this->filesSaved > TRANSACTION_INTERVAL) {
-                this->trackTransaction->CommitAndRestart();
-                this->Progress(this->filesSaved);
-                this->filesSaved = 0;
-            }
             if (is_directory(file->status())) {
                 /* recursion here */
                 musik::debug::info(TAG, "scanning " + file->path().string());
@@ -437,8 +439,6 @@ void Indexer::SyncDirectory(
             }
             else {
                 if (io) {
-                    this->readSemaphore.wait();
-
                     io->post(boost::bind(
                         &Indexer::ReadMetadataFromFile,
                         this,
@@ -476,6 +476,7 @@ ScanResult Indexer::SyncSource(IIndexerSource* source) {
             TrackPtr track(new IndexerTrack(tracks.ColumnInt64(0)));
             track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
             source->ScanTrack(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
+            this->IncrementTracksScanned();
         }
     }
 
@@ -545,7 +546,7 @@ void Indexer::ThreadLoop() {
         this->dbConnection.Close();
 
         if (!this->Exited()) {
-            this->Finished(this->filesSaved);
+            this->Finished(this->tracksScanned);
         }
 
         musik::debug::info(TAG, "done!");

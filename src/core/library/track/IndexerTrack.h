@@ -77,6 +77,10 @@ namespace musik { namespace core {
 
             static void ResetIdCache();
 
+        protected:
+            friend class Indexer;
+            static std::mutex sharedWriteMutex;
+
         private:
             int64_t id;
 

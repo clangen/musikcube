@@ -48,7 +48,6 @@
 #include <boost/thread/condition.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio/io_service.hpp>
-#include <boost/interprocess/sync/interprocess_semaphore.hpp>
 
 #include <deque>
 #include <vector>
@@ -127,6 +126,8 @@ namespace musik { namespace core {
 
             void Schedule(SyncType type, musik::core::sdk::IIndexerSource *source);
 
+            void IncrementTracksScanned(size_t delta = 1);
+
             void SyncDirectory(
                 boost::asio::io_service* io,
                 const std::string& syncRoot,
@@ -145,7 +146,7 @@ namespace musik { namespace core {
             boost::mutex stateMutex;
             boost::condition waitCondition;
             boost::thread *thread;
-            std::atomic<size_t> filesSaved;
+            std::atomic<size_t> tracksScanned;
             std::deque<AddRemoveContext> addRemoveQueue;
             std::deque<SyncContext> syncQueue;
             MetadataReaderList metadataReaders;
@@ -155,7 +156,6 @@ namespace musik { namespace core {
             std::shared_ptr<musik::core::db::ScopedTransaction> trackTransaction;
             std::vector<std::string> paths;
             std::shared_ptr<musik::core::sdk::IIndexerSource> currentSource;
-            boost::interprocess::interprocess_semaphore readSemaphore;
     };
 
     typedef std::shared_ptr<Indexer> IndexerPtr;
