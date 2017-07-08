@@ -71,8 +71,8 @@ namespace musik { namespace core {
             virtual ~Indexer();
 
             /* IIndexer */
-            virtual void AddPath(const std::string& paths);
-            virtual void RemovePath(const std::string& paths);
+            virtual void AddPath(const std::string& path);
+            virtual void RemovePath(const std::string& path);
             virtual void GetPaths(std::vector<std::string>& paths);
             virtual void Schedule(SyncType type);
             virtual State GetState() { return this->state; }

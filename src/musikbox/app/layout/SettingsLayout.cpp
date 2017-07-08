@@ -108,8 +108,7 @@ SettingsLayout::SettingsLayout(
 , library(library)
 , indexer(library->Indexer())
 , transport(transport)
-, playback(playback)
-, pathsUpdated(false) {
+, playback(playback) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->browseAdapter.reset(new DirectoryAdapter());
     this->addedPathsAdapter.reset(new SimpleScrollAdapter());
@@ -424,7 +423,7 @@ void SettingsLayout::InitializeWindows() {
 #endif
     this->AddWindow(this->hotkeyDropdown);
     this->AddWindow(this->pluginsDropdown);
-    
+
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->syncOnStartupCheckbox);
     this->AddWindow(this->removeCheckbox);
@@ -454,12 +453,6 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
         this->RefreshAddedPaths();
         this->LoadPreferences();
         this->CheckShowFirstRunDialog();
-    }
-    else {
-        if (this->pathsUpdated) {
-            this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
-            this->pathsUpdated = false;
-        }
     }
 }
 
@@ -550,7 +543,7 @@ void SettingsLayout::AddSelectedDirectory() {
         if (path.size()) {
             this->indexer->AddPath(path);
             this->RefreshAddedPaths();
-            this->pathsUpdated = true;
+            this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
         }
     }
 }
@@ -563,7 +556,7 @@ void SettingsLayout::RemoveSelectedDirectory() {
     if (index != ListWindow::NO_SELECTION) {
         this->indexer->RemovePath(paths.at(index));
         this->RefreshAddedPaths();
-        this->pathsUpdated = true;
+        this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
     }
 }
 

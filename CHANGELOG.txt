@@ -1,3 +1,12 @@
+0.19.2
+
+* start the metadata indexer immediately after adding or removing paths from
+  the settings view. this functionality was previously disabled due to
+  performance issues and a bug with the indexer. these problems have all been
+  addressed.
+
+--------------------------------------------------------------------------------
+
 0.19.1
 
 * re-introduced the multi-threaded indexer! this makes metadata scanning quite
