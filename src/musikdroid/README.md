@@ -2,9 +2,9 @@
 
 `musikdroid` is an android app that is used to stream music from, or remote control, existing `musikbox` installations (windows, macos, or linux clients). 
 
-*disclaimer*: although `musikdroid` is generally stable and performant, it does **not** employ best practices as prescribed by the android community at large. no model-view-presenter, dependency injection, or architecture compoments (except for `Room`). it uses `RxJava`, but sparingly.
+*disclaimer*: although `musikdroid` is generally stable and performant, it does **not** employ best practices as prescribed by the android community at large. no model-view-presenter, dependency injection, or architecture compoments (except `Room`). It uses `RxJava`, but sparingly.
 
-`musikdroid` is written in `kotlin`
+`musikdroid` is written in `kotlin`.
 
 # building
 
