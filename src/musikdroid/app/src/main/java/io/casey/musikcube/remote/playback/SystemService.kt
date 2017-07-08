@@ -28,9 +28,11 @@ import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
 import android.support.v4.app.NotificationCompat.Action as NotifAction
 
-/* basically a stub service that exists to keep a connection active to the
-StreamingPlaybackService, which keeps music playing. TODO: should also hold
-a partial wakelock to keep the radio from going to sleep. */
+/**
+ * a service used to interact with all of the system media-related components -- notifications,
+ * lock screen controls, and headset events. also holds a partial wakelock to keep the system
+ * from completely falling asleep during streaming playback.
+ */
 class SystemService : Service() {
     private val handler = Handler()
     private var prefs: SharedPreferences? = null
@@ -53,7 +55,6 @@ class SystemService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        recycleAlbumArt()
         unregisterReceivers()
     }
 
@@ -104,34 +105,23 @@ class SystemService : Service() {
     private fun shutdownNow() {
         Log.d(TAG, "SystemService SHUT_DOWN")
 
-        if (mediaSession != null) {
-            mediaSession?.release()
-        }
+        mediaSession?.release()
+        mediaSession = null
 
-        if (playback != null) {
-            playback?.disconnect(playbackListener)
-            playback = null
-        }
+        playback?.disconnect(playbackListener)
+        playback = null
 
-        if (wakeLock != null) {
-            wakeLock?.release()
-            wakeLock = null
-        }
+        wakeLock?.release()
+        wakeLock = null
 
         stopSelf()
     }
 
     private fun sleepNow() {
         Log.d(TAG, "SystemService SLEEP")
-
-        if (wakeLock != null) {
-            wakeLock?.release()
-            wakeLock = null
-        }
-
-        if (playback != null) {
-            playback?.disconnect(playbackListener)
-        }
+        wakeLock?.release()
+        wakeLock = null
+        playback?.disconnect(playbackListener)
     }
 
     private fun initMediaSession() {
@@ -140,7 +130,8 @@ class SystemService : Service() {
         mediaSession = MediaSessionCompat(this, "musikdroid.SystemService", receiver, null)
 
         mediaSession?.setFlags(
-            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+            MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
 
         mediaSession?.setCallback(mediaSessionCallback)
 
@@ -194,14 +185,8 @@ class SystemService : Service() {
             .build())
     }
 
-    @Synchronized private fun recycleAlbumArt() {
-        if (albumArt != null) {
-            albumArt = null
-        }
-    }
-
     private fun downloadAlbumArt(title: String, artist: String, album: String, duration: Int) {
-        recycleAlbumArt()
+        albumArt = null
 
         albumArtModel = AlbumArtModel(title, artist, album, AlbumArtModel.Size.Mega) {
             _: AlbumArtModel, url: String? ->
@@ -252,7 +237,7 @@ class SystemService : Service() {
                 currentImage = albumArt
             }
             else {
-                recycleAlbumArt()
+                albumArt = null
             }
         }
 
@@ -427,11 +412,10 @@ class SystemService : Service() {
                     }
                 }
             }
-            return super.onMediaButtonEvent(mediaButtonEvent)
+            return false
         }
 
         override fun onPlay() {
-            super.onPlay()
             if (playback?.queueCount == 0) {
                 playback?.playAll()
             }
@@ -441,27 +425,22 @@ class SystemService : Service() {
         }
 
         override fun onPause() {
-            super.onPause()
             playback?.pause()
         }
 
         override fun onSkipToNext() {
-            super.onSkipToNext()
             playback?.next()
         }
 
         override fun onSkipToPrevious() {
-            super.onSkipToPrevious()
             playback?.prev()
         }
 
         override fun onFastForward() {
-            super.onFastForward()
             playback?.seekForward()
         }
 
         override fun onRewind() {
-            super.onRewind()
             playback?.seekBackward()
         }
     }

@@ -7,19 +7,11 @@ interface PlaybackService {
     fun disconnect(listener: () -> Unit)
 
     fun playAll()
-
     fun playAll(index: Int, filter: String)
-
-    fun play(
-        category: String,
-        categoryId: Long,
-        index: Int,
-        filter: String)
-
+    fun play(category: String, categoryId: Long, index: Int, filter: String)
     fun playAt(index: Int)
 
     fun pauseOrResume()
-
     fun pause()
     fun resume()
     fun prev()
