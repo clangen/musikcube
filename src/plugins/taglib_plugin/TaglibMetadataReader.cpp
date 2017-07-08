@@ -207,6 +207,14 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::ITrack
 
         this->SetTagValue("album", id3v2->album(), track);
 
+        //{
+        //    TagLib::Map<TagLib::ByteVector, TagLib::ID3v2::FrameList>::Iterator it = allTags.begin();
+        //    while (it != allTags.end()) {
+        //        const char* f = it->first.data();
+        //        ++it;
+        //    }
+        //}
+
         /* year */
 
         if (!allTags["TYER"].isEmpty()) { /* ID3v2.3*/
@@ -214,6 +222,10 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::ITrack
         }
 
         if (!allTags["TDRC"].isEmpty()) { /* ID3v2.4*/
+            this->SetTagValue("year", allTags["TDRC"].front()->toString().substr(0, 4), track);
+        }
+
+        if (!allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
             this->SetTagValue("year", allTags["TDRC"].front()->toString().substr(0, 4), track);
         }
 

@@ -394,17 +394,22 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     for ( ; it != unknownFields.end(); ++it){
         int64_t keyId = 0;
         std::string key;
+        bool keyCached = false, valueCached = false;
 
         /* lookup the ID for the key; insert if it doesn't exist.. */
         if (metadataIdCache.find("metaKey-" + it->first) != metadataIdCache.end()) {
             keyId = metadataIdCache["metaKey-" + it->first];
+            keyCached = true;
         }
         else {
+            selectMetaKey.Reset();
             selectMetaKey.BindText(0, it->first);
+
             if (selectMetaKey.Step() == db::Row) {
                 keyId = selectMetaKey.ColumnInt64(0);
             }
             else {
+                insertMetaKey.Reset();
                 insertMetaKey.BindText(0, it->first);
 
                 if (insertMetaKey.Step() == db::Done) {
@@ -412,8 +417,9 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
                 }
             }
 
-            metadataIdCache["metaKey-" + it->first] = keyId;
-            selectMetaKey.Reset();
+            if (keyId != 0) {
+                metadataIdCache["metaKey-" + it->first] = keyId;
+            }
         }
 
         if (keyId == 0) {
@@ -427,8 +433,10 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
         if (metadataIdCache.find("metaValue-" + it->second) != metadataIdCache.end()) {
             valueId = metadataIdCache["metaValue-" + it->second];
+            valueCached = true;
         }
         else {
+            selectMetaValue.Reset();
             selectMetaValue.BindInt64(0, keyId);
             selectMetaValue.BindText(1, it->second);
 
@@ -436,27 +444,31 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
                 valueId = selectMetaValue.ColumnInt64(0);
             }
             else {
+                insertMetaValue.Reset();
                 insertMetaValue.BindInt64(0, keyId);
                 insertMetaValue.BindText(1, it->second);
 
                 if (insertMetaValue.Step() == db::Done) {
                     valueId = connection.LastInsertedId();
                 }
-
-                insertMetaValue.Reset();
             }
 
-            metadataIdCache["metaValue-" + it->second] = valueId;
-            selectMetaValue.Reset();
+            if (valueId != 0) {
+                metadataIdCache["metaValue-" + it->second] = valueId;
+            }
+        }
+
+        if (keyCached && valueCached) {
+            continue; /* duplicate info. we don't need to save it again. */
         }
 
         /* now that we have a keyId and a valueId, create the relationship */
 
         if (valueId != 0) {
+            insertTrackMeta.Reset();
             insertTrackMeta.BindInt64(0, this->id);
             insertTrackMeta.BindInt64(1, valueId);
             insertTrackMeta.Step();
-            insertTrackMeta.Reset();
         }
     }
 }

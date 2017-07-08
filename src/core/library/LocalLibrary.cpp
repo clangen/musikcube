@@ -490,6 +490,19 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute("ALTER TABLE playlist_tracks ADD COLUMN track_external_id TEXT NOT NULL DEFAULT ''");
     db.Execute("ALTER TABLE playlist_tracks ADD COLUMN source_id INTEGER DEFAULT 0");
 
+    /* add the extended metadata track view */
+    db.Execute(
+        "CREATE VIEW extended_metadata AS "
+        "SELECT DISTINCT "
+            "tracks.id, tracks.external_id, tracks.source_id, meta_keys.id AS meta_key_id, track_meta.meta_value_id, "
+            "meta_keys.name AS key, meta_values.content AS value "
+        "FROM "
+            "track_meta, meta_values, meta_keys, tracks "
+        "WHERE "
+            "tracks.id == track_meta.track_id AND "
+            "meta_values.id = track_meta.meta_value_id AND "
+            "meta_values.meta_key_id == meta_keys.id ");
+
     /* upgrade playlist tracks table */
     if (lastVersion == 1) {
         upgradeV1toV2(db);
