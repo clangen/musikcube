@@ -236,7 +236,9 @@ void CategoryListView::OnQueryCompleted(IQuery* query) {
 
                 /* scroll down just a bit more to reveal the item above so
                 there's indication the user can scroll. */
-                this->ScrollTo(selectedIndex == 0 ? selectedIndex : selectedIndex - 1);
+                if (!this->IsEntryVisible(selectedIndex)) {
+                    this->ScrollTo(selectedIndex == 0 ? selectedIndex : selectedIndex - 1);
+                }
             }
 
             this->OnAdapterChanged();
