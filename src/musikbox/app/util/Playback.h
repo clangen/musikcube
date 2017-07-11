@@ -45,6 +45,10 @@ namespace musik {
             void Play(
                 musik::box::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);
+
+            void Supplant(
+                musik::box::TrackListView& trackList,
+                musik::core::audio::PlaybackService& playback);
         }
     }
 }

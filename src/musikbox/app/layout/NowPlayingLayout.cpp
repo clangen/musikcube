@@ -218,14 +218,7 @@ void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
 }
 
 bool NowPlayingLayout::KeyPress(const std::string& key) {
-    if (key == "KEY_ENTER") {
-        size_t index = this->trackListView->GetSelectedIndex();
-        if (index != ListWindow::NO_SELECTION) {
-            this->playback.Play(index);
-            return true;
-        }
-    }
-    else if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistLoad, key)) {
+    if (Hotkeys::Is(Hotkeys::PlayQueuePlaylistLoad, key)) {
         PlayQueueOverlays::ShowLoadPlaylistOverlay(
             this->playback,
             this->library,

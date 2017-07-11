@@ -38,27 +38,42 @@
 
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
+using namespace musik::box;
+
+static const size_t NO_SELECTION = (size_t) -1;
+
+static size_t getSelectedIndex(TrackListView& trackList) {
+    auto tracks = trackList.GetTrackList();
+    size_t index = 0;
+
+    if (tracks && tracks->Count()) {
+        if (trackList.IsFocused()) {
+            index = trackList.GetSelectedTrackIndex();
+            if (index == cursespp::ListWindow::NO_SELECTION) {
+                return NO_SELECTION;
+            }
+        }
+    }
+
+    return index;
+}
 
 namespace musik {
     namespace box {
         namespace playback {
-            void Play(
-                musik::box::TrackListView& trackList,
-                musik::core::audio::PlaybackService& playback)
-            {
-                auto tracks = trackList.GetTrackList();
-
-                if (tracks && tracks->Count()) {
-                    size_t index = 0;
-
-                    if (trackList.IsFocused()) {
-                        index = trackList.GetSelectedTrackIndex();
-                        if (index == cursespp::ListWindow::NO_SELECTION) {
-                            return;
-                        }
-                    }
-
+            void Play(TrackListView& trackList, PlaybackService& playback) {
+                auto index = getSelectedIndex(trackList);
+                if (index != NO_SELECTION) {
+                    auto tracks = trackList.GetTrackList();
                     playback.Play(*tracks, index);
+                }
+            }
+
+            void Supplant(TrackListView& trackList, PlaybackService& playback) {
+                auto index = getSelectedIndex(trackList);
+                if (index != NO_SELECTION) {
+                    auto tracks = trackList.GetTrackList();
+                    playback.Supplant(*tracks, index);
                 }
             }
         }

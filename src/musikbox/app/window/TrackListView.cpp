@@ -40,6 +40,7 @@
 #include <cursespp/Text.h>
 
 #include <core/library/LocalLibraryConstants.h>
+#include <core/audio/PlaybackService.h>
 
 #include <glue/util/Duration.h>
 
@@ -212,13 +213,12 @@ bool TrackListView::KeyPress(const std::string& key) {
 
             PlayQueueOverlays::ShowAlbumDividerOverlay(
                 MessageQueue(), this->playback, this->library, track);
-
-            handled = true;
         }
         else {
             playback::Play(*this, this->playback);
-            handled = true;
         }
+
+        handled = true;
     }
     else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
@@ -232,6 +232,12 @@ bool TrackListView::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
+        handled = true;
+    }
+    else if (Hotkeys::Is(Hotkeys::PlayQueueSupplant, key)) {
+        if (!headers.HeaderAt(this->GetSelectedIndex())) {
+            playback::Supplant(*this, this->playback);
+        }
         handled = true;
     }
 

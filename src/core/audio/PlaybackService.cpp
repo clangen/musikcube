@@ -466,15 +466,49 @@ PlaybackState PlaybackService::GetPlaybackState() {
     return transport.GetPlaybackState();
 }
 
-void PlaybackService::Play(const TrackList& tracks, size_t index) {
-    /* do the copy outside of the critical section, then swap. */
-    TrackList temp(this->library);
-    temp.CopyFrom(tracks);
+bool PlaybackService::Supplant(const TrackList& tracks, size_t index) {
+    if (&tracks == &playlist) {
+        return true;
+    }
 
+    auto playingTrack = this->GetPlaying();
+    if (playingTrack && tracks.Count() > index) {
+        auto supplantTrack = tracks.Get(index);
+        auto supplantLibrary = supplantTrack->Library();
+        auto supplantId = tracks.GetId(index);
+
+        auto playingId = playingTrack->GetId();
+        auto playingLibrary = playingTrack->Library();
+
+        if (supplantId == playingId && supplantLibrary == playingLibrary) {
+            {
+                std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+                TrackList temp(this->library);
+                temp.CopyFrom(tracks);
+                this->playlist.Swap(temp);
+                this->unshuffled.Clear();
+                this->index = index;
+                this->nextIndex = NO_POSITION;
+            }
+
+            POST(this, MESSAGE_PREPARE_NEXT_TRACK, this->index, 0);
+            POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
+        }
+    }
+
+    return false;
+}
+
+void PlaybackService::Play(const TrackList& tracks, size_t index) {
     {
         std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-        this->playlist.Swap(temp);
-        this->unshuffled.Clear();
+
+        if (&tracks != &playlist) {
+            TrackList temp(this->library);
+            temp.CopyFrom(tracks);
+            this->playlist.Swap(temp);
+            this->unshuffled.Clear();
+        }
     }
 
     if (index <= tracks.Count()) {
@@ -497,8 +531,10 @@ void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t in
         /* otherwise use slower impl to be compatible with SDK */
         {
             std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-            this->CopyFrom(source);
-            this->unshuffled.Clear();
+            if (source != &playlist) {
+                this->CopyFrom(source);
+                this->unshuffled.Clear();
+            }
         }
 
         if (index <= source->Count()) {
