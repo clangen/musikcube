@@ -127,7 +127,6 @@
 
         "tracklist_unknown_album": "[unknown album]",
         "tracklist_supplant_success_toast": "play queue swapped with current list",
-        "tracklist_supplant_fail_toast": "failed to swap play queue with current list",
 
         "main_syncing_banner_start": "syncing metadata...",
         "main_syncing_banner": "syncing metadata (%d tracks processed)",

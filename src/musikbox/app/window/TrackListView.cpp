@@ -240,9 +240,6 @@ bool TrackListView::KeyPress(const std::string& key) {
             if (playback::Supplant(*this, this->playback)) {
                 ToastOverlay::Show(_TSTR("tracklist_supplant_success_toast"), 2000);
             }
-            else {
-                ToastOverlay::Show(_TSTR("tracklist_supplant_fail_toast"), 2000);
-            }
         }
         handled = true;
     }

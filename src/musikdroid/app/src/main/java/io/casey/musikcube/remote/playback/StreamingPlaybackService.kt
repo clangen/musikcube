@@ -664,7 +664,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
                     this.wss.sendObserve(query, this.wssClient)
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribeOn(AndroidSchedulers.mainThread())
-                        .map { message -> extractTrackFromMessage(message) }
+                        .map { message: SocketMessage -> extractTrackFromMessage(message)!! }
                         .subscribe(
                             { track ->
                                 if (originalParams === params && playContext.currentIndex == currentIndex) {
@@ -704,8 +704,8 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(AndroidSchedulers.mainThread())
             .flatMap { response -> getQueueCount(playContext, response) }
-            .concatMap { count -> getCurrentAndNextTrackMessages(playContext, count ?: 0) }
-            .map { message -> extractTrackFromMessage(message) }
+            .concatMap { count -> getCurrentAndNextTrackMessages(playContext, count) }
+            .map { message -> extractTrackFromMessage(message)!! }
             .subscribe(
                 { track ->
                     if (playContext.currentMetadata == null) {
