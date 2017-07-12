@@ -55,15 +55,15 @@ namespace cursespp {
 
             virtual void Layout() override;
             virtual bool KeyPress(const std::string& key) override;
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
         protected:
-            virtual void OnVisibilityChanged(bool visible);
+            virtual void OnVisibilityChanged(bool visible) override;
 
         private:
             ToastOverlay(const std::string& text, long durationMs);
 
-            void OnRedraw();
+            virtual void OnRedraw() override;
             void RecalculateSize();
 
             bool ticking;
