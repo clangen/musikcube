@@ -179,6 +179,7 @@ xcopy "$(SolutionDir)src\plugins\websocket_remote\3rdparty\win32_bin\$(Configura
     <ClCompile Include="cursespp\Text.cpp" />
     <ClCompile Include="cursespp\TextInput.cpp" />
     <ClCompile Include="cursespp\TextLabel.cpp" />
+    <ClCompile Include="cursespp\ToastOverlay.cpp" />
     <ClCompile Include="cursespp\Win32Util.cpp" />
     <ClCompile Include="cursespp\Window.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -248,6 +249,7 @@ xcopy "$(SolutionDir)src\plugins\websocket_remote\3rdparty\win32_bin\$(Configura
     <ClInclude Include="cursespp\Text.h" />
     <ClInclude Include="cursespp\TextInput.h" />
     <ClInclude Include="cursespp\TextLabel.h" />
+    <ClInclude Include="cursespp\ToastOverlay.h" />
     <ClInclude Include="cursespp\Win32Util.h" />
     <ClInclude Include="cursespp\Window.h" />
     <ClInclude Include="resource.h" />

@@ -45,6 +45,7 @@ set (BOX_SRCS
 	./cursespp/Text.cpp
 	./cursespp/TextInput.cpp
 	./cursespp/TextLabel.cpp
+	./cursespp/ToastOverlay.cpp
 	./cursespp/Window.cpp
 )
 

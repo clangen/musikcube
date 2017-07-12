@@ -107,7 +107,7 @@ namespace musik { namespace core { namespace audio {
             virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode);
 
             /* TODO: include in SDK? */
-            virtual bool Supplant(const TrackList& source, size_t index);
+            virtual bool Supplant(const TrackList& source, size_t index = 0);
 
             /* app-specific implementation. similar to some SDK methods, but use
             concrete data types with known optimizations */

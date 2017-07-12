@@ -69,12 +69,13 @@ namespace musik {
                 }
             }
 
-            void Supplant(TrackListView& trackList, PlaybackService& playback) {
+            bool Supplant(TrackListView& trackList, PlaybackService& playback) {
                 auto index = getSelectedIndex(trackList);
                 if (index != NO_SELECTION) {
                     auto tracks = trackList.GetTrackList();
-                    playback.Supplant(*tracks, index);
+                    return playback.Supplant(*tracks, index);
                 }
+                return false;
             }
         }
     }

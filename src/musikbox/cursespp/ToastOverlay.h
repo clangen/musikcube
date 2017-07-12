@@ -34,21 +34,43 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include "OverlayBase.h"
+#include <vector>
 
-#include <core/audio/PlaybackService.h>
-#include <app/window/TrackListView.h>
+namespace cursespp {
+    class ToastOverlay :
+        public OverlayBase,
+        public sigslot::has_slots<>
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        , public std::enable_shared_from_this<ToastOverlay>
+#endif
+    {
+        public:
+            static void Show(const std::string& text, long durationMs = 3000);
 
-namespace musik {
-    namespace box {
-        namespace playback {
-            void Play(
-                musik::box::TrackListView& trackList,
-                musik::core::audio::PlaybackService& playback);
+            virtual ~ToastOverlay();
 
-            bool Supplant(
-                musik::box::TrackListView& trackList,
-                musik::core::audio::PlaybackService& playback);
-        }
-    }
+            ToastOverlay(const ToastOverlay& other) = delete;
+            ToastOverlay& operator=(const ToastOverlay& other) = delete;
+
+            virtual void Layout() override;
+            virtual bool KeyPress(const std::string& key) override;
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+
+        protected:
+            virtual void OnVisibilityChanged(bool visible);
+
+        private:
+            ToastOverlay(const std::string& text, long durationMs);
+
+            void OnRedraw();
+            void RecalculateSize();
+
+            bool ticking;
+            std::string title;
+            std::vector<std::string> titleLines;
+            int durationMs;
+            int x, y;
+            int width, height;
+    };
 }

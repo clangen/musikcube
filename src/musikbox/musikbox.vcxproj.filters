@@ -141,6 +141,9 @@
     <ClCompile Include="app\util\UpdateCheck.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\ToastOverlay.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -330,6 +333,9 @@
     </ClInclude>
     <ClInclude Include="app\util\UpdateCheck.h">
       <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\ToastOverlay.h">
+      <Filter>cursespp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -467,6 +467,8 @@ PlaybackState PlaybackService::GetPlaybackState() {
 }
 
 bool PlaybackService::Supplant(const TrackList& tracks, size_t index) {
+    bool supplant = false;
+
     if (&tracks == &playlist) {
         return true;
     }
@@ -480,20 +482,41 @@ bool PlaybackService::Supplant(const TrackList& tracks, size_t index) {
         auto playingId = playingTrack->GetId();
         auto playingLibrary = playingTrack->Library();
 
+        /* look at the index hint, see if we can find a matching track without
+        iteration. */
         if (supplantId == playingId && supplantLibrary == playingLibrary) {
-            {
-                std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-                TrackList temp(this->library);
-                temp.CopyFrom(tracks);
-                this->playlist.Swap(temp);
-                this->unshuffled.Clear();
-                this->index = index;
-                this->nextIndex = NO_POSITION;
-            }
-
-            POST(this, MESSAGE_PREPARE_NEXT_TRACK, this->index, 0);
-            POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
+            supplant = true;
         }
+        /* otherwise search the input */
+        else {
+            for (size_t i = 0; i < tracks.Count(); i++) {
+                supplantTrack = tracks.Get(i);
+                auto supplantLibrary = supplantTrack->Library();
+                auto supplantId = supplantTrack->GetId();
+
+                if (supplantId == playingId && supplantLibrary == playingLibrary) {
+                    index = i;
+                    supplant = true;
+                }
+            }
+        }
+    }
+
+    if (supplant) {
+        {
+            std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+            TrackList temp(this->library);
+            temp.CopyFrom(tracks);
+            this->playlist.Swap(temp);
+            this->unshuffled.Clear();
+            this->index = index;
+            this->nextIndex = NO_POSITION;
+        }
+
+        POST(this, MESSAGE_PREPARE_NEXT_TRACK, this->index, 0);
+        POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
+
+        return true;
     }
 
     return false;

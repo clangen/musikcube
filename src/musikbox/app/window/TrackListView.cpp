@@ -38,6 +38,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
+#include <cursespp/ToastOverlay.h>
 
 #include <core/library/LocalLibraryConstants.h>
 #include <core/audio/PlaybackService.h>
@@ -236,7 +237,12 @@ bool TrackListView::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::PlayQueueSupplant, key)) {
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
-            playback::Supplant(*this, this->playback);
+            if (playback::Supplant(*this, this->playback)) {
+                ToastOverlay::Show(_TSTR("tracklist_supplant_success_toast"), 2000);
+            }
+            else {
+                ToastOverlay::Show(_TSTR("tracklist_supplant_fail_toast"), 2000);
+            }
         }
         handled = true;
     }

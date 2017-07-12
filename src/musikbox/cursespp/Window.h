@@ -52,8 +52,11 @@ namespace cursespp {
 
     class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         public:
-            Window(IWindow* parent = NULL);
+            Window(IWindow* parent = nullptr);
             virtual ~Window();
+
+            Window(const Window& other) = delete;
+            Window& operator=(const Window& other) = delete;
 
             virtual void SetParent(IWindow* parent);
 
