@@ -60,7 +60,7 @@ fun AppCompatActivity.addTransportFragment(
 {
     val root = this.findViewById(android.R.id.content)
     if (root != null) {
-        if (root.findViewById(R.id.transport_container) != null) {
+        if (root.findViewById<View>(R.id.transport_container) != null) {
             val fragment = TransportFragment.newInstance()
 
             this.supportFragmentManager

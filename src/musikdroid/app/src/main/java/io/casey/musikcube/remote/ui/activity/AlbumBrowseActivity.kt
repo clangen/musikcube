@@ -135,8 +135,8 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
     }
 
     private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById(R.id.title) as TextView
-        private val subtitle: TextView = itemView.findViewById(R.id.subtitle) as TextView
+        private val title = itemView.findViewById<TextView>(R.id.title)
+        private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
 
         internal fun bind(entry: JSONObject) {
             val playingId = transport?.playbackService?.getTrackLong(Metadata.Track.ALBUM_ID, -1L) ?: -1L

@@ -180,10 +180,10 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
     }
 
     private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById(R.id.title) as TextView
+        private val title: TextView = itemView.findViewById<TextView>(R.id.title)
 
         init {
-            itemView.findViewById(R.id.subtitle).visibility = View.GONE
+            itemView.findViewById<View>(R.id.subtitle).visibility = View.GONE
         }
 
         internal fun bind(entry: JSONObject) {

@@ -108,9 +108,9 @@ class PlayQueueActivity : WebSocketActivityBase() {
     }
 
     private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById(R.id.title) as TextView
-        private val subtitle: TextView = itemView.findViewById(R.id.subtitle) as TextView
-        private val trackNum: TextView = itemView.findViewById(R.id.track_num) as TextView
+        private val title: TextView = itemView.findViewById<TextView>(R.id.title)
+        private val subtitle: TextView = itemView.findViewById<TextView>(R.id.subtitle)
+        private val trackNum: TextView = itemView.findViewById<TextView>(R.id.track_num)
 
         internal fun bind(entry: JSONObject?, position: Int) {
             trackNum.text = (position + 1).toString()

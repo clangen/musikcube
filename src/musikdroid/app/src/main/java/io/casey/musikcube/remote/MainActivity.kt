@@ -196,7 +196,7 @@ class MainActivity : WebSocketActivityBase() {
         val sb = Snackbar.make(mainLayout!!, stringId, Snackbar.LENGTH_LONG)
         val sbView = sb.view
         sbView.setBackgroundColor(getColorCompat(R.color.color_primary))
-        val tv = sbView.findViewById(android.support.design.R.id.snackbar_text) as TextView
+        val tv = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
         tv.setTextColor(getColorCompat(R.color.theme_foreground))
         sb.show()
     }
@@ -451,7 +451,7 @@ class MainActivity : WebSocketActivityBase() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val inflater = LayoutInflater.from(activity)
             val view = inflater.inflate(R.layout.dialog_checkbox, null)
-            val checkbox = view.findViewById(R.id.checkbox) as CheckBox
+            val checkbox = view.findViewById<CheckBox>(R.id.checkbox)
             checkbox.setText(R.string.update_check_dont_ask_again)
 
             val version = arguments?.getString(EXTRA_VERSION)

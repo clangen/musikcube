@@ -88,7 +88,7 @@ class EmptyListView : FrameLayout {
         offlineContainer = mainView?.findViewById(R.id.offline_container)
         viewOfflineButton = mainView?.findViewById(R.id.offline_tracks_button)
         reconnectButton = mainView?.findViewById(R.id.disconnected_button)
-        emptyTextView = mainView?.findViewById(R.id.empty_text_view) as TextView
+        emptyTextView = mainView?.findViewById<TextView>(R.id.empty_text_view)
 
         addView(mainView)
 

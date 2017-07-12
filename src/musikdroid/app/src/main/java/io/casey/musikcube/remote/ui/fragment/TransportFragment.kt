@@ -62,10 +62,10 @@ class TransportFragment : Fragment() {
         }
 
     private fun bindEventHandlers() {
-        this.title = this.rootView?.findViewById(R.id.track_title) as TextView
-        this.buffering = this.rootView?.findViewById(R.id.buffering)
+        this.title = this.rootView?.findViewById<TextView>(R.id.track_title)
+        this.buffering = this.rootView?.findViewById<View>(R.id.buffering)
 
-        val titleBar = this.rootView?.findViewById(R.id.title_bar)
+        val titleBar = this.rootView?.findViewById<View>(R.id.title_bar)
 
         titleBar?.setOnClickListener { _: View ->
             if (playbackService?.playbackState != PlaybackState.Stopped) {
@@ -82,9 +82,9 @@ class TransportFragment : Fragment() {
             true
         }
 
-        this.rootView?.findViewById(R.id.button_prev)?.setOnClickListener { _: View -> playbackService?.prev() }
+        this.rootView?.findViewById<View>(R.id.button_prev)?.setOnClickListener { _: View -> playbackService?.prev() }
 
-        this.playPause = this.rootView?.findViewById(R.id.button_play_pause) as TextView
+        this.playPause = this.rootView?.findViewById<TextView>(R.id.button_play_pause)
 
         this.playPause?.setOnClickListener { _: View ->
             if (playbackService?.playbackState == PlaybackState.Stopped) {
@@ -95,7 +95,7 @@ class TransportFragment : Fragment() {
             }
         }
 
-        this.rootView?.findViewById(R.id.button_next)?.setOnClickListener { _: View -> playbackService?.next() }
+        this.rootView?.findViewById<View>(R.id.button_next)?.setOnClickListener { _: View -> playbackService?.next() }
     }
 
     private fun rebindUi() {
