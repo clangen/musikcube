@@ -18,6 +18,7 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.SeekBar
 import android.widget.TextView
+import dagger.android.AndroidInjection
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.playback.RepeatMode
@@ -39,24 +40,29 @@ class MainActivity : WebSocketActivityBase() {
     private var playback: PlaybackService? = null
 
     private var updateCheck: UpdateCheck = UpdateCheck()
-    private var mainLayout: View? = null
-    private var metadataView: MainMetadataView? = null
-    private var playPause: TextView? = null
-    private var currentTime: TextView? = null
-    private var totalTime: TextView? = null
-    private var connectedNotPlayingContainer: View? = null
-    private var disconnectedButton: View? = null
-    private var showOfflineButton: View? = null
-    private var disconnectedContainer: View? = null
-    private var shuffleCb: CheckBox? = null
-    private var muteCb: CheckBox? = null
-    private var repeatCb: CheckBox? = null
-    private var disconnectedOverlay: View? = null
-    private var seekbar: SeekBar? = null
     private var seekbarValue = -1
     private var blink = 0
 
+    /* views */
+    private lateinit var mainLayout: View
+    private lateinit var metadataView: MainMetadataView
+    private lateinit var playPause: TextView
+    private lateinit var currentTime: TextView
+    private lateinit var totalTime: TextView
+    private lateinit var connectedNotPlayingContainer: View
+    private lateinit var disconnectedButton: View
+    private lateinit var showOfflineButton: View
+    private lateinit var disconnectedContainer: View
+    private lateinit var shuffleCb: CheckBox
+    private lateinit var muteCb: CheckBox
+    private lateinit var repeatCb: CheckBox
+    private lateinit var disconnectedOverlay: View
+    private lateinit var seekbar: SeekBar
+    /* end views */
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        AndroidInjection.inject(this)
+
         super.onCreate(savedInstanceState)
 
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
@@ -72,15 +78,15 @@ class MainActivity : WebSocketActivityBase() {
 
     override fun onPause() {
         super.onPause()
-        metadataView?.onPause()
+        metadataView.onPause()
         unbindCheckboxEventListeners()
         handler.removeCallbacks(updateTimeRunnable)
     }
 
     override fun onResume() {
         super.onResume()
-        this.playback = playbackService
-        metadataView?.onResume()
+        playback = playbackService
+        metadataView.onResume()
         bindCheckBoxEventListeners()
         rebindUi()
         scheduleUpdateTime(true)
@@ -193,7 +199,7 @@ class MainActivity : WebSocketActivityBase() {
     }
 
     private fun showSnackbar(stringId: Int) {
-        val sb = Snackbar.make(mainLayout!!, stringId, Snackbar.LENGTH_LONG)
+        val sb = Snackbar.make(mainLayout, stringId, Snackbar.LENGTH_LONG)
         val sbView = sb.view
         sbView.setBackgroundColor(getColorCompat(R.color.color_primary))
         val tv = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
@@ -202,38 +208,38 @@ class MainActivity : WebSocketActivityBase() {
     }
 
     private fun bindCheckBoxEventListeners() {
-        this.shuffleCb?.setOnCheckedChangeListener(shuffleListener)
-        this.muteCb?.setOnCheckedChangeListener(muteListener)
-        this.repeatCb?.setOnCheckedChangeListener(repeatListener)
+        shuffleCb.setOnCheckedChangeListener(shuffleListener)
+        muteCb.setOnCheckedChangeListener(muteListener)
+        repeatCb.setOnCheckedChangeListener(repeatListener)
     }
 
     /* onRestoreInstanceState() calls setChecked(), which has the side effect of
     running these callbacks. this screws up state, especially for the repeat checkbox */
     private fun unbindCheckboxEventListeners() {
-        this.shuffleCb?.setOnCheckedChangeListener(null)
-        this.muteCb?.setOnCheckedChangeListener(null)
-        this.repeatCb?.setOnCheckedChangeListener(null)
+        shuffleCb.setOnCheckedChangeListener(null)
+        muteCb.setOnCheckedChangeListener(null)
+        repeatCb.setOnCheckedChangeListener(null)
     }
 
     private fun bindEventListeners() {
-        this.mainLayout = findViewById(R.id.activity_main)
-        this.metadataView = findViewById(R.id.main_metadata_view) as MainMetadataView
-        this.shuffleCb = findViewById(R.id.check_shuffle) as CheckBox
-        this.muteCb = findViewById(R.id.check_mute) as CheckBox
-        this.repeatCb = findViewById(R.id.check_repeat) as CheckBox
-        this.connectedNotPlayingContainer = findViewById(R.id.connected_not_playing)
-        this.disconnectedButton = findViewById(R.id.disconnected_button)
-        this.disconnectedContainer = findViewById(R.id.disconnected_container)
-        this.disconnectedOverlay = findViewById(R.id.disconnected_overlay)
-        this.showOfflineButton = findViewById(R.id.offline_tracks_button)
-        this.playPause = findViewById(R.id.button_play_pause) as TextView
-        this.currentTime = findViewById(R.id.current_time) as TextView
-        this.totalTime = findViewById(R.id.total_time) as TextView
-        this.seekbar = findViewById(R.id.seekbar) as SeekBar
+        mainLayout = findViewById(R.id.activity_main)
+        metadataView = findViewById<MainMetadataView>(R.id.main_metadata_view)
+        shuffleCb = findViewById<CheckBox>(R.id.check_shuffle)
+        muteCb = findViewById<CheckBox>(R.id.check_mute)
+        repeatCb = findViewById<CheckBox>(R.id.check_repeat)
+        connectedNotPlayingContainer = findViewById(R.id.connected_not_playing)
+        disconnectedButton = findViewById(R.id.disconnected_button)
+        disconnectedContainer = findViewById(R.id.disconnected_container)
+        disconnectedOverlay = findViewById(R.id.disconnected_overlay)
+        showOfflineButton = findViewById(R.id.offline_tracks_button)
+        playPause = findViewById<TextView>(R.id.button_play_pause)
+        currentTime = findViewById<TextView>(R.id.current_time)
+        totalTime = findViewById<TextView>(R.id.total_time)
+        seekbar = findViewById<SeekBar>(R.id.seekbar)
 
-        findViewById(R.id.button_prev).setOnClickListener { _: View -> playback?.prev() }
+        findViewById<View>(R.id.button_prev).setOnClickListener { _: View -> playback?.prev() }
 
-        findViewById(R.id.button_play_pause).setOnClickListener { _: View ->
+        findViewById<View>(R.id.button_play_pause).setOnClickListener { _: View ->
             if (playback?.playbackState === PlaybackState.Stopped) {
                 playback?.playAll()
             }
@@ -242,20 +248,19 @@ class MainActivity : WebSocketActivityBase() {
             }
         }
 
-        findViewById(R.id.button_next).setOnClickListener { _: View -> playback?.next() }
+        findViewById<View>(R.id.button_next).setOnClickListener { _: View -> playback?.next() }
 
-        disconnectedButton?.setOnClickListener { _ -> getWebSocketService().reconnect() }
+        disconnectedButton.setOnClickListener { _ -> getWebSocketService().reconnect() }
 
-        seekbar?.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     seekbarValue = progress
-                    currentTime?.text = Duration.format(seekbarValue.toDouble())
+                    currentTime.text = Duration.format(seekbarValue.toDouble())
                 }
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar) {
-
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
@@ -266,29 +271,36 @@ class MainActivity : WebSocketActivityBase() {
             }
         })
 
-        findViewById(R.id.button_artists).setOnClickListener { _: View -> startActivity(CategoryBrowseActivity.getStartIntent(this, Messages.Category.ALBUM_ARTIST)) }
+        findViewById<View>(R.id.button_artists).setOnClickListener { _: View ->
+            startActivity(CategoryBrowseActivity
+                .getStartIntent(this, Messages.Category.ALBUM_ARTIST))
+        }
 
-        findViewById(R.id.button_tracks).setOnClickListener { _: View -> startActivity(TrackListActivity.getStartIntent(this@MainActivity)) }
+        findViewById<View>(R.id.button_tracks).setOnClickListener { _: View ->
+            startActivity(TrackListActivity.getStartIntent(this@MainActivity))
+        }
 
-        findViewById(R.id.button_albums).setOnClickListener { _: View -> startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity)) }
+        findViewById<View>(R.id.button_albums).setOnClickListener { _: View ->
+            startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity))
+        }
 
-        findViewById(R.id.button_play_queue).setOnClickListener { _ -> navigateToPlayQueue() }
+        findViewById<View>(R.id.button_play_queue).setOnClickListener { _ -> navigateToPlayQueue() }
 
-        findViewById(R.id.metadata_container).setOnClickListener { _ ->
+        findViewById<View>(R.id.metadata_container).setOnClickListener { _ ->
             if (playback?.queueCount ?: 0 > 0) {
                 navigateToPlayQueue()
             }
         }
 
-        disconnectedOverlay?.setOnClickListener { _ ->
+        disconnectedOverlay.setOnClickListener { _ ->
             /* swallow input so user can't click on things while disconnected */
         }
 
-        showOfflineButton?.setOnClickListener { _ -> onOfflineTracksSelected() }
+        showOfflineButton.setOnClickListener { _ -> onOfflineTracksSelected() }
     }
 
     private fun rebindUi() {
-        if (this.playback == null) {
+        if (playback == null) {
             throw IllegalStateException()
         }
 
@@ -301,42 +313,41 @@ class MainActivity : WebSocketActivityBase() {
         val showMetadataView = !stopped && (playback?.queueCount ?: 0) > 0
 
         /* bottom section: transport controls */
-        this.playPause?.setText(if (playing || buffering) R.string.button_pause else R.string.button_play)
+        playPause.setText(if (playing || buffering) R.string.button_pause else R.string.button_play)
 
-        this.connectedNotPlayingContainer?.visibility = if (connected && stopped) View.VISIBLE else View.GONE
-        this.disconnectedOverlay?.visibility = if (connected || !stopped) View.GONE else View.VISIBLE
+        connectedNotPlayingContainer.visibility = if (connected && stopped) View.VISIBLE else View.GONE
+        disconnectedOverlay.visibility = if (connected || !stopped) View.GONE else View.VISIBLE
 
         val repeatMode = playback?.repeatMode
         val repeatChecked = repeatMode !== RepeatMode.None
-        repeatCb?.text = getString(REPEAT_TO_STRING_ID[repeatMode] ?: R.string.unknown_value)
-        repeatCb?.setCheckWithoutEvent(repeatChecked, this.repeatListener)
 
-        this.shuffleCb?.text = getString(if (streaming) R.string.button_random else R.string.button_shuffle)
-        shuffleCb?.setCheckWithoutEvent(playback?.isShuffled ?: false, shuffleListener)
-
-        muteCb?.setCheckWithoutEvent(playback?.isMuted ?: false, muteListener)
+        repeatCb.text = getString(REPEAT_TO_STRING_ID[repeatMode] ?: R.string.unknown_value)
+        repeatCb.setCheckWithoutEvent(repeatChecked, this.repeatListener)
+        shuffleCb.text = getString(if (streaming) R.string.button_random else R.string.button_shuffle)
+        shuffleCb.setCheckWithoutEvent(playback?.isShuffled ?: false, shuffleListener)
+        muteCb.setCheckWithoutEvent(playback?.isMuted ?: false, muteListener)
 
         /* middle section: connected, disconnected, and metadata views */
-        connectedNotPlayingContainer?.visibility = View.GONE
-        disconnectedContainer?.visibility = View.GONE
+        connectedNotPlayingContainer.visibility = View.GONE
+        disconnectedContainer.visibility = View.GONE
 
         if (!showMetadataView) {
-            metadataView?.hide()
+            metadataView.hide()
 
             if (!connected) {
-                disconnectedContainer?.visibility = View.VISIBLE
+                disconnectedContainer.visibility = View.VISIBLE
             }
             else if (stopped) {
-                connectedNotPlayingContainer?.visibility = View.VISIBLE
+                connectedNotPlayingContainer.visibility = View.VISIBLE
             }
         }
         else {
-            metadataView?.refresh()
+            metadataView.refresh()
         }
     }
 
     private fun clearUi() {
-        metadataView?.clear()
+        metadataView.clear()
         rebindUi()
     }
 
@@ -354,11 +365,11 @@ class MainActivity : WebSocketActivityBase() {
             val duration = playback?.duration ?: 0.0
             val current: Double = if (seekbarValue == -1) playback?.currentTime ?: 0.0 else seekbarValue.toDouble()
 
-            currentTime?.text = Duration.format(current)
-            totalTime?.text = Duration.format(duration)
-            seekbar?.max = duration.toInt()
-            seekbar?.progress = current.toInt()
-            seekbar?.secondaryProgress = playback?.bufferedTime?.toInt() ?: 0
+            currentTime.text = Duration.format(current)
+            totalTime.text = Duration.format(duration)
+            seekbar.max = duration.toInt()
+            seekbar.progress = current.toInt()
+            seekbar.secondaryProgress = playback?.bufferedTime?.toInt() ?: 0
 
             var currentTimeColor = R.color.theme_foreground
             if (playback?.playbackState === PlaybackState.Paused) {
@@ -367,7 +378,7 @@ class MainActivity : WebSocketActivityBase() {
                     else R.color.theme_blink_foreground
             }
 
-            currentTime?.setTextColor(getColorCompat(currentTimeColor))
+            currentTime.setTextColor(getColorCompat(currentTimeColor))
 
             scheduleUpdateTime(false)
         }
@@ -398,8 +409,8 @@ class MainActivity : WebSocketActivityBase() {
         }
 
         val checked = newMode !== RepeatMode.None
-        repeatCb?.text = getString(REPEAT_TO_STRING_ID[newMode] ?: R.string.unknown_value)
-        repeatCb?.setCheckWithoutEvent(checked, repeatListener)
+        repeatCb.text = getString(REPEAT_TO_STRING_ID[newMode] ?: R.string.unknown_value)
+        repeatCb.setCheckWithoutEvent(checked, repeatListener)
 
         playback?.toggleRepeatMode()
     }

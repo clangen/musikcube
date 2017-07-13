@@ -27,13 +27,13 @@ import io.casey.musikcube.remote.websocket.WebSocketService
 import org.json.JSONObject
 
 class TrackListActivity : WebSocketActivityBase(), Filterable {
-    private var tracks: TrackListSlidingWindow? = null
-    private var emptyView: EmptyListView? = null
-    private var transport: TransportFragment? = null
-    private var categoryType: String? = null
+    private lateinit var tracks: TrackListSlidingWindow
+    private lateinit var emptyView: EmptyListView
+    private lateinit var transport: TransportFragment
+    private var categoryType: String = ""
     private var categoryId: Long = 0
     private var lastFilter = ""
-    private var adapter: Adapter = Adapter()
+    private var adapter = Adapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,25 +50,27 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
 
         val queryFactory = createCategoryQueryFactory(categoryType, categoryId)
 
-        val fastScroller = findViewById(R.id.fast_scroller) as RecyclerFastScroller
-        val recyclerView = findViewById(R.id.recycler_view) as RecyclerView
+        val fastScroller = findViewById<RecyclerFastScroller>(R.id.fast_scroller)
+        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
-        emptyView = findViewById(R.id.empty_list_view) as EmptyListView
-        emptyView?.capability = if (isOfflineTracks) Capability.OfflineOk else Capability.OnlineOnly
-        emptyView?.emptyMessage = emptyMessage
-        emptyView?.alternateView = recyclerView
+        emptyView = findViewById(R.id.empty_list_view)
+        emptyView.let {
+            it.capability = if (isOfflineTracks) Capability.OfflineOk else Capability.OnlineOnly
+            it.emptyMessage = emptyMessage
+            it.alternateView = recyclerView
+        }
 
         tracks = TrackListSlidingWindow(
             recyclerView, fastScroller, getWebSocketService(), queryFactory)
 
-        tracks?.setOnMetadataLoadedListener(slidingWindowListener)
+        tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
         transport = addTransportFragment(object: TransportFragment.OnModelChangedListener {
             override fun onChanged(fragment: TransportFragment) {
                 adapter.notifyDataSetChanged()
             }
-        })
+        })!!
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -80,11 +82,11 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
 
     override fun onPause() {
         super.onPause()
-        tracks?.pause()
+        tracks.pause()
     }
 
     override fun onResume() {
-        tracks?.resume() /* needs to happen before */
+        tracks.resume() /* needs to happen before */
         super.onResume()
         requeryIfViewingOfflineCache()
     }
@@ -104,10 +106,10 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
             if (newState === WebSocketService.State.Connected) {
                 filterDebouncer.cancel()
-                tracks?.requery()
+                tracks.requery()
             }
             else {
-                emptyView?.update(newState, adapter.itemCount)
+                emptyView.update(newState, adapter.itemCount)
             }
         }
 
@@ -119,7 +121,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
     private val filterDebouncer = object : Debouncer<String>(350) {
         override fun onDebounced(last: String?) {
             if (!isPaused) {
-                tracks?.requery()
+                tracks.requery()
             }
         }
     }
@@ -128,7 +130,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         val index = view.tag as Int
 
         if (isValidCategory(categoryType, categoryId)) {
-            playbackService?.play(categoryType!!, categoryId, index, lastFilter)
+            playbackService?.play(categoryType, categoryId, index, lastFilter)
         }
         else {
             playbackService?.playAll(index, lastFilter)
@@ -152,7 +154,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
 
             if (entry != null) {
                 val entryExternalId = entry.optString(Metadata.Track.EXTERNAL_ID, "")
-                val playingExternalId = transport?.playbackService?.getTrackString(Metadata.Track.EXTERNAL_ID, "")
+                val playingExternalId = transport.playbackService?.getTrackString(Metadata.Track.EXTERNAL_ID, "")
 
                 if (entryExternalId == playingExternalId) {
                     titleColor = R.color.theme_green
@@ -181,11 +183,11 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(tracks?.getTrack(position), position)
+            holder.bind(tracks.getTrack(position), position)
         }
 
         override fun getItemCount(): Int {
-            return if (tracks == null) 0 else tracks!!.count
+            return tracks.count
         }
     }
 
@@ -203,7 +205,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
 
     private fun requeryIfViewingOfflineCache() {
         if (isOfflineTracks) {
-            tracks!!.requery()
+            tracks.requery()
         }
     }
 
@@ -262,7 +264,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
 
     private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) {
-            emptyView?.update(getWebSocketService().state, count)
+            emptyView.update(getWebSocketService().state, count)
         }
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}

@@ -40,17 +40,17 @@ class MainMetadataView : FrameLayout {
 
     private var isPaused = true
 
-    private var title: TextView? = null
-    private var artist: TextView? = null
-    private var album: TextView? = null
-    private var volume: TextView? = null
-    private var titleWithArt: TextView? = null
-    private var artistAndAlbumWithArt: TextView? = null
-    private var volumeWithArt: TextView? = null
-    private var mainTrackMetadataWithAlbumArt: View? = null
-    private var mainTrackMetadataNoAlbumArt: View? = null
-    private var buffering: View? = null
-    private var albumArtImageView: ImageView? = null
+    private lateinit var title: TextView
+    private lateinit var artist: TextView
+    private lateinit var album: TextView
+    private lateinit var volume: TextView
+    private lateinit var titleWithArt: TextView
+    private lateinit var artistAndAlbumWithArt: TextView
+    private lateinit var volumeWithArt: TextView
+    private lateinit var mainTrackMetadataWithAlbumArt: View
+    private lateinit var mainTrackMetadataNoAlbumArt: View
+    private lateinit var buffering: View
+    private lateinit var albumArtImageView: ImageView
 
     private enum class DisplayMode {
         Artwork, NoArtwork, Stopped
@@ -109,24 +109,24 @@ class MainMetadataView : FrameLayout {
             /* we don't display the volume amount when we're streaming -- the system has
             overlays for drawing volume. */
             if (streaming) {
-                this.volume?.visibility = View.GONE
-                this.volumeWithArt?.visibility = View.GONE
+                volume.visibility = View.GONE
+                volumeWithArt.visibility = View.GONE
             }
             else {
                 val volume = getString(R.string.status_volume, Math.round(playback.volume * 100))
-                this.volume?.visibility = View.VISIBLE
-                this.volumeWithArt?.visibility = View.VISIBLE
-                this.volume?.text = volume
-                this.volumeWithArt?.text = volume
+                this.volume.visibility = View.VISIBLE
+                this.volumeWithArt.visibility = View.VISIBLE
+                this.volume.text = volume
+                this.volumeWithArt.text = volume
             }
 
-            this.title?.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
-            this.artist?.text = if (Strings.empty(artist)) getString(if (buffering) R.string.buffering else R.string.unknown_artist) else artist
-            this.album?.text = if (Strings.empty(album)) getString(if (buffering) R.string.buffering else R.string.unknown_album) else album
+            this.title.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
+            this.artist.text = if (Strings.empty(artist)) getString(if (buffering) R.string.buffering else R.string.unknown_artist) else artist
+            this.album.text = if (Strings.empty(album)) getString(if (buffering) R.string.buffering else R.string.unknown_album) else album
 
             this.rebindAlbumArtistWithArtTextView(playback)
-            this.titleWithArt?.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
-            this.buffering?.visibility = if (buffering) View.VISIBLE else View.GONE
+            this.titleWithArt.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
+            this.buffering.visibility = if (buffering) View.VISIBLE else View.GONE
 
             val albumArtEnabledInSettings = this.prefs?.getBoolean(
                 Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED) ?: false
@@ -162,18 +162,18 @@ class MainMetadataView : FrameLayout {
         lastDisplayMode = mode
 
         if (mode == DisplayMode.Stopped) {
-            albumArtImageView?.setImageDrawable(null)
-            mainTrackMetadataWithAlbumArt?.visibility = View.GONE
-            mainTrackMetadataNoAlbumArt?.visibility = View.GONE
+            albumArtImageView.setImageDrawable(null)
+            mainTrackMetadataWithAlbumArt.visibility = View.GONE
+            mainTrackMetadataNoAlbumArt.visibility = View.GONE
         }
         else if (mode == DisplayMode.Artwork) {
-            mainTrackMetadataWithAlbumArt?.visibility = View.VISIBLE
-            mainTrackMetadataNoAlbumArt?.visibility = View.GONE
+            mainTrackMetadataWithAlbumArt.visibility = View.VISIBLE
+            mainTrackMetadataNoAlbumArt.visibility = View.GONE
         }
         else {
-            albumArtImageView?.setImageDrawable(null)
-            mainTrackMetadataWithAlbumArt?.visibility = View.GONE
-            mainTrackMetadataNoAlbumArt?.visibility = View.VISIBLE
+            albumArtImageView.setImageDrawable(null)
+            mainTrackMetadataWithAlbumArt.visibility = View.GONE
+            mainTrackMetadataNoAlbumArt.visibility = View.VISIBLE
         }
     }
 
@@ -215,9 +215,9 @@ class MainMetadataView : FrameLayout {
         builder.setSpan(artistColor, artistOffset, artistOffset + artist.length, 0)
         builder.setSpan(artistClickable, artistOffset, artistOffset + artist.length, 0)
 
-        this.artistAndAlbumWithArt?.movementMethod = LinkMovementMethod.getInstance()
-        this.artistAndAlbumWithArt?.highlightColor = Color.TRANSPARENT
-        this.artistAndAlbumWithArt?.text = builder
+        artistAndAlbumWithArt.movementMethod = LinkMovementMethod.getInstance()
+        artistAndAlbumWithArt.highlightColor = Color.TRANSPARENT
+        artistAndAlbumWithArt.text = builder
     }
 
     private fun updateAlbumArt() {
@@ -266,7 +266,7 @@ class MainMetadataView : FrameLayout {
                         }
                     }
                 })
-                .into(albumArtImageView!!)
+                .into(albumArtImageView)
         }
         else {
             setMetadataDisplayMode(lastDisplayMode)
@@ -290,8 +290,8 @@ class MainMetadataView : FrameLayout {
                 if (!albumArtModel.matches(artist, album)) {
                     AlbumArtModel("", artist, album, AlbumArtModel.Size.Mega) {
                                 _: AlbumArtModel, url: String? ->
-                            val width = albumArtImageView!!.width
-                            val height = albumArtImageView!!.height
+                            val width = albumArtImageView.width
+                            val height = albumArtImageView.height
                             Glide.with(context).load(url).downloadOnly(width, height)
                         }
                     }
@@ -321,8 +321,8 @@ class MainMetadataView : FrameLayout {
         this.mainTrackMetadataNoAlbumArt = findViewById(R.id.main_track_metadata_without_art)
         this.albumArtImageView = findViewById<ImageView>(R.id.album_art)
 
-        this.album?.setOnClickListener { _ -> navigateToCurrentAlbum() }
-        this.artist?.setOnClickListener { _ -> navigateToCurrentArtist() }
+        this.album.setOnClickListener { _ -> navigateToCurrentAlbum() }
+        this.artist.setOnClickListener { _ -> navigateToCurrentArtist() }
     }
 
     private fun navigateToCurrentArtist() {

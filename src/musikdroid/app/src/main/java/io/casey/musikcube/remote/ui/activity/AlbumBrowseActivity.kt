@@ -44,11 +44,11 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         setTitleFromIntent(R.string.albums_title)
         enableUpNavigation()
 
-        val fastScroller = findViewById(R.id.fast_scroller) as RecyclerFastScroller
-        val recyclerView = findViewById(R.id.recycler_view) as RecyclerView
+        val fastScroller = findViewById<RecyclerFastScroller>(R.id.fast_scroller)
+        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
-        emptyView = findViewById(R.id.empty_list_view) as EmptyListView
+        emptyView = findViewById<EmptyListView>(R.id.empty_list_view)
         emptyView?.capability = EmptyListView.Capability.OnlineOnly
         emptyView?.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
         emptyView?.alternateView = recyclerView

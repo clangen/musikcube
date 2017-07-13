@@ -140,17 +140,17 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun bindEventListeners() {
-        this.addressText = this.findViewById(R.id.address) as EditText
-        this.portText = this.findViewById(R.id.port) as EditText
-        this.httpPortText = this.findViewById(R.id.http_port) as EditText
-        this.passwordText = this.findViewById(R.id.password) as EditText
-        this.albumArtCheckbox = findViewById(R.id.album_art_checkbox) as CheckBox
-        this.messageCompressionCheckbox = findViewById(R.id.message_compression) as CheckBox
-        this.softwareVolume = findViewById(R.id.software_volume) as CheckBox
-        this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner) as Spinner
-        this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner) as Spinner
-        this.sslCheckbox = findViewById(R.id.ssl_checkbox) as CheckBox
-        this.certCheckbox = findViewById(R.id.cert_validation) as CheckBox
+        this.addressText = this.findViewById<EditText>(R.id.address)
+        this.portText = this.findViewById<EditText>(R.id.port)
+        this.httpPortText = this.findViewById<EditText>(R.id.http_port)
+        this.passwordText = this.findViewById<EditText>(R.id.password)
+        this.albumArtCheckbox = findViewById<CheckBox>(R.id.album_art_checkbox)
+        this.messageCompressionCheckbox = findViewById<CheckBox>(R.id.message_compression)
+        this.softwareVolume = findViewById<CheckBox>(R.id.software_volume)
+        this.bitrateSpinner = findViewById<Spinner>(R.id.transcoder_bitrate_spinner)
+        this.cacheSpinner = findViewById<Spinner>(R.id.streaming_disk_cache_spinner)
+        this.sslCheckbox = findViewById<CheckBox>(R.id.ssl_checkbox)
+        this.certCheckbox = findViewById<CheckBox>(R.id.cert_validation)
     }
 
     private fun save() {

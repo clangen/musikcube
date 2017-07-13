@@ -58,7 +58,7 @@ fun AppCompatActivity.enableUpNavigation() {
 fun AppCompatActivity.addTransportFragment(
         listener: TransportFragment.OnModelChangedListener? = null): TransportFragment?
 {
-    val root = this.findViewById(android.R.id.content)
+    val root = findViewById<View>(android.R.id.content)
     if (root != null) {
         if (root.findViewById<View>(R.id.transport_container) != null) {
             val fragment = TransportFragment.newInstance()

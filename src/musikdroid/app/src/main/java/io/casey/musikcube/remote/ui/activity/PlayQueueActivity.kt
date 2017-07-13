@@ -34,14 +34,14 @@ class PlayQueueActivity : WebSocketActivityBase() {
 
         setContentView(R.layout.recycler_view_activity)
 
-        val fastScroller = findViewById(R.id.fast_scroller) as RecyclerFastScroller
-        val recyclerView = findViewById(R.id.recycler_view) as RecyclerView
+        val fastScroller = findViewById<RecyclerFastScroller>(R.id.fast_scroller)
+        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
         val queryFactory = playback!!.playlistQueryFactory
         val message: SocketMessage? = queryFactory.getRequeryMessage()
 
-        emptyView = findViewById(R.id.empty_list_view) as EmptyListView
+        emptyView = findViewById<EmptyListView>(R.id.empty_list_view)
         emptyView?.capability = EmptyListView.Capability.OfflineOk
         emptyView?.emptyMessage = getString(R.string.play_queue_empty)
         emptyView?.alternateView = recyclerView
