@@ -126,7 +126,7 @@
         "transport_repeat_off": "repeat off",
 
         "tracklist_unknown_album": "[unknown album]",
-        "tracklist_supplant_success_toast": "play queue swapped with current list",
+        "tracklist_hot_swap_success_toast": "play queue hot-swapped with current list",
 
         "main_syncing_banner_start": "syncing metadata...",
         "main_syncing_banner": "syncing metadata (%d tracks processed)",

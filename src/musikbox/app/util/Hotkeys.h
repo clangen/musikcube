@@ -83,7 +83,7 @@ namespace musik {
                     PlayQueuePlaylistSave,
                     PlayQueuePlaylistRename,
                     PlayQueuePlaylistDelete,
-                    PlayQueueSupplant,
+                    PlayQueueHotSwap,
 
                     /* browse ->playlists */
                     BrowsePlaylistsNew,

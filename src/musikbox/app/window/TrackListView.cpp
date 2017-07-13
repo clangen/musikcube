@@ -235,10 +235,10 @@ bool TrackListView::KeyPress(const std::string& key) {
         this->ScrollToPlaying();
         handled = true;
     }
-    else if (Hotkeys::Is(Hotkeys::PlayQueueSupplant, key)) {
+    else if (Hotkeys::Is(Hotkeys::PlayQueueHotSwap, key)) {
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
-            if (playback::Supplant(*this, this->playback)) {
-                ToastOverlay::Show(_TSTR("tracklist_supplant_success_toast"), 2000);
+            if (playback::HotSwap(*this, this->playback)) {
+                ToastOverlay::Show(_TSTR("tracklist_hot_swap_success_toast"), 2000);
             }
         }
         handled = true;

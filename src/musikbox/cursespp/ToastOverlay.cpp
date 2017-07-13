@@ -96,7 +96,7 @@ void ToastOverlay::RecalculateSize() {
     this->titleLines = text::BreakLines(this->title, this->width - 4);
     this->height = (int) this->titleLines.size() + 2;
     this->x = (Screen::GetWidth() / 2) - (this->width / 2);
-    this->y = 4;
+    this->y = 2;
 }
 
 void ToastOverlay::OnRedraw() {

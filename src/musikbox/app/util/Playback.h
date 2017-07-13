@@ -46,7 +46,7 @@ namespace musik {
                 musik::box::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);
 
-            bool Supplant(
+            bool HotSwap(
                 musik::box::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);
         }

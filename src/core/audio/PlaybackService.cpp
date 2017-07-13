@@ -466,8 +466,8 @@ PlaybackState PlaybackService::GetPlaybackState() {
     return transport.GetPlaybackState();
 }
 
-bool PlaybackService::Supplant(const TrackList& tracks, size_t index) {
-    bool supplant = false;
+bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
+    bool swap = false;
 
     if (&tracks == &playlist) {
         return true;
@@ -485,7 +485,7 @@ bool PlaybackService::Supplant(const TrackList& tracks, size_t index) {
         /* look at the index hint, see if we can find a matching track without
         iteration. */
         if (supplantId == playingId && supplantLibrary == playingLibrary) {
-            supplant = true;
+            swap = true;
         }
         /* otherwise search the input */
         else {
@@ -496,13 +496,13 @@ bool PlaybackService::Supplant(const TrackList& tracks, size_t index) {
 
                 if (supplantId == playingId && supplantLibrary == playingLibrary) {
                     index = i;
-                    supplant = true;
+                    swap = true;
                 }
             }
         }
     }
 
-    if (supplant) {
+    if (swap) {
         {
             std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
             TrackList temp(this->library);
