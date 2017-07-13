@@ -50,6 +50,9 @@ namespace cursespp {
             App(const std::string& title);
             ~App(); /* do not subclass */
 
+            App(const App& other) = delete;
+            App& operator=(const App& other) = delete;
+
             void SetKeyHandler(MainKeyHandler handler);
             void SetResizeHandler(ResizeHandler handler);
             void SetColorMode(Colors::Mode mode);
