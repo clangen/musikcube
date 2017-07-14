@@ -39,7 +39,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         super.onCreate(savedInstanceState)
 
         val intent = intent
-        categoryType = intent.getStringExtra(EXTRA_CATEGORY_TYPE)
+        categoryType = intent.getStringExtra(EXTRA_CATEGORY_TYPE) ?: ""
         categoryId = intent.getLongExtra(EXTRA_SELECTED_ID, 0)
         val titleId = intent.getIntExtra(EXTRA_TITLE_ID, R.string.songs_title)
 

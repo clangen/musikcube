@@ -21,11 +21,11 @@ import io.casey.musikcube.remote.websocket.WebSocketService
 import org.json.JSONObject
 
 class PlayQueueActivity : WebSocketActivityBase() {
-    private var tracks: TrackListSlidingWindow? = null
-    private var playback: PlaybackService? = null
     private var adapter: Adapter = Adapter()
     private var offlineQueue: Boolean = false
-    private var emptyView: EmptyListView? = null
+    private var playback: PlaybackService? = null
+    private lateinit var tracks: TrackListSlidingWindow
+    private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,15 +42,15 @@ class PlayQueueActivity : WebSocketActivityBase() {
         val message: SocketMessage? = queryFactory.getRequeryMessage()
 
         emptyView = findViewById<EmptyListView>(R.id.empty_list_view)
-        emptyView?.capability = EmptyListView.Capability.OfflineOk
-        emptyView?.emptyMessage = getString(R.string.play_queue_empty)
-        emptyView?.alternateView = recyclerView
+        emptyView.capability = EmptyListView.Capability.OfflineOk
+        emptyView.emptyMessage = getString(R.string.play_queue_empty)
+        emptyView.alternateView = recyclerView
 
         offlineQueue = (Messages.Category.OFFLINE == message?.getStringOption(Messages.Key.CATEGORY))
 
         tracks = TrackListSlidingWindow(recyclerView, fastScroller, getWebSocketService(), queryFactory)
-        tracks?.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
-        tracks?.setOnMetadataLoadedListener(slidingWindowListener)
+        tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
+        tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
         setTitleFromIntent(R.string.play_queue_title)
         addTransportFragment()
@@ -59,16 +59,16 @@ class PlayQueueActivity : WebSocketActivityBase() {
 
     override fun onPause() {
         super.onPause()
-        this.tracks?.pause()
+        this.tracks.pause()
     }
 
     override fun onResume() {
-        this.tracks?.resume() /* needs to happen before */
+        this.tracks.resume() /* needs to happen before */
 
         super.onResume()
 
         if (offlineQueue) {
-            tracks?.requery()
+            tracks.requery()
         }
     }
 
@@ -87,7 +87,7 @@ class PlayQueueActivity : WebSocketActivityBase() {
 
     private val playbackEvents = {
         if (adapter.itemCount == 0) {
-            tracks?.requery()
+            tracks.requery()
         }
         adapter.notifyDataSetChanged()
     }
@@ -95,10 +95,10 @@ class PlayQueueActivity : WebSocketActivityBase() {
     private val socketClient = object : WebSocketService.Client {
         override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
             if (newState == WebSocketService.State.Connected) {
-                tracks?.requery()
+                tracks.requery()
             }
             else {
-                emptyView?.update(newState, adapter.itemCount)
+                emptyView.update(newState, adapter.itemCount)
             }
         }
 
@@ -149,17 +149,17 @@ class PlayQueueActivity : WebSocketActivityBase() {
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(tracks?.getTrack(position), position)
+            holder.bind(tracks.getTrack(position), position)
         }
 
         override fun getItemCount(): Int {
-            return tracks?.count ?: 0
+            return tracks.count
         }
     }
 
     private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) {
-            emptyView?.update(getWebSocketService().state, count)
+            emptyView.update(getWebSocketService().state, count)
         }
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}

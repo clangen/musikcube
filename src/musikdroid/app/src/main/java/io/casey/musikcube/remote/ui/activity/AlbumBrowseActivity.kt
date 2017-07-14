@@ -27,16 +27,16 @@ import org.json.JSONObject
 
 class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
     private var adapter: Adapter = Adapter()
-    private var transport: TransportFragment? = null
-    private var categoryName: String? = null
+    private var categoryName: String = ""
     private var categoryId: Long = 0
     private var lastFilter = ""
-    private var emptyView: EmptyListView? = null
+    private lateinit var transport: TransportFragment
+    private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        categoryName = intent.getStringExtra(EXTRA_CATEGORY_NAME)
+        categoryName = intent.getStringExtra(EXTRA_CATEGORY_NAME) ?: ""
         categoryId = intent.getLongExtra(EXTRA_CATEGORY_ID, categoryId)
 
         setContentView(R.layout.recycler_view_activity)
@@ -49,15 +49,15 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
         emptyView = findViewById<EmptyListView>(R.id.empty_list_view)
-        emptyView?.capability = EmptyListView.Capability.OnlineOnly
-        emptyView?.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
-        emptyView?.alternateView = recyclerView
+        emptyView.capability = EmptyListView.Capability.OnlineOnly
+        emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
+        emptyView.alternateView = recyclerView
 
         transport = addTransportFragment(object: TransportFragment.OnModelChangedListener {
             override fun onChanged(fragment: TransportFragment) {
                 adapter.notifyDataSetChanged()
             }
-        })
+        })!!
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -95,7 +95,7 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
 
         getWebSocketService().send(message, socketClient) { response: SocketMessage ->
                 adapter.setModel(response.getJsonArrayOption(Messages.Key.DATA) ?: JSONArray())
-                emptyView?.update(getWebSocketService().state, adapter.itemCount)
+                emptyView.update(getWebSocketService().state, adapter.itemCount)
         }
     }
 
@@ -114,7 +114,7 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
                 requery()
             }
             else {
-                emptyView!!.update(newState, adapter.itemCount)
+                emptyView.update(newState, adapter.itemCount)
             }
         }
 
@@ -139,7 +139,7 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
 
         internal fun bind(entry: JSONObject) {
-            val playingId = transport?.playbackService?.getTrackLong(Metadata.Track.ALBUM_ID, -1L) ?: -1L
+            val playingId = transport.playbackService?.getTrackLong(Metadata.Track.ALBUM_ID, -1L) ?: -1L
             val entryId = entry.optLong(Key.ID)
 
             var titleColor = R.color.theme_foreground

@@ -18,15 +18,15 @@ import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.WebSocketService
 
 abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks {
-    private var runnerDelegate: LifecycleDelegate? = null
-    private var prefs: SharedPreferences? = null
-    private var wss: WebSocketService? = null
+    private lateinit var runnerDelegate: LifecycleDelegate
+    private lateinit var prefs: SharedPreferences
+    private lateinit var wss: WebSocketService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         volumeControlStream = AudioManager.STREAM_MUSIC
         runnerDelegate = LifecycleDelegate(this, this, javaClass, null)
-        runnerDelegate?.onCreate(savedInstanceState)
+        runnerDelegate.onCreate(savedInstanceState)
         wss = WebSocketService.getInstance(this)
         playbackService = PlaybackServiceFactory.instance(this)
         prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
@@ -35,7 +35,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
     override fun onPause() {
         super.onPause()
 
-        runnerDelegate?.onPause()
+        runnerDelegate.onPause()
 
         val playbackListener = playbackServiceEventListener
         if (playbackListener != null) {
@@ -44,7 +44,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
 
         val wssClient = webSocketServiceClient
         if (wssClient != null) {
-            wss?.removeClient(webSocketServiceClient!!)
+            wss.removeClient(webSocketServiceClient!!)
         }
 
         isPaused = true
@@ -53,7 +53,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
     override fun onResume() {
         super.onResume()
 
-        runnerDelegate?.onResume()
+        runnerDelegate.onResume()
 
         playbackService = PlaybackServiceFactory.instance(this)
 
@@ -64,7 +64,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
 
         val wssClient = webSocketServiceClient
         if (wssClient != null) {
-            wss?.addClient(webSocketServiceClient!!)
+            wss.addClient(webSocketServiceClient!!)
         }
 
         isPaused = false
@@ -72,16 +72,16 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
 
     override fun onDestroy() {
         super.onDestroy()
-        runnerDelegate?.onDestroy()
+        runnerDelegate.onDestroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        runnerDelegate?.onSaveInstanceState(outState)
+        runnerDelegate.onSaveInstanceState(outState)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        val streaming = prefs!!.getBoolean(
+        val streaming = prefs.getBoolean(
             Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)
 
         /* if we're not streaming we want the hardware buttons to go out to the system */
@@ -117,7 +117,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
     }
 
     protected fun getWebSocketService(): WebSocketService {
-        return wss!!
+        return wss
     }
 
     protected var isPaused = true
@@ -127,7 +127,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
         private set
 
     protected val runner: Runner
-        get() = runnerDelegate!!.runner()
+        get() = runnerDelegate.runner()
 
     protected fun reloadPlaybackService() {
         if (!isPaused && playbackService != null) {

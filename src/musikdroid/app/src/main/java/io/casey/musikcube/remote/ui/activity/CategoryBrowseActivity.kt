@@ -33,12 +33,12 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
         }
     }
 
-    private var category: String? = null
     private var adapter: Adapter = Adapter()
-    private var lastFilter: String? = null
-    private var transport: TransportFragment? = null
     private var deepLinkType: Int = 0
-    private var emptyView: EmptyListView? = null
+    private var lastFilter: String? = null
+    private lateinit var category: String
+    private lateinit var transport: TransportFragment
+    private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,9 +55,9 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
         emptyView = findViewById<EmptyListView>(R.id.empty_list_view)
-        emptyView?.capability = EmptyListView.Capability.OnlineOnly
-        emptyView?.emptyMessage = getString(R.string.empty_no_items_format, getString(categoryTypeStringId))
-        emptyView?.alternateView = recyclerView
+        emptyView.capability = EmptyListView.Capability.OnlineOnly
+        emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(categoryTypeStringId))
+        emptyView.alternateView = recyclerView
 
         enableUpNavigation()
 
@@ -65,7 +65,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
             override fun onChanged(fragment: TransportFragment) {
                 adapter.notifyDataSetChanged()
             }
-        })
+        })!!
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -118,7 +118,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
             if (data != null && data.length() > 0) {
                 adapter.setModel(data)
             }
-            emptyView?.update(getWebSocketService().state, adapter.itemCount)
+            emptyView.update(getWebSocketService().state, adapter.itemCount)
         }
     }
 
@@ -137,7 +137,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
                 requery()
             }
             else if (newState === WebSocketService.State.Disconnected) {
-                emptyView?.update(newState, adapter.itemCount)
+                emptyView.update(newState, adapter.itemCount)
             }
         }
 
@@ -168,14 +168,14 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
     }
 
     private fun navigateToAlbums(entry: JSONObject) {
-        val intent = AlbumBrowseActivity.getStartIntent(this, category!!, entry)
+        val intent = AlbumBrowseActivity.getStartIntent(this, category, entry)
         startActivityForResult(intent, Navigation.RequestCode.ALBUM_BROWSE_ACTIVITY)
     }
 
     private fun navigateToTracks(entry: JSONObject) {
         val categoryId = entry.optLong(Messages.Key.ID)
         val value = entry.optString(Messages.Key.VALUE)
-        val intent = TrackListActivity.getStartIntent(this, category!!, categoryId, value)
+        val intent = TrackListActivity.getStartIntent(this, category, categoryId, value)
         startActivityForResult(intent, Navigation.RequestCode.CATEGORY_TRACKS_ACTIVITY)
     }
 
@@ -192,7 +192,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
 
             val idKey = CATEGORY_NAME_TO_ID[category]
             if (idKey != null && idKey.isNotEmpty()) {
-                playingId = transport?.playbackService?.getTrackLong(idKey, -1) ?: -1L
+                playingId = transport.playbackService?.getTrackLong(idKey, -1) ?: -1L
             }
 
             var titleColor = R.color.theme_foreground

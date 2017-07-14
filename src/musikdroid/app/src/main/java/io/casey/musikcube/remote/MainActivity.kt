@@ -36,7 +36,7 @@ import io.casey.musikcube.remote.websocket.WebSocketService
 
 class MainActivity : WebSocketActivityBase() {
     private val handler = Handler()
-    private var prefs: SharedPreferences? = null
+    private lateinit var prefs: SharedPreferences
     private var playback: PlaybackService? = null
 
     private var updateCheck: UpdateCheck = UpdateCheck()
@@ -171,7 +171,7 @@ class MainActivity : WebSocketActivityBase() {
     }
 
     private val isStreamingSelected: Boolean
-        get() = prefs!!.getBoolean(
+        get() = prefs.getBoolean(
             Prefs.Key.STREAMING_PLAYBACK,
             Prefs.Default.STREAMING_PLAYBACK)
 
@@ -182,7 +182,7 @@ class MainActivity : WebSocketActivityBase() {
             playback?.stop()
         }
 
-        prefs?.edit()?.putBoolean(Prefs.Key.STREAMING_PLAYBACK, !streaming)?.apply()
+        prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !streaming)?.apply()
 
         val messageId = if (streaming)
             R.string.snackbar_remote_enabled
@@ -305,7 +305,7 @@ class MainActivity : WebSocketActivityBase() {
         }
 
         val playbackState = playback?.playbackState
-        val streaming = prefs!!.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)
+        val streaming = prefs.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)
         val connected = getWebSocketService().state === WebSocketService.State.Connected
         val stopped = playbackState === PlaybackState.Stopped
         val playing = playbackState === PlaybackState.Playing
@@ -419,7 +419,7 @@ class MainActivity : WebSocketActivityBase() {
         if (!UpdateAvailableDialog.displayed) {
             updateCheck.run { required, version, url ->
                 if (required) {
-                    val suppressed = prefs?.getString(Prefs.Key.UPDATE_DIALOG_SUPPRESSED_VERSION, "")
+                    val suppressed = prefs.getString(Prefs.Key.UPDATE_DIALOG_SUPPRESSED_VERSION, "")
                     if (!UpdateAvailableDialog.displayed && suppressed != version) {
                         val tag = UpdateAvailableDialog.TAG
                         if (supportFragmentManager.findFragmentByTag(tag) == null) {

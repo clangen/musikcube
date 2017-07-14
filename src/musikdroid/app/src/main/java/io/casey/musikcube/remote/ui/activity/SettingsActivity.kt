@@ -25,18 +25,18 @@ import io.casey.musikcube.remote.websocket.Prefs.Default as Defaults
 import io.casey.musikcube.remote.websocket.Prefs.Key as Keys
 
 class SettingsActivity : AppCompatActivity() {
-    private var addressText: EditText? = null
-    private var portText: EditText? = null
-    private var httpPortText: EditText? = null
-    private var passwordText: EditText? = null
-    private var albumArtCheckbox: CheckBox? = null
-    private var messageCompressionCheckbox: CheckBox? = null
-    private var softwareVolume: CheckBox? = null
-    private var sslCheckbox: CheckBox? = null
-    private var certCheckbox: CheckBox? = null
-    private var bitrateSpinner: Spinner? = null
-    private var cacheSpinner: Spinner? = null
-    private var prefs: SharedPreferences? = null
+    private lateinit var addressText: EditText
+    private lateinit var portText: EditText
+    private lateinit var httpPortText: EditText
+    private lateinit var passwordText: EditText
+    private lateinit var albumArtCheckbox: CheckBox
+    private lateinit var messageCompressionCheckbox: CheckBox
+    private lateinit var softwareVolume: CheckBox
+    private lateinit var sslCheckbox: CheckBox
+    private lateinit var certCheckbox: CheckBox
+    private lateinit var bitrateSpinner: Spinner
+    private lateinit var cacheSpinner: Spinner
+    private lateinit var prefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,23 +66,23 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun rebindUi() {
         /* connection info */
-        addressText?.setTextAndMoveCursorToEnd(prefs!!.getString(Keys.ADDRESS, Defaults.ADDRESS))
+        addressText.setTextAndMoveCursorToEnd(prefs.getString(Keys.ADDRESS, Defaults.ADDRESS))
         
-        portText?.setTextAndMoveCursorToEnd(String.format(
-            Locale.ENGLISH, "%d", prefs!!.getInt(Keys.MAIN_PORT, Defaults.MAIN_PORT)))
+        portText.setTextAndMoveCursorToEnd(String.format(
+            Locale.ENGLISH, "%d", prefs.getInt(Keys.MAIN_PORT, Defaults.MAIN_PORT)))
 
-        httpPortText?.setTextAndMoveCursorToEnd(String.format(
-            Locale.ENGLISH, "%d", prefs!!.getInt(Keys.AUDIO_PORT, Defaults.AUDIO_PORT)))
+        httpPortText.setTextAndMoveCursorToEnd(String.format(
+            Locale.ENGLISH, "%d", prefs.getInt(Keys.AUDIO_PORT, Defaults.AUDIO_PORT)))
 
-        passwordText?.setTextAndMoveCursorToEnd(prefs!!.getString(Keys.PASSWORD, Defaults.PASSWORD))
+        passwordText.setTextAndMoveCursorToEnd(prefs.getString(Keys.PASSWORD, Defaults.PASSWORD))
 
         /* bitrate */
         val bitrates = ArrayAdapter.createFromResource(
             this, R.array.transcode_bitrate_array, android.R.layout.simple_spinner_item)
 
         bitrates.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        bitrateSpinner?.adapter = bitrates
-        bitrateSpinner?.setSelection(prefs!!.getInt(
+        bitrateSpinner.adapter = bitrates
+        bitrateSpinner.setSelection(prefs.getInt(
             Keys.TRANSCODER_BITRATE_INDEX, Defaults.TRANSCODER_BITRATE_INDEX))
 
         val cacheSizes = ArrayAdapter.createFromResource(
@@ -91,35 +91,35 @@ class SettingsActivity : AppCompatActivity() {
         /* disk cache */
         cacheSizes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         
-        cacheSpinner?.adapter = cacheSizes
-        cacheSpinner?.setSelection(prefs!!.getInt(
+        cacheSpinner.adapter = cacheSizes
+        cacheSpinner.setSelection(prefs.getInt(
             Keys.DISK_CACHE_SIZE_INDEX, Defaults.DISK_CACHE_SIZE_INDEX))
 
         /* advanced */
-        albumArtCheckbox?.isChecked = prefs!!.getBoolean(
+        albumArtCheckbox.isChecked = prefs.getBoolean(
             Keys.ALBUM_ART_ENABLED, Defaults.ALBUM_ART_ENABLED)
         
-        messageCompressionCheckbox?.isChecked = prefs!!.getBoolean(
+        messageCompressionCheckbox.isChecked = prefs.getBoolean(
             Keys.MESSAGE_COMPRESSION_ENABLED, Defaults.MESSAGE_COMPRESSION_ENABLED)
         
-        softwareVolume?.isChecked = prefs!!.getBoolean(Keys.SOFTWARE_VOLUME, Defaults.SOFTWARE_VOLUME)
+        softwareVolume.isChecked = prefs.getBoolean(Keys.SOFTWARE_VOLUME, Defaults.SOFTWARE_VOLUME)
 
-        sslCheckbox?.setCheckWithoutEvent(
-            this.prefs!!.getBoolean(Keys.SSL_ENABLED,Defaults.SSL_ENABLED), sslCheckChanged)
+        sslCheckbox.setCheckWithoutEvent(
+            this.prefs.getBoolean(Keys.SSL_ENABLED,Defaults.SSL_ENABLED), sslCheckChanged)
 
-        certCheckbox?.setCheckWithoutEvent(
-            this.prefs!!.getBoolean(Keys.CERT_VALIDATION_DISABLED, Defaults.CERT_VALIDATION_DISABLED),
+        certCheckbox.setCheckWithoutEvent(
+            this.prefs.getBoolean(Keys.CERT_VALIDATION_DISABLED, Defaults.CERT_VALIDATION_DISABLED),
             certValidationChanged)
 
         enableUpNavigation()
     }
 
     private fun onDisableSslFromDialog() {
-        sslCheckbox?.setCheckWithoutEvent(false, sslCheckChanged)
+        sslCheckbox.setCheckWithoutEvent(false, sslCheckChanged)
     }
 
     private fun onDisableCertValidationFromDialog() {
-        certCheckbox?.setCheckWithoutEvent(false, certValidationChanged)
+        certCheckbox.setCheckWithoutEvent(false, certValidationChanged)
     }
 
     private val sslCheckChanged = { _: CompoundButton, value:Boolean ->
@@ -154,26 +154,26 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun save() {
-        val addr = addressText?.text.toString()
-        val port = portText?.text.toString()
-        val httpPort = httpPortText?.text.toString()
-        val password = passwordText?.text.toString()
+        val addr = addressText.text.toString()
+        val port = portText.text.toString()
+        val httpPort = httpPortText.text.toString()
+        val password = passwordText.text.toString()
 
-        prefs!!.edit()
+        prefs.edit()
             .putString(Keys.ADDRESS, addr)
             .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) Integer.valueOf(port) else 0)
             .putInt(Keys.AUDIO_PORT, if (httpPort.isNotEmpty()) Integer.valueOf(httpPort) else 0)
             .putString(Keys.PASSWORD, password)
-            .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox!!.isChecked)
-            .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox!!.isChecked)
-            .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume!!.isChecked)
-            .putBoolean(Keys.SSL_ENABLED, sslCheckbox!!.isChecked)
-            .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox!!.isChecked)
-            .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner!!.selectedItemPosition)
-            .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner!!.selectedItemPosition)
+            .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox.isChecked)
+            .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked)
+            .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
+            .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)
+            .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
+            .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
+            .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
             .apply()
 
-        if (!softwareVolume!!.isChecked) {
+        if (!softwareVolume.isChecked) {
             PlayerWrapper.setVolume(1.0f)
         }
 
