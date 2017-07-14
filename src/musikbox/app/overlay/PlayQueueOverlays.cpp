@@ -315,7 +315,7 @@ static void handleJumpTo(
 static void showAddCategorySelectionToPlaylistOverlay(
     IMessageQueue& queue,
     ILibraryPtr library,
-    const std::string& categoryType, 
+    const std::string& categoryType,
     int64_t categoryId)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
@@ -445,19 +445,20 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     PlaybackService& playback,
     ILibraryPtr library,
     const std::string& fieldColumn,
+    const std::string& fieldValue,
     int64_t fieldId)
 {
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_playlist"));
-    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_start"));
-    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end"));
-    adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_start_of_queue"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end_in_queue"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
     adapter->SetSelectable(true);
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
-        .SetTitle(_TSTR("playqueue_overlay_add_to_queue_title"))
+        .SetTitle(_TSTR("playqueue_overlay_add_category_title"))
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
@@ -567,8 +568,8 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
 
 void PlayQueueOverlays::ShowSavePlaylistOverlay(
     IMessageQueue& queue,
-    PlaybackService& playback, 
-    ILibraryPtr library, 
+    PlaybackService& playback,
+    ILibraryPtr library,
     int64_t selectedPlaylistId)
 {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);

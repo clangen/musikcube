@@ -73,12 +73,9 @@
 
         "playqueue_title": "play queue",
 
-        "playqueue_overlay_add_to_start": "add to beginning",
-        "playqueue_overlay_add_to_end": "add to end",
-        "playqueue_overlay_add_as_next": "add as next",
         "playqueue_overlay_new": "new...",
         "playqueue_overlay_confirm_overwrite_message": "are you sure you want to overwrite the playlist '%s'?",
-        "playqueue_overlay_add_to_queue_title": "add to play queue",
+        "playqueue_overlay_add_category_title": "category actions",
         "playqueue_overlay_load_playlist_title": "load playlist",
         "playqueue_overlay_save_playlist_title": "save playlist",
         "playqueue_overlay_rename_playlist_title": "rename playlist",

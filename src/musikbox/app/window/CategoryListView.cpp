@@ -204,6 +204,7 @@ bool CategoryListView::KeyPress(const std::string& key) {
                 this->playback,
                 this->library,
                 this->fieldName,
+                this->GetSelectedValue(),
                 id);
             return true;
         }

@@ -57,6 +57,7 @@ namespace musik {
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
                     const std::string& fieldColumn,
+                    const std::string& fieldValue,
                     int64_t fieldId);
 
                 static void ShowAlbumDividerOverlay(

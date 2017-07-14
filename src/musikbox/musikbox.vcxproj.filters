@@ -82,7 +82,7 @@
       <Filter>app\util</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\Checkbox.cpp">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\ListOverlay.cpp">
       <Filter>cursespp\overlay</Filter>
@@ -97,10 +97,10 @@
       <Filter>cursespp\overlay</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\TextInput.cpp">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\TextLabel.cpp">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\LayoutBase.cpp">
       <Filter>cursespp\layout</Filter>
@@ -112,16 +112,16 @@
       <Filter>cursespp\adapter</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\ScrollableWindow.cpp">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\ShortcutsWindow.cpp">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\ListWindow.cpp">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\Window.cpp">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClCompile>
     <ClCompile Include="cursespp\SingleLineEntry.cpp">
       <Filter>cursespp\adapter</Filter>
@@ -272,7 +272,7 @@
       <Filter>app\util</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\Checkbox.h">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\ListOverlay.h">
       <Filter>cursespp\overlay</Filter>
@@ -287,10 +287,10 @@
       <Filter>cursespp\overlay</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\TextInput.h">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\TextLabel.h">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\LayoutBase.h">
       <Filter>cursespp\layout</Filter>
@@ -305,16 +305,16 @@
       <Filter>cursespp\adapter</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\ScrollableWindow.h">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\ShortcutsWindow.h">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\ListWindow.h">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\Window.h">
-      <Filter>cursespp\widget</Filter>
+      <Filter>cursespp\window</Filter>
     </ClInclude>
     <ClInclude Include="cursespp\SingleLineEntry.h">
       <Filter>cursespp\adapter</Filter>
@@ -360,9 +360,6 @@
     <Filter Include="app\overlay">
       <UniqueIdentifier>{a84f242d-d70b-49e9-975e-63fc73954a2b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="cursespp\widget">
-      <UniqueIdentifier>{adfba99d-6228-438a-9e4b-d3c4daf6202b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="cursespp\overlay">
       <UniqueIdentifier>{3e0fdd20-9aa9-430c-b675-43a7906ee79e}</UniqueIdentifier>
     </Filter>
@@ -374,6 +371,9 @@
     </Filter>
     <Filter Include="cursespp\util">
       <UniqueIdentifier>{4a6b94ec-80fd-476a-b924-d7bc0495744a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cursespp\window">
+      <UniqueIdentifier>{adfba99d-6228-438a-9e4b-d3c4daf6202b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
