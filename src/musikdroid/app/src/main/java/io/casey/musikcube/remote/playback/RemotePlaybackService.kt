@@ -2,12 +2,14 @@ package io.casey.musikcube.remote.playback
 
 import android.content.Context
 import android.os.Handler
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
 import org.json.JSONObject
 import java.util.*
+import javax.inject.Inject
 
 class RemotePlaybackService(context: Context) : PlaybackService {
     private interface Key {
@@ -89,8 +91,8 @@ class RemotePlaybackService(context: Context) : PlaybackService {
         }
     }
 
+    @Inject lateinit var wss: WebSocketService
     private val handler = Handler()
-    private val wss: WebSocketService = WebSocketService.getInstance(context.applicationContext)
     private val listeners = HashSet<() -> Unit>()
     private val estimatedTime = EstimatedPosition()
 
@@ -142,6 +144,7 @@ class RemotePlaybackService(context: Context) : PlaybackService {
     private var track: JSONObject = JSONObject()
 
     init {
+        Application.mainComponent.inject(this)
         reset()
     }
 

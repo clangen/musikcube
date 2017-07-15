@@ -14,22 +14,26 @@ import io.reactivex.schedulers.Schedulers
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.*
+import javax.inject.Inject
 
 @Database(entities = arrayOf(OfflineTrack::class), version = 1)
 abstract class OfflineDb : RoomDatabase() {
+    @Inject lateinit var wss: WebSocketService
+
     init {
-        WebSocketService.getInstance(Application.instance!!)
-            .addInterceptor({ message, responder ->
-                var result = false
-                if (Messages.Request.QueryTracksByCategory.matches(message.name)) {
-                    val category = message.getStringOption(Messages.Key.CATEGORY)
-                    if (Messages.Category.OFFLINE == category) {
-                        queryTracks(message, responder)
-                        result = true
-                    }
+        Application.mainComponent.inject(this)
+
+        wss.addInterceptor({ message, responder ->
+            var result = false
+            if (Messages.Request.QueryTracksByCategory.matches(message.name)) {
+                val category = message.getStringOption(Messages.Key.CATEGORY)
+                if (Messages.Category.OFFLINE == category) {
+                    queryTracks(message, responder)
+                    result = true
                 }
-                result
-            })
+            }
+            result
+        })
 
         prune()
     }

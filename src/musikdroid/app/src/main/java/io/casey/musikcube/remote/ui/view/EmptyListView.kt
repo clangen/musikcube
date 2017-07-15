@@ -7,16 +7,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.StreamingPlaybackService
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.extension.setVisible
 import io.casey.musikcube.remote.websocket.WebSocketService
+import javax.inject.Inject
 import io.casey.musikcube.remote.websocket.WebSocketService.State as WebSocketState
 
 class EmptyListView : FrameLayout {
     enum class Capability { OnlineOnly, OfflineOk }
+
+    @Inject lateinit var wss: WebSocketService
 
     private var mainView: View? = null
     private var emptyTextView: TextView? = null
@@ -81,6 +85,8 @@ class EmptyListView : FrameLayout {
     }
 
     private fun initialize() {
+        Application.mainComponent.inject(this)
+
         val inflater = LayoutInflater.from(context)
 
         mainView = inflater.inflate(R.layout.empty_list_view, this, false)
@@ -93,7 +99,7 @@ class EmptyListView : FrameLayout {
         addView(mainView)
 
         reconnectButton?.setOnClickListener { _ ->
-            WebSocketService.getInstance(context).reconnect()
+            wss.reconnect()
         }
 
         viewOfflineButton?.setOnClickListener { _ ->

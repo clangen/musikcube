@@ -4,6 +4,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -110,7 +111,7 @@ class MainActivity : WebSocketActivityBase() {
         menu.findItem(R.id.action_genres).isEnabled = connected
 
         menu.findItem(R.id.action_remote_toggle).setIcon(
-            if (streaming) R.mipmap.ic_toolbar_streaming else R.mipmap.ic_toolbar_remote)
+            if (streaming) R.drawable.ic_toolbar_streaming else R.drawable.ic_toolbar_remote)
 
         return super.onPrepareOptionsMenu(menu)
     }

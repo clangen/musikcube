@@ -22,9 +22,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.*
+import javax.inject.Inject
 
 class StreamingPlaybackService(context: Context) : PlaybackService {
-    private val wss: WebSocketService = WebSocketService.getInstance(context.applicationContext)
+    @Inject lateinit var wss: WebSocketService
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val listeners = HashSet<() -> Unit>()
     private var params: QueueParams? = null
@@ -134,6 +135,10 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
             this.categoryId = categoryId
             this.filter = filter
         }
+    }
+
+    init {
+        Application.mainComponent.inject(this)
     }
 
     @Synchronized override fun connect(listener: () -> Unit) {

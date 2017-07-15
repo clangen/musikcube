@@ -21,6 +21,8 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.drawable.GlideDrawable
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import dagger.android.AndroidInjection
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.*
 import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity
@@ -33,9 +35,10 @@ import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
 import org.json.JSONArray
+import javax.inject.Inject
 
 class MainMetadataView : FrameLayout {
-    private var wss: WebSocketService? = null
+    @Inject lateinit var wss: WebSocketService
     private var prefs: SharedPreferences? = null
 
     private var isPaused = true
@@ -300,8 +303,9 @@ class MainMetadataView : FrameLayout {
     }
 
     private fun init() {
+        Application.mainComponent.inject(this)
+
         this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        this.wss = WebSocketService.getInstance(context)
 
         val child = LayoutInflater.from(context).inflate(R.layout.main_metadata, this, false)
 

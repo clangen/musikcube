@@ -14,7 +14,7 @@ import io.reactivex.Observable
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 
-class WebSocketService private constructor(val context: Context) {
+class WebSocketService constructor(val context: Context) {
     interface Client {
         fun onStateChanged(newState: State, oldState: State)
         fun onMessageReceived(message: SocketMessage)
@@ -581,16 +581,7 @@ class WebSocketService private constructor(val context: Context) {
         private val MESSAGE_SCHEDULE_PING = MESSAGE_BASE + 4
         private val MESSAGE_PING_EXPIRED = MESSAGE_BASE + 5
 
-        private var INSTANCE: WebSocketService? = null
         private val NEXT_ID = AtomicLong(0)
-
-        @Synchronized fun getInstance(context: Context): WebSocketService {
-            if (INSTANCE == null) {
-                INSTANCE = WebSocketService(context)
-            }
-
-            return INSTANCE!!
-        }
 
         private val INTERNAL_CLIENT = object : Client {
             override fun onStateChanged(newState: State, oldState: State) {}

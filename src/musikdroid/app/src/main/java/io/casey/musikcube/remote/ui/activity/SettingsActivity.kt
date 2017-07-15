@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.*
+import dagger.android.AndroidInjection
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.PlayerWrapper
 import io.casey.musikcube.remote.playback.StreamProxy
@@ -21,6 +22,7 @@ import io.casey.musikcube.remote.ui.extension.setTextAndMoveCursorToEnd
 import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.WebSocketService
 import java.util.*
+import javax.inject.Inject
 import io.casey.musikcube.remote.websocket.Prefs.Default as Defaults
 import io.casey.musikcube.remote.websocket.Prefs.Key as Keys
 
@@ -38,7 +40,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var cacheSpinner: Spinner
     private lateinit var prefs: SharedPreferences
 
+    @Inject lateinit var wss: WebSocketService
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        AndroidInjection.inject(this)
         super.onCreate(savedInstanceState)
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         setContentView(R.layout.activity_settings)
@@ -178,7 +183,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         StreamProxy.reload()
-        WebSocketService.getInstance(this).disconnect()
+        wss.disconnect()
 
         finish()
     }

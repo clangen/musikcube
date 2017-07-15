@@ -255,7 +255,7 @@ class SystemService : Service() {
             applicationContext, 1, MainActivity.getStartIntent(this), 0)
 
         val notification = NotificationCompat.Builder(this)
-            .setSmallIcon(R.mipmap.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(artist + " - " + album)
             .setContentIntent(contentIntent)
