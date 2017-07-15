@@ -244,8 +244,11 @@ class MainMetadataView : FrameLayout {
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .listener(object : RequestListener<String, GlideDrawable> {
                     override fun onException(
-                            e: Exception, model: String, target: Target<GlideDrawable>,
-                            first: Boolean): Boolean {
+                            e: Exception,
+                            model: String,
+                            target: Target<GlideDrawable>,
+                            first: Boolean): Boolean
+                    {
                         setMetadataDisplayMode(DisplayMode.NoArtwork)
                         lastArtworkUrl = null
                         return false

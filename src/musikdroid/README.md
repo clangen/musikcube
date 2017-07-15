@@ -1,10 +1,6 @@
 # musikdroid
 
-`musikdroid` is an android app that is used to stream music from, or remote control, existing `musikbox` installations (windows, macos, or linux clients). 
-
-*disclaimer*: although `musikdroid` is generally stable and performant, it does **not** employ best practices as prescribed by the android community at large. no model-view-presenter, dependency injection, or architecture compoments (except `Room`). It uses `RxJava`, but sparingly.
-
-`musikdroid` is written in `kotlin`.
+`musikdroid` is an android app that is used to stream music from, or remote control, existing `musikbox` installations (windows, macos, or linux clients). it is written in `kotlin`.
 
 # building
 
@@ -14,6 +10,8 @@ because `musikdroid` is not available in the Google Play store, it uses [fabric.
 2. remove `apply plugin: 'io.fabric'` from `app/build.gradle`
 
 this should allow you to build and test locally without special keys. TODO: simplify
+
+the project is currently built using `Android Studio 3.0 Canary 6`
 
 # attribution
 
