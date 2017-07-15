@@ -467,12 +467,15 @@ PlaybackState PlaybackService::GetPlaybackState() {
 }
 
 bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
-    bool swap = false;
-
     if (&tracks == &playlist) {
         return true;
     }
 
+    if (!tracks.Count()) {
+        return false;
+    }
+
+    bool found = false;
     auto playingTrack = this->GetPlaying();
     if (playingTrack && tracks.Count() > index) {
         auto supplantTrack = tracks.Get(index);
@@ -485,7 +488,7 @@ bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
         /* look at the index hint, see if we can find a matching track without
         iteration. */
         if (supplantId == playingId && supplantLibrary == playingLibrary) {
-            swap = true;
+            found = true;
         }
         /* otherwise search the input */
         else {
@@ -496,30 +499,29 @@ bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
 
                 if (supplantId == playingId && supplantLibrary == playingLibrary) {
                     index = i;
-                    swap = true;
+                    found = true;
                 }
             }
         }
     }
 
-    if (swap) {
-        {
-            std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-            TrackList temp(this->library);
-            temp.CopyFrom(tracks);
-            this->playlist.Swap(temp);
-            this->unshuffled.Clear();
-            this->index = index;
-            this->nextIndex = NO_POSITION;
-        }
-
-        POST(this, MESSAGE_PREPARE_NEXT_TRACK, this->index, 0);
-        POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
-
-        return true;
+    {
+        std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+        TrackList temp(this->library);
+        temp.CopyFrom(tracks);
+        this->playlist.Swap(temp);
+        this->unshuffled.Clear();
+        this->index = found ? index : NO_POSITION;
+        this->nextIndex = NO_POSITION;
     }
 
-    return false;
+    if (found) {
+        POST(this, MESSAGE_PREPARE_NEXT_TRACK, this->index, 0);
+    }
+
+    POST(this, MESSAGE_NOTIFY_EDITED, NO_POSITION, 0);
+
+    return true;
 }
 
 void PlaybackService::Play(const TrackList& tracks, size_t index) {
@@ -842,7 +844,8 @@ PlaybackService::Editor::~Editor() {
     if (this->edited) {
         /* we've been tracking the playback index through edit operations. let's
         update it here. */
-            /* make sure the play index we're requesting is in bounds */
+
+        /* make sure the play index we're requesting is in bounds */
         if (this->playIndex != this->playback.GetIndex() || this->nextTrackInvalidated) {
             if (this->playback.Count() > 0 && this->playIndex != NO_POSITION) {
                 this->playIndex = std::min(this->playback.Count() - 1, this->playIndex);

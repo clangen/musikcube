@@ -1,3 +1,16 @@
+0.20.0
+
+* added play queue "hot-swap". you can now swap a different list of tracks
+  into an active play queue without disrupting playback. if the hot-swap
+  action finds the playing track in the new list, it'll be automatically 
+  selected as the active track
+* fixed a bug that was causing extended track metadata to be parsed incorrectly
+  examples include bitrate, channels, lyrics, etc.
+* fixed a bug where the category list view may jump around a bit during the
+  indexing process
+
+--------------------------------------------------------------------------------
+
 0.19.2
 
 * start the metadata indexer immediately after adding or removing paths from
