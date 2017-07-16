@@ -1,3 +1,9 @@
+0.21.1
+
+* arrow keys can now select items in the shortcuts window while focused.
+
+--------------------------------------------------------------------------------
+
 0.20.0
 
 * added play queue "hot-swap". you can now swap a different list of tracks

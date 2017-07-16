@@ -107,29 +107,38 @@ void ShortcutsWindow::SetChangedCallback(ChangedCallback callback) {
 
 bool ShortcutsWindow::KeyPress(const std::string& key) {
     if (this->changedCallback && this->IsFocused()) {
-        if (key == "KEY_RIGHT") {
-            int active = getActiveIndex();
-            if (active >= 0 && active + 1 < (int) this->entries.size()) {
-                this->activeKey = this->entries[active + 1]->key;
+        int count = (int) this->entries.size();
+        if (count > 0) {
+            if (key == "KEY_RIGHT") {
+                int active = getActiveIndex();
+                if (active >= 0 && active + 1 < count) {
+                    this->activeKey = this->entries[active + 1]->key;
+                }
+                else {
+                    this->activeKey = this->entries[0]->key;
+                }
                 this->Redraw();
+                return true;
             }
-            return true;
-        }
-        else if (key == "KEY_LEFT") {
-            int active = getActiveIndex();
-            if (active > 0) {
-                this->activeKey = this->entries[active - 1]->key;
+            else if (key == "KEY_LEFT") {
+                int active = getActiveIndex();
+                if (active > 0) {
+                    this->activeKey = this->entries[active - 1]->key;
+                }
+                else {
+                    this->activeKey = this->entries[count - 1]->key;
+                }
                 this->Redraw();
+                return true;
             }
-            return true;
-        }
-        else if (key == "KEY_ENTER") {
-            /* replace the original key we cached when we were forcused originally
-            to "commit" the operation, as it'll be swapped back when we lose focus */
-            this->originalKey = this->activeKey;
+            else if (key == "KEY_ENTER") {
+                /* replace the original key we cached when we were forcused originally
+                to "commit" the operation, as it'll be swapped back when we lose focus */
+                this->originalKey = this->activeKey;
 
-            if (this->changedCallback) {
-                this->changedCallback(this->activeKey);
+                if (this->changedCallback) {
+                    this->changedCallback(this->activeKey);
+                }
             }
         }
     }
