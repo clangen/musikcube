@@ -127,8 +127,12 @@ App::~App() {
     endwin();
 }
 
-void App::SetKeyHandler(MainKeyHandler handler) {
+void App::SetKeyHandler(KeyHandler handler) {
     this->keyHandler = handler;
+}
+
+void App::SetKeyHook(KeyHandler hook) {
+    this->keyHook = hook;
 }
 
 void App::SetResizeHandler(ResizeHandler handler) {
@@ -276,6 +280,12 @@ void App::Run(ILayoutPtr layout) {
 
         if (ch != ERR) {
             kn = key::Read((int) ch);
+
+            if (this->keyHook) {
+                if (this->keyHook(kn)) {
+                    continue;
+                }
+            }
 
 process:
             if (ch == '\t') { /* tab */

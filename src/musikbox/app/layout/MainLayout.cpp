@@ -58,6 +58,8 @@ using namespace cursespp;
 
 static UpdateCheck updateCheck;
 
+#define ENABLE_DEMO_MODE 0
+
 static void updateSyncingText(TextLabel* label, int updates) {
     try {
         if (updates <= 0) {
@@ -104,6 +106,19 @@ MainLayout::MainLayout(
     library->Indexer()->GetPaths(paths);
     this->SetMainLayout(paths.size() > 0 ? libraryLayout : settingsLayout);
 
+#if ENABLE_DEMO_MODE
+    App::Instance().SetKeyHook([this](const std::string& key) -> bool {
+        static std::map<std::string, std::string> SANITIZE = {
+            { "^I", "TAB" }, { " ", "SPACE" }, { "^[", "ESC" }
+        };
+        auto it = SANITIZE.find(key);
+        std::string normalized = (it == SANITIZE.end()) ? key : it->second;
+        std::string keypress = "keypress: " + (normalized.size() ? normalized : "<none>");
+        this->hotkey->SetText(keypress, text::AlignCenter);
+        return false;
+    });
+#endif
+
     this->RunUpdateCheck();
 }
 
@@ -117,6 +132,11 @@ void MainLayout::ResizeToViewport() {
 
 void MainLayout::OnLayout() {
     size_t cx = Screen::GetWidth(), cy = Screen::GetHeight();
+
+#if ENABLE_DEMO_MODE
+    this->hotkey->MoveAndResize(0, cy - 1, cx, 1);
+    --cy;
+#endif
 
     int yOffset = 0;
 
@@ -151,9 +171,15 @@ void MainLayout::Initialize() {
     this->shortcuts.reset(new ShortcutsWindow());
     this->AddWindow(this->shortcuts);
 
+#if ENABLE_DEMO_MODE
+    this->hotkey.reset(new TextLabel());
+    this->hotkey->SetContentColor(CURSESPP_FOOTER);
+    this->hotkey->SetText("keypress: <none>", text::AlignCenter);
+    this->AddWindow(this->hotkey);
+#endif
+
     this->syncing.reset(new TextLabel());
     this->syncing->SetContentColor(CURSESPP_BANNER);
-    this->syncing->MoveAndResize(0, 0, 1, 1);
     this->syncing->Hide();
     this->AddWindow(this->syncing);
 }

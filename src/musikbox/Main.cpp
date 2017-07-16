@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
 
         mainLayout->Start();
 
-        app.SetKeyHandler([&](const std::string& kn) {
+        app.SetKeyHandler([&](const std::string& kn) -> bool {
             if (app.IsOverlayVisible()) {
                 return false;
             }

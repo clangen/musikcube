@@ -98,6 +98,14 @@
       "hex": "#eee8d5",
       "palette": 254
     },
+    "footer_background": {
+      "hex": "#cb4b16",
+      "palette": 166
+    },
+    "footer_foreground": {
+      "hex": "#eee8d5",
+      "palette": 254
+    },
     "list_header_background": {
       "hex": "#fdf6e3",
       "palette": 230

@@ -100,6 +100,7 @@ namespace musik {
                 std::shared_ptr<cursespp::LayoutBase> layout;
                 std::shared_ptr<cursespp::TextLabel> syncing;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout, libraryLayout, settingsLayout;
+                std::shared_ptr<cursespp::TextLabel> hotkey;
                 musik::core::ILibraryPtr library;
                 cursespp::IWindowPtr lastFocus;
                 ITopLevelLayout* topLevelLayout;

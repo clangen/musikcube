@@ -75,6 +75,8 @@ indicies we'll use to store them */
 #define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 47
 #define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 48
 #define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 49
+#define THEME_COLOR_FOOTER_BACKGROUND 50
+#define THEME_COLOR_FOOTER_FOREGROUND 51
 
 /* user-readable names for the color identifiers above. these are
 used as key names in the config files */
@@ -102,6 +104,8 @@ used as key names in the config files */
 #define JSON_KEY_COLOR_BUTTON_FOREGROUND_ACTIVE "button_foreground_active"
 #define JSON_KEY_COLOR_BANNER_BACKGROUND "banner_background"
 #define JSON_KEY_COLOR_BANNER_FOREGROUND "banner_foreground"
+#define JSON_KEY_COLOR_FOOTER_BACKGROUND "footer_background"
+#define JSON_KEY_COLOR_FOOTER_FOREGROUND "footer_foreground"
 #define JSON_KEY_COLOR_LIST_HEADER_BACKGROUND "list_header_background"
 #define JSON_KEY_COLOR_LIST_HEADER_FOREGROUND "list_header_foreground"
 #define JSON_KEY_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND "list_header_highlighted_background"
@@ -286,6 +290,10 @@ struct Theme {
         bannerBackground.Set(THEME_COLOR_BANNER_BACKGROUND, 255, 150, 32, COLOR_256_ORANGE);
         bannerForeground.Set(THEME_COLOR_BANNER_FOREGROUND, 24, 24, 20, COLOR_BLACK);
 
+        /* footer */
+        footerBackground.Set(THEME_COLOR_FOOTER_BACKGROUND, 102, 217, 238, COLOR_256_BLUE);
+        footerForeground.Set(THEME_COLOR_FOOTER_FOREGROUND, 24, 24, 20, COLOR_BLACK);
+
         /* listview */
         listHeaderBackground.Set(THEME_COLOR_LIST_HEADER_BACKGROUND, 36, 36, 31, -1);
         listHeaderForeground.Set(THEME_COLOR_LIST_HEADER_FOREGROUND, 166, 226, 46, COLOR_256_GREEN);
@@ -344,6 +352,8 @@ struct Theme {
                     this->buttonForegroundActive.Set(colors.value(JSON_KEY_COLOR_BUTTON_FOREGROUND_ACTIVE, unset));
                     this->bannerBackground.Set(colors.value(JSON_KEY_COLOR_BANNER_BACKGROUND, unset));
                     this->bannerForeground.Set(colors.value(JSON_KEY_COLOR_BANNER_FOREGROUND, unset));
+                    this->footerBackground.Set(colors.value(JSON_KEY_COLOR_FOOTER_BACKGROUND, unset));
+                    this->footerForeground.Set(colors.value(JSON_KEY_COLOR_FOOTER_FOREGROUND, unset));
                     this->listHeaderBackground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_BACKGROUND, unset));
                     this->listHeaderForeground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_FOREGROUND, unset));
                     this->listHeaderHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND, unset));
@@ -421,6 +431,12 @@ struct Theme {
             bannerForeground.Id(mode, COLOR_BLACK),
             bannerBackground.Id(mode, COLOR_YELLOW));
 
+        /* footer */
+        init_pair(
+            CURSESPP_FOOTER,
+            footerForeground.Id(mode, COLOR_BLACK),
+            footerBackground.Id(mode, COLOR_BLUE));
+
         /* list items */
         init_pair(
             CURSESPP_LIST_ITEM_HEADER,
@@ -488,6 +504,10 @@ struct Theme {
     /* banner */
     Color bannerBackground;
     Color bannerForeground;
+
+    /* footer */
+    Color footerBackground;
+    Color footerForeground;
 
     /* listview */
     Color listHeaderBackground;

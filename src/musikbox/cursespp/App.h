@@ -45,7 +45,7 @@
 namespace cursespp {
     class App {
         public:
-            using MainKeyHandler = std::function<bool(const std::string&)>;
+            using KeyHandler = std::function<bool(const std::string&)>;
             using ResizeHandler = std::function<void()>;
 
             App(const std::string& title);
@@ -54,7 +54,8 @@ namespace cursespp {
             App(const App& other) = delete;
             App& operator=(const App& other) = delete;
 
-            void SetKeyHandler(MainKeyHandler handler);
+            void SetKeyHandler(KeyHandler handler);
+            void SetKeyHook(KeyHandler hook);
             void SetResizeHandler(ResizeHandler handler);
             void SetColorMode(Colors::Mode mode);
             void SetColorTheme(const std::string& fn);
@@ -114,7 +115,7 @@ namespace cursespp {
 
             std::queue<std::string> injectedKeys;
             WindowState state;
-            MainKeyHandler keyHandler;
+            KeyHandler keyHandler, keyHook;
             ResizeHandler resizeHandler;
             Colors::Mode colorMode;
             std::string colorTheme;

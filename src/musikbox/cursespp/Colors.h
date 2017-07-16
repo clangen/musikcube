@@ -69,6 +69,7 @@
 #define CURSESPP_OVERLAY_TEXT_FOCUSED 24
 
 #define CURSESPP_BANNER 25
+#define CURSESPP_FOOTER 26
 
 namespace cursespp {
     class Colors {
