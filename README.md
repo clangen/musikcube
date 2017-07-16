@@ -8,7 +8,7 @@ a curses frontend to musikcube.
 
 musicbox compiles and runs easily on windows, macos and linux. it also runs well on a raspberry pi with raspbian, and can be setup as a streaming audio server.
 
- [keyboard shortcuts are listed here.](https://github.com/clangen/musikcube/wiki/user-guide)
+ [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
 
 it looks something like this on windows:
 
