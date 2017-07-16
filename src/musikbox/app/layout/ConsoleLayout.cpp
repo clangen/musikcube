@@ -36,6 +36,7 @@
 
 #include "ConsoleLayout.h"
 
+#include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/MultiLineEntry.h>
 #include <cursespp/Colors.h>
@@ -45,6 +46,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Version.h>
+#include <app/util/Messages.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -119,6 +121,22 @@ void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
         shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+
+        shortcuts->SetChangedCallback([this](std::string key) {
+            if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
+                this->BroadcastMessage(message::JumpToSettings);
+            }
+            if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
+                this->BroadcastMessage(message::JumpToLibrary);
+            }
+            else if (key == "^D") {
+                App::Instance().Quit();
+            }
+            else {
+                this->KeyPress(key);
+            }
+        });
+
         shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateConsole));
     }
 }

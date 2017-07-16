@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <queue>
 #include "IViewRoot.h"
 #include "ILayout.h"
 #include "IInput.h"
@@ -72,6 +73,10 @@ namespace cursespp {
 
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
+            void InjectKeyPress(const std::string& key);
+            void Quit();
+
+            static App& Instance();
 
             static int64_t Now();
             static OverlayStack& Overlays();
@@ -107,12 +112,14 @@ namespace cursespp {
             void FocusPrevInLayout();
             void OnResized();
 
+            std::queue<std::string> injectedKeys;
             WindowState state;
             MainKeyHandler keyHandler;
             ResizeHandler resizeHandler;
             Colors::Mode colorMode;
             std::string colorTheme;
             int minWidth, minHeight;
+            bool quit;
 
 #ifdef WIN32
             int iconId;

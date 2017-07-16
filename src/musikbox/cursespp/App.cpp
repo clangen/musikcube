@@ -59,6 +59,8 @@ static OverlayStack overlays;
 static bool disconnected = false;
 static int64_t resizeAt = 0;
 
+static App* instance = nullptr;
+
 #ifndef WIN32
 static void hangupHandler(int signal) {
     disconnected = true;
@@ -70,7 +72,21 @@ static void resizedHandler(int signal) {
 }
 #endif
 
+App& App::Instance() {
+    if (!instance) {
+        throw std::runtime_error("app not running!");
+    }
+    return *instance;
+}
+
 App::App(const std::string& title) {
+    if (instance) {
+        throw std::runtime_error("app instance already running!");
+    }
+
+    instance = this; /* only one instance. */
+
+    this->quit = false;
     this->minWidth = this->minHeight = 0;
 
 #ifdef WIN32
@@ -188,6 +204,14 @@ void App::OnResized() {
     }
 }
 
+void App::InjectKeyPress(const std::string& key) {
+    this->injectedKeys.push(key);
+}
+
+void App::Quit() {
+    this->quit = true;
+}
+
 #ifdef WIN32
 bool App::Running(const std::string& uniqueId) {
     return App::Running(uniqueId, uniqueId);
@@ -219,15 +243,23 @@ void App::Run(ILayoutPtr layout) {
     }
 
     int64_t ch;
-
-    bool quit = false;
+    std::string kn;
 
     this->state.input = nullptr;
     this->state.keyHandler = nullptr;
 
     this->ChangeLayout(layout);
 
-    while (!quit && !disconnected) {
+    while (!this->quit && !disconnected) {
+        kn = "";
+
+        if (this->injectedKeys.size()) {
+            kn = injectedKeys.front();
+            injectedKeys.pop();
+            ch = ERR;
+            goto process;
+        }
+
         timeout(IDLE_TIMEOUT_MS);
 
         if (this->state.input) {
@@ -243,8 +275,9 @@ void App::Run(ILayoutPtr layout) {
         }
 
         if (ch != ERR) {
-            std::string kn = key::Read((int) ch);
+            kn = key::Read((int) ch);
 
+process:
             if (ch == '\t') { /* tab */
                 this->FocusNextInLayout();
             }
@@ -252,7 +285,7 @@ void App::Run(ILayoutPtr layout) {
                 this->FocusPrevInLayout();
             }
             else if (kn == "^D") { /* ctrl+d quits */
-                quit = true;
+                this->quit = true;
             }
             else if (kn == "KEY_RESIZE") {
                 resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
@@ -328,6 +361,7 @@ void App::EnsureFocusIsValid() {
         IWindowPtr focused = layout->GetFocus();
         if (focused != this->state.focused) {
             this->UpdateFocusedWindow(focused);
+            Window::InvalidateScreen();
         }
     }
 }

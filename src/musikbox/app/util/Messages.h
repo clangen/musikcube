@@ -65,6 +65,10 @@ namespace musik {
             static const int PlaylistCreated = 1032;
 
             static const int UpdateCheckFinished = 1033;
+
+            static const int JumpToConsole = 1034;
+            static const int JumpToLibrary = 1035;
+            static const int JumpToSettings = 1036;
         }
     }
 }

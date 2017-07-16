@@ -127,6 +127,7 @@ namespace cursespp {
 
         protected:
 
+            void BroadcastMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void PostMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void DebounceMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void RemoveMessage(int messageType);

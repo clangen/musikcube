@@ -129,11 +129,13 @@ void MessageQueue::RegisterForBroadcasts(IMessageTargetPtr target) {
     this->receivers.insert(target);
 }
 
-void MessageQueue::UnregisterForBroadcasts(IMessageTargetPtr target) {
+void MessageQueue::UnregisterForBroadcasts(IMessageTarget *target) {
     LockT lock(this->queueMutex);
-    auto it = this->receivers.find(target);
-    if (it != this->receivers.end()) {
-        this->receivers.erase(it);
+    for (auto it : this->receivers) {
+        if (it.get() == target) {
+            this->receivers.erase(it);
+            return;
+        }
     }
 }
 

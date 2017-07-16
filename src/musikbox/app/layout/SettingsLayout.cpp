@@ -47,6 +47,7 @@
 #include <core/audio/Outputs.h>
 
 #include <app/util/Hotkeys.h>
+#include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/UpdateCheck.h>
 #include <app/overlay/ColorThemeOverlay.h>
@@ -441,6 +442,20 @@ void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateConsole), _TSTR("shortcuts_console"));
         shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+
+        shortcuts->SetChangedCallback([this](std::string key) {
+            if (Hotkeys::Is(Hotkeys::NavigateConsole, key)) {
+                this->BroadcastMessage(message::JumpToConsole);
+            }
+            if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
+                this->BroadcastMessage(message::JumpToLibrary);
+            }
+            else if (key == "^D") {
+                app.Quit();
+            }
+            this->KeyPress(key);
+        });
+
         shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateSettings));
     }
 }

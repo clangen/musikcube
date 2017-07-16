@@ -177,23 +177,15 @@ void Window::SendToBottom() {
 }
 
 void Window::PostMessage(int messageType, int64_t user1, int64_t user2, int64_t delay) {
-    messageQueue.Post(
-        Message::Create(
-            this,
-            messageType,
-            user1,
-            user2),
-        delay);
+    messageQueue.Post(Message::Create(this, messageType, user1, user2), delay);
+}
+
+void Window::BroadcastMessage(int messageType, int64_t user1, int64_t user2, int64_t delay) {
+    messageQueue.Broadcast(Message::Create(nullptr, messageType, user1, user2), delay);
 }
 
 void Window::DebounceMessage(int messageType, int64_t user1, int64_t user2, int64_t delay) {
-    messageQueue.Debounce(
-        Message::Create(
-            this,
-            messageType,
-            user1,
-            user2),
-        delay);
+    messageQueue.Debounce(Message::Create(this, messageType, user1, user2), delay);
 }
 
 void Window::RemoveMessage(int messageType) {

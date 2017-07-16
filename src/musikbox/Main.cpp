@@ -42,9 +42,6 @@
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 
-#include <app/layout/ConsoleLayout.h>
-#include <app/layout/LibraryLayout.h>
-#include <app/layout/SettingsLayout.h>
 #include <app/layout/MainLayout.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
@@ -55,6 +52,7 @@
 
 #include <glue/audio/MasterTransport.h>
 
+#include <core/debug.h>
 #include <core/library/LibraryFactory.h>
 #include <core/plugin/Plugins.h>
 #include <core/support/PreferenceKeys.h>
@@ -72,11 +70,11 @@
     #undef MOUSE_MOVED
 #endif
 
+using namespace musik;
 using namespace musik::glue;
 using namespace musik::glue::audio;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
 using namespace musik::box;
 using namespace cursespp;
 
@@ -181,42 +179,23 @@ int main(int argc, char* argv[]) {
 
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
-        using Layout = std::shared_ptr<LayoutBase>;
+        /* top-level layout */
         using Main = std::shared_ptr<MainLayout>;
+        Main mainLayout(new MainLayout(app, playback, transport, library));
 
-        Layout libraryLayout(new LibraryLayout(playback, library));
-        Layout consoleLayout(new ConsoleLayout(transport, library));
-        Layout settingsLayout(new SettingsLayout(app, library, playback, transport));
-
-        Main mainLayout(new MainLayout(library));
-
-        std::vector<std::string> paths;
-        library->Indexer()->GetPaths(paths);
-
-        mainLayout->SetMainLayout(paths.size() > 0
-            ? libraryLayout : settingsLayout);
+        mainLayout->Start();
 
         app.SetKeyHandler([&](const std::string& kn) {
             if (app.IsOverlayVisible()) {
                 return false;
-            }
-            else if (Hotkeys::Is(Hotkeys::NavigateConsole, kn)) {
-                mainLayout->SetMainLayout(consoleLayout);
-                return true;
-            }
-            else if (Hotkeys::Is(Hotkeys::NavigateLibrary, kn)) {
-                mainLayout->SetMainLayout(libraryLayout);
-                return true;
-            }
-            else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {
-                mainLayout->SetMainLayout(settingsLayout);
-                return true;
             }
 
             return globalHotkeys.Handle(kn);
         });
 
         app.Run(mainLayout);
+
+        mainLayout->Stop();
 
 #ifdef WIN32
         win32::HideMainWindow();

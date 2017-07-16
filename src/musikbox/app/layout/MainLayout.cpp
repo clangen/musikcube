@@ -42,6 +42,10 @@
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/UpdateCheck.h>
+#include <app/layout/ConsoleLayout.h>
+#include <app/layout/LibraryLayout.h>
+#include <app/layout/SettingsLayout.h>
+#include <app/util/Hotkeys.h>
 
 #include "SettingsLayout.h"
 #include "MainLayout.h"
@@ -71,7 +75,11 @@ static void updateSyncingText(TextLabel* label, int updates) {
     }
 }
 
-MainLayout::MainLayout(ILibraryPtr library)
+MainLayout::MainLayout(
+    cursespp::App& app,
+    musik::core::audio::PlaybackService& playback,
+    musik::glue::audio::MasterTransport& transport,
+    ILibraryPtr library)
 : shortcutsFocused(false)
 , topLevelLayout(nullptr)
 , syncUpdateCount(0)
@@ -85,6 +93,16 @@ MainLayout::MainLayout(ILibraryPtr library)
     library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
     library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
+
+    this->libraryLayout.reset(new LibraryLayout(playback, library));
+    this->consoleLayout.reset(new ConsoleLayout(transport, library));
+    this->settingsLayout.reset(new SettingsLayout(app, library, playback, transport));
+
+    /* take user to settings if they don't have a valid configuration. otherwise,
+    switch to the library view immediately */
+    std::vector<std::string> paths;
+    library->Indexer()->GetPaths(paths);
+    this->SetMainLayout(paths.size() > 0 ? libraryLayout : settingsLayout);
 
     this->RunUpdateCheck();
 }
@@ -230,6 +248,22 @@ void MainLayout::FocusShortcuts() {
 }
 
 bool MainLayout::KeyPress(const std::string& key) {
+    /* deal with top-level view switching first. */
+    if (Hotkeys::Is(Hotkeys::NavigateConsole, key)) {
+        this->SetMainLayout(consoleLayout);
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
+        this->SetMainLayout(libraryLayout);
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
+        this->SetMainLayout(settingsLayout);
+        return true;
+    }
+
+    /* otherwise, see if the user is monkeying around with the
+    shortcut bar focus... */
     if (key == "^["  ||
         (key == "KEY_ENTER" && this->shortcutsFocused) ||
         (key == "KEY_UP" && this->shortcutsFocused))
@@ -256,11 +290,37 @@ bool MainLayout::KeyPress(const std::string& key) {
         }
     }
 
+    /* otherwise, pass along to our child layout */
     return this->layout ? this->layout->KeyPress(key) : false;
 }
 
+void MainLayout::Start() {
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+    std::enable_shared_from_this<LayoutBase>* receiver =
+        (std::enable_shared_from_this<LayoutBase>*) this;
+#else
+    auto receiver = this;
+#endif
+    MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
+}
+
+void MainLayout::Stop() {
+    MessageQueue().UnregisterForBroadcasts(this);
+}
+
+
 void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     int type = message.Type();
+
+    if (type == message::JumpToConsole) {
+        this->SetMainLayout(consoleLayout);
+    }
+    else if (type == message::JumpToSettings) {
+        this->SetMainLayout(settingsLayout);
+    }
+    else if (type == message::JumpToLibrary) {
+        this->SetMainLayout(libraryLayout);
+    }
     if (type == message::IndexerStarted) {
         this->syncUpdateCount = 0;
         this->Layout();

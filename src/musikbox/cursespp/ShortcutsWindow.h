@@ -34,17 +34,21 @@
 
 #pragma once
 
+#include "IKeyHandler.h"
 #include "Window.h"
 #include "Text.h"
 
 namespace cursespp {
     class ShortcutsWindow :
-        public cursespp::Window
+        public cursespp::Window,
+        public cursespp::IKeyHandler
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
         , public std::enable_shared_from_this<ShortcutsWindow>
 #endif
     {
         public:
+            using ChangedCallback = std::function<void (std::string /* key */)>;
+
             ShortcutsWindow();
             virtual ~ShortcutsWindow();
 
@@ -55,14 +59,20 @@ namespace cursespp {
                 const std::string& description,
                 int64_t attrs = -1);
 
+            void SetChangedCallback(ChangedCallback callback);
+
             void RemoveAll();
             void SetActive(const std::string& key);
 
+            virtual bool KeyPress(const std::string& key) override;
+
         protected:
-            virtual void OnRedraw();
+            virtual void OnRedraw() override;
+            virtual void OnFocusChanged(bool focused) override;
 
         private:
             size_t CalculateLeftPadding();
+            int getActiveIndex();
 
             struct Entry {
                 Entry(const std::string& key, const std::string& desc, int64_t attrs = -1) {
@@ -76,10 +86,11 @@ namespace cursespp {
                 int64_t attrs;
             };
 
-            typedef std::vector<std::shared_ptr<Entry> > EntryList;
+            using EntryList = std::vector<std::shared_ptr<Entry>>;
 
+            ChangedCallback changedCallback;
             EntryList entries;
-            std::string activeKey;
+            std::string activeKey, originalKey;
             text::TextAlign alignment;
     };
 }

@@ -55,7 +55,7 @@ namespace musik { namespace core { namespace runtime {
             virtual bool Contains(IMessageTarget *target, int type = -1);
             virtual void Debounce(IMessagePtr message, int64_t delayMs = 0);
             virtual void RegisterForBroadcasts(IMessageTargetPtr target);
-            virtual void UnregisterForBroadcasts(IMessageTargetPtr target);
+            virtual void UnregisterForBroadcasts(IMessageTarget *target);
             virtual void WaitAndDispatch();
             virtual void Dispatch();
 

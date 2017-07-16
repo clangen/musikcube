@@ -34,13 +34,19 @@
 
 #pragma once
 
+#include <cursespp/App.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextInput.h>
+#include <cursespp/TextLabel.h>
 #include <cursespp/ShortcutsWindow.h>
 #include <cursespp/IViewRoot.h>
+
+#include <core/audio/PlaybackService.h>
 #include <core/support/Preferences.h>
 #include <core/library/ILibrary.h>
 #include <core/runtime/IMessageTarget.h>
+
+#include <glue/audio/MasterTransport.h>
 
 #include "ITopLevelLayout.h"
 
@@ -57,27 +63,32 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                MainLayout(musik::core::ILibraryPtr library);
+                MainLayout(
+                    cursespp::App& app,
+                    musik::core::audio::PlaybackService& playback,
+                    musik::glue::audio::MasterTransport& transport,
+                    musik::core::ILibraryPtr library);
+
                 virtual ~MainLayout();
 
-                virtual bool KeyPress(const std::string& key);
-                virtual void OnLayout();
+                void Start();
+                void Stop();
 
-                virtual cursespp::IWindowPtr GetFocus();
-                virtual cursespp::IWindowPtr FocusNext();
-                virtual cursespp::IWindowPtr FocusPrev();
-
-                virtual void ResizeToViewport();
+                virtual bool KeyPress(const std::string& key) override;
+                virtual void OnLayout() override;
+                virtual cursespp::IWindowPtr GetFocus() override;
+                virtual cursespp::IWindowPtr FocusNext() override;
+                virtual cursespp::IWindowPtr FocusPrev() override;
+                virtual void ResizeToViewport() override;
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
                 void SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout);
-
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
             private:
                 void OnIndexerStarted();
                 void OnIndexerProgress(int count);
                 void OnIndexerFinished(int count);
-                
+
                 void Initialize();
                 void RunUpdateCheck();
 
@@ -88,6 +99,7 @@ namespace musik {
                 std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
                 std::shared_ptr<cursespp::LayoutBase> layout;
                 std::shared_ptr<cursespp::TextLabel> syncing;
+                std::shared_ptr<cursespp::LayoutBase> consoleLayout, libraryLayout, settingsLayout;
                 musik::core::ILibraryPtr library;
                 cursespp::IWindowPtr lastFocus;
                 ITopLevelLayout* topLevelLayout;

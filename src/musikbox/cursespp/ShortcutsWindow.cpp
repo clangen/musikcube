@@ -74,6 +74,7 @@ void ShortcutsWindow::RemoveAll() {
 
 void ShortcutsWindow::SetActive(const std::string& key) {
     this->activeKey = key;
+    this->originalKey = "";
     this->Redraw();
 }
 
@@ -98,6 +99,63 @@ size_t ShortcutsWindow::CalculateLeftPadding() {
     }
 
     return (padding / 2); /* text::AlignCenter */
+}
+
+void ShortcutsWindow::SetChangedCallback(ChangedCallback callback) {
+    this->changedCallback = callback;
+}
+
+bool ShortcutsWindow::KeyPress(const std::string& key) {
+    if (this->changedCallback && this->IsFocused()) {
+        if (key == "KEY_RIGHT") {
+            int active = getActiveIndex();
+            if (active >= 0 && active + 1 < (int) this->entries.size()) {
+                this->activeKey = this->entries[active + 1]->key;
+                this->Redraw();
+            }
+            return true;
+        }
+        else if (key == "KEY_LEFT") {
+            int active = getActiveIndex();
+            if (active > 0) {
+                this->activeKey = this->entries[active - 1]->key;
+                this->Redraw();
+            }
+            return true;
+        }
+        else if (key == "KEY_ENTER") {
+            /* replace the original key we cached when we were forcused originally
+            to "commit" the operation, as it'll be swapped back when we lose focus */
+            this->originalKey = this->activeKey;
+
+            if (this->changedCallback) {
+                this->changedCallback(this->activeKey);
+            }
+        }
+    }
+    return false;
+}
+
+void ShortcutsWindow::OnFocusChanged(bool focused) {
+    if (focused) {
+        this->originalKey = this->activeKey;
+    }
+    else {
+        if (this->originalKey.size()) {
+            this->activeKey = this->originalKey;
+            this->originalKey = "";
+            this->Redraw();
+        }
+    }
+}
+
+int ShortcutsWindow::getActiveIndex() {
+    for (int i = 0; i < (int) this->entries.size(); i++) {
+        if (this->entries[i]->key == this->activeKey) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void ShortcutsWindow::OnRedraw() {
