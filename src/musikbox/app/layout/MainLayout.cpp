@@ -58,7 +58,12 @@ using namespace cursespp;
 
 static UpdateCheck updateCheck;
 
-#define ENABLE_DEMO_MODE 0
+#define ENABLE_DEMO_MODE 1
+
+#if ENABLE_DEMO_MODE
+static std::string lastKey;
+static int lastKeyRepeat = 0;
+#endif
 
 static void updateSyncingText(TextLabel* label, int updates) {
     try {
@@ -106,19 +111,7 @@ MainLayout::MainLayout(
     library->Indexer()->GetPaths(paths);
     this->SetMainLayout(paths.size() > 0 ? libraryLayout : settingsLayout);
 
-#if ENABLE_DEMO_MODE
-    App::Instance().SetKeyHook([this](const std::string& key) -> bool {
-        static std::map<std::string, std::string> SANITIZE = {
-            { "^I", "TAB" }, { " ", "SPACE" }, { "^[", "ESC" }
-        };
-        auto it = SANITIZE.find(key);
-        std::string normalized = (it == SANITIZE.end()) ? key : it->second;
-        std::string keypress = "keypress: " + (normalized.size() ? normalized : "<none>");
-        this->hotkey->SetText(keypress, text::AlignCenter);
-        return false;
-    });
-#endif
-
+    this->EnableDemoModeIfNecessary();
     this->RunUpdateCheck();
 }
 
@@ -382,4 +375,32 @@ void MainLayout::RunUpdateCheck() {
             UpdateCheck::ShowUpgradeAvailableOverlay(version, url);
         }
     });
+}
+
+void MainLayout::EnableDemoModeIfNecessary() {
+#if ENABLE_DEMO_MODE
+    App::Instance().SetKeyHook([this](const std::string& key) -> bool {
+        static std::map<std::string, std::string> SANITIZE = {
+            { "^I", "TAB" }, { " ", "SPACE" }, { "^[", "ESC" }
+        };
+
+        auto it = SANITIZE.find(key);
+        std::string normalized = (it == SANITIZE.end()) ? key : it->second;
+
+        if (normalized == lastKey) {
+            ++lastKeyRepeat;
+            if (lastKeyRepeat >= 2) {
+                normalized = normalized + " (x" + std::to_string(lastKeyRepeat) + ")";
+            }
+        }
+        else {
+            lastKey = normalized;
+            lastKeyRepeat = 1;
+        }
+
+        std::string keypress = "keypress: " + (normalized.size() ? normalized : "<none>");
+        this->hotkey->SetText(keypress, text::AlignCenter);
+        return false;
+    });
+#endif
 }

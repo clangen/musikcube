@@ -92,6 +92,8 @@ namespace musik {
                 void Initialize();
                 void RunUpdateCheck();
 
+                void EnableDemoModeIfNecessary();
+
                 cursespp::IWindowPtr BlurShortcuts();
                 void FocusShortcuts();
 
