@@ -130,6 +130,11 @@ ListOverlay& ListOverlay::SetAutoDismiss(bool autoDismiss) {
 
 ListOverlay& ListOverlay::SetSelectedIndex(size_t index) {
     this->listWindow->SetSelectedIndex(index);
+
+    if (!this->listWindow->IsEntryVisible(index)) {
+        this->listWindow->ScrollTo(index);
+    }
+
     return *this;
 }
 

@@ -34,6 +34,8 @@
 
 #include "stdafx.h"
 
+#include <chrono>
+
 #include "PlayQueueOverlays.h"
 
 #include <core/audio/Visualizer.h>
@@ -65,7 +67,54 @@ using namespace musik::core::runtime;
 using namespace musik::box;
 using namespace cursespp;
 
+using namespace std::chrono;
+using Seconds = std::chrono::duration<float>;
+
+static size_t lastTrackOverlayIndex = 0;
+static size_t lastCategoryOverlayIndex = 0;
+static int64_t lastPlaylistId = -1;
+static milliseconds lastOperationExpiry;
+
 using Adapter = cursespp::SimpleScrollAdapter;
+
+static inline milliseconds now() {
+    return duration_cast<milliseconds>(
+        system_clock::now().time_since_epoch());
+}
+
+static inline bool lastOperationExpired() {
+    return now() > lastOperationExpiry;
+}
+
+static inline void touchOperationExpiry() {
+    lastOperationExpiry = now() + duration_cast<milliseconds>(Seconds(60));
+}
+
+static inline int findPlaylistIndex(CategoryListQuery::ResultList result, int64_t playlistId) {
+    int i = 0;
+    for (auto it : *(result.get())) {
+        if (it->id == playlistId) {
+            return i;
+        }
+        ++i;
+    }
+    return -1;
+}
+
+static inline void setLastPlaylistId(int64_t id) {
+    lastPlaylistId = id;
+    touchOperationExpiry();
+}
+
+static inline void setLastTrackOverlayIndex(size_t i) {
+    lastTrackOverlayIndex = i;
+    touchOperationExpiry();
+}
+
+static inline void setLastCategoryOverlayIndex(size_t i) {
+    lastCategoryOverlayIndex = i;
+    touchOperationExpiry();
+}
 
 static std::string stringWithFormat(const std::string& key, const std::string& value) {
     std::string message = _TSTR(key);
@@ -326,6 +375,14 @@ static void showAddCategorySelectionToPlaylistOverlay(
     adapter->AddEntry(_TSTR("playqueue_overlay_new"));
     addPlaylistsToAdapter(adapter, result);
 
+    size_t selectedIndex = 0;
+    if (!lastOperationExpired() && lastPlaylistId >= 0) {
+        int index = findPlaylistIndex(result, lastPlaylistId);
+        if (index >= 0) {
+            selectedIndex = (size_t)index + 1; /* +1 offsets "new..." */
+        }
+    }
+
     showPlaylistListOverlay(
         _TSTR("playqueue_overlay_select_playlist_title"),
         adapter,
@@ -337,6 +394,7 @@ static void showAddCategorySelectionToPlaylistOverlay(
                 }
                 else { /* add to existing */
                     int64_t playlistId = (*result)[index - 1]->id;
+                    setLastPlaylistId(playlistId);
 
                     auto query = SavePlaylistQuery::Append(
                         library, playlistId, categoryType, categoryId);
@@ -347,7 +405,8 @@ static void showAddCategorySelectionToPlaylistOverlay(
                     });
                 }
             }
-    });
+        },
+        selectedIndex);
 }
 
 static void showAddTrackToPlaylistOverlay(
@@ -360,6 +419,14 @@ static void showAddTrackToPlaylistOverlay(
     adapter->SetSelectable(true);
     adapter->AddEntry(_TSTR("playqueue_overlay_new"));
     addPlaylistsToAdapter(adapter, result);
+
+    size_t selectedIndex = 0;
+    if (!lastOperationExpired() && lastPlaylistId >= 0) {
+        int index = findPlaylistIndex(result, lastPlaylistId);
+        if (index >= 0) {
+            selectedIndex = (size_t) index + 1; /* +1 offsets "new..." */
+        }
+    }
 
     showPlaylistListOverlay(
         _TSTR("playqueue_overlay_select_playlist_title"),
@@ -375,6 +442,8 @@ static void showAddTrackToPlaylistOverlay(
                 }
                 else { /* add to existing */
                     int64_t playlistId = (*result)[index - 1]->id;
+                    setLastPlaylistId(playlistId);
+
                     library->Enqueue(SavePlaylistQuery::Append(playlistId, list), 0,
                         [&queue, playlistId](auto query) {
                             /* the nesting is real... */
@@ -382,7 +451,8 @@ static void showAddTrackToPlaylistOverlay(
                         });
                 }
             }
-    });
+        },
+        selectedIndex);
 }
 
 PlayQueueOverlays::PlayQueueOverlays() {
@@ -404,15 +474,26 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
     adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
     adapter->SetSelectable(true);
 
+    size_t selectedIndex = 0;
+    if (!lastOperationExpired()) {
+        selectedIndex = lastTrackOverlayIndex;
+    }
+
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playqueue_overlay_track_actions_title"))
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
-        .SetSelectedIndex(0)
+        .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [track, library, &messageQueue, &playback]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                if (index == ListWindow::NO_SELECTION) {
+                    return;
+                }
+
+                setLastTrackOverlayIndex(index);
+
                 auto editor = playback.Edit();
                 if (index <= 2) {
                     handleJumpTo(index, messageQueue, track);
@@ -455,19 +536,27 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
     adapter->SetSelectable(true);
 
+    size_t selectedIndex = 0;
+    if (!lastOperationExpired()) {
+        selectedIndex = lastCategoryOverlayIndex;
+    }
+
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playqueue_overlay_add_category_title"))
         .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
-        .SetSelectedIndex(0)
+        .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [&playback, &messageQueue, library, fieldColumn, fieldId]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index == ListWindow::NO_SELECTION) {
                     return;
                 }
-                else if (index == 0) {
+
+                setLastCategoryOverlayIndex(index);
+
+                if (index == 0) {
                     showAddCategorySelectionToPlaylistOverlay(
                         messageQueue, library, fieldColumn, fieldId);
                 }
