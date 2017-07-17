@@ -457,6 +457,7 @@ void Window::Show() {
     }
     else {
         this->Create();
+        this->isVisibleInParent = true;
     }
 
     if (this->isDirty) {

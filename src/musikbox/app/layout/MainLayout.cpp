@@ -58,7 +58,7 @@ using namespace cursespp;
 
 static UpdateCheck updateCheck;
 
-#define ENABLE_DEMO_MODE 1
+#define ENABLE_DEMO_MODE 0
 
 #if ENABLE_DEMO_MODE
 static std::string lastKey;

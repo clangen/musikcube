@@ -601,7 +601,7 @@ bool SettingsLayout::KeyPress(const std::string& key) {
             return true;
         }
     }
-    else if (key == "KEY_BACKSPACE") { /* backspace */
+    else if (key == "KEY_BACKSPACE" || key == "KEY_DC") { /* backspace */
         if (this->GetFocus() == this->addedPathsList) {
             this->RemoveSelectedDirectory();
             return true;
