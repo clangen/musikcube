@@ -315,8 +315,8 @@ bool MainLayout::KeyPress(const std::string& key) {
 
 void MainLayout::Start() {
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-    std::enable_shared_from_this<LayoutBase>* receiver =
-        (std::enable_shared_from_this<LayoutBase>*) this;
+    std::enable_shared_from_this<MainLayout>* receiver =
+        (std::enable_shared_from_this<MainLayout>*) this;
 #else
     auto receiver = this;
 #endif

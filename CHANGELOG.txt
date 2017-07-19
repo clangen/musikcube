@@ -1,3 +1,12 @@
+0.21.2
+
+* "add tracks", "add category", and "select playlist" context menus now remember
+  the last selected item for 60 seconds. this makes adding multiple things to
+  the same playlist (or play queue) much easier. 
+* fixed startup crash on older versions of macos
+
+--------------------------------------------------------------------------------
+
 0.21.1
 
 * arrow keys can now select items in the shortcuts window while focused.
