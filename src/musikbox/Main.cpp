@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 
         /* blocking event loop */
         app.Run(mainLayout);
-        /* done with the app *//
+        /* done with the app */
 
         mainLayout->Stop();
 
