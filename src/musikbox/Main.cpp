@@ -164,14 +164,14 @@ int main(int argc, char* argv[]) {
 
         app.SetColorMode(colorMode);
 
-        /* set color theme */
+        /* theme */
         std::string colorTheme = prefs->GetString(musik::box::prefs::keys::ColorTheme);
         if (colorTheme.size()) {
             colorTheme = GetApplicationDirectory() + "/themes/" + colorTheme + ".json";
             app.SetColorTheme(colorTheme);
         }
 
-        /* tray icon options */
+        /* tray icon */
         app.SetMinimizeToTray(prefs->GetBool(musik::box::prefs::keys::MinimizeToTray, false));
         if (prefs->GetBool(musik::box::prefs::keys::StartMinimized, false)) {
             app.Minimize();
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
 
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
-        /* top-level layout */
+        /* main layout */
         using Main = std::shared_ptr<MainLayout>;
         Main mainLayout(new MainLayout(app, playback, transport, library));
 
@@ -193,7 +193,9 @@ int main(int argc, char* argv[]) {
             return globalHotkeys.Handle(kn);
         });
 
+        /* blocking event loop */
         app.Run(mainLayout);
+        /* done with the app *//
 
         mainLayout->Stop();
 

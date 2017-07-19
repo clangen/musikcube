@@ -332,16 +332,12 @@ process:
         this->CheckShowOverlay();
         this->EnsureFocusIsValid();
 
-        /* note that order is important here! dispatch pending messages first,
-        because they may muck around with layout, then redraw the window. if
-        done in the reverse order, the user may observe more flicker. */
+        /* needs to happen here, or else flicker */
         Window::MessageQueue().Dispatch();
 
         if (Window::WriteToScreen(this->state.input)) {
-            /* if we wrote to the screen that means panels could have shifted
-            around. ensure any visible overlay is still on top. */
             if (this->state.overlayWindow && !this->state.overlayWindow->IsTop()) {
-                this->state.overlay->BringToTop();
+                this->state.overlay->BringToTop(); /* active overlay is always on top... */
             }
         }
     }
