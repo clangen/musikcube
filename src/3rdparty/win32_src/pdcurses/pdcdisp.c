@@ -194,11 +194,42 @@ void PDC_gotoyx(int row, int col)
     }
 }
 
-int PDC_font_size = 12;
+#ifndef USER_DEFAULT_SCREEN_DPI
+#define USER_DEFAULT_SCREEN_DPI 96
+#endif
+
+static LONG scale_font_for_current_dpi(LONG size)
+{
+    typedef LONG(__stdcall *GetDpiForSystemProc)();
+    HMODULE user32Dll = LoadLibrary(L"User32.dll");
+
+    if (user32Dll) 
+    {
+        GetDpiForSystemProc getDpiForSystem =
+            (GetDpiForSystemProc) GetProcAddress( user32Dll, "GetDpiForSystem");
+
+        if (getDpiForSystem)
+        {
+            LONG dpi = getDpiForSystem();
+            size = MulDiv( size, getDpiForSystem(), USER_DEFAULT_SCREEN_DPI);
+        }
+
+        FreeLibrary( user32Dll);
+    }
+
+    return size;
+}
+
+int PDC_font_size = -1;
 TCHAR PDC_font_name[80];
 
 static LOGFONT PDC_get_logical_font( const int font_idx)
 {
+    if ( PDC_font_size < 0) 
+    {
+        PDC_font_size = scale_font_for_current_dpi(12); /* default 12 points */
+    }
+
     LOGFONT lf;
 
     memset(&lf, 0, sizeof(LOGFONT));        // Clear out structure.
