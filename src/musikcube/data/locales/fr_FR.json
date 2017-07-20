@@ -1,0 +1,89 @@
+{
+    "schemaVersion": 1,
+    "strings": {
+        "default_overlay_title": "musikcube",
+
+        "button_ok": "ok",
+        "button_yes": "oui",
+        "button_no": "non",
+
+        "browse_title_artists": "artistes",
+        "browse_title_albums": "albums",
+        "browse_title_genres": "genres",
+        "browse_title_album_artists": "artistes de l'album",
+        "browse_title_category": "catégorie",
+        "browse_title_tracks": "morceaux",
+
+        "settings_space_to_add": "parcourir (ESPACE pour ajouter)",
+        "settings_backspace_to_remove": "dossiers indexés (RETOUR ARRIÈRE pour supprimer)",
+        "settings_enable_disable_plugins": "activer/désactiver les plugins",
+        "settings_color_theme": "thème de couleur : ",
+        "settings_hotkey_tester": "testeur de raccourci clavier",
+        "settings_output_device": "périphérique de sortie : ",
+        "settings_transport_type": "mode de lecture : ",
+        "settings_degrade_256": "limitation à une palette de 256 couleurs",
+        "settings_show_dotfiles": "afficher les dossiers cachés dans la navigation",
+        "settings_sync_on_startup": "synchroniser les méta-données au démarrage",
+        "settings_remove_missing": "enlever les fichiers manquants de la bibliothèque",
+        "settings_default_theme_name": "défaut",
+        "settings_8color_theme_name": "8 couleurs (mode de compatibilité)",
+        "settings_transport_type_gapless": "continu",
+        "settings_transport_type_crossfade": "fondu",
+        "settings_first_run_dialog_title": "bienvenue sur musikcube !",
+        "settings_first_run_dialog_body": "ajoutez quelques dossiers contenant des fichiers musicaux, puis appuyez sur '%s' pour afficher le mode de vue bibliothèque et commencez à écouter !\n\npour des informations de dépannage, appuyez sur '%s' pour entrer dans la vue console.\n\nles autres raccourcis clavier sont affichés dans la barre de commande en bas de l'écran. vous pouvez activer le mode commande en appuyant sur 'ESC'.\n\nsélectionnez 'ok' pour commencer.",
+        "settings_needs_restart": "vous devrez redémarrer musikcube pour que ce changement prenne effet.",
+        "settings_selected_locale": "langue : ",
+
+        "locale_overlay_select_title": "sélectionnez la langue",
+
+        "color_theme_list_overlay_title": "thèmes de couleur",
+        "color_theme_256_overlay_message": "Désactiver le mode 256 couleurs activera le mode de couleur RVB, ce qui remplacera les couleurs dans la palette de base. désactiver cette option permettra d'améliorer la qualité des thèmes, mais cela pourrait causer des problèmes d'affichage dans d'autres applications jusqu'à ce que le terminal soit remis à zéro.\n\nêtes-vous sûr de vouloir désactiver la palette de 256 couleurs ?",
+
+        "playback_overlay_transport_title": "mode de lecture",
+        "playback_overlay_output_plugins_title": "plugins de sortie",
+        "playback_overlay_invalid_transport": "le périphérique de sortie sélectionné (%s) ne prends pas en charge le fondu.",
+        "playback_overlay_no_output_plugins_mesage": "aucun plugins de sortie trouvé !",
+
+        "playqueue_overlay_add_to_end": "ajouter à la fin",
+        "playqueue_overlay_add_as_next": "ajouter à la suite",
+        "playqueue_overlay_new": "nouveau...",
+        "playqueue_overlay_confirm_overwrite_message": "êtes-vous sûr de vouloir écraser la liste de lecture '%s' ?",
+        "playqueue_overlay_add_to_queue_title": "ajouter à la file d'attente",
+        "playqueue_overlay_load_playlist_title": "charger la liste de lecture",
+        "playqueue_overlay_save_playlist_title": "sauvegarder la liste de lecture",
+        "playqueue_overlay_rename_playlist_title": "renommer la liste de lecture",
+        "playqueue_overlay_delete_playlist_title": "supprimer la liste de lecture",
+        "playqueue_overlay_playlist_name_title": "nom de la liste de lecture",
+        "playqueue_overlay_new_playlist_name_title": "nouveau nom pour la liste de lecture",
+        "playqueue_overlay_confirm_delete_message": "êtes-vous sûr de supprimer '%s'?",
+        "playqueue_overlay_load_playlists_none_message": "vous n'avez pas encore sauvegardé de listes de lecture !",
+
+        "visualizer_overlay_title": "visualiseur",
+        "visualizer_overlay_no_visualizers_message": "aucun visualiseur trouvé !",
+
+        "plugin_overlay_title": "plugins",
+
+        "shortcuts_settings": "paramètres",
+        "shortcuts_library": "bibliothèque",
+        "shortcuts_console": "console",
+        "shortcuts_quit": "quitter",
+        "shortcuts_browse": "naviguer",
+        "shortcuts_filter": "filtrer",
+        "shortcuts_tracks": "morceaux",
+        "shortcuts_play_queue": "file d'attente",
+
+        "transport_playing_format": "lecture de $title par $artist de $album",
+        "transport_stopped": "la lecture est stoppée",
+        "transport_empty_song": "[morceau]",
+        "transport_empty_album": "[album]",
+        "transport_empty_artist": "[artiste]",
+        "transport_shuffle": "aléatoire",
+        "transport_muted": "sourdine",
+        "transport_volume": "vol",
+        "transport_repeat_list": "répéter la liste",
+        "transport_repeat_track": "répéter le morceau",
+        "transport_repeat_off": "répétition désactivée",
+
+        "main_syncing_banner": "synchronisation des métadonnées (%d morceaux traités)"
+    }
+}

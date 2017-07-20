@@ -13,7 +13,7 @@ make clean
 cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true .
 make -j4
 
-DIRNAME="musikbox_macos_$VERSION"
+DIRNAME="musikcube_macos_$VERSION"
 OUTPATH="bin/dist/$DIRNAME"
 
 rm -rf "$OUTPATH"
@@ -21,15 +21,15 @@ rm -rf "$OUTPATH"
 mkdir -p "$OUTPATH/plugins"
 mkdir -p "$OUTPATH/locales"
 mkdir -p "$OUTPATH/themes"
-cp bin/musikbox "$OUTPATH" 
+cp bin/musikcube "$OUTPATH" 
 cp bin/plugins/*.dylib "$OUTPATH/plugins"
 cp bin/locales/*.json "$OUTPATH/locales"
 cp bin/themes/*.json "$OUTPATH/themes"
 
-strip bin/musikbox
+strip bin/musikcube
 strip bin/plugins/*.dylib
 
 pushd bin/dist 
-tar cvf musikbox_macos_$VERSION.tar $DIRNAME
-bzip2 musikbox_macos_$VERSION.tar
+tar cvf musikcube_macos_$VERSION.tar $DIRNAME
+bzip2 musikcube_macos_$VERSION.tar
 popd

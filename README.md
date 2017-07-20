@@ -1,12 +1,8 @@
 # musikcube
 
-a cross-platform audio engine, library, player and server written in c++.
+a cross-platform, terminal-based audio engine, library, player and server written in c++.
 
-# musikbox
-
-a curses frontend to musikcube.
-
-musicbox compiles and runs easily on windows, macos and linux. it also runs well on a raspberry pi with raspbian, and can be setup as a streaming audio server.
+musikcube compiles and runs easily on windows, macos and linux. it also runs well on a raspberry pi with raspbian, and can be setup as a streaming audio server.
 
  [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
 
@@ -22,7 +18,7 @@ and on linux:
 
 ![linux screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/linux.png)
 
-you can also stream audio from, or remote control musikbox using the `musikdroid` android app, which can be downloaded in the `releases` section above. it looks like this:
+you can also stream audio from, or remote control musikcube using the `musikdroid` android app, which can be downloaded in the `releases` section above. it looks like this:
 
 ![android screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/android.png)
 
@@ -32,13 +28,13 @@ binaries are available in the [releases](https://github.com/clangen/musikcube/re
 
 while macos binaries are provided, you can also install via homebrew as follows:
 
-- `brew tap clangen/musikbox`
-- `brew install musikbox`
-- `musikbox`
+- `brew tap clangen/musikcube`
+- `brew install musikcube`
+- `musikcube`
 
 # raspberry pi
 
-musikbox runs well on a raspberry pi, connected to you home stereo. [see here for detailed setup instructions](https://github.com/clangen/musikcube/wiki/raspberry-pi).
+musikcube runs well on a raspberry pi, connected to you home stereo. [see here for detailed setup instructions](https://github.com/clangen/musikcube/wiki/raspberry-pi).
 
 # compiling
 
@@ -50,7 +46,7 @@ a list of all keyboard shortcuts can be found in the [user guide](https://github
 
 # streaming server
 
-musikbox ships with a streaming audio server enabled by default. it runs a websocket server on port 7905, used for metadata retrieval. an http server runs on port 7906, and is used to serve (optionally transcoded) audio data to clients.
+musikcube ships with a streaming audio server enabled by default. it runs a websocket server on port 7905, used for metadata retrieval. an http server runs on port 7906, and is used to serve (optionally transcoded) audio data to clients.
 
 **it's important to understand that, out of the box, the server (and remote api) should NOT be considered safe for use outside of a local network**. the websockets service only supports a simple password challenge, and the audio http server just handles Basic authorization. it does not provide ssl or tls. the server also stores the password in plain text in a settings file on the local machine.
 

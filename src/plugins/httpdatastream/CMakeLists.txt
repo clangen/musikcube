@@ -12,4 +12,4 @@ set (httpdatastream_SOURCES
 
 add_library(httpdatastream SHARED ${httpdatastream_SOURCES})
 
-target_link_libraries(httpdatastream ${musikbox_LINK_LIBS} -lcurl)
+target_link_libraries(httpdatastream ${musikcube_LINK_LIBS} -lcurl)

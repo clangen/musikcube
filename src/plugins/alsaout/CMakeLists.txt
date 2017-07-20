@@ -8,5 +8,5 @@ add_definitions(
 )
 
 add_library( alsaout SHARED ${alsaout_SOURCES} )
-target_link_libraries( alsaout ${musikbox_LINK_LIBS} asound)
+target_link_libraries( alsaout ${musikcube_LINK_LIBS} asound)
 

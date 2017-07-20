@@ -4,4 +4,4 @@ set (nullout_SOURCES
 )
 
 add_library(nullout SHARED ${nullout_SOURCES})
-target_link_libraries(nullout ${musikbox_LINK_LIBS})
+target_link_libraries(nullout ${musikcube_LINK_LIBS})

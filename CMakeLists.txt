@@ -5,22 +5,22 @@
 
 cmake_minimum_required(VERSION 3.0)
 
-project(musikbox)
-set (musikbox_VERSION_MAJOR 0)
-set (musikbox_VERSION_MINOR 20)
-set (musikbox_VERSION_PATCH 2)
-set (musikbox_VERSION "${musikbox_VERSION_MAJOR}.${musikbox_VERSION_MINOR}.${musikbox_VERSION_PATCH}")
+project(musikcube)
+set (musikcube_VERSION_MAJOR 0)
+set (musikcube_VERSION_MINOR 20)
+set (musikcube_VERSION_PATCH 2)
+set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 
 include(CMakeToolsHelpers OPTIONAL)
 
 include(ExternalProject)
 
 ExternalProject_Add(taglib
-    SOURCE_DIR "${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
+    SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
     BUILD_IN_SOURCE 0
     DOWNLOAD_COMMAND ""
     UPDATE_COMMAND ""
-    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
+    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
     INSTALL_COMMAND make install
 )
 
@@ -50,15 +50,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
 
 # SET (CMAKE_BUILD_TYPE DEBUG)
-set (LIBRARY_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin/plugins)
-set (EXECUTABLE_OUTPUT_PATH ${musikbox_SOURCE_DIR}/bin)
+set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
+set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 
 link_directories (
-  ${musikbox_SOURCE_DIR}/bin/plugins
-  ${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib
+  ${musikcube_SOURCE_DIR}/bin/plugins
+  ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib
 )
 
-set (musikbox_LINK_LIBS
+set (musikcube_LINK_LIBS
   ${linux_LINK_LIBS}
   ${BOOST_LINK_LIBS}
   dl
@@ -66,11 +66,11 @@ set (musikbox_LINK_LIBS
 )
 
 include_directories (
-  "${musikbox_SOURCE_DIR}/src"
-  "${musikbox_SOURCE_DIR}/src/core"
-  "${musikbox_SOURCE_DIR}/src/musikbox"
-  "${musikbox_SOURCE_DIR}/src/3rdparty/include"
-  "${musikbox_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include"
+  "${musikcube_SOURCE_DIR}/src"
+  "${musikcube_SOURCE_DIR}/src/core"
+  "${musikcube_SOURCE_DIR}/src/musikcube"
+  "${musikcube_SOURCE_DIR}/src/3rdparty/include"
+  "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include"
 )
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
@@ -81,7 +81,7 @@ endif ()
 
 add_subdirectory(src/core)
 add_subdirectory(src/glue)
-add_subdirectory(src/musikbox)
+add_subdirectory(src/musikcube)
 add_subdirectory(src/plugins/taglib_plugin)
 add_subdirectory(src/plugins/m4adecoder)
 add_subdirectory(src/plugins/oggdecoder)
@@ -103,7 +103,7 @@ endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 # install the binary
 install(
-  FILES bin/musikbox DESTINATION share/musikcube
+  FILES bin/musikcube DESTINATION share/musikcube
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
@@ -145,8 +145,8 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 file(GLOB sdk_headers "src/core/sdk/*.h")
-file(GLOB themes "src/musikbox/data/themes/*.json")
-file(GLOB locales "src/musikbox/data/locales/*.json")
+file(GLOB themes "src/musikcube/data/themes/*.json")
+file(GLOB locales "src/musikcube/data/locales/*.json")
 
 file(COPY ${themes}
     DESTINATION bin/themes
@@ -173,7 +173,7 @@ install(
 
 # shell script that starts the app.
 install(
-  FILES src/musikbox/musikbox
+  FILES src/musikcube/musikcube
   DESTINATION bin/
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
@@ -184,14 +184,14 @@ install(
 if (GENERATE_DEB MATCHES "1")
   if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(CPACK_GENERATOR "DEB")
-    set(CPACK_PACKAGE_DESCRIPTION "musikbox, a terminal-based music player and library")
-    set(CPACK_PACKAGE_VERSION_MAJOR "${musikbox_VERSION_MAJOR}")
-    set(CPACK_PACKAGE_VERSION_MINOR "${musikbox_VERSION_MINOR}")
-    set(CPACK_PACKAGE_VERSION_PATCH "${musikbox_VERSION_PATCH}")
+    set(CPACK_PACKAGE_DESCRIPTION "musikcube, a terminal-based music player and library")
+    set(CPACK_PACKAGE_VERSION_MAJOR "${musikcube_VERSION_MAJOR}")
+    set(CPACK_PACKAGE_VERSION_MINOR "${musikcube_VERSION_MINOR}")
+    set(CPACK_PACKAGE_VERSION_PATCH "${musikcube_VERSION_PATCH}")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libboost-atomic${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libflac8, libfaad2, libncursesw5, libasound2, libpulse0, pulseaudio, libmicrohttpd10, libmp3lame0")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "casey langen")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCHITECTURE})
-    set(CPACK_PACKAGE_FILE_NAME "musikbox_${musikbox_VERSION}_${DEB_ARCHITECTURE}")
+    set(CPACK_PACKAGE_FILE_NAME "musikcube_${musikcube_VERSION}_${DEB_ARCHITECTURE}")
     include(CPack)
   endif()
 endif()

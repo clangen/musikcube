@@ -1,0 +1,5 @@
+#!/bin/bash
+pushd @musikcube_INSTALL_DIR@/share/musikcube/ > /dev/null
+{
+  ./musikcube && popd
+} || popd > /dev/null

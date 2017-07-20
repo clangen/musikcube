@@ -30,4 +30,4 @@ add_definitions(-DHAVE_CONFIG_H)
 
 add_library(nomaddecoder SHARED ${nomaddecoder_SOURCES})
 
-target_link_libraries(nomaddecoder ${musikbox_LINK_LIBS})
+target_link_libraries(nomaddecoder ${musikcube_LINK_LIBS})

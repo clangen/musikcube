@@ -57,4 +57,4 @@ include_directories(
 )
 
 add_library(musikcore STATIC ${CORE_SOURCES})
-target_link_libraries(musikcore ${musikbox_LINK_LIBS})
+target_link_libraries(musikcore ${musikcube_LINK_LIBS})

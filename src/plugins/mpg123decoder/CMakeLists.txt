@@ -6,4 +6,4 @@ set (mpg123decoder_SOURCES
 )
 
 add_library(mpg123decoder SHARED ${mpg123decoder_SOURCES})
-target_link_libraries(mpg123decoder ${musikbox_LINK_LIBS} mpg123)
+target_link_libraries(mpg123decoder ${musikcube_LINK_LIBS} mpg123)

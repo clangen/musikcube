@@ -21,8 +21,8 @@ add_library(m4adecoder SHARED ${m4adecoder_SOURCES})
 # prefer static libraries on mac to make redist easier
 if (${LINK_STATICALLY} MATCHES "true")
   find_library(FAADLIB NAMES libfaad.a faad)
-  target_link_libraries(m4adecoder ${musikbox_LINK_LIBS} ${FAADLIB})
+  target_link_libraries(m4adecoder ${musikcube_LINK_LIBS} ${FAADLIB})
 else()
-  target_link_libraries(m4adecoder ${musikbox_LINK_LIBS} faad)
+  target_link_libraries(m4adecoder ${musikcube_LINK_LIBS} faad)
 endif()
 
