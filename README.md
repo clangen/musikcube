@@ -6,6 +6,8 @@ musikcube compiles and runs easily on windows, macos and linux. it also runs wel
 
  [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
 
+**a quick note**: the terminal-based frontend was recently renamed from `musikbox` to `musikcube` to avoid naming confusion. `musikbox` was originally going to be a throw-away test harness for the core library, but instead evolved into a stable, complete player. 
+
 it looks something like this on windows:
 
 ![windows screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/windows.png)
