@@ -1,4 +1,11 @@
-0.21.2
+0.21.0
+
+* musikbox binary renamed to musikcube. build scripts, documentation, website
+  and everything else updated accordingly.
+
+--------------------------------------------------------------------------------
+
+0.20.2
 
 * "add tracks", "add category", and "select playlist" context menus now remember
   the last selected item for 60 seconds. this makes adding multiple things to
@@ -7,7 +14,7 @@
 
 --------------------------------------------------------------------------------
 
-0.21.1
+0.20.1
 
 * arrow keys can now select items in the shortcuts window while focused.
 
