@@ -8,6 +8,8 @@ if you'd like to check out a quick demo, you can view an [asciinema cast here](h
 
  [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
 
+# screenshots
+
 it looks something like this on windows:
 
 ![windows screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/windows.png)
