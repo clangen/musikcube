@@ -4,9 +4,9 @@ a cross-platform, terminal-based audio engine, library, player and server writte
 
 musikcube compiles and runs easily on windows, macos and linux. it also runs well on a raspberry pi with raspbian, and can be setup as a streaming audio server.
 
- [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
+if you'd like to check out a quick demo, you can view an [asciinema cast here](https://asciinema.org/a/129748).
 
-**a quick note**: the terminal-based frontend was recently renamed from `musikbox` to `musikcube` to avoid naming confusion. `musikbox` was originally a throw-away test harness for the core library, but evolved into a stable, usable player.
+ [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
 
 it looks something like this on windows:
 
@@ -19,6 +19,10 @@ and this on macos:
 and on linux:
 
 ![linux screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/linux.png)
+
+here's a little demo:
+
+[![asciicast](https://asciinema.org/a/129748.png)](https://asciinema.org/a/129748)
 
 you can also stream audio from, or remote control musikcube using the `musikdroid` android app, which can be downloaded in the `releases` section above. it looks like this:
 
