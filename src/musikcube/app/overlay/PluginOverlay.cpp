@@ -52,7 +52,7 @@ using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
 
-static const std::string check = "\xe2\x9c\x93";
+static const std::string check = "√";
 
 struct PluginInfo {
     std::string name;

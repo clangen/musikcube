@@ -94,7 +94,7 @@ using namespace std::placeholders;
 
 using EntryPtr = IScrollAdapter::EntryPtr;
 
-static const std::string arrow = "\xe2\x96\xba ";
+static const std::string arrow = "> ";
 static bool showDotfiles = false;
 
 static UpdateCheck updateCheck;
