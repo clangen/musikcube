@@ -1,3 +1,10 @@
+0.21.1
+
+* updated a few of the symbols used for drawing things like dropdowns and 
+  checkmarks so they work with a wider variety of fonts
+
+--------------------------------------------------------------------------------
+
 0.21.0
 
 * musikbox binary renamed to musikcube. build scripts, documentation, website
