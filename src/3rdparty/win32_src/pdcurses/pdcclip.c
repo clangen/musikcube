@@ -72,10 +72,14 @@ int PDC_getclipboard(char **contents, long *length)
 
     if( rval == PDC_CLIP_SUCCESS)
     {
+        void *tptr = GlobalLock( handle);
+
+        if( tptr)
+        {
 #ifdef PDC_WIDE
-        size_t len = wcslen((wchar_t *)handle) * 3;
+            size_t len = wcslen((wchar_t *)tptr) * 3;
 #else
-        size_t len = strlen((char *)handle);
+            size_t len = strlen( tptr);
 #endif
 
         *contents = (char *)GlobalAlloc( GMEM_FIXED, len + 1);
@@ -85,12 +89,16 @@ int PDC_getclipboard(char **contents, long *length)
         else
         {
 #ifdef PDC_WIDE
-            len = PDC_wcstombs((char *)*contents, (wchar_t *)handle, len);
+                len = PDC_wcstombs( (char *)*contents, tptr, len);
 #else
-            strcpy((char *)*contents, (char *)handle);
+                strcpy((char *)*contents, tptr);
 #endif
+            }
            *length = (long)len;
+            GlobalUnlock( handle);
         }
+        else
+            rval = PDC_CLIP_MEMORY_ERROR;
     CloseClipboard();
     }
     return rval;
@@ -120,11 +128,6 @@ int PDC_setclipboard_raw( const char *contents, long length,
        PDC_mbstowcs((wchar_t *)ptr2, contents, length);
     else
        memcpy((char *)ptr2, contents, (length + 1) * sizeof( wchar_t));
-//  printf( "%ld bytes: %x %x %x %x\n", length,
-//          ((uint16_t *)ptr2)[0],
-//          ((uint16_t *)ptr2)[1],
-//          ((uint16_t *)ptr2)[2],
-//          ((uint16_t *)ptr2)[3]);
 #else
     memcpy((char *)ptr2, contents, length);
     ptr2[length] = 0;      /* ensure null termination */
@@ -139,7 +142,6 @@ int PDC_setclipboard_raw( const char *contents, long length,
     }
 
     CloseClipboard();
-    GlobalFree(ptr1);
 
     return PDC_CLIP_SUCCESS;
 }

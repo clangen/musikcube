@@ -294,5 +294,5 @@ void PDC_init_atrtab(void)
     _normalize(&fg, &bg);
 
     for (i = 0; i < PDC_COLOR_PAIRS; i++)
-        PDC_init_pair(i, fg, bg);
+        PDC_init_pair( (short)i, fg, bg);
 }

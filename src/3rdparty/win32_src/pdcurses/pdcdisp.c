@@ -7,8 +7,6 @@
 #include <string.h>
 #include <tchar.h>
 
-// #ifdef CHTYPE_LONG
-
 /* For this 'real Windows' version,  we use all Unicode all the time,
 including for ACS characters,  and even when PDC_WIDE isn't #defined
 (i.e., when running in 'legacy' 8-bit character mode) See 'acs_defs.h'
@@ -17,8 +15,6 @@ for details. */
 #define USE_UNICODE_ACS_CHARS 1
 
 #include "acs_defs.h"
-
-// #endif
 
 static const unsigned short starting_ascii_to_unicode[32] = {
    0,
@@ -88,7 +84,6 @@ static void redraw_cursor_from_index( const HDC hdc, const int idx)
         "0488",                       /* 5: bottom half block */
         "2266",                      /* 6: central block     */
         "0385;3053;3558",           /* 7: cross */
-//      "0385;3058",                /* 7: cross */
         "0088;0+10+48-18-4"  };    /* 8: outlined block: heavy top/bottom*/
     const char *sptr = shapes[idx];
     LONG left, top;
@@ -194,23 +189,29 @@ void PDC_gotoyx(int row, int col)
     }
 }
 
-#ifndef USER_DEFAULT_SCREEN_DPI
+#ifndef USER_DEFAULT_SCREEN_DPI /* defined in newer versions of WinUser.h */
 #define USER_DEFAULT_SCREEN_DPI 96
 #endif
 
-static LONG scale_font_for_current_dpi(LONG size)
+/* if the calling application marks itself as "DPI aware", we want to make sure
+that we scale the user's font appropriately. the GetDpiForSystem call is only
+available on Windows 10 and newer, so we load the DLL dynamically and find the
+function address at runtime. if the method isn't available, that means we're on
+and older operating system, so we just return the original value */
+static LONG scale_font_for_current_dpi( LONG size)
 {
     typedef LONG(__stdcall *GetDpiForSystemProc)();
-    HMODULE user32Dll = LoadLibrary(L"User32.dll");
+    HMODULE user32Dll = LoadLibrary( _T("User32.dll"));
 
-    if (user32Dll) 
+    if ( user32Dll)
     {
+        /* https://msdn.microsoft.com/en-us/library/windows/desktop/mt748623(v=vs.85).aspx */
+
         GetDpiForSystemProc getDpiForSystem =
             (GetDpiForSystemProc) GetProcAddress( user32Dll, "GetDpiForSystem");
 
-        if (getDpiForSystem)
+        if ( getDpiForSystem)
         {
-            LONG dpi = getDpiForSystem();
             size = MulDiv( size, getDpiForSystem(), USER_DEFAULT_SCREEN_DPI);
         }
 
@@ -225,23 +226,23 @@ TCHAR PDC_font_name[80];
 
 static LOGFONT PDC_get_logical_font( const int font_idx)
 {
-    if ( PDC_font_size < 0) 
+    if ( PDC_font_size < 0)
     {
         PDC_font_size = scale_font_for_current_dpi(12); /* default 12 points */
     }
 
     LOGFONT lf;
 
-    memset(&lf, 0, sizeof(LOGFONT));        // Clear out structure.
+    memset(&lf, 0, sizeof(LOGFONT));        /* Clear out structure. */
     lf.lfHeight = -PDC_font_size;
 #ifdef PDC_WIDE
     if( !*PDC_font_name)
-        _tcscpy( PDC_font_name, _T("Courier New"));
+        wcscpy( PDC_font_name, _T("Courier New"));
     if( font_idx & 4)
-        _tcscpy( lf.lfFaceName, _T("Unifont"));
+        wcscpy( lf.lfFaceName, _T("Unifont"));
     else
-        _tcscpy( lf.lfFaceName, PDC_font_name );
-//  wprintf( L"New font: %s\n", PDC_font_name);
+        wcscpy( lf.lfFaceName, PDC_font_name );
+/*  wprintf( L"New font: %s\n", PDC_font_name); */
 #else
     if( !*PDC_font_name)
         strcpy( PDC_font_name, "Courier New");
@@ -250,7 +251,7 @@ static LOGFONT PDC_get_logical_font( const int font_idx)
     else
         strcpy( lf.lfFaceName, PDC_font_name);
 #endif
-//  lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+/*  lf.lfPitchAndFamily = FIXED_PITCH | FF_MODERN; */
     lf.lfPitchAndFamily = FF_MODERN;
     lf.lfWeight = ((font_idx & 1) ? FW_EXTRABOLD : FW_NORMAL);
     lf.lfItalic = ((font_idx & 2) ? TRUE : FALSE);
@@ -287,7 +288,6 @@ int PDC_choose_a_new_font( void)
     rval = ChooseFont( &cf);
     if( rval)
 #ifdef PDC_WIDE
-// should this be _tcscpy() ???
         wcscpy( PDC_font_name, lf.lfFaceName);
 #else
         strcpy( PDC_font_name, lf.lfFaceName);
@@ -441,10 +441,8 @@ static bool character_is_in_font( chtype ichar)
     if( (ichar & A_ALTCHARSET) && (ichar & A_CHARTEXT) < 0x80)
        ichar = acs_map[ichar & 0x7f];
     ichar &= A_CHARTEXT;
-#ifdef PDC_WIDE
     if( ichar > MAX_UNICODE)  /* assume combining chars won't be */
        return( FALSE);        /* supported;  they rarely are     */
-#endif
     if( ichar > 0xffff)     /* see above comments */
        return( TRUE);
     for( i = PDC_unicode_range_data->cRanges; i; i--, wptr++)
@@ -454,11 +452,6 @@ static bool character_is_in_font( chtype ichar)
          return( TRUE);
                /* Didn't find it in any range;  it must not be in the font */
     return( FALSE);
-}
-#else
-static bool character_is_in_font( chtype ichar)
-{
-   return( TRUE);
 }
 #endif         /* #ifdef USE_FALLBACK_FONT */
 
@@ -555,14 +548,14 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
         wchar_t buff[BUFFSIZE];
         int lpDx[BUFFSIZE + 1];
         int olen = 0;
+#ifdef USE_FALLBACK_FONT
         const bool in_font = character_is_in_font( *srcp);
+#endif
 
         for( i = 0; i < len && olen < BUFFSIZE - 1
-#ifdef PDC_WIDE
+#ifdef USE_FALLBACK_FONT
                   && (in_font == character_is_in_font( srcp[i])
                               || (srcp[i] & A_CHARTEXT) == MAX_UNICODE)
-#else
-                  && (in_font == character_is_in_font( srcp[i]))
 #endif
                   && attrib == (attr_t)( srcp[i] >> PDC_REAL_ATTR_SHIFT); i++)
         {
@@ -640,8 +633,10 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
         }
         if( !PDC_really_blinking && (*srcp & A_BLINK))
             new_font_attrib &= ~A_BLINK;
+#ifdef USE_FALLBACK_FONT
         if( !in_font)                  /* flag to indicate use of */
             new_font_attrib |= 1;      /* fallback font           */
+#endif
         if( new_font_attrib != font_attrib)
         {
             HFONT hFont;
@@ -665,8 +660,6 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
         clip_rect.top = lineno * PDC_cyChar;
         clip_rect.right = clip_rect.left + i * PDC_cxChar;
         clip_rect.bottom = clip_rect.top + PDC_cyChar;
-//      TextOutW( hdc, clip_rect.left, clip_rect.top,
-//                         buff, olen);
         ExtTextOutW( hdc, clip_rect.left, clip_rect.top,
                            ETO_CLIPPED | ETO_OPAQUE, &clip_rect,
                            buff, olen, (olen > 1 ? lpDx : NULL));

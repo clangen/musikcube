@@ -62,7 +62,6 @@ void PDC_add_clipboard_to_key_queue( void)
 #endif
 
             clipboard_contents = (TCHAR *)calloc( len + 1, sizeof( TCHAR));
-//          _tcscpy( clipboard_contents, (TCHAR *)handle);
             memcpy( clipboard_contents, (TCHAR *)handle, (len + 1) * sizeof( TCHAR));
 #ifdef PDC_WIDE
             printf( "ilen = %ld\n", len);

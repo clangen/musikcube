@@ -37,52 +37,6 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
 
 #define N_COLORS 256
 
-/* this is the standard extended color palette that seems to be found
-on most UNIX operating systems (including macOS). it was generated using
-a modified version of this python script: http://askubuntu.com/a/821161. */
-COLORREF PDC_standard_extended_palette_colors[240] = {
-    0x000000, 0x5f0000, 0x870000, 0xaf0000, 0xd70000, 0xff0000,
-    0x005f00, 0x5f5f00, 0x875f00, 0xaf5f00, 0xd75f00, 0xff5f00,
-    0x008700, 0x5f8700, 0x878700, 0xaf8700, 0xd78700, 0xff8700,
-    0x00af00, 0x5faf00, 0x87af00, 0xafaf00, 0xd7af00, 0xffaf00,
-    0x00d700, 0x5fd700, 0x87d700, 0xafd700, 0xd7d700, 0xffd700,
-    0x00ff00, 0x5fff00, 0x87ff00, 0xafff00, 0xd7ff00, 0xffff00,
-    0x00005f, 0x5f005f, 0x87005f, 0xaf005f, 0xd7005f, 0xff005f,
-    0x005f5f, 0x5f5f5f, 0x875f5f, 0xaf5f5f, 0xd75f5f, 0xff5f5f,
-    0x00875f, 0x5f875f, 0x87875f, 0xaf875f, 0xd7875f, 0xff875f,
-    0x00af5f, 0x5faf5f, 0x87af5f, 0xafaf5f, 0xd7af5f, 0xffaf5f,
-    0x00d75f, 0x5fd75f, 0x87d75f, 0xafd75f, 0xd7d75f, 0xffd75f,
-    0x00ff5f, 0x5fff5f, 0x87ff5f, 0xafff5f, 0xd7ff5f, 0xffff5f,
-    0x000087, 0x5f0087, 0x870087, 0xaf0087, 0xd70087, 0xff0087,
-    0x005f87, 0x5f5f87, 0x875f87, 0xaf5f87, 0xd75f87, 0xff5f87,
-    0x008787, 0x5f8787, 0x878787, 0xaf8787, 0xd78787, 0xff8787,
-    0x00af87, 0x5faf87, 0x87af87, 0xafaf87, 0xd7af87, 0xffaf87,
-    0x00d787, 0x5fd787, 0x87d787, 0xafd787, 0xd7d787, 0xffd787,
-    0x00ff87, 0x5fff87, 0x87ff87, 0xafff87, 0xd7ff87, 0xffff87,
-    0x0000af, 0x5f00af, 0x8700af, 0xaf00af, 0xd700af, 0xff00af,
-    0x005faf, 0x5f5faf, 0x875faf, 0xaf5faf, 0xd75faf, 0xff5faf,
-    0x0087af, 0x5f87af, 0x8787af, 0xaf87af, 0xd787af, 0xff87af,
-    0x00afaf, 0x5fafaf, 0x87afaf, 0xafafaf, 0xd7afaf, 0xffafaf,
-    0x00d7af, 0x5fd7af, 0x87d7af, 0xafd7af, 0xd7d7af, 0xffd7af,
-    0x00ffaf, 0x5fffaf, 0x87ffaf, 0xafffaf, 0xd7ffaf, 0xffffaf,
-    0x0000d7, 0x5f00d7, 0x8700d7, 0xaf00d7, 0xd700d7, 0xff00d7,
-    0x005fd7, 0x5f5fd7, 0x875fd7, 0xaf5fd7, 0xd75fd7, 0xff5fd7,
-    0x0087d7, 0x5f87d7, 0x8787d7, 0xaf87d7, 0xd787d7, 0xff87d7,
-    0x00afd7, 0x5fafd7, 0x87afd7, 0xafafd7, 0xd7afd7, 0xffafd7,
-    0x00d7d7, 0x5fd7d7, 0x87d7d7, 0xafd7d7, 0xd7d7d7, 0xffd7d7,
-    0x00ffd7, 0x5fffd7, 0x87ffd7, 0xafffd7, 0xd7ffd7, 0xffffd7,
-    0x0000ff, 0x5f00ff, 0x8700ff, 0xaf00ff, 0xd700ff, 0xff00ff,
-    0x005fff, 0x5f5fff, 0x875fff, 0xaf5fff, 0xd75fff, 0xff5fff,
-    0x0087ff, 0x5f87ff, 0x8787ff, 0xaf87ff, 0xd787ff, 0xff87ff,
-    0x00afff, 0x5fafff, 0x87afff, 0xafafff, 0xd7afff, 0xffafff,
-    0x00d7ff, 0x5fd7ff, 0x87d7ff, 0xafd7ff, 0xd7d7ff, 0xffd7ff,
-    0x00ffff, 0x5fffff, 0x87ffff, 0xafffff, 0xd7ffff, 0xffffff,
-    0x080808, 0x121212, 0x1c1c1c, 0x262626, 0x303030, 0x3a3a3a,
-    0x444444, 0x4e4e4e, 0x585858, 0x626262, 0x6c6c6c, 0x767676,
-    0x808080, 0x8a8a8a, 0x949494, 0x9e9e9e, 0xa8a8a8, 0xb2b2b2,
-    0xbcbcbc, 0xc6c6c6, 0xd0d0d0, 0xdadada, 0xe4e4e4, 0xeeeeee
-};
-
 #ifdef A_OVERLINE
 #define A_ALL_LINES (A_UNDERLINE | A_LEFTLINE | A_RIGHTLINE | A_OVERLINE | A_STRIKEOUT)
 #else
@@ -963,6 +917,101 @@ INLINE void show_mouse_rect( const HWND hwnd, RECT before, RECT after)
         }
 }
 
+/* Cygwin lacks _splitpath, _wsplitpath.  THE FOLLOWING ARE NOT FULLY
+TESTED IMPLEMENTATIONS OF THOSE TWO FUNCTIONS,  because the only use we
+make of them is to get fname.  (Though I did write a little test program,
+and they seem to work.) */
+
+#ifdef __CYGWIN__
+#ifdef PDC_WIDE
+static void my_wsplitpath( const wchar_t *path, wchar_t *drive,
+           wchar_t *dir, wchar_t *fname, wchar_t *ext)
+{
+    size_t i, loc = 0;
+
+    assert( path);
+    assert( fname);
+    if( path[0] && path[1] == ':')
+    {
+        if( drive)
+        {
+            drive[0] = path[0];
+            drive[1] = ':';
+            drive[2] = '\0';
+        }
+        path += 2;
+    }
+    else if( drive)
+        *drive = '\0';
+    for( i = 0; path[i]; i++)
+        if( path[i] == '/' || path[i] == '\\')
+            loc = i + 1;
+    if( dir)
+    {
+        memcpy( dir, path, loc * sizeof( wchar_t));
+        dir[loc] = '\0';
+    }
+    if( loc)
+        path += loc;
+    loc = 0;
+    while( path[loc] && path[loc] != '.')
+        loc++;
+    if( fname)
+    {
+        memcpy( fname, path, loc * sizeof( wchar_t));
+        fname[loc] = '\0';
+    }
+    if( ext)
+        wcscpy( ext, path + loc);
+}
+#endif            /* #ifdef PDC_WIDE */
+
+static void my_splitpath( const char *path, char *drive,
+           char *dir, char *fname, char *ext)
+{
+    size_t i, loc = 0;
+
+    assert( path);
+    assert( fname);
+    if( path[0] && path[1] == ':')
+    {
+        if( drive)
+        {
+            drive[0] = path[0];
+            drive[1] = ':';
+            drive[2] = '\0';
+        }
+        path += 2;
+    }
+    else if( drive)
+        *drive = '\0';
+    for( i = 0; path[i]; i++)
+        if( path[i] == '/' || path[i] == '\\')
+            loc = i + 1;
+    if( dir)
+    {
+        memcpy( dir, path, loc * sizeof( char));
+        dir[loc] = '\0';
+    }
+    if( loc)
+        path += loc;
+    loc = 0;
+    while( path[loc] && path[loc] != '.')
+        loc++;
+    if( fname)
+    {
+        memcpy( fname, path, loc * sizeof( char));
+        fname[loc] = '\0';
+    }
+    if( ext)
+        strcpy( ext, path + loc);
+}
+#else          /* non-Cygwin case : */
+   #define my_splitpath  _splitpath
+   #define my_wsplitpath _wsplitpath
+   #define GOT_ARGV_ARGC
+#endif            /* #ifdef __CYGWIN__ */
+
 /* This function looks at the full command line,  which includes a fully
 specified path to the executable and arguments;  and strips out just the
 name of the app,  with the arguments optionally appended.  Hence,
@@ -997,16 +1046,43 @@ starting this library,  those arguments will be stored in PDC_argc and
 PDC_argv,  and will be used instead of GetCommandLine.
 */
 
+#ifdef UNICODE
+   #define my_stprintf wsprintf
+   #define my_tcslen   wcslen
+#ifdef __CYGWIN__
+                     /* Can't lowercase Unicode text in Cygwin */
+   #define my_tcslwr
+#else
+   #define my_tcslwr   wcslwr
+#endif      /* __CYGWIN__ */
+   #define my_tcscat   wcscat
+   #define my_tcscpy   wcscpy
+   #define my_stscanf  swscanf
+#else
+   #define my_stprintf sprintf
+   #define my_tcslen   strlen
+   #define my_tcslwr   strlwr
+   #define my_tcscat   strcat
+   #define my_tcscpy   strcpy
+   #define my_stscanf  sscanf
+#endif
+
 static void get_app_name( TCHAR *buff, const bool include_args)
 {
     int i;
+#ifdef GOT_ARGV_ARGC
     int argc = (PDC_argc ? PDC_argc : __argc);
     char **argv = (PDC_argc ? PDC_argv : __argv);
+#else
+    int argc = PDC_argc;
+    char **argv = PDC_argv;
+#endif
 
 #ifdef PDC_WIDE
+#ifdef GOT_ARGV_ARGC
     if( __wargv)
     {
-        _wsplitpath( __wargv[0], NULL, NULL, buff, NULL);
+        my_wsplitpath( __wargv[0], NULL, NULL, buff, NULL);
         if( include_args)
             for( i = 1; i < __argc; i++)
             {
@@ -1014,11 +1090,13 @@ static void get_app_name( TCHAR *buff, const bool include_args)
                 wcscat( buff, __wargv[i]);
             }
     }
-    else if( argv)
+    else
+#endif      /* #ifdef GOT_ARGV_ARGC */
+       if( argv)
     {
-        char tbuff[_MAX_PATH];
+        char tbuff[MAX_PATH];
 
-        _splitpath( argv[0], NULL, NULL, tbuff, NULL);
+        my_splitpath( argv[0], NULL, NULL, tbuff, NULL);
         if( include_args)
             for( i = 1; i < argc; i++)
             {
@@ -1031,8 +1109,8 @@ static void get_app_name( TCHAR *buff, const bool include_args)
     {
         wchar_t *tptr;
 
-        _wsplitpath( GetCommandLine( ), NULL, NULL, buff, NULL);
-        _wcslwr( buff + 1);
+        my_wsplitpath( GetCommandLine( ), NULL, NULL, buff, NULL);
+        my_tcslwr( buff + 1);
         tptr = wcsstr( buff, L".exe\"");
         if( tptr)
         {
@@ -1042,12 +1120,10 @@ static void get_app_name( TCHAR *buff, const bool include_args)
                 *tptr = '\0';
         }
     }
-    debug_printf( "(W) __argv: %p __wargv: %p Name out: '%ls'\n", __argv, __wargv, buff);
 #else       /* non-Unicode case */
-    debug_printf( "__argv: %p\n", __argv);
     if( argv)
     {
-        _splitpath( argv[0], NULL, NULL, buff, NULL);
+        my_splitpath( argv[0], NULL, NULL, buff, NULL);
         debug_printf( "Path: %s;  exe: %s\n", argv[0], buff);
         if( include_args)
             for( i = 1; i < argc; i++)
@@ -1060,8 +1136,8 @@ static void get_app_name( TCHAR *buff, const bool include_args)
     {
         char *tptr;
 
-        _splitpath( GetCommandLine( ), NULL, NULL, buff, NULL);
-        _strlwr( buff + 1);
+        my_splitpath( GetCommandLine( ), NULL, NULL, buff, NULL);
+        strlwr( buff + 1);
         tptr = strstr( buff, ".exe\"");
         if( tptr)
         {
@@ -1071,9 +1147,8 @@ static void get_app_name( TCHAR *buff, const bool include_args)
                 *tptr = '\0';
         }
     }
-    debug_printf( "__argv: %p __wargv: %p Name out: '%s'\n", __argv, __wargv, buff);
 #endif
-    _tcslwr( buff + 1);
+    my_tcslwr( buff + 1);
 }
 
 /* This function extracts the first icon from the executable that is
@@ -1082,9 +1157,9 @@ executing this DLL */
 INLINE HICON get_app_icon( )
 {
 #ifdef PDC_WIDE
-    wchar_t filename[_MAX_PATH];
+    wchar_t filename[MAX_PATH];
 #else
-    char filename[_MAX_PATH];
+    char filename[MAX_PATH];
 #endif
 
     HICON icon = NULL;
@@ -1114,25 +1189,25 @@ INLINE int set_default_sizes_from_registry( const int n_cols, const int n_rows,
     if( rval == ERROR_SUCCESS)
     {
         TCHAR buff[180];
-        TCHAR key_name[_MAX_PATH];
+        TCHAR key_name[MAX_PATH];
         extern int PDC_font_size;
 
         if( IsZoomed( PDC_hWnd))    /* -1x-1 indicates a maximized window */
-            _sntprintf( buff, sizeof( buff),
+            my_stprintf( buff,
                       _T( "-1x-1,%d,0,0,%d"), PDC_font_size, menu_shown);
         else
-            _sntprintf( buff, sizeof( buff),
+            my_stprintf( buff,
                       _T( "%dx%d,%d,%d,%d,%d"), n_cols, n_rows, PDC_font_size,
                        xloc, yloc, menu_shown);
-        _sntprintf( buff + _tcslen( buff), sizeof( buff) - _tcslen( buff),
+        my_stprintf( buff + my_tcslen( buff),
                   _T(";%d,%d,%d,%d:"),
                   min_lines, max_lines,
                   min_cols, max_cols);
-        _tcscat( buff, PDC_font_name);
+        my_tcscat( buff, PDC_font_name);
 
         get_app_name( key_name, FALSE);
         rval = RegSetValueEx( hNewKey, key_name, 0, REG_SZ,
-                       (BYTE *)buff, (DWORD)( _tcslen( buff) * sizeof( TCHAR)));
+                       (BYTE *)buff, (DWORD)( my_tcslen( buff) * sizeof( TCHAR)));
         RegCloseKey( hNewKey);
     }
     debug_printf( "Size: %d %d; %d\n", n_cols, n_rows, rval);
@@ -1357,7 +1432,7 @@ INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
         return( 1);
     if( rval == ERROR_SUCCESS)
     {
-        TCHAR key_name[_MAX_PATH];
+        TCHAR key_name[MAX_PATH];
 
         get_app_name( key_name, FALSE);
         rval = RegQueryValueEx( hKey, key_name,
@@ -1367,14 +1442,14 @@ INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
             extern int PDC_font_size;
             int x = -1, y = -1, bytes_read = 0;
 
-            _stscanf( data, _T( "%dx%d,%d,%d,%d,%d;%d,%d,%d,%d:%n"),
+            my_stscanf( data, _T( "%dx%d,%d,%d,%d,%d;%d,%d,%d,%d:%n"),
                              &x, &y, &PDC_font_size,
                              xloc, yloc, menu_shown,
                              &min_lines, &max_lines,
                              &min_cols, &max_cols,
                              &bytes_read);
             if( bytes_read > 0 && data[bytes_read - 1] == ':')
-               _tcscpy( PDC_font_name, data + bytes_read);
+               my_tcscpy( PDC_font_name, data + bytes_read);
             if( n_cols)
                 *n_cols = x;
             if( n_rows)
@@ -1452,8 +1527,8 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
 
     debug_printf( "WM_SIZE: wParam %x %d %d %d\n", (unsigned)wParam,
                   n_xpixels, n_ypixels, SP->resized);
-//  if( wine_version)
-//      printf( "Wine version: %s\n", wine_version( ));
+/*  if( wine_version)
+        printf( "Wine version: %s\n", wine_version( ));  */
 
 
     if( wParam == SIZE_MINIMIZED )
@@ -2275,7 +2350,7 @@ INLINE int set_up_window( void)
     int xsize, ysize, window_style;
     int xloc = CW_USEDEFAULT;
     int yloc = CW_USEDEFAULT;
-    TCHAR WindowTitle[_MAX_PATH];
+    TCHAR WindowTitle[MAX_PATH];
     const TCHAR *AppName = _T( "Curses_App");
     HICON icon;
     static bool wndclass_has_been_registered = FALSE;
@@ -2366,7 +2441,7 @@ INLINE int set_up_window( void)
     }
 
     hMenu = GetSystemMenu( PDC_hWnd, FALSE);
-    AppendMenu( hMenu, MF_STRING | MF_CHECKED, WM_TOGGLE_MENU, _T( "Menu"));
+    AppendMenu( hMenu, MF_STRING | (menu_shown ? MF_CHECKED : MF_UNCHECKED), WM_TOGGLE_MENU, _T( "Menu"));
     AppendMenu( hMenu, MF_STRING, WM_CHOOSE_FONT, _T( "Choose Font"));
 
     debug_printf( "menu set\n");
@@ -2403,7 +2478,7 @@ INLINE int set_up_window( void)
 
 int PDC_scr_open( int argc, char **argv)
 {
-    int i;
+    int i, r, g, b;
     HMODULE hntdll = GetModuleHandle( _T("ntdll.dll"));
 
     if( hntdll)
@@ -2426,8 +2501,16 @@ int PDC_scr_open( int argc, char **argv)
                            ((i & COLOR_GREEN) ? intensity : 0),
                            ((i & COLOR_BLUE) ? intensity : 0));
     }
-    for( i = 16; i < N_COLORS; i++)
-        pdc_rgbs[i] = (COLORREF) PDC_standard_extended_palette_colors[i - 16];
+           /* 256-color xterm extended palette:  216 colors in a
+            6x6x6 color cube,  plus 24 (not 50) shades of gray */
+    for( r = 0; r < 6; r++)
+        for( g = 0; g < 6; g++)
+            for( b = 0; b < 6; b++)
+                pdc_rgbs[i++] = RGB( r ? r * 40 + 55 : 0,
+                                   g ? g * 40 + 55 : 0,
+                                   b ? b * 40 + 55 : 0);
+    for( i = 0; i < 24; i++)
+        pdc_rgbs[i + 232] = RGB( i * 10 + 8, i * 10 + 8, i * 10 + 8);
     SP->mouse_wait = PDC_CLICK_PERIOD;
     SP->visibility = 0;                /* no cursor,  by default */
     SP->curscol = SP->cursrow = 0;

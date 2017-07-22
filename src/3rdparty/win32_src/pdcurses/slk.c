@@ -432,8 +432,8 @@ static void _slk_calc(void)
     int n_groups = 0, group_size[10];
 
     label_length = COLS / n_labels;
-    if (label_length > MAX_LABEL_LENGTH - 1)
-        label_length = MAX_LABEL_LENGTH - 1;
+    if (label_length > MAX_LABEL_LENGTH)
+        label_length = MAX_LABEL_LENGTH;
     remaining_space = COLS - label_length * n_labels + 1;
     for( i = abs( label_fmt); i; i /= 16)
         group_size[n_groups++] = i % 16;

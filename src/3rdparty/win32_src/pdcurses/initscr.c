@@ -99,10 +99,12 @@ char ttytype[128];
 #define PDC_str( x) PDC_STR( x)
 
 static const char *_curses_notice =
-      "PDCurses " PDC_str(PDC_VER_MAJOR) "." \
-                  PDC_str(PDC_VER_MINOR) "." \
-                  PDC_str(PDC_VER_CHANGE) " - Public Domain " \
-                  PDC_str(PDC_VER_YEAR);
+      "PDCurses " PDC_str(PDC_VER_MAJOR) "."
+                  PDC_str(PDC_VER_MINOR) "."
+                  PDC_str(PDC_VER_CHANGE) " - Public Domain "
+                  PDC_str(PDC_VER_YEAR) "-"
+                  PDC_str(PDC_VER_MONTH) "-"
+                  PDC_str(PDC_VER_DAY);
 
 SCREEN *SP = (SCREEN*)NULL;           /* curses variables */
 WINDOW *curscr = (WINDOW *)NULL;      /* the current screen image */

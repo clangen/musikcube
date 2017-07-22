@@ -10,14 +10,14 @@
 #include <curses.h>
 
 #if defined(__TURBOC__) || defined(__EMX__) || defined(__DJGPP__) || \
-    defined(__CYGWIN32__) || defined(__MINGW32__) || \
+    defined(__CYGWIN__) || defined(__MINGW32__) || \
     defined(__WATCOMC__) || defined(__PACIFIC__)
 # ifndef HAVE_VSSCANF
 #  define HAVE_VSSCANF       /* have vsscanf() */
 # endif
 #endif
 
-#if defined(__CYGWIN32__) || defined(__MINGW32__) || \
+#if defined(__CYGWIN__) || defined(__MINGW32__) || \
     defined(__LCC__) || defined(__WATCOMC__)
 # ifndef HAVE_VSNPRINTF
 #  define HAVE_VSNPRINTF     /* have vsnprintf() */

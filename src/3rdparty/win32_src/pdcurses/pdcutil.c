@@ -16,7 +16,6 @@ void PDC_napms(int ms)     /* 'ms' = milli,  _not_ microseconds! */
     MSG msg;
     DWORD curr_ms = GetTickCount( );
     const DWORD milliseconds_sleep_limit = ms + curr_ms;
-    const DWORD max_sleep_ms = 50;     /* check messages 20 times a second */
     extern bool PDC_bDone;
 
     PDC_LOG(("PDC_napms() - called: ms=%d\n", ms));
@@ -24,6 +23,7 @@ void PDC_napms(int ms)     /* 'ms' = milli,  _not_ microseconds! */
     /* Pump all pending messages from WIN32 to the window handler */
     while( !PDC_bDone && curr_ms < milliseconds_sleep_limit )
     {
+        const DWORD max_sleep_ms = 50;      /* check msgs 20 times/second */
         DWORD sleep_millisecs;
 
         while( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) )

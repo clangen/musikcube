@@ -82,7 +82,7 @@ WINDOW *newpad(int nlines, int ncols)
 
     PDC_LOG(("newpad() - called: lines=%d cols=%d\n", nlines, ncols));
 
-    if ( !(win = PDC_makenew(nlines, ncols, -1, -1))
+    if ( !(win = PDC_makenew(nlines, ncols, 0, 0))
         || !(win = PDC_makelines(win)) )
         return (WINDOW *)NULL;
 
@@ -178,7 +178,7 @@ int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
 
     PDC_LOG(("pnoutrefresh() - called\n"));
 
-    if (!w || !(w->_flags & (_PAD|_SUBPAD)) || (sy2 >= LINES) || (sy2 >= COLS))
+    if (!w || !(w->_flags & (_PAD|_SUBPAD)) || (sy2 >= LINES) || (sx2 >= COLS))
         return ERR;
 
     if (py < 0)
