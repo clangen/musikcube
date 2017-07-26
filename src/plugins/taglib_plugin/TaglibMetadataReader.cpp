@@ -226,7 +226,7 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::ITrack
         }
 
         if (!allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
-            this->SetTagValue("year", allTags["TDRC"].front()->toString().substr(0, 4), track);
+            this->SetTagValue("year", allTags["TCOP"].front()->toString().substr(0, 4), track);
         }
 
         /* TRCK is the track number (or "trackNum/totalTracks") */
