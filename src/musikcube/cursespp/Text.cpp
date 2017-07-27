@@ -51,8 +51,10 @@ namespace cursespp {
                 auto it = str.begin();
                 auto end = str.end();
 
-                size_t c = 0;
-                while (c < len && it != str.end()) {
+                size_t cols = 0;
+                while (it != str.end()) {
+                    auto prev = it;
+
                     try {
                         utf8::next(it, end);
                     }
@@ -61,10 +63,13 @@ namespace cursespp {
                         ++it;
                     }
 
-                    ++c;
-                }
+                    size_t c = u8cols(std::string(prev, it));
+                    if (cols + c > len) {
+                        return std::string(str.begin(), prev);
+                    }
 
-                return std::string(str.begin(), it);
+                    cols += c;
+                }
             }
 
             return str;
