@@ -100,7 +100,7 @@ void ToastOverlay::RecalculateSize() {
 }
 
 void ToastOverlay::OnRedraw() {
-     if (this->width <= 0 || this->height <= 0) {
+     if (!this->IsVisible() || this->width <= 0 || this->height <= 0) {
          return;
      }
 

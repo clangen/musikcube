@@ -113,7 +113,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
     WINDOW* window = scrollable->GetContent();
     werase(window);
 
-    if (this->height == 0 || this->width == 0 || this->GetEntryCount() == 0) {
+    if (!scrollable->IsVisible() || !window || this->height == 0 || this->width == 0 || this->GetEntryCount() == 0) {
         return;
     }
 

@@ -36,6 +36,7 @@
 
 #include <core/debug.h>
 
+#include <functional>
 #include <string>
 #include <queue>
 #include <thread>

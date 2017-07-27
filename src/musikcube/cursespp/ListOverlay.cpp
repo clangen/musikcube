@@ -213,7 +213,7 @@ void ListOverlay::RecalculateSize() {
 }
 
 void ListOverlay::Redraw() {
-    if (this->width <= 0 || this->height <= 0) {
+    if (!this->IsVisible() || this->width <= 0 || this->height <= 0) {
         return;
     }
 
