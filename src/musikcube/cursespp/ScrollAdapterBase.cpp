@@ -158,7 +158,7 @@ void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, Scr
 
             /* string is padded above, we don't need a \n */
 
-            wprintw(window, "%s", line.c_str());
+            checked_wprintw(window, "%s", line.c_str());
 
             if (attrs != -1) {
                 wattroff(window, attrs);

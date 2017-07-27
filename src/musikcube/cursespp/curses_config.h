@@ -46,3 +46,11 @@
     #include <ncursesw/curses.h>
     #include <ncursesw/panel.h>
 #endif
+
+#include <stdarg.h>
+
+#define checked_wprintw(window, format, ...) \
+    if (window && format) { wprintw(window, format, ##__VA_ARGS__); }
+
+#define checked_waddstr(window, str) \
+    if (window && str) { waddstr(window, str); }

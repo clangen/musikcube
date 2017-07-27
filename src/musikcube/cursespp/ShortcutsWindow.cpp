@@ -185,7 +185,7 @@ void ShortcutsWindow::OnRedraw() {
         int64_t keyAttrs = (e->attrs == -1) ? normalAttrs : COLOR_PAIR(e->attrs);
         keyAttrs = (e->key == this->activeKey) ? activeAttrs : keyAttrs;
 
-        wprintw(c, " ");
+        checked_wprintw(c, " ");
         --remaining;
 
         if (remaining == 0) {
@@ -202,7 +202,7 @@ void ShortcutsWindow::OnRedraw() {
         }
 
         wattron(c, keyAttrs);
-        wprintw(c, key.c_str());
+        checked_wprintw(c, key.c_str());
         wattroff(c, keyAttrs);
 
         remaining -= len;
@@ -217,7 +217,7 @@ void ShortcutsWindow::OnRedraw() {
             len = remaining;
         }
 
-        wprintw(c, value.c_str());
+        checked_wprintw(c, value.c_str());
 
         remaining -= len;
     }

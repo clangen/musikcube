@@ -399,7 +399,7 @@ void Window::DrawFrameAndTitle() {
         if (max > 3) { /* 3 = first character plus ellipse (e.g. 'F..')*/
             std::string adjusted = " " + text::Ellipsize(this->title, (size_t) max - 2) + " ";
             wmove(this->frame, 0, 2);
-            waddstr(this->frame, adjusted.c_str());
+            checked_waddstr(this->frame, adjusted.c_str());
         }
     }
 }

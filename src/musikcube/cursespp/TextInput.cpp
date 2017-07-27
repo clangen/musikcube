@@ -102,7 +102,7 @@ void TextInput::OnRedraw() {
 
     if (!this->IsFocused() && !columns && hintText.size()) {
         /* draw the hint if we have one and there's no string yet */
-        waddstr(c, u8substr(hintText, 0, columns).c_str());
+        checked_waddstr(c, u8substr(hintText, 0, columns).c_str());
     }
     else {
         /* mask the string if we're in password mode */
@@ -121,7 +121,7 @@ void TextInput::OnRedraw() {
 
         /* finally, draw the offset/trimmed, potentially masked, padded
         string to the output */
-        waddstr(c, trimmed.c_str());
+        checked_waddstr(c, trimmed.c_str());
     }
 }
 
