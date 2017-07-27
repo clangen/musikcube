@@ -90,7 +90,7 @@ void Checkbox::OnRedraw() {
             wattron(c, COLOR_PAIR(attrs));
         }
 
-        wprintw(c, ellipsized.c_str());
+        checked_wprintw(c, ellipsized.c_str());
 
         if (attrs != -1) {
             wattroff(c, COLOR_PAIR(attrs));

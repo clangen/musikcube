@@ -136,6 +136,7 @@ namespace cursespp {
             virtual void Destroy();
             void Recreate();
             void Clear();
+            void DrawFrameAndTitle();
             void RepaintBackground();
             void RecreateForUpdatedDimensions();
             void DestroyIfBadBounds();

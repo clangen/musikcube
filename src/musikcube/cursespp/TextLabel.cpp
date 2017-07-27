@@ -72,7 +72,7 @@ void TextLabel::OnRedraw() {
     }
 
     wmove(c, 0, 0);
-    waddstr(c, aligned.c_str());
+    checked_waddstr(c, aligned.c_str());
 
     if (attrs != -1) {
         wattroff(c, COLOR_PAIR(attrs));

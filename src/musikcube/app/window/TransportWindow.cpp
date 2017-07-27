@@ -285,7 +285,7 @@ static size_t writePlayingFormat(
         }
 
         ON(w, attr);
-        wprintw(w, value.c_str());
+        checked_wprintw(w, value.c_str());
         OFF(w, attr);
 
         remaining -= cols;
@@ -477,7 +477,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (stopped) {
         ON(c, disabled);
-        wprintw(c, Strings.STOPPED.c_str());
+        checked_wprintw(c, Strings.STOPPED.c_str());
         displayCache->Reset();
         OFF(c, disabled);
     }
@@ -489,7 +489,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     wmove(c, 0, cx - shuffleLabelLen);
     int64_t shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
-    wprintw(c, shuffleLabel.c_str());
+    checked_wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
 
     /* volume slider */
@@ -604,20 +604,20 @@ void TransportWindow::Update(TimeMode timeMode) {
     wmove(c, 1, 0); /* move cursor to the second line */
 
     ON(c, volumeAttrs);
-    wprintw(c, volume.c_str());
+    checked_wprintw(c, volume.c_str());
     OFF(c, volumeAttrs);
 
     ON(c, currentTimeAttrs); /* blink if paused */
-    wprintw(c, "%s ", currentTime.c_str());
+    checked_wprintw(c, "%s ", currentTime.c_str());
     OFF(c, currentTimeAttrs);
 
     ON(c, timerAttrs);
-    waddstr(c, timerTrack.c_str()); /* may be a very long string */
-    wprintw(c, " %s", displayCache->totalTime.c_str());
+    checked_waddstr(c, timerTrack.c_str()); /* may be a very long string */
+    checked_wprintw(c, " %s", displayCache->totalTime.c_str());
     OFF(c, timerAttrs);
 
     ON(c, repeatAttrs);
-    wprintw(c, repeatModeLabel.c_str());
+    checked_wprintw(c, repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
 
     this->Invalidate();

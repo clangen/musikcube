@@ -63,6 +63,7 @@ set (musikcube_LINK_LIBS
   ${BOOST_LINK_LIBS}
   dl
   curl
+  pthread
 )
 
 include_directories (
@@ -78,6 +79,10 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   link_directories ("/usr/local/lib")
   include_directories("/usr/local/include")
 endif ()
+
+if (EXISTS "/etc/arch-release")
+  add_definitions (-DNO_NCURSESW)
+endif()
 
 add_subdirectory(src/core)
 add_subdirectory(src/glue)

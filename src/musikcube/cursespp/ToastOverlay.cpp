@@ -100,7 +100,7 @@ void ToastOverlay::RecalculateSize() {
 }
 
 void ToastOverlay::OnRedraw() {
-     if (this->width <= 0 || this->height <= 0) {
+     if (!this->IsVisible() || this->width <= 0 || this->height <= 0) {
          return;
      }
 
@@ -108,6 +108,6 @@ void ToastOverlay::OnRedraw() {
 
      for (int i = 0; i < (int) this->titleLines.size(); i++) {
          wmove(c, i, 1);
-         wprintw(c, text::Ellipsize(this->titleLines[i], this->width - 4).c_str());
+         checked_wprintw(c, text::Ellipsize(this->titleLines[i], this->width - 4).c_str());
      }
 }

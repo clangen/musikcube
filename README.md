@@ -4,8 +4,6 @@ a cross-platform, terminal-based audio engine, library, player and server writte
 
 musikcube compiles and runs easily on windows, macos and linux. it also runs well on a raspberry pi with raspbian, and can be setup as a streaming audio server.
 
-if you'd like to check out a quick demo, you can view an [asciinema cast here](https://asciinema.org/a/129748).
-
  [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
 
 # screenshots
@@ -22,7 +20,7 @@ and on linux:
 
 ![linux screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/linux.png)
 
-here's a little demo:
+here's a demo (made with asciinema):
 
 [![asciicast](https://asciinema.org/a/129748.png)](https://asciinema.org/a/129748)
 

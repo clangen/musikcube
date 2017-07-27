@@ -76,7 +76,7 @@ std::string musik::core::GetApplicationDirectory() {
         result = result.substr(0, last); /* remove filename component */
     #else
         std::string pathToProc = boost::str(boost::format("/proc/%d/exe") % (int) getpid());
-        char pathbuf[PATH_MAX + 1];
+        char pathbuf[PATH_MAX + 1] = { 0 };
         readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
         result.assign(pathbuf);
         size_t last = result.find_last_of("/");
