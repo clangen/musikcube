@@ -48,12 +48,13 @@ namespace cursespp {
             /* not a simple substr anymore, gotta deal with multi-byte
             characters... */
             if (u8cols(str) > len) {
+                auto prev = str.begin();
                 auto it = str.begin();
                 auto end = str.end();
 
                 size_t cols = 0;
-                while (it != str.end()) {
-                    auto prev = it;
+                while (cols <= len && it != str.end()) {
+                    prev = it;
 
                     try {
                         utf8::next(it, end);
@@ -63,13 +64,10 @@ namespace cursespp {
                         ++it;
                     }
 
-                    size_t c = u8cols(std::string(prev, it));
-                    if (cols + c > len) {
-                        return std::string(str.begin(), prev);
-                    }
-
-                    cols += c;
+                    cols += u8cols(std::string(prev, it));
                 }
+
+                return std::string(str.begin(), prev);
             }
 
             return str;
@@ -77,7 +75,14 @@ namespace cursespp {
 
         std::string Ellipsize(const std::string& str, size_t len) {
             if (u8cols(str) > len) {
-                return Truncate(str, len - 2) + "..";
+                std::string trunc = Truncate(str, len - 2);
+
+                size_t tlen = u8cols(trunc);
+                for (size_t i = tlen; i < len; i++) {
+                    trunc += ".";
+                }
+
+                return trunc;
             }
 
             return str;
