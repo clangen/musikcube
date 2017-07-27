@@ -389,18 +389,37 @@ void Window::SetFocusedFrameColor(int64_t color) {
     this->RepaintBackground();
 }
 
+void Window::DrawFrameAndTitle() {
+    box(this->frame, 0, 0);
+
+    /* draw the title, if one is specified */
+    size_t titleLen = u8len(this->title);
+    if (titleLen > 0) {
+        int max = this->width - 4; /* 4 = corner + space + space + corner */
+        if (max > 3) { /* 3 = first character plus ellipse (e.g. 'F..')*/
+            std::string adjusted = " " + text::Ellipsize(this->title, (size_t) max - 2) + " ";
+            wmove(this->frame, 0, 2);
+            waddstr(this->frame, adjusted.c_str());
+        }
+    }
+}
+
 void Window::RepaintBackground() {
+    bool focused = IsFocused();
+
     if (this->drawFrame &&
         this->frameColor != CURSESPP_DEFAULT_COLOR &&
         this->frame &&
         this->content != this->frame)
     {
-        wbkgd(this->frame, COLOR_PAIR(IsFocused()
+        wbkgd(this->frame, COLOR_PAIR(focused
             ? this->focusedFrameColor : this->frameColor));
+
+        this->DrawFrameAndTitle();
     }
 
     if (this->content) {
-        wbkgd(this->content, COLOR_PAIR(IsFocused()
+        wbkgd(this->content, COLOR_PAIR(focused
             ? this->focusedContentColor : this->contentColor));
     }
 
@@ -621,8 +640,6 @@ void Window::Create() {
         sub-window inside */
 
         else {
-            box(this->frame, 0, 0);
-
             this->content = newwin(
                 this->height - 2,
                 this->width - 2,
@@ -646,16 +663,7 @@ void Window::Create() {
                 wbkgd(this->content, COLOR_PAIR(currentContentColor));
             }
 
-            /* draw the title, if one is specified */
-            size_t titleLen = u8len(this->title);
-            if (titleLen > 0) {
-                int max = this->width - 4; /* 4 = corner + space + space + corner */
-                if (max > 3) { /* 3 = first character plus ellipse (e.g. 'F..')*/
-                    std::string adjusted = " " + text::Ellipsize(this->title, (size_t) max - 2) + " ";
-                    wmove(this->frame, 0, 2);
-                    waddstr(this->frame, adjusted.c_str());
-                }
-            }
+            this->DrawFrameAndTitle();
         }
 
         this->Show();
