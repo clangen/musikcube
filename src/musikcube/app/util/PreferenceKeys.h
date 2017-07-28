@@ -45,6 +45,7 @@ namespace musik { namespace cube { namespace prefs {
         extern const std::string ColorTheme;
         extern const std::string MinimizeToTray;
         extern const std::string StartMinimized;
+        extern const std::string AutoUpdateCheck;
         extern const std::string LastAcknowledgedUpdateVersion;
     }
 

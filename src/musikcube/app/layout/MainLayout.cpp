@@ -370,6 +370,10 @@ void MainLayout::OnIndexerFinished(int count) {
 }
 
 void MainLayout::RunUpdateCheck() {
+    if (!prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true)) {
+        return;
+    }
+
     updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
         if (updateRequired) {
             UpdateCheck::ShowUpgradeAvailableOverlay(version, url);

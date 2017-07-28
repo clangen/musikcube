@@ -48,6 +48,7 @@
         "settings_minimize_to_tray": "minimize to tray",
         "settings_start_minimized": "start minimized",
         "settings_server_setup": "server setup",
+        "settings_auto_update_check": "check for updates on startup",
         "settings_check_for_updates": "check for updates",
 
         "settings_server_enable_websockets": "metadata server enabled",

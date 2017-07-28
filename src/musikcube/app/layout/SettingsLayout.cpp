@@ -159,6 +159,9 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->prefs->SetBool(cube::prefs::keys::StartMinimized, checked);
     }
 #endif
+    else if (cb == autoUpdateCheckbox.get()) {
+        this->prefs->SetBool(cube::prefs::keys::AutoUpdateCheck, checked);
+    }
 }
 
 void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {
@@ -263,6 +266,8 @@ void SettingsLayout::OnLayout() {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     }
 
+    this->updateDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+
     y = BOTTOM(this->browseList);
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
@@ -275,8 +280,7 @@ void SettingsLayout::OnLayout() {
     this->minimizeToTrayCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
-
-    this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->autoUpdateCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -362,6 +366,10 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->Activated.connect(this, &SettingsLayout::OnServerDropdownActivate);
     }
 
+    this->updateDropdown.reset(new TextLabel());
+    this->updateDropdown->SetText(arrow + _TSTR("settings_check_for_updates"));
+    this->updateDropdown->Activated.connect(this, &SettingsLayout::OnUpdateDropdownActivate);
+
     CREATE_CHECKBOX(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
@@ -374,10 +382,7 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->minimizeToTrayCheckbox, _TSTR("settings_minimize_to_tray"));
     CREATE_CHECKBOX(this->startMinimizedCheckbox, _TSTR("settings_start_minimized"));
 #endif
-
-    this->updateDropdown.reset(new TextLabel());
-    this->updateDropdown->SetText(arrow + _TSTR("settings_check_for_updates"));
-    this->updateDropdown->Activated.connect(this, &SettingsLayout::OnUpdateDropdownActivate);
+    CREATE_CHECKBOX(this->autoUpdateCheckbox, _TSTR("settings_auto_update_check"));
 
     int order = 0;
     this->browseList->SetFocusOrder(order++);
@@ -393,6 +398,8 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->SetFocusOrder(order++);
     }
 
+    this->updateDropdown->SetFocusOrder(order++);
+
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->SetFocusOrder(order++);
 #endif
@@ -404,7 +411,7 @@ void SettingsLayout::InitializeWindows() {
     this->minimizeToTrayCheckbox->SetFocusOrder(order++);
     this->startMinimizedCheckbox->SetFocusOrder(order++);
 #endif
-    this->updateDropdown->SetFocusOrder(order++);
+    this->autoUpdateCheckbox->SetFocusOrder(order++);
 
     this->AddWindow(this->browseLabel);
     this->AddWindow(this->addedPathsLabel);
@@ -418,6 +425,8 @@ void SettingsLayout::InitializeWindows() {
     if (this->serverAvailable) {
         this->AddWindow(this->serverDropdown);
     }
+
+    this->AddWindow(updateDropdown);
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->AddWindow(this->paletteCheckbox);
@@ -433,7 +442,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->minimizeToTrayCheckbox);
     this->AddWindow(this->startMinimizedCheckbox);
 #endif
-    this->AddWindow(updateDropdown);
+    this->AddWindow(this->autoUpdateCheckbox);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -533,6 +542,7 @@ void SettingsLayout::LoadPreferences() {
     this->minimizeToTrayCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::MinimizeToTray, false));
     this->startMinimizedCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::StartMinimized, false));
 #endif
+    this->autoUpdateCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true));
 
     /* output plugin */
     std::shared_ptr<IOutput> output = outputs::SelectedOutput();
