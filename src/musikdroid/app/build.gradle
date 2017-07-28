@@ -4,7 +4,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'io.fabric.tools:gradle:1.+'
+        classpath 'io.fabric.tools:gradle:1.23.0'
     }
 }
 
@@ -69,9 +69,9 @@ dependencies {
     implementation(name:'videocache-2.8.0-pre', ext:'aar')
     implementation 'org.slf4j:slf4j-android:1.7.21'
 
-    implementation "android.arch.persistence.room:runtime:1.0.0-alpha4"
-    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-alpha4"
-    kapt "android.arch.persistence.room:compiler:1.0.0-alpha4"
+    implementation "android.arch.persistence.room:runtime:1.0.0-alpha7"
+    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-alpha7"
+    kapt "android.arch.persistence.room:compiler:1.0.0-alpha7"
 
     compileOnly 'org.glassfish:javax.annotation:10.0-b28'
     implementation 'com.google.dagger:dagger:2.11'

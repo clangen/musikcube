@@ -76,12 +76,12 @@ class MainMetadataView : FrameLayout {
     }
 
     fun onResume() {
-        this.wss?.addClient(wssClient)
+        this.wss.addClient(wssClient)
         isPaused = false
     }
 
     fun onPause() {
-        this.wss?.removeClient(wssClient)
+        this.wss.removeClient(wssClient)
         isPaused = true
     }
 
@@ -244,9 +244,9 @@ class MainMetadataView : FrameLayout {
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .listener(object : RequestListener<String, GlideDrawable> {
                     override fun onException(
-                            e: Exception,
-                            model: String,
-                            target: Target<GlideDrawable>,
+                            e: Exception?,
+                            model: String?,
+                            target: Target<GlideDrawable>?,
                             first: Boolean): Boolean
                     {
                         setMetadataDisplayMode(DisplayMode.NoArtwork)
@@ -286,7 +286,7 @@ class MainMetadataView : FrameLayout {
             .addOption(Messages.Key.LIMIT, 1)
             .build()
 
-        this.wss?.send(request, wssClient) { response: SocketMessage ->
+        this.wss.send(request, wssClient) { response: SocketMessage ->
             val data = response.getJsonArrayOption(Messages.Key.DATA, JSONArray())
             if (data != null && data.length() > 0) {
                 val track = data.optJSONObject(0)

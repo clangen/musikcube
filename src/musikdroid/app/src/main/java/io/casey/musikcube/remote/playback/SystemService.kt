@@ -11,7 +11,7 @@ import android.os.PowerManager
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.support.v7.app.NotificationCompat
+import android.support.v4.app.NotificationCompat
 import android.util.Log
 import android.view.KeyEvent
 import com.bumptech.glide.Glide
@@ -27,6 +27,7 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
 import android.support.v4.app.NotificationCompat.Action as NotifAction
+import android.support.v4.media.app.NotificationCompat.MediaStyle
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,
@@ -254,7 +255,7 @@ class SystemService : Service() {
         val contentIntent = PendingIntent.getActivity(
             applicationContext, 1, MainActivity.getStartIntent(this), 0)
 
-        val notification = NotificationCompat.Builder(this)
+        val notification = NotificationCompat.Builder(this, "musikdroid")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(artist + " - " + album)
@@ -270,7 +271,7 @@ class SystemService : Service() {
                 getString(R.string.button_play),
                 ACTION_NOTIFICATION_PLAY))
 
-            notification.setStyle(NotificationCompat.MediaStyle()
+            notification.setStyle(MediaStyle()
                 .setShowActionsInCompactView(0)
                 .setMediaSession(mediaSession?.sessionToken))
         }
@@ -286,7 +287,7 @@ class SystemService : Service() {
                     getString(R.string.button_close),
                     ACTION_NOTIFICATION_STOP))
 
-                notification.setStyle(NotificationCompat.MediaStyle()
+                notification.setStyle(MediaStyle()
                     .setShowActionsInCompactView(0, 1)
                     .setMediaSession(mediaSession?.sessionToken))
             }
@@ -306,7 +307,7 @@ class SystemService : Service() {
                     getString(R.string.button_next),
                     ACTION_NOTIFICATION_NEXT))
 
-                notification.setStyle(NotificationCompat.MediaStyle()
+                notification.setStyle(MediaStyle()
                     .setShowActionsInCompactView(0, 1, 2)
                     .setMediaSession(mediaSession?.sessionToken))
             }

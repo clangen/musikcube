@@ -195,7 +195,7 @@ class MainActivity : WebSocketActivityBase() {
         reloadPlaybackService()
         playback = playbackService
 
-        supportInvalidateOptionsMenu()
+        invalidateOptionsMenu()
         rebindUi()
     }
 

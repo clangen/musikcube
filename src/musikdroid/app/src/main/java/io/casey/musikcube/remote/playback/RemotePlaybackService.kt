@@ -11,7 +11,7 @@ import org.json.JSONObject
 import java.util.*
 import javax.inject.Inject
 
-class RemotePlaybackService(context: Context) : PlaybackService {
+class RemotePlaybackService : PlaybackService {
     private interface Key {
         companion object {
             val STATE = "state"

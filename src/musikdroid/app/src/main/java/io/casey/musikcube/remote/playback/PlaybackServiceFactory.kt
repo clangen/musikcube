@@ -34,7 +34,7 @@ object PlaybackServiceFactory {
         if (streaming == null || remote == null || prefs == null) {
             prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
             streaming = StreamingPlaybackService(context)
-            remote = RemotePlaybackService(context)
+            remote = RemotePlaybackService()
         }
     }
 }
