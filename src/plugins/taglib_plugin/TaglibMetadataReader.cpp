@@ -75,6 +75,7 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <iostream>
 
 #ifdef WIN32
 static inline std::wstring utf8to16(const char* utf8) {
@@ -124,18 +125,30 @@ bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::ITrackWriter 
         extension = path.substr(lastDot + 1).c_str();
     }
 
+    bool success = false;
+
     if (extension.size()) {
         boost::algorithm::to_lower(extension);
 
         if (extension == "mp3") {
-            this->GetID3v2Tag(uri, track);
+            try {
+                success = this->GetID3v2Tag(uri, track);
+            }
+            catch (...) {
+                std::cerr << "id3v2 tag read for " << uri << "failed!";
+            }
         }
     }
 
-    return this->GetGenericTag(uri, track);
-}
+    try {
+        success |= this->GetGenericTag(uri, track);
+    }
+    catch (...) {
+        std::cerr << "generic tag read for " << uri << "failed!";
+    }
 
-#include <iostream>
+    return success;
+}
 
 bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::sdk::ITrackWriter *target) {
 #ifdef WIN32
