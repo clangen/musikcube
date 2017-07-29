@@ -1,3 +1,35 @@
+0.22.0
+
+musikcube:
+
+* fixed compile issues and startup crashes on Fedora, ArchLinux and openSUSE
+* fixed a bug where playback speed may be incorrect for audio files that do
+  not have exactly two channels.
+* fixed a crash that could occur in the WASAPI output plugin for audio streams
+  with very low sampling rates
+* fixed crash when parsing "TCOP" id3v2 tag (ilitirit-za)
+* fixed double-wide character truncation and ellipsizing (stephanwilliams)
+* added a new setting to disable startup update checks
+* sync'd PDCurses with the upstream repo
+
+musikdroid:
+
+* fixed a couple (relatively obscure) crashes
+* updated build environment to Android Studio Canary 8 with Support Libraries
+  26.0.0 (final)
+
+low-level:
+
+* fixed the way we define C++ flags in CMakeLists.txt so it works across more
+  platforms, e.g. FreeBSD (geier)
+* fixed GetApplicationDirectory() null termination error (mkilgore)
+* updated the way we calculate audio buffer sizes and counts to ensure there
+  is always enough headroom for audio with very low sampling rates
+* updated the mpg123 decoder so it compiles and runs again against the latest
+  version of the library and musikcube sdk.
+
+--------------------------------------------------------------------------------
+
 0.21.1
 
 * updated a few of the symbols used for drawing things like dropdowns and 
