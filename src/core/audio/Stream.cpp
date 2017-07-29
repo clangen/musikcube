@@ -181,6 +181,7 @@ bool Stream::GetNextBufferFromDecoder() {
         for (int i = 0; i < bufferCount; i++) {
             auto buffer = new Buffer(this->rawBuffer + offset, samplesPerBuffer);
             buffer->SetSampleRate(this->decoderSampleRate);
+            buffer->SetChannels(this->decoderChannels);
             this->recycledBuffers.push_back(buffer);
             offset += samplesPerBuffer;
         }

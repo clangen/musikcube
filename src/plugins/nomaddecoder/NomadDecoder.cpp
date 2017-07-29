@@ -113,8 +113,10 @@ bool NomadDecoder::GetBuffer(IBuffer *buffer) {
         DEFAULT_READ_SAMPLE_SIZE,
         SAMPLE_FORMAT_32_BIT_FLOAT);
 
+    auto info = nomad_info(this->nomadContext);
+    buffer->SetChannels(info->channels);
     buffer->SetSamples(read > 0 ? read : 0);
-    buffer->SetSampleRate(nomad_info(this->nomadContext)->sample_rate);
+    buffer->SetSampleRate(info->sample_rate);
 
     return (read > 0) ? true : false;
 }
