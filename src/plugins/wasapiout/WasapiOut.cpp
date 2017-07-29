@@ -417,14 +417,11 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     wf.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
 
     DWORD streamFlags = 0;
-
     if (this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, (WAVEFORMATEX *) &wf, 0) != S_OK) {
         streamFlags |= AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM;
     }
 
-    long totalMillis = (long) round((buffer->Samples() / buffer->Channels() * 1000) / buffer->SampleRate()) * MAX_BUFFERS_PER_OUTPUT;
-    REFERENCE_TIME hundredNanos = totalMillis * 1000 * 10;
-
+    REFERENCE_TIME hundredNanos = 1000 * 1000 * 10; /* 1 second in nanos */
     if ((result = this->audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, streamFlags, hundredNanos, 0, (WAVEFORMATEX *) &wf, NULL)) != S_OK) {
         return false;
     }

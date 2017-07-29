@@ -45,6 +45,8 @@ using namespace musik::core::io;
 
 static std::string TAG = "Stream";
 
+#define MIN_BUFFER_COUNT 30
+
 #define SET_OFFSET(target, offset) \
     target->SetPosition( \
         ((double) this->decoderSamplePosition + offset) / \
@@ -164,15 +166,15 @@ bool Stream::GetNextBufferFromDecoder() {
         return false;
     }
 
-    /* ensure our internal state is initialized. */
+    /* ensure our internal state is initialized */
     if (!this->rawBuffer) {
         this->decoderSampleRate = buffer->SampleRate();
         this->decoderChannels = buffer->Channels();
 
         int samplesPerBuffer = samplesPerChannel * decoderChannels;
 
-        this->bufferCount = (int)(this->bufferLengthSeconds *
-            (double)(this->decoderSampleRate / samplesPerBuffer));
+        this->bufferCount = std::max(MIN_BUFFER_COUNT, (int)(this->bufferLengthSeconds *
+            (double)(this->decoderSampleRate / samplesPerBuffer)));
 
         this->rawBuffer = new float[bufferCount * samplesPerBuffer];
         int offset = 0;
@@ -247,7 +249,7 @@ void Stream::RefillInternalBuffers() {
         /* fill another chunk -- most of the time for file-based
         streams this will only be a single buffer. note the - 1
         part is to leave space for any potential remainder. */
-        count = std::min(recycled - 1, this->bufferCount / 4);
+        count = std::min(recycled - 1, std::max(1, this->bufferCount / 4));
     }
 
     while (!this->done && (count > 0 || count == -1)) {
@@ -266,9 +268,7 @@ void Stream::RefillInternalBuffers() {
             count = bufferCount / 4;
         }
 
-        Buffer* currentBuffer = this->decoderBuffer;
-
-        int floatsPerBuffer = this->samplesPerChannel * currentBuffer->Channels();
+        int floatsPerBuffer = this->samplesPerChannel * this->decoderBuffer->Channels();
 
         Buffer* target;
         int offset = 0;
@@ -277,9 +277,9 @@ void Stream::RefillInternalBuffers() {
         through, let's fill it up with the head of the new buffer. */
         if (remainder) {
             long desired = floatsPerBuffer - remainder->Samples();
-            long actual = std::min(currentBuffer->Samples(), desired);
+            long actual = std::min(this->decoderBuffer->Samples(), desired);
 
-            remainder->Append(currentBuffer->BufferPointer(), actual);
+            remainder->Append(this->decoderBuffer->BufferPointer(), actual);
             SET_OFFSET(remainder, 0);
 
             if (remainder->Samples() == floatsPerBuffer) {
@@ -298,19 +298,19 @@ void Stream::RefillInternalBuffers() {
         /* now that the remainder is taken care of, break the rest of the data
         into uniform chunks */
 
-        int buffersToFill = (currentBuffer->Samples() - offset) / floatsPerBuffer;
+        int buffersToFill = (this->decoderBuffer->Samples() - offset) / floatsPerBuffer;
 
         for (int i = 0; i < buffersToFill; i++) {
             target = this->GetEmptyBuffer();
-            COPY_BUFFER(target, currentBuffer, floatsPerBuffer, offset);
+            COPY_BUFFER(target, this->decoderBuffer, floatsPerBuffer, offset);
             this->filledBuffers.push_back(target);
             offset += floatsPerBuffer;
         }
 
         /* any remainder will be sent to the output next time through the loop*/
-        if (offset < currentBuffer->Samples()) {
+        if (offset < this->decoderBuffer->Samples()) {
             remainder = this->GetEmptyBuffer();
-            COPY_BUFFER(remainder, currentBuffer, currentBuffer->Samples() - offset, offset);
+            COPY_BUFFER(remainder, this->decoderBuffer, this->decoderBuffer->Samples() - offset, offset);
         }
     }
 }
