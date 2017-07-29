@@ -53,6 +53,11 @@ class Mpg123Plugin : public musik::core::sdk::IPlugin {
     virtual const char* Name() { return "mpg123 IDecoder"; }
     virtual const char* Version() { return "0.4"; }
     virtual const char* Author() { return "Daniel Önnerby, clangen"; }
+    virtual const char* Guid() { return "89f705c4-50ae-4577-9cc2-09bb94f341a8"; }
+    virtual bool Configurable() { return false; }
+    virtual void Configure() { }
+    virtual void Reload() { }
+    virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {

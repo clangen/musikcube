@@ -36,9 +36,9 @@
 #include <stdio.h>
 
 #define STREAM_FEED_SIZE 2048 * 2
-#define DEBUG 0
+#define MPG123_DECODER_DEBUG 0
 
-#if DEBUG > 0
+#if MPG123_DECODER_DEBUG > 0
 #include <iostream>
 #endif
 
@@ -67,9 +67,17 @@ void Mpg123Decoder::Destroy() {
     delete this;
 }
 
+double Mpg123Decoder::GetDuration() {
+    if (this->decoder) {
+        return (double) mpg123_length(this->decoder) / (double) this->sampleRate;
+    }
+
+    return 0.0;
+}
+
 double Mpg123Decoder::SetPosition(double second) {
     off_t seekToFileOffset = 0;
-    off_t seekToSampleOffset = second * (double)this->sampleRate;
+    off_t seekToSampleOffset = (off_t) (second * (double)this->sampleRate);
     off_t *indexOffset = 0;
     off_t indexSet = 0;
     size_t indexFill = 0;
@@ -136,7 +144,7 @@ bool Mpg123Decoder::GetBuffer(IBuffer *buffer) {
                 break;
 
             case MPG123_NEW_FORMAT: {
-#if DEBUG > 0
+#if MPG123_DECODER_DEBUG > 0
                     int encoding = 0;
 
                     mpg123_getformat(
@@ -165,8 +173,7 @@ bool Mpg123Decoder::Feed() {
     if (this->fileStream) {
         unsigned char buffer[STREAM_FEED_SIZE];
 
-        long long bytesRead =
-            this->fileStream->Read(&buffer, STREAM_FEED_SIZE);
+        long bytesRead = this->fileStream->Read(&buffer, STREAM_FEED_SIZE);
 
         if (bytesRead) {
             if (mpg123_feed(this->decoder, buffer, bytesRead) == MPG123_OK) {

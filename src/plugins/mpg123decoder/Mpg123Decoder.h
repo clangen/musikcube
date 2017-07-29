@@ -48,6 +48,7 @@ class Mpg123Decoder : public musik::core::sdk::IDecoder {
         virtual double SetPosition(double seconds);
         virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer);
         virtual void Destroy();
+        virtual double GetDuration();
 
     private:
         bool Feed();

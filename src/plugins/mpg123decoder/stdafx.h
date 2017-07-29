@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/config.h>
+#include <core/sdk/constants.h>
 #include <math.h>
 
 #ifdef WIN32
