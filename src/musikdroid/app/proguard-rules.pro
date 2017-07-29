@@ -16,8 +16,17 @@
 #   public *;
 #}
 
+-dontobfuscate
+
 -keep public class * implements com.bumptech.glide.module.GlideModule
 -keep public enum com.bumptech.glide.load.resource.bitmap.ImageHeaderParser$** {
   **[] $VALUES;
   public *;
 }
+
+-keep class android.support.v7.widget.SearchView { *; }
+
+-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
+-dontwarn android.arch.util.paging.CountedDataSource
+-dontwarn android.arch.persistence.room.paging.LimitOffsetDataSource
+-dontwarn com.google.errorprone.annotations.*
