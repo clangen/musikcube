@@ -80,7 +80,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   include_directories("/usr/local/include")
 endif ()
 
-if (EXISTS "/etc/arch-release" OR NO_NCURSESW)
+if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
   add_definitions (-DNO_NCURSESW)
 endif()
 
