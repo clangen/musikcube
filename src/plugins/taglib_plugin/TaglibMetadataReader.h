@@ -65,6 +65,15 @@ class TaglibMetadataReader : public musik::core::sdk::IMetadataReader {
         virtual void Destroy();
 
     private:
+        template <typename T> void ReadFromMap(
+            const T& map, musik::core::sdk::ITrackWriter *target);
+
+        template <typename T> void ExtractValueForKey(
+            const T& map,
+            const std::string& inputKey,
+            const std::string& outputKey,
+            musik::core::sdk::ITrackWriter *target);
+
         void SetTagValue(
             const char* key,
             const char* string,musik::core::sdk::ITrackWriter *target);
@@ -96,11 +105,11 @@ class TaglibMetadataReader : public musik::core::sdk::IMetadataReader {
             TagLib::String tagString,
             musik::core::sdk::ITrackWriter *target);
 
-        bool GetID3v2Tag(
+        bool ReadID3V2(
             const char* uri,
             musik::core::sdk::ITrackWriter *target);
 
-        bool GetGenericTag(
+        bool ReadGeneric(
             const char* uri,
             musik::core::sdk::ITrackWriter *target);
 };

@@ -50,6 +50,8 @@
     #include <taglib/mpeg/id3v2/frames/commentsframe.h>
     #include <taglib/mp4/mp4file.h>
     #include <taglib/ogg/oggfile.h>
+    #include <taglib/ogg/xiphcomment.h>
+    #include <taglib/flac/flacfile.h>
     #include <taglib/toolkit/tpropertymap.h>
 #else
     #include <taglib/tlist.h>
@@ -67,6 +69,8 @@
     #include <taglib/commentsframe.h>
     #include <taglib/mp4file.h>
     #include <taglib/oggfile.h>
+    #include <taglib/flacfile.h>
+    #include <taglib/xiphcomment.h>
     #include <taglib/tpropertymap.h>
 #endif
 
@@ -132,7 +136,7 @@ bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::ITrackWriter 
 
         if (extension == "mp3") {
             try {
-                success = this->GetID3v2Tag(uri, track);
+                success = this->ReadID3V2(uri, track);
             }
             catch (...) {
                 std::cerr << "id3v2 tag read for " << uri << "failed!";
@@ -141,7 +145,7 @@ bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::ITrackWriter 
     }
 
     try {
-        success |= this->GetGenericTag(uri, track);
+        success |= this->ReadGeneric(uri, track);
     }
     catch (...) {
         std::cerr << "generic tag read for " << uri << "failed!";
@@ -150,7 +154,7 @@ bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::ITrackWriter 
     return success;
 }
 
-bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::sdk::ITrackWriter *target) {
+bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITrackWriter *target) {
 #ifdef WIN32
     TagLib::FileRef file(utf8to16(uri).c_str());
 #else
@@ -181,11 +185,25 @@ bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::sdk::ITra
                 this->SetTagValue("year", tag->year(), target);
             }
 
-            TagLib::PropertyMap map = tag->properties();
-            if (map.contains("DISCNUMBER")) {
-                TagLib::StringList value = map["DISCNUMBER"];
-                if (value.size()) {
-                    this->SetTagValue("disc", value[0], target);
+            /* read some generic key/value pairs that don't have direct accessors */
+            this->ReadFromMap(tag->properties(), target);
+
+            /* taglib hides certain properties (like album artist) in the XiphComment's
+            field list. see if we're dealing with a FLAC file with a Xiph comment. if so,
+            extract those as well. */
+            auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
+            if (xiphTag) {
+                this->ReadFromMap(xiphTag->fieldListMap(), target);
+            }
+
+            /* flac files may have more than one type of tag embedded. see if there's
+            see if there's a xiph comment burried deep. */
+            if (!xiphTag) {
+                auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
+                if (flacFile) {
+                    if (flacFile->hasXiphComment()) {
+                        this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
+                    }
                 }
             }
 
@@ -199,7 +217,29 @@ bool TaglibMetadataReader::GetGenericTag(const char* uri, musik::core::sdk::ITra
     return false;
 }
 
-bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::ITrackWriter *track) {
+template <typename T>
+void TaglibMetadataReader::ExtractValueForKey(
+    const T& map,
+    const std::string& inputKey,
+    const std::string& outputKey,
+    musik::core::sdk::ITrackWriter *target)
+{
+    if (map.contains(inputKey.c_str())) {
+        TagLib::StringList value = map[inputKey.c_str()];
+        if (value.size()) {
+            this->SetTagValue(outputKey.c_str(), value[0], target);
+        }
+    }
+}
+
+template <typename T>
+void TaglibMetadataReader::ReadFromMap(const T& map, musik::core::sdk::ITrackWriter *target) {
+    ExtractValueForKey(map, "DISCNUMBER", "disc", target);
+    ExtractValueForKey(map, "ALBUM ARTIST", "album_artist", target);
+    ExtractValueForKey(map, "ALBUMARTIST", "album_artist", target);
+}
+
+bool TaglibMetadataReader::ReadID3V2(const char* uri, musik::core::sdk::ITrackWriter *track) {
     TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
 #ifdef WIN32
@@ -219,14 +259,6 @@ bool TaglibMetadataReader::GetID3v2Tag(const char* uri, musik::core::sdk::ITrack
         }
 
         this->SetTagValue("album", id3v2->album(), track);
-
-        //{
-        //    TagLib::Map<TagLib::ByteVector, TagLib::ID3v2::FrameList>::Iterator it = allTags.begin();
-        //    while (it != allTags.end()) {
-        //        const char* f = it->first.data();
-        //        ++it;
-        //    }
-        //}
 
         /* year */
 
