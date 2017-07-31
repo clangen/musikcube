@@ -43,6 +43,7 @@
     #include <taglib/fileref.h>
     #include <taglib/audioproperties.h>
     #include <taglib/mpeg/id3v2/id3v2tag.h>
+    #include <taglib/mp4/mp4file.h>
 #else
     #include <taglib/tlist.h>
     #include <taglib/tfile.h>
@@ -50,6 +51,7 @@
     #include <taglib/fileref.h>
     #include <taglib/audioproperties.h>
     #include <taglib/id3v2tag.h>
+    #include <taglib/mp4file.h>
 #endif
 
 #include <set>
@@ -70,6 +72,12 @@ class TaglibMetadataReader : public musik::core::sdk::IMetadataReader {
 
         template <typename T> void ExtractValueForKey(
             const T& map,
+            const std::string& inputKey,
+            const std::string& outputKey,
+            musik::core::sdk::ITrackWriter *target);
+
+        void ExtractValueForKey(
+            const TagLib::MP4::ItemMap& map,
             const std::string& inputKey,
             const std::string& outputKey,
             musik::core::sdk::ITrackWriter *target);

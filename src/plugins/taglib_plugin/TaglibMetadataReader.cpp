@@ -189,20 +189,34 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITrack
             this->ReadFromMap(tag->properties(), target);
 
             /* taglib hides certain properties (like album artist) in the XiphComment's
-            field list. see if we're dealing with a FLAC file with a Xiph comment. if so,
-            extract those as well. */
+            field list. if we're dealing with a straight-up Xiph tag, process it now */
             auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
             if (xiphTag) {
                 this->ReadFromMap(xiphTag->fieldListMap(), target);
             }
 
-            /* flac files may have more than one type of tag embedded. see if there's
-            see if there's a xiph comment burried deep. */
+            /* if this isn't a xiph tag, the file format may have some other custom
+            properties. let's see if we can pull them out here... */
             if (!xiphTag) {
+                bool handled = false;
+
+                /* flac files may have more than one type of tag embedded. see if there's
+                see if there's a xiph comment burried deep. */
                 auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
-                if (flacFile) {
-                    if (flacFile->hasXiphComment()) {
-                        this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
+                if (flacFile && flacFile->hasXiphComment()) {
+                    this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
+                    handled = true;
+                }
+
+                /* similarly, mp4 buries disc number and album artist. however, taglib does
+                NOT exposed a map with normalized keys, so we have to do special property
+                handling here... */
+                if (!handled) {
+                    auto mp4File = dynamic_cast<TagLib::MP4::File*>(file.file());
+                    if (mp4File && mp4File->hasMP4Tag()) {
+                        auto mp4TagMap = static_cast<TagLib::MP4::Tag*>(tag)->itemListMap();
+                        this->ExtractValueForKey(mp4TagMap, "aART", "album_artist", target);
+                        this->ExtractValueForKey(mp4TagMap, "disk", "disc", target);
                     }
                 }
             }
@@ -215,6 +229,20 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITrack
     }
 
     return false;
+}
+
+void TaglibMetadataReader::ExtractValueForKey(
+    const TagLib::MP4::ItemMap& map,
+    const std::string& inputKey,
+    const std::string& outputKey,
+    musik::core::sdk::ITrackWriter *target)
+{
+    if (map.contains(inputKey.c_str())) {
+        TagLib::StringList value = map[inputKey.c_str()].toStringList();
+        if (value.size()) {
+            this->SetTagValue(outputKey.c_str(), value[0], target);
+        }
+    }
 }
 
 template <typename T>
