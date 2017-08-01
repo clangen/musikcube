@@ -44,7 +44,7 @@ extern "C" {
 class NomadDecoder : public musik::core::sdk::IDecoder {
     public:
         NomadDecoder();
-        virtual ~NomadDecoder();
+        ~NomadDecoder();
 
         virtual bool Open(musik::core::sdk::IDataStream *dataStream);
         virtual double SetPosition(double seconds);

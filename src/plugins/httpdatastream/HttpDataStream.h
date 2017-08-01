@@ -48,9 +48,9 @@ class FileReadStream;
 class HttpDataStream : public IDataStream {
     public:
         HttpDataStream();
-        virtual ~HttpDataStream();
-        virtual void Destroy();
+        ~HttpDataStream();
 
+        virtual void Destroy();
         virtual bool Open(const char *uri, unsigned int options = 0);
         virtual bool Close();
         virtual PositionType Read(void* buffer, PositionType readBytes);

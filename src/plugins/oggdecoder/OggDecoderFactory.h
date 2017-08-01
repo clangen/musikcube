@@ -41,7 +41,7 @@ using namespace musik::core::sdk;
 class OggDecoderFactory : public IDecoderFactory {
     public:
         OggDecoderFactory();
-        virtual ~OggDecoderFactory();
+        ~OggDecoderFactory();
 
         virtual IDecoder* CreateDecoder();
         virtual void Destroy();

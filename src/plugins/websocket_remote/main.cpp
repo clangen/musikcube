@@ -70,7 +70,7 @@ static class PlaybackRemote : public IPlaybackRemote {
 #endif
         }
 
-        virtual ~PlaybackRemote() {
+        ~PlaybackRemote() {
             this->Stop();
         }
 

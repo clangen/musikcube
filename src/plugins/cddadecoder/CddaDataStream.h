@@ -45,9 +45,9 @@ using namespace musik::core::sdk;
 class CddaDataStream : public IDataStream {
     public:
         CddaDataStream();
-        virtual ~CddaDataStream();
-        virtual void Destroy();
+        ~CddaDataStream();
 
+        virtual void Destroy();
         virtual bool Open(const char *filename, unsigned int options = 0);
         virtual bool Close();
         virtual void Interrupt();

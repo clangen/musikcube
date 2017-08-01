@@ -218,7 +218,7 @@ class Visualizer : public musik::core::sdk::ISpectrumVisualizer {
     public:
         virtual const char* Name() {
             return "GdiVis";
-        };
+        }
 
         virtual void Destroy() {
             this->Hide();

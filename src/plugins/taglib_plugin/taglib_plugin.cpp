@@ -59,7 +59,7 @@ class TaglibPlugin : public musik::core::sdk::IPlugin {
         virtual bool Configurable() { return false; }
         virtual void Configure() { }
         virtual void Reload() { }
-        int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" DLLEXPORT musik::core::sdk::IMetadataReader* GetMetadataReader() {

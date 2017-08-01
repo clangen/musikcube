@@ -43,7 +43,7 @@ using namespace musik::core::sdk;
 class OggDecoder : public IDecoder {
     public:
         OggDecoder();
-        virtual ~OggDecoder();
+        ~OggDecoder();
 
         virtual void Destroy();
         virtual double SetPosition(double second);

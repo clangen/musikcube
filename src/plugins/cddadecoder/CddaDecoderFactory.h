@@ -42,8 +42,7 @@ class CddaDecoderFactory : public IDecoderFactory {
 public:
     CddaDecoderFactory();
     ~CddaDecoderFactory();
-
-    IDecoder* CreateDecoder();
-    void Destroy();
-    bool CanHandle(const char* type) const;
+    virtual IDecoder* CreateDecoder();
+    virtual void Destroy();
+    virtual bool CanHandle(const char* type) const;
 };
