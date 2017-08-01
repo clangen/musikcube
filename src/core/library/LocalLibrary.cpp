@@ -116,10 +116,8 @@ void LocalLibrary::Close() {
     {
         std::unique_lock<std::mutex> lock(this->mutex);
 
-        if (this->indexer) {
-            delete this->indexer;
-            this->indexer = nullptr;
-        }
+        delete this->indexer;
+        this->indexer = nullptr;
 
         if (this->thread) {
             thread = this->thread;

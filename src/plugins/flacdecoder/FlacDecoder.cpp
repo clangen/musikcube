@@ -52,15 +52,11 @@ FlacDecoder::FlacDecoder()
 }
 
 FlacDecoder::~FlacDecoder() {
-    if (this->decoder) {
-        FLAC__stream_decoder_delete(this->decoder);
-        this->decoder = NULL;
-    }
+    FLAC__stream_decoder_delete(this->decoder);
+    this->decoder = NULL;
 
-    if (this->outputBuffer) {
-        delete this->outputBuffer;
-        this->outputBuffer = NULL;
-    }
+    delete this->outputBuffer;
+    this->outputBuffer = NULL;
 }
 
 FLAC__StreamDecoderReadStatus FlacDecoder::FlacRead(
