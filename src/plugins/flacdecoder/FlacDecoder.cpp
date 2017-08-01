@@ -39,10 +39,10 @@
 #include <cstring>
 
 FlacDecoder::FlacDecoder()
-: decoder(NULL)
+: decoder(nullptr)
 , outputBufferSize(0)
 , outputBufferUsed(0)
-, outputBuffer(NULL)
+, outputBuffer(nullptr)
 , channels(0)
 , sampleRate(0)
 , bitsPerSample(0)
@@ -52,11 +52,13 @@ FlacDecoder::FlacDecoder()
 }
 
 FlacDecoder::~FlacDecoder() {
-    FLAC__stream_decoder_delete(this->decoder);
-    this->decoder = NULL;
+    if (this->decoder) {
+        FLAC__stream_decoder_delete(this->decoder);
+        this->decoder = nullptr;
+    }
 
     delete this->outputBuffer;
-    this->outputBuffer = NULL;
+    this->outputBuffer = nullptr;
 }
 
 FLAC__StreamDecoderReadStatus FlacDecoder::FlacRead(
@@ -182,7 +184,7 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::FlacWrite(
     /* initialize the output buffer if it doesn't exist */
     if (sampleCount > fdec->outputBufferSize) {
         delete fdec->outputBuffer;
-        fdec->outputBuffer = NULL;
+        fdec->outputBuffer = nullptr;
         fdec->outputBufferSize = sampleCount;
         fdec->outputBuffer = new float[sampleCount];
     }
