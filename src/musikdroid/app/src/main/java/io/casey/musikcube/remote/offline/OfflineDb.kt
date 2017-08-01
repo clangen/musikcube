@@ -59,7 +59,7 @@ abstract class OfflineDb : RoomDatabase() {
         }
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe()
+        .subscribe({ _ -> }, { })
     }
 
     fun queryTracks(message: SocketMessage, responder: WebSocketService.Responder) {
