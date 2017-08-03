@@ -96,8 +96,21 @@ static bool exists(DiscIdList& discs, CddaDataModel& model, const std::string& e
     }
 
     /* find by drive letter. */
-    if (!model.GetAudioDisc(tolower(tokens.at(1)[0]))) {
+    auto disc = model.GetAudioDisc(tolower(tokens.at(1)[0]));
+
+    if (!disc) {
         return false;
+    }
+
+    /* make sure the track is an audio track */
+    try {
+        int trackNumber = std::stoi(tokens.at(3));
+        if (disc->GetTrackAt(trackNumber)->GetType() != CddaDataModel::DiscTrack::Type::Audio) {
+            return false;
+        }
+    }
+    catch (...) {
+        return false; /* track number parse failed? malformed. reject. */
     }
 
     return discs.find(tokens.at(2)) != discs.end();
@@ -323,28 +336,31 @@ ScanResult CddaIndexerSource::Scan(IIndexerWriter* indexer) {
 
         for (int i = 0; i < disc->GetTrackCount(); i++) {
             auto discTrack = disc->GetTrackAt(i);
-            auto externalId = createExternalId(driveLetter, cddbId, i);
-            auto track = indexer->CreateWriter();
 
-            track->SetValue("album", album.c_str());
-            track->SetValue("artist", artist.c_str());
-            track->SetValue("album_artist", artist.c_str());
-            track->SetValue("genre", genre.c_str());
-            track->SetValue("filename", discTrack->GetFilePath().c_str());
-            track->SetValue("duration", std::to_string((int) round(discTrack->GetDuration())).c_str());
-            track->SetValue("track", std::to_string(i + 1).c_str());
+            if (discTrack->GetType() == CddaDataModel::DiscTrack::Type::Audio) {
+                auto externalId = createExternalId(driveLetter, cddbId, i);
+                auto track = indexer->CreateWriter();
 
-            if (metadata) {
-                track->SetValue("title", metadata->titles.at(i).c_str());
+                track->SetValue("album", album.c_str());
+                track->SetValue("artist", artist.c_str());
+                track->SetValue("album_artist", artist.c_str());
+                track->SetValue("genre", genre.c_str());
+                track->SetValue("filename", discTrack->GetFilePath().c_str());
+                track->SetValue("duration", std::to_string((int)round(discTrack->GetDuration())).c_str());
+                track->SetValue("track", std::to_string(i + 1).c_str());
+
+                if (metadata) {
+                    track->SetValue("title", metadata->titles.at(i).c_str());
+                }
+                else {
+                    std::string title = "track #" + std::to_string(i + 1);
+                    track->SetValue("title", title.c_str());
+                }
+
+                indexer->Save(this, track, externalId.c_str());
+
+                track->Release();
             }
-            else {
-                std::string title = "track #" + std::to_string(i + 1);
-                track->SetValue("title", title.c_str());
-            }
-
-            indexer->Save(this, track, externalId.c_str());
-
-            track->Release();
         }
     }
 

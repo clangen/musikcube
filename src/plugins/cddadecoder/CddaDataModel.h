@@ -49,7 +49,9 @@ class CddaDataModel {
 
         struct DiscTrack {
             public:
-                DiscTrack(TRACK_DATA& data, char driveLetter, int number, double duration);
+                enum class Type { Audio, Data, Leadout };
+
+                DiscTrack(TRACK_DATA& data, char driveLetter, Type type, int number, double duration);
 
                 int GetCddbSum();
 
@@ -57,12 +59,14 @@ class CddaDataModel {
                 int GetMinutes() { return this->minutes; }
                 int GetSeconds() { return this->seconds; }
                 int GetFrames() { return this->frames; }
+                Type GetType() { return this->type; }
                 double GetDuration() { return duration; }
 
                 std::string GetFilePath();
 
             private:
                 double duration;
+                Type type;
                 char driveLetter;
                 int number;
                 int minutes;

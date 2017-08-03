@@ -245,11 +245,18 @@ AudioDiscPtr CddaDataModel::GetAudioDisc(char driveLetter) {
         if (readable) {
             auto audioDisc = std::shared_ptr<AudioDisc>(new AudioDisc(driveLetter));
 
+            int audioTrackCount = 0;
             int trackCount = (toc.LastTrack - toc.FirstTrack) + 1;
+            DiscTrack::Type type;
 
             for (int j = 0; j < trackCount; j++) {
+                type = DiscTrack::Type::Audio;
+
                 if (toc.TrackData[j].Control & 4) {
-                    continue; /* data track */
+                    type = DiscTrack::Type::Data;
+                }
+                else {
+                    ++audioTrackCount;
                 }
 
                 auto start = MSF2UINT(toc.TrackData[j].Address) - FRAMES_PER_PREGAP;
@@ -258,12 +265,12 @@ AudioDiscPtr CddaDataModel::GetAudioDisc(char driveLetter) {
                 double duration = (double)(length / 2 / sizeof(short)) / 44100.0f;
 
                 audioDisc->AddTrack(std::make_shared<DiscTrack>(
-                    toc.TrackData[j], driveLetter, j, duration));
+                    toc.TrackData[j], driveLetter, type, j, duration));
             }
 
-            if (audioDisc->GetTrackCount()) {
+            if (audioTrackCount > 0) {
                 audioDisc->SetLeadout(std::make_shared<DiscTrack>(
-                    toc.TrackData[trackCount], driveLetter, trackCount + 1, 0));
+                    toc.TrackData[trackCount], driveLetter, DiscTrack::Type::Leadout, trackCount + 1, 0));
 
                 return audioDisc;
             }
@@ -295,8 +302,15 @@ void CddaDataModel::OnAudioDiscInsertedOrRemoved() {
 
 /* * * * CddaDataModel::DiscTrack * * * */
 
-CddaDataModel::DiscTrack::DiscTrack(TRACK_DATA& data, const char driveLetter, int number, double duration) {
+CddaDataModel::DiscTrack::DiscTrack(
+    TRACK_DATA& data,
+    const char driveLetter,
+    DiscTrack::Type type,
+    int number,
+    double duration)
+{
     this->driveLetter = driveLetter;
+    this->type = type;
     this->number = number;
     this->duration = duration;
     this->minutes = data.Address[1];
