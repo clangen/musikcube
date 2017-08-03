@@ -210,8 +210,7 @@ bool TrackListView::KeyPress(const std::string& key) {
 
     if (key == "KEY_ENTER") {
         if (headers.HeaderAt(this->GetSelectedIndex())) {
-            auto track = this->GetSelectedTrack();
-
+            TrackPtr track = this->GetSelectedTrack();
             PlayQueueOverlays::ShowAlbumDividerOverlay(
                 MessageQueue(), this->playback, this->library, track);
         }
@@ -222,13 +221,17 @@ bool TrackListView::KeyPress(const std::string& key) {
         handled = true;
     }
     else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
+        TrackPtr track = this->GetSelectedTrack();
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
-            TrackPtr track = this->GetSelectedTrack();
             if (track) {
                 PlayQueueOverlays::ShowAddTrackOverlay(
                     MessageQueue(), this->library, this->playback, track);
                 handled = true;
             }
+        }
+        else {
+            PlayQueueOverlays::ShowAlbumDividerOverlay(
+                MessageQueue(), this->playback, this->library, track);
         }
     }
     else if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
