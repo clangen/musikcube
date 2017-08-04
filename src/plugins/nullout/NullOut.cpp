@@ -87,7 +87,7 @@ int NullOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     }
 
     /* order of operations matters, otherwise overflow. */
-    int micros = ((buffer->Samples() * 1000) / buffer->SampleRate() * 1000);
+    int micros = ((buffer->Samples() * 1000) / buffer->SampleRate() * 1000) / buffer->Channels();
     usleep(micros);
     provider->OnBufferProcessed(buffer);
     return OutputBufferWritten;
