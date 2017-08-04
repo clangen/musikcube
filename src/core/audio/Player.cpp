@@ -383,10 +383,18 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                         lock, std::chrono::milliseconds(sleepMs));
                 }
             }
-            /* if we're unable to obtain a buffer, it means we're out of data and the
-            player is finished. terminate the thread. */
             else {
-                finished = true;
+                if (player->stream->Eof()) {
+                    finished = true;
+                }
+                else {
+                    /* we should never get here, but if for some reason we can't get the
+                    next buffer, but we're not EOF, that means we need to wait for a short
+                    while and try again... */
+                    std::unique_lock<std::mutex> lock(player->queueMutex);
+                    player->writeToOutputCondition.wait_for(
+                        lock, std::chrono::milliseconds(10));
+                }
             }
         }
 

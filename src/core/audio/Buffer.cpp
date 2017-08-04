@@ -45,29 +45,30 @@
 #ifdef WIN32
     #define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 #else
-    #define CopyFloat(dst, src, num) memmove((float*) dst, (float*)src, (num) * sizeof(float))
+    #define CopyFloat(dst, src, num) memcpy((float*) dst, (float*)src, (num) * sizeof(float))
 #endif
 
 using namespace musik::core::audio;
 
 Buffer::Buffer(Flags flags)
 : buffer(nullptr)
-, sampleSize(0)
+, samples(0)
 , internalBufferSize(0)
 , sampleRate(44100)
 , channels(2)
-, flags(flags) {
+, flags(flags)
+, position(0) {
 }
 
 Buffer::Buffer(float* buffer, int samples)
 : buffer(buffer)
-, sampleSize(samples)
+, samples(samples)
 , internalBufferSize(samples)
 , sampleRate(44100)
 , channels(2)
-, flags(ImmutableSize | NoDelete) {
+, flags(ImmutableSize | NoDelete)
+, position(0) {
 }
-
 
 Buffer::~Buffer() {
     if ((flags & NoDelete) == 0) {
@@ -96,11 +97,11 @@ float* Buffer::BufferPointer() const {
 }
 
 long Buffer::Samples() const {
-    return this->sampleSize;
+    return this->samples;
 }
 
 void Buffer::SetSamples(long samples) {
-    this->sampleSize = samples;
+    this->samples = samples;
     this->ResizeBuffer();
 }
 
@@ -110,20 +111,20 @@ void Buffer::CopyFormat(Buffer* fromBuffer) {
 }
 
 void Buffer::ResizeBuffer() {
-    if (this->sampleSize > this->internalBufferSize) {
+    if (this->samples > this->internalBufferSize) {
         if (flags & ImmutableSize && this->internalBufferSize > 0) {
             throw std::runtime_error("buffer cannot be resized");
         }
 
         delete[] this->buffer;
-        this->buffer = new float[this->sampleSize];
-        this->internalBufferSize = this->sampleSize;
+        this->buffer = new float[this->samples];
+        this->internalBufferSize = this->samples;
     }
 }
 
 /* logical bytes; backing store may be be larger */
 long Buffer::Bytes() const {
-    return sizeof(float) * this->sampleSize;
+    return sizeof(float) * this->samples;
 }
 
 double Buffer::Position() const {
@@ -134,41 +135,19 @@ void Buffer::SetPosition(double position) {
     this->position = position;
 }
 
-void Buffer::Copy(float* buffer, long samples) {
-    if (samples > this->internalBufferSize) {
-        float *newBuffer = new float[samples];
-        CopyFloat(newBuffer, buffer, samples);
+void Buffer::Copy(float* buffer, long samples, long offset) {
+    long length = offset + samples;
+    if (length > this->internalBufferSize) {
+        float *newBuffer = new float[length];
+        CopyFloat(newBuffer, this->buffer, this->internalBufferSize);
+        CopyFloat(newBuffer + offset, buffer, samples);
         delete[] this->buffer;
         this->buffer = newBuffer;
-        this->internalBufferSize = samples;
+        this->internalBufferSize = length;
     }
     else {
-        CopyFloat(this->buffer, buffer, samples);
+        CopyFloat(this->buffer + offset, buffer, samples);
     }
 
-    this->sampleSize = samples;
-}
-
-void Buffer::Append(float* src, long samples) {
-    /* number of floats (not bytes) in buffer */
-    long newBufferSize = this->sampleSize + samples;
-
-    if (newBufferSize > this->internalBufferSize) {
-        /* resize, then copy, if too small */
-        float *newBuffer = new float[newBufferSize];
-
-        CopyFloat(newBuffer, this->buffer, this->sampleSize);
-        CopyFloat(newBuffer + this->sampleSize, src, samples);
-
-        delete[] this->buffer;
-
-        this->buffer = newBuffer;
-        this->internalBufferSize = newBufferSize;
-    }
-    else {
-        /* append, no resize required */
-        CopyFloat(this->buffer + this->sampleSize, src, samples);
-    }
-
-    this->sampleSize = newBufferSize;
+    this->samples = std::max(this->samples, length);
 }

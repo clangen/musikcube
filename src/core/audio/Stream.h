@@ -62,18 +62,18 @@ namespace musik { namespace core { namespace audio {
         public:
             virtual ~Stream();
 
-            virtual Buffer* GetNextProcessedOutputBuffer();
-            virtual void OnBufferProcessedByPlayer(Buffer* buffer);
-            virtual double SetPosition(double seconds);
-            virtual double GetDuration();
-            virtual bool OpenStream(std::string uri);
-            virtual void Interrupt();
-            virtual int GetCapabilities();
+            virtual Buffer* GetNextProcessedOutputBuffer() override;
+            virtual void OnBufferProcessedByPlayer(Buffer* buffer) override;
+            virtual double SetPosition(double seconds) override;
+            virtual double GetDuration() override;
+            virtual bool OpenStream(std::string uri) override;
+            virtual void Interrupt() override;
+            virtual int GetCapabilities() override;
+            virtual bool Eof() override { return this->done; }
 
         private:
             bool GetNextBufferFromDecoder();
             Buffer* GetEmptyBuffer();
-            void ApplyDsp(Buffer* buffer);
             void RefillInternalBuffers();
 
             typedef std::deque<Buffer*> BufferList;
@@ -83,17 +83,20 @@ namespace musik { namespace core { namespace audio {
 
             long decoderSampleRate;
             long decoderChannels;
-            uint64_t decoderSamplePosition;
             std::string uri;
             musik::core::io::DataStreamFactory::DataStreamPtr dataStream;
 
             BufferList recycledBuffers;
             BufferList filledBuffers;
+
             Buffer* decoderBuffer;
-            Buffer* remainder;
+            long decoderSampleOffset;
+            long decoderSamplesRemain;
+            uint64_t decoderPosition;
 
             unsigned int options;
             int samplesPerChannel;
+            long samplesPerBuffer;
             int bufferCount;
             bool done;
             double bufferLengthSeconds;

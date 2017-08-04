@@ -47,16 +47,6 @@ static std::string TAG = "Stream";
 
 #define MIN_BUFFER_COUNT 30
 
-#define SET_OFFSET(target, offset) \
-    target->SetPosition( \
-        ((double) this->decoderSamplePosition + offset) / \
-        ((double) target->Channels()) / \
-        ((double) this->decoderSampleRate));
-
-#define COPY_BUFFER(target, current, count, offset) \
-    target->Copy(current->BufferPointer() + offset, count); \
-    SET_OFFSET(target, offset) \
-
 Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int options)
 : options(options)
 , samplesPerChannel(samplesPerChannel)
@@ -64,16 +54,18 @@ Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int o
 , bufferCount(0)
 , decoderSampleRate(0)
 , decoderChannels(0)
-, decoderSamplePosition(0)
+, decoderPosition(0)
+, decoderSampleOffset(0)
+, decoderSamplesRemain(0)
 , done(false)
 , capabilities(0)
-, remainder(nullptr)
 , rawBuffer(nullptr) {
     if ((this->options & NoDSP) == 0) {
         streams::GetDspPlugins();
     }
 
     this->decoderBuffer = new Buffer();
+    this->decoderBuffer->SetSamples(0);
 }
 
 Stream::~Stream() {
@@ -99,7 +91,7 @@ double Stream::SetPosition(double requestedSeconds) {
     if (actualSeconds != -1) {
         double rate = (double) this->decoderSampleRate;
 
-        this->decoderSamplePosition =
+        this->decoderPosition =
             (uint64_t)(actualSeconds * rate) * this->decoderChannels;
 
         /* move all the filled buffers back to the recycled queue */
@@ -159,61 +151,41 @@ void Stream::OnBufferProcessedByPlayer(Buffer* buffer) {
 }
 
 bool Stream::GetNextBufferFromDecoder() {
-    Buffer* buffer = this->decoderBuffer;
-
     /* ask the decoder for some data */
-    if (!this->decoder->GetBuffer(buffer)) {
+    if (!this->decoder->GetBuffer(this->decoderBuffer)) {
         return false;
     }
 
     /* ensure our internal state is initialized */
     if (!this->rawBuffer) {
-        this->decoderSampleRate = buffer->SampleRate();
-        this->decoderChannels = buffer->Channels();
-
-        int samplesPerBuffer = samplesPerChannel * decoderChannels;
+        this->decoderSampleRate = this->decoderBuffer->SampleRate();
+        this->decoderChannels = this->decoderBuffer->Channels();
+        this->samplesPerBuffer = samplesPerChannel * decoderChannels;
 
         this->bufferCount = std::max(MIN_BUFFER_COUNT, (int)(this->bufferLengthSeconds *
-            (double)(this->decoderSampleRate / samplesPerBuffer)));
+            (double)(this->decoderSampleRate / this->samplesPerBuffer)));
 
-        this->rawBuffer = new float[bufferCount * samplesPerBuffer];
+        this->rawBuffer = new float[bufferCount * this->samplesPerBuffer];
         int offset = 0;
         for (int i = 0; i < bufferCount; i++) {
-            auto buffer = new Buffer(this->rawBuffer + offset, samplesPerBuffer);
+            auto buffer = new Buffer(this->rawBuffer + offset, this->samplesPerBuffer);
             buffer->SetSampleRate(this->decoderSampleRate);
             buffer->SetChannels(this->decoderChannels);
             this->recycledBuffers.push_back(buffer);
-            offset += samplesPerBuffer;
+            offset += this->samplesPerBuffer;
         }
     }
-
-    this->decoderSamplePosition += buffer->Samples();
-
-    /* calculate the position (seconds) in the buffer */
-    buffer->SetPosition(
-        ((double) this->decoderSamplePosition) /
-        ((double) buffer->Channels()) /
-        ((double) this->decoderSampleRate));
 
     return true;
 }
 
 inline Buffer* Stream::GetEmptyBuffer() {
-    Buffer* target;
-
     if (recycledBuffers.size()) {
-        target = recycledBuffers.front();
+        Buffer* target = recycledBuffers.front();
         recycledBuffers.pop_front();
+        return target;
     }
-    else {
-        /* if we've calculated our buffer sizes correctly based on what
-        the output device expects, we should never hit this case. but
-        if something goes awry and we need more space to store samples */
-        target = new Buffer();
-        target->CopyFormat(this->decoderBuffer);
-    }
-
-    return target;
+    return nullptr;
 }
 
 Buffer* Stream::GetNextProcessedOutputBuffer() {
@@ -221,22 +193,17 @@ Buffer* Stream::GetNextProcessedOutputBuffer() {
 
     /* in the normal case we have buffers available in the filled queue. */
     if (this->filledBuffers.size()) {
-        Buffer* currentBuffer = this->filledBuffers.front();
+        Buffer* buffer = this->filledBuffers.front();
         this->filledBuffers.pop_front();
-        this->ApplyDsp(currentBuffer);
-        return currentBuffer;
+
+        for (std::shared_ptr<IDSP> dsp : this->dsps) {
+            dsp->Process(buffer);
+        }
+
+        return buffer;
     }
 
-    /* if there's nothing left in the queue, we're almost done. there may
-    be a partial buffer still hanging around from the last decoder read */
-    if (remainder) {
-        Buffer* finalBuffer = remainder;
-        remainder = nullptr;
-        this->ApplyDsp(finalBuffer);
-        return finalBuffer;
-    }
-
-    return nullptr; /* stream is done. */
+    return nullptr;
 }
 
 void Stream::RefillInternalBuffers() {
@@ -253,73 +220,70 @@ void Stream::RefillInternalBuffers() {
         count = std::min(recycled - 1, std::max(1, this->bufferCount / 4));
     }
 
-    while (!this->done && (count > 0 || count == -1)) {
-        --count;
+    Buffer* target = nullptr;
+    long targetSampleOffset = 0;
+    long targetSamplesRemain = 0;
 
-        /* ask the decoder for the next buffer */
-        if (!GetNextBufferFromDecoder()) {
-            this->done = true;
-            break;
+    while (!this->done && (count > 0 || count == -1)) {
+        /* get the next buffer, if the last one has been consumed... */
+        if (this->decoderSamplesRemain <= 0) {
+            if (!GetNextBufferFromDecoder()) {
+                if (target) { /* very last buffer for this stream. */
+                    target->SetSamples(targetSampleOffset);
+                }
+                this->done = true;
+                break;
+            }
+
+            this->decoderSamplesRemain = this->decoderBuffer->Samples();
+            this->decoderSampleOffset = 0;
         }
 
-        /* if we were just initialized, then make sure our buffer
-        is about a quarter filled. this will start playback quickly,
-        and ensure we don't have any buffer underruns */
+        /* count will be < 0 on the very first pass through. let's try to
+        fill 1/4 of our buffers */
         if (count < 0) {
             count = bufferCount / 4;
         }
 
-        int floatsPerBuffer = this->samplesPerChannel * this->decoderBuffer->Channels();
-
-        Buffer* target;
-        int offset = 0;
-
-        /* if we have a partial / remainder buffer hanging out from the last time
-        through, let's fill it up with the head of the new buffer. */
-        if (remainder) {
-            long desired = floatsPerBuffer - remainder->Samples();
-            long actual = std::min(this->decoderBuffer->Samples(), desired);
-
-            remainder->Append(this->decoderBuffer->BufferPointer(), actual);
-            SET_OFFSET(remainder, 0);
-
-            if (remainder->Samples() == floatsPerBuffer) {
-                /* normal case: we were able to fill it; add it to the list of
-                filled buffers and continue to fill some more... */
-                this->filledBuffers.push_back(remainder);
-                offset += actual;
-                remainder = nullptr;
-            }
-            else {
-                continue; /* already consumed all of the decoder buffer. go back
-                    to the top of the loop to get some more data. */
-            }
-        }
-
-        /* now that the remainder is taken care of, break the rest of the data
-        into uniform chunks */
-
-        int buffersToFill = (this->decoderBuffer->Samples() - offset) / floatsPerBuffer;
-
-        for (int i = 0; i < buffersToFill; i++) {
+        /* we're going to write to this guy... */
+        if (!target) {
             target = this->GetEmptyBuffer();
-            COPY_BUFFER(target, this->decoderBuffer, floatsPerBuffer, offset);
-            this->filledBuffers.push_back(target);
-            offset += floatsPerBuffer;
+
+            if (!target) {
+                break; /* no available buffers. break out. */
+            }
+
+            target->SetSamples(0);
+
+            target->SetPosition(
+                ((double) this->decoderPosition) /
+                ((double) this->decoderChannels) /
+                ((double) this->decoderSampleRate));
+
+            filledBuffers.push_back(target);
         }
 
-        /* any remainder will be sent to the output next time through the loop*/
-        if (offset < this->decoderBuffer->Samples()) {
-            remainder = this->GetEmptyBuffer();
-            COPY_BUFFER(remainder, this->decoderBuffer, this->decoderBuffer->Samples() - offset, offset);
-        }
-    }
-}
+        /* write to the target, from the decoder buffer. note that after the
+        write the target may not be full, or the decoder buffer may not be
+        empty. we'll go through the loop again... */
+        targetSamplesRemain = this->samplesPerBuffer - targetSampleOffset;
+        if (targetSamplesRemain > 0) {
+            long samplesToCopy = std::min(this->decoderSamplesRemain, targetSamplesRemain);
 
-void Stream::ApplyDsp(Buffer* buffer) {
-    if (this->dsps.size() > 0) {
-        for (std::shared_ptr<IDSP> dsp : this->dsps) {
-            dsp->Process(buffer);
+            float* src = this->decoderBuffer->BufferPointer() + this->decoderSampleOffset;
+            target->Copy(src, samplesToCopy, targetSampleOffset);
+
+            this->decoderPosition += samplesToCopy;
+            this->decoderSampleOffset += samplesToCopy;
+            this->decoderSamplesRemain -= samplesToCopy;
+
+            targetSampleOffset += samplesToCopy;
+
+            if (targetSampleOffset == this->samplesPerBuffer) {
+                targetSampleOffset = 0;
+                target = nullptr;
+                --count; /* target buffer has been filled. */
+            }
         }
     }
 }

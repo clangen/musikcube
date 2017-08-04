@@ -68,15 +68,14 @@ namespace musik { namespace core { namespace audio {
 
             double Position() const;
             void SetPosition(double position);
-            void Copy(float* buffer, long samples);
-            void Append(float* buffer, long samples);
+            void Copy(float* buffer, long samples, long offset = 0);
             void CopyFormat(Buffer* fromBuffer);
 
         private:
             void ResizeBuffer();
 
             float *buffer;
-            long sampleSize;
+            long samples;
             long internalBufferSize;
             long sampleRate;
             int channels;
