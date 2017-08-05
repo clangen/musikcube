@@ -60,7 +60,7 @@ class SystemService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent != null) {
+        if (intent != null && intent.action != null) {
             when (intent.action) {
                 ACTION_WAKE_UP -> wakeupNow()
                 ACTION_SHUT_DOWN -> shutdownNow()
