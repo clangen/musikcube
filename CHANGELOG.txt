@@ -1,3 +1,27 @@
+0.23.0
+
+musikcube:
+
+* fixed album artist support for FLAC, OGG, and M4A files. users with existing
+libraries that are having problems should re-import their files.
+* fixed CDDB lookup for mixed-mode discs in Windows
+* fixed a bug in the low-level audio processing that could leak memory until
+the playing track completed
+* allow M-ENTER to also activate the context menu for album header rows.
+(ENTER still works as well)
+* fixed the NullOut plugin -- it was not taking channel count into account when
+calculating buffer duration
+* added support for Manjaro Linux
+
+musikdroid:
+
+* fixed a crash in SystemService::onStartCommand where the Intent's "action"
+was not being null-checked.
+* suppressed a strange crash related to the Room library not initializing the
+database properly
+
+--------------------------------------------------------------------------------
+
 0.22.0
 
 musikcube:
