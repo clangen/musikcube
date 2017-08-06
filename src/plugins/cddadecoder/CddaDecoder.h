@@ -47,14 +47,16 @@ class CddaDecoder : public IDecoder {
         CddaDecoder();
         ~CddaDecoder();
 
-        virtual bool Open(IDataStream* data);
-        virtual void Destroy();
-        virtual double SetPosition(double seconds);
-        virtual double GetDuration();
-        virtual bool GetBuffer(IBuffer *buffer);
+        virtual bool Open(IDataStream* data) override;
+        virtual void Destroy() override;
+        virtual double SetPosition(double seconds) override;
+        virtual double GetDuration() override;
+        virtual bool GetBuffer(IBuffer *buffer) override;
+        virtual bool Exhausted() override { return this->exhausted; }
 
     private:
         CddaDataStream* data;
         double duration;
         BYTE* buffer;
+        bool exhausted;
 };

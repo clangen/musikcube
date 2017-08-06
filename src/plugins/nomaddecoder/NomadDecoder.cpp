@@ -77,6 +77,7 @@ static int nomadClose(void *datasource) {
 }
 
 NomadDecoder::NomadDecoder() {
+    this->exhausted = false;
     this->duration = -1.0f;
     this->nomadContext = nullptr;
     this->callbacks.read = &nomadRead;
@@ -118,7 +119,12 @@ bool NomadDecoder::GetBuffer(IBuffer *buffer) {
     buffer->SetSamples(read > 0 ? read : 0);
     buffer->SetSampleRate(info->sample_rate);
 
-    return (read > 0) ? true : false;
+    if (read > 0) {
+        return true;
+    }
+
+    this->exhausted = true;
+    return false;
 }
 
 bool NomadDecoder::Open(IDataStream *stream) {
@@ -148,7 +154,12 @@ bool NomadDecoder::Open(IDataStream *stream) {
         this->nomadContext = nullptr;
     }
 
-    return result ? false : true;
+    if (!result) {
+        return true;
+    }
+
+    this->exhausted = false;
+    return false;
 }
 
 /* adapted from http://stackoverflow.com/a/3520427 */

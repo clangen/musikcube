@@ -47,7 +47,8 @@ FlacDecoder::FlacDecoder()
 , sampleRate(0)
 , bitsPerSample(0)
 , totalSamples(0)
-, duration(-1.0f) {
+, duration(-1.0f)
+, exhausted(false) {
     this->decoder = FLAC__stream_decoder_new();
 }
 
@@ -62,18 +63,21 @@ FlacDecoder::~FlacDecoder() {
 }
 
 FLAC__StreamDecoderReadStatus FlacDecoder::FlacRead(
-    const FLAC__StreamDecoder *decoder,
+    const FLAC__StreamDecoder *dec,
     FLAC__byte buffer[],
     size_t *bytes,
     void *clientData)
 {
-    size_t readBytes = (size_t)((FlacDecoder*) clientData)->stream->Read(buffer,(long)(*bytes));
+    auto decoder = (FlacDecoder*) clientData;
+    size_t readBytes = (size_t) decoder->stream->Read(buffer,(long)(*bytes));
     *bytes = readBytes;
 
     if (readBytes == 0) {
+        decoder->exhausted = true;
         return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
     }
-    else if(readBytes == (size_t) -1) {
+    else if (readBytes == (size_t) -1) {
+        decoder->exhausted = true;
         return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
     }
 

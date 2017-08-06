@@ -37,13 +37,16 @@
 #include "ntddcdrm.h"
 #include "devioctl.h"
 #include <string>
-
-#define ENABLE_LOOKAHEAD_BUFFER 0
+#include <mutex>
 
 using namespace musik::core::sdk;
 
 class CddaDataStream : public IDataStream {
     public:
+        enum class ReadError : int {
+            DeviceBusy = -128
+        };
+
         CddaDataStream();
         ~CddaDataStream();
 
@@ -73,11 +76,4 @@ class CddaDataStream : public IDataStream {
         UINT firstSector, startSector, stopSector;
         unsigned long channels;
         volatile bool closed;
-
-#if ENABLE_LOOKAHEAD_BUFFER
-        char* lookahead;
-        DWORD lookaheadOffset;
-        DWORD lookaheadTotal;
-        void RefillInternalBuffer();
-#endif
 };

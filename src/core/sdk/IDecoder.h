@@ -46,6 +46,7 @@ namespace musik { namespace core { namespace sdk {
             virtual bool GetBuffer(IBuffer *buffer) = 0;
             virtual double GetDuration() = 0;
             virtual bool Open(IDataStream *stream) = 0;
+            virtual bool Exhausted() = 0;
     };
 
 } } }

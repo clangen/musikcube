@@ -43,6 +43,7 @@ CddaDecoder::CddaDecoder() {
     this->duration = -1.0f;
     this->data = nullptr;
     this->buffer = new BYTE[CDDA_BUFFER_SIZE];
+    this->exhausted = false;
 }
 
 CddaDecoder::~CddaDecoder() {
@@ -87,6 +88,11 @@ bool CddaDecoder::GetBuffer(IBuffer *buffer) {
     PositionType count = this->data->Read(
         (void *) this->buffer, CDDA_BUFFER_SIZE);
 
+    if (count == (PositionType) CddaDataStream::ReadError::DeviceBusy) {
+        this->exhausted = false; /* stream not exhausted, waiting for data */
+        return false;
+    }
+
     if (count > 0) {
         short* t = (short*) this->buffer;
 
@@ -99,5 +105,6 @@ bool CddaDecoder::GetBuffer(IBuffer *buffer) {
         return true;
     }
 
+    this->exhausted = true;
     return false;
 }

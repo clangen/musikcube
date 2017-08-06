@@ -215,6 +215,10 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
         hasBuffer = this->decoder->GetBuffer(this->pcmBuffer);
     }
 
+    if (!hasBuffer && !decoder->Exhausted()) {
+        goto internal_error;
+    }
+
     /* done with spillover. read new data... */
     while (hasBuffer && bytesWritten < (size_t) bytesToRead) {
         /* calculated according to lame.h */
@@ -314,26 +318,36 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
     if (bytesWritten == 0) {
         encodedBytes.reset();
 
-        size_t count = lame_encode_flush(
+        /* 7200 bytes minimum is required for the flush op; see lame.h */
+        if (encodedBytes.length < 7200) {
+            encodedBytes.realloc(7200);
+        }
+
+        int count = lame_encode_flush(
             lame,
             encodedBytes.data,
             encodedBytes.length);
 
-        memcpy(dst + bytesWritten, encodedBytes.data, count);
+        this->eof = true;
 
-        if (this->outFile) {
-            fwrite(encodedBytes.data, 1, count, this->outFile);
-            fclose(this->outFile);
-            this->outFile = nullptr;
+        if (count >= 0) {
+            memcpy(dst + bytesWritten, encodedBytes.data, count);
 
-            boost::system::error_code ec;
-            boost::filesystem::rename(this->tempFilename, this->finalFilename, ec);
-            if (ec) {
-                boost::filesystem::remove(this->tempFilename, ec);
+            if (this->outFile) {
+                fwrite(encodedBytes.data, 1, count, this->outFile);
+                fclose(this->outFile);
+                this->outFile = nullptr;
+
+                boost::system::error_code ec;
+                boost::filesystem::rename(this->tempFilename, this->finalFilename, ec);
+                if (ec) {
+                    boost::filesystem::remove(this->tempFilename, ec);
+                }
             }
         }
-
-        this->eof = true;
+        else {
+            goto internal_error;
+        }
     }
 
     this->position += bytesWritten;
@@ -343,6 +357,8 @@ internal_error:
     this->eof = true;
     fclose(this->outFile);
     this->outFile = nullptr;
+    boost::system::error_code ec;
+    boost::filesystem::remove(this->tempFilename, ec);
     return 0;
 }
 

@@ -47,11 +47,12 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
         FlacDecoder();
         ~FlacDecoder();
 
-        virtual void Destroy();
-        virtual double SetPosition(double seconds);
-        virtual bool GetBuffer(IBuffer *buffer);
-        virtual double GetDuration();
-        virtual bool Open(musik::core::sdk::IDataStream *stream);
+        virtual void Destroy() override;
+        virtual double SetPosition(double seconds) override;
+        virtual bool GetBuffer(IBuffer *buffer) override;
+        virtual double GetDuration() override;
+        virtual bool Open(musik::core::sdk::IDataStream *stream) override;
+        virtual bool Exhausted() override { return this->exhausted; }
 
     private:
         static FLAC__StreamDecoderReadStatus FlacRead(
@@ -104,6 +105,7 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
         uint64_t totalSamples;
         int bitsPerSample;
         double duration;
+        bool exhausted;
 
         float *outputBuffer;
         unsigned long outputBufferSize;

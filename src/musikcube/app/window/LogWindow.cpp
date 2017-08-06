@@ -59,6 +59,7 @@ LogWindow::LogWindow(IWindow *parent)
 }
 
 LogWindow::~LogWindow() {
+    delete this->adapter;
 }
 
 IScrollAdapter& LogWindow::GetScrollAdapter() {

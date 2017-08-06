@@ -45,11 +45,12 @@ class OggDecoder : public IDecoder {
         OggDecoder();
         ~OggDecoder();
 
-        virtual void Destroy();
-        virtual double SetPosition(double second);
-        virtual bool GetBuffer(IBuffer *buffer);
-        virtual double GetDuration();
-        virtual bool Open(musik::core::sdk::IDataStream *fileStream);
+        virtual void Destroy() override;
+        virtual double SetPosition(double second) override;
+        virtual bool GetBuffer(IBuffer *buffer) override;
+        virtual double GetDuration() override;
+        virtual bool Open(musik::core::sdk::IDataStream *fileStream) override;
+        virtual bool Exhausted() { return this->exhausted; }
 
         /* libvorbis callbacks */
         static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);
@@ -59,6 +60,7 @@ class OggDecoder : public IDecoder {
 
     private:
         musik::core::sdk::IDataStream *fileStream;
+        bool exhausted;
         OggVorbis_File oggFile;
         ov_callbacks oggCallbacks;
         double duration;

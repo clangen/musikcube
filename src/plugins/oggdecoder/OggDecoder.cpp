@@ -39,6 +39,7 @@
 
 OggDecoder::OggDecoder() {
     this->duration = -1.0f;
+    this->exhausted = false;
     this->oggCallbacks.read_func = &OggRead;
     this->oggCallbacks.seek_func = &OggSeek;
     this->oggCallbacks.tell_func = &OggTell;
@@ -99,6 +100,7 @@ bool OggDecoder::Open(musik::core::sdk::IDataStream *fileStream) {
     this->fileStream = fileStream;
 
     if (ov_open_callbacks(this, &this->oggFile, NULL, 0, this->oggCallbacks) != 0) {
+        this->exhausted = true;
         return false;
     }
 
@@ -137,6 +139,7 @@ bool OggDecoder::GetBuffer(IBuffer *buffer) {
         &bitstream);
 
     if (samplesRead == 0) {
+        this->exhausted = true;
         return false;
     }
 

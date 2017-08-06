@@ -39,18 +39,8 @@
 #include <set>
 #include <mutex>
 
-#if ENABLE_LOOKAHEAD_BUFFER
-    /* as it turns out having a small lookahead buffer is better than a
-    large one. if the buffer is too large, the device seems to start to
-    power down, then takes a while to power back up. we just want a little
-    but of wiggle room, but to generally keep the device reading small
-    chunks of data constantly. */
-    #define MAX_SECTORS_IN_LOOKAHEAD 20
-    #define MAX_SECTORS_PER_READ 10
-    #define BUFFER_SIZE_BYTES (MAX_SECTORS_IN_LOOKAHEAD * BYTES_PER_SECTOR)
-#endif
-
 static std::mutex driveAccessMutex; /* one track can read at a time */
+static CddaDataStream* activeRead = nullptr;
 
 CddaDataStream::CddaDataStream() {
     this->closed = false;
@@ -58,11 +48,6 @@ CddaDataStream::CddaDataStream() {
     this->position = this->length = 0;
     memset(&this->toc, 0, sizeof(this->toc));
     this->startSector = this->stopSector = 0;
-
-#if ENABLE_LOOKAHEAD_BUFFER
-    this->lookahead = new char[BUFFER_SIZE_BYTES];
-    this->lookaheadOffset = this->lookaheadTotal = 0;
-#endif
 }
 
 CddaDataStream::~CddaDataStream() {
@@ -154,8 +139,14 @@ bool CddaDataStream::Close() {
         this->drive = INVALID_HANDLE_VALUE;
     }
 
-    this->closed = true;
+    {
+        std::lock_guard<std::mutex> lock(driveAccessMutex);
+        if (activeRead == this) {
+            activeRead = nullptr;
+        }
+    }
 
+    this->closed = true;
     return true;
 }
 
@@ -168,6 +159,17 @@ void CddaDataStream::Destroy() {
 }
 
 PositionType CddaDataStream::Read(void* buffer, PositionType readBytes) {
+    {
+        std::lock_guard<std::mutex> lock(driveAccessMutex);
+        if (activeRead == nullptr) {
+            activeRead = this;
+        }
+    }
+
+    if (activeRead != this) {
+        return (PositionType) ReadError::DeviceBusy;
+    }
+
     if (this->position >= this->length) {
         return 0;
     }
@@ -186,12 +188,6 @@ bool CddaDataStream::SetPosition(PositionType position) {
     while (this->position % (2 * this->channels)) {
         this->position++;
     }
-
-#if ENABLE_LOOKAHEAD_BUFFER
-    this->RefillInternalBuffer();
-    this->lookaheadOffset = 0;
-    Sleep(250);
-#endif
 
     return true;
 }
@@ -220,70 +216,12 @@ const char* CddaDataStream::Uri() {
     return uri.c_str();
 }
 
-#if ENABLE_LOOKAHEAD_BUFFER
-void CddaDataStream::RefillInternalBuffer() {
-    std::unique_lock<std::mutex> lock(driveAccessMutex);
-
-    LONGLONG pos = this->position;
-    int iterations = MAX_SECTORS_IN_LOOKAHEAD / MAX_SECTORS_PER_READ;
-    DWORD totalBytesRead = 0;
-
-    RAW_READ_INFO rawReadInfo = { 0 };
-    rawReadInfo.SectorCount = MAX_SECTORS_PER_READ;
-    rawReadInfo.TrackMode = CDDA;
-
-    DWORD bytesActuallyRead = 0;
-
-    while (iterations > 0) {
-        UINT sectorOffset = this->startSector + (int)(pos / BYTES_PER_SECTOR);
-        rawReadInfo.DiskOffset.QuadPart = sectorOffset * 2048;
-
-        DeviceIoControl(
-            this->drive,
-            IOCTL_CDROM_RAW_READ,
-            &rawReadInfo,
-            sizeof(rawReadInfo),
-            &this->lookahead[totalBytesRead],
-            BYTES_PER_SECTOR * MAX_SECTORS_PER_READ,
-            &bytesActuallyRead,
-            0);
-
-        totalBytesRead += bytesActuallyRead;
-        pos += bytesActuallyRead;
-
-        if (totalBytesRead == 0) {
-            break;
-        }
-
-        --iterations;
-    }
-
-    this->lookaheadOffset = 0;
-    this->lookaheadTotal = totalBytesRead;
-}
-#endif
-
 HRESULT CddaDataStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead) {
     if (this->closed) {
         pdwBytesRead = 0;
         return S_FALSE;
     }
 
-#if ENABLE_LOOKAHEAD_BUFFER
-    size_t avail = this->lookaheadTotal - this->lookaheadOffset;
-
-    if (avail == 0) {
-        this->RefillInternalBuffer();
-        avail = this->lookaheadTotal;
-    }
-
-    DWORD readSize = min(avail, (size_t) dwBytesToRead);
-    if (readSize >= 0) {
-        memcpy(pbBuffer, &this->lookahead[this->lookaheadOffset], readSize);
-        this->position += readSize;
-        this->lookaheadOffset += readSize;
-    }
-#else
     DWORD readSize = 0;
     LONGLONG pos = this->position;
     UINT sectorOffset = this->startSector + (int)(pos / BYTES_PER_SECTOR);
@@ -304,7 +242,6 @@ HRESULT CddaDataStream::Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, L
         0);
 
     this->position += readSize;
-#endif
 
     if (pdwBytesRead) {
         *pdwBytesRead = readSize;

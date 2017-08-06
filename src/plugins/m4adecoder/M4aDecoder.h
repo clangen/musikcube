@@ -43,11 +43,12 @@ class M4aDecoder : public musik::core::sdk::IDecoder {
         M4aDecoder();
         ~M4aDecoder();
 
-        virtual void Destroy();
-        virtual double SetPosition(double seconds);
-        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer);
-        virtual double GetDuration();
-        virtual bool Open(musik::core::sdk::IDataStream *stream);
+        virtual void Destroy() override;
+        virtual double SetPosition(double seconds) override;
+        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
+        virtual double GetDuration() override;
+        virtual bool Open(musik::core::sdk::IDataStream *stream) override;
+        virtual bool Exhausted() override { return this->exhausted; }
 
     private:
         NeAACDecHandle decoder;
@@ -59,4 +60,5 @@ class M4aDecoder : public musik::core::sdk::IDecoder {
         unsigned char channelCount;
         long decoderSampleId;
         double duration;
+        bool exhausted;
 };

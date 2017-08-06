@@ -83,6 +83,7 @@ M4aDecoder::M4aDecoder() {
     this->decoderFile = nullptr;
     memset(&decoderCallbacks, 0, sizeof(this->decoderCallbacks));
     this->duration = -1.0f;
+    this->exhausted = false;
 }
 
 M4aDecoder::~M4aDecoder() {
@@ -90,7 +91,9 @@ M4aDecoder::~M4aDecoder() {
 
 bool M4aDecoder::Open(musik::core::sdk::IDataStream *stream) {
     decoder = NeAACDecOpen();
+
     if (!decoder) {
+        this->exhausted = true;
         return false;
     }
 
@@ -177,63 +180,57 @@ double M4aDecoder::GetDuration() {
 }
 
 bool M4aDecoder::GetBuffer(IBuffer* target) {
-    if (this->decoderSampleId < 0) {
-        return false;
+    if (this->decoderSampleId >= 0) {
+        void* sampleBuffer = NULL;
+        unsigned char* encodedData = NULL;
+        unsigned int encodedDataLength = 0;
+        NeAACDecFrameInfo frameInfo;
+
+        long duration = mp4ff_get_sample_duration(
+            decoderFile, audioTrackId, decoderSampleId);
+
+        if (duration > 0) {
+            /* read the raw data required */
+
+            int rc =
+                mp4ff_read_sample(
+                    decoderFile,
+                    audioTrackId,
+                    decoderSampleId,
+                    &encodedData,
+                    &encodedDataLength);
+
+            decoderSampleId++;
+
+            if (rc == 0 || encodedData == NULL) {
+                this->exhausted = true;
+                return false;
+            }
+
+            sampleBuffer =
+                NeAACDecDecode(
+                    decoder,
+                    &frameInfo,
+                    encodedData,
+                    encodedDataLength);
+
+            free(encodedData);
+
+            if (frameInfo.error <= 0 && decoderSampleId <= this->totalSamples) {
+                target->SetSampleRate(frameInfo.samplerate);
+                target->SetChannels(frameInfo.channels);
+                target->SetSamples(frameInfo.samples);
+
+                memcpy(
+                    static_cast<void*>(target->BufferPointer()),
+                    static_cast<void*>(sampleBuffer),
+                    sizeof(float) * frameInfo.samples);
+
+                return true;
+            }
+        }
     }
 
-    void* sampleBuffer = NULL;
-    unsigned char* encodedData = NULL;
-    unsigned int encodedDataLength = 0;
-    NeAACDecFrameInfo frameInfo;
-
-    long duration = mp4ff_get_sample_duration(
-        decoderFile, audioTrackId, decoderSampleId);
-
-    if (duration <= 0) {
-        return false;
-    }
-
-    /* read the raw data required */
-
-    int rc =
-        mp4ff_read_sample(
-            decoderFile,
-            audioTrackId,
-            decoderSampleId,
-            &encodedData,
-            &encodedDataLength);
-
-    decoderSampleId++;
-
-    if (rc == 0 || encodedData == NULL) {
-        return false;
-    }
-
-    sampleBuffer =
-        NeAACDecDecode(
-            decoder,
-            &frameInfo,
-            encodedData,
-            encodedDataLength);
-
-    free(encodedData);
-
-    if (frameInfo.error > 0) {
-        return false;
-    }
-
-    if (decoderSampleId > this->totalSamples) {
-        return false;
-    }
-
-    target->SetSampleRate(frameInfo.samplerate);
-    target->SetChannels(frameInfo.channels);
-    target->SetSamples(frameInfo.samples);
-
-    memcpy(
-        static_cast<void*>(target->BufferPointer()),
-        static_cast<void*>(sampleBuffer),
-        sizeof(float) * frameInfo.samples);
-
-    return true;
+    this->exhausted = true;
+    return false;
 }
