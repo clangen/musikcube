@@ -55,9 +55,11 @@ static nlohmann::json loadLocaleData(const std::string& fn) {
     char* bytes = nullptr;
     int count = 0;
 
-    if (FileToByteArray(fn, &bytes, count, true)) {
+    if (FileToByteArray(fn, &bytes, count, true) == true) {
         try {
-            return nlohmann::json::parse(bytes);
+            nlohmann::json localeData = nlohmann::json::parse(bytes);
+            free(bytes);
+            return localeData;
         }
         catch (...) {
         }
