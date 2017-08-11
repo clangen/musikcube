@@ -72,7 +72,7 @@ IndexerTrack::IndexerTrack(int64_t id)
 
 IndexerTrack::~IndexerTrack() {
     delete this->internalMetadata;
-    this->internalMetadata  = NULL;
+    this->internalMetadata  = nullptr;
 }
 
 std::string IndexerTrack::GetValue(const char* metakey) {
@@ -135,7 +135,7 @@ if (this->internalMetadata) {
 
 void IndexerTrack::SetThumbnail(const char *data, long size) {
     if (this->internalMetadata->thumbnailData) {
-        delete this->internalMetadata->thumbnailData;
+        delete[] this->internalMetadata->thumbnailData;
     }
 
     this->internalMetadata->thumbnailData = new char[size];
@@ -763,10 +763,10 @@ TrackPtr IndexerTrack::Copy() {
 }
 
 IndexerTrack::MetadataWithThumbnail::MetadataWithThumbnail()
-: thumbnailData(NULL)
+: thumbnailData(nullptr)
 , thumbnailSize(0) {
 }
 
 IndexerTrack::MetadataWithThumbnail::~MetadataWithThumbnail() {
-    delete this->thumbnailData;
+    delete[] this->thumbnailData;
 }
