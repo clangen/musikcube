@@ -419,7 +419,7 @@ class MainActivity : WebSocketActivityBase() {
     private fun runUpdateCheck() {
         if (!UpdateAvailableDialog.displayed) {
             updateCheck.run { required, version, url ->
-                if (required) {
+                if (!isPaused && required) {
                     val suppressed = prefs.getString(Prefs.Key.UPDATE_DIALOG_SUPPRESSED_VERSION, "")
                     if (!UpdateAvailableDialog.displayed && suppressed != version) {
                         val tag = UpdateAvailableDialog.TAG

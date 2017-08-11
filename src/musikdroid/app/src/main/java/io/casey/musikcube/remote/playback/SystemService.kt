@@ -8,10 +8,11 @@ import android.media.AudioManager
 import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
+import android.support.v4.app.NotificationCompat
 import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.support.v4.app.NotificationCompat
 import android.util.Log
 import android.view.KeyEvent
 import com.bumptech.glide.Glide
@@ -27,7 +28,6 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
 import android.support.v4.app.NotificationCompat.Action as NotifAction
-import android.support.v4.media.app.NotificationCompat.MediaStyle
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,
