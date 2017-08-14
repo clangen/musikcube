@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(musikcube)
 set (musikcube_VERSION_MAJOR 0)
-set (musikcube_VERSION_MINOR 23)
+set (musikcube_VERSION_MINOR 24)
 set (musikcube_VERSION_PATCH 0)
 set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 

@@ -1,24 +1,49 @@
+0.24.0
+
+musikcube:
+
+* added the ability for the user to select the output device (i.e. soundcard
+  or port) audio will be rendered to. previously we always used the system's
+  default device.
+* fixed some transcoder and cdda bugs that prevented streaming cd audio to
+  remote (e.g. android) clients.
+* fixed a (potential) memory leak in the indexer when extracting album artwork
+* matthiaskrgr pointed out some memory leaks, and KTRosenberg fixed them.
+
+musikdroid:
+
+* fixed (potential) crash when trying to display the update check dialog.
+
+low-level:
+
+* fixed a bug in CddaDataStream where the active reader would not have exclusive
+  access to the output device.
+* added new SDK interfaces for enumerating audio devices that are available to
+  output drivers.
+
+--------------------------------------------------------------------------------
+
 0.23.0
 
 musikcube:
 
 * fixed album artist support for FLAC, OGG, and M4A files. users with existing
-libraries that are having problems should re-import their files.
+  libraries that are having problems should re-import their files.
 * fixed CDDB lookup for mixed-mode discs in Windows
 * fixed a bug in the low-level audio processing that could leak memory until
-the playing track completed
+  the playing track completed
 * allow M-ENTER to also activate the context menu for album header rows.
 (ENTER still works as well)
 * fixed the NullOut plugin -- it was not taking channel count into account when
-calculating buffer duration
+  calculating buffer duration
 * added support for Manjaro Linux
 
 musikdroid:
 
 * fixed a crash in SystemService::onStartCommand where the Intent's "action"
-was not being null-checked.
+  was not being null-checked.
 * suppressed a strange crash related to the Room library not initializing the
-database properly
+  database properly
 
 --------------------------------------------------------------------------------
 

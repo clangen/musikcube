@@ -79,17 +79,9 @@ class WasapiDevice : public musik::core::sdk::IDevice {
             this->name = name;
         }
 
-        virtual void Destroy() override {
-            delete this;
-        }
-
-        virtual const char* Name() const override {
-            return name.c_str();
-        }
-
-        virtual const char* Id() const override {
-            return id.c_str();
-        }
+        virtual void Destroy() override { delete this; }
+        virtual const char* Name() const override { return name.c_str(); }
+        virtual const char* Id() const override { return id.c_str(); }
 
     private:
         std::string name, id;
@@ -97,17 +89,9 @@ class WasapiDevice : public musik::core::sdk::IDevice {
 
 class WasapiDeviceList : public musik::core::sdk::IDeviceList {
     public:
-        virtual void Destroy() {
-            delete this;
-        }
-
-        virtual size_t Count() const override {
-            return devices.size();
-        }
-
-        virtual const IDevice* At(size_t index) const override {
-            return &devices.at(index);
-        }
+        virtual void Destroy() override { delete this; }
+        virtual size_t Count() const override { return devices.size(); }
+        virtual const IDevice* At(size_t index) const override { return &devices.at(index); }
 
         void Add(const std::string& id, const std::string& name) {
             devices.push_back(WasapiDevice(id, name));
@@ -399,7 +383,6 @@ void WasapiOut::Reset() {
     this->renderClient = nullptr;
     this->audioClient = nullptr;
     this->device = nullptr;
-
 
     ZeroMemory(&waveFormat, sizeof(WAVEFORMATEXTENSIBLE));
 }
