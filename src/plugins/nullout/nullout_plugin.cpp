@@ -48,7 +48,7 @@ class NullPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
         virtual const char* Name() { return "Null IOutput"; }
-        virtual const char* Version() { return "0.1.0"; }
+        virtual const char* Version() { return "0.2.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "0d45a986-24f1-4253-9fc2-b432353a1eea"; }
         virtual bool Configurable() { return false; }

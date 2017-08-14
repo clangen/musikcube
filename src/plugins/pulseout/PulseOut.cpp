@@ -36,16 +36,89 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IPreferences.h>
 #include <pulse/volume.h>
+#include <pulse/pulseaudio.h>
+#include <pulse/thread-mainloop.h>
 #include <math.h>
 
 using namespace musik::core::sdk;
 
 typedef std::unique_lock<std::recursive_mutex> Lock;
+typedef musik::core::sdk::IOutput IOutput;
+
 static musik::core::sdk::IPreferences* prefs = nullptr;
+
+#define PREF_FORCE_LINEAR_VOLUME "force_linear_volume"
+#define PREF_DEVICE_ID "device_id"
+
+class PulseDevice : public musik::core::sdk::IDevice {
+    public:
+        PulseDevice(const std::string& id, const std::string& name) {
+            this->id = id;
+            this->name = name;
+        }
+
+        virtual void Destroy() {
+            delete this;
+        }
+
+        virtual const char* Name() const {
+            return name.c_str();
+        }
+
+        virtual const char* Id() const {
+            return id.c_str();
+        }
+
+    private:
+        std::string name, id;
+};
+
+class PulseDeviceList : public musik::core::sdk::IDeviceList {
+    public:
+        virtual void Destroy() {
+            delete this;
+        }
+
+        virtual size_t Count() const {
+            return devices.size();
+        }
+
+        virtual const IDevice* At(size_t index) const {
+            return &devices.at(index);
+        }
+
+        void Add(const std::string& id, const std::string& name) {
+            devices.push_back(PulseDevice(id, name));
+        }
+
+    private:
+        std::vector<PulseDevice> devices;
+};
+
+struct DeviceListContext {
+    pa_threaded_mainloop* mainLoop;
+    PulseDeviceList* devices;
+};
+
+static void deviceEnumerator(pa_context* context, const pa_sink_info* info, int eol, void* userdata) {
+    DeviceListContext* deviceListContext = (DeviceListContext*) userdata;
+    if (info) {
+        deviceListContext->devices->Add(info->name, info->description);
+    }
+
+    if (eol) {
+        pa_threaded_mainloop_signal(deviceListContext->mainLoop, 0);
+    }
+}
+
+static std::string getDeviceId() {
+    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
+}
 
 extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     ::prefs = prefs;
-    prefs->GetBool("force_linear_volume", false);
+    prefs->GetBool(PREF_FORCE_LINEAR_VOLUME, false);
+    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
     prefs->Save();
 }
 
@@ -89,6 +162,81 @@ void PulseOut::Drain() {
     }
 }
 
+musik::core::sdk::IDevice* PulseOut::GetDefaultDevice() {
+    return findDeviceById<PulseDevice, IOutput>(this, getDeviceId());
+}
+
+bool PulseOut::SetDefaultDevice(const char* deviceId) {
+    return setDefaultDevice<IPreferences, PulseDevice, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
+}
+
+musik::core::sdk::IDeviceList* PulseOut::GetDeviceList() {
+    PulseDeviceList* result = new PulseDeviceList();
+
+    auto mainLoop = pa_threaded_mainloop_new();
+    if (mainLoop) {
+        auto context = pa_context_new(pa_threaded_mainloop_get_api(mainLoop), "musikcube");
+        if (context) {
+            if (pa_context_connect(context, nullptr, (pa_context_flags_t) 0, nullptr) >= 0) {
+                if (pa_threaded_mainloop_start(mainLoop) >= 0) {
+                    bool contextOk = false;
+                    for (;;) {
+                        pa_context_state_t state;
+                        state = pa_context_get_state(context);
+
+                        if (state == PA_CONTEXT_READY) {
+                            contextOk = true;
+                            break;
+                        }
+                        else if (state == PA_CONTEXT_FAILED || state == PA_CONTEXT_TERMINATED) {
+                            break;
+                        }
+
+                        pa_threaded_mainloop_wait(mainLoop);
+                    }
+
+                    pa_threaded_mainloop_lock(mainLoop);
+
+                    if (contextOk) {
+                        DeviceListContext dlc;
+                        dlc.mainLoop = mainLoop;
+                        dlc.devices = result;
+
+                        auto op = pa_context_get_sink_info_list(context, deviceEnumerator, (void*) &dlc);
+                        if (op) {
+                            while (pa_operation_get_state(op) == PA_OPERATION_RUNNING) {
+                                pa_threaded_mainloop_wait(mainLoop);
+                            }
+
+                            pa_operation_unref(op);
+                        }
+                    }
+
+                    pa_threaded_mainloop_unlock(mainLoop);
+                }
+
+                pa_context_disconnect(context);
+                pa_context_unref(context);
+            }
+        }
+
+        pa_threaded_mainloop_stop(mainLoop);
+        pa_threaded_mainloop_free(mainLoop);
+    }
+
+    return result;
+}
+
+std::string PulseOut::GetPreferredDeviceId() {
+    std::string deviceId = getDeviceId();
+    auto device = findDeviceById<PulseDevice>(this, deviceId);
+    if (device) {
+        device->Destroy();
+        return deviceId;
+    }
+    return "";
+}
+
 void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
     if (!this->audioConnection ||
         this->rate != buffer->SampleRate() ||
@@ -102,22 +250,40 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
         spec.rate = buffer->SampleRate();
 
         std::cerr << "PulseOut: opening device\n";
+
+        std::string deviceId = this->GetPreferredDeviceId();
+
+        /* output to preferred device id, as specified in prefs */
         this->audioConnection = pa_blocking_new(
             nullptr,
-            "musikbox",
+            "musikcube",
             PA_STREAM_PLAYBACK,
-            nullptr,
+            deviceId.size() ? deviceId.c_str() : nullptr,
             "music",
             &spec,
             nullptr,
             nullptr,
             0);
 
+        if (!this->audioConnection && deviceId.size()) {
+            /* fall back to default if preferred is not found */
+            this->audioConnection = pa_blocking_new(
+                nullptr,
+                "musikcube",
+                PA_STREAM_PLAYBACK,
+                nullptr,
+                "music",
+                &spec,
+                nullptr,
+                nullptr,
+                0);
+        }
+
         if (this->audioConnection) {
             this->rate = buffer->SampleRate();
             this->channels = buffer->Channels();
             this->state = StatePlaying;
-            this->linearVolume = ::prefs->GetBool("force_linear_volume", false);
+            this->linearVolume = ::prefs->GetBool(PREF_FORCE_LINEAR_VOLUME, false);
             this->SetVolume(this->volume);
         }
     }

@@ -206,7 +206,7 @@ void ListOverlay::RecalculateSize() {
 
     /* constrain to app bounds */
     this->height = std::max(0, std::min(Screen::GetHeight() - 4, this->height));
-    this->width = std::max(0, std::min(Screen::GetWidth(), this->width));
+    this->width = std::max(0, std::min(Screen::GetWidth() - 4, this->width));
 
     this->y = VERTICAL_PADDING;
     this->x = (Screen::GetWidth() / 2) - (this->width / 2);
@@ -230,7 +230,6 @@ void ListOverlay::Redraw() {
         currentY += 2;
     }
 }
-
 
 void ListOverlay::RefreshAdapter() {
     this->listWindow->OnAdapterChanged();

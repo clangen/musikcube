@@ -30,7 +30,9 @@
         "settings_enable_disable_plugins": "plugin manager",
         "settings_color_theme": "color theme: ",
         "settings_hotkey_tester": "hotkey tester",
+        "settings_output_driver": "output driver: ",
         "settings_output_device": "output device: ",
+        "settings_output_device_default": "default",
         "settings_transport_type": "playback mode: ",
         "settings_degrade_256": "degrade to 256 color palette",
         "settings_show_dotfiles": "show dotfiles in directory browser",
@@ -68,8 +70,9 @@
         "color_theme_256_overlay_message": "disabling 256 color degradation will enable RGB color mode, which will replace colors in the stock palette. disabling this option results in higher fidelity themes, but it may cause display issues in other applications until the terminal is reset.\n\nare you sure you want to disable 256 color degradation?",
 
         "playback_overlay_transport_title": "playback mode",
-        "playback_overlay_output_plugins_title": "output plugins",
-        "playback_overlay_invalid_transport": "the selected output device (%s) doesn't support crossfading.",
+        "playback_overlay_output_plugins_title": "output driver plugins",
+        "playback_overlay_output_device_title": "output device",
+        "playback_overlay_invalid_transport": "the selected output driver (%s) doesn't support crossfading.",
         "playback_overlay_no_output_plugins_mesage": "no output plugins found!",
 
         "playqueue_title": "play queue",
@@ -136,6 +139,7 @@
     },
 
     "dimensions": {
+        "output_device_overlay_width": 35,
         "playqueue_album_header_overlay": 35,
         "playqueue_playlist_add_to_queue_overlay": 35,
         "playqueue_playlist_list_overlay": 35,

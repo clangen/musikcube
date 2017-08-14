@@ -39,6 +39,8 @@
 #include <boost/thread/thread.hpp>
 
 #include <core/sdk/IOutput.h>
+#include <core/sdk/IDevice.h>
+
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/condition.hpp>
 #include <list>
@@ -49,21 +51,25 @@ class AlsaOut : public musik::core::sdk::IOutput {
         virtual ~AlsaOut();
 
         /* IPlugin */
-        virtual const char* Name() { return "AlsaOut"; }
+        virtual const char* Name() override { return "AlsaOut"; }
 
         /* IOutput */
-        virtual void Destroy();
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual double GetVolume();
-        virtual void Stop();
-        virtual double Latency();
-        virtual void Drain();
+        virtual void Destroy() override;
+        virtual void Pause() override ;
+        virtual void Resume() override;
+        virtual void SetVolume(double volume) override;
+        virtual double GetVolume() override;
+        virtual void Stop() override;
+        virtual double Latency() override;
+        virtual void Drain() override;
 
         virtual int Play(
             musik::core::sdk::IBuffer *buffer,
-            musik::core::sdk::IBufferProvider *provider);
+            musik::core::sdk::IBufferProvider *provider) override;
+
+        virtual musik::core::sdk::IDeviceList* GetDeviceList() override;
+        virtual bool SetDefaultDevice(const char* deviceId) override;
+        virtual musik::core::sdk::IDevice* GetDefaultDevice() override;
 
     private:
         struct BufferContext {
@@ -76,6 +82,7 @@ class AlsaOut : public musik::core::sdk::IOutput {
         void InitDevice();
         void CloseDevice();
         void WriteLoop();
+        std::string GetPreferredDeviceId();
 
         std::string device;
         snd_pcm_t* pcmHandle;

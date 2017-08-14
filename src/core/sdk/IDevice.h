@@ -32,29 +32,58 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IOutput.h>
+#pragma once
 
-#include "CoreAudioOut.h"
+#include <string>
+#include <string.h>
 
-class CoreAudioPlugin : public musik::core::sdk::IPlugin {
-    public:
-        virtual void Destroy() { delete this; }
-        virtual const char* Name() { return "CoreAudio IOutput"; }
-        virtual const char* Version() { return "0.5.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "7277a19f-a5f7-4123-ac2d-c36273097b72"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
-};
+namespace musik { namespace core { namespace sdk {
 
-extern "C" musik::core::sdk::IPlugin* GetPlugin() {
-    return new CoreAudioPlugin();
-}
+    class IDevice {
+        public:
+            virtual void Destroy() = 0;
+            virtual const char* Name() const = 0;
+            virtual const char* Id() const = 0;
+    };
 
-extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
-    return new CoreAudioOut();
-}
+    class IDeviceList {
+        public:
+            virtual void Destroy() = 0;
+            virtual size_t Count() const = 0;
+            virtual const IDevice* At(size_t index) const = 0;
+    };
+
+    template <typename Device, typename Output>
+    IDevice* findDeviceById(Output* output, const std::string& deviceId) {
+        IDevice* result = nullptr;
+        auto deviceList = output->GetDeviceList();
+        if (deviceList) {
+            for (size_t i = 0; i < deviceList->Count(); i++) {
+                auto device = deviceList->At(i);
+                if (device->Id() == deviceId) {
+                    return new Device(device->Id(), device->Name());
+                }
+            }
+            deviceList->Destroy();
+        }
+        return result;
+    }
+
+    template <typename Prefs, typename Device, typename Output>
+    bool setDefaultDevice(Prefs* prefs, Output* output, const char* key, const char* deviceId) {
+        if (!prefs || !deviceId || !strlen(deviceId)) {
+            prefs->SetString(key, "");
+            return true;
+        }
+
+        auto device = findDeviceById<Device, Output>(output, deviceId);
+        if (device) {
+            device->Destroy();
+            prefs->SetString(key, deviceId);
+            return true;
+        }
+
+        return false;
+    }
+
+} } }

@@ -41,6 +41,8 @@
 #include <AudioToolbox/AudioQueue.h>
 #include <CoreAudio/CoreAudioTypes.h>
 #include <CoreFoundation/CFRunLoop.h>
+#include <CoreServices/CoreServices.h>
+#include <CoreAudio/CoreAudio.h>
 
 class CoreAudioOut : public musik::core::sdk::IOutput {
     public:
@@ -53,21 +55,25 @@ class CoreAudioOut : public musik::core::sdk::IOutput {
         virtual ~CoreAudioOut();
 
         /* IPlugin */
-        virtual const char* Name() { return "CoreAudio"; }
+        virtual const char* Name() override { return "CoreAudio"; }
 
         /* IOutput */
-        virtual void Destroy();
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual double GetVolume();
-        virtual void Stop();
-        virtual double Latency() { return 0.0; }
-        virtual void Drain();
+        virtual void Destroy() override;
+        virtual void Pause() override;
+        virtual void Resume() override;
+        virtual void SetVolume(double volume) override;
+        virtual double GetVolume() override;
+        virtual void Stop() override;
+        virtual double Latency() override { return 0.0; }
+        virtual void Drain() override;
 
         virtual int Play(
             musik::core::sdk::IBuffer *buffer,
-            musik::core::sdk::IBufferProvider *provider);
+            musik::core::sdk::IBufferProvider *provider) override;
+
+        virtual musik::core::sdk::IDeviceList* GetDeviceList() override;
+        virtual bool SetDefaultDevice(const char* deviceId) override;
+        virtual musik::core::sdk::IDevice* GetDefaultDevice() override;
 
         void NotifyBufferCompleted(BufferContext *context);
 

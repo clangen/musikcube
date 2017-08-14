@@ -44,6 +44,7 @@
 #include <Audioclient.h>
 
 #include <core/sdk/IOutput.h>
+#include <core/sdk/IDevice.h>
 
 using namespace musik::core::sdk;
 
@@ -59,14 +60,17 @@ class WasapiOut : public IOutput {
         virtual void Destroy();
 
         /* IOutput */
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual double GetVolume();
-        virtual void Stop();
-        virtual int Play(IBuffer *buffer, IBufferProvider *provider);
-        virtual double Latency();
-        virtual void Drain();
+        virtual void Pause() override;
+        virtual void Resume() override;
+        virtual void SetVolume(double volume) override;
+        virtual double GetVolume() override;
+        virtual void Stop() override;
+        virtual int Play(IBuffer *buffer, IBufferProvider *provider) override;
+        virtual double Latency() override;
+        virtual void Drain() override;
+        virtual IDeviceList* GetDeviceList() override;
+        virtual bool SetDefaultDevice(const char* deviceId) override;
+        virtual IDevice* GetDefaultDevice() override;
 
         void OnDeviceChanged() { this->deviceChanged = true; }
 
@@ -79,6 +83,7 @@ class WasapiOut : public IOutput {
 
         bool Configure(IBuffer *buffer);
         void Reset();
+        IMMDevice* GetPreferredDevice();
 
         IMMDeviceEnumerator *enumerator;
         IMMDevice *device;

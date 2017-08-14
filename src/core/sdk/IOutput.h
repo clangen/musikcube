@@ -38,6 +38,7 @@
 #include "IDataStream.h"
 #include "IBuffer.h"
 #include "IBufferProvider.h"
+#include "IDevice.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -53,6 +54,9 @@ namespace musik { namespace core { namespace sdk {
             virtual void Drain() = 0;
             virtual double Latency() = 0;
             virtual const char* Name() = 0;
+            virtual IDeviceList* GetDeviceList() = 0;
+            virtual bool SetDefaultDevice(const char* deviceId) = 0;
+            virtual IDevice* GetDefaultDevice() = 0;
     };
 
 } } }

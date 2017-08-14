@@ -36,6 +36,8 @@
 #include "pch.h"
 
 #include <core/sdk/IOutput.h>
+#include <core/sdk/IDevice.h>
+
 #include <mutex>
 #include "pulse_blocking_stream.h"
 
@@ -45,21 +47,25 @@ class PulseOut : public musik::core::sdk::IOutput {
         virtual ~PulseOut();
 
         /* IPlugin */
-        virtual const char* Name() { return "PulseAudio"; }
+        virtual const char* Name() override { return "PulseAudio"; }
 
         /* IOutput */
-        virtual void Destroy();
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual double GetVolume();
-        virtual void Stop();
-        virtual double Latency();
-        virtual void Drain();
+        virtual void Destroy() override;
+        virtual void Pause() override;
+        virtual void Resume() override;
+        virtual void SetVolume(double volume) override;
+        virtual double GetVolume() override;
+        virtual void Stop() override;
+        virtual double Latency() override;
+        virtual void Drain() override;
 
         virtual int Play(
             musik::core::sdk::IBuffer *buffer,
-            musik::core::sdk::IBufferProvider *provider);
+            musik::core::sdk::IBufferProvider *provider) override;
+
+        virtual musik::core::sdk::IDeviceList* GetDeviceList() override;
+        virtual bool SetDefaultDevice(const char* deviceId) override;
+        virtual musik::core::sdk::IDevice* GetDefaultDevice() override;
 
     private:
         enum State {
@@ -70,6 +76,7 @@ class PulseOut : public musik::core::sdk::IOutput {
 
         void OpenDevice(musik::core::sdk::IBuffer *buffer);
         void CloseDevice();
+        std::string GetPreferredDeviceId();
 
         std::recursive_mutex stateMutex;
         pa_blocking* audioConnection;

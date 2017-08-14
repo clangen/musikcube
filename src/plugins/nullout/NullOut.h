@@ -45,18 +45,21 @@ class NullOut : public IOutput {
         ~NullOut();
 
         /* IPlugin */
-        virtual const char* Name() { return "Null"; };
-        virtual void Destroy();
+        virtual const char* Name() override { return "Null"; };
+        virtual void Destroy() override;
 
         /* IOutput */
-        virtual void Pause();
-        virtual void Resume();
-        virtual void SetVolume(double volume);
-        virtual double GetVolume();
-        virtual void Stop();
-        virtual int Play(IBuffer *buffer, IBufferProvider *provider);
-        virtual double Latency();
-        virtual void Drain();
+        virtual void Pause() override;
+        virtual void Resume() override;
+        virtual void SetVolume(double volume) override;
+        virtual double GetVolume() override;
+        virtual void Stop() override;
+        virtual int Play(IBuffer *buffer, IBufferProvider *provider) override;
+        virtual double Latency() override;
+        virtual void Drain() override;
+        virtual IDeviceList* GetDeviceList() override;
+        virtual bool SetDefaultDevice(const char* deviceId) override;
+        virtual IDevice* GetDefaultDevice() override;
 
     private:
         enum State {

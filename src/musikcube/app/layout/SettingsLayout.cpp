@@ -99,6 +99,21 @@ static bool showDotfiles = false;
 
 static UpdateCheck updateCheck;
 
+static std::string getOutputDeviceName() {
+    std::string deviceName = _TSTR("settings_output_device_default");
+
+    std::shared_ptr<IOutput> output = outputs::SelectedOutput();
+    if (output) {
+        IDevice* device = output->GetDefaultDevice();
+        if (device) {
+            deviceName = device->Name();
+            device->Destroy();
+        }
+    }
+
+    return deviceName;
+}
+
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
@@ -168,12 +183,12 @@ void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {
     LocaleOverlay::Show([this](){ this->LoadPreferences(); });
 }
 
-void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
+void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label) {
     std::string currentName;
     std::shared_ptr<IOutput> currentPlugin = outputs::SelectedOutput();
     currentName = currentPlugin ? currentPlugin->Name() : currentName;
 
-    PlaybackOverlays::ShowOutputOverlay(
+    PlaybackOverlays::ShowOutputDriverOverlay(
         this->transport.GetType(),
         [this, currentName] {
             std::string newName;
@@ -185,6 +200,17 @@ void SettingsLayout::OnOutputDropdownActivated(cursespp::TextLabel* label) {
                 this->transport.ReloadOutput();
             }
         });
+}
+
+void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label) {
+    std::string currentName = getOutputDeviceName();
+    PlaybackOverlays::ShowOutputDeviceOverlay([this, currentName] {
+        std::string newName = getOutputDeviceName();
+        if (currentName != newName) {
+            this->LoadPreferences();
+            this->transport.ReloadOutput();
+        }
+    });
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
@@ -256,7 +282,8 @@ void SettingsLayout::OnLayout() {
 
     y = BOTTOM(this->browseList);
     this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->outputDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->transportDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -342,8 +369,11 @@ void SettingsLayout::InitializeWindows() {
     this->localeDropdown.reset(new TextLabel());
     this->localeDropdown->Activated.connect(this, &SettingsLayout::OnLocaleDropdownActivate);
 
-    this->outputDropdown.reset(new TextLabel());
-    this->outputDropdown->Activated.connect(this, &SettingsLayout::OnOutputDropdownActivated);
+    this->outputDriverDropdown.reset(new TextLabel());
+    this->outputDriverDropdown->Activated.connect(this, &SettingsLayout::OnOutputDriverDropdownActivated);
+
+    this->outputDeviceDropdown.reset(new TextLabel());
+    this->outputDeviceDropdown->Activated.connect(this, &SettingsLayout::OnOutputDeviceDropdownActivated);
 
     this->transportDropdown.reset(new TextLabel());
     this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
@@ -388,7 +418,8 @@ void SettingsLayout::InitializeWindows() {
     this->browseList->SetFocusOrder(order++);
     this->addedPathsList->SetFocusOrder(order++);
     this->localeDropdown->SetFocusOrder(order++);
-    this->outputDropdown->SetFocusOrder(order++);
+    this->outputDriverDropdown->SetFocusOrder(order++);
+    this->outputDeviceDropdown->SetFocusOrder(order++);
     this->transportDropdown->SetFocusOrder(order++);
     this->themeDropdown->SetFocusOrder(order++);
     this->hotkeyDropdown->SetFocusOrder(order++);
@@ -418,7 +449,8 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->localeDropdown);
-    this->AddWindow(this->outputDropdown);
+    this->AddWindow(this->outputDriverDropdown);
+    this->AddWindow(this->outputDeviceDropdown);
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->themeDropdown);
 
@@ -544,11 +576,15 @@ void SettingsLayout::LoadPreferences() {
 #endif
     this->autoUpdateCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true));
 
-    /* output plugin */
+    /* output driver */
     std::shared_ptr<IOutput> output = outputs::SelectedOutput();
     if (output) {
-        this->outputDropdown->SetText(arrow + _TSTR("settings_output_device") + output->Name());
+        this->outputDriverDropdown->SetText(arrow + _TSTR("settings_output_driver") + output->Name());
     }
+
+    /* output device */
+    std::string deviceName = getOutputDeviceName();
+    this->outputDeviceDropdown->SetText(arrow + _TSTR("settings_output_device") + deviceName);
 
     /* transport type */
     std::string transportName =

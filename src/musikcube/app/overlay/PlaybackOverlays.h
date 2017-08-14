@@ -41,9 +41,11 @@ namespace musik {
     namespace cube {
         class PlaybackOverlays {
             public:
-                static void ShowOutputOverlay(
+                static void ShowOutputDriverOverlay(
                     musik::glue::audio::MasterTransport::Type transportType,
                     std::function<void()> callback);
+
+                static void ShowOutputDeviceOverlay(std::function<void()> callback);
 
                 static void ShowTransportOverlay(
                     musik::glue::audio::MasterTransport::Type transportType,

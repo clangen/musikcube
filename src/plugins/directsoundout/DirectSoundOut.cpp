@@ -35,11 +35,62 @@
 #include "DirectSoundOut.h"
 
 #include <core/sdk/constants.h>
+#include <core/sdk/IDevice.h>
+#include <core/sdk/IPreferences.h>
 
 #include <cassert>
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <vector>
+
+#define MAX_BUFFERS_PER_OUTPUT 16
+#define READ_CURSOR_INITIAL_OFFSET 128
+#define DEVICE_ID "device_id"
+
+#define BUFFER_SIZE_BYTES_PER_CHANNEL \
+    (2048 * sizeof(float) * MAX_BUFFERS_PER_OUTPUT)
+
+musik::core::sdk::IPreferences* prefs = nullptr;
+
+extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferences* prefs) {
+    ::prefs = prefs;
+    prefs->GetString(DEVICE_ID, nullptr, 0, "");
+    prefs->Save();
+}
+
+static std::string getDeviceId() {
+    return getPreferenceString<std::string>(prefs, DEVICE_ID, "");
+}
+
+class DxDevice : public musik::core::sdk::IDevice {
+    public:
+        DxDevice(const std::string& id, const std::string& name) {
+            this->id = id;
+            this->name = name;
+        }
+
+        virtual void Destroy() override { delete this; }
+        virtual const char* Name() const override { return name.c_str(); }
+        virtual const char* Id() const override { return id.c_str(); }
+
+    private:
+        std::string name, id;
+};
+
+class DxDeviceList : public musik::core::sdk::IDeviceList {
+    public:
+        virtual void Destroy() { delete this; }
+        virtual size_t Count() const override { return devices.size(); }
+        virtual const IDevice* At(size_t index) const override { return &devices.at(index); }
+
+        void Add(const std::string& id, const std::string& name) {
+            devices.push_back(DxDevice(id, name));
+        }
+
+    private:
+        std::vector<DxDevice> devices;
+};
 
 class DrainBuffer :
     public musik::core::sdk::IBuffer,
@@ -76,12 +127,6 @@ class DrainBuffer :
         int channels, samples, rate;
         float *buffer;
 };
-
-#define MAX_BUFFERS_PER_OUTPUT 16
-#define READ_CURSOR_INITIAL_OFFSET 128
-
-#define BUFFER_SIZE_BYTES_PER_CHANNEL \
-    (2048 * sizeof(float) * MAX_BUFFERS_PER_OUTPUT)
 
 using Lock = std::unique_lock<std::recursive_mutex>;
 
@@ -187,6 +232,42 @@ void DirectSoundOut::Stop() {
     Lock lock(this->stateMutex);
     this->ResetBuffers();
     this->state = StateStopped;
+}
+
+static inline std::string utf16to8(const wchar_t* utf16) {
+    if (!utf16) return "";
+    int size = WideCharToMultiByte(CP_UTF8, 0, utf16, -1, 0, 0, 0, 0);
+    char* buffer = new char[size];
+    WideCharToMultiByte(CP_UTF8, 0, utf16, -1, buffer, size, 0, 0);
+    std::string utf8str(buffer);
+    delete[] buffer;
+    return utf8str;
+}
+
+static inline std::wstring utf8to16(const char* utf8) {
+    int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
+    wchar_t* buffer = new wchar_t[size];
+    MultiByteToWideChar(CP_UTF8, 0, utf8, -1, buffer, size);
+    std::wstring utf16fn(buffer);
+    delete[] buffer;
+    return utf16fn;
+}
+
+static BOOL CALLBACK DSEnumCallback(LPGUID lpGuid, LPCWSTR description, LPCWSTR module, LPVOID context) {
+    DxDeviceList* list = static_cast<DxDeviceList*>(context);
+
+    std::string utf8Id = "";
+    std::string utf8Desc = utf16to8(description);
+
+    if (lpGuid) {
+        OLECHAR* guidString;
+        StringFromCLSID(*lpGuid, &guidString);
+        utf8Id = utf16to8(guidString);
+        CoTaskMemFree(guidString);
+        list->Add(utf8Id, utf8Desc);
+    }
+
+    return 1;
 }
 
 int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
@@ -329,7 +410,51 @@ void DirectSoundOut::ResetBuffers() {
 }
 
 double DirectSoundOut::Latency() {
-    return (double) latency;
+    return (double)latency;
+}
+
+IDeviceList* DirectSoundOut::GetDeviceList() {
+    DxDeviceList* list = new DxDeviceList();
+    DirectSoundEnumerate((LPDSENUMCALLBACKW)DSEnumCallback, (LPVOID)list);
+    return list;
+}
+
+bool DirectSoundOut::SetDefaultDevice(const char* deviceId) {
+    return setDefaultDevice<IPreferences, DxDevice, IOutput>(prefs, this, DEVICE_ID, deviceId);
+}
+
+IDevice* DirectSoundOut::GetDefaultDevice() {
+    return findDeviceById<DxDevice, IOutput>(this, getDeviceId());
+}
+
+LPCGUID DirectSoundOut::GetPreferredDeviceId() {
+    GUID* guid = nullptr;
+
+    if (prefs) {
+        std::string storedDeviceId = getDeviceId();
+        auto devices = GetDeviceList();
+
+        /* if we have a stored device id, see if we can find it in the CURRENT
+        devices! otherwise we'll return null for the primary device */
+        if (storedDeviceId.size()) {
+            auto devices = GetDeviceList();
+            for (size_t i = 0; i < devices->Count(); i++) {
+                if (storedDeviceId == devices->At(i)->Id()) {
+                    std::wstring guidW = utf8to16(storedDeviceId.c_str());
+                    guid = new GUID();
+                    HRESULT result = CLSIDFromString(guidW.c_str(), guid);
+                    if (result != S_OK) {
+                        delete guid;
+                        guid = nullptr;
+                        break;
+                    }
+                }
+            }
+            devices->Destroy();
+        }
+    }
+
+    return guid;
 }
 
 bool DirectSoundOut::Configure(IBuffer *buffer) {
@@ -349,7 +474,15 @@ bool DirectSoundOut::Configure(IBuffer *buffer) {
     HRESULT result;
 
     if (!this->outputContext) {
-        result = DirectSoundCreate8(nullptr, &this->outputContext, nullptr);
+        /* first, let's try the preferred device */
+        LPCGUID guid = this->GetPreferredDeviceId();
+        result = DirectSoundCreate8(guid, &this->outputContext, nullptr);
+        delete guid;
+
+        /* if it failed, let's output to the default device. */
+        if (result != S_OK) {
+            result = DirectSoundCreate8(nullptr, &this->outputContext, nullptr);
+        }
 
         if (result != DS_OK) {
             return false;

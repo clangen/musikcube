@@ -81,6 +81,18 @@ void NullOut::Drain() {
 
 }
 
+IDeviceList* NullOut::GetDeviceList() {
+    return nullptr;
+}
+
+bool NullOut::SetDefaultDevice(const char* deviceId) {
+    return false;
+}
+
+IDevice* NullOut::GetDefaultDevice() {
+    return nullptr;
+}
+
 int NullOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (this->state == StatePaused) {
         return OutputInvalidState;

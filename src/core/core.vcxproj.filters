@@ -471,5 +471,8 @@
     <ClInclude Include="sdk\IMetadataValueList.h">
       <Filter>src\sdk\library</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\IDevice.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -54,6 +54,13 @@ using namespace cursespp;
 static std::vector<std::shared_ptr<IOutput> > plugins;
 static std::set<std::string> invalidCrossfadeOutputs = { "WaveOut" };
 
+template <typename T>
+struct DestroyDeleter {
+    void operator()(T* t) {
+        if (t) t->Destroy();
+    }
+};
+
 static void showNoOutputPluginsMessage() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -92,7 +99,7 @@ static void showOutputCannotCrossfadeMessage(const std::string& outputName) {
 PlaybackOverlays::PlaybackOverlays() {
 }
 
-void PlaybackOverlays::ShowOutputOverlay(
+void PlaybackOverlays::ShowOutputDriverOverlay(
     MasterTransport::Type transportType,
     std::function<void()> callback)
 {
@@ -138,6 +145,72 @@ void PlaybackOverlays::ShowOutputOverlay(
                 }
 
                 outputs::SelectOutput(plugins[index]);
+
+                if (callback) {
+                    callback();
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
+    auto output = outputs::SelectedOutput();
+    if (!output) {
+        showNoOutputPluginsMessage();
+        return;
+    }
+
+    std::string currentDeviceName = _TSTR("settings_output_device_default");
+
+    std::shared_ptr<IDeviceList> deviceList = std::shared_ptr<IDeviceList>(
+        output->GetDeviceList(), DestroyDeleter<IDeviceList>());
+
+    std::shared_ptr<IDevice> device = std::shared_ptr<IDevice>(
+        output->GetDefaultDevice(), DestroyDeleter<IDevice>());
+
+    if (device) {
+        currentDeviceName = device->Name();
+    }
+
+    using Adapter = cursespp::SimpleScrollAdapter;
+    using ListOverlay = cursespp::ListOverlay;
+
+    size_t width = _DIMEN("output_device_overlay_width", 35);
+    size_t selectedIndex = 0;
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry(_TSTR("settings_output_device_default"));
+
+    if (deviceList) {
+        for (size_t i = 0; i < deviceList->Count(); i++) {
+            const std::string name = deviceList->At(i)->Name();
+            adapter->AddEntry(name);
+
+            width = std::max(width, u8cols(name));
+
+            if (name == currentDeviceName) {
+                selectedIndex = i + 1;
+            }
+        }
+    }
+
+    adapter->SetSelectable(true);
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("playback_overlay_output_device_title"))
+        .SetSelectedIndex(selectedIndex)
+        .SetWidth(width)
+        .SetItemSelectedCallback(
+            [output, deviceList, callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                if (index == 0) {
+                    output->SetDefaultDevice("");
+                }
+                else {
+                    output->SetDefaultDevice(deviceList->At(index - 1)->Id());
+                }
 
                 if (callback) {
                     callback();

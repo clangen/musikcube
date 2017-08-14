@@ -191,6 +191,7 @@
     <ClInclude Include="sdk\IBuffer.h" />
     <ClInclude Include="sdk\IDecoder.h" />
     <ClInclude Include="sdk\IDecoderFactory.h" />
+    <ClInclude Include="sdk\IDevice.h" />
     <ClInclude Include="sdk\IDSP.h" />
     <ClInclude Include="sdk\IDataStream.h" />
     <ClInclude Include="sdk\IDataStreamFactory.h" />

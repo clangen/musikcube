@@ -51,5 +51,20 @@ namespace musik { namespace core { namespace sdk {
             virtual void Save() = 0;
     };
 
+    template <typename String>
+    String getPreferenceString(IPreferences* prefs, const char* key, const char* defaultValue) {
+        if (prefs) {
+            size_t count = prefs->GetString(key, nullptr, 0, defaultValue);
+            if (count) {
+                char* buffer = new char[count];
+                prefs->GetString(key, buffer, count, defaultValue);
+                String result = buffer;
+                delete[] buffer;
+                return result;
+            }
+        }
+        return "";
+    }
+
 } } }
 

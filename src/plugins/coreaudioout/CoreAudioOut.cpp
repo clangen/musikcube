@@ -34,11 +34,55 @@
 
 #include "CoreAudioOut.h"
 #include <core/sdk/constants.h>
+#include <core/sdk/IPreferences.h>
 #include <iostream>
+#include <vector>
 
 #define BUFFER_COUNT 24 
+#define PREF_DEVICE_ID "device_id"
 
 using namespace musik::core::sdk;
+
+class CoreAudioDevice : public IDevice {
+    public:
+        CoreAudioDevice(const std::string& id, const std::string& name) {
+            this->id = id;
+            this->name = name;
+        }
+
+        virtual void Destroy() { delete this; }
+        virtual const char* Name() const { return name.c_str(); }
+        virtual const char* Id() const { return id.c_str(); }
+
+    private:
+        std::string name, id;
+};
+
+class CoreAudioDeviceList : public IDeviceList {
+    public:
+        virtual void Destroy() { delete this; }
+        virtual size_t Count() const { return devices.size(); }
+        virtual const IDevice* At(size_t index) const { return &devices.at(index); }
+
+        void Add(const std::string& id, const std::string& name) {
+            devices.push_back(CoreAudioDevice(id, name));
+        }
+
+    private:
+        std::vector<CoreAudioDevice> devices;
+};
+
+static musik::core::sdk::IPreferences* prefs = nullptr;
+
+extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
+    ::prefs = prefs;
+    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
+    prefs->Save();
+}
+
+static std::string getDeviceId() {
+    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
+}
 
 void audioCallback(void *customData, AudioQueueRef queue, AudioQueueBufferRef buffer) {
     CoreAudioOut* output = (CoreAudioOut *) customData;
@@ -117,6 +161,7 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         this->Stop();
         lock.lock();
 
+        /* create the queue */
         result = AudioQueueNewOutput(
             &this->audioFormat,
             audioCallback,
@@ -131,6 +176,31 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             return OutputInvalidState;
         }
 
+        /* after the queue is created, but before it's started, let's make
+        sure the correct output device is selected */
+        auto device = this->GetDefaultDevice();
+        if (device) {
+            std::string deviceId = device->Id();
+            if (deviceId.c_str()) {
+                CFStringRef deviceUid = CFStringCreateWithBytes(
+                    kCFAllocatorDefault,
+                    (const UInt8*) deviceId.c_str(),
+                    deviceId.size(),
+                    kCFStringEncodingUTF8,
+                    false);
+
+                AudioQueueSetProperty(
+                    this->audioQueue,
+                    kAudioQueueProperty_CurrentDevice,
+                    &deviceUid,
+                    sizeof(deviceUid));
+
+                CFRelease(deviceUid);
+            }
+            device->Destroy();
+        }
+
+        /* get it running! */
         result = AudioQueueStart(this->audioQueue, nullptr);
 
         this->SetVolume(volume);
@@ -256,4 +326,92 @@ void CoreAudioOut::Stop() {
         AudioQueueStop(queue, true);
         AudioQueueDispose(queue, true);
     }
+}
+
+IDeviceList* CoreAudioOut::GetDeviceList() {
+    CoreAudioDeviceList* result = new CoreAudioDeviceList();
+
+    AudioObjectPropertyAddress address = {
+        kAudioHardwarePropertyDevices,
+        kAudioObjectPropertyScopeGlobal,
+        kAudioObjectPropertyElementMaster
+    };
+
+    UInt32 propsize;
+    if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &address, 0, NULL, &propsize) == 0) {
+        int deviceCount = propsize / sizeof(AudioDeviceID);
+        AudioDeviceID *deviceIds = new AudioDeviceID[deviceCount];
+
+        char buffer[2048];
+        if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, NULL, &propsize, deviceIds) == 0) {
+            for (int i = 0; i < deviceCount; ++i) {
+                auto deviceId = deviceIds[i];
+
+                AudioObjectPropertyAddress outputAddress = {
+                    kAudioDevicePropertyStreamConfiguration,
+                    kAudioDevicePropertyScopeOutput,
+                    0
+                };
+
+                /* see if this device has output channels. if it doesn't, it's a device
+                that can only do input */
+                size_t outputChannels = 0;
+                if (AudioObjectGetPropertyDataSize(deviceId, &outputAddress, 0, NULL, &propsize) == 0) {
+                    AudioBufferList *bufferList = (AudioBufferList *) malloc(propsize);
+                    if (AudioObjectGetPropertyData(deviceId, &outputAddress, 0, NULL, &propsize, bufferList) == 0) {
+                        for (UInt32 j = 0; j < bufferList->mNumberBuffers; ++j) {
+                            outputChannels += bufferList->mBuffers[j].mNumberChannels;
+                        }
+                    }
+                    free(bufferList);
+                }
+
+                if (outputChannels > 0) { /* device has an output! */
+                    std::string deviceNameStr, deviceIdStr;
+
+                    /* get the device name */
+
+                    AudioObjectPropertyAddress nameAddress = {
+                        kAudioDevicePropertyDeviceName,
+                        kAudioDevicePropertyScopeOutput,
+                        0
+                    };
+
+                    UInt32 maxLength = 2048;
+                    if (AudioObjectGetPropertyData(deviceId, &nameAddress, 0, NULL, &maxLength, buffer) == 0) {
+                        deviceNameStr = buffer;
+                    }
+
+                    /* get the device id */
+
+                    AudioObjectPropertyAddress uidAddress = {
+                        kAudioDevicePropertyDeviceUID,
+                        kAudioObjectPropertyScopeGlobal,
+                        kAudioObjectPropertyElementMaster
+                    };
+
+                    CFStringRef deviceUid;
+                    if (AudioObjectGetPropertyData(deviceId, &uidAddress, 0, NULL, &propsize, &deviceUid) == 0) {
+                        deviceIdStr = CFStringGetCStringPtr(deviceUid, kCFStringEncodingUTF8);
+                    }
+
+                    if (deviceNameStr.size() && deviceIdStr.size()) {
+                        result->Add(deviceIdStr, deviceNameStr);
+                    }
+                }
+            }
+        }
+
+        delete[] deviceIds;
+    }
+
+    return result;
+}
+
+bool CoreAudioOut::SetDefaultDevice(const char* deviceId) {
+    return setDefaultDevice<IPreferences, CoreAudioDevice, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
+}
+
+IDevice* CoreAudioOut::GetDefaultDevice() {
+    return findDeviceById<CoreAudioDevice, IOutput>(this, getDeviceId());
 }

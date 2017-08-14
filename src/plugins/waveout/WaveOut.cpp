@@ -34,12 +34,93 @@
 
 #include "pch.h"
 #include "WaveOut.h"
+#include <string>
+#include <vector>
 #include <core/sdk/constants.h>
+#include <core/sdk/IPreferences.h>
 
 #define MAX_VOLUME 0xFFFF
 #define MAX_BUFFERS_PER_OUTPUT 16
+#define PREF_DEVICE_ID "device_id"
+
+musik::core::sdk::IPreferences* prefs = nullptr;
 
 using LockT = std::unique_lock<std::recursive_mutex>;
+
+class WaveOutDevice : public musik::core::sdk::IDevice {
+    public:
+        WaveOutDevice(const std::string& id, const std::string& name) {
+            this->id = id;
+            this->name = name;
+        }
+
+        virtual void Destroy() override {
+            delete this;
+        }
+
+        virtual const char* Name() const override {
+            return name.c_str();
+        }
+
+        virtual const char* Id() const override {
+            return id.c_str();
+        }
+
+    private:
+        std::string name, id;
+};
+
+class WaveOutDeviceList : public musik::core::sdk::IDeviceList {
+    public:
+        virtual void Destroy() override {
+            delete this;
+        }
+
+        virtual size_t Count() const override {
+            return devices.size();
+        }
+
+        virtual const IDevice* At(size_t index) const override {
+            return &devices.at(index);
+        }
+
+        void Add(const std::string& id, const std::string& name) {
+            devices.push_back(WaveOutDevice(id, name));
+        }
+
+    private:
+        std::vector<WaveOutDevice> devices;
+};
+
+extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferences* prefs) {
+    ::prefs = prefs;
+    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
+    prefs->Save();
+}
+
+static inline std::string utf16to8(const wchar_t* utf16) {
+    if (!utf16) return "";
+    int size = WideCharToMultiByte(CP_UTF8, 0, utf16, -1, 0, 0, 0, 0);
+    char* buffer = new char[size];
+    WideCharToMultiByte(CP_UTF8, 0, utf16, -1, buffer, size, 0, 0);
+    std::string utf8str(buffer);
+    delete[] buffer;
+    return utf8str;
+}
+
+static std::string deviceCapsToId(WAVEOUTCAPS& caps, UINT index) {
+    std::string name = utf16to8(caps.szPname);
+    return std::to_string(index) + ":" + name;
+}
+
+static std::string getDeviceId() {
+    char buffer[4096] = { 0 };
+    std::string storedDeviceId;
+    if (prefs && prefs->GetString(PREF_DEVICE_ID, buffer, 4096, "") > 0) {
+        storedDeviceId.assign(buffer);
+    }
+    return storedDeviceId;
+}
 
 WaveOut::WaveOut()
 : waveHandle(NULL)
@@ -254,6 +335,44 @@ int WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     return OutputBufferFull;
 }
 
+bool WaveOut::SetDefaultDevice(const char* deviceId) {
+    return setDefaultDevice<IPreferences, WaveOutDevice, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
+}
+
+IDevice* WaveOut::GetDefaultDevice() {
+    return findDeviceById<WaveOutDevice, IOutput>(this, getDeviceId());
+}
+
+IDeviceList* WaveOut::GetDeviceList() {
+    WaveOutDeviceList* result = new WaveOutDeviceList();
+
+    for (UINT i = 0; i < waveOutGetNumDevs(); i++) {
+        WAVEOUTCAPS caps = { 0 };
+        if (waveOutGetDevCaps(i, &caps, sizeof(WAVEOUTCAPS)) == MMSYSERR_NOERROR) {
+            std::string name = utf16to8(caps.szPname);
+            std::string id = deviceCapsToId(caps, i);
+            result->Add(id, name);
+        }
+    }
+
+    return result;
+}
+
+UINT WaveOut::GetPreferredDeviceId() {
+    std::string storedDeviceId = getDeviceId();
+
+    for (UINT i = 0; i < waveOutGetNumDevs(); i++) {
+        WAVEOUTCAPS caps = { 0 };
+        if (waveOutGetDevCaps(i, &caps, sizeof(WAVEOUTCAPS)) == MMSYSERR_NOERROR) {
+            if (storedDeviceId == deviceCapsToId(caps, i)) {
+                return i;
+            }
+        }
+    }
+
+    return WAVE_MAPPER;
+}
+
 void WaveOut::SetFormat(IBuffer *buffer) {
     if (this->currentChannels != buffer->Channels() ||
         this->currentSampleRate != buffer->SampleRate() ||
@@ -268,7 +387,7 @@ void WaveOut::SetFormat(IBuffer *buffer) {
         this->StartWaveOutThread();
 
         /* reset, and configure speaker output */
-	    ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
+        ZeroMemory(&this->waveFormat, sizeof(this->waveFormat));
 
         DWORD speakerConfig = 0;
 
@@ -313,7 +432,7 @@ void WaveOut::SetFormat(IBuffer *buffer) {
         output device, making it impossible to reach this condition. */
         int openResult = waveOutOpen(
             &this->waveHandle,
-            WAVE_MAPPER,
+            this->GetPreferredDeviceId(),
             (WAVEFORMATEX*) &this->waveFormat,
             this->threadId,
             (DWORD_PTR) this,

@@ -98,7 +98,8 @@ namespace musik {
                 void OnCheckboxChanged(
                     cursespp::Checkbox* checkbox, bool checked);
 
-                void OnOutputDropdownActivated(cursespp::TextLabel* label);
+                void OnOutputDriverDropdownActivated(cursespp::TextLabel* label);
+                void OnOutputDeviceDropdownActivated(cursespp::TextLabel* label);
                 void OnTransportDropdownActivate(cursespp::TextLabel* label);
                 void OnPluginsDropdownActivate(cursespp::TextLabel* label);
                 void OnHotkeyDropdownActivate(cursespp::TextLabel* label);
@@ -122,7 +123,8 @@ namespace musik {
                 std::shared_ptr<musik::core::Preferences> prefs;
 
                 std::shared_ptr<cursespp::TextLabel> localeDropdown;
-                std::shared_ptr<cursespp::TextLabel> outputDropdown;
+                std::shared_ptr<cursespp::TextLabel> outputDriverDropdown;
+                std::shared_ptr<cursespp::TextLabel> outputDeviceDropdown;
                 std::shared_ptr<cursespp::TextLabel> transportDropdown;
                 std::shared_ptr<cursespp::TextLabel> pluginsDropdown;
                 std::shared_ptr<cursespp::TextLabel> hotkeyDropdown;

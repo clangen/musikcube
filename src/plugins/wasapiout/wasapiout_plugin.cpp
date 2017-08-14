@@ -43,7 +43,7 @@ class WasapiPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
         virtual const char* Name() { return "Wasapi IOutput"; }
-        virtual const char* Version() { return "0.4.0"; }
+        virtual const char* Version() { return "0.5.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "871cb3c2-0002-49cd-9410-5207cb3cfd4a"; }
         virtual bool Configurable() { return false; }
