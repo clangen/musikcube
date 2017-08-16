@@ -124,7 +124,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
 
     private val filterDebouncer = object : Debouncer<String>(350) {
         override fun onDebounced(last: String?) {
-            if (!isPaused) {
+            if (!isPaused()) {
                 requery()
             }
         }

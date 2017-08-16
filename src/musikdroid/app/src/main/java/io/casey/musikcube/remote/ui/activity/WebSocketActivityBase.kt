@@ -22,6 +22,7 @@ import javax.inject.Inject
 abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks {
     private lateinit var runnerDelegate: LifecycleDelegate
     private lateinit var prefs: SharedPreferences
+    private var paused = false
     @Inject lateinit var wss: WebSocketService
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +50,11 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
             wss.removeClient(webSocketServiceClient!!)
         }
 
-        isPaused = true
+        paused = true
+    }
+
+    protected fun isPaused(): Boolean {
+        return paused
     }
 
     override fun onResume() {
@@ -69,7 +74,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
             wss.addClient(webSocketServiceClient!!)
         }
 
-        isPaused = false
+        paused = false
     }
 
     override fun onDestroy() {
@@ -122,9 +127,6 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
         return wss
     }
 
-    protected var isPaused = true
-        private set
-
     protected var playbackService: PlaybackService? = null
         private set
 
@@ -132,7 +134,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
         get() = runnerDelegate.runner()
 
     protected fun reloadPlaybackService() {
-        if (!isPaused && playbackService != null) {
+        if (!isPaused() && playbackService != null) {
             val playbackListener = playbackServiceEventListener
 
             if (playbackListener != null) {
