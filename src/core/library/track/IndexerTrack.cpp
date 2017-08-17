@@ -741,10 +741,6 @@ void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
     std::unique_lock<std::mutex> lock(sharedWriteMutex);
 
-    if (this->GetString("album_artist") == "") {
-        this->SetValue("album_artist", this->GetString("artist").c_str());
-    }
-
     if (this->GetString("external_id") == "") {
         this->SetValue("external_id", createTrackExternalId(*this).c_str());
     }
