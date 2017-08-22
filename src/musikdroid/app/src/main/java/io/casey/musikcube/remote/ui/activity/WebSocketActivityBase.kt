@@ -7,12 +7,10 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.KeyEvent
 import android.view.MenuItem
-
 import com.uacf.taskrunner.LifecycleDelegate
 import com.uacf.taskrunner.Runner
 import com.uacf.taskrunner.Task
-import dagger.android.AndroidInjection
-
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.websocket.Prefs
@@ -26,7 +24,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
     @Inject lateinit var wss: WebSocketService
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AndroidInjection.inject(this)
+        Application.mainComponent.inject(this)
         super.onCreate(savedInstanceState)
         volumeControlStream = AudioManager.STREAM_MUSIC
         runnerDelegate = LifecycleDelegate(this, this, javaClass, null)

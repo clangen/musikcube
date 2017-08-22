@@ -51,7 +51,12 @@
 
         </activity>
 
-        <activity android:name=".ui.activity.CategoryBrowseActivity"
+        <activity
+            android:name=".ui.activity.CategoryBrowseActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity android:name=".ui.activity.ConnectionsActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 

@@ -4,6 +4,7 @@ import android.app.*
 import android.content.*
 import android.graphics.Bitmap
 import android.media.AudioManager
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
@@ -27,7 +28,6 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
 import android.support.v4.app.NotificationCompat.Action as NotifAction
-import android.os.Build
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,

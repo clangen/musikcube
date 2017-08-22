@@ -1,6 +1,5 @@
 package io.casey.musikcube.remote.playback
 
-import android.content.Context
 import android.os.Handler
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow

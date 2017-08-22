@@ -1,12 +1,8 @@
 package io.casey.musikcube.remote
 
-import android.app.Activity
 import android.arch.persistence.room.Room
 import com.crashlytics.android.Crashlytics
 import com.facebook.stetho.Stetho
-import dagger.android.AndroidInjector
-import dagger.android.DispatchingAndroidInjector
-import dagger.android.HasActivityInjector
 import io.casey.musikcube.remote.injection.DaggerMainComponent
 import io.casey.musikcube.remote.injection.MainComponent
 import io.casey.musikcube.remote.injection.MainModule
@@ -14,18 +10,14 @@ import io.casey.musikcube.remote.offline.OfflineDb
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.util.NetworkUtil
 import io.fabric.sdk.android.Fabric
-import javax.inject.Inject
 
-class Application : android.app.Application(), HasActivityInjector {
-    @Inject lateinit var activityInjector: DispatchingAndroidInjector<Activity>
-
+class Application : android.app.Application() {
     override fun onCreate() {
         instance = this
 
         super.onCreate()
 
         mainComponent = DaggerMainComponent.builder().mainModule(MainModule()).build()
-        mainComponent.inject(this)
 
         if (BuildConfig.DEBUG) {
             Stetho.initializeWithDefaults(this)
@@ -41,10 +33,6 @@ class Application : android.app.Application(), HasActivityInjector {
             applicationContext,
             OfflineDb::class.java,
             "offline").build()
-    }
-
-    override fun activityInjector(): AndroidInjector<Activity> {
-        return activityInjector
     }
 
     companion object {

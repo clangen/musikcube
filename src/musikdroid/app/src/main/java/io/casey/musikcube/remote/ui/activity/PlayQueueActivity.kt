@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.playback.PlaybackService
@@ -28,6 +29,8 @@ class PlayQueueActivity : WebSocketActivityBase() {
     private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Application.mainComponent.inject(this)
+
         super.onCreate(savedInstanceState)
 
         playback = playbackService
