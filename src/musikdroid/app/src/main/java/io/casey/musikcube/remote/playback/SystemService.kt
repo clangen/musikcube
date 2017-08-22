@@ -1,7 +1,6 @@
 package io.casey.musikcube.remote.playback
 
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.content.*
 import android.graphics.Bitmap
 import android.media.AudioManager
@@ -28,6 +27,7 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
 import android.support.v4.app.NotificationCompat.Action as NotifAction
+import android.os.Build
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,
@@ -36,12 +36,13 @@ import android.support.v4.app.NotificationCompat.Action as NotifAction
  */
 class SystemService : Service() {
     private val handler = Handler()
-    private var prefs: SharedPreferences? = null
     private var playback: StreamingPlaybackService? = null
     private var wakeLock: PowerManager.WakeLock? = null
-    private var powerManager: PowerManager? = null
     private var mediaSession: MediaSessionCompat? = null
     private var headsetHookPressCount = 0
+
+    private lateinit var powerManager: PowerManager
+    private lateinit var prefs: SharedPreferences
 
     private var albumArtModel = AlbumArtModel.empty()
     private var albumArt: Bitmap? = null
@@ -49,6 +50,22 @@ class SystemService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                NOTIFICATION_CHANNEL,
+                NOTIFICATION_CHANNEL,
+                NotificationManager.IMPORTANCE_LOW)
+
+            channel.enableVibration(false)
+            channel.setSound(null, null)
+            channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+
+            val nm = getSystemService(Service.NOTIFICATION_SERVICE) as NotificationManager
+            nm.deleteNotificationChannel(NOTIFICATION_CHANNEL)
+            nm.createNotificationChannel(channel)
+        }
+
         prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         registerReceivers()
@@ -90,7 +107,7 @@ class SystemService : Service() {
         }
 
         if (wakeLock == null) {
-            wakeLock = powerManager?.newWakeLock(
+            wakeLock = powerManager.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService")
 
             wakeLock?.setReferenceCounted(false)
@@ -221,8 +238,8 @@ class SystemService : Service() {
     private fun updateMetadata(title: String, artist: String, album: String, image: Bitmap?, duration: Int) {
         var currentImage = image
 
-        val albumArtEnabledInSettings = this.prefs?.getBoolean(
-            Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED) ?: Prefs.Default.ALBUM_ART_ENABLED
+        val albumArtEnabledInSettings = this.prefs.getBoolean(
+            Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
 
         if (albumArtEnabledInSettings) {
             if ("-" != artist && "-" != album && !albumArtModel.matches(artist, album)) {
@@ -255,13 +272,12 @@ class SystemService : Service() {
         val contentIntent = PendingIntent.getActivity(
             applicationContext, 1, MainActivity.getStartIntent(this), 0)
 
-        val notification = NotificationCompat.Builder(this, "musikdroid")
+        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(artist + " - " + album)
             .setContentIntent(contentIntent)
             .setUsesChronometer(false)
-            //.setLargeIcon(albumArtBitmap))
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
 
@@ -461,6 +477,7 @@ class SystemService : Service() {
     companion object {
         private val TAG = "SystemService"
         private val NOTIFICATION_ID = 0xdeadbeef.toInt()
+        private val NOTIFICATION_CHANNEL = "musikdroid"
         private val HEADSET_HOOK_DEBOUNCE_MS = 500L
         private val ACTION_NOTIFICATION_PLAY = "io.casey.musikcube.remote.NOTIFICATION_PLAY"
         private val ACTION_NOTIFICATION_PAUSE = "io.casey.musikcube.remote.NOTIFICATION_PAUSE"

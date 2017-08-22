@@ -24,7 +24,7 @@ abstract class Debouncer<in T>(private val delay: Long) {
 
     protected abstract fun onDebounced(last: T?)
 
-    private val deferred = object : Runnable {
+    private val deferred:Runnable = object : Runnable {
         override fun run() {
             onDebounced(last)
         }
