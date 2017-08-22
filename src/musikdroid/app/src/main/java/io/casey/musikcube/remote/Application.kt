@@ -3,10 +3,11 @@ package io.casey.musikcube.remote
 import android.arch.persistence.room.Room
 import com.crashlytics.android.Crashlytics
 import com.facebook.stetho.Stetho
+import io.casey.musikcube.remote.db.connections.ConnectionsDb
+import io.casey.musikcube.remote.db.offline.OfflineDb
 import io.casey.musikcube.remote.injection.DaggerMainComponent
 import io.casey.musikcube.remote.injection.MainComponent
 import io.casey.musikcube.remote.injection.MainModule
-import io.casey.musikcube.remote.offline.OfflineDb
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.util.NetworkUtil
 import io.fabric.sdk.android.Fabric
@@ -33,6 +34,11 @@ class Application : android.app.Application() {
             applicationContext,
             OfflineDb::class.java,
             "offline").build()
+
+        connectionsDb = Room.databaseBuilder(
+            applicationContext,
+            ConnectionsDb::class.java,
+            "connections").build()
     }
 
     companion object {
@@ -42,6 +48,9 @@ class Application : android.app.Application() {
             private set
 
         var offlineDb: OfflineDb? = null
+            private set
+
+        var connectionsDb: ConnectionsDb? = null
             private set
     }
 }

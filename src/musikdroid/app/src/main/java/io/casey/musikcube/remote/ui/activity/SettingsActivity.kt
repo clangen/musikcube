@@ -8,12 +8,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
-import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.*
+import com.uacf.taskrunner.Tasks
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.db.connections.Connection
 import io.casey.musikcube.remote.playback.PlayerWrapper
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.ui.extension.enableUpNavigation
@@ -22,11 +23,10 @@ import io.casey.musikcube.remote.ui.extension.setTextAndMoveCursorToEnd
 import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.WebSocketService
 import java.util.*
-import javax.inject.Inject
 import io.casey.musikcube.remote.websocket.Prefs.Default as Defaults
 import io.casey.musikcube.remote.websocket.Prefs.Key as Keys
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : WebSocketActivityBase() {
     private lateinit var addressText: EditText
     private lateinit var portText: EditText
     private lateinit var httpPortText: EditText
@@ -39,8 +39,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var bitrateSpinner: Spinner
     private lateinit var cacheSpinner: Spinner
     private lateinit var prefs: SharedPreferences
-
-    @Inject lateinit var wss: WebSocketService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Application.mainComponent.inject(this)
@@ -58,12 +56,26 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            finish()
-            return true
-        } else if (item.itemId == R.id.action_save) {
-            save()
-            return true
+        when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+                return true
+            }
+
+            R.id.action_save -> {
+                save()
+                return true
+            }
+
+            R.id.action_save_as -> {
+                saveAs()
+                return true
+            }
+
+            R.id.action_connections -> {
+                startActivity(ConnectionsActivity.getStartIntent(this))
+                return true
+            }
         }
 
         return super.onOptionsItemSelected(item)
@@ -158,6 +170,23 @@ class SettingsActivity : AppCompatActivity() {
         this.certCheckbox = findViewById<CheckBox>(R.id.cert_validation)
     }
 
+    private fun saveAs() {
+        try {
+            val connection = Connection()
+            connection.name = "foo"
+            connection.hostname = addressText.text.toString()
+            connection.wssPort = portText.text.toString().toInt()
+            connection.httpPort = httpPortText.text.toString().toInt()
+            connection.password = passwordText.text.toString()
+            connection.ssl = sslCheckbox.isChecked
+            connection.noValidate = certCheckbox.isChecked
+            runner.run("${SaveAsTask.NAME}.${connection.name}", SaveAsTask(connection))
+        }
+        catch (ex: NumberFormatException) {
+            /* TODO dialog */
+        }
+    }
+
     private fun save() {
         val addr = addressText.text.toString()
         val port = portText.text.toString()
@@ -187,6 +216,12 @@ class SettingsActivity : AppCompatActivity() {
 
         finish()
     }
+
+    override val webSocketServiceClient: WebSocketService.Client?
+        get() = null
+
+    override val playbackServiceEventListener: (() -> Unit)?
+        get() = null
 
     class SslAlertDialog : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -249,5 +284,21 @@ class SettingsActivity : AppCompatActivity() {
         fun getStartIntent(context: Context): Intent {
             return Intent(context, SettingsActivity::class.java)
         }
+    }
+}
+
+private class SaveAsTask : Tasks.Blocking<Unit, Exception> {
+    var connection: Connection
+
+    constructor(connection: Connection) {
+        this.connection = connection
+    }
+
+    override fun exec(context: Context?) {
+        Application.connectionsDb?.connectionsDao()?.insertConnection(connection)
+    }
+
+    companion object {
+        val NAME = "SaveAsTask"
     }
 }

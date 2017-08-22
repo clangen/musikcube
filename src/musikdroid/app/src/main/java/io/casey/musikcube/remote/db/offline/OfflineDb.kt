@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote.offline
+package io.casey.musikcube.remote.db.offline
 
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase

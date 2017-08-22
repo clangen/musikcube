@@ -2,7 +2,7 @@ package io.casey.musikcube.remote.injection
 
 import dagger.Component
 import io.casey.musikcube.remote.MainActivity
-import io.casey.musikcube.remote.offline.OfflineDb
+import io.casey.musikcube.remote.db.offline.OfflineDb
 import io.casey.musikcube.remote.playback.RemotePlaybackService
 import io.casey.musikcube.remote.playback.StreamingPlaybackService
 import io.casey.musikcube.remote.ui.activity.*

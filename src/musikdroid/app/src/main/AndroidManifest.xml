@@ -56,8 +56,9 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity android:name=".ui.activity.ConnectionsActivity"
-            android:screenOrientation="portrait"
+        <activity
+            android:name=".ui.activity.ConnectionsActivity"
+            android:label="@string/connections_title"
             android:windowSoftInputMode="adjustResize" />
 
         <service android:name=".playback.SystemService">

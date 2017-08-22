@@ -10,6 +10,7 @@
     <string name="genres_title">genres</string>
     <string name="artists_title">artists</string>
     <string name="playlists_title">playlists</string>
+    <string name="connections_title">connections</string>
     <string name="button_pause">pause</string>
     <string name="button_play">play</string>
     <string name="button_prev">prev</string>
@@ -57,6 +58,8 @@
     <string name="menu_playlists">playlists</string>
     <string name="menu_remote_toggle">remote playback</string>
     <string name="menu_offline_tracks">offline songs</string>
+    <string name="menu_save_as">save as</string>
+    <string name="menu_connections">connections</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>
     <string name="snackbar_remote_enabled">switched to remote control mode</string>

@@ -1,7 +1,7 @@
 package io.casey.musikcube.remote.playback
 
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.offline.OfflineTrack
+import io.casey.musikcube.remote.db.offline.OfflineTrack
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
