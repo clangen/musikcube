@@ -8,14 +8,4 @@
         app:showAsAction="always"
         android:title="@string/button_save"/>
 
-    <item
-        android:id="@+id/action_save_as"
-        app:showAsAction="never"
-        android:title="@string/menu_save_as"/>
-
-    <item
-        android:id="@+id/action_connections"
-        app:showAsAction="never"
-        android:title="@string/menu_connections"/>
-
 </menu>

@@ -8,18 +8,19 @@ import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.*
+import com.uacf.taskrunner.Task
 import com.uacf.taskrunner.Tasks
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.db.connections.Connection
 import io.casey.musikcube.remote.playback.PlayerWrapper
 import io.casey.musikcube.remote.playback.StreamProxy
-import io.casey.musikcube.remote.ui.extension.enableUpNavigation
-import io.casey.musikcube.remote.ui.extension.setCheckWithoutEvent
-import io.casey.musikcube.remote.ui.extension.setTextAndMoveCursorToEnd
+import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.WebSocketService
 import java.util.*
@@ -46,7 +47,8 @@ class SettingsActivity : WebSocketActivityBase() {
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         setContentView(R.layout.activity_settings)
         setTitle(R.string.settings_title)
-        bindEventListeners()
+        cacheViews()
+        bindListeners()
         rebindUi()
     }
 
@@ -61,24 +63,33 @@ class SettingsActivity : WebSocketActivityBase() {
                 finish()
                 return true
             }
-
             R.id.action_save -> {
                 save()
-                return true
-            }
-
-            R.id.action_save_as -> {
-                saveAs()
-                return true
-            }
-
-            R.id.action_connections -> {
-                startActivity(ConnectionsActivity.getStartIntent(this))
                 return true
             }
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == CONNECTIONS_REQUEST_CODE && resultCode == RESULT_OK) {
+            if (data != null) {
+                val connection = data.getParcelableExtra<Connection>(
+                    ConnectionsActivity.EXTRA_SELECTED_CONNECTION)
+
+                if (connection != null) {
+                    addressText.setText(connection.hostname)
+                    passwordText.setText(connection.password)
+                    portText.setText(connection.wssPort.toString())
+                    httpPortText.setText(connection.httpPort.toString())
+                    sslCheckbox.setCheckWithoutEvent(connection.ssl, sslCheckChanged)
+                    certCheckbox.setCheckWithoutEvent(connection.noValidate, certValidationChanged)
+                }
+            }
+        }
+
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     private fun rebindUi() {
@@ -141,26 +152,27 @@ class SettingsActivity : WebSocketActivityBase() {
 
     private val sslCheckChanged = { _: CompoundButton, value:Boolean ->
         if (value) {
-            if (supportFragmentManager.findFragmentByTag(SslAlertDialog.TAG) == null) {
-                SslAlertDialog.newInstance().show(supportFragmentManager, SslAlertDialog.TAG)
+            if (!dialogVisible(SslAlertDialog.TAG)) {
+                showDialog(SslAlertDialog.newInstance(), SslAlertDialog.TAG)
             }
         }
     }
 
     private val certValidationChanged = { _: CompoundButton, value: Boolean ->
         if (value) {
-            if (supportFragmentManager.findFragmentByTag(DisableCertValidationAlertDialog.TAG) == null) {
-                DisableCertValidationAlertDialog.newInstance().show(
-                    supportFragmentManager, DisableCertValidationAlertDialog.TAG)
+            if (!dialogVisible(DisableCertValidationAlertDialog.TAG)) {
+                showDialog(
+                    DisableCertValidationAlertDialog.newInstance(),
+                    DisableCertValidationAlertDialog.TAG)
             }
         }
     }
 
-    private fun bindEventListeners() {
-        this.addressText = this.findViewById<EditText>(R.id.address)
-        this.portText = this.findViewById<EditText>(R.id.port)
-        this.httpPortText = this.findViewById<EditText>(R.id.http_port)
-        this.passwordText = this.findViewById<EditText>(R.id.password)
+    private fun cacheViews() {
+        this.addressText = findViewById<EditText>(R.id.address)
+        this.portText = findViewById<EditText>(R.id.port)
+        this.httpPortText = findViewById<EditText>(R.id.http_port)
+        this.passwordText = findViewById<EditText>(R.id.password)
         this.albumArtCheckbox = findViewById<CheckBox>(R.id.album_art_checkbox)
         this.messageCompressionCheckbox = findViewById<CheckBox>(R.id.message_compression)
         this.softwareVolume = findViewById<CheckBox>(R.id.software_volume)
@@ -170,20 +182,50 @@ class SettingsActivity : WebSocketActivityBase() {
         this.certCheckbox = findViewById<CheckBox>(R.id.cert_validation)
     }
 
-    private fun saveAs() {
+    private fun bindListeners() {
+        findViewById<View>(R.id.button_save_as).setOnClickListener{_ ->
+            showSaveAsDialog()
+        }
+
+        findViewById<View>(R.id.button_load).setOnClickListener{_ ->
+            startActivityForResult(
+                ConnectionsActivity.getStartIntent(this),
+                CONNECTIONS_REQUEST_CODE)
+        }
+    }
+
+    private fun showSaveAsDialog() {
+        if (!dialogVisible(SaveAsDialog.TAG)) {
+            showDialog(SaveAsDialog.newInstance(), SaveAsDialog.TAG)
+        }
+    }
+
+    private fun showInvalidConnectionDialog() {
+        if (!dialogVisible(InvalidConnectionDialog.TAG)) {
+            showDialog(InvalidConnectionDialog.newInstance(), InvalidConnectionDialog.TAG)
+        }
+    }
+
+    private fun saveAs(name: String) {
         try {
             val connection = Connection()
-            connection.name = "foo"
+            connection.name = name
             connection.hostname = addressText.text.toString()
             connection.wssPort = portText.text.toString().toInt()
             connection.httpPort = httpPortText.text.toString().toInt()
             connection.password = passwordText.text.toString()
             connection.ssl = sslCheckbox.isChecked
             connection.noValidate = certCheckbox.isChecked
-            runner.run("${SaveAsTask.NAME}.${connection.name}", SaveAsTask(connection))
+
+            if (connection.valid) {
+                runner.run(SaveAsTask.nameFor(connection), SaveAsTask(connection))
+            }
+            else {
+                showInvalidConnectionDialog()
+            }
         }
         catch (ex: NumberFormatException) {
-            /* TODO dialog */
+            showInvalidConnectionDialog()
         }
     }
 
@@ -222,6 +264,24 @@ class SettingsActivity : WebSocketActivityBase() {
 
     override val playbackServiceEventListener: (() -> Unit)?
         get() = null
+
+    override fun onTaskCompleted(name: String, id: Long, task: Task<*, *>, r: Any) {
+        if (SaveAsTask.match(name)) {
+            if ((r as SaveAsTask.Result) == SaveAsTask.Result.Exists) {
+                val connection = (task as SaveAsTask).connection
+                if (!dialogVisible(ConfirmOverwiteDialog.TAG)) {
+                    showDialog(
+                        ConfirmOverwiteDialog.newInstance(connection),
+                        ConfirmOverwiteDialog.TAG)
+                }
+            }
+            else {
+                showSnackbar(
+                    findViewById<View>(android.R.id.content),
+                    R.string.snackbar_saved_connection_preset)
+            }
+        }
+    }
 
     class SslAlertDialog : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -280,25 +340,140 @@ class SettingsActivity : WebSocketActivityBase() {
         }
     }
 
+    class InvalidConnectionDialog: DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.settings_invalid_connection_title)
+                .setMessage(R.string.settings_invalid_connection_message)
+                .setNegativeButton(R.string.button_ok, null)
+                .create()
+
+            dlg.setCancelable(false)
+            return dlg
+        }
+
+        companion object {
+            val TAG = "invalid_connection_dialog"
+            fun newInstance(): InvalidConnectionDialog {
+                return InvalidConnectionDialog()
+            }
+        }
+    }
+
+    class ConfirmOverwiteDialog : DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.settings_confirm_overwrite_title)
+                .setMessage(R.string.settings_confirm_overwrite_message)
+                .setNegativeButton(R.string.button_no, null)
+                .setPositiveButton(R.string.button_yes) { _, _ ->
+                    val connection = arguments.getParcelable<Connection>(EXTRA_CONNECTION)
+                    val saveAs = SaveAsTask(connection, true)
+                    (activity as SettingsActivity).runner.run(SaveAsTask.nameFor(connection), saveAs)
+                }
+                .create()
+
+            dlg.setCancelable(false)
+            return dlg
+        }
+
+        companion object {
+            val TAG = "confirm_overwrite_dialog"
+            private val EXTRA_CONNECTION = "extra_connection"
+
+            fun newInstance(connection: Connection): ConfirmOverwiteDialog {
+                val args = Bundle()
+                args.putParcelable(EXTRA_CONNECTION, connection)
+                val result = ConfirmOverwiteDialog()
+                result.arguments = args
+                return result
+            }
+        }
+    }
+
+    class SaveAsDialog : DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val inflater = LayoutInflater.from(context)
+            val view = inflater.inflate(R.layout.dialog_edit, null)
+            val edit = view.findViewById<EditText>(R.id.edit)
+
+            val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.settings_save_as_title)
+                .setNegativeButton(R.string.button_cancel, null)
+                .setPositiveButton(R.string.button_save) { _, _ ->
+                    (activity as SettingsActivity).saveAs(edit.text.toString())
+                }
+                .create()
+
+            dlg.setView(view)
+            dlg.setCancelable(false)
+
+            return dlg
+        }
+
+        override fun onResume() {
+            super.onResume()
+            (activity as SettingsActivity).showKeyboard()
+        }
+
+        override fun onPause() {
+            super.onPause()
+            (activity as SettingsActivity).hideKeyboard()
+        }
+
+        companion object {
+            val TAG = "save_as_dialog"
+
+            fun newInstance(): SaveAsDialog {
+                return SaveAsDialog()
+            }
+        }
+    }
+
     companion object {
+        val CONNECTIONS_REQUEST_CODE = 1000
+
         fun getStartIntent(context: Context): Intent {
             return Intent(context, SettingsActivity::class.java)
         }
     }
 }
 
-private class SaveAsTask : Tasks.Blocking<Unit, Exception> {
+private class SaveAsTask : Tasks.Blocking<SaveAsTask.Result, Exception> {
     var connection: Connection
 
-    constructor(connection: Connection) {
+    enum class Result { Exists, Added }
+
+    val overwrite: Boolean
+
+    constructor(connection: Connection, overwrite: Boolean = false) {
         this.connection = connection
+        this.overwrite = overwrite
     }
 
-    override fun exec(context: Context?) {
-        Application.connectionsDb?.connectionsDao()?.insertConnection(connection)
+    override fun exec(context: Context?): Result {
+        val dao = Application.connectionsDb?.connectionsDao()!!
+
+        if (!overwrite) {
+            var existing: Connection? = dao.query(connection.name)
+            if (existing != null) {
+                return Result.Exists
+            }
+        }
+
+        dao.insert(connection)
+        return Result.Added
     }
 
     companion object {
         val NAME = "SaveAsTask"
+
+        fun nameFor(connection: Connection): String {
+            return "$NAME.${connection.name}"
+        }
+
+        fun match(name: String?): Boolean {
+            return name != null && name.startsWith("$NAME.")
+        }
     }
 }

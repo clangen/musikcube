@@ -10,11 +10,14 @@ import java.util.List;
 @Dao
 public interface ConnectionsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertConnection(Connection... connections);
+    void insert(Connection... connections);
 
     @Query("SELECT * FROM Connection ORDER BY LOWER(name)")
-    List<Connection> queryConnections();
+    List<Connection> query();
 
     @Query("SELECT * FROM Connection WHERE name=:name")
-    Connection queryConnection(String name);
+    Connection query(String name);
+
+    @Query("DELETE FROM Connection WHERE name=:name")
+    void delete(String name);
 }

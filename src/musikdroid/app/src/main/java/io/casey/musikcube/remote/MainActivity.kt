@@ -24,6 +24,7 @@ import io.casey.musikcube.remote.playback.RepeatMode
 import io.casey.musikcube.remote.ui.activity.*
 import io.casey.musikcube.remote.ui.extension.getColorCompat
 import io.casey.musikcube.remote.ui.extension.setCheckWithoutEvent
+import io.casey.musikcube.remote.ui.extension.showSnackbar
 import io.casey.musikcube.remote.ui.fragment.InvalidPasswordDialogFragment
 import io.casey.musikcube.remote.ui.model.UpdateCheck
 import io.casey.musikcube.remote.ui.view.MainMetadataView
@@ -188,22 +189,13 @@ class MainActivity : WebSocketActivityBase() {
         else
             R.string.snackbar_streaming_enabled
 
-        showSnackbar(messageId)
+        showSnackbar(mainLayout, messageId)
 
         reloadPlaybackService()
         playback = playbackService
 
         invalidateOptionsMenu()
         rebindUi()
-    }
-
-    private fun showSnackbar(stringId: Int) {
-        val sb = Snackbar.make(mainLayout, stringId, Snackbar.LENGTH_LONG)
-        val sbView = sb.view
-        sbView.setBackgroundColor(getColorCompat(R.color.color_primary))
-        val tv = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
-        tv.setTextColor(getColorCompat(R.color.theme_foreground))
-        sb.show()
     }
 
     private fun bindCheckBoxEventListeners() {

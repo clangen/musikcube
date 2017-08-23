@@ -2,6 +2,8 @@ package io.casey.musikcube.remote.ui.extension
 
 import android.app.SearchManager
 import android.content.Context
+import android.support.design.widget.Snackbar
+import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.MenuItemCompat
@@ -12,9 +14,11 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
 import android.view.Menu
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.EditText
+import android.widget.TextView
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.activity.Filterable
@@ -137,4 +141,38 @@ fun View.setVisible(visible: Boolean) {
 
 fun AppCompatActivity.dpToPx(dp: Float): Float {
     return dp * this.resources.displayMetrics.density
+}
+
+fun AppCompatActivity.showKeyboard() {
+    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+}
+
+fun AppCompatActivity.hideKeyboard(view: View? = null) {
+    val v = view ?: this.findViewById(android.R.id.content)
+    if (v != null) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(v.windowToken, 0)
+    }
+}
+
+fun AppCompatActivity.dialogVisible(tag: String): Boolean {
+    return this.supportFragmentManager.findFragmentByTag(tag) != null
+}
+
+fun AppCompatActivity.showDialog(dialog: DialogFragment, tag: String) {
+    dialog.show(this.supportFragmentManager, tag)
+}
+
+fun AppCompatActivity.showSnackbar(view: View, stringId: Int) {
+    val sb = Snackbar.make(view, stringId, Snackbar.LENGTH_LONG)
+    val sbView = sb.view
+    sbView.setBackgroundColor(getColorCompat(R.color.color_primary))
+    val tv = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
+    tv.setTextColor(getColorCompat(R.color.theme_foreground))
+    sb.show()
+}
+
+fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) {
+    this.showSnackbar(this.findViewById<View>(viewId), stringId)
 }

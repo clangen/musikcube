@@ -44,6 +44,13 @@
         <item name="android:background">@drawable/playback_button</item>
     </style>
 
+    <style name="ConnectionButton">
+        <item name="android:padding">12dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/theme_foreground</item>
+        <item name="android:background">@drawable/category_button</item>
+    </style>
+
     <style name="PlaybackCheckbox">
         <item name="android:button">@drawable/playback_button</item>
         <item name="android:minHeight">36dp</item>

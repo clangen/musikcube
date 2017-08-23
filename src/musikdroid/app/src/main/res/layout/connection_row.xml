@@ -1,21 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="8dp">
+    android:layout_height="wrap_content"
+    android:background="?android:selectableItemBackground"
+    android:minHeight="52dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingLeft="16dp"
+    android:paddingRight="8dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/button_del"
+        android:layout_alignParentLeft="true">
+
+        <TextView
+            android:id="@+id/name"
+            android:textColor="@color/theme_foreground"
+            android:textSize="16sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="name"/>
+
+        <TextView
+            android:id="@+id/hostname"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="address"/>
+
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/name"
+        android:id="@+id/button_del"
+        style="@style/ConnectionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="name"/>
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginLeft="8dp"
+        android:text="@string/button_del"/>
 
-    <TextView
-        android:id="@+id/hostname"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="address"/>
-
-</LinearLayout>
+</RelativeLayout>

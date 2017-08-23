@@ -83,9 +83,56 @@
 
         </android.support.design.widget.TextInputLayout>
 
+        <CheckBox
+            android:id="@+id/ssl_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/theme_foreground"
+            android:layout_marginLeft="24dp"
+            android:text="@string/settings_use_ssl"/>
+
+        <CheckBox
+            android:id="@+id/cert_validation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/theme_foreground"
+            android:layout_marginLeft="24dp"
+            android:visibility="visible"
+            android:text="@string/settings_disable_cert_validation"/>
+
         <android.support.v4.widget.Space
             android:layout_width="0dp"
-            android:layout_height="8dp"/>
+            android:layout_height="16dp"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginLeft="24dp">
+
+            <TextView
+                android:id="@+id/button_save_as"
+                style="@style/ConnectionButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="8dp"
+                android:text="@string/button_save_as"/>
+
+            <TextView
+                android:id="@+id/button_load"
+                style="@style/ConnectionButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="8dp"
+                android:text="@string/button_load"/>
+
+        </LinearLayout>
+
+        <android.support.v4.widget.Space
+            android:layout_width="0dp"
+            android:layout_height="16dp"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -136,23 +183,6 @@
             android:textColor="@color/theme_foreground"
             android:layout_marginLeft="24dp"
             android:text="@string/settings_enable_album_art"/>
-
-        <CheckBox
-            android:id="@+id/ssl_checkbox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/theme_foreground"
-            android:layout_marginLeft="24dp"
-            android:text="@string/settings_use_ssl"/>
-
-        <CheckBox
-            android:id="@+id/cert_validation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/theme_foreground"
-            android:layout_marginLeft="24dp"
-            android:visibility="visible"
-            android:text="@string/settings_disable_cert_validation"/>
 
         <CheckBox
             android:id="@+id/message_compression"
