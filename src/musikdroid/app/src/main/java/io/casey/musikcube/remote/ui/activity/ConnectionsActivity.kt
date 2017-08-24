@@ -165,7 +165,7 @@ class ConfirmDeleteDialog : DialogFragment() {
 
         val dlg = AlertDialog.Builder(activity)
             .setTitle(R.string.settings_confirm_delete_title)
-            .setTitle(message)
+            .setMessage(message)
             .setNegativeButton(R.string.button_no, null)
             .setPositiveButton(R.string.button_yes) { _, _ ->
                 (activity as ConnectionsActivity).onConfirmDelete(connection)

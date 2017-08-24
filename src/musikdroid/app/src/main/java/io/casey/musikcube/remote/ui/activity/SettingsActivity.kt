@@ -200,9 +200,9 @@ class SettingsActivity : WebSocketActivityBase() {
         }
     }
 
-    private fun showInvalidConnectionDialog() {
+    private fun showInvalidConnectionDialog(messageId: Int = R.string.settings_invalid_connection_message) {
         if (!dialogVisible(InvalidConnectionDialog.TAG)) {
-            showDialog(InvalidConnectionDialog.newInstance(), InvalidConnectionDialog.TAG)
+            showDialog(InvalidConnectionDialog.newInstance(messageId), InvalidConnectionDialog.TAG)
         }
     }
 
@@ -235,28 +235,33 @@ class SettingsActivity : WebSocketActivityBase() {
         val httpPort = httpPortText.text.toString()
         val password = passwordText.text.toString()
 
-        prefs.edit()
-            .putString(Keys.ADDRESS, addr)
-            .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) Integer.valueOf(port) else 0)
-            .putInt(Keys.AUDIO_PORT, if (httpPort.isNotEmpty()) Integer.valueOf(httpPort) else 0)
-            .putString(Keys.PASSWORD, password)
-            .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox.isChecked)
-            .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked)
-            .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
-            .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)
-            .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
-            .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
-            .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
-            .apply()
+        try {
+            prefs.edit()
+                    .putString(Keys.ADDRESS, addr)
+                    .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) port.toInt() else 0)
+                    .putInt(Keys.AUDIO_PORT, if (httpPort.isNotEmpty()) httpPort.toInt() else 0)
+                    .putString(Keys.PASSWORD, password)
+                    .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox.isChecked)
+                    .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked)
+                    .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
+                    .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)
+                    .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
+                    .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
+                    .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
+                    .apply()
 
-        if (!softwareVolume.isChecked) {
-            PlayerWrapper.setVolume(1.0f)
+            if (!softwareVolume.isChecked) {
+                PlayerWrapper.setVolume(1.0f)
+            }
+
+            StreamProxy.reload()
+            wss.disconnect()
+
+            finish()
         }
-
-        StreamProxy.reload()
-        wss.disconnect()
-
-        finish()
+        catch (ex: NumberFormatException) {
+            showInvalidConnectionDialog(R.string.settings_invalid_connection_no_name_message)
+        }
     }
 
     override val webSocketServiceClient: WebSocketService.Client?
@@ -344,7 +349,7 @@ class SettingsActivity : WebSocketActivityBase() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.settings_invalid_connection_title)
-                .setMessage(R.string.settings_invalid_connection_message)
+                .setMessage(arguments.getInt(EXTRA_MESSAGE_ID))
                 .setNegativeButton(R.string.button_ok, null)
                 .create()
 
@@ -354,8 +359,13 @@ class SettingsActivity : WebSocketActivityBase() {
 
         companion object {
             val TAG = "invalid_connection_dialog"
-            fun newInstance(): InvalidConnectionDialog {
-                return InvalidConnectionDialog()
+            private val EXTRA_MESSAGE_ID = "extra_message_id"
+            fun newInstance(messageId: Int = R.string.settings_invalid_connection_message): InvalidConnectionDialog {
+                val args = Bundle()
+                args.putInt(EXTRA_MESSAGE_ID, messageId)
+                val result = InvalidConnectionDialog()
+                result.arguments = args
+                return result
             }
         }
     }

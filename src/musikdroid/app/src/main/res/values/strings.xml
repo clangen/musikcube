@@ -89,6 +89,7 @@
     <string name="settings_save_as_title">save as</string>
     <string name="settings_invalid_connection_title">invalid connection</string>
     <string name="settings_invalid_connection_message">one or more connection fields are invalid.\n\nensure you\'ve entered a valid name, hostname, and port numbers.</string>
+    <string name="settings_invalid_connection_no_name_message">one or more connection fields are invalid.\n\nensure you\'ve entered a hostname and port numbers.</string>
     <string name="settings_confirm_delete_title">confirm delete</string>
     <string name="settings_confirm_delete_message">are you sure you want to delete \'%s\'?</string>
     <string name="connections_no_presets">no saved connection presets.</string>
