@@ -216,7 +216,7 @@ bool M4aDecoder::GetBuffer(IBuffer* target) {
 
             free(encodedData);
 
-            if (frameInfo.error <= 0 && decoderSampleId <= this->totalSamples) {
+            if (sampleBuffer && frameInfo.error <= 0 && decoderSampleId <= this->totalSamples) {
                 target->SetSampleRate(frameInfo.samplerate);
                 target->SetChannels(frameInfo.channels);
                 target->SetSamples(frameInfo.samples);
