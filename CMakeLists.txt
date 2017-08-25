@@ -1,6 +1,6 @@
 #cmake -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Debug .
-#cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=i386|amd64|armhf -DDEB_BOOST_VERSION=1.55.0 -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+#cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=i386|amd64|armhf -DDEB_DISTRO=stretch -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
 #cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true .
 
 cmake_minimum_required(VERSION 3.0)
@@ -191,15 +191,42 @@ install(
 
 if (GENERATE_DEB MATCHES "1")
   if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(DEB_BOOST_VERSION "1.55.0")
+    set(DEB_MICROHTTPD_VERSION "10")
+    if (DEB_DISTRO MATCHES "stretch")
+      set(DEB_BOOST_VERSION "1.62.0")
+      set(DEB_MICROHTTPD_VERSION "12")
+    elseif (DEB_DISTRO MATCHES "zesty")
+      set(DEB_BOOST_VERSION "1.61.0")
+      set(DEB_MICROHTTPD_VERSION "10")
+    endif()
+
     set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGE_DESCRIPTION "musikcube, a terminal-based music player and library")
     set(CPACK_PACKAGE_VERSION_MAJOR "${musikcube_VERSION_MAJOR}")
     set(CPACK_PACKAGE_VERSION_MINOR "${musikcube_VERSION_MINOR}")
     set(CPACK_PACKAGE_VERSION_PATCH "${musikcube_VERSION_PATCH}")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libboost-atomic${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libflac8, libfaad2, libncursesw5, libasound2, libpulse0, pulseaudio, libmicrohttpd10, libmp3lame0")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS
+        "libboost-thread${DEB_BOOST_VERSION},
+        libboost-system${DEB_BOOST_VERSION},
+        libboost-filesystem${DEB_BOOST_VERSION},
+        libboost-date-time${DEB_BOOST_VERSION},
+        libboost-atomic${DEB_BOOST_VERSION},
+        libboost-chrono${DEB_BOOST_VERSION},
+        libmicrohttpd${DEB_MICROHTTPD_VERSION},
+        libogg0,
+        libvorbis0a,
+        libvorbisfile3,
+        libflac8,
+        libfaad2,
+        libncursesw5,
+        libasound2,
+        libpulse0,
+        pulseaudio,
+        libmp3lame0")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "casey langen")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCHITECTURE})
-    set(CPACK_PACKAGE_FILE_NAME "musikcube_${musikcube_VERSION}_${DEB_ARCHITECTURE}")
+    set(CPACK_PACKAGE_FILE_NAME "musikcube_${musikcube_VERSION}_${DEB_DISTRO}_${DEB_ARCHITECTURE}")
     include(CPack)
   endif()
 endif()
