@@ -249,5 +249,6 @@ bool FlacDecoder::GetBuffer(IBuffer *buffer) {
         }
     }
 
+    this->exhausted = true;
     return false;
 }
