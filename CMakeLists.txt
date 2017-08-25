@@ -197,7 +197,7 @@ if (GENERATE_DEB MATCHES "1")
       set(DEB_BOOST_VERSION "1.62.0")
       set(DEB_MICROHTTPD_VERSION "12")
     elseif (DEB_DISTRO MATCHES "zesty")
-      set(DEB_BOOST_VERSION "1.61.0")
+      set(DEB_BOOST_VERSION "1.62.0")
       set(DEB_MICROHTTPD_VERSION "10")
     endif()
 
