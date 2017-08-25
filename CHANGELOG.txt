@@ -1,3 +1,21 @@
+0.25.0
+
+musikcube:
+
+* fixed a crash in the m4a decoder
+* updated some linux dependencies
+* added a build for raspbian stretch
+
+musikdroid:
+
+* fixed playback notification so it works properly with Android O
+* updated settings ui to include a way to save and load connections
+* fixed a couple random crashes that surfaced in fabric
+* removed android-specific dagger cruft; just use vanilla dagger
+* updated support library and build tooling versions
+
+--------------------------------------------------------------------------------
+
 0.24.0
 
 musikcube:
