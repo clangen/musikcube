@@ -20,4 +20,7 @@ public interface ConnectionsDao {
 
     @Query("DELETE FROM Connection WHERE name=:name")
     void delete(String name);
+
+    @Query("UPDATE Connection SET name=:newName WHERE name=:oldName")
+    void rename(String oldName, String newName);
 }

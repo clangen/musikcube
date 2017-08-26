@@ -52,6 +52,10 @@ class SettingsActivity : WebSocketActivityBase() {
         rebindUi()
     }
 
+    override fun onPause() {
+        super.onPause()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.settings_menu, menu)
         return true
@@ -423,12 +427,12 @@ class SettingsActivity : WebSocketActivityBase() {
 
         override fun onResume() {
             super.onResume()
-            (activity as SettingsActivity).showKeyboard()
+            showKeyboard()
         }
 
         override fun onPause() {
             super.onPause()
-            (activity as SettingsActivity).hideKeyboard()
+            hideKeyboard()
         }
 
         companion object {

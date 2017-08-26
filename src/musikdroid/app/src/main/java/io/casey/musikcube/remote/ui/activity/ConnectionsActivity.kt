@@ -13,16 +13,17 @@ import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import com.uacf.taskrunner.Task
 import com.uacf.taskrunner.Tasks
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.db.connections.Connection
-import io.casey.musikcube.remote.ui.extension.dialogVisible
-import io.casey.musikcube.remote.ui.extension.enableUpNavigation
-import io.casey.musikcube.remote.ui.extension.showDialog
+import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.websocket.WebSocketService
+
+private val EXTRA_CONNECTION = "extra_connection"
 
 class ConnectionsActivity : WebSocketActivityBase() {
     private lateinit var recycler: RecyclerView
@@ -41,7 +42,7 @@ class ConnectionsActivity : WebSocketActivityBase() {
         recycler = findViewById(R.id.recycler_view)
         emptyText = findViewById(R.id.empty_text)
 
-        adapter = Adapter(itemClickListener)
+        adapter = Adapter(itemClickListener, itemLongClickListener)
         val layoutManager = LinearLayoutManager(this)
         recycler.layoutManager = layoutManager
         recycler.addItemDecoration(DividerItemDecoration(this, layoutManager.orientation))
@@ -60,10 +61,14 @@ class ConnectionsActivity : WebSocketActivityBase() {
         get() = null
 
     override fun onTaskCompleted(taskName: String, taskId: Long, task: Task<*, *>, result: Any) {
-        if (taskName == LoadTask.NAME || taskName == DeleteTask.NAME) {
-            adapter.items = (result!! as List<Connection>)
-            adapter.notifyDataSetChanged()
-            updateViewState()
+        when (taskName) {
+            LoadTask.NAME,
+            DeleteTask.NAME,
+            RenameTask.NAME -> {
+                adapter.items = (result!! as List<Connection>)
+                adapter.notifyDataSetChanged()
+                updateViewState()
+            }
         }
     }
 
@@ -73,14 +78,18 @@ class ConnectionsActivity : WebSocketActivityBase() {
         emptyText.visibility = if (count == 0) View.VISIBLE else View.GONE
     }
 
-    fun onConfirmDelete(connection: Connection) {
+    fun rename(connection: Connection, name: String) {
+        runner.run(RenameTask.NAME, RenameTask(connection, name))
+    }
+
+    fun delete(connection: Connection) {
         runner.run(DeleteTask.NAME, DeleteTask(connection))
     }
 
     private val itemClickListener: (View) -> Unit = { view: View ->
         val connection = view.tag as Connection
         if (view.id == R.id.button_del) {
-            if (!dialogVisible(ConfirmDeleteDialog.EXTRA_CONNECTION)) {
+            if (!dialogVisible(ConfirmDeleteDialog.TAG)) {
                 showDialog(ConfirmDeleteDialog.newInstance(connection), ConfirmDeleteDialog.TAG)
             }
         }
@@ -91,6 +100,13 @@ class ConnectionsActivity : WebSocketActivityBase() {
         }
     }
 
+    private val itemLongClickListener: (View) -> Boolean = { view: View ->
+        if (!dialogVisible(RenameDialog.TAG)) {
+            showDialog(RenameDialog.newInstance(view.tag as Connection), RenameDialog.TAG)
+        }
+        true
+    }
+
     companion object {
         val EXTRA_SELECTED_CONNECTION = "extra_selected_connection"
         fun getStartIntent(context: Context): Intent {
@@ -99,14 +115,19 @@ class ConnectionsActivity : WebSocketActivityBase() {
     }
 }
 
-private class ViewHolder(itemView: View, listener: (View) -> Unit) : RecyclerView.ViewHolder(itemView) {
+private class ViewHolder(itemView: View,
+                         clickListener: (View) -> Unit,
+                         longClickListener: (View) -> Boolean)
+    : RecyclerView.ViewHolder(itemView)
+{
     var name: TextView = itemView.findViewById(R.id.name)
     var address: TextView = itemView.findViewById(R.id.hostname)
     var delete: TextView = itemView.findViewById(R.id.button_del)
 
     init {
-        itemView.setOnClickListener(listener)
-        delete.setOnClickListener(listener)
+        itemView.setOnClickListener(clickListener)
+        itemView.setOnLongClickListener(longClickListener)
+        delete.setOnClickListener(clickListener)
     }
 
     fun rebind(connection: Connection) {
@@ -117,7 +138,10 @@ private class ViewHolder(itemView: View, listener: (View) -> Unit) : RecyclerVie
     }
 }
 
-private class Adapter(val listener: (View) -> Unit) : RecyclerView.Adapter<ViewHolder>() {
+private class Adapter(val clickListener: (View) -> Unit,
+                      val longClickListener: (View) -> Boolean)
+    : RecyclerView.Adapter<ViewHolder>()
+{
     var items = listOf<Connection>()
 
     override fun onBindViewHolder(holder: ViewHolder?, position: Int) {
@@ -128,7 +152,7 @@ private class Adapter(val listener: (View) -> Unit) : RecyclerView.Adapter<ViewH
         val view = LayoutInflater.from(parent?.context)
             .inflate(R.layout.connection_row, parent, false)
 
-        return ViewHolder(view, listener)
+        return ViewHolder(view, clickListener, longClickListener)
     }
 
     override fun getItemCount(): Int {
@@ -158,6 +182,20 @@ private class DeleteTask(val connection: Connection) : Tasks.Blocking<List<Conne
     }
 }
 
+private class RenameTask(val connection: Connection, val name:String)
+    : Tasks.Blocking<List<Connection>, Exception>()
+{
+    override fun exec(context: Context?): List<Connection> {
+        val dao = Application.connectionsDb?.connectionsDao()!!
+        dao.rename(connection.name, name)
+        return dao.query()
+    }
+
+    companion object {
+        val NAME = "RenameTask"
+    }
+}
+
 class ConfirmDeleteDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val connection = arguments.getParcelable<Connection>(EXTRA_CONNECTION)
@@ -168,7 +206,7 @@ class ConfirmDeleteDialog : DialogFragment() {
             .setMessage(message)
             .setNegativeButton(R.string.button_no, null)
             .setPositiveButton(R.string.button_yes) { _, _ ->
-                (activity as ConnectionsActivity).onConfirmDelete(connection)
+                (activity as ConnectionsActivity).delete(connection)
             }
             .create()
 
@@ -178,9 +216,55 @@ class ConfirmDeleteDialog : DialogFragment() {
 
     companion object {
         val TAG = "confirm_delete_dialog"
-        val EXTRA_CONNECTION = "extra_connection"
         fun newInstance(connection: Connection): ConfirmDeleteDialog {
             val result = ConfirmDeleteDialog()
+            result.arguments = Bundle()
+            result.arguments.putParcelable(EXTRA_CONNECTION, connection)
+            return result
+        }
+    }
+}
+
+class RenameDialog : DialogFragment() {
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val connection = arguments.getParcelable<Connection>(EXTRA_CONNECTION)
+
+        val inflater = LayoutInflater.from(context)
+        val view = inflater.inflate(R.layout.dialog_edit, null)
+        val edit = view.findViewById<EditText>(R.id.edit)
+
+        edit.setText(connection.name)
+        edit.selectAll()
+
+        val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.settings_save_as_title)
+                .setNegativeButton(R.string.button_cancel, null)
+                .setPositiveButton(R.string.button_save) { _, _ ->
+                    val name = edit.text.toString()
+                    (activity as ConnectionsActivity).rename(connection, name)
+                }
+                .create()
+
+        dlg.setView(view)
+        dlg.setCancelable(false)
+
+        return dlg
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showKeyboard()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        hideKeyboard()
+    }
+
+    companion object {
+        val TAG = "rename_dialog"
+        fun newInstance(connection: Connection): RenameDialog {
+            val result = RenameDialog()
             result.arguments = Bundle()
             result.arguments.putParcelable(EXTRA_CONNECTION, connection)
             return result

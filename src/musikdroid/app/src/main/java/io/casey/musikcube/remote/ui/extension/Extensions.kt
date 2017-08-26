@@ -143,17 +143,31 @@ fun AppCompatActivity.dpToPx(dp: Float): Float {
     return dp * this.resources.displayMetrics.density
 }
 
-fun AppCompatActivity.showKeyboard() {
-    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+fun showKeyboard(context: Context) {
+    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+}
+
+fun hideKeyboard(context: Context, view: View) {
+    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.hideSoftInputFromWindow(view.windowToken, 0)
+}
+
+fun AppCompatActivity.showKeyboard() {
+    showKeyboard(this)
 }
 
 fun AppCompatActivity.hideKeyboard(view: View? = null) {
     val v = view ?: this.findViewById(android.R.id.content)
-    if (v != null) {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.hideSoftInputFromWindow(v.windowToken, 0)
-    }
+    hideKeyboard(this, v)
+}
+
+fun DialogFragment.showKeyboard() {
+    showKeyboard(activity)
+}
+
+fun DialogFragment.hideKeyboard() {
+    hideKeyboard(activity, activity.findViewById(android.R.id.content))
 }
 
 fun AppCompatActivity.dialogVisible(tag: String): Boolean {

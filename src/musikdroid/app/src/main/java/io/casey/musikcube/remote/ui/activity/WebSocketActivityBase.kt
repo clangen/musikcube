@@ -13,6 +13,7 @@ import com.uacf.taskrunner.Task
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
+import io.casey.musikcube.remote.ui.extension.hideKeyboard
 import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.WebSocketService
 import javax.inject.Inject
@@ -34,6 +35,8 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
     }
 
     override fun onPause() {
+        hideKeyboard()
+
         super.onPause()
 
         runnerDelegate.onPause()
