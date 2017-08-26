@@ -65,6 +65,7 @@
             <intent-filter>
                 <action android:name="io.casey.musikcube.remote.WAKE_UP" />
                 <action android:name="io.casey.musikcube.remote.SHUT_DOWN" />
+                <action android:name="io.casey.musikcube.remote.SLEEP" />
             </intent-filter>
         </service>
 
