@@ -37,6 +37,7 @@
     <string name="button_disable">disable</string>
     <string name="button_cancel">cancel</string>
     <string name="button_ok">ok</string>
+    <string name="button_connect">connect</string>
     <string name="button_yes">yes</string>
     <string name="button_no">no</string>
     <string name="button_del">delete</string>
