@@ -46,6 +46,7 @@
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/plugin/PluginFactory.h>
+#include <core/support/Common.h>
 #include <core/support/Preferences.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/sdk/IAnalyzer.h>
@@ -64,6 +65,7 @@
 
 static const std::string TAG = "Indexer";
 static const size_t TRANSACTION_INTERVAL = 300;
+static FILE* logFile = nullptr;
 
 #ifdef __arm__
 static const int MAX_THREADS = 2;
@@ -93,6 +95,24 @@ static std::string normalizeDir(std::string path) {
     return path;
 }
 
+static void openLogFile() {
+    if (!logFile) {
+        std::string path = GetDataDirectory() + "/indexer_log.txt";
+#ifdef WIN32
+        logFile = _wfopen(u8to16(path).c_str(), L"w");
+#else
+        logFile = fopen(path.c_str(), "w");
+#endif
+    }
+}
+
+static void closeLogFile() {
+    if (logFile) {
+        fclose(logFile);
+        logFile = nullptr;
+    }
+}
+
 static std::string normalizePath(const std::string& path) {
     return boost::filesystem::path(path).make_preferred().string();
 }
@@ -104,6 +124,10 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , state(StateIdle)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
+    if (prefs->GetBool(prefs::keys::IndexerLogEnabled, false) && !logFile) {
+        openLogFile();
+    }
+
     this->metadataReaders = PluginFactory::Instance()
         .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
 
@@ -126,6 +150,8 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 }
 
 Indexer::~Indexer() {
+    closeLogFile();
+
     if (this->thread) {
         {
             boost::mutex::scoped_lock lock(this->stateMutex);
@@ -250,6 +276,10 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     /* process local files */
     if (type == SyncType::All || type == SyncType::Local) {
+        if (logFile) {
+            fprintf(logFile, "\n\nSYNCING LOCAL FILES:\n");
+        }
+
         std::vector<std::string> paths;
         std::vector<int64_t> pathIds;
 
@@ -339,6 +369,10 @@ void Indexer::ReadMetadataFromFile(
         while (it != this->metadataReaders.end()) {
             try {
                 if ((*it)->CanRead(track.GetValue("extension").c_str())) {
+                    if (logFile) {
+                        fprintf(logFile, "    - %s\n", file.string().c_str());
+                    }
+
                     if ((*it)->Read(file.string().c_str(), &track)) {
                         saveToDb = true;
                         break;
@@ -360,6 +394,10 @@ void Indexer::ReadMetadataFromFile(
             auto it = this->audioDecoders.begin();
             while (it != this->audioDecoders.end()) {
                 if ((*it)->CanHandle(fullPath.c_str())) {
+                    if (logFile) {
+                        fprintf(logFile, "    - %s\n", file.string().c_str());
+                    }
+
                     saveToDb = true;
                     track.SetValue("title", file.leaf().string().c_str());
                     break;
@@ -470,6 +508,10 @@ void Indexer::SyncDirectory(
 }
 
 ScanResult Indexer::SyncSource(IIndexerSource* source) {
+    if (logFile) {
+        fprintf(logFile, "\n\nSYNCING SOURCE WITH ID: %d\n", source->SourceId());
+    }
+
     if (source->SourceId() == 0) {
         return ScanRollback;
     }
@@ -487,6 +529,11 @@ ScanResult Indexer::SyncSource(IIndexerSource* source) {
         while (tracks.Step() == db::Row) {
             TrackPtr track(new IndexerTrack(tracks.ColumnInt64(0)));
             track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
+
+            if (logFile) {
+                fprintf(logFile, "    - %s\n", track->GetValue(constants::Track::FILENAME).c_str());
+            }
+
             source->ScanTrack(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
             this->IncrementTracksScanned();
         }

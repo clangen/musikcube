@@ -52,6 +52,7 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::OutputPlugin = "OutputPlugin";
     const std::string keys::Transport = "Transport";
     const std::string keys::Locale = "Locale";
+    const std::string keys::IndexerLogEnabled = "IndexerLogEnabled";
 
 } } }
 
