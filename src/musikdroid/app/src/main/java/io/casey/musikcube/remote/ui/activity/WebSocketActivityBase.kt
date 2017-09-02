@@ -116,7 +116,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onTaskCompleted(s: String, l: Long, task: Task<*, *>, o: Any) {
+    override fun onTaskCompleted(taskName: String, taskId: Long, task: Task<*, *>, result: Any) {
 
     }
 

@@ -60,19 +60,20 @@ class ConnectionsActivity : WebSocketActivityBase() {
     override val playbackServiceEventListener: (() -> Unit)?
         get() = null
 
+    @Suppress("UNCHECKED_CAST")
     override fun onTaskCompleted(taskName: String, taskId: Long, task: Task<*, *>, result: Any) {
         when (taskName) {
             LoadTask.NAME,
             DeleteTask.NAME,
             RenameTask.NAME -> {
-                adapter.items = (result!! as List<Connection>)
+                adapter.items = (result as List<Connection>)
                 adapter.notifyDataSetChanged()
                 updateViewState()
             }
         }
     }
 
-    fun updateViewState() {
+    private fun updateViewState() {
         val count = adapter.itemCount
         recycler.visibility = if (count == 0) View.GONE else View.VISIBLE
         emptyText.visibility = if (count == 0) View.VISIBLE else View.GONE

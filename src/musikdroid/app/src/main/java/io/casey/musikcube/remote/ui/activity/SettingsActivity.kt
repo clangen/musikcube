@@ -173,17 +173,17 @@ class SettingsActivity : WebSocketActivityBase() {
     }
 
     private fun cacheViews() {
-        this.addressText = findViewById<EditText>(R.id.address)
-        this.portText = findViewById<EditText>(R.id.port)
-        this.httpPortText = findViewById<EditText>(R.id.http_port)
-        this.passwordText = findViewById<EditText>(R.id.password)
-        this.albumArtCheckbox = findViewById<CheckBox>(R.id.album_art_checkbox)
-        this.messageCompressionCheckbox = findViewById<CheckBox>(R.id.message_compression)
-        this.softwareVolume = findViewById<CheckBox>(R.id.software_volume)
-        this.bitrateSpinner = findViewById<Spinner>(R.id.transcoder_bitrate_spinner)
-        this.cacheSpinner = findViewById<Spinner>(R.id.streaming_disk_cache_spinner)
-        this.sslCheckbox = findViewById<CheckBox>(R.id.ssl_checkbox)
-        this.certCheckbox = findViewById<CheckBox>(R.id.cert_validation)
+        this.addressText = findViewById(R.id.address)
+        this.portText = findViewById(R.id.port)
+        this.httpPortText = findViewById(R.id.http_port)
+        this.passwordText = findViewById(R.id.password)
+        this.albumArtCheckbox = findViewById(R.id.album_art_checkbox)
+        this.messageCompressionCheckbox = findViewById(R.id.message_compression)
+        this.softwareVolume = findViewById(R.id.software_volume)
+        this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner)
+        this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner)
+        this.sslCheckbox = findViewById(R.id.ssl_checkbox)
+        this.certCheckbox = findViewById(R.id.cert_validation)
     }
 
     private fun bindListeners() {
@@ -274,9 +274,9 @@ class SettingsActivity : WebSocketActivityBase() {
     override val playbackServiceEventListener: (() -> Unit)?
         get() = null
 
-    override fun onTaskCompleted(name: String, id: Long, task: Task<*, *>, r: Any) {
-        if (SaveAsTask.match(name)) {
-            if ((r as SaveAsTask.Result) == SaveAsTask.Result.Exists) {
+    override fun onTaskCompleted(taskName: String, taskId: Long, task: Task<*, *>, result: Any) {
+        if (SaveAsTask.match(taskName)) {
+            if ((result as SaveAsTask.Result) == SaveAsTask.Result.Exists) {
                 val connection = (task as SaveAsTask).connection
                 if (!dialogVisible(ConfirmOverwiteDialog.TAG)) {
                     showDialog(
@@ -453,23 +453,17 @@ class SettingsActivity : WebSocketActivityBase() {
     }
 }
 
-private class SaveAsTask : Tasks.Blocking<SaveAsTask.Result, Exception> {
-    var connection: Connection
-
+private class SaveAsTask(val connection: Connection,
+                         val overwrite: Boolean = false)
+    : Tasks.Blocking<SaveAsTask.Result, Exception>()
+{
     enum class Result { Exists, Added }
-
-    val overwrite: Boolean
-
-    constructor(connection: Connection, overwrite: Boolean = false) {
-        this.connection = connection
-        this.overwrite = overwrite
-    }
 
     override fun exec(context: Context?): Result {
         val dao = Application.connectionsDb?.connectionsDao()!!
 
         if (!overwrite) {
-            var existing: Connection? = dao.query(connection.name)
+            val existing: Connection? = dao.query(connection.name)
             if (existing != null) {
                 return Result.Exists
             }

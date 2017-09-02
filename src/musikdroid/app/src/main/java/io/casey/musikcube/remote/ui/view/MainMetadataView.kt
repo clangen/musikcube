@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.ui.view
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.os.Handler
 import android.support.annotation.AttrRes
 import android.text.SpannableStringBuilder
 import android.text.TextPaint
@@ -41,7 +42,6 @@ class MainMetadataView : FrameLayout {
     private var prefs: SharedPreferences? = null
 
     private var isPaused = true
-
     private lateinit var title: TextView
     private lateinit var artist: TextView
     private lateinit var album: TextView
@@ -363,7 +363,7 @@ class MainMetadataView : FrameLayout {
 
     private var albumArtRetrieved: (AlbumArtModel, String?) -> Unit = {
             model: AlbumArtModel, _: String? ->
-        handler.post {
+        handler?.post {
             if (model === albumArtModel) {
                 if (Strings.empty(model.url)) {
                     setMetadataDisplayMode(DisplayMode.NoArtwork)

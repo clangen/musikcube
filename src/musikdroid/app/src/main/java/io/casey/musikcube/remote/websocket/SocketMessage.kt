@@ -38,6 +38,7 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
         this.options = options ?: JSONObject()
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> getOption(key: String): T? {
         if (options.has(key)) {
             try {
