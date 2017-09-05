@@ -14,7 +14,7 @@
     <ProjectGuid>{4993E68D-E97A-4CD2-AC8E-168AE315BAC5}</ProjectGuid>
     <RootNamespace>m4adecoder</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
     <ProjectName>m4adecoder</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
