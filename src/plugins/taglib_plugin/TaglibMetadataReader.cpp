@@ -84,6 +84,7 @@
 #ifdef WIN32
 static inline std::wstring utf8to16(const char* utf8) {
     int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
+    if (size <= 0) return L"";
     wchar_t* buffer = new wchar_t[size];
     MultiByteToWideChar(CP_UTF8, 0, utf8, -1, buffer, size);
     std::wstring utf16fn(buffer);

@@ -61,6 +61,7 @@ musik::core::sdk::IPreferences* prefs = nullptr;
 static inline std::string utf16to8(const wchar_t* utf16) {
     if (!utf16) return "";
     int size = WideCharToMultiByte(CP_UTF8, 0, utf16, -1, 0, 0, 0, 0);
+    if (size <= 0) return "";
     char* buffer = new char[size];
     WideCharToMultiByte(CP_UTF8, 0, utf16, -1, buffer, size, 0, 0);
     std::string utf8str(buffer);
