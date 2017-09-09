@@ -1,3 +1,21 @@
+0.25.2
+
+musikcube:
+
+* upgraded to a new version of the windows sdk (10.0.15063.0)
+* added some missing checks in WideCharToMultiByte (and MultiByteToWideChar)
+  that could result in access violations on windows
+* added a hidden setting for enabling indexer logging (set IndexerLogEnabled in
+  settings.json)
+
+musikdroid:
+
+* added the ability to rename connection presets
+* fixed a crash in SystemService related to unregistered intents
+* upgraded to android studio beta 5
+
+--------------------------------------------------------------------------------
+
 0.25.1
 
 musikcube:
