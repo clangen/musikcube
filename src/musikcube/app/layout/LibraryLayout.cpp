@@ -277,7 +277,14 @@ IWindowPtr LibraryLayout::GetFocus() {
         return this->transportView;
     }
 
-    return this->visibleLayout->GetFocus();
+    auto result = this->visibleLayout->GetFocus();
+
+    if (!result) {
+        this->visibleLayout->SetFocusIndex(0);
+        result = this->visibleLayout->GetFocus();
+    }
+
+     return result;
 }
 
 bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {

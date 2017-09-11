@@ -120,7 +120,7 @@ void NowPlayingLayout::OnLayout() {
         this->GetWidth(),
         this->GetHeight());
 
-    this->trackListView->SetFocusOrder(1);
+    this->trackListView->SetFocusOrder(0);
 }
 
 void NowPlayingLayout::InitializeWindows() {

@@ -47,6 +47,8 @@
 #include <app/layout/SettingsLayout.h>
 #include <app/util/Hotkeys.h>
 
+#include <map>
+
 #include "SettingsLayout.h"
 #include "MainLayout.h"
 
@@ -57,6 +59,7 @@ using namespace musik::core::runtime;
 using namespace cursespp;
 
 static UpdateCheck updateCheck;
+static std::map<ILayout*, int> lastFocusMap;
 
 #define ENABLE_DEMO_MODE 0
 
@@ -64,6 +67,15 @@ static UpdateCheck updateCheck;
 static std::string lastKey;
 static int lastKeyRepeat = 0;
 #endif
+
+static int last(ILayout* layout) {
+    auto it = lastFocusMap.find(layout);
+    return (it == lastFocusMap.end()) ? 0 : it->second;
+}
+
+static void last(ILayout* layout, int last) {
+    lastFocusMap[layout] = last;
+}
 
 static void updateSyncingText(TextLabel* label, int updates) {
     try {
@@ -206,6 +218,8 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
             }
 
             this->RemoveWindow(this->layout);
+            last(this->layout.get(), this->layout->GetFocusIndex());
+            this->layout->SetFocusIndex(-1);
             this->layout->Hide();
         }
 
@@ -226,6 +240,7 @@ void MainLayout::SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 
             this->AddWindow(this->layout);
             this->layout->SetFocusOrder(0);
+            this->layout->SetFocusIndex(last(this->layout.get()));
             this->Layout();
         }
     }
