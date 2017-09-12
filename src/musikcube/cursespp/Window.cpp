@@ -53,6 +53,7 @@ static bool freeze = false;
 static Window* top = nullptr;
 
 static MessageQueue messageQueue;
+static std::shared_ptr<INavigationKeys> keys;
 
 #define ENABLE_BOUNDS_CHECK 1
 
@@ -781,4 +782,45 @@ void Window::Blur() {
         this->RepaintBackground();
         this->Redraw();
     }
+}
+
+void Window::SetNavigationKeys(std::shared_ptr<INavigationKeys> keys) {
+    ::keys = keys;
+}
+
+/* default keys for navigating around sub-views. apps can override this shim to
+provide VIM-like keybindings, if it wants... */
+static class DefaultNavigationKeys : public INavigationKeys {
+    public:
+        virtual bool Up(const std::string& key) override { return Up() == key; }
+        virtual bool Down(const std::string& key) override { return Down() == key; }
+        virtual bool Left(const std::string& key) override { return Left() == key; }
+        virtual bool Right(const std::string& key) override { return Right() == key; }
+        virtual bool Next(const std::string& key) override { return Next() == key; }
+        virtual bool Prev(const std::string& key) override { return Prev() == key; }
+        virtual bool Mode(const std::string& key) override { return Mode() == key; }
+        virtual bool PageUp(const std::string& key) override { return PageUp() == key; }
+        virtual bool PageDown(const std::string& key) override { return PageDown() == key; }
+        virtual bool Home(const std::string& key) override { return Home() == key; }
+        virtual bool End(const std::string& key) override { return End() == key; }
+
+        virtual std::string Up() override { return "KEY_UP"; }
+        virtual std::string Down() override { return "KEY_DOWN"; }
+        virtual std::string Left() override { return "KEY_LEFT"; }
+        virtual std::string Right() override { return "KEY_RIGHT"; }
+        virtual std::string Next() override { return "KEY_TAB"; }
+        virtual std::string Prev() override { return "KEY_BTAB"; }
+        virtual std::string Mode() override  { return "^["; }
+        virtual std::string PageUp() override { return "KEY_PPAGE"; }
+        virtual std::string PageDown() override { return "KEY_NPAGE"; }
+        virtual std::string Home() override { return "KEY_HOME"; }
+        virtual std::string End() override { return "KEY_END"; }
+} defaultNavigationKeys;
+
+INavigationKeys& Window::NavigationKeys() {
+    if (::keys) {
+        return *::keys.get();
+    }
+
+    return defaultNavigationKeys;
 }

@@ -386,11 +386,12 @@ void LayoutBase::SetFocusMode(FocusMode mode) {
 }
 
 bool LayoutBase::KeyPress(const std::string& key) {
-    if (key == "KEY_LEFT" || key == "KEY_UP") {
+    auto& keys = NavigationKeys();
+    if (keys.Left(key) || keys.Up(key)) {
         this->FocusPrev();
         return true;
     }
-    else if (key == "KEY_RIGHT" || key == "KEY_DOWN") {
+    else if (keys.Right(key) || keys.Down(key)) {
         this->FocusNext();
         return true;
     }

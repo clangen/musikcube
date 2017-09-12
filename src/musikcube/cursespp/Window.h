@@ -36,7 +36,7 @@
 
 #include "curses_config.h"
 #include "IWindow.h"
-
+#include "INavigationKeys.h"
 #include <core/runtime/IMessageQueue.h>
 
 #ifdef WIN32
@@ -123,6 +123,8 @@ namespace cursespp {
             static void Freeze();
             static void Unfreeze();
 
+            static void SetNavigationKeys(std::shared_ptr<INavigationKeys> keys);
+
             static musik::core::runtime::IMessageQueue& MessageQueue();
 
         protected:
@@ -131,6 +133,7 @@ namespace cursespp {
             void PostMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void DebounceMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void RemoveMessage(int messageType);
+            static INavigationKeys& NavigationKeys();
 
             virtual void Create();
             virtual void Destroy();

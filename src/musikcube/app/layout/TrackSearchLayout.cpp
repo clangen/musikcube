@@ -92,7 +92,7 @@ void TrackSearchLayout::InitializeWindows() {
     this->input->EnterPressed.connect(this, &TrackSearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
-    
+
     this->trackList.reset(new TrackListView(this->playback, this->library));
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
@@ -144,13 +144,13 @@ void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
 }
 
 bool TrackSearchLayout::KeyPress(const std::string& key) {
-    if (key == "KEY_DOWN") {
+    if (Hotkeys::Is(Hotkeys::Down, key)) {
         if (this->GetFocus() == this->input) {
             this->FocusNext();
             return true;
         }
     }
-    else if (key == "KEY_UP") {
+    else if (Hotkeys::Is(Hotkeys::Up, key)) {
         if (this->GetFocus() == this->trackList) {
             this->SetFocus(this->input);
             return true;

@@ -109,7 +109,9 @@ bool ShortcutsWindow::KeyPress(const std::string& key) {
     if (this->changedCallback && this->IsFocused()) {
         int count = (int) this->entries.size();
         if (count > 0) {
-            if (key == "KEY_RIGHT") {
+            auto& keys = NavigationKeys();
+
+            if (keys.Right(key)) {
                 int active = getActiveIndex();
                 if (active >= 0 && active + 1 < count) {
                     this->activeKey = this->entries[active + 1]->key;
@@ -120,7 +122,7 @@ bool ShortcutsWindow::KeyPress(const std::string& key) {
                 this->Redraw();
                 return true;
             }
-            else if (key == "KEY_LEFT") {
+            else if (keys.Left(key)) {
                 int active = getActiveIndex();
                 if (active > 0) {
                     this->activeKey = this->entries[active - 1]->key;

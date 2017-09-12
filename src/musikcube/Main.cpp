@@ -135,6 +135,7 @@ int main(int argc, char* argv[]) {
     PlaybackService playback(Window::MessageQueue(), library, transport);
 
     GlobalHotkeys globalHotkeys(playback, library);
+    Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
     musik::core::plugin::InstallDependencies(library);
 

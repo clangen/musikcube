@@ -227,6 +227,7 @@ xcopy "$(SolutionDir)src\plugins\websocket_remote\3rdparty\win32_bin\$(Configura
     <ClInclude Include="cursespp\IInput.h" />
     <ClInclude Include="cursespp\IKeyHandler.h" />
     <ClInclude Include="cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\INavigationKeys.h" />
     <ClInclude Include="cursespp\InputOverlay.h" />
     <ClInclude Include="cursespp\IOrderable.h" />
     <ClInclude Include="cursespp\IOverlay.h" />

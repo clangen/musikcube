@@ -300,7 +300,7 @@ bool MainLayout::KeyPress(const std::string& key) {
     shortcut bar focus... */
     if (key == "^["  ||
         (key == "KEY_ENTER" && this->shortcutsFocused) ||
-        (key == "KEY_UP" && this->shortcutsFocused))
+        (Hotkeys::Is(Hotkeys::Up, key) && this->shortcutsFocused))
     {
         this->shortcutsFocused = !this->shortcutsFocused;
 
@@ -315,8 +315,8 @@ bool MainLayout::KeyPress(const std::string& key) {
     }
 
     if (this->shortcutsFocused) {
-        if (key == "KEY_DOWN" || key == "KEY_LEFT" ||
-            key == "KEY_UP" || key == "KEY_RIGHT")
+        if (Hotkeys::Is(Hotkeys::Down, key) || Hotkeys::Is(Hotkeys::Left, key) ||
+            Hotkeys::Is(Hotkeys::Up, key) || Hotkeys::Is(Hotkeys::Right, key))
         {
             /* layouts allow focusing via TAB and sometimes arrow
             keys. suppress these from bubbling. */

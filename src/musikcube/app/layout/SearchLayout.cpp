@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <app/util/Hotkeys.h>
 #include "SearchLayout.h"
 
 using namespace musik::core::library::constants;
@@ -158,13 +159,13 @@ bool SearchLayout::KeyPress(const std::string& key) {
         }
     }
 
-    if (key == "KEY_DOWN") {
+    if (Hotkeys::Is(Hotkeys::Down, key)) {
         if (this->GetFocus() == this->input) {
             this->FocusNext();
             return true;
         }
     }
-    else if (key == "KEY_UP") {
+    else if (Hotkeys::Is(Hotkeys::Up, key)) {
         if (IS_CATEGORY(this->GetFocus())) {
             this->SetFocus(this->input);
             return true;

@@ -327,16 +327,7 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
-    if (key == "^[") { /* switches between browse/now playing */
-        if (this->visibleLayout != this->browseLayout) {
-            this->ShowBrowse();
-        }
-        else {
-            this->ShowNowPlaying();
-        }
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, key)) {
+    if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, key)) {
         this->ShowNowPlaying();
         return true;
     }
@@ -352,12 +343,12 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         this->ShowTrackSearch();
         return true;
     }
-    else if (this->GetFocus() == this->transportView && key == "KEY_UP") {
+    else if (this->GetFocus() == this->transportView && Hotkeys::Is(Hotkeys::Up, key)) {
         this->transportView->Blur();
         this->visibleLayout->FocusLast();
         return true;
     }
-    else if (this->GetFocus() == this->transportView && key == "KEY_DOWN") {
+    else if (this->GetFocus() == this->transportView && Hotkeys::Is(Hotkeys::Down, key)) {
         this->transportView->Blur();
         this->visibleLayout->FocusFirst();
         return true;

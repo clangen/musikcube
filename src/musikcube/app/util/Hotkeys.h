@@ -36,13 +36,23 @@
 
 #include "stdafx.h"
 
-#include <core/library/ILibrary.h>
+#include <cursespp/INavigationKeys.h>
 
 namespace musik {
     namespace cube {
         class Hotkeys {
             public:
                 enum Id {
+                    /* selection */
+                    Up,
+                    Down,
+                    Left,
+                    Right,
+                    PageUp,
+                    PageDown,
+                    Home,
+                    End,
+
                     /* navigation */
                     NavigateLibrary,
                     NavigateLibraryBrowse,
@@ -100,6 +110,7 @@ namespace musik {
 
                 static bool Is(Id id, const std::string& kn);
                 static std::string Get(Id id);
+                static std::shared_ptr<cursespp::INavigationKeys> NavigationKeys();
 
             private:
                 Hotkeys();

@@ -46,6 +46,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
 
+#include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
 
 #include <boost/format.hpp>
@@ -296,11 +297,11 @@ static size_t writePlayingFormat(
 }
 
 static inline bool inc(const std::string& kn) {
-    return (/*kn == "KEY_UP" ||*/ kn == "KEY_RIGHT");
+    return (Hotkeys::Is(Hotkeys::Right, kn));
 }
 
 static inline bool dec(const std::string& kn) {
-    return (/*kn == "KEY_DOWN" ||*/ kn == "KEY_LEFT");
+    return (Hotkeys::Is(Hotkeys::Left, kn));
 }
 
 TransportWindow::TransportWindow(musik::core::audio::PlaybackService& playback)

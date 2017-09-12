@@ -121,23 +121,24 @@ bool ScrollableWindow::KeyPress(const std::string& key) {
     the logical (selected) index doesn't actually change -- i.e. the
     user is at the beginning or end of the scrollable area. this is so
     controllers can change focus in response to UP/DOWN if necessary. */
+    auto& keys = NavigationKeys();
 
-    if (key == "KEY_NPAGE") { this->PageDown(); return true; }
-    else if (key == "KEY_PPAGE") { this->PageUp(); return true; }
-    else if (key == "KEY_DOWN") {
+    if (keys.PageDown(key)) { this->PageDown(); return true; }
+    else if (keys.PageUp(key)) { this->PageUp(); return true; }
+    else if (keys.Down(key)) {
         const size_t before = this->GetScrollPosition().logicalIndex;
         this->ScrollDown();
         const size_t after = this->GetScrollPosition().logicalIndex;
         return !this->allowArrowKeyPropagation || (before != after);
     }
-    else if (key == "KEY_UP") {
+    else if (keys.Up(key)) {
         const size_t before = this->GetScrollPosition().logicalIndex;
         this->ScrollUp();
         const size_t after = this->GetScrollPosition().logicalIndex;
         return !this->allowArrowKeyPropagation || (before != after);
     }
-    else if (key == "KEY_HOME") { this->ScrollToTop(); return true; }
-    else if (key == "KEY_END") { this->ScrollToBottom(); return true; }
+    else if (keys.Home(key)) { this->ScrollToTop(); return true; }
+    else if (keys.End(key)) { this->ScrollToBottom(); return true; }
     return false;
 }
 
