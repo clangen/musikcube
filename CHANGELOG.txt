@@ -1,3 +1,11 @@
+0.26.0
+
+* added the ability to rebind UP, DOWN, LEFT, RIGHT, PAGE_UP, PAGE_DOWN, END and
+  HOME keys to allow for VIM-style key bindings
+* fixed a focus related bug when switching between main views
+
+--------------------------------------------------------------------------------
+
 0.25.2
 
 musikcube:
