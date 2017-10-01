@@ -110,6 +110,8 @@ namespace key {
     static const std::string relative = "relative";
     static const std::string password = "password";
     static const std::string authenticated = "authenticated";
+    static const std::string playlist_id = "playlist_id";
+    static const std::string playlist_name = "playlist_name";
 }
 
 namespace value {
@@ -151,6 +153,9 @@ namespace request {
     static const std::string play_tracks_by_category = "play_tracks_by_category";
     static const std::string query_play_queue_tracks = "query_play_queue_tracks";
     static const std::string get_environment = "get_environment";
+    static const std::string save_playlist = "save_playlist";
+    static const std::string rename_playlist = "rename_playlist";
+    static const std::string delete_playlist = "delete_playlist";
 }
 
 namespace fragment {

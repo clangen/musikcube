@@ -72,7 +72,7 @@ namespace musik { namespace core { namespace library {
 
             /* ILibrary */
             virtual int Enqueue(
-                QueryPtr query, 
+                QueryPtr query,
                 unsigned int options = 0,
                 Callback = Callback()) override;
 
@@ -120,8 +120,8 @@ namespace musik { namespace core { namespace library {
             std::string name;
 
             std::thread* thread;
-            std::condition_variable queueCondition;
-            std::mutex mutex;
+            std::condition_variable_any queueCondition;
+            std::recursive_mutex mutex;
             std::atomic<bool> exit;
 
             core::IIndexer *indexer;

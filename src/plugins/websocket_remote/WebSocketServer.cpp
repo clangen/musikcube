@@ -330,6 +330,18 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithCurrentTime(connection, request);
             return;
         }
+        else if (name == request::save_playlist) {
+            this->RespondWithSavePlaylist(connection, request);
+            return;
+        }
+        else if (name == request::rename_playlist) {
+            this->RespondWithRenamePlaylist(connection, request);
+            return;
+        }
+        else if (name == request::delete_playlist) {
+            this->RespondWithDeletePlaylist(connection, request);
+            return;
+        }
     }
 
     this->RespondWithInvalidRequest(connection, name, id);
@@ -768,6 +780,57 @@ void WebSocketServer::RespondWithCurrentTime(connection_hdl connection, json& re
         { key::playing_current_time, context.playback->GetPosition() },
         { key::id, track ? track->GetId() : -1 }
     });
+}
+
+void WebSocketServer::RespondWithSavePlaylist(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+
+    json& ids = options[key::ids];
+    if (ids.is_array()) {
+        int64_t id = options.value(key::playlist_id, 0);
+        std::string name = options.value(key::playlist_name, "");
+
+        size_t count = ids.size();
+        int64_t* idArray = new int64_t[count];
+        std::copy(ids.begin(), ids.end(), idArray);
+
+        uint64_t newPlaylistId = this->context.dataProvider
+            ->SavePlaylist(idArray, count, name.c_str(), id);
+
+        delete[] idArray;
+
+        if (newPlaylistId != 0) {
+            this->RespondWithOptions(connection, request, {
+                { key::playlist_id, newPlaylistId }
+            });
+        }
+        else {
+            this->RespondWithFailure(connection, request);
+        }
+    }
+    else {
+        this->RespondWithInvalidRequest(
+            connection, request[message::name], request[message::id]);
+    }
+}
+
+void WebSocketServer::RespondWithRenamePlaylist(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+    int64_t id = options[key::playlist_id];
+    std::string name = options[key::playlist_name];
+
+    this->context.dataProvider->RenamePlaylist(id, name.c_str())
+        ? this->RespondWithSuccess(connection, request)
+        : this->RespondWithFailure(connection, request);
+}
+
+void WebSocketServer::RespondWithDeletePlaylist(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+    int64_t id = options[key::playlist_id];
+
+    this->context.dataProvider->DeletePlaylist(id)
+        ? this->RespondWithSuccess(connection, request)
+        : this->RespondWithFailure(connection, request);
 }
 
 void WebSocketServer::BroadcastPlaybackOverview() {

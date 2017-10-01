@@ -62,6 +62,8 @@ namespace musik { namespace core {
         public:
             TrackList(ILibraryPtr library);
             TrackList(TrackList* other);
+            TrackList(ILibraryPtr library, int64_t trackIds[], size_t trackIdCount);
+
             virtual ~TrackList();
 
             /* ITrackList */

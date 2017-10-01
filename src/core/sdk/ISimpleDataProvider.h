@@ -69,6 +69,18 @@ namespace musik { namespace core { namespace sdk {
                 const char* categoryIdName,
                 int64_t categoryIdValue,
                 const char* filter = "") = 0;
+
+            virtual uint64_t SavePlaylist(
+                int64_t trackIds[],
+                size_t trackIdCount,
+                const char* playlistName,
+                const uint64_t playlistId = 0) = 0;
+
+            virtual bool RenamePlaylist(
+                const uint64_t playlistId,
+                const char* playlistName) = 0;
+
+            virtual bool DeletePlaylist(const uint64_t playlistId) = 0;
     };
 
 } } }

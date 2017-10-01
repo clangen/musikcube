@@ -49,11 +49,13 @@ namespace musik { namespace core { namespace db { namespace local {
                 QueryTracks(
                     const char* query = "",
                     int limit = -1,
-                    int offset = 0);
+                    int offset = 0) override;
 
-            virtual musik::core::sdk::IRetainedTrack* QueryTrackById(int64_t trackId);
+            virtual musik::core::sdk::IRetainedTrack*
+                QueryTrackById(int64_t trackId) override;
 
-            virtual musik::core::sdk::IRetainedTrack* QueryTrackByExternalId(const char* externalId);
+            virtual musik::core::sdk::IRetainedTrack*
+                QueryTrackByExternalId(const char* externalId) override;
 
             virtual musik::core::sdk::ITrackList*
                 QueryTracksByCategory(
@@ -61,20 +63,32 @@ namespace musik { namespace core { namespace db { namespace local {
                     int64_t selectedId,
                     const char* filter = "",
                     int limit = -1,
-                    int offset = 0);
+                    int offset = 0) override;
 
             virtual musik::core::sdk::IMetadataValueList*
                 QueryCategory(
                     const char* type,
-                    const char* filter = "");
+                    const char* filter = "") override;
 
             virtual musik::core::sdk::IMetadataMapList*
-                QueryAlbums(const char* filter = "");
+                QueryAlbums(const char* filter = "") override;
 
             virtual musik::core::sdk::IMetadataMapList* QueryAlbums(
                 const char* categoryIdName,
                 int64_t categoryIdValue,
-                const char* filter = "");
+                const char* filter = "") override;
+
+            virtual uint64_t SavePlaylist(
+                int64_t trackIds[],
+                size_t trackIdCount,
+                const char* name,
+                const uint64_t playlistId = 0) override;
+
+            virtual bool RenamePlaylist(
+                const uint64_t playlistId,
+                const char* name) override;
+
+            virtual bool DeletePlaylist(const uint64_t playlistId) override;
 
         private:
             musik::core::ILibraryPtr library;

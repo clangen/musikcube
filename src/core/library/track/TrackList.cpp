@@ -63,6 +63,11 @@ TrackList::TrackList(TrackList* other)
     this->library = library;
 }
 
+TrackList::TrackList(ILibraryPtr library, int64_t trackIds[], size_t trackIdCount)
+: library(library) {
+    this->ids.insert(this->ids.end(), &trackIds[0], &trackIds[trackIdCount]);
+}
+
 TrackList::~TrackList() {
 
 }

@@ -76,6 +76,8 @@ namespace musik { namespace core { namespace db { namespace local {
 
             virtual ~SavePlaylistQuery();
 
+            int64_t GetPlaylistId() const;
+
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 

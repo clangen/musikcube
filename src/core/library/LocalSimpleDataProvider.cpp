@@ -40,8 +40,10 @@
 #include <core/library/query/local/AlbumListQuery.h>
 #include <core/library/query/local/CategoryListQuery.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
+#include <core/library/query/local/DeletePlaylistQuery.h>
 #include <core/library/query/local/SearchTrackListQuery.h>
 #include <core/library/query/local/GetPlaylistQuery.h>
+#include <core/library/query/local/SavePlaylistQuery.h>
 #include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/track/RetainedTrack.h>
@@ -209,4 +211,95 @@ IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(
 
 IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
     return this->QueryAlbums(nullptr, -1, filter);
+}
+
+uint64_t LocalSimpleDataProvider::SavePlaylist(
+    int64_t trackIds[],
+    size_t trackIdCount,
+    const char* name,
+    const uint64_t playlistId)
+{
+    if (playlistId == 0 && (!name || !strlen(name))) {
+        return 0;
+    }
+
+    try {
+        std::shared_ptr<TrackList> sharedTrackList =
+            std::make_shared<TrackList>(this->library, trackIds, trackIdCount);
+
+        /* replacing (and optionally renaming) an existing playlist */
+        if (playlistId != 0) {
+            std::shared_ptr<SavePlaylistQuery> query =
+                SavePlaylistQuery::Replace(playlistId, sharedTrackList);
+
+            this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+            if (query->GetStatus() == IQuery::Finished) {
+                if (strlen(name)) {
+                    query = SavePlaylistQuery::Rename(playlistId, name);
+
+                    this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+                    if (query->GetStatus() == IQuery::Finished) {
+                        return playlistId;
+                    }
+                }
+                else {
+                    return playlistId;
+                }
+            }
+        }
+        else {
+            std::shared_ptr<SavePlaylistQuery> query =
+                SavePlaylistQuery::Save(name, sharedTrackList);
+
+            this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+            if (query->GetStatus() == IQuery::Finished) {
+                return query->GetPlaylistId();
+            }
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "SavePlaylist failed");
+    }
+
+    return 0;
+}
+
+bool LocalSimpleDataProvider::RenamePlaylist(const uint64_t playlistId, const char* name)
+{
+    try {
+        std::shared_ptr<SavePlaylistQuery> query =
+            SavePlaylistQuery::Rename(playlistId, name);
+
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+        if (query->GetStatus() == IQuery::Finished) {
+            return true;
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "RenamePlaylist failed");
+    }
+
+    return false;
+}
+
+bool LocalSimpleDataProvider::DeletePlaylist(const uint64_t playlistId) {
+    try {
+        std::shared_ptr<DeletePlaylistQuery> query =
+            std::make_shared<DeletePlaylistQuery>(playlistId);
+
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+        if (query->GetStatus() == IQuery::Finished) {
+            return true;
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "DeletePlaylist failed");
+    }
+
+    return false;
 }

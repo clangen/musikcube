@@ -114,7 +114,7 @@ void LocalLibrary::Close() {
     std::thread* thread = nullptr;
 
     {
-        std::unique_lock<std::mutex> lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
         delete this->indexer;
         this->indexer = nullptr;
@@ -159,7 +159,7 @@ int LocalLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callbac
     LocalQueryPtr localQuery = std::dynamic_pointer_cast<LocalQuery>(query);
 
     if (localQuery) {
-        std::unique_lock<std::mutex> lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
         if (this->exit) { /* closed */
             return -1;
@@ -189,7 +189,7 @@ int LocalLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callbac
 
 
 LocalLibrary::QueryContextPtr LocalLibrary::GetNextQuery() {
-    std::unique_lock<std::mutex> lock(this->mutex);
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
     while (!this->queryQueue.size() && !this->exit) {
         this->queueCondition.wait(lock);
     }

@@ -178,6 +178,10 @@ SavePlaylistQuery::SavePlaylistQuery(
 SavePlaylistQuery::~SavePlaylistQuery() {
 }
 
+int64_t SavePlaylistQuery::GetPlaylistId() const {
+    return playlistId;
+}
+
 bool SavePlaylistQuery::AddTracksToPlaylist(
     musik::core::db::Connection &db,
     int64_t playlistId,
@@ -245,17 +249,17 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
         return false;
     }
 
-    int64_t playlistId = db.LastInsertedId();
+    this->playlistId = db.LastInsertedId();
 
     /* add tracks to playlist */
     if (this->tracks) {
-        if (!this->AddTracksToPlaylist(db, playlistId, this->tracks)) {
+        if (!this->AddTracksToPlaylist(db, this->playlistId, this->tracks)) {
             transaction.Cancel();
             return false;
         }
     }
     else {
-        if (!this->AddCategoryTracksToPlaylist(db, playlistId)) {
+        if (!this->AddCategoryTracksToPlaylist(db, this->playlistId)) {
             transaction.Cancel();
             return false;
         }

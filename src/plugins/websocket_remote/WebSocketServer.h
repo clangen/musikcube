@@ -146,6 +146,9 @@ class WebSocketServer {
         void RespondWithPlayTracksByCategory(connection_hdl connection, json& request);
         void RespondWithEnvironment(connection_hdl connection, json& request);
         void RespondWithCurrentTime(connection_hdl connection, json& request);
+        void RespondWithSavePlaylist(connection_hdl connection, json& request);
+        void RespondWithRenamePlaylist(connection_hdl connection, json& request);
+        void RespondWithDeletePlaylist(connection_hdl connection, json& request);
 
         void BroadcastPlaybackOverview();
         void BroadcastPlayQueueChanged();
