@@ -51,8 +51,12 @@ namespace musik { namespace core { namespace db { namespace local {
                     return this->id;
                 }
 
-                virtual musik::core::sdk::ResourceType GetResourceType() {
-                    return musik::core::sdk::ResourceType::Value;
+                virtual musik::core::sdk::IResource::Class GetClass() {
+                    return musik::core::sdk::IResource::Class::Value;
+                }
+
+                virtual const char* GetType() {
+                    return this->type.c_str();
                 }
 
                 virtual int GetValue(char* dst, size_t size) {
@@ -60,6 +64,7 @@ namespace musik { namespace core { namespace db { namespace local {
                 }
 
                 std::string displayValue;
+                std::string type;
                 int64_t id;
             };
 

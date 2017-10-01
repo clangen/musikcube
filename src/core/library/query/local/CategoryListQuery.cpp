@@ -204,6 +204,7 @@ bool CategoryListQuery::OnRun(Connection& db) {
         std::shared_ptr<Result> row(new Result());
         row->id = stmt.ColumnInt64(0);
         row->displayValue = stmt.ColumnText(1);
+        row->type = this->trackField;
         result->push_back(row);
     }
 

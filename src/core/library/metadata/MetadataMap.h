@@ -55,7 +55,8 @@ namespace musik { namespace core {
 
             /* IResource */
             virtual int64_t GetId();
-            virtual musik::core::sdk::ResourceType GetResourceType();
+            virtual musik::core::sdk::IResource::Class GetClass();
+            virtual const char* GetType();
 
             /* IValue */
             virtual int GetValue(char* dst, size_t size);
@@ -66,7 +67,6 @@ namespace musik { namespace core {
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
-            virtual const char* GetDataType();
 
             /* implementation specific */
             void SetValue(const char* key, const std::string& value);

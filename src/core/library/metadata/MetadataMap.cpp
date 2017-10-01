@@ -56,13 +56,13 @@ namespace {
             SdkWrapper(MetadataMapPtr wrapped) { this->wrapped = wrapped; };
             virtual void Release() { this->wrapped.reset(); }
             virtual int64_t GetId() { return this->wrapped->GetId(); }
-            virtual ResourceType GetResourceType() { return this->wrapped->GetResourceType(); }
+            virtual IResource::Class GetClass() { return this->wrapped->GetClass(); }
             virtual int GetString(const char* key, char* dst, int size) { return this->wrapped->GetString(key, dst, size); }
             virtual long long GetInt64(const char* key, long long defaultValue) { return this->wrapped->GetInt64(key, defaultValue); }
             virtual int GetInt32(const char* key, unsigned int defaultValue) { return this->wrapped->GetInt32(key, defaultValue); }
             virtual double GetDouble(const char* key, double defaultValue) { return this->wrapped->GetDouble(key, defaultValue); }
             virtual int GetValue(char* dst, size_t size) { return this->wrapped->GetValue(dst, size); }
-            virtual const char* GetDataType() { return this->wrapped->GetDataType(); }
+            virtual const char* GetType() { return this->wrapped->GetType(); }
             MetadataMapPtr wrapped;
     };
 }
@@ -89,8 +89,8 @@ int64_t MetadataMap::GetId() {
     return this->id;
 }
 
-ResourceType MetadataMap::GetResourceType() {
-    return ResourceType::Map;
+musik::core::sdk::IResource::Class MetadataMap::GetClass() {
+    return musik::core::sdk::IResource::Class::Map;
 }
 
 int MetadataMap::GetString(const char* key, char* dst, int size) {
@@ -154,7 +154,7 @@ int MetadataMap::GetValue(char* dst, size_t size) {
     return CopyString(this->value, dst, size);
 }
 
-const char* MetadataMap::GetDataType() {
+const char* MetadataMap::GetType() {
     return this->type.c_str();
 }
 

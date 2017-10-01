@@ -45,7 +45,6 @@ namespace musik { namespace core { namespace sdk {
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
-            virtual const char* GetDataType() = 0;
     };
 
 } } }
