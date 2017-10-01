@@ -49,7 +49,6 @@
 #include <core/library/track/RetainedTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 
-
 #define TAG "LocalSimpleDataProvider"
 
 using namespace musik::core;
@@ -57,6 +56,59 @@ using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace musik::core::sdk;
+
+class ExternalIdListToTrackListQuery : public LocalQueryBase {
+    public:
+        ExternalIdListToTrackListQuery(
+            ILibraryPtr library,
+            const char** externalIds,
+            size_t externalIdCount)
+        {
+            this->library = library;
+            this->externalIds = externalIds;
+            this->externalIdCount = externalIdCount;
+        }
+
+        virtual ~ExternalIdListToTrackListQuery() {
+        }
+
+        std::shared_ptr<TrackList> Result() {
+            return this->result;
+        }
+
+    protected:
+        virtual bool OnRun(musik::core::db::Connection& db) {
+            std::string sql = "SELECT id FROM tracks WHERE external_id IN(";
+            for (size_t i = 0; i < externalIdCount; i++) {
+                sql += (i == 0) ? "?" : ",?";
+            }
+            sql += ");";
+
+            Statement query(sql.c_str(), db);
+
+            for (size_t i = 0; i < externalIdCount; i++) {
+                query.BindText(i, externalIds[i]);
+            }
+
+            this->result = std::make_shared<TrackList>(this->library);
+
+            while (query.Step() == Row) {
+                result->Add(query.ColumnInt64(0));
+            }
+
+            return true;
+        }
+
+        virtual std::string Name() {
+            return "ExternalIdListToTrackListQuery";
+        }
+
+    private:
+        ILibraryPtr library;
+        const char** externalIds;
+        size_t externalIdCount;
+        std::shared_ptr<TrackList> result;
+};
 
 LocalSimpleDataProvider::LocalSimpleDataProvider(musik::core::ILibraryPtr library)
 : library(library) {
@@ -213,32 +265,25 @@ IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
     return this->QueryAlbums(nullptr, -1, filter);
 }
 
-uint64_t LocalSimpleDataProvider::SavePlaylist(
-    int64_t trackIds[],
-    size_t trackIdCount,
-    const char* name,
+static uint64_t savePlaylist(
+    ILibraryPtr library,
+    std::shared_ptr<TrackList> trackList,
+    const char* playlistName,
     const uint64_t playlistId)
 {
-    if (playlistId == 0 && (!name || !strlen(name))) {
-        return 0;
-    }
-
     try {
-        std::shared_ptr<TrackList> sharedTrackList =
-            std::make_shared<TrackList>(this->library, trackIds, trackIdCount);
-
         /* replacing (and optionally renaming) an existing playlist */
         if (playlistId != 0) {
             std::shared_ptr<SavePlaylistQuery> query =
-                SavePlaylistQuery::Replace(playlistId, sharedTrackList);
+                SavePlaylistQuery::Replace(playlistId, trackList);
 
-            this->library->Enqueue(query, ILibrary::QuerySynchronous);
+            library->Enqueue(query, ILibrary::QuerySynchronous);
 
             if (query->GetStatus() == IQuery::Finished) {
-                if (strlen(name)) {
-                    query = SavePlaylistQuery::Rename(playlistId, name);
+                if (strlen(playlistName)) {
+                    query = SavePlaylistQuery::Rename(playlistId, playlistName);
 
-                    this->library->Enqueue(query, ILibrary::QuerySynchronous);
+                    library->Enqueue(query, ILibrary::QuerySynchronous);
 
                     if (query->GetStatus() == IQuery::Finished) {
                         return playlistId;
@@ -251,9 +296,9 @@ uint64_t LocalSimpleDataProvider::SavePlaylist(
         }
         else {
             std::shared_ptr<SavePlaylistQuery> query =
-                SavePlaylistQuery::Save(name, sharedTrackList);
+                SavePlaylistQuery::Save(playlistName, trackList);
 
-            this->library->Enqueue(query, ILibrary::QuerySynchronous);
+            library->Enqueue(query, ILibrary::QuerySynchronous);
 
             if (query->GetStatus() == IQuery::Finished) {
                 return query->GetPlaylistId();
@@ -262,6 +307,46 @@ uint64_t LocalSimpleDataProvider::SavePlaylist(
     }
     catch (...) {
         musik::debug::err(TAG, "SavePlaylist failed");
+    }
+
+    return 0;
+}
+
+uint64_t LocalSimpleDataProvider::SavePlaylistWithIds(
+    int64_t* trackIds,
+    size_t trackIdCount,
+    const char* playlistName,
+    const uint64_t playlistId)
+{
+    if (playlistId == 0 && (!playlistName || !strlen(playlistName))) {
+        return 0;
+    }
+
+    std::shared_ptr<TrackList> trackList =
+        std::make_shared<TrackList>(this->library, trackIds, trackIdCount);
+
+    return savePlaylist(this->library, trackList, playlistName, playlistId);
+}
+
+uint64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
+    const char** externalIds,
+    size_t externalIdCount,
+    const char* playlistName,
+    const uint64_t playlistId)
+{
+    if (playlistId == 0 && (!playlistName || !strlen(playlistName))) {
+        return 0;
+    }
+
+    using Query = ExternalIdListToTrackListQuery;
+
+    std::shared_ptr<Query> query =
+        std::make_shared<Query> (this->library, externalIds, externalIdCount);
+
+    library->Enqueue(query, ILibrary::QuerySynchronous);
+
+    if (query->GetStatus() == IQuery::Finished) {
+        return savePlaylist(this->library, query->Result(), playlistName, playlistId);
     }
 
     return 0;

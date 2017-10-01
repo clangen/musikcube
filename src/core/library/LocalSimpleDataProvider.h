@@ -78,10 +78,16 @@ namespace musik { namespace core { namespace db { namespace local {
                 int64_t categoryIdValue,
                 const char* filter = "") override;
 
-            virtual uint64_t SavePlaylist(
-                int64_t trackIds[],
+            virtual uint64_t SavePlaylistWithIds(
+                int64_t* trackIds,
                 size_t trackIdCount,
                 const char* name,
+                const uint64_t playlistId = 0) override;
+
+            virtual uint64_t SavePlaylistWithExternalIds(
+                const char** externalIds,
+                size_t externalIdCount,
+                const char* playlistName,
                 const uint64_t playlistId = 0) override;
 
             virtual bool RenamePlaylist(
