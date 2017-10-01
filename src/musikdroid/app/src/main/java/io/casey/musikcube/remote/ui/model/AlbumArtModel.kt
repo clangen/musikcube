@@ -40,7 +40,7 @@ class AlbumArtModel(val track: String,
         }
     }
 
-    class Image(internal val size: Size, internal val url: String)
+    private class Image(internal val size: Size, internal val url: String)
 
     init {
         this.callback = callback ?: DEFAULT_CALLBACK

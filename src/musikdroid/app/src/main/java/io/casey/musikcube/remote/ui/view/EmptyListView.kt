@@ -44,14 +44,8 @@ class EmptyListView : FrameLayout {
     }
 
     var capability: Capability = Capability.OnlineOnly
-        set(value) {
-            field = value
-        }
 
     var alternateView: View? = null
-        get() {
-            return field
-        }
         set(value) {
             field = value
             alternateView?.visibility = if (visibility == View.GONE) View.VISIBLE else View.GONE
@@ -94,7 +88,7 @@ class EmptyListView : FrameLayout {
         offlineContainer = mainView?.findViewById(R.id.offline_container)
         viewOfflineButton = mainView?.findViewById(R.id.offline_tracks_button)
         reconnectButton = mainView?.findViewById(R.id.disconnected_button)
-        emptyTextView = mainView?.findViewById<TextView>(R.id.empty_text_view)
+        emptyTextView = mainView?.findViewById(R.id.empty_text_view)
 
         addView(mainView)
 

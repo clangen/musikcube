@@ -313,19 +313,19 @@ class MainMetadataView : FrameLayout {
 
         addView(child, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
 
-        this.title = findViewById<TextView>(R.id.track_title)
-        this.artist = findViewById<TextView>(R.id.track_artist)
-        this.album = findViewById<TextView>(R.id.track_album)
-        this.volume = findViewById<TextView>(R.id.volume)
+        this.title = findViewById(R.id.track_title)
+        this.artist = findViewById(R.id.track_artist)
+        this.album = findViewById(R.id.track_album)
+        this.volume = findViewById(R.id.volume)
         this.buffering = findViewById(R.id.buffering)
 
-        this.titleWithArt = findViewById<TextView>(R.id.with_art_track_title)
-        this.artistAndAlbumWithArt = findViewById<TextView>(R.id.with_art_artist_and_album)
-        this.volumeWithArt = findViewById<TextView>(R.id.with_art_volume)
+        this.titleWithArt = findViewById(R.id.with_art_track_title)
+        this.artistAndAlbumWithArt = findViewById(R.id.with_art_artist_and_album)
+        this.volumeWithArt = findViewById(R.id.with_art_volume)
 
         this.mainTrackMetadataWithAlbumArt = findViewById(R.id.main_track_metadata_with_art)
         this.mainTrackMetadataNoAlbumArt = findViewById(R.id.main_track_metadata_without_art)
-        this.albumArtImageView = findViewById<ImageView>(R.id.album_art)
+        this.albumArtImageView = findViewById(R.id.album_art)
 
         this.album.setOnClickListener { _ -> navigateToCurrentAlbum() }
         this.artist.setOnClickListener { _ -> navigateToCurrentArtist() }

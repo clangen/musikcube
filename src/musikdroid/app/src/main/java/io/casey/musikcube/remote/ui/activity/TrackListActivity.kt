@@ -144,8 +144,8 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
     }
 
     private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById<TextView>(R.id.title)
-        private val subtitle: TextView = itemView.findViewById<TextView>(R.id.subtitle)
+        private val title: TextView = itemView.findViewById(R.id.title)
+        private val subtitle: TextView = itemView.findViewById(R.id.subtitle)
 
         internal fun bind(entry: JSONObject?, position: Int) {
             itemView.tag = position
