@@ -78,14 +78,14 @@ namespace musik { namespace core {
             virtual State GetState() { return this->state; }
 
             /* IIndexerWriter */
-            virtual musik::core::sdk::IRetainedTrackWriter* CreateWriter();
+            virtual musik::core::sdk::IRetainedTagStore* CreateWriter();
             virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri);
             virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id);
             virtual int RemoveAll(musik::core::sdk::IIndexerSource* source);
 
             virtual bool Save(
                 musik::core::sdk::IIndexerSource* source,
-                musik::core::sdk::IRetainedTrackWriter* track,
+                musik::core::sdk::IRetainedTagStore* track,
                 const char* externalId = "");
 
             /* IIndexerNotifier */

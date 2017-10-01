@@ -373,7 +373,7 @@ void CddaIndexerSource::Interrupt() {
 
 void CddaIndexerSource::ScanTrack(
     IIndexerWriter* indexer,
-    IRetainedTrackWriter* track,
+    IRetainedTagStore* track,
     const char* externalId)
 {
     if (!exists(this->discIds, this->model, externalId)) {

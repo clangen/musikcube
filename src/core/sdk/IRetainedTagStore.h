@@ -36,17 +36,13 @@
 
 #include "ITagStore.h"
 
-namespace musik {
-    namespace core {
-        namespace sdk {
+namespace musik { namespace core { namespace sdk {
 
-            class IRetainedTrackWriter : public ITagStore {
-                public:
-                    virtual void Release() = 0;
-                    virtual void Retain() = 0;
-            };
+    class IRetainedTagStore : public ITagStore {
+        public:
+            virtual void Release() = 0;
+            virtual void Retain() = 0;
+    };
 
-        }
-    }
-}
+} } }
 

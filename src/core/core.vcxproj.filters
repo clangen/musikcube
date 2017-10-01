@@ -447,9 +447,6 @@
     <ClInclude Include="sdk\ITrack.h">
       <Filter>src\sdk\library</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IRetainedTrackWriter.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IRetainedTrack.h">
       <Filter>src\sdk\library</Filter>
     </ClInclude>
@@ -475,6 +472,9 @@
       <Filter>src\sdk\library</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITagStore.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IRetainedTagStore.h">
       <Filter>src\sdk\library</Filter>
     </ClInclude>
   </ItemGroup>

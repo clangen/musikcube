@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/sdk/IRetainedTrack.h>
-#include <core/sdk/IRetainedTrackWriter.h>
+#include <core/sdk/IRetainedTagStore.h>
 #include "Track.h"
 #include <atomic>
 
@@ -61,16 +61,16 @@ namespace musik { namespace core {
             TrackPtr track;
     };
 
-    class RetainedTrackWriter : public musik::core::sdk::IRetainedTrackWriter {
+    class RetainedTagStore : public musik::core::sdk::IRetainedTagStore {
         public:
-            RetainedTrackWriter(TrackPtr track);
-            virtual ~RetainedTrackWriter();
+            RetainedTagStore(TrackPtr track);
+            virtual ~RetainedTagStore();
 
             template <typename T> T As() {
                 return dynamic_cast<T>(track.get());
             }
 
-            /* IRetainedTrackWriter */
+            /* IRetainedTagStore */
             virtual void Release();
             virtual void Retain();
 

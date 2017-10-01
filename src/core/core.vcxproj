@@ -220,7 +220,7 @@
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="sdk\IPreferences.h" />
     <ClInclude Include="sdk\IRetainedTrack.h" />
-    <ClInclude Include="sdk\IRetainedTrackWriter.h" />
+    <ClInclude Include="sdk\IRetainedTagStore.h" />
     <ClInclude Include="sdk\ISimpleDataProvider.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />

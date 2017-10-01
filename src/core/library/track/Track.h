@@ -66,7 +66,7 @@ namespace musik { namespace core {
             virtual std::string GetString(const char* metakey) = 0;
             virtual std::string Uri() = 0;
 
-            /* IWritableTrack */
+            /* ITagStore */
             virtual void SetValue(const char* metakey, const char* value) = 0;
             virtual void ClearValue(const char* metakey) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;

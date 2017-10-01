@@ -49,7 +49,7 @@ RetainedTrack::~RetainedTrack() {
 
 void RetainedTrack::Release() {
     int c = this->count.fetch_sub(1);
-    if (c > 0) {
+    if (c == 1) { /* value before fetch */
         this->count = 0;
         this->track.reset();
         delete this;
@@ -84,37 +84,37 @@ int64_t RetainedTrack::GetId() {
     return track->GetId();
 }
 
-/* * * * RetainedTrackWriter * * * */
+/* * * * RetainedTagStore * * * */
 
-RetainedTrackWriter::RetainedTrackWriter(TrackPtr track) {
+RetainedTagStore::RetainedTagStore(TrackPtr track) {
     this->count = 1;
     this->track = track;
 }
 
-RetainedTrackWriter::~RetainedTrackWriter() {
+RetainedTagStore::~RetainedTagStore() {
 }
 
-void RetainedTrackWriter::Release() {
+void RetainedTagStore::Release() {
     int c = this->count.fetch_sub(1);
-    if (c > 0) {
+    if (c == 1) { /* fetched before sub */
         this->count = 0;
         this->track.reset();
         delete this;
     }
 }
 
-void RetainedTrackWriter::Retain() {
+void RetainedTagStore::Retain() {
     ++this->count;
 }
 
-void RetainedTrackWriter::SetValue(const char* metakey, const char* value) {
+void RetainedTagStore::SetValue(const char* metakey, const char* value) {
     this->track->SetValue(metakey, value);
 }
 
-void RetainedTrackWriter::ClearValue(const char* metakey) {
+void RetainedTagStore::ClearValue(const char* metakey) {
     this->track->ClearValue(metakey);
 }
 
-void RetainedTrackWriter::SetThumbnail(const char *data, long size) {
+void RetainedTagStore::SetThumbnail(const char *data, long size) {
     this->track->SetThumbnail(data, size);
 }

@@ -534,7 +534,7 @@ ScanResult Indexer::SyncSource(IIndexerSource* source) {
                 fprintf(logFile, "    - %s\n", track->GetString(constants::Track::FILENAME).c_str());
             }
 
-            source->ScanTrack(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
+            source->ScanTrack(this, new RetainedTagStore(track), tracks.ColumnText(2));
             this->IncrementTracksScanned();
         }
     }
@@ -859,12 +859,12 @@ bool Indexer::Exited() {
     return this->exit;
 }
 
-IRetainedTrackWriter* Indexer::CreateWriter() {
+IRetainedTagStore* Indexer::CreateWriter() {
     std::shared_ptr<Track> track(new IndexerTrack(0));
-    return new RetainedTrackWriter(track);
+    return new RetainedTagStore(track);
 }
 
-bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track, const char* externalId) {
+bool Indexer::Save(IIndexerSource* source, IRetainedTagStore* track, const char* externalId) {
     if (source->SourceId() == 0) {
         return false;
     }
@@ -875,7 +875,7 @@ bool Indexer::Save(IIndexerSource* source, IRetainedTrackWriter* track, const ch
 
     /* two levels of unpacking with dynamic_casts. don't tell anyone,
     it'll be our little secret. */
-    RetainedTrackWriter* rtw = dynamic_cast<RetainedTrackWriter*>(track);
+    RetainedTagStore* rtw = dynamic_cast<RetainedTagStore*>(track);
     if (rtw) {
         IndexerTrack* it = rtw->As<IndexerTrack*>();
         if (it) {
