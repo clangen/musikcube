@@ -792,7 +792,10 @@ void WebSocketServer::RespondWithSavePlaylist(connection_hdl connection, json& r
 
         size_t count = ids.size();
         int64_t* idArray = new int64_t[count];
-        std::copy(ids.begin(), ids.end(), idArray);
+
+        if (count > 0) {
+            std::copy(ids.begin(), ids.end(), idArray);
+        }
 
         uint64_t newPlaylistId = this->context.dataProvider
             ->SavePlaylist(idArray, count, name.c_str(), id);
