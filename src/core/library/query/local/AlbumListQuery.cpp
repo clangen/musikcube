@@ -109,7 +109,7 @@ MetadataMapListPtr AlbumListQuery::GetResult() {
     return this->result;
 }
 
-musik::core::sdk::IMetadataMapList* AlbumListQuery::GetSdkResult() {
+musik::core::sdk::IMapList* AlbumListQuery::GetSdkResult() {
     return this->result->GetSdkValue();
 }
 
@@ -148,9 +148,7 @@ bool AlbumListQuery::OnRun(Connection& db) {
 
     while (stmt.Step() == Row) {
         std::shared_ptr<MetadataMap> row(new MetadataMap(
-            stmt.ColumnInt64(0),
-            stmt.ColumnText(1),
-            "album"));
+            stmt.ColumnInt64(0), stmt.ColumnText(1), "album"));
 
         row->SetValue(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
         row->SetValue(Track::ALBUM_ARTIST, stmt.ColumnText(3));

@@ -50,7 +50,7 @@ namespace musik { namespace core {
 
             /* ITrack */
             virtual int64_t GetId();
-            virtual int GetValue(const char* key, char* dst, int size);
+            virtual int GetString(const char* key, char* dst, int size);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
@@ -74,7 +74,7 @@ namespace musik { namespace core {
             virtual void Release();
             virtual void Retain();
 
-            /* ITrackWriter */
+            /* ITagStore */
             virtual void SetValue(const char* metakey, const char* value);
             virtual void ClearValue(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);

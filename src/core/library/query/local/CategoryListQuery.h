@@ -36,7 +36,7 @@
 
 #include <core/library/query/local/LocalQueryBase.h>
 #include <core/db/Connection.h>
-#include <core/sdk/IMetadataValueList.h>
+#include <core/sdk/IValueList.h>
 #include <core/support/Common.h>
 #include <memory>
 
@@ -46,13 +46,13 @@ namespace musik { namespace core { namespace db { namespace local {
         public:
             /* note we implement the SDK's IMetadataValue interface so
             we can return data to plugins! */
-            struct Result : public musik::core::sdk::IMetadataValue {
+            struct Result : public musik::core::sdk::IValue {
                 virtual int64_t GetId() {
                     return this->id;
                 }
 
-                virtual const char* GetValue() {
-                    return this->displayValue.c_str();
+                virtual musik::core::sdk::ResourceType GetResourceType() {
+                    return musik::core::sdk::ResourceType::Value;
                 }
 
                 virtual int GetValue(char* dst, size_t size) {
@@ -77,7 +77,7 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual ResultList GetResult();
             virtual int GetIndexOf(int64_t id);
 
-            musik::core::sdk::IMetadataValueList* GetSdkResult();
+            musik::core::sdk::IValueList* GetSdkResult();
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);

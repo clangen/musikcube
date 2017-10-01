@@ -343,17 +343,17 @@ size_t TrackListView::Adapter::GetEntryCount() {
 
 static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
     std::string trackNum = text::Align(
-        track->GetValue(constants::Track::TRACK_NUM),
+        track->GetString(constants::Track::TRACK_NUM),
         text::AlignRight,
         TRACK_COL_WIDTH);
 
     std::string duration = text::Align(
-        musik::glue::duration::Duration(track->GetValue(constants::Track::DURATION)),
+        musik::glue::duration::Duration(track->GetString(constants::Track::DURATION)),
         text::AlignRight,
         DURATION_COL_WIDTH);
 
     std::string artist = text::Align(
-        track->GetValue(constants::Track::ARTIST),
+        track->GetString(constants::Track::ARTIST),
         text::AlignLeft,
         ARTIST_COL_WIDTH);
 
@@ -367,7 +367,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
     titleWidth = std::max(0, titleWidth);
 
     std::string title = text::Align(
-        track->GetValue(constants::Track::TITLE),
+        track->GetString(constants::Track::TITLE),
         text::AlignLeft,
         (int) titleWidth);
 
@@ -386,7 +386,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         TrackPtr track = parent.tracks->Get(trackIndex);
 
         if (track) {
-            std::string album = track->GetValue(constants::Track::ALBUM);
+            std::string album = track->GetString(constants::Track::ALBUM);
 
             if (!album.size()) {
                 album = _TSTR("tracklist_unknown_album");

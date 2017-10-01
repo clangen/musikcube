@@ -62,7 +62,7 @@ LibraryTrack::LibraryTrack(int64_t id, musik::core::ILibraryPtr library)
 LibraryTrack::~LibraryTrack() {
 }
 
-std::string LibraryTrack::GetValue(const char* metakey) {
+std::string LibraryTrack::GetString(const char* metakey) {
     std::unique_lock<std::mutex> lock(this->data.mutex);
     MetadataMap::iterator metavalue = this->data.metadata.find(metakey);
     if (metavalue != this->data.metadata.end()) {
@@ -73,9 +73,9 @@ std::string LibraryTrack::GetValue(const char* metakey) {
 
 long long LibraryTrack::GetInt64(const char* key, long long defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = GetString(key);
         if (value.size()) {
-            return std::stoll(GetValue(key));
+            return std::stoll(GetString(key));
         }
     }
     catch (...) {
@@ -85,9 +85,9 @@ long long LibraryTrack::GetInt64(const char* key, long long defaultValue) {
 
 int LibraryTrack::GetInt32(const char* key, unsigned int defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = GetString(key);
         if (value.size()) {
-            return std::stol(GetValue(key));
+            return std::stol(GetString(key));
         }
     }
     catch (...) {
@@ -97,9 +97,9 @@ int LibraryTrack::GetInt32(const char* key, unsigned int defaultValue) {
 
 double LibraryTrack::GetDouble(const char* key, double defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = GetString(key);
         if (value.size()) {
-            return std::stod(GetValue(key));
+            return std::stod(GetString(key));
         }
     }
     catch (...) {
@@ -126,11 +126,11 @@ void LibraryTrack::SetThumbnail(const char *data, long size) {
 }
 
 std::string LibraryTrack::Uri() {
-    return this->GetValue("filename");
+    return this->GetString("filename");
 }
 
-int LibraryTrack::GetValue(const char* key, char* dst, int size) {
-    return CopyString(this->GetValue(key), dst, size);
+int LibraryTrack::GetString(const char* key, char* dst, int size) {
+    return CopyString(this->GetString(key), dst, size);
 }
 
 int LibraryTrack::Uri(char* dst, int size) {
@@ -166,7 +166,7 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
     /* if no ID is specified, see if we can look one up by filename
     in the current database. */
     if (target->GetId() == 0) {
-        std::string path = target->GetValue("filename");
+        std::string path = target->GetString("filename");
 
         if (!path.size()) {
             return false;

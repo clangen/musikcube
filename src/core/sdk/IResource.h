@@ -34,13 +34,16 @@
 
 #pragma once
 
+#include <stddef.h>
+#include "constants.h"
+
 namespace musik { namespace core { namespace sdk {
 
-    class ITrackWriter {
+    class IResource {
         public:
-            virtual void SetValue(const char* metakey, const char* value) = 0;
-            virtual void ClearValue(const char* metakey) = 0;
-            virtual void SetThumbnail(const char *data, long size) = 0; /* should be SetBlob with a key */
+            virtual int64_t GetId() = 0;
+            virtual ResourceType GetResourceType() = 0;
     };
 
 } } }
+

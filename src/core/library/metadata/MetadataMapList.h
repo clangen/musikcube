@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IMetadataMapList.h>
+#include <core/sdk/IMapList.h>
 #include "MetadataMap.h"
 #include <vector>
 #include <memory>
@@ -42,22 +42,21 @@
 namespace musik { namespace core {
 
     class MetadataMapList :
-        public musik::core::sdk::IMetadataMapList,
+        public musik::core::sdk::IMapList,
         public std::enable_shared_from_this<MetadataMapList>
     {
         public:
             MetadataMapList();
             virtual ~MetadataMapList();
 
-            /* IMetadataMapList */
+            /* IMapList */
             virtual void Release();
             virtual size_t Count() const;
-            virtual musik::core::sdk::IMetadataMap* GetMetadata(size_t index) const;
+            virtual musik::core::sdk::IMap* GetAt(size_t index) const;
 
             /* implementation specific */
             void Add(MetadataMapPtr entry);
-            MetadataMapPtr Get(size_t index);
-            musik::core::sdk::IMetadataMapList* GetSdkValue();
+            musik::core::sdk::IMapList* GetSdkValue();
 
         private:
             std::vector<MetadataMapPtr> entries;

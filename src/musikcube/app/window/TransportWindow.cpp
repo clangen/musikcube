@@ -195,22 +195,22 @@ struct musik::cube::TransportDisplayCache {
             this->track = track;
 
             if (this->track) {
-                title = this->track->GetValue(constants::Track::TITLE);
+                title = this->track->GetString(constants::Track::TITLE);
                 title = title.size() ? title : Strings.EMPTY_SONG;
                 titleCols = u8cols(title);
 
-                album = this->track->GetValue(constants::Track::ALBUM);
+                album = this->track->GetString(constants::Track::ALBUM);
                 album = album.size() ? album : Strings.EMPTY_ALBUM;
                 albumCols = u8cols(album);
 
-                artist = this->track->GetValue(constants::Track::ARTIST);
+                artist = this->track->GetString(constants::Track::ARTIST);
                 artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
                 artistCols = u8cols(artist);
 
                 secondsTotal = (int)transport.GetDuration();
                 if (secondsTotal <= 0) {
                     std::string duration =
-                        this->track->GetValue(constants::Track::DURATION);
+                        this->track->GetString(constants::Track::DURATION);
 
                     if (duration.size()) {
                         secondsTotal = boost::lexical_cast<int>(duration);

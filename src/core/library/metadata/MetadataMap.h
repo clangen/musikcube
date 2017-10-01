@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IMetadataMap.h>
+#include <core/sdk/IMap.h>
 #include <string>
 #include <unordered_map>
 #include <memory>
@@ -42,36 +42,40 @@
 namespace musik { namespace core {
 
     class MetadataMap :
-        public musik::core::sdk::IMetadataMap,
+        public musik::core::sdk::IMap,
         public std::enable_shared_from_this<MetadataMap>
     {
         public:
             MetadataMap(
                 int64_t id,
-                const std::string& description,
+                const std::string& value,
                 const std::string& type);
 
             virtual ~MetadataMap();
 
-            /* IMetadataMap */
-            virtual void Release();
+            /* IResource */
             virtual int64_t GetId();
-            virtual const char* GetDescription();
-            virtual const char* GetType();
+            virtual musik::core::sdk::ResourceType GetResourceType();
 
-            virtual int GetValue(const char* key, char* dst, int size);
+            /* IValue */
+            virtual int GetValue(char* dst, size_t size);
+
+            /* IMap */
+            virtual void Release();
+            virtual int GetString(const char* key, char* dst, int size);
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
+            virtual const char* GetDataType();
 
             /* implementation specific */
             void SetValue(const char* key, const std::string& value);
             std::string GetValue(const char* key);
-            musik::core::sdk::IMetadataMap* GetSdkValue();
+            musik::core::sdk::IMap* GetSdkValue();
 
         private:
             int64_t id;
-            std::string type, description;
+            std::string type, value;
             std::unordered_map<std::string, std::string> metadata;
     };
 

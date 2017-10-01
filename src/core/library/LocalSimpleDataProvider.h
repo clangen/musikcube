@@ -65,15 +65,15 @@ namespace musik { namespace core { namespace db { namespace local {
                     int limit = -1,
                     int offset = 0) override;
 
-            virtual musik::core::sdk::IMetadataValueList*
+            virtual musik::core::sdk::IValueList*
                 QueryCategory(
                     const char* type,
                     const char* filter = "") override;
 
-            virtual musik::core::sdk::IMetadataMapList*
+            virtual musik::core::sdk::IMapList*
                 QueryAlbums(const char* filter = "") override;
 
-            virtual musik::core::sdk::IMetadataMapList* QueryAlbums(
+            virtual musik::core::sdk::IMapList* QueryAlbums(
                 const char* categoryIdName,
                 int64_t categoryIdValue,
                 const char* filter = "") override;

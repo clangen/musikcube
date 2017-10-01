@@ -34,13 +34,13 @@
 
 #pragma once
 
-#include "ITrackWriter.h"
+#include "ITagStore.h"
 
 namespace musik {
     namespace core {
         namespace sdk {
 
-            class IRetainedTrackWriter : public ITrackWriter {
+            class IRetainedTrackWriter : public ITagStore {
                 public:
                     virtual void Release() = 0;
                     virtual void Retain() = 0;

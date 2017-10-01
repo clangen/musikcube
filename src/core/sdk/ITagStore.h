@@ -34,16 +34,13 @@
 
 #pragma once
 
-#include <stddef.h>
-
 namespace musik { namespace core { namespace sdk {
 
-    class IMetadataValue {
+    class ITagStore {
         public:
-            virtual int64_t GetId() = 0;
-            virtual const char* GetValue() = 0;
-            virtual int GetValue(char* dst, size_t size) = 0;
+            virtual void SetValue(const char* metakey, const char* value) = 0;
+            virtual void ClearValue(const char* metakey) = 0;
+            virtual void SetThumbnail(const char *data, long size) = 0; /* should be SetBlob with a key */
     };
 
 } } }
-

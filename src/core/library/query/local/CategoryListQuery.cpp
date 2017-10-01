@@ -126,9 +126,9 @@ static std::map<std::string, std::string> FILTERED_FIELD_TO_QUERY_MAP = {
 };
 
 /* data structure that we can return to plugins who need metadata info */
-class MetadataList : public musik::core::sdk::IMetadataValueList {
+class ValueList : public musik::core::sdk::IValueList {
     public:
-        MetadataList(CategoryListQuery::ResultList results) {
+        ValueList(CategoryListQuery::ResultList results) {
             this->results = results;
         }
 
@@ -140,7 +140,7 @@ class MetadataList : public musik::core::sdk::IMetadataValueList {
             return this->results->size();
         }
 
-        virtual musik::core::sdk::IMetadataValue* GetAt(size_t index) {
+        virtual musik::core::sdk::IValue* GetAt(size_t index) {
             return this->results->at(index).get();
         }
 
@@ -167,8 +167,8 @@ CategoryListQuery::ResultList CategoryListQuery::GetResult() {
     return this->result;
 }
 
-musik::core::sdk::IMetadataValueList* CategoryListQuery::GetSdkResult() {
-    return new MetadataList(this->result);
+musik::core::sdk::IValueList* CategoryListQuery::GetSdkResult() {
+    return new ValueList(this->result);
 }
 
 int CategoryListQuery::GetIndexOf(int64_t id) {

@@ -35,7 +35,7 @@
 #pragma once
 
 #include <core/db/Connection.h>
-#include <core/sdk/IMetadataReader.h>
+#include <core/sdk/ITagReader.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/sdk/IIndexerWriter.h>
 #include <core/sdk/IIndexerNotifier.h>
@@ -103,7 +103,7 @@ namespace musik { namespace core {
             };
 
             typedef std::vector<std::shared_ptr<
-                musik::core::sdk::IMetadataReader> > MetadataReaderList;
+                musik::core::sdk::ITagReader> > TagReaderList;
 
             typedef std::vector<std::shared_ptr<
                 musik::core::sdk::IDecoderFactory> > DecoderList;
@@ -150,7 +150,7 @@ namespace musik { namespace core {
             std::atomic<size_t> tracksScanned;
             std::deque<AddRemoveContext> addRemoveQueue;
             std::deque<SyncContext> syncQueue;
-            MetadataReaderList metadataReaders;
+            TagReaderList tagReaders;
             DecoderList audioDecoders;
             IndexerSourceList sources;
             std::shared_ptr<musik::core::Preferences> prefs;

@@ -287,22 +287,22 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
 
 static std::string formatWithAlbum(TrackPtr track, size_t width) {
     std::string trackNum = text::Align(
-        track->GetValue(constants::Track::TRACK_NUM),
+        track->GetString(constants::Track::TRACK_NUM),
         text::AlignRight,
         TRACK_COL_WIDTH);
 
     std::string duration = text::Align(
-        duration::Duration(track->GetValue(constants::Track::DURATION)),
+        duration::Duration(track->GetString(constants::Track::DURATION)),
         text::AlignRight,
         DURATION_COL_WIDTH);
 
     std::string album = text::Align(
-        track->GetValue(constants::Track::ALBUM),
+        track->GetString(constants::Track::ALBUM),
         text::AlignLeft,
         ALBUM_COL_WIDTH);
 
     std::string artist = text::Align(
-        track->GetValue(constants::Track::ARTIST),
+        track->GetString(constants::Track::ARTIST),
         text::AlignLeft,
         ARTIST_COL_WIDTH);
 
@@ -317,7 +317,7 @@ static std::string formatWithAlbum(TrackPtr track, size_t width) {
     titleWidth = std::max(0, titleWidth);
 
     std::string title = text::Align(
-        track->GetValue(constants::Track::TITLE),
+        track->GetString(constants::Track::TITLE),
         text::AlignLeft,
         (int) titleWidth);
 

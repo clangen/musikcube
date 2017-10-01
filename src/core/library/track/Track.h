@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/ITrackWriter.h>
+#include <core/sdk/ITagStore.h>
 #include <core/library/ILibrary.h>
 #include <core/sdk/ITrack.h>
 #include <boost/shared_ptr.hpp>
@@ -48,7 +48,7 @@ namespace musik { namespace core {
     typedef std::vector<TrackPtr> TrackVector;
 
     class Track :
-        public musik::core::sdk::ITrackWriter,
+        public musik::core::sdk::ITagStore,
         public musik::core::sdk::ITrack
     {
         public:
@@ -63,7 +63,7 @@ namespace musik { namespace core {
             virtual musik::core::ILibraryPtr Library();
             virtual int LibraryId();
 
-            virtual std::string GetValue(const char* metakey) = 0;
+            virtual std::string GetString(const char* metakey) = 0;
             virtual std::string Uri() = 0;
 
             /* IWritableTrack */
@@ -72,7 +72,7 @@ namespace musik { namespace core {
             virtual void SetThumbnail(const char *data, long size) = 0;
 
             /* ITrack */
-            virtual int GetValue(const char* key, char* dst, int size) = 0;
+            virtual int GetString(const char* key, char* dst, int size) = 0;
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;

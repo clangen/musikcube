@@ -34,20 +34,16 @@
 
 #pragma once
 
-#include "constants.h"
+#include <stddef.h>
+#include "IValue.h"
 
 namespace musik { namespace core { namespace sdk {
 
-    class IMetadataMap {
+    class IValueList {
         public:
             virtual void Release() = 0;
-            virtual int64_t GetId() = 0;
-            virtual int GetValue(const char* key, char* dst, int size) = 0;
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
-            virtual const char* GetDescription() = 0;
-            virtual const char* GetType() = 0;
+            virtual size_t Count() = 0;
+            virtual IValue* GetAt(size_t index) = 0;
     };
 
 } } }

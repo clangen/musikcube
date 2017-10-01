@@ -34,16 +34,16 @@
 
 #pragma once
 
+#include "IMap.h"
 #include <stddef.h>
-#include "IMetadataValue.h"
 
 namespace musik { namespace core { namespace sdk {
 
-    class IMetadataValueList {
+    class IMapList {
         public:
             virtual void Release() = 0;
-            virtual size_t Count() = 0;
-            virtual IMetadataValue* GetAt(size_t index) = 0;
+            virtual size_t Count() const = 0;
+            virtual IMap* GetAt(size_t index) const = 0;
     };
 
 } } }

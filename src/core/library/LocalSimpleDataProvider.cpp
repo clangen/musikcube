@@ -219,7 +219,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
     return nullptr;
 }
 
-IMetadataValueList* LocalSimpleDataProvider::QueryCategory(const char* type, const char* filter) {
+IValueList* LocalSimpleDataProvider::QueryCategory(const char* type, const char* filter) {
     try {
         std::shared_ptr<CategoryListQuery> search(
             new CategoryListQuery(type, std::string(filter ? filter : "")));
@@ -237,7 +237,7 @@ IMetadataValueList* LocalSimpleDataProvider::QueryCategory(const char* type, con
     return nullptr;
 }
 
-IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(
+IMapList* LocalSimpleDataProvider::QueryAlbums(
     const char* categoryIdName,
     int64_t categoryIdValue,
     const char* filter)
@@ -261,7 +261,7 @@ IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(
     return nullptr;
 }
 
-IMetadataMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
+IMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
     return this->QueryAlbums(nullptr, -1, filter);
 }
 

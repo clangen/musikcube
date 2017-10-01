@@ -75,7 +75,7 @@ IndexerTrack::~IndexerTrack() {
     this->internalMetadata  = nullptr;
 }
 
-std::string IndexerTrack::GetValue(const char* metakey) {
+std::string IndexerTrack::GetString(const char* metakey) {
     if (metakey && this->internalMetadata) {
         MetadataMap::iterator metavalue = this->internalMetadata->metadata.find(metakey);
         if (metavalue != this->internalMetadata->metadata.end()) {
@@ -88,9 +88,9 @@ std::string IndexerTrack::GetValue(const char* metakey) {
 
 long long IndexerTrack::GetInt64(const char* key, long long defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = GetString(key);
         if (value.size()) {
-            return std::stoll(GetValue(key));
+            return std::stoll(GetString(key));
         }
     } catch (...) {
     }
@@ -99,9 +99,9 @@ long long IndexerTrack::GetInt64(const char* key, long long defaultValue) {
 
 int IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = GetString(key);
         if (value.size()) {
-            return std::stol(GetValue(key));
+            return std::stol(GetString(key));
         }
     }
     catch (...) {
@@ -111,9 +111,9 @@ int IndexerTrack::GetInt32(const char* key, unsigned int defaultValue) {
 
 double IndexerTrack::GetDouble(const char* key, double defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = GetString(key);
         if (value.size()) {
-            return std::stod(GetValue(key));
+            return std::stod(GetString(key));
         }
     } catch (...) {
     }
@@ -145,11 +145,11 @@ void IndexerTrack::SetThumbnail(const char *data, long size) {
 }
 
 std::string IndexerTrack::Uri() {
-    return this->GetValue("filename");
+    return this->GetString("filename");
 }
 
-int IndexerTrack::GetValue(const char* key, char* dst, int size) {
-    return CopyString(this->GetValue(key), dst, size);
+int IndexerTrack::GetString(const char* key, char* dst, int size) {
+    return CopyString(this->GetString(key), dst, size);
 }
 
 int IndexerTrack::Uri(char* dst, int size) {
@@ -202,7 +202,7 @@ bool IndexerTrack::NeedsToBeIndexed(
             "FROM tracks t " \
             "WHERE filename=?", dbConnection);
 
-        stmt.BindText(0, this->GetValue("filename"));
+        stmt.BindText(0, this->GetString("filename"));
 
         bool fileDifferent = true;
 
@@ -226,7 +226,7 @@ static int64_t writeToTracksTable(
     db::Connection &dbConnection,
     IndexerTrack& track)
 {
-    std::string externalId = track.GetValue("external_id");
+    std::string externalId = track.GetString("external_id");
     int64_t id = track.GetId();
 
     if (externalId.size() == 0) {
@@ -248,10 +248,10 @@ static int64_t writeToTracksTable(
             }
         }
         else {
-            std::string fn = track.GetValue("filename");
+            std::string fn = track.GetString("filename");
             if (fn.size()) {
                 db::Statement stmt("SELECT id, external_id FROM tracks WHERE filename=?", dbConnection);
-                stmt.BindText(0, track.GetValue("filename"));
+                stmt.BindText(0, track.GetString("filename"));
                 if (stmt.Step() == db::Row) {
                     id = stmt.ColumnInt64(0);
                     track.SetId(id);
@@ -279,17 +279,17 @@ static int64_t writeToTracksTable(
 
     db::Statement stmt(query.c_str(), dbConnection);
 
-    stmt.BindText(0, track.GetValue("track"));
-    stmt.BindText(1, track.GetValue("disc"));
-    stmt.BindText(2, track.GetValue("bpm"));
+    stmt.BindText(0, track.GetString("track"));
+    stmt.BindText(1, track.GetString("disc"));
+    stmt.BindText(2, track.GetString("bpm"));
     stmt.BindInt32(3, track.GetInt32("duration"));
     stmt.BindInt32(4, track.GetInt32("filesize"));
-    stmt.BindText(5, track.GetValue("year"));
-    stmt.BindText(6, track.GetValue("title"));
-    stmt.BindText(7, track.GetValue("filename"));
+    stmt.BindText(5, track.GetString("year"));
+    stmt.BindText(6, track.GetString("title"));
+    stmt.BindText(7, track.GetString("filename"));
     stmt.BindInt32(8, track.GetInt32("filetime"));
     stmt.BindInt64(9, track.GetInt64("path_id"));
-    stmt.BindText(10, track.GetValue("external_id"));
+    stmt.BindText(10, track.GetString("external_id"));
 
     if (id != 0) {
         stmt.BindInt64(11, id);
@@ -486,22 +486,22 @@ static size_t hash32(const char* str) {
 }
 
 static std::string createTrackExternalId(IndexerTrack& track) {
-    size_t hash1 = (size_t) hash32(track.GetValue("filename").c_str());
+    size_t hash1 = (size_t) hash32(track.GetString("filename").c_str());
 
     size_t hash2 = (size_t) hash32(
-        (track.GetValue("title") +
-        track.GetValue("album") +
-        track.GetValue("artist") +
-        track.GetValue("album_artist") +
-        track.GetValue("filesize") +
-        track.GetValue("duration")).c_str());
+        (track.GetString("title") +
+        track.GetString("album") +
+        track.GetString("artist") +
+        track.GetString("album_artist") +
+        track.GetString("filesize") +
+        track.GetString("duration")).c_str());
 
     return std::string("local-") + std::to_string(hash1) + "-" + std::to_string(hash2);
 }
 
 int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
-    std::string album = this->GetValue("album");
-    std::string value = album + "-" + this->GetValue("album_artist");
+    std::string album = this->GetString("album");
+    std::string value = album + "-" + this->GetString("album_artist");
 
     /* ideally we'd use std::hash<>, but on some platforms this returns a 64-bit
     unsigned number, which cannot be easily used with sqlite3. */
@@ -536,7 +536,7 @@ int64_t IndexerTrack::SaveSingleValueField(
         "SELECT id FROM %1% WHERE name=?") % fieldTableName);
 
     db::Statement stmt(selectQuery.c_str(), dbConnection);
-    std::string value = this->GetValue(trackMetadataKeyName.c_str());
+    std::string value = this->GetString(trackMetadataKeyName.c_str());
 
     if (metadataIdCache.find(fieldTableName + "-" + value) != metadataIdCache.end()) {
         id = metadataIdCache[fieldTableName + "-" + value];
@@ -636,11 +636,11 @@ int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
     std::unique_lock<std::mutex> lock(sharedWriteMutex);
 
-    if (this->GetValue("album_artist") == "") {
-        this->SetValue("album_artist", this->GetValue("artist").c_str());
+    if (this->GetString("album_artist") == "") {
+        this->SetValue("album_artist", this->GetString("artist").c_str());
     }
 
-    if (this->GetValue("external_id") == "") {
+    if (this->GetString("external_id") == "") {
         this->SetValue("external_id", createTrackExternalId(*this).c_str());
     }
 
@@ -666,7 +666,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     int sourceId = 0;
 
     try {
-        std::string source = this->GetValue("source_id");
+        std::string source = this->GetString("source_id");
         if (source.size()) {
             sourceId = std::stoi(source.c_str());
         }

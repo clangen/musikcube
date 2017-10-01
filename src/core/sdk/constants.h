@@ -101,6 +101,11 @@ namespace musik {
                 ScanRollback
             };
 
+            enum class ResourceType {
+                Value,
+                Map
+            };
+
             namespace category {
                 static const char* Album = "album";
                 static const char* Artist = "artist";

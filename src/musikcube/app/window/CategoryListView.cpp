@@ -177,7 +177,7 @@ void CategoryListView::ScrollToPlaying() {
         /* by name: slower. also, not currently used, but will be in the near
         future when we open up category browsing to other types of metadata */
         else {
-            std::string value = this->playing->GetValue(this->fieldName.c_str());
+            std::string value = this->playing->GetString(this->fieldName.c_str());
             if (value.size()) {
                 /* binary search would be better, but need to research if sqlite
                 properly sorts utf8 strings. */
@@ -272,7 +272,7 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::Scrollabl
             playing = (playingId == parent.metadata->at(index)->id);
         }
         else {
-            playing = parent.playing->GetValue(parent.fieldName.c_str()) == value;
+            playing = parent.playing->GetString(parent.fieldName.c_str()) == value;
         }
     }
 

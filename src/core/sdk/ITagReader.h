@@ -34,13 +34,13 @@
 
 #pragma once
 
-#include "ITrackWriter.h"
+#include "ITagStore.h"
 
 namespace musik { namespace core { namespace sdk {
 
-    class IMetadataReader {
+    class ITagReader {
         public:
-            virtual bool Read(const char *uri, musik::core::sdk::ITrackWriter *target) = 0;
+            virtual bool Read(const char *uri, musik::core::sdk::ITagStore *target) = 0;
             virtual bool CanRead(const char *extension) = 0;
             virtual void Destroy() = 0;
     };

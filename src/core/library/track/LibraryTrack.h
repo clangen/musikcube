@@ -54,7 +54,7 @@ namespace musik { namespace core {
             virtual int64_t GetId();
             virtual void SetId(int64_t id) { this->id = id; }
 
-            virtual std::string GetValue(const char* metakey);
+            virtual std::string GetString(const char* metakey);
             virtual std::string Uri();
 
             /* IWritableTrack */
@@ -66,7 +66,7 @@ namespace musik { namespace core {
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
-            virtual int GetValue(const char* key, char* dst, int size);
+            virtual int GetString(const char* key, char* dst, int size);
             virtual int Uri(char* dst, int size);
 
             virtual MetadataIteratorRange GetValues(const char* metakey);

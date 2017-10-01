@@ -60,8 +60,8 @@ void RetainedTrack::Retain() {
     ++this->count;
 }
 
-int RetainedTrack::GetValue(const char* key, char* dst, int size) {
-    return track->GetValue(key, dst, size);
+int RetainedTrack::GetString(const char* key, char* dst, int size) {
+    return track->GetString(key, dst, size);
 }
 
 int RetainedTrack::Uri(char* dst, int size) {

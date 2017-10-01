@@ -423,9 +423,6 @@
     <ClInclude Include="sdk\IPlaybackRemote.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IMetadataReader.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IPlaybackService.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
@@ -440,9 +437,6 @@
     </ClInclude>
     <ClInclude Include="sdk\IIndexerWriter.h">
       <Filter>src\sdk\indexer</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\ITrackWriter.h">
-      <Filter>src\sdk\library</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITrackListEditor.h">
       <Filter>src\sdk\library</Filter>
@@ -459,20 +453,29 @@
     <ClInclude Include="sdk\IRetainedTrack.h">
       <Filter>src\sdk\library</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IMetadataMap.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataMapList.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataValue.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IMetadataValueList.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IDevice.h">
       <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IValue.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IValueList.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IResource.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMap.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMapList.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITagReader.h">
+      <Filter>src\sdk\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ITagStore.h">
+      <Filter>src\sdk\library</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

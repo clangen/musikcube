@@ -73,7 +73,7 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
         trackQuery.BindInt64(0, (int64_t) this->result->GetId());
     }
     else {
-        const std::string& externalId = this->result->GetValue("external_id");
+        const std::string& externalId = this->result->GetString("external_id");
         if (!externalId.size()) {
             return false;
         }

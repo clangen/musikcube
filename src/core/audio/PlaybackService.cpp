@@ -705,7 +705,7 @@ double PlaybackService::GetDuration() {
 
     if (track) {
         return boost::lexical_cast<double>(
-            track->GetValue(constants::Track::DURATION));
+            track->GetString(constants::Track::DURATION));
     }
 
     return 0.0f;

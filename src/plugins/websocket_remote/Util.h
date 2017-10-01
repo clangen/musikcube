@@ -37,8 +37,8 @@
 #include <string>
 #include <boost/bimap.hpp>
 
-#include <core/sdk/constants.h>
 #include <core/sdk/IPreferences.h>
+#include <core/sdk/IValue.h>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -68,7 +68,12 @@ static std::string GetPreferenceString(
 
 template <typename MetadataT>
 static std::string GetMetadataString(MetadataT* metadata, const std::string& key) {
-    metadata->GetValue(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
+    metadata->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
+    return std::string(threadLocalBuffer);
+}
+
+static std::string GetValueString(musik::core::sdk::IValue* value) {
+    value->GetValue(threadLocalBuffer, sizeof(threadLocalBuffer));
     return std::string(threadLocalBuffer);
 }
 

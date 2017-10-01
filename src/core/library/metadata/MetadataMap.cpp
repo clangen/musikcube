@@ -51,28 +51,29 @@ namespace {
     can pass this to a plugin and it will keep the instance
     around until it's released, even if the containing list is
     released. */
-    class SdkWrapper : public IMetadataMap {
+    class SdkWrapper : public IMap {
         public:
             SdkWrapper(MetadataMapPtr wrapped) { this->wrapped = wrapped; };
             virtual void Release() { this->wrapped.reset(); }
             virtual int64_t GetId() { return this->wrapped->GetId(); }
-            virtual int GetValue(const char* key, char* dst, int size) { return this->wrapped->GetValue(key, dst, size); }
+            virtual ResourceType GetResourceType() { return this->wrapped->GetResourceType(); }
+            virtual int GetString(const char* key, char* dst, int size) { return this->wrapped->GetString(key, dst, size); }
             virtual long long GetInt64(const char* key, long long defaultValue) { return this->wrapped->GetInt64(key, defaultValue); }
             virtual int GetInt32(const char* key, unsigned int defaultValue) { return this->wrapped->GetInt32(key, defaultValue); }
             virtual double GetDouble(const char* key, double defaultValue) { return this->wrapped->GetDouble(key, defaultValue); }
-            virtual const char* GetDescription() { return this->wrapped->GetDescription(); }
-            virtual const char* GetType() { return this->wrapped->GetType(); }
+            virtual int GetValue(char* dst, size_t size) { return this->wrapped->GetValue(dst, size); }
+            virtual const char* GetDataType() { return this->wrapped->GetDataType(); }
             MetadataMapPtr wrapped;
     };
 }
 
 MetadataMap::MetadataMap(
     int64_t id,
-    const std::string& description,
+    const std::string& value,
     const std::string& type)
 {
     this->id = id;
-    this->description = description;
+    this->value = value;
     this->type = type;
 }
 
@@ -88,7 +89,11 @@ int64_t MetadataMap::GetId() {
     return this->id;
 }
 
-int MetadataMap::GetValue(const char* key, char* dst, int size) {
+ResourceType MetadataMap::GetResourceType() {
+    return ResourceType::Map;
+}
+
+int MetadataMap::GetString(const char* key, char* dst, int size) {
     auto it = metadata.find(key);
     if (it != metadata.end()) {
         return CopyString(it->second, dst, size);
@@ -145,11 +150,11 @@ double MetadataMap::GetDouble(const char* key, double defaultValue) {
     return defaultValue;
 }
 
-const char* MetadataMap::GetDescription() {
-    return this->description.c_str();
+int MetadataMap::GetValue(char* dst, size_t size) {
+    return CopyString(this->value, dst, size);
 }
 
-const char* MetadataMap::GetType() {
+const char* MetadataMap::GetDataType() {
     return this->type.c_str();
 }
 
@@ -157,6 +162,6 @@ void MetadataMap::SetValue(const char* key, const std::string& value) {
     this->metadata[key] = value;
 }
 
-musik::core::sdk::IMetadataMap* MetadataMap::GetSdkValue() {
+musik::core::sdk::IMap* MetadataMap::GetSdkValue() {
     return new SdkWrapper(shared_from_this());
 }

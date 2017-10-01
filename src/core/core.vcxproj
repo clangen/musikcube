@@ -200,11 +200,12 @@
     <ClInclude Include="sdk\IIndexerNotifier.h" />
     <ClInclude Include="sdk\IIndexerSource.h" />
     <ClInclude Include="sdk\IIndexerWriter.h" />
-    <ClInclude Include="sdk\IMetadataMap.h" />
-    <ClInclude Include="sdk\IMetadataMapList.h" />
-    <ClInclude Include="sdk\IMetadataReader.h" />
-    <ClInclude Include="sdk\IMetadataValue.h" />
-    <ClInclude Include="sdk\IMetadataValueList.h" />
+    <ClInclude Include="sdk\IMap.h" />
+    <ClInclude Include="sdk\IMapList.h" />
+    <ClInclude Include="sdk\ITagReader.h" />
+    <ClInclude Include="sdk\IResource.h" />
+    <ClInclude Include="sdk\IValue.h" />
+    <ClInclude Include="sdk\IValueList.h" />
     <ClInclude Include="sdk\IOutput.h" />
     <ClInclude Include="sdk\IBufferProvider.h" />
     <ClInclude Include="sdk\IPcmVisualizer.h" />
@@ -225,7 +226,7 @@
     <ClInclude Include="sdk\ITrack.h" />
     <ClInclude Include="sdk\ITrackList.h" />
     <ClInclude Include="sdk\ITrackListEditor.h" />
-    <ClInclude Include="sdk\ITrackWriter.h" />
+    <ClInclude Include="sdk\ITagStore.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\PreferenceKeys.h" />

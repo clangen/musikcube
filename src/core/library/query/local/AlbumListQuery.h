@@ -55,7 +55,7 @@ namespace musik { namespace core { namespace db { namespace local {
             std::string Name() { return "AlbumListQuery"; }
 
             musik::core::MetadataMapListPtr GetResult();
-            musik::core::sdk::IMetadataMapList* GetSdkResult();
+            musik::core::sdk::IMapList* GetSdkResult();
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);

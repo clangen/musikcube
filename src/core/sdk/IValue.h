@@ -32,47 +32,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include "MetadataMapList.h"
+#pragma once
 
-using namespace musik::core;
-using namespace musik::core::sdk;
+#include "IResource.h"
+#include <stddef.h>
 
-namespace {
-    class SdkWrapper : public IMapList {
+namespace musik { namespace core { namespace sdk {
+
+    class IValue : public IResource {
         public:
-            SdkWrapper(MetadataMapListPtr wrapped) { this->wrapped = wrapped; }
-            virtual void Release() { this->wrapped.reset(); }
-            virtual size_t Count() const { return this->wrapped->Count(); }
-            virtual IMap* GetAt(size_t index) const { return this->wrapped->GetAt(index); }
-            MetadataMapListPtr wrapped;
+            virtual int GetValue(char* dst, size_t size) = 0;
     };
-}
 
-MetadataMapList::MetadataMapList() {
+} } }
 
-}
-
-MetadataMapList::~MetadataMapList() {
-
-}
-
-void MetadataMapList::Release() {
-    /* nothing. wrapper helps with cleanup. */
-}
-
-size_t MetadataMapList::Count() const {
-    return this->entries.size();
-}
-
-IMap* MetadataMapList::GetAt(size_t index) const {
-    return this->entries.at(index)->GetSdkValue();
-}
-
-void MetadataMapList::Add(MetadataMapPtr entry) {
-    this->entries.push_back(entry);
-}
-
-IMapList* MetadataMapList::GetSdkValue() {
-    return new SdkWrapper(shared_from_this());
-}

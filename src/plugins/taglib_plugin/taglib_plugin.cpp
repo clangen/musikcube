@@ -52,8 +52,8 @@
 class TaglibPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Destroy() { delete this; }
-        virtual const char* Name() { return "Taglib 1.11 IMetadataReader"; }
-        virtual const char* Version() { return "0.5.0"; }
+        virtual const char* Name() { return "Taglib 1.11 ITagReader"; }
+        virtual const char* Version() { return "0.6.0"; }
         virtual const char* Author() { return "Daniel Önnerby, clangen"; }
         virtual const char* Guid() { return "c77ea7a4-5d57-4f17-8521-aba8eeadeda7"; }
         virtual bool Configurable() { return false; }
@@ -62,7 +62,7 @@ class TaglibPlugin : public musik::core::sdk::IPlugin {
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
-extern "C" DLLEXPORT musik::core::sdk::IMetadataReader* GetMetadataReader() {
+extern "C" DLLEXPORT musik::core::sdk::ITagReader* GetTagReader() {
     return new TaglibMetadataReader();
 }
 

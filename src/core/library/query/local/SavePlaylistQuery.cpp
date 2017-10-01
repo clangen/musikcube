@@ -205,8 +205,8 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
         track = tracks->Get(i);
         if (track) {
             insertTrack.Reset();
-            insertTrack.BindText(0, track->GetValue("external_id"));
-            insertTrack.BindText(1, track->GetValue("source_id"));
+            insertTrack.BindText(0, track->GetString("external_id"));
+            insertTrack.BindText(1, track->GetString("source_id"));
             insertTrack.BindInt64(2, playlistId);
             insertTrack.BindInt32(3, offset++);
 

@@ -35,8 +35,8 @@
 #pragma once
 
 #include "ITrackList.h"
-#include "IMetadataValueList.h"
-#include "IMetadataMapList.h"
+#include "IValueList.h"
+#include "IMapList.h"
 #include "IRetainedTrack.h"
 
 namespace musik { namespace core { namespace sdk {
@@ -59,13 +59,13 @@ namespace musik { namespace core { namespace sdk {
                 int limit = -1,
                 int offset = 0) = 0;
 
-            virtual IMetadataValueList* QueryCategory(
+            virtual IValueList* QueryCategory(
                 const char* type,
                 const char* filter = "") = 0;
 
-            virtual IMetadataMapList* QueryAlbums(const char* filter = "") = 0;
+            virtual IMapList* QueryAlbums(const char* filter = "") = 0;
 
-            virtual IMetadataMapList* QueryAlbums(
+            virtual IMapList* QueryAlbums(
                 const char* categoryIdName,
                 int64_t categoryIdValue,
                 const char* filter = "") = 0;

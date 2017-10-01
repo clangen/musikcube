@@ -604,17 +604,17 @@ void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& re
         std::string category = options.value(key::category, "");
         uint64_t categoryId = options.value(key::category_id, -1);
 
-        IMetadataMapList* albumList = context.dataProvider
+        IMapList* albumList = context.dataProvider
             ->QueryAlbums(category.c_str(), categoryId, filter.c_str());
 
         json result = json::array();
 
-        IMetadataMap* album;
+        IMap* album;
         for (size_t i = 0; i < albumList->Count(); i++) {
-            album = albumList->GetMetadata(i);
+            album = albumList->GetAt(i);
 
             result.push_back({
-                { key::title, album->GetDescription() },
+                { key::title, GetValueString(album) },
                 { key::id, album->GetId() },
                 { key::thumbnail_id, 0 }, /* note: thumbnails aren't supported at the album level yet */
                 { key::album_artist_id, album->GetInt64(key::album_artist_id.c_str()) },
@@ -703,19 +703,19 @@ void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& 
         std::string filter = request[message::options].value(key::filter, "");
 
         if (category.size()) {
-            IMetadataValueList* result = context.dataProvider
+            IValueList* result = context.dataProvider
                 ->QueryCategory(category.c_str(), filter.c_str());
 
             if (result != nullptr) {
                 json list = json::array();
 
-                IMetadataValue* current;
+                IValue* current;
                 for (size_t i = 0; i < result->Count(); i++) {
                     current = result->GetAt(i);
 
                     list[i] = {
                         { key::id, current->GetId() },
-                        { key::value, current->GetValue() }
+                        { key::value, GetValueString(current) }
                     };
                 }
 

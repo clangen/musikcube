@@ -80,7 +80,7 @@ using namespace musik::core::library;
 
 using Thread = std::unique_ptr<boost::thread>;
 
-using MetadataDeleter = PluginFactory::DestroyDeleter<IMetadataReader>;
+using TagReaderDestroyer = PluginFactory::DestroyDeleter<ITagReader>;
 using DecoderDeleter = PluginFactory::DestroyDeleter<IDecoderFactory>;
 using SourceDeleter = PluginFactory::DestroyDeleter<IIndexerSource>;
 
@@ -128,8 +128,8 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
         openLogFile();
     }
 
-    this->metadataReaders = PluginFactory::Instance()
-        .QueryInterface<IMetadataReader, MetadataDeleter>("GetMetadataReader");
+    this->tagReaders = PluginFactory::Instance()
+        .QueryInterface<ITagReader, TagReaderDestroyer>("GetTagReader");
 
     this->audioDecoders = PluginFactory::Instance()
         .QueryInterface<IDecoderFactory, DecoderDeleter>("GetDecoderFactory");
@@ -364,11 +364,11 @@ void Indexer::ReadMetadataFromFile(
         bool saveToDb = false;
 
         /* read the tag from the plugin */
-        typedef MetadataReaderList::iterator Iterator;
-        Iterator it = this->metadataReaders.begin();
-        while (it != this->metadataReaders.end()) {
+        typedef TagReaderList::iterator Iterator;
+        Iterator it = this->tagReaders.begin();
+        while (it != this->tagReaders.end()) {
             try {
-                if ((*it)->CanRead(track.GetValue("extension").c_str())) {
+                if ((*it)->CanRead(track.GetString("extension").c_str())) {
                     if (logFile) {
                         fprintf(logFile, "    - %s\n", file.string().c_str());
                     }
@@ -531,7 +531,7 @@ ScanResult Indexer::SyncSource(IIndexerSource* source) {
             track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
 
             if (logFile) {
-                fprintf(logFile, "    - %s\n", track->GetValue(constants::Track::FILENAME).c_str());
+                fprintf(logFile, "    - %s\n", track->GetString(constants::Track::FILENAME).c_str());
             }
 
             source->ScanTrack(this, new RetainedTrackWriter(track), tracks.ColumnText(2));
