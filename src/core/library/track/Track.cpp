@@ -39,6 +39,8 @@
 
 using namespace musik::core;
 
+/* * * * Track * * * */
+
 Track::~Track() {
 }
 
@@ -53,4 +55,32 @@ ILibraryPtr Track::Library() {
 
 int Track::LibraryId() {
     return 0;
+}
+
+/* * * * TagStore * * * */
+
+template<typename T>
+struct NoDeleter {
+    void operator()(T* t) {
+    }
+};
+
+TagStore::TagStore(TrackPtr track) {
+    this->track = track;
+}
+
+TagStore::TagStore(Track& track) {
+    this->track = TrackPtr(&track, NoDeleter<Track>());
+}
+
+void TagStore::SetValue(const char* key, const char* value) {
+    this->track->SetValue(key, value);
+}
+
+void TagStore::ClearValue(const char* key) {
+    this->track->ClearValue(key);
+}
+
+void TagStore::SetThumbnail(const char *data, long size) {
+    this->track->SetThumbnail(data, size);
 }

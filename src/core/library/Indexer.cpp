@@ -364,6 +364,7 @@ void Indexer::ReadMetadataFromFile(
         bool saveToDb = false;
 
         /* read the tag from the plugin */
+        TagStore store(track);
         typedef TagReaderList::iterator Iterator;
         Iterator it = this->tagReaders.begin();
         while (it != this->tagReaders.end()) {
@@ -373,7 +374,7 @@ void Indexer::ReadMetadataFromFile(
                         fprintf(logFile, "    - %s\n", file.string().c_str());
                     }
 
-                    if ((*it)->Read(file.string().c_str(), &track)) {
+                    if ((*it)->Read(file.string().c_str(), &store)) {
                         saveToDb = true;
                         break;
                     }
@@ -795,9 +796,10 @@ void Indexer::RunAnalyzers() {
         if (LibraryTrack::Load(&track, this->dbConnection)) {
             PluginVector runningAnalyzers;
 
+            TagStore store(track);
             PluginVector::iterator plugin = analyzers.begin();
             for ( ; plugin != analyzers.end(); ++plugin) {
-                if ((*plugin)->Start(&track)) {
+                if ((*plugin)->Start(&store)) {
                     runningAnalyzers.push_back(*plugin);
                 }
             }
@@ -815,7 +817,7 @@ void Indexer::RunAnalyzers() {
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             PluginVector::iterator plugin = runningAnalyzers.begin();
                             while(plugin != runningAnalyzers.end()) {
-                                if ((*plugin)->Analyze(&track, buffer)) {
+                                if ((*plugin)->Analyze(&store, buffer)) {
                                     ++plugin;
                                 }
                                 else {
@@ -830,7 +832,7 @@ void Indexer::RunAnalyzers() {
                         PluginVector::iterator plugin = analyzers.begin();
 
                         for ( ; plugin != analyzers.end(); ++plugin) {
-                            if ((*plugin)->End(&track)) {
+                            if ((*plugin)->End(&store)) {
                                 successPlugins++;
                             }
                         }

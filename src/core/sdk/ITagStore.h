@@ -38,8 +38,8 @@ namespace musik { namespace core { namespace sdk {
 
     class ITagStore {
         public:
-            virtual void SetValue(const char* metakey, const char* value) = 0;
-            virtual void ClearValue(const char* metakey) = 0;
+            virtual void SetValue(const char* key, const char* value) = 0;
+            virtual void ClearValue(const char* value) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0; /* should be SetBlob with a key */
     };
 

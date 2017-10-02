@@ -45,12 +45,8 @@ namespace musik { namespace core {
 
     class Track;
     typedef std::shared_ptr<Track> TrackPtr;
-    typedef std::vector<TrackPtr> TrackVector;
 
-    class Track :
-        public musik::core::sdk::ITagStore,
-        public musik::core::sdk::ITrack
-    {
+    class Track : public musik::core::sdk::ITrack {
         public:
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
@@ -66,9 +62,11 @@ namespace musik { namespace core {
             virtual std::string GetString(const char* metakey) = 0;
             virtual std::string Uri() = 0;
 
-            /* ITagStore */
-            virtual void SetValue(const char* metakey, const char* value) = 0;
-            virtual void ClearValue(const char* metakey) = 0;
+            /* ITrack is a ready only interface; we use the ITagStore interface
+            for writing. we replicate the interface here, and have TagStore pass
+            through to us */
+            virtual void SetValue(const char* key, const char* value) = 0;
+            virtual void ClearValue(const char* key) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;
 
             /* ITrack */
@@ -78,9 +76,23 @@ namespace musik { namespace core {
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
             virtual int Uri(char* dst, int size) = 0;
 
+            /* implementation specific */
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;
             virtual TrackPtr Copy() = 0;
+    };
+
+    class TagStore : public musik::core::sdk::ITagStore {
+        public:
+            TagStore(TrackPtr track);
+            TagStore(Track& track);
+
+            virtual void SetValue(const char* key, const char* value) override;
+            virtual void ClearValue(const char* key) override;
+            virtual void SetThumbnail(const char *data, long size) override;
+
+        private:
+            TrackPtr track;
     };
 
 } }
