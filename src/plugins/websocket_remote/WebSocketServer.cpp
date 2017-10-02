@@ -484,13 +484,13 @@ bool WebSocketServer::RespondWithTracks(
         else {
             json data = json::array();
 
-            IRetainedTrack* track = nullptr;
+            ITrack* track = nullptr;
             for (size_t i = 0; i < tracks->Count(); i++) {
                 if (idsOnly) {
                     data.push_back({ {key::id, tracks->GetId(i) } });
                 }
                 else {
-                    track = tracks->GetRetainedTrack(i);
+                    track = tracks->GetTrack(i);
                     data.push_back(this->ReadTrackMetadata(track));
                 }
 
@@ -563,8 +563,8 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         });
     }
     else {
-        static auto deleter = [](IRetainedTrack* track) { track->Release(); };
-        std::vector<std::shared_ptr<IRetainedTrack>> tracks;
+        static auto deleter = [](ITrack* track) { track->Release(); };
+        std::vector<std::shared_ptr<ITrack>> tracks;
 
         /* edit the playlist so it can be changed while we're getting the tracks
         out of it. */
@@ -574,7 +574,7 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         int to = std::min(trackCount, offset + limit);
 
         for (int i = offset; i < to; i++) {
-            tracks.push_back(std::shared_ptr<IRetainedTrack>(context.playback->GetTrack(i), deleter));
+            tracks.push_back(std::shared_ptr<ITrack>(context.playback->GetTrack(i), deleter));
         }
 
         editor->Release();
@@ -908,7 +908,7 @@ void WebSocketServer::BroadcastPlayQueueChanged() {
     this->Broadcast(broadcast::play_queue_changed, options);
 }
 
-json WebSocketServer::WebSocketServer::ReadTrackMetadata(IRetainedTrack* track) {
+json WebSocketServer::WebSocketServer::ReadTrackMetadata(ITrack* track) {
     return {
         { key::id, track->GetId() },
         { key::external_id, GetMetadataString(track, key::external_id) },
@@ -937,7 +937,7 @@ void WebSocketServer::BuildPlaybackOverview(json& options) {
     options[key::playing_duration] = context.playback->GetDuration();
     options[key::playing_current_time] = context.playback->GetPosition();
 
-    IRetainedTrack* track = context.playback->GetPlayingTrack();
+    ITrack* track = context.playback->GetPlayingTrack();
     if (track) {
         options[key::playing_track] = this->ReadTrackMetadata(track);
         track->Release();

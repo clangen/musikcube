@@ -37,7 +37,7 @@
 #include "ITrackList.h"
 #include "IValueList.h"
 #include "IMapList.h"
-#include "IRetainedTrack.h"
+#include "ITrack.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -48,9 +48,9 @@ namespace musik { namespace core { namespace sdk {
                 int limit = -1,
                 int offset = 0) = 0;
 
-            virtual IRetainedTrack* QueryTrackById(int64_t trackId) = 0;
+            virtual ITrack* QueryTrackById(int64_t trackId) = 0;
 
-            virtual IRetainedTrack* QueryTrackByExternalId(const char* externalId) = 0;
+            virtual ITrack* QueryTrackByExternalId(const char* externalId) = 0;
 
             virtual ITrackList* QueryTracksByCategory(
                 const char* categoryType,

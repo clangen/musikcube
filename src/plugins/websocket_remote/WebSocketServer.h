@@ -109,7 +109,7 @@ class WebSocketServer {
         using ConnectionList = std::map<connection_hdl, bool, std::owner_less<connection_hdl>>;
         using json = nlohmann::json;
         using ITrackList = musik::core::sdk::ITrackList;
-        using IRetainedTrack = musik::core::sdk::IRetainedTrack;
+        using ITrack = musik::core::sdk::ITrack;
 
         /* vars */
         Context& context;
@@ -155,7 +155,7 @@ class WebSocketServer {
 
         void GetLimitAndOffset(json& options, int& limit, int& offset);
         ITrackList* QueryTracksByCategory(json& request, int& limit, int& offset);
-        json ReadTrackMetadata(IRetainedTrack* track);
+        json ReadTrackMetadata(ITrack* track);
         void BuildPlaybackOverview(json& options);
 
         void OnOpen(connection_hdl connection);

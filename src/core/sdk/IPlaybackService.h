@@ -35,7 +35,7 @@
 #pragma once
 
 #include "constants.h"
-#include "IRetainedTrack.h"
+#include "ITrack.h"
 #include "ITrackList.h"
 #include "ITrackListEditor.h"
 
@@ -72,10 +72,10 @@ namespace musik { namespace core { namespace sdk {
             virtual size_t GetIndex() = 0;
             virtual size_t Count() = 0;
 
-            virtual IRetainedTrack* GetTrack(size_t index) = 0;
+            virtual ITrack* GetTrack(size_t index) = 0;
 
             /* sdk v2 */
-            virtual IRetainedTrack* GetPlayingTrack() = 0;
+            virtual ITrack* GetPlayingTrack() = 0;
 
             /* sdk v3 */
             virtual void CopyFrom(const ITrackList* trackList) = 0;

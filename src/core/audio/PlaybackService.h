@@ -98,8 +98,8 @@ namespace musik { namespace core { namespace audio {
             virtual double GetPosition();
             virtual void SetPosition(double seconds);
             virtual double GetDuration();
-            virtual musik::core::sdk::IRetainedTrack* GetTrack(size_t index);
-            virtual musik::core::sdk::IRetainedTrack* GetPlayingTrack();
+            virtual musik::core::sdk::ITrack* GetTrack(size_t index);
+            virtual musik::core::sdk::ITrack* GetPlayingTrack();
             virtual void CopyFrom(const musik::core::sdk::ITrackList* source);
             virtual void Play(const musik::core::sdk::ITrackList* source, size_t index);
             virtual musik::core::sdk::ITrackListEditor* EditPlaylist();

@@ -38,7 +38,7 @@
 #include "Transcoder.h"
 #include "TranscodingDataStream.h"
 
-#include <core/sdk/IRetainedTrack.h>
+#include <core/sdk/ITrack.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -337,7 +337,7 @@ int HttpServer::HandleRequest(
             boost::split(parts, urlStr, boost::is_any_of("/"));
             if (parts.size() > 0) {
                 if (parts.at(0) == fragment::audio && parts.size() == 3) {
-                    IRetainedTrack* track = nullptr;
+                    ITrack* track = nullptr;
                     bool byExternalId = (parts.at(1) == fragment::external_id);
 
                     if (byExternalId) {

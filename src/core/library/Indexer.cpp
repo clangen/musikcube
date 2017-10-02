@@ -41,7 +41,6 @@
 #include <core/config.h>
 #include <core/library/track/IndexerTrack.h>
 #include <core/library/track/LibraryTrack.h>
-#include <core/library/track/RetainedTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>

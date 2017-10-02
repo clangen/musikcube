@@ -51,10 +51,10 @@ namespace musik { namespace core { namespace db { namespace local {
                     int limit = -1,
                     int offset = 0) override;
 
-            virtual musik::core::sdk::IRetainedTrack*
+            virtual musik::core::sdk::ITrack*
                 QueryTrackById(int64_t trackId) override;
 
-            virtual musik::core::sdk::IRetainedTrack*
+            virtual musik::core::sdk::ITrack*
                 QueryTrackByExternalId(const char* externalId) override;
 
             virtual musik::core::sdk::ITrackList*

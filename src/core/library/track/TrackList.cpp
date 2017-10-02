@@ -38,7 +38,7 @@
 #include <core/library/query/local/LocalQueryBase.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <core/library/track/RetainedTrack.h>
+#include <core/library/track/Track.h>
 #include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
@@ -148,12 +148,10 @@ TrackPtr TrackList::Get(size_t index) const {
     return TrackPtr();
 }
 
-IRetainedTrack* TrackList::GetRetainedTrack(size_t index) const {
-    return new RetainedTrack(this->Get(index));
-}
-
 ITrack* TrackList::GetTrack(size_t index) const {
-    return this->Get(index).get();
+    auto track = this->Get(index).get();
+    track->Retain();
+    return track;
 }
 
 int64_t TrackList::GetId(size_t index) const {

@@ -47,21 +47,18 @@ namespace musik { namespace core {
     class Track;
     typedef std::shared_ptr<Track> TrackPtr;
 
-    class Track : public musik::core::sdk::ITrack {
+    class Track : 
+        public musik::core::sdk::ITrack,
+        public std::enable_shared_from_this<Track>
+    {
         public:
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
 
             virtual ~Track();
 
-            virtual int64_t GetId();
-            virtual void SetId(int64_t id) = 0;
-
             virtual musik::core::ILibraryPtr Library();
             virtual int LibraryId();
-
-            virtual std::string GetString(const char* metakey) = 0;
-            virtual std::string Uri() = 0;
 
             /* ITrack is a ready only interface; we use the ITagStore interface
             for writing. we replicate the interface here, and have TagStore pass
@@ -71,6 +68,9 @@ namespace musik { namespace core {
             virtual void SetThumbnail(const char *data, long size) = 0;
 
             /* ITrack */
+            virtual void Retain();
+            virtual void Release();
+            virtual int64_t GetId();
             virtual int GetString(const char* key, char* dst, int size) = 0;
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
@@ -78,9 +78,15 @@ namespace musik { namespace core {
             virtual int Uri(char* dst, int size) = 0;
 
             /* implementation specific */
+            virtual void SetId(int64_t id) = 0;
+            virtual std::string GetString(const char* metakey) = 0;
+            virtual std::string Uri() = 0;
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;
             virtual TrackPtr Copy() = 0;
+
+            /* for SDK interop */
+            ITrack* GetSdkValue();
     };
 
     class TagStore : public musik::core::sdk::ITagStore {

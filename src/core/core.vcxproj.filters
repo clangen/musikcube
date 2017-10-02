@@ -124,9 +124,6 @@
     <ClCompile Include="audio\Visualizer.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
-    <ClCompile Include="library\track\RetainedTrack.cpp">
-      <Filter>src\library\track</Filter>
-    </ClCompile>
     <ClCompile Include="audio\Stream.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
@@ -288,9 +285,6 @@
     <ClInclude Include="sdk\constants.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="library\track\RetainedTrack.h">
-      <Filter>src\library\track</Filter>
-    </ClInclude>
     <ClInclude Include="audio\IStream.h">
       <Filter>src\audio</Filter>
     </ClInclude>
@@ -445,9 +439,6 @@
       <Filter>src\sdk\library</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITrack.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\IRetainedTrack.h">
       <Filter>src\sdk\library</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IDevice.h">

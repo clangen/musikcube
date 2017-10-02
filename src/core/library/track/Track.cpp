@@ -39,6 +39,70 @@
 
 using namespace musik::core;
 
+/* * * * SdkWrapper * * * */
+class SdkWrapper : public Track {
+    public:
+        SdkWrapper(TrackPtr track) {
+            this->track = track;
+            this->count = 0;
+        }
+
+        virtual ~SdkWrapper() {
+
+        }
+
+        virtual void Retain() {
+            ++this->count;
+        }
+
+        virtual void Release() {
+            int c = this->count.fetch_sub(1);
+            if (c == 1) { /* fetched before sub */
+                this->count = 0;
+                this->track.reset();
+                delete this;
+            }
+        }
+
+        virtual int GetString(const char* key, char* dst, int size) {
+            return track->GetString(key, dst, size);
+        }
+
+        virtual long long GetInt64(const char* key, long long defaultValue) {
+            return track->GetInt64(key, defaultValue);
+        }
+
+        virtual int GetInt32(const char* key, unsigned int defaultValue) {
+            return track->GetInt32(key, defaultValue);
+        }
+
+        virtual double GetDouble(const char* key, double defaultValue) {
+            return track->GetDouble(key, defaultValue);
+        }
+
+        virtual int Uri(char* dst, int size) {
+            return track->Uri(dst, size);
+        }
+
+        /* pure virtual methods defined by Track, but not defined in ITrack. therefore,
+        these methods cannot be called by the SDK, and should throw. */
+        #define NO_IMPL throw std::runtime_error("not implemented");
+        virtual void SetValue(const char* key, const char* value) override { NO_IMPL }
+        virtual void ClearValue(const char* key) override { NO_IMPL }
+        virtual void SetThumbnail(const char *data, long size) override { NO_IMPL }
+        virtual void SetId(int64_t id) override { NO_IMPL }
+        virtual std::string GetString(const char* metakey) override { NO_IMPL }
+        virtual std::string Uri() override { NO_IMPL }
+        virtual MetadataIteratorRange GetValues(const char* metakey) override { NO_IMPL }
+        virtual MetadataIteratorRange GetAllValues() override { NO_IMPL }
+        virtual TrackPtr Copy() override { NO_IMPL }
+        #undef NO_IMPL
+
+    private:
+        std::atomic<int> count;
+        std::shared_ptr<Track> track;
+};
+
 /* * * * Track * * * */
 
 Track::~Track() {
@@ -55,6 +119,18 @@ ILibraryPtr Track::Library() {
 
 int Track::LibraryId() {
     return 0;
+}
+
+void Track::Retain() {
+    /* nothing. SdkWrapper implements as necessary */
+}
+
+void Track::Release() {
+    /* same as Retain() */
+}
+
+musik::core::sdk::ITrack* Track::GetSdkValue() {
+    return new SdkWrapper(shared_from_this());
 }
 
 /* * * * TagStore * * * */

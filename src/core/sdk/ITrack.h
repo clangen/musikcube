@@ -40,6 +40,8 @@ namespace musik { namespace core { namespace sdk {
 
     class ITrack {
         public:
+            virtual void Retain() = 0;
+            virtual void Release() = 0;
             virtual int64_t GetId() = 0;
             virtual int GetString(const char* key, char* dst, int size) = 0;
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;

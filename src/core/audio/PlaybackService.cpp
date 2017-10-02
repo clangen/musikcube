@@ -38,7 +38,7 @@
 
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <core/library/track/RetainedTrack.h>
+#include <core/library/track/Track.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
@@ -711,23 +711,23 @@ double PlaybackService::GetDuration() {
     return 0.0f;
 }
 
-IRetainedTrack* PlaybackService::GetTrack(size_t index) {
+ITrack* PlaybackService::GetTrack(size_t index) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     const size_t count = this->playlist.Count();
 
     if (count && index < this->playlist.Count()) {
-        return new RetainedTrack(this->playlist.Get(index));
+        return this->playlist.Get(index)->GetSdkValue();
     }
 
     return nullptr;
 }
 
-IRetainedTrack* PlaybackService::GetPlayingTrack() {
+ITrack* PlaybackService::GetPlayingTrack() {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     if (this->playingTrack) {
-        return new RetainedTrack(this->playingTrack);
+        return this->playingTrack->GetSdkValue();
     }
 
     return nullptr;

@@ -117,7 +117,6 @@
     <ClCompile Include="library\query\local\TrackMetadataQuery.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
-    <ClCompile Include="library\track\RetainedTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
     <ClCompile Include="library\track\TrackList.cpp" />
     <ClCompile Include="pch.cpp">
@@ -175,7 +174,6 @@
     <ClInclude Include="library\query\local\TrackMetadataQuery.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
-    <ClInclude Include="library\track\RetainedTrack.h" />
     <ClInclude Include="library\track\Track.h" />
     <ClInclude Include="library\track\TrackList.h" />
     <ClInclude Include="pch.hpp" />
@@ -219,7 +217,6 @@
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="sdk\IPreferences.h" />
-    <ClInclude Include="sdk\IRetainedTrack.h" />
     <ClInclude Include="sdk\ISimpleDataProvider.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />

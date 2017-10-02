@@ -55,7 +55,6 @@ namespace musik { namespace core {
 
             /* ITrackList */
             virtual size_t Count() const;
-            virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) const;
             virtual int64_t GetId(size_t index) const;
             virtual int IndexOf(int64_t id) const;
             virtual musik::core::sdk::ITrack* GetTrack(size_t index) const;

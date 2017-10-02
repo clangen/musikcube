@@ -93,10 +93,6 @@ namespace musik { namespace core { namespace db { namespace local {
                         return this->wrapped->Count();
                     }
 
-                    virtual musik::core::sdk::IRetainedTrack* GetRetainedTrack(size_t index) const {
-                        return this->wrapped->GetRetainedTrack(index);
-                    }
-
                     virtual int64_t GetId(size_t index) const {
                         return this->wrapped->GetId(index);
                     }

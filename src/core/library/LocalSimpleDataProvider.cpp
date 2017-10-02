@@ -46,7 +46,6 @@
 #include <core/library/query/local/SavePlaylistQuery.h>
 #include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/library/track/LibraryTrack.h>
-#include <core/library/track/RetainedTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 
 #define TAG "LocalSimpleDataProvider"
@@ -141,7 +140,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, i
     return nullptr;
 }
 
-IRetainedTrack* LocalSimpleDataProvider::QueryTrackById(int64_t trackId) {
+ITrack* LocalSimpleDataProvider::QueryTrackById(int64_t trackId) {
     try {
         TrackPtr target(new LibraryTrack(trackId, this->library));
 
@@ -151,7 +150,7 @@ IRetainedTrack* LocalSimpleDataProvider::QueryTrackById(int64_t trackId) {
         this->library->Enqueue(search, ILibrary::QuerySynchronous);
 
         if (search->GetStatus() == IQuery::Finished) {
-            return new RetainedTrack(target);
+            return target->GetSdkValue();
         }
     }
     catch (...) {
@@ -161,7 +160,7 @@ IRetainedTrack* LocalSimpleDataProvider::QueryTrackById(int64_t trackId) {
     return nullptr;
 }
 
-IRetainedTrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* externalId) {
+ITrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* externalId) {
     if (strlen(externalId)) {
         try {
             TrackPtr target(new LibraryTrack(0, this->library));
@@ -173,7 +172,7 @@ IRetainedTrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* exte
             this->library->Enqueue(search, ILibrary::QuerySynchronous);
 
             if (search->GetStatus() == IQuery::Finished) {
-                return new RetainedTrack(target);
+                return target->GetSdkValue();
             }
         }
         catch (...) {
