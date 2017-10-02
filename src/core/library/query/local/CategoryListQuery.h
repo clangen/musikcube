@@ -59,8 +59,11 @@ namespace musik { namespace core { namespace db { namespace local {
                     return this->type.c_str();
                 }
 
-                virtual int GetValue(char* dst, size_t size) {
+                virtual size_t GetValue(char* dst, size_t size) {
                     return musik::core::CopyString(this->displayValue, dst, size);
+                }
+
+                virtual void Release() {
                 }
 
                 std::string displayValue;

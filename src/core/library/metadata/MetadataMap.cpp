@@ -61,7 +61,7 @@ namespace {
             virtual long long GetInt64(const char* key, long long defaultValue) { return this->wrapped->GetInt64(key, defaultValue); }
             virtual int GetInt32(const char* key, unsigned int defaultValue) { return this->wrapped->GetInt32(key, defaultValue); }
             virtual double GetDouble(const char* key, double defaultValue) { return this->wrapped->GetDouble(key, defaultValue); }
-            virtual int GetValue(char* dst, size_t size) { return this->wrapped->GetValue(dst, size); }
+            virtual size_t GetValue(char* dst, size_t size) { return this->wrapped->GetValue(dst, size); }
             virtual const char* GetType() { return this->wrapped->GetType(); }
             MetadataMapPtr wrapped;
     };
@@ -150,7 +150,7 @@ double MetadataMap::GetDouble(const char* key, double defaultValue) {
     return defaultValue;
 }
 
-int MetadataMap::GetValue(char* dst, size_t size) {
+size_t MetadataMap::GetValue(char* dst, size_t size) {
     return CopyString(this->value, dst, size);
 }
 

@@ -49,6 +49,7 @@ namespace musik { namespace core { namespace sdk {
             virtual int64_t GetId() = 0;
             virtual Class GetClass() = 0;
             virtual const char* GetType() = 0;
+            virtual void Release() = 0;
     };
 
 } } }

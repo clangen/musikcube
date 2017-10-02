@@ -67,14 +67,23 @@ namespace musik { namespace core {
             virtual void ClearValue(const char* key) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;
 
-            /* ITrack */
-            virtual void Retain();
-            virtual void Release();
-            virtual int64_t GetId();
+            /* IResource */
+            virtual int64_t GetId() override;
+            virtual Class GetClass() override;
+            virtual const char* GetType() override;
+
+            /* IValue */
+            virtual size_t GetValue(char* dst, size_t size) override;
+
+            /* IMap */
+            virtual void Release() override;
             virtual int GetString(const char* key, char* dst, int size) = 0;
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
+
+            /* ITrack */
+            virtual void Retain() override;
             virtual int Uri(char* dst, int size) = 0;
 
             /* implementation specific */

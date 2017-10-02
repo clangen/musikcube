@@ -40,6 +40,7 @@
 using namespace musik::core;
 
 /* * * * SdkWrapper * * * */
+
 class SdkWrapper : public Track {
     public:
         SdkWrapper(TrackPtr track) {
@@ -82,6 +83,18 @@ class SdkWrapper : public Track {
 
         virtual int Uri(char* dst, int size) {
             return track->Uri(dst, size);
+        }
+
+        virtual musik::core::sdk::IResource::Class GetClass() {
+            return track->GetClass();
+        }
+
+        virtual const char* GetType() {
+            return track->GetType();
+        }
+
+        virtual size_t GetValue(char* dst, size_t size) {
+            return track->GetValue(dst, size);
         }
 
         /* pure virtual methods defined by Track, but not defined in ITrack. therefore,
@@ -131,6 +144,18 @@ void Track::Release() {
 
 musik::core::sdk::ITrack* Track::GetSdkValue() {
     return new SdkWrapper(shared_from_this());
+}
+
+musik::core::sdk::IResource::Class Track::GetClass() {
+    return musik::core::sdk::IResource::Class::Map;
+}
+
+const char* Track::GetType() {
+    return "track";
+}
+
+size_t Track::GetValue(char* dst, size_t count) {
+    return 0;
 }
 
 /* * * * TagStore * * * */

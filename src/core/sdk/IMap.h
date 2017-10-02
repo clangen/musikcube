@@ -40,7 +40,6 @@ namespace musik { namespace core { namespace sdk {
 
     class IMap : public IValue {
         public:
-            virtual void Release() = 0;
             virtual int GetString(const char* key, char* dst, int size) = 0;
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;

@@ -59,7 +59,7 @@ namespace musik { namespace core {
             virtual const char* GetType();
 
             /* IValue */
-            virtual int GetValue(char* dst, size_t size);
+            virtual size_t GetValue(char* dst, size_t size);
 
             /* IMap */
             virtual void Release();

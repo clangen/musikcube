@@ -34,19 +34,14 @@
 
 #pragma once
 
+#include "IMap.h"
 #include "constants.h"
 
 namespace musik { namespace core { namespace sdk {
 
-    class ITrack {
+    class ITrack : public IMap {
         public:
             virtual void Retain() = 0;
-            virtual void Release() = 0;
-            virtual int64_t GetId() = 0;
-            virtual int GetString(const char* key, char* dst, int size) = 0;
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
             virtual int Uri(char* dst, int size) = 0;
     };
 

@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IValue : public IResource {
         public:
-            virtual int GetValue(char* dst, size_t size) = 0;
+            virtual size_t GetValue(char* dst, size_t size) = 0;
     };
 
 } } }
