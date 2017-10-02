@@ -358,13 +358,14 @@ void Indexer::ReadMetadataFromFile(
     const std::string& pathId)
 {
     musik::core::IndexerTrack track(0);
+    TagStore* store = nullptr;
 
     /* get cached filesize, parts, size, etc */
     if (track.NeedsToBeIndexed(file, this->dbConnection)) {
         bool saveToDb = false;
 
         /* read the tag from the plugin */
-        TagStore store(track);
+        store = new TagStore(track);
         typedef TagReaderList::iterator Iterator;
         Iterator it = this->tagReaders.begin();
         while (it != this->tagReaders.end()) {
@@ -374,7 +375,7 @@ void Indexer::ReadMetadataFromFile(
                         fprintf(logFile, "    - %s\n", file.string().c_str());
                     }
 
-                    if ((*it)->Read(file.string().c_str(), &store)) {
+                    if ((*it)->Read(file.string().c_str(), store)) {
                         saveToDb = true;
                         break;
                     }
@@ -432,6 +433,10 @@ void Indexer::ReadMetadataFromFile(
             }
 #endif
         }
+    }
+
+    if (store) {
+        store->Release();
     }
 
     this->IncrementTracksScanned();
@@ -535,7 +540,9 @@ ScanResult Indexer::SyncSource(IIndexerSource* source) {
                 fprintf(logFile, "    - %s\n", track->GetString(constants::Track::FILENAME).c_str());
             }
 
-            source->ScanTrack(this, new RetainedTagStore(track), tracks.ColumnText(2));
+            TagStore* store = new TagStore(track);
+            source->ScanTrack(this, store, tracks.ColumnText(2));
+            store->Release();
             this->IncrementTracksScanned();
         }
     }
@@ -796,10 +803,10 @@ void Indexer::RunAnalyzers() {
         if (LibraryTrack::Load(&track, this->dbConnection)) {
             PluginVector runningAnalyzers;
 
-            TagStore store(track);
+            TagStore* store = new TagStore(track);
             PluginVector::iterator plugin = analyzers.begin();
             for ( ; plugin != analyzers.end(); ++plugin) {
-                if ((*plugin)->Start(&store)) {
+                if ((*plugin)->Start(store)) {
                     runningAnalyzers.push_back(*plugin);
                 }
             }
@@ -817,7 +824,7 @@ void Indexer::RunAnalyzers() {
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             PluginVector::iterator plugin = runningAnalyzers.begin();
                             while(plugin != runningAnalyzers.end()) {
-                                if ((*plugin)->Analyze(&store, buffer)) {
+                                if ((*plugin)->Analyze(store, buffer)) {
                                     ++plugin;
                                 }
                                 else {
@@ -832,7 +839,7 @@ void Indexer::RunAnalyzers() {
                         PluginVector::iterator plugin = analyzers.begin();
 
                         for ( ; plugin != analyzers.end(); ++plugin) {
-                            if ((*plugin)->End(&store)) {
+                            if ((*plugin)->End(store)) {
                                 successPlugins++;
                             }
                         }
@@ -845,6 +852,10 @@ void Indexer::RunAnalyzers() {
                         }
                     }
                 }
+            }
+
+            if (store) {
+                store->Release();
             }
         }
 
@@ -861,12 +872,12 @@ bool Indexer::Exited() {
     return this->exit;
 }
 
-IRetainedTagStore* Indexer::CreateWriter() {
+ITagStore* Indexer::CreateWriter() {
     std::shared_ptr<Track> track(new IndexerTrack(0));
-    return new RetainedTagStore(track);
+    return new TagStore(track);
 }
 
-bool Indexer::Save(IIndexerSource* source, IRetainedTagStore* track, const char* externalId) {
+bool Indexer::Save(IIndexerSource* source, ITagStore* store, const char* externalId) {
     if (source->SourceId() == 0) {
         return false;
     }
@@ -877,9 +888,9 @@ bool Indexer::Save(IIndexerSource* source, IRetainedTagStore* track, const char*
 
     /* two levels of unpacking with dynamic_casts. don't tell anyone,
     it'll be our little secret. */
-    RetainedTagStore* rtw = dynamic_cast<RetainedTagStore*>(track);
-    if (rtw) {
-        IndexerTrack* it = rtw->As<IndexerTrack*>();
+    TagStore* ts = dynamic_cast<TagStore*>(store);
+    if (ts) {
+        IndexerTrack* it = ts->As<IndexerTrack*>();
         if (it) {
             it->SetValue(constants::Track::EXTERNAL_ID, externalId);
             it->SetValue(constants::Track::SOURCE_ID, std::to_string(source->SourceId()).c_str());

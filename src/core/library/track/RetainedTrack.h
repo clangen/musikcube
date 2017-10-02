@@ -33,7 +33,6 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/sdk/IRetainedTrack.h>
-#include <core/sdk/IRetainedTagStore.h>
 #include "Track.h"
 #include <atomic>
 
@@ -55,29 +54,6 @@ namespace musik { namespace core {
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
             virtual int Uri(char* dst, int size);
-
-        private:
-            std::atomic<int> count;
-            TrackPtr track;
-    };
-
-    class RetainedTagStore : public musik::core::sdk::IRetainedTagStore {
-        public:
-            RetainedTagStore(TrackPtr track);
-            virtual ~RetainedTagStore();
-
-            template <typename T> T As() {
-                return dynamic_cast<T>(track.get());
-            }
-
-            /* IRetainedTagStore */
-            virtual void Release();
-            virtual void Retain();
-
-            /* ITagStore */
-            virtual void SetValue(const char* metakey, const char* value);
-            virtual void ClearValue(const char* metakey);
-            virtual void SetThumbnail(const char *data, long size);
 
         private:
             std::atomic<int> count;

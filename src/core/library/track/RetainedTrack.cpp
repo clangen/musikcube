@@ -83,38 +83,3 @@ double RetainedTrack::GetDouble(const char* key, double defaultValue) {
 int64_t RetainedTrack::GetId() {
     return track->GetId();
 }
-
-/* * * * RetainedTagStore * * * */
-
-RetainedTagStore::RetainedTagStore(TrackPtr track) {
-    this->count = 1;
-    this->track = track;
-}
-
-RetainedTagStore::~RetainedTagStore() {
-}
-
-void RetainedTagStore::Release() {
-    int c = this->count.fetch_sub(1);
-    if (c == 1) { /* fetched before sub */
-        this->count = 0;
-        this->track.reset();
-        delete this;
-    }
-}
-
-void RetainedTagStore::Retain() {
-    ++this->count;
-}
-
-void RetainedTagStore::SetValue(const char* metakey, const char* value) {
-    this->track->SetValue(metakey, value);
-}
-
-void RetainedTagStore::ClearValue(const char* metakey) {
-    this->track->ClearValue(metakey);
-}
-
-void RetainedTagStore::SetThumbnail(const char *data, long size) {
-    this->track->SetThumbnail(data, size);
-}

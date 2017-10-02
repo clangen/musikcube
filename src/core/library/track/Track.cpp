@@ -66,10 +66,12 @@ struct NoDeleter {
 };
 
 TagStore::TagStore(TrackPtr track) {
+    this->count = 1;
     this->track = track;
 }
 
 TagStore::TagStore(Track& track) {
+    this->count = 1;
     this->track = TrackPtr(&track, NoDeleter<Track>());
 }
 
@@ -83,4 +85,17 @@ void TagStore::ClearValue(const char* key) {
 
 void TagStore::SetThumbnail(const char *data, long size) {
     this->track->SetThumbnail(data, size);
+}
+
+void TagStore::Release() {
+    int c = this->count.fetch_sub(1);
+    if (c == 1) { /* fetched before sub */
+        this->count = 0;
+        this->track.reset();
+        delete this;
+    }
+}
+
+void TagStore::Retain() {
+    ++this->count;
 }

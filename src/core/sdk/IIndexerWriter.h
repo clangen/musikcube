@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "IRetainedTagStore.h"
+#include "ITagStore.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -42,11 +42,11 @@ namespace musik { namespace core { namespace sdk {
 
     class IIndexerWriter {
         public:
-            virtual IRetainedTagStore* CreateWriter() = 0;
+            virtual ITagStore* CreateWriter() = 0;
 
             virtual bool Save(
                 IIndexerSource* source,
-                IRetainedTagStore* track,
+                ITagStore* track,
                 const char* externalId = "") = 0;
 
             virtual bool RemoveByUri(IIndexerSource* source, const char* uri) = 0;

@@ -38,6 +38,7 @@
 #include <core/library/ILibrary.h>
 #include <core/sdk/ITrack.h>
 #include <boost/shared_ptr.hpp>
+#include <atomic>
 #include <vector>
 #include <map>
 
@@ -87,12 +88,19 @@ namespace musik { namespace core {
             TagStore(TrackPtr track);
             TagStore(Track& track);
 
+            template <typename T> T As() {
+                return dynamic_cast<T>(track.get());
+            }
+
+            virtual void Retain() override;
+            virtual void Release() override;
             virtual void SetValue(const char* key, const char* value) override;
             virtual void ClearValue(const char* key) override;
             virtual void SetThumbnail(const char *data, long size) override;
 
         private:
             TrackPtr track;
+            std::atomic<int> count;
     };
 
 } }

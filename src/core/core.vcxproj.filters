@@ -474,8 +474,5 @@
     <ClInclude Include="sdk\ITagStore.h">
       <Filter>src\sdk\library</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IRetainedTagStore.h">
-      <Filter>src\sdk\library</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

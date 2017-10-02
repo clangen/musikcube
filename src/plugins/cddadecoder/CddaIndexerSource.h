@@ -56,7 +56,7 @@ class CddaIndexerSource :
 
         virtual void ScanTrack(
             musik::core::sdk::IIndexerWriter* indexer,
-            musik::core::sdk::IRetainedTagStore* track,
+            musik::core::sdk::ITagStore* tagStore,
             const char* externalId);
 
         virtual void Interrupt();
