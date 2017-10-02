@@ -45,20 +45,7 @@
 
 namespace musik { namespace core {
 
-    /* <ugh> */
-    class TrackList_ITrackList : public musik::core::sdk::ITrackList {
-        public: virtual void Release() { /* not used by the SDK */ }
-    };
-
-    class TrackList_ITrackListEditor : public musik::core::sdk::ITrackListEditor {
-        public: virtual void Release() { /* not used by the SDK */ }
-    };
-    /* </ugh> */
-
-    class TrackList :
-        public TrackList_ITrackList,
-        public TrackList_ITrackListEditor
-    {
+    class TrackList : public musik::core::sdk::ITrackList {
         public:
             TrackList(ILibraryPtr library);
             TrackList(TrackList* other);
@@ -72,15 +59,16 @@ namespace musik { namespace core {
             virtual int64_t GetId(size_t index) const;
             virtual int IndexOf(int64_t id) const;
             virtual musik::core::sdk::ITrack* GetTrack(size_t index) const;
+            virtual void Release() { /* not used now */ }
 
-            /* ITrackListEditor */
-            virtual void Add(const int64_t id);
-            virtual bool Insert(int64_t id, size_t index);
-            virtual bool Swap(size_t index1, size_t index2);
-            virtual bool Move(size_t from, size_t to);
-            virtual bool Delete(size_t index);
-            virtual void Clear();
-            virtual void Shuffle();
+            /* TrackListEditor passes through to us */
+            void Add(const int64_t id);
+            bool Insert(int64_t id, size_t index);
+            bool Swap(size_t index1, size_t index2);
+            bool Move(size_t from, size_t to);
+            bool Delete(size_t index);
+            void Clear();
+            void Shuffle();
 
             /* implementation specific */
             TrackPtr Get(size_t index) const;
@@ -102,5 +90,25 @@ namespace musik { namespace core {
 
             std::vector<int64_t> ids;
             ILibraryPtr library;
+    };
+
+    class TrackListEditor : public musik::core::sdk::ITrackListEditor {
+        public:
+            TrackListEditor(std::shared_ptr<TrackList> trackList);
+            TrackListEditor(TrackList& trackList);
+
+            virtual ~TrackListEditor();
+
+            virtual void Add(const int64_t id);
+            virtual bool Insert(int64_t id, size_t index);
+            virtual bool Swap(size_t index1, size_t index2);
+            virtual bool Move(size_t from, size_t to);
+            virtual bool Delete(size_t index);
+            virtual void Clear();
+            virtual void Shuffle();
+            virtual void Release() { /* nothing yet */ }
+
+        private:
+            std::shared_ptr<TrackList> trackList;
     };
 } }

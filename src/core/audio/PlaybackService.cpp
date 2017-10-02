@@ -764,10 +764,13 @@ ITrackListEditor* PlaybackService::EditPlaylist() {
         public:
             SdkTrackListEditor(
                 PlaybackService& playback,
-                TrackListEditor& tracks,
+                TrackList& tracks,
                 Queue& queue,
                 Mutex& mutex)
             : PlaybackService::Editor(playback, tracks, queue, mutex) {
+            }
+
+            virtual ~SdkTrackListEditor() {
             }
 
             virtual void Release() {
@@ -813,14 +816,14 @@ have finished all operations. */
 
 PlaybackService::Editor::Editor(
     PlaybackService& playback,
-    TrackListEditor& tracks,
+    TrackList& tracks,
     Queue& queue,
     Mutex& mutex)
 : playback(playback)
-, tracks(tracks)
 , queue(queue)
 , lock(mutex)
 , edited(false) {
+    this->tracks = IEditor(new musik::core::TrackListEditor(tracks));
     this->playIndex = playback.GetIndex();
     this->nextTrackInvalidated = false;
 }
@@ -863,7 +866,7 @@ PlaybackService::Editor::~Editor() {
 }
 
 bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
-    if ((this->edited = this->tracks.Insert(id, index))) {
+    if ((this->edited = this->tracks->Insert(id, index))) {
         if (index == this->playIndex) {
             ++this->playIndex;
         }
@@ -878,7 +881,7 @@ bool PlaybackService::Editor::Insert(int64_t id, size_t index) {
 }
 
 bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
-    if ((this->edited = this->tracks.Swap(index1, index2))) {
+    if ((this->edited = this->tracks->Swap(index1, index2))) {
         if (index1 == this->playIndex) {
             this->playIndex = index2;
             this->nextTrackInvalidated = true;
@@ -894,7 +897,7 @@ bool PlaybackService::Editor::Swap(size_t index1, size_t index2) {
 }
 
 bool PlaybackService::Editor::Move(size_t from, size_t to) {
-    if ((this->edited = this->tracks.Move(from, to))) {
+    if ((this->edited = this->tracks->Move(from, to))) {
         if (from == this->playIndex) {
             this->playIndex = to;
         }
@@ -912,7 +915,7 @@ bool PlaybackService::Editor::Move(size_t from, size_t to) {
 }
 
 bool PlaybackService::Editor::Delete(size_t index) {
-    if ((this->edited = this->tracks.Delete(index))) {
+    if ((this->edited = this->tracks->Delete(index))) {
         if (this->playback.Count() == 0) {
             this->playIndex = NO_POSITION;
         }
@@ -931,7 +934,7 @@ bool PlaybackService::Editor::Delete(size_t index) {
 }
 
 void PlaybackService::Editor::Add(const int64_t id) {
-    this->tracks.Add(id);
+    this->tracks->Add(id);
 
     if (this->playback.Count() - 1 == this->playIndex + 1) {
         this->nextTrackInvalidated = true;

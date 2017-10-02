@@ -223,3 +223,50 @@ void TrackList::AddToCache(int64_t key, TrackPtr value) const {
         cacheList.erase(last);
     }
 }
+
+/* * * * * TrackListEditor * * * * */
+
+template <typename T>
+struct NoDeleter {
+    void operator()(T* t) {
+    }
+};
+
+TrackListEditor::TrackListEditor(std::shared_ptr<TrackList> trackList) {
+    this->trackList = trackList;
+}
+
+TrackListEditor::TrackListEditor(TrackList& trackList) {
+    this->trackList = std::shared_ptr<TrackList>(&trackList, NoDeleter<TrackList>());
+}
+
+TrackListEditor::~TrackListEditor() {
+}
+
+void TrackListEditor::Add(const int64_t id) {
+    this->trackList->Add(id);
+}
+
+bool TrackListEditor::Insert(int64_t id, size_t index) {
+    return this->trackList->Insert(id, index);
+}
+
+bool TrackListEditor::Swap(size_t index1, size_t index2) {
+    return this->trackList->Swap(index1, index2);
+}
+
+bool TrackListEditor::Move(size_t from, size_t to) {
+    return this->trackList->Move(from, to);
+}
+
+bool TrackListEditor::Delete(size_t index) {
+    return this->trackList->Delete(index);
+}
+
+void TrackListEditor::Clear() {
+    this->trackList->Clear();
+}
+
+void TrackListEditor::Shuffle() {
+    this->trackList->Shuffle();
+}

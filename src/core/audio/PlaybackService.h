@@ -128,10 +128,10 @@ namespace musik { namespace core { namespace audio {
             that lock when it's destructed. */
             class Editor : public musik::core::sdk::ITrackListEditor {
                 public:
-                    using TrackListEditor = musik::core::sdk::ITrackListEditor;
+                    using IEditor = std::shared_ptr<musik::core::sdk::ITrackListEditor>;
 
                     Editor(Editor&& other);
-                    ~Editor();
+                    virtual ~Editor();
 
                     /* ITrackListEditor */
                     virtual bool Insert(int64_t id, size_t index);
@@ -151,12 +151,12 @@ namespace musik { namespace core { namespace audio {
 
                     Editor(
                         PlaybackService& playback,
-                        TrackListEditor& tracks,
+                        TrackList& tracks,
                         Queue& queue,
                         Mutex& mutex);
 
                     PlaybackService& playback;
-                    TrackListEditor& tracks;
+                    IEditor tracks;
                     Queue& queue;
                     Lock lock;
                     size_t playIndex;
