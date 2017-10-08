@@ -48,7 +48,7 @@ class CddaDecoder : public IDecoder {
         ~CddaDecoder();
 
         virtual bool Open(IDataStream* data) override;
-        virtual void Destroy() override;
+        virtual void Release() override;
         virtual double SetPosition(double seconds) override;
         virtual double GetDuration() override;
         virtual bool GetBuffer(IBuffer *buffer) override;

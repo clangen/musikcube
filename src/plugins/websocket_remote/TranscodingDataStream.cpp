@@ -134,17 +134,17 @@ bool TranscodingDataStream::Close() {
 
 void TranscodingDataStream::Dispose() {
     if (this->pcmBuffer) {
-        this->pcmBuffer->Destroy();
+        this->pcmBuffer->Release();
         this->pcmBuffer = nullptr;
     }
 
     if (this->decoder) {
-        this->decoder->Destroy();
+        this->decoder->Release();
         this->decoder = nullptr;
     }
 
     if (this->input) {
-        this->input->Destroy();
+        this->input->Release();
         this->input = nullptr;
     }
 
@@ -167,7 +167,7 @@ void TranscodingDataStream::Interrupt() {
     this->interrupted = true;
 }
 
-void TranscodingDataStream::Destroy() {
+void TranscodingDataStream::Release() {
     this->Dispose();
 }
 

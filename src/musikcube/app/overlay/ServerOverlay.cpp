@@ -270,7 +270,7 @@ void ServerOverlay::Show(Callback callback) {
 
 std::shared_ptr<IPlugin> ServerOverlay::FindServerPlugin() {
     std::shared_ptr<IPlugin> result;
-    using Deleter = PluginFactory::DestroyDeleter<IPlugin>;
+    using Deleter = PluginFactory::ReleaseDeleter<IPlugin>;
     PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
         "GetPlugin",
         [&result](std::shared_ptr<IPlugin> plugin, const std::string& fn) {

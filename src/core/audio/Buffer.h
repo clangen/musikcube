@@ -64,7 +64,7 @@ namespace musik { namespace core { namespace audio {
             virtual long Samples() const override;
             virtual void SetSamples(long samples) override;
             virtual long Bytes() const override;
-            virtual void Destroy() override { delete this; }
+            virtual void Release() override { delete this; }
 
             double Position() const;
             void SetPosition(double position);

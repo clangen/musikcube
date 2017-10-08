@@ -52,7 +52,7 @@ class WaveOut : public IOutput {
 
         /* IPlugin */
         virtual const char* Name() { return "WaveOut"; };
-        virtual void Destroy();
+        virtual void Release();
 
         /* IOutput */
         virtual void Pause() override;

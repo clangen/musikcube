@@ -50,7 +50,7 @@ class NomadDecoder : public musik::core::sdk::IDecoder {
         virtual double SetPosition(double seconds) override;
         virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
         virtual double GetDuration() override;
-        virtual void Destroy() override;
+        virtual void Release() override;
         virtual bool Exhausted() override { return this->exhausted; }
 
     private:

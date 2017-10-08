@@ -47,7 +47,7 @@ class CddaIndexerSource :
         ~CddaIndexerSource();
 
         /* IIndexerSource */
-        virtual void Destroy();
+        virtual void Release();
         virtual void OnBeforeScan();
         virtual void OnAfterScan();
         virtual int SourceId();

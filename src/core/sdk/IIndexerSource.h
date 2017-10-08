@@ -42,7 +42,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IIndexerSource {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
 
             virtual void OnBeforeScan() = 0;
 

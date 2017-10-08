@@ -53,11 +53,11 @@
     <Filter Include="src\sdk\io">
       <UniqueIdentifier>{578b0af6-0dc3-4a69-a784-5e0293a5708a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\sdk\library">
-      <UniqueIdentifier>{a39a447a-65ad-465c-839d-b96cc4a8e2e9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\sdk\indexer">
       <UniqueIdentifier>{d35af273-0f2b-4669-aa83-d7eee8c2c5c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\sdk\metadata">
+      <UniqueIdentifier>{a39a447a-65ad-465c-839d-b96cc4a8e2e9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -412,7 +412,7 @@
       <Filter>src\sdk\vis</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ISimpleDataProvider.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IPlaybackRemote.h">
       <Filter>src\sdk\audio</Filter>
@@ -433,37 +433,37 @@
       <Filter>src\sdk\indexer</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITrackListEditor.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITrackList.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITrack.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IDevice.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IValue.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IValueList.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IResource.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IMap.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IMapList.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITagReader.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\ITagStore.h">
-      <Filter>src\sdk\library</Filter>
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

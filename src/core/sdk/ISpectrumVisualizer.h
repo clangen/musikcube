@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace sdk {
 
     class ISpectrumVisualizer : public IVisualizer {
     public:
-        virtual void Destroy() = 0;
+        virtual void Release() = 0;
         virtual void Write(float *spectrum, int size) = 0;
     };
 

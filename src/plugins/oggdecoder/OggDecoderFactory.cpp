@@ -51,7 +51,7 @@ OggDecoderFactory::OggDecoderFactory() {
 OggDecoderFactory::~OggDecoderFactory() {
 }
 
-void OggDecoderFactory::Destroy() {
+void OggDecoderFactory::Release() {
     delete this;
 }
 

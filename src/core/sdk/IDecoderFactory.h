@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace sdk {
     class  IDecoderFactory{
         public:
             virtual IDecoder* CreateDecoder() = 0;
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual bool CanHandle(const char* type) const = 0;
     };
 

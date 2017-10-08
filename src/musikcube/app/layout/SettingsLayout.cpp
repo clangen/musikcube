@@ -107,7 +107,7 @@ static std::string getOutputDeviceName() {
         IDevice* device = output->GetDefaultDevice();
         if (device) {
             deviceName = device->Name();
-            device->Destroy();
+            device->Release();
         }
     }
 

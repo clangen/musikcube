@@ -47,7 +47,7 @@ class FlacDecoder :	public musik::core::sdk::IDecoder {
         FlacDecoder();
         ~FlacDecoder();
 
-        virtual void Destroy() override;
+        virtual void Release() override;
         virtual double SetPosition(double seconds) override;
         virtual bool GetBuffer(IBuffer *buffer) override;
         virtual double GetDuration() override;

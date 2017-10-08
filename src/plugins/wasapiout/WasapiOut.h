@@ -57,7 +57,7 @@ class WasapiOut : public IOutput {
 
         /* IPlugin */
         virtual const char* Name() { return "WASAPI"; };
-        virtual void Destroy();
+        virtual void Release();
 
         /* IOutput */
         virtual void Pause() override;

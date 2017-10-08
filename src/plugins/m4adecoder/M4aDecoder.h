@@ -43,7 +43,7 @@ class M4aDecoder : public musik::core::sdk::IDecoder {
         M4aDecoder();
         ~M4aDecoder();
 
-        virtual void Destroy() override;
+        virtual void Release() override;
         virtual double SetPosition(double seconds) override;
         virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
         virtual double GetDuration() override;

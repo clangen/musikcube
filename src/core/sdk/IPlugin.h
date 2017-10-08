@@ -38,7 +38,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IPlugin {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual const char* Name() = 0;
             virtual const char* Version() = 0;
             virtual const char* Author() = 0;

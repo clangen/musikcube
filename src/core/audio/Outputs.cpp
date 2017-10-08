@@ -77,7 +77,7 @@ namespace musik {
                 }
 
                 OutputList GetAllOutputs() {
-                    using OutputDeleter = PluginFactory::DestroyDeleter<IOutput>;
+                    using OutputDeleter = PluginFactory::ReleaseDeleter<IOutput>;
 
                     OutputList result = PluginFactory::Instance()
                         .QueryInterface<IOutput, OutputDeleter>("GetAudioOutput");

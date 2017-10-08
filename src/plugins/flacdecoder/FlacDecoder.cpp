@@ -209,7 +209,7 @@ FLAC__StreamDecoderWriteStatus FlacDecoder::FlacWrite(
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
-void FlacDecoder::Destroy() {
+void FlacDecoder::Release() {
 	delete this;
 }
 

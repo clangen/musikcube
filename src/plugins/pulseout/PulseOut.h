@@ -50,7 +50,7 @@ class PulseOut : public musik::core::sdk::IOutput {
         virtual const char* Name() override { return "PulseAudio"; }
 
         /* IOutput */
-        virtual void Destroy() override;
+        virtual void Release() override;
         virtual void Pause() override;
         virtual void Resume() override;
         virtual void SetVolume(double volume) override;

@@ -49,7 +49,7 @@ using musik::core::PluginFactory;
 using DataStreamPtr = musik::core::io::DataStreamFactory::DataStreamPtr;
 using DecoderFactoryList = std::vector<std::shared_ptr<IDecoderFactory > >;
 using DspList = std::vector<std::shared_ptr<IDSP > >;
-using Deleter = PluginFactory::DestroyDeleter<IDecoder>;
+using Deleter = PluginFactory::ReleaseDeleter<IDecoder>;
 using DecoderPtr = std::shared_ptr<IDecoder>;
 
 static std::mutex initLock;
@@ -58,7 +58,7 @@ static DecoderFactoryList decoders;
 static void init() {
     std::unique_lock<std::mutex> lock(initLock);
     if (!decoders.size()) {
-        typedef PluginFactory::DestroyDeleter<IDecoderFactory> Deleter;
+        typedef PluginFactory::ReleaseDeleter<IDecoderFactory> Deleter;
 
         decoders = PluginFactory::Instance()
             .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
@@ -103,7 +103,7 @@ namespace musik { namespace core { namespace audio {
             good to start pulling data out of it! */
             if (!decoder->Open(dataStream)) {
                 musik::debug::err(TAG, "open ok, but decode failed " + uri);
-                decoder->Destroy();
+                decoder->Release();
                 return nullptr;
             }
 
@@ -118,7 +118,7 @@ namespace musik { namespace core { namespace audio {
         }
 
         DspList GetDspPlugins() {
-            typedef PluginFactory::DestroyDeleter<IDSP> Deleter;
+            typedef PluginFactory::ReleaseDeleter<IDSP> Deleter;
             return PluginFactory::Instance().QueryInterface<IDSP, Deleter>("GetDSP");
         }
     };

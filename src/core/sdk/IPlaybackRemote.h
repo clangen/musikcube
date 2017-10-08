@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IPlaybackRemote {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual void SetPlaybackService(IPlaybackService* playback) = 0;
             virtual void OnTrackChanged(ITrack* track) = 0;
             virtual void OnPlaybackStateChanged(PlaybackState state) = 0;

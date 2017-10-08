@@ -57,7 +57,7 @@ class PulseDevice : public musik::core::sdk::IDevice {
             this->name = name;
         }
 
-        virtual void Destroy() {
+        virtual void Release() {
             delete this;
         }
 
@@ -75,7 +75,7 @@ class PulseDevice : public musik::core::sdk::IDevice {
 
 class PulseDeviceList : public musik::core::sdk::IDeviceList {
     public:
-        virtual void Destroy() {
+        virtual void Release() {
             delete this;
         }
 
@@ -231,7 +231,7 @@ std::string PulseOut::GetPreferredDeviceId() {
     std::string deviceId = getDeviceId();
     auto device = findDeviceById<PulseDevice>(this, deviceId);
     if (device) {
-        device->Destroy();
+        device->Release();
         return deviceId;
     }
     return "";
@@ -289,7 +289,7 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
     }
 }
 
-void PulseOut::Destroy() {
+void PulseOut::Release() {
     std::cerr << "PulseOut: destroy\n";
     delete this;
 }

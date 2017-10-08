@@ -54,7 +54,7 @@ FlacDecoderFactory::FlacDecoderFactory() {
 FlacDecoderFactory::~FlacDecoderFactory() {
 }
 
-void FlacDecoderFactory::Destroy() {
+void FlacDecoderFactory::Release() {
     delete this;
 }
 

@@ -154,7 +154,7 @@ void CddaDataStream::Interrupt() {
 
 }
 
-void CddaDataStream::Destroy() {
+void CddaDataStream::Release() {
     delete this;
 }
 

@@ -41,14 +41,14 @@ namespace musik { namespace core { namespace sdk {
 
     class IDevice {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual const char* Name() const = 0;
             virtual const char* Id() const = 0;
     };
 
     class IDeviceList {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual size_t Count() const = 0;
             virtual const IDevice* At(size_t index) const = 0;
     };
@@ -64,7 +64,7 @@ namespace musik { namespace core { namespace sdk {
                     return new Device(device->Id(), device->Name());
                 }
             }
-            deviceList->Destroy();
+            deviceList->Release();
         }
         return result;
     }
@@ -78,7 +78,7 @@ namespace musik { namespace core { namespace sdk {
 
         auto device = findDeviceById<Device, Output>(output, deviceId);
         if (device) {
-            device->Destroy();
+            device->Release();
             prefs->SetString(key, deviceId);
             return true;
         }

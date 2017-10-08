@@ -61,6 +61,6 @@ IDataStream* CddaDataStreamFactory::Open(const char *uri, unsigned int options) 
     return NULL;
 }
 
-void CddaDataStreamFactory::Destroy() {
+void CddaDataStreamFactory::Release() {
     delete this;
 }

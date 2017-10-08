@@ -46,7 +46,7 @@
 
 class NullPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Destroy() { delete this; }
+        virtual void Release() { delete this; }
         virtual const char* Name() { return "Null IOutput"; }
         virtual const char* Version() { return "0.2.0"; }
         virtual const char* Author() { return "clangen"; }

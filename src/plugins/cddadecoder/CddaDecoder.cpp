@@ -50,7 +50,7 @@ CddaDecoder::~CddaDecoder() {
     delete[] this->buffer;
 }
 
-void CddaDecoder::Destroy() {
+void CddaDecoder::Release() {
     delete this;
 }
 

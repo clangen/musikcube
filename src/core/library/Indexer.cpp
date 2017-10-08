@@ -79,9 +79,9 @@ using namespace musik::core::library;
 
 using Thread = std::unique_ptr<boost::thread>;
 
-using TagReaderDestroyer = PluginFactory::DestroyDeleter<ITagReader>;
-using DecoderDeleter = PluginFactory::DestroyDeleter<IDecoderFactory>;
-using SourceDeleter = PluginFactory::DestroyDeleter<IIndexerSource>;
+using TagReaderDestroyer = PluginFactory::ReleaseDeleter<ITagReader>;
+using DecoderDeleter = PluginFactory::ReleaseDeleter<IDecoderFactory>;
+using SourceDeleter = PluginFactory::ReleaseDeleter<IIndexerSource>;
 
 static std::string normalizeDir(std::string path) {
     path = boost::filesystem::path(path).make_preferred().string();
@@ -768,7 +768,7 @@ void Indexer::ProcessAddRemoveQueue() {
 
 void Indexer::RunAnalyzers() {
     typedef sdk::IAnalyzer PluginType;
-    typedef PluginFactory::DestroyDeleter<PluginType> Deleter;
+    typedef PluginFactory::ReleaseDeleter<PluginType> Deleter;
     typedef std::shared_ptr<PluginType> PluginPtr;
     typedef std::vector<PluginPtr> PluginVector;
 

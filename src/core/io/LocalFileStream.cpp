@@ -118,7 +118,7 @@ bool LocalFileStream::Close() {
     return false;
 }
 
-void LocalFileStream::Destroy() {
+void LocalFileStream::Release() {
     delete this;
 }
 

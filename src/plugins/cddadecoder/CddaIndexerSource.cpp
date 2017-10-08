@@ -277,7 +277,7 @@ CddaIndexerSource::~CddaIndexerSource() {
     model.RemoveEventListener(this);
 }
 
-void CddaIndexerSource::Destroy() {
+void CddaIndexerSource::Release() {
     delete this;
 }
 

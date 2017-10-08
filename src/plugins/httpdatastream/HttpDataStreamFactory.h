@@ -43,5 +43,5 @@ class HttpDataStreamFactory : public IDataStreamFactory {
 
         virtual bool CanRead(const char *uri);
         virtual IDataStream* Open(const char *uri, unsigned int options = 0);
-        virtual void Destroy();
+        virtual void Release();
 };

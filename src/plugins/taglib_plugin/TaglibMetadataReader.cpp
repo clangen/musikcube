@@ -99,7 +99,7 @@ TaglibMetadataReader::TaglibMetadataReader() {
 TaglibMetadataReader::~TaglibMetadataReader() {
 }
 
-void TaglibMetadataReader::Destroy() {
+void TaglibMetadataReader::Release() {
     delete this;
 }
 

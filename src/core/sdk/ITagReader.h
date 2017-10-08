@@ -42,7 +42,7 @@ namespace musik { namespace core { namespace sdk {
         public:
             virtual bool Read(const char *uri, musik::core::sdk::ITagStore *target) = 0;
             virtual bool CanRead(const char *extension) = 0;
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
     };
 
 } } }

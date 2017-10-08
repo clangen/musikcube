@@ -41,6 +41,6 @@ class M4aDecoderFactory : public musik::core::sdk::IDecoderFactory {
         M4aDecoderFactory();
         ~M4aDecoderFactory();
         virtual musik::core::sdk::IDecoder* CreateDecoder();
-        virtual void Destroy();
+        virtual void Release();
         virtual bool CanHandle(const char* source) const;
 };

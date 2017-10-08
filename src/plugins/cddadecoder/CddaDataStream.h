@@ -50,7 +50,7 @@ class CddaDataStream : public IDataStream {
         CddaDataStream();
         ~CddaDataStream();
 
-        virtual void Destroy();
+        virtual void Release();
         virtual bool Open(const char *filename, unsigned int options = 0);
         virtual bool Close();
         virtual void Interrupt();

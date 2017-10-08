@@ -50,7 +50,7 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
 }
 
 class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
-    virtual void Destroy() { delete this; };
+    virtual void Release() { delete this; };
     virtual const char* Name() { return PLUGIN_NAME; }
     virtual const char* Version() { return "0.5.0"; }
     virtual const char* Author() { return "Björn Olievier, clangen"; }

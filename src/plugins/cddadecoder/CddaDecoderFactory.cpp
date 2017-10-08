@@ -43,7 +43,7 @@ CddaDecoderFactory::CddaDecoderFactory() {
 CddaDecoderFactory::~CddaDecoderFactory() {
 }
 
-void CddaDecoderFactory::Destroy() {
+void CddaDecoderFactory::Release() {
     delete this;
 }
 

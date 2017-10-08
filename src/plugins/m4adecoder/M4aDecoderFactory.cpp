@@ -53,7 +53,7 @@ M4aDecoderFactory::M4aDecoderFactory() {
 M4aDecoderFactory::~M4aDecoderFactory() {
 }
 
-void M4aDecoderFactory::Destroy() {
+void M4aDecoderFactory::Release() {
     delete this;
 }
 

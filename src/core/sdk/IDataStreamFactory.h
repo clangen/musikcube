@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace sdk {
         public:
             virtual bool CanRead(const char *uri) = 0;
             virtual IDataStream* Open(const char *uri, unsigned int options = 0) = 0;
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
     };
 
 } } }

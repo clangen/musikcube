@@ -58,9 +58,9 @@ namespace musik { namespace core {
             static PluginFactory& Instance();
 
             template <typename T>
-            struct DestroyDeleter {
+            struct ReleaseDeleter {
                 void operator()(T* t) {
-                    t->Destroy();
+                    t->Release();
                 }
             };
 

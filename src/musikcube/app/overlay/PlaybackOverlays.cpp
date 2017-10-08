@@ -55,9 +55,9 @@ static std::vector<std::shared_ptr<IOutput> > plugins;
 static std::set<std::string> invalidCrossfadeOutputs = { "WaveOut" };
 
 template <typename T>
-struct DestroyDeleter {
+struct ReleaseDeleter {
     void operator()(T* t) {
-        if (t) t->Destroy();
+        if (t) t->Release();
     }
 };
 
@@ -164,10 +164,10 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
     std::string currentDeviceName = _TSTR("settings_output_device_default");
 
     std::shared_ptr<IDeviceList> deviceList = std::shared_ptr<IDeviceList>(
-        output->GetDeviceList(), DestroyDeleter<IDeviceList>());
+        output->GetDeviceList(), ReleaseDeleter<IDeviceList>());
 
     std::shared_ptr<IDevice> device = std::shared_ptr<IDevice>(
-        output->GetDefaultDevice(), DestroyDeleter<IDevice>());
+        output->GetDefaultDevice(), ReleaseDeleter<IDevice>());
 
     if (device) {
         currentDeviceName = device->Name();

@@ -62,6 +62,6 @@ IDataStream* HttpDataStreamFactory::Open(const char *uri, unsigned int options) 
     return nullptr;
 }
 
-void HttpDataStreamFactory::Destroy() {
+void HttpDataStreamFactory::Release() {
     delete this;
 }

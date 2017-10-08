@@ -62,7 +62,7 @@ class TranscodingDataStream : public musik::core::sdk::IDataStream {
         virtual bool Open(const char *uri, unsigned int options = 0) override;
         virtual bool Close() override;
         virtual void Interrupt() override;
-        virtual void Destroy() override;
+        virtual void Release() override;
         virtual PositionType Read(void *buffer, PositionType readBytes) override;
         virtual bool SetPosition(PositionType position) override;
         virtual PositionType Position() override;

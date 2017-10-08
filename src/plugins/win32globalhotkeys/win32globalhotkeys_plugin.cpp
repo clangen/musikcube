@@ -157,7 +157,7 @@ class MMShellHook:
     public musik::core::sdk::IPlugin,
     public musik::core::sdk::IPlaybackRemote {
         public:
-            virtual void Destroy() {
+            virtual void Release() {
             }
 
             virtual const char* Name() {

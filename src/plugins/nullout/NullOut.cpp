@@ -53,7 +53,7 @@ NullOut::NullOut() {
 NullOut::~NullOut() {
 }
 
-void NullOut::Destroy() {
+void NullOut::Release() {
     delete this;
 }
 

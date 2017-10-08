@@ -53,7 +53,7 @@ NomadDecoderFactory::NomadDecoderFactory() {
 NomadDecoderFactory::~NomadDecoderFactory() {
 }
 
-void NomadDecoderFactory::Destroy() {
+void NomadDecoderFactory::Release() {
     delete this;
 }
 

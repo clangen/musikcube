@@ -84,7 +84,7 @@ class AlsaDevice : public IDevice {
             this->name = name;
         }
 
-        virtual void Destroy() override {
+        virtual void Release() override {
             delete this;
         }
 
@@ -102,7 +102,7 @@ class AlsaDevice : public IDevice {
 
 class AlsaDeviceList : public musik::core::sdk::IDeviceList {
     public:
-        virtual void Destroy() override {
+        virtual void Release() override {
             delete this;
         }
 
@@ -221,7 +221,7 @@ std::string AlsaOut::GetPreferredDeviceId() {
                     break;
                 }
             }
-            deviceList->Destroy();
+            deviceList->Release();
         }
     }
 
@@ -302,7 +302,7 @@ error:
     this->CloseDevice();
 }
 
-void AlsaOut::Destroy() {
+void AlsaOut::Release() {
     delete this;
 }
 

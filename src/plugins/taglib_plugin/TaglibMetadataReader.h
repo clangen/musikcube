@@ -65,7 +65,7 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
 
         virtual bool Read(const char *uri, musik::core::sdk::ITagStore *target);
         virtual bool CanRead(const char *extension);
-        virtual void Destroy();
+        virtual void Release();
 
     private:
         template <typename T> void ReadFromMap(

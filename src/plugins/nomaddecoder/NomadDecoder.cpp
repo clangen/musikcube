@@ -88,7 +88,7 @@ NomadDecoder::NomadDecoder() {
 NomadDecoder::~NomadDecoder() {
 }
 
-void NomadDecoder::Destroy() {
+void NomadDecoder::Release() {
     if (this->nomadContext) {
         nomad_close(this->nomadContext);
         this->nomadContext = nullptr;

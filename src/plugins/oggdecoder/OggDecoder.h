@@ -45,7 +45,7 @@ class OggDecoder : public IDecoder {
         OggDecoder();
         ~OggDecoder();
 
-        virtual void Destroy() override;
+        virtual void Release() override;
         virtual double SetPosition(double second) override;
         virtual bool GetBuffer(IBuffer *buffer) override;
         virtual double GetDuration() override;

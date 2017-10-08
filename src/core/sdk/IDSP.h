@@ -40,7 +40,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IDSP {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual bool Process(IBuffer *buffer) = 0;
     };
 

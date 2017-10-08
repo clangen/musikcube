@@ -43,6 +43,6 @@ public:
     CddaDecoderFactory();
     ~CddaDecoderFactory();
     virtual IDecoder* CreateDecoder();
-    virtual void Destroy();
+    virtual void Release();
     virtual bool CanHandle(const char* type) const;
 };

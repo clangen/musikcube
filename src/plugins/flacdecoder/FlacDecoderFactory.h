@@ -41,6 +41,6 @@ class FlacDecoderFactory : public musik::core::sdk::IDecoderFactory {
         FlacDecoderFactory();
         ~FlacDecoderFactory();
         virtual musik::core::sdk::IDecoder* CreateDecoder();
-        virtual void Destroy();
+        virtual void Release();
         virtual bool CanHandle(const char* type) const;
 };

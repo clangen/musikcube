@@ -50,7 +50,7 @@ class CoreAudioDevice : public IDevice {
             this->name = name;
         }
 
-        virtual void Destroy() { delete this; }
+        virtual void Release() { delete this; }
         virtual const char* Name() const { return name.c_str(); }
         virtual const char* Id() const { return id.c_str(); }
 
@@ -60,7 +60,7 @@ class CoreAudioDevice : public IDevice {
 
 class CoreAudioDeviceList : public IDeviceList {
     public:
-        virtual void Destroy() { delete this; }
+        virtual void Release() { delete this; }
         virtual size_t Count() const { return devices.size(); }
         virtual const IDevice* At(size_t index) const { return &devices.at(index); }
 
@@ -197,7 +197,7 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
                 CFRelease(deviceUid);
             }
-            device->Destroy();
+            device->Release();
         }
 
         /* get it running! */
@@ -254,7 +254,7 @@ CoreAudioOut::~CoreAudioOut() {
     this->Stop();
 }
 
-void CoreAudioOut::Destroy() {
+void CoreAudioOut::Release() {
     delete this;
 }
 

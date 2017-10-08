@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IOutput {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual void Pause() = 0;
             virtual void Resume() = 0;
             virtual void SetVolume(double volume) = 0;

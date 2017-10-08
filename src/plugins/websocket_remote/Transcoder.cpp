@@ -179,7 +179,7 @@ IDataStream* Transcoder::TranscodeAndWait(Context& context, const std::string& u
         std::this_thread::yield();
     }
 
-    transcoder->Destroy();
+    transcoder->Release();
     PruneTranscodeCache(context);
 
     return context.environment->GetDataStream(uri.c_str());

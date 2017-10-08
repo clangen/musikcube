@@ -57,7 +57,7 @@ namespace musik {
             namespace vis {
                 static void init() {
                     /* spectrum visualizers */
-                    typedef PluginFactory::DestroyDeleter<ISpectrumVisualizer> SpectrumDeleter;
+                    typedef PluginFactory::ReleaseDeleter<ISpectrumVisualizer> SpectrumDeleter;
                     std::vector<std::shared_ptr<ISpectrumVisualizer> > spectrum;
 
                     spectrum = PluginFactory::Instance()
@@ -68,7 +68,7 @@ namespace musik {
                     }
 
                     /* pcm visualizers */
-                    typedef PluginFactory::DestroyDeleter<IPcmVisualizer> PcmDeleter;
+                    typedef PluginFactory::ReleaseDeleter<IPcmVisualizer> PcmDeleter;
                     std::vector<std::shared_ptr<IPcmVisualizer> > pcm;
 
                     pcm = PluginFactory::Instance()

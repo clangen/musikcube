@@ -76,7 +76,7 @@ PluginFactory::PluginFactory() {
 
 PluginFactory::~PluginFactory() {
     for (std::shared_ptr<Descriptor> plugin : this->plugins) {
-        plugin->plugin->Destroy();
+        plugin->plugin->Release();
         closeNativeHandle(plugin->nativeHandle);
     }
     plugins.clear();

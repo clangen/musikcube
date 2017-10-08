@@ -70,7 +70,7 @@ class DxDevice : public musik::core::sdk::IDevice {
             this->name = name;
         }
 
-        virtual void Destroy() override { delete this; }
+        virtual void Release() override { delete this; }
         virtual const char* Name() const override { return name.c_str(); }
         virtual const char* Id() const override { return id.c_str(); }
 
@@ -80,7 +80,7 @@ class DxDevice : public musik::core::sdk::IDevice {
 
 class DxDeviceList : public musik::core::sdk::IDeviceList {
     public:
-        virtual void Destroy() { delete this; }
+        virtual void Release() { delete this; }
         virtual size_t Count() const override { return devices.size(); }
         virtual const IDevice* At(size_t index) const override { return &devices.at(index); }
 
@@ -121,7 +121,7 @@ class DrainBuffer :
         virtual void SetSamples(long samples) { this->samples = samples; }
         virtual long Bytes() const { return this->samples * sizeof(float); }
         virtual void OnBufferProcessed(IBuffer *buffer) { }
-        virtual void Destroy() { delete this; }
+        virtual void Release() { delete this; }
 
     private:
         int channels, samples, rate;
@@ -172,7 +172,7 @@ DirectSoundOut::DirectSoundOut()
 DirectSoundOut::~DirectSoundOut() {
 }
 
-void DirectSoundOut::Destroy() {
+void DirectSoundOut::Release() {
     this->Reset();
     delete this;
 }
@@ -452,7 +452,7 @@ LPCGUID DirectSoundOut::GetPreferredDeviceId() {
                     }
                 }
             }
-            devices->Destroy();
+            devices->Release();
         }
     }
 

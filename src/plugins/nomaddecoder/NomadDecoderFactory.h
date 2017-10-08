@@ -41,6 +41,6 @@ class NomadDecoderFactory : public musik::core::sdk::IDecoderFactory {
       NomadDecoderFactory();
       ~NomadDecoderFactory();
       virtual musik::core::sdk::IDecoder* CreateDecoder();
-      virtual void Destroy();
+      virtual void Release();
       virtual bool CanHandle(const char* type) const;
 };

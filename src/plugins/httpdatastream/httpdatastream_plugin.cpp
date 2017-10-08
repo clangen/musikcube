@@ -61,7 +61,7 @@ static class HttpDataStreamPlugin : public musik::core::sdk::IPlugin {
             boost::filesystem::path::imbue(utf8Locale);
         }
 
-        virtual void Destroy() { };
+        virtual void Release() { };
         virtual const char* Name() { return "HTTP IDataStream"; }
         virtual const char* Version() { return "0.1.0"; }
         virtual const char* Author() { return "clangen"; }

@@ -157,7 +157,7 @@ PlaybackService::~PlaybackService() {
 }
 
 void PlaybackService::InitRemotes() {
-    typedef PluginFactory::DestroyDeleter<IPlaybackRemote> Deleter;
+    typedef PluginFactory::ReleaseDeleter<IPlaybackRemote> Deleter;
 
     this->remotes = PluginFactory::Instance()
         .QueryInterface<IPlaybackRemote, Deleter>("GetPlaybackRemote");

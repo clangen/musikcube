@@ -50,7 +50,7 @@ class HttpDataStream : public IDataStream {
         HttpDataStream();
         ~HttpDataStream();
 
-        virtual void Destroy();
+        virtual void Release();
         virtual bool Open(const char *uri, unsigned int options = 0);
         virtual bool Close();
         virtual PositionType Read(void* buffer, PositionType readBytes);

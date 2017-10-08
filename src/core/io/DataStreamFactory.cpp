@@ -43,11 +43,11 @@ using namespace musik::core::io;
 using namespace musik::core::sdk;
 
 using DataStreamPtr = DataStreamFactory::DataStreamPtr;
-using StreamDeleter = musik::core::PluginFactory::DestroyDeleter<IDataStream>;
+using StreamDeleter = musik::core::PluginFactory::ReleaseDeleter<IDataStream>;
 
 DataStreamFactory::DataStreamFactory() {
     typedef IDataStreamFactory PluginType;
-    typedef musik::core::PluginFactory::DestroyDeleter<PluginType> Deleter;
+    typedef musik::core::PluginFactory::ReleaseDeleter<PluginType> Deleter;
 
     this->dataStreamFactories = musik::core::PluginFactory::Instance()
         .QueryInterface<PluginType, Deleter>("GetDataStreamFactory");
@@ -64,7 +64,7 @@ DataStreamFactory* DataStreamFactory::Instance() {
 }
 
 IDataStream* DataStreamFactory::OpenDataStream(const char* uri) {
-    typedef musik::core::PluginFactory::DestroyDeleter<IDataStream> StreamDeleter;
+    typedef musik::core::PluginFactory::ReleaseDeleter<IDataStream> StreamDeleter;
 
     if (uri) {
         DataStreamFactoryVector::iterator it =
@@ -87,7 +87,7 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri) {
             return regularFile;
         }
         else {
-            regularFile->Destroy();
+            regularFile->Release();
         }
     }
 

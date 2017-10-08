@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace sdk {
 
     class  IAnalyzer {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual bool Start(musik::core::sdk::ITagStore *target) = 0;
             virtual bool Analyze(musik::core::sdk::ITagStore *target, IBuffer *buffer) = 0;
             virtual bool End(musik::core::sdk::ITagStore *target) = 0;

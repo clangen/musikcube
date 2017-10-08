@@ -39,7 +39,7 @@
 
 class WaveOutPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Destroy() { delete this; }
+        virtual void Release() { delete this; }
         virtual const char* Name() { return "WaveOut IOutput"; }
         virtual const char* Version() { return "0.7.0"; }
         virtual const char* Author() { return "Bj\xC3\xB6rn Olievier, clangen"; }

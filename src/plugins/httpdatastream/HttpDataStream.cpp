@@ -340,7 +340,7 @@ bool HttpDataStream::Close() {
     return true;
 }
 
-void HttpDataStream::Destroy() {
+void HttpDataStream::Release() {
     this->Close();
     delete this;
 }

@@ -151,7 +151,7 @@ bool M4aDecoder::Open(musik::core::sdk::IDataStream *stream) {
     return false;
 }
 
-void M4aDecoder::Destroy() {
+void M4aDecoder::Release() {
     mp4ff_close(decoderFile);
 
     if (decoder) {

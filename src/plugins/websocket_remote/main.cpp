@@ -74,7 +74,7 @@ static class PlaybackRemote : public IPlaybackRemote {
             this->Stop();
         }
 
-        virtual void Destroy() {
+        virtual void Release() {
         }
 
         void Reload() {
@@ -158,7 +158,7 @@ static class Plugin : public IPlugin {
             boost::filesystem::path::imbue(utf8Locale);
         }
 
-        virtual void Destroy() { }
+        virtual void Release() { }
         virtual const char* Name() { return "WebSockets IPlaybackRemote"; }
         virtual const char* Version() { return "0.6.0"; }
         virtual const char* Author() { return "clangen"; }

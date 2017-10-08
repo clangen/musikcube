@@ -410,7 +410,7 @@ int HttpServer::HandleRequest(
                                 }
                                 else {
                                     if (file) {
-                                        file->Destroy();
+                                        file->Release();
                                         file = nullptr;
                                     }
 
@@ -484,7 +484,7 @@ int HttpServer::HandleRequest(
                                 }
                             }
                             else {
-                                file->Destroy();
+                                file->Release();
                                 file = nullptr;
                             }
                         }

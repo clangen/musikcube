@@ -46,7 +46,7 @@ class NullOut : public IOutput {
 
         /* IPlugin */
         virtual const char* Name() override { return "Null"; };
-        virtual void Destroy() override;
+        virtual void Release() override;
 
         /* IOutput */
         virtual void Pause() override;

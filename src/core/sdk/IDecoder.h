@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IDecoder {
         public:
-            virtual void Destroy() = 0;
+            virtual void Release() = 0;
             virtual double SetPosition(double seconds) = 0;
             virtual bool GetBuffer(IBuffer *buffer) = 0;
             virtual double GetDuration() = 0;

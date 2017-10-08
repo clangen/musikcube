@@ -109,7 +109,7 @@ bool OggDecoder::Open(musik::core::sdk::IDataStream *fileStream) {
     return true;
 }
 
-void OggDecoder::Destroy() {
+void OggDecoder::Release() {
     ov_clear(&this->oggFile);
     delete this;
 }
