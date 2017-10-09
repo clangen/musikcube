@@ -157,6 +157,7 @@ namespace request {
     static const std::string save_playlist = "save_playlist";
     static const std::string rename_playlist = "rename_playlist";
     static const std::string delete_playlist = "delete_playlist";
+    static const std::string append_to_playlist = "append_to_playlist";
 }
 
 namespace fragment {

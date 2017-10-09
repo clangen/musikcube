@@ -78,23 +78,35 @@ namespace musik { namespace core { namespace db { namespace local {
                 int64_t categoryIdValue,
                 const char* filter = "") override;
 
-            virtual uint64_t SavePlaylistWithIds(
+            virtual int64_t SavePlaylistWithIds(
                 int64_t* trackIds,
                 size_t trackIdCount,
                 const char* name,
-                const uint64_t playlistId = 0) override;
+                const int64_t playlistId = 0) override;
 
-            virtual uint64_t SavePlaylistWithExternalIds(
+            virtual int64_t SavePlaylistWithExternalIds(
                 const char** externalIds,
                 size_t externalIdCount,
                 const char* playlistName,
-                const uint64_t playlistId = 0) override;
+                const int64_t playlistId = 0) override;
 
             virtual bool RenamePlaylist(
-                const uint64_t playlistId,
+                const int64_t playlistId,
                 const char* name) override;
 
-            virtual bool DeletePlaylist(const uint64_t playlistId) override;
+            virtual bool DeletePlaylist(const int64_t playlistId) override;
+
+            virtual bool AppendToPlaylistWithIds(
+                const int64_t playlistId,
+                const int64_t* trackIds,
+                size_t trackIdCount,
+                int offset = -1) override;
+
+            virtual bool AppendToPlaylistWithExternalIds(
+                const int64_t playlistId,
+                const char** externalIds,
+                size_t externalIdCount,
+                int offset = -1) override;
 
         private:
             musik::core::ILibraryPtr library;

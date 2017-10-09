@@ -63,7 +63,7 @@ TrackList::TrackList(TrackList* other)
     this->library = library;
 }
 
-TrackList::TrackList(ILibraryPtr library, int64_t trackIds[], size_t trackIdCount)
+TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)
 : library(library) {
     if (trackIdCount > 0) {
         this->ids.insert(this->ids.end(), &trackIds[0], &trackIds[trackIdCount]);

@@ -342,6 +342,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithDeletePlaylist(connection, request);
             return;
         }
+        else if (name == request::append_to_playlist) {
+            this->RespondWithAppendToPlaylist(connection, request);
+            return;
+        }
     }
 
     this->RespondWithInvalidRequest(connection, name, id);
@@ -800,7 +804,7 @@ void WebSocketServer::RespondWithSavePlaylist(connection_hdl connection, json& r
                 std::copy(ids.begin(), ids.end(), idArray);
             }
 
-            uint64_t newPlaylistId = this->context.dataProvider
+            int64_t newPlaylistId = this->context.dataProvider
                 ->SavePlaylistWithIds(idArray, count, name.c_str(), id);
 
             delete[] idArray;
@@ -834,7 +838,7 @@ void WebSocketServer::RespondWithSavePlaylist(connection_hdl connection, json& r
                 externalIdArray[i][size] = 0;
             }
 
-            uint64_t newPlaylistId = this->context.dataProvider
+            int64_t newPlaylistId = this->context.dataProvider
                 ->SavePlaylistWithExternalIds(
                     (const char**) externalIdArray,
                     count,
@@ -881,6 +885,74 @@ void WebSocketServer::RespondWithDeletePlaylist(connection_hdl connection, json&
     this->context.dataProvider->DeletePlaylist(id)
         ? this->RespondWithSuccess(connection, request)
         : this->RespondWithFailure(connection, request);
+}
+
+void WebSocketServer::RespondWithAppendToPlaylist(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+    int offset = options.value(key::offset, -1);
+
+    /* by int64 id (faster, but less reliable) */
+    if (options.find(key::ids) != options.end()) {
+        json& ids = options[key::ids];
+
+        if (ids.is_array()) {
+            int64_t id = options.value(key::playlist_id, 0);
+            size_t count = ids.size();
+            int64_t* idArray = new int64_t[count];
+
+            if (count > 0) {
+                std::copy(ids.begin(), ids.end(), idArray);
+            }
+
+            bool result = this->context.dataProvider
+                ->AppendToPlaylistWithIds(id, idArray, count, offset);
+
+            delete[] idArray;
+
+            result
+                ? this->RespondWithSuccess(connection, request)
+                : this->RespondWithFailure(connection, request);
+
+            return;
+        }
+    }
+    /* by external id (slower, more reliable) */
+    else if (options.find(key::external_ids) != options.end()) {
+        json& externalIds = options[key::external_ids];
+
+        if (externalIds.is_array()) {
+            int64_t id = options.value(key::playlist_id, 0);
+            size_t count = externalIds.size();
+            char** externalIdArray = (char**)malloc(count * sizeof(char*));
+
+            for (size_t i = 0; i < count; i++) {
+                std::string externalId = externalIds[i];
+                size_t size = externalId.size();
+                externalIdArray[i] = (char*)malloc(size + 1);
+                strncpy(externalIdArray[i], externalId.c_str(), size);
+                externalIdArray[i][size] = 0;
+            }
+
+            bool result = this->context.dataProvider
+                ->AppendToPlaylistWithExternalIds(
+                    id, (const char**)externalIdArray, count, offset);
+
+            for (size_t i = 0; i < count; i++) {
+                free(externalIdArray[i]);
+            }
+
+            free(externalIdArray);
+
+            result
+                ? this->RespondWithSuccess(connection, request)
+                : this->RespondWithFailure(connection, request);
+        }
+    }
+    /* no id list or external id list */
+    else {
+        this->RespondWithInvalidRequest(
+            connection, request[message::name], request[message::id]);
+    }
 }
 
 void WebSocketServer::BroadcastPlaybackOverview() {

@@ -107,6 +107,7 @@
     <ClCompile Include="library\metadata\MetadataMap.cpp" />
     <ClCompile Include="library\metadata\MetadataMapList.cpp" />
     <ClCompile Include="library\query\local\AlbumListQuery.cpp" />
+    <ClCompile Include="library\query\local\AppendPlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\CategoryListQuery.cpp" />
     <ClCompile Include="library\query\local\CategoryTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\DeletePlaylistQuery.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="library\metadata\MetadataMap.h" />
     <ClInclude Include="library\metadata\MetadataMapList.h" />
     <ClInclude Include="library\query\local\AlbumListQuery.h" />
+    <ClInclude Include="library\query\local\AppendPlaylistQuery.h" />
     <ClInclude Include="library\query\local\CategoryListQuery.h" />
     <ClInclude Include="library\query\local\CategoryTrackListQuery.h" />
     <ClInclude Include="library\query\local\DeletePlaylistQuery.h" />

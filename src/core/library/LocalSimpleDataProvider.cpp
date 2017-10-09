@@ -38,6 +38,7 @@
 #include <core/debug.h>
 
 #include <core/library/query/local/AlbumListQuery.h>
+#include <core/library/query/local/AppendPlaylistQuery.h>
 #include <core/library/query/local/CategoryListQuery.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/DeletePlaylistQuery.h>
@@ -268,7 +269,7 @@ static uint64_t savePlaylist(
     ILibraryPtr library,
     std::shared_ptr<TrackList> trackList,
     const char* playlistName,
-    const uint64_t playlistId)
+    const int64_t playlistId)
 {
     try {
         /* replacing (and optionally renaming) an existing playlist */
@@ -311,11 +312,11 @@ static uint64_t savePlaylist(
     return 0;
 }
 
-uint64_t LocalSimpleDataProvider::SavePlaylistWithIds(
+int64_t LocalSimpleDataProvider::SavePlaylistWithIds(
     int64_t* trackIds,
     size_t trackIdCount,
     const char* playlistName,
-    const uint64_t playlistId)
+    const int64_t playlistId)
 {
     if (playlistId == 0 && (!playlistName || !strlen(playlistName))) {
         return 0;
@@ -327,11 +328,11 @@ uint64_t LocalSimpleDataProvider::SavePlaylistWithIds(
     return savePlaylist(this->library, trackList, playlistName, playlistId);
 }
 
-uint64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
+int64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
     const char** externalIds,
     size_t externalIdCount,
     const char* playlistName,
-    const uint64_t playlistId)
+    const int64_t playlistId)
 {
     if (playlistId == 0 && (!playlistName || !strlen(playlistName))) {
         return 0;
@@ -351,7 +352,7 @@ uint64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
     return 0;
 }
 
-bool LocalSimpleDataProvider::RenamePlaylist(const uint64_t playlistId, const char* name)
+bool LocalSimpleDataProvider::RenamePlaylist(const int64_t playlistId, const char* name)
 {
     try {
         std::shared_ptr<SavePlaylistQuery> query =
@@ -370,7 +371,7 @@ bool LocalSimpleDataProvider::RenamePlaylist(const uint64_t playlistId, const ch
     return false;
 }
 
-bool LocalSimpleDataProvider::DeletePlaylist(const uint64_t playlistId) {
+bool LocalSimpleDataProvider::DeletePlaylist(const int64_t playlistId) {
     try {
         std::shared_ptr<DeletePlaylistQuery> query =
             std::make_shared<DeletePlaylistQuery>(playlistId);
@@ -386,4 +387,63 @@ bool LocalSimpleDataProvider::DeletePlaylist(const uint64_t playlistId) {
     }
 
     return false;
+}
+
+static bool appendToPlaylist(
+    ILibraryPtr library,
+    const int64_t playlistId,
+    std::shared_ptr<TrackList> trackList,
+    int offset)
+{
+    try {
+        std::shared_ptr<AppendPlaylistQuery> query =
+            std::make_shared<AppendPlaylistQuery>(
+                playlistId,
+                trackList,
+                offset);
+
+        library->Enqueue(query, ILibrary::QuerySynchronous);
+
+        if (query->GetStatus() == IQuery::Finished) {
+            return true;
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "AppendToPlaylist failed");
+    }
+
+    return false;
+}
+
+bool LocalSimpleDataProvider::AppendToPlaylistWithIds(
+    const int64_t playlistId,
+    const int64_t* ids,
+    size_t idCount,
+    int offset)
+{
+    std::shared_ptr<TrackList> trackList =
+        std::make_shared<TrackList>(this->library, ids, idCount);
+
+    return appendToPlaylist(this->library, playlistId, trackList, offset);
+}
+
+bool LocalSimpleDataProvider::AppendToPlaylistWithExternalIds(
+    const int64_t playlistId,
+    const char** externalIds,
+    size_t externalIdCount,
+    int offset)
+{
+    using Query = ExternalIdListToTrackListQuery;
+
+    std::shared_ptr<Query> query =
+        std::make_shared<Query>(this->library, externalIds, externalIdCount);
+
+    library->Enqueue(query, ILibrary::QuerySynchronous);
+
+    if (query->GetStatus() == IQuery::Finished) {
+        return appendToPlaylist(this->library, playlistId, query->Result(), offset);
+    }
+
+    return 0;
+
 }

@@ -70,23 +70,35 @@ namespace musik { namespace core { namespace sdk {
                 int64_t categoryIdValue,
                 const char* filter = "") = 0;
 
-            virtual uint64_t SavePlaylistWithIds(
+            virtual int64_t SavePlaylistWithIds(
                 int64_t* trackIds,
                 size_t trackIdCount,
                 const char* playlistName,
-                const uint64_t playlistId = 0) = 0;
+                const int64_t playlistId = 0) = 0;
 
-            virtual uint64_t SavePlaylistWithExternalIds(
+            virtual int64_t SavePlaylistWithExternalIds(
                 const char** externalIds,
                 size_t externalIdCount,
                 const char* playlistName,
-                const uint64_t playlistId = 0) = 0;
+                const int64_t playlistId = 0) = 0;
 
             virtual bool RenamePlaylist(
-                const uint64_t playlistId,
+                const int64_t playlistId,
                 const char* playlistName) = 0;
 
-            virtual bool DeletePlaylist(const uint64_t playlistId) = 0;
+            virtual bool DeletePlaylist(const int64_t playlistId) = 0;
+
+            virtual bool AppendToPlaylistWithIds(
+                const int64_t playlistId,
+                const int64_t* trackIds,
+                size_t trackIdCount,
+                int offset = -1) = 0;
+
+            virtual bool AppendToPlaylistWithExternalIds(
+                const int64_t playlistId,
+                const char** externalTrackIds,
+                size_t externalTrackIdCount,
+                int offset = -1) = 0;
     };
 
 } } }
