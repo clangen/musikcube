@@ -52,11 +52,11 @@ class SdkWrapper : public Track {
 
         }
 
-        virtual void Retain() {
+        virtual void Retain() override {
             ++this->count;
         }
 
-        virtual void Release() {
+        virtual void Release() override {
             int c = this->count.fetch_sub(1);
             if (c == 1) { /* fetched before sub */
                 this->count = 0;
@@ -65,35 +65,35 @@ class SdkWrapper : public Track {
             }
         }
 
-        virtual int GetString(const char* key, char* dst, int size) {
+        virtual int GetString(const char* key, char* dst, int size) override {
             return track->GetString(key, dst, size);
         }
 
-        virtual long long GetInt64(const char* key, long long defaultValue) {
+        virtual long long GetInt64(const char* key, long long defaultValue) override {
             return track->GetInt64(key, defaultValue);
         }
 
-        virtual int GetInt32(const char* key, unsigned int defaultValue) {
+        virtual int GetInt32(const char* key, unsigned int defaultValue) override {
             return track->GetInt32(key, defaultValue);
         }
 
-        virtual double GetDouble(const char* key, double defaultValue) {
+        virtual double GetDouble(const char* key, double defaultValue) override {
             return track->GetDouble(key, defaultValue);
         }
 
-        virtual int Uri(char* dst, int size) {
+        virtual int Uri(char* dst, int size) override {
             return track->Uri(dst, size);
         }
 
-        virtual musik::core::sdk::IResource::Class GetClass() {
+        virtual musik::core::sdk::IResource::Class GetClass() override {
             return track->GetClass();
         }
 
-        virtual const char* GetType() {
+        virtual const char* GetType() override {
             return track->GetType();
         }
 
-        virtual size_t GetValue(char* dst, size_t size) {
+        virtual size_t GetValue(char* dst, size_t size) override {
             return track->GetValue(dst, size);
         }
 

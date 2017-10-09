@@ -77,14 +77,14 @@ namespace musik { namespace core {
 
             /* IMap */
             virtual void Release() override;
-            virtual int GetString(const char* key, char* dst, int size) = 0;
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL) = 0;
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0) = 0;
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
+            virtual int GetString(const char* key, char* dst, int size) override = 0;
+            virtual long long GetInt64(const char* key, long long defaultValue = 0LL) override = 0;
+            virtual int GetInt32(const char* key, unsigned int defaultValue = 0) override = 0;
+            virtual double GetDouble(const char* key, double defaultValue = 0.0f) override = 0;
 
             /* ITrack */
             virtual void Retain() override;
-            virtual int Uri(char* dst, int size) = 0;
+            virtual int Uri(char* dst, int size) override = 0;
 
             /* implementation specific */
             virtual void SetId(int64_t id) = 0;

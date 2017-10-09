@@ -42,15 +42,15 @@
 
 class PulsePlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Destroy() { delete this; }
-        virtual const char* Name() { return "PulseAudio IOutput"; }
-        virtual const char* Version() { return "0.5.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "67c7e90b-5123-41c0-b03a-838ecd6cb8b5"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        virtual void Release() override { delete this; }
+        virtual const char* Name() override { return "PulseAudio IOutput"; }
+        virtual const char* Version() override { return "0.5.0"; }
+        virtual const char* Author() override { return "clangen"; }
+        virtual const char* Guid() override { return "67c7e90b-5123-41c0-b03a-838ecd6cb8b5"; }
+        virtual bool Configurable() override { return false; }
+        virtual void Configure() override { }
+        virtual void Reload() override { }
+        virtual int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" musik::core::sdk::IPlugin* GetPlugin() {

@@ -42,15 +42,15 @@
 
 class AlsaPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Destroy() { delete this; }
-        virtual const char* Name() { return "AlsaOut IOutput"; }
-        virtual const char* Version() { return "0.5.0"; }
-        virtual const char* Author() { return "Julian Cromarty, clangen"; }
-        virtual const char* Guid() { return "668a75e6-1816-4c75-a361-a9d48906f23f"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        virtual void Release() override { delete this; }
+        virtual const char* Name() override { return "AlsaOut IOutput"; }
+        virtual const char* Version() override { return "0.5.0"; }
+        virtual const char* Author() override { return "Julian Cromarty, clangen"; }
+        virtual const char* Guid() override { return "668a75e6-1816-4c75-a361-a9d48906f23f"; }
+        virtual bool Configurable() override { return false; }
+        virtual void Configure() override { }
+        virtual void Reload() override { }
+        virtual int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" musik::core::sdk::IPlugin* GetPlugin() {

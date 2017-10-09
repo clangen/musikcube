@@ -50,7 +50,7 @@ class OggDecoder : public IDecoder {
         virtual bool GetBuffer(IBuffer *buffer) override;
         virtual double GetDuration() override;
         virtual bool Open(musik::core::sdk::IDataStream *fileStream) override;
-        virtual bool Exhausted() { return this->exhausted; }
+        virtual bool Exhausted() override { return this->exhausted; }
 
         /* libvorbis callbacks */
         static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);

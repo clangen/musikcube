@@ -75,36 +75,36 @@ namespace musik { namespace core { namespace audio {
             ~PlaybackService();
 
             /* IMessageTarget */
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* IPlaybackService */
-            virtual void Play(size_t index);
-            virtual bool Next();
-            virtual bool Previous();
-            virtual void Stop() { transport.Stop(); }
-            virtual musik::core::sdk::RepeatMode GetRepeatMode() { return this->repeatMode; }
-            virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode);
-            virtual void ToggleRepeatMode();
-            virtual musik::core::sdk::PlaybackState GetPlaybackState();
-            virtual bool IsShuffled();
-            virtual void ToggleShuffle();
-            virtual size_t GetIndex();
-            virtual size_t Count();
-            virtual double GetVolume();
-            virtual void SetVolume(double vol);
-            virtual void PauseOrResume();
-            virtual bool IsMuted();
-            virtual void ToggleMute();
-            virtual double GetPosition();
-            virtual void SetPosition(double seconds);
-            virtual double GetDuration();
-            virtual musik::core::sdk::ITrack* GetTrack(size_t index);
-            virtual musik::core::sdk::ITrack* GetPlayingTrack();
-            virtual void CopyFrom(const musik::core::sdk::ITrackList* source);
-            virtual void Play(const musik::core::sdk::ITrackList* source, size_t index);
-            virtual musik::core::sdk::ITrackListEditor* EditPlaylist();
-            virtual musik::core::sdk::TimeChangeMode GetTimeChangeMode();
-            virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode);
+            virtual void Play(size_t index) override;
+            virtual bool Next() override;
+            virtual bool Previous() override;
+            virtual void Stop()  override { transport.Stop(); }
+            virtual musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
+            virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
+            virtual void ToggleRepeatMode() override;
+            virtual musik::core::sdk::PlaybackState GetPlaybackState() override;
+            virtual bool IsShuffled() override;
+            virtual void ToggleShuffle() override;
+            virtual size_t GetIndex() override;
+            virtual size_t Count() override;
+            virtual double GetVolume() override;
+            virtual void SetVolume(double vol) override;
+            virtual void PauseOrResume() override;
+            virtual bool IsMuted() override;
+            virtual void ToggleMute() override;
+            virtual double GetPosition() override;
+            virtual void SetPosition(double seconds) override;
+            virtual double GetDuration() override;
+            virtual musik::core::sdk::ITrack* GetTrack(size_t index) override;
+            virtual musik::core::sdk::ITrack* GetPlayingTrack() override;
+            virtual void CopyFrom(const musik::core::sdk::ITrackList* source) override;
+            virtual void Play(const musik::core::sdk::ITrackList* source, size_t index) override;
+            virtual musik::core::sdk::ITrackListEditor* EditPlaylist() override;
+            virtual musik::core::sdk::TimeChangeMode GetTimeChangeMode() override;
+            virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) override;
 
             /* TODO: include in SDK? */
             virtual bool HotSwap(const TrackList& source, size_t index = 0);
@@ -134,14 +134,14 @@ namespace musik { namespace core { namespace audio {
                     virtual ~Editor();
 
                     /* ITrackListEditor */
-                    virtual bool Insert(int64_t id, size_t index);
-                    virtual bool Swap(size_t index1, size_t index2);
-                    virtual bool Move(size_t from, size_t to);
-                    virtual bool Delete(size_t index);
-                    virtual void Add(const int64_t id);
-                    virtual void Clear();
-                    virtual void Shuffle();
-                    virtual void Release();
+                    virtual bool Insert(int64_t id, size_t index) override;
+                    virtual bool Swap(size_t index1, size_t index2) override;
+                    virtual bool Move(size_t from, size_t to) override;
+                    virtual bool Delete(size_t index) override;
+                    virtual void Add(const int64_t id) override;
+                    virtual void Clear() override;
+                    virtual void Shuffle() override;
+                    virtual void Release() override;
 
                 private:
                     friend class PlaybackService;
