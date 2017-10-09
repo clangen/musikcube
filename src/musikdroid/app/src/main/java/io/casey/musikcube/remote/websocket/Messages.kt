@@ -24,7 +24,11 @@ class Messages {
         QueryTracksByCategory("query_tracks_by_category"),
         QueryCategory("query_category"),
         QueryAlbums("query_albums"),
-        QueryPlayQueueTracks("query_play_queue_tracks");
+        QueryPlayQueueTracks("query_play_queue_tracks"),
+        SavePlaylist("save_playlist"),
+        RenamePlaylist("rename_playlist"),
+        DeletePlaylist("delete_playlist"),
+        AppendToPlaylist("append_to_playlist");
 
         override fun toString(): String {
             return rawValue
