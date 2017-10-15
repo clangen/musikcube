@@ -24,7 +24,7 @@ here's a demo (made with asciinema):
 
 [![asciicast](https://asciinema.org/a/129748.png)](https://asciinema.org/a/129748)
 
-you can also stream audio from, or remote control musikcube using the `musikdroid` android app, which can be downloaded in the `releases` section above. it looks like this:
+while the main musikcube app runs in the console, you can also stream audio from (and even remote control) musikcube using the `musikdroid` android app, which can be downloaded in the `releases` section above. it looks like this:
 
 ![android screenshot](https://raw.githubusercontent.com/clangen/clangen-projects-static/master/musikcube/screenshots/android.png)
 
