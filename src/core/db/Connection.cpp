@@ -53,26 +53,6 @@ Connection::~Connection() {
     this->UpdateReferenceCount(false);
 }
 
-int Connection::Open(const char *database, unsigned int options, unsigned int cache) {
-    if (!this->connection) {
-        int error;
-
-#ifdef UTF_WIDECHAR
-        error = sqlite3_open16(database, &this->connection);
-#else
-        error = sqlite3_open(database, &this->connection);
-#endif
-
-        if (error == SQLITE_OK) {
-            this->Initialize(cache);
-        }
-
-        return error;
-    }
-
-    return SQLITE_OK;
-}
-
 int Connection::Open(const std::string &database, unsigned int options, unsigned int cache) {
     int error;
 
@@ -121,32 +101,6 @@ int Connection::Execute(const char* sql) {
     sqlite3_reset(stmt);
     sqlite3_finalize(stmt);
 
-    return Okay;
-}
-
-int Connection::Execute(const wchar_t* sql) {
-    sqlite3_stmt *stmt  = nullptr;
-
-    {
-        std::unique_lock<std::mutex> lock(this->mutex);
-
-        int err = sqlite3_prepare16_v2(this->connection, sql, -1, &stmt, nullptr);
-
-        if (err != SQLITE_OK) {
-            sqlite3_finalize(stmt);
-            return Error;
-        }
-    }
-
-    int error = this->StepStatement(stmt);
-
-    if (error != SQLITE_OK && error != SQLITE_DONE) {
-        sqlite3_finalize(stmt);
-        return Error;
-    }
-
-    sqlite3_reset(stmt);
-    sqlite3_finalize(stmt);
     return Okay;
 }
 

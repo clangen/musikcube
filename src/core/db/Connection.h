@@ -60,11 +60,9 @@ namespace musik { namespace core { namespace db {
             Connection();
             ~Connection();
 
-            int Open(const char *database, unsigned int options = 0, unsigned int cache = 0);
             int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
             int Close();
             int Execute(const char* sql);
-            int Execute(const wchar_t* sql);
 
             int64_t LastInsertedId();
 
