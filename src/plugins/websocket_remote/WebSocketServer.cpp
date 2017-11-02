@@ -620,7 +620,7 @@ void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& re
             result.push_back({
                 { key::title, GetValueString(album) },
                 { key::id, album->GetId() },
-                { key::thumbnail_id, 0 }, /* note: thumbnails aren't supported at the album level yet */
+                { key::thumbnail_id, album->GetInt64(key::thumbnail_id.c_str()) },
                 { key::album_artist_id, album->GetInt64(key::album_artist_id.c_str()) },
                 { key::album_artist, GetMetadataString(album, key::album_artist) }
             });

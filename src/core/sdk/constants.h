@@ -89,7 +89,8 @@ namespace musik {
                 PathUserHome,
                 PathData,
                 PathApplication,
-                PathPlugins
+                PathPlugins,
+                PathLibrary
             };
 
             enum class Capability : int {

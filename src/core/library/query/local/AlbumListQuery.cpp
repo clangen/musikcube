@@ -60,11 +60,8 @@ static const std::string COLUMNS =
     "albums.id, "
     "albums.name as album, "
     "tracks.album_artist_id, "
-    "artists.name as album_artist ";
-    /* thumbnails may have different images even though they are part
-    of the same album. need to figure out how to work around this
-    efficiently. */
-//    "tracks.thumbnail_id ";
+    "artists.name as album_artist, "
+    "albums.thumbnail_id ";
 
 static const std::string TABLES =
     "albums, tracks, artists ";

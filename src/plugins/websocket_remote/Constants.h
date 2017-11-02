@@ -164,6 +164,7 @@ namespace fragment {
     static const std::string audio = "audio";
     static const std::string id = "id";
     static const std::string external_id = "external_id";
+    static const std::string thumbnail = "thumbnail";
 }
 
 namespace broadcast {

@@ -38,6 +38,7 @@
 #include "Context.h"
 #include <condition_variable>
 #include <mutex>
+#include <vector>
 
 class HttpServer {
     public:
@@ -63,6 +64,18 @@ class HttpServer {
             void * cls,
             struct MHD_Connection *c,
             char *s);
+
+        static int HandleAudioTrackRequest(
+            HttpServer* server,
+            MHD_Response*& response,
+            MHD_Connection* connection,
+            std::vector<std::string>& pathParts);
+
+        static int HandleThumbnailRequest(
+            HttpServer* server,
+            MHD_Response*& response,
+            MHD_Connection* connection,
+            std::vector<std::string>& pathParts);
 
         struct MHD_Daemon *httpServer;
         Context& context;

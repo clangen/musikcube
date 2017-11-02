@@ -499,7 +499,7 @@ static std::string createTrackExternalId(IndexerTrack& track) {
     return std::string("local-") + std::to_string(hash1) + "-" + std::to_string(hash2);
 }
 
-int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
+int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection, int64_t thumbnailId) {
     std::string album = this->GetString("album");
     std::string value = album + "-" + this->GetString("album_artist");
 
@@ -520,6 +520,15 @@ int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection) {
         if (insertValue.Step() == db::Done) {
             metadataIdCache[cacheKey] = id;
         }
+    }
+
+    if (thumbnailId != 0) {
+        db::Statement updateStatement(
+            "UPDATE albums SET thumbnail_id=? WHERE id=?", dbConnection);
+
+        updateStatement.BindInt64(0, thumbnailId);
+        updateStatement.BindInt64(1, id);
+        updateStatement.Step();
     }
 
     return id;
@@ -656,11 +665,11 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     this->id = writeToTracksTable(dbConnection, *this);
 
-    int64_t albumId = this->SaveAlbum(dbConnection);
+    int64_t thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
+    int64_t albumId = this->SaveAlbum(dbConnection, thumbnailId);
     int64_t genreId = this->SaveGenre(dbConnection);
     int64_t artistId = this->SaveArtist(dbConnection);
     int64_t albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
-    int64_t thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
 
     /* ensure we have a correct source id */
     int sourceId = 0;

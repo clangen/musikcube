@@ -21,7 +21,7 @@
     <SccProjectName />
     <SccLocalPath />
     <ProjectGuid>{68AA481E-3CCE-440F-8CCE-69F1B371C89D}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>win32gdivis</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

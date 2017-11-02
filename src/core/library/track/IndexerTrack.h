@@ -105,7 +105,7 @@ namespace musik { namespace core {
 
             int64_t SaveArtist(db::Connection& connection);
 
-            int64_t SaveAlbum(db::Connection& connection);
+            int64_t SaveAlbum(db::Connection& connection, int64_t thumbnailId);
 
             int64_t SaveSingleValueField(
                 db::Connection& connection,

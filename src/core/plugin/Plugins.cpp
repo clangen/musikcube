@@ -54,15 +54,40 @@ using namespace musik::core::db::local;
 using namespace musik::core::io;
 using namespace musik::core::sdk;
 
+typedef void(*SetEnvironment)(IEnvironment*);
+typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
+typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
+
+static ILibraryPtr library;
+static LocalSimpleDataProvider* dataProvider = nullptr;
+
 static class Environment : public IEnvironment {
     public:
         virtual size_t GetPath(PathType type, char* dst, int size) override {
             std::string path;
             switch (type) {
-                case PathUserHome: path = GetHomeDirectory(); break;
-                case PathData: path = GetDataDirectory(); break;
-                case PathApplication: path = GetApplicationDirectory(); break;
-                case PathPlugins: path = GetPluginDirectory(); break;
+                case PathUserHome: path =
+                    GetHomeDirectory();
+                    break;
+
+                case PathData:
+                    path = GetDataDirectory();
+                    break;
+
+                case PathApplication:
+                    path = GetApplicationDirectory();
+                    break;
+
+                case PathPlugins:
+                    path = GetPluginDirectory();
+                    break;
+
+                case PathLibrary: {
+                    if (library) {
+                        path = GetDataDirectory() + std::to_string(library->Id()) + "/";
+                    }
+                    break;
+                }
             }
             return CopyString(path, dst, size);
         }
@@ -84,13 +109,6 @@ static class Environment : public IEnvironment {
         }
 } environment;
 
-typedef void(*SetEnvironment)(IEnvironment*);
-
-typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
-LocalSimpleDataProvider* dataProvider = nullptr;
-
-typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
-
 namespace musik { namespace core { namespace plugin {
 
     void InstallDependencies(ILibraryPtr library) {
@@ -99,7 +117,8 @@ namespace musik { namespace core { namespace plugin {
 
         /* data providers */
         delete dataProvider;
-        dataProvider = new LocalSimpleDataProvider(library);
+        ::library = library;
+        ::dataProvider = new LocalSimpleDataProvider(library);
 
         PluginFactory::Instance().QueryFunction<SetSimpleDataProvider>(
             "SetSimpleDataProvider",
@@ -137,7 +156,8 @@ namespace musik { namespace core { namespace plugin {
             });
 
         delete dataProvider;
-        dataProvider = nullptr;
+        ::dataProvider = nullptr;
+        ::library.reset();
 
         /* indexer */
         PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(
