@@ -11,7 +11,6 @@ import android.util.Log
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
-import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.Prefs
@@ -26,8 +25,6 @@ import java.util.*
 import javax.inject.Inject
 
 class StreamingPlaybackService(context: Context) : PlaybackService {
-    private enum class WakeLockDebounce { Wake, Sleep }
-
     @Inject lateinit var wss: WebSocketService
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val listeners = HashSet<() -> Unit>()
@@ -108,14 +105,6 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
             }
 
             return startedNext
-        }
-
-        fun isCurrentCached(): Boolean {
-            return currentPlayer == null || (currentPlayer?.bufferedPercent ?: 0) >= 100
-        }
-
-        fun isNextCached(): Boolean {
-            return nextPlayer == null || (nextPlayer?.bufferedPercent ?: 0) >= 100
         }
 
         fun reset(wrapper: PlayerWrapper?) {
@@ -462,40 +451,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         }
     }
 
-    private fun wakeUpIfPlayerNeedsConnectivity(player: PlayerWrapper) {
-        when (player.state) {
-            PlayerWrapper.State.Preparing,
-            PlayerWrapper.State.Prepared,
-            PlayerWrapper.State.Playing,
-            PlayerWrapper.State.Buffering -> {
-                sleepWakeDebouncer.call(WakeLockDebounce.Wake)
-            }
-            else -> { }
-        }
-    }
-
-    private val onPlayerFileCached = { _: PlayerWrapper ->
-        if (StreamProxy.ENABLED) {
-            if (playContext.isCurrentCached() && playContext.isNextCached()) {
-                sleepWakeDebouncer.call(WakeLockDebounce.Sleep)
-            }
-        }
-    }
-
-    private val sleepWakeDebouncer = object : Debouncer<WakeLockDebounce>(500) {
-        override fun onDebounced(last: WakeLockDebounce?) {
-            if ((last ?: WakeLockDebounce.Sleep) == WakeLockDebounce.Sleep) {
-                SystemService.sleep()
-            }
-            else {
-                SystemService.wakeup()
-            }
-        }
-    }
-
-    private val onCurrentPlayerStateChanged = { player: PlayerWrapper, state: PlayerWrapper.State ->
-        wakeUpIfPlayerNeedsConnectivity(player)
-
+    private val onCurrentPlayerStateChanged = { _: PlayerWrapper, state: PlayerWrapper.State ->
         when (state) {
             PlayerWrapper.State.Playing -> {
                 setState(PlaybackState.Playing)
@@ -518,11 +474,9 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         }
     }
 
-    private val onNextPlayerStateChanged = { player: PlayerWrapper, state: PlayerWrapper.State ->
-        wakeUpIfPlayerNeedsConnectivity(player)
-
+    private val onNextPlayerStateChanged = { mpw: PlayerWrapper, state: PlayerWrapper.State ->
         if (state === PlayerWrapper.State.Prepared) {
-            if (player === playContext.nextPlayer) {
+            if (mpw === playContext.nextPlayer) {
                 playContext.notifyNextTrackPrepared()
             }
         }
@@ -677,11 +631,8 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
             if (uri != null) {
                 playContext.reset(playContext.nextPlayer)
                 playContext.nextPlayer = PlayerWrapper.newInstance()
-                with (playContext.nextPlayer!!) {
-                    setOnStateChangedListener(onNextPlayerStateChanged)
-                    setOnFileCachedListener(onPlayerFileCached)
-                    prefetch(uri, playContext.nextMetadata!!)
-                }
+                playContext.nextPlayer?.setOnStateChangedListener(onNextPlayerStateChanged)
+                playContext.nextPlayer?.prefetch(uri, playContext.nextMetadata!!)
             }
         }
     }
@@ -781,11 +732,8 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
 
                         if (uri != null) {
                             playContext.currentPlayer = PlayerWrapper.newInstance()
-                            with (playContext.currentPlayer!!) {
-                                setOnStateChangedListener(onCurrentPlayerStateChanged)
-                                setOnFileCachedListener(onPlayerFileCached)
-                                play(uri, playContext.currentMetadata!!)
-                            }
+                            playContext.currentPlayer?.setOnStateChangedListener(onCurrentPlayerStateChanged)
+                            playContext.currentPlayer?.play(uri, playContext.currentMetadata!!)
                         }
                     }
                     else {
@@ -898,7 +846,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
 
     private val pauseServiceSleepRunnable = object: Runnable {
         override fun run() {
-            SystemService.disconnect()
+            SystemService.sleep()
         }
     }
 

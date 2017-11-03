@@ -81,8 +81,7 @@ class SystemService : Service() {
             when (intent.action) {
                 ACTION_WAKE_UP -> wakeupNow()
                 ACTION_SHUT_DOWN -> shutdownNow()
-                ACTION_DISCONNECT -> disconnectNow()
-                ACTION_SLEEP -> scheduleReleaseWakeLock()
+                ACTION_SLEEP -> sleepNow()
                 else -> {
                     if (handlePlaybackAction(intent.action)) {
                         wakeupNow()
@@ -99,15 +98,13 @@ class SystemService : Service() {
     }
 
     private fun wakeupNow() {
-        Log.d(TAG, "SystemService wakeupNow()")
+        Log.d(TAG, "SystemService WAKE_UP")
 
         val sleeping = playback == null || wakeLock == null
 
         if (playback == null) {
             playback = PlaybackServiceFactory.streaming(this)
         }
-
-        handler.removeCallbacks(releaseWakeLockRunnable)
 
         if (wakeLock == null) {
             wakeLock = powerManager.newWakeLock(
@@ -124,7 +121,7 @@ class SystemService : Service() {
     }
 
     private fun shutdownNow() {
-        Log.d(TAG, "SystemService shutdownNow()")
+        Log.d(TAG, "SystemService SHUT_DOWN")
 
         mediaSession?.release()
         mediaSession = null
@@ -138,15 +135,11 @@ class SystemService : Service() {
         stopSelf()
     }
 
-    private fun disconnectNow() {
-        Log.d(TAG, "SystemService disconnectNow()")
-        scheduleReleaseWakeLock()
+    private fun sleepNow() {
+        Log.d(TAG, "SystemService SLEEP")
+        wakeLock?.release()
+        wakeLock = null
         playback?.disconnect(playbackListener)
-    }
-
-    private fun scheduleReleaseWakeLock() {
-        Log.d(TAG, "SystemService scheduleReleaseWakeLock() -- 5 seconds until release")
-        handler.postDelayed(releaseWakeLockRunnable, 5000)
     }
 
     private fun initMediaSession() {
@@ -208,14 +201,6 @@ class SystemService : Service() {
             .setState(mediaSessionState, 0, 0f)
             .setActions(MEDIA_SESSION_ACTIONS)
             .build())
-    }
-
-    private val releaseWakeLockRunnable = object: Runnable {
-        override fun run() {
-            Log.d(TAG, "SystemService releasing WakeLock NOW!")
-            wakeLock?.release()
-            wakeLock = null
-        }
     }
 
     private fun downloadAlbumArt(title: String, artist: String, album: String, duration: Int) {
@@ -501,7 +486,6 @@ class SystemService : Service() {
         val ACTION_NOTIFICATION_STOP = "io.casey.musikcube.remote.PAUSE_SHUT_DOWN"
         var ACTION_WAKE_UP = "io.casey.musikcube.remote.WAKE_UP"
         var ACTION_SHUT_DOWN = "io.casey.musikcube.remote.SHUT_DOWN"
-        var ACTION_DISCONNECT = "io.casey.musikcube.remote.DISCONNECT"
         var ACTION_SLEEP = "io.casey.musikcube.remote.SLEEP"
 
         private val MEDIA_SESSION_ACTIONS =
@@ -519,11 +503,6 @@ class SystemService : Service() {
         fun shutdown() {
             val c = Application.instance
             c?.startService(Intent(c, SystemService::class.java).setAction(ACTION_SHUT_DOWN))
-        }
-
-        fun disconnect() {
-            val c = Application.instance
-            c?.startService(Intent(c, SystemService::class.java).setAction(ACTION_DISCONNECT))
         }
 
         fun sleep() {
