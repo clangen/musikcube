@@ -253,10 +253,10 @@ class ExoPlayerWrapper : PlayerWrapper() {
         if (StreamProxy.ENABLED) {
             if (StreamProxy.isCached(this.originalUri!!)) {
                 percentAvailable = 100
-
                 if (originalUri != null && metadata != null) {
                     PlayerWrapper.storeOffline(originalUri!!, metadata!!)
                 }
+                onFileCached()
             }
             else {
                 StreamProxy.registerCacheListener(this.cacheListener, this.originalUri!!)
@@ -275,11 +275,11 @@ class ExoPlayerWrapper : PlayerWrapper() {
 
     private val cacheListener = CacheListener { _: File, _: String, percent: Int ->
         percentAvailable = percent
-
         if (percentAvailable >= 100) {
             if (originalUri != null && metadata != null) {
                 storeOffline(originalUri!!, metadata!!)
             }
+            onFileCached()
         }
     }
 

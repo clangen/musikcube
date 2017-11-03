@@ -222,6 +222,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
             if (originalUri != null && metadata != null) {
                 PlayerWrapper.storeOffline(originalUri!!, metadata!!)
             }
+            onFileCached()
         }
     }
 

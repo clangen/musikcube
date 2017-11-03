@@ -27,13 +27,14 @@ abstract class PlayerWrapper {
         Disposed
     }
 
-    private var listener: ((PlayerWrapper, State) -> Unit)? = null
+    private var stateChangedListener: ((PlayerWrapper, State) -> Unit)? = null
+    private var fileCachedListener: ((PlayerWrapper) -> Unit)? = null
 
     var state = State.Stopped
         protected set(state) {
             if (this.state != state) {
                 field = state
-                listener?.invoke(this,state)
+                stateChangedListener?.invoke(this,state)
             }
         }
 
@@ -48,10 +49,21 @@ abstract class PlayerWrapper {
     abstract val duration: Int
     abstract val bufferedPercent: Int
 
-    open fun setOnStateChangedListener(listener: ((PlayerWrapper, State) -> Unit)?) {
+    fun setOnStateChangedListener(listener: ((PlayerWrapper, State) -> Unit)?) {
         Preconditions.throwIfNotOnMainThread()
-        this.listener = listener
-        this.listener?.invoke(this, this.state)
+        this.stateChangedListener = listener
+        this.stateChangedListener?.invoke(this, this.state)
+    }
+
+    fun setOnFileCachedListener(listener: ((PlayerWrapper) -> Unit)?) {
+        this.fileCachedListener = listener
+        onFileCached()
+    }
+
+    protected fun onFileCached() {
+        if (this.bufferedPercent >= 100) {
+            this.fileCachedListener?.invoke(this)
+        }
     }
 
     companion object {

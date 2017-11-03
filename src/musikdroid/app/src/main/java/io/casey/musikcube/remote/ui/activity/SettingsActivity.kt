@@ -52,10 +52,6 @@ class SettingsActivity : WebSocketActivityBase() {
         rebindUi()
     }
 
-    override fun onPause() {
-        super.onPause()
-    }
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.settings_menu, menu)
         return true
