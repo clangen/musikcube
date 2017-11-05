@@ -21,7 +21,7 @@ import io.casey.musikcube.remote.websocket.WebSocketService
 import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 
-abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks {
+abstract class BaseActivity : AppCompatActivity(), Runner.TaskCallbacks {
     protected var disposables = CompositeDisposable()
     private lateinit var runnerDelegate: LifecycleDelegate
     private lateinit var prefs: SharedPreferences
@@ -133,9 +133,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
 
     }
 
-    protected fun getWebSocketService(): WebSocketService {
-        return wss
-    }
+    protected val socketService: WebSocketService get() = wss
 
     protected var playbackService: IPlaybackService? = null
         private set

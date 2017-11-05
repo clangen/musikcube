@@ -33,7 +33,7 @@ import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.WebSocketService
 
-class MainActivity : WebSocketActivityBase() {
+class MainActivity : BaseActivity() {
     private val handler = Handler()
     private lateinit var prefs: SharedPreferences
     private var playback: IPlaybackService? = null
@@ -71,7 +71,7 @@ class MainActivity : WebSocketActivityBase() {
 
         bindEventListeners()
 
-        if (!getWebSocketService().hasValidConnection()) {
+        if (!socketService.hasValidConnection()) {
             startActivity(SettingsActivity.getStartIntent(this))
         }
     }
@@ -100,7 +100,7 @@ class MainActivity : WebSocketActivityBase() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        val connected = getWebSocketService().state === WebSocketService.State.Connected
+        val connected = socketService.state === WebSocketService.State.Connected
         val streaming = isStreamingSelected
 
         menu.findItem(R.id.action_playlists).isEnabled = connected
@@ -254,7 +254,7 @@ class MainActivity : WebSocketActivityBase() {
 
         findViewById<View>(R.id.button_next).setOnClickListener { _: View -> playback?.next() }
 
-        disconnectedButton.setOnClickListener { _ -> getWebSocketService().reconnect() }
+        disconnectedButton.setOnClickListener { _ -> socketService.reconnect() }
 
         seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -310,7 +310,7 @@ class MainActivity : WebSocketActivityBase() {
 
         val playbackState = playback?.playbackState
         val streaming = prefs.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)
-        val connected = getWebSocketService().state === WebSocketService.State.Connected
+        val connected = socketService.state === WebSocketService.State.Connected
         val stopped = playbackState === PlaybackState.Stopped
         val playing = playbackState === PlaybackState.Playing
         val buffering = playbackState === PlaybackState.Buffering

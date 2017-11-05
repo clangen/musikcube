@@ -13,7 +13,6 @@ import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
-import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
@@ -26,7 +25,7 @@ import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.reactivex.Observable
 
-class TrackListActivity : WebSocketActivityBase(), Filterable {
+class TrackListActivity : BaseActivity(), Filterable {
     private lateinit var tracks: TrackListSlidingWindow
     private lateinit var emptyView: EmptyListView
     private lateinit var transport: TransportFragment

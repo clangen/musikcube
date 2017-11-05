@@ -13,7 +13,7 @@ import io.casey.musikcube.remote.ui.view.MainMetadataView
 interface ViewComponent {
     fun inject(activity: ConnectionsActivity)
     fun inject(activity: MainActivity)
-    fun inject(activity: WebSocketActivityBase)
+    fun inject(activity: BaseActivity)
     fun inject(activity: SettingsActivity)
     fun inject(activity: AlbumBrowseActivity)
     fun inject(activity: CategoryBrowseActivity)

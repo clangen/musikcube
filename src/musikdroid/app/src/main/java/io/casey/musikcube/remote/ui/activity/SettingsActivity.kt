@@ -22,12 +22,11 @@ import io.casey.musikcube.remote.playback.PlayerWrapper
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.websocket.Prefs
-import io.casey.musikcube.remote.websocket.WebSocketService
 import java.util.*
 import io.casey.musikcube.remote.websocket.Prefs.Default as Defaults
 import io.casey.musikcube.remote.websocket.Prefs.Key as Keys
 
-class SettingsActivity : WebSocketActivityBase() {
+class SettingsActivity : BaseActivity() {
     private lateinit var addressText: EditText
     private lateinit var portText: EditText
     private lateinit var httpPortText: EditText

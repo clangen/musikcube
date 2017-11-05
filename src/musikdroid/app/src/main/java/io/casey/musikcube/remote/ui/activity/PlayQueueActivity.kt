@@ -12,13 +12,12 @@ import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
-import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.playback.IPlaybackService
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.view.EmptyListView
 
-class PlayQueueActivity : WebSocketActivityBase() {
+class PlayQueueActivity : BaseActivity() {
     private var adapter: Adapter = Adapter()
     private var offlineQueue: Boolean = false
     private var playback: IPlaybackService? = null
@@ -102,19 +101,19 @@ class PlayQueueActivity : WebSocketActivityBase() {
         private val subtitle: TextView = itemView.findViewById(R.id.subtitle)
         private val trackNum: TextView = itemView.findViewById(R.id.track_num)
 
-        internal fun bind(entry: ITrack?, position: Int) {
+        internal fun bind(track: ITrack?, position: Int) {
             trackNum.text = (position + 1).toString()
             itemView.tag = position
             var titleColor = R.color.theme_foreground
             var subtitleColor = R.color.theme_disabled_foreground
 
-            if (entry == null) {
+            if (track == null) {
                 title.text = "-"
                 subtitle.text = "-"
             }
             else {
                 val playing = playback!!.playingTrack
-                val entryExternalId = entry.externalId
+                val entryExternalId = track.externalId
                 val playingExternalId = playing.externalId
 
                 if (entryExternalId == playingExternalId) {
@@ -122,8 +121,8 @@ class PlayQueueActivity : WebSocketActivityBase() {
                     subtitleColor = R.color.theme_yellow
                 }
 
-                title.text = fallback(entry.title, "-")
-                subtitle.text = fallback(entry.albumArtist, "-")
+                title.text = fallback(track.title, "-")
+                subtitle.text = fallback(track.albumArtist, "-")
             }
 
             title.setTextColor(getColorCompat(titleColor))

@@ -13,17 +13,15 @@ import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.ICategoryValue
 import io.casey.musikcube.remote.data.IDataProvider
-import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.view.EmptyListView
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Navigation
-import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.WebSocketService.State as SocketState
 
-class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
+class CategoryBrowseActivity : BaseActivity(), Filterable {
     interface DeepLink {
         companion object {
             val TRACKS = 0
@@ -177,23 +175,18 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
             itemView.findViewById<View>(R.id.subtitle).visibility = View.GONE
         }
 
-        internal fun bind(entry: ICategoryValue) {
+        internal fun bind(categoryValue: ICategoryValue) {
             val playing = transport.playbackService?.playingTrack
             val playingId = playing?.getCategoryId(category) ?: -1
 
             var titleColor = R.color.theme_foreground
-            if (playingId != -1L && entry.id == playingId) {
+            if (playingId != -1L && categoryValue.id == playingId) {
                 titleColor = R.color.theme_green
             }
 
-            /* note optString only does a null check! */
-            var value = entry.value
-            value = if (Strings.empty(value)) getString(R.string.unknown_value) else value
-
-            title.text = value
+            title.text = fallback(categoryValue.value, getString(R.string.unknown_value))
             title.setTextColor(getColorCompat(titleColor))
-
-            itemView.tag = entry
+            itemView.tag = categoryValue
         }
     }
 

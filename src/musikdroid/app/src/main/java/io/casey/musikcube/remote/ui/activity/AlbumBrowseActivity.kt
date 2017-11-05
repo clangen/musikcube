@@ -14,7 +14,6 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IAlbum
 import io.casey.musikcube.remote.data.ICategoryValue
 import io.casey.musikcube.remote.data.IDataProvider
-import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.view.EmptyListView
@@ -23,7 +22,7 @@ import io.casey.musikcube.remote.util.Navigation
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 
-class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
+class AlbumBrowseActivity : BaseActivity(), Filterable {
     private var adapter: Adapter = Adapter()
     private var categoryName: String = ""
     private var categoryId: Long = 0

@@ -21,11 +21,10 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.db.connections.Connection
 import io.casey.musikcube.remote.ui.extension.*
-import io.casey.musikcube.remote.websocket.WebSocketService
 
 private val EXTRA_CONNECTION = "extra_connection"
 
-class ConnectionsActivity : WebSocketActivityBase() {
+class ConnectionsActivity : BaseActivity() {
     private lateinit var recycler: RecyclerView
     private lateinit var emptyText: View
     private lateinit var adapter: Adapter
