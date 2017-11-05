@@ -31,7 +31,7 @@ class ConnectionsActivity : WebSocketActivityBase() {
     private lateinit var adapter: Adapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Application.mainComponent.inject(this)
+        component.inject(this)
 
         super.onCreate(savedInstanceState)
         setResult(Activity.RESULT_CANCELED)
@@ -53,12 +53,6 @@ class ConnectionsActivity : WebSocketActivityBase() {
         super.onResume()
         runner.run(LoadTask.NAME, LoadTask())
     }
-
-    override val webSocketServiceClient: WebSocketService.Client?
-        get() = null
-
-    override val playbackServiceEventListener: (() -> Unit)?
-        get() = null
 
     @Suppress("UNCHECKED_CAST")
     override fun onTaskCompleted(taskName: String, taskId: Long, task: Task<*, *>, result: Any) {

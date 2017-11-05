@@ -11,17 +11,12 @@ enum class RepeatMode constructor(private val rawValue: String) {
 
     companion object {
         fun from(rawValue: String): RepeatMode {
-            if (None.rawValue == rawValue) {
-                return None
+            return when (rawValue) {
+                None.rawValue -> None
+                List.rawValue -> List
+                Track.rawValue -> Track
+                else -> throw IllegalArgumentException("rawValue matches invalid")
             }
-            else if (List.rawValue == rawValue) {
-                return List
-            }
-            else if (Track.rawValue == rawValue) {
-                return Track
-            }
-
-            throw IllegalArgumentException("rawValue matches invalid")
         }
     }
 }

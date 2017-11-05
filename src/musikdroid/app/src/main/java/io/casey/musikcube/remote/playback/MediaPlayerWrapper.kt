@@ -9,6 +9,7 @@ import android.os.PowerManager
 import android.util.Base64
 import android.util.Log
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.util.Preconditions
 import io.casey.musikcube.remote.websocket.Prefs
 import org.json.JSONObject
@@ -21,7 +22,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
     private var prefetching: Boolean = false
     private val context = Application.instance
     private val prefs: SharedPreferences
-    private var metadata: JSONObject? = null
+    private var metadata: ITrack? = null
     private var proxyUri: String? = null
     private var originalUri: String? = null
     override var bufferedPercent: Int = 0
@@ -30,7 +31,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
         this.prefs = context!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     }
 
-    override fun play(uri: String, metadata: JSONObject) {
+    override fun play(uri: String, metadata: ITrack) {
         Preconditions.throwIfNotOnMainThread()
 
         try {
@@ -59,7 +60,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    override fun prefetch(uri: String, metadata: JSONObject) {
+    override fun prefetch(uri: String, metadata: ITrack) {
         Preconditions.throwIfNotOnMainThread()
 
         this.prefetching = true

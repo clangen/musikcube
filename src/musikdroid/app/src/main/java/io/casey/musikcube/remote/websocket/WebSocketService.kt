@@ -14,14 +14,14 @@ import io.reactivex.Observable
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 
-class WebSocketService constructor(val context: Context) {
+class WebSocketService constructor(private val context: Context) {
     interface Client {
         fun onStateChanged(newState: State, oldState: State)
         fun onMessageReceived(message: SocketMessage)
         fun onInvalidPassword()
     }
 
-    interface Responder { /* TODO: remove me */
+    interface Responder {
         fun respond(response: SocketMessage)
     }
 
@@ -224,8 +224,8 @@ class WebSocketService constructor(val context: Context) {
 
         var intercepted = false
 
-        for (interceptor in interceptors) {
-            if (interceptor(message, responder)) {
+        interceptors.forEach {
+            if (it(message, responder)) {
                 intercepted = true
             }
         }
@@ -269,7 +269,7 @@ class WebSocketService constructor(val context: Context) {
         return id
     }
 
-    fun sendObserve(message: SocketMessage, client: Client): Observable<SocketMessage> {
+    fun observe(message: SocketMessage, client: Client): Observable<SocketMessage> {
         return Observable.create { emitter ->
             try {
                 Preconditions.throwIfNotOnMainThread()
@@ -297,7 +297,7 @@ class WebSocketService constructor(val context: Context) {
                 }
 
                 if (!clients.contains(client) && client !== INTERNAL_CLIENT) {
-                    throw IllegalArgumentException("client matches not registered")
+                    throw IllegalArgumentException("client not registered")
                 }
 
                 val mrd = MessageResultDescriptor()

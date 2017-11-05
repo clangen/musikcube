@@ -1,21 +1,23 @@
 package io.casey.musikcube.remote.ui.model
 
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-import io.casey.musikcube.remote.websocket.Messages
-import io.casey.musikcube.remote.websocket.SocketMessage
-import io.casey.musikcube.remote.websocket.WebSocketService
-import org.json.JSONObject
-import java.util.*
+import io.casey.musikcube.remote.data.IDataProvider
+import io.casey.musikcube.remote.data.ITrack
+import io.reactivex.Observable
+import io.reactivex.disposables.CompositeDisposable
 
 class TrackListSlidingWindow(private val recyclerView: RecyclerView,
                              private val fastScroller: RecyclerFastScroller,
-                             private val wss: WebSocketService,
-                             private val queryFactory: TrackListSlidingWindow.QueryFactory) {
+                             val dataProvider: IDataProvider,
+                             private val queryFactory: TrackListSlidingWindow.QueryFactory)
+{
     private var scrollState = RecyclerView.SCROLL_STATE_IDLE
     private var fastScrollerActive = false
+    private var disposables = CompositeDisposable()
     private var queryOffset = -1
     private var queryLimit = -1
     private var initialPosition = -1
@@ -24,7 +26,7 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
     internal var connected = false
 
     private class CacheEntry {
-        internal var value: JSONObject? = null
+        internal var value: ITrack? = null
         internal var dirty: Boolean = false
     }
 
@@ -40,12 +42,10 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
     }
 
     abstract class QueryFactory {
-        abstract fun getRequeryMessage(): SocketMessage?
-        abstract fun getPageAroundMessage(offset: Int, limit: Int): SocketMessage?
-
-        open fun connectionRequired(): Boolean {
-            return false
-        }
+        abstract fun count(): Observable<Int>?
+        abstract fun all(): Observable<List<ITrack>>?
+        abstract fun page(offset: Int, limit: Int): Observable<List<ITrack>>?
+        abstract fun offline(): Boolean
     }
 
     var count = 0
@@ -74,17 +74,16 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
     }
 
     fun requery() {
-        val connectionRequired = queryFactory.connectionRequired()
-
-        if (!connectionRequired || connected) {
+        if (queryFactory.offline() || connected) {
             cancelMessages()
 
             var queried = false
-            val message = queryFactory.getRequeryMessage()
+            val countObservable = queryFactory.count()
 
-            if (message != null) {
-                wss.send(message, _client) { response: SocketMessage ->
-                    count = response.getIntOption(Messages.Key.COUNT, 0)
+            if (countObservable != null) {
+                countObservable.subscribe(
+                { newCount ->
+                    count = newCount
 
                     if (initialPosition != -1) {
                         recyclerView.scrollToPosition(initialPosition)
@@ -92,7 +91,10 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
                     }
 
                     loadedListener?.onReloaded(count)
-                }
+                },
+                { _ ->
+                    Log.d("TrackListSlidingWindow", "message send failed, likely canceled")
+                })
 
                 queried = true
             }
@@ -106,15 +108,18 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
 
     fun pause() {
         connected = false
-        wss.removeClient(_client)
         recyclerView.removeOnScrollListener(_scrollListener)
         fastScroller.setOnHandleTouchListener(null)
+        disposables.dispose()
+        disposables = CompositeDisposable()
     }
 
     fun resume() {
+        disposables.add(dataProvider.observeQueueState()
+            .subscribe({ requery() }, { /* error */ }))
+
         recyclerView.addOnScrollListener(_scrollListener)
         fastScroller.setOnHandleTouchListener(fastScrollerTouch)
-        wss.addClient(_client)
         connected = true
         fastScrollerActive = false
     }
@@ -127,11 +132,7 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
         this.loadedListener = loadedListener
     }
 
-    fun setWindowSize(windowSize: Int) {
-        this.windowSize = windowSize
-    }
-
-    fun getTrack(index: Int): JSONObject? {
+    fun getTrack(index: Int): ITrack? {
         val track = cache[index]
 
         if (track?.dirty ?: true) {
@@ -152,7 +153,6 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
     private fun cancelMessages() {
         queryLimit = -1
         queryOffset = queryLimit
-        wss.cancelMessages(_client)
     }
 
     private fun getPageAround(index: Int) {
@@ -167,35 +167,33 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
         val offset = Math.max(0, index - 10) /* snag a couple before */
         val limit = windowSize
 
-        val request = queryFactory.getPageAroundMessage(offset, limit)
+        val pageRequest = queryFactory.page(offset, limit)
 
-        if (request != null) {
+        if (pageRequest != null) {
             cancelMessages()
 
             queryOffset = offset
             queryLimit = limit
 
-            wss.send(request, _client) { response: SocketMessage ->
-                queryLimit = -1
-                queryOffset = queryLimit
+            pageRequest.subscribe(
+                { response ->
+                    queryLimit = -1
+                    queryOffset = queryLimit
 
-                val data = response.getJsonArrayOption(Messages.Key.DATA)
-                val responseOffset = response.getIntOption(Messages.Key.OFFSET)
-                if (data != null) {
-                    for (i in 0..data.length() - 1) {
-                        val track = data.optJSONObject(i)
-                        if (track != null) {
-                            val entry = CacheEntry()
-                            entry.dirty = false
-                            entry.value = track
-                            cache.put(responseOffset + i, entry)
-                        }
+                    var i = 0
+                    response.forEach { track ->
+                        val entry = CacheEntry()
+                        entry.dirty = false
+                        entry.value = track
+                        cache.put(offset + i++, entry)
                     }
 
                     notifyAdapterChanged()
-                    notifyMetadataLoaded(responseOffset, data.length())
-                }
-            }
+                    notifyMetadataLoaded(offset, i)
+                },
+                { _ ->
+                    Log.d("TrackListSlidingWindow", "message send failed, likely canceled")
+                })
         }
     }
 
@@ -218,22 +216,6 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
                 notifyAdapterChanged()
             }
         }
-    }
-
-    private val _client = object : WebSocketService.Client {
-        override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
-
-        }
-
-        override fun onMessageReceived(message: SocketMessage) {
-            if (message.type == SocketMessage.Type.Broadcast) {
-                if (Messages.Broadcast.PlayQueueChanged.matches(message.name)) {
-                    requery()
-                }
-            }
-        }
-
-        override fun onInvalidPassword() {}
     }
 
     companion object {

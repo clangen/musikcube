@@ -42,7 +42,7 @@ class SettingsActivity : WebSocketActivityBase() {
     private lateinit var prefs: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Application.mainComponent.inject(this)
+        component.inject(this)
         super.onCreate(savedInstanceState)
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         setContentView(R.layout.activity_settings)
@@ -50,10 +50,6 @@ class SettingsActivity : WebSocketActivityBase() {
         cacheViews()
         bindListeners()
         rebindUi()
-    }
-
-    override fun onPause() {
-        super.onPause()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -267,12 +263,6 @@ class SettingsActivity : WebSocketActivityBase() {
             showInvalidConnectionDialog(R.string.settings_invalid_connection_no_name_message)
         }
     }
-
-    override val webSocketServiceClient: WebSocketService.Client?
-        get() = null
-
-    override val playbackServiceEventListener: (() -> Unit)?
-        get() = null
 
     override fun onTaskCompleted(taskName: String, taskId: Long, task: Task<*, *>, result: Any) {
         if (SaveAsTask.match(taskName)) {

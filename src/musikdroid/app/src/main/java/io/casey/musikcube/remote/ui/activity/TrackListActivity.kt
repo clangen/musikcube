@@ -10,8 +10,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.data.IDataProvider
+import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
@@ -25,7 +26,7 @@ import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
-import org.json.JSONObject
+import io.reactivex.Observable
 
 class TrackListActivity : WebSocketActivityBase(), Filterable {
     private lateinit var tracks: TrackListSlidingWindow
@@ -37,7 +38,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
     private var adapter = Adapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Application.mainComponent.inject(this)
+        component.inject(this)
 
         super.onCreate(savedInstanceState)
 
@@ -65,7 +66,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         }
 
         tracks = TrackListSlidingWindow(
-            recyclerView, fastScroller, getWebSocketService(), queryFactory)
+            recyclerView, fastScroller, dataProvider, queryFactory)
 
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
@@ -91,34 +92,31 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
     override fun onResume() {
         tracks.resume() /* needs to happen before */
         super.onResume()
+        initObservers()
         requeryIfViewingOfflineCache()
     }
-
-    override val webSocketServiceClient: WebSocketService.Client?
-        get() = socketClient
-
-    override val playbackServiceEventListener: (() -> Unit)?
-        get() = null
 
     override fun setFilter(filter: String) {
         lastFilter = filter
         filterDebouncer.call()
     }
 
-    private val socketClient = object : WebSocketService.Client {
-        override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
-            if (newState === WebSocketService.State.Connected) {
-                filterDebouncer.cancel()
-                tracks.requery()
-            }
-            else {
-                emptyView.update(newState, adapter.itemCount)
-            }
-        }
+    private fun initObservers() {
+        disposables.add(dataProvider.observeConnection().subscribe(
+            { states ->
+                val shouldRequery =
+                    states.first === IDataProvider.State.Connected ||
+                    (states.first === IDataProvider.State.Disconnected && isOfflineTracks)
 
-        override fun onMessageReceived(message: SocketMessage) {}
-
-        override fun onInvalidPassword() {}
+                if (shouldRequery) {
+                    filterDebouncer.cancel()
+                    tracks.requery()
+                }
+                else {
+                    emptyView.update(states.first, adapter.itemCount)
+                }
+            },
+            { /* error */ }))
     }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
@@ -147,16 +145,14 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         private val title: TextView = itemView.findViewById(R.id.title)
         private val subtitle: TextView = itemView.findViewById(R.id.subtitle)
 
-        internal fun bind(entry: JSONObject?, position: Int) {
+        internal fun bind(track: ITrack?, position: Int) {
             itemView.tag = position
 
-            /* TODO: this colorizing logic matches copied from PlayQueueActivity. can we generalize
-            it cleanly somehow? matches it worth it? */
             var titleColor = R.color.theme_foreground
             var subtitleColor = R.color.theme_disabled_foreground
 
-            if (entry != null) {
-                val entryExternalId = entry.optString(Metadata.Track.EXTERNAL_ID, "")
+            if (track != null) {
+                val entryExternalId = track.externalId
                 val playingExternalId = transport.playbackService?.getTrackString(Metadata.Track.EXTERNAL_ID, "")
 
                 if (entryExternalId == playingExternalId) {
@@ -164,8 +160,8 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
                     subtitleColor = R.color.theme_yellow
                 }
 
-                title.text = entry.optString(Metadata.Track.TITLE, "-")
-                subtitle.text = entry.optString(Metadata.Track.ALBUM_ARTIST, "-")
+                title.text = track.title
+                subtitle.text = track.albumArtist
             }
             else {
                 title.text = "-"
@@ -216,28 +212,19 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         if (isValidCategory(categoryType, categoryId)) {
             /* tracks for a specified category (album, artists, genres, etc */
             return object : QueryFactory() {
-                override fun getRequeryMessage(): SocketMessage? {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracksByCategory)
-                        .addOption(Messages.Key.CATEGORY, categoryType)
-                        .addOption(Messages.Key.ID, categoryId)
-                        .addOption(Messages.Key.COUNT_ONLY, true)
-                        .addOption(Messages.Key.FILTER, lastFilter)
-                        .build()
+               override fun count(): Observable<Int> {
+                    return dataProvider.getTrackCountByCategory(categoryType ?: "", categoryId, lastFilter)
                 }
 
-                override fun getPageAroundMessage(offset: Int, limit: Int): SocketMessage? {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracksByCategory)
-                        .addOption(Messages.Key.CATEGORY, categoryType)
-                        .addOption(Messages.Key.ID, categoryId)
-                        .addOption(Messages.Key.OFFSET, offset)
-                        .addOption(Messages.Key.LIMIT, limit)
-                        .addOption(Messages.Key.FILTER, lastFilter)
-                        .build()
+                override fun all(): Observable<List<ITrack>>? {
+                    return dataProvider.getTracksByCategory(categoryType ?: "", categoryId, lastFilter)
                 }
 
-                override fun connectionRequired(): Boolean {
+                override fun page(offset: Int, limit: Int): Observable<List<ITrack>> {
+                    return dataProvider.getTracksByCategory(categoryType ?: "", categoryId, limit, offset, lastFilter)
+                }
+
+                override fun offline(): Boolean {
                     return Messages.Category.OFFLINE == categoryType
                 }
             }
@@ -245,21 +232,20 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
         else {
             /* all tracks */
             return object : QueryFactory() {
-                override fun getRequeryMessage(): SocketMessage? {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracks)
-                        .addOption(Messages.Key.FILTER, lastFilter)
-                        .addOption(Messages.Key.COUNT_ONLY, true)
-                        .build()
+                override fun count(): Observable<Int> {
+                    return dataProvider.getTrackCount(lastFilter)
                 }
 
-                override fun getPageAroundMessage(offset: Int, limit: Int): SocketMessage? {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracks)
-                        .addOption(Messages.Key.OFFSET, offset)
-                        .addOption(Messages.Key.LIMIT, limit)
-                        .addOption(Messages.Key.FILTER, lastFilter)
-                        .build()
+                override fun all(): Observable<List<ITrack>>? {
+                    return dataProvider.getTracks(lastFilter)
+                }
+
+                override fun page(offset: Int, limit: Int): Observable<List<ITrack>> {
+                    return dataProvider.getTracks(limit, offset, lastFilter)
+                }
+
+                override fun offline(): Boolean {
+                    return Messages.Category.OFFLINE == categoryType
                 }
             }
         }
@@ -267,7 +253,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
 
     private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) {
-            emptyView.update(getWebSocketService().state, count)
+            emptyView.update(dataProvider.state, count)
         }
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}

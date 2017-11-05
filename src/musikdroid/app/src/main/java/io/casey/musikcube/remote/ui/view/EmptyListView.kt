@@ -9,6 +9,10 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.data.IDataProvider
+import io.casey.musikcube.remote.injection.DaggerViewComponent
+import io.casey.musikcube.remote.injection.DataModule
+import io.casey.musikcube.remote.injection.AppModule
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.StreamingPlaybackService
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
@@ -59,7 +63,7 @@ class EmptyListView : FrameLayout {
             emptyTextView?.text = message
         }
 
-    fun update(state: WebSocketState, count: Int) {
+    fun update(state: WebSocketState, count: Int) { /* TODO REMOVE ME! */
         if (count > 0) {
             visibility = View.GONE
         }
@@ -78,8 +82,30 @@ class EmptyListView : FrameLayout {
         alternateView?.visibility = if (visibility == View.GONE) View.VISIBLE else View.GONE
     }
 
+    fun update(state: IDataProvider.State, count: Int) {
+        if (count > 0) {
+            visibility = View.GONE
+        }
+        else {
+            visibility = View.VISIBLE
+
+            val showOfflineContainer =
+                capability == Capability.OnlineOnly &&
+                    PlaybackServiceFactory.instance(context) is StreamingPlaybackService &&
+                    state != IDataProvider.State.Connected
+
+            offlineContainer?.setVisible(showOfflineContainer)
+            emptyContainer?.setVisible(!showOfflineContainer)
+        }
+
+        alternateView?.visibility = if (visibility == View.GONE) View.VISIBLE else View.GONE
+    }
+
     private fun initialize() {
-        Application.mainComponent.inject(this)
+        DaggerViewComponent.builder()
+            .appComponent(Application.appComponent)
+            .dataModule(DataModule())
+            .build().inject(this)
 
         val inflater = LayoutInflater.from(context)
 

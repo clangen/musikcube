@@ -65,7 +65,6 @@ class Messages {
         }
 
         companion object {
-
             fun from(rawValue: String): Broadcast? {
                 for (value in Broadcast.values()) {
                     if (value.toString() == rawValue) {

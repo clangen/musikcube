@@ -1,6 +1,7 @@
 package io.casey.musikcube.remote.playback
 
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.db.offline.OfflineTrack
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Single
@@ -37,8 +38,8 @@ abstract class PlayerWrapper {
             }
         }
 
-    abstract fun play(uri: String, metadata: JSONObject)
-    abstract fun prefetch(uri: String, metadata: JSONObject)
+    abstract fun play(uri: String, metadata: ITrack)
+    abstract fun prefetch(uri: String, metadata: ITrack)
     abstract fun pause()
     abstract fun resume()
     abstract fun updateVolume()
@@ -64,10 +65,10 @@ abstract class PlayerWrapper {
         private var globalMuted = false
         private var preDuckGlobalVolume = DUCK_NONE
 
-        fun storeOffline(uri: String, json: JSONObject) {
+        fun storeOffline(uri: String, metadata: ITrack) {
             Single.fromCallable {
                 val track = OfflineTrack()
-                if (track.fromJSONObject(uri, json)) {
+                if (track.fromJSONObject(uri, metadata.toJson())) {
                     Application.offlineDb?.trackDao()?.insertTrack(track)
                     Application.offlineDb?.prune()
                 }

@@ -7,7 +7,6 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
 import android.view.LayoutInflater
@@ -18,6 +17,7 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.SeekBar
 import android.widget.TextView
+import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.playback.RepeatMode
@@ -61,7 +61,7 @@ class MainActivity : WebSocketActivityBase() {
     /* end views */
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Application.mainComponent.inject(this)
+        component.inject(this)
 
         super.onCreate(savedInstanceState)
 
@@ -69,6 +69,7 @@ class MainActivity : WebSocketActivityBase() {
         playback = playbackService
 
         setContentView(R.layout.activity_main)
+
         bindEventListeners()
 
         if (!getWebSocketService().hasValidConnection()) {
@@ -91,10 +92,7 @@ class MainActivity : WebSocketActivityBase() {
         rebindUi()
         scheduleUpdateTime(true)
         runUpdateCheck()
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
+        initObservers()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -147,11 +145,27 @@ class MainActivity : WebSocketActivityBase() {
         return super.onOptionsItemSelected(item)
     }
 
-    override val webSocketServiceClient: WebSocketService.Client?
-        get() = serviceClient
-
     override val playbackServiceEventListener: (() -> Unit)?
         get() = playbackEvents
+
+    private fun initObservers() {
+        disposables.add(dataProvider.observeConnection().subscribe(
+            { states ->
+                when (states.first) {
+                    IDataProvider.State.Connected -> rebindUi()
+                    IDataProvider.State.Disconnected -> clearUi()
+                    else -> { }
+                }
+            }, { /* error */ }))
+
+        disposables.add(dataProvider.observeAuthFailure().subscribe(
+            {
+                val tag = InvalidPasswordDialogFragment.TAG
+                if (supportFragmentManager.findFragmentByTag(tag) == null) {
+                    InvalidPasswordDialogFragment.newInstance().show(supportFragmentManager, tag)
+                }
+            }, { /* error */ }))
+    }
 
     private fun onOfflineTracksSelected() {
         if (isStreamingSelected) {
@@ -214,19 +228,19 @@ class MainActivity : WebSocketActivityBase() {
 
     private fun bindEventListeners() {
         mainLayout = findViewById(R.id.activity_main)
-        metadataView = findViewById<MainMetadataView>(R.id.main_metadata_view)
-        shuffleCb = findViewById<CheckBox>(R.id.check_shuffle)
-        muteCb = findViewById<CheckBox>(R.id.check_mute)
-        repeatCb = findViewById<CheckBox>(R.id.check_repeat)
+        metadataView = findViewById(R.id.main_metadata_view)
+        shuffleCb = findViewById(R.id.check_shuffle)
+        muteCb = findViewById(R.id.check_mute)
+        repeatCb = findViewById(R.id.check_repeat)
         connectedNotPlayingContainer = findViewById(R.id.connected_not_playing)
         disconnectedButton = findViewById(R.id.disconnected_button)
         disconnectedContainer = findViewById(R.id.disconnected_container)
         disconnectedOverlay = findViewById(R.id.disconnected_overlay)
         showOfflineButton = findViewById(R.id.offline_tracks_button)
-        playPause = findViewById<TextView>(R.id.button_play_pause)
-        currentTime = findViewById<TextView>(R.id.current_time)
-        totalTime = findViewById<TextView>(R.id.total_time)
-        seekbar = findViewById<SeekBar>(R.id.seekbar)
+        playPause = findViewById(R.id.button_play_pause)
+        currentTime = findViewById(R.id.current_time)
+        totalTime = findViewById(R.id.total_time)
+        seekbar = findViewById(R.id.seekbar)
 
         findViewById<View>(R.id.button_prev).setOnClickListener { _: View -> playback?.prev() }
 
@@ -428,26 +442,6 @@ class MainActivity : WebSocketActivityBase() {
     }
 
     private val playbackEvents = { rebindUi() }
-
-    private val serviceClient = object : WebSocketService.Client {
-        override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
-            if (newState === WebSocketService.State.Connected) {
-                rebindUi()
-            }
-            else if (newState === WebSocketService.State.Disconnected) {
-                clearUi()
-            }
-        }
-
-        override fun onMessageReceived(message: SocketMessage) {}
-
-        override fun onInvalidPassword() {
-            val tag = InvalidPasswordDialogFragment.TAG
-            if (supportFragmentManager.findFragmentByTag(tag) == null) {
-                InvalidPasswordDialogFragment.newInstance().show(supportFragmentManager, tag)
-            }
-        }
-    }
 
     class UpdateAvailableDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {

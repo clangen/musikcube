@@ -1,0 +1,34 @@
+package io.casey.musikcube.remote.data
+
+import io.reactivex.Observable
+
+interface IDataProvider {
+    enum class State { Disconnected, Connecting, Connected }
+
+    fun attach()
+    fun detach()
+    fun destroy()
+
+    fun observeConnection(): Observable<Pair<State, State>>
+    fun observeQueueState(): Observable<Unit>
+    fun observeAuthFailure(): Observable<Unit>
+
+    fun getAlbums(filter: String = ""): Observable<List<IAlbum>>
+    fun getAlbumForCategory(categoryType: String, categoryId: Long, filter: String = ""): Observable<List<IAlbum>>
+
+    fun getTrackCount(filter: String = ""): Observable<Int>
+    fun getTracks(filter: String = ""): Observable<List<ITrack>>
+    fun getTracks(limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
+
+    fun getTrackCountByCategory(category: String, id: Long, filter: String = ""): Observable<Int>
+    fun getTracksByCategory(category: String, id: Long, filter: String = ""): Observable<List<ITrack>>
+    fun getTracksByCategory(category: String, id: Long, limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
+
+    fun getQueueTracksCount(filter: String = ""): Observable<Int>
+    fun getQueueTracks(filter: String = ""): Observable<List<ITrack>>
+    fun getQueueTracks(limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
+
+    fun getCategoryValues(type: String, filter: String = ""): Observable<List<ICategoryValue>>
+
+    val state: State
+}

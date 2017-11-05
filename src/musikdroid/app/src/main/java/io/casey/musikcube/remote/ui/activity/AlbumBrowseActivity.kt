@@ -10,8 +10,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.data.IAlbum
+import io.casey.musikcube.remote.data.ICategoryValue
+import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
@@ -20,10 +22,6 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Navigation
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
-import io.casey.musikcube.remote.websocket.Messages.Key
-import io.casey.musikcube.remote.websocket.SocketMessage
-import io.casey.musikcube.remote.websocket.WebSocketService
-import org.json.JSONArray
 import org.json.JSONObject
 
 class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
@@ -35,7 +33,8 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
     private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Application.mainComponent.inject(this)
+        component.inject(this)
+
         super.onCreate(savedInstanceState)
 
         categoryName = intent.getStringExtra(EXTRA_CATEGORY_NAME) ?: ""
@@ -50,7 +49,7 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
-        emptyView = findViewById<EmptyListView>(R.id.empty_list_view)
+        emptyView = findViewById(R.id.empty_list_view)
         emptyView.capability = EmptyListView.Capability.OnlineOnly
         emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
         emptyView.alternateView = recyclerView
@@ -60,6 +59,11 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
                 adapter.notifyDataSetChanged()
             }
         })!!
+    }
+
+    override fun onResume() {
+        super.onResume()
+        initObservables()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -72,12 +76,6 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         filterDebouncer.call(filter)
     }
 
-    override val webSocketServiceClient: WebSocketService.Client?
-        get() = socketClient
-
-    override val playbackServiceEventListener: (() -> Unit)?
-        get() = null
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode == Navigation.ResponseCode.PLAYBACK_STARTED) {
             setResult(Navigation.ResponseCode.PLAYBACK_STARTED)
@@ -87,18 +85,25 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    private fun requery() {
-        val message = SocketMessage.Builder
-            .request(Messages.Request.QueryAlbums)
-            .addOption(Messages.Key.CATEGORY, categoryName)
-            .addOption(Messages.Key.CATEGORY_ID, categoryId)
-            .addOption(Key.FILTER, lastFilter)
-            .build()
+    private fun initObservables() {
+        disposables.add(dataProvider.observeConnection().subscribe(
+            { state ->
+                if (state.first == IDataProvider.State.Connected) {
+                    filterDebouncer.call()
+                    requery()
+                }
+                else {
+                    emptyView.update(state.first, adapter.itemCount)
+                }
+            }, { /* error */ }))
+    }
 
-        getWebSocketService().send(message, socketClient) { response: SocketMessage ->
-                adapter.setModel(response.getJsonArrayOption(Messages.Key.DATA) ?: JSONArray())
-                emptyView.update(getWebSocketService().state, adapter.itemCount)
-        }
+    private fun requery() {
+        dataProvider.getAlbumForCategory(categoryName, categoryId)
+            .subscribe({ albumList ->
+                adapter.setModel(albumList)
+                emptyView.update(dataProvider.state, adapter.itemCount)
+            }, { /* error*/ })
     }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
@@ -109,29 +114,11 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         }
     }
 
-    private val socketClient = object : WebSocketService.Client {
-        override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
-            if (newState === WebSocketService.State.Connected) {
-                filterDebouncer.call()
-                requery()
-            }
-            else {
-                emptyView.update(newState, adapter.itemCount)
-            }
-        }
-
-        override fun onMessageReceived(message: SocketMessage) {}
-
-        override fun onInvalidPassword() {}
-    }
-
     private val onItemClickListener = { view: View ->
-        val album = view.tag as JSONObject
-        val id = album.optLong(Key.ID)
-        val title = album.optString(Metadata.Album.TITLE, "")
+        val album = view.tag as IAlbum
 
         val intent = TrackListActivity.getStartIntent(
-            this@AlbumBrowseActivity, Messages.Category.ALBUM, id, title)
+            this@AlbumBrowseActivity, Messages.Category.ALBUM, album.id, album.name)
 
         startActivityForResult(intent, Navigation.RequestCode.ALBUM_TRACKS_ACTIVITY)
     }
@@ -140,32 +127,31 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         private val title = itemView.findViewById<TextView>(R.id.title)
         private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
 
-        internal fun bind(entry: JSONObject) {
+        internal fun bind(album: IAlbum) {
             val playingId = transport.playbackService?.getTrackLong(Metadata.Track.ALBUM_ID, -1L) ?: -1L
-            val entryId = entry.optLong(Key.ID)
 
             var titleColor = R.color.theme_foreground
             var subtitleColor = R.color.theme_disabled_foreground
 
-            if (playingId != -1L && entryId == playingId) {
+            if (playingId != -1L && album.id == playingId) {
                 titleColor = R.color.theme_green
                 subtitleColor = R.color.theme_yellow
             }
 
-            title.text = entry.optString(Metadata.Album.TITLE, "-")
+            title.text = album.name
             title.setTextColor(getColorCompat(titleColor))
 
-            subtitle.text = entry.optString(Metadata.Album.ALBUM_ARTIST, "-")
+            subtitle.text = album.albumArtist
             subtitle.setTextColor(getColorCompat(subtitleColor))
-            itemView.tag = entry
+            itemView.tag = album
         }
     }
 
     private inner class Adapter : RecyclerView.Adapter<ViewHolder>() {
-        private var model: JSONArray = JSONArray()
+        private var model: List<IAlbum> = listOf()
 
-        internal fun setModel(model: JSONArray?) {
-            this.model = model ?: JSONArray()
+        internal fun setModel(model: List<IAlbum>) {
+            this.model = model
             notifyDataSetChanged()
         }
 
@@ -177,11 +163,11 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(model.optJSONObject(position))
+            holder.bind(model[position])
         }
 
         override fun getItemCount(): Int {
-            return model.length()
+            return model.size
         }
     }
 
@@ -211,10 +197,8 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
             return intent
         }
 
-        fun getStartIntent(context: Context, categoryName: String, categoryJson: JSONObject): Intent {
-            val value = categoryJson.optString(Messages.Key.VALUE)
-            val categoryId = categoryJson.optLong(Messages.Key.ID)
-            return getStartIntent(context, categoryName, categoryId, value)
+        fun getStartIntent(context: Context, categoryName: String, categoryValue: ICategoryValue): Intent {
+            return getStartIntent(context, categoryName, categoryValue.id, categoryValue.name)
         }
     }
 }

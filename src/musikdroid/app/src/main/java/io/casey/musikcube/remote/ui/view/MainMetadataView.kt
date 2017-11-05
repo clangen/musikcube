@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.ui.view
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
-import android.os.Handler
 import android.support.annotation.AttrRes
 import android.text.SpannableStringBuilder
 import android.text.TextPaint
@@ -24,6 +23,9 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.injection.DaggerViewComponent
+import io.casey.musikcube.remote.injection.DataModule
+import io.casey.musikcube.remote.injection.AppModule
 import io.casey.musikcube.remote.playback.*
 import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
@@ -305,7 +307,10 @@ class MainMetadataView : FrameLayout {
     }
 
     private fun init() {
-        Application.mainComponent.inject(this)
+        DaggerViewComponent.builder()
+            .appComponent(Application.appComponent)
+            .dataModule(DataModule())
+            .build().inject(this)
 
         this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 

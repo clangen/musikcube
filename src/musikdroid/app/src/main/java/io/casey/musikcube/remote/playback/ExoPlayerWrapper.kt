@@ -21,6 +21,7 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
 import io.casey.musikcube.remote.websocket.Prefs
@@ -35,7 +36,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
     private val extractors: ExtractorsFactory
     private var source: MediaSource? = null
     private val player: SimpleExoPlayer?
-    private var metadata: JSONObject? = null
+    private var metadata: ITrack? = null
     private var prefetch: Boolean = false
     private val context: Context
     private var lastPosition: Long = -1
@@ -102,7 +103,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
         this.transcoding = this.prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
-    override fun play(uri: String, metadata: JSONObject) {
+    override fun play(uri: String, metadata: ITrack) {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {
@@ -123,7 +124,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    override fun prefetch(uri: String, metadata: JSONObject) {
+    override fun prefetch(uri: String, metadata: ITrack) {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {

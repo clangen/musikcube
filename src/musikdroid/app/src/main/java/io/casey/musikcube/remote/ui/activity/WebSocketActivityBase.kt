@@ -11,22 +11,35 @@ import com.uacf.taskrunner.LifecycleDelegate
 import com.uacf.taskrunner.Runner
 import com.uacf.taskrunner.Task
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.data.IDataProvider
+import io.casey.musikcube.remote.injection.*
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.ui.extension.hideKeyboard
 import io.casey.musikcube.remote.websocket.Prefs
 import io.casey.musikcube.remote.websocket.WebSocketService
+import io.reactivex.disposables.CompositeDisposable
 import javax.inject.Inject
 
 abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks {
+    protected var disposables = CompositeDisposable()
     private lateinit var runnerDelegate: LifecycleDelegate
     private lateinit var prefs: SharedPreferences
     private var paused = false
     @Inject lateinit var wss: WebSocketService
+    @Inject lateinit var dataProvider: IDataProvider
+
+    protected val component: ViewComponent =
+        DaggerViewComponent.builder()
+            .appComponent(Application.appComponent)
+            .dataModule(DataModule())
+            .build()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Application.mainComponent.inject(this)
+        component.inject(this)
+
         super.onCreate(savedInstanceState)
+
         volumeControlStream = AudioManager.STREAM_MUSIC
         runnerDelegate = LifecycleDelegate(this, this, javaClass, null)
         runnerDelegate.onCreate(savedInstanceState)
@@ -39,6 +52,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
 
         super.onPause()
 
+        dataProvider.detach()
         runnerDelegate.onPause()
 
         val playbackListener = playbackServiceEventListener
@@ -61,6 +75,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
     override fun onResume() {
         super.onResume()
 
+        dataProvider.attach()
         runnerDelegate.onResume()
 
         playbackService = PlaybackServiceFactory.instance(this)
@@ -76,11 +91,15 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
         }
 
         paused = false
+
+        disposables.dispose()
+        disposables = CompositeDisposable()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         runnerDelegate.onDestroy()
+        dataProvider.destroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -150,6 +169,9 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
         }
     }
 
-    protected abstract val webSocketServiceClient: WebSocketService.Client?
-    protected abstract val playbackServiceEventListener: (() -> Unit)?
+    protected open val webSocketServiceClient: WebSocketService.Client?
+        get() = null
+
+    protected open val playbackServiceEventListener: (() -> Unit)?
+        get() = null
 }

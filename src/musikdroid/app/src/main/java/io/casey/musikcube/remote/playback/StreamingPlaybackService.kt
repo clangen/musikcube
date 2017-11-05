@@ -10,22 +10,23 @@ import android.provider.Settings
 import android.util.Log
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.data.IDataProvider
+import io.casey.musikcube.remote.data.ITrack
+import io.casey.musikcube.remote.injection.DaggerServiceComponent
+import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.Prefs
-import io.casey.musikcube.remote.websocket.SocketMessage
-import io.casey.musikcube.remote.websocket.WebSocketService
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import org.json.JSONArray
-import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.*
 import javax.inject.Inject
 
 class StreamingPlaybackService(context: Context) : PlaybackService {
-    @Inject lateinit var wss: WebSocketService
+    @Inject lateinit var dataProvider: IDataProvider
+
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val listeners = HashSet<() -> Unit>()
     private var params: QueueParams? = null
@@ -36,8 +37,8 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
     private val random = Random()
     private val handler = Handler()
 
-    private val trackMetadataCache = object : LinkedHashMap<Int, JSONObject>() {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, JSONObject>): Boolean {
+    private val trackMetadataCache = object : LinkedHashMap<Int, ITrack>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, ITrack>): Boolean {
             return size >= MAX_TRACK_METADATA_CACHE_SIZE
         }
     }
@@ -46,8 +47,8 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         internal var queueCount: Int = 0
         internal var currentPlayer: PlayerWrapper? = null
         internal var nextPlayer: PlayerWrapper? = null
-        internal var currentMetadata: JSONObject? = null
-        internal var nextMetadata: JSONObject? = null
+        internal var currentMetadata: ITrack? = null
+        internal var nextMetadata: ITrack? = null
         internal var currentIndex = -1
         internal var nextIndex = -1
         internal var nextPlayerScheduled: Boolean = false
@@ -138,20 +139,23 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
     }
 
     init {
-        Application.mainComponent.inject(this)
+        DaggerServiceComponent.builder()
+            .appComponent(Application.appComponent)
+            .dataModule(DataModule())
+            .build().inject(this)
     }
 
     @Synchronized override fun connect(listener: () -> Unit) {
         listeners.add(listener)
         if (listeners.size == 1) {
-            wss.addClient(wssClient)
+            dataProvider.attach()
         }
     }
 
     @Synchronized override fun disconnect(listener: () -> Unit) {
         listeners.remove(listener)
         if (listeners.size == 0) {
-            wss.removeClient(wssClient)
+            dataProvider.detach()
         }
     }
 
@@ -349,11 +353,11 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
     }
 
     override fun getTrackString(key: String, defaultValue: String): String {
-        return playContext.currentMetadata?.optString(key, defaultValue) ?: defaultValue
+        return playContext.currentMetadata?.getString(key, defaultValue) ?: defaultValue
     }
 
     override fun getTrackLong(key: String, defaultValue: Long): Long {
-        return playContext.currentMetadata?.optLong(key, defaultValue) ?: defaultValue
+        return playContext.currentMetadata?.getLong(key, defaultValue) ?: defaultValue
     }
 
     override val bufferedTime: Double /* ms -> sec */
@@ -496,14 +500,14 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         }
     }
 
-    private fun getUri(track: JSONObject?): String? {
+    private fun getUri(track: ITrack?): String? {
         if (track != null) {
-            val existingUri = track.optString(Metadata.Track.URI, "")
+            val existingUri = track.uri
             if (Strings.notEmpty(existingUri)) {
                 return existingUri
             }
 
-            val externalId = track.optString(Metadata.Track.EXTERNAL_ID, "")
+            val externalId = track.externalId
             if (Strings.notEmpty(externalId)) {
                 val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
                 val protocol = if (ssl) "https" else "http"
@@ -575,32 +579,23 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         }
     }
 
-    private fun getMetadataQuery(index: Int): SocketMessage? {
-        val message = playlistQueryFactory.getRequeryMessage()
-
-        if (message != null) {
-            return message
-                .buildUpon()
-                .removeOption(Messages.Key.COUNT_ONLY)
-                .addOption(Messages.Key.LIMIT, 1)
-                .addOption(Messages.Key.OFFSET, index)
-                .build()
-        }
-
-        return null
+    private fun getMetadataQuery(index: Int): Observable<List<ITrack>>? {
+        return playlistQueryFactory.page(index, 1)
     }
 
-    private fun getCurrentAndNextTrackMessages(context: PlaybackContext, queueCount: Int): Observable<SocketMessage> {
-        val tracks = ArrayList<Observable<SocketMessage>>()
+    private fun getCurrentAndNextTrackMessages(context: PlaybackContext, queueCount: Int): Observable<List<ITrack>> {
+        val tracks = ArrayList<Observable<List<ITrack>>>()
 
         if (queueCount > 0) {
+            context.queueCount = queueCount
+
             if (trackMetadataCache.containsKey(context.currentIndex)) {
                 context.currentMetadata = trackMetadataCache[context.currentIndex]
             }
             else {
                 val query = getMetadataQuery(context.currentIndex)
                 if (query != null) {
-                    tracks.add(wss.sendObserve(query, wssClient))
+                    tracks.add(query)
                 }
             }
 
@@ -614,7 +609,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
                     else {
                         val query = getMetadataQuery(context.nextIndex)
                         if (query != null) {
-                            tracks.add(wss.sendObserve(query, wssClient))
+                            tracks.add(query)
                         }
                     }
                 }
@@ -666,16 +661,15 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
                 val query = getMetadataQuery(nextIndex)
 
                 if (query != null) {
-                    this.wss.sendObserve(query, this.wssClient)
+                    query
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribeOn(AndroidSchedulers.mainThread())
-                        .map { message: SocketMessage -> extractTrackFromMessage(message)!! }
                         .subscribe(
                             { track ->
                                 if (originalParams === params && playContext.currentIndex == currentIndex) {
                                     if (playContext.nextMetadata == null) {
                                         playContext.nextIndex = nextIndex
-                                        playContext.nextMetadata = track
+                                        playContext.nextMetadata = track.firstOrNull()
                                         prefetchNextTrackAudio()
                                     }
                                 }
@@ -703,21 +697,19 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
 
         params = newParams
 
-        val countMessage = playlistQueryFactory.getRequeryMessage() ?: return
+        val countMessage = playlistQueryFactory.count() ?: return
 
-        wss.sendObserve(countMessage, wssClient)
+        countMessage
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeOn(AndroidSchedulers.mainThread())
-            .flatMap { response -> getQueueCount(playContext, response) }
             .concatMap { count -> getCurrentAndNextTrackMessages(playContext, count) }
-            .map { message -> extractTrackFromMessage(message)!! }
             .subscribe(
                 { track ->
                     if (playContext.currentMetadata == null) {
-                        playContext.currentMetadata = track
+                        playContext.currentMetadata = track.firstOrNull()
                     }
                     else {
-                        playContext.nextMetadata = track
+                        playContext.nextMetadata = track.firstOrNull()
                     }
                 },
                 { error ->
@@ -753,18 +745,16 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
 
     private fun precacheTrackMetadata(start: Int, count: Int) {
         val originalParams = params
-        val query = playlistQueryFactory.getPageAroundMessage(start, count)
+        val query = playlistQueryFactory.page(start, count)
 
         if (query != null) {
-            this.wss.sendObserve(query, this.wssClient)
-                .observeOn(AndroidSchedulers.mainThread())
+            query.observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     { response ->
                         if (originalParams === this.params) {
-                            val data = response.getJsonArrayOption(Messages.Key.DATA) ?: JSONArray()
-                            for (i in 0..data.length() - 1) {
-                                trackMetadataCache.put(start + i, data.getJSONObject(i))
+                            response.forEachIndexed { i, track ->
+                                trackMetadataCache.put(start + i, track)
                             }
                         }
                     },
@@ -775,65 +765,51 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
     }
 
     override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
-        override fun getRequeryMessage(): SocketMessage? {
+        override fun count(): Observable<Int>? {
             val params = params
             if (params != null) {
                 if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracksByCategory)
-                        .addOption(Messages.Key.CATEGORY, params.category)
-                        .addOption(Messages.Key.ID, params.categoryId)
-                        .addOption(Messages.Key.FILTER, params.filter)
-                        .addOption(Messages.Key.COUNT_ONLY, true)
-                        .build()
+                    return dataProvider.getTrackCountByCategory(
+                        params.category ?: "", params.categoryId, params.filter)
                 }
                 else {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracks)
-                        .addOption(Messages.Key.FILTER, params.filter)
-                        .addOption(Messages.Key.COUNT_ONLY, true)
-                        .build()
+                    return dataProvider.getTrackCount(params.filter)
                 }
             }
-
             return null
         }
 
-        override fun getPageAroundMessage(offset: Int, limit: Int): SocketMessage? {
+        override fun all(): Observable<List<ITrack>>? {
             val params = params
             if (params != null) {
                 if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracksByCategory)
-                        .addOption(Messages.Key.CATEGORY, params.category)
-                        .addOption(Messages.Key.ID, params.categoryId)
-                        .addOption(Messages.Key.FILTER, params.filter)
-                        .addOption(Messages.Key.LIMIT, limit)
-                        .addOption(Messages.Key.OFFSET, offset)
-                        .build()
+                    return dataProvider.getTracksByCategory(
+                        params.category ?: "", params.categoryId, params.filter)
                 }
                 else {
-                    return SocketMessage.Builder
-                        .request(Messages.Request.QueryTracks)
-                        .addOption(Messages.Key.FILTER, params.filter)
-                        .addOption(Messages.Key.LIMIT, limit)
-                        .addOption(Messages.Key.OFFSET, offset)
-                        .build()
+                    return dataProvider.getTracks(params.filter)
                 }
             }
-
             return null
         }
 
-        override fun connectionRequired(): Boolean {
-            return true
+        override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? {
+            val params = params
+            if (params != null) {
+                if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
+                    return dataProvider.getTracksByCategory(
+                        params.category ?: "", params.categoryId, limit, offset, params.filter)
+                }
+                else {
+                    return dataProvider.getTracks(limit, offset, params.filter)
+                }
+            }
+            return null
         }
-    }
 
-    private val wssClient = object : WebSocketService.Client {
-        override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {}
-        override fun onMessageReceived(message: SocketMessage) {}
-        override fun onInvalidPassword() {}
+        override fun offline(): Boolean {
+            return params?.category == Messages.Category.OFFLINE
+        }
     }
 
     init {
@@ -901,15 +877,5 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         private val MAX_TRACK_METADATA_CACHE_SIZE = 50
         private val PRECACHE_METADATA_SIZE = 10
         private val PAUSED_SERVICE_SLEEP_DELAY_MS = 1000 * 60 * 5 /* 5 minutes */
-
-        private fun getQueueCount(context: PlaybackContext, message: SocketMessage): Observable<Int> {
-            context.queueCount = message.getIntOption(Messages.Key.COUNT, 0)
-            return Observable.just(context.queueCount)
-        }
-
-        private fun extractTrackFromMessage(message: SocketMessage): JSONObject? {
-            val data = message.getJsonArrayOption(Messages.Key.DATA) ?: JSONArray()
-            return if (data.length() > 0) data.optJSONObject(0) else null
-        }
     }
 }

@@ -2,10 +2,17 @@ package io.casey.musikcube.remote.playback
 
 import android.os.Handler
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.data.IDataProvider
+import io.casey.musikcube.remote.data.ITrack
+import io.casey.musikcube.remote.injection.DaggerServiceComponent
+import io.casey.musikcube.remote.injection.DataModule
+import io.casey.musikcube.remote.injection.AppModule
+import io.casey.musikcube.remote.injection.ServiceModule
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
+import io.reactivex.Observable
 import org.json.JSONObject
 import java.util.*
 import javax.inject.Inject
@@ -91,6 +98,8 @@ class RemotePlaybackService : PlaybackService {
     }
 
     @Inject lateinit var wss: WebSocketService
+    @Inject lateinit var dataProvider: IDataProvider
+
     private val handler = Handler()
     private val listeners = HashSet<() -> Unit>()
     private val estimatedTime = EstimatedPosition()
@@ -143,7 +152,11 @@ class RemotePlaybackService : PlaybackService {
     private var track: JSONObject = JSONObject()
 
     init {
-        Application.mainComponent.inject(this)
+        DaggerServiceComponent.builder()
+            .appComponent(Application.appComponent)
+            .dataModule(DataModule())
+            .build().inject(this)
+
         reset()
     }
 
@@ -243,6 +256,7 @@ class RemotePlaybackService : PlaybackService {
 
         if (listeners.size == 1) {
             wss.addClient(client)
+            dataProvider.attach()
             scheduleTimeSyncMessage()
         }
     }
@@ -252,6 +266,7 @@ class RemotePlaybackService : PlaybackService {
 
         if (listeners.size == 0) {
             wss.removeClient(client)
+            dataProvider.detach()
             handler.removeCallbacks(syncTimeRunnable)
         }
     }
@@ -375,23 +390,20 @@ class RemotePlaybackService : PlaybackService {
     }
 
     override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
-        override fun getRequeryMessage(): SocketMessage {
-            return SocketMessage.Builder
-                .request(Messages.Request.QueryPlayQueueTracks)
-                .addOption(Messages.Key.COUNT_ONLY, true)
-                .build()
+        override fun count(): Observable<Int> {
+            return dataProvider.getQueueTracksCount()
         }
 
-        override fun getPageAroundMessage(offset: Int, limit: Int): SocketMessage {
-            return SocketMessage.Builder
-                .request(Messages.Request.QueryPlayQueueTracks)
-                .addOption(Messages.Key.OFFSET, offset)
-                .addOption(Messages.Key.LIMIT, limit)
-                .build()
+        override fun all(): Observable<List<ITrack>>? {
+            return dataProvider.getQueueTracks()
         }
 
-        override fun connectionRequired(): Boolean {
-            return true
+        override fun page(offset: Int, limit: Int): Observable<List<ITrack>> {
+            return dataProvider.getQueueTracks(limit, offset)
+        }
+
+        override fun offline(): Boolean {
+            return false
         }
     }
 

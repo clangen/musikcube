@@ -11,6 +11,8 @@ import android.widget.TextView
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.data.IDataProvider
+import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.playback.Metadata
 import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.ui.extension.*
@@ -29,7 +31,7 @@ class PlayQueueActivity : WebSocketActivityBase() {
     private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        Application.mainComponent.inject(this)
+        component.inject(this)
 
         super.onCreate(savedInstanceState)
 
@@ -41,19 +43,27 @@ class PlayQueueActivity : WebSocketActivityBase() {
         val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
 
-        val queryFactory = playback!!.playlistQueryFactory
-        val message: SocketMessage? = queryFactory.getRequeryMessage()
-
         emptyView = findViewById(R.id.empty_list_view)
         emptyView.capability = EmptyListView.Capability.OfflineOk
         emptyView.emptyMessage = getString(R.string.play_queue_empty)
         emptyView.alternateView = recyclerView
 
-        offlineQueue = (Messages.Category.OFFLINE == message?.getStringOption(Messages.Key.CATEGORY))
+        val queryFactory = playback!!.playlistQueryFactory
+        offlineQueue = playback!!.playlistQueryFactory.offline()
 
-        tracks = TrackListSlidingWindow(recyclerView, fastScroller, getWebSocketService(), queryFactory)
+        tracks = TrackListSlidingWindow(recyclerView, fastScroller, dataProvider, queryFactory)
         tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
+
+        dataProvider.observeConnection().subscribe(
+            { states ->
+                if (states.first == IDataProvider.State.Connected) {
+                    tracks.requery()
+                }
+                else {
+                    emptyView.update(states.first, adapter.itemCount)
+                }
+            }, { /* error */ })
 
         setTitleFromIntent(R.string.play_queue_title)
         addTransportFragment()
@@ -75,9 +85,6 @@ class PlayQueueActivity : WebSocketActivityBase() {
         }
     }
 
-    override val webSocketServiceClient: WebSocketService.Client?
-        get() = socketClient
-
     override val playbackServiceEventListener: (() -> Unit)?
         get() = playbackEvents
 
@@ -95,27 +102,12 @@ class PlayQueueActivity : WebSocketActivityBase() {
         adapter.notifyDataSetChanged()
     }
 
-    private val socketClient = object : WebSocketService.Client {
-        override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {
-            if (newState == WebSocketService.State.Connected) {
-                tracks.requery()
-            }
-            else {
-                emptyView.update(newState, adapter.itemCount)
-            }
-        }
-
-        override fun onMessageReceived(message: SocketMessage) {}
-
-        override fun onInvalidPassword() {}
-    }
-
     private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val title: TextView = itemView.findViewById(R.id.title)
         private val subtitle: TextView = itemView.findViewById(R.id.subtitle)
         private val trackNum: TextView = itemView.findViewById(R.id.track_num)
 
-        internal fun bind(entry: JSONObject?, position: Int) {
+        internal fun bind(entry: ITrack?, position: Int) {
             trackNum.text = (position + 1).toString()
             itemView.tag = position
             var titleColor = R.color.theme_foreground
@@ -126,7 +118,7 @@ class PlayQueueActivity : WebSocketActivityBase() {
                 subtitle.text = "-"
             }
             else {
-                val entryExternalId = entry.optString(Metadata.Track.EXTERNAL_ID, "")
+                val entryExternalId = entry.externalId
                 val playingExternalId = playback?.getTrackString(Metadata.Track.EXTERNAL_ID, "")
 
                 if (entryExternalId == playingExternalId) {
@@ -134,8 +126,8 @@ class PlayQueueActivity : WebSocketActivityBase() {
                     subtitleColor = R.color.theme_yellow
                 }
 
-                title.text = entry.optString(Metadata.Track.TITLE, "-")
-                subtitle.text = entry.optString(Metadata.Track.ALBUM_ARTIST, "-")
+                title.text = entry.title
+                subtitle.text = entry.albumArtist
             }
 
             title.setTextColor(getColorCompat(titleColor))
@@ -162,7 +154,7 @@ class PlayQueueActivity : WebSocketActivityBase() {
 
     private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) {
-            emptyView.update(getWebSocketService().state, count)
+            emptyView.update(dataProvider.state, count)
         }
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}

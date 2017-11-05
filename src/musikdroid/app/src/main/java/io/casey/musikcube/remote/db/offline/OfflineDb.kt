@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.db.offline
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.injection.DaggerDataComponent
 import io.casey.musikcube.remote.playback.StreamProxy
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
@@ -21,7 +22,9 @@ abstract class OfflineDb : RoomDatabase() {
     @Inject lateinit var wss: WebSocketService
 
     init {
-        Application.mainComponent.inject(this)
+        DaggerDataComponent.builder()
+            .appComponent(Application.appComponent)
+            .build().inject(this)
 
         wss.addInterceptor({ message, responder ->
             var result = false
@@ -62,7 +65,7 @@ abstract class OfflineDb : RoomDatabase() {
         .subscribe({ _ -> }, { })
     }
 
-    fun queryTracks(message: SocketMessage, responder: WebSocketService.Responder) {
+    private fun queryTracks(message: SocketMessage, responder: WebSocketService.Responder) {
         Single.fromCallable {
             val dao = trackDao()
 

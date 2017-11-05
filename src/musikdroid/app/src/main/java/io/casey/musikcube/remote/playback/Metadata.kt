@@ -21,8 +21,10 @@ object Metadata {
 
     interface Album {
         companion object {
+            val ID = "id"
             val TITLE = "title"
             val ALBUM_ARTIST = "album_artist"
+            val ALBUM_ARTIST_ID = "album_artist_id"
         }
     }
 }
