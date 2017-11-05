@@ -1,8 +1,9 @@
 package io.casey.musikcube.remote.playback
 
+import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 
-interface PlaybackService {
+interface IPlaybackService {
     fun connect(listener: () -> Unit)
     fun disconnect(listener: () -> Unit)
 
@@ -46,6 +47,5 @@ interface PlaybackService {
 
     val playlistQueryFactory: TrackListSlidingWindow.QueryFactory
 
-    fun getTrackString(key: String, defaultValue: String): String
-    fun getTrackLong(key: String, defaultValue: Long): Long
+    val playingTrack: ITrack
 }

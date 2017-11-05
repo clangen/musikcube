@@ -18,7 +18,7 @@ import android.widget.CompoundButton
 import android.widget.SeekBar
 import android.widget.TextView
 import io.casey.musikcube.remote.data.IDataProvider
-import io.casey.musikcube.remote.playback.PlaybackService
+import io.casey.musikcube.remote.playback.IPlaybackService
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.playback.RepeatMode
 import io.casey.musikcube.remote.ui.activity.*
@@ -36,7 +36,7 @@ import io.casey.musikcube.remote.websocket.WebSocketService
 class MainActivity : WebSocketActivityBase() {
     private val handler = Handler()
     private lateinit var prefs: SharedPreferences
-    private var playback: PlaybackService? = null
+    private var playback: IPlaybackService? = null
 
     private var updateCheck: UpdateCheck = UpdateCheck()
     private var seekbarValue = -1

@@ -11,10 +11,11 @@ import android.widget.TextView
 import io.casey.musikcube.remote.MainActivity
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.playback.Metadata
-import io.casey.musikcube.remote.playback.PlaybackService
+import io.casey.musikcube.remote.playback.IPlaybackService
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.playback.PlaybackState
 import io.casey.musikcube.remote.ui.activity.PlayQueueActivity
+import io.casey.musikcube.remote.ui.extension.fallback
 import io.casey.musikcube.remote.ui.extension.getColorCompat
 
 class TransportFragment : Fragment() {
@@ -53,7 +54,7 @@ class TransportFragment : Fragment() {
         this.playbackService?.connect(playbackListener)
     }
 
-    var playbackService: PlaybackService? = null
+    var playbackService: IPlaybackService? = null
         private set
 
     var modelChangedListener: OnModelChangedListener? = null
@@ -112,10 +113,9 @@ class TransportFragment : Fragment() {
             title?.setText(R.string.transport_not_playing)
         }
         else {
-            title?.setTextColor(getColorCompat(R.color.theme_green))
-
             val defaultValue = getString(if (buffering) R.string.buffering else R.string.unknown_title)
-            title?.text = playbackService?.getTrackString(Metadata.Track.TITLE, defaultValue)
+            title?.text = fallback(playbackService?.playingTrack?.title, defaultValue)
+            title?.setTextColor(getColorCompat(R.color.theme_green))
         }
     }
 

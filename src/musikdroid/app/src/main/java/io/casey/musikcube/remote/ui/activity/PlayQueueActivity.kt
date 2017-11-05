@@ -13,7 +13,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.playback.Metadata
-import io.casey.musikcube.remote.playback.PlaybackService
+import io.casey.musikcube.remote.playback.IPlaybackService
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.view.EmptyListView
@@ -21,7 +21,7 @@ import io.casey.musikcube.remote.ui.view.EmptyListView
 class PlayQueueActivity : WebSocketActivityBase() {
     private var adapter: Adapter = Adapter()
     private var offlineQueue: Boolean = false
-    private var playback: PlaybackService? = null
+    private var playback: IPlaybackService? = null
     private lateinit var tracks: TrackListSlidingWindow
     private lateinit var emptyView: EmptyListView
 
@@ -113,16 +113,17 @@ class PlayQueueActivity : WebSocketActivityBase() {
                 subtitle.text = "-"
             }
             else {
+                val playing = playback!!.playingTrack
                 val entryExternalId = entry.externalId
-                val playingExternalId = playback?.getTrackString(Metadata.Track.EXTERNAL_ID, "")
+                val playingExternalId = playing.externalId
 
                 if (entryExternalId == playingExternalId) {
                     titleColor = R.color.theme_green
                     subtitleColor = R.color.theme_yellow
                 }
 
-                title.text = entry.title
-                subtitle.text = entry.albumArtist
+                title.text = fallback(entry.title, "-")
+                subtitle.text = fallback(entry.albumArtist, "-")
             }
 
             title.setTextColor(getColorCompat(titleColor))

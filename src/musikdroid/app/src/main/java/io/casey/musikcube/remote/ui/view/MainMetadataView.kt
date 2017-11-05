@@ -25,10 +25,10 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.DataModule
-import io.casey.musikcube.remote.injection.AppModule
 import io.casey.musikcube.remote.playback.*
 import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
+import io.casey.musikcube.remote.ui.extension.fallback
 import io.casey.musikcube.remote.ui.extension.getColorCompat
 import io.casey.musikcube.remote.ui.model.AlbumArtModel
 import io.casey.musikcube.remote.util.Strings
@@ -102,13 +102,14 @@ class MainMetadataView : FrameLayout {
             visibility = View.VISIBLE
 
             val playback = playbackService
+            val playing = playbackService.playingTrack
 
             val buffering = playback.playbackState == PlaybackState.Buffering
             val streaming = playback is StreamingPlaybackService
 
-            val artist = playback.getTrackString(Metadata.Track.ARTIST, "")
-            val album = playback.getTrackString(Metadata.Track.ALBUM, "")
-            val title = playback.getTrackString(Metadata.Track.TITLE, "")
+            val artist = fallback(playing.artist, "")
+            val album = fallback(playing.album, "")
+            val title = fallback(playing.title, "")
 
             /* we don't display the volume amount when we're streaming -- the system has
             overlays for drawing volume. */
@@ -151,7 +152,7 @@ class MainMetadataView : FrameLayout {
         }
     }
 
-    private val playbackService: PlaybackService
+    private val playbackService: IPlaybackService
         get() = PlaybackServiceFactory.instance(context)
 
     private fun getString(resId: Int): String {
@@ -181,14 +182,17 @@ class MainMetadataView : FrameLayout {
         }
     }
 
-    private fun rebindAlbumArtistWithArtTextView(playback: PlaybackService) {
+    private fun rebindAlbumArtistWithArtTextView(playback: IPlaybackService) {
+        val playing = playback.playingTrack
         val buffering = playback.playbackState == PlaybackState.Buffering
 
-        val artist = playback.getTrackString(
-            Metadata.Track.ARTIST, getString(if (buffering) R.string.buffering else R.string.unknown_artist))
+        val artist = fallback(
+            playing.artist,
+            getString(if (buffering) R.string.buffering else R.string.unknown_artist))
 
-        val album = playback.getTrackString(
-            Metadata.Track.ALBUM, getString(if (buffering) R.string.buffering else R.string.unknown_album))
+        val album = fallback(
+            playing.album,
+            getString(if (buffering) R.string.buffering else R.string.unknown_album))
 
         val albumColor = ForegroundColorSpan(getColorCompat(R.color.theme_orange))
 
@@ -338,11 +342,11 @@ class MainMetadataView : FrameLayout {
 
     private fun navigateToCurrentArtist() {
         val context = context
-        val playback = playbackService
+        val playing = playbackService.playingTrack
 
-        val artistId = playback.getTrackLong(Metadata.Track.ARTIST_ID, -1)
+        val artistId = playing.artistId
         if (artistId != -1L) {
-            val artistName = playback.getTrackString(Metadata.Track.ARTIST, "")
+            val artistName = fallback(playing.artist, "")
             context.startActivity(AlbumBrowseActivity.getStartIntent(
                 context, Messages.Category.ARTIST, artistId, artistName))
         }
@@ -350,11 +354,11 @@ class MainMetadataView : FrameLayout {
 
     private fun navigateToCurrentAlbum() {
         val context = context
-        val playback = playbackService
+        val playing = playbackService.playingTrack
 
-        val albumId = playback.getTrackLong(Metadata.Track.ALBUM_ID, -1)
+        val albumId = playing.albumId
         if (albumId != -1L) {
-            val albumName = playback.getTrackString(Metadata.Track.ALBUM, "")
+            val albumName = fallback(playing.album, "")
             context.startActivity(TrackListActivity.getStartIntent(
                 context, Messages.Category.ALBUM, albumId, albumName))
         }

@@ -13,7 +13,7 @@ import com.uacf.taskrunner.Task
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.injection.*
-import io.casey.musikcube.remote.playback.PlaybackService
+import io.casey.musikcube.remote.playback.IPlaybackService
 import io.casey.musikcube.remote.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.ui.extension.hideKeyboard
 import io.casey.musikcube.remote.websocket.Prefs
@@ -137,7 +137,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
         return wss
     }
 
-    protected var playbackService: PlaybackService? = null
+    protected var playbackService: IPlaybackService? = null
         private set
 
     protected val runner: Runner

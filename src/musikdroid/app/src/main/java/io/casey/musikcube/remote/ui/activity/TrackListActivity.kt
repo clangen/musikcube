@@ -150,16 +150,17 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
             var subtitleColor = R.color.theme_disabled_foreground
 
             if (track != null) {
+                val playing = transport.playbackService!!.playingTrack
                 val entryExternalId = track.externalId
-                val playingExternalId = transport.playbackService?.getTrackString(Metadata.Track.EXTERNAL_ID, "")
+                val playingExternalId = playing.externalId
 
                 if (entryExternalId == playingExternalId) {
                     titleColor = R.color.theme_green
                     subtitleColor = R.color.theme_yellow
                 }
 
-                title.text = track.title
-                subtitle.text = track.albumArtist
+                title.text = fallback(track.title, "-")
+                subtitle.text = fallback(track.albumArtist, "-")
             }
             else {
                 title.text = "-"

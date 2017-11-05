@@ -165,7 +165,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
 
     private fun navigateToTracks(entry: ICategoryValue) {
         val categoryId = entry.id
-        val value = entry.name
+        val value = entry.value
         val intent = TrackListActivity.getStartIntent(this, category, categoryId, value)
         startActivityForResult(intent, Navigation.RequestCode.CATEGORY_TRACKS_ACTIVITY)
     }
@@ -178,12 +178,8 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
         }
 
         internal fun bind(entry: ICategoryValue) {
-            var playingId: Long = -1
-
-            val idKey = CATEGORY_NAME_TO_ID[category]
-            if (idKey != null && idKey.isNotEmpty()) {
-                playingId = transport.playbackService?.getTrackLong(idKey, -1) ?: -1L
-            }
+            val playing = transport.playbackService?.playingTrack
+            val playingId = playing?.getCategoryId(category) ?: -1
 
             var titleColor = R.color.theme_foreground
             if (playingId != -1L && entry.id == playingId) {
@@ -191,7 +187,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
             }
 
             /* note optString only does a null check! */
-            var value = entry.name
+            var value = entry.value
             value = if (Strings.empty(value)) getString(R.string.unknown_value) else value
 
             title.text = value
@@ -229,13 +225,6 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
     companion object {
         private val EXTRA_CATEGORY = "extra_category"
         private val EXTRA_DEEP_LINK_TYPE = "extra_deep_link_type"
-
-        private val CATEGORY_NAME_TO_ID: Map<String, String> = mapOf(
-            Messages.Category.ALBUM_ARTIST to Metadata.Track.ALBUM_ARTIST_ID,
-            Messages.Category.GENRE to Metadata.Track.GENRE_ID,
-            Messages.Category.ARTIST to Metadata.Track.ARTIST_ID,
-            Messages.Category.ALBUM to Metadata.Track.ALBUM_ID,
-            Messages.Category.PLAYLISTS to Metadata.Track.ALBUM_ID)
 
         private val CATEGORY_NAME_TO_TITLE: Map<String, Int> = mapOf(
             Messages.Category.ALBUM_ARTIST to R.string.artists_title,

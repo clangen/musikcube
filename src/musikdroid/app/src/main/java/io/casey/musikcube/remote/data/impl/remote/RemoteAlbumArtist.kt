@@ -6,8 +6,8 @@ import org.json.JSONObject
 
 class RemoteAlbumArtist(private val json: JSONObject) : IAlbumArtist {
     override val id: Long
-        get() = json.optLong(Messages.Key.ID)
-    override val name: String
+        get() = json.optLong(Messages.Key.ID, -1)
+    override val value: String
         get() = json.optString(Messages.Key.VALUE, "")
     override val type: String
         get() = Messages.Category.ALBUM_ARTIST

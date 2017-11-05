@@ -8,8 +8,8 @@ class RemoteCategoryValue(private val categoryType: String,
                           private val json: JSONObject) : ICategoryValue
 {
     override val id: Long
-        get() = json.optLong(Messages.Key.ID)
-    override val name: String
+        get() = json.optLong(Messages.Key.ID, -1)
+    override val value: String
         get() = json.optString(Messages.Key.VALUE, "")
     override val type: String
         get() = categoryType

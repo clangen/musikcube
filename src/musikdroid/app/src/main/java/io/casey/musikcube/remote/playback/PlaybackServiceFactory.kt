@@ -10,7 +10,7 @@ object PlaybackServiceFactory {
     private var remote: RemotePlaybackService? = null
     private var prefs: SharedPreferences? = null
 
-    @Synchronized fun instance(context: Context): PlaybackService {
+    @Synchronized fun instance(context: Context): IPlaybackService {
         init(context)
 
         if (prefs!!.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)) {

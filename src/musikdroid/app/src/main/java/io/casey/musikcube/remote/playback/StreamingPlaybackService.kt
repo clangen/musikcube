@@ -12,6 +12,7 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
+import io.casey.musikcube.remote.data.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
@@ -20,11 +21,12 @@ import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.Prefs
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.*
 import javax.inject.Inject
 
-class StreamingPlaybackService(context: Context) : PlaybackService {
+class StreamingPlaybackService(context: Context) : IPlaybackService {
     @Inject lateinit var dataProvider: IDataProvider
 
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
@@ -352,13 +354,11 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         notifyEventListeners()
     }
 
-    override fun getTrackString(key: String, defaultValue: String): String {
-        return playContext.currentMetadata?.getString(key, defaultValue) ?: defaultValue
-    }
-
-    override fun getTrackLong(key: String, defaultValue: Long): Long {
-        return playContext.currentMetadata?.getLong(key, defaultValue) ?: defaultValue
-    }
+    override val playingTrack: ITrack
+        get() {
+            val playing: ITrack? = playContext.currentMetadata
+            return playing ?: RemoteTrack(JSONObject())
+        }
 
     override val bufferedTime: Double /* ms -> sec */
         get() {
@@ -567,11 +567,7 @@ class StreamingPlaybackService(context: Context) : PlaybackService {
         }
         else {
             if (currentIndex + 1 >= count) {
-                if (repeatMode === RepeatMode.List) {
-                    return 0
-                } else {
-                    return -1
-                }
+                return if (repeatMode === RepeatMode.List) 0 else -1
             }
             else {
                 return currentIndex + 1

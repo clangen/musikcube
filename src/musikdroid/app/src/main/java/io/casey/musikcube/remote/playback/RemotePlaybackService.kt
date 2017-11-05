@@ -4,6 +4,7 @@ import android.os.Handler
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
+import io.casey.musikcube.remote.data.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
@@ -15,7 +16,7 @@ import org.json.JSONObject
 import java.util.*
 import javax.inject.Inject
 
-class RemotePlaybackService : PlaybackService {
+class RemotePlaybackService : IPlaybackService {
     private interface Key {
         companion object {
             val STATE = "state"
@@ -288,19 +289,8 @@ class RemotePlaybackService : PlaybackService {
     override val bufferedTime: Double
         get() = duration
 
-    override fun getTrackString(key: String, defaultValue: String): String {
-        if (track.has(key)) {
-            return track.optString(key, defaultValue)
-        }
-        return defaultValue
-    }
-
-    override fun getTrackLong(key: String, defaultValue: Long): Long {
-        if (track.has(key)) {
-            return track.optLong(key, defaultValue)
-        }
-        return defaultValue
-    }
+    override val playingTrack: ITrack
+        get() = RemoteTrack(track)
 
     private fun reset() {
         playbackState = PlaybackState.Stopped

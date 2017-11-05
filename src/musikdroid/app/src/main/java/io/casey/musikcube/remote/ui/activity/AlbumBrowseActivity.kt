@@ -117,7 +117,7 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         val album = view.tag as IAlbum
 
         val intent = TrackListActivity.getStartIntent(
-            this@AlbumBrowseActivity, Messages.Category.ALBUM, album.id, album.name)
+            this@AlbumBrowseActivity, Messages.Category.ALBUM, album.id, album.value)
 
         startActivityForResult(intent, Navigation.RequestCode.ALBUM_TRACKS_ACTIVITY)
     }
@@ -127,7 +127,8 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
 
         internal fun bind(album: IAlbum) {
-            val playingId = transport.playbackService?.getTrackLong(Metadata.Track.ALBUM_ID, -1L) ?: -1L
+            val playing = transport.playbackService!!.playingTrack
+            val playingId = playing.albumId
 
             var titleColor = R.color.theme_foreground
             var subtitleColor = R.color.theme_disabled_foreground
@@ -137,10 +138,10 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
                 subtitleColor = R.color.theme_yellow
             }
 
-            title.text = album.name
+            title.text = fallback(album.value, "-")
             title.setTextColor(getColorCompat(titleColor))
 
-            subtitle.text = album.albumArtist
+            subtitle.text = fallback(album.albumArtist, "-")
             subtitle.setTextColor(getColorCompat(subtitleColor))
             itemView.tag = album
         }
@@ -197,7 +198,7 @@ class AlbumBrowseActivity : WebSocketActivityBase(), Filterable {
         }
 
         fun getStartIntent(context: Context, categoryName: String, categoryValue: ICategoryValue): Intent {
-            return getStartIntent(context, categoryName, categoryValue.id, categoryValue.name)
+            return getStartIntent(context, categoryName, categoryValue.id, categoryValue.value)
         }
     }
 }

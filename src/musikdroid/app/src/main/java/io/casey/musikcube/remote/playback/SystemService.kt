@@ -23,6 +23,7 @@ import com.bumptech.glide.request.target.Target
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.MainActivity
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.ui.extension.fallback
 import io.casey.musikcube.remote.ui.model.AlbumArtModel
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
@@ -188,9 +189,10 @@ class SystemService : Service() {
                 else -> { }
             }
 
-            title = playback?.getTrackString(Metadata.Track.TITLE, "-")!!
-            album = playback?.getTrackString(Metadata.Track.ALBUM, "-")!!
-            artist = playback?.getTrackString(Metadata.Track.ARTIST, "-")!!
+            val playing = playback!!.playingTrack
+            title = fallback(playing.title, "-")
+            album = fallback(playing.album, "-")
+            artist = fallback(playing.artist, "-")
             duration = ((playback?.duration ?: 0.0) * 1000).toInt()
         }
 

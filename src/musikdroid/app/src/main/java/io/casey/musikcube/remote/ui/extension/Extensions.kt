@@ -190,3 +190,7 @@ fun AppCompatActivity.showSnackbar(view: View, stringId: Int) {
 fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) {
     this.showSnackbar(this.findViewById<View>(viewId), stringId)
 }
+
+fun fallback(input: String?, fallback: String): String {
+    return if (input.isNullOrEmpty()) fallback else input!!
+}

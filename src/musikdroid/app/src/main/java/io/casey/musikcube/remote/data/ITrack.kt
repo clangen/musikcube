@@ -17,7 +17,6 @@ interface ITrack {
     val artist: String
     val artistId: Long
 
-    fun getString(key: String, default: String): String
-    fun getLong(key: String, default: Long): Long
+    fun getCategoryId(categoryType: String): Long
     fun toJson(): JSONObject
 }
