@@ -24,8 +24,6 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Navigation
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
-import io.casey.musikcube.remote.websocket.SocketMessage
-import io.casey.musikcube.remote.websocket.WebSocketService
 import io.reactivex.Observable
 
 class TrackListActivity : WebSocketActivityBase(), Filterable {
@@ -102,7 +100,7 @@ class TrackListActivity : WebSocketActivityBase(), Filterable {
     }
 
     private fun initObservers() {
-        disposables.add(dataProvider.observeConnection().subscribe(
+        disposables.add(dataProvider.observeState().subscribe(
             { states ->
                 val shouldRequery =
                     states.first === IDataProvider.State.Connected ||

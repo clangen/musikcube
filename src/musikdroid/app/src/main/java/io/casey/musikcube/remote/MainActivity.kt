@@ -31,7 +31,6 @@ import io.casey.musikcube.remote.ui.view.MainMetadataView
 import io.casey.musikcube.remote.util.Duration
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.Prefs
-import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
 
 class MainActivity : WebSocketActivityBase() {
@@ -149,7 +148,7 @@ class MainActivity : WebSocketActivityBase() {
         get() = playbackEvents
 
     private fun initObservers() {
-        disposables.add(dataProvider.observeConnection().subscribe(
+        disposables.add(dataProvider.observeState().subscribe(
             { states ->
                 when (states.first) {
                     IDataProvider.State.Connected -> rebindUi()

@@ -25,7 +25,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
     private val authFailurePublisher: PublishSubject<Unit> = PublishSubject.create()
 
     init {
-        disposables.add(observeConnection().subscribe({ updatedStates ->
+        disposables.add(observeState().subscribe({ updatedStates ->
             currentState = updatedStates.first
         }, { /*error */ }))
     }
@@ -116,7 +116,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .compose(applySchedulers())
     }
 
-    override fun getQueueTracksCount(filter: String): Observable<Int> {
+    override fun getPlayQueueTracksCount(filter: String): Observable<Int> {
         val message = SocketMessage.Builder
             .request(Messages.Request.QueryPlayQueueTracks)
             .addOption(Messages.Key.FILTER, filter)
@@ -128,11 +128,11 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .compose(applySchedulers())
     }
 
-    override fun getQueueTracks(filter: String): Observable<List<ITrack>> {
-        return getQueueTracks(-1, -1, filter)
+    override fun getPlayQueueTracks(filter: String): Observable<List<ITrack>> {
+        return getPlayQueueTracks(-1, -1, filter)
     }
 
-    override fun getQueueTracks(limit: Int, offset: Int, filter: String): Observable<List<ITrack>> {
+    override fun getPlayQueueTracks(limit: Int, offset: Int, filter: String): Observable<List<ITrack>> {
         val builder = SocketMessage.Builder
             .request(Messages.Request.QueryPlayQueueTracks)
             .addOption(Messages.Key.FILTER, filter)
@@ -159,11 +159,11 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .compose(applySchedulers())
     }
 
-    override fun observeConnection(): Observable<Pair<IDataProvider.State, IDataProvider.State>> {
+    override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> {
         return connectionStatePublisher.compose(applySchedulers())
     }
 
-    override fun observeQueueState(): Observable<Unit> {
+    override fun observePlayQueue(): Observable<Unit> {
         return playQueueStatePublisher.compose(applySchedulers())
     }
 

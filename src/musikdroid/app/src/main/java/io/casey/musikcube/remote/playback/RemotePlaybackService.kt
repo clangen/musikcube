@@ -6,8 +6,6 @@ import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.injection.DataModule
-import io.casey.musikcube.remote.injection.AppModule
-import io.casey.musikcube.remote.injection.ServiceModule
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.SocketMessage
@@ -391,15 +389,15 @@ class RemotePlaybackService : PlaybackService {
 
     override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
         override fun count(): Observable<Int> {
-            return dataProvider.getQueueTracksCount()
+            return dataProvider.getPlayQueueTracksCount()
         }
 
         override fun all(): Observable<List<ITrack>>? {
-            return dataProvider.getQueueTracks()
+            return dataProvider.getPlayQueueTracks()
         }
 
         override fun page(offset: Int, limit: Int): Observable<List<ITrack>> {
-            return dataProvider.getQueueTracks(limit, offset)
+            return dataProvider.getPlayQueueTracks(limit, offset)
         }
 
         override fun offline(): Boolean {

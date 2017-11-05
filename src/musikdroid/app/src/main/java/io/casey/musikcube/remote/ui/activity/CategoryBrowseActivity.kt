@@ -21,8 +21,6 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Navigation
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
-import io.casey.musikcube.remote.websocket.SocketMessage
-import io.casey.musikcube.remote.websocket.WebSocketService
 import io.casey.musikcube.remote.websocket.WebSocketService.State as SocketState
 
 class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
@@ -98,7 +96,7 @@ class CategoryBrowseActivity : WebSocketActivityBase(), Filterable {
     }
 
     private fun initObservers() {
-        disposables.add(dataProvider.observeConnection().subscribe(
+        disposables.add(dataProvider.observeState().subscribe(
             { states ->
                 when (states.first) {
                     IDataProvider.State.Connected -> {

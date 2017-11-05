@@ -9,8 +9,8 @@ interface IDataProvider {
     fun detach()
     fun destroy()
 
-    fun observeConnection(): Observable<Pair<State, State>>
-    fun observeQueueState(): Observable<Unit>
+    fun observeState(): Observable<Pair<State, State>>
+    fun observePlayQueue(): Observable<Unit>
     fun observeAuthFailure(): Observable<Unit>
 
     fun getAlbums(filter: String = ""): Observable<List<IAlbum>>
@@ -24,9 +24,9 @@ interface IDataProvider {
     fun getTracksByCategory(category: String, id: Long, filter: String = ""): Observable<List<ITrack>>
     fun getTracksByCategory(category: String, id: Long, limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
 
-    fun getQueueTracksCount(filter: String = ""): Observable<Int>
-    fun getQueueTracks(filter: String = ""): Observable<List<ITrack>>
-    fun getQueueTracks(limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
+    fun getPlayQueueTracksCount(filter: String = ""): Observable<Int>
+    fun getPlayQueueTracks(filter: String = ""): Observable<List<ITrack>>
+    fun getPlayQueueTracks(limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
 
     fun getCategoryValues(type: String, filter: String = ""): Observable<List<ICategoryValue>>
 

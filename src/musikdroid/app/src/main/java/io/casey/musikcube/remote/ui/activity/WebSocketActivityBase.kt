@@ -60,10 +60,8 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
             playbackService?.disconnect(playbackServiceEventListener!!)
         }
 
-        val wssClient = webSocketServiceClient
-        if (wssClient != null) {
-            wss.removeClient(webSocketServiceClient!!)
-        }
+        disposables.dispose()
+        disposables = CompositeDisposable()
 
         paused = true
     }
@@ -85,15 +83,7 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
             this.playbackService?.connect(playbackServiceEventListener!!)
         }
 
-        val wssClient = webSocketServiceClient
-        if (wssClient != null) {
-            wss.addClient(webSocketServiceClient!!)
-        }
-
         paused = false
-
-        disposables.dispose()
-        disposables = CompositeDisposable()
     }
 
     override fun onDestroy() {
@@ -168,9 +158,6 @@ abstract class WebSocketActivityBase : AppCompatActivity(), Runner.TaskCallbacks
             }
         }
     }
-
-    protected open val webSocketServiceClient: WebSocketService.Client?
-        get() = null
 
     protected open val playbackServiceEventListener: (() -> Unit)?
         get() = null

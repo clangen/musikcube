@@ -9,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
@@ -18,10 +17,6 @@ import io.casey.musikcube.remote.playback.PlaybackService
 import io.casey.musikcube.remote.ui.extension.*
 import io.casey.musikcube.remote.ui.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.view.EmptyListView
-import io.casey.musikcube.remote.websocket.Messages
-import io.casey.musikcube.remote.websocket.SocketMessage
-import io.casey.musikcube.remote.websocket.WebSocketService
-import org.json.JSONObject
 
 class PlayQueueActivity : WebSocketActivityBase() {
     private var adapter: Adapter = Adapter()
@@ -55,7 +50,7 @@ class PlayQueueActivity : WebSocketActivityBase() {
         tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
-        dataProvider.observeConnection().subscribe(
+        dataProvider.observeState().subscribe(
             { states ->
                 if (states.first == IDataProvider.State.Connected) {
                     tracks.requery()

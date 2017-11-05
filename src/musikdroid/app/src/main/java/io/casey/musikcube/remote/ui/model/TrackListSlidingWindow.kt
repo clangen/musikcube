@@ -115,7 +115,7 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
     }
 
     fun resume() {
-        disposables.add(dataProvider.observeQueueState()
+        disposables.add(dataProvider.observePlayQueue()
             .subscribe({ requery() }, { /* error */ }))
 
         recyclerView.addOnScrollListener(_scrollListener)
