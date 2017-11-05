@@ -14,7 +14,7 @@ interface IDataProvider {
     fun observeAuthFailure(): Observable<Unit>
 
     fun getAlbums(filter: String = ""): Observable<List<IAlbum>>
-    fun getAlbumForCategory(categoryType: String, categoryId: Long, filter: String = ""): Observable<List<IAlbum>>
+    fun getAlbumsForCategory(categoryType: String, categoryId: Long, filter: String = ""): Observable<List<IAlbum>>
 
     fun getTrackCount(filter: String = ""): Observable<Int>
     fun getTracks(filter: String = ""): Observable<List<ITrack>>

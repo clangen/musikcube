@@ -97,7 +97,7 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
     }
 
     private fun requery() {
-        dataProvider.getAlbumForCategory(categoryName, categoryId)
+        dataProvider.getAlbumsForCategory(categoryName, categoryId, lastFilter)
             .subscribe({ albumList ->
                 adapter.setModel(albumList)
                 emptyView.update(dataProvider.state, adapter.itemCount)

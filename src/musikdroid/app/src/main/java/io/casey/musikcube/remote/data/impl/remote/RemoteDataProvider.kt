@@ -34,10 +34,10 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         get() = currentState
 
     override fun getAlbums(filter: String): Observable<List<IAlbum>> {
-        return getAlbumForCategory("", 0, filter)
+        return getAlbumsForCategory("", 0, filter)
     }
 
-    override fun getAlbumForCategory(categoryType: String, categoryId: Long, filter: String): Observable<List<IAlbum>> {
+    override fun getAlbumsForCategory(categoryType: String, categoryId: Long, filter: String): Observable<List<IAlbum>> {
         val message = SocketMessage.Builder
             .request(Messages.Request.QueryAlbums)
             .addOption(Messages.Key.CATEGORY, categoryType)
