@@ -159,6 +159,37 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .compose(applySchedulers())
     }
 
+    override fun appendToPlaylist(playlistId: Long, categoryType: String, categoryId: Long, filter: String, offset: Long): Observable<Boolean> {
+        val type = if (categoryType.isNotEmpty() && categoryId > 0)
+            Messages.Request.QueryTracksByCategory else Messages.Request.QueryTracks
+
+        val suboptions = JSONObject()
+
+        if (type == Messages.Request.QueryTracksByCategory) {
+            suboptions.put(Messages.Key.CATEGORY, categoryType)
+            suboptions.put(Messages.Key.ID, categoryId)
+        }
+
+        if (filter.isNotEmpty()) {
+            suboptions.put(Messages.Key.FILTER, filter)
+        }
+
+        val subquery = JSONObject()
+            .put(Messages.Key.TYPE, type.toString())
+            .put(Messages.Key.OPTIONS, suboptions)
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.AppendToPlaylist)
+            .addOption(Messages.Key.PLAYLIST_ID, playlistId)
+            .addOption(Messages.Key.OFFSET, offset)
+            .addOption(Messages.Key.SUBQUERY, subquery)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .compose(applySchedulers())
+    }
+
     override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> {
         return connectionStatePublisher.compose(applySchedulers())
     }
@@ -258,6 +289,10 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         private fun toCount(message: SocketMessage): Observable<Int> {
             return Observable.just(message.getIntOption(Messages.Key.COUNT, 0))
+        }
+
+        private fun isSuccessful(message: SocketMessage): Observable<Boolean> {
+            return Observable.just(message.getBooleanOption(Messages.Key.SUCCESS, false))
         }
     }
 }

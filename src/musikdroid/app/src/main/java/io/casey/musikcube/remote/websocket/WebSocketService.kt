@@ -86,9 +86,11 @@ class WebSocketService constructor(private val context: Context) {
         else if (message.what == MESSAGE_SCHEDULE_PING) {
             ping()
         }
-        else if (message.what == MESSAGE_PING_EXPIRED) {
-            removeInternalCallbacks()
-            disconnect(state == State.Connected || autoReconnect)
+        else if (message.what == MESSAGE_PING_TIMEOUT) {
+            if (DISCONNECT_ON_PING_TIMEOUT) {
+                removeInternalCallbacks()
+                disconnect(state == State.Connected || autoReconnect)
+            }
         }
 
         result
@@ -200,13 +202,13 @@ class WebSocketService constructor(private val context: Context) {
         if (state == State.Connected) {
             removeInternalCallbacks()
 
-            handler.removeMessages(MESSAGE_PING_EXPIRED)
-            handler.sendEmptyMessageDelayed(MESSAGE_PING_EXPIRED, PING_INTERVAL_MILLIS)
+            handler.removeMessages(MESSAGE_PING_TIMEOUT)
+            handler.sendEmptyMessageDelayed(MESSAGE_PING_TIMEOUT, PING_INTERVAL_MILLIS)
 
             val ping = SocketMessage.Builder.request(Messages.Request.Ping).build()
 
             send(ping, INTERNAL_CLIENT) { _: SocketMessage ->
-                handler.removeMessages(MESSAGE_PING_EXPIRED)
+                handler.removeMessages(MESSAGE_PING_TIMEOUT)
                 handler.sendEmptyMessageDelayed(MESSAGE_SCHEDULE_PING, PING_INTERVAL_MILLIS)
             }
         }
@@ -579,7 +581,9 @@ class WebSocketService constructor(private val context: Context) {
         private val MESSAGE_REMOVE_OLD_CALLBACKS = MESSAGE_BASE + 2
         private val MESSAGE_AUTO_RECONNECT = MESSAGE_BASE + 3
         private val MESSAGE_SCHEDULE_PING = MESSAGE_BASE + 4
-        private val MESSAGE_PING_EXPIRED = MESSAGE_BASE + 5
+        private val MESSAGE_PING_TIMEOUT = MESSAGE_BASE + 5
+
+        private val DISCONNECT_ON_PING_TIMEOUT = true
 
         private val NEXT_ID = AtomicLong(0)
 

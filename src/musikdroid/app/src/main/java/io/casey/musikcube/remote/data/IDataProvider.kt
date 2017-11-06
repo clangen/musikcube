@@ -30,5 +30,7 @@ interface IDataProvider {
 
     fun getCategoryValues(type: String, filter: String = ""): Observable<List<ICategoryValue>>
 
+    fun appendToPlaylist(playlistId: Long, categoryType: String = "", categoryId: Long = -1, filter: String = "", offset: Long = -1): Observable<Boolean>
+
     val state: State
 }

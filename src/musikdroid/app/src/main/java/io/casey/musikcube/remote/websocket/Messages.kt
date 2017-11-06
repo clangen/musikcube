@@ -95,6 +95,11 @@ class Messages {
             val FILTER = "filter"
             val RELATIVE = "relative"
             val PLAYING_CURRENT_TIME = "playing_current_time"
+            val PLAYLIST_ID = "playlist_id"
+            val SUBQUERY = "subquery"
+            val TYPE = "type"
+            val OPTIONS = "options"
+            val SUCCESS = "success";
         }
     }
 
