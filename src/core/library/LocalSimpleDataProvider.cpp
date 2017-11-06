@@ -389,18 +389,17 @@ bool LocalSimpleDataProvider::DeletePlaylist(const int64_t playlistId) {
     return false;
 }
 
+template <typename TrackListType>
 static bool appendToPlaylist(
     ILibraryPtr library,
     const int64_t playlistId,
-    std::shared_ptr<TrackList> trackList,
+    TrackListType trackList,
     int offset)
 {
     try {
         std::shared_ptr<AppendPlaylistQuery> query =
             std::make_shared<AppendPlaylistQuery>(
-                playlistId,
-                trackList,
-                offset);
+                library, playlistId, trackList, offset);
 
         library->Enqueue(query, ILibrary::QuerySynchronous);
 
@@ -446,4 +445,15 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithExternalIds(
 
     return 0;
 
+}
+
+bool LocalSimpleDataProvider::AppendToPlaylistWithTrackList(
+    const int64_t playlistId, ITrackList* trackList, int offset)
+{
+    static auto deleter = [](musik::core::sdk::ITrackList* trackList) {};
+
+    bool result = appendToPlaylist(
+        this->library, playlistId, trackList, offset);
+
+    return result;
 }

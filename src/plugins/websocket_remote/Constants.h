@@ -113,6 +113,8 @@ namespace key {
     static const std::string authenticated = "authenticated";
     static const std::string playlist_id = "playlist_id";
     static const std::string playlist_name = "playlist_name";
+    static const std::string subquery = "subquery";
+    static const std::string type = "type";
 }
 
 namespace value {

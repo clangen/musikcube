@@ -34,7 +34,8 @@
 
 #include "pch.hpp"
 #include "AppendPlaylistQuery.h"
-
+#include <core/library/track/LibraryTrack.h>
+#include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 
@@ -58,17 +59,34 @@ static std::string GET_MAX_SORT_ORDER_QUERY =
     "SELECT MAX(sort_order) from playlist_tracks where playlist_id = ?";
 
 AppendPlaylistQuery::AppendPlaylistQuery(
+    musik::core::ILibraryPtr library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks,
     const int offset)
-: tracks(tracks)
+: library(library)
+, sharedTracks(tracks)
+, rawTracks(nullptr)
+, playlistId(playlistId)
+, offset(offset) {
+
+}
+
+AppendPlaylistQuery::AppendPlaylistQuery(
+    musik::core::ILibraryPtr library,
+    const int64_t playlistId,
+    musik::core::sdk::ITrackList *tracks,
+    const int offset)
+: library(library)
+, rawTracks(tracks)
 , playlistId(playlistId)
 , offset(offset) {
 
 }
 
 bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
-    if (!tracks->Count() || playlistId == 0) {
+    ITrackList* tracks = sharedTracks ? sharedTracks.get() : rawTracks;
+
+    if (!tracks || !tracks->Count() || playlistId == 0) {
         return true;
     }
 
@@ -99,20 +117,33 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
 
     Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
 
-    for (size_t i = 0; i < this->tracks->Count(); i++) {
-        auto track = this->tracks->Get(i);
-        insertTrack.Reset();
-        insertTrack.BindText(0, track->GetString("external_id"));
-        insertTrack.BindText(1, track->GetString("source_id"));
-        insertTrack.BindInt64(2, playlistId);
-        insertTrack.BindInt32(3, offset++);
+    for (size_t i = 0; i < tracks->Count(); i++) {
+        auto id = tracks->GetId(i);
+        auto target = TrackPtr(new LibraryTrack(id, this->library));
 
-        if (insertTrack.Step() == db::Error) {
-            return false;
+        std::shared_ptr<TrackMetadataQuery> query(
+            new TrackMetadataQuery(
+                target,
+                this->library,
+                TrackMetadataQuery::IdsOnly));
+
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+        if (query->GetStatus() == IQuery::Finished) {
+            auto track = query->Result();
+            insertTrack.Reset();
+            insertTrack.BindText(0, track->GetString("external_id"));
+            insertTrack.BindText(1, track->GetString("source_id"));
+            insertTrack.BindInt64(2, playlistId);
+            insertTrack.BindInt32(3, offset++);
+
+            if (insertTrack.Step() == db::Error) {
+                return false;
+            }
         }
     }
 
     transaction.CommitAndRestart();
 
-    return false;
+    return true;
 }

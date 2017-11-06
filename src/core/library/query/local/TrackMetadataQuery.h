@@ -41,9 +41,12 @@ namespace musik { namespace core { namespace db { namespace local {
 
 class TrackMetadataQuery : public LocalQueryBase {
     public:
+        enum Type { Full, IdsOnly };
+
         TrackMetadataQuery(
             musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library);
+            musik::core::ILibraryPtr library,
+            Type type = Full);
 
         virtual ~TrackMetadataQuery() { }
 
@@ -56,6 +59,7 @@ class TrackMetadataQuery : public LocalQueryBase {
         virtual std::string Name() { return "TrackMetadataQuery"; }
 
     private:
+        Type type;
         ILibraryPtr library;
         TrackPtr result;
 };

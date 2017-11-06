@@ -108,6 +108,11 @@ namespace musik { namespace core { namespace db { namespace local {
                 size_t externalIdCount,
                 int offset = -1) override;
 
+            virtual bool AppendToPlaylistWithTrackList(
+                const int64_t playlistId,
+                musik::core::sdk::ITrackList* trackList,
+                int offset = -1) override;
+
         private:
             musik::core::ILibraryPtr library;
     };

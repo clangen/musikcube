@@ -99,6 +99,11 @@ namespace musik { namespace core { namespace sdk {
                 const char** externalTrackIds,
                 size_t externalTrackIdCount,
                 int offset = -1) = 0;
+
+            virtual bool AppendToPlaylistWithTrackList(
+                const int64_t playlistId,
+                ITrackList* trackList,
+                int offset = -1) = 0;
     };
 
 } } }

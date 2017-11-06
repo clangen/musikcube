@@ -156,6 +156,7 @@ class WebSocketServer {
 
         void GetLimitAndOffset(json& options, int& limit, int& offset);
         ITrackList* QueryTracksByCategory(json& request, int& limit, int& offset);
+        ITrackList* QueryTracks(json& request, int& limit, int& offset);
         json ReadTrackMetadata(ITrack* track);
         void BuildPlaybackOverview(json& options);
 

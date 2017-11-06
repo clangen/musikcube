@@ -44,8 +44,15 @@ namespace musik { namespace core { namespace db { namespace local {
     class AppendPlaylistQuery : public musik::core::db::LocalQueryBase {
         public:
             AppendPlaylistQuery(
+                musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks,
+                const int offset = -1);
+
+            AppendPlaylistQuery(
+                musik::core::ILibraryPtr library,
+                const int64_t playlistId,
+                musik::core::sdk::ITrackList *tracks,
                 const int offset = -1);
 
             virtual ~AppendPlaylistQuery() { }
@@ -56,7 +63,10 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual bool OnRun(musik::core::db::Connection &db);
 
             int64_t playlistId;
-            std::shared_ptr<musik::core::TrackList> tracks;
+
+            musik::core::ILibraryPtr library;
+            std::shared_ptr<musik::core::TrackList> sharedTracks;
+            musik::core::sdk::ITrackList* rawTracks;
             int offset;
     };
 
