@@ -30,7 +30,11 @@ interface IDataProvider {
 
     fun getCategoryValues(type: String, filter: String = ""): Observable<List<ICategoryValue>>
 
+    fun createPlaylist(playlistName: String, categoryType: String = "", categoryId: Long = -1, filter: String = ""): Observable<Long>
+    fun createPlaylist(playlistName: String, tracks: List<ITrack> = ArrayList()): Observable<Long>
     fun appendToPlaylist(playlistId: Long, categoryType: String = "", categoryId: Long = -1, filter: String = "", offset: Long = -1): Observable<Boolean>
+    fun renamePlaylist(playlistId: Long, newName: String): Observable<Boolean>
+    fun deletePlaylist(playlistId: Long): Observable<Boolean>
 
     val state: State
 }

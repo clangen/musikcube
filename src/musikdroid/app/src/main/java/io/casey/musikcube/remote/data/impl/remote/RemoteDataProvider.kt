@@ -159,30 +159,78 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .compose(applySchedulers())
     }
 
+    override fun createPlaylist(playlistName: String, categoryType: String, categoryId: Long, filter: String): Observable<Long> {
+        if (playlistName.isBlank()) {
+            return Observable.just(0)
+        }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SavePlaylist)
+            .addOption(Messages.Key.PLAYLIST_NAME, playlistName)
+            .addOption(Messages.Key.SUBQUERY, createTrackListSubquery(categoryType, categoryId, filter))
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .compose(applySchedulers())
+    }
+
+    override fun createPlaylist(playlistName: String, tracks: List<ITrack>): Observable<Long> {
+        if (playlistName.isBlank()) {
+            return Observable.just(0)
+        }
+
+        val externalIds = JSONArray()
+        tracks.forEach {
+            if (it.externalId.isNotEmpty()) {
+                externalIds.put(it.externalId)
+            }
+        }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SavePlaylist)
+            .addOption(Messages.Key.PLAYLIST_NAME, playlistName)
+            .addOption(Messages.Key.EXTERNAL_IDS, externalIds)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .compose(applySchedulers())
+    }
+
     override fun appendToPlaylist(playlistId: Long, categoryType: String, categoryId: Long, filter: String, offset: Long): Observable<Boolean> {
-        val type = if (categoryType.isNotEmpty() && categoryId > 0)
-            Messages.Request.QueryTracksByCategory else Messages.Request.QueryTracks
-
-        val suboptions = JSONObject()
-
-        if (type == Messages.Request.QueryTracksByCategory) {
-            suboptions.put(Messages.Key.CATEGORY, categoryType)
-            suboptions.put(Messages.Key.ID, categoryId)
-        }
-
-        if (filter.isNotEmpty()) {
-            suboptions.put(Messages.Key.FILTER, filter)
-        }
-
-        val subquery = JSONObject()
-            .put(Messages.Key.TYPE, type.toString())
-            .put(Messages.Key.OPTIONS, suboptions)
-
         val message = SocketMessage.Builder
             .request(Messages.Request.AppendToPlaylist)
             .addOption(Messages.Key.PLAYLIST_ID, playlistId)
             .addOption(Messages.Key.OFFSET, offset)
-            .addOption(Messages.Key.SUBQUERY, subquery)
+            .addOption(Messages.Key.SUBQUERY, createTrackListSubquery(categoryType, categoryId, filter))
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .compose(applySchedulers())
+    }
+
+    override fun renamePlaylist(playlistId: Long, newName: String): Observable<Boolean> {
+        if (newName.isBlank()) {
+            return Observable.just(false)
+        }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.RenamePlaylist)
+            .addOption(Messages.Key.PLAYLIST_ID, playlistId)
+            .addOption(Messages.Key.PLAYLIST_NAME, newName)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .compose(applySchedulers())
+    }
+
+    override fun deletePlaylist(playlistId: Long): Observable<Boolean> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.DeletePlaylist)
+            .addOption(Messages.Key.PLAYLIST_ID, playlistId)
             .build()
 
         return service.observe(message, client)
@@ -253,6 +301,26 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             }
         }
 
+        private fun createTrackListSubquery(categoryType: String, categoryId: Long, filter: String): JSONObject {
+            val type = if (categoryType.isNotEmpty() && categoryId > 0)
+                Messages.Request.QueryTracksByCategory else Messages.Request.QueryTracks
+
+            val suboptions = JSONObject()
+
+            if (type == Messages.Request.QueryTracksByCategory) {
+                suboptions.put(Messages.Key.CATEGORY, categoryType)
+                suboptions.put(Messages.Key.ID, categoryId)
+            }
+
+            if (filter.isNotBlank()) {
+                suboptions.put(Messages.Key.FILTER, filter)
+            }
+
+            return JSONObject()
+                .put(Messages.Key.TYPE, type.toString())
+                .put(Messages.Key.OPTIONS, suboptions)
+        }
+
         private val toAlbumArtist: (JSONObject, String) -> ICategoryValue = { json, type -> RemoteAlbumArtist(json) }
         private val toCategoryValue: (JSONObject, String) -> ICategoryValue = { json, type -> RemoteCategoryValue(type, json) }
 
@@ -293,6 +361,10 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         private fun isSuccessful(message: SocketMessage): Observable<Boolean> {
             return Observable.just(message.getBooleanOption(Messages.Key.SUCCESS, false))
+        }
+
+        private fun extractId(message: SocketMessage, idKey: String): Observable<Long> {
+            return Observable.just(message.getLongOption(idKey, 0))
         }
     }
 }

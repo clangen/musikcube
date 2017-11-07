@@ -96,10 +96,12 @@ class Messages {
             val RELATIVE = "relative"
             val PLAYING_CURRENT_TIME = "playing_current_time"
             val PLAYLIST_ID = "playlist_id"
+            val PLAYLIST_NAME = "playlist_name"
             val SUBQUERY = "subquery"
             val TYPE = "type"
             val OPTIONS = "options"
-            val SUCCESS = "success";
+            val SUCCESS = "success"
+            val EXTERNAL_IDS = "external_ids"
         }
     }
 
