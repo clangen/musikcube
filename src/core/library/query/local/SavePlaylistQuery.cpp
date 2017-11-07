@@ -36,12 +36,16 @@
 #include "SavePlaylistQuery.h"
 #include "CategoryTrackListQuery.h"
 
+#include <core/library/track/LibraryTrack.h>
+#include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Statement.h>
 
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
+
+/* CONSTANTS */
 
 static std::string CREATE_PLAYLIST_QUERY =
     "INSERT INTO playlists (name) VALUES (?);";
@@ -58,12 +62,24 @@ static std::string RENAME_PLAYLIST_QUERY =
 static std::string GET_MAX_SORT_ORDER_QUERY =
     "SELECT MAX(sort_order) from playlist_tracks where playlist_id = ?";
 
+/* STATIC FACTORY METHODS */
+
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
+    musik::core::ILibraryPtr library,
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
     return std::shared_ptr<SavePlaylistQuery>(
-        new SavePlaylistQuery(playlistName, tracks));
+        new SavePlaylistQuery(library, playlistName, tracks));
+}
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
+    musik::core::ILibraryPtr library,
+    const std::string& playlistName,
+    musik::core::sdk::ITrackList* tracks)
+{
+    return std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(library, playlistName, tracks));
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
@@ -77,11 +93,21 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Save(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
+    musik::core::ILibraryPtr library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
     return std::shared_ptr<SavePlaylistQuery>(
-        new SavePlaylistQuery(playlistId, tracks));
+        new SavePlaylistQuery(library, playlistId, tracks));
+}
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
+    musik::core::ILibraryPtr library,
+    const int64_t playlistId,
+    musik::core::sdk::ITrackList* tracks)
+{
+    return std::shared_ptr<SavePlaylistQuery>(
+        new SavePlaylistQuery(library, playlistId, tracks));
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
@@ -92,15 +118,19 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
-    const int64_t playlistId, std::shared_ptr<musik::core::TrackList> tracks)
+    musik::core::ILibraryPtr library,
+    const int64_t playlistId,
+    std::shared_ptr<musik::core::TrackList> tracks)
 {
     auto result = std::shared_ptr<SavePlaylistQuery>(
-        new SavePlaylistQuery(playlistId, tracks));
+        new SavePlaylistQuery(library, playlistId, tracks));
 
     result->op = AppendOp;
 
     return result;
 }
+
+/* CONSTRUCTORS */
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
     musik::core::ILibraryPtr library,
@@ -117,16 +147,31 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
+    musik::core::ILibraryPtr library,
     const std::string& playlistName,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
+    this->library = library;
     this->playlistId = -1;
     this->categoryId = -1;
     this->playlistName = playlistName;
-    this->tracks = tracks;
+    this->tracks.rawTracks = nullptr;
+    this->tracks.sharedTracks = tracks;
     this->op = CreateOp;
 }
 
+SavePlaylistQuery::SavePlaylistQuery(
+    musik::core::ILibraryPtr library,
+    const std::string& playlistName,
+    musik::core::sdk::ITrackList* tracks)
+{
+    this->library = library;
+    this->playlistId = -1;
+    this->categoryId = -1;
+    this->playlistName = playlistName;
+    this->tracks.rawTracks = tracks;
+    this->op = CreateOp;
+}
 
 SavePlaylistQuery::SavePlaylistQuery(
     musik::core::ILibraryPtr library,
@@ -143,11 +188,24 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
+    musik::core::ILibraryPtr library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks)
 {
+    this->library = library;
     this->playlistId = playlistId;
-    this->tracks = tracks;
+    this->tracks.sharedTracks = tracks;
+    this->op = ReplaceOp;
+}
+
+SavePlaylistQuery::SavePlaylistQuery(
+    musik::core::ILibraryPtr library,
+    const int64_t playlistId,
+    musik::core::sdk::ITrackList* tracks)
+{
+    this->library = library;
+    this->playlistId = playlistId;
+    this->tracks.rawTracks = tracks;
     this->op = ReplaceOp;
 }
 
@@ -161,7 +219,6 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->playlistId = playlistId;
     this->categoryId = categoryId;
     this->categoryType = categoryType;
-    this->tracks = tracks;
     this->op = AppendOp;
 }
 
@@ -178,6 +235,8 @@ SavePlaylistQuery::SavePlaylistQuery(
 SavePlaylistQuery::~SavePlaylistQuery() {
 }
 
+/* METHODS */
+
 int64_t SavePlaylistQuery::GetPlaylistId() const {
     return playlistId;
 }
@@ -185,7 +244,7 @@ int64_t SavePlaylistQuery::GetPlaylistId() const {
 bool SavePlaylistQuery::AddTracksToPlaylist(
     musik::core::db::Connection &db,
     int64_t playlistId,
-    std::shared_ptr<musik::core::TrackList> tracks)
+    TrackListWrapper& tracks)
 {
     int offset = 0;
 
@@ -201,8 +260,8 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
     Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
 
     TrackPtr track;
-    for (size_t i = 0; i < tracks->Count(); i++) {
-        track = tracks->Get(i);
+    for (size_t i = 0; i < tracks.Count(); i++) {
+        track = tracks.Get(this->library, i);
         if (track) {
             insertTrack.Reset();
             insertTrack.BindText(0, track->GetString("external_id"));
@@ -229,7 +288,7 @@ bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
 
     if (query->GetStatus() == IQuery::Finished) {
         auto tracks = query->GetResult();
-        if (this->AddTracksToPlaylist(db, playlistId, tracks)) {
+        if (this->AddTracksToPlaylist(db, playlistId, TrackListWrapper(tracks))) {
             return true;
         }
     }
@@ -252,7 +311,7 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
     this->playlistId = db.LastInsertedId();
 
     /* add tracks to playlist */
-    if (this->tracks) {
+    if (this->tracks.Exists()) {
         if (!this->AddTracksToPlaylist(db, this->playlistId, this->tracks)) {
             transaction.Cancel();
             return false;
@@ -299,7 +358,7 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
 bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
     ScopedTransaction transaction(db);
 
-    bool result = this->tracks
+    bool result = this->tracks.Exists()
         ? this->AddTracksToPlaylist(db, this->playlistId, this->tracks)
         : this->AddCategoryTracksToPlaylist(db, this->playlistId);
 
@@ -318,4 +377,47 @@ bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
         case AppendOp: return this->AppendToPlaylist(db);
     }
     return false;
+}
+
+/* SUPPORTING TYPES */
+
+SavePlaylistQuery::TrackListWrapper::TrackListWrapper() {
+    this->rawTracks = nullptr;
+}
+
+SavePlaylistQuery::TrackListWrapper::TrackListWrapper(
+    std::shared_ptr<musik::core::TrackList> shared)
+{
+    this->rawTracks = nullptr;
+    this->sharedTracks = shared;
+}
+
+bool SavePlaylistQuery::TrackListWrapper::Exists() {
+    return this->sharedTracks || this->rawTracks;
+}
+
+size_t SavePlaylistQuery::TrackListWrapper::Count() {
+    if (sharedTracks) {
+        return sharedTracks->Count();
+    }
+
+    return rawTracks ? rawTracks->Count() : 0;
+}
+
+TrackPtr SavePlaylistQuery::TrackListWrapper::Get(
+    musik::core::ILibraryPtr library, size_t index)
+{
+    if (sharedTracks) {
+        return sharedTracks->Get(index);
+    }
+
+    TrackPtr result = std::make_shared<LibraryTrack>(rawTracks->GetId(index), library);
+    if (rawTracks) {
+        std::shared_ptr<TrackMetadataQuery> query(
+            new TrackMetadataQuery(result, library, TrackMetadataQuery::IdsOnly));
+
+        library->Enqueue(query, ILibrary::QuerySynchronous);
+    }
+
+    return result;
 }

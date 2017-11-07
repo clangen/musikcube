@@ -300,6 +300,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
             this->ShowModifiedLabel(false);
             auto tracks = this->trackList->GetTrackList().get();
             this->library->Enqueue(SavePlaylistQuery::Replace(
+                this->library,
                 this->categoryList->GetSelectedId(),
                 std::shared_ptr<TrackList>(new TrackList(tracks))));
             return true;

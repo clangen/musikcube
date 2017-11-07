@@ -185,7 +185,7 @@ static void confirmOverwritePlaylist(
             "ENTER",
             _TSTR("button_yes"),
             [library, playlistId, tracks](const std::string& str) {
-                library->Enqueue(SavePlaylistQuery::Replace(playlistId, tracks));
+                library->Enqueue(SavePlaylistQuery::Replace(library, playlistId, tracks));
             });
 
     App::Overlays().Push(dialog);
@@ -205,7 +205,7 @@ static void createNewPlaylist(
         .SetInputAcceptedCallback(
             [&queue, tracks, library, callback](const std::string& name) {
                 if (name.size()) {
-                    auto query = SavePlaylistQuery::Save(name, tracks);
+                    auto query = SavePlaylistQuery::Save(library, name, tracks);
                     library->Enqueue(query, 0, [&queue, callback](auto query) {
                         queue.Post(Message::Create(nullptr, message::PlaylistCreated));
 
@@ -444,7 +444,7 @@ static void showAddTrackToPlaylistOverlay(
                     int64_t playlistId = (*result)[index - 1]->id;
                     setLastPlaylistId(playlistId);
 
-                    library->Enqueue(SavePlaylistQuery::Append(playlistId, list), 0,
+                    library->Enqueue(SavePlaylistQuery::Append(library, playlistId, list), 0,
                         [&queue, playlistId](auto query) {
                             /* the nesting is real... */
                             queue.Post(Message::Create(nullptr, message::TracksAddedToPlaylist, playlistId));

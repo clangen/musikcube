@@ -265,9 +265,10 @@ IMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
     return this->QueryAlbums(nullptr, -1, filter);
 }
 
+template <typename TrackListType>
 static uint64_t savePlaylist(
     ILibraryPtr library,
-    std::shared_ptr<TrackList> trackList,
+    TrackListType trackList,
     const char* playlistName,
     const int64_t playlistId)
 {
@@ -275,7 +276,7 @@ static uint64_t savePlaylist(
         /* replacing (and optionally renaming) an existing playlist */
         if (playlistId != 0) {
             std::shared_ptr<SavePlaylistQuery> query =
-                SavePlaylistQuery::Replace(playlistId, trackList);
+                SavePlaylistQuery::Replace(library, playlistId, trackList);
 
             library->Enqueue(query, ILibrary::QuerySynchronous);
 
@@ -296,7 +297,7 @@ static uint64_t savePlaylist(
         }
         else {
             std::shared_ptr<SavePlaylistQuery> query =
-                SavePlaylistQuery::Save(playlistName, trackList);
+                SavePlaylistQuery::Save(library, playlistName, trackList);
 
             library->Enqueue(query, ILibrary::QuerySynchronous);
 
@@ -352,20 +353,34 @@ int64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
     return 0;
 }
 
+int64_t LocalSimpleDataProvider::SavePlaylistWithTrackList(
+    ITrackList* trackList,
+    const char* playlistName,
+    const int64_t playlistId)
+{
+    if (playlistId == 0 && (!playlistName || !strlen(playlistName))) {
+        return 0;
+    }
+
+    return savePlaylist(this->library, trackList, playlistName, playlistId);
+}
+
 bool LocalSimpleDataProvider::RenamePlaylist(const int64_t playlistId, const char* name)
 {
-    try {
-        std::shared_ptr<SavePlaylistQuery> query =
-            SavePlaylistQuery::Rename(playlistId, name);
+    if (strlen(name)) {
+        try {
+            std::shared_ptr<SavePlaylistQuery> query =
+                SavePlaylistQuery::Rename(playlistId, name);
 
-        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+            this->library->Enqueue(query, ILibrary::QuerySynchronous);
 
-        if (query->GetStatus() == IQuery::Finished) {
-            return true;
+            if (query->GetStatus() == IQuery::Finished) {
+                return true;
+            }
         }
-    }
-    catch (...) {
-        musik::debug::err(TAG, "RenamePlaylist failed");
+        catch (...) {
+            musik::debug::err(TAG, "RenamePlaylist failed");
+        }
     }
 
     return false;

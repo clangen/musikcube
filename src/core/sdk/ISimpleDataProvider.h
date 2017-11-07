@@ -82,6 +82,11 @@ namespace musik { namespace core { namespace sdk {
                 const char* playlistName,
                 const int64_t playlistId = 0) = 0;
 
+            virtual int64_t SavePlaylistWithTrackList(
+                ITrackList* trackList,
+                const char* playlistName,
+                const int64_t playlistId = 0) = 0;
+
             virtual bool RenamePlaylist(
                 const int64_t playlistId,
                 const char* playlistName) = 0;

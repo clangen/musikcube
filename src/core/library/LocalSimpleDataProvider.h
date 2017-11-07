@@ -90,6 +90,11 @@ namespace musik { namespace core { namespace db { namespace local {
                 const char* playlistName,
                 const int64_t playlistId = 0) override;
 
+            virtual int64_t SavePlaylistWithTrackList(
+                musik::core::sdk::ITrackList* trackList,
+                const char* playlistName,
+                const int64_t playlistId = 0) override;
+
             virtual bool RenamePlaylist(
                 const int64_t playlistId,
                 const char* name) override;
