@@ -50,9 +50,6 @@ namespace musik { namespace core { namespace db {
             Statement(const char* sql,Connection &connection);
             virtual ~Statement();
 
-            void Reset();
-            int Step();
-
             void BindInt32(int position, int bindInt);
             void BindInt64(int position, int64_t bindInt);
             void BindText(int position, const char* bindText);
@@ -66,7 +63,11 @@ namespace musik { namespace core { namespace db {
             const char* ColumnText(int column);
             const wchar_t* ColumnTextW(int column);
 
-            void UnbindAll();
+            int Step();
+
+            void Reset();
+            void Unbind();
+            void ResetAndUnbind();
 
         private:
             friend class Connection;

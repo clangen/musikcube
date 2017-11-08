@@ -794,8 +794,7 @@ void Indexer::RunAnalyzers() {
     while(getNextTrack.Step() == db::Row ) {
         trackId = getNextTrack.ColumnInt64(0);
 
-        getNextTrack.Reset();
-        getNextTrack.UnbindAll();
+        getNextTrack.ResetAndUnbind();
 
         IndexerTrack track(trackId);
 

@@ -36,7 +36,7 @@
 #include "LocalSimpleDataProvider.h"
 
 #include <core/debug.h>
-
+#include <core/db/ScopedTransaction.h>
 #include <core/library/query/local/AlbumListQuery.h>
 #include <core/library/query/local/AppendPlaylistQuery.h>
 #include <core/library/query/local/CategoryListQuery.h>
@@ -48,6 +48,7 @@
 #include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <vector>
 
 #define TAG "LocalSimpleDataProvider"
 
@@ -56,6 +57,8 @@ using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace musik::core::sdk;
+
+/* QUERIES */
 
 class ExternalIdListToTrackListQuery : public LocalQueryBase {
     public:
@@ -109,6 +112,112 @@ class ExternalIdListToTrackListQuery : public LocalQueryBase {
         size_t externalIdCount;
         std::shared_ptr<TrackList> result;
 };
+
+class RemoveFromPlaylistQuery : public LocalQueryBase {
+    public:
+        RemoveFromPlaylistQuery(
+            ILibraryPtr library,
+            int64_t playlistId,
+            const char** externalIds,
+            const int* sortOrders,
+            size_t count)
+        {
+            this->library = library;
+            this->playlistId = playlistId;
+            this->externalIds = externalIds;
+            this->sortOrders = sortOrders;
+            this->count = count;
+            this->updated = 0;
+        }
+
+        virtual ~RemoveFromPlaylistQuery() {
+        }
+
+        size_t GetResult() {
+            return this->updated;
+        }
+
+    protected:
+        virtual bool OnRun(musik::core::db::Connection& db) {
+            this->updated = 0;
+
+            ScopedTransaction transaction(db);
+
+            {
+                Statement deleteStmt(
+                    "DELETE FROM playlist_tracks "
+                    "WHERE playlist_id=? AND track_external_id=? AND sort_order=?",
+                    db);
+
+                for (size_t i = 0; i < count; i++) {
+                    auto id = this->externalIds[i];
+                    auto o = this->sortOrders[i];
+
+                    deleteStmt.ResetAndUnbind();
+                    deleteStmt.BindInt64(0, this->playlistId);
+                    deleteStmt.BindText(1, this->externalIds[i]);
+                    deleteStmt.BindInt32(2, this->sortOrders[i]);
+                    if (deleteStmt.Step() == Done) {
+                        ++this->updated;
+                    }
+                }
+            }
+
+            bool error = false;
+
+            {
+                Statement playlistTracks(
+                    "SELECT track_external_id, sort_order FROM playlist_tracks "
+                    "WHERE playlist_id=? ORDER BY sort_order ASC",
+                    db);
+
+                Statement updateStmt(
+                    "UPDATE playlist_tracks "
+                    "SET sort_order=? "
+                    "WHERE playlist_id=? AND track_external_id=? AND sort_order=?",
+                    db);
+
+                int order = 0;
+
+                playlistTracks.BindInt64(0, this->playlistId);
+                while (playlistTracks.Step() == Row) {
+                    updateStmt.ResetAndUnbind();
+                    updateStmt.BindInt32(0, order++);
+                    updateStmt.BindInt64(1, this->playlistId);
+                    updateStmt.BindText(2, playlistTracks.ColumnText(0));
+                    updateStmt.BindInt32(3, playlistTracks.ColumnInt32(1));
+                    if (updateStmt.Step() != Done) {
+                        error = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!error) {
+                transaction.CommitAndRestart();
+            }
+            else {
+                this->updated = 0;
+            }
+
+            return true;
+        }
+
+        virtual std::string Name() {
+            return "RemoveFromPlaylistQuery";
+        }
+
+    private:
+        ILibraryPtr library;
+        int64_t playlistId;
+        const char** externalIds;
+        const int* sortOrders;
+        size_t count;
+        size_t updated;
+        std::shared_ptr<TrackList> result;
+};
+
+/* DATA PROVIDER */
 
 LocalSimpleDataProvider::LocalSimpleDataProvider(musik::core::ILibraryPtr library)
 : library(library) {
@@ -471,4 +580,24 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithTrackList(
         this->library, playlistId, trackList, offset);
 
     return result;
+}
+
+size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
+    const int64_t playlistId,
+    const char** externalIds,
+    const int* sortOrders,
+    int count)
+{
+    using Query = RemoveFromPlaylistQuery;
+
+    auto query = std::make_shared<Query>(
+        this->library, playlistId, externalIds, sortOrders, count);
+
+    library->Enqueue(query, ILibrary::QuerySynchronous);
+
+    if (query->GetStatus() == IQuery::Finished) {
+        return query->GetResult();
+    }
+
+    return 0;
 }

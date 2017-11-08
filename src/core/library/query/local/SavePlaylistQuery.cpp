@@ -253,7 +253,7 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
     Statement queryMax(GET_MAX_SORT_ORDER_QUERY.c_str(), db);
     queryMax.BindInt64(0, playlistId);
     if (queryMax.Step() == db::Row) {
-        offset = queryMax.ColumnInt32(0) + 1;
+        offset = queryMax.ColumnInt32(0);
     }
 
     /* insert all the tracks. */

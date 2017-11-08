@@ -63,7 +63,12 @@ void Statement::Reset() {
     sqlite3_reset(this->stmt);
 }
 
-void Statement::UnbindAll() {
+void Statement::Unbind() {
+    sqlite3_clear_bindings(this->stmt);
+}
+
+void Statement::ResetAndUnbind() {
+    sqlite3_reset(this->stmt);
     sqlite3_clear_bindings(this->stmt);
 }
 

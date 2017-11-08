@@ -317,6 +317,7 @@ static void upgradeV3ToV4(db::Connection& db) {
 
 static void upgradeV4ToV5(db::Connection& db) {
     db.Execute("DELETE from tracks");
+    db.Execute("UPDATE playlist_tracks SET sort_order=sort_order-1");
     scheduleSyncDueToDbUpgrade = true;
 }
 

@@ -115,6 +115,7 @@ namespace key {
     static const std::string playlist_name = "playlist_name";
     static const std::string subquery = "subquery";
     static const std::string type = "type";
+    static const std::string sort_orders = "sort_orders";
 }
 
 namespace value {
@@ -160,6 +161,7 @@ namespace request {
     static const std::string rename_playlist = "rename_playlist";
     static const std::string delete_playlist = "delete_playlist";
     static const std::string append_to_playlist = "append_to_playlist";
+    static const std::string remove_tracks_from_playlist = "remove_tracks_from_playlist";
 }
 
 namespace fragment {

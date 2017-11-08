@@ -118,6 +118,12 @@ namespace musik { namespace core { namespace db { namespace local {
                 musik::core::sdk::ITrackList* trackList,
                 int offset = -1) override;
 
+            virtual size_t RemoveTracksFromPlaylist(
+                const int64_t playlistId,
+                const char** externalIds,
+                const int* sortOrders,
+                int count) override;
+
         private:
             musik::core::ILibraryPtr library;
     };

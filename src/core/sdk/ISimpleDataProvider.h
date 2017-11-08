@@ -109,6 +109,12 @@ namespace musik { namespace core { namespace sdk {
                 const int64_t playlistId,
                 ITrackList* trackList,
                 int offset = -1) = 0;
+
+            virtual size_t RemoveTracksFromPlaylist(
+                const int64_t playlistId,
+                const char** externalIds,
+                const int* sortOrders,
+                int count) = 0;
     };
 
 } } }
