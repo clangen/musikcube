@@ -1,0 +1,3 @@
+[submodule "src/plugins/webmdecoder/libwebm"]
+	path = src/plugins/webmdecoder/libwebm
+	url = https://github.com/webmproject/libwebm.git

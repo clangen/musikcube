@@ -29,4 +29,5 @@ src/plugins/taglib_plugin/obj
 src/plugins/taglib_plugin/taglib-1.11
 src/musikbox/musikbox
 src/musikcube/musikcube
+libwebm-prefix
 taglib-prefix

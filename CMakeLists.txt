@@ -23,6 +23,14 @@ ExternalProject_Add(taglib
     CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
     INSTALL_COMMAND make install
 )
+ExternalProject_Add(libwebm
+    SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/webmdecoder/libwebm"
+    BUILD_IN_SOURCE 0
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS "-DENABLE_WEBM_PARSER:BOOL=ON -E env CXXFLAGS=\"-fPIC\""
+    INSTALL_COMMAND echo "Skipping install step"
+)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-unused-result -Wno-deprecated-declarations")
 
@@ -59,6 +67,7 @@ set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 link_directories (
   ${musikcube_SOURCE_DIR}/bin/plugins
   ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib
+  ${musikcube_SOURCE_DIR}/libwebm-prefix/src/libwebm-build
 )
 
 set (musikcube_LINK_LIBS
@@ -75,6 +84,7 @@ include_directories (
   "${musikcube_SOURCE_DIR}/src/musikcube"
   "${musikcube_SOURCE_DIR}/src/3rdparty/include"
   "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include"
+  "${musikcube_SOURCE_DIR}/src/plugins/webmdecoder/libwebm/webm_parser/include"
 )
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
@@ -98,8 +108,10 @@ add_subdirectory(src/plugins/flacdecoder)
 add_subdirectory(src/plugins/nullout)
 add_subdirectory(src/plugins/websocket_remote)
 add_subdirectory(src/plugins/httpdatastream)
+add_subdirectory(src/plugins/webmdecoder)
 
 add_dependencies(taglibreader taglib)
+add_dependencies(webmdecoder libwebm)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/plugins/alsaout)
@@ -133,6 +145,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libtaglibreader.so
       bin/plugins/libwebsocket_remote.so
       bin/plugins/libhttpdatastream.so
+      bin/plugins/libwebmdecoder.so
     DESTINATION share/musikcube/plugins
   )
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -148,6 +161,7 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libtaglibreader.dylib
       bin/plugins/libwebsocket_remote.dylib
       bin/plugins/libhttpdatastream.dylib
+      bin/plugins/libwebmdecoder.dylib
     DESTINATION share/musikcube/plugins
   )
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
