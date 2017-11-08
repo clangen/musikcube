@@ -11,6 +11,9 @@
 **/Debug
 **/*.deb
 **/*.aps
+.cproject
+.project
+.settings
 .vs
 .vscode
 bin
