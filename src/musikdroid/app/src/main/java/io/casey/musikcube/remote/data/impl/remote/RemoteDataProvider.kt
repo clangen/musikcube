@@ -198,6 +198,25 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .compose(applySchedulers())
     }
 
+    override fun createPlaylistWithExternalIds(playlistName: String, externalIds: List<String>): Observable<Long> {
+        if (playlistName.isBlank()) {
+            return Observable.just(0)
+        }
+
+        val jsonArray = JSONArray()
+        externalIds.forEach { jsonArray.put(it) }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SavePlaylist)
+            .addOption(Messages.Key.PLAYLIST_NAME, playlistName)
+            .addOption(Messages.Key.EXTERNAL_IDS, jsonArray)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .compose(applySchedulers())
+    }
+
     override fun appendToPlaylist(playlistId: Long, categoryType: String, categoryId: Long, filter: String, offset: Long): Observable<Boolean> {
         val message = SocketMessage.Builder
             .request(Messages.Request.AppendToPlaylist)
@@ -208,6 +227,61 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .compose(applySchedulers())
+    }
+
+    override fun appendToPlaylist(playlistId: Long, tracks: List<ITrack>, offset: Long): Observable<Boolean> {
+        val externalIds = JSONArray()
+        tracks.forEach {
+            if (it.externalId.isNotEmpty()) {
+                externalIds.put(it.externalId)
+            }
+        }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.AppendToPlaylist)
+            .addOption(Messages.Key.PLAYLIST_ID, playlistId)
+            .addOption(Messages.Key.EXTERNAL_IDS, externalIds)
+            .addOption(Messages.Key.OFFSET, offset)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .compose(applySchedulers())
+    }
+
+    override fun appendToPlaylistWithExternalIds(playlistId: Long, externalIds: List<String>, offset: Long): Observable<Boolean> {
+        val jsonArray = JSONArray()
+        externalIds.forEach { jsonArray.put(it) }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.AppendToPlaylist)
+            .addOption(Messages.Key.PLAYLIST_ID, playlistId)
+            .addOption(Messages.Key.EXTERNAL_IDS, jsonArray)
+            .addOption(Messages.Key.OFFSET, offset)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .compose(applySchedulers())
+    }
+
+    override fun removeTracksFromPlaylist(playlistId: Long, externalIds: List<String>, sortOrders: List<Int>): Observable<Int> {
+        val jsonIds = JSONArray()
+        externalIds.forEach { jsonIds.put(it) }
+
+        val jsonOrders = JSONArray()
+        sortOrders.forEach { jsonOrders.put(it) }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.RemoveTracksFromPlaylist)
+            .addOption(Messages.Key.PLAYLIST_ID, playlistId)
+            .addOption(Messages.Key.EXTERNAL_IDS, jsonIds)
+            .addOption(Messages.Key.SORT_ORDERS, jsonOrders)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Int> { socketMessage -> toCount(socketMessage) }
             .compose(applySchedulers())
     }
 

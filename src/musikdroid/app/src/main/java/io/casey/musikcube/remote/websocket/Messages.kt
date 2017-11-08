@@ -28,7 +28,8 @@ class Messages {
         SavePlaylist("save_playlist"),
         RenamePlaylist("rename_playlist"),
         DeletePlaylist("delete_playlist"),
-        AppendToPlaylist("append_to_playlist");
+        AppendToPlaylist("append_to_playlist"),
+        RemoveTracksFromPlaylist("remove_tracks_from_playlist");
 
         override fun toString(): String {
             return rawValue
@@ -102,6 +103,7 @@ class Messages {
             val OPTIONS = "options"
             val SUCCESS = "success"
             val EXTERNAL_IDS = "external_ids"
+            val SORT_ORDERS = "sort_orders"
         }
     }
 
