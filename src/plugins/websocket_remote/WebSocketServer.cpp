@@ -91,7 +91,7 @@ static std::shared_ptr<T> jsonToIntArray(json& arr) {
         std::copy(arr.begin(), arr.end(), idArray);
     }
 
-    return std::shared_ptr<T>(idArray, [count](int* result) {
+    return std::shared_ptr<T>(idArray, [count](T* result) {
         delete[] result;
     });
 }
