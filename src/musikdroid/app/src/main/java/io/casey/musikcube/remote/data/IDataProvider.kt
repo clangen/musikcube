@@ -29,6 +29,8 @@ interface IDataProvider {
     fun getPlayQueueTracks(filter: String = ""): Observable<List<ITrack>>
     fun getPlayQueueTracks(limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
 
+    fun getPlaylists(): Observable<List<IPlaylist>>
+
     fun getCategoryValues(type: String, filter: String = ""): Observable<List<ICategoryValue>>
 
     fun createPlaylist(playlistName: String, categoryType: String = "", categoryId: Long = -1, filter: String = ""): Observable<Long>

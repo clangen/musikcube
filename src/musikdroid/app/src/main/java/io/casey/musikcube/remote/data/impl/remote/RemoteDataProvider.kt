@@ -8,6 +8,7 @@ import io.reactivex.Observable
 import io.reactivex.ObservableTransformer
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.ReplaySubject
 import org.json.JSONArray
@@ -46,8 +47,9 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .build()
 
         return service.observe(message, client)
+            .observeOn(Schedulers.computation())
             .flatMap<List<IAlbum>> { socketMessage -> toAlbumList(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getTrackCount(filter: String): Observable<Int> {
@@ -58,8 +60,9 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .build()
 
         return service.observe(message, client)
+            .observeOn(Schedulers.computation())
             .flatMap<Int> { socketMessage -> toCount(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getTracks(limit: Int, offset: Int, filter: String): Observable<List<ITrack>> {
@@ -73,8 +76,9 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         }
 
         return service.observe(builder.build(), client)
+            .observeOn(Schedulers.computation())
             .flatMap<List<ITrack>> { socketMessage -> toTrackList(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getTracks(externalIds: Set<String>): Observable<Map<String, ITrack>> {
@@ -87,13 +91,14 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .build()
 
         return service.observe(message, client)
+            .observeOn(Schedulers.computation())
             .flatMap<Map<String, ITrack>> { socketMessage ->
                 val tracks = HashMap<String, ITrack>()
                 val json = socketMessage.getJsonObjectOption(Messages.Key.DATA, JSONObject())!!
                 json.keys().forEach { tracks.put(it, RemoteTrack(json.getJSONObject(it))) }
                 Observable.just(tracks)
             }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getTracks(filter: String): Observable<List<ITrack>> {
@@ -111,7 +116,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Int> { socketMessage -> toCount(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getTracksByCategory(category: String, id: Long, filter: String): Observable<List<ITrack>> {
@@ -131,8 +136,9 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         }
 
         return service.observe(builder.build(), client)
+            .observeOn(Schedulers.computation())
             .flatMap<List<ITrack>> { socketMessage -> toTrackList(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getPlayQueueTracksCount(filter: String): Observable<Int> {
@@ -144,7 +150,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Int> { socketMessage -> toCount(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getPlayQueueTracks(filter: String): Observable<List<ITrack>> {
@@ -162,8 +168,26 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         }
 
         return service.observe(builder.build(), client)
+            .observeOn(Schedulers.computation())
             .flatMap<List<ITrack>> { socketMessage -> toTrackList(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun getPlaylists(): Observable<List<IPlaylist>> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.QueryCategory)
+            .addOption(Messages.Key.CATEGORY, Messages.Category.PLAYLISTS)
+            .build()
+
+        return service.observe(message, client)
+            .observeOn(Schedulers.computation())
+            .flatMap<List<ICategoryValue>> { socketMessage ->
+                toCategoryList(socketMessage, Messages.Category.PLAYLISTS)
+            }
+            .flatMap { values ->
+                Observable.just(values.filterIsInstance<IPlaylist>())
+            }
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun getCategoryValues(type: String, filter: String): Observable<List<ICategoryValue>> {
@@ -174,8 +198,9 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .build()
 
         return service.observe(message, client)
+            .observeOn(Schedulers.computation())
             .flatMap<List<ICategoryValue>> { socketMessage -> toCategoryList(socketMessage, type) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun createPlaylist(playlistName: String, categoryType: String, categoryId: Long, filter: String): Observable<Long> {
@@ -191,7 +216,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun createPlaylist(playlistName: String, tracks: List<ITrack>): Observable<Long> {
@@ -214,7 +239,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun createPlaylistWithExternalIds(playlistName: String, externalIds: List<String>): Observable<Long> {
@@ -233,7 +258,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun appendToPlaylist(playlistId: Long, categoryType: String, categoryId: Long, filter: String, offset: Long): Observable<Boolean> {
@@ -246,7 +271,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun appendToPlaylist(playlistId: Long, tracks: List<ITrack>, offset: Long): Observable<Boolean> {
@@ -266,7 +291,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun appendToPlaylistWithExternalIds(playlistId: Long, externalIds: List<String>, offset: Long): Observable<Boolean> {
@@ -282,7 +307,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun removeTracksFromPlaylist(playlistId: Long, externalIds: List<String>, sortOrders: List<Int>): Observable<Int> {
@@ -301,7 +326,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Int> { socketMessage -> toCount(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun renamePlaylist(playlistId: Long, newName: String): Observable<Boolean> {
@@ -317,7 +342,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun deletePlaylist(playlistId: Long): Observable<Boolean> {
@@ -328,19 +353,19 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         return service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
-            .compose(applySchedulers())
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> {
-        return connectionStatePublisher.compose(applySchedulers())
+        return connectionStatePublisher.observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun observePlayQueue(): Observable<Unit> {
-        return playQueueStatePublisher.compose(applySchedulers())
+        return playQueueStatePublisher.observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun observeAuthFailure(): Observable<Unit> {
-        return authFailurePublisher.compose(applySchedulers())
+        return authFailurePublisher.observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun attach() {
@@ -384,16 +409,6 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
     }
 
     companion object {
-        private fun <T> applySchedulers(): ObservableTransformer<T, T> {
-            return ObservableTransformer { upstream ->
-                with (upstream) {
-                    subscribeOn(AndroidSchedulers.mainThread())
-                    observeOn(AndroidSchedulers.mainThread())
-                }
-                upstream
-            }
-        }
-
         private fun createTrackListSubquery(categoryType: String, categoryId: Long, filter: String): JSONObject {
             val type = if (categoryType.isNotEmpty() && categoryId > 0)
                 Messages.Request.QueryTracksByCategory else Messages.Request.QueryTracks
@@ -415,11 +430,13 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         }
 
         private val toAlbumArtist: (JSONObject, String) -> ICategoryValue = { json, type -> RemoteAlbumArtist(json) }
+        private val toPlaylist: (JSONObject, String) -> ICategoryValue = { json, type -> RemotePlaylist(json) }
         private val toCategoryValue: (JSONObject, String) -> ICategoryValue = { json, type -> RemoteCategoryValue(type, json) }
 
         private fun toCategoryList(socketMessage: SocketMessage, type: String): Observable<List<ICategoryValue>> {
             val converter: (JSONObject, String) -> ICategoryValue = when (type) {
                 Messages.Category.ALBUM_ARTIST -> toAlbumArtist
+                Messages.Category.PLAYLISTS -> toPlaylist
                 else -> toCategoryValue
             }
             val values = ArrayList<ICategoryValue>()

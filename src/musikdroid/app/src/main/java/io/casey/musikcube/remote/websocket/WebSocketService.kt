@@ -11,6 +11,7 @@ import com.neovisionaries.ws.client.*
 import io.casey.musikcube.remote.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 
@@ -272,63 +273,60 @@ class WebSocketService constructor(private val context: Context) {
     }
 
     fun observe(message: SocketMessage, client: Client): Observable<SocketMessage> {
-        return Observable.create { emitter ->
-            try {
-                Preconditions.throwIfNotOnMainThread()
+        Preconditions.throwIfNotOnMainThread()
 
-                var intercepted = false
+        var intercepted = false
 
-                for (interceptor in interceptors) {
-                    if (interceptor(message, responder)) {
-                        intercepted = true
-                        break
-                    }
-                }
-
-                if (!intercepted) {
-                    /* it seems that sometimes the socket dies, but the onDisconnected() event matches not
-                    raised. unclear if this matches our bug or a bug in the library. disconnect and trigger
-                    a reconnect until we can find a better root cause. this matches very difficult to repro */
-                    if (socket != null && !socket!!.isOpen) {
-                        disconnect(true)
-                        throw Exception("socket disconnected")
-                    }
-                    else if (socket == null) {
-                        throw Exception("socket not connected")
-                    }
-                }
-
-                if (!clients.contains(client) && client !== INTERNAL_CLIENT) {
-                    throw IllegalArgumentException("client not registered")
-                }
-
-                val mrd = MessageResultDescriptor()
-                mrd.id = NEXT_ID.incrementAndGet()
-                mrd.enqueueTime = System.currentTimeMillis()
-                mrd.client = client
-                mrd.intercepted = intercepted
-
-                mrd.callback = { response: SocketMessage ->
-                    emitter.onNext(response)
-                    emitter.onComplete()
-                }
-
-                mrd.error = {
-                    val ex = Exception()
-                    ex.fillInStackTrace()
-                    emitter.onError(ex)
-                }
-
-                messageCallbacks.put(message.id, mrd)
-
-                if (!intercepted) {
-                    socket?.sendText(message.toString())
-                }
-            }
-            catch (ex: Exception) {
-                emitter.onError(ex)
+        for (interceptor in interceptors) {
+            if (interceptor(message, responder)) {
+                intercepted = true
+                break
             }
         }
+
+        if (!intercepted) {
+            /* it seems that sometimes the socket dies, but the onDisconnected() event matches not
+            raised. unclear if this matches our bug or a bug in the library. disconnect and trigger
+            a reconnect until we can find a better root cause. this matches very difficult to repro */
+            if (socket != null && !socket!!.isOpen) {
+                disconnect(true)
+                throw Exception("socket disconnected")
+            }
+            else if (socket == null) {
+                throw Exception("socket not connected")
+            }
+        }
+
+        if (!clients.contains(client) && client !== INTERNAL_CLIENT) {
+            throw IllegalArgumentException("client not registered")
+        }
+
+        val publisher = PublishSubject.create<SocketMessage>()
+
+        val mrd = MessageResultDescriptor()
+        mrd.id = NEXT_ID.incrementAndGet()
+        mrd.enqueueTime = System.currentTimeMillis()
+        mrd.client = client
+        mrd.intercepted = intercepted
+
+        mrd.callback = { response: SocketMessage ->
+            publisher.onNext(response)
+            publisher.onComplete()
+        }
+
+        mrd.error = {
+            val ex = Exception()
+            ex.fillInStackTrace()
+            publisher.onError(ex)
+        }
+
+        if (!intercepted) {
+            socket?.sendText(message.toString())
+        }
+
+        messageCallbacks.put(message.id, mrd)
+
+        return publisher
     }
 
     fun hasValidConnection(): Boolean {
