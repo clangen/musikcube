@@ -65,6 +65,9 @@ namespace musik { namespace core { namespace db { namespace local {
                     int limit = -1,
                     int offset = 0) override;
 
+            virtual musik::core::sdk::ITrackList* QueryTracksByExternalId(
+                const char** externalIds, size_t externalIdCount) override;
+
             virtual musik::core::sdk::IValueList*
                 QueryCategory(
                     const char* type,

@@ -346,6 +346,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             RespondWithQueryTracksByCategory(connection, request);
             return;
         }
+        else if (name == request::query_tracks_by_external_ids) {
+            RespondWithQueryTracksByExternalIds(connection, request);
+            return;
+        }
         else if (name == request::query_albums) {
             RespondWithQueryAlbums(connection, request);
             return;
@@ -595,6 +599,42 @@ void WebSocketServer::RespondWithQueryTracks(connection_hdl connection, json& re
 
     this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
 }
+
+void WebSocketServer::RespondWithQueryTracksByExternalIds(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+
+    if (options.find(key::external_ids) != options.end()) {
+        json& externalIds = options[key::external_ids];
+        if (externalIds.is_array()) {
+            auto externalIdArray = jsonToStringArray(externalIds);
+            ITrackList* trackList = context.dataProvider
+                ->QueryTracksByExternalId(
+                    (const char**) externalIdArray.get(),
+                    externalIds.size());
+
+            if (trackList) {
+                json tracks = { };
+
+                ITrack* track;
+                std::string externalId;
+                for (size_t i = 0; i < trackList->Count(); i++) {
+                    track = trackList->GetTrack(i);
+                    externalId = GetMetadataString(track, track::ExternalId);
+                    tracks[externalId] = this->ReadTrackMetadata(track);
+                }
+
+                trackList->Release();
+                json options = { { key::data, tracks } };
+
+                this->RespondWithOptions(connection, request, options);
+                return;
+            }
+        }
+    }
+
+    this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+}
+
 
 void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json& request) {
     /* for the output */

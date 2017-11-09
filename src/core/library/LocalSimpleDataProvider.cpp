@@ -46,9 +46,11 @@
 #include <core/library/query/local/GetPlaylistQuery.h>
 #include <core/library/query/local/SavePlaylistQuery.h>
 #include <core/library/query/local/TrackMetadataQuery.h>
+#include <core/library/query/local/TrackListQueryBase.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <vector>
+#include <map>
 
 #define TAG "LocalSimpleDataProvider"
 
@@ -60,7 +62,7 @@ using namespace musik::core::sdk;
 
 /* QUERIES */
 
-class ExternalIdListToTrackListQuery : public LocalQueryBase {
+class ExternalIdListToTrackListQuery : public TrackListQueryBase {
     public:
         ExternalIdListToTrackListQuery(
             ILibraryPtr library,
@@ -75,8 +77,16 @@ class ExternalIdListToTrackListQuery : public LocalQueryBase {
         virtual ~ExternalIdListToTrackListQuery() {
         }
 
-        std::shared_ptr<TrackList> Result() {
+        virtual std::shared_ptr<TrackList> GetResult() override {
             return this->result;
+        }
+
+        virtual Headers GetHeaders() override {
+            return Headers();
+        }
+
+        virtual size_t GetQueryHash() override {
+            return 0;
         }
 
     protected:
@@ -456,7 +466,7 @@ int64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
     library->Enqueue(query, ILibrary::QuerySynchronous);
 
     if (query->GetStatus() == IQuery::Finished) {
-        return savePlaylist(this->library, query->Result(), playlistName, playlistId);
+        return savePlaylist(this->library, query->GetResult(), playlistName, playlistId);
     }
 
     return 0;
@@ -564,7 +574,7 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithExternalIds(
     library->Enqueue(query, ILibrary::QuerySynchronous);
 
     if (query->GetStatus() == IQuery::Finished) {
-        return appendToPlaylist(this->library, playlistId, query->Result(), offset);
+        return appendToPlaylist(this->library, playlistId, query->GetResult(), offset);
     }
 
     return 0;
@@ -588,9 +598,7 @@ size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
     const int* sortOrders,
     int count)
 {
-    using Query = RemoveFromPlaylistQuery;
-
-    auto query = std::make_shared<Query>(
+    auto query = std::make_shared<RemoveFromPlaylistQuery>(
         this->library, playlistId, externalIds, sortOrders, count);
 
     library->Enqueue(query, ILibrary::QuerySynchronous);
@@ -600,4 +608,19 @@ size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
     }
 
     return 0;
+}
+
+ITrackList* LocalSimpleDataProvider::QueryTracksByExternalId(
+    const char** externalIds, size_t externalIdCount)
+{
+    auto query = std::make_shared<ExternalIdListToTrackListQuery>(
+        this->library, externalIds, externalIdCount);
+
+    library->Enqueue(query, ILibrary::QuerySynchronous);
+
+    if (query->GetStatus() == IQuery::Finished) {
+        return query->GetSdkResult();
+    }
+
+    return nullptr;
 }

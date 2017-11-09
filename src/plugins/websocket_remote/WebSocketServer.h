@@ -137,6 +137,7 @@ class WebSocketServer {
         void RespondWithPlaybackOverview(connection_hdl connection, json& reuest);
         bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);
         void RespondWithQueryTracks(connection_hdl connection, json& request);
+        void RespondWithQueryTracksByExternalIds(connection_hdl connection, json& request);
         void RespondWithPlayQueueTracks(connection_hdl connection, json& request);
         void RespondWithQueryAlbums(connection_hdl connection, json& request);
         void RespondWithPlayTracks(connection_hdl connection, json& request);

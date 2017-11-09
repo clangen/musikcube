@@ -150,6 +150,7 @@ namespace request {
     static const std::string get_current_time = "get_current_time";
     static const std::string query_category = "query_category";
     static const std::string query_tracks = "query_tracks";
+    static const std::string query_tracks_by_external_ids = "query_tracks_by_external_ids";
     static const std::string query_albums = "query_albums";
     static const std::string query_tracks_by_category = "query_tracks_by_category";
     static const std::string play_all_tracks = "play_all_tracks";

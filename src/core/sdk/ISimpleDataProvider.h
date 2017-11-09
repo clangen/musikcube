@@ -59,6 +59,9 @@ namespace musik { namespace core { namespace sdk {
                 int limit = -1,
                 int offset = 0) = 0;
 
+            virtual ITrackList* QueryTracksByExternalId(
+                const char** externalIds, size_t externalIdCount) = 0;
+
             virtual IValueList* QueryCategory(
                 const char* type,
                 const char* filter = "") = 0;
