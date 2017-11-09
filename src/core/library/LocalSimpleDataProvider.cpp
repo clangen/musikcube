@@ -458,15 +458,20 @@ int64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
         return 0;
     }
 
-    using Query = ExternalIdListToTrackListQuery;
+    try {
+        using Query = ExternalIdListToTrackListQuery;
 
-    std::shared_ptr<Query> query =
-        std::make_shared<Query> (this->library, externalIds, externalIdCount);
+        std::shared_ptr<Query> query =
+            std::make_shared<Query>(this->library, externalIds, externalIdCount);
 
-    library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->Enqueue(query, ILibrary::QuerySynchronous);
 
-    if (query->GetStatus() == IQuery::Finished) {
-        return savePlaylist(this->library, query->GetResult(), playlistName, playlistId);
+        if (query->GetStatus() == IQuery::Finished) {
+            return savePlaylist(this->library, query->GetResult(), playlistName, playlistId);
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "SavePlaylistWithExternalIds failed");
     }
 
     return 0;
@@ -568,13 +573,18 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithExternalIds(
 {
     using Query = ExternalIdListToTrackListQuery;
 
-    std::shared_ptr<Query> query =
-        std::make_shared<Query>(this->library, externalIds, externalIdCount);
+    try {
+        std::shared_ptr<Query> query =
+            std::make_shared<Query>(this->library, externalIds, externalIdCount);
 
-    library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->Enqueue(query, ILibrary::QuerySynchronous);
 
-    if (query->GetStatus() == IQuery::Finished) {
-        return appendToPlaylist(this->library, playlistId, query->GetResult(), offset);
+        if (query->GetStatus() == IQuery::Finished) {
+            return appendToPlaylist(this->library, playlistId, query->GetResult(), offset);
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "AppendToPlaylistWithExternalIds failed");
     }
 
     return 0;
@@ -598,13 +608,18 @@ size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
     const int* sortOrders,
     int count)
 {
-    auto query = std::make_shared<RemoveFromPlaylistQuery>(
-        this->library, playlistId, externalIds, sortOrders, count);
+    try {
+        auto query = std::make_shared<RemoveFromPlaylistQuery>(
+            this->library, playlistId, externalIds, sortOrders, count);
 
-    library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->Enqueue(query, ILibrary::QuerySynchronous);
 
-    if (query->GetStatus() == IQuery::Finished) {
-        return query->GetResult();
+        if (query->GetStatus() == IQuery::Finished) {
+            return query->GetResult();
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "RemoveTracksFromPlaylist failed");
     }
 
     return 0;
@@ -613,13 +628,18 @@ size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
 ITrackList* LocalSimpleDataProvider::QueryTracksByExternalId(
     const char** externalIds, size_t externalIdCount)
 {
-    auto query = std::make_shared<ExternalIdListToTrackListQuery>(
-        this->library, externalIds, externalIdCount);
+    try {
+        auto query = std::make_shared<ExternalIdListToTrackListQuery>(
+            this->library, externalIds, externalIdCount);
 
-    library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->Enqueue(query, ILibrary::QuerySynchronous);
 
-    if (query->GetStatus() == IQuery::Finished) {
-        return query->GetSdkResult();
+        if (query->GetStatus() == IQuery::Finished) {
+            return query->GetSdkResult();
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "QueryTracksByExternalId failed");
     }
 
     return nullptr;
