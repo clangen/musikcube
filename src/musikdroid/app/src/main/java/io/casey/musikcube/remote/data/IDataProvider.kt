@@ -19,6 +19,7 @@ interface IDataProvider {
     fun getTrackCount(filter: String = ""): Observable<Int>
     fun getTracks(filter: String = ""): Observable<List<ITrack>>
     fun getTracks(limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
+    fun getTracks(externalIds: Set<String>): Observable<Map<String, ITrack>>
 
     fun getTrackCountByCategory(category: String, id: Long, filter: String = ""): Observable<Int>
     fun getTracksByCategory(category: String, id: Long, filter: String = ""): Observable<List<ITrack>>

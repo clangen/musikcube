@@ -77,6 +77,25 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .compose(applySchedulers())
     }
 
+    override fun getTracks(externalIds: Set<String>): Observable<Map<String, ITrack>> {
+        val jsonIds = JSONArray()
+        externalIds.forEach { jsonIds.put(it) }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.QueryTracksByExternalIds)
+            .addOption(Messages.Key.EXTERNAL_IDS, jsonIds)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Map<String, ITrack>> { socketMessage ->
+                val tracks = HashMap<String, ITrack>()
+                val json = socketMessage.getJsonObjectOption(Messages.Key.DATA, JSONObject())!!
+                json.keys().forEach { tracks.put(it, RemoteTrack(json.getJSONObject(it))) }
+                Observable.just(tracks)
+            }
+            .compose(applySchedulers())
+    }
+
     override fun getTracks(filter: String): Observable<List<ITrack>> {
         return getTracks(-1, -1, filter)
     }
