@@ -287,8 +287,8 @@ bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
     this->library->Enqueue(query, ILibrary::QuerySynchronous);
 
     if (query->GetStatus() == IQuery::Finished) {
-        auto tracks = query->GetResult();
-        if (this->AddTracksToPlaylist(db, playlistId, TrackListWrapper(tracks))) {
+        auto wrapper = TrackListWrapper(query->GetResult());
+        if (this->AddTracksToPlaylist(db, playlistId, wrapper)) {
             return true;
         }
     }
