@@ -19,23 +19,20 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
-import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.activity.Filterable
 import io.casey.musikcube.remote.ui.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
 
-var EXTRA_ACTIVITY_TITLE = "extra_title"
+val EXTRA_ACTIVITY_TITLE = "extra_title"
 
 fun AppCompatActivity.setupDefaultRecyclerView(
                              recyclerView: RecyclerView,
-                             fastScroller: RecyclerFastScroller,
                              adapter: RecyclerView.Adapter<*>) {
     val layoutManager = LinearLayoutManager(this)
 
     recyclerView.layoutManager = LinearLayoutManager(this)
     recyclerView.adapter = adapter
-    fastScroller.attachRecyclerView(recyclerView)
 
     val dividerItemDecoration = DividerItemDecoration(this, layoutManager.orientation)
 

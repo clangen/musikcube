@@ -12,6 +12,8 @@ import io.casey.musikcube.remote.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.ReplaySubject
+import io.reactivex.subjects.Subject
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 
@@ -293,7 +295,9 @@ class WebSocketService constructor(private val context: Context) {
                 throw Exception("socket disconnected")
             }
             else if (socket == null) {
-                throw Exception("socket not connected")
+                val replay = ReplaySubject.create<SocketMessage>()
+                replay.onError(Exception("socket not connected"))
+                return replay
             }
         }
 

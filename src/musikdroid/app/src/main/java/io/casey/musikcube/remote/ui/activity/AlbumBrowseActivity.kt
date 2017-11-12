@@ -9,7 +9,7 @@ import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
+import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IAlbum
 import io.casey.musikcube.remote.data.ICategoryValue
@@ -43,9 +43,8 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
         setTitleFromIntent(R.string.albums_title)
         enableUpNavigation()
 
-        val fastScroller = findViewById<RecyclerFastScroller>(R.id.fast_scroller)
-        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
-        setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
+        val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
+        setupDefaultRecyclerView(recyclerView, adapter)
 
         emptyView = findViewById(R.id.empty_list_view)
         emptyView.capability = EmptyListView.Capability.OnlineOnly

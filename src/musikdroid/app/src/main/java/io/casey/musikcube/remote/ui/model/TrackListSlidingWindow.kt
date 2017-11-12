@@ -2,16 +2,14 @@ package io.casey.musikcube.remote.ui.model
 
 import android.support.v7.widget.RecyclerView
 import android.util.Log
-import android.view.MotionEvent
-import android.view.View
-import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
+import com.simplecityapps.recyclerview_fastscroll.interfaces.OnFastScrollStateChangeListener
+import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 
-class TrackListSlidingWindow(private val recyclerView: RecyclerView,
-                             private val fastScroller: RecyclerFastScroller,
+class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
                              val dataProvider: IDataProvider,
                              private val queryFactory: TrackListSlidingWindow.QueryFactory)
 {
@@ -57,19 +55,14 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
             notifyMetadataLoaded(0, 0)
         }
 
-    private val fastScrollerTouch by lazy {
-        View.OnTouchListener { _, event ->
-            if (event != null) {
-                val type = event.actionMasked
-                if (type == MotionEvent.ACTION_DOWN) {
-                    fastScrollerActive = true
-                }
-                else if (type == MotionEvent.ACTION_UP) {
-                    fastScrollerActive = false
-                    requery()
-                }
-            }
-            false
+    private val fastScrollStateChangeListener = object: OnFastScrollStateChangeListener {
+        override fun onFastScrollStop() {
+            fastScrollerActive = false
+            requery()
+        }
+
+        override fun onFastScrollStart() {
+            fastScrollerActive = true
         }
     }
 
@@ -108,8 +101,7 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
 
     fun pause() {
         connected = false
-        recyclerView.removeOnScrollListener(_scrollListener)
-        fastScroller.setOnHandleTouchListener(null)
+        recyclerView.removeOnScrollListener(recyclerViewScrollListener)
         disposables.dispose()
         disposables = CompositeDisposable()
     }
@@ -118,8 +110,8 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
         disposables.add(dataProvider.observePlayQueue()
             .subscribe({ requery() }, { /* error */ }))
 
-        recyclerView.addOnScrollListener(_scrollListener)
-        fastScroller.setOnHandleTouchListener(fastScrollerTouch)
+        recyclerView.setStateChangeListener(fastScrollStateChangeListener)
+        recyclerView.addOnScrollListener(recyclerViewScrollListener)
         connected = true
         fastScrollerActive = false
     }
@@ -209,7 +201,7 @@ class TrackListSlidingWindow(private val recyclerView: RecyclerView,
         return scrollState != RecyclerView.SCROLL_STATE_IDLE || fastScrollerActive
     }
 
-    private val _scrollListener = object : RecyclerView.OnScrollListener() {
+    private val recyclerViewScrollListener = object : RecyclerView.OnScrollListener() {
         override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {
             scrollState = newState
             if (!scrolling()) {

@@ -8,7 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import com.pluscubed.recyclerfastscroll.RecyclerFastScroller
+import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.data.IDataProvider
 import io.casey.musikcube.remote.data.ITrack
@@ -33,9 +33,8 @@ class PlayQueueActivity : BaseActivity() {
 
         setContentView(R.layout.recycler_view_activity)
 
-        val fastScroller = findViewById<RecyclerFastScroller>(R.id.fast_scroller)
-        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
-        setupDefaultRecyclerView(recyclerView, fastScroller, adapter)
+        val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
+        setupDefaultRecyclerView(recyclerView, adapter)
 
         emptyView = findViewById(R.id.empty_list_view)
         emptyView.capability = EmptyListView.Capability.OfflineOk
@@ -45,7 +44,7 @@ class PlayQueueActivity : BaseActivity() {
         val queryFactory = playback!!.playlistQueryFactory
         offlineQueue = playback!!.playlistQueryFactory.offline()
 
-        tracks = TrackListSlidingWindow(recyclerView, fastScroller, dataProvider, queryFactory)
+        tracks = TrackListSlidingWindow(recyclerView, dataProvider, queryFactory)
         tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
 

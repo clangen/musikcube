@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -11,24 +10,13 @@
         android:layout_height="0dp"
         android:layout_width="match_parent">
 
-        <RelativeLayout
+        <com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
+            android:id="@+id/recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <android.support.v7.widget.RecyclerView
-                android:id="@+id/recycler_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
-            <com.pluscubed.recyclerfastscroll.RecyclerFastScroller
-                android:id="@+id/fast_scroller"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                app:rfs_touchTargetWidth="32dp"
-                android:paddingLeft="8dp"
-                android:layout_alignParentRight="true" />
-
-        </RelativeLayout>
+            android:layout_height="match_parent"
+            app:fastScrollAutoHide="true"
+            app:fastScrollAutoHideDelay="1500"
+            app:fastScrollThumbColor="@color/color_accent" />
 
         <io.casey.musikcube.remote.ui.view.EmptyListView
             android:id="@+id/empty_list_view"
