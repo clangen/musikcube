@@ -17,9 +17,10 @@ import android.util.Log
 import android.view.KeyEvent
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.request.animation.GlideAnimation
+import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.request.transition.Transition
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.MainActivity
 import io.casey.musikcube.remote.R
@@ -218,11 +219,11 @@ class SystemService : Service() {
 
                         albumArtRequest = Glide
                             .with(applicationContext)
-                            .load(url)
                             .asBitmap()
-                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .load(url)
+                            .apply(BITMAP_OPTIONS)
                             .into(object: SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
-                                override fun onResourceReady(bitmap: Bitmap?, glideAnimation: GlideAnimation<in Bitmap>?) {
+                                override fun onResourceReady(bitmap: Bitmap?, transition: Transition<in Bitmap>?) {
                                     albumArtRequest = null
                                     if (albumArtModel.matches(artist, album)) {
                                         albumArt = bitmap
@@ -489,6 +490,8 @@ class SystemService : Service() {
         var ACTION_WAKE_UP = "io.casey.musikcube.remote.WAKE_UP"
         var ACTION_SHUT_DOWN = "io.casey.musikcube.remote.SHUT_DOWN"
         var ACTION_SLEEP = "io.casey.musikcube.remote.SLEEP"
+
+        private val BITMAP_OPTIONS = RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL)
 
         private val MEDIA_SESSION_ACTIONS =
             PlaybackStateCompat.ACTION_PLAY_PAUSE or

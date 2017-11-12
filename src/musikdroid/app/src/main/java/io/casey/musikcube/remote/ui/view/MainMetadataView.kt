@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.ui.view
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.support.annotation.AttrRes
 import android.text.SpannableStringBuilder
 import android.text.TextPaint
@@ -17,9 +18,11 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.GlideDrawable
+import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
@@ -246,37 +249,30 @@ class MainMetadataView : FrameLayout {
 
             Glide.with(context)
                 .load(url)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .listener(object : RequestListener<String, GlideDrawable> {
-                    override fun onException(
-                            e: Exception?,
-                            model: String?,
-                            target: Target<GlideDrawable>?,
-                            first: Boolean): Boolean
-                    {
-                        setMetadataDisplayMode(DisplayMode.NoArtwork)
-                        lastArtworkUrl = null
-                        return false
-                    }
+                .apply(BITMAP_OPTIONS)
+                    .listener(object : RequestListener<Drawable> {
+                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                            if (!isPaused) {
+                                preloadNextImage()
+                            }
 
-                    override fun onResourceReady(
-                            resource: GlideDrawable, model: String, target: Target<GlideDrawable>,
-                            memory: Boolean, first: Boolean): Boolean {
-                        if (!isPaused) {
-                            preloadNextImage()
+                            /* if the loadId doesn't match the current id, then the image was
+                            loaded for a different song. throw it away. */
+                            if (albumArtModel.id != loadId) {
+                                return true
+                            }
+                            else {
+                                setMetadataDisplayMode(DisplayMode.Artwork)
+                                return false
+                            }
                         }
 
-                        /* if the loadId doesn't match the current id, then the image was
-                        loaded for a different song. throw it away. */
-                        if (albumArtModel.id != loadId) {
-                            return true
-                        }
-                        else {
-                            setMetadataDisplayMode(DisplayMode.Artwork)
+                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
+                            setMetadataDisplayMode(DisplayMode.NoArtwork)
+                            lastArtworkUrl = null
                             return false
                         }
-                    }
-                })
+                    })
                 .into(albumArtImageView)
         }
         else {
@@ -299,8 +295,8 @@ class MainMetadataView : FrameLayout {
                 val album = track.optString(Metadata.Track.ALBUM, "")
 
                 if (!albumArtModel.matches(artist, album)) {
-                    AlbumArtModel("", artist, album, AlbumArtModel.Size.Mega) {
-                                _: AlbumArtModel, url: String? ->
+                    AlbumArtModel("", artist, album, AlbumArtModel.Size.Mega)
+                        { _: AlbumArtModel, url: String? ->
                             val width = albumArtImageView.width
                             val height = albumArtImageView.height
                             Glide.with(context).load(url).downloadOnly(width, height)
@@ -382,5 +378,9 @@ class MainMetadataView : FrameLayout {
                 }
             }
         }
+    }
+
+    private companion object {
+        val BITMAP_OPTIONS = RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL)
     }
 }

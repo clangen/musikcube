@@ -10,5 +10,6 @@ class RemoteAlbum(val json: JSONObject) : IAlbum {
     override val value: String get() = json.optString(Metadata.Album.TITLE, "")
     override val albumArtist: String get() = json.optString(Metadata.Album.ALBUM_ARTIST, "")
     override val albumArtistId: Long get() = json.optLong(Metadata.Album.ALBUM_ARTIST_ID, -1)
+    override val thumbnailId: Long get() = json.optLong(Metadata.Album.THUMBNAIL_ID, -1)
     override val type: String get() = Messages.Category.ALBUM
 }

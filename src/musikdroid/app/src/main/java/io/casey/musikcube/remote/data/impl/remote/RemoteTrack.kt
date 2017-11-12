@@ -32,6 +32,8 @@ class RemoteTrack(val json: JSONObject) : ITrack {
         get() = json.optString(Metadata.Track.ARTIST, "")
     override val artistId: Long
         get() = json.optLong(Metadata.Track.ARTIST_ID, -1)
+    override val thumbnailId: Long
+        get() = json.optLong(Metadata.Track.THUMBNAIL_ID, -1)
 
     override fun getCategoryId(categoryType: String): Long {
         val idKey = CATEGORY_NAME_TO_ID[categoryType]

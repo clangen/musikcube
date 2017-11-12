@@ -16,6 +16,7 @@ object Metadata {
             val GENRE_ID = "visual_genre_id"
             val ARTIST = "artist"
             val ARTIST_ID = "visual_artist_id"
+            val THUMBNAIL_ID = "thumbnail_id"
         }
     }
 
@@ -25,6 +26,7 @@ object Metadata {
             val TITLE = "title"
             val ALBUM_ARTIST = "album_artist"
             val ALBUM_ARTIST_ID = "album_artist_id"
+            val THUMBNAIL_ID = "thumbnail_id"
         }
     }
 }

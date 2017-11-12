@@ -16,6 +16,7 @@ interface ITrack {
     val genreId: Long
     val artist: String
     val artistId: Long
+    val thumbnailId: Long
 
     fun getCategoryId(categoryType: String): Long
     fun toJson(): JSONObject
