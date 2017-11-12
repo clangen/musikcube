@@ -17,7 +17,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
-import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
@@ -44,7 +43,7 @@ import javax.inject.Inject
 
 class MainMetadataView : FrameLayout {
     @Inject lateinit var wss: WebSocketService
-    private var prefs: SharedPreferences? = null
+    private lateinit var prefs: SharedPreferences
 
     private var isPaused = true
     private lateinit var title: TextView
@@ -136,8 +135,8 @@ class MainMetadataView : FrameLayout {
             this.titleWithArt.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
             this.buffering.visibility = if (buffering) View.VISIBLE else View.GONE
 
-            val albumArtEnabledInSettings = this.prefs?.getBoolean(
-                Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED) ?: false
+            val albumArtEnabledInSettings = this.prefs.getBoolean(
+                Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
 
             if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
                 this.albumArtModel = AlbumArtModel.empty()
@@ -231,6 +230,19 @@ class MainMetadataView : FrameLayout {
         artistAndAlbumWithArt.text = builder
     }
 
+//    private val thumbnailUrl: String
+//        get() {
+//            val playing = playbackService.playingTrack
+//            if (playing.thumbnailId > 0) {
+//                val host = prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS)
+//                val port = prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.MAIN_PORT)
+//                val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
+//                val scheme = if (ssl) "https" else "http"
+//                return "$scheme://$host:$port/thumbnail/${playing.thumbnailId}"
+//            }
+//            return ""
+//        }
+
     private fun updateAlbumArt() {
         if (playbackService.playbackState == PlaybackState.Stopped) {
             setMetadataDisplayMode(DisplayMode.NoArtwork)
@@ -247,7 +259,7 @@ class MainMetadataView : FrameLayout {
             val loadId = albumArtModel.id
             this.lastArtworkUrl = url
 
-            Glide.with(context)
+            GlideApp.with(context)
                 .load(url)
                 .apply(BITMAP_OPTIONS)
                     .listener(object : RequestListener<Drawable> {
@@ -299,7 +311,7 @@ class MainMetadataView : FrameLayout {
                         { _: AlbumArtModel, url: String? ->
                             val width = albumArtImageView.width
                             val height = albumArtImageView.height
-                            Glide.with(context).load(url).downloadOnly(width, height)
+                            GlideApp.with(context).load(url).downloadOnly(width, height)
                         }
                     }
                 }

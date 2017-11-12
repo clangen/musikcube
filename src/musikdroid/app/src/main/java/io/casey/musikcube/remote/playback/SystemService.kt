@@ -26,6 +26,7 @@ import io.casey.musikcube.remote.MainActivity
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.extension.fallback
 import io.casey.musikcube.remote.ui.model.AlbumArtModel
+import io.casey.musikcube.remote.ui.view.GlideApp
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
@@ -217,8 +218,7 @@ class SystemService : Service() {
                             albumArtRequest?.request?.clear()
                         }
 
-                        albumArtRequest = Glide
-                            .with(applicationContext)
+                        albumArtRequest = GlideApp.with(applicationContext)
                             .asBitmap()
                             .load(url)
                             .apply(BITMAP_OPTIONS)

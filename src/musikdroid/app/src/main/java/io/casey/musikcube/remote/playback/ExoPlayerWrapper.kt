@@ -62,14 +62,14 @@ class ExoPlayerWrapper : PlayerWrapper() {
                 }
 
                 val builder = OkHttpClient.Builder()
-                        .cache(Cache(path, StreamProxy.CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: StreamProxy.MINIMUM_CACHE_SIZE_BYTES))
-                        .addInterceptor { chain ->
-                            var request = chain.request()
-                            val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
-                            val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
-                            request = request.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
-                            chain.proceed(request)
-                        }
+                    .cache(Cache(path, StreamProxy.CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: StreamProxy.MINIMUM_CACHE_SIZE_BYTES))
+                    .addInterceptor { chain ->
+                        var request = chain.request()
+                        val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
+                        val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
+                        request = request.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
+                        chain.proceed(request)
+                    }
 
                 if (prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
                     NetworkUtil.disableCertificateValidation(builder)
