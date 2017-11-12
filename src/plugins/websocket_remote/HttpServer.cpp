@@ -562,7 +562,7 @@ int HttpServer::HandleThumbnailRequest(
                 MHD_add_response_header(response, "Cache-Control", "public, max-age=31536000");
                 MHD_add_response_header(response, "Content-Type", contentType(path).c_str());
                 MHD_add_response_header(response, "Server", "musikcube websocket_remote");
-                int status = MHD_HTTP_OK;
+                status = MHD_HTTP_OK;
             }
             else {
                 file->Release();
