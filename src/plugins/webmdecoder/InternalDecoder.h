@@ -32,48 +32,18 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include "IDataStreamReader.h"
+#pragma once
 
-webm::Status IDataStreamReader::Read(size_t num_to_read,
-                                     std::uint8_t* buffer,
-                                     std::uint64_t* num_actually_read)
+#include <cstdint>
+#include <vector>
+#include <core/sdk/IBuffer.h>
+
+class InternalDecoder
 {
-    musik::core::sdk::PositionType bytesRead = this->stream->Read((void*) buffer, (musik::core::sdk::PositionType) num_to_read);
-    if (bytesRead <= 0) {
-        *num_actually_read = 0;
-        return webm::Status(webm::Status::kEndOfFile);
-    } else {
-        *num_actually_read = bytesRead;
-        if (bytesRead < num_to_read) {
-            return webm::Status(webm::Status::kOkPartial);
-        } else {
-            return webm::Status(webm::Status::kOkCompleted);
-        }
-    } 
-}
-
-webm::Status IDataStreamReader::Skip(std::uint64_t num_to_skip,
-                                     std::uint64_t* num_actually_skipped)
-{
-    if (this->stream->Seekable()) {
-        std::cerr << "IDataStreamReader:Stream is seekable" << std::endl;
-        if (this->stream->SetPosition(this->stream->Position() + num_to_skip)) {
-            *num_actually_skipped = num_to_skip;
-            return webm::Status(webm::Status::kOkCompleted);
-        }
-        else {
-            std::cerr << "IDataStreamReader:Seek failed" << std::endl;
-        }
-    }
-    *num_actually_skipped = 0;
-    /* Again, might not be EOF. Is just a failure code for now */
-    std::cerr << "IDataStreamReader:Nothing skipped" << std::endl;
-    return webm::Status(webm::Status::kEndOfFile);
-}
-
-std::uint64_t IDataStreamReader::Position() const
-{
-    return this->stream->Position();
-}
-
+public:
+	virtual ~InternalDecoder()
+	{
+	}
+	virtual int DecodeData(std::vector<float> &outputBuffer, int channels,
+			std::vector<std::uint8_t> data) = 0;
+};

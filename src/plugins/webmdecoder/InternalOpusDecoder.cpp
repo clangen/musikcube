@@ -32,48 +32,32 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <iostream>
-#include "IDataStreamReader.h"
+#include "InternalOpusDecoder.h"
+#include <stdexcept>
 
-webm::Status IDataStreamReader::Read(size_t num_to_read,
-                                     std::uint8_t* buffer,
-                                     std::uint64_t* num_actually_read)
+InternalOpusDecoder::InternalOpusDecoder(int channels) :
+		InternalDecoder(), channels(0), error(0), decoder(
+				opus_decoder_create(48000, channels, &error))
 {
-    musik::core::sdk::PositionType bytesRead = this->stream->Read((void*) buffer, (musik::core::sdk::PositionType) num_to_read);
-    if (bytesRead <= 0) {
-        *num_actually_read = 0;
-        return webm::Status(webm::Status::kEndOfFile);
-    } else {
-        *num_actually_read = bytesRead;
-        if (bytesRead < num_to_read) {
-            return webm::Status(webm::Status::kOkPartial);
-        } else {
-            return webm::Status(webm::Status::kOkCompleted);
-        }
-    } 
+	if (error != OPUS_OK)
+		throw std::runtime_error(opus_strerror(error));
 }
 
-webm::Status IDataStreamReader::Skip(std::uint64_t num_to_skip,
-                                     std::uint64_t* num_actually_skipped)
+InternalOpusDecoder::~InternalOpusDecoder()
 {
-    if (this->stream->Seekable()) {
-        std::cerr << "IDataStreamReader:Stream is seekable" << std::endl;
-        if (this->stream->SetPosition(this->stream->Position() + num_to_skip)) {
-            *num_actually_skipped = num_to_skip;
-            return webm::Status(webm::Status::kOkCompleted);
-        }
-        else {
-            std::cerr << "IDataStreamReader:Seek failed" << std::endl;
-        }
-    }
-    *num_actually_skipped = 0;
-    /* Again, might not be EOF. Is just a failure code for now */
-    std::cerr << "IDataStreamReader:Nothing skipped" << std::endl;
-    return webm::Status(webm::Status::kEndOfFile);
+	opus_decoder_destroy(this->decoder);
 }
 
-std::uint64_t IDataStreamReader::Position() const
+int InternalOpusDecoder::DecodeData(std::vector<float> &outputBuffer,
+		int channels, std::vector<std::uint8_t> data)
 {
-    return this->stream->Position();
+	int frameSize = opus_packet_get_samples_per_frame(data.data(), 48000);
+	float buffer[frameSize * channels];
+	int samples = opus_decode_float(this->decoder, data.data(), data.size(),
+			buffer, frameSize, 0);
+	if (samples >= 0) {
+		outputBuffer.insert(outputBuffer.end(), buffer,
+				buffer + (samples * channels));
+	}
+	return samples;
 }
-
