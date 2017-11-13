@@ -288,7 +288,8 @@ bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
 
     if (query->GetStatus() == IQuery::Finished) {
         auto tracks = query->GetResult();
-        if (this->AddTracksToPlaylist(db, playlistId, TrackListWrapper(tracks))) {
+        TrackListWrapper wrapper(tracks);
+        if (this->AddTracksToPlaylist(db, playlistId, wrapper)) {
             return true;
         }
     }
