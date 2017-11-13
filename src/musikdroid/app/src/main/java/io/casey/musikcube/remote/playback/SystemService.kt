@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.playback
 import android.app.*
 import android.content.*
 import android.graphics.Bitmap
+import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
@@ -22,6 +23,7 @@ import com.bumptech.glide.request.transition.Transition
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.MainActivity
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.ui.extension.fallback
 import io.casey.musikcube.remote.ui.model.albumart.Size
 import io.casey.musikcube.remote.ui.view.GlideApp
@@ -175,10 +177,8 @@ class SystemService : Service() {
     private fun updateMediaSessionPlaybackState() {
         var mediaSessionState = PlaybackStateCompat.STATE_STOPPED
 
-        var title = "-"
-        var album = "-"
-        var artist = "-"
         var duration = 0
+        var playing: ITrack? = null
 
         if (playback != null) {
             when (playback?.playbackState) {
@@ -188,15 +188,14 @@ class SystemService : Service() {
                 else -> { }
             }
 
-            val playing = playback!!.playingTrack
-            title = fallback(playing.title, "-")
-            album = fallback(playing.album, "-")
-            artist = fallback(playing.artist, "-")
+            playing = playback!!.playingTrack
             duration = ((playback?.duration ?: 0.0) * 1000).toInt()
         }
 
-        updateMetadata(title, artist, album, duration)
-        updateNotification(title, artist, album, mediaSessionState)
+        Log.e(TAG, String.format("updatePlaybackState: %s", playing))
+
+        updateMetadata(playing, duration)
+        updateNotification(playing, mediaSessionState)
 
         mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
             .setState(mediaSessionState, 0, 0f)
@@ -204,59 +203,72 @@ class SystemService : Service() {
             .build())
     }
 
-    private fun downloadAlbumArt(title: String, artist: String, album: String, duration: Int) {
-        albumArt.reset()
-        albumArt.url = getAlbumArtUrl(artist, album, Size.Mega)
+    private fun downloadAlbumArt(track: ITrack, duration: Int) {
+        if (!albumArt.same(track) || albumArt.request == null) {
+            if (track.artist.isNotBlank() && track.album.isNotBlank()) {
+                val url = getAlbumArtUrl(track, Size.Mega)
 
-        val originalRequest = GlideApp.with(applicationContext)
-            .asBitmap().load(albumArt.url).apply(BITMAP_OPTIONS)
+                val originalRequest = GlideApp.with(applicationContext)
+                        .asBitmap().load(url).apply(BITMAP_OPTIONS)
 
-        albumArt.request = originalRequest
+                albumArt.reset(track)
+                albumArt.request = originalRequest
+                albumArt.target = originalRequest.into(object : SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
+                    override fun onResourceReady(bitmap: Bitmap?, transition: Transition<in Bitmap>?) {
+                        /* make sure the instance's current request is the same as this request. it's
+                        possible we had another download request come in before this one finished */
+                        if (albumArt.request == originalRequest) {
+                            albumArt.bitmap = bitmap
+                            albumArt.request = null
+                            updateMetadata(track, duration)
+                        }
+                    }
 
-        albumArt.target = originalRequest.into(object: SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
-            override fun onResourceReady(bitmap: Bitmap?, transition: Transition<in Bitmap>?) {
-                /* make sure the instance's current request is the samea s this request. it's
-                possible we had another download request come in before this one finished */
-                if (albumArt.request == originalRequest) {
-                    albumArt.bitmap = bitmap
-                    updateMetadata(title, artist, album, duration)
-                }
-                albumArt.request = null
+                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                        if (albumArt.request == originalRequest) {
+                            albumArt.request = null
+                        }
+                    }
+                })
             }
-        })
+        }
+        else {
+            Log.d(TAG, "downloadAlbumArt already in flight")
+        }
     }
 
-    private fun updateMetadata(title: String, artist: String, album: String, duration: Int) {
+    private fun updateMetadata(track: ITrack?, duration: Int) {
         var currentImage: Bitmap? = null
 
         val albumArtEnabledInSettings = this.prefs.getBoolean(
             Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
 
-        if (albumArtEnabledInSettings) {
-            val url = getAlbumArtUrl(artist, album, Size.Mega)
-            if ("-" != artist && "-" != album && url != albumArt.url) {
-                downloadAlbumArt(title, artist, album, duration)
-            }
-            else if (albumArt.url == url) {
-                if (albumArt.bitmap == null) {
-                    downloadAlbumArt(title, artist, album, duration)
-                }
+        if (albumArtEnabledInSettings && track != null && albumArt.same(track)) {
+            if (albumArt.bitmap != null) {
                 currentImage = albumArt.bitmap
             }
         }
 
+        if (track != null && currentImage == null) {
+            downloadAlbumArt(track, duration)
+        }
+
         mediaSession?.setMetadata(MediaMetadataCompat.Builder()
-            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
-            .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album)
-            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track?.artist ?: "-")
+            .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track?.album ?: "-")
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track?.title ?: "-")
             .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration.toLong())
             .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentImage)
             .build())
     }
 
-    private fun updateNotification(title: String, artist: String, album: String, state: Int) {
+    private fun updateNotification(track: ITrack?, state: Int) {
         val contentIntent = PendingIntent.getActivity(
             applicationContext, 1, MainActivity.getStartIntent(this), 0)
+
+        val title = fallback(track?.title, "-")
+        val artist = fallback(track?.artist, "-")
+        val album = fallback(track?.album, "-")
 
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
@@ -461,19 +473,23 @@ class SystemService : Service() {
     }
 
     private class AlbumArt {
-        var url: String? = null
         var target: SimpleTarget<Bitmap>? = null
         var request: GlideRequest<Bitmap>? = null
         var bitmap: Bitmap? = null
+        var track: ITrack? = null
 
-        fun reset() {
+        fun reset(t: ITrack? = null) {
             if (target != null &&  target?.request != null) {
                 target?.request?.clear()
             }
-            url = null
             bitmap = null
             request = null
             target = null
+            track = t
+        }
+
+        fun same(other: ITrack?): Boolean {
+            return track != null && other != null && other.externalId == track?.externalId
         }
     }
 

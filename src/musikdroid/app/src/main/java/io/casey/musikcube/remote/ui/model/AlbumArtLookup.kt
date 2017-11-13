@@ -1,10 +1,14 @@
 package io.casey.musikcube.remote.ui.model.albumart
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.util.LruCache
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.data.IAlbum
 import io.casey.musikcube.remote.data.ITrack
 import io.casey.musikcube.remote.util.NetworkUtil
 import io.casey.musikcube.remote.util.Strings
+import io.casey.musikcube.remote.websocket.Prefs
 import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
@@ -27,12 +31,35 @@ enum class Size constructor(internal val key: String, internal val order: Int) {
     }
 }
 
+/* used to strip extraneous tags */
+private val badPatterns = arrayOf(
+    Pattern.compile("(?i)^" + Pattern.quote("[") + "CD" + Pattern.quote("]")),
+    Pattern.compile("(?i)" + Pattern.quote("(") + "disc \\d*" + Pattern.quote(")") + "$"),
+    Pattern.compile("(?i)" + Pattern.quote("[") + "disc \\d*" + Pattern.quote("]") + "$"),
+    Pattern.compile("(?i)" + Pattern.quote("(+") + "video" + Pattern.quote(")") + "$"),
+    Pattern.compile("(?i)" + Pattern.quote("[+") + "video" + Pattern.quote("]") + "$"),
+    Pattern.compile("(?i)" + Pattern.quote("(") + "explicit" + Pattern.quote(")") + "$"),
+    Pattern.compile("(?i)" + Pattern.quote("[") + "explicit" + Pattern.quote("]") + "$"),
+    Pattern.compile("(?i)" + Pattern.quote("[+") + "digital booklet" + Pattern.quote("]") + "$"))
+
+/* http://www.last.fm/group/Last.fm+Web+Services/forum/21604/_/522900 -- it's ok to
+put our key in the code */
+private val lastFmFormatUrl =
+    "http://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=" +
+    "502c69bd3f9946e8e0beee4fcb28c4cd&artist=%s&album=%s&format=json&size=%s"
+
+private val urlCache = LruCache<String, String>(500)
+private val badUrlCache = LruCache<String, Boolean>(100)
+private val inFlight = mutableMapOf<String, CountDownLatch>()
+
 fun getUrl(album: IAlbum, size: Size = Size.Small): String? {
-    return getUrl(album.albumArtist, album.name, size)
+    return getThumbnailUrl(album.thumbnailId)
+        ?: getUrl(album.albumArtist, album.name, size)
 }
 
 fun getUrl(track: ITrack, size: Size = Size.Small): String? {
-    return getUrl(track.artist, track.album, size)
+    return getThumbnailUrl(track.thumbnailId)
+        ?: getUrl(track.artist, track.album, size)
 }
 
 fun getUrl(artist: String = "", album: String = "", size: Size = Size.Small): String? {
@@ -172,26 +199,20 @@ fun intercept(req: Request): Request? {
     return result
 }
 
-/* used to strip extraneous tags */
-private val badPatterns = arrayOf(
-    Pattern.compile("(?i)^" + Pattern.quote("[") + "CD" + Pattern.quote("]")),
-    Pattern.compile("(?i)" + Pattern.quote("(") + "disc \\d*" + Pattern.quote(")") + "$"),
-    Pattern.compile("(?i)" + Pattern.quote("[") + "disc \\d*" + Pattern.quote("]") + "$"),
-    Pattern.compile("(?i)" + Pattern.quote("(+") + "video" + Pattern.quote(")") + "$"),
-    Pattern.compile("(?i)" + Pattern.quote("[+") + "video" + Pattern.quote("]") + "$"),
-    Pattern.compile("(?i)" + Pattern.quote("(") + "explicit" + Pattern.quote(")") + "$"),
-    Pattern.compile("(?i)" + Pattern.quote("[") + "explicit" + Pattern.quote("]") + "$"),
-    Pattern.compile("(?i)" + Pattern.quote("[+") + "digital booklet" + Pattern.quote("]") + "$"))
+private val prefs by lazy {
+    Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+}
 
-/* http://www.last.fm/group/Last.fm+Web+Services/forum/21604/_/522900 -- it's ok to
-put our key in the code */
-private val lastFmFormatUrl =
-    "http://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=" +
-    "502c69bd3f9946e8e0beee4fcb28c4cd&artist=%s&album=%s&format=json&size=%s"
-
-private val urlCache = LruCache<String, String>(500)
-private val badUrlCache = LruCache<String, Boolean>(100)
-private val inFlight = mutableMapOf<String, CountDownLatch>()
+private fun getThumbnailUrl(id: Long): String? {
+    if (id > 0) {
+        val host = prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS)
+        val port = prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.MAIN_PORT)
+        val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
+        val scheme = if (ssl) "https" else "http"
+        return "$scheme://$host:$port/thumbnail/$id"
+    }
+    return null
+}
 
 private fun dejunk(album: String): String {
     var result = album

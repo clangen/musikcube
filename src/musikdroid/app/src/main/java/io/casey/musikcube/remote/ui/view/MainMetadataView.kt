@@ -142,7 +142,7 @@ class MainMetadataView : FrameLayout {
                 setMetadataDisplayMode(DisplayMode.NoArtwork)
             }
             else {
-                val newUrl = getAlbumArtUrl(artist, album, Size.Mega) ?: ""
+                val newUrl = getAlbumArtUrl(playing, Size.Mega) ?: ""
                 if (newUrl != loadedAlbumArtUrl) {
                     updateAlbumArt(newUrl)
                 }
@@ -225,19 +225,6 @@ class MainMetadataView : FrameLayout {
         artistAndAlbumWithArt.highlightColor = Color.TRANSPARENT
         artistAndAlbumWithArt.text = builder
     }
-
-//    private val thumbnailUrl: String
-//        get() {
-//            val playing = playbackService.playingTrack
-//            if (playing.thumbnailId > 0) {
-//                val host = prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS)
-//                val port = prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.MAIN_PORT)
-//                val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
-//                val scheme = if (ssl) "https" else "http"
-//                return "$scheme://$host:$port/thumbnail/${playing.thumbnailId}"
-//            }
-//            return ""
-//        }
 
     private fun updateAlbumArt(albumArtUrl: String = "") {
         if (playbackService.playbackState == PlaybackState.Stopped) {
