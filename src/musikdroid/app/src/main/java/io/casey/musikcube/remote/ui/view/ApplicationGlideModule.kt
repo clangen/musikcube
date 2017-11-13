@@ -10,7 +10,9 @@ import com.bumptech.glide.integration.okhttp3.OkHttpUrlLoader
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.module.AppGlideModule
 import io.casey.musikcube.remote.websocket.Prefs
-import okhttp3.OkHttpClient
+import okhttp3.*
+import io.casey.musikcube.remote.ui.model.albumart.canIntercept as canInterceptArtwork
+import io.casey.musikcube.remote.ui.model.albumart.intercept as interceptArtwork
 import java.io.InputStream
 
 @GlideModule
@@ -28,9 +30,23 @@ class ApplicationGlideModule : AppGlideModule() {
                 val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
                 req = req.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
             }
-            chain.proceed(req)
+            else if (canInterceptArtwork(req)) {
+                req = interceptArtwork(req)
+            }
+
+            if (req != null) chain.proceed(req) else error(chain)
         }).build()
 
         registry?.replace(GlideUrl::class.java, InputStream::class.java, OkHttpUrlLoader.Factory(client))
+    }
+
+    private fun error(chain: Interceptor.Chain): Response {
+        return Response.Builder()
+            .request(chain.request())
+            .code(404)
+            .protocol(Protocol.HTTP_1_1)
+            .body(ResponseBody.create(MediaType.parse("application/json"), "{ }"))
+            .message("not found")
+            .build()
     }
 }

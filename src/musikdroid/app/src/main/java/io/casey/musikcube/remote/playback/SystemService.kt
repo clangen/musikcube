@@ -5,7 +5,6 @@ import android.content.*
 import android.graphics.Bitmap
 import android.media.AudioManager
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
 import android.support.v4.app.NotificationCompat
@@ -15,7 +14,6 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.KeyEvent
-import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.SimpleTarget
@@ -25,12 +23,14 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.MainActivity
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.extension.fallback
-import io.casey.musikcube.remote.ui.model.AlbumArtModel
+import io.casey.musikcube.remote.ui.model.albumart.Size
 import io.casey.musikcube.remote.ui.view.GlideApp
+import io.casey.musikcube.remote.ui.view.GlideRequest
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Prefs
 import android.support.v4.app.NotificationCompat.Action as NotifAction
+import io.casey.musikcube.remote.ui.model.albumart.getUrl as getAlbumArtUrl
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,
@@ -38,7 +38,6 @@ import android.support.v4.app.NotificationCompat.Action as NotifAction
  * from completely falling asleep during streaming playback.
  */
 class SystemService : Service() {
-    private val handler = Handler()
     private var playback: StreamingPlaybackService? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var mediaSession: MediaSessionCompat? = null
@@ -47,9 +46,7 @@ class SystemService : Service() {
     private lateinit var powerManager: PowerManager
     private lateinit var prefs: SharedPreferences
 
-    private var albumArtModel = AlbumArtModel.empty()
-    private var albumArt: Bitmap? = null
-    private var albumArtRequest: SimpleTarget<Bitmap>? = null
+    private val albumArt = AlbumArt()
 
     override fun onCreate() {
         super.onCreate()
@@ -198,7 +195,7 @@ class SystemService : Service() {
             duration = ((playback?.duration ?: 0.0) * 1000).toInt()
         }
 
-        updateMetadata(title, artist, album, null, duration)
+        updateMetadata(title, artist, album, duration)
         updateNotification(title, artist, album, mediaSessionState)
 
         mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
@@ -208,57 +205,43 @@ class SystemService : Service() {
     }
 
     private fun downloadAlbumArt(title: String, artist: String, album: String, duration: Int) {
-        albumArt = null
+        albumArt.reset()
+        albumArt.url = getAlbumArtUrl(artist, album, Size.Mega)
 
-        albumArtModel = AlbumArtModel(title, artist, album, AlbumArtModel.Size.Mega) {
-            _: AlbumArtModel, url: String? ->
-                if (albumArtModel.matches(artist, album)) {
-                    handler.post {
-                        if (albumArtRequest != null && albumArtRequest?.request != null) {
-                            albumArtRequest?.request?.clear()
-                        }
+        val originalRequest = GlideApp.with(applicationContext)
+            .asBitmap().load(albumArt.url).apply(BITMAP_OPTIONS)
 
-                        albumArtRequest = GlideApp.with(applicationContext)
-                            .asBitmap()
-                            .load(url)
-                            .apply(BITMAP_OPTIONS)
-                            .into(object: SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
-                                override fun onResourceReady(bitmap: Bitmap?, transition: Transition<in Bitmap>?) {
-                                    albumArtRequest = null
-                                    if (albumArtModel.matches(artist, album)) {
-                                        albumArt = bitmap
-                                        updateMetadata(title, artist, album, bitmap, duration)
-                                    }
-                                }
-                            })
-                    }
+        albumArt.request = originalRequest
+
+        albumArt.target = originalRequest.into(object: SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
+            override fun onResourceReady(bitmap: Bitmap?, transition: Transition<in Bitmap>?) {
+                /* make sure the instance's current request is the samea s this request. it's
+                possible we had another download request come in before this one finished */
+                if (albumArt.request == originalRequest) {
+                    albumArt.bitmap = bitmap
+                    updateMetadata(title, artist, album, duration)
                 }
-        }
-
-        albumArtModel.fetch()
+                albumArt.request = null
+            }
+        })
     }
 
-    private fun updateMetadata(title: String, artist: String, album: String, image: Bitmap?, duration: Int) {
-        var currentImage = image
+    private fun updateMetadata(title: String, artist: String, album: String, duration: Int) {
+        var currentImage: Bitmap? = null
 
         val albumArtEnabledInSettings = this.prefs.getBoolean(
             Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
 
         if (albumArtEnabledInSettings) {
-            if ("-" != artist && "-" != album && !albumArtModel.matches(artist, album)) {
+            val url = getAlbumArtUrl(artist, album, Size.Mega)
+            if ("-" != artist && "-" != album && url != albumArt.url) {
                 downloadAlbumArt(title, artist, album, duration)
             }
-            else if (albumArtModel.matches(artist, album)) {
-                if (currentImage == null && Strings.notEmpty(albumArtModel.url)) {
-                    /* lookup may have failed -- try again. if the fetch matches already in
-                    progress this will be a no-op */
-                    albumArtModel.fetch()
+            else if (albumArt.url == url) {
+                if (albumArt.bitmap == null) {
+                    downloadAlbumArt(title, artist, album, duration)
                 }
-
-                currentImage = albumArt
-            }
-            else {
-                albumArt = null
+                currentImage = albumArt.bitmap
             }
         }
 
@@ -474,6 +457,23 @@ class SystemService : Service() {
             if (intent.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
                 playback?.pause()
             }
+        }
+    }
+
+    private class AlbumArt {
+        var url: String? = null
+        var target: SimpleTarget<Bitmap>? = null
+        var request: GlideRequest<Bitmap>? = null
+        var bitmap: Bitmap? = null
+
+        fun reset() {
+            if (target != null &&  target?.request != null) {
+                target?.request?.clear()
+            }
+            url = null
+            bitmap = null
+            request = null
+            target = null
         }
     }
 

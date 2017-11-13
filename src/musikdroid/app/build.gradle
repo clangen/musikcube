@@ -77,7 +77,7 @@ dependencies {
     kapt 'com.google.dagger:dagger-compiler:2.11'
 
     implementation 'com.neovisionaries:nv-websocket-client:1.31'
-    implementation 'com.squareup.okhttp3:okhttp:3.8.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.9.0'
     implementation 'com.github.bumptech.glide:glide:4.3.1'
     implementation "com.github.bumptech.glide:okhttp3-integration:4.3.1"
     kapt 'com.github.bumptech.glide:compiler:4.3.1'

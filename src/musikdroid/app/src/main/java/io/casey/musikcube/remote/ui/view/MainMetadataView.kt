@@ -32,7 +32,7 @@ import io.casey.musikcube.remote.ui.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.extension.fallback
 import io.casey.musikcube.remote.ui.extension.getColorCompat
-import io.casey.musikcube.remote.ui.model.AlbumArtModel
+import io.casey.musikcube.remote.ui.model.albumart.Size
 import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.websocket.Messages
 import io.casey.musikcube.remote.websocket.Prefs
@@ -40,6 +40,7 @@ import io.casey.musikcube.remote.websocket.SocketMessage
 import io.casey.musikcube.remote.websocket.WebSocketService
 import org.json.JSONArray
 import javax.inject.Inject
+import io.casey.musikcube.remote.ui.model.albumart.getUrl as getAlbumArtUrl
 
 class MainMetadataView : FrameLayout {
     @Inject lateinit var wss: WebSocketService
@@ -62,9 +63,8 @@ class MainMetadataView : FrameLayout {
         Artwork, NoArtwork, Stopped
     }
 
-    private var albumArtModel = AlbumArtModel.empty()
     private var lastDisplayMode = DisplayMode.Stopped
-    private var lastArtworkUrl: String? = null
+    private var loadedAlbumArtUrl: String? = null
 
     constructor(context: Context) : super(context) {
         init()
@@ -90,7 +90,7 @@ class MainMetadataView : FrameLayout {
 
     fun clear() {
         if (!isPaused) {
-            albumArtModel = AlbumArtModel.empty()
+            loadedAlbumArtUrl = null
             updateAlbumArt()
         }
     }
@@ -139,17 +139,13 @@ class MainMetadataView : FrameLayout {
                 Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
 
             if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
-                this.albumArtModel = AlbumArtModel.empty()
                 setMetadataDisplayMode(DisplayMode.NoArtwork)
             }
             else {
-                if (!this.albumArtModel.matches(artist, album)) {
-                    this.albumArtModel.destroy()
-
-                    this.albumArtModel = AlbumArtModel(
-                        title, artist, album, AlbumArtModel.Size.Mega, albumArtRetrieved)
+                val newUrl = getAlbumArtUrl(artist, album, Size.Mega) ?: ""
+                if (newUrl != loadedAlbumArtUrl) {
+                    updateAlbumArt(newUrl)
                 }
-                updateAlbumArt()
             }
         }
     }
@@ -243,24 +239,20 @@ class MainMetadataView : FrameLayout {
 //            return ""
 //        }
 
-    private fun updateAlbumArt() {
+    private fun updateAlbumArt(albumArtUrl: String = "") {
         if (playbackService.playbackState == PlaybackState.Stopped) {
             setMetadataDisplayMode(DisplayMode.NoArtwork)
         }
 
-        val url = albumArtModel.url
-
-        if (Strings.empty(url)) {
-            this.lastArtworkUrl = null
-            albumArtModel.fetch()
+        if (Strings.empty(albumArtUrl)) {
+            loadedAlbumArtUrl = null
             setMetadataDisplayMode(DisplayMode.NoArtwork)
         }
-        else if (url != lastArtworkUrl || lastDisplayMode == DisplayMode.Stopped) {
-            val loadId = albumArtModel.id
-            this.lastArtworkUrl = url
+        else if (albumArtUrl != loadedAlbumArtUrl || lastDisplayMode == DisplayMode.Stopped) {
+            loadedAlbumArtUrl = albumArtUrl
 
             GlideApp.with(context)
-                .load(url)
+                .load(albumArtUrl)
                 .apply(BITMAP_OPTIONS)
                     .listener(object : RequestListener<Drawable> {
                         override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
@@ -268,20 +260,13 @@ class MainMetadataView : FrameLayout {
                                 preloadNextImage()
                             }
 
-                            /* if the loadId doesn't match the current id, then the image was
-                            loaded for a different song. throw it away. */
-                            if (albumArtModel.id != loadId) {
-                                return true
-                            }
-                            else {
-                                setMetadataDisplayMode(DisplayMode.Artwork)
-                                return false
-                            }
+                            setMetadataDisplayMode(DisplayMode.Artwork)
+                            return false
                         }
 
                         override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
                             setMetadataDisplayMode(DisplayMode.NoArtwork)
-                            lastArtworkUrl = null
+                            loadedAlbumArtUrl = null
                             return false
                         }
                     })
@@ -306,16 +291,12 @@ class MainMetadataView : FrameLayout {
                 val artist = track.optString(Metadata.Track.ARTIST, "")
                 val album = track.optString(Metadata.Track.ALBUM, "")
 
-                if (!albumArtModel.matches(artist, album)) {
-                    AlbumArtModel("", artist, album, AlbumArtModel.Size.Mega)
-                        { _: AlbumArtModel, url: String? ->
-                            val width = albumArtImageView.width
-                            val height = albumArtImageView.height
-                            GlideApp.with(context).load(url).downloadOnly(width, height)
-                        }
-                    }
+                val newUrl = getAlbumArtUrl(artist, album, Size.Mega)
+                if (loadedAlbumArtUrl != newUrl) {
+                    GlideApp.with(context).load(newUrl).apply(BITMAP_OPTIONS).downloadOnly(width, height)
                 }
             }
+        }
     }
 
     private fun init() {
@@ -376,20 +357,6 @@ class MainMetadataView : FrameLayout {
         override fun onStateChanged(newState: WebSocketService.State, oldState: WebSocketService.State) {}
         override fun onMessageReceived(message: SocketMessage) {}
         override fun onInvalidPassword() {}
-    }
-
-    private var albumArtRetrieved: (AlbumArtModel, String?) -> Unit = {
-            model: AlbumArtModel, _: String? ->
-        handler?.post {
-            if (model === albumArtModel) {
-                if (Strings.empty(model.url)) {
-                    setMetadataDisplayMode(DisplayMode.NoArtwork)
-                }
-                else {
-                    updateAlbumArt()
-                }
-            }
-        }
     }
 
     private companion object {
