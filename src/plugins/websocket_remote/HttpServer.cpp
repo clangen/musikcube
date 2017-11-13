@@ -318,33 +318,35 @@ int HttpServer::HandleRequest(
     int status = MHD_HTTP_NOT_FOUND;
 
     try {
-        if (!isAuthenticated(connection, server->context)) {
-            status = 401; /* unauthorized */
-            static const char* error = "unauthorized";
-            response = MHD_create_response_from_buffer(strlen(error), (void*) error, MHD_RESPMEM_PERSISTENT);
+        if (method && std::string(method) == "GET") {
+            if (!isAuthenticated(connection, server->context)) {
+                status = 401; /* unauthorized */
+                static const char* error = "unauthorized";
+                response = MHD_create_response_from_buffer(strlen(error), (void*)error, MHD_RESPMEM_PERSISTENT);
 
 #ifdef ENABLE_DEBUG
-            std::cerr << "unauthorized\n";
+                std::cerr << "unauthorized\n";
 #endif
-        }
-        else {
-            /* if we get here we're authenticated */
-            std::string urlStr(url);
-
-            if (urlStr[0] == '/') {
-                urlStr = urlStr.substr(1);
             }
+            else {
+                /* if we get here we're authenticated */
+                std::string urlStr(url);
 
-            std::vector<std::string> parts;
-            boost::split(parts, urlStr, boost::is_any_of("/"));
-            if (parts.size() > 0) {
-                /* /audio/id/<id> OR /audio/external_id/<external_id> */
-                if (parts.at(0) == fragment::audio && parts.size() == 3) {
-                    status = HandleAudioTrackRequest(server, response, connection, parts);
+                if (urlStr[0] == '/') {
+                    urlStr = urlStr.substr(1);
                 }
-                /* /thumbnail/<id> */
-                else if (parts.at(0) == fragment::thumbnail && parts.size() == 2) {
-                    status = HandleThumbnailRequest(server, response, connection, parts);
+
+                std::vector<std::string> parts;
+                boost::split(parts, urlStr, boost::is_any_of("/"));
+                if (parts.size() > 0) {
+                    /* /audio/id/<id> OR /audio/external_id/<external_id> */
+                    if (parts.at(0) == fragment::audio && parts.size() == 3) {
+                        status = HandleAudioTrackRequest(server, response, connection, parts);
+                    }
+                    /* /thumbnail/<id> */
+                    else if (parts.at(0) == fragment::thumbnail && parts.size() == 2) {
+                        status = HandleThumbnailRequest(server, response, connection, parts);
+                    }
                 }
             }
         }
