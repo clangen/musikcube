@@ -49,6 +49,7 @@ class SystemService : Service() {
     private lateinit var prefs: SharedPreferences
 
     private val albumArt = AlbumArt()
+    private val sessionData = SessionMetadata()
 
     override fun onCreate() {
         super.onCreate()
@@ -192,9 +193,7 @@ class SystemService : Service() {
             duration = ((playback?.duration ?: 0.0) * 1000).toInt()
         }
 
-        Log.e(TAG, String.format("updatePlaybackState: %s", playing))
-
-        updateMetadata(playing, duration)
+        updateMediaSession(playing, duration)
         updateNotification(playing, mediaSessionState)
 
         mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
@@ -203,9 +202,11 @@ class SystemService : Service() {
             .build())
     }
 
-    private fun downloadAlbumArt(track: ITrack, duration: Int) {
-        if (!albumArt.same(track) || albumArt.request == null) {
+    private fun downloadAlbumArtIfNecessary(track: ITrack, duration: Int) {
+        if (!albumArt.same(track) || (albumArt.request == null && albumArt.bitmap == null)) {
             if (track.artist.isNotBlank() && track.album.isNotBlank()) {
+                Log.d(TAG, "download")
+
                 val url = getAlbumArtUrl(track, Size.Mega)
 
                 val originalRequest = GlideApp.with(applicationContext)
@@ -220,7 +221,7 @@ class SystemService : Service() {
                         if (albumArt.request == originalRequest) {
                             albumArt.bitmap = bitmap
                             albumArt.request = null
-                            updateMetadata(track, duration)
+                            updateMediaSession(track, duration)
                         }
                     }
 
@@ -237,29 +238,42 @@ class SystemService : Service() {
         }
     }
 
-    private fun updateMetadata(track: ITrack?, duration: Int) {
+    private val albumArtEnabled: Boolean
+        get() {
+            return this.prefs.getBoolean(
+                Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
+        }
+
+    private fun updateMediaSession(track: ITrack?, duration: Int) {
         var currentImage: Bitmap? = null
 
-        val albumArtEnabledInSettings = this.prefs.getBoolean(
-            Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
-
-        if (albumArtEnabledInSettings && track != null && albumArt.same(track)) {
-            if (albumArt.bitmap != null) {
-                currentImage = albumArt.bitmap
-            }
+        if (albumArtEnabled && track != null) {
+            downloadAlbumArtIfNecessary(track, duration)
+            currentImage = albumArt.bitmap
         }
 
-        if (track != null && currentImage == null) {
-            downloadAlbumArt(track, duration)
+        if (!sessionData.matches(track, currentImage)) {
+            sessionData.update(track, currentImage, duration)
+            mediaSessionDebouncer.call()
         }
+    }
 
-        mediaSession?.setMetadata(MediaMetadataCompat.Builder()
-            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track?.artist ?: "-")
-            .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track?.album ?: "-")
-            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track?.title ?: "-")
-            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration.toLong())
-            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, currentImage)
-            .build())
+    /* some versions of the OS seem to have problems if we update the lockscreen
+    artwork more quickly than twice a second. this can happen if we just loaded
+    a new track but don't have artwork yet, but artwork comes back right away.
+    this debouncer ensures we wait at least half a second between updates */
+    private val mediaSessionDebouncer = object: Debouncer<Unit>(500) {
+        override fun onDebounced(last: Unit?) {
+            Log.e(TAG, String.format("updatePlaybackState: %s", sessionData.bitmap))
+            val track = sessionData.track
+            mediaSession?.setMetadata(MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track?.artist ?: "-")
+                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track?.album ?: "-")
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, track?.title ?: "-")
+                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, sessionData.duration.toLong())
+                .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, sessionData.bitmap)
+                .build())
+        }
     }
 
     private fun updateNotification(track: ITrack?, state: Int) {
@@ -479,9 +493,6 @@ class SystemService : Service() {
         var track: ITrack? = null
 
         fun reset(t: ITrack? = null) {
-            if (target != null &&  target?.request != null) {
-                target?.request?.clear()
-            }
             bitmap = null
             request = null
             target = null
@@ -490,6 +501,24 @@ class SystemService : Service() {
 
         fun same(other: ITrack?): Boolean {
             return track != null && other != null && other.externalId == track?.externalId
+        }
+    }
+
+    private class SessionMetadata {
+        var track: ITrack? = null
+        var bitmap: Bitmap? = null
+        var duration: Int = 0
+
+        fun update(otherTrack: ITrack?, otherBitmap: Bitmap?, otherDuration: Int) {
+            track = otherTrack
+            bitmap = otherBitmap
+            duration = duration
+        }
+
+        fun matches(otherTrack: ITrack?, otherBitmap: Bitmap?): Boolean {
+            return (track != null && otherTrack != null) &&
+                otherTrack.externalId == track?.externalId &&
+                bitmap === otherBitmap
         }
     }
 
