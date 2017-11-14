@@ -43,8 +43,8 @@
 #include <sstream>
 
 WebmDecoder::WebmDecoder() :
-		stream(nullptr), decoder(nullptr), bitsPerSample(0), totalSamples(0), channels(
-				0), duration(0), exhausted(false)
+		decoder(nullptr), bitsPerSample(0), channels(0), duration(0), sampleRate(
+				48000), exhausted(false)
 {
 }
 
@@ -54,8 +54,6 @@ WebmDecoder::~WebmDecoder()
 
 void WebmDecoder::Release()
 {
-	if (this->decoder != nullptr)
-		delete this->decoder;
 	delete this;
 }
 
@@ -71,12 +69,35 @@ double WebmDecoder::GetDuration()
 
 bool WebmDecoder::GetBuffer(musik::core::sdk::IBuffer *buffer)
 {
-	buffer->SetSampleRate(48000);
-	buffer->SetSamples(totalSamples);
+	buffer->SetSampleRate(sampleRate);
 	buffer->SetChannels(channels);
-	std::memcpy(buffer->BufferPointer(), this->decodedBuffer.data(), this->decodedBuffer.size() * sizeof(float));
-	this->exhausted = true;
-	return true;
+	if (packets.empty())
+	{
+		this->exhausted = true;
+		return false;
+	}
+	if (this->decoder != nullptr)
+	{
+		try
+		{
+			int samples = this->decoder->DecodeData(buffer, channels,
+					packets.front());
+			packets.pop();
+			return true;
+		} catch (std::exception& e)
+		{
+			std::cerr << "webmdecoder: failed to decode frame - " << e.what()
+					<< std::endl;
+			packets.pop();
+		}
+	}
+	else
+	{
+		std::cerr << "webmdecoder: error - no codec to decode data"
+				<< std::endl;
+		this->exhausted = true;
+	}
+	return false;
 }
 
 bool WebmDecoder::Open(musik::core::sdk::IDataStream *stream)
@@ -94,7 +115,6 @@ bool WebmDecoder::Open(musik::core::sdk::IDataStream *stream)
 		this->exhausted = true;
 		return false;
 	}
-	std::cerr << "Open complete" << std::endl;
 	return true;
 }
 
@@ -204,19 +224,10 @@ webm::Status WebmDecoder::OnFrame(const webm::FrameMetadata& metadata,
 	std::uint8_t buffer[*bytes_remaining];
 	webm::Status status = reader->Read(metadata.size, buffer, &bytes_read);
 	*bytes_remaining -= bytes_read;
-	if (this->decoder != nullptr)
+	if (bytes_read > 0)
 	{
-		std::vector<std::uint8_t> data;
-		data.insert(data.end(), &buffer[0], &buffer[0] + bytes_read);
-		int samples = this->decoder->DecodeData(decodedBuffer, channels, data);
-		if (samples > 0)
-		{
-			totalSamples += (samples * channels);
-		} else {
-			std::cerr << "webmdecoder: failed to decode frame - " << samples << std::endl;
-		}
+		packets.emplace(&buffer[0], &buffer[0] + bytes_read);
 	}
-
 	return status;
 }
 webm::Status WebmDecoder::OnClusterEnd(const webm::ElementMetadata& metadata,
@@ -287,20 +298,22 @@ webm::Status WebmDecoder::OnTrackEntry(const webm::ElementMetadata& metadata,
 			<< std::endl;
 	std::cerr << "\t\tOutput freq - " << audio.output_frequency.value()
 			<< std::endl;
+	sampleRate = audio.output_frequency.value();
 	std::cerr << "\t\tChannels - " << audio.channels.value() << std::endl;
-	channels = static_cast<int>(audio.channels.value());
+	channels = audio.channels.value();
 	std::cerr << "\t\tBit depth - " << audio.bit_depth.value() << std::endl;
 	try
 	{
 		if (codecId == OPUS_ID)
 		{
-			this->decoder = new InternalOpusDecoder(audio.channels.value());
+			this->decoder = std::unique_ptr<InternalOpusDecoder>(
+					new InternalOpusDecoder(channels, sampleRate));
 		}
 		else if (codecId == VORBIS_ID)
 		{
 			throw std::runtime_error("Vorbis encoded audio not yet supported");
 		}
-	} catch (std::runtime_error& e)
+	} catch (std::exception& e)
 	{
 		std::cerr << "webmdecoder: Unable to create decoder: " << e.what()
 				<< std::endl;

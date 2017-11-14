@@ -44,6 +44,6 @@ public:
 	virtual ~InternalDecoder()
 	{
 	}
-	virtual int DecodeData(std::vector<float> &outputBuffer, int channels,
-			std::vector<std::uint8_t> data) = 0;
+	virtual int DecodeData(musik::core::sdk::IBuffer *outputBuffer,
+			int channels, std::vector<std::uint8_t> data) = 0;
 };

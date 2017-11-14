@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <queue>
 #include <vector>
 #include <core/sdk/constants.h>
 #include <core/sdk/IDecoder.h>
@@ -179,16 +180,14 @@ private:
 	const std::string OPUS_ID = std::string("A_OPUS");
 	const std::string VORBIS_ID = std::string("A_VORBIS");
 
-	musik::core::sdk::IDataStream *stream;
-
 	double duration;
 	long channels;
-	uint64_t totalSamples;
 	int bitsPerSample;
+	long sampleRate;
 	bool exhausted;
 
-	std::vector<float> decodedBuffer;
-	InternalDecoder* decoder;
+	std::queue<std::vector<std::uint8_t>> packets;
+	std::unique_ptr<InternalDecoder> decoder;
 
 	webm::WebmParser parser;
 	std::unique_ptr<webm::Reader> reader;

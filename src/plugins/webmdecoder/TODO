@@ -1,4 +1,3 @@
-* Store frames during parsing and decode a single frame at a time when GetBuffer is called instead of all at once
 * Add support for Vorbis encoded data
 * Add support for seeking
 * Add support for playing the audio track of webm files that contain both audio and video

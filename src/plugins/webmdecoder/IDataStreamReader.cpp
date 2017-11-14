@@ -57,7 +57,6 @@ webm::Status IDataStreamReader::Skip(std::uint64_t num_to_skip,
                                      std::uint64_t* num_actually_skipped)
 {
     if (this->stream->Seekable()) {
-        std::cerr << "IDataStreamReader:Stream is seekable" << std::endl;
         if (this->stream->SetPosition(this->stream->Position() + num_to_skip)) {
             *num_actually_skipped = num_to_skip;
             return webm::Status(webm::Status::kOkCompleted);

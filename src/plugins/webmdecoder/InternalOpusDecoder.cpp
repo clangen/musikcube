@@ -35,9 +35,9 @@
 #include "InternalOpusDecoder.h"
 #include <stdexcept>
 
-InternalOpusDecoder::InternalOpusDecoder(int channels) :
-		InternalDecoder(), channels(0), error(0), decoder(
-				opus_decoder_create(48000, channels, &error))
+InternalOpusDecoder::InternalOpusDecoder(int channels, long sampleRate) :
+		InternalDecoder(), channels(channels), sampleRate(sampleRate), error(0), decoder(
+				opus_decoder_create(sampleRate, channels, &error))
 {
 	if (error != OPUS_OK)
 		throw std::runtime_error(opus_strerror(error));
@@ -48,16 +48,15 @@ InternalOpusDecoder::~InternalOpusDecoder()
 	opus_decoder_destroy(this->decoder);
 }
 
-int InternalOpusDecoder::DecodeData(std::vector<float> &outputBuffer,
+int InternalOpusDecoder::DecodeData(musik::core::sdk::IBuffer *outputBuffer,
 		int channels, std::vector<std::uint8_t> data)
 {
-	int frameSize = opus_packet_get_samples_per_frame(data.data(), 48000);
-	float buffer[frameSize * channels];
+	int frameSize = opus_packet_get_samples_per_frame(data.data(), sampleRate);
+	outputBuffer->SetSamples(frameSize * channels);
 	int samples = opus_decode_float(this->decoder, data.data(), data.size(),
-			buffer, frameSize, 0);
-	if (samples >= 0) {
-		outputBuffer.insert(outputBuffer.end(), buffer,
-				buffer + (samples * channels));
+			outputBuffer->BufferPointer(), frameSize, 0);
+	if (samples < 0) {
+		throw std::runtime_error(opus_strerror(samples));
 	}
 	return samples;
 }

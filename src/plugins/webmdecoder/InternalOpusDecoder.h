@@ -40,13 +40,14 @@
 class InternalOpusDecoder: public InternalDecoder
 {
 public:
-	InternalOpusDecoder(int channels);
+	InternalOpusDecoder(int channels, long sampleRate);
 	virtual ~InternalOpusDecoder();
-	virtual int DecodeData(std::vector<float> &outputBuffer, int channels,
-			std::vector<std::uint8_t> data) override;
+	virtual int DecodeData(musik::core::sdk::IBuffer *outputBuffer,
+			int channels, std::vector<std::uint8_t> data) override;
 
 private:
 	OpusDecoder* decoder;
 	int error;
 	int channels;
+	long sampleRate;
 };
