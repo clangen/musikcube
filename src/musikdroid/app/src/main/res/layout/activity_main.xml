@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:clipToPadding="false"
-    tools:context="io.casey.musikcube.remote.MainActivity">
+    tools:context="io.casey.musikcube.remote.ui.home.activity.MainActivity">
 
     <FrameLayout
         android:background="@color/theme_background"
@@ -250,7 +250,7 @@
             android:layout_margin="32dp"
             android:layout_gravity="center"/>
 
-        <io.casey.musikcube.remote.ui.view.MainMetadataView
+        <io.casey.musikcube.remote.ui.home.view.MainMetadataView
             android:id="@+id/main_metadata_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>

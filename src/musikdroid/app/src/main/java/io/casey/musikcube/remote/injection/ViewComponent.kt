@@ -1,10 +1,16 @@
 package io.casey.musikcube.remote.injection
 
 import dagger.Component
-import io.casey.musikcube.remote.MainActivity
-import io.casey.musikcube.remote.ui.activity.*
-import io.casey.musikcube.remote.ui.view.EmptyListView
-import io.casey.musikcube.remote.ui.view.MainMetadataView
+import io.casey.musikcube.remote.ui.home.activity.MainActivity
+import io.casey.musikcube.remote.ui.category.activity.*
+import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
+import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.view.EmptyListView
+import io.casey.musikcube.remote.ui.home.view.MainMetadataView
+import io.casey.musikcube.remote.ui.settings.activity.ConnectionsActivity
+import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
+import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 
 @ViewScope
 @Component(

@@ -2,9 +2,9 @@ package io.casey.musikcube.remote.injection
 
 import dagger.Module
 import dagger.Provides
-import io.casey.musikcube.remote.data.IDataProvider
-import io.casey.musikcube.remote.data.impl.remote.RemoteDataProvider
-import io.casey.musikcube.remote.websocket.WebSocketService
+import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.model.impl.remote.RemoteDataProvider
+import io.casey.musikcube.remote.service.websocket.WebSocketService
 
 @Module
 class DataModule {

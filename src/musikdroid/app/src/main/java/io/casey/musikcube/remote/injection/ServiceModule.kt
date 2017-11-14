@@ -3,7 +3,7 @@ package io.casey.musikcube.remote.injection
 import android.content.Context
 import dagger.Module
 import dagger.Provides
-import io.casey.musikcube.remote.websocket.WebSocketService
+import io.casey.musikcube.remote.service.websocket.WebSocketService
 
 @Module
 class ServiceModule {

@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
 
-        <activity android:name=".MainActivity"
+        <activity android:name=".ui.home.activity.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,19 +25,19 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.activity.AlbumBrowseActivity"
+        <activity android:name=".ui.albums.activity.AlbumBrowseActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity android:name=".ui.activity.SettingsActivity"
+        <activity android:name=".ui.settings.activity.SettingsActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize|stateHidden" />
 
-        <activity android:name=".ui.activity.PlayQueueActivity"
+        <activity android:name=".ui.playqueue.activity.PlayQueueActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
-        <activity android:name=".ui.activity.TrackListActivity"
+        <activity android:name=".ui.tracks.activity.TrackListActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
 
@@ -52,16 +52,16 @@
         </activity>
 
         <activity
-            android:name=".ui.activity.CategoryBrowseActivity"
+            android:name="io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name=".ui.activity.ConnectionsActivity"
+            android:name=".ui.settings.activity.ConnectionsActivity"
             android:label="@string/connections_title"
             android:windowSoftInputMode="adjustResize" />
 
-        <service android:name=".playback.SystemService">
+        <service android:name="io.casey.musikcube.remote.service.system.SystemService">
             <intent-filter>
                 <action android:name="io.casey.musikcube.remote.WAKE_UP" />
                 <action android:name="io.casey.musikcube.remote.SHUT_DOWN" />
@@ -69,7 +69,7 @@
             </intent-filter>
         </service>
 
-        <receiver android:name=".playback.MediaButtonReceiver">
+        <receiver android:name="io.casey.musikcube.remote.service.system.MediaButtonReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>

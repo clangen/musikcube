@@ -1,8 +1,8 @@
 package io.casey.musikcube.remote.injection
 
 import dagger.Component
-import io.casey.musikcube.remote.playback.RemotePlaybackService
-import io.casey.musikcube.remote.playback.StreamingPlaybackService
+import io.casey.musikcube.remote.service.playback.impl.remote.RemotePlaybackService
+import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
 
 @ServiceScope
 @Component(

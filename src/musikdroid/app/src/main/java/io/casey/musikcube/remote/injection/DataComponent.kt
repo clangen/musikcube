@@ -1,7 +1,7 @@
 package io.casey.musikcube.remote.injection
 
 import dagger.Component
-import io.casey.musikcube.remote.db.offline.OfflineDb
+import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineDb
 
 @DataScope
 @Component(
