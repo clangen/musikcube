@@ -11,6 +11,8 @@ import com.uacf.taskrunner.LifecycleDelegate
 import com.uacf.taskrunner.Runner
 import com.uacf.taskrunner.Task
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.framework.components.ComponentSet
+import io.casey.musikcube.remote.framework.components.IComponent
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.injection.*
 import io.casey.musikcube.remote.service.playback.IPlaybackService
@@ -26,6 +28,7 @@ abstract class BaseActivity : AppCompatActivity(), Runner.TaskCallbacks {
     private lateinit var runnerDelegate: LifecycleDelegate
     private lateinit var prefs: SharedPreferences
     private var paused = false
+    private val components = ComponentSet()
     @Inject lateinit var wss: WebSocketService
     @Inject lateinit var dataProvider: IDataProvider
 
@@ -40,6 +43,7 @@ abstract class BaseActivity : AppCompatActivity(), Runner.TaskCallbacks {
 
         super.onCreate(savedInstanceState)
 
+        components.onCreate(savedInstanceState ?: Bundle())
         volumeControlStream = AudioManager.STREAM_MUSIC
         runnerDelegate = LifecycleDelegate(this, this, javaClass, null)
         runnerDelegate.onCreate(savedInstanceState)
@@ -47,11 +51,34 @@ abstract class BaseActivity : AppCompatActivity(), Runner.TaskCallbacks {
         prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     }
 
+    override fun onStart() {
+        super.onStart()
+        components.onStart()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        components.onResume()
+        dataProvider.attach()
+        runnerDelegate.onResume()
+
+        playbackService = PlaybackServiceFactory.instance(this)
+
+        val playbackListener = playbackServiceEventListener
+        if (playbackListener != null) {
+            this.playbackService?.connect(playbackServiceEventListener!!)
+        }
+
+        paused = false
+    }
+
     override fun onPause() {
         hideKeyboard()
 
         super.onPause()
 
+        components.onPause()
         dataProvider.detach()
         runnerDelegate.onPause()
 
@@ -66,35 +93,22 @@ abstract class BaseActivity : AppCompatActivity(), Runner.TaskCallbacks {
         paused = true
     }
 
-    protected fun isPaused(): Boolean {
-        return paused
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        dataProvider.attach()
-        runnerDelegate.onResume()
-
-        playbackService = PlaybackServiceFactory.instance(this)
-
-        val playbackListener = playbackServiceEventListener
-        if (playbackListener != null) {
-            this.playbackService?.connect(playbackServiceEventListener!!)
-        }
-
-        paused = false
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        runnerDelegate.onDestroy()
-        dataProvider.destroy()
+    override fun onStop() {
+        super.onStop()
+        components.onStop()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        components.onSaveInstanceState(outState)
         runnerDelegate.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        components.onDestroy()
+        runnerDelegate.onDestroy()
+        dataProvider.destroy()
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
@@ -132,6 +146,10 @@ abstract class BaseActivity : AppCompatActivity(), Runner.TaskCallbacks {
     override fun onTaskError(s: String, l: Long, task: Task<*, *>, throwable: Throwable) {
 
     }
+
+    protected fun isPaused(): Boolean = paused
+    protected fun component(component: IComponent) = components.add(component)
+    protected fun <T> component(cls: Class<out IComponent>): T? = components.get(cls)
 
     protected val socketService: WebSocketService get() = wss
 
