@@ -73,6 +73,13 @@ namespace musik { namespace core { namespace db { namespace local {
                     const char* type,
                     const char* filter = "") override;
 
+            virtual musik::core::sdk::IValueList*
+                QueryCategoryWithPredicate(
+                    const char* type,
+                    const char* predicateType,
+                    int64_t predicateId,
+                    const char* filter = "") override;
+
             virtual musik::core::sdk::IMapList*
                 QueryAlbums(const char* filter = "") override;
 

@@ -339,9 +339,19 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
 }
 
 IValueList* LocalSimpleDataProvider::QueryCategory(const char* type, const char* filter) {
+    return QueryCategoryWithPredicate(type, "", -1LL, filter);
+}
+
+IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicate(
+    const char* type, const char* predicateType, int64_t predicateId, const char* filter)
+{
     try {
         std::shared_ptr<CategoryListQuery> search(
-            new CategoryListQuery(type, std::string(filter ? filter : "")));
+            new CategoryListQuery(
+                type,
+                predicateType ? predicateType : "",
+                predicateId,
+                std::string(filter ? filter : "")));
 
         this->library->Enqueue(search, ILibrary::QuerySynchronous);
 

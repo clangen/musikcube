@@ -442,9 +442,9 @@ int HttpServer::HandleAudioTrackRequest(
                 if (HTTP_416_DISABLED) {
                     rangeVal = nullptr; /* ignore the header from here on out. */
 
-                                        /* lots of clients don't seem to be to deal with 416 properly;
-                                        instead, ignore the range header and return the whole file,
-                                        and a 200 (not 206) */
+                    /* lots of clients don't seem to be to deal with 416 properly;
+                    instead, ignore the range header and return the whole file,
+                    and a 200 (not 206) */
                     if (file) {
                         range = parseRange(file, nullptr);
                     }

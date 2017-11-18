@@ -783,6 +783,7 @@ ITrackList* WebSocketServer::QueryTracksByCategory(json& request, int& limit, in
 
 void WebSocketServer::RespondWithQueryTracksByCategory(connection_hdl connection, json& request) {
     int limit, offset;
+
     ITrackList* tracks = QueryTracksByCategory(request, limit, offset);
 
     if (tracks && this->RespondWithTracks(connection, request, tracks, limit, offset)) {
@@ -794,12 +795,19 @@ void WebSocketServer::RespondWithQueryTracksByCategory(connection_hdl connection
 
 void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& request) {
     if (request.find(message::options) != request.end()) {
-        std::string category = request[message::options][key::category];
-        std::string filter = request[message::options].value(key::filter, "");
+        auto& options = request[message::options];
+        std::string category = options[key::category];
+        std::string filter = options.value(key::filter, "");
+        std::string predicate = options.value(key::predicate_category, "");
+        int64_t predicateId = options.value(key::predicate_id, -1LL);
 
         if (category.size()) {
             IValueList* result = context.dataProvider
-                ->QueryCategory(category.c_str(), filter.c_str());
+                ->QueryCategoryWithPredicate(
+                    category.c_str(),
+                    predicate.c_str(),
+                    predicateId,
+                    filter.c_str());
 
             if (result != nullptr) {
                 json list = json::array();

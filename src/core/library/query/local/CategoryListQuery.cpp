@@ -53,61 +53,63 @@ using namespace musik::core::db::local;
 static const std::string REGULAR_ALBUM_QUERY =
     "SELECT DISTINCT albums.id, albums.name "
     "FROM albums, tracks "
-    "WHERE albums.id = tracks.album_id AND tracks.visible = 1 "
+    "WHERE albums.id = tracks.album_id AND tracks.visible = 1 %s"
     "ORDER BY albums.sort_order;";
 
 static const std::string FILTERED_ALBUM_QUERY =
     "SELECT DISTINCT albums.id, albums.name "
     "FROM albums, tracks "
-    "WHERE albums.id = tracks.album_id AND LOWER(albums.name) LIKE ? AND tracks.visible = 1 "
+    "WHERE albums.id = tracks.album_id AND LOWER(albums.name) LIKE ? AND tracks.visible = 1 %s"
     "ORDER BY albums.sort_order;";
 
 static const std::string REGULAR_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.visual_artist_id AND tracks.visible = 1 "
+    "WHERE artists.id = tracks.visual_artist_id AND tracks.visible = 1 %s"
     "ORDER BY artists.sort_order;";
 
 static const std::string FILTERED_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.visual_artist_id AND LOWER(artists.name) LIKE ? AND tracks.visible = 1 "
+    "WHERE artists.id = tracks.visual_artist_id AND LOWER(artists.name) LIKE ? AND tracks.visible = 1 %s"
     "ORDER BY artists.sort_order;";
 
 static const std::string REGULAR_ALBUM_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.album_artist_id AND tracks.visible = 1 "
+    "WHERE artists.id = tracks.album_artist_id AND tracks.visible = 1 %s"
     "ORDER BY artists.sort_order;";
 
 static const std::string FILTERED_ALBUM_ARTIST_QUERY =
     "SELECT DISTINCT artists.id, artists.name "
     "FROM artists, tracks "
-    "WHERE artists.id = tracks.album_artist_id AND LOWER(artists.name) LIKE ? AND tracks.visible = 1 "
+    "WHERE artists.id = tracks.album_artist_id AND LOWER(artists.name) LIKE ? AND tracks.visible = 1 %s"
     "ORDER BY artists.sort_order;";
 
 static const std::string REGULAR_GENRE_QUERY =
     "SELECT DISTINCT genres.id, genres.name "
     "FROM genres, tracks "
-    "WHERE genres.id = tracks.visual_genre_id AND tracks.visible = 1 "
+    "WHERE genres.id = tracks.visual_genre_id AND tracks.visible = 1 %s"
     "ORDER BY genres.sort_order;";
 
 static const std::string FILTERED_GENRE_QUERY =
     "SELECT DISTINCT genres.id, genres.name "
     "FROM genres, tracks "
-    "WHERE genres.id = tracks.visual_genre_id AND LOWER(genres.name) LIKE ? AND tracks.visible = 1 "
+    "WHERE genres.id = tracks.visual_genre_id AND LOWER(genres.name) LIKE ? AND tracks.visible = 1 %s"
     "ORDER BY genres.sort_order;";
 
 static const std::string REGULAR_PLAYLISTS_QUERY =
     "SELECT DISTINCT id, name "
-    "FROM playlists "
+    "FROM playlists %s "
     "ORDER BY name;";
 
 static const std::string FILTERED_PLAYLISTS_QUERY =
     "SELECT DISTINCT id, name "
-    "FROM playlists "
-    "WHERE LOWER(name) LIKE ? "
+    "FROM playlists"
+    "WHERE LOWER(name) LIKE ? %s "
     "ORDER BY name;";
+
+static const std::string QUERY_PREDICATE = " AND %s=? ";
 
 static std::map<std::string, std::string> FIELD_TO_QUERY_MAP = {
     { Track::ALBUM, REGULAR_ALBUM_QUERY },
@@ -123,6 +125,13 @@ static std::map<std::string, std::string> FILTERED_FIELD_TO_QUERY_MAP = {
     { Track::ALBUM_ARTIST, FILTERED_ALBUM_ARTIST_QUERY },
     { Track::GENRE, FILTERED_GENRE_QUERY },
     { Playlists::TABLE_NAME, REGULAR_PLAYLISTS_QUERY }
+};
+
+static std::map<std::string, std::string> PREDICATE_TO_COLUMN_MAP = {
+    { Track::ALBUM, "album_id" },
+    { Track::ARTIST, "visual_artist_id" },
+    { Track::ALBUM_ARTIST, "album_artist_id" },
+    { Track::GENRE, "visual_genre_id" },
 };
 
 /* data structure that we can return to plugins who need metadata info */
@@ -150,7 +159,17 @@ class ValueList : public musik::core::sdk::IValueList {
 
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField, const std::string& filter)
+: CategoryListQuery(trackField, "", -1LL, filter) {
+}
+
+CategoryListQuery::CategoryListQuery(
+    const std::string& trackField,
+    const std::string& predicateField,
+    int64_t predicateFieldId,
+    const std::string& filter)
 : trackField(trackField)
+, predicateField(predicateField)
+, predicateFieldId(predicateFieldId)
 , filter(filter) {
     RESET_RESULT(result);
 
@@ -186,10 +205,29 @@ bool CategoryListQuery::OnRun(Connection& db) {
 
     bool filtered = this->filter.size() > 0;
 
+    bool predicated =
+        predicateField.size() &&
+        predicateField != Playlists::TABLE_NAME &&
+        predicateFieldId > 0;
+
     std::string query = filtered
         ? FILTERED_FIELD_TO_QUERY_MAP[this->trackField]
         : FIELD_TO_QUERY_MAP[this->trackField];
 
+    std::string predicate = "";
+
+    if (predicated) {
+        auto end = PREDICATE_TO_COLUMN_MAP.end();
+        predicated = PREDICATE_TO_COLUMN_MAP.find(predicateField) != end;
+        if (predicated) {
+            predicate = boost::str(boost::format(
+                QUERY_PREDICATE) % PREDICATE_TO_COLUMN_MAP[predicateField]);
+        }
+    }
+
+    query = boost::str(boost::format(query) % predicate);
+
+    int bindIndex = 0;
     Statement stmt(query.c_str(), db);
 
     if (filtered) {
@@ -197,7 +235,11 @@ bool CategoryListQuery::OnRun(Connection& db) {
         std::string wild = this->filter;
         std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
         wild = "%" + wild + "%";
-        stmt.BindText(0, wild);
+        stmt.BindText(bindIndex++, wild);
+    }
+
+    if (predicated) {
+        stmt.BindInt64(bindIndex++, predicateFieldId);
     }
 
     while (stmt.Step() == Row) {

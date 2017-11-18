@@ -116,6 +116,8 @@ namespace key {
     static const std::string subquery = "subquery";
     static const std::string type = "type";
     static const std::string sort_orders = "sort_orders";
+    static const std::string predicate_category = "predicate_category";
+    static const std::string predicate_id = "predicate_id";
 }
 
 namespace value {

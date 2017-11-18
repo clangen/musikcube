@@ -66,6 +66,12 @@ namespace musik { namespace core { namespace sdk {
                 const char* type,
                 const char* filter = "") = 0;
 
+            virtual IValueList* QueryCategoryWithPredicate(
+                const char* type,
+                const char* predicateType,
+                int64_t predicateId,
+                const char* filter = "") = 0;
+
             virtual IMapList* QueryAlbums(const char* filter = "") = 0;
 
             virtual IMapList* QueryAlbums(

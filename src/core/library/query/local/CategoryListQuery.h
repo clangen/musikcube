@@ -78,6 +78,12 @@ namespace musik { namespace core { namespace db { namespace local {
                 const std::string& trackField,
                 const std::string& filter = "");
 
+            CategoryListQuery(
+                const std::string& trackField,
+                const std::string& predicateField,
+                const int64_t predicateFieldId,
+                const std::string& filter = "");
+
             virtual ~CategoryListQuery();
 
             std::string Name() { return "CategoryListQuery"; }
@@ -92,6 +98,8 @@ namespace musik { namespace core { namespace db { namespace local {
 
             std::string trackField;
             std::string filter;
+            std::string predicateField;
+            int64_t predicateFieldId;
             ResultList result;
     };
 
