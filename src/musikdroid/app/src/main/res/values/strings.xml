@@ -68,6 +68,8 @@
     <string name="menu_show_albums">albums</string>
     <string name="menu_show_artists">artist</string>
     <string name="menu_show_genres">genres</string>
+    <string name="menu_delete_playlist">delete</string>
+    <string name="menu_play_playlist">play now</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>
     <string name="snackbar_remote_enabled">switched to remote control mode</string>
@@ -118,5 +120,7 @@
     <string name="playlist_edit_no_playlists">couldn\'t get playlists from server</string>
     <string name="playlist_edit_add_error">playlist update failed</string>
     <string name="playlist_edit_add_success">playlist updated</string>
-    <string name="playlist_edit_list_title">pick a playlist</string>
+    <string name="playlist_edit_pick_playlist">pick a playlist</string>
+    <string name="playlist_confirm_delete_title">confirm delete</string>
+    <string name="playlist_confirm_delete_message">are you sure you want to delete playlist \'%s\'?</string>
 </resources>

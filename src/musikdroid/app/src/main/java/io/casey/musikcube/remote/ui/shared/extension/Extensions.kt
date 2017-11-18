@@ -1,6 +1,5 @@
 package io.casey.musikcube.remote.ui.shared.extension
 
-import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.support.design.widget.Snackbar
@@ -41,21 +40,17 @@ fun AppCompatActivity.setupDefaultRecyclerView(
     recyclerView.addItemDecoration(dividerItemDecoration)
 }
 
-fun RecyclerView.ViewHolder.getColorCompat(resourceId: Int): Int {
-    return ContextCompat.getColor(itemView.context, resourceId)
-}
+fun RecyclerView.ViewHolder.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(itemView.context, resourceId)
 
-fun View.getColorCompat(resourceId: Int): Int {
-    return ContextCompat.getColor(context, resourceId)
-}
+fun View.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(context, resourceId)
 
-fun Fragment.getColorCompat(resourceId: Int): Int {
-    return ContextCompat.getColor(activity, resourceId)
-}
+fun Fragment.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(activity, resourceId)
 
-fun AppCompatActivity.getColorCompat(resourceId: Int): Int {
-    return ContextCompat.getColor(this, resourceId)
-}
+fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(this, resourceId)
 
 fun AppCompatActivity.enableUpNavigation() {
     val ab = this.supportActionBar
@@ -83,14 +78,12 @@ fun AppCompatActivity.addTransportFragment(
 }
 
 
-fun AppCompatActivity.setTitleFromIntent(defaultId: Int) {
+fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
+    this.setTitleFromIntent(getString(defaultId))
+
+fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     val title = this.intent.getStringExtra(EXTRA_ACTIVITY_TITLE)
-    if (Strings.notEmpty(title)) {
-        this.title = title
-    }
-    else {
-        this.setTitle(defaultId)
-    }
+    this.title = if (Strings.notEmpty(title)) title else defaultTitle
 }
 
 fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
@@ -103,9 +96,7 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
 
     if (filterable != null) {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String): Boolean {
-                return false
-            }
+            override fun onQueryTextSubmit(query: String): Boolean = false
 
             override fun onQueryTextChange(newText: String): Boolean {
                 filterable.setFilter(newText)
@@ -142,9 +133,7 @@ fun View.setVisible(visible: Boolean) {
     this.visibility = if (visible) View.VISIBLE else View.GONE
 }
 
-fun AppCompatActivity.dpToPx(dp: Float): Float {
-    return dp * this.resources.displayMetrics.density
-}
+fun AppCompatActivity.dpToPx(dp: Float): Float = dp * this.resources.displayMetrics.density
 
 fun showKeyboard(context: Context) {
     val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -156,22 +145,17 @@ fun hideKeyboard(context: Context, view: View) {
     imm.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
-fun AppCompatActivity.showKeyboard() {
-    showKeyboard(this)
-}
+fun AppCompatActivity.showKeyboard() = showKeyboard(this)
 
 fun AppCompatActivity.hideKeyboard(view: View? = null) {
     val v = view ?: this.findViewById(android.R.id.content)
     hideKeyboard(this, v)
 }
 
-fun DialogFragment.showKeyboard() {
-    showKeyboard(activity)
-}
+fun DialogFragment.showKeyboard() = showKeyboard(activity)
 
-fun DialogFragment.hideKeyboard() {
+fun DialogFragment.hideKeyboard() =
     hideKeyboard(activity, activity.findViewById(android.R.id.content))
-}
 
 fun AppCompatActivity.dialogVisible(tag: String): Boolean =
     this.supportFragmentManager.findFragmentByTag(tag) != null
@@ -190,17 +174,14 @@ fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int) {
     sb.show()
 }
 
-fun showSnackbar(view: View, stringId: Int) {
+fun showSnackbar(view: View, stringId: Int) =
     showSnackbar(view, stringId, R.color.color_primary, R.color.theme_foreground)
-}
 
-fun showErrorSnackbar(view: View, stringId: Int) {
+fun showErrorSnackbar(view: View, stringId: Int) =
     showSnackbar(view, stringId, R.color.theme_red, R.color.theme_foreground)
-}
 
-fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) {
+fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) =
     showSnackbar(this.findViewById<View>(viewId), stringId)
-}
 
 fun fallback(input: String?, fallback: String): String =
     if (input.isNullOrEmpty()) fallback else input!!

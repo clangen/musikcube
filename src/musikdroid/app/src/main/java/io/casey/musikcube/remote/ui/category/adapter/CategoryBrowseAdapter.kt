@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
@@ -58,7 +57,7 @@ class CategoryBrowseAdapter(private val listener: EventListener,
 
         internal fun bind(categoryValue: ICategoryValue) {
             action.tag = categoryValue
-            action.visibility = if (category == Messages.Category.PLAYLISTS) View.GONE else View.VISIBLE
+            action.visibility = View.VISIBLE
 
             val playing = playback.service.playingTrack
             val playingId = playing.getCategoryId(category)

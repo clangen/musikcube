@@ -9,7 +9,7 @@ interface IPlaybackService {
 
     fun playAll()
     fun playAll(index: Int, filter: String)
-    fun play(category: String, categoryId: Long, index: Int, filter: String)
+    fun play(category: String, categoryId: Long, index: Int = 0, filter: String = "")
     fun playAt(index: Int)
 
     fun pauseOrResume()

@@ -2,13 +2,13 @@ package io.casey.musikcube.remote.ui.shared.fragment
 
 import android.content.Intent
 import android.os.Bundle
-import android.support.v4.app.Fragment
+import android.support.v4.app.DialogFragment
 import io.casey.musikcube.remote.framework.IMixin
 import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 
-open class BaseFragment: Fragment(), ViewModel.Provider {
+open class BaseDialogFragment: DialogFragment(), ViewModel.Provider {
     private val mixins = MixinSet()
 
     override fun onCreate(savedInstanceState: Bundle?) {

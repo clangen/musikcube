@@ -15,10 +15,7 @@ import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.constants.Navigation
-import io.casey.musikcube.remote.ui.shared.extension.addTransportFragment
-import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
@@ -64,7 +61,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         adapter = CategoryBrowseAdapter(eventListener, playback, category)
 
         setContentView(R.layout.recycler_view_activity)
-        setTitle(categoryTitleStringId)
+        setTitleFromIntent(categoryTitleStringId)
 
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, adapter)
@@ -187,6 +184,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         private val EXTRA_PREDICATE_TYPE = "extra_predicate_type"
         private val EXTRA_PREDICATE_ID = "extra_predicate_id"
         private val EXTRA_NAVIGATION_TYPE = "extra_navigation_type"
+        private val EXTRA_TITLE = "extra_title"
 
         private val CATEGORY_NAME_TO_TITLE: Map<String, Int> = mapOf(
             Messages.Category.ALBUM_ARTIST to R.string.artists_title,
@@ -209,10 +207,11 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
                 .putExtra(EXTRA_PREDICATE_ID, predicateId)
         }
 
-        fun getStartIntent(context: Context, category: String, navigationType: NavigationType): Intent {
+        fun getStartIntent(context: Context, category: String, navigationType: NavigationType, title: String = ""): Intent {
             return Intent(context, CategoryBrowseActivity::class.java)
                 .putExtra(EXTRA_CATEGORY, category)
                 .putExtra(EXTRA_NAVIGATION_TYPE, navigationType.ordinal)
+                .putExtra(EXTRA_TITLE, title)
         }
     }
 }
