@@ -185,7 +185,7 @@ class SystemService : Service() {
         var playing: ITrack? = null
 
         if (playback != null) {
-            when (playback?.playbackState) {
+            when (playback?.state) {
                 PlaybackState.Playing -> mediaSessionState = PlaybackStateCompat.STATE_PLAYING
                 PlaybackState.Buffering -> mediaSessionState = PlaybackStateCompat.STATE_BUFFERING
                 PlaybackState.Paused -> mediaSessionState = PlaybackStateCompat.STATE_PAUSED

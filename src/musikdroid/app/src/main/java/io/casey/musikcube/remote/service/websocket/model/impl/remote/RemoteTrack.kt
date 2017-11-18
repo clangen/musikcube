@@ -43,9 +43,7 @@ class RemoteTrack(val json: JSONObject) : ITrack {
         return -1L
     }
 
-    override fun toJson(): JSONObject {
-        return JSONObject(json.toString())
-    }
+    override fun toJson(): JSONObject = JSONObject(json.toString())
 
     companion object {
         private val CATEGORY_NAME_TO_ID: Map<String, String> = mapOf(

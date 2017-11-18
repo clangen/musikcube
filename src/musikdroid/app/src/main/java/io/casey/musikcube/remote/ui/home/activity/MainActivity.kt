@@ -18,35 +18,37 @@ import android.widget.CompoundButton
 import android.widget.SeekBar
 import android.widget.TextView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
-import io.casey.musikcube.remote.ui.category.activity.*
+import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.websocket.WebSocketService
+import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
+import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
+import io.casey.musikcube.remote.ui.home.view.MainMetadataView
+import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
+import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
+import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.extension.setCheckWithoutEvent
 import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
-import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
-import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
-import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.shared.util.Duration
-import io.casey.musikcube.remote.service.websocket.Messages
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
-import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
-import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 
 class MainActivity : BaseActivity() {
     private val handler = Handler()
-    private lateinit var prefs: SharedPreferences
-    private var playback: IPlaybackService? = null
-
     private var updateCheck: UpdateCheck = UpdateCheck()
     private var seekbarValue = -1
     private var blink = 0
+
+    private lateinit var prefs: SharedPreferences
+    private lateinit var data: DataProviderMixin
+    private lateinit var playback: PlaybackMixin
 
     /* views */
     private lateinit var mainLayout: View
@@ -67,17 +69,18 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
+        data = mixin(DataProviderMixin())
+        playback = mixin(PlaybackMixin({ rebindUi() }))
 
         super.onCreate(savedInstanceState)
 
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        playback = playbackService
 
         setContentView(R.layout.activity_main)
 
         bindEventListeners()
 
-        if (!socketService.hasValidConnection()) {
+        if (!data.wss.hasValidConnection()) {
             startActivity(SettingsActivity.getStartIntent(this))
         }
     }
@@ -91,7 +94,6 @@ class MainActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        playback = playbackService
         metadataView.onResume()
         bindCheckBoxEventListeners()
         rebindUi()
@@ -106,7 +108,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        val connected = socketService.state === WebSocketService.State.Connected
+        val connected = data.wss.state === WebSocketService.State.Connected
         val streaming = isStreamingSelected
 
         menu.findItem(R.id.action_playlists).isEnabled = connected
@@ -137,7 +139,7 @@ class MainActivity : BaseActivity() {
 
             R.id.action_playlists -> {
                 startActivity(CategoryBrowseActivity.getStartIntent(
-                    this, Messages.Category.PLAYLISTS, CategoryBrowseActivity.DeepLink.TRACKS))
+                    this, Messages.Category.PLAYLISTS, CategoryBrowseActivity.NavigationType.Tracks))
                 return true
             }
 
@@ -150,11 +152,8 @@ class MainActivity : BaseActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    override val playbackServiceEventListener: (() -> Unit)?
-        get() = playbackEvents
-
     private fun initObservers() {
-        disposables.add(dataProvider.observeState().subscribe(
+        disposables.add(data.provider.observeState().subscribe(
             { states ->
                 when (states.first) {
                     IDataProvider.State.Connected -> rebindUi()
@@ -163,7 +162,7 @@ class MainActivity : BaseActivity() {
                 }
             }, { /* error */ }))
 
-        disposables.add(dataProvider.observeAuthFailure().subscribe(
+        disposables.add(data.provider.observeAuthFailure().subscribe(
             {
                 val tag = InvalidPasswordDialogFragment.TAG
                 if (supportFragmentManager.findFragmentByTag(tag) == null) {
@@ -198,7 +197,7 @@ class MainActivity : BaseActivity() {
         val streaming = isStreamingSelected
 
         if (streaming) {
-            playback?.stop()
+            playback.service.stop()
         }
 
         prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !streaming)?.apply()
@@ -210,8 +209,7 @@ class MainActivity : BaseActivity() {
 
         showSnackbar(mainLayout, messageId)
 
-        reloadPlaybackService()
-        playback = playbackService
+        playback.reload()
 
         invalidateOptionsMenu()
         rebindUi()
@@ -247,20 +245,20 @@ class MainActivity : BaseActivity() {
         totalTime = findViewById(R.id.total_time)
         seekbar = findViewById(R.id.seekbar)
 
-        findViewById<View>(R.id.button_prev).setOnClickListener { _: View -> playback?.prev() }
+        findViewById<View>(R.id.button_prev).setOnClickListener { _: View -> playback.service.prev() }
 
         findViewById<View>(R.id.button_play_pause).setOnClickListener { _: View ->
-            if (playback?.playbackState === PlaybackState.Stopped) {
-                playback?.playAll()
+            if (playback.service.state === PlaybackState.Stopped) {
+                playback.service.playAll()
             }
             else {
-                playback?.pauseOrResume()
+                playback.service.pauseOrResume()
             }
         }
 
-        findViewById<View>(R.id.button_next).setOnClickListener { _: View -> playback?.next() }
+        findViewById<View>(R.id.button_next).setOnClickListener { _: View -> playback.service.next() }
 
-        disconnectedButton.setOnClickListener { _ -> socketService.reconnect() }
+        disconnectedButton.setOnClickListener { _ -> data.wss.reconnect() }
 
         seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -275,7 +273,7 @@ class MainActivity : BaseActivity() {
 
             override fun onStopTrackingTouch(seekBar: SeekBar) {
                 if (seekbarValue != -1) {
-                    playback?.seekTo(seekbarValue.toDouble())
+                    playback.service.seekTo(seekbarValue.toDouble())
                     seekbarValue = -1
                 }
             }
@@ -297,7 +295,7 @@ class MainActivity : BaseActivity() {
         findViewById<View>(R.id.button_play_queue).setOnClickListener { _ -> navigateToPlayQueue() }
 
         findViewById<View>(R.id.metadata_container).setOnClickListener { _ ->
-            if (playback?.queueCount ?: 0 > 0) {
+            if (playback.service.queueCount > 0) {
                 navigateToPlayQueue()
             }
         }
@@ -310,17 +308,13 @@ class MainActivity : BaseActivity() {
     }
 
     private fun rebindUi() {
-        if (playback == null) {
-            throw IllegalStateException()
-        }
-
-        val playbackState = playback?.playbackState
+        val playbackState = playback.service.state
         val streaming = prefs.getBoolean(Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)
-        val connected = socketService.state === WebSocketService.State.Connected
+        val connected = data.wss.state === WebSocketService.State.Connected
         val stopped = playbackState === PlaybackState.Stopped
         val playing = playbackState === PlaybackState.Playing
         val buffering = playbackState === PlaybackState.Buffering
-        val showMetadataView = !stopped && (playback?.queueCount ?: 0) > 0
+        val showMetadataView = !stopped && (playback.service.queueCount) > 0
 
         /* bottom section: transport controls */
         playPause.setText(if (playing || buffering) R.string.button_pause else R.string.button_play)
@@ -328,14 +322,14 @@ class MainActivity : BaseActivity() {
         connectedNotPlayingContainer.visibility = if (connected && stopped) View.VISIBLE else View.GONE
         disconnectedOverlay.visibility = if (connected || !stopped) View.GONE else View.VISIBLE
 
-        val repeatMode = playback?.repeatMode
+        val repeatMode = playback.service.repeatMode
         val repeatChecked = repeatMode !== RepeatMode.None
 
         repeatCb.text = getString(REPEAT_TO_STRING_ID[repeatMode] ?: R.string.unknown_value)
         repeatCb.setCheckWithoutEvent(repeatChecked, this.repeatListener)
         shuffleCb.text = getString(if (streaming) R.string.button_random else R.string.button_shuffle)
-        shuffleCb.setCheckWithoutEvent(playback?.isShuffled ?: false, shuffleListener)
-        muteCb.setCheckWithoutEvent(playback?.isMuted ?: false, muteListener)
+        shuffleCb.setCheckWithoutEvent(playback.service.shuffled, shuffleListener)
+        muteCb.setCheckWithoutEvent(playback.service.muted, muteListener)
 
         /* middle section: connected, disconnected, and metadata views */
         connectedNotPlayingContainer.visibility = View.GONE
@@ -362,7 +356,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun navigateToPlayQueue() {
-        startActivity(PlayQueueActivity.getStartIntent(this@MainActivity, playback?.queuePosition ?: 0))
+        startActivity(PlayQueueActivity.getStartIntent(this@MainActivity, playback.service.queuePosition ?: 0))
     }
 
     private fun scheduleUpdateTime(immediate: Boolean) {
@@ -372,17 +366,17 @@ class MainActivity : BaseActivity() {
 
     private val updateTimeRunnable = object: Runnable {
         override fun run() {
-            val duration = playback?.duration ?: 0.0
-            val current: Double = if (seekbarValue == -1) playback?.currentTime ?: 0.0 else seekbarValue.toDouble()
+            val duration = playback.service.duration
+            val current: Double = if (seekbarValue == -1) playback.service.currentTime else seekbarValue.toDouble()
 
             currentTime.text = Duration.format(current)
             totalTime.text = Duration.format(duration)
             seekbar.max = duration.toInt()
             seekbar.progress = current.toInt()
-            seekbar.secondaryProgress = playback?.bufferedTime?.toInt() ?: 0
+            seekbar.secondaryProgress = playback.service.bufferedTime.toInt()
 
             var currentTimeColor = R.color.theme_foreground
-            if (playback?.playbackState === PlaybackState.Paused) {
+            if (playback.service.state === PlaybackState.Paused) {
                 currentTimeColor =
                     if (++blink % 2 == 0) R.color.theme_foreground
                     else R.color.theme_blink_foreground
@@ -395,19 +389,19 @@ class MainActivity : BaseActivity() {
     }
 
     private val muteListener = { _: CompoundButton, b: Boolean ->
-        if (b != playback?.isMuted) {
-            playback?.toggleMute()
+        if (b != playback.service.muted) {
+            playback.service.toggleMute()
         }
     }
 
     private val shuffleListener = { _: CompoundButton, b: Boolean ->
-        if (b != playback?.isShuffled) {
-            playback?.toggleShuffle()
+        if (b != playback.service.shuffled) {
+            playback.service.toggleShuffle()
         }
     }
 
     private fun onRepeatListener() {
-        val currentMode = playback?.repeatMode
+        val currentMode = playback.service.repeatMode
 
         var newMode = RepeatMode.None
 
@@ -422,7 +416,7 @@ class MainActivity : BaseActivity() {
         repeatCb.text = getString(REPEAT_TO_STRING_ID[newMode] ?: R.string.unknown_value)
         repeatCb.setCheckWithoutEvent(checked, repeatListener)
 
-        playback?.toggleRepeatMode()
+        playback.service.toggleRepeatMode()
     }
 
     private fun runUpdateCheck() {
@@ -445,8 +439,6 @@ class MainActivity : BaseActivity() {
     private val repeatListener = { _: CompoundButton, _: Boolean ->
         onRepeatListener()
     }
-
-    private val playbackEvents = { rebindUi() }
 
     class UpdateAvailableDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -525,10 +517,7 @@ class MainActivity : BaseActivity() {
 
         companion object {
             val TAG = "switch_to_offline_tracks_dialog"
-
-            fun newInstance(): SwitchToOfflineTracksDialog {
-                return SwitchToOfflineTracksDialog()
-            }
+            fun newInstance(): SwitchToOfflineTracksDialog = SwitchToOfflineTracksDialog()
         }
     }
 

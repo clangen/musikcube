@@ -10,20 +10,20 @@ import android.provider.Settings
 import android.util.Log
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.injection.DataModule
+import io.casey.musikcube.remote.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
 import io.casey.musikcube.remote.service.playback.RepeatMode
 import io.casey.musikcube.remote.service.system.SystemService
+import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.util.Strings
-import io.casey.musikcube.remote.service.websocket.Messages
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import org.json.JSONObject
@@ -195,7 +195,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
     override fun pauseOrResume() {
         if (playContext.currentPlayer != null) {
-            if (playbackState === PlaybackState.Playing || playbackState === PlaybackState.Buffering) {
+            if (state === PlaybackState.Playing || state === PlaybackState.Buffering) {
                 pause()
             }
             else {
@@ -205,13 +205,13 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     override fun pause() {
-        if (playbackState != PlaybackState.Paused) {
+        if (state != PlaybackState.Paused) {
             schedulePausedSleep()
             killAudioFocus()
 
             if (playContext.currentPlayer != null) {
                 playContext.currentPlayer?.pause()
-                setState(PlaybackState.Paused)
+                state = PlaybackState.Paused
             }
         }
     }
@@ -223,7 +223,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
             if (playContext.currentPlayer != null) {
                 playContext.currentPlayer?.resume()
-                setState(PlaybackState.Playing)
+                state = PlaybackState.Playing
             }
         }
     }
@@ -233,7 +233,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         killAudioFocus()
         playContext.stopPlaybackAndReset()
         trackMetadataCache.clear()
-        setState(PlaybackState.Stopped)
+        state = PlaybackState.Stopped
     }
 
     override fun prev() {
@@ -315,12 +315,12 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             return (playContext.currentPlayer?.position?.toDouble() ?: 0.0) / 1000.0
         }
 
-    override var isShuffled: Boolean = false
+    override var shuffled: Boolean = false
         private set(value) {
             field = value
         }
 
-    override var isMuted: Boolean = false
+    override var muted: Boolean = false
         private set(value) {
             field = value
         }
@@ -330,20 +330,24 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             field = value
         }
 
-    override var playbackState = PlaybackState.Stopped
+    override var state = PlaybackState.Stopped
         private set(value) {
-            field = value
+            if (field !== value) {
+                Log.d(TAG, "state = " + state)
+                field = value
+                notifyEventListeners()
+            }
         }
 
     override fun toggleShuffle() {
-        isShuffled = !isShuffled
+        shuffled = !shuffled
         invalidateAndPrefetchNextTrackMetadata()
         notifyEventListeners()
     }
 
     override fun toggleMute() {
-        isMuted = !isMuted
-        PlayerWrapper.setMute(isMuted)
+        muted = !muted
+        PlayerWrapper.setMute(muted)
         notifyEventListeners()
     }
 
@@ -375,9 +379,9 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
 
     private fun pauseTransient() {
-        if (playbackState !== PlaybackState.Paused) {
+        if (state !== PlaybackState.Paused) {
             pausedByTransientLoss = true
-            setState(PlaybackState.Paused)
+            state = PlaybackState.Paused
             playContext.currentPlayer?.pause()
         }
     }
@@ -391,7 +395,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
 
     private fun adjustVolume(delta: Float) {
-        if (isMuted) {
+        if (muted) {
             toggleMute()
         }
 
@@ -460,22 +464,22 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
     }
 
-    private val onCurrentPlayerStateChanged = { _: PlayerWrapper, state: PlayerWrapper.State ->
-        when (state) {
+    private val onCurrentPlayerStateChanged = { _: PlayerWrapper, newState: PlayerWrapper.State ->
+        when (newState) {
             PlayerWrapper.State.Playing -> {
-                setState(PlaybackState.Playing)
+                state = PlaybackState.Playing
                 prefetchNextTrackAudio()
                 cancelScheduledPausedSleep()
                 precacheTrackMetadata(playContext.currentIndex, PRECACHE_METADATA_SIZE)
             }
 
-            PlayerWrapper.State.Buffering -> setState(PlaybackState.Buffering)
+            PlayerWrapper.State.Buffering -> state = PlaybackState.Buffering
 
             PlayerWrapper.State.Paused -> pause()
 
             PlayerWrapper.State.Error -> pause()
 
-            PlayerWrapper.State.Finished -> if (playbackState !== PlaybackState.Paused) {
+            PlayerWrapper.State.Finished -> if (this.state !== PlaybackState.Paused) {
                 moveToNextTrack(false)
             }
 
@@ -488,14 +492,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             if (mpw === playContext.nextPlayer) {
                 playContext.notifyNextTrackPrepared()
             }
-        }
-    }
-
-    private fun setState(state: PlaybackState) {
-        if (playbackState !== state) {
-            Log.d(TAG, "state = " + state)
-            playbackState = state
-            notifyEventListeners()
         }
     }
 
@@ -556,7 +552,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     private fun resolveNextIndex(currentIndex: Int, count: Int, userInitiated: Boolean): Int {
-        if (isShuffled) { /* our shuffle matches actually random for now. */
+        if (shuffled) { /* our shuffle matches actually random for now. */
             if (count <= 0) {
                 return currentIndex
             }
@@ -684,7 +680,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     private fun loadQueueAndPlay(newParams: QueueParams, startIndex: Int) {
-        setState(PlaybackState.Buffering)
+        state = PlaybackState.Buffering
 
         cancelScheduledPausedSleep()
         SystemService.wakeup()
@@ -715,7 +711,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                 },
                 { error ->
                     Log.e(TAG, "failed to load track to play!", error)
-                    setState(PlaybackState.Stopped)
+                    state = PlaybackState.Stopped
                 },
                 {
                     if (this.params === newParams && playContext === newPlayContext) {
@@ -845,7 +841,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                 pause()
             }
 
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> when (playbackState) {
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> when (state) {
                 PlaybackState.Playing,
                 PlaybackState.Buffering -> pauseTransient()
                 else -> { }

@@ -12,25 +12,28 @@ import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.service.playback.IPlaybackService
-import io.casey.musikcube.remote.ui.shared.extension.*
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
+import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
+import io.reactivex.rxkotlin.subscribeBy
 
 class PlayQueueActivity : BaseActivity() {
     private var adapter: Adapter = Adapter()
     private var offlineQueue: Boolean = false
-    private var playback: IPlaybackService? = null
+    private lateinit var data: DataProviderMixin
+    private lateinit var playback: PlaybackMixin
     private lateinit var tracks: TrackListSlidingWindow
     private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
+        data = mixin(DataProviderMixin())
+        playback = mixin(PlaybackMixin(playbackEvents))
 
         super.onCreate(savedInstanceState)
-
-        playback = playbackService
 
         setContentView(R.layout.recycler_view_activity)
 
@@ -42,22 +45,24 @@ class PlayQueueActivity : BaseActivity() {
         emptyView.emptyMessage = getString(R.string.play_queue_empty)
         emptyView.alternateView = recyclerView
 
-        val queryFactory = playback!!.playlistQueryFactory
-        offlineQueue = playback!!.playlistQueryFactory.offline()
+        val queryFactory = playback.service.playlistQueryFactory
+        offlineQueue = playback.service.playlistQueryFactory.offline()
 
-        tracks = TrackListSlidingWindow(recyclerView, dataProvider, queryFactory)
+        tracks = TrackListSlidingWindow(recyclerView, data.provider, queryFactory)
         tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
-        dataProvider.observeState().subscribe(
-            { states ->
+        data.provider.observeState().subscribeBy(
+            onNext = { states ->
                 if (states.first == IDataProvider.State.Connected) {
                     tracks.requery()
                 }
                 else {
                     emptyView.update(states.first, adapter.itemCount)
                 }
-            }, { /* error */ })
+            },
+            onError = {
+            })
 
         setTitleFromIntent(R.string.play_queue_title)
         addTransportFragment()
@@ -79,13 +84,9 @@ class PlayQueueActivity : BaseActivity() {
         }
     }
 
-    override val playbackServiceEventListener: (() -> Unit)?
-        get() = playbackEvents
-
     private val onItemClickListener = View.OnClickListener { v ->
         if (v.tag is Int) {
-            val index = v.tag as Int
-            playback?.playAt(index)
+            playback.service.playAt(v.tag as Int)
         }
     }
 
@@ -112,7 +113,7 @@ class PlayQueueActivity : BaseActivity() {
                 subtitle.text = "-"
             }
             else {
-                val playing = playback!!.playingTrack
+                val playing = playback.service.playingTrack
                 val entryExternalId = track.externalId
                 val playingExternalId = playing.externalId
 
@@ -142,14 +143,12 @@ class PlayQueueActivity : BaseActivity() {
             holder.bind(tracks.getTrack(position), position)
         }
 
-        override fun getItemCount(): Int {
-            return tracks.count
-        }
+        override fun getItemCount(): Int = tracks.count
     }
 
     private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) {
-            emptyView.update(dataProvider.state, count)
+            emptyView.update(data.provider.state, count)
         }
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}

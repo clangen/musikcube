@@ -2,18 +2,18 @@ package io.casey.musikcube.remote.service.playback.impl.remote
 
 import android.os.Handler
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.injection.DataModule
+import io.casey.musikcube.remote.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
+import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.reactivex.Observable
 import org.json.JSONObject
 import java.util.*
@@ -49,12 +49,7 @@ class RemotePlaybackService : IPlaybackService {
 
         internal fun get(track: JSONObject?): Double {
             if (track != null && track.optLong(Metadata.Track.ID, -1L) == trackId && trackId != -1L) {
-                if (pauseTime != 0.0) {
-                    return pauseTime
-                }
-                else {
-                    return estimatedTime()
-                }
+                return if (pauseTime != 0.0) pauseTime else estimatedTime()
             }
             return 0.0
         }
@@ -106,27 +101,25 @@ class RemotePlaybackService : IPlaybackService {
     private val listeners = HashSet<() -> Unit>()
     private val estimatedTime = EstimatedPosition()
 
-    override var playbackState = PlaybackState.Stopped
+    override var state = PlaybackState.Stopped
         private set(value) {
             field = value
         }
 
     override val currentTime: Double
-        get() {
-            return estimatedTime.get(track)
-        }
+        get() = estimatedTime.get(track)
 
     override var repeatMode: RepeatMode = RepeatMode.None
         private set(value) {
             field = value
         }
 
-    override var isShuffled: Boolean = false
+    override var shuffled: Boolean = false
         private set(value) {
             field = value
         }
 
-    override var isMuted: Boolean = false
+    override var muted: Boolean = false
         private set(value) {
             field = value
         }
@@ -193,13 +186,13 @@ class RemotePlaybackService : IPlaybackService {
     }
 
     override fun pause() {
-        if (playbackState != PlaybackState.Paused) {
+        if (state != PlaybackState.Paused) {
             pauseOrResume()
         }
     }
 
     override fun resume() {
-        if (playbackState != PlaybackState.Playing) {
+        if (state != PlaybackState.Playing) {
             pauseOrResume()
         }
     }
@@ -296,10 +289,10 @@ class RemotePlaybackService : IPlaybackService {
         get() = RemoteTrack(track)
 
     private fun reset() {
-        playbackState = PlaybackState.Stopped
+        state = PlaybackState.Stopped
         repeatMode = RepeatMode.None
-        isMuted = false
-        isShuffled = isMuted
+        muted = false
+        shuffled = muted
         volume = 0.0
         queuePosition = 0
         queueCount = queuePosition
@@ -328,9 +321,9 @@ class RemotePlaybackService : IPlaybackService {
             throw IllegalArgumentException("invalid message!")
         }
 
-        playbackState = PlaybackState.from(message.getStringOption(Key.STATE))
+        state = PlaybackState.from(message.getStringOption(Key.STATE))
 
-        when (playbackState) {
+        when (state) {
             PlaybackState.Paused -> estimatedTime.pause()
             PlaybackState.Playing -> {
                 estimatedTime.resume()
@@ -340,8 +333,8 @@ class RemotePlaybackService : IPlaybackService {
         }
 
         repeatMode = RepeatMode.from(message.getStringOption(Key.REPEAT_MODE))
-        isShuffled = message.getBooleanOption(Key.SHUFFLED)
-        isMuted = message.getBooleanOption(Key.MUTED)
+        shuffled = message.getBooleanOption(Key.SHUFFLED)
+        muted = message.getBooleanOption(Key.MUTED)
         volume = message.getDoubleOption(Key.VOLUME)
         queueCount = message.getIntOption(Key.PLAY_QUEUE_COUNT)
         queuePosition = message.getIntOption(Key.PLAY_QUEUE_POSITION)
@@ -366,7 +359,7 @@ class RemotePlaybackService : IPlaybackService {
     private fun scheduleTimeSyncMessage() {
         handler.removeCallbacks(syncTimeRunnable)
 
-        if (playbackState == PlaybackState.Playing) {
+        if (state == PlaybackState.Playing) {
             handler.postDelayed(syncTimeRunnable, SYNC_TIME_INTERVAL_MS)
         }
     }
@@ -381,21 +374,10 @@ class RemotePlaybackService : IPlaybackService {
     }
 
     override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
-        override fun count(): Observable<Int> {
-            return dataProvider.getPlayQueueTracksCount()
-        }
-
-        override fun all(): Observable<List<ITrack>>? {
-            return dataProvider.getPlayQueueTracks()
-        }
-
-        override fun page(offset: Int, limit: Int): Observable<List<ITrack>> {
-            return dataProvider.getPlayQueueTracks(limit, offset)
-        }
-
-        override fun offline(): Boolean {
-            return false
-        }
+        override fun count(): Observable<Int> = dataProvider.getPlayQueueTracksCount()
+        override fun all(): Observable<List<ITrack>>? = dataProvider.getPlayQueueTracks()
+        override fun page(offset: Int, limit: Int): Observable<List<ITrack>> = dataProvider.getPlayQueueTracks(limit, offset)
+        override fun offline(): Boolean  = false
     }
 
     private val client = object : WebSocketService.Client {

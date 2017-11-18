@@ -17,12 +17,13 @@ import com.uacf.taskrunner.Task
 import com.uacf.taskrunner.Tasks
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.ui.settings.model.Connection
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
-import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
+import io.casey.musikcube.remote.ui.settings.model.Connection
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import java.util.*
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Key as Keys
@@ -40,8 +41,10 @@ class SettingsActivity : BaseActivity() {
     private lateinit var bitrateSpinner: Spinner
     private lateinit var cacheSpinner: Spinner
     private lateinit var prefs: SharedPreferences
+    private lateinit var data: DataProviderMixin
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        data = mixin(DataProviderMixin())
         component.inject(this)
         super.onCreate(savedInstanceState)
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
@@ -237,25 +240,25 @@ class SettingsActivity : BaseActivity() {
 
         try {
             prefs.edit()
-                    .putString(Keys.ADDRESS, addr)
-                    .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) port.toInt() else 0)
-                    .putInt(Keys.AUDIO_PORT, if (httpPort.isNotEmpty()) httpPort.toInt() else 0)
-                    .putString(Keys.PASSWORD, password)
-                    .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox.isChecked)
-                    .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked)
-                    .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
-                    .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)
-                    .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
-                    .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
-                    .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
-                    .apply()
+                .putString(Keys.ADDRESS, addr)
+                .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) port.toInt() else 0)
+                .putInt(Keys.AUDIO_PORT, if (httpPort.isNotEmpty()) httpPort.toInt() else 0)
+                .putString(Keys.PASSWORD, password)
+                .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox.isChecked)
+                .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked)
+                .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
+                .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)
+                .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
+                .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
+                .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
+                .apply()
 
             if (!softwareVolume.isChecked) {
                 PlayerWrapper.setVolume(1.0f)
             }
 
             StreamProxy.reload()
-            wss.disconnect()
+            data.wss.disconnect()
 
             finish()
         }
@@ -268,10 +271,10 @@ class SettingsActivity : BaseActivity() {
         if (SaveAsTask.match(taskName)) {
             if ((result as SaveAsTask.Result) == SaveAsTask.Result.Exists) {
                 val connection = (task as SaveAsTask).connection
-                if (!dialogVisible(ConfirmOverwiteDialog.TAG)) {
+                if (!dialogVisible(ConfirmOverwriteDialog.TAG)) {
                     showDialog(
-                            ConfirmOverwiteDialog.newInstance(connection),
-                            ConfirmOverwiteDialog.TAG)
+                        ConfirmOverwriteDialog.newInstance(connection),
+                        ConfirmOverwriteDialog.TAG)
                 }
             }
             else {
@@ -364,7 +367,7 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-    class ConfirmOverwiteDialog : DialogFragment() {
+    class ConfirmOverwriteDialog : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.settings_confirm_overwrite_title)
@@ -385,10 +388,10 @@ class SettingsActivity : BaseActivity() {
             val TAG = "confirm_overwrite_dialog"
             private val EXTRA_CONNECTION = "extra_connection"
 
-            fun newInstance(connection: Connection): ConfirmOverwiteDialog {
+            fun newInstance(connection: Connection): ConfirmOverwriteDialog {
                 val args = Bundle()
                 args.putParcelable(EXTRA_CONNECTION, connection)
-                val result = ConfirmOverwiteDialog()
+                val result = ConfirmOverwriteDialog()
                 result.arguments = args
                 return result
             }

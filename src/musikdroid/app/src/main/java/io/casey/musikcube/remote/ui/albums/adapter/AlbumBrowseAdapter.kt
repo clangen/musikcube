@@ -1,0 +1,81 @@
+package io.casey.musikcube.remote.ui.albums.adapter
+
+import android.support.v7.widget.RecyclerView
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.injection.GlideApp
+import io.casey.musikcube.remote.service.websocket.model.IAlbum
+import io.casey.musikcube.remote.ui.shared.extension.fallback
+import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
+import io.casey.musikcube.remote.ui.shared.model.albumart.Size
+import io.casey.musikcube.remote.ui.shared.model.albumart.getUrl
+
+class AlbumBrowseAdapter(private val listener: EventListener,
+                         private val playback: PlaybackMixin)
+    : RecyclerView.Adapter<AlbumBrowseAdapter.ViewHolder>()
+{
+    interface EventListener {
+        fun onItemClicked(album: IAlbum)
+        fun onActionClicked(view: View, album: IAlbum)
+    }
+
+    private var model: List<IAlbum> = listOf()
+
+    internal fun setModel(model: List<IAlbum>) {
+        this.model = model
+        notifyDataSetChanged()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        val view = inflater.inflate(R.layout.simple_list_item, parent, false)
+        val action = view.findViewById<View>(R.id.action)
+        view.setOnClickListener({ v -> listener.onItemClicked(v.tag as IAlbum) })
+        action.setOnClickListener({ v -> listener.onActionClicked(v, v.tag as IAlbum) })
+        return ViewHolder(view, playback)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(model[position])
+    }
+
+    override fun getItemCount(): Int = model.size
+
+    inner class ViewHolder internal constructor(
+            itemView: View, playback: PlaybackMixin) : RecyclerView.ViewHolder(itemView) {
+        private val title = itemView.findViewById<TextView>(R.id.title)
+        private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
+        private val artwork = itemView.findViewById<ImageView>(R.id.artwork)
+        private val action = itemView.findViewById<View>(R.id.action)
+
+        internal fun bind(album: IAlbum) {
+            val playing = playback.service.playingTrack
+            val playingId = playing.albumId
+
+            var titleColor = R.color.theme_foreground
+            var subtitleColor = R.color.theme_disabled_foreground
+
+            if (playingId != -1L && album.id == playingId) {
+                titleColor = R.color.theme_green
+                subtitleColor = R.color.theme_yellow
+            }
+
+            artwork.visibility = View.VISIBLE
+
+            GlideApp.with(itemView.context).load(getUrl(album, Size.Large)).into(artwork)
+
+            title.text = fallback(album.value, "-")
+            title.setTextColor(getColorCompat(titleColor))
+
+            subtitle.text = fallback(album.albumArtist, "-")
+            subtitle.setTextColor(getColorCompat(subtitleColor))
+            itemView.tag = album
+            action.tag = album
+        }
+    }
+}

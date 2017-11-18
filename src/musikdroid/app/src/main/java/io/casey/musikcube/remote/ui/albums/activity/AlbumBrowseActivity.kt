@@ -3,38 +3,44 @@ package io.casey.musikcube.remote.ui.albums.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.ui.shared.extension.*
-import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
-import io.casey.musikcube.remote.ui.shared.view.EmptyListView
-import io.casey.musikcube.remote.util.Debouncer
-import io.casey.musikcube.remote.ui.shared.constants.Navigation
-import io.casey.musikcube.remote.util.Strings
-import io.casey.musikcube.remote.service.websocket.Messages
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.casey.musikcube.remote.ui.albums.adapter.AlbumBrowseAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.constants.Navigation
+import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
+import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
+import io.casey.musikcube.remote.ui.shared.view.EmptyListView
+import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.casey.musikcube.remote.util.Debouncer
+import io.casey.musikcube.remote.util.Strings
+import io.reactivex.rxkotlin.subscribeBy
 
 class AlbumBrowseActivity : BaseActivity(), Filterable {
-    private var adapter: Adapter = Adapter()
     private var categoryName: String = ""
     private var categoryId: Long = 0
     private var lastFilter = ""
+    private lateinit var adapter: AlbumBrowseAdapter
+    private lateinit var playback: PlaybackMixin
+    private lateinit var data: DataProviderMixin
     private lateinit var transport: TransportFragment
     private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
+        data = mixin(DataProviderMixin())
+        playback = mixin(PlaybackMixin())
+        mixin(ItemContextMenuMixin(this))
 
         super.onCreate(savedInstanceState)
 
@@ -45,6 +51,8 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
 
         setTitleFromIntent(R.string.albums_title)
         enableUpNavigation()
+
+        adapter = AlbumBrowseAdapter(eventListener, playback)
 
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, adapter)
@@ -86,8 +94,8 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
     }
 
     private fun initObservables() {
-        disposables.add(dataProvider.observeState().subscribe(
-            { state ->
+        disposables.add(data.provider.observeState().subscribeBy(
+            onNext = { state ->
                 if (state.first == IDataProvider.State.Connected) {
                     filterDebouncer.call()
                     requery()
@@ -95,15 +103,20 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
                 else {
                     emptyView.update(state.first, adapter.itemCount)
                 }
-            }, { /* error */ }))
+            },
+            onError = {
+            }))
     }
 
     private fun requery() {
-        dataProvider.getAlbumsForCategory(categoryName, categoryId, lastFilter)
-            .subscribe({ albumList ->
-                adapter.setModel(albumList)
-                emptyView.update(dataProvider.state, adapter.itemCount)
-            }, { /* error*/ })
+        data.provider.getAlbumsForCategory(categoryName, categoryId, lastFilter)
+            .subscribeBy(
+                onNext = { albumList ->
+                    adapter.setModel(albumList)
+                    emptyView.update(data.provider.state, adapter.itemCount)
+                },
+                onError =  {
+                })
     }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
@@ -114,61 +127,15 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
         }
     }
 
-    private val onItemClickListener = { view: View ->
-        val album = view.tag as IAlbum
-
-        val intent = TrackListActivity.getStartIntent(
+    private val eventListener = object: AlbumBrowseAdapter.EventListener {
+        override fun onItemClicked(album: IAlbum) {
+            val intent = TrackListActivity.getStartIntent(
                 this@AlbumBrowseActivity, Messages.Category.ALBUM, album.id, album.value)
 
-        startActivityForResult(intent, Navigation.RequestCode.ALBUM_TRACKS_ACTIVITY)
-    }
+            startActivityForResult(intent, Navigation.RequestCode.ALBUM_TRACKS_ACTIVITY)        }
 
-    private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title = itemView.findViewById<TextView>(R.id.title)
-        private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
-
-        internal fun bind(album: IAlbum) {
-            val playing = transport.playbackService!!.playingTrack
-            val playingId = playing.albumId
-
-            var titleColor = R.color.theme_foreground
-            var subtitleColor = R.color.theme_disabled_foreground
-
-            if (playingId != -1L && album.id == playingId) {
-                titleColor = R.color.theme_green
-                subtitleColor = R.color.theme_yellow
-            }
-
-            title.text = fallback(album.value, "-")
-            title.setTextColor(getColorCompat(titleColor))
-
-            subtitle.text = fallback(album.albumArtist, "-")
-            subtitle.setTextColor(getColorCompat(subtitleColor))
-            itemView.tag = album
-        }
-    }
-
-    private inner class Adapter : RecyclerView.Adapter<ViewHolder>() {
-        private var model: List<IAlbum> = listOf()
-
-        internal fun setModel(model: List<IAlbum>) {
-            this.model = model
-            notifyDataSetChanged()
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            val view = inflater.inflate(R.layout.simple_list_item, parent, false)
-            view.setOnClickListener(onItemClickListener)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(model[position])
-        }
-
-        override fun getItemCount(): Int {
-            return model.size
+        override fun onActionClicked(view: View, album: IAlbum) {
+            mixin(ItemContextMenuMixin::class.java)?.showForCategory(album, view)
         }
     }
 
@@ -176,9 +143,8 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
         private val EXTRA_CATEGORY_NAME = "extra_category_name"
         private val EXTRA_CATEGORY_ID = "extra_category_id"
 
-        fun getStartIntent(context: Context): Intent {
-            return Intent(context, AlbumBrowseActivity::class.java)
-        }
+        fun getStartIntent(context: Context): Intent =
+            Intent(context, AlbumBrowseActivity::class.java)
 
         fun getStartIntent(context: Context, categoryName: String, categoryId: Long): Intent {
             return Intent(context, AlbumBrowseActivity::class.java)
@@ -198,8 +164,7 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
             return intent
         }
 
-        fun getStartIntent(context: Context, categoryName: String, categoryValue: ICategoryValue): Intent {
-            return getStartIntent(context, categoryName, categoryValue.id, categoryValue.value)
-        }
+        fun getStartIntent(context: Context, categoryName: String, categoryValue: ICategoryValue): Intent =
+            getStartIntent(context, categoryName, categoryValue.id, categoryValue.value)
     }
 }

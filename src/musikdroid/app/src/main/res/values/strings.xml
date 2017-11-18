@@ -63,6 +63,11 @@
     <string name="menu_playlists">playlists</string>
     <string name="menu_remote_toggle">remote playback</string>
     <string name="menu_offline_tracks">offline songs</string>
+    <string name="menu_add_to_playlist">add to playlist</string>
+    <string name="menu_show_tracks">songs</string>
+    <string name="menu_show_albums">albums</string>
+    <string name="menu_show_artists">artist</string>
+    <string name="menu_show_genres">genres</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>
     <string name="snackbar_remote_enabled">switched to remote control mode</string>
@@ -110,4 +115,8 @@
     <string name="update_check_dialog_message">\nmusikbox version %s is now available. would you like to download it now?</string>
     <string name="update_check_dont_ask_again">don\'t ask me again for this version</string>
     <string name="buffering">buffering</string>
+    <string name="playlist_edit_no_playlists">couldn\'t get playlists from server</string>
+    <string name="playlist_edit_add_error">playlist update failed</string>
+    <string name="playlist_edit_add_success">playlist updated</string>
+    <string name="playlist_edit_list_title">pick a playlist</string>
 </resources>

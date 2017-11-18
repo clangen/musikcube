@@ -109,7 +109,7 @@ class MainMetadataView : FrameLayout {
             val playback = playbackService
             val playing = playbackService.playingTrack
 
-            val buffering = playback.playbackState == PlaybackState.Buffering
+            val buffering = playback.state == PlaybackState.Buffering
             val streaming = playback is StreamingPlaybackService
 
             val artist = fallback(playing.artist, "")
@@ -185,7 +185,7 @@ class MainMetadataView : FrameLayout {
 
     private fun rebindAlbumArtistWithArtTextView(playback: IPlaybackService) {
         val playing = playback.playingTrack
-        val buffering = playback.playbackState == PlaybackState.Buffering
+        val buffering = playback.state == PlaybackState.Buffering
 
         val artist = fallback(
             playing.artist,
@@ -230,7 +230,7 @@ class MainMetadataView : FrameLayout {
     }
 
     private fun updateAlbumArt(albumArtUrl: String = "") {
-        if (playbackService.playbackState == PlaybackState.Stopped) {
+        if (playbackService.state == PlaybackState.Stopped) {
             setMetadataDisplayMode(DisplayMode.NoArtwork)
         }
 

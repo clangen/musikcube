@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.ui.shared.extension
 
+import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.support.design.widget.Snackbar
@@ -19,6 +20,7 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
@@ -37,6 +39,10 @@ fun AppCompatActivity.setupDefaultRecyclerView(
     val dividerItemDecoration = DividerItemDecoration(this, layoutManager.orientation)
 
     recyclerView.addItemDecoration(dividerItemDecoration)
+}
+
+fun RecyclerView.ViewHolder.getColorCompat(resourceId: Int): Int {
+    return ContextCompat.getColor(itemView.context, resourceId)
 }
 
 fun View.getColorCompat(resourceId: Int): Int {
@@ -167,27 +173,37 @@ fun DialogFragment.hideKeyboard() {
     hideKeyboard(activity, activity.findViewById(android.R.id.content))
 }
 
-fun AppCompatActivity.dialogVisible(tag: String): Boolean {
-    return this.supportFragmentManager.findFragmentByTag(tag) != null
-}
+fun AppCompatActivity.dialogVisible(tag: String): Boolean =
+    this.supportFragmentManager.findFragmentByTag(tag) != null
 
 fun AppCompatActivity.showDialog(dialog: DialogFragment, tag: String) {
     dialog.show(this.supportFragmentManager, tag)
 }
 
-fun AppCompatActivity.showSnackbar(view: View, stringId: Int) {
+fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int) {
     val sb = Snackbar.make(view, stringId, Snackbar.LENGTH_LONG)
     val sbView = sb.view
-    sbView.setBackgroundColor(getColorCompat(R.color.color_primary))
+    val context = view.context
+    sbView.setBackgroundColor(ContextCompat.getColor(context, bgColor))
     val tv = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
-    tv.setTextColor(getColorCompat(R.color.theme_foreground))
+    tv.setTextColor(ContextCompat.getColor(context, fgColor))
     sb.show()
 }
 
-fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) {
-    this.showSnackbar(this.findViewById<View>(viewId), stringId)
+fun showSnackbar(view: View, stringId: Int) {
+    showSnackbar(view, stringId, R.color.color_primary, R.color.theme_foreground)
 }
 
-fun fallback(input: String?, fallback: String): String {
-    return if (input.isNullOrEmpty()) fallback else input!!
+fun showErrorSnackbar(view: View, stringId: Int) {
+    showSnackbar(view, stringId, R.color.theme_red, R.color.theme_foreground)
 }
+
+fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) {
+    showSnackbar(this.findViewById<View>(viewId), stringId)
+}
+
+fun fallback(input: String?, fallback: String): String =
+    if (input.isNullOrEmpty()) fallback else input!!
+
+fun fallback(input: String?, fallback: Int): String =
+    if (input.isNullOrEmpty()) Application.Companion.instance!!.getString(fallback) else input!!

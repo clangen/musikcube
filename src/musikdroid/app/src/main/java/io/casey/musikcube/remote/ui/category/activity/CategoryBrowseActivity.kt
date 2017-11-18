@@ -3,51 +3,65 @@ package io.casey.musikcube.remote.ui.category.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.ui.shared.extension.*
-import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
-import io.casey.musikcube.remote.ui.shared.view.EmptyListView
-import io.casey.musikcube.remote.util.Debouncer
-import io.casey.musikcube.remote.ui.shared.constants.Navigation
-import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.constants.Navigation
+import io.casey.musikcube.remote.ui.shared.extension.addTransportFragment
+import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
+import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
+import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
+import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
+import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.casey.musikcube.remote.util.Debouncer
+import io.reactivex.rxkotlin.subscribeBy
 import io.casey.musikcube.remote.service.websocket.WebSocketService.State as SocketState
 
 class CategoryBrowseActivity : BaseActivity(), Filterable {
-    interface DeepLink {
+    enum class NavigationType {
+        Tracks, Albums, Select;
+
         companion object {
-            val TRACKS = 0
-            val ALBUMS = 1
+            fun get(ordinal: Int) = values()[ordinal]
         }
     }
 
-    private var adapter: Adapter = Adapter()
-    private var deepLinkType: Int = 0
+    private lateinit var adapter: CategoryBrowseAdapter
+    private var navigationType: NavigationType = NavigationType.Tracks
     private var lastFilter: String? = null
     private lateinit var category: String
+    private lateinit var predicateType: String
+    private var predicateId: Long = -1
     private lateinit var transport: TransportFragment
     private lateinit var emptyView: EmptyListView
+    private lateinit var data: DataProviderMixin
+    private lateinit var playback: PlaybackMixin
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
+        data = mixin(DataProviderMixin())
+        playback = mixin(PlaybackMixin())
+        mixin(ItemContextMenuMixin(this))
 
         super.onCreate(savedInstanceState)
 
         category = intent.getStringExtra(EXTRA_CATEGORY)
-        deepLinkType = intent.getIntExtra(EXTRA_DEEP_LINK_TYPE, DeepLink.ALBUMS)
-        adapter = Adapter()
+        predicateType = intent.getStringExtra(EXTRA_PREDICATE_TYPE) ?: ""
+        predicateId = intent.getLongExtra(EXTRA_PREDICATE_ID, -1)
+        navigationType = NavigationType.get(intent.getIntExtra(EXTRA_NAVIGATION_TYPE, NavigationType.Albums.ordinal))
+        adapter = CategoryBrowseAdapter(eventListener, playback, category)
 
         setContentView(R.layout.recycler_view_activity)
         setTitle(categoryTitleStringId)
@@ -83,12 +97,12 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
         if (resultCode == Navigation.ResponseCode.PLAYBACK_STARTED) {
             setResult(Navigation.ResponseCode.PLAYBACK_STARTED)
             finish()
         }
-
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun setFilter(filter: String) {
@@ -97,8 +111,8 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     }
 
     private fun initObservers() {
-        disposables.add(dataProvider.observeState().subscribe(
-            { states ->
+        disposables.add(data.provider.observeState().subscribeBy(
+            onNext = { states ->
                 when (states.first) {
                     IDataProvider.State.Connected -> {
                         filterDebouncer.cancel()
@@ -109,25 +123,22 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
                     }
                     else -> { }
                 }
-            }, { /* error */ }
-        ))
+            },
+            onError = {
+            }))
     }
 
     private val categoryTypeStringId: Int
-        get() {
-            return CATEGORY_NAME_TO_EMPTY_TYPE[category] ?: R.string.unknown_value
-        }
+        get() = CATEGORY_NAME_TO_EMPTY_TYPE[category] ?: R.string.unknown_value
 
     private val categoryTitleStringId: Int
-        get() {
-            return CATEGORY_NAME_TO_TITLE[category] ?: R.string.unknown_value
-        }
+        get() = CATEGORY_NAME_TO_TITLE[category] ?: R.string.unknown_value
 
     private fun requery() {
-        dataProvider.getCategoryValues(category, lastFilter ?: "").subscribe(
-            { values -> adapter.setModel(values) },
-            { /* error */ },
-            { emptyView.update(dataProvider.state, adapter.itemCount)})
+        data.provider.getCategoryValues(category, predicateType, predicateId, lastFilter ?: "").subscribeBy(
+            onNext = { values -> adapter.setModel(values) },
+            onError = { },
+            onComplete = { emptyView.update(data.provider.state, adapter.itemCount)})
     }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
@@ -138,25 +149,24 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         }
     }
 
-    private val onItemClickListener = { view: View ->
-        val entry = view.tag as ICategoryValue
-        if (deepLinkType == DeepLink.ALBUMS) {
-            navigateToAlbums(entry)
+    private val eventListener = object: CategoryBrowseAdapter.EventListener {
+        override fun onItemClicked(value: ICategoryValue) {
+            when (navigationType) {
+                NavigationType.Albums -> navigateToAlbums(value)
+                NavigationType.Tracks -> navigateToTracks(value)
+                NavigationType.Select -> {
+                    val intent = Intent()
+                        .putExtra(EXTRA_CATEGORY, value.type)
+                        .putExtra(EXTRA_ID, value.id)
+                    setResult(RESULT_OK, intent)
+                    finish()
+                }
+            }
         }
-        else {
-            navigateToTracks(entry)
-        }
-    }
 
-    private val onItemLongClickListener = { view: View ->
-        /* if we deep link to albums by default, long press will get to
-        tracks. if we deep link to tracks, just ignore */
-        var result = false
-        if (deepLinkType == DeepLink.ALBUMS) {
-            navigateToTracks(view.tag as ICategoryValue)
-            result = true
+        override fun onActionClicked(view: View, value: ICategoryValue) {
+            mixin(ItemContextMenuMixin::class.java)?.showForCategory(value, view)
         }
-        result
     }
 
     private fun navigateToAlbums(entry: ICategoryValue) {
@@ -171,56 +181,12 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         startActivityForResult(intent, Navigation.RequestCode.CATEGORY_TRACKS_ACTIVITY)
     }
 
-    private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById(R.id.title)
-
-        init {
-            itemView.findViewById<View>(R.id.subtitle).visibility = View.GONE
-        }
-
-        internal fun bind(categoryValue: ICategoryValue) {
-            val playing = transport.playbackService?.playingTrack
-            val playingId = playing?.getCategoryId(category) ?: -1
-
-            var titleColor = R.color.theme_foreground
-            if (playingId != -1L && categoryValue.id == playingId) {
-                titleColor = R.color.theme_green
-            }
-
-            title.text = fallback(categoryValue.value, getString(R.string.unknown_value))
-            title.setTextColor(getColorCompat(titleColor))
-            itemView.tag = categoryValue
-        }
-    }
-
-    private inner class Adapter : RecyclerView.Adapter<ViewHolder>() {
-        private var model: List<ICategoryValue> = ArrayList()
-
-        internal fun setModel(model: List<ICategoryValue>?) {
-            this.model = model ?: ArrayList()
-            notifyDataSetChanged()
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            val view = inflater.inflate(R.layout.simple_list_item, parent, false)
-            view.setOnClickListener(onItemClickListener)
-            view.setOnLongClickListener(onItemLongClickListener)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(model[position])
-        }
-
-        override fun getItemCount(): Int {
-            return model.size
-        }
-    }
-
     companion object {
-        private val EXTRA_CATEGORY = "extra_category"
-        private val EXTRA_DEEP_LINK_TYPE = "extra_deep_link_type"
+        val EXTRA_CATEGORY = "extra_category"
+        val EXTRA_ID = "extra_id"
+        private val EXTRA_PREDICATE_TYPE = "extra_predicate_type"
+        private val EXTRA_PREDICATE_ID = "extra_predicate_id"
+        private val EXTRA_NAVIGATION_TYPE = "extra_navigation_type"
 
         private val CATEGORY_NAME_TO_TITLE: Map<String, Int> = mapOf(
             Messages.Category.ALBUM_ARTIST to R.string.artists_title,
@@ -236,15 +202,17 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
             Messages.Category.ALBUM to R.string.browse_type_albums,
             Messages.Category.PLAYLISTS to R.string.browse_type_playlists)
 
-        fun getStartIntent(context: Context, category: String): Intent {
+        fun getStartIntent(context: Context, category: String, predicateType: String = "", predicateId: Long = -1): Intent {
             return Intent(context, CategoryBrowseActivity::class.java)
                 .putExtra(EXTRA_CATEGORY, category)
+                .putExtra(EXTRA_PREDICATE_TYPE, predicateType)
+                .putExtra(EXTRA_PREDICATE_ID, predicateId)
         }
 
-        fun getStartIntent(context: Context, category: String, deepLinkType: Int): Intent {
+        fun getStartIntent(context: Context, category: String, navigationType: NavigationType): Intent {
             return Intent(context, CategoryBrowseActivity::class.java)
                 .putExtra(EXTRA_CATEGORY, category)
-                .putExtra(EXTRA_DEEP_LINK_TYPE, deepLinkType)
+                .putExtra(EXTRA_NAVIGATION_TYPE, navigationType.ordinal)
         }
     }
 }

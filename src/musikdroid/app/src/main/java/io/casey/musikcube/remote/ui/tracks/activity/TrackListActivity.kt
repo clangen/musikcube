@@ -3,41 +3,69 @@ package io.casey.musikcube.remote.ui.tracks.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.constants.Navigation
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
+import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow.QueryFactory
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView.Capability
+import io.casey.musikcube.remote.ui.tracks.adapter.TrackListAdapter
 import io.casey.musikcube.remote.util.Debouncer
-import io.casey.musikcube.remote.ui.shared.constants.Navigation
 import io.casey.musikcube.remote.util.Strings
-import io.casey.musikcube.remote.service.websocket.Messages
-import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.reactivex.Observable
+import io.reactivex.rxkotlin.subscribeBy
 
 class TrackListActivity : BaseActivity(), Filterable {
     private lateinit var tracks: TrackListSlidingWindow
     private lateinit var emptyView: EmptyListView
     private lateinit var transport: TransportFragment
+    private lateinit var adapter: TrackListAdapter
+
+    private lateinit var data: DataProviderMixin
+    private lateinit var playback: PlaybackMixin
+
     private var categoryType: String = ""
     private var categoryId: Long = 0
     private var lastFilter = ""
-    private var adapter = Adapter()
+
+    private val onItemClickListener = { view: View ->
+        val index = view.tag as Int
+
+        if (isValidCategory(categoryType, categoryId)) {
+            playback.service.play(categoryType, categoryId, index, lastFilter)
+        }
+        else {
+            playback.service.playAll(index, lastFilter)
+        }
+
+        setResult(Navigation.ResponseCode.PLAYBACK_STARTED)
+        finish()
+    }
+
+    private val onActionClickListener = { view: View ->
+        val track = view.tag as ITrack
+        mixin(ItemContextMenuMixin::class.java)?.showForTrack(track, view)
+        Unit
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
+        data = mixin(DataProviderMixin())
+        playback = mixin(PlaybackMixin())
+        mixin(ItemContextMenuMixin(this))
 
         super.onCreate(savedInstanceState)
 
@@ -52,8 +80,11 @@ class TrackListActivity : BaseActivity(), Filterable {
         enableUpNavigation()
 
         val queryFactory = createCategoryQueryFactory(categoryType, categoryId)
-
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
+
+        tracks = TrackListSlidingWindow(recyclerView, data.provider, queryFactory)
+        adapter = TrackListAdapter(tracks, onItemClickListener, onActionClickListener, playback)
+
         setupDefaultRecyclerView(recyclerView, adapter)
 
         emptyView = findViewById(R.id.empty_list_view)
@@ -62,8 +93,6 @@ class TrackListActivity : BaseActivity(), Filterable {
             it.emptyMessage = emptyMessage
             it.alternateView = recyclerView
         }
-
-        tracks = TrackListSlidingWindow(recyclerView, dataProvider, queryFactory)
 
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
@@ -99,8 +128,8 @@ class TrackListActivity : BaseActivity(), Filterable {
     }
 
     private fun initObservers() {
-        disposables.add(dataProvider.observeState().subscribe(
-            { states ->
+        disposables.add(data.provider.observeState().subscribeBy(
+            onNext = { states ->
                 val shouldRequery =
                     states.first === IDataProvider.State.Connected ||
                     (states.first === IDataProvider.State.Disconnected && isOfflineTracks)
@@ -113,7 +142,8 @@ class TrackListActivity : BaseActivity(), Filterable {
                     emptyView.update(states.first, adapter.itemCount)
                 }
             },
-            { /* error */ }))
+            onError = {
+            }))
     }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
@@ -121,70 +151,6 @@ class TrackListActivity : BaseActivity(), Filterable {
             if (!isPaused()) {
                 tracks.requery()
             }
-        }
-    }
-
-    private val onItemClickListener = { view: View ->
-        val index = view.tag as Int
-
-        if (isValidCategory(categoryType, categoryId)) {
-            playbackService?.play(categoryType, categoryId, index, lastFilter)
-        }
-        else {
-            playbackService?.playAll(index, lastFilter)
-        }
-
-        setResult(Navigation.ResponseCode.PLAYBACK_STARTED)
-        finish()
-    }
-
-    private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById(R.id.title)
-        private val subtitle: TextView = itemView.findViewById(R.id.subtitle)
-
-        internal fun bind(track: ITrack?, position: Int) {
-            itemView.tag = position
-
-            var titleColor = R.color.theme_foreground
-            var subtitleColor = R.color.theme_disabled_foreground
-
-            if (track != null) {
-                val playing = transport.playbackService!!.playingTrack
-                val entryExternalId = track.externalId
-                val playingExternalId = playing.externalId
-
-                if (entryExternalId == playingExternalId) {
-                    titleColor = R.color.theme_green
-                    subtitleColor = R.color.theme_yellow
-                }
-
-                title.text = fallback(track.title, "-")
-                subtitle.text = fallback(track.albumArtist, "-")
-            }
-            else {
-                title.text = "-"
-                subtitle.text = "-"
-            }
-
-            title.setTextColor(getColorCompat(titleColor))
-            subtitle.setTextColor(getColorCompat(subtitleColor))
-        }
-    }
-
-    private inner class Adapter : RecyclerView.Adapter<ViewHolder>() {
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            val view = inflater.inflate(R.layout.simple_list_item, parent, false)
-            view.setOnClickListener(onItemClickListener)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(tracks.getTrack(position), position)
-        }
-
-        override fun getItemCount(): Int {
-            return tracks.count
         }
     }
 
@@ -210,48 +176,40 @@ class TrackListActivity : BaseActivity(), Filterable {
         if (isValidCategory(categoryType, categoryId)) {
             /* tracks for a specified category (album, artists, genres, etc */
             return object : QueryFactory() {
-               override fun count(): Observable<Int> {
-                    return dataProvider.getTrackCountByCategory(categoryType ?: "", categoryId, lastFilter)
-                }
+               override fun count(): Observable<Int> =
+                   data.provider.getTrackCountByCategory(categoryType ?: "", categoryId, lastFilter)
 
-                override fun all(): Observable<List<ITrack>>? {
-                    return dataProvider.getTracksByCategory(categoryType ?: "", categoryId, lastFilter)
-                }
+                override fun all(): Observable<List<ITrack>>? =
+                    data.provider.getTracksByCategory(categoryType ?: "", categoryId, lastFilter)
 
-                override fun page(offset: Int, limit: Int): Observable<List<ITrack>> {
-                    return dataProvider.getTracksByCategory(categoryType ?: "", categoryId, limit, offset, lastFilter)
-                }
+                override fun page(offset: Int, limit: Int): Observable<List<ITrack>> =
+                    data.provider.getTracksByCategory(categoryType ?: "", categoryId, limit, offset, lastFilter)
 
-                override fun offline(): Boolean {
-                    return Messages.Category.OFFLINE == categoryType
-                }
+                override fun offline(): Boolean =
+                    Messages.Category.OFFLINE == categoryType
             }
         }
         else {
             /* all tracks */
             return object : QueryFactory() {
-                override fun count(): Observable<Int> {
-                    return dataProvider.getTrackCount(lastFilter)
-                }
+                override fun count(): Observable<Int> =
+                    data.provider.getTrackCount(lastFilter)
 
-                override fun all(): Observable<List<ITrack>>? {
-                    return dataProvider.getTracks(lastFilter)
-                }
+                override fun all(): Observable<List<ITrack>>? =
+                    data.provider.getTracks(lastFilter)
 
-                override fun page(offset: Int, limit: Int): Observable<List<ITrack>> {
-                    return dataProvider.getTracks(limit, offset, lastFilter)
-                }
+                override fun page(offset: Int, limit: Int): Observable<List<ITrack>> =
+                    data.provider.getTracks(limit, offset, lastFilter)
 
-                override fun offline(): Boolean {
-                    return Messages.Category.OFFLINE == categoryType
-                }
+                override fun offline(): Boolean =
+                    Messages.Category.OFFLINE == categoryType
             }
         }
     }
 
     private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) {
-            emptyView.update(dataProvider.state, count)
+            emptyView.update(data.provider.state, count)
         }
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}
@@ -285,12 +243,10 @@ class TrackListActivity : BaseActivity(), Filterable {
             return intent
         }
 
-        fun getStartIntent(context: Context): Intent {
-            return Intent(context, TrackListActivity::class.java)
-        }
+        fun getStartIntent(context: Context): Intent =
+            Intent(context, TrackListActivity::class.java)
 
-        private fun isValidCategory(categoryType: String?, categoryId: Long): Boolean {
-            return categoryType != null && categoryType.isNotEmpty() && categoryId != -1L
-        }
+        private fun isValidCategory(categoryType: String?, categoryId: Long): Boolean =
+            categoryType != null && categoryType.isNotEmpty() && categoryId != -1L
     }
 }

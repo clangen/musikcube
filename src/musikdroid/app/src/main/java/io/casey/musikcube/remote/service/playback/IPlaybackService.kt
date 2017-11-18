@@ -34,13 +34,13 @@ interface IPlaybackService {
     val currentTime: Double
     val bufferedTime: Double
 
-    val playbackState: PlaybackState
+    val state: PlaybackState
 
     fun toggleShuffle()
-    val isShuffled: Boolean
+    val shuffled: Boolean
 
     fun toggleMute()
-    val isMuted: Boolean
+    val muted: Boolean
 
     fun toggleRepeatMode()
     val repeatMode: RepeatMode

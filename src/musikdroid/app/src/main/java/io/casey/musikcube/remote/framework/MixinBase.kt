@@ -1,13 +1,21 @@
-package io.casey.musikcube.remote.framework.components
+package io.casey.musikcube.remote.framework
 
+import android.content.Intent
 import android.os.Bundle
+import io.casey.musikcube.remote.Application
 
-abstract class ComponentBase: IComponent {
+abstract class MixinBase : IMixin {
     enum class State {
         Unknown, Created, Started, Resumed, Paused, Stopped, Destroyed
     }
 
     protected var state = State.Unknown
+        private set
+
+    protected val active
+        get() = state == State.Resumed
+
+    protected var context = Application.instance!!
         private set
 
     override fun onCreate(bundle: Bundle) {
@@ -28,6 +36,9 @@ abstract class ComponentBase: IComponent {
 
     override fun onStop() {
         state = State.Stopped
+    }
+
+    override fun onActivityResult(request: Int, result: Int, data: Intent?) {
     }
 
     override fun onSaveInstanceState(bundle: Bundle) {

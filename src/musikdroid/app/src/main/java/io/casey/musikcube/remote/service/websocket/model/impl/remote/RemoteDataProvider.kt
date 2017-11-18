@@ -1,9 +1,9 @@
 package io.casey.musikcube.remote.model.impl.remote
 
-import io.casey.musikcube.remote.service.websocket.model.*
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
+import io.casey.musikcube.remote.service.websocket.model.*
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -189,10 +189,12 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun getCategoryValues(type: String, filter: String): Observable<List<ICategoryValue>> {
+    override fun getCategoryValues(type: String, predicateType: String, predicateId: Long, filter: String): Observable<List<ICategoryValue>> {
         val message = SocketMessage.Builder
             .request(Messages.Request.QueryCategory)
             .addOption(Messages.Key.CATEGORY, type)
+            .addOption(Messages.Key.PREDICATE_CATEGORY, predicateType)
+            .addOption(Messages.Key.PREDICATE_ID, predicateId)
             .addOption(Messages.Key.FILTER, filter)
             .build()
 
@@ -292,6 +294,9 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
+
+    override fun appendToPlaylist(playlistId: Long, categoryValue: ICategoryValue): Observable<Boolean> =
+        appendToPlaylist(playlistId, categoryValue.type, categoryValue.id)
 
     override fun appendToPlaylistWithExternalIds(playlistId: Long, externalIds: List<String>, offset: Long): Observable<Boolean> {
         val jsonArray = JSONArray()

@@ -88,6 +88,8 @@ class Messages {
             val PLAYING_CURRENT_TIME = "playing_current_time"
             val PLAYLIST_ID = "playlist_id"
             val PLAYLIST_NAME = "playlist_name"
+            val PREDICATE_CATEGORY = "predicate_category"
+            val PREDICATE_ID = "predicate_id"
             val SUBQUERY = "subquery"
             val TYPE = "type"
             val OPTIONS = "options"
