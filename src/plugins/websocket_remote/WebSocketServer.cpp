@@ -713,7 +713,9 @@ void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& re
                 { key::id, album->GetId() },
                 { key::thumbnail_id, album->GetInt64(key::thumbnail_id.c_str()) },
                 { key::album_artist_id, album->GetInt64(key::album_artist_id.c_str()) },
-                { key::album_artist, GetMetadataString(album, key::album_artist) }
+                { key::album_artist, GetMetadataString(album, key::album_artist) },
+                { key::artist_id, album->GetInt64(key::visual_artist_id.c_str()) },
+                { key::artist, GetMetadataString(album, key::artist) },
             });
 
             album->Release();
@@ -1108,9 +1110,9 @@ json WebSocketServer::WebSocketServer::ReadTrackMetadata(ITrack* track) {
         { key::album_artist, GetMetadataString(track, key::album_artist) },
         { key::album_artist_id, track->GetInt64(key::album_artist_id.c_str()) },
         { key::artist, GetMetadataString(track, key::artist) },
-        { key::artist_id, track->GetInt64(key::artist_id.c_str()) },
+        { key::artist_id, track->GetInt64(key::visual_artist_id.c_str()) },
         { key::genre, GetMetadataString(track, key::genre) },
-        { key::genre_id, track->GetInt64(key::genre_id.c_str()) },
+        { key::genre_id, track->GetInt64(key::visual_genre_id.c_str()) },
         { key::thumbnail_id, track->GetInt64(key::thumbnail_id.c_str()) },
     };
 }
