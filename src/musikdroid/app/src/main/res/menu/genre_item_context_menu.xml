@@ -1,23 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
     <item
         android:id="@+id/menu_add_to_playlist"
         android:title="@string/menu_add_to_playlist"/>
 
     <item
-        android:id="@+id/menu_show_artists"
+        android:id="@+id/menu_show_genre_artists"
         android:title="@string/menu_show_artists"/>
 
     <item
-        android:id="@+id/menu_show_albums"
+        android:id="@+id/menu_show_genre_albums"
         android:title="@string/menu_show_albums"/>
 
     <item
-        android:id="@+id/menu_show_genres"
-        android:title="@string/menu_show_genres"/>
-
-    <item
-        android:id="@+id/menu_show_tracks"
+        android:id="@+id/menu_show_genre_tracks"
         android:title="@string/menu_show_tracks"/>
 </menu>

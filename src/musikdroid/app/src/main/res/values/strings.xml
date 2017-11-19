@@ -67,7 +67,10 @@
     <string name="menu_add_to_playlist">add to playlist</string>
     <string name="menu_show_tracks">songs</string>
     <string name="menu_show_albums">albums</string>
-    <string name="menu_show_artists">artist</string>
+    <string name="menu_show_artists">artists</string>
+    <string name="menu_show_artist">artist</string>
+    <string name="menu_show_artist_albums">artist albums</string>
+    <string name="menu_show_artist_tracks">artist songs</string>
     <string name="menu_show_genres">genres</string>
     <string name="menu_delete_playlist">delete</string>
     <string name="menu_play_playlist">play now</string>
@@ -129,6 +132,6 @@
     <string name="playlist_created">playlist \'%s\' created</string>
     <string name="playlist_not_created">could not create playlist \'%s\'</string>
     <string name="playlist_deleted">playlist \'%s\' deleted</string>
-    <string name="playlist_not_deleted">could not create playlist \'%s\'</string>
+    <string name="playlist_not_deleted">could not delete playlist \'%s\'</string>
 
 </resources>

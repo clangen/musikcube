@@ -30,11 +30,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/fab_padding"
-            android:backgroundTint="@color/color_primary"
             android:src="@drawable/ic_fab_add"
             android:scaleType="center"
             android:elevation="6dp"
             android:visibility="gone"
+            app:backgroundTint="@color/color_primary"
             app:fabSize="mini"
             app:rippleColor="?colorAccent"/>
 

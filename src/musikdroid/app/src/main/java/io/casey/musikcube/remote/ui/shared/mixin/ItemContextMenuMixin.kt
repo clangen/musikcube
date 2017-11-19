@@ -17,6 +17,7 @@ import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
@@ -96,11 +97,16 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     fun createPlaylist(playlistName: String) {
         provider.createPlaylist(playlistName).subscribeBy(
             onNext = { id ->
-                listener?.onPlaylistCreated(id)
-                showSuccess(activity.getString(R.string.playlist_created, playlistName))
+                if (id > 0L) {
+                    listener?.onPlaylistCreated(id)
+                    showSuccess(activity.getString(R.string.playlist_created, playlistName))
+                }
+                else {
+                    showError(activity.getString(R.string.playlist_not_created, playlistName))
+                }
             },
             onError = {
-                showSuccess(activity.getString(R.string.playlist_not_created, playlistName))
+                showError(activity.getString(R.string.playlist_not_created, playlistName))
             })
     }
 
@@ -156,9 +162,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
     fun showForTrack(track: ITrack, anchorView: View) {
         val popup = PopupMenu(activity, anchorView)
-        popup.inflate(R.menu.generic_item_context_menu)
-
-        popup.menu.removeItem(R.id.menu_show_tracks)
+        popup.inflate(R.menu.track_item_context_menu)
 
         popup.setOnMenuItemClickListener { item ->
             val intent: Intent? = when (item.itemId) {
@@ -166,26 +170,17 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     addToPlaylist(track)
                     null
                 }
-                R.id.menu_show_albums -> {
+                R.id.menu_show_artist_albums -> {
                     AlbumBrowseActivity.getStartIntent(
                         activity, Messages.Category.ARTIST, track.artistId)
                 }
-                R.id.menu_show_artists -> {
+                R.id.menu_show_artist_tracks -> {
                     TrackListActivity.getStartIntent(
                     activity,
                     Messages.Category.ARTIST,
                     track.artistId)
                 }
-                R.id.menu_show_genres -> {
-                    CategoryBrowseActivity.getStartIntent(
-                        activity,
-                        Messages.Category.GENRE,
-                        Messages.Category.ARTIST,
-                        track.artistId)
-                }
-                else -> {
-                    null
-                }
+                else -> null
             }
 
             if (intent != null) {
@@ -223,61 +218,74 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             showForPlaylist(value.value, value.id, anchorView)
         }
         else {
-            val popup = PopupMenu(activity, anchorView)
-            popup.inflate(R.menu.generic_item_context_menu)
-
-            if (value.type != Messages.Category.GENRE) {
-                popup.menu.removeItem(R.id.menu_show_artists)
+            val menuId = when (value.type) {
+                Messages.Category.ARTIST -> R.menu.artist_item_context_menu
+                Messages.Category.ALBUM_ARTIST -> R.menu.artist_item_context_menu
+                Messages.Category.ALBUM -> R.menu.album_item_context_menu
+                Messages.Category.GENRE -> R.menu.genre_item_context_menu
+                else -> -1
             }
 
-            when (value.type) {
-                Messages.Category.ARTIST -> popup.menu.removeItem(R.id.menu_show_artists)
-                Messages.Category.ALBUM -> popup.menu.removeItem(R.id.menu_show_albums)
-                Messages.Category.GENRE -> popup.menu.removeItem(R.id.menu_show_genres)
-            }
+            if (menuId != -1) {
+                val popup = PopupMenu(activity, anchorView)
+                popup.inflate(menuId)
 
-            popup.setOnMenuItemClickListener { item ->
-                val intent: Intent? = when (item.itemId) {
-                    R.id.menu_add_to_playlist -> {
-                        addToPlaylist(value)
-                        null
+                popup.setOnMenuItemClickListener { item ->
+                    val intent: Intent? = when (item.itemId) {
+                        R.id.menu_add_to_playlist -> {
+                            addToPlaylist(value)
+                            null
+                        }
+                        R.id.menu_show_artist_albums -> {
+                            if (value is IAlbum) {
+                                AlbumBrowseActivity.getStartIntent(
+                                    activity, Messages.Category.ALBUM_ARTIST, value.albumArtistId)
+                            }
+                            else {
+                                null /* should never happen */
+                            }
+                        }
+                        R.id.menu_show_genre_albums -> {
+                            AlbumBrowseActivity.getStartIntent(activity, value.type, value.id)
+                        }
+                        R.id.menu_show_artist_tracks,
+                        R.id.menu_show_genre_tracks -> {
+                            TrackListActivity.getStartIntent(activity, value.type, value.id)
+                        }
+                        R.id.menu_show_artist_genres -> {
+                            CategoryBrowseActivity.getStartIntent(
+                                activity, Messages.Category.GENRE, value.type, value.id)
+                        }
+                        R.id.menu_show_genre_artists -> {
+                            CategoryBrowseActivity.getStartIntent(
+                                activity, Messages.Category.ARTIST, value.type, value.id)
+                        }
+                        else -> null
                     }
-                    R.id.menu_show_albums -> {
-                        AlbumBrowseActivity.getStartIntent(activity, value.type, value.id)
+
+                    if (intent != null) {
+                        activity.startActivity(intent)
                     }
-                    R.id.menu_show_tracks -> {
-                        TrackListActivity.getStartIntent(activity, value.type, value.id)
-                    }
-                    R.id.menu_show_genres -> {
-                        CategoryBrowseActivity.getStartIntent(
-                            activity, Messages.Category.GENRE, value.type, value.id)
-                    }
-                    R.id.menu_show_artists -> {
-                        CategoryBrowseActivity.getStartIntent(
-                            activity, Messages.Category.ARTIST, value.type, value.id)
-                    }
-                    else -> {
-                        null
-                    }
+
+                    true
                 }
 
-                if (intent != null) {
-                    activity.startActivity(intent)
-                }
-
-                true
+                popup.show()
             }
-
-            popup.show()
         }
     }
 
     private fun deletePlaylistConfirmed(playlistId: Long, playlistName: String) {
         if (playlistId != -1L) {
             provider.deletePlaylist(playlistId).subscribeBy(
-                onNext = {
-                    listener?.onPlaylistDeleted(playlistId)
-                    showSuccess(activity.getString(R.string.playlist_deleted, playlistName))
+                onNext = { success ->
+                    if (success) {
+                        listener?.onPlaylistDeleted(playlistId)
+                        showSuccess(activity.getString(R.string.playlist_deleted, playlistName))
+                    }
+                    else {
+                        showSuccess(activity.getString(R.string.playlist_not_deleted, playlistName))
+                    }
                 },
                 onError = {
                     showSuccess(activity.getString(R.string.playlist_not_deleted, playlistName))
@@ -292,6 +300,9 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         showSnackbar(activity.findViewById(android.R.id.content), message)
 
     private fun showError(message: Int) =
+        showError(activity.getString(message))
+
+    private fun showError(message: String) =
         showErrorSnackbar(activity.findViewById(android.R.id.content), message)
 
     class ConfirmDeletePlaylistDialog : BaseDialogFragment() {
