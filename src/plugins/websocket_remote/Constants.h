@@ -88,8 +88,10 @@ namespace key {
     static const std::string album_artist = "album_artist";
     static const std::string genre = "genre";
     static const std::string thumbnail_id = "thumbnail_id";
-    static const std::string genre_id = "visual_genre_id";
-    static const std::string artist_id = "visual_artist_id";
+    static const std::string visual_genre_id = "visual_genre_id";
+    static const std::string genre_id = "genre_id";
+    static const std::string visual_artist_id = "visual_artist_id";
+    static const std::string artist_id = "artist_id";
     static const std::string track_num = "track";
     static const std::string album_artist_id = "album_artist_id";
     static const std::string album_id = "album_id";
