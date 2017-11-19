@@ -3,4 +3,9 @@
     <dimen name="text_size_xlarge">20sp</dimen>
     <dimen name="text_size_large">16sp</dimen>
     <dimen name="text_size_small">12sp</dimen>
+    <dimen name="fab_button_size">40dp</dimen>
+    <dimen name="fab_padding">8dp</dimen>
+    <dimen name="fab_plus_padding">56dp</dimen>
+    <dimen name="edit_text_dialog_padding_x">24dp</dimen>
+    <dimen name="edit_text_dialog_padding_y">8dp</dimen>
 </resources>

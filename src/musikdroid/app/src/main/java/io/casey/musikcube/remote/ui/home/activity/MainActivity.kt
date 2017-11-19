@@ -25,6 +25,7 @@ import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
+import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
@@ -139,7 +140,7 @@ class MainActivity : BaseActivity() {
 
             R.id.action_playlists -> {
                 startActivity(CategoryBrowseActivity.getStartIntent(
-                    this, Messages.Category.PLAYLISTS, CategoryBrowseActivity.NavigationType.Tracks))
+                    this, Messages.Category.PLAYLISTS, NavigationType.Tracks))
                 return true
             }
 
@@ -356,7 +357,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun navigateToPlayQueue() {
-        startActivity(PlayQueueActivity.getStartIntent(this@MainActivity, playback.service.queuePosition ?: 0))
+        startActivity(PlayQueueActivity.getStartIntent(this@MainActivity, playback.service.queuePosition))
     }
 
     private fun scheduleUpdateTime(immediate: Boolean) {

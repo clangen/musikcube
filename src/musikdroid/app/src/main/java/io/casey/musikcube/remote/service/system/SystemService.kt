@@ -99,9 +99,7 @@ class SystemService : Service() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    override fun onBind(intent: Intent): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent): IBinder? = null
 
     private fun wakeupNow() {
         Log.d(TAG, "SystemService WAKE_UP")
@@ -502,9 +500,8 @@ class SystemService : Service() {
             track = t
         }
 
-        fun same(other: ITrack?): Boolean {
-            return track != null && other != null && other.externalId == track?.externalId
-        }
+        fun same(other: ITrack?): Boolean =
+            track != null && other != null && other.externalId == track?.externalId
     }
 
     private class SessionMetadata {
@@ -515,7 +512,7 @@ class SystemService : Service() {
         fun update(otherTrack: ITrack?, otherBitmap: Bitmap?, otherDuration: Int) {
             track = otherTrack
             bitmap = otherBitmap
-            duration = duration
+            duration = otherDuration
         }
 
         fun matches(otherTrack: ITrack?, otherBitmap: Bitmap?): Boolean {

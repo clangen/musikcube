@@ -14,6 +14,7 @@ import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
 import android.view.Menu
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.CheckBox
 import android.widget.CompoundButton
@@ -84,6 +85,20 @@ fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     val title = this.intent.getStringExtra(EXTRA_ACTIVITY_TITLE)
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
+}
+
+fun AppCompatActivity.setFabVisible(visible: Boolean, fab: View, recycler: RecyclerView) {
+    if (visible) {
+        val bottom = this.resources.getDimensionPixelSize(R.dimen.fab_plus_padding)
+        fab.visibility = View.VISIBLE
+        recycler.clipToPadding = false
+        recycler.setPadding(0, 0, 0, bottom)
+    }
+    else {
+        fab.visibility = View.GONE
+        recycler.clipToPadding = true
+        recycler.setPadding(0, 0, 0, 0)
+    }
 }
 
 fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
@@ -164,8 +179,8 @@ fun AppCompatActivity.showDialog(dialog: DialogFragment, tag: String) {
     dialog.show(this.supportFragmentManager, tag)
 }
 
-fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int) {
-    val sb = Snackbar.make(view, stringId, Snackbar.LENGTH_LONG)
+fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int) {
+    val sb = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
     val sbView = sb.view
     val context = view.context
     sbView.setBackgroundColor(ContextCompat.getColor(context, bgColor))
@@ -174,11 +189,20 @@ fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int) {
     sb.show()
 }
 
+fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int) =
+    showSnackbar(view, Application.instance!!.getString(stringId), bgColor, fgColor)
+
+fun showSnackbar(view: View, text: String) =
+    showSnackbar(view, text, R.color.color_primary, R.color.theme_foreground)
+
 fun showSnackbar(view: View, stringId: Int) =
-    showSnackbar(view, stringId, R.color.color_primary, R.color.theme_foreground)
+    showSnackbar(view, Application.instance!!.getString(stringId))
+
+fun showErrorSnackbar(view: View, text: String) =
+    showSnackbar(view, text, R.color.theme_red, R.color.theme_foreground)
 
 fun showErrorSnackbar(view: View, stringId: Int) =
-    showSnackbar(view, stringId, R.color.theme_red, R.color.theme_foreground)
+    showErrorSnackbar(view, Application.instance!!.getString(stringId))
 
 fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) =
     showSnackbar(this.findViewById<View>(viewId), stringId)

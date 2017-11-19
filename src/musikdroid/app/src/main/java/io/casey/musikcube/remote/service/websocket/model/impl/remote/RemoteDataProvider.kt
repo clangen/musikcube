@@ -433,8 +433,8 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
                 .put(Messages.Key.OPTIONS, suboptions)
         }
 
-        private val toAlbumArtist: (JSONObject, String) -> ICategoryValue = { json, type -> RemoteAlbumArtist(json) }
-        private val toPlaylist: (JSONObject, String) -> ICategoryValue = { json, type -> RemotePlaylist(json) }
+        private val toAlbumArtist: (JSONObject, String) -> ICategoryValue = { json, _ -> RemoteAlbumArtist(json) }
+        private val toPlaylist: (JSONObject, String) -> ICategoryValue = { json, _ -> RemotePlaylist(json) }
         private val toCategoryValue: (JSONObject, String) -> ICategoryValue = { json, type -> RemoteCategoryValue(type, json) }
 
         private fun toCategoryList(socketMessage: SocketMessage, type: String): Observable<List<ICategoryValue>> {

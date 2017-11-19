@@ -31,6 +31,7 @@
     <string name="button_repeat_list">repeat list</string>
     <string name="button_repeat_track">repeat song</string>
     <string name="button_save">save</string>
+    <string name="button_create">create</string>
     <string name="button_settings">settings</string>
     <string name="button_close">close</string>
     <string name="button_enable">enable</string>
@@ -123,4 +124,11 @@
     <string name="playlist_edit_pick_playlist">pick a playlist</string>
     <string name="playlist_confirm_delete_title">confirm delete</string>
     <string name="playlist_confirm_delete_message">are you sure you want to delete playlist \'%s\'?</string>
+    <string name="playlist_name_error_empty">playlist name cannot be empty</string>
+    <string name="playlist_name_title">playlist name</string>
+    <string name="playlist_created">playlist \'%s\' created</string>
+    <string name="playlist_not_created">could not create playlist \'%s\'</string>
+    <string name="playlist_deleted">playlist \'%s\' deleted</string>
+    <string name="playlist_not_deleted">could not create playlist \'%s\'</string>
+
 </resources>

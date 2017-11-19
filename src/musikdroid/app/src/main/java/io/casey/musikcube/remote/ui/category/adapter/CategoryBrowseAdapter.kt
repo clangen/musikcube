@@ -7,12 +7,14 @@ import android.view.ViewGroup
 import android.widget.TextView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
+import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 
 class CategoryBrowseAdapter(private val listener: EventListener,
                             private val playback: PlaybackMixin,
+                            private val navigationType: NavigationType,
                             private val category: String)
     : RecyclerView.Adapter<CategoryBrowseAdapter.ViewHolder>()
 {
@@ -34,7 +36,7 @@ class CategoryBrowseAdapter(private val listener: EventListener,
         val action = view.findViewById<View>(R.id.action)
         view.setOnClickListener({ v -> listener.onItemClicked(v.tag as ICategoryValue) })
         action.setOnClickListener({ v -> listener.onActionClicked(v, v.tag as ICategoryValue) })
-        return ViewHolder(view, playback, category)
+        return ViewHolder(view, playback, navigationType, category)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -46,6 +48,7 @@ class CategoryBrowseAdapter(private val listener: EventListener,
     class ViewHolder internal constructor(
             itemView: View,
             private val playback: PlaybackMixin,
+            private val navigationType: NavigationType,
             private val category: String) : RecyclerView.ViewHolder(itemView)
     {
         private val title: TextView = itemView.findViewById(R.id.title)
@@ -57,7 +60,7 @@ class CategoryBrowseAdapter(private val listener: EventListener,
 
         internal fun bind(categoryValue: ICategoryValue) {
             action.tag = categoryValue
-            action.visibility = View.VISIBLE
+            action.visibility = if (navigationType == NavigationType.Select) View.GONE else View.VISIBLE
 
             val playing = playback.service.playingTrack
             val playingId = playing.getCategoryId(category)

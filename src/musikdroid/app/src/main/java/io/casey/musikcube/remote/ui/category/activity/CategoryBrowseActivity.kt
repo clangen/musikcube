@@ -12,6 +12,7 @@ import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
+import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.constants.Navigation
@@ -27,13 +28,6 @@ import io.reactivex.rxkotlin.subscribeBy
 import io.casey.musikcube.remote.service.websocket.WebSocketService.State as SocketState
 
 class CategoryBrowseActivity : BaseActivity(), Filterable {
-    enum class NavigationType {
-        Tracks, Albums, Select;
-
-        companion object {
-            fun get(ordinal: Int) = values()[ordinal]
-        }
-    }
 
     private lateinit var adapter: CategoryBrowseAdapter
     private var navigationType: NavigationType = NavigationType.Tracks
@@ -50,7 +44,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         component.inject(this)
         data = mixin(DataProviderMixin())
         playback = mixin(PlaybackMixin())
-        mixin(ItemContextMenuMixin(this))
+        mixin(ItemContextMenuMixin(this, contextMenuListener))
 
         super.onCreate(savedInstanceState)
 
@@ -58,20 +52,25 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         predicateType = intent.getStringExtra(EXTRA_PREDICATE_TYPE) ?: ""
         predicateId = intent.getLongExtra(EXTRA_PREDICATE_ID, -1)
         navigationType = NavigationType.get(intent.getIntExtra(EXTRA_NAVIGATION_TYPE, NavigationType.Albums.ordinal))
-        adapter = CategoryBrowseAdapter(eventListener, playback, category)
+        adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category)
 
         setContentView(R.layout.recycler_view_activity)
         setTitleFromIntent(categoryTitleStringId)
 
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
-        setupDefaultRecyclerView(recyclerView, adapter)
+        val fab = findViewById<View>(R.id.fab)
+        val fabVisible = (category == Messages.Category.PLAYLISTS)
 
         emptyView = findViewById(R.id.empty_list_view)
         emptyView.capability = EmptyListView.Capability.OnlineOnly
         emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(categoryTypeStringId))
         emptyView.alternateView = recyclerView
 
+        setupDefaultRecyclerView(recyclerView, adapter)
+        setFabVisible(fabVisible, fab, recyclerView)
         enableUpNavigation()
+
+        findViewById<View>(R.id.fab).setOnClickListener(fabClickListener)
 
         transport = addTransportFragment(object: TransportFragment.OnModelChangedListener {
             override fun onChanged(fragment: TransportFragment) {
@@ -85,11 +84,16 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         initObservers()
     }
 
+    val fabClickListener = { _: View ->
+        if (category == Messages.Category.PLAYLISTS) {
+            mixin(ItemContextMenuMixin::class.java)?.createPlaylist()
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         if (Messages.Category.PLAYLISTS != category) { /* bleh */
             initSearchMenu(menu, this)
         }
-
         return true
     }
 
@@ -146,18 +150,19 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         }
     }
 
-    private val eventListener = object: CategoryBrowseAdapter.EventListener {
+    private val contextMenuListener = object: ItemContextMenuMixin.EventListener() {
+        override fun onPlaylistDeleted(id: Long) = requery()
+
+        override fun onPlaylistCreated(id: Long) =
+            if (navigationType == NavigationType.Select) navigateToSelect(id) else requery()
+    }
+
+    private val adapterListener = object: CategoryBrowseAdapter.EventListener {
         override fun onItemClicked(value: ICategoryValue) {
             when (navigationType) {
                 NavigationType.Albums -> navigateToAlbums(value)
                 NavigationType.Tracks -> navigateToTracks(value)
-                NavigationType.Select -> {
-                    val intent = Intent()
-                        .putExtra(EXTRA_CATEGORY, value.type)
-                        .putExtra(EXTRA_ID, value.id)
-                    setResult(RESULT_OK, intent)
-                    finish()
-                }
+                NavigationType.Select -> navigateToSelect(value.id)
             }
         }
 
@@ -176,6 +181,14 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         val value = entry.value
         val intent = TrackListActivity.getStartIntent(this, category, categoryId, value)
         startActivityForResult(intent, Navigation.RequestCode.CATEGORY_TRACKS_ACTIVITY)
+    }
+
+    private fun navigateToSelect(id: Long) {
+        val intent = Intent()
+            .putExtra(EXTRA_CATEGORY, category)
+            .putExtra(EXTRA_ID, id)
+        setResult(RESULT_OK, intent)
+        finish()
     }
 
     companion object {

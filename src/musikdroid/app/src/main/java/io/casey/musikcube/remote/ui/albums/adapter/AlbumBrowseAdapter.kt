@@ -46,8 +46,8 @@ class AlbumBrowseAdapter(private val listener: EventListener,
 
     override fun getItemCount(): Int = model.size
 
-    inner class ViewHolder internal constructor(
-            itemView: View, playback: PlaybackMixin) : RecyclerView.ViewHolder(itemView) {
+    class ViewHolder internal constructor(
+            itemView: View, val playback: PlaybackMixin) : RecyclerView.ViewHolder(itemView) {
         private val title = itemView.findViewById<TextView>(R.id.title)
         private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
         private val artwork = itemView.findViewById<ImageView>(R.id.artwork)
