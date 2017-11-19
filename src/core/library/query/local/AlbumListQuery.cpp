@@ -58,15 +58,13 @@ static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY = {
 
 static const std::string COLUMNS =
     "albums.id, "
-    "albums.name AS album, "
+    "albums.name as album, "
     "tracks.album_artist_id, "
-    "album_artists.name AS album_artist, "
-    "tracks.visual_artist_id AS artist_id, "
-    "artists.name AS artist, "
+    "artists.name as album_artist, "
     "albums.thumbnail_id ";
 
 static const std::string TABLES =
-    "albums, tracks, artists AS album_artists, artists ";
+    "albums, tracks, artists ";
 
 static const std::string VISIBLE_PREDICATE =
     " tracks.visible == 1 AND ";
@@ -79,8 +77,7 @@ static const std::string CATEGORY_PREDICATE =
 
 static const std::string GENERAL_PREDICATE =
     "albums.id = tracks.album_id AND "
-    "artists.id = tracks.visual_artist_id AND "
-    "album_artists.id = tracks.album_artist_id ";
+    "artists.id = tracks.album_artist_id ";
 
 static const std::string ORDER =
     "albums.name asc ";
@@ -152,9 +149,7 @@ bool AlbumListQuery::OnRun(Connection& db) {
 
         row->SetValue(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
         row->SetValue(Track::ALBUM_ARTIST, stmt.ColumnText(3));
-        row->SetValue(Track::ARTIST_ID, stmt.ColumnText(4));
-        row->SetValue(Track::ARTIST, stmt.ColumnText(5));
-        row->SetValue(Track::THUMBNAIL_ID, stmt.ColumnText(6));
+        row->SetValue(Track::THUMBNAIL_ID, stmt.ColumnText(4));
 
         result->Add(row);
     }
