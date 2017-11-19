@@ -42,7 +42,7 @@ class PlaybackMixin(var listener: (() -> Unit)? = null): MixinBase() {
         val streaming = prefs.getBoolean(
             Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)
 
-        if (streaming) {
+        if (!streaming) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
                 service.volumeDown()
                 return true
