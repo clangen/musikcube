@@ -452,10 +452,10 @@ void WebSocketServer::RespondWithInvalidRequest(connection_hdl connection, const
     json error = {
         { message::name, name },
         { message::id, id },
-        { message::options,{
-            { key::error, value::invalid }
-        } }
+        { message::type, type::response },
+        { message::options,{{ key::error, value::invalid }} }
     };
+
     wss->send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
 }
 
