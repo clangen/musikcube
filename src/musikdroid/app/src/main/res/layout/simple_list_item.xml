@@ -11,6 +11,8 @@
         android:id="@+id/artwork"
         android:layout_width="52dp"
         android:layout_height="52dp"
+        android:src="@drawable/ic_art_placeholder"
+        android:scaleType="centerInside"
         android:visibility="gone" />
 
     <LinearLayout
@@ -50,7 +52,8 @@
         android:id="@+id/action"
         android:background="?android:selectableItemBackground"
         android:src="@drawable/ic_overflow"
-        android:padding="8dp"
+        android:scaleType="center"
+        android:padding="4dp"
         android:layout_gravity="center_vertical"
         android:layout_width="36dp"
         android:layout_height="36dp"

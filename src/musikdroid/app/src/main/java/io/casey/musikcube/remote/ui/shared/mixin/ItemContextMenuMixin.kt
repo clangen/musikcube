@@ -346,7 +346,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.playlist_name_title)
-                .setPositiveButton(R.string.button_create, { _: DialogInterface, _: Int ->
+                    .setNegativeButton(R.string.button_cancel, null)
+                    .setPositiveButton(R.string.button_create, { _: DialogInterface, _: Int ->
                     val playlistName = editText.text.toString()
                     if (playlistName.isNotBlank()) {
                         mixin.createPlaylist(playlistName)

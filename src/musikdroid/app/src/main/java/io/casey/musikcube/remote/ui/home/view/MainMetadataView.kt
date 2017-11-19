@@ -28,19 +28,21 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.injection.GlideApp
-import io.casey.musikcube.remote.service.playback.*
+import io.casey.musikcube.remote.service.playback.IPlaybackService
+import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
+import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
+import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.websocket.SocketMessage
+import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.model.albumart.Size
+import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.util.Strings
-import io.casey.musikcube.remote.service.websocket.Messages
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.service.websocket.SocketMessage
-import io.casey.musikcube.remote.service.websocket.WebSocketService
 import org.json.JSONArray
 import javax.inject.Inject
 import io.casey.musikcube.remote.ui.shared.model.albumart.getUrl as getAlbumArtUrl
@@ -138,10 +140,7 @@ class MainMetadataView : FrameLayout {
             this.titleWithArt.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
             this.buffering.visibility = if (buffering) View.VISIBLE else View.GONE
 
-            val albumArtEnabledInSettings = this.prefs.getBoolean(
-                Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
-
-            if (!albumArtEnabledInSettings || Strings.empty(artist) || Strings.empty(album)) {
+            if (Strings.empty(artist) || Strings.empty(album)) {
                 setMetadataDisplayMode(DisplayMode.NoArtwork)
             }
             else {

@@ -50,6 +50,10 @@ private val urlCache = LruCache<String, String>(500)
 private val badUrlCache = LruCache<String, Boolean>(100)
 private val inFlight = mutableMapOf<String, CountDownLatch>()
 
+private val prefs by lazy {
+    Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+}
+
 fun getUrl(album: IAlbum, size: Size = Size.Small): String? {
     return getThumbnailUrl(album.thumbnailId)
         ?: getUrl(album.albumArtist, album.name, size)
@@ -61,6 +65,10 @@ fun getUrl(track: ITrack, size: Size = Size.Small): String? {
 }
 
 fun getUrl(artist: String = "", album: String = "", size: Size = Size.Small): String? {
+    if (!prefs.getBoolean(Prefs.Key.LASTFM_ENABLED, Prefs.Default.LASTFM_ENABLED)) {
+        return null
+    }
+
     if (artist.isBlank() || album.isBlank()) {
         return null
     }
@@ -195,10 +203,6 @@ fun intercept(req: Request): Request? {
     }
 
     return result
-}
-
-private val prefs by lazy {
-    Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 }
 
 private fun getThumbnailUrl(id: Long): String? {

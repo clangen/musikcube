@@ -239,16 +239,10 @@ class SystemService : Service() {
         }
     }
 
-    private val albumArtEnabled: Boolean
-        get() {
-            return this.prefs.getBoolean(
-                Prefs.Key.ALBUM_ART_ENABLED, Prefs.Default.ALBUM_ART_ENABLED)
-        }
-
     private fun updateMediaSession(track: ITrack?, duration: Int) {
         var currentImage: Bitmap? = null
 
-        if (albumArtEnabled && track != null) {
+        if (track != null) {
             downloadAlbumArtIfNecessary(track, duration)
             currentImage = albumArt.bitmap
         }

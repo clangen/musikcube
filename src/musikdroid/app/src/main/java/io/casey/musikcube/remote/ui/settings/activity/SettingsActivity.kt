@@ -128,7 +128,7 @@ class SettingsActivity : BaseActivity() {
 
         /* advanced */
         albumArtCheckbox.isChecked = prefs.getBoolean(
-            Keys.ALBUM_ART_ENABLED, Defaults.ALBUM_ART_ENABLED)
+            Keys.LASTFM_ENABLED, Defaults.LASTFM_ENABLED)
         
         messageCompressionCheckbox.isChecked = prefs.getBoolean(
             Keys.MESSAGE_COMPRESSION_ENABLED, Defaults.MESSAGE_COMPRESSION_ENABLED)
@@ -244,7 +244,7 @@ class SettingsActivity : BaseActivity() {
                 .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) port.toInt() else 0)
                 .putInt(Keys.AUDIO_PORT, if (httpPort.isNotEmpty()) httpPort.toInt() else 0)
                 .putString(Keys.PASSWORD, password)
-                .putBoolean(Keys.ALBUM_ART_ENABLED, albumArtCheckbox.isChecked)
+                .putBoolean(Keys.LASTFM_ENABLED, albumArtCheckbox.isChecked)
                 .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked)
                 .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
                 .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)

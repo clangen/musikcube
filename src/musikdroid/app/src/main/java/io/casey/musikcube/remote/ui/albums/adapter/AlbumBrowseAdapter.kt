@@ -6,6 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.GlideApp
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
@@ -67,7 +69,11 @@ class AlbumBrowseAdapter(private val listener: EventListener,
 
             artwork.visibility = View.VISIBLE
 
-            GlideApp.with(itemView.context).load(getUrl(album, Size.Large)).into(artwork)
+            GlideApp
+                .with(itemView.context)
+                .load(getUrl(album, Size.Large))
+                .apply(OPTIONS)
+                .into(artwork)
 
             title.text = fallback(album.value, "-")
             title.setTextColor(getColorCompat(titleColor))
@@ -76,6 +82,13 @@ class AlbumBrowseAdapter(private val listener: EventListener,
             subtitle.setTextColor(getColorCompat(subtitleColor))
             itemView.tag = album
             action.tag = album
+        }
+
+        companion object {
+            val OPTIONS = RequestOptions()
+                .placeholder(R.drawable.ic_art_placeholder)
+                .error(R.drawable.ic_art_placeholder)
+                .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
         }
     }
 }
