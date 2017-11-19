@@ -172,13 +172,11 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 }
                 R.id.menu_show_artist_albums -> {
                     AlbumBrowseActivity.getStartIntent(
-                        activity, Messages.Category.ARTIST, track.artistId)
+                        activity, Messages.Category.ARTIST, track.artistId, track.artist)
                 }
                 R.id.menu_show_artist_tracks -> {
                     TrackListActivity.getStartIntent(
-                    activity,
-                    Messages.Category.ARTIST,
-                    track.artistId)
+                        activity, Messages.Category.ARTIST, track.artistId, track.artist)
                 }
                 else -> null
             }
@@ -236,29 +234,41 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                             addToPlaylist(value)
                             null
                         }
-                        R.id.menu_show_artist_albums -> {
+                        R.id.menu_show_artist_albums,
+                        R.id.menu_show_genre_albums -> {
                             if (value is IAlbum) {
                                 AlbumBrowseActivity.getStartIntent(
-                                    activity, Messages.Category.ALBUM_ARTIST, value.albumArtistId)
+                                    activity,
+                                    Messages.Category.ALBUM_ARTIST,
+                                    value.albumArtistId,
+                                    value.albumArtist)
                             }
                             else {
-                                null /* should never happen */
+                                AlbumBrowseActivity.getStartIntent(
+                                    activity, value.type, value.id, value.value)
                             }
-                        }
-                        R.id.menu_show_genre_albums -> {
-                            AlbumBrowseActivity.getStartIntent(activity, value.type, value.id)
                         }
                         R.id.menu_show_artist_tracks,
                         R.id.menu_show_genre_tracks -> {
-                            TrackListActivity.getStartIntent(activity, value.type, value.id)
+                            if (value is IAlbum) {
+                                TrackListActivity.getStartIntent(
+                                    activity,
+                                    Messages.Category.ALBUM_ARTIST,
+                                    value.albumArtistId,
+                                    value.albumArtist)
+                            }
+                            else {
+                                TrackListActivity.getStartIntent(
+                                    activity, value.type, value.id, value.value)
+                            }
                         }
                         R.id.menu_show_artist_genres -> {
                             CategoryBrowseActivity.getStartIntent(
-                                activity, Messages.Category.GENRE, value.type, value.id)
+                                activity, Messages.Category.GENRE, value.type, value.id, value.value)
                         }
                         R.id.menu_show_genre_artists -> {
                             CategoryBrowseActivity.getStartIntent(
-                                activity, Messages.Category.ARTIST, value.type, value.id)
+                                activity, Messages.Category.ARTIST, value.type, value.id, value.value)
                         }
                         else -> null
                     }

@@ -15,7 +15,6 @@ import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
-import io.casey.musikcube.remote.ui.shared.constants.Navigation
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -97,15 +96,6 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         return true
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (resultCode == Navigation.ResponseCode.PLAYBACK_STARTED) {
-            setResult(Navigation.ResponseCode.PLAYBACK_STARTED)
-            finish()
-        }
-    }
-
     override fun setFilter(filter: String) {
         this.lastFilter = filter
         this.filterDebouncer.call()
@@ -171,17 +161,11 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         }
     }
 
-    private fun navigateToAlbums(entry: ICategoryValue) {
-        val intent = AlbumBrowseActivity.getStartIntent(this, category, entry)
-        startActivityForResult(intent, Navigation.RequestCode.ALBUM_BROWSE_ACTIVITY)
-    }
+    private fun navigateToAlbums(entry: ICategoryValue) =
+        startActivity(AlbumBrowseActivity.getStartIntent(this, category, entry))
 
-    private fun navigateToTracks(entry: ICategoryValue) {
-        val categoryId = entry.id
-        val value = entry.value
-        val intent = TrackListActivity.getStartIntent(this, category, categoryId, value)
-        startActivityForResult(intent, Navigation.RequestCode.CATEGORY_TRACKS_ACTIVITY)
-    }
+    private fun navigateToTracks(entry: ICategoryValue) =
+        startActivity(TrackListActivity.getStartIntent(this, category, entry.id, entry.value))
 
     private fun navigateToSelect(id: Long) {
         val intent = Intent()
@@ -206,6 +190,12 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
             Messages.Category.ALBUM to R.string.albums_title,
             Messages.Category.PLAYLISTS to R.string.playlists_title)
 
+        private val CATEGORY_NAME_TO_RELATED_TITLE: Map<String, Int> = mapOf(
+                Messages.Category.ALBUM_ARTIST to R.string.artists_from_category,
+                Messages.Category.GENRE to R.string.genres_from_category,
+                Messages.Category.ARTIST to R.string.artists_from_category,
+                Messages.Category.ALBUM to R.string.albums_by_title)
+
         private val CATEGORY_NAME_TO_EMPTY_TYPE: Map<String, Int> = mapOf(
             Messages.Category.ALBUM_ARTIST to R.string.browse_type_artists,
             Messages.Category.GENRE to R.string.browse_type_genres,
@@ -213,11 +203,18 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
             Messages.Category.ALBUM to R.string.browse_type_albums,
             Messages.Category.PLAYLISTS to R.string.browse_type_playlists)
 
-        fun getStartIntent(context: Context, category: String, predicateType: String = "", predicateId: Long = -1): Intent {
-            return Intent(context, CategoryBrowseActivity::class.java)
+        fun getStartIntent(context: Context, category: String, predicateType: String = "", predicateId: Long = -1, predicateValue: String = ""): Intent {
+            val intent = Intent(context, CategoryBrowseActivity::class.java)
                 .putExtra(EXTRA_CATEGORY, category)
                 .putExtra(EXTRA_PREDICATE_TYPE, predicateType)
                 .putExtra(EXTRA_PREDICATE_ID, predicateId)
+
+            if (predicateValue.isNotBlank() && CATEGORY_NAME_TO_RELATED_TITLE.containsKey(category)) {
+                val format = CATEGORY_NAME_TO_RELATED_TITLE[category]!!
+                intent.putExtra(EXTRA_ACTIVITY_TITLE, context.getString(format, predicateValue))
+            }
+
+            return intent
         }
 
         fun getStartIntent(context: Context, category: String, navigationType: NavigationType, title: String = ""): Intent {

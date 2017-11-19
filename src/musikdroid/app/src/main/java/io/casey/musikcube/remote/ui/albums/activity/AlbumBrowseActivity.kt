@@ -14,7 +14,6 @@ import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.adapter.AlbumBrowseAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
-import io.casey.musikcube.remote.ui.shared.constants.Navigation
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -84,15 +83,6 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
         filterDebouncer.call(filter)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (resultCode == Navigation.ResponseCode.PLAYBACK_STARTED) {
-            setResult(Navigation.ResponseCode.PLAYBACK_STARTED)
-            finish()
-        }
-
-        super.onActivityResult(requestCode, resultCode, data)
-    }
-
     private fun initObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { state ->
@@ -128,11 +118,9 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
     }
 
     private val eventListener = object: AlbumBrowseAdapter.EventListener {
-        override fun onItemClicked(album: IAlbum) {
-            val intent = TrackListActivity.getStartIntent(
-                this@AlbumBrowseActivity, Messages.Category.ALBUM, album.id, album.value)
-
-            startActivityForResult(intent, Navigation.RequestCode.ALBUM_TRACKS_ACTIVITY)        }
+        override fun onItemClicked(album: IAlbum) =
+            startActivity(TrackListActivity.getStartIntent(
+                this@AlbumBrowseActivity, Messages.Category.ALBUM, album.id, album.value))
 
         override fun onActionClicked(view: View, album: IAlbum) {
             mixin(ItemContextMenuMixin::class.java)?.showForCategory(album, view)

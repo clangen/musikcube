@@ -10,9 +10,9 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
-import io.casey.musikcube.remote.ui.shared.constants.Navigation
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -51,7 +51,7 @@ class TrackListActivity : BaseActivity(), Filterable {
             playback.service.playAll(index, lastFilter)
         }
 
-        setResult(Navigation.ResponseCode.PLAYBACK_STARTED)
+        startActivity(MainActivity.getStartIntent(this))
         finish()
     }
 
@@ -220,11 +220,8 @@ class TrackListActivity : BaseActivity(), Filterable {
         private val EXTRA_SELECTED_ID = "extra_selected_id"
         private val EXTRA_TITLE_ID = "extra_title_id"
 
-        fun getStartIntent(context: Context, type: String, id: Long): Intent {
-            return Intent(context, TrackListActivity::class.java)
-                .putExtra(EXTRA_CATEGORY_TYPE, type)
-                .putExtra(EXTRA_SELECTED_ID, id)
-        }
+        fun getStartIntent(context: Context, type: String, id: Long): Intent =
+            getStartIntent(context, type, id, "")
 
         fun getOfflineStartIntent(context: Context): Intent {
             return getStartIntent(context, Messages.Category.OFFLINE, 0)
@@ -232,7 +229,9 @@ class TrackListActivity : BaseActivity(), Filterable {
         }
 
         fun getStartIntent(context: Context, type: String, id: Long, categoryValue: String): Intent {
-            val intent = getStartIntent(context, type, id)
+            val intent = Intent(context, TrackListActivity::class.java)
+                .putExtra(EXTRA_CATEGORY_TYPE, type)
+                .putExtra(EXTRA_SELECTED_ID, id)
 
             if (Strings.notEmpty(categoryValue)) {
                 intent.putExtra(
