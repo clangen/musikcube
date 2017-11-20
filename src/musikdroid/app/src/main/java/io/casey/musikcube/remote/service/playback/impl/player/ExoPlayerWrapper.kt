@@ -52,39 +52,37 @@ class ExoPlayerWrapper : PlayerWrapper() {
         }
 
         synchronized(ExoPlayerWrapper::class.java) {
-            if (audioStreamHttpClient == null) {
-                val path = File(context.externalCacheDir, "audio")
+            val path = File(context.externalCacheDir, "audio")
 
-                var diskCacheIndex = prefs.getInt(
-                        Prefs.Key.DISK_CACHE_SIZE_INDEX, Prefs.Default.DISK_CACHE_SIZE_INDEX)
+            var diskCacheIndex = prefs.getInt(
+                    Prefs.Key.DISK_CACHE_SIZE_INDEX, Prefs.Default.DISK_CACHE_SIZE_INDEX)
 
-                if (diskCacheIndex < 0 || diskCacheIndex > StreamProxy.CACHE_SETTING_TO_BYTES.size) {
-                    diskCacheIndex = 0
-                }
-
-                val builder = OkHttpClient.Builder()
-                    .cache(Cache(path, StreamProxy.CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: StreamProxy.MINIMUM_CACHE_SIZE_BYTES))
-                    .addInterceptor { chain ->
-                        var request = chain.request()
-                        val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
-                        val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
-                        request = request.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
-                        chain.proceed(request)
-                    }
-
-                if (prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
-                    NetworkUtil.disableCertificateValidation(builder)
-                }
-
-                audioStreamHttpClient = builder.build()
+            if (diskCacheIndex < 0 || diskCacheIndex > StreamProxy.CACHE_SETTING_TO_BYTES.size) {
+                diskCacheIndex = 0
             }
+
+            val builder = OkHttpClient.Builder()
+                .cache(Cache(path, StreamProxy.CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: StreamProxy.MINIMUM_CACHE_SIZE_BYTES))
+                .addInterceptor { chain ->
+                    var request = chain.request()
+                    val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
+                    val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
+                    request = request.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
+                    chain.proceed(request)
+                }
+
+            if (prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
+                NetworkUtil.disableCertificateValidation(builder)
+            }
+
+            audioStreamHttpClient = builder.build()
         }
 
         if (uri.startsWith("http")) {
             this.datasources = OkHttpDataSourceFactory(
-                    audioStreamHttpClient,
-                    Util.getUserAgent(context, "musikdroid"),
-                    DefaultBandwidthMeter())
+                audioStreamHttpClient,
+                Util.getUserAgent(context, "musikdroid"),
+                DefaultBandwidthMeter())
         }
         else {
             this.datasources = DefaultDataSourceFactory(
@@ -285,7 +283,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    private var eventListener = object : ExoPlayer.EventListener {
+    private var eventListener = object : Player.EventListener {
         override fun onTimelineChanged(timeline: Timeline, manifest: Any?) {
         }
 
@@ -341,7 +339,6 @@ class ExoPlayerWrapper : PlayerWrapper() {
                 State.Playing,
                 State.Paused ->
                     state = State.Error
-
                 else -> { }
             }
         }
@@ -351,10 +348,13 @@ class ExoPlayerWrapper : PlayerWrapper() {
 
         override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
         }
+
+        override fun onRepeatModeChanged(repeatMode: Int) {
+        }
     }
 
     companion object {
-        private var audioStreamHttpClient: OkHttpClient? = null
+        private lateinit var audioStreamHttpClient: OkHttpClient
     }
 
     init {
