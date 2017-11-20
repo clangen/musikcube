@@ -4,7 +4,6 @@ import android.os.Handler
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.injection.DataModule
-import io.casey.musikcube.remote.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
@@ -13,6 +12,7 @@ import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.reactivex.Observable
 import org.json.JSONObject

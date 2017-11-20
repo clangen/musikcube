@@ -5,10 +5,10 @@ import android.arch.persistence.room.RoomDatabase
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerDataComponent
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
-import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
+import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -22,6 +22,7 @@ abstract class OfflineDb : RoomDatabase() {
     @Inject lateinit var wss: WebSocketService
 
     init {
+
         DaggerDataComponent.builder()
             .appComponent(Application.appComponent)
             .build().inject(this)

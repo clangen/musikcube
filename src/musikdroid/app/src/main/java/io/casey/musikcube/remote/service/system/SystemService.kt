@@ -21,19 +21,19 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.GlideApp
 import io.casey.musikcube.remote.injection.GlideRequest
-import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
+import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.home.activity.MainActivity
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.model.albumart.Size
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import android.support.v4.app.NotificationCompat.Action as NotifAction
 import io.casey.musikcube.remote.ui.shared.model.albumart.getUrl as getAlbumArtUrl
 

@@ -1,7 +1,7 @@
-package io.casey.musikcube.remote.model.impl.remote
+package io.casey.musikcube.remote.service.websocket.model.impl.remote
 
-import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import org.json.JSONObject
 
 class RemoteCategoryValue(private val categoryType: String,

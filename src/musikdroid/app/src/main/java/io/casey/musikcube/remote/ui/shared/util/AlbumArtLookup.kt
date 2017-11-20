@@ -5,9 +5,11 @@ import android.util.LruCache
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.util.Strings
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import okhttp3.*
+import io.casey.musikcube.remote.util.Strings
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException

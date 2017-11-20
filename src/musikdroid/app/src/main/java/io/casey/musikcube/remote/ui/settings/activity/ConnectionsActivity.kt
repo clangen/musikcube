@@ -20,8 +20,8 @@ import com.uacf.taskrunner.Tasks
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.settings.model.Connection
-import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.extension.*
 
 private val EXTRA_CONNECTION = "extra_connection"
 

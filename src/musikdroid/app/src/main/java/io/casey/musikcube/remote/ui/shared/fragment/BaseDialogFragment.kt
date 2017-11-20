@@ -7,7 +7,6 @@ import android.support.v7.app.AppCompatActivity
 import io.casey.musikcube.remote.framework.IMixin
 import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
-import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 
 open class BaseDialogFragment: DialogFragment(), ViewModel.Provider {

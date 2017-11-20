@@ -3,13 +3,13 @@ package io.casey.musikcube.remote
 import android.arch.persistence.room.Room
 import com.crashlytics.android.Crashlytics
 import com.facebook.stetho.Stetho
-import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
-import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineDb
-import io.casey.musikcube.remote.injection.DaggerAppComponent
 import io.casey.musikcube.remote.injection.AppComponent
 import io.casey.musikcube.remote.injection.AppModule
+import io.casey.musikcube.remote.injection.DaggerAppComponent
 import io.casey.musikcube.remote.injection.ServiceModule
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
+import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineDb
+import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.fabric.sdk.android.Fabric
 

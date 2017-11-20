@@ -8,9 +8,10 @@ import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.subscribeBy
 
 class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
-                             val dataProvider: IDataProvider,
+                             private val dataProvider: IDataProvider,
                              private val queryFactory: TrackListSlidingWindow.QueryFactory)
 {
     private var scrollState = RecyclerView.SCROLL_STATE_IDLE
@@ -29,9 +30,7 @@ class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
     }
 
     private val cache = object : LinkedHashMap<Int, CacheEntry>() {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, CacheEntry>): Boolean {
-            return size >= MAX_SIZE
-        }
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, CacheEntry>): Boolean = size >= MAX_SIZE
     }
 
     interface OnMetadataLoadedListener {
@@ -74,20 +73,20 @@ class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
             val countObservable = queryFactory.count()
 
             if (countObservable != null) {
-                countObservable.subscribe(
-                { newCount ->
-                    count = newCount
+                countObservable.subscribeBy(
+                    onNext = { newCount ->
+                        count = newCount
 
-                    if (initialPosition != -1) {
-                        recyclerView.scrollToPosition(initialPosition)
-                        initialPosition = -1
-                    }
+                        if (initialPosition != -1) {
+                            recyclerView.scrollToPosition(initialPosition)
+                            initialPosition = -1
+                        }
 
-                    loadedListener?.onReloaded(count)
-                },
-                { _ ->
-                    Log.d("TrackListSlidingWindow", "message send failed, likely canceled")
-                })
+                        loadedListener?.onReloaded(count)
+                    },
+                    onError = { _ ->
+                        Log.d("TrackListSlidingWindow", "message send failed, likely canceled")
+                    })
 
                 queried = true
             }
@@ -127,7 +126,7 @@ class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
     fun getTrack(index: Int): ITrack? {
         val track = cache[index]
 
-        if (track?.dirty ?: true) {
+        if (track == null || track.dirty) {
             if (scrollState == RecyclerView.SCROLL_STATE_IDLE) {
                 getPageAround(index)
             }
@@ -167,8 +166,8 @@ class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
             queryOffset = offset
             queryLimit = limit
 
-            pageRequest.subscribe(
-                { response ->
+            pageRequest.subscribeBy(
+                onNext = { response ->
                     queryLimit = -1
                     queryOffset = queryLimit
 
@@ -183,23 +182,20 @@ class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
                     notifyAdapterChanged()
                     notifyMetadataLoaded(offset, i)
                 },
-                { _ ->
+                onError = { _ ->
                     Log.d("TrackListSlidingWindow", "message send failed, likely canceled")
                 })
         }
     }
 
-    private fun notifyAdapterChanged() {
+    private fun notifyAdapterChanged() =
         recyclerView.adapter.notifyDataSetChanged()
-    }
 
-    private fun notifyMetadataLoaded(offset: Int, count: Int) {
+    private fun notifyMetadataLoaded(offset: Int, count: Int) =
         loadedListener?.onMetadataLoaded(offset, count)
-    }
 
-    private fun scrolling(): Boolean {
-        return scrollState != RecyclerView.SCROLL_STATE_IDLE || fastScrollerActive
-    }
+    private fun scrolling(): Boolean =
+        scrollState != RecyclerView.SCROLL_STATE_IDLE || fastScrollerActive
 
     private val recyclerViewScrollListener = object : RecyclerView.OnScrollListener() {
         override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {

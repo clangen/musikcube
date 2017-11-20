@@ -21,12 +21,12 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
+import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import java.io.File

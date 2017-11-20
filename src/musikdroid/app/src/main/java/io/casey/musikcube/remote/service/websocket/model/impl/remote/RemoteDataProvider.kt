@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote.model.impl.remote
+package io.casey.musikcube.remote.service.websocket.model.impl.remote
 
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
@@ -33,9 +33,8 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
     override val state: IDataProvider.State
         get() = currentState
 
-    override fun getAlbums(filter: String): Observable<List<IAlbum>> {
-        return getAlbumsForCategory("", 0, filter)
-    }
+    override fun getAlbums(filter: String): Observable<List<IAlbum>> =
+        getAlbumsForCategory("", 0, filter)
 
     override fun getAlbumsForCategory(categoryType: String, categoryId: Long, filter: String): Observable<List<IAlbum>> {
         val message = SocketMessage.Builder
@@ -100,9 +99,8 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun getTracks(filter: String): Observable<List<ITrack>> {
-        return getTracks(-1, -1, filter)
-    }
+    override fun getTracks(filter: String): Observable<List<ITrack>> =
+        getTracks(-1, -1, filter)
 
     override fun getTrackCountByCategory(category: String, id: Long, filter: String): Observable<Int> {
         val message = SocketMessage.Builder
@@ -118,9 +116,8 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun getTracksByCategory(category: String, id: Long, filter: String): Observable<List<ITrack>> {
-        return getTracksByCategory(category, id, -1, -1, filter)
-    }
+    override fun getTracksByCategory(category: String, id: Long, filter: String): Observable<List<ITrack>> =
+        getTracksByCategory(category, id, -1, -1, filter)
 
     override fun getTracksByCategory(category: String, id: Long, limit: Int, offset: Int, filter: String): Observable<List<ITrack>> {
         val builder = SocketMessage.Builder
@@ -152,9 +149,8 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun getPlayQueueTracks(filter: String): Observable<List<ITrack>> {
-        return getPlayQueueTracks(-1, -1, filter)
-    }
+    override fun getPlayQueueTracks(filter: String): Observable<List<ITrack>> =
+        getPlayQueueTracks(-1, -1, filter)
 
     override fun getPlayQueueTracks(limit: Int, offset: Int, filter: String): Observable<List<ITrack>> {
         val builder = SocketMessage.Builder
@@ -360,17 +356,14 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> {
-        return connectionStatePublisher.observeOn(AndroidSchedulers.mainThread())
-    }
+    override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> =
+        connectionStatePublisher.observeOn(AndroidSchedulers.mainThread())
 
-    override fun observePlayQueue(): Observable<Unit> {
-        return playQueueStatePublisher.observeOn(AndroidSchedulers.mainThread())
-    }
+    override fun observePlayQueue(): Observable<Unit> =
+        playQueueStatePublisher.observeOn(AndroidSchedulers.mainThread())
 
-    override fun observeAuthFailure(): Observable<Unit> {
-        return authFailurePublisher.observeOn(AndroidSchedulers.mainThread())
-    }
+    override fun observeAuthFailure(): Observable<Unit> =
+        authFailurePublisher.observeOn(AndroidSchedulers.mainThread())
 
     override fun attach() {
         service.addClient(client)
@@ -404,13 +397,12 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         }
     }
 
-    private fun mapState(state: WebSocketService.State): IDataProvider.State {
-        return when (state) {
+    private fun mapState(state: WebSocketService.State): IDataProvider.State =
+        when (state) {
             WebSocketService.State.Disconnected -> IDataProvider.State.Disconnected
             WebSocketService.State.Connecting -> IDataProvider.State.Connecting
             WebSocketService.State.Connected -> IDataProvider.State.Connected
         }
-    }
 
     companion object {
         private fun createTrackListSubquery(categoryType: String, categoryId: Long, filter: String): JSONObject {

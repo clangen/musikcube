@@ -3,54 +3,58 @@ package io.casey.musikcube.remote.ui.playqueue.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.widget.RecyclerView
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.playqueue.adapter.PlayQueueAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.extension.addTransportFragment
+import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
+import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
+import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.reactivex.rxkotlin.subscribeBy
 
 class PlayQueueActivity : BaseActivity() {
-    private var adapter: Adapter = Adapter()
     private var offlineQueue: Boolean = false
     private lateinit var data: DataProviderMixin
     private lateinit var playback: PlaybackMixin
     private lateinit var tracks: TrackListSlidingWindow
+    private lateinit var adapter: PlayQueueAdapter
     private lateinit var emptyView: EmptyListView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
+
         data = mixin(DataProviderMixin())
         playback = mixin(PlaybackMixin(playbackEvents))
+        mixin(ItemContextMenuMixin(this))
 
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.recycler_view_activity)
 
+        val queryFactory = playback.service.playlistQueryFactory
+        offlineQueue = playback.service.playlistQueryFactory.offline()
+
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
+        tracks = TrackListSlidingWindow(recyclerView, data.provider, queryFactory)
+        tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
+        tracks.setOnMetadataLoadedListener(slidingWindowListener)
+        adapter = PlayQueueAdapter(tracks, playback, adapterListener)
+
         setupDefaultRecyclerView(recyclerView, adapter)
 
         emptyView = findViewById(R.id.empty_list_view)
         emptyView.capability = EmptyListView.Capability.OfflineOk
         emptyView.emptyMessage = getString(R.string.play_queue_empty)
         emptyView.alternateView = recyclerView
-
-        val queryFactory = playback.service.playlistQueryFactory
-        offlineQueue = playback.service.playlistQueryFactory.offline()
-
-        tracks = TrackListSlidingWindow(recyclerView, data.provider, queryFactory)
-        tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
-        tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
         data.provider.observeState().subscribeBy(
             onNext = { states ->
@@ -84,9 +88,12 @@ class PlayQueueActivity : BaseActivity() {
         }
     }
 
-    private val onItemClickListener = View.OnClickListener { v ->
-        if (v.tag is Int) {
-            playback.service.playAt(v.tag as Int)
+    private val adapterListener = object: PlayQueueAdapter.EventListener {
+        override fun onItemClicked(position: Int) =
+            playback.service.playAt(position)
+
+        override fun onActionClicked(view: View, value: ITrack) {
+            mixin(ItemContextMenuMixin::class.java)?.showForTrack(value, view)
         }
     }
 
@@ -97,61 +104,11 @@ class PlayQueueActivity : BaseActivity() {
         adapter.notifyDataSetChanged()
     }
 
-    private inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val title: TextView = itemView.findViewById(R.id.title)
-        private val subtitle: TextView = itemView.findViewById(R.id.subtitle)
-        private val trackNum: TextView = itemView.findViewById(R.id.track_num)
-
-        internal fun bind(track: ITrack?, position: Int) {
-            trackNum.text = (position + 1).toString()
-            itemView.tag = position
-            var titleColor = R.color.theme_foreground
-            var subtitleColor = R.color.theme_disabled_foreground
-
-            if (track == null) {
-                title.text = "-"
-                subtitle.text = "-"
-            }
-            else {
-                val playing = playback.service.playingTrack
-                val entryExternalId = track.externalId
-                val playingExternalId = playing.externalId
-
-                if (entryExternalId == playingExternalId) {
-                    titleColor = R.color.theme_green
-                    subtitleColor = R.color.theme_yellow
-                }
-
-                title.text = fallback(track.title, "-")
-                subtitle.text = fallback(track.albumArtist, "-")
-            }
-
-            title.setTextColor(getColorCompat(titleColor))
-            subtitle.setTextColor(getColorCompat(subtitleColor))
-        }
-    }
-
-    private inner class Adapter : RecyclerView.Adapter<ViewHolder>() {
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val inflater = LayoutInflater.from(parent.context)
-            val view = inflater.inflate(R.layout.play_queue_row, parent, false)
-            view.setOnClickListener(onItemClickListener)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(tracks.getTrack(position), position)
-        }
-
-        override fun getItemCount(): Int = tracks.count
-    }
-
     private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
-        override fun onReloaded(count: Int) {
+        override fun onReloaded(count: Int) =
             emptyView.update(data.provider.state, count)
-        }
 
-        override fun onMetadataLoaded(offset: Int, count: Int) {}
+        override fun onMetadataLoaded(offset: Int, count: Int) = Unit
     }
 
     companion object {

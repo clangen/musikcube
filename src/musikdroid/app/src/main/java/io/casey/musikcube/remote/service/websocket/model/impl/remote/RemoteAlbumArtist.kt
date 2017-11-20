@@ -1,7 +1,7 @@
-package io.casey.musikcube.remote.model.impl.remote
+package io.casey.musikcube.remote.service.websocket.model.impl.remote
 
-import io.casey.musikcube.remote.service.websocket.model.IAlbumArtist
 import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.websocket.model.IAlbumArtist
 import org.json.JSONObject
 
 class RemoteAlbumArtist(private val json: JSONObject) : IAlbumArtist {

@@ -9,14 +9,14 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
-import io.casey.musikcube.remote.ui.shared.extension.setVisible
 import io.casey.musikcube.remote.service.websocket.WebSocketService
+import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.ui.shared.extension.setVisible
+import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import javax.inject.Inject
 import io.casey.musikcube.remote.service.websocket.WebSocketService.State as WebSocketState
 

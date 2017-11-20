@@ -8,9 +8,9 @@ import com.danikula.videocache.CacheListener
 import com.danikula.videocache.HttpProxyCacheServer
 import com.danikula.videocache.file.Md5FileNameGenerator
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Strings
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import java.io.File
 import java.util.*
 

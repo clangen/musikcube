@@ -1,8 +1,8 @@
-package io.casey.musikcube.remote.model.impl.remote
+package io.casey.musikcube.remote.service.websocket.model.impl.remote
 
-import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.websocket.model.ITrack
 import org.json.JSONObject
 
 class RemoteTrack(val json: JSONObject) : ITrack {

@@ -1,28 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?android:selectableItemBackground"
     android:minHeight="52dp"
-    android:padding="8dp" >
+    android:padding="8dp">
 
     <TextView
         android:id="@+id/track_num"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="12dp"
-        android:layout_alignParentLeft="true"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="12dp"
+        android:layout_alignParentStart="true"
         android:textColor="@color/theme_disabled_foreground"
-        android:text="1" />
+        tools:text="1" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/track_num"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@id/track_num"
+        android:layout_toStartOf="@+id/action"
         android:orientation="vertical">
 
         <TextView
@@ -34,7 +36,7 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:textColor="@color/theme_foreground"
-            android:text="title"/>
+            tools:text="title"/>
 
         <TextView
             android:textSize="12dp"
@@ -46,9 +48,20 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:textColor="@color/theme_disabled_foreground"
-            android:text="subtitle"/>
+            tools:text="subtitle"/>
 
     </LinearLayout>
 
+    <ImageView
+        android:id="@+id/action"
+        android:background="?android:selectableItemBackground"
+        android:src="@drawable/ic_overflow"
+        android:scaleType="center"
+        android:padding="4dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:gravity="center"/>
 
 </RelativeLayout>

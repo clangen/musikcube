@@ -9,11 +9,11 @@ import android.os.PowerManager
 import android.util.Base64
 import android.util.Log
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
-import io.casey.musikcube.remote.util.Preconditions
+import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
+import io.casey.musikcube.remote.util.Preconditions
 import java.io.IOException
 import java.util.*
 

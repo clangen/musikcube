@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote.ui.tracks.adapter
+package io.casey.musikcube.remote.ui.playqueue.adapter
 
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
@@ -12,17 +12,22 @@ import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 
-class TrackListAdapter(private val tracks: TrackListSlidingWindow,
-                       private val onItemClickListener: (View) -> Unit,
-                       private val onActionClickListener: (View) -> Unit,
-                       private var playback: PlaybackMixin) : RecyclerView.Adapter<TrackListAdapter.ViewHolder>()
+class PlayQueueAdapter(val tracks: TrackListSlidingWindow,
+                       val playback: PlaybackMixin,
+                       val listener: EventListener): RecyclerView.Adapter<PlayQueueAdapter.ViewHolder>()
 {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackListAdapter.ViewHolder {
+    interface EventListener {
+        fun onItemClicked(position: Int)
+        fun onActionClicked(view: View, value: ITrack)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
-        val view = inflater.inflate(R.layout.simple_list_item, parent, false)
-        view.setOnClickListener(onItemClickListener)
-        view.findViewById<View>(R.id.action).setOnClickListener(onActionClickListener)
-        return ViewHolder(view, playback)
+        val view = inflater.inflate(R.layout.play_queue_row, parent, false)
+        val action = view.findViewById<View>(R.id.action)
+        view.setOnClickListener{ v -> listener.onItemClicked(v.tag as Int) }
+        action.setOnClickListener{ v -> listener.onActionClicked(v, v.tag as ITrack) }
+        return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -31,21 +36,25 @@ class TrackListAdapter(private val tracks: TrackListSlidingWindow,
 
     override fun getItemCount(): Int = tracks.count
 
-    class ViewHolder internal constructor(private val view: View,
-        private val playback: PlaybackMixin) : RecyclerView.ViewHolder(view)
-    {
-        private val title: TextView = view.findViewById(R.id.title)
-        private val subtitle: TextView = view.findViewById(R.id.subtitle)
-        private val action: View = view.findViewById(R.id.action)
+    inner class ViewHolder internal constructor(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val title = itemView.findViewById<TextView>(R.id.title)
+        private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
+        private val trackNum = itemView.findViewById<TextView>(R.id.track_num)
+        private val action = itemView.findViewById<View>(R.id.action)
 
         internal fun bind(track: ITrack?, position: Int) {
+            trackNum.text = (position + 1).toString()
             itemView.tag = position
             action.tag = track
 
             var titleColor = R.color.theme_foreground
             var subtitleColor = R.color.theme_disabled_foreground
 
-            if (track != null) {
+            if (track == null) {
+                title.text = "-"
+                subtitle.text = "-"
+            }
+            else {
                 val playing = playback.service.playingTrack
                 val entryExternalId = track.externalId
                 val playingExternalId = playing.externalId
@@ -57,10 +66,6 @@ class TrackListAdapter(private val tracks: TrackListSlidingWindow,
 
                 title.text = fallback(track.title, "-")
                 subtitle.text = fallback(track.albumArtist, "-")
-            }
-            else {
-                title.text = "-"
-                subtitle.text = "-"
             }
 
             title.setTextColor(getColorCompat(titleColor))

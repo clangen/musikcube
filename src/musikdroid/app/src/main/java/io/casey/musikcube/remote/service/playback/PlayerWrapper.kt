@@ -1,10 +1,10 @@
 package io.casey.musikcube.remote.service.playback
 
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineTrack
 import io.casey.musikcube.remote.service.playback.impl.player.ExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.MediaPlayerWrapper
+import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineTrack
+import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
