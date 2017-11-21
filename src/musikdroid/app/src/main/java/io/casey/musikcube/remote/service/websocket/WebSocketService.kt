@@ -8,6 +8,7 @@ import android.os.Looper
 import android.os.Message
 import android.util.Log
 import com.neovisionaries.ws.client.*
+import io.casey.musikcube.remote.BuildConfig
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
@@ -305,7 +306,7 @@ class WebSocketService constructor(private val context: Context) {
             throw IllegalArgumentException("client not registered")
         }
 
-        val publisher = PublishSubject.create<SocketMessage>()
+        val subject = ReplaySubject.create<SocketMessage>()
 
         val mrd = MessageResultDescriptor()
         mrd.id = NEXT_ID.incrementAndGet()
@@ -314,14 +315,14 @@ class WebSocketService constructor(private val context: Context) {
         mrd.intercepted = intercepted
 
         mrd.callback = { response: SocketMessage ->
-            publisher.onNext(response)
-            publisher.onComplete()
+            subject.onNext(response)
+            subject.onComplete()
         }
 
         mrd.error = {
             val ex = Exception()
             ex.fillInStackTrace()
-            publisher.onError(ex)
+            subject.onError(ex)
         }
 
         if (!intercepted) {
@@ -330,7 +331,7 @@ class WebSocketService constructor(private val context: Context) {
 
         messageCallbacks.put(message.id, mrd)
 
-        return publisher
+        return subject
     }
 
     fun hasValidConnection(): Boolean {
@@ -585,7 +586,7 @@ class WebSocketService constructor(private val context: Context) {
         private val MESSAGE_SCHEDULE_PING = MESSAGE_BASE + 4
         private val MESSAGE_PING_TIMEOUT = MESSAGE_BASE + 5
 
-        private val DISCONNECT_ON_PING_TIMEOUT = true
+        private val DISCONNECT_ON_PING_TIMEOUT = !BuildConfig.DEBUG
 
         private val NEXT_ID = AtomicLong(0)
 
