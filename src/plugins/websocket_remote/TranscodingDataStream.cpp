@@ -189,6 +189,7 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
             lame_set_VBR(lame, vbr_off);
             lame_set_VBR_mean_bitrate_kbps(lame, this->bitrate);
             lame_set_out_samplerate(lame, this->pcmBuffer->SampleRate());
+            lame_set_bWriteVbrTag(lame, 1);
             lame_init_params(lame);
         }
     }
@@ -323,10 +324,12 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
             encodedBytes.realloc(7200);
         }
 
-        int count = lame_encode_flush(
+        int count = lame_encode_flush_nogap(
             lame,
             encodedBytes.data,
             encodedBytes.length);
+
+        lame_init_bitstream(lame); /* writes XING header for gapless playback */
 
         this->eof = true;
 
