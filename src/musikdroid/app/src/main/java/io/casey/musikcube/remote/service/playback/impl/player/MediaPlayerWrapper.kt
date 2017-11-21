@@ -137,10 +137,10 @@ class MediaPlayerWrapper : PlayerWrapper() {
         }
     }
 
+    override val uri get() = originalUri ?: ""
+
     private val isPreparedOrPlaying: Boolean
-        get() {
-            return state === State.Playing || state === State.Prepared
-        }
+        get() = (state === State.Playing || state === State.Prepared)
 
     override fun dispose() {
         Preconditions.throwIfNotOnMainThread()

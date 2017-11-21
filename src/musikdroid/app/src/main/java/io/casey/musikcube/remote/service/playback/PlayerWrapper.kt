@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.service.playback
 
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.service.playback.impl.player.ExoPlayerWrapper
+import io.casey.musikcube.remote.service.playback.impl.player.GaplessExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.MediaPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineTrack
 import io.casey.musikcube.remote.service.websocket.model.ITrack
@@ -31,7 +32,7 @@ abstract class PlayerWrapper {
 
     private var listener: ((PlayerWrapper, State) -> Unit)? = null
 
-    var state = State.Stopped
+    open var state = State.Stopped
         protected set(state) {
             if (this.state != state) {
                 field = state
@@ -49,6 +50,7 @@ abstract class PlayerWrapper {
     abstract var position: Int
     abstract val duration: Int
     abstract val bufferedPercent: Int
+    abstract val uri: String
 
     open fun setOnStateChangedListener(listener: ((PlayerWrapper, State) -> Unit)?) {
         Preconditions.throwIfNotOnMainThread()
@@ -140,7 +142,7 @@ abstract class PlayerWrapper {
 
         fun newInstance(): PlayerWrapper {
             return if (TYPE == Type.ExoPlayer)
-                ExoPlayerWrapper() else MediaPlayerWrapper()
+                GaplessExoPlayerWrapper() else MediaPlayerWrapper()
         }
 
         fun addActivePlayer(player: PlayerWrapper) {

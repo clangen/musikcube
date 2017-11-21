@@ -100,6 +100,8 @@ class WebSocketService constructor(private val context: Context) {
         result
     }
 
+    private enum class Type { Callback, Reactive }
+
     private class MessageResultDescriptor {
         var id: Long = 0
         var enqueueTime: Long = 0
@@ -107,6 +109,7 @@ class WebSocketService constructor(private val context: Context) {
         var client: Client? = null
         var callback: ((response: SocketMessage) -> Unit)? = null
         var error: (() -> Unit)? = null
+        var type: Type = Type.Callback
     }
 
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
@@ -261,6 +264,7 @@ class WebSocketService constructor(private val context: Context) {
             mrd.enqueueTime = System.currentTimeMillis()
             mrd.client = client
             mrd.callback = callback
+            mrd.type = Type.Callback
             mrd.intercepted = intercepted
             messageCallbacks.put(message.id, mrd)
         }
@@ -313,6 +317,7 @@ class WebSocketService constructor(private val context: Context) {
         mrd.enqueueTime = System.currentTimeMillis()
         mrd.client = client
         mrd.intercepted = intercepted
+        mrd.type = Type.Reactive
 
         mrd.callback = { response: SocketMessage ->
             subject.onNext(response)
@@ -382,7 +387,9 @@ class WebSocketService constructor(private val context: Context) {
     }
 
     private fun removeCallbacksForClient(client: Client) {
-        removeCallbacks({ mrd: MessageResultDescriptor -> mrd.client === client })
+        removeCallbacks({ mrd: MessageResultDescriptor ->
+            mrd.client === client
+        })
     }
 
     private fun removeCallbacks(predicate: (MessageResultDescriptor) -> Boolean) {

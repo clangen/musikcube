@@ -26,6 +26,7 @@ import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.subscribeBy
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.*
@@ -58,12 +59,10 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         internal var nextMetadata: ITrack? = null
         internal var currentIndex = -1
         internal var nextIndex = -1
-        internal var nextPlayerScheduled: Boolean = false
 
         fun stopPlaybackAndReset() {
             reset(currentPlayer)
             reset(nextPlayer)
-            nextPlayerScheduled = false
             nextPlayer = null
             currentPlayer = null
             nextMetadata = null
@@ -75,7 +74,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         fun notifyNextTrackPrepared() {
             if (currentPlayer != null && nextPlayer != null) {
                 currentPlayer?.setNextMediaPlayer(nextPlayer)
-                nextPlayerScheduled = true
             }
         }
 
@@ -103,7 +101,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             nextPlayer = null
             nextMetadata = null
             nextIndex = -1
-            nextPlayerScheduled = false
 
             /* needs to be done after swapping current/next, otherwise event handlers
             will fire, and things may get cleaned up before we have a chance to start */
@@ -119,10 +116,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             if (wrapper != null) {
                 wrapper.setOnStateChangedListener(null)
                 wrapper.dispose()
-
-                if (wrapper === nextPlayer) {
-                    nextPlayerScheduled = false /* uhh... */
-                }
             }
         }
     }
@@ -155,14 +148,21 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     @Synchronized override fun connect(listener: () -> Unit) {
         listeners.add(listener)
         if (listeners.size == 1) {
+            handler.removeCallbacks(dataProviderDisconnectRunnable)
             dataProvider.attach()
         }
     }
 
     @Synchronized override fun disconnect(listener: () -> Unit) {
         listeners.remove(listener)
-        if (listeners.size == 0) {
-            dataProvider.detach()
+        if (detachable()) {
+            /* we don't do this immediately... many UI components attach
+            and detach as they are active/inactive. there may be race
+            conditions between Activity changes, so we make sure to give
+            things a couple seconds to settle... */
+            handler.postDelayed(
+                dataProviderDisconnectRunnable,
+                DATA_PROVIDER_DISCONNECT_DELAY_MS.toLong())
         }
     }
 
@@ -576,9 +576,8 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
     }
 
-    private fun getMetadataQuery(index: Int): Observable<List<ITrack>>? {
-        return playlistQueryFactory.page(index, 1)
-    }
+    private fun getMetadataQuery(index: Int): Observable<List<ITrack>>? =
+        playlistQueryFactory.page(index, 1)
 
     private fun getCurrentAndNextTrackMessages(context: PlaybackContext, queueCount: Int): Observable<List<ITrack>> {
         val tracks = ArrayList<Observable<List<ITrack>>>()
@@ -620,7 +619,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         if (playContext.nextMetadata != null) {
             val uri = getUri(playContext.nextMetadata)
 
-            if (uri != null) {
+            if (uri != null && uri != playContext.nextPlayer?.uri) {
                 playContext.reset(playContext.nextPlayer)
                 playContext.nextPlayer = PlayerWrapper.newInstance()
                 playContext.nextPlayer?.setOnStateChangedListener(onNextPlayerStateChanged)
@@ -697,11 +696,12 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         val countMessage = playlistQueryFactory.count() ?: return
 
         countMessage
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribeOn(AndroidSchedulers.mainThread())
-            .concatMap { count -> getCurrentAndNextTrackMessages(playContext, count) }
-            .subscribe(
-                { track ->
+            .concatMap { count ->
+                getCurrentAndNextTrackMessages(playContext, count)
+            }
+            .subscribeBy(
+                onNext = { track ->
+                    Log.e(TAG, "here")
                     if (playContext.currentMetadata == null) {
                         playContext.currentMetadata = track.firstOrNull()
                     }
@@ -709,11 +709,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                         playContext.nextMetadata = track.firstOrNull()
                     }
                 },
-                { error ->
+                onError = { error ->
                     Log.e(TAG, "failed to load track to play!", error)
                     state = PlaybackState.Stopped
                 },
-                {
+                onComplete = {
                     if (this.params === newParams && playContext === newPlayContext) {
                         notifyEventListeners()
 
@@ -817,6 +817,17 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         context.contentResolver.registerContentObserver(Settings.System.CONTENT_URI, true, SettingsContentObserver())
     }
 
+    private fun detachable() =
+        listeners.size == 0 && state == PlaybackState.Stopped
+
+    private val dataProviderDisconnectRunnable = object: Runnable {
+        override fun run() {
+            if (detachable()) {
+                dataProvider.detach()
+            }
+        }
+    }
+
     private val pauseServiceSleepRunnable = object: Runnable {
         override fun run() {
             SystemService.sleep()
@@ -874,5 +885,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         private val MAX_TRACK_METADATA_CACHE_SIZE = 50
         private val PRECACHE_METADATA_SIZE = 10
         private val PAUSED_SERVICE_SLEEP_DELAY_MS = 1000 * 60 * 5 /* 5 minutes */
+        private val DATA_PROVIDER_DISCONNECT_DELAY_MS = 5000
     }
 }

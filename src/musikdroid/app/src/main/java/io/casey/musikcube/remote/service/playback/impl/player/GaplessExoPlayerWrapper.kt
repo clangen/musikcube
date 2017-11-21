@@ -3,11 +3,10 @@ package io.casey.musikcube.remote.service.playback.impl.player
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
-import android.util.Log
 import com.danikula.videocache.CacheListener
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
-import com.google.android.exoplayer2.extractor.ExtractorsFactory
+import com.google.android.exoplayer2.source.DynamicConcatenatingMediaSource
 import com.google.android.exoplayer2.source.ExtractorMediaSource
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.TrackGroupArray
@@ -24,18 +23,16 @@ import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.util.Preconditions
-import okhttp3.OkHttpClient
 import java.io.File
 
-class ExoPlayerWrapper : PlayerWrapper() {
-    private val prefs: SharedPreferences
-    private var datasources: DataSource.Factory? = null
-    private val extractors: ExtractorsFactory
+class GaplessExoPlayerWrapper : PlayerWrapper() {
+    private var sourceFactory: DataSource.Factory =
+        DefaultDataSourceFactory(context, Util.getUserAgent(context, "musikdroid"))
+
+    private val extractorsFactory = DefaultExtractorsFactory()
     private var source: MediaSource? = null
-    private val player: SimpleExoPlayer?
     private var metadata: ITrack? = null
     private var prefetch: Boolean = false
-    private val context: Context
     private var lastPosition: Long = -1
     private var percentAvailable = 0
     private var originalUri: String? = null
@@ -43,32 +40,25 @@ class ExoPlayerWrapper : PlayerWrapper() {
     private val transcoding: Boolean
 
     init {
-        this.context = Application.instance!!
-        val bandwidth = DefaultBandwidthMeter()
-        val trackFactory = AdaptiveTrackSelection.Factory(bandwidth)
-        val trackSelector = DefaultTrackSelector(trackFactory)
-        this.player = ExoPlayerFactory.newSimpleInstance(this.context, trackSelector)
-        this.extractors = DefaultExtractorsFactory()
-        this.datasources = DefaultDataSourceFactory(context, Util.getUserAgent(context, "musikdroid"))
-        this.prefs = Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        this.transcoding = this.prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
+        this.transcoding = prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
     override fun play(uri: String, metadata: ITrack) {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {
+            removeAllAndReset()
+
             this.metadata = metadata
             this.originalUri = uri
             this.proxyUri = StreamProxy.getProxyUrl(uri)
-            Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
 
             addCacheListener()
 
-            this.source = ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null)
-            this.player!!.playWhenReady = true
-            this.player.prepare(this.source)
-            addActivePlayer(this)
+            this.source = ExtractorMediaSource(Uri.parse(proxyUri), sourceFactory, extractorsFactory, null, null)
+
+            addPlayer(this, this.source!!, playNow = true)
+
             state = State.Preparing
         }
     }
@@ -77,30 +67,26 @@ class ExoPlayerWrapper : PlayerWrapper() {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {
+            removePending()
+
             this.metadata = metadata
             this.originalUri = uri
             this.proxyUri = StreamProxy.getProxyUrl(uri)
-            Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
-
             this.prefetch = true
+            this.source = ExtractorMediaSource(Uri.parse(proxyUri), sourceFactory, extractorsFactory, null, null)
 
             addCacheListener()
+            addPlayer(this, source!!)
 
-            this.source = ExtractorMediaSource(Uri.parse(proxyUri), datasources, extractors, null, null)
-            this.player!!.playWhenReady = false
-            this.player.prepare(this.source)
-            addActivePlayer(this)
-            state = State.Preparing
+            state = State.Prepared
         }
     }
 
     override fun pause() {
         Preconditions.throwIfNotOnMainThread()
-
         this.prefetch = true
-
         if (this.state == State.Playing) {
-            this.player!!.playWhenReady = false
+            gaplessPlayer?.playWhenReady = false
             state = State.Paused
         }
     }
@@ -113,19 +99,16 @@ class ExoPlayerWrapper : PlayerWrapper() {
         when (state) {
             State.Paused,
             State.Prepared -> {
-                player!!.playWhenReady = true
+                gaplessPlayer?.playWhenReady = true
                 state = State.Playing
             }
-
             State.Error -> {
-                player!!.playWhenReady = lastPosition == -1L
-                player.prepare(source)
+                gaplessPlayer?.playWhenReady = lastPosition == -1L
+                gaplessPlayer?.prepare(source)
                 state = State.Preparing
             }
-
             else -> { }
         }
-
     }
 
     override val uri get() = originalUri ?: ""
@@ -133,14 +116,14 @@ class ExoPlayerWrapper : PlayerWrapper() {
     override var position: Int
         get(): Int {
             Preconditions.throwIfNotOnMainThread()
-            return this.player!!.currentPosition.toInt()
+            return gaplessPlayer?.currentPosition?.toInt() ?: 0
         }
         set(millis) {
             Preconditions.throwIfNotOnMainThread()
 
             this.lastPosition = -1
-            if (this.player!!.playbackState != ExoPlayer.STATE_IDLE) {
-                if (this.player.isCurrentWindowSeekable) {
+            if (gaplessPlayer?.playbackState != ExoPlayer.STATE_IDLE) {
+                if (gaplessPlayer?.isCurrentWindowSeekable == true) {
                     var offset = millis.toLong()
 
                     /* if we're transcoding we don't want to seek arbitrarily because it may put
@@ -149,12 +132,12 @@ class ExoPlayerWrapper : PlayerWrapper() {
                     if (transcoding && percentAvailable != 100) {
                         /* give ourselves 2% wiggle room! */
                         val percent = Math.max(0, percentAvailable - 2).toFloat() / 100.0f
-                        val totalMs = this.player.duration
-                        val available = (totalMs.toFloat() * percent).toLong()
+                        val totalMs = gaplessPlayer?.duration
+                        val available = (totalMs!!.toFloat() * percent).toLong()
                         offset = Math.min(millis.toLong(), available)
                     }
 
-                    this.player.seekTo(offset)
+                    gaplessPlayer?.seekTo(offset)
                 }
             }
         }
@@ -162,17 +145,15 @@ class ExoPlayerWrapper : PlayerWrapper() {
     override val duration: Int
         get() {
             Preconditions.throwIfNotOnMainThread()
-            return this.player!!.duration.toInt()
+            return gaplessPlayer?.duration?.toInt() ?: 0
         }
 
     override val bufferedPercent: Int
-        get() {
-            return if (transcoding) percentAvailable else 100
-        }
+        get() = if (transcoding) percentAvailable else 100
 
     override fun updateVolume() {
         Preconditions.throwIfNotOnMainThread()
-        this.player!!.volume = getVolume()
+        gaplessPlayer?.volume = getVolume()
     }
 
     override fun setNextMediaPlayer(wrapper: PlayerWrapper?) {
@@ -184,12 +165,8 @@ class ExoPlayerWrapper : PlayerWrapper() {
 
         if (!dead()) {
             state = State.Killing
-            removeActivePlayer(this)
+            removePlayer(this)
             removeCacheListener()
-            this.player?.playWhenReady = false
-            this.player?.removeListener(eventListener)
-            this.player?.stop()
-            this.player?.release()
             state = State.Disposed
         }
     }
@@ -214,7 +191,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
 
     private fun removeCacheListener() {
         StreamProxy.unregisterCacheListener(this.cacheListener)
-     }
+    }
 
     private val cacheListener = CacheListener { _: File, _: String, percent: Int ->
         percentAvailable = percent
@@ -249,15 +226,15 @@ class ExoPlayerWrapper : PlayerWrapper() {
                 else {
                     state = State.Prepared
 
-                    player!!.volume = getVolume()
+                    gaplessPlayer!!.volume = getVolume()
 
                     if (lastPosition != -1L) {
-                        player.seekTo(lastPosition)
+                        gaplessPlayer?.seekTo(lastPosition)
                         lastPosition = -1
                     }
 
                     if (!prefetch) {
-                        player.playWhenReady = true
+                        gaplessPlayer?.playWhenReady = true
                         state = State.Playing
                     }
                     else {
@@ -274,7 +251,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
         override fun onPlayerError(error: ExoPlaybackException) {
             Preconditions.throwIfNotOnMainThread()
 
-            lastPosition = player!!.currentPosition
+            lastPosition = gaplessPlayer?.currentPosition ?: 0
 
             when (state) {
                 State.Preparing,
@@ -287,6 +264,13 @@ class ExoPlayerWrapper : PlayerWrapper() {
         }
 
         override fun onPositionDiscontinuity() {
+            /* window index corresponds to the position of the current song in
+            the queue. the current song should always be 0! if it's not, then
+            that means we advanced to the next one... */
+            if (gaplessPlayer?.currentWindowIndex ?: 0 != 0) {
+                promoteNext()
+                state = State.Finished
+            }
         }
 
         override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
@@ -296,7 +280,76 @@ class ExoPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    init {
-        this.player!!.addListener(eventListener)
+    companion object {
+        private val prefs: SharedPreferences by lazy { Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
+        private val context: Context by lazy { Application.instance!! }
+        private val trackSelector = DefaultTrackSelector(AdaptiveTrackSelection.Factory(DefaultBandwidthMeter()))
+        private var all = mutableListOf<GaplessExoPlayerWrapper>()
+        private lateinit var dcms: DynamicConcatenatingMediaSource
+        private var gaplessPlayer: SimpleExoPlayer? = null
+
+        private fun promoteNext() {
+            if (all.size > 0) {
+                removePlayer(all[0])
+                if (all.size > 0) {
+                    val next = all[0]
+                    gaplessPlayer?.addListener(next.eventListener)
+                    next.state = when(gaplessPlayer?.playbackState) {
+                        Player.STATE_READY -> State.Playing
+                        else -> State.Buffering
+                    }
+                }
+            }
+        }
+
+        private fun removeAllAndReset() {
+            all.forEach { gaplessPlayer?.removeListener(it.eventListener) }
+            all.clear()
+            gaplessPlayer?.stop()
+            gaplessPlayer?.release()
+            gaplessPlayer = ExoPlayerFactory.newSimpleInstance(context, trackSelector)
+            dcms = DynamicConcatenatingMediaSource()
+        }
+
+        private fun removePending() {
+            if (all.size > 0) {
+                (1 until dcms.size).forEach {
+                    dcms.removeMediaSource(1)
+                }
+
+                val remain = all.removeAt(0)
+                all.forEach { gaplessPlayer?.removeListener(it.eventListener) }
+                all = mutableListOf(remain)
+            }
+        }
+
+        private fun addPlayer(wrapper: GaplessExoPlayerWrapper, source: MediaSource, playNow: Boolean = false) {
+            addActivePlayer(wrapper)
+
+            if (all.size == 0) {
+                gaplessPlayer?.addListener(wrapper.eventListener)
+            }
+
+            dcms.addMediaSource(source)
+            all.add(wrapper)
+
+            if (playNow) {
+                gaplessPlayer?.playWhenReady = true
+            }
+
+            if (dcms.size == 1) {
+                gaplessPlayer?.prepare(dcms)
+            }
+        }
+
+        private fun removePlayer(wrapper: GaplessExoPlayerWrapper) {
+            val index = all.indexOf(wrapper)
+            if (index >= 0) {
+                dcms.removeMediaSource(index)
+                gaplessPlayer?.removeListener(all[index].eventListener)
+                all.removeAt(index)
+            }
+            removeActivePlayer(wrapper)
+        }
     }
 }
