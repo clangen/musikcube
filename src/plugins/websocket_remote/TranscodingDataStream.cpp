@@ -188,6 +188,8 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
             lame_set_in_samplerate(this->lame, this->pcmBuffer->SampleRate());
             lame_set_VBR(lame, vbr_off);
             lame_set_VBR_mean_bitrate_kbps(lame, this->bitrate);
+            lame_set_brate(lame, this->bitrate);
+            lame_set_quality(lame, 5);
             lame_set_out_samplerate(lame, this->pcmBuffer->SampleRate());
             lame_set_bWriteVbrTag(lame, 1);
             lame_init_params(lame);
@@ -324,12 +326,10 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
             encodedBytes.realloc(7200);
         }
 
-        int count = lame_encode_flush_nogap(
+        int count = lame_encode_flush(
             lame,
             encodedBytes.data,
             encodedBytes.length);
-
-        lame_init_bitstream(lame); /* writes XING header for gapless playback */
 
         this->eof = true;
 
@@ -338,6 +338,16 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
 
             if (this->outFile) {
                 fwrite(encodedBytes.data, 1, count, this->outFile);
+
+                /* need to make sure we write the LAME header, otherwise
+                gapless playback won't work! */
+                unsigned char header[2800]; /* max frame size */
+                size_t headerSize = lame_get_lametag_frame(lame, header, sizeof(header));
+                if (headerSize) {
+                    fseek(this->outFile, 0, SEEK_SET);
+                    fwrite(header, 1, headerSize, this->outFile);
+                }
+
                 fclose(this->outFile);
                 this->outFile = nullptr;
 

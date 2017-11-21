@@ -509,7 +509,8 @@ int HttpServer::HandleAudioTrackRequest(
                     MHD_add_response_header(response, "Cache-Control", value.c_str());
                 }
 
-                MHD_add_response_header(response, "Content-Type", contentType(filename).c_str());
+                std::string type = isOnDemandTranscoder ? "audio/mpeg" : contentType(filename);
+                MHD_add_response_header(response, "Content-Type", type.c_str());
                 MHD_add_response_header(response, "Server", "musikcube websocket_remote");
 
                 if ((rangeVal && strlen(rangeVal)) || range->from > 0) {
