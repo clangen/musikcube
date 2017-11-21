@@ -106,6 +106,10 @@
     <string name="settings_invalid_connection_no_name_message">one or more connection fields are invalid.\n\nensure you\'ve entered a hostname and port numbers.</string>
     <string name="settings_confirm_delete_title">confirm delete</string>
     <string name="settings_confirm_delete_message">are you sure you want to delete \'%s\'?</string>
+    <string name="settings_playback_engine">playback engine</string>
+    <string name="settings_playback_engine_exo">ExoPlayer (stable)</string>
+    <string name="settings_playback_engine_exo_gapless">ExoPlayer Gapless (experimental)</string>
+    <string name="settings_playback_engine_mp">MediaPlayer (deprecated)</string>
     <string name="connections_no_presets">no saved connection presets.</string>
     <string name="empty_show_offline_tracks_button">show offline songs</string>
     <string name="empty_no_offline_tracks_message">oops, you don\'t seem to have any songs available offline.\n\nnext time you\'re connected, stream some music!</string>
@@ -135,5 +139,4 @@
     <string name="playlist_not_created">could not create playlist \'%s\'</string>
     <string name="playlist_deleted">playlist \'%s\' deleted</string>
     <string name="playlist_not_deleted">could not delete playlist \'%s\'</string>
-
 </resources>

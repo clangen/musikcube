@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="playback_engine_array">
+        <item>@string/settings_playback_engine_exo</item>
+        <item>@string/settings_playback_engine_exo_gapless</item>
+        <item>@string/settings_playback_engine_mp</item>
+    </string-array>
+</resources>

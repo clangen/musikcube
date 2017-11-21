@@ -621,7 +621,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
             if (uri != null && uri != playContext.nextPlayer?.uri) {
                 playContext.reset(playContext.nextPlayer)
-                playContext.nextPlayer = PlayerWrapper.newInstance()
+                playContext.nextPlayer = PlayerWrapper.newInstance(prefs)
                 playContext.nextPlayer?.setOnStateChangedListener(onNextPlayerStateChanged)
                 playContext.nextPlayer?.prefetch(uri, playContext.nextMetadata!!)
             }
@@ -720,7 +720,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                         val uri = getUri(playContext.currentMetadata)
 
                         if (uri != null) {
-                            playContext.currentPlayer = PlayerWrapper.newInstance()
+                            playContext.currentPlayer = PlayerWrapper.newInstance(prefs)
                             playContext.currentPlayer?.setOnStateChangedListener(onCurrentPlayerStateChanged)
                             playContext.currentPlayer?.play(uri, playContext.currentMetadata!!)
                         }

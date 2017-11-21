@@ -173,6 +173,23 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginRight="8dp"
+            android:text="@string/settings_playback_engine"/>
+
+        <Spinner
+            android:id="@+id/streaming_playback_engine"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="24dp"/>
+
+        <android.support.v4.widget.Space
+            android:layout_width="0dp"
+            android:layout_height="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginRight="8dp"
             android:layout_marginBottom="8dp"
             android:text="@string/settings_advanced"/>
 

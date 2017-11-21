@@ -16,6 +16,7 @@ class Prefs {
             val TRANSCODER_BITRATE_INDEX = "transcoder_bitrate_index"
             val DISK_CACHE_SIZE_INDEX = "disk_cache_size_index"
             val UPDATE_DIALOG_SUPPRESSED_VERSION = "update_dialog_suppressed_version"
+            val PLAYBACK_ENGINE_INDEX = "playback_engine_index"
         }
     }
 
@@ -33,6 +34,7 @@ class Prefs {
             val CERT_VALIDATION_DISABLED = false
             val TRANSCODER_BITRATE_INDEX = 0
             val DISK_CACHE_SIZE_INDEX = 2
+            val PLAYBACK_ENGINE_INDEX = 0
         }
     }
 

@@ -1,11 +1,13 @@
 package io.casey.musikcube.remote.service.playback
 
+import android.content.SharedPreferences
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.service.playback.impl.player.ExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.GaplessExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.MediaPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineTrack
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -13,8 +15,17 @@ import io.reactivex.schedulers.Schedulers
 import java.util.*
 
 abstract class PlayerWrapper {
-    private enum class Type {
-        MediaPlayer, ExoPlayer
+    private enum class Type(prefIndex: Int) {
+        ExoPlayer(0), ExoPlayerGapless(1), MediaPlayer(2);
+
+        companion object {
+            fun fromPrefIndex(index: Int): Type =
+                when(index) {
+                    2 -> MediaPlayer
+                    1 -> ExoPlayerGapless
+                    else -> ExoPlayer
+                }
+        }
     }
 
     enum class State {
@@ -140,9 +151,16 @@ abstract class PlayerWrapper {
             }
         }
 
-        fun newInstance(): PlayerWrapper {
-            return if (TYPE == Type.ExoPlayer)
-                GaplessExoPlayerWrapper() else MediaPlayerWrapper()
+        fun newInstance(prefs: SharedPreferences): PlayerWrapper {
+            val type = prefs.getInt(
+                Prefs.Key.PLAYBACK_ENGINE_INDEX,
+                Prefs.Default.PLAYBACK_ENGINE_INDEX)
+
+            return when (Type.fromPrefIndex(type)) {
+                Type.ExoPlayer -> ExoPlayerWrapper()
+                Type.ExoPlayerGapless -> GaplessExoPlayerWrapper()
+                Type.MediaPlayer -> MediaPlayerWrapper()
+            }
         }
 
         fun addActivePlayer(player: PlayerWrapper) {

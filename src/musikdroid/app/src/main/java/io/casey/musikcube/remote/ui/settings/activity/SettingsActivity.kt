@@ -24,6 +24,7 @@ import io.casey.musikcube.remote.ui.settings.model.Connection
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import java.util.*
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Key as Keys
@@ -40,11 +41,16 @@ class SettingsActivity : BaseActivity() {
     private lateinit var certCheckbox: CheckBox
     private lateinit var bitrateSpinner: Spinner
     private lateinit var cacheSpinner: Spinner
+    private lateinit var playbackEngineSpinner: Spinner
     private lateinit var prefs: SharedPreferences
+    private lateinit var playback: PlaybackMixin
     private lateinit var data: DataProviderMixin
+
+    private var engineType = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         data = mixin(DataProviderMixin())
+        playback = mixin(PlaybackMixin())
         component.inject(this)
         super.onCreate(savedInstanceState)
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
@@ -116,15 +122,30 @@ class SettingsActivity : BaseActivity() {
         bitrateSpinner.setSelection(prefs.getInt(
             Keys.TRANSCODER_BITRATE_INDEX, Defaults.TRANSCODER_BITRATE_INDEX))
 
+        /* disk cache */
         val cacheSizes = ArrayAdapter.createFromResource(
             this, R.array.disk_cache_array, android.R.layout.simple_spinner_item)
 
-        /* disk cache */
         cacheSizes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         
         cacheSpinner.adapter = cacheSizes
         cacheSpinner.setSelection(prefs.getInt(
             Keys.DISK_CACHE_SIZE_INDEX, Defaults.DISK_CACHE_SIZE_INDEX))
+
+        /* playback engine */
+        val engines = ArrayAdapter.createFromResource(
+            this, R.array.playback_engine_array, android.R.layout.simple_spinner_item)
+
+        engines.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+
+        val engineType = prefs.getInt(Keys.PLAYBACK_ENGINE_INDEX, Defaults.PLAYBACK_ENGINE_INDEX)
+
+        if (this.engineType == -1) {
+            this.engineType = engineType
+        }
+
+        playbackEngineSpinner.adapter = engines
+        playbackEngineSpinner.setSelection(engineType)
 
         /* advanced */
         albumArtCheckbox.isChecked = prefs.getBoolean(
@@ -165,8 +186,8 @@ class SettingsActivity : BaseActivity() {
         if (value) {
             if (!dialogVisible(DisableCertValidationAlertDialog.TAG)) {
                 showDialog(
-                        DisableCertValidationAlertDialog.newInstance(),
-                        DisableCertValidationAlertDialog.TAG)
+                    DisableCertValidationAlertDialog.newInstance(),
+                    DisableCertValidationAlertDialog.TAG)
             }
         }
     }
@@ -181,6 +202,7 @@ class SettingsActivity : BaseActivity() {
         this.softwareVolume = findViewById(R.id.software_volume)
         this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner)
         this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner)
+        this.playbackEngineSpinner = findViewById(R.id.streaming_playback_engine)
         this.sslCheckbox = findViewById(R.id.ssl_checkbox)
         this.certCheckbox = findViewById(R.id.cert_validation)
     }
@@ -192,8 +214,8 @@ class SettingsActivity : BaseActivity() {
 
         findViewById<View>(R.id.button_load).setOnClickListener{_ ->
             startActivityForResult(
-                    ConnectionsActivity.getStartIntent(this),
-                    CONNECTIONS_REQUEST_CODE)
+                ConnectionsActivity.getStartIntent(this),
+                CONNECTIONS_REQUEST_CODE)
         }
     }
 
@@ -239,6 +261,12 @@ class SettingsActivity : BaseActivity() {
         val password = passwordText.text.toString()
 
         try {
+            val engineType = playbackEngineSpinner.selectedItemPosition
+
+            val streaming = prefs.getBoolean(
+                    Prefs.Key.STREAMING_PLAYBACK,
+                    Prefs.Default.STREAMING_PLAYBACK)
+
             prefs.edit()
                 .putString(Keys.ADDRESS, addr)
                 .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) port.toInt() else 0)
@@ -251,10 +279,15 @@ class SettingsActivity : BaseActivity() {
                 .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
                 .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
                 .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
+                .putInt(Keys.PLAYBACK_ENGINE_INDEX, engineType)
                 .apply()
 
             if (!softwareVolume.isChecked) {
                 PlayerWrapper.setVolume(1.0f)
+            }
+
+            if (streaming && engineType != this.engineType) {
+                playback.service.stop()
             }
 
             StreamProxy.reload()
