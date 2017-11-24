@@ -34,28 +34,17 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <core/io/DataStreamFactory.h>
-#include <core/sdk/IDecoder.h>
-#include <core/sdk/IEncoder.h>
-#include <core/sdk/IDSP.h>
-#include <core/sdk/IDecoderFactory.h>
+#include "IBuffer.h"
 
-#include <memory>
-#include <vector>
+namespace musik { namespace core { namespace sdk {
 
-namespace musik { namespace core { namespace audio {
-
-    namespace streams {
-        std::shared_ptr<musik::core::sdk::IDecoder>
-            GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
-
-        musik::core::sdk::IDecoder*
-            GetDecoderForDataStream(musik::core::sdk::IDataStream* stream);
-
-        musik::core::sdk::IEncoder* GetEncoderForType(const char* type);
-
-        std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
+    class IEncoder {
+        public:
+            virtual void Release() = 0;
+            virtual void Initialize(size_t rate, size_t channels, size_t bitrate) = 0;
+            virtual int Encode(const IBuffer* pcm, char** data) = 0;
+            virtual int Flush(char** data) = 0;
+            virtual void Finalize(const char* uri) = 0;
     };
 
 } } }

@@ -34,28 +34,39 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <core/io/DataStreamFactory.h>
+#include "Context.h"
+#include <core/sdk/constants.h>
+#include <core/sdk/IDataStream.h>
 #include <core/sdk/IDecoder.h>
-#include <core/sdk/IEncoder.h>
-#include <core/sdk/IDSP.h>
-#include <core/sdk/IDecoderFactory.h>
+#include <string>
 
-#include <memory>
-#include <vector>
+class Transcoder {
+    public:
+        using IDataStream = musik::core::sdk::IDataStream;
 
-namespace musik { namespace core { namespace audio {
+        static void RemoveTempTranscodeFiles(Context& context);
 
-    namespace streams {
-        std::shared_ptr<musik::core::sdk::IDecoder>
-            GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
+        static void PruneTranscodeCache(Context& context);
 
-        musik::core::sdk::IDecoder*
-            GetDecoderForDataStream(musik::core::sdk::IDataStream* stream);
+        static IDataStream* Transcode(
+            Context& context,
+            const std::string& uri,
+            size_t bitrate,
+            const std::string& format);
 
-        musik::core::sdk::IEncoder* GetEncoderForType(const char* type);
+        static IDataStream* TranscodeAndWait(
+            Context& context, 
+            const std::string& uri,
+            size_t bitrate,
+            const std::string& format);
 
-        std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
-    };
+        static IDataStream* TranscodeOnDemand(
+            Context& context, 
+            const std::string& uri,
+            size_t bitrate,
+            const std::string& format);
 
-} } }
+    private:
+        Transcoder() { }
+        ~Transcoder() { }
+};

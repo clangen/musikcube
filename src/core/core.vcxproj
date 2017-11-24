@@ -196,6 +196,8 @@
     <ClInclude Include="sdk\IDSP.h" />
     <ClInclude Include="sdk\IDataStream.h" />
     <ClInclude Include="sdk\IDataStreamFactory.h" />
+    <ClInclude Include="sdk\IEncoder.h" />
+    <ClInclude Include="sdk\IEncoderFactory.h" />
     <ClInclude Include="sdk\IEnvironment.h" />
     <ClInclude Include="sdk\IIndexerNotifier.h" />
     <ClInclude Include="sdk\IIndexerSource.h" />

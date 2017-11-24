@@ -96,8 +96,9 @@ add_subdirectory(src/plugins/oggdecoder)
 add_subdirectory(src/plugins/nomaddecoder)
 add_subdirectory(src/plugins/flacdecoder)
 add_subdirectory(src/plugins/nullout)
-add_subdirectory(src/plugins/websocket_remote)
+add_subdirectory(src/plugins/server)
 add_subdirectory(src/plugins/httpdatastream)
+add_subdirectory(src/plugins/stockencoders)
 
 add_dependencies(taglibreader taglib)
 
@@ -131,8 +132,9 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libnomaddecoder.so
       bin/plugins/liboggdecoder.so
       bin/plugins/libtaglibreader.so
-      bin/plugins/libwebsocket_remote.so
+      bin/plugins/libserver.so
       bin/plugins/libhttpdatastream.so
+      bin/plugins/libstockencoders.so
     DESTINATION share/musikcube/plugins
   )
 else (CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -146,8 +148,9 @@ else (CMAKE_SYSTEM_NAME MATCHES "Linux")
       bin/plugins/libnomaddecoder.dylib
       bin/plugins/liboggdecoder.dylib
       bin/plugins/libtaglibreader.dylib
-      bin/plugins/libwebsocket_remote.dylib
+      bin/plugins/libserver.dylib
       bin/plugins/libhttpdatastream.dylib
+      bin/plugins/libstockencoders.dylib
     DESTINATION share/musikcube/plugins
   )
 endif (CMAKE_SYSTEM_NAME MATCHES "Linux")

@@ -100,6 +100,10 @@ static class Environment : public IEnvironment {
             return streams::GetDecoderForDataStream(stream);
         }
 
+        virtual IEncoder* GetEncoder(const char* type) override {
+            return streams::GetEncoderForType(type);
+        }
+
         virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) override {
             musik::core::audio::Buffer* buffer = new Buffer();
             buffer->SetChannels(2);

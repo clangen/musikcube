@@ -55,7 +55,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;../..;../../3rdparty/include;../../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../..;../../3rdparty/include;../../3rdparty/win32_include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;OGGDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -71,8 +71,8 @@
     <Link>
       <AdditionalOptions>/NODEFAULTLIB:LIBCMT
  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>./lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/win32_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
@@ -82,7 +82,7 @@
     <ClCompile>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>.;../..;../../3rdparty/include;../../../../boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;../..;../../3rdparty/include;../../3rdparty/win32_include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;OGGDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -98,8 +98,8 @@
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>./lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../3rdparty/win32_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -107,90 +107,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="libogg\bitwise.c" />
-    <ClCompile Include="libogg\framing.c" />
-    <ClCompile Include="libvorbis\analysis.c" />
-    <ClCompile Include="libvorbis\barkmel.c" />
-    <ClCompile Include="libvorbis\bitrate.c" />
-    <ClCompile Include="libvorbis\block.c" />
-    <ClCompile Include="libvorbis\codebook.c" />
-    <ClCompile Include="libvorbis\envelope.c" />
-    <ClCompile Include="libvorbis\floor0.c" />
-    <ClCompile Include="libvorbis\floor1.c" />
-    <ClCompile Include="libvorbis\info.c" />
-    <ClCompile Include="libvorbis\lookup.c" />
-    <ClCompile Include="libvorbis\lpc.c" />
-    <ClCompile Include="libvorbis\lsp.c" />
-    <ClCompile Include="libvorbis\mapping0.c" />
-    <ClCompile Include="libvorbis\mdct.c" />
-    <ClCompile Include="libvorbis\psy.c" />
-    <ClCompile Include="libvorbis\registry.c" />
-    <ClCompile Include="libvorbis\res0.c" />
-    <ClCompile Include="libvorbis\sharedbook.c" />
-    <ClCompile Include="libvorbis\smallft.c" />
-    <ClCompile Include="libvorbis\synthesis.c" />
-    <ClCompile Include="libvorbis\vorbisenc.c" />
-    <ClCompile Include="libvorbis\vorbisfile.c" />
-    <ClCompile Include="libvorbis\window.c" />
     <ClCompile Include="OggDecoder.cpp" />
     <ClCompile Include="oggdecoder_plugin.cpp" />
     <ClCompile Include="OggDecoderFactory.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libvorbis\backends.h" />
-    <ClInclude Include="libvorbis\bitrate.h" />
-    <ClInclude Include="libvorbis\books\coupled\res_books_51.h" />
-    <ClInclude Include="libvorbis\books\coupled\res_books_stereo.h" />
-    <ClInclude Include="libvorbis\books\floor\floor_books.h" />
-    <ClInclude Include="libvorbis\books\uncoupled\res_books_uncoupled.h" />
-    <ClInclude Include="libvorbis\codebook.h" />
-    <ClInclude Include="libvorbis\codec_internal.h" />
-    <ClInclude Include="libvorbis\envelope.h" />
-    <ClInclude Include="libvorbis\highlevel.h" />
-    <ClInclude Include="libvorbis\lookup.h" />
-    <ClInclude Include="libvorbis\lookup_data.h" />
-    <ClInclude Include="libvorbis\lpc.h" />
-    <ClInclude Include="libvorbis\lsp.h" />
-    <ClInclude Include="libvorbis\masking.h" />
-    <ClInclude Include="libvorbis\mdct.h" />
-    <ClInclude Include="libvorbis\misc.h" />
-    <ClInclude Include="libvorbis\modes\floor_all.h" />
-    <ClInclude Include="libvorbis\modes\psych_11.h" />
-    <ClInclude Include="libvorbis\modes\psych_16.h" />
-    <ClInclude Include="libvorbis\modes\psych_44.h" />
-    <ClInclude Include="libvorbis\modes\psych_8.h" />
-    <ClInclude Include="libvorbis\modes\residue_16.h" />
-    <ClInclude Include="libvorbis\modes\residue_44.h" />
-    <ClInclude Include="libvorbis\modes\residue_44p51.h" />
-    <ClInclude Include="libvorbis\modes\residue_44u.h" />
-    <ClInclude Include="libvorbis\modes\residue_8.h" />
-    <ClInclude Include="libvorbis\modes\setup_11.h" />
-    <ClInclude Include="libvorbis\modes\setup_16.h" />
-    <ClInclude Include="libvorbis\modes\setup_22.h" />
-    <ClInclude Include="libvorbis\modes\setup_32.h" />
-    <ClInclude Include="libvorbis\modes\setup_44.h" />
-    <ClInclude Include="libvorbis\modes\setup_44p51.h" />
-    <ClInclude Include="libvorbis\modes\setup_44u.h" />
-    <ClInclude Include="libvorbis\modes\setup_8.h" />
-    <ClInclude Include="libvorbis\modes\setup_X.h" />
-    <ClInclude Include="libvorbis\os.h" />
-    <ClInclude Include="libvorbis\psy.h" />
-    <ClInclude Include="libvorbis\registry.h" />
-    <ClInclude Include="libvorbis\scales.h" />
-    <ClInclude Include="libvorbis\smallft.h" />
-    <ClInclude Include="libvorbis\window.h" />
     <ClInclude Include="OggDecoder.h" />
     <ClInclude Include="OggDecoderFactory.h" />
-    <ClInclude Include="ogg\ogg.h" />
-    <ClInclude Include="ogg\os_types.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="vorbis\codec.h" />
-    <ClInclude Include="vorbis\vorbisenc.h" />
-    <ClInclude Include="vorbis\vorbisfile.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="libvorbis\lookups.pl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

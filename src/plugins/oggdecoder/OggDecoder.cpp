@@ -189,6 +189,18 @@ bool OggDecoder::GetBuffer(IBuffer *buffer) {
             ++pDataBuffer;
         }
     }
+    else if (info->channels == 4) {
+        for (unsigned long x = 0; x < samplesRead; ++x) {
+            *pDataBuffer = pcm[0][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[1][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[2][x];
+            ++pDataBuffer;
+            *pDataBuffer = pcm[3][x];
+            ++pDataBuffer;
+        }
+    }
     else if (info->channels == 5) {
         for (unsigned long x = 0; x < samplesRead; ++x) {
             *pDataBuffer = pcm[0][x];

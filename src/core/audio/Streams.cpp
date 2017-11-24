@@ -37,6 +37,7 @@
 #include "Streams.h"
 #include <core/debug.h>
 #include <core/sdk/IDecoderFactory.h>
+#include <core/sdk/IEncoderFactory.h>
 #include <core/plugin/PluginFactory.h>
 #include <mutex>
 
@@ -47,21 +48,31 @@ using namespace musik::core::sdk;
 using musik::core::PluginFactory;
 
 using DataStreamPtr = musik::core::io::DataStreamFactory::DataStreamPtr;
-using DecoderFactoryList = std::vector<std::shared_ptr<IDecoderFactory > >;
-using DspList = std::vector<std::shared_ptr<IDSP > >;
+using DecoderFactoryList = std::vector<std::shared_ptr<IDecoderFactory>>;
+using EncoderFactoryList = std::vector<std::shared_ptr<IEncoderFactory>>;
+using DspList = std::vector<std::shared_ptr<IDSP>>;
 using Deleter = PluginFactory::ReleaseDeleter<IDecoder>;
 using DecoderPtr = std::shared_ptr<IDecoder>;
 
 static std::mutex initLock;
 static DecoderFactoryList decoders;
+static EncoderFactoryList encoders;
 
 static void init() {
     std::unique_lock<std::mutex> lock(initLock);
+
     if (!decoders.size()) {
-        typedef PluginFactory::ReleaseDeleter<IDecoderFactory> Deleter;
+        using Deleter = PluginFactory::ReleaseDeleter<IDecoderFactory>;
 
         decoders = PluginFactory::Instance()
             .QueryInterface<IDecoderFactory, Deleter>("GetDecoderFactory");
+    }
+
+    if (!encoders.size()) {
+        using Deleter = PluginFactory::ReleaseDeleter<IEncoderFactory>;
+
+        encoders = PluginFactory::Instance()
+            .QueryInterface<IEncoderFactory, Deleter>("GetEncoderFactory");
     }
 }
 
@@ -110,6 +121,18 @@ namespace musik { namespace core { namespace audio {
             musik::debug::info(TAG, "about ready to play: " + uri);
 
             return decoder;
+        }
+
+        IEncoder* GetEncoderForType(const char* type) {
+            init();
+
+            for (auto factory : encoders) {
+                if (factory->CanHandle(type)) {
+                    return factory->CreateEncoder(type);
+                }
+            }
+
+            return nullptr;
         }
 
         std::shared_ptr<IDecoder> GetDecoderForDataStream(DataStreamPtr dataStream) {

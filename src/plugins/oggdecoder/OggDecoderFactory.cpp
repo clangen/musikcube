@@ -39,7 +39,7 @@
 #include "OggDecoderFactory.h"
 #include "OggDecoder.h"
 
-inline bool endsWith(const std::string& s, const std::string& suffix) {
+static inline bool endsWith(const std::string& s, const std::string& suffix) {
     return
         s.size() >= suffix.size() &&
         s.rfind(suffix) == (s.size() - suffix.size());

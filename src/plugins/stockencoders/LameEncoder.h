@@ -32,30 +32,22 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <core/config.h>
-#include <core/io/DataStreamFactory.h>
-#include <core/sdk/IDecoder.h>
 #include <core/sdk/IEncoder.h>
-#include <core/sdk/IDSP.h>
-#include <core/sdk/IDecoderFactory.h>
+#include <core/sdk/DataBuffer.h>
+#include <lame/lame.h>
 
-#include <memory>
-#include <vector>
+class LameEncoder : public musik::core::sdk::IEncoder {
+    using IBuffer = musik::core::sdk::IBuffer;
 
-namespace musik { namespace core { namespace audio {
+    public:
+        virtual void Release() override;
+        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
+        virtual int Encode(const IBuffer* pcm, char** data) override;
+        virtual int Flush(char** data) override;
+        virtual void Finalize(const char* uri) override;
 
-    namespace streams {
-        std::shared_ptr<musik::core::sdk::IDecoder>
-            GetDecoderForDataStream(musik::core::io::DataStreamFactory::DataStreamPtr dataStream);
-
-        musik::core::sdk::IDecoder*
-            GetDecoderForDataStream(musik::core::sdk::IDataStream* stream);
-
-        musik::core::sdk::IEncoder* GetEncoderForType(const char* type);
-
-        std::vector<std::shared_ptr<musik::core::sdk::IDSP > > GetDspPlugins();
-    };
-
-} } }
+    private:
+        DataBuffer<unsigned char> encodedBytes;
+        DataBuffer<float> downmix;
+        lame_t lame;
+};

@@ -35,8 +35,8 @@
 
 #include <core/sdk/IDecoder.h>
 
-#include "vorbis/codec.h"
-#include "vorbis/vorbisfile.h"
+#include <vorbis/codec.h>
+#include <vorbis/vorbisfile.h>
 
 using namespace musik::core::sdk;
 

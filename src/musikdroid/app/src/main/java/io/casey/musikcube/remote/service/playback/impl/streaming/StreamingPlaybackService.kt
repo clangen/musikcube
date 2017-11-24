@@ -530,7 +530,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
                 return String.format(
                     Locale.ENGLISH,
-                    "%s://%s:%d/audio/external_id/%s%s",
+                    "%s://%s:%d/audio/external_id/%s%s&format=mp3",
                     protocol,
                     prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS),
                     prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT),
