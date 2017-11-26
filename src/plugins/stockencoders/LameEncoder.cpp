@@ -155,7 +155,7 @@ void LameEncoder::Finalize(const char* uri) {
 #ifdef WIN32
         FILE* fp = _wfopen(utf8to16(uri).c_str(), L"r+b");
 #else
-        FILE* fp = fopen(uri, L"a+b");
+        FILE* fp = fopen(uri, "a+b");
 #endif
         if (fp) {
             if (!fseek(fp, 0, SEEK_SET)) {

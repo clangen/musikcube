@@ -35,6 +35,7 @@
 #pragma once
 
 #include "IBuffer.h"
+#include <stddef.h>
 
 namespace musik { namespace core { namespace sdk {
 
