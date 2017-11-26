@@ -14,7 +14,6 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.MixinBase
 import io.casey.musikcube.remote.injection.DaggerViewComponent
-import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
@@ -50,9 +49,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     init {
         DaggerViewComponent.builder()
             .appComponent(Application.appComponent)
-            .dataModule(DataModule())
-            .build()
-            .inject(this)
+            .build().inject(this)
     }
 
     override fun onCreate(bundle: Bundle) {

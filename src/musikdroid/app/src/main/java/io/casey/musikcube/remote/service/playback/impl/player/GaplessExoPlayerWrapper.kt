@@ -51,7 +51,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = StreamProxy.getProxyUrl(uri)
+            this.proxyUri = streamProxy.getProxyUrl(uri)
 
             addCacheListener()
 
@@ -71,7 +71,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = StreamProxy.getProxyUrl(uri)
+            this.proxyUri = streamProxy.getProxyUrl(uri)
             this.prefetch = true
             this.source = ExtractorMediaSource(Uri.parse(proxyUri), sourceFactory, extractorsFactory, null, null)
 
@@ -177,7 +177,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     }
 
     private fun addCacheListener() {
-        if (StreamProxy.isCached(this.originalUri!!)) {
+        if (streamProxy.isCached(this.originalUri!!)) {
             percentAvailable = 100
 
             if (originalUri != null && metadata != null) {
@@ -185,12 +185,12 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             }
         }
         else {
-            StreamProxy.registerCacheListener(this.cacheListener, this.originalUri!!)
+            streamProxy.registerCacheListener(this.cacheListener, this.originalUri!!)
         }
     }
 
     private fun removeCacheListener() {
-        StreamProxy.unregisterCacheListener(this.cacheListener)
+        streamProxy.unregisterCacheListener(this.cacheListener)
     }
 
     private val cacheListener = CacheListener { _: File, _: String, percent: Int ->

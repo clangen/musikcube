@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote.service.playback.impl.streaming.offline
+package io.casey.musikcube.remote.service.playback.impl.streaming.db
 
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
@@ -66,9 +66,9 @@ class OfflineTrack {
             json.put(Metadata.Track.EXTERNAL_ID, externalId)
             json.put(Metadata.Track.URI, uri)
             return json
-        } catch (ex: JSONException) {
+        }
+        catch (ex: JSONException) {
             throw RuntimeException("json serialization error")
         }
-
     }
 }

@@ -17,3 +17,7 @@ annotation class ServiceScope
 @Scope
 @Retention(AnnotationRetention.RUNTIME)
 annotation class DataScope
+
+@Scope
+@Retention(AnnotationRetention.RUNTIME)
+annotation class PlaybackScope

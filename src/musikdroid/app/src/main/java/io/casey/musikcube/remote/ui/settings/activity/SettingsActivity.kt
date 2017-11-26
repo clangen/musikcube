@@ -15,21 +15,25 @@ import android.view.View
 import android.widget.*
 import com.uacf.taskrunner.Task
 import com.uacf.taskrunner.Tasks
-import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.settings.model.Connection
+import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import java.util.*
+import javax.inject.Inject
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Key as Keys
 
 class SettingsActivity : BaseActivity() {
+    @Inject lateinit var connectionsDb: ConnectionsDb
+    @Inject lateinit var streamProxy: StreamProxy
+
     private lateinit var addressText: EditText
     private lateinit var portText: EditText
     private lateinit var httpPortText: EditText
@@ -243,7 +247,7 @@ class SettingsActivity : BaseActivity() {
             connection.noValidate = certCheckbox.isChecked
 
             if (connection.valid) {
-                runner.run(SaveAsTask.nameFor(connection), SaveAsTask(connection))
+                runner.run(SaveAsTask.nameFor(connection), SaveAsTask(connectionsDb, connection))
             }
             else {
                 showInvalidConnectionDialog()
@@ -290,7 +294,7 @@ class SettingsActivity : BaseActivity() {
                 playback.service.stop()
             }
 
-            StreamProxy.reload()
+            streamProxy.reload()
             data.wss.disconnect()
 
             finish()
@@ -408,7 +412,8 @@ class SettingsActivity : BaseActivity() {
                 .setNegativeButton(R.string.button_no, null)
                 .setPositiveButton(R.string.button_yes) { _, _ ->
                     val connection = arguments.getParcelable<Connection>(EXTRA_CONNECTION)
-                    val saveAs = SaveAsTask(connection, true)
+                    val db = (activity as SettingsActivity).connectionsDb
+                    val saveAs = SaveAsTask(db, connection, true)
                     (activity as SettingsActivity).runner.run(SaveAsTask.nameFor(connection), saveAs)
                 }
                 .create()
@@ -479,14 +484,15 @@ class SettingsActivity : BaseActivity() {
     }
 }
 
-private class SaveAsTask(val connection: Connection,
+private class SaveAsTask(val db: ConnectionsDb,
+                         val connection: Connection,
                          val overwrite: Boolean = false)
     : Tasks.Blocking<SaveAsTask.Result, Exception>()
 {
     enum class Result { Exists, Added }
 
     override fun exec(context: Context?): Result {
-        val dao = Application.connectionsDb?.connectionsDao()!!
+        val dao = db.connectionsDao()
 
         if (!overwrite) {
             val existing: Connection? = dao.query(connection.name)
@@ -503,11 +509,11 @@ private class SaveAsTask(val connection: Connection,
         val NAME = "SaveAsTask"
 
         fun nameFor(connection: Connection): String {
-            return "${NAME}.${connection.name}"
+            return "$NAME.${connection.name}"
         }
 
         fun match(name: String?): Boolean {
-            return name != null && name.startsWith("${NAME}.")
+            return name != null && name.startsWith("$NAME.")
         }
     }
 }

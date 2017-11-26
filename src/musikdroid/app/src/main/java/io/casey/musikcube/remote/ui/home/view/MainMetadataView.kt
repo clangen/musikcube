@@ -26,7 +26,6 @@ import com.bumptech.glide.request.target.Target
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.DaggerViewComponent
-import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.injection.GlideApp
 import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
@@ -291,7 +290,6 @@ class MainMetadataView : FrameLayout {
     private fun init() {
         DaggerViewComponent.builder()
             .appComponent(Application.appComponent)
-            .dataModule(DataModule())
             .build().inject(this)
 
         this.prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)

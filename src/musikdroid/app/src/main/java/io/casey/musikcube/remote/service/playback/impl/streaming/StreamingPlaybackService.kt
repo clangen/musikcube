@@ -11,7 +11,6 @@ import android.util.Log
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
-import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
@@ -141,7 +140,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     init {
         DaggerServiceComponent.builder()
             .appComponent(Application.appComponent)
-            .dataModule(DataModule())
             .build().inject(this)
     }
 
@@ -516,8 +514,8 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                 /* transcoding bitrate, if selected by the user */
                 var bitrateQueryParam = ""
                 val bitrateIndex = prefs.getInt(
-                        Prefs.Key.TRANSCODER_BITRATE_INDEX,
-                        Prefs.Default.TRANSCODER_BITRATE_INDEX)
+                    Prefs.Key.TRANSCODER_BITRATE_INDEX,
+                    Prefs.Default.TRANSCODER_BITRATE_INDEX)
 
                 if (bitrateIndex > 0) {
                     val r = Application.instance!!.resources

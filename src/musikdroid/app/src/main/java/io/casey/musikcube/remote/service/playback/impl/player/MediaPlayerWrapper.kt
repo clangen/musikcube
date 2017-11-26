@@ -45,7 +45,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
 
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = StreamProxy.getProxyUrl(uri)
+            this.proxyUri = streamProxy.getProxyUrl(uri)
 
             player.setDataSource(context, Uri.parse(proxyUri), headers)
             player.setAudioStreamType(AudioManager.STREAM_MUSIC)

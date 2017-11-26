@@ -15,7 +15,6 @@ import io.casey.musikcube.remote.framework.IMixin
 import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.injection.DaggerViewComponent
-import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.injection.ViewComponent
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.hideKeyboard
@@ -33,7 +32,6 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
     protected val component: ViewComponent =
         DaggerViewComponent.builder()
             .appComponent(Application.appComponent)
-            .dataModule(DataModule())
             .build()
 
     override fun onCreate(savedInstanceState: Bundle?) {

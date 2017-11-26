@@ -2,10 +2,13 @@ package io.casey.musikcube.remote.service.playback
 
 import android.content.SharedPreferences
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.injection.*
 import io.casey.musikcube.remote.service.playback.impl.player.ExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.GaplessExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.MediaPlayerWrapper
-import io.casey.musikcube.remote.service.playback.impl.streaming.offline.OfflineTrack
+import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
+import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineDb
+import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineTrack
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.util.Preconditions
@@ -13,8 +16,18 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.*
+import javax.inject.Inject
 
 abstract class PlayerWrapper {
+    @Inject lateinit var offlineDb: OfflineDb
+    @Inject lateinit var streamProxy: StreamProxy
+
+    init {
+        DaggerPlaybackComponent.builder()
+            .appComponent(Application.appComponent)
+            .build().inject(this)
+    }
+
     private enum class Type(prefIndex: Int) {
         ExoPlayer(0), ExoPlayerGapless(1), MediaPlayer(2);
 
@@ -69,6 +82,19 @@ abstract class PlayerWrapper {
         this.listener?.invoke(this, this.state)
     }
 
+    protected fun storeOffline(uri: String, metadata: ITrack) {
+        Single.fromCallable {
+            val track = OfflineTrack()
+            if (track.fromJSONObject(uri, metadata.toJson())) {
+                offlineDb.trackDao().insertTrack(track)
+                offlineDb.prune()
+            }
+        }
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe()
+    }
+
     companion object {
         private val TYPE = Type.ExoPlayer
         private val DUCK_COEF = 0.2f /* volume = 20% when ducked */
@@ -78,19 +104,6 @@ abstract class PlayerWrapper {
         private var globalVolume = 1.0f
         private var globalMuted = false
         private var preDuckGlobalVolume = DUCK_NONE
-
-        fun storeOffline(uri: String, metadata: ITrack) {
-            Single.fromCallable {
-                val track = OfflineTrack()
-                if (track.fromJSONObject(uri, metadata.toJson())) {
-                    Application.offlineDb?.trackDao()?.insertTrack(track)
-                    Application.offlineDb?.prune()
-                }
-            }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe()
-        }
 
         fun duck() {
             Preconditions.throwIfNotOnMainThread()

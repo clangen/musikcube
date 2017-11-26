@@ -15,9 +15,7 @@ import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 
 @ViewScope
-@Component(
-    dependencies = arrayOf(AppComponent::class),
-    modules = arrayOf(DataModule::class))
+@Component(dependencies = arrayOf(AppComponent::class))
 interface ViewComponent {
     fun inject(activity: ConnectionsActivity)
     fun inject(activity: MainActivity)

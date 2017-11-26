@@ -4,7 +4,6 @@ import android.os.Bundle
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.framework.MixinBase
 import io.casey.musikcube.remote.injection.DaggerViewComponent
-import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import javax.inject.Inject
@@ -18,9 +17,7 @@ class DataProviderMixin : MixinBase() {
 
         DaggerViewComponent.builder()
             .appComponent(Application.appComponent)
-            .dataModule(DataModule())
-            .build()
-            .inject(this)
+            .build().inject(this)
     }
 
     override fun onResume() {

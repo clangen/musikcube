@@ -60,7 +60,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
         if (!dead()) {
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = StreamProxy.getProxyUrl(uri)
+            this.proxyUri = streamProxy.getProxyUrl(uri)
             Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
 
             addCacheListener()
@@ -79,7 +79,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
         if (!dead()) {
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = StreamProxy.getProxyUrl(uri)
+            this.proxyUri = streamProxy.getProxyUrl(uri)
             Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
 
             this.prefetch = true
@@ -200,7 +200,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
     }
 
     private fun addCacheListener() {
-        if (StreamProxy.isCached(this.originalUri!!)) {
+        if (streamProxy.isCached(this.originalUri!!)) {
             percentAvailable = 100
 
             if (originalUri != null && metadata != null) {
@@ -208,12 +208,12 @@ class ExoPlayerWrapper : PlayerWrapper() {
             }
         }
         else {
-            StreamProxy.registerCacheListener(this.cacheListener, this.originalUri!!)
+            streamProxy.registerCacheListener(this.cacheListener, this.originalUri!!)
         }
     }
 
     private fun removeCacheListener() {
-        StreamProxy.unregisterCacheListener(this.cacheListener)
+        streamProxy.unregisterCacheListener(this.cacheListener)
      }
 
     private val cacheListener = CacheListener { _: File, _: String, percent: Int ->

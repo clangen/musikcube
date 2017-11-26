@@ -17,15 +17,18 @@ import android.widget.EditText
 import android.widget.TextView
 import com.uacf.taskrunner.Task
 import com.uacf.taskrunner.Tasks
-import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.settings.model.Connection
+import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
+import javax.inject.Inject
 
 private val EXTRA_CONNECTION = "extra_connection"
 
 class ConnectionsActivity : BaseActivity() {
+    @Inject lateinit var connectionsDb: ConnectionsDb
+
     private lateinit var recycler: RecyclerView
     private lateinit var emptyText: View
     private lateinit var adapter: Adapter
@@ -51,7 +54,7 @@ class ConnectionsActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        runner.run(LoadTask.NAME, LoadTask())
+        runner.run(LoadTask.NAME, LoadTask(connectionsDb))
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -74,11 +77,11 @@ class ConnectionsActivity : BaseActivity() {
     }
 
     fun rename(connection: Connection, name: String) {
-        runner.run(RenameTask.NAME, RenameTask(connection, name))
+        runner.run(RenameTask.NAME, RenameTask(connectionsDb, connection, name))
     }
 
     fun delete(connection: Connection) {
-        runner.run(DeleteTask.NAME, DeleteTask(connection))
+        runner.run(DeleteTask.NAME, DeleteTask(connectionsDb, connection))
     }
 
     private val itemClickListener: (View) -> Unit = { view: View ->
@@ -155,9 +158,9 @@ private class Adapter(val clickListener: (View) -> Unit,
     }
 }
 
-private class LoadTask : Tasks.Blocking<List<Connection>, Exception>() {
+private class LoadTask(val db: ConnectionsDb) : Tasks.Blocking<List<Connection>, Exception>() {
     override fun exec(context: Context?): List<Connection> {
-        return Application.connectionsDb?.connectionsDao()?.query()!!
+        return db.connectionsDao().query()
     }
 
     companion object {
@@ -165,9 +168,9 @@ private class LoadTask : Tasks.Blocking<List<Connection>, Exception>() {
     }
 }
 
-private class DeleteTask(val connection: Connection) : Tasks.Blocking<List<Connection>, Exception>() {
+private class DeleteTask(val db: ConnectionsDb, val connection: Connection) : Tasks.Blocking<List<Connection>, Exception>() {
     override fun exec(context: Context?): List<Connection> {
-        val dao = Application.connectionsDb?.connectionsDao()!!
+        val dao = db.connectionsDao()
         dao.delete(connection.name)
         return dao.query()
     }
@@ -177,11 +180,11 @@ private class DeleteTask(val connection: Connection) : Tasks.Blocking<List<Conne
     }
 }
 
-private class RenameTask(val connection: Connection, val name:String)
+private class RenameTask(val db: ConnectionsDb, val connection: Connection, val name:String)
     : Tasks.Blocking<List<Connection>, Exception>()
 {
     override fun exec(context: Context?): List<Connection> {
-        val dao = Application.connectionsDb?.connectionsDao()!!
+        val dao = db.connectionsDao()
         dao.rename(connection.name, name)
         return dao.query()
     }

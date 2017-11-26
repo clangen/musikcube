@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote.service.playback.impl.streaming.offline
+package io.casey.musikcube.remote.service.playback.impl.streaming.db
 
 import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
@@ -20,9 +20,9 @@ import javax.inject.Inject
 @Database(entities = arrayOf(OfflineTrack::class), version = 1)
 abstract class OfflineDb : RoomDatabase() {
     @Inject lateinit var wss: WebSocketService
+    @Inject lateinit var streamProxy: StreamProxy
 
     init {
-
         DaggerDataComponent.builder()
             .appComponent(Application.appComponent)
             .build().inject(this)
@@ -50,7 +50,7 @@ abstract class OfflineDb : RoomDatabase() {
             val toDelete = ArrayList<String>()
 
             uris.forEach {
-                if (!StreamProxy.isCached(it)) {
+                if (!streamProxy.isCached(it)) {
                     toDelete.add(it)
                 }
             }

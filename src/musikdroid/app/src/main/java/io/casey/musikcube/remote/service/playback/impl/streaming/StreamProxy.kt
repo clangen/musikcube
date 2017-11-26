@@ -7,18 +7,46 @@ import android.util.Base64
 import com.danikula.videocache.CacheListener
 import com.danikula.videocache.HttpProxyCacheServer
 import com.danikula.videocache.file.Md5FileNameGenerator
-import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Strings
 import java.io.File
 import java.util.*
 
-class StreamProxy private constructor(context: Context) {
-    private val proxy: HttpProxyCacheServer
+class StreamProxy(private val context: Context) {
+    private lateinit var proxy: HttpProxyCacheServer
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
     init {
+        restart()
+    }
+
+    @Synchronized fun registerCacheListener(cl: CacheListener, uri: String) {
+        proxy.registerCacheListener(cl, uri) /* let it throw */
+    }
+
+    @Synchronized fun unregisterCacheListener(cl: CacheListener) {
+        proxy.unregisterCacheListener(cl)
+    }
+
+    @Synchronized fun isCached(url: String): Boolean {
+        return proxy.isCached(url)
+    }
+
+    @Synchronized fun getProxyUrl(url: String): String {
+        return proxy.getProxyUrl(url)
+    }
+
+    @Synchronized fun getProxyFilename(url: String): String {
+        return FILENAME_GENERATOR(url)
+    }
+
+    @Synchronized fun reload() {
+        proxy.shutdown()
+        restart()
+    }
+
+    private fun restart() {
         if (this.prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
             NetworkUtil.disableCertificateValidation()
         }
@@ -45,40 +73,13 @@ class StreamProxy private constructor(context: Context) {
                 headers.put("Authorization", "Basic " + encoded)
                 headers
             }
-            .fileNameGenerator gen@ { url ->
-                try {
-                    val uri = Uri.parse(url)
-                    /* format matches: audio/external_id/<id> */
-                    val segments = uri.pathSegments
-                    if (segments.size == 3 && "external_id" == segments[1]) {
-                        /* url params, hyphen separated */
-                        var params = uri.query
-                        if (Strings.notEmpty(params)) {
-                            params = "-" + params
-                                .replace("?", "-")
-                                .replace("&", "-")
-                                .replace("=", "-")
-                        }
-                        else {
-                            params = ""
-                        }
-
-                        return@gen "${segments[2]}$params"
-                    }
-                }
-                catch (ex: Exception) {
-                    /* eh... */
-                }
-
-                return@gen DEFAULT_FILENAME_GENERATOR.generate(url)
-            }
+            .fileNameGenerator(FILENAME_GENERATOR)
             .build()
     }
 
     companion object {
-        val ENABLED = true
-        val BYTES_PER_MEGABYTE = 1048576L
-        val BYTES_PER_GIGABYTE = 1073741824L
+        private val BYTES_PER_MEGABYTE = 1048576L
+        private val BYTES_PER_GIGABYTE = 1073741824L
         val MINIMUM_CACHE_SIZE_BYTES = BYTES_PER_MEGABYTE * 128
 
         val CACHE_SETTING_TO_BYTES: MutableMap<Int, Long> = mutableMapOf(
@@ -91,34 +92,32 @@ class StreamProxy private constructor(context: Context) {
 
         private val DEFAULT_FILENAME_GENERATOR = Md5FileNameGenerator()
 
-        private var INSTANCE: StreamProxy? = null
+        private val FILENAME_GENERATOR: (String) -> String = gen@ { url ->
+            try {
+                val uri = Uri.parse(url)
+                /* format matches: audio/external_id/<id> */
+                val segments = uri.pathSegments
+                if (segments.size == 3 && "external_id" == segments[1]) {
+                    /* url params, hyphen separated */
+                    var params = uri.query
+                    if (Strings.notEmpty(params)) {
+                        params = "-" + params
+                            .replace("?", "-")
+                            .replace("&", "-")
+                            .replace("=", "-")
+                    }
+                    else {
+                        params = ""
+                    }
 
-        @Synchronized fun init(context: Context) {
-            if (INSTANCE == null) {
-                INSTANCE = StreamProxy(context.applicationContext)
+                    return@gen "${segments[2]}$params"
+                }
             }
-        }
+            catch (ex: Exception) {
+                /* eh... */
+            }
 
-        @Synchronized fun registerCacheListener(cl: CacheListener, uri: String) {
-            INSTANCE?.proxy?.registerCacheListener(cl, uri) /* let it throw */
-        }
-
-        @Synchronized fun unregisterCacheListener(cl: CacheListener) {
-            INSTANCE?.proxy?.unregisterCacheListener(cl)
-        }
-
-        @Synchronized fun isCached(url: String): Boolean {
-            return INSTANCE?.proxy?.isCached(url)!!
-        }
-
-        @Synchronized fun getProxyUrl(url: String): String {
-            init(Application.instance!!)
-            return if (ENABLED) INSTANCE?.proxy?.getProxyUrl(url)!! else url
-        }
-
-        @Synchronized fun reload() {
-            INSTANCE?.proxy?.shutdown()
-            INSTANCE = null
+            return@gen DEFAULT_FILENAME_GENERATOR.generate(url)
         }
     }
 }

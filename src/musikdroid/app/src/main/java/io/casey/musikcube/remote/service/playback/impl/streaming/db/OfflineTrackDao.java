@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote.service.playback.impl.streaming.offline;
+package io.casey.musikcube.remote.service.playback.impl.streaming.db;
 
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Insert;

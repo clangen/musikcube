@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.service.playback.impl.remote
 import android.os.Handler
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
-import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
@@ -149,7 +148,6 @@ class RemotePlaybackService : IPlaybackService {
     init {
         DaggerServiceComponent.builder()
             .appComponent(Application.appComponent)
-            .dataModule(DataModule())
             .build().inject(this)
 
         reset()

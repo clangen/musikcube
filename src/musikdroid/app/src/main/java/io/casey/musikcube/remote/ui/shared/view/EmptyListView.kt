@@ -10,7 +10,6 @@ import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.DaggerViewComponent
-import io.casey.musikcube.remote.injection.DataModule
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
 import io.casey.musikcube.remote.service.websocket.WebSocketService
@@ -103,7 +102,6 @@ class EmptyListView : FrameLayout {
     private fun initialize() {
         DaggerViewComponent.builder()
             .appComponent(Application.appComponent)
-            .dataModule(DataModule())
             .build().inject(this)
 
         val inflater = LayoutInflater.from(context)
