@@ -2,7 +2,10 @@ package io.casey.musikcube.remote.service.playback
 
 import android.content.SharedPreferences
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.injection.*
+import io.casey.musikcube.remote.injection.DaggerPlaybackComponent
+import io.casey.musikcube.remote.service.gapless.GaplessHeaderService
+import io.casey.musikcube.remote.service.gapless.db.GaplessDb
+import io.casey.musikcube.remote.service.gapless.db.GaplessTrack
 import io.casey.musikcube.remote.service.playback.impl.player.ExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.GaplessExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.MediaPlayerWrapper
@@ -20,7 +23,9 @@ import javax.inject.Inject
 
 abstract class PlayerWrapper {
     @Inject lateinit var offlineDb: OfflineDb
+    @Inject lateinit var gaplessDb: GaplessDb
     @Inject lateinit var streamProxy: StreamProxy
+    @Inject lateinit var gaplessService: GaplessHeaderService
 
     init {
         DaggerPlaybackComponent.builder()
@@ -88,6 +93,11 @@ abstract class PlayerWrapper {
             if (track.fromJSONObject(uri, metadata.toJson())) {
                 offlineDb.trackDao().insertTrack(track)
                 offlineDb.prune()
+            }
+
+            gaplessDb.dao().queryByUrl(uri).forEach {
+                gaplessDb.dao().update(GaplessTrack.DOWNLOADED, it.url)
+                gaplessService.schedule()
             }
         }
         .subscribeOn(Schedulers.io())

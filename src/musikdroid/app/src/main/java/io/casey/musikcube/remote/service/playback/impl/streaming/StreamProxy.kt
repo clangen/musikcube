@@ -7,17 +7,29 @@ import android.util.Base64
 import com.danikula.videocache.CacheListener
 import com.danikula.videocache.HttpProxyCacheServer
 import com.danikula.videocache.file.Md5FileNameGenerator
+import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.injection.DaggerServiceComponent
+import io.casey.musikcube.remote.service.gapless.db.GaplessDb
+import io.casey.musikcube.remote.service.gapless.db.GaplessTrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Strings
 import java.io.File
 import java.util.*
+import javax.inject.Inject
 
 class StreamProxy(private val context: Context) {
+    @Inject lateinit var gaplessDb: GaplessDb
     private lateinit var proxy: HttpProxyCacheServer
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
     init {
+        DaggerServiceComponent.builder()
+            .appComponent(Application.appComponent)
+            .build().inject(this)
+
+        gaplessDb.prune()
+
         restart()
     }
 
@@ -38,7 +50,7 @@ class StreamProxy(private val context: Context) {
     }
 
     @Synchronized fun getProxyFilename(url: String): String {
-        return FILENAME_GENERATOR(url)
+        return proxy.cacheDirectory.canonicalPath + "/" + FILENAME_GENERATOR(url)
     }
 
     @Synchronized fun reload() {
@@ -73,6 +85,21 @@ class StreamProxy(private val context: Context) {
                 headers.put("Authorization", "Basic " + encoded)
                 headers
             }
+            .headerReceiver { url: String, headers: Map<String, List<String>> ->
+                /* if we have a 'X-musikcube-Estimated-Content-Length' header in the response, that
+                means the on-demand transcoder is running, therefore gapless information won't be
+                available yet. track this download so we can patch up the header later, once the
+                file finishes transcoding */
+                val estimated = headers[ESTIMATED_LENGTH]
+                if (estimated?.firstOrNull() == "true") {
+                    synchronized (proxy) {
+                        val dao = gaplessDb.dao()
+                        if (dao.queryByUrl(url).isEmpty()) {
+                            dao.insert(GaplessTrack(null, url, GaplessTrack.DOWNLOADING))
+                        }
+                    }
+                }
+            }
             .fileNameGenerator(FILENAME_GENERATOR)
             .build()
     }
@@ -80,6 +107,7 @@ class StreamProxy(private val context: Context) {
     companion object {
         private val BYTES_PER_MEGABYTE = 1048576L
         private val BYTES_PER_GIGABYTE = 1073741824L
+        private val ESTIMATED_LENGTH = "X-musikcube-Estimated-Content-Length"
         val MINIMUM_CACHE_SIZE_BYTES = BYTES_PER_MEGABYTE * 128
 
         val CACHE_SETTING_TO_BYTES: MutableMap<Int, Long> = mutableMapOf(

@@ -6,10 +6,13 @@ import io.casey.musikcube.remote.injection.AppComponent
 import io.casey.musikcube.remote.injection.AppModule
 import io.casey.musikcube.remote.injection.DaggerAppComponent
 import io.casey.musikcube.remote.injection.ServiceModule
-import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
+import io.casey.musikcube.remote.service.gapless.GaplessHeaderService
 import io.fabric.sdk.android.Fabric
+import javax.inject.Inject
 
 class Application : android.app.Application() {
+    @Inject lateinit var gaplessService: GaplessHeaderService
+
     override fun onCreate() {
         instance = this
 
@@ -20,14 +23,16 @@ class Application : android.app.Application() {
             .serviceModule(ServiceModule())
             .build()
 
+        appComponent.inject(this)
+
+        gaplessService.schedule()
+
         if (BuildConfig.DEBUG) {
             Stetho.initializeWithDefaults(this)
         }
         else {
             Fabric.with(this, Crashlytics())
         }
-
-        NetworkUtil.init()
     }
 
     companion object {

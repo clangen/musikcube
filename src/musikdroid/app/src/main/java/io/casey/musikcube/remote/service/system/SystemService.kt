@@ -259,7 +259,6 @@ class SystemService : Service() {
     this debouncer ensures we wait at least half a second between updates */
     private val mediaSessionDebouncer = object: Debouncer<Unit>(500) {
         override fun onDebounced(last: Unit?) {
-            Log.e(TAG, String.format("updatePlaybackState: %s", sessionData.bitmap))
             val track = sessionData.track
             mediaSession?.setMetadata(MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track?.artist ?: "-")
