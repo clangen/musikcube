@@ -334,7 +334,7 @@ int HttpServer::HandleRequest(
 
     try {
         if (method && std::string(method) == "GET") {
-            if (false && !isAuthenticated(connection, server->context)) {
+            if (!isAuthenticated(connection, server->context)) {
                 status = 401; /* unauthorized */
                 static const char* error = "unauthorized";
                 response = MHD_create_response_from_buffer(strlen(error), (void*)error, MHD_RESPMEM_PERSISTENT);
