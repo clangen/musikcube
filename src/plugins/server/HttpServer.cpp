@@ -166,11 +166,11 @@ static Range* parseRange(IDataStream* file, const char* range) {
 
             if (parts.size() == 2) {
                 try {
-                    size_t from = std::stoul(boost::algorithm::trim_copy(parts[0]));
+                    size_t from = (size_t) std::max(0, std::stoi(boost::algorithm::trim_copy(parts[0])));
                     size_t to = size;
 
                     if (parts.at(1).size()) {
-                        to = std::stoul(boost::algorithm::trim_copy(parts[1]));
+                        to = (size_t) std::min((int) size, std::stoi(boost::algorithm::trim_copy(parts[1])));
                     }
 
                     if (to > from) {
@@ -179,10 +179,10 @@ static Range* parseRange(IDataStream* file, const char* range) {
                             result->to = 0;
                         }
                         else if (to >= size) {
-                            result->to = size - 1;
+                            result->to = (size == 0) ? 0 : size - 1;
                         }
                         else {
-                            result->to = to - 1;
+                            result->to = (to == 0) ? 0 : to - 1;
                         }
                     }
                 }
