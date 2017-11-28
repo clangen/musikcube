@@ -175,7 +175,15 @@ static Range* parseRange(IDataStream* file, const char* range) {
 
                     if (to > from) {
                         result->from = from;
-                        result->to = (to == 0) ? 0 : to - 1;
+                        if (to == 0) {
+                            result->to = 0;
+                        }
+                        else if (to >= size) {
+                            result->to = size - 1;
+                        }
+                        else {
+                            result->to = to - 1;
+                        }
                     }
                 }
                 catch (...) {
