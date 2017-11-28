@@ -1,3 +1,85 @@
+0.31.0
+
+musikcube:
+* added support for Ubuntu Artsy
+* fixed and exposed album-level artwork. previously it was track-only.
+* fixed notification icon color
+
+musikdroid:
+
+* gapless playback!
+* album art is now displayed in album rows when browsing
+* context menus on most screens with the ability to switch between related 
+  content (e.g. albums by this artist, artists in this genre, etc)
+* preliminary playlist creation support. more to come in the future
+* added a simple "spotlight" tutorial for new users that explains switching
+  between remote and streaming playback modes.
+* major refactor to the entire code base, including the following:
+  - a brand new data layer interface based on RxJava. this should position
+    the app for lots of new, fun stuff in the future.
+  - a new dependency injection implementation
+  - a view component layer for sharing functionality across screens
+* updated Glide from v3 -> v4
+* updated to Android Studio 3.0.1 and related tooling
+
+
+sdk:
+
+* removed all Destroy() methods, standardized on Release() across the board
+* added the following to ISimpleDataProvider:
+  - QueryCategoryWithPredicate()
+  - SavePlaylistWithIds()
+  - SavePlaylistWithExternalIds()
+  - SavePlaylistWithTrackList()
+  - AppendToPlaylistWithIds()
+  - AppendToPlaylistWithExternalIds()
+  - AppendToPlaylistWithTrackList()
+  - RemoveTracksFromPlaylist()
+  - RenamePlaylist()
+  - DeletePlaylist()
+* added new interfaces:
+  - IValue
+  - IEncoder
+  - IEncoderFactory
+* removed interfaces:
+  - IRetainedTrack
+  - IRetainedTrackWriter
+* renamed interfaces
+  - IMetadataMap -> IMap
+  - IMetadataMapList -> IMapList
+  - IMetadataReader -> ITagReader
+  - ITrackWriter -> ITagStore
+  - IMetadataValue -> IValue
+  - IMetadataValueList -> IValueList
+
+server:
+
+* renamed project from `websocket_remote` to `server`, and promoted to a
+  top-level component in the workspace
+* added correct LAME headers after transcoding to fix gapless playback of
+  encoded files.
+* added the following messages to the websocket server:
+  - save_playlist
+  - rename_playlist
+  - delete_playlist
+  - append_to_playlist
+  - remove_tracks_from_playlist 
+  - query_tracks_by_external_ids
+* renamed the following track fields:
+  - visual_genre_id -> genre_id
+  - visual_artist_id -> artist_id
+* added the ability to query album art by id
+* fixed HttpServer to ignore non-GET verbs
+* added "predicated category queries", i.e. "all the albums for this artist" or
+  "all the artists in this genre", etc.
+* added "artist" and "artistId" to album response (previously it was only
+  return "albumArtist" and "albumArtistId")
+* fixed bugs related to HTTP "Range" header parsing and generation
+* fixed a bug in the websocket functionality that was returning invalid
+  "invalid_request" responses... yeah.
+
+--------------------------------------------------------------------------------
+
 0.26.0
 
 * added the ability to rebind UP, DOWN, LEFT, RIGHT, PAGE_UP, PAGE_DOWN, END and

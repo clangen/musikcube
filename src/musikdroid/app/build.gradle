@@ -21,8 +21,8 @@ android {
         applicationId "io.casey.musikcube.remote"
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 23
-        versionName "0.15.3"
+        versionCode 24
+        versionName "0.21.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
