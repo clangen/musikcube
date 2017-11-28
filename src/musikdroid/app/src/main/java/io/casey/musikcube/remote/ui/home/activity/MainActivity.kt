@@ -4,19 +4,18 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
 import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.SeekBar
 import android.widget.TextView
+import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
@@ -101,6 +100,7 @@ class MainActivity : BaseActivity() {
         scheduleUpdateTime(true)
         runUpdateCheck()
         initObservers()
+        registerLayoutListener()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -157,9 +157,15 @@ class MainActivity : BaseActivity() {
         disposables.add(data.provider.observeState().subscribe(
             { states ->
                 when (states.first) {
-                    IDataProvider.State.Connected -> rebindUi()
-                    IDataProvider.State.Disconnected -> clearUi()
-                    else -> { }
+                    IDataProvider.State.Connected -> {
+                        rebindUi()
+                        checkShowSpotlight()
+                    }
+                    IDataProvider.State.Disconnected -> {
+                        clearUi()
+                    }
+                    else -> {
+                    }
                 }
             }, { /* error */ }))
 
@@ -351,6 +357,45 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    private fun registerLayoutListener() {
+        window.decorView.viewTreeObserver.addOnGlobalLayoutListener(
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
+                    if (toolbarButton != null && data.provider.state == IDataProvider.State.Connected) {
+                        checkShowSpotlight()
+                        window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    }
+                }
+            })
+    }
+
+    private fun checkShowSpotlight() {
+        val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
+        if (toolbarButton != null) {
+            SpotlightView.Builder(this@MainActivity)
+                .introAnimationDuration(400)
+                .enableRevealAnimation(true)
+                .performClick(true)
+                .fadeinTextDuration(400)
+                .headingTvColor(getColorCompat(R.color.color_accent))
+                .headingTvSize(24)
+                .headingTvText(getString(R.string.spotlight_playback_mode_title))
+                .subHeadingTvColor(Color.parseColor("#ffffff"))
+                .subHeadingTvSize(16)
+                .subHeadingTvText(getString(R.string.spotlight_playback_mode_message))
+                .maskColor(Color.parseColor("#dc000000"))
+                .target(toolbarButton)
+                .lineAnimDuration(400)
+                .lineAndArcColor(getColorCompat(R.color.color_primary))
+                .dismissOnTouch(true)
+                .dismissOnBackPress(true)
+                .enableDismissAfterShown(true)
+                .usageId(SPOTLIGHT_STREAMING_ID)
+                .show()
+        }
+    }
+
     private fun clearUi() {
         metadataView.clear()
         rebindUi()
@@ -523,6 +568,8 @@ class MainActivity : BaseActivity() {
     }
 
     companion object {
+        private val SPOTLIGHT_STREAMING_ID = "spotlight_streaming_mode"
+
         private var REPEAT_TO_STRING_ID: MutableMap<RepeatMode, Int> = mutableMapOf(
             RepeatMode.None to R.string.button_repeat_off,
             RepeatMode.List to R.string.button_repeat_list,

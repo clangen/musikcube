@@ -22,7 +22,7 @@ import javax.inject.Inject
 /**
  * When MP3 files are transcoded on-demand, the required metadata for gapless playback isn't
  * available yet. So, once we know the transocded files have been downloaded, we run this
- * service to fetch and replace the first 32000 bytes of the file, which should ensure the
+ * service to fetch and replace the first few bytes of the file, which should ensure the
  * required header is present, and subsequent plays are gapless.
  */
 class GaplessHeaderService {
@@ -78,11 +78,11 @@ class GaplessHeaderService {
         var newState = -1
 
         if (fn.exists()) {
-            /* the first 32000 bytes should be more than enough to snag the
+            /* the first few bytes should be more than enough to snag the
             LAME header that contains gapless playback metadata. just rewrite
             those bytes in the already-downloaded file */
             val req = Request.Builder()
-                .addHeader("Range", "bytes=0-32000")
+                .addHeader("Range", "bytes=0-$HEADER_SIZE_BYTES")
                 .url(url)
                 .build()
 
@@ -100,7 +100,7 @@ class GaplessHeaderService {
                 if (bytes?.isNotEmpty() == true) {
                     RandomAccessFile(fn, "rw").use {
                         it.seek(0)
-                        it.write(bytes)
+                        it.write(bytes, 0, Math.min(bytes.size, HEADER_SIZE_BYTES))
                     }
                     newState = GaplessTrack.UPDATED
                 }
@@ -120,5 +120,6 @@ class GaplessHeaderService {
 
     companion object {
         val MESSAGE_PROCESS = 1
+        val HEADER_SIZE_BYTES = 6400
     }
 }

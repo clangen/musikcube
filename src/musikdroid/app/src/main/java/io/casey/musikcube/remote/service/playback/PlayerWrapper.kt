@@ -106,7 +106,6 @@ abstract class PlayerWrapper {
     }
 
     companion object {
-        private val TYPE = Type.ExoPlayer
         private val DUCK_COEF = 0.2f /* volume = 20% when ducked */
         private val DUCK_NONE = -1.0f
 
