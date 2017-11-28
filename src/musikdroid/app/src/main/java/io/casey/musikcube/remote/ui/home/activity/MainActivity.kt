@@ -372,7 +372,7 @@ class MainActivity : BaseActivity() {
 
     private fun checkShowSpotlight() {
         val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
-        if (toolbarButton != null) {
+        if (!spotlightDisplayed && toolbarButton != null) {
             SpotlightView.Builder(this@MainActivity)
                 .introAnimationDuration(400)
                 .enableRevealAnimation(true)
@@ -382,7 +382,7 @@ class MainActivity : BaseActivity() {
                 .headingTvSize(24)
                 .headingTvText(getString(R.string.spotlight_playback_mode_title))
                 .subHeadingTvColor(Color.parseColor("#ffffff"))
-                .subHeadingTvSize(16)
+                .subHeadingTvSize(14)
                 .subHeadingTvText(getString(R.string.spotlight_playback_mode_message))
                 .maskColor(Color.parseColor("#dc000000"))
                 .target(toolbarButton)
@@ -393,6 +393,8 @@ class MainActivity : BaseActivity() {
                 .enableDismissAfterShown(true)
                 .usageId(SPOTLIGHT_STREAMING_ID)
                 .show()
+
+            spotlightDisplayed = true
         }
     }
 
@@ -568,7 +570,8 @@ class MainActivity : BaseActivity() {
     }
 
     companion object {
-        private val SPOTLIGHT_STREAMING_ID = "spotlight_streaming_mode"
+        private val SPOTLIGHT_STREAMING_ID = "streaming_mode"
+        private var spotlightDisplayed = false
 
         private var REPEAT_TO_STRING_ID: MutableMap<RepeatMode, Int> = mutableMapOf(
             RepeatMode.None to R.string.button_repeat_off,

@@ -140,5 +140,5 @@
     <string name="playlist_deleted">playlist \'%s\' deleted</string>
     <string name="playlist_not_deleted">could not delete playlist \'%s\'</string>
     <string name="spotlight_playback_mode_title">playback mode</string>
-    <string name="spotlight_playback_mode_message">want to listen to music from your phone?\nclick here to switch between remote control and streaming modes.</string>
+    <string name="spotlight_playback_mode_message">want to listen to music from your phone?\n\nclick here to switch between remote control and streaming playback modes.</string>
 </resources>
