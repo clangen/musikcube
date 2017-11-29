@@ -213,6 +213,12 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         override fun onLoadingChanged(isLoading: Boolean) {
         }
 
+        override fun onSeekProcessed() {
+        }
+
+        override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+        }
+
         override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
             Preconditions.throwIfNotOnMainThread()
 
@@ -263,7 +269,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             }
         }
 
-        override fun onPositionDiscontinuity() {
+        override fun onPositionDiscontinuity(type: Int) {
             /* window index corresponds to the position of the current song in
             the queue. the current song should always be 0! if it's not, then
             that means we advanced to the next one... */

@@ -236,6 +236,12 @@ class ExoPlayerWrapper : PlayerWrapper() {
         override fun onLoadingChanged(isLoading: Boolean) {
         }
 
+        override fun onSeekProcessed() {
+        }
+
+        override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+        }
+
         override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
             Preconditions.throwIfNotOnMainThread()
 
@@ -286,7 +292,7 @@ class ExoPlayerWrapper : PlayerWrapper() {
             }
         }
 
-        override fun onPositionDiscontinuity() {
+        override fun onPositionDiscontinuity(type: Int) {
         }
 
         override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
