@@ -143,6 +143,8 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     private val contextMenuListener = object: ItemContextMenuMixin.EventListener() {
         override fun onPlaylistDeleted(id: Long) = requery()
 
+        override fun onPlaylistUpdated(id: Long) = requery()
+
         override fun onPlaylistCreated(id: Long) =
             if (navigationType == NavigationType.Select) navigateToSelect(id) else requery()
     }

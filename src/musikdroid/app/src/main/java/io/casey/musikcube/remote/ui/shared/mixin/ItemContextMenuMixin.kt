@@ -89,7 +89,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     fun createPlaylist() =
-        EnterPlaylistNameDialog.show(activity, this)
+        EnterPlaylistNameDialog.showForCreate(activity, this)
 
     fun createPlaylist(playlistName: String) {
         provider.createPlaylist(playlistName).subscribeBy(
@@ -104,6 +104,22 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             },
             onError = {
                 showError(activity.getString(R.string.playlist_not_created, playlistName))
+            })
+    }
+
+    fun renamePlaylist(newName: String, id: Long) {
+        provider.renamePlaylist(id, newName).subscribeBy(
+            onNext = { success ->
+                if (success) {
+                    listener?.onPlaylistUpdated(id)
+                    showSuccess(activity.getString(R.string.playlist_renamed, newName))
+                }
+                else {
+                    showError(activity.getString(R.string.playlist_not_renamed, newName))
+                }
+            },
+            onError = {
+                showError(activity.getString(R.string.playlist_not_renamed, newName))
             })
     }
 
@@ -196,6 +212,9 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             when (item.itemId) {
                 R.id.menu_playlist_delete -> {
                     ConfirmDeletePlaylistDialog.show(activity, this, playlistName, playlistId)
+                }
+                R.id.menu_playlist_rename -> {
+                    EnterPlaylistNameDialog.showForRename(activity, this, playlistName, playlistId)
                 }
                 R.id.menu_playlist_play -> {
                     val playback = PlaybackServiceFactory.instance(Application.instance!!)
@@ -357,18 +376,33 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     class EnterPlaylistNameDialog: BaseDialogFragment() {
+        enum class Action { Create, Rename }
         private lateinit var mixin: ItemContextMenuMixin
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val editText = EditText(activity)
+            val action = arguments.getSerializable(EXTRA_ACTION)
+            val name = arguments.getString(EXTRA_NAME, "")
+            val id = arguments.getLong(EXTRA_ID, -1)
+
+            val buttonId = if (action == Action.Rename)
+                R.string.button_rename else R.string.button_create
+
+            if (name.isNotBlank()) {
+                editText.setText(name)
+                editText.selectAll()
+            }
 
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.playlist_name_title)
                     .setNegativeButton(R.string.button_cancel, null)
-                    .setPositiveButton(R.string.button_create, { _: DialogInterface, _: Int ->
+                    .setPositiveButton(buttonId, { _: DialogInterface, _: Int ->
                     val playlistName = editText.text.toString()
                     if (playlistName.isNotBlank()) {
-                        mixin.createPlaylist(playlistName)
+                        when (action) {
+                            Action.Create -> mixin.createPlaylist(playlistName)
+                            Action.Rename -> mixin.renamePlaylist(playlistName, id)
+                        }
                     }
                     else {
                         mixin.showError(R.string.playlist_name_error_empty)
@@ -396,14 +430,34 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
         companion object {
             val TAG = "EnterPlaylistNameDialog"
+            private val EXTRA_ACTION = "extra_action"
+            private val EXTRA_NAME = "extra_name"
+            private val EXTRA_ID = "extra_id"
 
             fun rebind(activity: AppCompatActivity, mixin: ItemContextMenuMixin) {
                 find<EnterPlaylistNameDialog>(activity, TAG)?.mixin = mixin
             }
 
-            fun show(activity: AppCompatActivity, mixin: ItemContextMenuMixin) {
+            fun showForCreate(activity: AppCompatActivity, mixin: ItemContextMenuMixin) {
+                dismiss(activity, TAG)
+                val bundle = Bundle()
+                bundle.putSerializable(EXTRA_ACTION, Action.Create)
+                show(activity, mixin, bundle)
+            }
+
+            fun showForRename(activity: AppCompatActivity, mixin: ItemContextMenuMixin, name: String, id: Long) {
+                dismiss(activity, TAG)
+                val bundle = Bundle()
+                bundle.putSerializable(EXTRA_ACTION, Action.Rename)
+                bundle.putString(EXTRA_NAME, name)
+                bundle.putLong(EXTRA_ID, id)
+                show(activity, mixin, bundle)
+            }
+
+            private fun show(activity: AppCompatActivity, mixin: ItemContextMenuMixin, bundle: Bundle) {
                 dismiss(activity, TAG)
                 val dialog = EnterPlaylistNameDialog()
+                dialog.arguments = bundle
                 dialog.mixin = mixin
                 dialog.show(activity.supportFragmentManager, TAG)
             }

@@ -46,6 +46,7 @@
     <string name="button_del">delete</string>
     <string name="button_save_as">save as</string>
     <string name="button_load">load</string>
+    <string name="button_rename">rename</string>
     <string name="button_learn_more">learn more</string>
     <string name="invalid_password_dialog_title">invalid password</string>
     <string name="invalid_password_dialog_message">the server rejected your password.\n\nchange the password in the settings screen.</string>
@@ -75,6 +76,7 @@
     <string name="menu_show_artist_tracks">artist songs</string>
     <string name="menu_show_genres">genres</string>
     <string name="menu_delete_playlist">delete</string>
+    <string name="menu_rename_playlist">rename</string>
     <string name="menu_play_playlist">play now</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>
@@ -137,6 +139,8 @@
     <string name="playlist_name_title">playlist name</string>
     <string name="playlist_created">playlist \'%s\' created</string>
     <string name="playlist_not_created">could not create playlist \'%s\'</string>
+    <string name="playlist_renamed">playlist \'%s\' renamed</string>
+    <string name="playlist_not_renamed">playlist \'%s\' not renamed</string>
     <string name="playlist_deleted">playlist \'%s\' deleted</string>
     <string name="playlist_not_deleted">could not delete playlist \'%s\'</string>
     <string name="spotlight_playback_mode_title">playback mode</string>
