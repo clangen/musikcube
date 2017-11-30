@@ -27,6 +27,7 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
+import java.util.*
 
 class TrackListActivity : BaseActivity(), Filterable {
     private lateinit var tracks: TrackListSlidingWindow
@@ -41,31 +42,10 @@ class TrackListActivity : BaseActivity(), Filterable {
     private var categoryId: Long = 0
     private var lastFilter = ""
 
-    private val onItemClickListener = { view: View ->
-        val index = view.tag as Int
-
-        if (isValidCategory(categoryType, categoryId)) {
-            playback.service.play(categoryType, categoryId, index, lastFilter)
-        }
-        else {
-            playback.service.playAll(index, lastFilter)
-        }
-
-        startActivity(MainActivity.getStartIntent(this))
-        finish()
-    }
-
-    private val onActionClickListener = { view: View ->
-        val track = view.tag as ITrack
-        mixin(ItemContextMenuMixin::class.java)?.showForTrack(track, view)
-        Unit
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
         data = mixin(DataProviderMixin())
         playback = mixin(PlaybackMixin())
-        mixin(ItemContextMenuMixin(this))
 
         super.onCreate(savedInstanceState)
 
@@ -73,6 +53,8 @@ class TrackListActivity : BaseActivity(), Filterable {
         categoryType = intent.getStringExtra(EXTRA_CATEGORY_TYPE) ?: ""
         categoryId = intent.getLongExtra(EXTRA_SELECTED_ID, 0)
         val titleId = intent.getIntExtra(EXTRA_TITLE_ID, R.string.songs_title)
+
+        mixin(ItemContextMenuMixin(this, menuListener))
 
         setContentView(R.layout.recycler_view_activity)
 
@@ -83,7 +65,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
 
         tracks = TrackListSlidingWindow(recyclerView, data.provider, queryFactory)
-        adapter = TrackListAdapter(tracks, onItemClickListener, onActionClickListener, playback)
+        adapter = TrackListAdapter(tracks, eventListener, playback)
 
         setupDefaultRecyclerView(recyclerView, adapter)
 
@@ -125,6 +107,30 @@ class TrackListActivity : BaseActivity(), Filterable {
     override fun setFilter(filter: String) {
         lastFilter = filter
         filterDebouncer.call()
+    }
+
+    private val eventListener = object: TrackListAdapter.EventListener {
+        override fun onItemClick(view: View, track: ITrack, position: Int) {
+            if (isValidCategory(categoryType, categoryId)) {
+                playback.service.play(categoryType, categoryId, position, lastFilter)
+            }
+            else {
+                playback.service.playAll(position, lastFilter)
+            }
+
+            startActivity(MainActivity.getStartIntent(this@TrackListActivity))
+            finish()
+        }
+
+        override fun onActionItemClick(view: View, track: ITrack, position: Int) {
+            val mixin = mixin(ItemContextMenuMixin::class.java)!!
+            if (categoryType == Messages.Category.Companion.PLAYLISTS) {
+                mixin.showForPlaylistTrack(track, position, categoryId, view)
+            }
+            else {
+                mixin.showForTrack(track, view)
+            }
+        }
     }
 
     private fun initObservers() {
@@ -214,6 +220,19 @@ class TrackListActivity : BaseActivity(), Filterable {
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}
     }
+
+    private val menuListener: ItemContextMenuMixin.EventListener?
+        get() {
+            if (categoryType == Messages.Category.PLAYLISTS) {
+                return object: ItemContextMenuMixin.EventListener () {
+                    override fun onPlaylistUpdated(id: Long) {
+                        tracks.requery()
+                    }
+                }
+            }
+
+            return null
+        }
 
     companion object {
         private val EXTRA_CATEGORY_TYPE = "extra_category_type"

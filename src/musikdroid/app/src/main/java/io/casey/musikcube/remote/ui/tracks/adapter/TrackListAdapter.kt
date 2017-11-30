@@ -13,15 +13,31 @@ import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 
 class TrackListAdapter(private val tracks: TrackListSlidingWindow,
-                       private val onItemClickListener: (View) -> Unit,
-                       private val onActionClickListener: (View) -> Unit,
+                       private val listener: EventListener?,
                        private var playback: PlaybackMixin) : RecyclerView.Adapter<TrackListAdapter.ViewHolder>()
 {
+    interface EventListener {
+        fun onItemClick(view: View, track: ITrack, position: Int)
+        fun onActionItemClick(view: View, track: ITrack, position: Int)
+    }
+
+    private data class Tag(var position: Int?, var track: ITrack?)
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackListAdapter.ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val view = inflater.inflate(R.layout.simple_list_item, parent, false)
-        view.setOnClickListener(onItemClickListener)
-        view.findViewById<View>(R.id.action).setOnClickListener(onActionClickListener)
+        view.tag = Tag(null, null)
+
+        view.setOnClickListener({ v ->
+            val tag = v.tag as Tag
+            listener?.onItemClick(v, tag.track!!, tag.position!!)
+        })
+
+        view.findViewById<View>(R.id.action).setOnClickListener({ v ->
+            val tag = v.tag as Tag
+            listener?.onActionItemClick(v, tag.track!!, tag.position!!)
+        })
+
         return ViewHolder(view, playback)
     }
 
@@ -39,8 +55,11 @@ class TrackListAdapter(private val tracks: TrackListSlidingWindow,
         private val action: View = view.findViewById(R.id.action)
 
         internal fun bind(track: ITrack?, position: Int) {
-            itemView.tag = position
-            action.tag = track
+            val tag = itemView.tag as Tag
+            tag.position = position
+            tag.track = track
+            itemView.tag = tag
+            action.tag = tag
 
             var titleColor = R.color.theme_foreground
             var subtitleColor = R.color.theme_disabled_foreground

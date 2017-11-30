@@ -35,6 +35,8 @@ import javax.inject.Inject
 
 class ItemContextMenuMixin(private val activity: AppCompatActivity,
                            internal val listener: EventListener? = null): MixinBase() {
+    private enum class TrackType { Normal, Playlist }
+
     @Inject lateinit var provider: IDataProvider
 
     open class EventListener {
@@ -56,6 +58,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         super.onCreate(bundle)
         ConfirmDeletePlaylistDialog.rebind(activity, this)
         EnterPlaylistNameDialog.rebind(activity, this)
+        ConfirmRemoveFromPlaylistDialog.rebind(activity, this)
     }
 
     override fun onResume() {
@@ -174,13 +177,30 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     fun showForTrack(track: ITrack, anchorView: View) {
+        showForTrack(track, -1, -1, anchorView, TrackType.Normal)
+    }
+
+    fun showForPlaylistTrack(track: ITrack, position: Int, playlistId: Long, anchorView: View) {
+        showForTrack(track, position, playlistId, anchorView, TrackType.Playlist)
+    }
+
+    private fun showForTrack(track: ITrack, position: Int, categoryId: Long, anchorView: View, type: TrackType) {
         val popup = PopupMenu(activity, anchorView)
         popup.inflate(R.menu.track_item_context_menu)
+
+        if (type != TrackType.Playlist) {
+            popup.menu.removeItem(R.id.menu_remove_from_playlist)
+        }
 
         popup.setOnMenuItemClickListener { item ->
             val intent: Intent? = when (item.itemId) {
                 R.id.menu_add_to_playlist -> {
                     addToPlaylist(track)
+                    null
+                }
+                R.id.menu_remove_from_playlist -> {
+                    ConfirmRemoveFromPlaylistDialog.show(
+                        activity, this, categoryId, position, track)
                     null
                 }
                 R.id.menu_show_artist_albums -> {
@@ -319,6 +339,17 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
     }
 
+    private fun removeFromPlaylistConfirmed(playlistId: Long, externalId: String, position: Int) {
+        provider.removeTracksFromPlaylist(playlistId, listOf(externalId), listOf(position)).subscribeBy(
+            onNext = { success ->
+                listener?.onPlaylistUpdated(playlistId)
+            },
+            onError = {
+
+            }
+        )
+    }
+
     private fun showSuccess(stringId: Int) =
         showSuccess(activity.getString(stringId))
 
@@ -330,6 +361,54 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
     private fun showError(message: String) =
         showErrorSnackbar(activity.findViewById(android.R.id.content), message)
+
+    class ConfirmRemoveFromPlaylistDialog : BaseDialogFragment() {
+        private lateinit var mixin: ItemContextMenuMixin
+
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val playlistId = arguments.getLong(EXTRA_PLAYLIST_ID, -1)
+            val trackTitle = arguments.getString(EXTRA_TRACK_TITLE, "")
+            val trackExternalId = arguments.getString(EXTRA_TRACK_EXTERNAL_ID, "")
+            val trackPosition = arguments.getInt(EXTRA_TRACK_POSITION, -1)
+
+            val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.playlist_confirm_delete_title)
+                .setMessage(getString(R.string.playlist_confirm_delete_message, trackTitle))
+                .setNegativeButton(R.string.button_no, null)
+                .setPositiveButton(R.string.button_yes, { _: DialogInterface, _: Int ->
+                    mixin.removeFromPlaylistConfirmed(playlistId, trackExternalId, trackPosition)
+                })
+                .create()
+
+            dlg.setCancelable(false)
+            return dlg
+        }
+
+        companion object {
+            val TAG = "confirm_delete_playlist_dialog"
+            private val EXTRA_PLAYLIST_ID = "extra_playlist_id"
+            private val EXTRA_TRACK_TITLE = "extra_track_title"
+            private val EXTRA_TRACK_EXTERNAL_ID = "extra_track_external_id"
+            private val EXTRA_TRACK_POSITION = "extra_track_position"
+
+            fun rebind(activity: AppCompatActivity, mixin: ItemContextMenuMixin) {
+                find<ConfirmRemoveFromPlaylistDialog>(activity, TAG)?.mixin = mixin
+            }
+
+            fun show(activity: AppCompatActivity, mixin: ItemContextMenuMixin, playlistId: Long, position: Int, track: ITrack) {
+                dismiss(activity, TAG)
+                val args = Bundle()
+                args.putLong(EXTRA_PLAYLIST_ID, playlistId)
+                args.putString(EXTRA_TRACK_TITLE, track.title)
+                args.putString(EXTRA_TRACK_EXTERNAL_ID, track.externalId)
+                args.putInt(EXTRA_TRACK_POSITION, position)
+                val result = ConfirmRemoveFromPlaylistDialog()
+                result.arguments = args
+                result.mixin = mixin
+                result.show(activity.supportFragmentManager, TAG)
+            }
+        }
+    }
 
     class ConfirmDeletePlaylistDialog : BaseDialogFragment() {
         private lateinit var mixin: ItemContextMenuMixin

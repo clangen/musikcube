@@ -68,6 +68,7 @@
     <string name="menu_remote_toggle">remote playback</string>
     <string name="menu_offline_tracks">offline songs</string>
     <string name="menu_add_to_playlist">add to playlist</string>
+    <string name="menu_remove_from_playlist">remove from playlist</string>
     <string name="menu_show_tracks">songs</string>
     <string name="menu_show_albums">albums</string>
     <string name="menu_show_artists">artists</string>
@@ -143,6 +144,8 @@
     <string name="playlist_not_renamed">playlist \'%s\' not renamed</string>
     <string name="playlist_deleted">playlist \'%s\' deleted</string>
     <string name="playlist_not_deleted">could not delete playlist \'%s\'</string>
+    <string name="remove_from_playlist_dialog_title">confirm</string>
+    <string name="remove_from_playlist_dialog_message">are you sure you want to remove \`%s\` from this playlist?</string>
     <string name="spotlight_playback_mode_title">playback mode</string>
     <string name="spotlight_playback_mode_message">want to listen to music from your phone?\n\nclick here to switch between remote control and streaming playback modes.</string>
 </resources>
