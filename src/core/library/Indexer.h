@@ -120,6 +120,7 @@ namespace musik { namespace core {
             void FinalizeSync(const SyncContext& context);
             void SyncDelete();
             void SyncCleanup();
+            void SyncPlaylistTracksOrder();
             musik::core::sdk::ScanResult SyncSource(musik::core::sdk::IIndexerSource* source);
             void ProcessAddRemoveQueue();
             void SyncOptimize();

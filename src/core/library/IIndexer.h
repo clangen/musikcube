@@ -53,7 +53,7 @@ namespace musik { namespace core {
             enum class SyncType{
                 All,
                 Local,
-                Sources,
+                Sources
             };
 
             virtual ~IIndexer() { }
