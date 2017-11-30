@@ -695,6 +695,42 @@ void Indexer::SyncCleanup() {
         }
     }
 
+    /* make sure playlist sort orders are always sequential without holes. we
+    do this anyway, as playlists are updated, but there's no way to guarantee
+    it stays this way -- plugins, external processes, etc can cause problems */
+    {
+        db::Statement playlists("SELECT DISTINCT id FROM playlists", this->dbConnection);
+
+        while (playlists.Step() == db::Row) {
+            db::Statement tracks(
+                "SELECT track_external_id, sort_order "
+                "FROM playlist_tracks WHERE playlist_id=? "
+                "ORDER BY sort_order",
+                this->dbConnection);
+
+            int64_t playlistId = playlists.ColumnInt64(0);
+            tracks.BindInt64(0, playlistId);
+
+            db::Statement update(
+                "UPDATE playlist_tracks "
+                "SET sort_order=? "
+                "WHERE track_external_id=? AND sort_order=?",
+                this->dbConnection);
+
+            int order = 0;
+            while (tracks.Step() == db::Row) {
+                std::string externalId = tracks.ColumnText(0);
+                int sortOrder = tracks.ColumnInt32(1);
+
+                update.ResetAndUnbind();
+                update.BindInt32(0, order++);
+                update.BindText(1, externalId);
+                update.BindInt32(2, sortOrder);
+                update.Step();
+            }
+        }
+    }
+
     /* optimize and shrink */
     this->dbConnection.Execute("VACUUM");
 }

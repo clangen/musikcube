@@ -103,13 +103,13 @@ namespace musik { namespace core {
             };
 
             typedef std::vector<std::shared_ptr<
-                musik::core::sdk::ITagReader> > TagReaderList;
+                musik::core::sdk::ITagReader>> TagReaderList;
 
             typedef std::vector<std::shared_ptr<
-                musik::core::sdk::IDecoderFactory> > DecoderList;
+                musik::core::sdk::IDecoderFactory>> DecoderList;
 
             typedef std::vector<std::shared_ptr<
-                musik::core::sdk::IIndexerSource> > IndexerSourceList;
+                musik::core::sdk::IIndexerSource>> IndexerSourceList;
 
             void ThreadLoop();
 
