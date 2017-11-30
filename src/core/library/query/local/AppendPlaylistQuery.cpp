@@ -56,7 +56,7 @@ static std::string UPDATE_OFFSET_QUERY =
     "UPDATE playlist_tracks SET offset = offset + ? WHERE playlist_id = ? AND offset >= ?";
 
 static std::string GET_MAX_SORT_ORDER_QUERY =
-    "SELECT MAX(sort_order) from playlist_tracks where playlist_id = ?";
+    "SELECT COALESCE(MAX(sort_order), -1) from playlist_tracks where playlist_id = ?";
 
 AppendPlaylistQuery::AppendPlaylistQuery(
     musik::core::ILibraryPtr library,
@@ -94,13 +94,13 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
 
     int offset = this->offset;
 
-    if (this->offset < 0) {
+    if (offset < 0) {
         /* get the max offset, we're appending to the end and don't want
         to screw up our sort order! */
         Statement queryMax(GET_MAX_SORT_ORDER_QUERY.c_str(), db);
         queryMax.BindInt64(0, playlistId);
         if (queryMax.Step() == db::Row) {
-            offset = queryMax.ColumnInt32(0);
+            offset = queryMax.ColumnInt32(0) + 1;
         }
     }
 
