@@ -23,7 +23,7 @@ class PlayQueueAdapter(val tracks: TrackListSlidingWindow,
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
-        val view = inflater.inflate(R.layout.play_queue_row, parent, false)
+        val view = inflater.inflate(R.layout.playlist_track_row, parent, false)
         val action = view.findViewById<View>(R.id.action)
         view.setOnClickListener{ v -> listener.onItemClicked(v.tag as Int) }
         action.setOnClickListener{ v -> listener.onActionClicked(v, v.tag as ITrack) }

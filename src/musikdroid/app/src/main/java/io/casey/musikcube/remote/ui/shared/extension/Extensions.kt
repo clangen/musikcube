@@ -28,15 +28,12 @@ import io.casey.musikcube.remote.util.Strings
 val EXTRA_ACTIVITY_TITLE = "extra_title"
 
 fun AppCompatActivity.setupDefaultRecyclerView(
-                             recyclerView: RecyclerView,
-                             adapter: RecyclerView.Adapter<*>) {
+    recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
+{
     val layoutManager = LinearLayoutManager(this)
-
+    val dividerItemDecoration = DividerItemDecoration(this, layoutManager.orientation)
     recyclerView.layoutManager = LinearLayoutManager(this)
     recyclerView.adapter = adapter
-
-    val dividerItemDecoration = DividerItemDecoration(this, layoutManager.orientation)
-
     recyclerView.addItemDecoration(dividerItemDecoration)
 }
 

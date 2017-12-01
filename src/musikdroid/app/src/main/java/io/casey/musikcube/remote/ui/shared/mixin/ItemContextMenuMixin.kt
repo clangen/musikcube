@@ -28,6 +28,7 @@ import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
 import io.casey.musikcube.remote.ui.shared.extension.showKeyboard
 import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
 import io.casey.musikcube.remote.ui.shared.fragment.BaseDialogFragment
+import io.casey.musikcube.remote.ui.tracks.activity.EditPlaylistActivity
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
@@ -232,6 +233,9 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             when (item.itemId) {
                 R.id.menu_playlist_delete -> {
                     ConfirmDeletePlaylistDialog.show(activity, this, playlistName, playlistId)
+                }
+                R.id.menu_playlist_edit -> {
+                    activity.startActivity(EditPlaylistActivity.getStartIntent(activity, playlistId))
                 }
                 R.id.menu_playlist_rename -> {
                     EnterPlaylistNameDialog.showForRename(activity, this, playlistName, playlistId)

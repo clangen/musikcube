@@ -7,7 +7,12 @@ import io.casey.musikcube.remote.framework.ViewModel
 class ViewModelMixin(private val provider: ViewModel.Provider): MixinBase() {
     private var viewModel: ViewModel<*>? = null
 
-    fun <T: ViewModel<*>> get(): T? = this.viewModel as T?
+    fun <T: ViewModel<*>> get(): T? {
+        if (viewModel == null) {
+            viewModel = provider.createViewModel()
+        }
+        return viewModel as T?
+    }
 
     override fun onCreate(bundle: Bundle) {
         super.onCreate(bundle)

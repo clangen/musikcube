@@ -22,6 +22,7 @@ interface IDataProvider {
     fun getTracks(externalIds: Set<String>): Observable<Map<String, ITrack>>
 
     fun getTrackCountByCategory(category: String, id: Long, filter: String = ""): Observable<Int>
+    fun getTrackIdsByCategory(category: String, id: Long, filter: String = ""): Observable<List<String>>
     fun getTracksByCategory(category: String, id: Long, filter: String = ""): Observable<List<ITrack>>
     fun getTracksByCategory(category: String, id: Long, limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
 
@@ -36,6 +37,7 @@ interface IDataProvider {
     fun createPlaylist(playlistName: String, categoryType: String = "", categoryId: Long = -1, filter: String = ""): Observable<Long>
     fun createPlaylist(playlistName: String, tracks: List<ITrack> = ArrayList()): Observable<Long>
     fun createPlaylistWithExternalIds(playlistName: String, externalIds: List<String> = ArrayList()): Observable<Long>
+    fun overwritePlaylistWithExternalIds(playlistId: Long, externalIds: List<String> = ArrayList()): Observable<Long>
     fun appendToPlaylist(playlistId: Long, categoryType: String = "", categoryId: Long = -1, filter: String = "", offset: Long = -1): Observable<Boolean>
     fun appendToPlaylist(playlistId: Long, tracks: List<ITrack> = ArrayList(), offset: Long = -1): Observable<Boolean>
     fun appendToPlaylist(playlistId: Long, categoryValue: ICategoryValue): Observable<Boolean>

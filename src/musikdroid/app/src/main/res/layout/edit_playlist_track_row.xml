@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rowView"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/opaque_row_background"
+    android:minHeight="52dp">
+
+    <ImageView
+        android:id="@+id/dragHandle"
+        android:src="@drawable/ic_reorder"
+        android:scaleType="center"
+        android:padding="4dp"
+        android:layout_marginStart="8dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:gravity="center"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@+id/dragHandle"
+        android:layout_toStartOf="@+id/swipeHandle"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/theme_foreground"
+            tools:text="title"/>
+
+        <TextView
+            android:textSize="12dp"
+            android:id="@+id/subtitle"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="@color/theme_disabled_foreground"
+            tools:text="subtitle"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/swipeHandle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingEnd="8dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:paddingStart="4dp"
+        android:minHeight="52dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginEnd="-4dp"
+            android:scaleType="center"
+            android:src="@drawable/ic_leftarrow" />
+
+        <ImageView
+            android:background="@drawable/ic_trashcan"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

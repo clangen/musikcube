@@ -11,7 +11,7 @@ because `musikdroid` is not available in the Google Play store, it uses [fabric.
 
 this should allow you to build and test locally without special keys. TODO: simplify
 
-the project is currently built using `Android Studio 3.0 Canary 6`
+the project is currently built using `Android Studio 3.0.1`
 
 # attribution
 

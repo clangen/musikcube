@@ -78,6 +78,7 @@
     <string name="menu_show_genres">genres</string>
     <string name="menu_delete_playlist">delete</string>
     <string name="menu_rename_playlist">rename</string>
+    <string name="menu_edit_playlist">edit</string>
     <string name="menu_play_playlist">play now</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>

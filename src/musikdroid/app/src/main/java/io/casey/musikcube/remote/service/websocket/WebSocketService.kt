@@ -330,6 +330,8 @@ class WebSocketService constructor(private val context: Context) {
             subject.onError(ex)
         }
 
+        subject.doOnDispose { cancelMessage(mrd.id) }
+
         if (!intercepted) {
             socket?.sendText(message.toString())
         }

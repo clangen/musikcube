@@ -116,6 +116,21 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    override fun getTrackIdsByCategory(category: String, id: Long, filter: String): Observable<List<String>> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.QueryTracksByCategory)
+            .addOption(Messages.Key.FILTER, filter)
+            .addOption(Messages.Key.CATEGORY, category)
+            .addOption(Messages.Key.ID, id)
+            .addOption(Messages.Key.COUNT_ONLY, false)
+            .addOption(Messages.Key.IDS_ONLY, true)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<List<String>> { socketMessage -> toStringList(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     override fun getTracksByCategory(category: String, id: Long, filter: String): Observable<List<ITrack>> =
         getTracksByCategory(category, id, -1, -1, filter)
 
@@ -241,7 +256,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
     override fun createPlaylistWithExternalIds(playlistName: String, externalIds: List<String>): Observable<Long> {
         if (playlistName.isBlank()) {
-            return Observable.just(0)
+            return Observable.just(-1L)
         }
 
         val jsonArray = JSONArray()
@@ -250,6 +265,25 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         val message = SocketMessage.Builder
             .request(Messages.Request.SavePlaylist)
             .addOption(Messages.Key.PLAYLIST_NAME, playlistName)
+            .addOption(Messages.Key.EXTERNAL_IDS, jsonArray)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun overwritePlaylistWithExternalIds(playlistId: Long, externalIds: List<String>): Observable<Long> {
+        if (playlistId < 0L) {
+            return Observable.just(-1L)
+        }
+
+        val jsonArray = JSONArray()
+        externalIds.forEach { jsonArray.put(it) }
+
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SavePlaylist)
+            .addOption(Messages.Key.PLAYLIST_ID, playlistId)
             .addOption(Messages.Key.EXTERNAL_IDS, jsonArray)
             .build()
 
@@ -459,6 +493,15 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
                 albums.add(RemoteAlbum(json.getJSONObject(i)))
             }
             return Observable.just(albums)
+        }
+
+        private fun toStringList(socketMessage: SocketMessage): Observable<List<String>> {
+            val strings = ArrayList<String>()
+            val json = socketMessage.getJsonArrayOption(Messages.Key.DATA, JSONArray())!!
+            for (i in 0 until json.length()) {
+                strings.add(json.getString(i))
+            }
+            return Observable.just(strings)
         }
 
         private fun toCount(message: SocketMessage): Observable<Int> {

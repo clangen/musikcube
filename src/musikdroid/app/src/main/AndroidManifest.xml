@@ -51,6 +51,11 @@
 
         </activity>
 
+        <activity android:name=".ui.tracks.activity.EditPlaylistActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+        </activity>
+
         <activity
             android:name="io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity"
             android:screenOrientation="portrait"

@@ -77,6 +77,7 @@ class Messages {
             val ID = "id"
             val COUNT = "count"
             val COUNT_ONLY = "count_only"
+            val IDS_ONLY = "ids_only"
             val OFFSET = "offset"
             val LIMIT = "limit"
             val INDEX = "index"

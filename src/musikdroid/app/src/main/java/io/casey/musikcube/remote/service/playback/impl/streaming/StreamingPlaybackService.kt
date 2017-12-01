@@ -774,20 +774,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             return null
         }
 
-        override fun all(): Observable<List<ITrack>>? {
-            val params = params
-            if (params != null) {
-                if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
-                    return dataProvider.getTracksByCategory(
-                        params.category ?: "", params.categoryId, params.filter)
-                }
-                else {
-                    return dataProvider.getTracks(params.filter)
-                }
-            }
-            return null
-        }
-
         override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? {
             val params = params
             if (params != null) {

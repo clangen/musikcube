@@ -373,7 +373,6 @@ class RemotePlaybackService : IPlaybackService {
 
     override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
         override fun count(): Observable<Int> = dataProvider.getPlayQueueTracksCount()
-        override fun all(): Observable<List<ITrack>>? = dataProvider.getPlayQueueTracks()
         override fun page(offset: Int, limit: Int): Observable<List<ITrack>> = dataProvider.getPlayQueueTracks(limit, offset)
         override fun offline(): Boolean  = false
     }

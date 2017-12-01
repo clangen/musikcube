@@ -40,7 +40,6 @@ class TrackListSlidingWindow(private val recyclerView: FastScrollRecyclerView,
 
     abstract class QueryFactory {
         abstract fun count(): Observable<Int>?
-        abstract fun all(): Observable<List<ITrack>>?
         abstract fun page(offset: Int, limit: Int): Observable<List<ITrack>>?
         abstract fun offline(): Boolean
     }

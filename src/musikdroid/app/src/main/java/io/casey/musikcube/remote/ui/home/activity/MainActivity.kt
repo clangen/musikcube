@@ -410,30 +410,29 @@ class MainActivity : BaseActivity() {
     private fun scheduleUpdateTime(immediate: Boolean) {
         handler.removeCallbacks(updateTimeRunnable)
         handler.postDelayed(updateTimeRunnable, (if (immediate) 0 else 1000).toLong())
+        handler.removeCallbacks(updateTimeRunnable)
     }
 
-    private val updateTimeRunnable = object: Runnable {
-        override fun run() {
-            val duration = playback.service.duration
-            val current: Double = if (seekbarValue == -1) playback.service.currentTime else seekbarValue.toDouble()
+    private val updateTimeRunnable = Runnable {
+        val duration = playback.service.duration
+        val current: Double = if (seekbarValue == -1) playback.service.currentTime else seekbarValue.toDouble()
 
-            currentTime.text = Duration.format(current)
-            totalTime.text = Duration.format(duration)
-            seekbar.max = duration.toInt()
-            seekbar.progress = current.toInt()
-            seekbar.secondaryProgress = playback.service.bufferedTime.toInt()
+        currentTime.text = Duration.format(current)
+        totalTime.text = Duration.format(duration)
+        seekbar.max = duration.toInt()
+        seekbar.progress = current.toInt()
+        seekbar.secondaryProgress = playback.service.bufferedTime.toInt()
 
-            var currentTimeColor = R.color.theme_foreground
-            if (playback.service.state === PlaybackState.Paused) {
-                currentTimeColor =
-                    if (++blink % 2 == 0) R.color.theme_foreground
-                    else R.color.theme_blink_foreground
-            }
-
-            currentTime.setTextColor(getColorCompat(currentTimeColor))
-
-            scheduleUpdateTime(false)
+        var currentTimeColor = R.color.theme_foreground
+        if (playback.service.state === PlaybackState.Paused) {
+            currentTimeColor =
+                if (++blink % 2 == 0) R.color.theme_foreground
+                else R.color.theme_blink_foreground
         }
+
+        currentTime.setTextColor(getColorCompat(currentTimeColor))
+
+        scheduleUpdateTime(false)
     }
 
     private val muteListener = { _: CompoundButton, b: Boolean ->

@@ -6,40 +6,58 @@ import android.os.Looper
 import com.uacf.taskrunner.Runner
 import com.uacf.taskrunner.Task
 import io.casey.musikcube.remote.Application
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.Subject
 import java.util.concurrent.atomic.AtomicLong
 
-abstract class ViewModel<ListenerT>(protected val runner: Runner? = null): Runner.TaskCallbacks {
+abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCallbacks {
     val id: Long = nextId.incrementAndGet()
+    private val publisher by lazy { createSubject() }
 
     interface Provider {
         fun <T: ViewModel<*>> createViewModel(): T?
     }
 
-    protected var listener: ListenerT? = null
+    protected var listener: T? = null
         private set
 
-    fun onPause() {
+    open fun onPause() {
     }
 
-    fun onResume() {
+    open fun onResume() {
     }
 
-    fun onDestroy() {
+    open fun onDestroy() {
         listener = null
         handler.postDelayed(cleanup, cleanupDelayMs)
     }
 
-    fun observe(listener: ListenerT) {
-        this.listener = listener
+    open fun onCleanup() {
+
+    }
+
+    fun observe(): Observable<T> {
+        return publisher
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(AndroidSchedulers.mainThread())
     }
 
     val context: Context = Application.instance!!
 
-    internal val cleanup = object: Runnable {
-        override fun run() {
-            listener = null
-            idToInstance.remove(id)
-        }
+    internal val cleanup = Runnable {
+        listener = null
+        idToInstance.remove(id)
+        onCleanup()
+    }
+
+    protected fun publish(value: T) {
+        publisher.onNext(value)
+    }
+
+    open fun createSubject(): Subject<T> {
+        return PublishSubject.create<T>()
     }
 
     override fun onTaskError(name: String?, id: Long, task: Task<*, *>?, error: Throwable?) {

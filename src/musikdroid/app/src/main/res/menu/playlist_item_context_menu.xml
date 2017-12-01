@@ -5,6 +5,10 @@
         android:title="@string/menu_play_playlist"/>
 
     <item
+        android:id="@+id/menu_playlist_edit"
+        android:title="@string/menu_edit_playlist"/>
+
+    <item
         android:id="@+id/menu_playlist_rename"
         android:title="@string/menu_rename_playlist"/>
 

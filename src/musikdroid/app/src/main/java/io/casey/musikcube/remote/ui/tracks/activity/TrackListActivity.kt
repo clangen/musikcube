@@ -185,9 +185,6 @@ class TrackListActivity : BaseActivity(), Filterable {
                override fun count(): Observable<Int> =
                    data.provider.getTrackCountByCategory(categoryType ?: "", categoryId, lastFilter)
 
-                override fun all(): Observable<List<ITrack>>? =
-                    data.provider.getTracksByCategory(categoryType ?: "", categoryId, lastFilter)
-
                 override fun page(offset: Int, limit: Int): Observable<List<ITrack>> =
                     data.provider.getTracksByCategory(categoryType ?: "", categoryId, limit, offset, lastFilter)
 
@@ -200,9 +197,6 @@ class TrackListActivity : BaseActivity(), Filterable {
             return object : QueryFactory() {
                 override fun count(): Observable<Int> =
                     data.provider.getTrackCount(lastFilter)
-
-                override fun all(): Observable<List<ITrack>>? =
-                    data.provider.getTracks(lastFilter)
 
                 override fun page(offset: Int, limit: Int): Observable<List<ITrack>> =
                     data.provider.getTracks(limit, offset, lastFilter)
