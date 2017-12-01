@@ -11,6 +11,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.casey.musikcube.remote.ui.tracks.adapter.EditPlaylistAdapter
@@ -27,6 +28,8 @@ class EditPlaylistActivity: BaseActivity() {
         mixin(ViewModelMixin(this))
         data = mixin(DataProviderMixin())
         super.onCreate(savedInstanceState)
+        val playlistName = intent.extras.getString(EXTRA_PLAYLIST_NAME, "-")
+        title = getString(R.string.playlist_edit_activity, playlistName)
         setContentView(R.layout.recycler_view_activity)
         viewModel = getViewModel()!!
         viewModel.attach(data.provider)
@@ -50,11 +53,11 @@ class EditPlaylistActivity: BaseActivity() {
                         finish()
                     }
                     else {
-                        /* TODO ERROR SNACKBAR */
+                        showErrorSnackbar(R.string.playlist_edit_save_failed)
                     }
                 },
                 onError = {
-                    /* TODO ERROR SNACKBAR */
+                    showErrorSnackbar(R.string.playlist_edit_save_failed)
                 })
         }
         return super.onOptionsItemSelected(item)
@@ -97,10 +100,12 @@ class EditPlaylistActivity: BaseActivity() {
 
     companion object {
         private val EXTRA_PLAYLIST_ID = "extra_playlist_id"
+        private val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
 
-        fun getStartIntent(context: Context, playlistId: Long): Intent {
+        fun getStartIntent(context: Context, playlistName: String, playlistId: Long): Intent {
             return Intent(context, EditPlaylistActivity::class.java)
                 .putExtra(EXTRA_PLAYLIST_ID, playlistId)
+                .putExtra(EXTRA_PLAYLIST_NAME, playlistName)
         }
     }
 }

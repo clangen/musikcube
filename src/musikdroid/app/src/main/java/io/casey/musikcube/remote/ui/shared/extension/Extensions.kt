@@ -200,6 +200,9 @@ fun showErrorSnackbar(view: View, text: String) =
 fun showErrorSnackbar(view: View, stringId: Int) =
     showErrorSnackbar(view, Application.instance!!.getString(stringId))
 
+fun AppCompatActivity.showErrorSnackbar(stringId: Int) =
+    showErrorSnackbar(this.findViewById<View>(android.R.id.content), stringId)
+
 fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) =
     showSnackbar(this.findViewById<View>(viewId), stringId)
 

@@ -47,7 +47,9 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
     val count: Int
         get() {
             if (externalIds.isEmpty() && status != Status.Loading) {
-                refreshTrackIds()
+                if (!modified) {
+                    refreshTrackIds()
+                }
             }
             return externalIds.size
         }
@@ -70,11 +72,13 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
 
     fun remove(index: Int) {
         externalIds.removeAt(index)
+        modified = true
     }
 
     fun move(from: Int, to: Int) {
         val id = externalIds.removeAt(from)
         externalIds.add(if (to > from) (to - 1) else to, id)
+        modified = true
     }
 
     private fun refreshTrackIds() {

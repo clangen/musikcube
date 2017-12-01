@@ -410,7 +410,6 @@ class MainActivity : BaseActivity() {
     private fun scheduleUpdateTime(immediate: Boolean) {
         handler.removeCallbacks(updateTimeRunnable)
         handler.postDelayed(updateTimeRunnable, (if (immediate) 0 else 1000).toLong())
-        handler.removeCallbacks(updateTimeRunnable)
     }
 
     private val updateTimeRunnable = Runnable {

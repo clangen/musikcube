@@ -235,7 +235,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     ConfirmDeletePlaylistDialog.show(activity, this, playlistName, playlistId)
                 }
                 R.id.menu_playlist_edit -> {
-                    activity.startActivity(EditPlaylistActivity.getStartIntent(activity, playlistId))
+                    activity.startActivity(EditPlaylistActivity.getStartIntent(activity, playlistName, playlistId))
                 }
                 R.id.menu_playlist_rename -> {
                     EnterPlaylistNameDialog.showForRename(activity, this, playlistName, playlistId)

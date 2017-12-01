@@ -145,6 +145,8 @@
     <string name="playlist_not_renamed">playlist \'%s\' not renamed</string>
     <string name="playlist_deleted">playlist \'%s\' deleted</string>
     <string name="playlist_not_deleted">could not delete playlist \'%s\'</string>
+    <string name="playlist_edit_activity">editing playlist \'%s\'</string>
+    <string name="playlist_edit_save_failed">could not save playlist</string>
     <string name="remove_from_playlist_dialog_title">confirm</string>
     <string name="remove_from_playlist_dialog_message">are you sure you want to remove \`%s\` from this playlist?</string>
     <string name="spotlight_playback_mode_title">playback mode</string>
