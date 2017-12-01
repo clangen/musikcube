@@ -91,7 +91,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
 
     protected:
         virtual bool OnRun(musik::core::db::Connection& db) {
-            std::string sql = "SELECT id FROM tracks WHERE external_id IN(";
+            std::string sql = "SELECT id, external_id FROM tracks WHERE external_id IN(";
             for (size_t i = 0; i < externalIdCount; i++) {
                 sql += (i == 0) ? "?" : ",?";
             }
@@ -103,10 +103,26 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
                 query.BindText(i, externalIds[i]);
             }
 
-            this->result = std::make_shared<TrackList>(this->library);
+            /* gotta eat up some memory to preserve the input order. map the
+            external id to the id so we can ensure we return the list in the
+            same order it was requested. this is faster than executing one
+            query per ID (we do this because WHERE IN() does not preserve input
+            ordering... */
+            struct Record { int64_t id; std::string externalId; };
+            std::map<std::string, int64_t> records;
 
             while (query.Step() == Row) {
-                result->Add(query.ColumnInt64(0));
+                records[query.ColumnText(1)] = query.ColumnInt64(0);
+            }
+
+            /* order the output here... */
+            this->result = std::make_shared<TrackList>(this->library);
+            auto end = records.end();
+            for (size_t i = 0; i < externalIdCount; i++) {
+                auto r = records.find(externalIds[i]);
+                if (r != end) {
+                    this->result->Add(r->second);
+                }
             }
 
             return true;
