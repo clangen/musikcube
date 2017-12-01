@@ -542,11 +542,12 @@ bool WebSocketServer::RespondWithTracks(
 
             ITrack* track = nullptr;
             for (size_t i = 0; i < tracks->Count(); i++) {
+                track = tracks->GetTrack(i);
+
                 if (idsOnly) {
-                    data.push_back({ {key::id, tracks->GetId(i) } });
+                    data.push_back(GetMetadataString(track, key::external_id));
                 }
                 else {
-                    track = tracks->GetTrack(i);
                     data.push_back(this->ReadTrackMetadata(track));
                 }
 
