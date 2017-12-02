@@ -33,6 +33,7 @@
     <string name="button_repeat_list">repeat list</string>
     <string name="button_repeat_track">repeat song</string>
     <string name="button_save">save</string>
+    <string name="button_edit">edit</string>
     <string name="button_create">create</string>
     <string name="button_settings">settings</string>
     <string name="button_close">close</string>
@@ -47,6 +48,7 @@
     <string name="button_save_as">save as</string>
     <string name="button_load">load</string>
     <string name="button_rename">rename</string>
+    <string name="button_discard">discard</string>
     <string name="button_learn_more">learn more</string>
     <string name="invalid_password_dialog_title">invalid password</string>
     <string name="invalid_password_dialog_message">the server rejected your password.\n\nchange the password in the settings screen.</string>
@@ -147,6 +149,9 @@
     <string name="playlist_not_deleted">could not delete playlist \'%s\'</string>
     <string name="playlist_edit_activity">editing playlist \'%s\'</string>
     <string name="playlist_edit_save_failed">could not save playlist</string>
+    <string name="playlist_edit_save_success">playlist saved</string>
+    <string name="playlist_edit_save_changes_title">save changes?</string>
+    <string name="playlist_edit_save_changes_message">do you want to save the changes you made to this playlist?</string>
     <string name="remove_from_playlist_dialog_title">confirm</string>
     <string name="remove_from_playlist_dialog_message">are you sure you want to remove \`%s\` from this playlist?</string>
     <string name="spotlight_playback_mode_title">playback mode</string>

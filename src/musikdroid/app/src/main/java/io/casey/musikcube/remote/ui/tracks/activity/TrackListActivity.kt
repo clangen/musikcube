@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
@@ -27,7 +28,6 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
-import java.util.*
 
 class TrackListActivity : BaseActivity(), Filterable {
     private lateinit var tracks: TrackListSlidingWindow
@@ -86,10 +86,29 @@ class TrackListActivity : BaseActivity(), Filterable {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        if (Messages.Category.PLAYLISTS != categoryType) {
+        if (Messages.Category.PLAYLISTS == categoryType) {
+            menuInflater.inflate(R.menu.view_playlist_menu, menu)
+        }
+        else {
             initSearchMenu(menu, this)
         }
         return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_edit) {
+            val name = intent.getStringExtra(EXTRA_CATEGORY_VALUE)
+            startActivityForResult(EditPlaylistActivity.getStartIntent(
+                this, name, categoryId), REQUEST_CODE_EDIT_PLAYLIST)
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQUEST_CODE_EDIT_PLAYLIST && resultCode == RESULT_OK) {
+            showSnackbar(R.string.playlist_edit_save_success)
+        }
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onPause() {
@@ -232,6 +251,8 @@ class TrackListActivity : BaseActivity(), Filterable {
         private val EXTRA_CATEGORY_TYPE = "extra_category_type"
         private val EXTRA_SELECTED_ID = "extra_selected_id"
         private val EXTRA_TITLE_ID = "extra_title_id"
+        private val EXTRA_CATEGORY_VALUE = "extra_category_value"
+        private val REQUEST_CODE_EDIT_PLAYLIST = 72
 
         fun getStartIntent(context: Context, type: String, id: Long): Intent =
             getStartIntent(context, type, id, "")
@@ -245,6 +266,7 @@ class TrackListActivity : BaseActivity(), Filterable {
             val intent = Intent(context, TrackListActivity::class.java)
                 .putExtra(EXTRA_CATEGORY_TYPE, type)
                 .putExtra(EXTRA_SELECTED_ID, id)
+                .putExtra(EXTRA_CATEGORY_VALUE, categoryValue)
 
             if (Strings.notEmpty(categoryValue)) {
                 intent.putExtra(

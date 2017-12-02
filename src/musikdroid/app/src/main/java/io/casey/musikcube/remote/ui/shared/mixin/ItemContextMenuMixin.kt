@@ -88,7 +88,11 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             pendingCode = -1
             completion = null
         }
-
+        else if (result == Activity.RESULT_OK && request == REQUEST_EDIT_PLAYLIST) {
+            showSnackbar(
+                activity.findViewById(android.R.id.content),
+                R.string.playlist_edit_add_success)
+        }
         super.onActivityResult(request, result, data)
     }
 
@@ -235,7 +239,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     ConfirmDeletePlaylistDialog.show(activity, this, playlistName, playlistId)
                 }
                 R.id.menu_playlist_edit -> {
-                    activity.startActivity(EditPlaylistActivity.getStartIntent(activity, playlistName, playlistId))
+                    activity.startActivityForResult(EditPlaylistActivity.getStartIntent(
+                        activity, playlistName, playlistId), REQUEST_EDIT_PLAYLIST)
                 }
                 R.id.menu_playlist_rename -> {
                     EnterPlaylistNameDialog.showForRename(activity, this, playlistName, playlistId)
@@ -548,6 +553,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     companion object {
-        private val REQUEST_ADD_TO_PLAYLIST = 128
+        private val REQUEST_ADD_TO_PLAYLIST = 32
+        private val REQUEST_EDIT_PLAYLIST = 33
     }
 }

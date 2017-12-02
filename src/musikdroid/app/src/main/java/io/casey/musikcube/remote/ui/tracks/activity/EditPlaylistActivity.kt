@@ -1,8 +1,11 @@
 package io.casey.musikcube.remote.ui.tracks.activity
 
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.support.v7.app.AlertDialog
+import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.helper.ItemTouchHelper
 import android.view.Menu
@@ -12,6 +15,7 @@ import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
+import io.casey.musikcube.remote.ui.shared.fragment.BaseDialogFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.casey.musikcube.remote.ui.tracks.adapter.EditPlaylistAdapter
@@ -38,6 +42,15 @@ class EditPlaylistActivity: BaseActivity() {
         touchHelper.attachToRecyclerView(recycler)
         adapter = EditPlaylistAdapter(viewModel, touchHelper)
         setupDefaultRecyclerView(recycler, adapter)
+        setResult(RESULT_CANCELED)
+    }
+
+    override fun onBackPressed() {
+        if (viewModel.modified) {
+            ConfirmDiscardChangesDialog.show(this)
+            return
+        }
+        super.onBackPressed()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -47,18 +60,7 @@ class EditPlaylistActivity: BaseActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_save) {
-            viewModel.save().subscribeBy(
-                onNext = { playlistId ->
-                    if (playlistId != -1L) {
-                        finish()
-                    }
-                    else {
-                        showErrorSnackbar(R.string.playlist_edit_save_failed)
-                    }
-                },
-                onError = {
-                    showErrorSnackbar(R.string.playlist_edit_save_failed)
-                })
+            saveAndFinish()
         }
         return super.onOptionsItemSelected(item)
     }
@@ -80,6 +82,26 @@ class EditPlaylistActivity: BaseActivity() {
         return EditPlaylistViewModel(intent.extras.getLong(EXTRA_PLAYLIST_ID, -1L)) as T
     }
 
+    private fun saveAndFinish() {
+        if (viewModel.modified) {
+            viewModel.save().subscribeBy(
+                onNext = { playlistId ->
+                    if (playlistId != -1L) {
+                        setResult(RESULT_OK)
+                        finish()
+                    } else {
+                        showErrorSnackbar(R.string.playlist_edit_save_failed)
+                    }
+                },
+                onError = {
+                    showErrorSnackbar(R.string.playlist_edit_save_failed)
+                })
+        }
+        else {
+            finish()
+        }
+    }
+
     private val touchHelperCallback = object:ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,
             ItemTouchHelper.LEFT)
@@ -95,6 +117,31 @@ class EditPlaylistActivity: BaseActivity() {
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
             viewModel.remove(viewHolder.adapterPosition)
             adapter.notifyItemRemoved(viewHolder.adapterPosition)
+        }
+    }
+
+    class ConfirmDiscardChangesDialog : BaseDialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val editActivity = activity as EditPlaylistActivity
+
+            val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.playlist_edit_save_changes_title)
+                .setMessage(R.string.playlist_edit_save_changes_message)
+                .setNegativeButton(R.string.button_discard, { _, _ -> editActivity.finish() })
+                .setPositiveButton(R.string.button_save, { _, _ -> editActivity.saveAndFinish() })
+                .create()
+
+            return dlg
+        }
+
+        companion object {
+            val TAG = "confirm_discard_playlist_changes"
+
+            fun show(activity: AppCompatActivity) {
+                dismiss(activity, TAG)
+                val result = ConfirmDiscardChangesDialog()
+                result.show(activity.supportFragmentManager, TAG)
+            }
         }
     }
 

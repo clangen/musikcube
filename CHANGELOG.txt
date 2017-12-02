@@ -2,6 +2,7 @@
 
 musikcube:
 * added support for Ubuntu Artsy
+* added preliminary audio encoders (MP3, OGG/Vorbis)
 * fixed and exposed album-level artwork. previously it was track-only.
 * fixed notification icon color
 
@@ -9,10 +10,10 @@ musikdroid:
 
 * gapless playback (for supported media)! enable in settings > playback 
   engine > "ExoPlayer Gapless (experimental)"
+* playlist create / rename / update / delete support
 * album art is now displayed in album rows when browsing
 * context menus on most screens with the ability to switch between related 
   content (e.g. albums by this artist, artists in this genre, etc)
-* preliminary playlist creation support. more to come in the future
 * added a simple "spotlight" tutorial for new users that explains switching
   between remote and streaming playback modes.
 * major refactor to the entire code base, including the following:
