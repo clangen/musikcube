@@ -105,23 +105,34 @@ class PluginAdapter : public ScrollAdapterBase {
         }
 
     private:
+        static std::string SortKey(const std::string& input) {
+            std::string name = input;
+            std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+            return name;
+        }
+
         void Refresh() {
             plugins.clear();
 
             PluginList& plugins = this->plugins;
             auto prefs = this->prefs;
 
-            typedef PluginFactory::NullDeleter<IPlugin> Deleter;
+            using Deleter = PluginFactory::NullDeleter<IPlugin>;
+            using Plugin = std::shared_ptr<IPlugin>;
 
             PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
                 "GetPlugin",
-                [&plugins, prefs](std::shared_ptr<IPlugin> plugin, const std::string& fn) {
+                [&plugins, prefs](Plugin plugin, const std::string& fn) {
                     PluginInfoPtr info(new PluginInfo());
                     info->name = plugin->Name();
                     info->fn = boost::filesystem::path(fn).filename().string();
                     info->enabled = prefs->GetBool(info->fn, true);
                     plugins.push_back(info);
                 });
+
+            std::sort(plugins.begin(), plugins.end(), [](PluginInfoPtr p1, PluginInfoPtr p2) -> bool {
+                return SortKey(p1->name) < SortKey(p2->name);
+            });
         }
 
         std::shared_ptr<Preferences> prefs;

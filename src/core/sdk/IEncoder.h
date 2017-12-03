@@ -35,6 +35,7 @@
 #pragma once
 
 #include "IBuffer.h"
+#include "IPreferences.h"
 #include <stddef.h>
 
 namespace musik { namespace core { namespace sdk {
@@ -46,6 +47,7 @@ namespace musik { namespace core { namespace sdk {
             virtual int Encode(const IBuffer* pcm, char** data) = 0;
             virtual int Flush(char** data) = 0;
             virtual void Finalize(const char* uri) = 0;
-    };
+            virtual IPreferences* GetPreferences() = 0;
+     };
 
 } } }

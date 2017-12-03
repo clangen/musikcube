@@ -33,7 +33,10 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "LameEncoder.h"
+#include "shared.h"
 #include <string>
+
+using namespace musik::core::sdk;
 
 #ifdef WIN32
 #include <windows.h>
@@ -48,10 +51,9 @@ static inline std::wstring utf8to16(const char* utf8) {
 }
 #endif
 
-void LameEncoder::Release() {
-    lame_close(lame);
-    lame = nullptr;
-    delete this;
+LameEncoder::LameEncoder() {
+    this->lame = nullptr;
+    this->prefs = env()->GetPreferences("LameEncoder");
 }
 
 void LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
@@ -64,6 +66,17 @@ void LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     lame_set_out_samplerate(lame, rate);
     lame_set_bWriteVbrTag(lame, 1);
     lame_init_params(lame);
+}
+
+void LameEncoder::Release() {
+    lame_close(lame);
+    lame = nullptr;
+    this->prefs->Release();
+    delete this;
+}
+
+IPreferences* LameEncoder::GetPreferences() {
+    return this->prefs;
 }
 
 int LameEncoder::Encode(const IBuffer* pcm, char** data) {

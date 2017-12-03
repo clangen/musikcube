@@ -38,6 +38,7 @@
 #include "IDataStream.h"
 #include "IDecoder.h"
 #include "IEncoder.h"
+#include "IPreferences.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -48,6 +49,7 @@ namespace musik { namespace core { namespace sdk {
             virtual IDecoder* GetDecoder(IDataStream* stream) = 0;
             virtual IEncoder* GetEncoder(const char* type) = 0;
             virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) = 0;
+            virtual IPreferences* GetPreferences(const char* name) = 0;
     };
 
 } } }

@@ -47,6 +47,7 @@ namespace musik { namespace core {
     class Preferences : public musik::core::sdk::IPreferences {
         public:
             enum Mode {
+                ModeTransient,
                 ModeReadOnly,
                 ModeReadWrite,
                 ModeAutoSave
@@ -54,6 +55,8 @@ namespace musik { namespace core {
 
             static void LoadPluginPreferences();
             static void SavePluginPreferences();
+
+            static musik::core::sdk::IPreferences* Unmanaged(const std::string& name);
 
             static std::shared_ptr<Preferences>
                 ForPlugin(const std::string& pluginName);
@@ -64,15 +67,17 @@ namespace musik { namespace core {
             ~Preferences();
 
             /* IPreferences (for plugin use) */
-            virtual bool GetBool(const char* key, bool defaultValue = false);
-            virtual int GetInt(const char* key, int defaultValue = 0);
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
-            virtual int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "");
+            virtual void Release() override;
 
-            virtual void SetBool(const char* key, bool value);
-            virtual void SetInt(const char* key, int value);
-            virtual void SetDouble(const char* key, double value);
-            virtual void SetString(const char* key, const char* value);
+            virtual bool GetBool(const char* key, bool defaultValue = false) override;
+            virtual int GetInt(const char* key, int defaultValue = 0) override;
+            virtual double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            virtual int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "") override;
+
+            virtual void SetBool(const char* key, bool value) override;
+            virtual void SetInt(const char* key, int value) override;
+            virtual void SetDouble(const char* key, double value) override;
+            virtual void SetString(const char* key, const char* value) override;
 
             virtual void Save();
 

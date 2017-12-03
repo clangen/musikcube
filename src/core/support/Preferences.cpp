@@ -63,25 +63,25 @@ static FILE* openFile(const std::string& fn, const std::string& mode) {
 }
 
 static std::string fileToString(const std::string& fn) {
-    FILE* f = openFile(fn, "rb");
     std::string result;
 
-    if (!f) {
-        return result;
+    if (fn.size()) {
+        FILE* f = openFile(fn, "rb");
+        if (f) {
+            fseek(f, 0, SEEK_END);
+            long len = ftell(f);
+            rewind(f);
+
+            if (len > 0) {
+                char* bytes = new char[len];
+                fread(static_cast<void*>(bytes), len, 1, f);
+                result.assign(bytes, len);
+                delete[] bytes;
+            }
+
+            fclose(f);
+        }
     }
-
-    fseek(f, 0, SEEK_END);
-    long len = ftell(f);
-    rewind(f);
-
-    if (len > 0) {
-        char* bytes = new char[len];
-        fread(static_cast<void*>(bytes), len, 1, f);
-        result.assign(bytes, len);
-        delete[] bytes;
-    }
-
-    fclose(f);
 
     return result;
 }
@@ -131,6 +131,14 @@ std::shared_ptr<Preferences> Preferences::ForPlugin(const std::string& pluginNam
     return pluginCache[name];
 }
 
+musik::core::sdk::IPreferences* Preferences::Unmanaged(const std::string& name) {
+    if (!name.size()) {
+        return new Preferences(name, ModeTransient);
+    }
+
+    return Preferences::ForPlugin("unmanaged_" + name).get();
+}
+
 std::shared_ptr<Preferences> Preferences::ForComponent(
     const std::string& c, Preferences::Mode mode)
 {
@@ -166,6 +174,12 @@ Preferences::Preferences(const std::string& component, Mode mode) {
 Preferences::~Preferences() {
     if (this->mode == ModeAutoSave) {
         this->Save();
+    }
+}
+
+void Preferences::Release() {
+    if (this->mode == ModeTransient) {
+        delete this;
     }
 }
 
@@ -242,8 +256,9 @@ void Preferences::Save() {
     if (this->mode == ModeReadOnly) {
         throw std::runtime_error("cannot save a ModeReadOnly Preference!");
     }
-
-    stringToFile(FILENAME(this->component), this->json.dump(2));
+    else if (this->mode != ModeTransient) {
+        stringToFile(FILENAME(this->component), this->json.dump(2));
+    }
 }
 
 /* SDK IPreferences interface */

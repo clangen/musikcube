@@ -36,6 +36,7 @@
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IEncoderFactory.h>
 
+#include "shared.h"
 #include "LameEncoder.h"
 #include "OggEncoder.h"
 
@@ -49,6 +50,8 @@
 #endif
 
 using namespace musik::core::sdk;
+
+static IEnvironment* environment = nullptr;
 
 static class Plugin : public IPlugin {
     public:
@@ -119,4 +122,12 @@ extern "C" DLL_EXPORT IPlugin* GetPlugin() {
 
 extern "C" DLL_EXPORT IEncoderFactory* GetEncoderFactory() {
     return &encoderFactory;
+}
+
+extern "C" DLL_EXPORT void SetEnvironment(musik::core::sdk::IEnvironment* env) {
+    environment = env;
+}
+
+IEnvironment* env() {
+    return environment;
 }

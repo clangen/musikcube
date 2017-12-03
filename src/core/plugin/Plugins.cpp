@@ -42,7 +42,7 @@
 #include <core/io/DataStreamFactory.h>
 #include <core/audio/Buffer.h>
 #include <core/audio/Streams.h>
-
+#include <core/support/Preferences.h>
 #include <core/library/LocalSimpleDataProvider.h>
 
 #include <core/sdk/IIndexerNotifier.h>
@@ -102,6 +102,10 @@ static class Environment : public IEnvironment {
 
         virtual IEncoder* GetEncoder(const char* type) override {
             return streams::GetEncoderForType(type);
+        }
+
+        virtual IPreferences* GetPreferences(const char* name) override {
+            return Preferences::Unmanaged(name ? name : std::string());
         }
 
         virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) override {

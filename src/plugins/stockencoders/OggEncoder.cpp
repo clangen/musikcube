@@ -33,10 +33,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "OggEncoder.h"
+#include "shared.h"
 #include <random>
 
 /* fre:ac/BoCA has an excellent example of vorbis encoder usage, a lot of code
 was adapted (stolen) from here: https://github.com/enzo1982/BoCA/blob/master/components/encoder/vorbis/vorbis.cpp */
+
+using namespace musik::core::sdk;
 
 void OggEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     ogg_stream_state os = { 0 };
@@ -48,6 +51,7 @@ void OggEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     vorbis_block vb = { 0 };
     this->bitrate = bitrate * 1000;
     this->headerWritten = false;
+    this->prefs = env()->GetPreferences("OggEncoder");
 }
 
 void OggEncoder::Release() {
@@ -56,7 +60,12 @@ void OggEncoder::Release() {
     vorbis_dsp_clear(&vd);
     vorbis_comment_clear(&vc);
     vorbis_info_clear(&vi);
+    this->prefs->Release();
     delete this;
+}
+
+IPreferences* OggEncoder::GetPreferences() {
+    return this->prefs;
 }
 
 int OggEncoder::Encode(const IBuffer* pcm, char** data) {

@@ -199,8 +199,8 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
             }
 
             this->encoder->Initialize(
-                this->pcmBuffer->SampleRate(), 
-                this->pcmBuffer->Channels(), 
+                this->pcmBuffer->SampleRate(),
+                this->pcmBuffer->Channels(),
                 this->bitrate);
         }
     }

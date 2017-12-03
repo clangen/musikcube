@@ -24,5 +24,8 @@
     <ClInclude Include="OggEncoder.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="shared.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

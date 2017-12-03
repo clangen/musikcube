@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="LameEncoder.h" />
     <ClInclude Include="OggEncoder.h" />
+    <ClInclude Include="shared.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

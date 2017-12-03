@@ -32,26 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IEncoder.h>
-#include <core/sdk/DataBuffer.h>
-#include <lame/lame.h>
+#pragma once
 
-class LameEncoder : public musik::core::sdk::IEncoder {
-    using IBuffer = musik::core::sdk::IBuffer;
+#include <core/sdk/IEnvironment.h>
 
-    public:
-        LameEncoder();
-
-        virtual void Release() override;
-        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
-        virtual int Encode(const IBuffer* pcm, char** data) override;
-        virtual int Flush(char** data) override;
-        virtual void Finalize(const char* uri) override;
-        virtual musik::core::sdk::IPreferences* GetPreferences() override;
-
-    private:
-        DataBuffer<unsigned char> encodedBytes;
-        DataBuffer<float> downmix;
-        musik::core::sdk::IPreferences* prefs;
-        lame_t lame;
-};
+extern musik::core::sdk::IEnvironment* env();

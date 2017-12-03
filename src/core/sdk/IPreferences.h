@@ -38,6 +38,8 @@ namespace musik { namespace core { namespace sdk {
 
     class IPreferences {
         public:
+            virtual void Release() = 0;
+
             virtual bool GetBool(const char* key, bool defaultValue = false) = 0;
             virtual int GetInt(const char* key, int defaultValue = 0) = 0;
             virtual double GetDouble(const char* key, double defaultValue = 0.0f) = 0;
