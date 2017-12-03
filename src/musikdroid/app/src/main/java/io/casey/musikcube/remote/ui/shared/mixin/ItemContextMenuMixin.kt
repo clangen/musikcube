@@ -41,13 +41,13 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     @Inject lateinit var provider: IDataProvider
 
     open class EventListener {
-        open fun onPlaylistDeleted(id: Long) { }
-        open fun onPlaylistCreated(id: Long) { }
-        open fun onPlaylistUpdated(id: Long) { }
+        open fun onPlaylistDeleted(id: Long, name: String) { }
+        open fun onPlaylistCreated(id: Long, name: String) { }
+        open fun onPlaylistUpdated(id: Long, name: String) { }
     }
 
     private var pendingCode = -1
-    private var completion: ((Long) -> Unit)? = null
+    private var completion: ((Long, String) -> Unit)? = null
 
     init {
         DaggerViewComponent.builder()
@@ -81,18 +81,25 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         if (pendingCode == request) {
             if (result == Activity.RESULT_OK && data != null) {
                 val playlistId = data.getLongExtra(CategoryBrowseActivity.EXTRA_ID, -1L)
+                val playlistName = data.getStringExtra(CategoryBrowseActivity.EXTRA_NAME)
                 if (playlistId != -1L) {
-                    completion?.invoke(playlistId)
+                    completion?.invoke(playlistId, playlistName)
                 }
             }
             pendingCode = -1
             completion = null
         }
-        else if (result == Activity.RESULT_OK && request == REQUEST_EDIT_PLAYLIST) {
+        else if (result == Activity.RESULT_OK && request == REQUEST_EDIT_PLAYLIST && data != null) {
+            val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME)
+            val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
+
             showSnackbar(
                 activity.findViewById(android.R.id.content),
-                R.string.playlist_edit_add_success)
+                context.getString(R.string.playlist_edit_add_success, playlistName),
+                context.getString(R.string.button_view),
+                viewPlaylist(playlistId, playlistName))
         }
+
         super.onActivityResult(request, result, data)
     }
 
@@ -103,7 +110,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         provider.createPlaylist(playlistName).subscribeBy(
             onNext = { id ->
                 if (id > 0L) {
-                    listener?.onPlaylistCreated(id)
+                    listener?.onPlaylistCreated(id, playlistName)
                     showSuccess(activity.getString(R.string.playlist_created, playlistName))
                 }
                 else {
@@ -119,7 +126,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         provider.renamePlaylist(id, newName).subscribeBy(
             onNext = { success ->
                 if (success) {
-                    listener?.onPlaylistUpdated(id)
+                    listener?.onPlaylistUpdated(id, newName)
                     showSuccess(activity.getString(R.string.playlist_renamed, newName))
                 }
                 else {
@@ -135,31 +142,34 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         addToPlaylist(listOf(track))
 
     fun addToPlaylist(tracks: List<ITrack>) {
-        showPlaylistChooser { id ->
-            addWithErrorHandler(id, provider.appendToPlaylist(id, tracks))
-        }
-    }
-
-    fun addToPlaylist(categoryType: String, categoryId: Long) {
-        showPlaylistChooser { id ->
-            addWithErrorHandler(id, provider.appendToPlaylist(id, categoryType, categoryId))
+        showPlaylistChooser { id, name ->
+            addWithErrorHandler(id, name, provider.appendToPlaylist(id, tracks))
         }
     }
 
     fun addToPlaylist(category: ICategoryValue) {
-        showPlaylistChooser { id ->
-            addWithErrorHandler(id, provider.appendToPlaylist(id, category))
+        showPlaylistChooser { id, name ->
+            addWithErrorHandler(id, name, provider.appendToPlaylist(id, category))
         }
     }
 
-    private fun addWithErrorHandler(playlistId: Long, observable: Observable<Boolean>) {
+    private fun viewPlaylist(playlistId: Long, playlistName: String): ((View) -> Unit) = { _ ->
+        activity.startActivity(TrackListActivity.getStartIntent(
+            activity, Messages.Category.PLAYLISTS, playlistId, playlistName))
+    }
+
+    private fun addWithErrorHandler(playlistId: Long, playlistName: String, observable: Observable<Boolean>) {
         val error = R.string.playlist_edit_add_error
 
         observable.subscribeBy(
             onNext = { success ->
                 if (success) {
-                    listener?.onPlaylistUpdated(playlistId)
-                    showSuccess(R.string.playlist_edit_add_success)
+                    listener?.onPlaylistUpdated(playlistId, playlistName)
+
+                    showSuccess(
+                        context.getString(R.string.playlist_edit_add_success, playlistName),
+                        context.getString(R.string.button_view),
+                        viewPlaylist(playlistId, playlistName))
                 }
                 else {
                     showError(error)
@@ -168,7 +178,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             onError = { showError(error) })
     }
 
-    private fun showPlaylistChooser(callback: (Long) -> Unit) {
+    private fun showPlaylistChooser(callback: (Long, String) -> Unit) {
         completion = callback
         pendingCode = REQUEST_ADD_TO_PLAYLIST
 
@@ -182,14 +192,14 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     fun showForTrack(track: ITrack, anchorView: View) {
-        showForTrack(track, -1, -1, anchorView, TrackType.Normal)
+        showForTrack(track, -1, -1, "", anchorView, TrackType.Normal)
     }
 
-    fun showForPlaylistTrack(track: ITrack, position: Int, playlistId: Long, anchorView: View) {
-        showForTrack(track, position, playlistId, anchorView, TrackType.Playlist)
+    fun showForPlaylistTrack(track: ITrack, position: Int, playlistId: Long, playlistName: String, anchorView: View) {
+        showForTrack(track, position, playlistId, playlistName, anchorView, TrackType.Playlist)
     }
 
-    private fun showForTrack(track: ITrack, position: Int, categoryId: Long, anchorView: View, type: TrackType) {
+    private fun showForTrack(track: ITrack, position: Int, categoryId: Long, categoryValue: String, anchorView: View, type: TrackType) {
         val popup = PopupMenu(activity, anchorView)
         popup.inflate(R.menu.track_item_context_menu)
 
@@ -205,7 +215,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 }
                 R.id.menu_remove_from_playlist -> {
                     ConfirmRemoveFromPlaylistDialog.show(
-                        activity, this, categoryId, position, track)
+                        activity, this, categoryId, categoryValue, position, track)
                     null
                 }
                 R.id.menu_show_artist_albums -> {
@@ -335,7 +345,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             provider.deletePlaylist(playlistId).subscribeBy(
                 onNext = { success ->
                     if (success) {
-                        listener?.onPlaylistDeleted(playlistId)
+                        listener?.onPlaylistDeleted(playlistId, playlistName)
                         showSuccess(activity.getString(R.string.playlist_deleted, playlistName))
                     }
                     else {
@@ -348,10 +358,10 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
     }
 
-    private fun removeFromPlaylistConfirmed(playlistId: Long, externalId: String, position: Int) {
+    private fun removeFromPlaylistConfirmed(playlistId: Long, playlistName: String, externalId: String, position: Int) {
         provider.removeTracksFromPlaylist(playlistId, listOf(externalId), listOf(position)).subscribeBy(
-            onNext = { success ->
-                listener?.onPlaylistUpdated(playlistId)
+            onNext = { _ ->
+                listener?.onPlaylistUpdated(playlistId, playlistName)
             },
             onError = {
 
@@ -359,11 +369,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         )
     }
 
-    private fun showSuccess(stringId: Int) =
-        showSuccess(activity.getString(stringId))
-
-    private fun showSuccess(message: String) =
-        showSnackbar(activity.findViewById(android.R.id.content), message)
+    private fun showSuccess(message: String, button: String? = null, cb: ((View) -> Unit)? = null) =
+        showSnackbar(activity.findViewById(android.R.id.content), message, buttonText = button, buttonCb = cb)
 
     private fun showError(message: Int) =
         showError(activity.getString(message))
@@ -376,6 +383,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val playlistId = arguments.getLong(EXTRA_PLAYLIST_ID, -1)
+            val playlistName = arguments.getString(EXTRA_PLAYLIST_NAME) ?: ""
             val trackTitle = arguments.getString(EXTRA_TRACK_TITLE, "")
             val trackExternalId = arguments.getString(EXTRA_TRACK_EXTERNAL_ID, "")
             val trackPosition = arguments.getInt(EXTRA_TRACK_POSITION, -1)
@@ -385,7 +393,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 .setMessage(getString(R.string.playlist_confirm_delete_message, trackTitle))
                 .setNegativeButton(R.string.button_no, null)
                 .setPositiveButton(R.string.button_yes, { _: DialogInterface, _: Int ->
-                    mixin.removeFromPlaylistConfirmed(playlistId, trackExternalId, trackPosition)
+                    mixin.removeFromPlaylistConfirmed(playlistId, playlistName, trackExternalId, trackPosition)
                 })
                 .create()
 
@@ -396,6 +404,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         companion object {
             val TAG = "confirm_delete_playlist_dialog"
             private val EXTRA_PLAYLIST_ID = "extra_playlist_id"
+            private val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
             private val EXTRA_TRACK_TITLE = "extra_track_title"
             private val EXTRA_TRACK_EXTERNAL_ID = "extra_track_external_id"
             private val EXTRA_TRACK_POSITION = "extra_track_position"
@@ -404,10 +413,11 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 find<ConfirmRemoveFromPlaylistDialog>(activity, TAG)?.mixin = mixin
             }
 
-            fun show(activity: AppCompatActivity, mixin: ItemContextMenuMixin, playlistId: Long, position: Int, track: ITrack) {
+            fun show(activity: AppCompatActivity, mixin: ItemContextMenuMixin, playlistId: Long, playlistName: String, position: Int, track: ITrack) {
                 dismiss(activity, TAG)
                 val args = Bundle()
                 args.putLong(EXTRA_PLAYLIST_ID, playlistId)
+                args.putString(EXTRA_PLAYLIST_NAME, playlistName)
                 args.putString(EXTRA_TRACK_TITLE, track.title)
                 args.putString(EXTRA_TRACK_EXTERNAL_ID, track.externalId)
                 args.putInt(EXTRA_TRACK_POSITION, position)
@@ -423,7 +433,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         private lateinit var mixin: ItemContextMenuMixin
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val playlistName = arguments.getString(EXTRA_PLAYLIST_NAME, "")
+            val playlistName = arguments.getString(EXTRA_PLAYLIST_NAME, "") ?: ""
 
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.playlist_confirm_delete_title)

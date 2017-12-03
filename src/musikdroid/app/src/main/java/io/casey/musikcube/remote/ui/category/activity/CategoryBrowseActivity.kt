@@ -141,12 +141,12 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     }
 
     private val contextMenuListener = object: ItemContextMenuMixin.EventListener() {
-        override fun onPlaylistDeleted(id: Long) = requery()
+        override fun onPlaylistDeleted(id: Long, name: String) = requery()
 
-        override fun onPlaylistUpdated(id: Long) = requery()
+        override fun onPlaylistUpdated(id: Long, name: String) = requery()
 
-        override fun onPlaylistCreated(id: Long) =
-            if (navigationType == NavigationType.Select) navigateToSelect(id) else requery()
+        override fun onPlaylistCreated(id: Long, name: String) =
+            if (navigationType == NavigationType.Select) navigateToSelect(id, name) else requery()
     }
 
     private val adapterListener = object: CategoryBrowseAdapter.EventListener {
@@ -154,7 +154,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
             when (navigationType) {
                 NavigationType.Albums -> navigateToAlbums(value)
                 NavigationType.Tracks -> navigateToTracks(value)
-                NavigationType.Select -> navigateToSelect(value.id)
+                NavigationType.Select -> navigateToSelect(value.id, value.value)
             }
         }
 
@@ -169,10 +169,11 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     private fun navigateToTracks(entry: ICategoryValue) =
         startActivity(TrackListActivity.getStartIntent(this, category, entry.id, entry.value))
 
-    private fun navigateToSelect(id: Long) {
+    private fun navigateToSelect(id: Long, name: String) {
         val intent = Intent()
             .putExtra(EXTRA_CATEGORY, category)
             .putExtra(EXTRA_ID, id)
+            .putExtra(EXTRA_NAME, name)
         setResult(RESULT_OK, intent)
         finish()
     }
@@ -180,6 +181,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     companion object {
         val EXTRA_CATEGORY = "extra_category"
         val EXTRA_ID = "extra_id"
+        val EXTRA_NAME = "extra_name"
         private val EXTRA_PREDICATE_TYPE = "extra_predicate_type"
         private val EXTRA_PREDICATE_ID = "extra_predicate_id"
         private val EXTRA_NAVIGATION_TYPE = "extra_navigation_type"

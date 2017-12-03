@@ -699,7 +699,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             }
             .subscribeBy(
                 onNext = { track ->
-                    Log.e(TAG, "here")
                     if (playContext.currentMetadata == null) {
                         playContext.currentMetadata = track.firstOrNull()
                     }

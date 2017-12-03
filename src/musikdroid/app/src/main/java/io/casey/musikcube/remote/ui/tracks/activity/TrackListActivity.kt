@@ -40,6 +40,7 @@ class TrackListActivity : BaseActivity(), Filterable {
 
     private var categoryType: String = ""
     private var categoryId: Long = 0
+    private var categoryValue: String = ""
     private var lastFilter = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +53,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         val intent = intent
         categoryType = intent.getStringExtra(EXTRA_CATEGORY_TYPE) ?: ""
         categoryId = intent.getLongExtra(EXTRA_SELECTED_ID, 0)
+        categoryValue = intent.getStringExtra(EXTRA_CATEGORY_VALUE) ?: ""
         val titleId = intent.getIntExtra(EXTRA_TITLE_ID, R.string.songs_title)
 
         mixin(ItemContextMenuMixin(this, menuListener))
@@ -97,16 +99,26 @@ class TrackListActivity : BaseActivity(), Filterable {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_edit) {
-            val name = intent.getStringExtra(EXTRA_CATEGORY_VALUE)
             startActivityForResult(EditPlaylistActivity.getStartIntent(
-                this, name, categoryId), REQUEST_CODE_EDIT_PLAYLIST)
+                this, categoryValue, categoryId), REQUEST_CODE_EDIT_PLAYLIST)
         }
         return super.onOptionsItemSelected(item)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == REQUEST_CODE_EDIT_PLAYLIST && resultCode == RESULT_OK) {
-            showSnackbar(R.string.playlist_edit_save_success)
+        if (requestCode == REQUEST_CODE_EDIT_PLAYLIST && resultCode == RESULT_OK && data != null) {
+            val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
+            val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
+
+            if (categoryType != Messages.Category.PLAYLISTS || playlistId != this.categoryId) {
+                showSnackbar(
+                    getString(R.string.playlist_edit_save_success, playlistName),
+                    buttonText = getString(R.string.button_view),
+                    buttonCb = { _ ->
+                        startActivity(TrackListActivity.getStartIntent(
+                                this@TrackListActivity, Messages.Category.PLAYLISTS, playlistId, playlistName))
+                    })
+            }
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
@@ -144,7 +156,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         override fun onActionItemClick(view: View, track: ITrack, position: Int) {
             val mixin = mixin(ItemContextMenuMixin::class.java)!!
             if (categoryType == Messages.Category.Companion.PLAYLISTS) {
-                mixin.showForPlaylistTrack(track, position, categoryId, view)
+                mixin.showForPlaylistTrack(track, position, categoryId, categoryValue, view)
             }
             else {
                 mixin.showForTrack(track, view)
@@ -238,7 +250,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         get() {
             if (categoryType == Messages.Category.PLAYLISTS) {
                 return object: ItemContextMenuMixin.EventListener () {
-                    override fun onPlaylistUpdated(id: Long) {
+                    override fun onPlaylistUpdated(id: Long, name: String) {
                         tracks.requery()
                     }
                 }

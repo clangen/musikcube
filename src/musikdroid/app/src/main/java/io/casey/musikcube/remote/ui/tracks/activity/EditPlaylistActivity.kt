@@ -27,12 +27,13 @@ class EditPlaylistActivity: BaseActivity() {
     private lateinit var viewModel: EditPlaylistViewModel
     private lateinit var data: DataProviderMixin
     private lateinit var adapter: EditPlaylistAdapter
+    private var playlistName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         mixin(ViewModelMixin(this))
         data = mixin(DataProviderMixin())
         super.onCreate(savedInstanceState)
-        val playlistName = intent.extras.getString(EXTRA_PLAYLIST_NAME, "-")
+        playlistName = intent.extras.getString(EXTRA_PLAYLIST_NAME, "-")
         title = getString(R.string.playlist_edit_activity, playlistName)
         setContentView(R.layout.recycler_view_activity)
         viewModel = getViewModel()!!
@@ -87,7 +88,10 @@ class EditPlaylistActivity: BaseActivity() {
             viewModel.save().subscribeBy(
                 onNext = { playlistId ->
                     if (playlistId != -1L) {
-                        setResult(RESULT_OK)
+                        val data = Intent()
+                        data.putExtra(EXTRA_PLAYLIST_NAME, playlistName)
+                        data.putExtra(EXTRA_PLAYLIST_ID, playlistId)
+                        setResult(RESULT_OK, data)
                         finish()
                     } else {
                         showErrorSnackbar(R.string.playlist_edit_save_failed)
@@ -146,8 +150,8 @@ class EditPlaylistActivity: BaseActivity() {
     }
 
     companion object {
-        private val EXTRA_PLAYLIST_ID = "extra_playlist_id"
-        private val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
+        val EXTRA_PLAYLIST_ID = "extra_playlist_id"
+        val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
 
         fun getStartIntent(context: Context, playlistName: String, playlistId: Long): Intent {
             return Intent(context, EditPlaylistActivity::class.java)

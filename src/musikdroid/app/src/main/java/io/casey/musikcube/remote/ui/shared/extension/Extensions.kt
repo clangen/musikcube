@@ -175,8 +175,13 @@ fun AppCompatActivity.showDialog(dialog: DialogFragment, tag: String) {
     dialog.show(this.supportFragmentManager, tag)
 }
 
-fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int) {
+fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) {
     val sb = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
+
+    if (buttonText != null && buttonCb != null) {
+        sb.setAction(buttonText, buttonCb)
+    }
+
     val sbView = sb.view
     val context = view.context
     sbView.setBackgroundColor(ContextCompat.getColor(context, bgColor))
@@ -185,29 +190,32 @@ fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int) {
     sb.show()
 }
 
-fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int) =
-    showSnackbar(view, Application.instance!!.getString(stringId), bgColor, fgColor)
+fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showSnackbar(view, Application.instance!!.getString(stringId), bgColor, fgColor, buttonText, buttonCb)
 
-fun showSnackbar(view: View, text: String) =
-    showSnackbar(view, text, R.color.color_primary, R.color.theme_foreground)
+fun showSnackbar(view: View, text: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showSnackbar(view, text, R.color.color_primary, R.color.theme_foreground, buttonText, buttonCb)
 
-fun showSnackbar(view: View, stringId: Int) =
-    showSnackbar(view, Application.instance!!.getString(stringId))
+fun showSnackbar(view: View, stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showSnackbar(view, Application.instance!!.getString(stringId), buttonText, buttonCb)
 
-fun showErrorSnackbar(view: View, text: String) =
-    showSnackbar(view, text, R.color.theme_red, R.color.theme_foreground)
+fun showErrorSnackbar(view: View, text: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showSnackbar(view, text, R.color.theme_red, R.color.theme_foreground, buttonText, buttonCb)
 
-fun showErrorSnackbar(view: View, stringId: Int) =
-    showErrorSnackbar(view, Application.instance!!.getString(stringId))
+fun showErrorSnackbar(view: View, stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showErrorSnackbar(view, Application.instance!!.getString(stringId), buttonText, buttonCb)
 
-fun AppCompatActivity.showErrorSnackbar(stringId: Int) =
-    showErrorSnackbar(this.findViewById<View>(android.R.id.content), stringId)
+fun AppCompatActivity.showErrorSnackbar(stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showErrorSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
 
-fun AppCompatActivity.showSnackbar(stringId: Int) =
-    showSnackbar(this.findViewById<View>(android.R.id.content), stringId)
+fun AppCompatActivity.showSnackbar(stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
 
-fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int) =
-    showSnackbar(this.findViewById<View>(viewId), stringId)
+fun AppCompatActivity.showSnackbar(stringId: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+        showSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
+
+fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
+    showSnackbar(this.findViewById<View>(viewId), stringId, buttonText, buttonCb)
 
 fun fallback(input: String?, fallback: String): String =
     if (input.isNullOrEmpty()) fallback else input!!

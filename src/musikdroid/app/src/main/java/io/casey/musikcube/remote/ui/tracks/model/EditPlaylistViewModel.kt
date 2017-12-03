@@ -67,7 +67,8 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
             return Observable.just(playlistId)
         }
 
-        return dataProvider?.overwritePlaylistWithExternalIds(playlistId, externalIds.toList()) ?: Observable.just(-1L)
+        return dataProvider?.overwritePlaylistWithExternalIds(
+            playlistId, externalIds.toList()) ?: Observable.just(-1L)
     }
 
     fun remove(index: Int) {
@@ -77,7 +78,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
 
     fun move(from: Int, to: Int) {
         val id = externalIds.removeAt(from)
-        externalIds.add(if (to > from) (to - 1) else to, id)
+        externalIds.add(to, id)
         modified = true
     }
 
