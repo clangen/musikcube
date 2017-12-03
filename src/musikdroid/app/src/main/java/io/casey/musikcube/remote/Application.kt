@@ -7,11 +7,13 @@ import io.casey.musikcube.remote.injection.AppModule
 import io.casey.musikcube.remote.injection.DaggerAppComponent
 import io.casey.musikcube.remote.injection.ServiceModule
 import io.casey.musikcube.remote.service.gapless.GaplessHeaderService
+import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineDb
 import io.fabric.sdk.android.Fabric
 import javax.inject.Inject
 
 class Application : android.app.Application() {
     @Inject lateinit var gaplessService: GaplessHeaderService
+    @Inject lateinit var offlineDb: OfflineDb
 
     override fun onCreate() {
         instance = this
