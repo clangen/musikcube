@@ -90,7 +90,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
         }
 
     protected:
-        virtual bool OnRun(musik::core::db::Connection& db) {
+        virtual bool OnRun(musik::core::db::Connection& db) override {
             std::string sql = "SELECT id, external_id FROM tracks WHERE external_id IN(";
             for (size_t i = 0; i < externalIdCount; i++) {
                 sql += (i == 0) ? "?" : ",?";
@@ -128,7 +128,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
             return true;
         }
 
-        virtual std::string Name() {
+        virtual std::string Name() override {
             return "ExternalIdListToTrackListQuery";
         }
 

@@ -79,7 +79,7 @@ namespace musik { namespace core {
             virtual void SetDouble(const char* key, double value) override;
             virtual void SetString(const char* key, const char* value) override;
 
-            virtual void Save();
+            virtual void Save() override;
 
             /* easier interface for internal use */
             virtual bool GetBool(const std::string& key, bool defaultValue = false);
