@@ -95,8 +95,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
             showSnackbar(
                 activity.findViewById(android.R.id.content),
-                context.getString(R.string.playlist_edit_add_success, playlistName),
-                context.getString(R.string.button_view),
+                activity.getString(R.string.playlist_edit_add_success, playlistName),
+                activity.getString(R.string.button_view),
                 viewPlaylist(playlistId, playlistName))
         }
 
@@ -167,8 +167,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     listener?.onPlaylistUpdated(playlistId, playlistName)
 
                     showSuccess(
-                        context.getString(R.string.playlist_edit_add_success, playlistName),
-                        context.getString(R.string.button_view),
+                        activity.getString(R.string.playlist_edit_add_success, playlistName),
+                        activity.getString(R.string.button_view),
                         viewPlaylist(playlistId, playlistName))
                 }
                 else {

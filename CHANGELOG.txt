@@ -4,7 +4,6 @@ musikcube:
 * added support for Ubuntu Artsy
 * added preliminary audio encoders (MP3, OGG/Vorbis)
 * fixed and exposed album-level artwork. previously it was track-only.
-* fixed notification icon color
 
 musikdroid:
 
@@ -23,6 +22,7 @@ musikdroid:
   - a view component layer for sharing functionality across screens
 * updated Glide from v3 -> v4
 * updated to Android Studio 3.0.1 and related tooling
+* fixed notification icon color
 
 sdk:
 

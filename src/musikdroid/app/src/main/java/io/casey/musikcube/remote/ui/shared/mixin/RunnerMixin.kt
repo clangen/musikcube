@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.ui.shared.mixin
 
 import android.os.Bundle
 import com.uacf.taskrunner.Runner
+import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.framework.MixinBase
 
 class RunnerMixin(private val callbacks: Runner.TaskCallbacks,
@@ -12,7 +13,7 @@ class RunnerMixin(private val callbacks: Runner.TaskCallbacks,
 
     override fun onCreate(bundle: Bundle) {
         super.onCreate(bundle)
-        this.runner = Runner.attach(this.context, callingType, callbacks, bundle, null)
+        this.runner = Runner.attach(Application.instance!!, callingType, callbacks, bundle, null)
     }
 
     override fun onResume() {

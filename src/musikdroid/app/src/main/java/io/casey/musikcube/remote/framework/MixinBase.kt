@@ -15,9 +15,6 @@ abstract class MixinBase : IMixin {
     protected val active
         get() = state == State.Resumed
 
-    protected var context = Application.instance!!
-        private set
-
     override fun onCreate(bundle: Bundle) {
         state = State.Created
     }
