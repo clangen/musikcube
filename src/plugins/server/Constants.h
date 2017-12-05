@@ -113,6 +113,7 @@ namespace key {
     static const std::string relative = "relative";
     static const std::string password = "password";
     static const std::string authenticated = "authenticated";
+    static const std::string environment = "environment";
     static const std::string playlist_id = "playlist_id";
     static const std::string playlist_name = "playlist_name";
     static const std::string subquery = "subquery";
@@ -121,6 +122,8 @@ namespace key {
     static const std::string sort_orders = "sort_orders";
     static const std::string predicate_category = "predicate_category";
     static const std::string predicate_id = "predicate_id";
+    static const std::string sdk_version = "sdk_version";
+    static const std::string api_version = "api_version";
 }
 
 namespace value {
@@ -193,3 +196,5 @@ static auto REPEAT_MODE_TO_STRING = makeBimap<musik::core::sdk::RepeatMode, std:
     { musik::core::sdk::RepeatTrack, "track" },
     { musik::core::sdk::RepeatList, "list" }
 });
+
+static const int ApiVersion = 12;

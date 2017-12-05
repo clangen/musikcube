@@ -96,6 +96,15 @@ static std::shared_ptr<T> jsonToIntArray(json& arr) {
     });
 }
 
+static json getEnvironment(Context& context) {
+    return {
+        { prefs::http_server_enabled, context.prefs->GetBool(prefs::http_server_enabled.c_str()) },
+        { prefs::http_server_port, context.prefs->GetInt(prefs::http_server_port.c_str()) },
+        { key::sdk_version, musik::core::sdk::SdkVersion },
+        { key::api_version, ApiVersion }
+    };
+}
+
 /* IMPLEMENTATION */
 
 WebSocketServer::WebSocketServer(Context& context)
@@ -215,9 +224,10 @@ void WebSocketServer::HandleAuthentication(connection_hdl connection, json& requ
             this->connections[connection] = true; /* mark as authed */
 
             this->RespondWithOptions(
-                connection,
-                request,
-                json({ { key::authenticated, true } }));
+                connection, request, json({ 
+                    { key::authenticated, true },
+                    { key::environment, getEnvironment(context) }
+                }));
 
             return;
         }
@@ -871,10 +881,7 @@ void WebSocketServer::RespondWithPlayTracksByCategory(connection_hdl connection,
 }
 
 void WebSocketServer::RespondWithEnvironment(connection_hdl connection, json& request) {
-    this->RespondWithOptions(connection, request, {
-        { prefs::http_server_enabled, context.prefs->GetBool(prefs::http_server_enabled.c_str()) },
-        { prefs::http_server_port, context.prefs->GetInt(prefs::http_server_port.c_str()) }
-    });
+    this->RespondWithOptions(connection, request, getEnvironment(context));
 }
 
 void WebSocketServer::RespondWithCurrentTime(connection_hdl connection, json& request) {
