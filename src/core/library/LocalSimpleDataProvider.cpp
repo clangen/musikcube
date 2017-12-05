@@ -49,6 +49,8 @@
 #include <core/library/query/local/TrackListQueryBase.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/runtime/Message.h>
+#include <core/support/Messages.h>
 #include <vector>
 #include <map>
 
@@ -58,6 +60,7 @@ using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::library;
+using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 
 /* QUERIES */
@@ -224,6 +227,11 @@ class RemoveFromPlaylistQuery : public LocalQueryBase {
             }
             else {
                 this->updated = 0;
+            }
+
+            if (this->updated > 0) {
+                this->library->GetMessageQueue().Broadcast(
+                    Message::Create(nullptr, message::PlaylistModified, playlistId));
             }
 
             return true;
@@ -427,7 +435,7 @@ static uint64_t savePlaylist(
 
             if (query->GetStatus() == IQuery::Finished) {
                 if (strlen(playlistName)) {
-                    query = SavePlaylistQuery::Rename(playlistId, playlistName);
+                    query = SavePlaylistQuery::Rename(library, playlistId, playlistName);
 
                     library->Enqueue(query, ILibrary::QuerySynchronous);
 
@@ -520,7 +528,7 @@ bool LocalSimpleDataProvider::RenamePlaylist(const int64_t playlistId, const cha
     if (strlen(name)) {
         try {
             std::shared_ptr<SavePlaylistQuery> query =
-                SavePlaylistQuery::Rename(playlistId, name);
+                SavePlaylistQuery::Rename(library, playlistId, name);
 
             this->library->Enqueue(query, ILibrary::QuerySynchronous);
 
@@ -539,7 +547,7 @@ bool LocalSimpleDataProvider::RenamePlaylist(const int64_t playlistId, const cha
 bool LocalSimpleDataProvider::DeletePlaylist(const int64_t playlistId) {
     try {
         std::shared_ptr<DeletePlaylistQuery> query =
-            std::make_shared<DeletePlaylistQuery>(playlistId);
+            std::make_shared<DeletePlaylistQuery>(library, playlistId);
 
         this->library->Enqueue(query, ILibrary::QuerySynchronous);
 

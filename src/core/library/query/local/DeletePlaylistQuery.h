@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <core/library/ILibrary.h>
 #include <core/library/query/local/LocalQueryBase.h>
 #include <core/db/Connection.h>
 
@@ -41,7 +42,10 @@ namespace musik { namespace core { namespace db { namespace local {
 
     class DeletePlaylistQuery : public musik::core::db::LocalQueryBase {
         public:
-            DeletePlaylistQuery(const int64_t playlistId);
+            DeletePlaylistQuery(
+                musik::core::ILibraryPtr library,
+                const int64_t playlistId);
+
             virtual ~DeletePlaylistQuery();
 
             virtual std::string Name() { return "DeletePlaylistQuery"; }
@@ -51,6 +55,7 @@ namespace musik { namespace core { namespace db { namespace local {
 
         private:
             int64_t playlistId;
+            musik::core::ILibraryPtr library;
     };
 
 } } } }

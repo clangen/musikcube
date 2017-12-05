@@ -40,6 +40,7 @@
 
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
+#include <core/support/Messages.h>
 
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/Hotkeys.h>
@@ -58,6 +59,7 @@ using namespace musik::core::runtime;
     (this->visibleLayout == target) && \
     (this->shortcuts && !this->shortcuts->IsFocused())
 
+using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
@@ -300,10 +302,10 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     switch (message.Type()) {
         case message::JumpToCategory: {
             static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
-                { message::category::Album, constants::Track::ALBUM },
-                { message::category::Artist, constants::Track::ARTIST },
-                { message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
-                { message::category::Genre, constants::Track::GENRE }
+                { cube::message::category::Album, constants::Track::ALBUM },
+                { cube::message::category::Artist, constants::Track::ARTIST },
+                { cube::message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
+                { cube::message::category::Genre, constants::Track::GENRE }
             };
 
             auto type = JUMP_TYPE_TO_COLUMN[(int)message.UserData1()];
@@ -312,8 +314,10 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
         }
         break;
 
-        case message::TracksAddedToPlaylist:
-        case message::PlaylistCreated: {
+        case core::message::PlaylistModified:
+        case core::message::PlaylistCreated:
+        case core::message::PlaylistRenamed:
+        case core::message::PlaylistDeleted: {
             MessageQueue().Post(Message::Create(
                 this->browseLayout.get(),
                 message.Type(),

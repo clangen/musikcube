@@ -71,6 +71,7 @@ namespace musik { namespace core { namespace db { namespace local {
                 musik::core::sdk::ITrackList* tracks);
 
             static std::shared_ptr<SavePlaylistQuery> Rename(
+                musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 const std::string& playlistName);
 
@@ -128,6 +129,7 @@ namespace musik { namespace core { namespace db { namespace local {
                 int64_t categoryId);
 
             SavePlaylistQuery(
+                musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 const std::string& newName);
 

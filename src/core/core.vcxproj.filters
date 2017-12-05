@@ -477,5 +477,8 @@
     <ClInclude Include="sdk\IEncoderFactory.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
+    <ClInclude Include="support\Messages.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

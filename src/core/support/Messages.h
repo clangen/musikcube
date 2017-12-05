@@ -31,44 +31,20 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <string>
-#include <vector>
-#include <sigslot/sigslot.h>
+namespace musik {
+    namespace core {
+        namespace message {
+            static const int First = 512;
 
-#include <core/library/IIndexer.h>
-#include <core/library/IQuery.h>
-#include <core/runtime/IMessageQueue.h>
+            static const int PlaylistModified       = First + 1;
+            static const int PlaylistCreated        = First + 2;
+            static const int PlaylistRenamed        = First + 3;
+            static const int PlaylistDeleted        = First + 4;
 
-namespace musik { namespace core {
-
-    class ILibrary {
-        public:
-            using QueryPtr = std::shared_ptr<musik::core::db::IQuery>;
-            using Callback = std::function<void(QueryPtr)>;
-
-            sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
-
-            enum QueryFlag {
-                QuerySynchronous = 1
-            };
-
-            virtual ~ILibrary() { }
-
-            virtual int Enqueue(
-                QueryPtr query,
-                unsigned int options = 0,
-                Callback = Callback()) = 0;
-
-            virtual IIndexer *Indexer() = 0;
-            virtual int Id() = 0;
-            virtual const std::string& Name() = 0;
-            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
-            virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
-            virtual void Close() = 0;
-    };
-
-    typedef std::shared_ptr<ILibrary> ILibraryPtr;
-
-} }
+            static const int User                   = 4096;
+        }
+    }
+}

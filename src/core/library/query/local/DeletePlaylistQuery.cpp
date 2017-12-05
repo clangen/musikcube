@@ -37,10 +37,13 @@
 
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Statement.h>
+#include <core/support/Messages.h>
+#include <core/runtime/Message.h>
 
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
+using namespace musik::core::runtime;
 
 static std::string DELETE_PLAYLIST_TRACKS_QUERY =
     "DELETE FROM playlist_tracks WHERE playlist_id=?;";
@@ -48,7 +51,8 @@ static std::string DELETE_PLAYLIST_TRACKS_QUERY =
 static std::string DELETE_PLAYLIST_QUERY =
     "DELETE FROM playlists WHERE id=?;";
 
-DeletePlaylistQuery::DeletePlaylistQuery(const int64_t playlistId) {
+DeletePlaylistQuery::DeletePlaylistQuery(musik::core::ILibraryPtr library, int64_t playlistId) {
+    this->library = library;
     this->playlistId = playlistId;
 }
 
@@ -58,7 +62,7 @@ DeletePlaylistQuery::~DeletePlaylistQuery() {
 bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
     ScopedTransaction transaction(db);
 
-    /* create playlist */
+    /* delete the tracks */
     Statement deleteTracks(DELETE_PLAYLIST_TRACKS_QUERY.c_str(), db);
     deleteTracks.BindInt64(0, this->playlistId);
 
@@ -67,7 +71,7 @@ bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
         return false;
     }
 
-    /* add tracks to playlist */
+    /* delete the container */
     Statement deletePlaylist(DELETE_PLAYLIST_QUERY.c_str(), db);
     deletePlaylist.BindInt64(0, this->playlistId);
 
@@ -75,6 +79,9 @@ bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
         transaction.Cancel();
         return false;
     }
+
+    this->library->GetMessageQueue().Broadcast(
+        Message::Create(nullptr, message::PlaylistDeleted, playlistId));
 
     return true;
 }

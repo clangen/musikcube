@@ -40,10 +40,13 @@
 #include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Statement.h>
+#include <core/runtime/Message.h>
+#include <core/support/Messages.h>
 
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
+using namespace musik::core::runtime;
 
 /* CONSTANTS */
 
@@ -111,10 +114,12 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
-    const int64_t playlistId, const std::string& playlistName)
+    musik::core::ILibraryPtr library,
+    const int64_t playlistId, 
+    const std::string& playlistName)
 {
     return std::shared_ptr<SavePlaylistQuery>(
-        new SavePlaylistQuery(playlistId, playlistName));
+        new SavePlaylistQuery(library, playlistId, playlistName));
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
@@ -223,9 +228,11 @@ SavePlaylistQuery::SavePlaylistQuery(
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
+    musik::core::ILibraryPtr library,
     const int64_t playlistId,
     const std::string& playlistName)
 {
+    this->library = library;
     this->categoryId = -1;
     this->playlistId = playlistId;
     this->playlistName = playlistName;
@@ -325,6 +332,9 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
         }
     }
 
+    this->library->GetMessageQueue().Broadcast(
+        Message::Create(nullptr, message::PlaylistCreated, playlistId));
+
     return true;
 }
 
@@ -332,7 +342,14 @@ bool SavePlaylistQuery::RenamePlaylist(musik::core::db::Connection &db) {
     Statement renamePlaylist(RENAME_PLAYLIST_QUERY.c_str(), db);
     renamePlaylist.BindText(0, this->playlistName);
     renamePlaylist.BindInt64(1, this->playlistId);
-    return (renamePlaylist.Step() != db::Error);
+    bool result = (renamePlaylist.Step() != db::Error);
+
+    if (result) {
+        this->library->GetMessageQueue().Broadcast(
+            Message::Create(nullptr, message::PlaylistRenamed, playlistId));
+    }
+
+    return result;
 }
 
 bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
@@ -353,6 +370,9 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
         return false;
     }
 
+    this->library->GetMessageQueue().Broadcast(
+        Message::Create(nullptr, message::PlaylistModified, playlistId));
+
     return true;
 }
 
@@ -366,6 +386,9 @@ bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
     if (!result) {
         transaction.Cancel();
     }
+
+    this->library->GetMessageQueue().Broadcast(
+        Message::Create(nullptr, message::PlaylistModified, playlistId));
 
     return result;
 }

@@ -37,6 +37,8 @@
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/runtime/Message.h>
+#include <core/support/Messages.h>
 #include <core/db/Statement.h>
 
 using musik::core::db::Statement;
@@ -47,6 +49,7 @@ using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
+using namespace musik::core::runtime;
 
 static std::string INSERT_PLAYLIST_TRACK_QUERY =
     "INSERT INTO playlist_tracks (track_external_id, source_id, playlist_id, sort_order) "
@@ -144,6 +147,9 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
     }
 
     transaction.CommitAndRestart();
+
+    this->library->GetMessageQueue().Broadcast(
+        Message::Create(nullptr, message::PlaylistModified, playlistId));
 
     return true;
 }

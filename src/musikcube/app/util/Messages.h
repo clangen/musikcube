@@ -35,14 +35,12 @@
 #pragma once
 
 #include "stdafx.h"
-
-#include <core/audio/PlaybackService.h>
-#include <app/window/TrackListView.h>
+#include <core/support/Messages.h>
 
 namespace musik {
     namespace cube {
         namespace message {
-            static const int JumpToCategory = 1024;
+            static const int First = musik::core::message::User + 1024;
 
             namespace category { /* User1 */
                 static const int Album = 0;
@@ -51,24 +49,17 @@ namespace musik {
                 static const int Genre = 3;
             }
 
-            static const int IndexerStarted = 1025;
-            static const int IndexerProgress = 1026;
-            static const int IndexerFinished = 1027;
-
-            static const int RequeryTrackList = 1028;
-
-            static const int RefreshTransport = 1029;
-
-            static const int RefreshLogs = 1030;
-
-            static const int TracksAddedToPlaylist = 1031;
-            static const int PlaylistCreated = 1032;
-
-            static const int UpdateCheckFinished = 1033;
-
-            static const int JumpToConsole = 1034;
-            static const int JumpToLibrary = 1035;
-            static const int JumpToSettings = 1036;
+            static const int JumpToCategory         = First + 1;
+            static const int IndexerStarted         = First + 2;
+            static const int IndexerProgress        = First + 3;
+            static const int IndexerFinished        = First + 4;
+            static const int RequeryTrackList       = First + 5;
+            static const int RefreshTransport       = First + 6;
+            static const int RefreshLogs            = First + 7;
+            static const int UpdateCheckFinished    = First + 8;
+            static const int JumpToConsole          = First + 9;
+            static const int JumpToLibrary          = First + 10;
+            static const int JumpToSettings         = First + 11;
         }
     }
 }

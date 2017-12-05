@@ -229,6 +229,7 @@
     <ClInclude Include="sdk\ITagStore.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
     <ClInclude Include="support\Common.h" />
+    <ClInclude Include="support\Messages.h" />
     <ClInclude Include="support\PreferenceKeys.h" />
     <ClInclude Include="support\Preferences.h" />
     <ClInclude Include="utfutil.h" />

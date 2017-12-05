@@ -58,6 +58,7 @@
 
 #define DEFAULT_OVERLAY_WIDTH 30
 
+using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::db;
@@ -207,8 +208,6 @@ static void createNewPlaylist(
                 if (name.size()) {
                     auto query = SavePlaylistQuery::Save(library, name, tracks);
                     library->Enqueue(query, 0, [&queue, callback](auto query) {
-                        queue.Post(Message::Create(nullptr, message::PlaylistCreated));
-
                         if (callback) {
                             callback(query);
                         }
@@ -234,9 +233,7 @@ static void createNewPlaylist(
             [&queue, library, categoryType, categoryId](const std::string& name) {
             if (name.size()) {
                 auto query = SavePlaylistQuery::Save(library, name, categoryType, categoryId);
-                library->Enqueue(query, 0, [&queue](auto query) {
-                    queue.Post(Message::Create(nullptr, message::PlaylistCreated));
-                });
+                library->Enqueue(query, 0);
             }
         });
 
@@ -257,7 +254,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(
         .SetInputAcceptedCallback(
             [library, playlistId, callback](const std::string& name) {
                 if (name.size()) {
-                    library->Enqueue(SavePlaylistQuery::Rename(playlistId, name), 0, callback);
+                    library->Enqueue(SavePlaylistQuery::Rename(library, playlistId, name), 0, callback);
                 }
             });
 
@@ -284,7 +281,7 @@ void PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
             _TSTR("button_yes"),
             [library, playlistId, callback](const std::string& str) {
                 library->Enqueue(std::shared_ptr<DeletePlaylistQuery>(
-                    new DeletePlaylistQuery(playlistId)), 0, callback);
+                    new DeletePlaylistQuery(library, playlistId)), 0, callback);
             });
 
     App::Overlays().Push(dialog);
@@ -345,20 +342,20 @@ static void handleJumpTo(
     int64_t id;
 
     if (index == 0) {
-        type = message::category::Album;
+        type = cube::message::category::Album;
         id = track->GetInt64(library::constants::Track::ALBUM_ID);
     }
     else if (index == 1) {
-        type = message::category::Artist;
+        type = cube::message::category::Artist;
         id = track->GetInt64(library::constants::Track::ARTIST_ID);
     }
     else if (index == 2) {
-        type = message::category::Genre;
+        type = cube::message::category::Genre;
         id = track->GetInt64(library::constants::Track::GENRE_ID);
     }
 
     messageQueue.Broadcast(runtime::Message::Create(
-        nullptr, message::JumpToCategory, type, id));
+        nullptr, cube::message::JumpToCategory, type, id));
 }
 
 static void showAddCategorySelectionToPlaylistOverlay(
@@ -399,10 +396,7 @@ static void showAddCategorySelectionToPlaylistOverlay(
                     auto query = SavePlaylistQuery::Append(
                         library, playlistId, categoryType, categoryId);
 
-                    library->Enqueue(query, 0, [&queue, playlistId](auto query) {
-                        /* the nesting is real... */
-                        queue.Post(Message::Create(nullptr, message::TracksAddedToPlaylist, playlistId));
-                    });
+                    library->Enqueue(query, 0);
                 }
             }
         },
@@ -443,12 +437,7 @@ static void showAddTrackToPlaylistOverlay(
                 else { /* add to existing */
                     int64_t playlistId = (*result)[index - 1]->id;
                     setLastPlaylistId(playlistId);
-
-                    library->Enqueue(SavePlaylistQuery::Append(library, playlistId, list), 0,
-                        [&queue, playlistId](auto query) {
-                            /* the nesting is real... */
-                            queue.Post(Message::Create(nullptr, message::TracksAddedToPlaylist, playlistId));
-                        });
+                    library->Enqueue(SavePlaylistQuery::Append(library, playlistId, list), 0);
                 }
             }
         },

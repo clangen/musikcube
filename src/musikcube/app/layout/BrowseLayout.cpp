@@ -39,6 +39,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/SavePlaylistQuery.h>
+#include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
@@ -47,6 +48,7 @@
 
 #include "BrowseLayout.h"
 
+using namespace musik;
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -156,22 +158,31 @@ void BrowseLayout::InitializeWindows() {
 }
 
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
-    if (message.Type() == message::IndexerProgress) {
-        int64_t id = this->categoryList->GetSelectedId();
-        auto filter = this->categoryList->GetFilter();
-        this->categoryList->Requery(filter, id);
-    }
-    else if (message.Type() == message::TracksAddedToPlaylist) {
-        if (this->IsPlaylist() &&
-            this->categoryList->GetSelectedId() == message.UserData1())
-        {
-            this->RequeryTrackList(this->categoryList.get());
+    switch (message.Type()) {
+        case cube::message::IndexerProgress: {
+            int64_t id = this->categoryList->GetSelectedId();
+            auto filter = this->categoryList->GetFilter();
+            this->categoryList->Requery(filter, id);
+            break;
         }
-    }
-    else if (message.Type() == message::PlaylistCreated) {
-        if (this->IsPlaylist()) {
-            auto lastId = this->categoryList->GetSelectedId();
-            this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
+
+        case core::message::PlaylistModified: {
+            if (this->IsPlaylist() &&
+                this->categoryList->GetSelectedId() == message.UserData1())
+            {
+                this->RequeryTrackList(this->categoryList.get());
+            }
+            break;
+        }
+
+        case core::message::PlaylistCreated:
+        case core::message::PlaylistDeleted:
+        case core::message::PlaylistRenamed: {
+            if (this->IsPlaylist()) {
+                auto lastId = this->categoryList->GetSelectedId();
+                this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
+            }
+            break;
         }
     }
 
