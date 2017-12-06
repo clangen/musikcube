@@ -137,6 +137,7 @@ namespace cursespp {
 
             virtual void Create();
             virtual void Destroy();
+            virtual void DecorateFrame();
             void Recreate();
             void Clear();
             void DrawFrameAndTitle();

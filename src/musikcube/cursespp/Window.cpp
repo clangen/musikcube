@@ -309,6 +309,10 @@ void Window::OnRemovedFromParent(IWindow* oldParent) {
     /* for subclass use */
 }
 
+void Window::DecorateFrame() {
+    /* for subclass use */
+}
+
 void Window::Redraw() {
     this->isDirty = true;
 
@@ -403,6 +407,8 @@ void Window::DrawFrameAndTitle() {
             checked_waddstr(this->frame, adjusted.c_str());
         }
     }
+
+    this->DecorateFrame();
 }
 
 void Window::RepaintBackground() {

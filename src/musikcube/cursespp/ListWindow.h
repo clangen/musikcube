@@ -68,21 +68,24 @@ namespace cursespp {
             virtual size_t GetSelectedIndex();
             virtual void SetSelectedIndex(size_t index);
             virtual bool IsEntryVisible(size_t index);
-
+            virtual void Invalidate();
             virtual void OnAdapterChanged();
 
             virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
+
+            void SetScrollbarVisible(bool visible);
 
         protected:
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
             virtual void OnInvalidated();
             virtual void OnDimensionsChanged();
-
+            virtual void DecorateFrame();
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
 
         private:
             virtual bool IsSelectedItemCompletelyVisible();
 
+            bool showScrollbar;
             IScrollAdapter::ScrollPosition scrollPosition;
             size_t selectedIndex;
     };

@@ -36,6 +36,12 @@
 #include <algorithm>
 #include "ListWindow.h"
 
+#ifdef WIN32
+#define SCROLLER 0x258A
+#else
+#define SCROLLER (' ' | A_REVERSE)
+#endif
+
 using namespace cursespp;
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
@@ -44,7 +50,8 @@ size_t ListWindow::NO_SELECTION = (size_t) -1;
 
 ListWindow::ListWindow(std::shared_ptr<IScrollAdapter> adapter, IWindow *parent)
 : ScrollableWindow(adapter, parent)
-, selectedIndex(0) {
+, selectedIndex(0)
+, showScrollbar(true) {
 
 }
 
@@ -55,6 +62,45 @@ ListWindow::ListWindow(IWindow *parent)
 
 ListWindow::~ListWindow() {
 
+}
+
+void ListWindow::SetScrollbarVisible(bool visible) {
+    if (this->showScrollbar != visible) {
+        this->showScrollbar = visible;
+        this->Invalidate();
+    }
+}
+
+void ListWindow::Invalidate() {
+    this->DecorateFrame();
+    Window::Invalidate();
+}
+
+void ListWindow::DecorateFrame() {
+    if (this->showScrollbar) {
+        int height = this->GetHeight();
+        auto *adapter = &this->GetScrollAdapter();
+        if (adapter && this->IsFrameVisible() && height > 2) {
+            auto& pos = this->GetScrollPosition();
+            float range = (float)height - 2.0f;
+            float total = (float)std::max((size_t)1, adapter->GetEntryCount());
+
+            int offset;
+            if (range > total) {
+                offset = -1;
+            }
+            else {
+                float percent = (float)pos.logicalIndex / total;
+                offset = (int)(range * percent) + 1;
+            }
+
+            for (int i = 1; i < height - 1; i++) {
+                int64_t ch = (i == offset) ? SCROLLER : ACS_VLINE;
+                wmove(this->GetFrame(), i, this->GetWidth() - 1);
+                waddch(this->GetFrame(), ch);
+            }
+        }
+    }
 }
 
 void ListWindow::ScrollToTop() {
