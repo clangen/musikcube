@@ -96,8 +96,10 @@ abstract class PlayerWrapper {
             }
 
             gaplessDb.dao().queryByUrl(uri).forEach {
-                gaplessDb.dao().update(GaplessTrack.DOWNLOADED, it.url)
-                gaplessService.schedule()
+                if (it.state != GaplessTrack.UPDATED) {
+                    gaplessDb.dao().update(GaplessTrack.DOWNLOADED, it.url)
+                    gaplessService.schedule()
+                }
             }
         }
         .subscribeOn(Schedulers.io())

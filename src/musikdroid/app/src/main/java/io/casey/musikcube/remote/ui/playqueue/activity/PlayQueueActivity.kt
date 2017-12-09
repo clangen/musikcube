@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.ui.playqueue.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.MenuItem
 import android.view.View
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
@@ -86,6 +87,21 @@ class PlayQueueActivity : BaseActivity() {
         if (offlineQueue) {
             tracks.requery()
         }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val result = super.onOptionsItemSelected(item)
+
+        if (item.itemId == android.R.id.home) {
+            overridePendingTransition(R.anim.stay_put, R.anim.slide_down)
+        }
+
+        return result
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        overridePendingTransition(R.anim.stay_put, R.anim.slide_down)
     }
 
     private val adapterListener = object: PlayQueueAdapter.EventListener {

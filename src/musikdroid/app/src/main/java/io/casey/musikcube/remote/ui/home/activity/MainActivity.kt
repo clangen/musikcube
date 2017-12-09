@@ -405,6 +405,7 @@ class MainActivity : BaseActivity() {
 
     private fun navigateToPlayQueue() {
         startActivity(PlayQueueActivity.getStartIntent(this@MainActivity, playback.service.queuePosition))
+        overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
     }
 
     private fun scheduleUpdateTime(immediate: Boolean) {

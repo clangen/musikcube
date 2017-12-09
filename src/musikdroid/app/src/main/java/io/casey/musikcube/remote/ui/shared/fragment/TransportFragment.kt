@@ -50,21 +50,24 @@ class TransportFragment: BaseFragment() {
 
     private fun bindEventHandlers() {
         this.title = this.rootView.findViewById(R.id.track_title)
+        this.title.isClickable = false
+        this.title.isFocusable = false
+
         this.buffering = this.rootView.findViewById(R.id.buffering)
 
         val titleBar = this.rootView.findViewById<View>(R.id.title_bar)
 
         titleBar?.setOnClickListener { _: View ->
             if (playback.service.state != PlaybackState.Stopped) {
-                val intent = PlayQueueActivity
+                startActivity(PlayQueueActivity
                     .getStartIntent(activity, playback.service.queuePosition)
-                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
 
-                startActivity(intent)
+                activity.overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
             }
         }
 
-        this.title.setOnLongClickListener { _: View ->
+        titleBar?.setOnLongClickListener { _: View ->
             startActivity(MainActivity.getStartIntent(activity))
             true
         }

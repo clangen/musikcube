@@ -17,6 +17,7 @@ import okhttp3.Request
 import okhttp3.Response
 import java.io.File
 import java.io.RandomAccessFile
+import java.net.SocketTimeoutException
 import javax.inject.Inject
 
 /**
@@ -96,13 +97,18 @@ class GaplessHeaderService {
             }
 
             if (res?.code() == 206) {
-                val bytes = res.body()?.bytes()
-                if (bytes?.isNotEmpty() == true) {
-                    RandomAccessFile(fn, "rw").use {
-                        it.seek(0)
-                        it.write(bytes, 0, Math.min(bytes.size, HEADER_SIZE_BYTES))
+                try {
+                    val bytes = res.body()?.bytes()
+                    if (bytes?.isNotEmpty() == true) {
+                        RandomAccessFile(fn, "rw").use {
+                            it.seek(0)
+                            it.write(bytes, 0, Math.min(bytes.size, HEADER_SIZE_BYTES))
+                        }
+                        newState = GaplessTrack.UPDATED
                     }
-                    newState = GaplessTrack.UPDATED
+                }
+                catch (ex: SocketTimeoutException) {
+                    newState = GaplessTrack.DOWNLOADED
                 }
             }
             else {
