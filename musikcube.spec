@@ -9,7 +9,8 @@ Source0: https://github.com/clangen/musikcube/archive/master.tar.gz#/%{name}-%{v
 License: GPLv3
 Packager: David Muckle <dvdmuckle@dvdmuckle.xyz>
 BuildRequires: gcc-c++ cmake boost-devel libogg-devel libvorbis-devel flac-devel faad2-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel libcurl-devel libmicrohttpd-devel lame-devel
-Requires: boost libogg libvorbis flac faad2 ncurses zlib alsa-lib pulseaudio-libs libcurl libmicrohttpd lame
+Requires: boost libogg libvorbis flac ncurses zlib alsa-lib pulseaudio-libs libcurl libmicrohttpd lame
+Recommends: faad2
 
 %description
 
@@ -20,7 +21,6 @@ A cross-platform, terminal-based audio engine, library, player and server writte
 
 
 %build
-#cmake -DCMAKE_INSTALL_PREFIX:PATH=%{buildroot}%{_prefix} .
 cmake .
 make -j2
 
