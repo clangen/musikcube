@@ -8,9 +8,10 @@ jobs:
       - run: apt-get update
       - run: apt-get install -y build-essential clang cmake libboost-thread1.58-dev libboost-system1.58-dev libboost-filesystem1.58-dev libboost-date-time1.58-dev libboost-atomic1.58-dev libboost-chrono1.58-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=xenial -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make && make package
+      - run: make -j2 && make package
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
-          path: /root/project/*.deb
+          path: /root/debs/
   build_ubuntu_artful:
     docker:
       - image: ubuntu:artful
@@ -19,9 +20,10 @@ jobs:
       - run: apt-get update
       - run: apt-get install -y build-essential clang cmake libboost-thread1.63-dev libboost-system1.63-dev libboost-filesystem1.63-dev libboost-date-time1.63-dev libboost-atomic1.63-dev libboost-chrono1.63-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=artful -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make && make package
+      - run: make -j2 && make package
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
-          path: /root/project/*.deb
+          path: /root/debs/
   build_ubuntu_zesty:
     docker:
       - image: ubuntu:zesty
@@ -30,9 +32,10 @@ jobs:
       - run: apt-get update
       - run: apt-get -y install build-essential clang cmake libboost-thread1.61-dev libboost-system1.61-dev libboost-filesystem1.61-dev libboost-date-time1.61-dev libboost-atomic1.61-dev libboost-chrono1.61-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=zesty -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make && make package
+      - run: make -j2 && make package
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
-          path: /root/project/*.deb
+          path: /root/debs/
 
 workflows:
   version: 2
