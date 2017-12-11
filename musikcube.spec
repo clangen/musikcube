@@ -1,11 +1,11 @@
 %define name musikcube
 %define build_timestamp %{lua: print(os.date("%Y%m%d"))}
-%define version 1.9
+%define version 0.31.0
 Name: %{name}           
 Version: %{version}     
 Release: %{build_timestamp}
 Summary: A cross-platform, terminal-based audio engine, library, player and server written in C++
-Source0: https://github.com/clangen/musikcube/archive/master.tar.gz#/%{name}-%{version}-%{release}.tar.gz
+Source0: https://github.com/clangen/musikcube/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 License: GPLv3
 Packager: David Muckle <dvdmuckle@dvdmuckle.xyz>
 BuildRequires: gcc-c++ cmake boost-devel libogg-devel libvorbis-devel flac-devel faad2-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel libcurl-devel libmicrohttpd-devel lame-devel
@@ -17,10 +17,11 @@ Recommends: faad2
 A cross-platform, terminal-based audio engine, library, player and server written in C++
 %global debug_package %{nil}
 %prep
-%autosetup -n %{name}-master
+%autosetup -n %{name}-%{version}
 
 
 %build
+#cmake -DCMAKE_INSTALL_PREFIX:PATH=%{buildroot}%{_prefix} .
 cmake .
 make -j2
 
