@@ -1,0 +1,27 @@
+version: 2.0
+jobs:
+  build_ubuntu_artful:
+    docker:
+      - image: ubuntu:artful
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.63-dev libboost-system1.63-dev libboost-filesystem1.63-dev libboost-date-time1.63-dev libboost-atomic1.63-dev libboost-chrono1.63-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
+      - run: cmake .
+      - run: make
+  build_ubuntu_zesty:
+    docker:
+            - image: ubuntu:zesty
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get -y install build-essential clang cmake libboost-thread1.61-dev libboost-system1.61-dev libboost-filesystem1.61-dev libboost-date-time1.61-dev libboost-atomic1.61-dev libboost-chrono1.61-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
+      - run: cmake .
+      - run: make
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build_ubuntu_artful
+      - build_ubuntu_zesty
