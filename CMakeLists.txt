@@ -78,9 +78,12 @@ include_directories (
 )
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
+# "/opt/local" is the default installation location for MacPorts
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   link_directories ("/usr/local/lib")
   include_directories("/usr/local/include")
+  link_directories ("/opt/local/lib")
+  include_directories("/opt/local/include")
 endif ()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
