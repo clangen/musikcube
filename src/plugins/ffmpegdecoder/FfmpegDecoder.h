@@ -37,77 +37,47 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDataStream.h>
-#include <FLAC/stream_decoder.h>
+
+extern "C" {
+    #include <libavformat/avio.h>
+    #include <libavformat/avformat.h>
+    #include <libavcodec/avcodec.h>
+    #include <libavutil/samplefmt.h>   
+    #include <libswresample/swresample.h> 
+}
+
 #include <stddef.h>
 
 using namespace musik::core::sdk;
 
-class FlacDecoder: public musik::core::sdk::IDecoder {
+class FfmpegDecoder: public musik::core::sdk::IDecoder {
     public:
-        FlacDecoder();
-        ~FlacDecoder();
+        FfmpegDecoder();
+        ~FfmpegDecoder();
 
         virtual void Release() override;
         virtual double SetPosition(double seconds) override;
         virtual bool GetBuffer(IBuffer *buffer) override;
         virtual double GetDuration() override;
         virtual bool Open(musik::core::sdk::IDataStream *stream) override;
-        virtual bool Exhausted() override { return this->exhausted; }
+        virtual bool Exhausted() override;
+
+        IDataStream* Stream() { return this->stream; }
 
     private:
-        static FLAC__StreamDecoderReadStatus FlacRead(
-            const FLAC__StreamDecoder *decoder,
-             FLAC__byte buffer[],
-             size_t *bytes,
-             void *clientData);
-
-        static FLAC__StreamDecoderSeekStatus FlacSeek(
-            const FLAC__StreamDecoder *decoder,
-            FLAC__uint64 absolute_byte_offset,
-            void *clientData);
-
-        static FLAC__StreamDecoderTellStatus FlacTell(
-            const FLAC__StreamDecoder *decoder,
-            FLAC__uint64 *absolute_byte_offset,
-            void *clientData);
-
-        static FLAC__bool FlacEof(
-            const FLAC__StreamDecoder *decoder,
-            void *clientData);
-
-        static FLAC__StreamDecoderLengthStatus FlacFileSize(
-            const FLAC__StreamDecoder *decoder,
-            FLAC__uint64 *stream_length,
-            void *clientData);
-
-        static FLAC__StreamDecoderWriteStatus FlacWrite(
-            const FLAC__StreamDecoder *decoder,
-            const FLAC__Frame *frame,
-            const FLAC__int32 *const buffer[],
-            void *clientData);
-
-        static void FlacMetadata(
-            const FLAC__StreamDecoder *decoder,
-            const FLAC__StreamMetadata *metadata,
-            void *clientData);
-
-        static void FlacError(
-            const FLAC__StreamDecoder *decoder,
-            FLAC__StreamDecoderErrorStatus status,
-            void *clientData);
+        void Reset();
 
     private:
-        musik::core::sdk::IDataStream *stream;
-        FLAC__StreamDecoder *decoder;
-
-        long channels;
-        long sampleRate;
-        uint64_t totalSamples;
-        int bitsPerSample;
+        musik::core::sdk::IDataStream* stream;
+        AVIOContext* ioContext;
+        AVFormatContext* formatContext;
+        AVCodecContext* codecContext;
+        AVPacket packet;
+        AVFrame* decodedFrame;
+        SwrContext* resampler;
+        unsigned char* buffer;
+        size_t bufferSize;
+        size_t rate, channels;
+        int streamId;
         double duration;
-        bool exhausted;
-
-        float *outputBuffer;
-        unsigned long outputBufferSize;
-        unsigned long outputBufferUsed;
 };
