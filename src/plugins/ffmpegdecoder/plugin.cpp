@@ -53,6 +53,8 @@ extern "C" {
 #endif
 
 #ifdef WIN32
+#include <Windows.h>
+
     BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
         return true;
     }
@@ -78,25 +80,25 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
             av_register_all();
 
             typeToCodecId = {
-                { ".mp3", AV_CODEC_ID_MP3 }, 
+                { ".mp3", AV_CODEC_ID_MP3 },
                 { "audio/mpeg", AV_CODEC_ID_MP3 },
-                { ".ogg", AV_CODEC_ID_VORBIS }, 
+                { ".ogg", AV_CODEC_ID_VORBIS },
                 { "audio/ogg", AV_CODEC_ID_VORBIS },
-                { ".opus", AV_CODEC_ID_OPUS }, 
-                { ".flac", AV_CODEC_ID_FLAC }, 
+                { ".opus", AV_CODEC_ID_OPUS },
+                { ".flac", AV_CODEC_ID_FLAC },
                 { "audio/flac", AV_CODEC_ID_FLAC },
-                { ".aac", AV_CODEC_ID_AAC }, 
+                { ".aac", AV_CODEC_ID_AAC },
                 { "audio/aac", AV_CODEC_ID_AAC },
-                { ".mp4", AV_CODEC_ID_MPEG4 }, 
+                { ".mp4", AV_CODEC_ID_MPEG4 },
                 { "audio/mp4", AV_CODEC_ID_MPEG4 },
-                { ".m4a", AV_CODEC_ID_MPEG4 }, 
-                { ".mpc", AV_CODEC_ID_MUSEPACK8 }, 
-                { ".mp+", AV_CODEC_ID_MUSEPACK8 }, 
-                { ".mpp", AV_CODEC_ID_MUSEPACK8 }, 
+                { ".m4a", AV_CODEC_ID_MPEG4 },
+                { ".mpc", AV_CODEC_ID_MUSEPACK8 },
+                { ".mp+", AV_CODEC_ID_MUSEPACK8 },
+                { ".mpp", AV_CODEC_ID_MUSEPACK8 },
                 { "audio/x-musepack", AV_CODEC_ID_MUSEPACK8 },
-                { ".ape", AV_CODEC_ID_APE }, 
+                { ".ape", AV_CODEC_ID_APE },
                 { "audio/monkeys-audio", AV_CODEC_ID_APE },
-                { ".wma", AV_CODEC_ID_WMAV2 }, 
+                { ".wma", AV_CODEC_ID_WMAV2 },
                 { "audio/x-ms-wma", AV_CODEC_ID_WMAV2 },
             };
 
@@ -133,7 +135,7 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
 
             return false;
         }
-    
+
     private:
         std::map<std::string, AVCodecID> typeToCodecId;
         std::set<AVCodecID> supported;

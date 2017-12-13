@@ -113,7 +113,8 @@ void FfmpegDecoder::Release() {
 double FfmpegDecoder::SetPosition(double seconds) {
     if (this->ioContext && this->formatContext && this->codecContext) {
         AVStream* stream = this->formatContext->streams[this->streamId];
-        int64_t pts = av_rescale_q(seconds * AV_TIME_BASE, AV_TIME_BASE_Q, stream->time_base); 
+        AVRational baseQ = { 1, AV_TIME_BASE };
+        int64_t pts = av_rescale_q(seconds * AV_TIME_BASE, baseQ, stream->time_base);
         avcodec_flush_buffers(this->codecContext);
         if (av_seek_frame(this->formatContext, this->streamId, pts, 0) >= 0) {
             return seconds;
@@ -129,14 +130,15 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
 
         if (!av_read_frame(this->formatContext, &this->packet)) {
             int frameDecoded = 0;
-    
+
             avcodec_decode_audio4(
                 this->codecContext,
                 this->decodedFrame,
                 &frameDecoded,
                 &this->packet);
 
-            int result;
+            av_free_packet(&this->packet);
+
             if (frameDecoded) {
                 int samples = this->decodedFrame->nb_samples;
                 int channels = this->codecContext->channels;
@@ -151,6 +153,7 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
 
                     if (!this->resampler) {
                         this->resampler = swr_alloc();
+
                         swr_alloc_set_opts(
                             this->resampler,
                             inLayout,
@@ -167,15 +170,15 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
 
                     uint8_t* outData = (uint8_t*) buffer->BufferPointer();
                     const uint8_t** inData = (const uint8_t**) this->decodedFrame->extended_data;
-                    result = swr_convert(this->resampler, &outData, samples, inData, samples);
+                    swr_convert(this->resampler, &outData, samples, inData, samples);
                 }
                 else {
                     buffer->SetSamples(0);
                 }
-
-                av_frame_unref(this->decodedFrame);
-                return true;
             }
+
+            av_frame_unref(this->decodedFrame);
+            return true;
         }
     }
     return false;
@@ -203,17 +206,15 @@ void FfmpegDecoder::Reset() {
 
 bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
     if (stream->Seekable() && this->ioContext == nullptr) {
-        av_register_all();
-
         this->stream = stream;
 
         this->ioContext = avio_alloc_context(
             this->buffer,
-            this->bufferSize, 
-            0, 
-            this, 
-            readCallback, 
-            writeCallback, 
+            this->bufferSize,
+            0,
+            this,
+            readCallback,
+            writeCallback,
             seekCallback);
 
         if (this->ioContext != nullptr) {
@@ -221,12 +222,12 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
             this->formatContext = avformat_alloc_context();
             this->formatContext->pb = this->ioContext;
             this->formatContext->flags = AVFMT_FLAG_CUSTOM_IO;
-            
+
             unsigned char probe[PROBE_SIZE];
             size_t count = stream->Read(probe, PROBE_SIZE);
             stream->SetPosition(0);
 
-            AVProbeData probeData;
+            AVProbeData probeData = { 0 };
             probeData.buf = probe;
             probeData.buf_size = count;
             probeData.filename = "";
@@ -236,9 +237,9 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
             if (this->formatContext->iformat) {
                 if (avformat_open_input(&this->formatContext, "", nullptr, nullptr) == 0) {
                     if (avformat_find_stream_info(this->formatContext, nullptr) >= 0) {
-                        for (int i = 0; i < this->formatContext->nb_streams; i++) {
+                        for (unsigned i = 0; i < this->formatContext->nb_streams; i++) {
                             if (this->formatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-                                this->streamId = i;
+                                this->streamId = (int) i;
                                 break;
                             }
                         }
@@ -260,7 +261,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         this->rate = stream->codec->sample_rate;
                         this->channels = stream->codec->channels;
                         this->duration = (double) this->formatContext->duration / (double) AV_TIME_BASE;
-                        return true;    
+                        return true;
                     }
                 }
             }
