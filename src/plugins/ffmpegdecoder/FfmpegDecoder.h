@@ -42,8 +42,8 @@ extern "C" {
     #include <libavformat/avio.h>
     #include <libavformat/avformat.h>
     #include <libavcodec/avcodec.h>
-    #include <libavutil/samplefmt.h>   
-    #include <libswresample/swresample.h> 
+    #include <libavutil/samplefmt.h>
+    #include <libswresample/swresample.h>
 }
 
 #include <stddef.h>

@@ -114,7 +114,7 @@ double FfmpegDecoder::SetPosition(double seconds) {
     if (this->ioContext && this->formatContext && this->codecContext) {
         AVStream* stream = this->formatContext->streams[this->streamId];
         AVRational baseQ = { 1, AV_TIME_BASE };
-        int64_t pts = av_rescale_q(seconds * AV_TIME_BASE, baseQ, stream->time_base);
+        int64_t pts = av_rescale_q((int64_t)(seconds * AV_TIME_BASE), baseQ, stream->time_base);
         avcodec_flush_buffers(this->codecContext);
         if (av_seek_frame(this->formatContext, this->streamId, pts, 0) >= 0) {
             return seconds;
@@ -189,6 +189,10 @@ double FfmpegDecoder::GetDuration() {
 }
 
 void FfmpegDecoder::Reset() {
+    if (this->ioContext) {
+        av_free(this->ioContext);
+        this->ioContext = nullptr;
+    }
     if (this->formatContext) {
         avformat_close_input(&this->formatContext);
         this->formatContext = nullptr;
@@ -196,10 +200,6 @@ void FfmpegDecoder::Reset() {
     if (this->codecContext) {
         avcodec_close(this->codecContext);
         this->codecContext = nullptr;
-    }
-    if (this->ioContext) {
-        av_free(this->ioContext);
-        this->ioContext = nullptr;
     }
     this->streamId = -1;
 }
@@ -247,15 +247,15 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
                     if (this->streamId != -1) {
                         this->codecContext = this->formatContext->streams[this->streamId]->codec;
-                        this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
-                        if (codecContext) {
-                            AVCodec* codec = avcodec_find_decoder(codecContext->codec_id);
-                            if (codec) {
-                                if (avcodec_open2(codecContext, codec, nullptr) < 0) {
-                                    goto reset_and_fail;
-                                }
-                            }
-                        }
+                        //if (codecContext) {
+                        //    this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
+                        //    AVCodec* codec = avcodec_find_decoder(codecContext->codec_id);
+                        //    if (codec) {
+                        //        if (avcodec_open2(codecContext, codec, nullptr) < 0) {
+                        //            goto reset_and_fail;
+                        //        }
+                        //    }
+                        //}
 
                         auto stream = this->formatContext->streams[this->streamId];
                         this->rate = stream->codec->sample_rate;
