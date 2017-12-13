@@ -223,6 +223,7 @@ if (GENERATE_DEB MATCHES "1")
         libboost-atomic${DEB_BOOST_VERSION},
         libboost-chrono${DEB_BOOST_VERSION},
         libmicrohttpd${DEB_MICROHTTPD_VERSION},
+        libcurl3,
         libogg0,
         libvorbis0a,
         libvorbisfile3,
