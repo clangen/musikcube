@@ -94,6 +94,7 @@ FfmpegDecoder::FfmpegDecoder() {
 
 FfmpegDecoder::~FfmpegDecoder() {
     this->Reset();
+
     delete[] this->buffer;
     this->buffer = nullptr;
     av_free_packet(&this->packet);
@@ -193,13 +194,20 @@ void FfmpegDecoder::Reset() {
         av_free(this->ioContext);
         this->ioContext = nullptr;
     }
+    if (this->codecContext) {
+        avcodec_flush_buffers(this->codecContext);
+
+        auto stream = this->formatContext->streams[this->streamId];
+        if (stream != nullptr) {
+            avcodec_close(this->codecContext);
+        }
+
+        this->codecContext = nullptr;
+    }
     if (this->formatContext) {
         avformat_close_input(&this->formatContext);
+        avformat_free_context(this->formatContext);
         this->formatContext = nullptr;
-    }
-    if (this->codecContext) {
-        avcodec_close(this->codecContext);
-        this->codecContext = nullptr;
     }
     this->streamId = -1;
 }
@@ -247,15 +255,15 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
                     if (this->streamId != -1) {
                         this->codecContext = this->formatContext->streams[this->streamId]->codec;
-                        //if (codecContext) {
-                        //    this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
-                        //    AVCodec* codec = avcodec_find_decoder(codecContext->codec_id);
-                        //    if (codec) {
-                        //        if (avcodec_open2(codecContext, codec, nullptr) < 0) {
-                        //            goto reset_and_fail;
-                        //        }
-                        //    }
-                        //}
+                        if (codecContext) {
+                            this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
+                            AVCodec* codec = avcodec_find_decoder(codecContext->codec_id);
+                            if (codec) {
+                                if (avcodec_open2(codecContext, codec, nullptr) < 0) {
+                                    goto reset_and_fail;
+                                }
+                            }
+                        }
 
                         auto stream = this->formatContext->streams[this->streamId];
                         this->rate = stream->codec->sample_rate;
