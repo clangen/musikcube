@@ -35,15 +35,24 @@
 #include "NullOut.h"
 
 #include <core/sdk/constants.h>
+#include <core/sdk/IPreferences.h>
 
 using namespace musik::core::sdk;
 
 #ifdef WIN32
     #include <Windows.h>
     #define usleep(x) Sleep(x / 1000);
+    #define DLLEXPORT __declspec(dllexport)
 #else
     #include <unistd.h>
+    #define DLLEXPORT
 #endif
+
+static float speedMultiplier = 1.0f;
+
+extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
+    ::speedMultiplier = (float) prefs->GetDouble("playback_speed_multiplier", 1.0f);
+}
 
 NullOut::NullOut() {
     this->volume = 1.0f;
@@ -100,7 +109,7 @@ int NullOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     /* order of operations matters, otherwise overflow. */
     int micros = ((buffer->Samples() * 1000) / buffer->SampleRate() * 1000) / buffer->Channels();
-    usleep(micros);
+    usleep((long)((float) micros / speedMultiplier));
     provider->OnBufferProcessed(buffer);
     return OutputBufferWritten;
 }
