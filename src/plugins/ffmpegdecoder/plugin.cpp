@@ -45,6 +45,7 @@ extern "C" {
 #include <algorithm>
 #include <set>
 #include <map>
+#include <string>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
