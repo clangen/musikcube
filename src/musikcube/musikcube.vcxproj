@@ -74,7 +74,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>../../../boost_1_65_0/lib32-msvc-14.1;../3rdparty/win32_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../boost_1_65_0/lib32-msvc-14.1;../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -89,8 +89,10 @@
 xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\plugins\stockencoders\3rdparty\win32_bin\$(Configuration)\*" "$(TargetDir)plugins" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -112,7 +114,7 @@ xcopy "$(SolutionDir)src\plugins\stockencoders\3rdparty\win32_bin\$(Configuratio
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>../../../boost_1_65_0/lib32-msvc-14.1;../3rdparty/win32_lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../boost_1_65_0/lib32-msvc-14.1;../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -131,8 +133,10 @@ xcopy "$(SolutionDir)src\plugins\stockencoders\3rdparty\win32_bin\$(Configuratio
 xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\win32_bin\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\plugins\stockencoders\3rdparty\win32_bin\$(Configuration)\*" "$(TargetDir)plugins" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

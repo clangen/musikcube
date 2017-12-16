@@ -1,0 +1,3 @@
+[submodule "src/3rdparty/bin"]
+	path = src/3rdparty/bin
+	url = https://github.com/clangen/musikcube-bin
