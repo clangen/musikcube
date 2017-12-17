@@ -27,7 +27,6 @@ make -j2
 
 
 %install
-mkdir %{buildroot}%{_prefix} -p
 make install DESTDIR=%{buildroot}
 
 %clean
