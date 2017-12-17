@@ -21,8 +21,8 @@ A cross-platform, terminal-based audio engine, library, player and server writte
 
 
 %build
-#cmake -DCMAKE_INSTALL_PREFIX:PATH=%{buildroot}%{_prefix} .
-cmake .
+cmake -D CMAKE_INSTALL_PREFIX:PATH=%{_prefix} .
+#cmake .
 make -j2
 
 
@@ -34,7 +34,7 @@ make install DESTDIR=%{buildroot}
 rm -rf %{buildroot}
 
 %files
-%{_prefix}/local/bin/musikcube
-%{_prefix}/local/share/musikcube/
-%{_prefix}/local/include/musikcube/
+%{_prefix}/bin/musikcube
+%{_prefix}/share/musikcube/
+%{_prefix}/include/musikcube/
 %doc
