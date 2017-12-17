@@ -1,4 +1,5 @@
-# libavformat-dev, libavcodec-dev, libavutil-dev, libavresample-dev(?), libswresample-dev
+# libresample2 libavcodec-extra57 libavutil55 libavformat57
+# libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
 
 set (ffmpegdecoder_SOURCES
     plugin.cpp
