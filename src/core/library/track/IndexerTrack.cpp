@@ -355,19 +355,23 @@ void IndexerTrack::SaveReplayGain(db::Connection& dbConnection)
         }
 
         {
-            db::Statement insert(
-                "INSERT INTO replay_gain "
-                "(track_id, album_gain, album_peak, track_gain, track_peak) "
-                "VALUES (?, ?, ?, ?, ?);",
-                dbConnection);
+            if (replayGain->albumGain != 1.0 || replayGain->albumPeak != 1.0 ||
+                replayGain->albumGain != 1.0 || replayGain->albumPeak != 1.0)
+            {
+                db::Statement insert(
+                    "INSERT INTO replay_gain "
+                    "(track_id, album_gain, album_peak, track_gain, track_peak) "
+                    "VALUES (?, ?, ?, ?, ?);",
+                    dbConnection);
 
-            insert.BindInt64(0, this->id);
-            insert.BindFloat(1, replayGain->albumGain);
-            insert.BindFloat(2, replayGain->albumPeak);
-            insert.BindFloat(3, replayGain->trackGain);
-            insert.BindFloat(4, replayGain->trackPeak);
+                insert.BindInt64(0, this->id);
+                insert.BindFloat(1, replayGain->albumGain);
+                insert.BindFloat(2, replayGain->albumPeak);
+                insert.BindFloat(3, replayGain->trackGain);
+                insert.BindFloat(4, replayGain->trackPeak);
 
-            insert.Step();
+                insert.Step();
+            }
         }
     }
 }
@@ -650,10 +654,7 @@ int64_t IndexerTrack::SaveMultiValueField(
 
     if (count > 1 || fieldId == 0) {
         fieldId = SaveNormalizedFieldValue(
-            connection,
-            fieldTableName,
-            aggregatedValue,
-            true);
+            connection, fieldTableName, aggregatedValue, true);
     }
 
     return fieldId;
