@@ -69,7 +69,8 @@ namespace musik { namespace core { namespace audio {
                 const std::string &url,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 DestroyMode destroyMode,
-                EventListener *listener);
+                EventListener *listener,
+                float gain = 1.0f);
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
@@ -99,7 +100,8 @@ namespace musik { namespace core { namespace audio {
                 const std::string &url,
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 DestroyMode finishMode,
-                EventListener *listener);
+                EventListener *listener,
+                float gain);
 
             virtual ~Player();
 
@@ -154,6 +156,7 @@ namespace musik { namespace core { namespace audio {
             float* spectrum;
             DestroyMode destroyMode;
             int pendingBufferCount;
+            float gain;
 
             FftContext* fftContext;
     };

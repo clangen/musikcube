@@ -57,10 +57,11 @@ namespace musik { namespace core {
             virtual std::string GetString(const char* metakey);
             virtual std::string Uri();
 
-            /* IWritableTrack */
+            /* ITagStore */
             virtual void SetValue(const char* metakey, const char* value);
             virtual void ClearValue(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);
+            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain);
 
             /* ITrack */
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
@@ -78,19 +79,8 @@ namespace musik { namespace core {
         private:
             int64_t id;
             int libraryId;
-
-            struct LibraryData {
-                LibraryData();
-                ~LibraryData();
-
-                Track::MetadataMap metadata;
-                char *thumbnailData;
-                long thumbnailSize;
-                std::mutex mutex;
-                musik::core::ILibraryPtr library;
-            };
-
-            LibraryData data;
+            Track::MetadataMap metadata;
+            std::mutex mutex;
     };
 
 } }

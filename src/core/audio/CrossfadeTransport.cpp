@@ -69,12 +69,12 @@ PlaybackState CrossfadeTransport::GetPlaybackState() {
     return this->state;
 }
 
-void CrossfadeTransport::PrepareNextTrack(const std::string& trackUrl) {
+void CrossfadeTransport::PrepareNextTrack(const std::string& trackUrl, float gain) {
     Lock lock(this->stateMutex);
-    this->next.Reset(trackUrl, this);
+    this->next.Reset(trackUrl, this, gain);
 }
 
-void CrossfadeTransport::Start(const std::string& url) {
+void CrossfadeTransport::Start(const std::string& url, float gain) {
     {
         Lock lock(this->stateMutex);
 
@@ -88,7 +88,7 @@ void CrossfadeTransport::Start(const std::string& url) {
             this->active.Start(this->volume);
         }
         else {
-            this->active.Reset(url, this);
+            this->active.Reset(url, this, gain);
             this->next.Stop();
         }
 
@@ -378,12 +378,13 @@ void CrossfadeTransport::PlayerContext::StopIf(Player* player) {
 }
 
 void CrossfadeTransport::PlayerContext::Reset() {
-    this->Reset("", nullptr);
+    this->Reset("", nullptr, 1.0f);
 }
 
 void CrossfadeTransport::PlayerContext::Reset(
     const std::string& url,
-    Player::EventListener* listener)
+    Player::EventListener* listener,
+    float gain)
 {
     if (this->player && this->output) {
         this->player->Detach(&this->transport);
@@ -408,7 +409,7 @@ void CrossfadeTransport::PlayerContext::Reset(
 
     this->canFade = this->started = false;
     this->output = url.size() ? outputs::SelectedOutput() : nullptr;
-    this->player = url.size() ? Player::Create(url, this->output, Player::Drain, listener) : nullptr;
+    this->player = url.size() ? Player::Create(url, this->output, Player::Drain, listener, gain) : nullptr;
 }
 
 void CrossfadeTransport::PlayerContext::TransferTo(PlayerContext& to) {

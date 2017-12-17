@@ -33,27 +33,43 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "PreferenceKeys.h"
+#include "ReplayGainQuery.h"
 
-namespace musik { namespace core { namespace prefs {
+using namespace musik::core::db;
+using namespace musik::core::db::local;
+using namespace musik::core::sdk;
 
-    const std::string components::Settings = "settings";
-    const std::string components::Libraries = "libraries";
-    const std::string components::Playback = "playback";
-    const std::string components::Plugins = "plugins";
+ReplayGainQuery::ReplayGainQuery(int64_t trackId) {
+    this->trackId = trackId;
+}
 
-    const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
-    const std::string keys::MaxTagReadThreads = "MaxTagReadThreads";
-    const std::string keys::RemoveMissingFiles = "RemoveMissingFiles";
-    const std::string keys::SyncOnStartup = "SyncOnStartup";
-    const std::string keys::Volume = "Volume";
-    const std::string keys::RepeatMode = "RepeatMode";
-    const std::string keys::TimeChangeMode = "TimeChangeMode";
-    const std::string keys::OutputPlugin = "OutputPlugin";
-    const std::string keys::Transport = "Transport";
-    const std::string keys::Locale = "Locale";
-    const std::string keys::IndexerLogEnabled = "IndexerLogEnabled";
-    const std::string keys::ReplayGainMode = "ReplayGainMode";
+ReplayGainQuery::~ReplayGainQuery() {
 
-} } }
+}
 
+ReplayGainQuery::Result ReplayGainQuery::GetResult() {
+    return this->result;
+}
+
+bool ReplayGainQuery::OnRun(musik::core::db::Connection &db) {
+    Statement stmt(
+        "SELECT album_gain, album_peak, track_gain, track_peak "
+        "FROM replay_gain "
+        "WHERE track_id=?",
+        db);
+
+    stmt.BindInt64(0, this->trackId);
+
+    this->result = std::make_shared<ReplayGain>();
+    this->result->albumGain = this->result->albumPeak = 1.0f;
+    this->result->trackGain = this->result->trackPeak = 1.0f;
+
+    if (stmt.Step() == db::Row) {
+        this->result->albumGain = stmt.ColumnFloat(0);
+        this->result->albumPeak = stmt.ColumnFloat(1);
+        this->result->trackGain = stmt.ColumnFloat(2);
+        this->result->trackPeak = stmt.ColumnFloat(3);
+    }
+
+    return true;
+}

@@ -178,13 +178,15 @@ namespace musik { namespace core { namespace audio {
             void PrepareNextTrack();
             void InitRemotes();
             void ResetRemotes();
+
             std::string UriAtIndex(size_t index);
+            float ReplayGainAtIndex(size_t index);
 
             musik::core::TrackList playlist;
             musik::core::TrackList unshuffled;
             std::recursive_mutex playlistMutex;
 
-            std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote > > remotes;
+            std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote>> remotes;
             std::shared_ptr<musik::core::Preferences> prefs;
             musik::core::TrackPtr playingTrack;
 

@@ -49,9 +49,9 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~ITransport() { }
 
-            virtual void PrepareNextTrack(const std::string& trackUrl) = 0;
+            virtual void Start(const std::string& trackUrl, float gain = 1.0f) = 0;
+            virtual void PrepareNextTrack(const std::string& trackUrl, float gain = 1.0f) = 0;
 
-            virtual void Start(const std::string& trackUrl) = 0;
             virtual void Stop() = 0;
             virtual bool Pause() = 0;
             virtual bool Resume() = 0;

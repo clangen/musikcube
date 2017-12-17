@@ -213,6 +213,10 @@ void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label)
     });
 }
 
+void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
+    PlaybackOverlays::ShowReplayGainOverlay();
+}
+
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
     const MasterTransport::Type current = this->transport.GetType();
 
@@ -284,6 +288,7 @@ void SettingsLayout::OnLayout() {
     this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->replayGainDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->transportDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -375,6 +380,9 @@ void SettingsLayout::InitializeWindows() {
     this->outputDeviceDropdown.reset(new TextLabel());
     this->outputDeviceDropdown->Activated.connect(this, &SettingsLayout::OnOutputDeviceDropdownActivated);
 
+    this->replayGainDropdown.reset(new TextLabel());
+    this->replayGainDropdown->Activated.connect(this, &SettingsLayout::OnReplayGainDropdownActivated);
+
     this->transportDropdown.reset(new TextLabel());
     this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
 
@@ -420,6 +428,7 @@ void SettingsLayout::InitializeWindows() {
     this->localeDropdown->SetFocusOrder(order++);
     this->outputDriverDropdown->SetFocusOrder(order++);
     this->outputDeviceDropdown->SetFocusOrder(order++);
+    this->replayGainDropdown->SetFocusOrder(order++);
     this->transportDropdown->SetFocusOrder(order++);
     this->themeDropdown->SetFocusOrder(order++);
     this->hotkeyDropdown->SetFocusOrder(order++);
@@ -451,6 +460,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->localeDropdown);
     this->AddWindow(this->outputDriverDropdown);
     this->AddWindow(this->outputDeviceDropdown);
+    this->AddWindow(this->replayGainDropdown);
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->themeDropdown);
 
@@ -585,6 +595,9 @@ void SettingsLayout::LoadPreferences() {
     /* output device */
     std::string deviceName = getOutputDeviceName();
     this->outputDeviceDropdown->SetText(arrow + _TSTR("settings_output_device") + deviceName);
+
+    /* replay gain */
+    this->replayGainDropdown->SetText(arrow + _TSTR("settings_replay_gain"));
 
     /* transport type */
     std::string transportName =

@@ -45,10 +45,11 @@ namespace musik { namespace core {
             IndexerTrack(int64_t id);
             virtual ~IndexerTrack(void);
 
-            /* IWritableTrack */
+            /* ITagStore */
             virtual void SetValue(const char* metakey, const char* value);
             virtual void ClearValue(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);
+            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain);
 
             /* ITrack */
             virtual std::string GetString(const char* metakey);
@@ -85,17 +86,18 @@ namespace musik { namespace core {
             int64_t id;
 
         private:
-            class MetadataWithThumbnail {
+            class InternalMetadata {
                 public:
-                    MetadataWithThumbnail();
-                    ~MetadataWithThumbnail();
+                    InternalMetadata();
+                    ~InternalMetadata();
 
                     Track::MetadataMap metadata;
+                    std::shared_ptr<musik::core::sdk::ReplayGain> replayGain;
                     char *thumbnailData;
                     int thumbnailSize;
             };
 
-            MetadataWithThumbnail *internalMetadata;
+            InternalMetadata *internalMetadata;
 
             int64_t SaveThumbnail(
                 db::Connection& connection,
@@ -126,6 +128,8 @@ namespace musik { namespace core {
                 bool isAggregatedValue,
                 const std::string& relationJunctionTableName = "",
                 const std::string& relationJunctionTableColumn = "");
+
+            void SaveReplayGain(db::Connection& dbConnection);
 
             void ProcessNonStandardMetadata(db::Connection& connection);
     };

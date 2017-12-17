@@ -62,6 +62,12 @@
         "settings_server_invalid_settings_title": "invalid settings",
         "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",
 
+        "settings_replay_gain": "replay gain",
+        "settings_replay_gain_title": "replay gain mode",
+        "settings_replay_gain_mode_disabled": "disabled",
+        "settings_replay_gain_mode_track": "track",
+        "settings_replay_gain_mode_album": "album",
+
         "track_filter_title": "track filter results",
 
         "locale_overlay_select_title": "select locale",

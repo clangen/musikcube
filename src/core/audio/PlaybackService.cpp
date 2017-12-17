@@ -39,6 +39,7 @@
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
+#include <core/library/query/local/ReplayGainQuery.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
@@ -52,6 +53,7 @@ using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::core::audio;
+using namespace musik::core::db::local;
 
 using musik::core::TrackPtr;
 using musik::core::ILibraryPtr;
@@ -624,7 +626,10 @@ void PlaybackService::Play(size_t index) {
     std::string uri = this->UriAtIndex(index);
 
     if (uri.size()) {
-        transport.Start(this->UriAtIndex(index));
+        transport.Start(
+            this->UriAtIndex(index),
+            this->ReplayGainAtIndex(index));
+
         this->nextIndex = NO_POSITION;
         this->index = index;
     }
@@ -980,4 +985,27 @@ std::string PlaybackService::UriAtIndex(size_t index) {
         }
     }
     return "";
+}
+
+float PlaybackService::ReplayGainAtIndex(size_t index) {
+    float result = 1.0f;
+
+    std::string mode = prefs->GetString(keys::ReplayGainMode, "disabled");
+    if (mode != "disabled" && index < this->playlist.Count()) {
+        int64_t id = this->playlist.Get(index)->GetId();
+        auto query = std::make_shared<ReplayGainQuery>(id);
+        if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
+            auto rg = query->GetResult();
+
+            float gain = (mode == "album") ? rg->albumGain : rg->trackGain;
+            float peak = (mode == "album") ? rg->albumPeak : rg->trackPeak;
+
+            if (gain != 1.0f) {
+                /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
+                result = std::min(powf(10, (gain / 20)), (1 / peak));
+            }
+        }
+    }
+
+    return result;
 }

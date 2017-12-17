@@ -37,6 +37,8 @@
 #include "PlaybackOverlays.h"
 
 #include <core/audio/Outputs.h>
+#include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -47,6 +49,7 @@
 
 using namespace musik::cube;
 using namespace musik::glue::audio;
+using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace cursespp;
@@ -255,6 +258,43 @@ void PlaybackOverlays::ShowTransportOverlay(
                 else if (callback) {
                     callback(result);
                 }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlaybackOverlays::ShowReplayGainOverlay() {
+    using Adapter = cursespp::SimpleScrollAdapter;
+    using ListOverlay = cursespp::ListOverlay;
+
+    /* eh... probably don't need to overthink this... */
+    static std::map<size_t, std::string> indexToValue = { {0, "disabled"}, {1, "track"}, {2, "album"} };
+    static std::map<std::string, size_t> valueToIndex = { {"disabled", 0}, {"track", 1}, {"album", 2} };
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry(_TSTR("settings_replay_gain_mode_disabled"));
+    adapter->AddEntry(_TSTR("settings_replay_gain_mode_track"));
+    adapter->AddEntry(_TSTR("settings_replay_gain_mode_album"));
+    adapter->SetSelectable(true);
+
+    auto prefs = Preferences::ForComponent(prefs::components::Playback);
+    auto current = prefs->GetString(prefs::keys::ReplayGainMode, "default");
+
+    auto end = valueToIndex.end();
+    size_t selectedIndex = valueToIndex.find(current) != end ? valueToIndex[current] : 0;
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("settings_replay_gain_title"))
+        .SetSelectedIndex(selectedIndex)
+        .SetItemSelectedCallback(
+            [prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                prefs->SetString(
+                    prefs::keys::ReplayGainMode.c_str(),
+                    indexToValue[index].c_str());
+
+                prefs->Save();
             });
 
     cursespp::App::Overlays().Push(dialog);

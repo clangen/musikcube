@@ -53,9 +53,9 @@ namespace musik { namespace core { namespace audio {
             GaplessTransport();
             virtual ~GaplessTransport();
 
-            virtual void PrepareNextTrack(const std::string& trackUrl);
+            virtual void Start(const std::string& trackUrl, float gain = 1.0f);
+            virtual void PrepareNextTrack(const std::string& trackUrl, float gain = 1.0f);
 
-            virtual void Start(const std::string& trackUrl);
             virtual void Stop();
             virtual bool Pause();
             virtual bool Resume();

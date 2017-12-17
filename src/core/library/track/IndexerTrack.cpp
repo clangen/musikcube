@@ -46,6 +46,7 @@
 #include <unordered_map>
 
 using namespace musik::core;
+using namespace musik::core::sdk;
 
 #define GENRE_TRACK_COLUMN_NAME "genre"
 #define GENRES_TABLE_NAME "genres"
@@ -65,7 +66,7 @@ void IndexerTrack::ResetIdCache() {
 }
 
 IndexerTrack::IndexerTrack(int64_t id)
-: internalMetadata(new IndexerTrack::MetadataWithThumbnail())
+: internalMetadata(new IndexerTrack::InternalMetadata())
 , id(id)
 {
 }
@@ -128,9 +129,9 @@ void IndexerTrack::SetValue(const char* metakey, const char* value) {
 }
 
 void IndexerTrack::ClearValue(const char* metakey) {
-if (this->internalMetadata) {
-    this->internalMetadata->metadata.erase(metakey);
-}
+    if (this->internalMetadata) {
+        this->internalMetadata->metadata.erase(metakey);
+    }
 }
 
 void IndexerTrack::SetThumbnail(const char *data, long size) {
@@ -142,6 +143,12 @@ void IndexerTrack::SetThumbnail(const char *data, long size) {
     this->internalMetadata->thumbnailSize = size;
 
     memcpy(this->internalMetadata->thumbnailData, data, size);
+}
+
+void IndexerTrack::SetReplayGain(const ReplayGain& replayGain) {
+    this->internalMetadata->replayGain.reset();
+    this->internalMetadata->replayGain = std::make_shared<ReplayGain>();
+    memcpy(this->internalMetadata->replayGain.get(), &replayGain, sizeof(ReplayGain));
 }
 
 std::string IndexerTrack::Uri() {
@@ -335,6 +342,34 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("source_id");
     metadata.erase("external_id");
     metadata.erase("visible");
+}
+
+void IndexerTrack::SaveReplayGain(db::Connection& dbConnection)
+{
+    auto replayGain = this->internalMetadata->replayGain;
+    if (replayGain) {
+        {
+            db::Statement removeOld("DELETE FROM replay_gain WHERE track_id=?", dbConnection);
+            removeOld.BindInt64(0, this->id);
+            removeOld.Step();
+        }
+
+        {
+            db::Statement insert(
+                "INSERT INTO replay_gain "
+                "(track_id, album_gain, album_peak, track_gain, track_peak) "
+                "VALUES (?, ?, ?, ?, ?);",
+                dbConnection);
+
+            insert.BindInt64(0, this->id);
+            insert.BindFloat(1, replayGain->albumGain);
+            insert.BindFloat(2, replayGain->albumPeak);
+            insert.BindFloat(3, replayGain->trackGain);
+            insert.BindFloat(4, replayGain->trackPeak);
+
+            insert.Step();
+        }
+    }
 }
 
 int64_t IndexerTrack::SaveThumbnail(db::Connection& connection, const std::string& libraryDirectory) {
@@ -665,6 +700,10 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     this->id = writeToTracksTable(dbConnection, *this);
 
+    if (!this->id) {
+        return false;
+    }
+
     int64_t thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
     int64_t albumId = this->SaveAlbum(dbConnection, thumbnailId);
     int64_t genreId = this->SaveGenre(dbConnection);
@@ -703,6 +742,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     }
 
     ProcessNonStandardMetadata(dbConnection);
+    SaveReplayGain(dbConnection);
 
     return true;
 }
@@ -771,11 +811,11 @@ TrackPtr IndexerTrack::Copy() {
     return TrackPtr(new IndexerTrack(this->id));
 }
 
-IndexerTrack::MetadataWithThumbnail::MetadataWithThumbnail()
+IndexerTrack::InternalMetadata::InternalMetadata()
 : thumbnailData(nullptr)
 , thumbnailSize(0) {
 }
 
-IndexerTrack::MetadataWithThumbnail::~MetadataWithThumbnail() {
+IndexerTrack::InternalMetadata::~InternalMetadata() {
     delete[] this->thumbnailData;
 }

@@ -48,6 +48,7 @@
     #include <taglib/mpeg/id3v2/id3v2frame.h>
     #include <taglib/mpeg/id3v2/frames/attachedpictureframe.h>
     #include <taglib/mpeg/id3v2/frames/commentsframe.h>
+    #include <taglib/mpeg/id3v2/frames/textidentificationframe.h>
     #include <taglib/mp4/mp4file.h>
     #include <taglib/ogg/oggfile.h>
     #include <taglib/ogg/xiphcomment.h>
@@ -72,6 +73,7 @@
     #include <taglib/flacfile.h>
     #include <taglib/xiphcomment.h>
     #include <taglib/tpropertymap.h>
+#include <taglib/textidentificationframe.h>
 #endif
 
 #include <vector>
@@ -92,6 +94,31 @@ static inline std::wstring utf8to16(const char* utf8) {
     return utf16fn;
 }
 #endif
+
+static float toReplayGainFloat(const std::string& input) {
+    /* trim any trailing " db" or "db" noise... */
+    std::string lower = boost::algorithm::to_lower_copy(input);
+    if (lower.find(" db") == lower.length() - 3) {
+        lower = lower.substr(0, lower.length() - 3);
+    }
+    else if (lower.find("db") == lower.length() - 2) {
+        lower = lower.substr(0, lower.length() - 2);
+    }
+
+    try {
+        return std::stof(lower);
+    }
+    catch (...) {
+        /* nothing we can do... */
+    }
+
+    return 1.0f;
+}
+
+static void initReplayGain(musik::core::sdk::ReplayGain& rg) {
+    rg.albumGain = rg.albumPeak = 1.0f;
+    rg.trackGain = rg.trackPeak = 1.0f;
+}
 
 TaglibMetadataReader::TaglibMetadataReader() {
 }
@@ -301,6 +328,47 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, musik::core::sdk::ITagStor
 
         if (!allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
             this->SetTagValue("year", allTags["TCOP"].front()->toString().substr(0, 4), track);
+        }
+
+        /* replay gain */
+
+        auto txxx = allTags["TXXX"];
+        if (!txxx.isEmpty()) {
+            using ReplayGain = musik::core::sdk::ReplayGain;
+            ReplayGain replayGain;
+            initReplayGain(replayGain);
+            bool found = false;
+
+            for (auto current : txxx) {
+                using UTIF = TagLib::ID3v2::UserTextIdentificationFrame;
+                UTIF* utif = dynamic_cast<UTIF*>(current);
+                if (utif) {
+                    auto name = utif->description().upper();
+                    auto values = utif->fieldList();
+                    if (values.size() > 0) {
+                        if (name == "REPLAYGAIN_TRACK_GAIN") {
+                            replayGain.trackGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            found = true;
+                        }
+                        else if (name == "REPLAYGAIN_TRACK_PEAK") {
+                            replayGain.trackPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            found = true;
+                        }
+                        else if (name == "REPLAYGAIN_ALBUM_GAIN") {
+                            replayGain.albumGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            found = true;
+                        }
+                        else if (name == "REPLAYGAIN_ALBUM_PEAK") {
+                            replayGain.albumPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            found = true;
+                        }
+                    }
+                }
+            }
+
+            if (found) {
+                track->SetReplayGain(replayGain);
+            }
         }
 
         /* TRCK is the track number (or "trackNum/totalTracks") */

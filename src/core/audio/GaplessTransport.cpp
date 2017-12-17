@@ -80,7 +80,7 @@ PlaybackState GaplessTransport::GetPlaybackState() {
     return this->state;
 }
 
-void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
+void GaplessTransport::PrepareNextTrack(const std::string& trackUrl, float gain) {
     bool startNext = false;
     {
         LockT lock(this->stateMutex);
@@ -88,7 +88,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
         RESET_NEXT_PLAYER(this);
 
         if (trackUrl.size()) {
-            this->nextPlayer = Player::Create(trackUrl, this->output, Player::NoDrain, this);
+            this->nextPlayer = Player::Create(trackUrl, this->output, Player::NoDrain, this, gain);
             startNext = this->nextCanStart;
         }
     }
@@ -98,10 +98,10 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl) {
     }
 }
 
-void GaplessTransport::Start(const std::string& url) {
+void GaplessTransport::Start(const std::string& url, float gain) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
-    Player* newPlayer = Player::Create(url, this->output, Player::NoDrain, this);
+    Player* newPlayer = Player::Create(url, this->output, Player::NoDrain, this, gain);
     musik::debug::info(TAG, "Player created successfully");
 
     this->StartWithPlayer(newPlayer);
@@ -274,7 +274,7 @@ void GaplessTransport::SetVolume(double volume) {
 
     this->volume = volume;
     this->output->SetVolume(this->volume);
-    
+
     if (oldVolume != this->volume) {
         this->SetMuted(false);
         this->VolumeChanged();

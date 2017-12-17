@@ -36,6 +36,13 @@
 
 namespace musik { namespace core { namespace sdk {
 
+    struct ReplayGain {
+        float trackGain;
+        float trackPeak;
+        float albumGain;
+        float albumPeak;
+    };
+
     class ITagStore {
         public:
             virtual void Retain() = 0;
@@ -43,6 +50,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetValue(const char* key, const char* value) = 0;
             virtual void ClearValue(const char* value) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;
+            virtual void SetReplayGain(const ReplayGain& replayGain) = 0;
     };
 
 } } }

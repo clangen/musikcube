@@ -48,9 +48,9 @@ namespace musik { namespace glue { namespace audio {
             MasterTransport();
             virtual ~MasterTransport();
 
-            virtual void PrepareNextTrack(const std::string& trackUrl);
+            virtual void Start(const std::string& trackUrl, float gain);
+            virtual void PrepareNextTrack(const std::string& trackUrl, float gain);
 
-            virtual void Start(const std::string& trackUrl);
             virtual void Stop();
             virtual bool Pause();
             virtual bool Resume();

@@ -57,6 +57,7 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string Transport;
         extern const std::string Locale;
         extern const std::string IndexerLogEnabled;
+        extern const std::string ReplayGainMode;
     }
 
 } } }

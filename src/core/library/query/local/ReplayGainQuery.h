@@ -32,28 +32,30 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include "PreferenceKeys.h"
+#pragma once
 
-namespace musik { namespace core { namespace prefs {
+#include <core/library/query/local/LocalQueryBase.h>
+#include <core/db/Connection.h>
+#include <core/sdk/ITagStore.h>
 
-    const std::string components::Settings = "settings";
-    const std::string components::Libraries = "libraries";
-    const std::string components::Playback = "playback";
-    const std::string components::Plugins = "plugins";
+namespace musik { namespace core { namespace db { namespace local {
 
-    const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
-    const std::string keys::MaxTagReadThreads = "MaxTagReadThreads";
-    const std::string keys::RemoveMissingFiles = "RemoveMissingFiles";
-    const std::string keys::SyncOnStartup = "SyncOnStartup";
-    const std::string keys::Volume = "Volume";
-    const std::string keys::RepeatMode = "RepeatMode";
-    const std::string keys::TimeChangeMode = "TimeChangeMode";
-    const std::string keys::OutputPlugin = "OutputPlugin";
-    const std::string keys::Transport = "Transport";
-    const std::string keys::Locale = "Locale";
-    const std::string keys::IndexerLogEnabled = "IndexerLogEnabled";
-    const std::string keys::ReplayGainMode = "ReplayGainMode";
+    class ReplayGainQuery : public musik::core::db::LocalQueryBase {
+        public:
+            using Result = std::shared_ptr<musik::core::sdk::ReplayGain>;
 
-} } }
+            ReplayGainQuery(int64_t trackId);
+            virtual ~ReplayGainQuery();
 
+            std::string Name() { return "ReplayGainQuery"; }
+
+            virtual Result GetResult();
+
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
+
+            int64_t trackId;
+            Result result;
+    };
+
+} } } }
