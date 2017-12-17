@@ -988,18 +988,20 @@ std::string PlaybackService::UriAtIndex(size_t index) {
 }
 
 float PlaybackService::ReplayGainAtIndex(size_t index) {
+    using Mode = values::ReplayGainMode;
+
     float result = 1.0f;
 
-    std::string mode = prefs->GetString(keys::ReplayGainMode, "disabled");
-    if (mode != "disabled" && index < this->playlist.Count()) {
+    values::ReplayGainMode mode = (Mode)
+        prefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+
+    if (mode != Mode::Disabled && index < this->playlist.Count()) {
         int64_t id = this->playlist.Get(index)->GetId();
         auto query = std::make_shared<ReplayGainQuery>(id);
         if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
             auto rg = query->GetResult();
-
-            float gain = (mode == "album") ? rg->albumGain : rg->trackGain;
-            float peak = (mode == "album") ? rg->albumPeak : rg->trackPeak;
-
+            float gain = (mode == Mode::Album) ? rg->albumGain : rg->trackGain;
+            float peak = (mode == Mode::Album) ? rg->albumPeak : rg->trackPeak;
             if (gain != 1.0f) {
                 /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
                 result = std::min(powf(10, (gain / 20)), (1 / peak));

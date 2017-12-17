@@ -114,6 +114,20 @@ static std::string getOutputDeviceName() {
     return deviceName;
 }
 
+static std::string getReplayGainMode() {
+    using Mode = core::prefs::values::ReplayGainMode;
+
+    auto prefs = Preferences::ForComponent(core::prefs::components::Playback);
+    Mode mode = (Mode) prefs->GetInt(core::prefs::keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+    switch (mode) {
+        case Mode::Disabled: return _TSTR("settings_replay_gain_mode_disabled");
+        case Mode::Album: return _TSTR("settings_replay_gain_mode_album");
+        case Mode::Track: return _TSTR("settings_replay_gain_mode_track");
+    }
+
+    return _TSTR("settings_replay_gain_mode_disabled");
+}
+
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
@@ -214,7 +228,7 @@ void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label)
 }
 
 void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
-    PlaybackOverlays::ShowReplayGainOverlay();
+    PlaybackOverlays::ShowReplayGainOverlay([this]() { this->LoadPreferences(); });
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
@@ -597,7 +611,8 @@ void SettingsLayout::LoadPreferences() {
     this->outputDeviceDropdown->SetText(arrow + _TSTR("settings_output_device") + deviceName);
 
     /* replay gain */
-    this->replayGainDropdown->SetText(arrow + _TSTR("settings_replay_gain"));
+    std::string replayGainMode = getReplayGainMode();
+    this->replayGainDropdown->SetText(arrow + _TSTR("settings_replay_gain") + replayGainMode);
 
     /* transport type */
     std::string transportName =

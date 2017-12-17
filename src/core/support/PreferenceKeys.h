@@ -60,5 +60,13 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string ReplayGainMode;
     }
 
+    namespace values {
+        enum class ReplayGainMode: int {
+            Disabled = 0,
+            Track = 1,
+            Album = 2
+        };
+    }
+
 } } }
 

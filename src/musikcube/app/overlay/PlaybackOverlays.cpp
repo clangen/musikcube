@@ -263,13 +263,9 @@ void PlaybackOverlays::ShowTransportOverlay(
     cursespp::App::Overlays().Push(dialog);
 }
 
-void PlaybackOverlays::ShowReplayGainOverlay() {
+void PlaybackOverlays::ShowReplayGainOverlay(std::function<void()> callback) {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
-
-    /* eh... probably don't need to overthink this... */
-    static std::map<size_t, std::string> indexToValue = { {0, "disabled"}, {1, "track"}, {2, "album"} };
-    static std::map<std::string, size_t> valueToIndex = { {"disabled", 0}, {"track", 1}, {"album", 2} };
 
     std::shared_ptr<Adapter> adapter(new Adapter());
     adapter->AddEntry(_TSTR("settings_replay_gain_mode_disabled"));
@@ -278,23 +274,23 @@ void PlaybackOverlays::ShowReplayGainOverlay() {
     adapter->SetSelectable(true);
 
     auto prefs = Preferences::ForComponent(prefs::components::Playback);
-    auto current = prefs->GetString(prefs::keys::ReplayGainMode, "default");
 
-    auto end = valueToIndex.end();
-    size_t selectedIndex = valueToIndex.find(current) != end ? valueToIndex[current] : 0;
+    auto selectedIndex = prefs->GetInt(
+        prefs::keys::ReplayGainMode.c_str(),
+        (int) prefs::values::ReplayGainMode::Disabled);
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("settings_replay_gain_title"))
-        .SetSelectedIndex(selectedIndex)
+        .SetSelectedIndex((size_t) selectedIndex)
         .SetItemSelectedCallback(
-            [prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                prefs->SetString(
-                    prefs::keys::ReplayGainMode.c_str(),
-                    indexToValue[index].c_str());
-
+            [callback, prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                prefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) index);
                 prefs->Save();
+                if (callback) {
+                    callback();
+                }
             });
 
     cursespp::App::Overlays().Push(dialog);
