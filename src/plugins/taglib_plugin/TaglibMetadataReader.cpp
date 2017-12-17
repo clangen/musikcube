@@ -221,6 +221,7 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITagSt
             auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
             if (xiphTag) {
                 this->ReadFromMap(xiphTag->fieldListMap(), target);
+                this->ExtractReplayGain(xiphTag->fieldListMap(), target);
             }
 
             /* if this isn't a xiph tag, the file format may have some other custom
@@ -233,6 +234,7 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITagSt
                 auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
                 if (flacFile && flacFile->hasXiphComment()) {
                     this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
+                    this->ExtractReplayGain(flacFile->xiphComment()->fieldListMap(), target);
                     handled = true;
                 }
 
@@ -245,6 +247,7 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITagSt
                         auto mp4TagMap = static_cast<TagLib::MP4::Tag*>(tag)->itemListMap();
                         this->ExtractValueForKey(mp4TagMap, "aART", "album_artist", target);
                         this->ExtractValueForKey(mp4TagMap, "disk", "disc", target);
+                        this->ExtractReplayGain(mp4TagMap, target);
                     }
                 }
             }
@@ -273,6 +276,20 @@ void TaglibMetadataReader::ExtractValueForKey(
     }
 }
 
+std::string TaglibMetadataReader::ExtractValueForKey(
+    const TagLib::MP4::ItemMap& map,
+    const std::string& inputKey,
+    const std::string& defaultValue)
+{
+    if (map.contains(inputKey.c_str())) {
+        TagLib::StringList value = map[inputKey.c_str()].toStringList();
+        if (value.size()) {
+            return value[0].to8Bit();
+        }
+    }
+    return defaultValue;
+}
+
 template <typename T>
 void TaglibMetadataReader::ExtractValueForKey(
     const T& map,
@@ -293,6 +310,44 @@ void TaglibMetadataReader::ReadFromMap(const T& map, musik::core::sdk::ITagStore
     ExtractValueForKey(map, "DISCNUMBER", "disc", target);
     ExtractValueForKey(map, "ALBUM ARTIST", "album_artist", target);
     ExtractValueForKey(map, "ALBUMARTIST", "album_artist", target);
+}
+
+template <typename T>
+std::string TaglibMetadataReader::ExtractValueForKey(
+    const T& map,
+    const std::string& inputKey,
+    const std::string& defaultValue)
+{
+    if (map.contains(inputKey.c_str())) {
+        TagLib::StringList value = map[inputKey.c_str()];
+        if (value.size()) {
+            return value[0].to8Bit();
+        }
+    }
+    return defaultValue;
+}
+
+template <typename T>
+void TaglibMetadataReader::ExtractReplayGain(
+    const T& map, musik::core::sdk::ITagStore *target)
+{
+    try {
+        musik::core::sdk::ReplayGain replayGain;
+        initReplayGain(replayGain);
+        replayGain.trackGain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_GAIN", "1.0"));
+        replayGain.trackPeak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_PEAK", "1.0"));
+        replayGain.albumGain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_GAIN", "1.0"));
+        replayGain.albumPeak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_PEAK", "1.0"));
+
+        if (replayGain.albumGain != 1.0f && replayGain.albumPeak != 1.0f &&
+            replayGain.trackGain != 1.0f && replayGain.trackPeak != 1.0f)
+        {
+            target->SetReplayGain(replayGain);
+        }
+    }
+    catch (...) {
+        /* let's not allow weird replay gain tags to crash indexing... */
+    }
 }
 
 bool TaglibMetadataReader::ReadID3V2(const char* uri, musik::core::sdk::ITagStore *track) {
