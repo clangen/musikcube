@@ -182,7 +182,9 @@ void PlaybackService::PrepareNextTrack() {
         /* repeat track, just keep playing the same thing over and over */
         if (this->repeatMode == RepeatTrack) {
             this->nextIndex = this->index;
-            this->transport.PrepareNextTrack(this->UriAtIndex(this->index));
+            this->transport.PrepareNextTrack(
+                this->UriAtIndex(this->index),
+                this->GainAtIndex(this->index));
         }
         else {
             /* annoying and confusing special case -- the user edited the
@@ -192,26 +194,32 @@ void PlaybackService::PrepareNextTrack() {
                 if (this->playlist.Count() > 0) {
                     this->index = NO_POSITION;
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
+                    this->transport.PrepareNextTrack(
+                        this->UriAtIndex(nextIndex),
+                        this->GainAtIndex(nextIndex));
                 }
             }
             /* normal case, just move forward */
             else if (this->playlist.Count() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
-                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
+                    this->transport.PrepareNextTrack(
+                        this->UriAtIndex(nextIndex),
+                        this->GainAtIndex(nextIndex));
                 }
             }
             /* repeat list case, wrap around to the beginning if necessary */
             else if (this->repeatMode == RepeatList) {
                 if (this->nextIndex != 0) {
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
+                    this->transport.PrepareNextTrack(
+                        this->UriAtIndex(nextIndex),
+                        this->GainAtIndex(nextIndex));
                 }
             }
             else {
                 /* nothing to prepare if we get here. */
-                this->transport.PrepareNextTrack("");
+                this->transport.PrepareNextTrack("", ITransport::Gain());
             }
         }
     }
@@ -291,7 +299,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                     quickly. make compare the track URIs before we update internal state. */
                     if (this->nextIndex >= this->Count()) {
                         this->nextIndex = NO_POSITION;
-                        this->transport.PrepareNextTrack("");
+                        this->transport.PrepareNextTrack("", ITransport::Gain());
                         return;
                     }
 
@@ -628,7 +636,7 @@ void PlaybackService::Play(size_t index) {
     if (uri.size()) {
         transport.Start(
             this->UriAtIndex(index),
-            this->ReplayGainAtIndex(index));
+            this->GainAtIndex(index));
 
         this->nextIndex = NO_POSITION;
         this->index = index;
@@ -987,10 +995,13 @@ std::string PlaybackService::UriAtIndex(size_t index) {
     return "";
 }
 
-float PlaybackService::ReplayGainAtIndex(size_t index) {
+ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
     using Mode = values::ReplayGainMode;
 
-    float result = 1.0f;
+    ITransport::Gain result;
+
+    float preampDb = (float) prefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f);
+    result.preamp = powf(10.0f, (preampDb / 20.0f));
 
     values::ReplayGainMode mode = (Mode)
         prefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
@@ -1004,7 +1015,9 @@ float PlaybackService::ReplayGainAtIndex(size_t index) {
             float peak = (mode == Mode::Album) ? rg->albumPeak : rg->trackPeak;
             if (gain != 1.0f) {
                 /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
-                result = std::min(powf(10, (gain / 20)), (1 / peak));
+                result.gain = powf(10.0f, (gain / 20.0f));
+                result.peak = (1.0f / peak);
+                result.preamp = 1.0f;
             }
         }
     }

@@ -58,6 +58,7 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string Locale;
         extern const std::string IndexerLogEnabled;
         extern const std::string ReplayGainMode;
+        extern const std::string PreampDecibels;
     }
 
     namespace values {

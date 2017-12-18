@@ -69,12 +69,12 @@ PlaybackState CrossfadeTransport::GetPlaybackState() {
     return this->state;
 }
 
-void CrossfadeTransport::PrepareNextTrack(const std::string& trackUrl, float gain) {
+void CrossfadeTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
     Lock lock(this->stateMutex);
     this->next.Reset(trackUrl, this, gain);
 }
 
-void CrossfadeTransport::Start(const std::string& url, float gain) {
+void CrossfadeTransport::Start(const std::string& url, Gain gain) {
     {
         Lock lock(this->stateMutex);
 
@@ -378,13 +378,13 @@ void CrossfadeTransport::PlayerContext::StopIf(Player* player) {
 }
 
 void CrossfadeTransport::PlayerContext::Reset() {
-    this->Reset("", nullptr, 1.0f);
+    this->Reset("", nullptr, Gain());
 }
 
 void CrossfadeTransport::PlayerContext::Reset(
     const std::string& url,
     Player::EventListener* listener,
-    float gain)
+    Gain gain)
 {
     if (this->player && this->output) {
         this->player->Detach(&this->transport);

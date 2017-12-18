@@ -54,6 +54,7 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::Locale = "Locale";
     const std::string keys::IndexerLogEnabled = "IndexerLogEnabled";
     const std::string keys::ReplayGainMode = "ReplayGainMode";
+    const std::string keys::PreampDecibels = "PreampDecibels";
 
 } } }
 

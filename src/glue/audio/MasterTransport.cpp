@@ -105,11 +105,11 @@ MasterTransport::Type MasterTransport::GetType() {
     return this->type;
 }
 
-void MasterTransport::PrepareNextTrack(const std::string& trackUrl, float gain) {
+void MasterTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
     this->transport->PrepareNextTrack(trackUrl, gain);
 }
 
-void MasterTransport::Start(const std::string& trackUrl, float gain) {
+void MasterTransport::Start(const std::string& trackUrl, Gain gain) {
     this->transport->Start(trackUrl, gain);
 }
 

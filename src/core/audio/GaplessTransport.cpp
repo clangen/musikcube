@@ -80,7 +80,7 @@ PlaybackState GaplessTransport::GetPlaybackState() {
     return this->state;
 }
 
-void GaplessTransport::PrepareNextTrack(const std::string& trackUrl, float gain) {
+void GaplessTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
     bool startNext = false;
     {
         LockT lock(this->stateMutex);
@@ -98,7 +98,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl, float gain)
     }
 }
 
-void GaplessTransport::Start(const std::string& url, float gain) {
+void GaplessTransport::Start(const std::string& url, Gain gain) {
     musik::debug::info(TAG, "we were asked to start the track at " + url);
 
     Player* newPlayer = Player::Create(url, this->output, Player::NoDrain, this, gain);

@@ -60,8 +60,8 @@ namespace musik { namespace core { namespace audio {
 
             void StopImmediately();
 
-            virtual void Start(const std::string& trackUrl, float gain);
-            virtual void PrepareNextTrack(const std::string& trackUrl, float gain);
+            virtual void Start(const std::string& trackUrl, Gain gain);
+            virtual void PrepareNextTrack(const std::string& trackUrl, Gain gain);
 
             virtual void Stop();
             virtual bool Pause();
@@ -100,7 +100,7 @@ namespace musik { namespace core { namespace audio {
                 void Reset(
                     const std::string& url,
                     Player::EventListener* listener,
-                    float gain);
+                    Gain gain);
 
                 void TransferTo(PlayerContext& context);
 

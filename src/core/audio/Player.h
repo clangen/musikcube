@@ -55,6 +55,13 @@ namespace musik { namespace core { namespace audio {
         public:
             enum DestroyMode { Drain, NoDrain };
 
+            struct Gain {
+                Gain() { this->preamp = this->gain = this->peak = 1.0f; }
+                float preamp;
+                float gain;
+                float peak;
+            };
+
             struct EventListener {
                 virtual void OnPlayerPrepared(Player *player) { }
                 virtual void OnPlayerStarted(Player *player) { }
@@ -70,7 +77,7 @@ namespace musik { namespace core { namespace audio {
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 DestroyMode destroyMode,
                 EventListener *listener,
-                float gain = 1.0f);
+                Gain gain = Gain());
 
             virtual void OnBufferProcessed(musik::core::sdk::IBuffer *buffer);
 
@@ -101,7 +108,7 @@ namespace musik { namespace core { namespace audio {
                 std::shared_ptr<musik::core::sdk::IOutput> output,
                 DestroyMode finishMode,
                 EventListener *listener,
-                float gain);
+                Gain gain);
 
             virtual ~Player();
 
@@ -155,8 +162,8 @@ namespace musik { namespace core { namespace audio {
             bool notifiedStarted;
             float* spectrum;
             DestroyMode destroyMode;
+            Gain gain;
             int pendingBufferCount;
-            float gain;
 
             FftContext* fftContext;
     };

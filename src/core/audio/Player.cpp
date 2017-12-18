@@ -112,7 +112,7 @@ Player* Player::Create(
     std::shared_ptr<IOutput> output,
     DestroyMode destroyMode,
     EventListener *listener,
-    float gain)
+    Gain gain)
 {
     return new Player(url, output, destroyMode, listener, gain);
 }
@@ -122,7 +122,7 @@ Player::Player(
     std::shared_ptr<IOutput> output,
     DestroyMode destroyMode,
     EventListener *listener,
-    float gain)
+    Gain gain)
 : state(Player::Idle)
 , url(url)
 , currentPosition(0)
@@ -287,7 +287,11 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     player->stream = Stream::Create();
 
     Buffer* buffer = nullptr;
-    const float gain = player->gain;
+
+    float gain = player->gain.preamp * player->gain.gain;
+    if (gain > 1.0f) {
+        gain = player->gain.peak;
+    }
 
     if (player->stream->OpenStream(player->url)) {
         for (Listener* l : player->Listeners()) {
@@ -343,13 +347,11 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
                 buffer = player->stream->GetNextProcessedOutputBuffer();
 
-                /* apply replay gain, if coef is specified */
+                /* apply replay gain, if specified */
                 if (gain != 1.0f) {
                     float* samples = buffer->BufferPointer();
                     for (long i = 0; i < buffer->Samples(); i++) {
                         samples[i] *= gain;
-                        if (samples[i] > 1.0f) samples[i] = 1.0f;
-                        else if (samples[i] < -1.0f) samples[i] = -1.0f;
                     }
                 }
 

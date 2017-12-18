@@ -180,7 +180,7 @@ namespace musik { namespace core { namespace audio {
             void ResetRemotes();
 
             std::string UriAtIndex(size_t index);
-            float ReplayGainAtIndex(size_t index);
+            musik::core::audio::ITransport::Gain GainAtIndex(size_t index);
 
             musik::core::TrackList playlist;
             musik::core::TrackList unshuffled;
