@@ -60,7 +60,7 @@ static const char* KEY_TRANSCODER_CACHE_COUNT = "transcoder_cache_count";
 static const char* KEY_TRANSCODER_SYNCHRONOUS = "transcoder_synchronous";
 static const char* KEY_PASSWORD = "password";
 
-#define VERTICAL_PADDING 1
+#define VERTICAL_PADDING 2
 #define DEFAULT_HEIGHT 17
 #define DEFAULT_WIDTH 45
 
@@ -93,13 +93,7 @@ using Callback = ServerOverlay::Callback;
 using Prefs = ServerOverlay::Prefs;
 
 static std::string settingIntToString(Prefs prefs, const std::string& key, int defaultValue) {
-    int resolved = prefs->GetInt(key, defaultValue);
-    try {
-        return std::to_string(resolved);
-    }
-    catch (...) {
-        return std::to_string(defaultValue);
-    }
+    return std::to_string(prefs->GetInt(key, defaultValue));
 }
 
 static void showInvalidDialog(Callback cb = Callback()) {
@@ -149,6 +143,7 @@ void ServerOverlay::InitViews() {
     /* title */
     this->titleLabel.reset(new TextLabel());
     this->titleLabel->SetText(_TSTR("settings_server_setup"), text::AlignCenter);
+    this->titleLabel->SetBold(true);
 
     /* shortcuts */
     this->shortcuts.reset(new ShortcutsWindow());

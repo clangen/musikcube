@@ -154,6 +154,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
     <ClCompile Include="app\overlay\PlaybackOverlays.cpp" />
     <ClCompile Include="app\overlay\PlayQueueOverlays.cpp" />
     <ClCompile Include="app\overlay\PluginOverlay.cpp" />
+    <ClCompile Include="app\overlay\PreampOverlay.cpp" />
     <ClCompile Include="app\overlay\ServerOverlay.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
@@ -209,6 +210,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
     <ClInclude Include="app\overlay\PlaybackOverlays.h" />
     <ClInclude Include="app\overlay\PlayQueueOverlays.h" />
     <ClInclude Include="app\overlay\PluginOverlay.h" />
+    <ClInclude Include="app\overlay\PreampOverlay.h" />
     <ClInclude Include="app\overlay\ServerOverlay.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />

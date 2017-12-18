@@ -46,6 +46,9 @@ TextLabel::TextLabel()
 : Window()
 , alignment(text::AlignLeft) {
     this->SetFrameVisible(false);
+    this->SetContentColor(CURSESPP_DEFAULT_COLOR);
+    this->SetFocusedContentColor(CURSESPP_TEXT_FOCUSED);
+    this->bold = false;
 }
 
 TextLabel::~TextLabel() {
@@ -65,14 +68,24 @@ void TextLabel::OnRedraw() {
         werase(c);
     }
 
-    attrs = this->IsFocused() ? CURSESPP_TEXT_FOCUSED : CURSESPP_DEFAULT_COLOR;
+    attrs = this->IsFocused()
+        ? this->GetFocusedContentColor()
+        : this->GetContentColor();
 
     if (attrs != -1) {
         wattron(c, COLOR_PAIR(attrs));
     }
 
+    if (this->bold) {
+        wattron(c, A_BOLD);
+    }
+
     wmove(c, 0, 0);
     checked_waddstr(c, aligned.c_str());
+
+    if (this->bold) {
+        wattroff(c, A_BOLD);
+    }
 
     if (attrs != -1) {
         wattroff(c, COLOR_PAIR(attrs));
@@ -83,6 +96,13 @@ void TextLabel::SetText(const std::string& value, const text::TextAlign alignmen
     if (value != this->buffer || alignment != this->alignment) {
         this->buffer = value;
         this->alignment = alignment;
+        this->Redraw();
+    }
+}
+
+void TextLabel::SetBold(bool bold) {
+    if (bold != this->bold) {
+        this->bold = bold;
         this->Redraw();
     }
 }

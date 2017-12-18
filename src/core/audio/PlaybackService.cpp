@@ -1002,6 +1002,7 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
 
     float preampDb = (float) prefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f);
     result.preamp = powf(10.0f, (preampDb / 20.0f));
+    result.peakValid = false;
 
     values::ReplayGainMode mode = (Mode)
         prefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
@@ -1017,7 +1018,7 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
                 /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
                 result.gain = powf(10.0f, (gain / 20.0f));
                 result.peak = (1.0f / peak);
-                result.preamp = 1.0f;
+                result.peakValid = true;
             }
         }
     }

@@ -34,44 +34,49 @@
 
 #pragma once
 
-#include <cursespp/curses_config.h>
-#include <cursespp/Window.h>
-#include <cursespp/IInput.h>
-#include <cursespp/IKeyHandler.h>
-#include <cursespp/Text.h>
-#include <sigslot/sigslot.h>
+#include <functional>
 
-namespace cursespp {
-    class TextLabel :
+#include <core/sdk/IPlugin.h>
+#include <core/support/Preferences.h>
+
+#include <cursespp/Checkbox.h>
+#include <cursespp/TextInput.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/OverlayBase.h>
+#include <cursespp/ShortcutsWindow.h>
+
+namespace musik {
+    namespace cube {
+        class PreampOverlay : public cursespp::OverlayBase, public sigslot::has_slots<>
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-        public cursespp::Window,
-        public cursespp::IKeyHandler,
-        public std::enable_shared_from_this<TextLabel> {
-#else
-        public cursespp::Window,
-        public cursespp::IKeyHandler {
+            , public std::enable_shared_from_this<PreampOverlay>
 #endif
-    public:
-        sigslot::signal1<TextLabel*> Activated;
+        {
+        public:
+            using Callback = std::function<void()>;
 
-        TextLabel();
-        virtual ~TextLabel();
+            static void Show(Callback callback);
 
-        virtual void SetText(
-            const std::string& value,
-            const text::TextAlign alignment = text::AlignLeft);
+            virtual void Layout();
+            virtual bool KeyPress(const std::string& key);
 
-        virtual std::string GetText() { return this->buffer; }
-        virtual size_t Length() { return u8cols(this->buffer); }
-        virtual void SetBold(bool bold);
-        virtual bool IsBold() { return this->bold; }
-        virtual void OnRedraw();
+            void OnReplayGainPressed(cursespp::TextLabel* label);
 
-        virtual bool KeyPress(const std::string& key);
+        private:
+            PreampOverlay(Callback callback);
 
-    private:
-        std::string buffer;
-        text::TextAlign alignment;
-        bool bold;
-    };
+            void RecalculateSize();
+            void InitViews();
+            bool Save();
+            void Load();
+
+            Callback callback;
+            int width, height, x, y;
+
+            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<cursespp::TextLabel> titleLabel, preampLabel, replayGainDropdown;
+            std::shared_ptr<cursespp::TextInput> preampInput;
+            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
+        };
+    }
 }

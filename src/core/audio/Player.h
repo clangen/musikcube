@@ -56,10 +56,14 @@ namespace musik { namespace core { namespace audio {
             enum DestroyMode { Drain, NoDrain };
 
             struct Gain {
-                Gain() { this->preamp = this->gain = this->peak = 1.0f; }
+                Gain() {
+                    this->preamp = this->gain = this->peak = 1.0f;
+                    this->peakValid = false;
+                }
                 float preamp;
                 float gain;
                 float peak;
+                bool peakValid;
             };
 
             struct EventListener {

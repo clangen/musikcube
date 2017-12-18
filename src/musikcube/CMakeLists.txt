@@ -15,6 +15,7 @@ set (CUBE_SRCS
 	./app/overlay/PlaybackOverlays.cpp
 	./app/overlay/PlayQueueOverlays.cpp
 	./app/overlay/PluginOverlay.cpp
+	./app/overlay/PreampOverlay.cpp
 	./app/overlay/ServerOverlay.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/Hotkeys.cpp

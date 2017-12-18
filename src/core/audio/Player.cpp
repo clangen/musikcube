@@ -289,7 +289,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     Buffer* buffer = nullptr;
 
     float gain = player->gain.preamp * player->gain.gain;
-    if (gain > 1.0f) {
+    if (gain > 1.0f && player->gain.peakValid) {
         gain = player->gain.peak;
     }
 
