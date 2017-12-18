@@ -144,8 +144,6 @@ namespace musik {
                 std::shared_ptr<cursespp::Checkbox> startMinimizedCheckbox;
                 std::shared_ptr<cursespp::Checkbox> autoUpdateCheckbox;
 
-                std::shared_ptr<cursespp::TextLabel> browseLabel;
-                std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
                 std::shared_ptr<cursespp::ListWindow> browseList;
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;
 

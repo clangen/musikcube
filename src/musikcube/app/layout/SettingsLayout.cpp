@@ -265,16 +265,13 @@ void SettingsLayout::OnLayout() {
     int cx = this->GetWidth(), cy = this->GetHeight();
 
     /* top row (directory setup) */
-    int startY = 1;
+    int startY = 0;
     int leftX = 0;
     int leftWidth = cx / 3; /* 1/3 width */
     int rightX = leftWidth;
     int rightWidth = cx - rightX; /* remainder (~2/3) */
 
-    this->browseLabel->MoveAndResize(leftX + 1, startY, leftWidth - 1, LABEL_HEIGHT);
-    this->addedPathsLabel->MoveAndResize(rightX + 1, startY, rightWidth - 1, LABEL_HEIGHT);
-
-    int pathListsY = BOTTOM(this->browseLabel);
+    int pathListsY = startY;
     int pathsHeight = (cy - pathListsY) / 2;
 
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
@@ -299,8 +296,6 @@ void SettingsLayout::OnLayout() {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     }
 
-    this->updateDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-
     y = BOTTOM(this->browseList);
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
@@ -314,6 +309,9 @@ void SettingsLayout::OnLayout() {
     this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
     this->autoUpdateCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+
+    y++;
+    this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -351,14 +349,11 @@ int64_t SettingsLayout::ListItemDecorator(
 void SettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
-    this->browseLabel.reset(new TextLabel());
-    this->browseLabel->SetText(_TSTR("settings_space_to_add"), text::AlignCenter);
-
-    this->addedPathsLabel.reset(new TextLabel());
-    this->addedPathsLabel->SetText(_TSTR("settings_backspace_to_remove"), text::AlignCenter);
-
     this->addedPathsList.reset(new cursespp::ListWindow(this->addedPathsAdapter));
+    this->addedPathsList->SetFrameTitle(_TSTR("settings_backspace_to_remove"));
+
     this->browseList.reset(new cursespp::ListWindow(this->browseAdapter));
+    this->browseList->SetFrameTitle(_TSTR("settings_space_to_add"));
 
     ScrollAdapterBase::ItemDecorator decorator =
         std::bind(
@@ -439,8 +434,6 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->SetFocusOrder(order++);
     }
 
-    this->updateDropdown->SetFocusOrder(order++);
-
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->SetFocusOrder(order++);
 #endif
@@ -453,9 +446,8 @@ void SettingsLayout::InitializeWindows() {
     this->startMinimizedCheckbox->SetFocusOrder(order++);
 #endif
     this->autoUpdateCheckbox->SetFocusOrder(order++);
+    this->updateDropdown->SetFocusOrder(order++);
 
-    this->AddWindow(this->browseLabel);
-    this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->localeDropdown);
@@ -468,8 +460,6 @@ void SettingsLayout::InitializeWindows() {
     if (this->serverAvailable) {
         this->AddWindow(this->serverDropdown);
     }
-
-    this->AddWindow(updateDropdown);
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->AddWindow(this->paletteCheckbox);
@@ -486,6 +476,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->startMinimizedCheckbox);
 #endif
     this->AddWindow(this->autoUpdateCheckbox);
+    this->AddWindow(updateDropdown);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {

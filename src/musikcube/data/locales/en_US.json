@@ -27,7 +27,7 @@
 
         "settings_space_to_add": "browse (SPACE to add)",
         "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
-        "settings_enable_disable_plugins": "plugin manager",
+        "settings_enable_disable_plugins": "configure plugins",
         "settings_color_theme": "color theme: ",
         "settings_hotkey_tester": "hotkey tester",
         "settings_output_driver": "output driver: ",
