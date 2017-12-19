@@ -236,9 +236,12 @@ if (GENERATE_DEB MATCHES "1")
     elseif (DEB_DISTRO MATCHES "artsy")
       set(DEB_BOOST_VERSION "1.63.0")
       set(DEB_MICROHTTPD_VERSION "12")
+    elseif (DEB_DISTRO MATCHES "xenial")
+      set(DEB_BOOST_VERSION "1.58.0")
+      set(DEB_MICROHTTPD_VERSION "10")
     endif()
 
-    set(DEPENDENCIES "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libboost-atomic${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libmicrohttpd${DEB_MICROHTTPD_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libncursesw5, libasound2, libpulse0, pulseaudio, libmp3lame0,")
+    set(DEPENDENCIES "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libboost-atomic${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libmicrohttpd${DEB_MICROHTTPD_VERSION}, libcurl3, libogg0, libvorbis0a, libvorbisfile3, libncursesw5, libasound2, libpulse0, pulseaudio, libmp3lame0,")
  
     if (${FFMPEG_DECODER} MATCHES "true")
       set(DEPENDENCIES "${DEPENDENCIES} libavcodec-extra, libavutil55, libavformat57, libswresample2")

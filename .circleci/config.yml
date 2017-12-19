@@ -1,0 +1,82 @@
+version: 2.0
+jobs:
+  build_ubuntu_xenial:
+    docker:
+      - image: ubuntu:xenial
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.58-dev libboost-system1.58-dev libboost-filesystem1.58-dev libboost-date-time1.58-dev libboost-atomic1.58-dev libboost-chrono1.58-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
+      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=xenial -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2 && make package
+      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - run: package_cloud push --skip-errors dvdmuckle/musikcube/ubuntu/xenial /root/debs/*.deb
+      - store_artifacts:
+          path: /root/debs/
+  build_ubuntu_artful:
+    docker:
+      - image: ubuntu:artful
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.63-dev libboost-system1.63-dev libboost-filesystem1.63-dev libboost-date-time1.63-dev libboost-atomic1.63-dev libboost-chrono1.63-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
+      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=artful -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2 && make package
+      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - run: package_cloud push --skip-errors dvdmuckle/musikcube/ubuntu/artful /root/debs/*.deb
+      - store_artifacts:
+          path: /root/debs/
+  build_ubuntu_zesty:
+    docker:
+      - image: ubuntu:zesty
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get -y install build-essential clang cmake libboost-thread1.61-dev libboost-system1.61-dev libboost-filesystem1.61-dev libboost-date-time1.61-dev libboost-atomic1.61-dev libboost-chrono1.61-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
+      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=zesty -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2 && make package
+      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - run: package_cloud push --skip-errors dvdmuckle/musikcube/ubuntu/zesty /root/debs/*.deb
+      - store_artifacts:
+          path: /root/debs/
+  build_fedora_26:
+    docker:
+      - image: fedora:26
+    steps:
+      - checkout
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
+      - run: dnf builddep -y musikcube.spec
+      - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
+      - run: rpmbuild -ba -vv musikcube.spec
+      - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
+      - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - run: package_cloud push --skip-errors dvdmuckle/musikcube/fedora/26 /root/rpms/*.rpm
+      - store_artifacts:
+          path: /root/rpms/
+  build_fedora_27:
+    docker:
+      - image: fedora:27
+    steps:
+      - checkout
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
+      - run: dnf builddep -y musikcube.spec
+      - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
+      - run: rpmbuild -ba -vv musikcube.spec
+      - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
+      - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - run: package_cloud push --skip-errors dvdmuckle/musikcube/fedora/27 /root/rpms/*.rpm
+      - store_artifacts:
+          path: /root/rpms/
+
+workflows:
+  version: 2
+  build_and_package:
+    jobs:
+      - build_ubuntu_artful
+      - build_ubuntu_zesty
+      - build_ubuntu_xenial
+      - build_fedora_26
+      - build_fedora_27
