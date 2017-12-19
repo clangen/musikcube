@@ -3,7 +3,7 @@
 %define version 0.31.0
 Name: %{name}           
 Version: %{version}     
-Release: %{build_timestamp}%{dist}
+Release: %{dist}
 Summary: A cross-platform, terminal-based audio engine, library, player and server written in C++
 Source0: https://github.com/clangen/musikcube/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 License: BSD-3-Clause
