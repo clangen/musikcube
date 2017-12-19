@@ -11,7 +11,7 @@ jobs:
       - run: make -j2 && make package
       - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors dvdmuckle/musikcube/ubuntu/xenial /root/debs/*.deb
+      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/xenial /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_artful:
@@ -25,7 +25,7 @@ jobs:
       - run: make -j2 && make package
       - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors dvdmuckle/musikcube/ubuntu/artful /root/debs/*.deb
+      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/artful /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_zesty:
@@ -39,7 +39,7 @@ jobs:
       - run: make -j2 && make package
       - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors dvdmuckle/musikcube/ubuntu/zesty /root/debs/*.deb
+      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/zesty /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_fedora_26:
@@ -53,7 +53,7 @@ jobs:
       - run: rpmbuild -ba -vv musikcube.spec
       - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: package_cloud push --skip-errors dvdmuckle/musikcube/fedora/26 /root/rpms/*.rpm
+      - run: package_cloud push --skip-errors clangen/musikcube/fedora/26 /root/rpms/*.rpm
       - store_artifacts:
           path: /root/rpms/
   build_fedora_27:
@@ -67,7 +67,7 @@ jobs:
       - run: rpmbuild -ba -vv musikcube.spec
       - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: package_cloud push --skip-errors dvdmuckle/musikcube/fedora/27 /root/rpms/*.rpm
+      - run: package_cloud push --skip-errors clangen/musikcube/fedora/27 /root/rpms/*.rpm
       - store_artifacts:
           path: /root/rpms/
 
@@ -80,3 +80,8 @@ workflows:
       - build_ubuntu_xenial
       - build_fedora_26
       - build_fedora_27
+
+general:
+  branches:
+    only:
+      - build
