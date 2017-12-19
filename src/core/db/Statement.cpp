@@ -90,6 +90,10 @@ void Statement::BindInt64(int position, int64_t bindInt) {
     sqlite3_bind_int64(this->stmt, position + 1, (sqlite3_int64) bindInt);
 }
 
+void Statement::BindFloat(int position, float bindFloat) {
+    sqlite3_bind_double(this->stmt, position + 1, bindFloat);
+}
+
 void Statement::BindText(int position, const char* bindText) {
     sqlite3_bind_text(
         this->stmt,
@@ -135,6 +139,10 @@ int Statement::ColumnInt32(int column) {
 
 int64_t Statement::ColumnInt64(int column) {
     return sqlite3_column_int64(this->stmt, column);
+}
+
+float Statement::ColumnFloat(int column) {
+    return (float) sqlite3_column_double(this->stmt, column);
 }
 
 const char* Statement::ColumnText(int column) {

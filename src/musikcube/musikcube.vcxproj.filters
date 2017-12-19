@@ -144,6 +144,9 @@
     <ClCompile Include="cursespp\Colors.cpp">
       <Filter>cursespp\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\PreampOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -339,6 +342,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\INavigationKeys.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\PreampOverlay.h">
+      <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -55,6 +55,7 @@
 #include <app/overlay/PlaybackOverlays.h>
 #include <app/overlay/PluginOverlay.h>
 #include <app/overlay/ServerOverlay.h>
+#include <app/overlay/PreampOverlay.h>
 
 #include <boost/format.hpp>
 
@@ -213,6 +214,10 @@ void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label)
     });
 }
 
+void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
+    PreampOverlay::Show([this]() { this->LoadPreferences(); });
+}
+
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
     const MasterTransport::Type current = this->transport.GetType();
 
@@ -260,16 +265,13 @@ void SettingsLayout::OnLayout() {
     int cx = this->GetWidth(), cy = this->GetHeight();
 
     /* top row (directory setup) */
-    int startY = 1;
+    int startY = 0;
     int leftX = 0;
     int leftWidth = cx / 3; /* 1/3 width */
     int rightX = leftWidth;
     int rightWidth = cx - rightX; /* remainder (~2/3) */
 
-    this->browseLabel->MoveAndResize(leftX + 1, startY, leftWidth - 1, LABEL_HEIGHT);
-    this->addedPathsLabel->MoveAndResize(rightX + 1, startY, rightWidth - 1, LABEL_HEIGHT);
-
-    int pathListsY = BOTTOM(this->browseLabel);
+    int pathListsY = startY;
     int pathsHeight = (cy - pathListsY) / 2;
 
     this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
@@ -284,6 +286,7 @@ void SettingsLayout::OnLayout() {
     this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->replayGainDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->transportDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -292,8 +295,6 @@ void SettingsLayout::OnLayout() {
     if (serverAvailable) {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     }
-
-    this->updateDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
 
     y = BOTTOM(this->browseList);
 #ifdef ENABLE_256_COLOR_OPTION
@@ -308,6 +309,9 @@ void SettingsLayout::OnLayout() {
     this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
     this->autoUpdateCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+
+    y++;
+    this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
 void SettingsLayout::RefreshAddedPaths() {
@@ -345,14 +349,11 @@ int64_t SettingsLayout::ListItemDecorator(
 void SettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
-    this->browseLabel.reset(new TextLabel());
-    this->browseLabel->SetText(_TSTR("settings_space_to_add"), text::AlignCenter);
-
-    this->addedPathsLabel.reset(new TextLabel());
-    this->addedPathsLabel->SetText(_TSTR("settings_backspace_to_remove"), text::AlignCenter);
-
     this->addedPathsList.reset(new cursespp::ListWindow(this->addedPathsAdapter));
+    this->addedPathsList->SetFrameTitle(_TSTR("settings_backspace_to_remove"));
+
     this->browseList.reset(new cursespp::ListWindow(this->browseAdapter));
+    this->browseList->SetFrameTitle(_TSTR("settings_space_to_add"));
 
     ScrollAdapterBase::ItemDecorator decorator =
         std::bind(
@@ -374,6 +375,9 @@ void SettingsLayout::InitializeWindows() {
 
     this->outputDeviceDropdown.reset(new TextLabel());
     this->outputDeviceDropdown->Activated.connect(this, &SettingsLayout::OnOutputDeviceDropdownActivated);
+
+    this->replayGainDropdown.reset(new TextLabel());
+    this->replayGainDropdown->Activated.connect(this, &SettingsLayout::OnReplayGainDropdownActivated);
 
     this->transportDropdown.reset(new TextLabel());
     this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
@@ -420,6 +424,7 @@ void SettingsLayout::InitializeWindows() {
     this->localeDropdown->SetFocusOrder(order++);
     this->outputDriverDropdown->SetFocusOrder(order++);
     this->outputDeviceDropdown->SetFocusOrder(order++);
+    this->replayGainDropdown->SetFocusOrder(order++);
     this->transportDropdown->SetFocusOrder(order++);
     this->themeDropdown->SetFocusOrder(order++);
     this->hotkeyDropdown->SetFocusOrder(order++);
@@ -428,8 +433,6 @@ void SettingsLayout::InitializeWindows() {
     if (this->serverAvailable) {
         this->serverDropdown->SetFocusOrder(order++);
     }
-
-    this->updateDropdown->SetFocusOrder(order++);
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->SetFocusOrder(order++);
@@ -443,22 +446,20 @@ void SettingsLayout::InitializeWindows() {
     this->startMinimizedCheckbox->SetFocusOrder(order++);
 #endif
     this->autoUpdateCheckbox->SetFocusOrder(order++);
+    this->updateDropdown->SetFocusOrder(order++);
 
-    this->AddWindow(this->browseLabel);
-    this->AddWindow(this->addedPathsLabel);
     this->AddWindow(this->browseList);
     this->AddWindow(this->addedPathsList);
     this->AddWindow(this->localeDropdown);
     this->AddWindow(this->outputDriverDropdown);
     this->AddWindow(this->outputDeviceDropdown);
+    this->AddWindow(this->replayGainDropdown);
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->themeDropdown);
 
     if (this->serverAvailable) {
         this->AddWindow(this->serverDropdown);
     }
-
-    this->AddWindow(updateDropdown);
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->AddWindow(this->paletteCheckbox);
@@ -475,6 +476,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->startMinimizedCheckbox);
 #endif
     this->AddWindow(this->autoUpdateCheckbox);
+    this->AddWindow(updateDropdown);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -585,6 +587,9 @@ void SettingsLayout::LoadPreferences() {
     /* output device */
     std::string deviceName = getOutputDeviceName();
     this->outputDeviceDropdown->SetText(arrow + _TSTR("settings_output_device") + deviceName);
+
+    /* replay gain */
+    this->replayGainDropdown->SetText(arrow + _TSTR("settings_preamp"));
 
     /* transport type */
     std::string transportName =

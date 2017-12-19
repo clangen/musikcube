@@ -47,7 +47,7 @@ namespace musik { namespace core {
     class Track;
     typedef std::shared_ptr<Track> TrackPtr;
 
-    class Track : 
+    class Track :
         public musik::core::sdk::ITrack,
         public std::enable_shared_from_this<Track>
     {
@@ -66,6 +66,7 @@ namespace musik { namespace core {
             virtual void SetValue(const char* key, const char* value) = 0;
             virtual void ClearValue(const char* key) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;
+            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) = 0;
 
             /* IResource */
             virtual int64_t GetId() override;
@@ -112,6 +113,7 @@ namespace musik { namespace core {
             virtual void SetValue(const char* key, const char* value) override;
             virtual void ClearValue(const char* key) override;
             virtual void SetThumbnail(const char *data, long size) override;
+            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
 
         private:
             TrackPtr track;

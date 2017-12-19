@@ -39,6 +39,7 @@
 #include <core/audio/ITransport.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
+#include <core/library/query/local/ReplayGainQuery.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
@@ -52,6 +53,7 @@ using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::core::audio;
+using namespace musik::core::db::local;
 
 using musik::core::TrackPtr;
 using musik::core::ILibraryPtr;
@@ -180,7 +182,9 @@ void PlaybackService::PrepareNextTrack() {
         /* repeat track, just keep playing the same thing over and over */
         if (this->repeatMode == RepeatTrack) {
             this->nextIndex = this->index;
-            this->transport.PrepareNextTrack(this->UriAtIndex(this->index));
+            this->transport.PrepareNextTrack(
+                this->UriAtIndex(this->index),
+                this->GainAtIndex(this->index));
         }
         else {
             /* annoying and confusing special case -- the user edited the
@@ -190,26 +194,32 @@ void PlaybackService::PrepareNextTrack() {
                 if (this->playlist.Count() > 0) {
                     this->index = NO_POSITION;
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
+                    this->transport.PrepareNextTrack(
+                        this->UriAtIndex(nextIndex),
+                        this->GainAtIndex(nextIndex));
                 }
             }
             /* normal case, just move forward */
             else if (this->playlist.Count() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
-                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
+                    this->transport.PrepareNextTrack(
+                        this->UriAtIndex(nextIndex),
+                        this->GainAtIndex(nextIndex));
                 }
             }
             /* repeat list case, wrap around to the beginning if necessary */
             else if (this->repeatMode == RepeatList) {
                 if (this->nextIndex != 0) {
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(this->UriAtIndex(nextIndex));
+                    this->transport.PrepareNextTrack(
+                        this->UriAtIndex(nextIndex),
+                        this->GainAtIndex(nextIndex));
                 }
             }
             else {
                 /* nothing to prepare if we get here. */
-                this->transport.PrepareNextTrack("");
+                this->transport.PrepareNextTrack("", ITransport::Gain());
             }
         }
     }
@@ -289,7 +299,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                     quickly. make compare the track URIs before we update internal state. */
                     if (this->nextIndex >= this->Count()) {
                         this->nextIndex = NO_POSITION;
-                        this->transport.PrepareNextTrack("");
+                        this->transport.PrepareNextTrack("", ITransport::Gain());
                         return;
                     }
 
@@ -624,7 +634,10 @@ void PlaybackService::Play(size_t index) {
     std::string uri = this->UriAtIndex(index);
 
     if (uri.size()) {
-        transport.Start(this->UriAtIndex(index));
+        transport.Start(
+            this->UriAtIndex(index),
+            this->GainAtIndex(index));
+
         this->nextIndex = NO_POSITION;
         this->index = index;
     }
@@ -980,4 +993,35 @@ std::string PlaybackService::UriAtIndex(size_t index) {
         }
     }
     return "";
+}
+
+ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
+    using Mode = values::ReplayGainMode;
+
+    ITransport::Gain result;
+
+    float preampDb = (float) prefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f);
+    result.preamp = powf(10.0f, (preampDb / 20.0f));
+    result.peakValid = false;
+
+    values::ReplayGainMode mode = (Mode)
+        prefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+
+    if (mode != Mode::Disabled && index < this->playlist.Count()) {
+        int64_t id = this->playlist.Get(index)->GetId();
+        auto query = std::make_shared<ReplayGainQuery>(id);
+        if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
+            auto rg = query->GetResult();
+            float gain = (mode == Mode::Album) ? rg->albumGain : rg->trackGain;
+            float peak = (mode == Mode::Album) ? rg->albumPeak : rg->trackPeak;
+            if (gain != 1.0f) {
+                /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
+                result.gain = powf(10.0f, (gain / 20.0f));
+                result.peak = (1.0f / peak);
+                result.peakValid = true;
+            }
+        }
+    }
+
+    return result;
 }

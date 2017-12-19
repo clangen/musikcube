@@ -77,11 +77,24 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
             const std::string& outputKey,
             musik::core::sdk::ITagStore *target);
 
+        template <typename T> std::string ExtractValueForKey(
+            const T& map,
+            const std::string& inputKey,
+            const std::string& defaultValue);
+
+        template <typename T> void ExtractReplayGain(
+            const T& map, musik::core::sdk::ITagStore *target);
+
         void ExtractValueForKey(
             const TagLib::MP4::ItemMap& map,
             const std::string& inputKey,
             const std::string& outputKey,
             musik::core::sdk::ITagStore *target);
+
+        std::string ExtractValueForKey(
+            const TagLib::MP4::ItemMap& map,
+            const std::string& inputKey,
+            const std::string& defaultValue);
 
         void SetTagValue(
             const char* key,

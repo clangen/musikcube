@@ -113,6 +113,7 @@
     <ClCompile Include="library\query\local\DeletePlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\GetPlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\NowPlayingTrackListQuery.cpp" />
+    <ClCompile Include="library\query\local\ReplayGainQuery.cpp" />
     <ClCompile Include="library\query\local\SavePlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\SearchTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\TrackMetadataQuery.cpp" />
@@ -169,6 +170,7 @@
     <ClInclude Include="library\query\local\DeletePlaylistQuery.h" />
     <ClInclude Include="library\query\local\GetPlaylistQuery.h" />
     <ClInclude Include="library\query\local\NowPlayingTrackListQuery.h" />
+    <ClInclude Include="library\query\local\ReplayGainQuery.h" />
     <ClInclude Include="library\query\local\SavePlaylistQuery.h" />
     <ClInclude Include="library\query\local\SearchTrackListQuery.h" />
     <ClInclude Include="library\query\local\TrackListQueryBase.h" />

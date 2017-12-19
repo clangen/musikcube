@@ -100,6 +100,7 @@ namespace musik {
 
                 void OnOutputDriverDropdownActivated(cursespp::TextLabel* label);
                 void OnOutputDeviceDropdownActivated(cursespp::TextLabel* label);
+                void OnReplayGainDropdownActivated(cursespp::TextLabel* label);
                 void OnTransportDropdownActivate(cursespp::TextLabel* label);
                 void OnPluginsDropdownActivate(cursespp::TextLabel* label);
                 void OnHotkeyDropdownActivate(cursespp::TextLabel* label);
@@ -125,6 +126,7 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> localeDropdown;
                 std::shared_ptr<cursespp::TextLabel> outputDriverDropdown;
                 std::shared_ptr<cursespp::TextLabel> outputDeviceDropdown;
+                std::shared_ptr<cursespp::TextLabel> replayGainDropdown;
                 std::shared_ptr<cursespp::TextLabel> transportDropdown;
                 std::shared_ptr<cursespp::TextLabel> pluginsDropdown;
                 std::shared_ptr<cursespp::TextLabel> hotkeyDropdown;
@@ -142,8 +144,6 @@ namespace musik {
                 std::shared_ptr<cursespp::Checkbox> startMinimizedCheckbox;
                 std::shared_ptr<cursespp::Checkbox> autoUpdateCheckbox;
 
-                std::shared_ptr<cursespp::TextLabel> browseLabel;
-                std::shared_ptr<cursespp::TextLabel> addedPathsLabel;
                 std::shared_ptr<cursespp::ListWindow> browseList;
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;
 

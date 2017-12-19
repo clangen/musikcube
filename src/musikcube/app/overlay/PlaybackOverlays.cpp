@@ -37,6 +37,8 @@
 #include "PlaybackOverlays.h"
 
 #include <core/audio/Outputs.h>
+#include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -47,6 +49,7 @@
 
 using namespace musik::cube;
 using namespace musik::glue::audio;
+using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace cursespp;
@@ -254,6 +257,39 @@ void PlaybackOverlays::ShowTransportOverlay(
                 }
                 else if (callback) {
                     callback(result);
+                }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void PlaybackOverlays::ShowReplayGainOverlay(std::function<void()> callback) {
+    using Adapter = cursespp::SimpleScrollAdapter;
+    using ListOverlay = cursespp::ListOverlay;
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry(_TSTR("settings_replay_gain_mode_disabled"));
+    adapter->AddEntry(_TSTR("settings_replay_gain_mode_track"));
+    adapter->AddEntry(_TSTR("settings_replay_gain_mode_album"));
+    adapter->SetSelectable(true);
+
+    auto prefs = Preferences::ForComponent(prefs::components::Playback);
+
+    auto selectedIndex = prefs->GetInt(
+        prefs::keys::ReplayGainMode.c_str(),
+        (int) prefs::values::ReplayGainMode::Disabled);
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("settings_replay_gain_title"))
+        .SetSelectedIndex((size_t) selectedIndex)
+        .SetItemSelectedCallback(
+            [callback, prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                prefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) index);
+                prefs->Save();
+                if (callback) {
+                    callback();
                 }
             });
 

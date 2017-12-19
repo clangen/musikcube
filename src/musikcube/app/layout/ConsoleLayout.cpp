@@ -298,7 +298,7 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
 bool ConsoleLayout::PlayFile(const std::vector<std::string>& args) {
     if (args.size() > 0) {
         std::string filename = boost::algorithm::join(args, " ");
-        transport.Start(filename);
+        transport.Start(filename, ITransport::Gain());
         return true;
     }
 

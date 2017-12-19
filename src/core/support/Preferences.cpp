@@ -184,12 +184,19 @@ void Preferences::Release() {
 }
 
 #define RETURN_VALUE(defaultValue) \
-    auto it = json.find(key); \
-    if (it == json.end()) { \
-        json[key] = defaultValue; \
+{ \
+    try { \
+        auto it = json.find(key); \
+        if (it == json.end()) { \
+            json[key] = defaultValue; \
+            return defaultValue; \
+        } \
+        return it.value(); \
+    } \
+    catch (...) { \
         return defaultValue; \
     } \
-    return it.value();
+}
 
 bool Preferences::GetBool(const std::string& key, bool defaultValue) {
     const char* p = key.c_str();

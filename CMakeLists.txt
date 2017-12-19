@@ -78,9 +78,12 @@ include_directories (
 )
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
+# "/opt/local" is the default installation location for MacPorts
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   link_directories ("/usr/local/lib")
   include_directories("/usr/local/include")
+  link_directories ("/opt/local/lib")
+  include_directories("/opt/local/include")
 endif ()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
@@ -91,14 +94,19 @@ add_subdirectory(src/core)
 add_subdirectory(src/glue)
 add_subdirectory(src/musikcube)
 add_subdirectory(src/plugins/taglib_plugin)
-add_subdirectory(src/plugins/m4adecoder)
-add_subdirectory(src/plugins/oggdecoder)
-add_subdirectory(src/plugins/nomaddecoder)
-add_subdirectory(src/plugins/flacdecoder)
 add_subdirectory(src/plugins/nullout)
 add_subdirectory(src/plugins/server)
 add_subdirectory(src/plugins/httpdatastream)
 add_subdirectory(src/plugins/stockencoders)
+
+if (${FFMPEG_DECODER} MATCHES "true")
+  add_subdirectory(src/plugins/ffmpegdecoder)
+else()
+  add_subdirectory(src/plugins/m4adecoder)
+  add_subdirectory(src/plugins/oggdecoder)
+  add_subdirectory(src/plugins/nomaddecoder)
+  add_subdirectory(src/plugins/flacdecoder)
+endif()
 
 add_dependencies(taglibreader taglib)
 
@@ -121,39 +129,62 @@ install(
 
 # install the plugins
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  # linux
-  install(
-    FILES
-      bin/plugins/libalsaout.so
-      bin/plugins/libpulseout.so
-      bin/plugins/libnullout.so
-      bin/plugins/libflacdecoder.so
-      bin/plugins/libm4adecoder.so
-      bin/plugins/libnomaddecoder.so
-      bin/plugins/liboggdecoder.so
-      bin/plugins/libtaglibreader.so
-      bin/plugins/libserver.so
-      bin/plugins/libhttpdatastream.so
-      bin/plugins/libstockencoders.so
-    DESTINATION share/musikcube/plugins
-  )
-else (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  # macos
-  install(
-    FILES
-      bin/plugins/libcoreaudioout.dylib
-      bin/plugins/libnullout.dylib
-      bin/plugins/libflacdecoder.dylib
-      bin/plugins/libm4adecoder.dylib
-      bin/plugins/libnomaddecoder.dylib
-      bin/plugins/liboggdecoder.dylib
-      bin/plugins/libtaglibreader.dylib
-      bin/plugins/libserver.dylib
-      bin/plugins/libhttpdatastream.dylib
-      bin/plugins/libstockencoders.dylib
-    DESTINATION share/musikcube/plugins
-  )
-endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  if (${FFMPEG_DECODER} MATCHES "true")
+    install(
+      FILES
+        bin/plugins/libalsaout.so
+        bin/plugins/libpulseout.so
+        bin/plugins/libnullout.so
+        bin/plugins/libffmpegdecoder.so
+        bin/plugins/libtaglibreader.so
+        bin/plugins/libserver.so
+        bin/plugins/libhttpdatastream.so
+        bin/plugins/libstockencoders.so
+      DESTINATION share/musikcube/plugins)
+  else()
+    install(
+      FILES
+        bin/plugins/libalsaout.so
+        bin/plugins/libpulseout.so
+        bin/plugins/libnullout.so
+        bin/plugins/libflacdecoder.so
+        bin/plugins/libm4adecoder.so
+        bin/plugins/libnomaddecoder.so
+        bin/plugins/liboggdecoder.so
+        bin/plugins/libtaglibreader.so
+        bin/plugins/libserver.so
+        bin/plugins/libhttpdatastream.so
+        bin/plugins/libstockencoders.so
+      DESTINATION share/musikcube/plugins)
+  endif()
+else () # macOS
+  if (${FFMPEG_DECODER} MATCHES "true")
+    install(
+      FILES
+        bin/plugins/libcoreaudioout.dylib
+        bin/plugins/libnullout.dylib
+        bin/plugins/libffmpegdecoder.dylib
+        bin/plugins/libtaglibreader.dylib
+        bin/plugins/libserver.dylib
+        bin/plugins/libhttpdatastream.dylib
+        bin/plugins/libstockencoders.dylib
+      DESTINATION share/musikcube/plugins)
+  else()
+    install(
+      FILES
+        bin/plugins/libcoreaudioout.dylib
+        bin/plugins/libnullout.dylib
+        bin/plugins/libflacdecoder.dylib
+        bin/plugins/libm4adecoder.dylib
+        bin/plugins/libnomaddecoder.dylib
+        bin/plugins/liboggdecoder.dylib
+        bin/plugins/libtaglibreader.dylib
+        bin/plugins/libserver.dylib
+        bin/plugins/libhttpdatastream.dylib
+        bin/plugins/libstockencoders.dylib
+      DESTINATION share/musikcube/plugins)
+  endif()
+endif ()
 
 file(GLOB sdk_headers "src/core/sdk/*.h")
 file(GLOB themes "src/musikcube/data/themes/*.json")
@@ -210,30 +241,20 @@ if (GENERATE_DEB MATCHES "1")
       set(DEB_MICROHTTPD_VERSION "10")
     endif()
 
+    set(DEPENDENCIES "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libboost-atomic${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libmicrohttpd${DEB_MICROHTTPD_VERSION}, libcurl3, libogg0, libvorbis0a, libvorbisfile3, libncursesw5, libasound2, libpulse0, pulseaudio, libmp3lame0,")
+ 
+    if (${FFMPEG_DECODER} MATCHES "true")
+      set(DEPENDENCIES "${DEPENDENCIES} libavcodec-extra, libavutil55, libavformat57, libswresample2")
+    else()
+      set(DEPENDENCIES "${DEPENDENCIES} libflac8, libfaad2")
+    endif()
+ 
     set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGE_DESCRIPTION "musikcube, a terminal-based music player and library")
     set(CPACK_PACKAGE_VERSION_MAJOR "${musikcube_VERSION_MAJOR}")
     set(CPACK_PACKAGE_VERSION_MINOR "${musikcube_VERSION_MINOR}")
     set(CPACK_PACKAGE_VERSION_PATCH "${musikcube_VERSION_PATCH}")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS
-        "libboost-thread${DEB_BOOST_VERSION},
-        libboost-system${DEB_BOOST_VERSION},
-        libboost-filesystem${DEB_BOOST_VERSION},
-        libboost-date-time${DEB_BOOST_VERSION},
-        libboost-atomic${DEB_BOOST_VERSION},
-        libboost-chrono${DEB_BOOST_VERSION},
-        libmicrohttpd${DEB_MICROHTTPD_VERSION},
-        libcurl3,
-        libogg0,
-        libvorbis0a,
-        libvorbisfile3,
-        libflac8,
-        libfaad2,
-        libncursesw5,
-        libasound2,
-        libpulse0,
-        pulseaudio,
-        libmp3lame0")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS ${DEPENDENCIES})
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "casey langen")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCHITECTURE})
     set(CPACK_PACKAGE_FILE_NAME "musikcube_${musikcube_VERSION}_${DEB_DISTRO}_${DEB_ARCHITECTURE}")

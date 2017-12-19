@@ -143,17 +143,19 @@ std::string CategoryListView::GetFilter() {
 }
 
 void CategoryListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
-this->playing = track;
-this->OnAdapterChanged();
+    this->playing = track;
+    this->OnAdapterChanged();
 }
 
 void CategoryListView::SetFieldName(const std::string& fieldName) {
     if (this->fieldName != fieldName) {
+        this->selectAfterQuery = 0;
         this->fieldName = fieldName;
+        this->SetSelectedIndex(0);
+        this->ScrollToTop();
 
         if (this->metadata) {
             this->metadata.reset();
-            this->ScrollToTop();
         }
 
         this->Requery();

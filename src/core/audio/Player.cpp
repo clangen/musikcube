@@ -111,16 +111,18 @@ Player* Player::Create(
     const std::string &url,
     std::shared_ptr<IOutput> output,
     DestroyMode destroyMode,
-    EventListener *listener)
+    EventListener *listener,
+    Gain gain)
 {
-    return new Player(url, output, destroyMode, listener);
+    return new Player(url, output, destroyMode, listener, gain);
 }
 
 Player::Player(
     const std::string &url,
     std::shared_ptr<IOutput> output,
     DestroyMode destroyMode,
-    EventListener *listener)
+    EventListener *listener,
+    Gain gain)
 : state(Player::Idle)
 , url(url)
 , currentPosition(0)
@@ -130,7 +132,8 @@ Player::Player(
 , nextMixPoint(-1.0)
 , pendingBufferCount(0)
 , destroyMode(destroyMode)
-, fftContext(nullptr) {
+, fftContext(nullptr)
+, gain(gain) {
     musik::debug::info(TAG, "new instance created");
 
     this->spectrum = new float[FFT_N / 2];
@@ -285,6 +288,11 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     Buffer* buffer = nullptr;
 
+    float gain = player->gain.preamp * player->gain.gain;
+    if (gain > 1.0f && player->gain.peakValid) {
+        gain = player->gain.peak;
+    }
+
     if (player->stream->OpenStream(player->url)) {
         for (Listener* l : player->Listeners()) {
             l->OnPlayerPrepared(player);
@@ -338,6 +346,14 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                 std::unique_lock<std::mutex> lock(player->queueMutex);
 
                 buffer = player->stream->GetNextProcessedOutputBuffer();
+
+                /* apply replay gain, if specified */
+                if (gain != 1.0f) {
+                    float* samples = buffer->BufferPointer();
+                    for (long i = 0; i < buffer->Samples(); i++) {
+                        samples[i] *= gain;
+                    }
+                }
 
                 /* lock it down until it's processed */
                 if (buffer) {

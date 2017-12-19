@@ -42,7 +42,7 @@
 
 using namespace musik::core::sdk;
 
-class FlacDecoder :	public musik::core::sdk::IDecoder {
+class FlacDecoder: public musik::core::sdk::IDecoder {
     public:
         FlacDecoder();
         ~FlacDecoder();

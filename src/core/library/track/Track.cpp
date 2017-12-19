@@ -38,6 +38,7 @@
 #include <core/library/LocalLibrary.h>
 
 using namespace musik::core;
+using namespace musik::core::sdk;
 
 /* * * * SdkWrapper * * * */
 
@@ -85,7 +86,7 @@ class SdkWrapper : public Track {
             return track->Uri(dst, size);
         }
 
-        virtual musik::core::sdk::IResource::Class GetClass() override {
+        virtual IResource::Class GetClass() override {
             return track->GetClass();
         }
 
@@ -103,6 +104,7 @@ class SdkWrapper : public Track {
         virtual void SetValue(const char* key, const char* value) override { NO_IMPL }
         virtual void ClearValue(const char* key) override { NO_IMPL }
         virtual void SetThumbnail(const char *data, long size) override { NO_IMPL }
+        virtual void SetReplayGain(const ReplayGain& replayGain) override { NO_IMPL }
         virtual void SetId(int64_t id) override { NO_IMPL }
         virtual std::string GetString(const char* metakey) override { NO_IMPL }
         virtual std::string Uri() override { NO_IMPL }
@@ -142,12 +144,12 @@ void Track::Release() {
     /* same as Retain() */
 }
 
-musik::core::sdk::ITrack* Track::GetSdkValue() {
+ITrack* Track::GetSdkValue() {
     return new SdkWrapper(shared_from_this());
 }
 
-musik::core::sdk::IResource::Class Track::GetClass() {
-    return musik::core::sdk::IResource::Class::Map;
+IResource::Class Track::GetClass() {
+    return IResource::Class::Map;
 }
 
 const char* Track::GetType() {
@@ -195,6 +197,10 @@ void TagStore::Release() {
         this->track.reset();
         delete this;
     }
+}
+
+void TagStore::SetReplayGain(const ReplayGain& replayGain) {
+    this->track->SetReplayGain(replayGain);
 }
 
 void TagStore::Retain() {

@@ -63,9 +63,9 @@ LibraryTrack::~LibraryTrack() {
 }
 
 std::string LibraryTrack::GetString(const char* metakey) {
-    std::unique_lock<std::mutex> lock(this->data.mutex);
-    MetadataMap::iterator metavalue = this->data.metadata.find(metakey);
-    if (metavalue != this->data.metadata.end()) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    MetadataMap::iterator metavalue = this->metadata.find(metakey);
+    if (metavalue != this->metadata.end()) {
         return metavalue->second;
     }
     return "";
@@ -108,21 +108,24 @@ double LibraryTrack::GetDouble(const char* key, double defaultValue) {
 }
 
 void LibraryTrack::SetValue(const char* metakey, const char* value) {
-    std::unique_lock<std::mutex> lock(this->data.mutex);
-    this->data.metadata.insert(std::pair<std::string, std::string>(metakey,value));
+    std::unique_lock<std::mutex> lock(this->mutex);
+    this->metadata.insert(std::pair<std::string, std::string>(metakey,value));
 }
 
 void LibraryTrack::ClearValue(const char* metakey) {
-    std::unique_lock<std::mutex> lock(this->data.mutex);
-    this->data.metadata.erase(metakey);
+    std::unique_lock<std::mutex> lock(this->mutex);
+    this->metadata.erase(metakey);
 }
 
 void LibraryTrack::SetThumbnail(const char *data, long size) {
-    delete this->data.thumbnailData;
-    this->data.thumbnailData = new char[size];
-    this->data.thumbnailSize = size;
+    /* do nothing. we implement a fat interface; this is just used by
+    IndexerTrack. */
+}
 
-    memcpy(this->data.thumbnailData, data, size);
+void LibraryTrack::SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) {
+    /* do nothing, we don't use this value and this method should never be
+    called. it's used by the IndexerTrack implementation, and also by the
+    playback engine, but not here in the library. */
 }
 
 std::string LibraryTrack::Uri() {
@@ -138,14 +141,14 @@ int LibraryTrack::Uri(char* dst, int size) {
 }
 
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {
-    std::unique_lock<std::mutex> lock(this->data.mutex);
-    return this->data.metadata.equal_range(metakey);
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return this->metadata.equal_range(metakey);
 }
 
 Track::MetadataIteratorRange LibraryTrack::GetAllValues() {
     return Track::MetadataIteratorRange(
-        this->data.metadata.begin(),
-        this->data.metadata.end());
+        this->metadata.begin(),
+        this->metadata.end());
 
     return Track::MetadataIteratorRange();
 }
@@ -247,14 +250,4 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
     }
 
     return false;
-}
-
-
-LibraryTrack::LibraryData::LibraryData()
-: thumbnailData(NULL)
-, thumbnailSize(0) {
-}
-
-LibraryTrack::LibraryData::~LibraryData() {
-    delete this->thumbnailData;
 }

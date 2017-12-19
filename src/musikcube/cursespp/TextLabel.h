@@ -63,7 +63,8 @@ namespace cursespp {
 
         virtual std::string GetText() { return this->buffer; }
         virtual size_t Length() { return u8cols(this->buffer); }
-
+        virtual void SetBold(bool bold);
+        virtual bool IsBold() { return this->bold; }
         virtual void OnRedraw();
 
         virtual bool KeyPress(const std::string& key);
@@ -71,5 +72,6 @@ namespace cursespp {
     private:
         std::string buffer;
         text::TextAlign alignment;
+        bool bold;
     };
 }

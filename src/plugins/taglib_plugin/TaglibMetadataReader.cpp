@@ -48,6 +48,7 @@
     #include <taglib/mpeg/id3v2/id3v2frame.h>
     #include <taglib/mpeg/id3v2/frames/attachedpictureframe.h>
     #include <taglib/mpeg/id3v2/frames/commentsframe.h>
+    #include <taglib/mpeg/id3v2/frames/textidentificationframe.h>
     #include <taglib/mp4/mp4file.h>
     #include <taglib/ogg/oggfile.h>
     #include <taglib/ogg/xiphcomment.h>
@@ -72,6 +73,7 @@
     #include <taglib/flacfile.h>
     #include <taglib/xiphcomment.h>
     #include <taglib/tpropertymap.h>
+#include <taglib/textidentificationframe.h>
 #endif
 
 #include <vector>
@@ -80,6 +82,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+
+using namespace musik::core::sdk;
 
 #ifdef WIN32
 static inline std::wstring utf8to16(const char* utf8) {
@@ -92,6 +96,36 @@ static inline std::wstring utf8to16(const char* utf8) {
     return utf16fn;
 }
 #endif
+
+static float toReplayGainFloat(const std::string& input) {
+    /* trim any trailing " db" or "db" noise... */
+    std::string lower = boost::algorithm::to_lower_copy(input);
+    if (lower.find(" db") == lower.length() - 3) {
+        lower = lower.substr(0, lower.length() - 3);
+    }
+    else if (lower.find("db") == lower.length() - 2) {
+        lower = lower.substr(0, lower.length() - 2);
+    }
+
+    try {
+        return std::stof(lower);
+    }
+    catch (...) {
+        /* nothing we can do... */
+    }
+
+    return 1.0f;
+}
+
+static inline void initReplayGain(ReplayGain& rg) {
+    rg.albumGain = rg.albumPeak = 1.0f;
+    rg.trackGain = rg.trackPeak = 1.0f;
+}
+
+static inline bool replayGainValid(ReplayGain& rg) {
+    return rg.albumGain != 1.0 || rg.albumPeak != 1.0 ||
+        rg.trackGain != 1.0 || rg.trackPeak != 1.0;
+}
 
 TaglibMetadataReader::TaglibMetadataReader() {
 }
@@ -121,7 +155,7 @@ bool TaglibMetadataReader::CanRead(const char *extension){
     return false;
 }
 
-bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::ITagStore *track) {
+bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
     std::string path(uri);
     std::string extension;
 
@@ -155,7 +189,7 @@ bool TaglibMetadataReader::Read(const char* uri, musik::core::sdk::ITagStore *tr
     return success;
 }
 
-bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITagStore *target) {
+bool TaglibMetadataReader::ReadGeneric(const char* uri, ITagStore *target) {
 #ifdef WIN32
     TagLib::FileRef file(utf8to16(uri).c_str());
 #else
@@ -194,6 +228,7 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITagSt
             auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
             if (xiphTag) {
                 this->ReadFromMap(xiphTag->fieldListMap(), target);
+                this->ExtractReplayGain(xiphTag->fieldListMap(), target);
             }
 
             /* if this isn't a xiph tag, the file format may have some other custom
@@ -206,6 +241,7 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITagSt
                 auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
                 if (flacFile && flacFile->hasXiphComment()) {
                     this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
+                    this->ExtractReplayGain(flacFile->xiphComment()->fieldListMap(), target);
                     handled = true;
                 }
 
@@ -218,6 +254,7 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, musik::core::sdk::ITagSt
                         auto mp4TagMap = static_cast<TagLib::MP4::Tag*>(tag)->itemListMap();
                         this->ExtractValueForKey(mp4TagMap, "aART", "album_artist", target);
                         this->ExtractValueForKey(mp4TagMap, "disk", "disc", target);
+                        this->ExtractReplayGain(mp4TagMap, target);
                     }
                 }
             }
@@ -236,7 +273,7 @@ void TaglibMetadataReader::ExtractValueForKey(
     const TagLib::MP4::ItemMap& map,
     const std::string& inputKey,
     const std::string& outputKey,
-    musik::core::sdk::ITagStore *target)
+    ITagStore *target)
 {
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()].toStringList();
@@ -246,12 +283,26 @@ void TaglibMetadataReader::ExtractValueForKey(
     }
 }
 
+std::string TaglibMetadataReader::ExtractValueForKey(
+    const TagLib::MP4::ItemMap& map,
+    const std::string& inputKey,
+    const std::string& defaultValue)
+{
+    if (map.contains(inputKey.c_str())) {
+        TagLib::StringList value = map[inputKey.c_str()].toStringList();
+        if (value.size()) {
+            return value[0].to8Bit();
+        }
+    }
+    return defaultValue;
+}
+
 template <typename T>
 void TaglibMetadataReader::ExtractValueForKey(
     const T& map,
     const std::string& inputKey,
     const std::string& outputKey,
-    musik::core::sdk::ITagStore *target)
+    ITagStore *target)
 {
     if (map.contains(inputKey.c_str())) {
         TagLib::StringList value = map[inputKey.c_str()];
@@ -262,13 +313,48 @@ void TaglibMetadataReader::ExtractValueForKey(
 }
 
 template <typename T>
-void TaglibMetadataReader::ReadFromMap(const T& map, musik::core::sdk::ITagStore *target) {
+void TaglibMetadataReader::ReadFromMap(const T& map, ITagStore *target) {
     ExtractValueForKey(map, "DISCNUMBER", "disc", target);
     ExtractValueForKey(map, "ALBUM ARTIST", "album_artist", target);
     ExtractValueForKey(map, "ALBUMARTIST", "album_artist", target);
 }
 
-bool TaglibMetadataReader::ReadID3V2(const char* uri, musik::core::sdk::ITagStore *track) {
+template <typename T>
+std::string TaglibMetadataReader::ExtractValueForKey(
+    const T& map,
+    const std::string& inputKey,
+    const std::string& defaultValue)
+{
+    if (map.contains(inputKey.c_str())) {
+        TagLib::StringList value = map[inputKey.c_str()];
+        if (value.size()) {
+            return value[0].to8Bit();
+        }
+    }
+    return defaultValue;
+}
+
+template <typename T>
+void TaglibMetadataReader::ExtractReplayGain(const T& map, ITagStore *target)
+{
+    try {
+        ReplayGain replayGain;
+        initReplayGain(replayGain);
+        replayGain.trackGain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_GAIN", "1.0"));
+        replayGain.trackPeak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_TRACK_PEAK", "1.0"));
+        replayGain.albumGain = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_GAIN", "1.0"));
+        replayGain.albumPeak = toReplayGainFloat(ExtractValueForKey(map, "REPLAYGAIN_ALBUM_PEAK", "1.0"));
+
+        if (replayGainValid(replayGain)) {
+            target->SetReplayGain(replayGain);
+        }
+    }
+    catch (...) {
+        /* let's not allow weird replay gain tags to crash indexing... */
+    }
+}
+
+bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
     TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
 #ifdef WIN32
@@ -301,6 +387,41 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, musik::core::sdk::ITagStor
 
         if (!allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
             this->SetTagValue("year", allTags["TCOP"].front()->toString().substr(0, 4), track);
+        }
+
+        /* replay gain */
+
+        auto txxx = allTags["TXXX"];
+        if (!txxx.isEmpty()) {
+            ReplayGain replayGain;
+            initReplayGain(replayGain);
+
+            for (auto current : txxx) {
+                using UTIF = TagLib::ID3v2::UserTextIdentificationFrame;
+                UTIF* utif = dynamic_cast<UTIF*>(current);
+                if (utif) {
+                    auto name = utif->description().upper();
+                    auto values = utif->fieldList();
+                    if (values.size() > 0) {
+                        if (name == "REPLAYGAIN_TRACK_GAIN") {
+                            replayGain.trackGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                        }
+                        else if (name == "REPLAYGAIN_TRACK_PEAK") {
+                            replayGain.trackPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                        }
+                        else if (name == "REPLAYGAIN_ALBUM_GAIN") {
+                            replayGain.albumGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                        }
+                        else if (name == "REPLAYGAIN_ALBUM_PEAK") {
+                            replayGain.albumPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                        }
+                    }
+                }
+            }
+
+            if (replayGainValid(replayGain)) {
+                track->SetReplayGain(replayGain);
+            }
         }
 
         /* TRCK is the track number (or "trackNum/totalTracks") */
@@ -442,7 +563,7 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, musik::core::sdk::ITagStor
 void TaglibMetadataReader::SetTagValue(
     const char* key,
     const TagLib::String tagString,
-    musik::core::sdk::ITagStore *track)
+    ITagStore *track)
 {
     std::string value(tagString.to8Bit(true));
     track->SetValue(key, value.c_str());
@@ -451,16 +572,14 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValue(
     const char* key,
     const char* string,
-    musik::core::sdk::ITagStore *track)
+    ITagStore *track)
 {
     std::string temp(string);
     track->SetValue(key, temp.c_str());
 }
 
 void TaglibMetadataReader::SetTagValue(
-    const char* key,
-    const int tagInt,
-    musik::core::sdk::ITagStore *target)
+    const char* key, const int tagInt, ITagStore *target)
 {
     std::string temp = boost::str(boost::format("%1%") % tagInt);
     target->SetValue(key, temp.c_str());
@@ -469,7 +588,7 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    musik::core::sdk::ITagStore *target)
+    ITagStore *target)
 {
     if (!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -485,9 +604,7 @@ void TaglibMetadataReader::SetTagValues(
 }
 
 void TaglibMetadataReader::SetSlashSeparatedValues(
-    const char* key,
-    TagLib::String tagString,
-    musik::core::sdk::ITagStore *track)
+    const char* key, TagLib::String tagString, ITagStore *track)
 {
     if(!tagString.isEmpty()) {
         std::string value(tagString.to8Bit(true));
@@ -505,7 +622,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key,
     const TagLib::ID3v2::FrameList &frame,
-    musik::core::sdk::ITagStore *track)
+    ITagStore *track)
 {
     if(!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
@@ -517,27 +634,21 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 }
 
 void TaglibMetadataReader::SetAudioProperties(
-    TagLib::AudioProperties *audioProperties,
-    musik::core::sdk::ITagStore *track)
+    TagLib::AudioProperties *audioProperties, ITagStore *track)
 {
-    /* FIXME: it's overkill to bring boost in just to convert ints to strings */
-
     if (audioProperties) {
-        std::string duration = boost::str(boost::format("%1%") % audioProperties->length());
-        this->SetTagValue("duration", duration, track);
-
+        std::string duration = std::to_string(audioProperties->length());
         int bitrate = audioProperties->bitrate();
-
-        if(bitrate) {
-            std::string temp(boost::str(boost::format("%1%") % bitrate));
-            this->SetTagValue("bitrate", temp, track);
-        }
-
         int channels = audioProperties->channels();
 
-        if(channels) {
-            std::string temp(boost::str(boost::format("%1%") % channels));
-            this->SetTagValue("channels", temp, track);
+        this->SetTagValue("duration", duration, track);
+
+        if (bitrate) {
+            this->SetTagValue("bitrate", std::to_string(bitrate), track);
+        }
+
+        if (channels) {
+            this->SetTagValue("channels", std::to_string(channels), track);
         }
     }
 }

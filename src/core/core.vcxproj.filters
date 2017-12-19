@@ -196,6 +196,9 @@
     <ClCompile Include="library\query\local\AppendPlaylistQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\ReplayGainQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -479,6 +482,9 @@
     </ClInclude>
     <ClInclude Include="support\Messages.h">
       <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\ReplayGainQuery.h">
+      <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

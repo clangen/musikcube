@@ -27,7 +27,7 @@
 
         "settings_space_to_add": "browse (SPACE to add)",
         "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
-        "settings_enable_disable_plugins": "plugin manager",
+        "settings_enable_disable_plugins": "configure plugins",
         "settings_color_theme": "color theme: ",
         "settings_hotkey_tester": "hotkey tester",
         "settings_output_driver": "output driver: ",
@@ -61,6 +61,17 @@
         "settings_server_password": "password:",
         "settings_server_invalid_settings_title": "invalid settings",
         "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",
+
+        "settings_preamp": "preamp / replay gain",
+        "settings_preamp_label": "preamp gain (dB):",
+        "settings_preamp_invalid_gain_title": "invalid gain",
+        "settings_preamp_invalid_gain_message": "preamp gain values must be between -20.0 and 20.0 dB",
+
+        "settings_replay_gain": "replay gain: ",
+        "settings_replay_gain_title": "replay gain mode",
+        "settings_replay_gain_mode_disabled": "disabled",
+        "settings_replay_gain_mode_track": "track",
+        "settings_replay_gain_mode_album": "album",
 
         "track_filter_title": "track filter results",
 
@@ -144,6 +155,7 @@
         "playqueue_playlist_add_to_queue_overlay": 35,
         "playqueue_playlist_list_overlay": 35,
         "playqueue_playlist_name_overlay": 35,
-        "server_overlay_width": 45
+        "server_overlay_width": 45,
+        "preamp_overlay_width": 40
     }
 }

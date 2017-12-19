@@ -50,7 +50,7 @@ using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 
-#define DATABASE_VERSION 5
+#define DATABASE_VERSION 6
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -311,13 +311,28 @@ static void upgradeV2ToV3(db::Connection& db) {
 }
 
 static void upgradeV3ToV4(db::Connection& db) {
-    db.Execute("DELETE from tracks");
+    db.Execute("UPDATE tracks SET filetime=0");
     scheduleSyncDueToDbUpgrade = true;
 }
 
 static void upgradeV4ToV5(db::Connection& db) {
-    db.Execute("DELETE from tracks");
+    db.Execute("UPDATE tracks SET filetime=0");
     db.Execute("UPDATE playlist_tracks SET sort_order=sort_order-1");
+    scheduleSyncDueToDbUpgrade = true;
+}
+
+static void upgradeV5ToV6(db::Connection& db) {
+    db.Execute("UPDATE tracks SET filetime=0");
+
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS replay_gain ("
+        "id INTEGER PRIMARY KEY,"
+        "track_id INTEGER DEFAULT 0,"
+        "album_gain REAL default 1.0,"
+        "album_peak REAL default 1.0,"
+        "track_gain REAL default 1.0,"
+        "track_peak REAL default 1.0)");
+
     scheduleSyncDueToDbUpgrade = true;
 }
 
@@ -442,6 +457,16 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "sort_order INTEGER DEFAULT 0"
             ")");
 
+    /* replay gain */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS replay_gain ("
+        "id INTEGER PRIMARY KEY,"
+        "track_id INTEGER DEFAULT 0,"
+        "album_gain REAL default 1.0,"
+        "album_peak REAL default 1.0,"
+        "track_gain REAL default 1.0,"
+        "track_peak REAL default 1.0)");
+
     /* version */
     db.Execute("CREATE TABLE IF NOT EXISTS version (version INTEGER default 1)");
 
@@ -522,6 +547,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     if (lastVersion >= 1 && lastVersion < 5) {
         upgradeV4ToV5(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 6) {
+        upgradeV5ToV6(db);
     }
 
     /* ensure our version is set correctly */

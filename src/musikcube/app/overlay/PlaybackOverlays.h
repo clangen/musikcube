@@ -51,6 +51,8 @@ namespace musik {
                     musik::glue::audio::MasterTransport::Type transportType,
                     std::function<void(int)> callback);
 
+                static void ShowReplayGainOverlay(std::function<void()> callback);
+
             private:
                 PlaybackOverlays();
         };

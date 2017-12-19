@@ -70,7 +70,8 @@ TextInput::TextInput(TextInput::Style style, IInput::InputMode inputMode)
 , position(0)
 , style(style)
 , inputMode(inputMode)
-, enterEnabled(true) {
+, enterEnabled(true)
+, truncate(false) {
     if (style == StyleLine) {
         this->SetFrameVisible(false);
     }
@@ -147,6 +148,13 @@ bool TextInput::Write(const std::string& key) {
             this->position = len;
         }
         else {
+            if (truncate) {
+                int cols = u8cols(this->buffer);
+                if (cols >= this->GetWidth()) {
+                    return false;
+                }
+            }
+
             size_t offset = u8offset(this->buffer, this->position);
             offset = (offset == std::string::npos) ? 0 : offset;
             this->buffer.insert(offset, key);
@@ -160,6 +168,12 @@ bool TextInput::Write(const std::string& key) {
     }
 
     return false;
+}
+
+void TextInput::SetTruncate(bool truncate) {
+    if (this->truncate != truncate) {
+        this->truncate = truncate;
+    }
 }
 
 void TextInput::SetEnterEnabled(bool enabled) {

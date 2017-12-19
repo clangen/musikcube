@@ -36,12 +36,15 @@
 
 #include <core/config.h>
 #include <core/sdk/constants.h>
+#include <core/audio/Player.h>
 #include <sigslot/sigslot.h>
 
 namespace musik { namespace core { namespace audio {
 
     class ITransport {
         public:
+            using Gain = Player::Gain;
+
             sigslot::signal2<int, std::string> StreamEvent;
             sigslot::signal1<int> PlaybackEvent;
             sigslot::signal0<> VolumeChanged;
@@ -49,9 +52,9 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~ITransport() { }
 
-            virtual void PrepareNextTrack(const std::string& trackUrl) = 0;
+            virtual void Start(const std::string& trackUrl, Gain gain) = 0;
+            virtual void PrepareNextTrack(const std::string& trackUrl, Gain gain) = 0;
 
-            virtual void Start(const std::string& trackUrl) = 0;
             virtual void Stop() = 0;
             virtual bool Pause() = 0;
             virtual bool Resume() = 0;
