@@ -60,8 +60,10 @@ configure_file("musikcube.in" "musikcube" @ONLY)
 
 add_executable(musikcube ${CUBE_SRCS})
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+add_definitions(-DNCURSES_WIDECHAR)
+
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	target_link_libraries(musikcube ${musikcube_LINK_LIBS} ncursesw panelw musikcore musikglue)
-else (CMAKE_SYSTEM_NAME MATCHES "Linux")
+else()
 	target_link_libraries(musikcube ${musikcube_LINK_LIBS} curses panel musikcore musikglue)
-endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+endif()

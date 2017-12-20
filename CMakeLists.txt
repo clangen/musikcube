@@ -21,8 +21,7 @@ ExternalProject_Add(taglib
     DOWNLOAD_COMMAND ""
     UPDATE_COMMAND ""
     CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
-    INSTALL_COMMAND make install
-)
+    INSTALL_COMMAND make install)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-unused-result -Wno-deprecated-declarations")
 
@@ -35,11 +34,7 @@ if (${LINK_STATICALLY} MATCHES "true")
   set(Boost_USE_STATIC_LIBS ON)
 endif()
 
-set (BOOST_LIBS
-  system
-  filesystem
-  thread
-)
+set (BOOST_LIBS system filesystem thread)
 
 find_package(Boost 1.55.0 REQUIRED ${BOOST_LIBS})
 
@@ -49,8 +44,7 @@ set (BOOST_LINK_LIBS ${Boost_LIBRARIES})
 #message(STATUS "boost libs: " ${BOOST_LINK_LIBS})
 #message(STATUS "boost includes: " ${Boost_INCLUDE_DIRS})
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Modules)
 
 # SET (CMAKE_BUILD_TYPE DEBUG)
 set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
@@ -58,28 +52,24 @@ set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 
 link_directories (
   ${musikcube_SOURCE_DIR}/bin/plugins
-  ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib
-)
+  ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib)
 
-set (musikcube_LINK_LIBS
-  ${linux_LINK_LIBS}
-  ${BOOST_LINK_LIBS}
-  dl
-  curl
-  pthread
-)
+if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread)
+else()
+  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} dl curl pthread)
+endif()
 
 include_directories (
   "${musikcube_SOURCE_DIR}/src"
   "${musikcube_SOURCE_DIR}/src/core"
   "${musikcube_SOURCE_DIR}/src/musikcube"
   "${musikcube_SOURCE_DIR}/src/3rdparty/include"
-  "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include"
-)
+  "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
 # "/opt/local" is the default installation location for MacPorts
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   link_directories ("/usr/local/lib")
   include_directories("/usr/local/include")
   link_directories ("/opt/local/lib")
@@ -87,6 +77,8 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 endif ()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
+  add_definitions (-DNO_NCURSESW)
+elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   add_definitions (-DNO_NCURSESW)
 endif()
 
@@ -110,13 +102,12 @@ endif()
 
 add_dependencies(taglibreader taglib)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   add_subdirectory(src/plugins/alsaout)
   add_subdirectory(src/plugins/pulseout)
-else (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  # macos
-  add_subdirectory(src/plugins/coreaudioout)
-endif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+else()
+  add_subdirectory(src/plugins/coreaudioout) # macOS
+endif()
 
 # install the binary
 install(
@@ -124,11 +115,10 @@ install(
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    WORLD_EXECUTE WORLD_READ
-)
+    WORLD_EXECUTE WORLD_READ)
 
 # install the plugins
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   if (${FFMPEG_DECODER} MATCHES "true")
     install(
       FILES
@@ -190,28 +180,13 @@ file(GLOB sdk_headers "src/core/sdk/*.h")
 file(GLOB themes "src/musikcube/data/themes/*.json")
 file(GLOB locales "src/musikcube/data/locales/*.json")
 
-file(COPY ${themes}
-    DESTINATION bin/themes
-)
+file(COPY ${themes} DESTINATION bin/themes)
+install(FILES ${themes} DESTINATION share/musikcube/themes)
 
-install(
-    FILES ${themes}
-    DESTINATION share/musikcube/themes
-)
+file(COPY ${locales} DESTINATION bin/locales)
+install(FILES ${locales} DESTINATION share/musikcube/locales)
 
-file(COPY ${locales}
-    DESTINATION bin/locales
-)
-
-install(
-    FILES ${locales}
-    DESTINATION share/musikcube/locales
-)
-
-install(
-    FILES ${sdk_headers}
-    DESTINATION include/musikcube/core/sdk
-)
+install(FILES ${sdk_headers} DESTINATION include/musikcube/core/sdk)
 
 # shell script that starts the app.
 install(
@@ -220,8 +195,7 @@ install(
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    WORLD_EXECUTE WORLD_READ
-)
+    WORLD_EXECUTE WORLD_READ)
 
 if (GENERATE_DEB MATCHES "1")
   if (CMAKE_SYSTEM_NAME MATCHES "Linux")

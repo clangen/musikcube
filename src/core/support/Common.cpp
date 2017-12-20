@@ -52,6 +52,11 @@
     #include <limits.h>
 #endif
 
+#ifdef __FreeBSD__
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+#endif
+
 std::string musik::core::GetPluginDirectory() {
     std::string path(GetApplicationDirectory());
     path.append("/plugins/");
@@ -75,9 +80,21 @@ std::string musik::core::GetApplicationDirectory() {
         size_t last = result.find_last_of("/");
         result = result.substr(0, last); /* remove filename component */
     #else
-        std::string pathToProc = boost::str(boost::format("/proc/%d/exe") % (int) getpid());
         char pathbuf[PATH_MAX + 1] = { 0 };
-        readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
+
+        #ifdef __FreeBSD__
+            int mib[4];
+            mib[0] = CTL_KERN;
+            mib[1] = KERN_PROC;
+            mib[2] = KERN_PROC_PATHNAME;
+            mib[3] = -1;
+            size_t bufsize = sizeof(pathbuf);
+            sysctl(mib, 4, pathbuf, &bufsize, nullptr, 0);
+        #else
+            std::string pathToProc = boost::str(boost::format("/proc/%d/exe") % (int) getpid());
+            readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
+	#endif
+
         result.assign(pathbuf);
         size_t last = result.find_last_of("/");
         result = result.substr(0, last); /* remove filename component */

@@ -19,6 +19,7 @@ ipch
 build
 CPack*
 _CPack*
+musikcube.core
 src/3rdparty/bin
 src/3rdparty/obj
 src/contrib
