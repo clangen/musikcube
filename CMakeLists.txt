@@ -102,11 +102,14 @@ endif()
 
 add_dependencies(taglibreader taglib)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/plugins/alsaout)
   add_subdirectory(src/plugins/pulseout)
-else()
-  add_subdirectory(src/plugins/coreaudioout) # macOS
+elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+  add_subdirectory(src/plugins/sndioout)
+  add_subdirectory(src/plugins/pulseout)
+elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  add_subdirectory(src/plugins/coreaudioout)
 endif()
 
 # install the binary
@@ -119,12 +122,18 @@ install(
 
 # install the plugins
 if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+  if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    set(ADDITIONAL_OUTPUTS bin/plugins/libalsaout.so)
+  else()
+    set(ADDITIONAL_OUTPUTS bin/plugins/libsndioout.so)
+  endif()
+  
   if (${FFMPEG_DECODER} MATCHES "true")
     install(
       FILES
-        bin/plugins/libalsaout.so
         bin/plugins/libpulseout.so
         bin/plugins/libnullout.so
+        ${ADDITIONAL_OUTPUTS}
         bin/plugins/libffmpegdecoder.so
         bin/plugins/libtaglibreader.so
         bin/plugins/libserver.so
@@ -134,9 +143,9 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   else()
     install(
       FILES
-        bin/plugins/libalsaout.so
         bin/plugins/libpulseout.so
         bin/plugins/libnullout.so
+        ${ADDITIONAL_OUTPUTS}
         bin/plugins/libflacdecoder.so
         bin/plugins/libm4adecoder.so
         bin/plugins/libnomaddecoder.so

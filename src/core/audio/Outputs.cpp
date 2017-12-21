@@ -53,6 +53,8 @@ using OutputList = std::vector<Output>;
 static const std::string defaultOutput = "WASAPI";
 #elif defined(__APPLE__)
 static const std::string defaultOutput = "CoreAudio";
+#elif defined(__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined (__DragonFly__)
+static const std::string defaultOutput = "sndio";
 #else
 static const std::string defaultOutput = "PulseAudio";
 #endif
