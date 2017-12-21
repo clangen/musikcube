@@ -34,6 +34,8 @@
 #pragma once
 
 #include <core/sdk/IOutput.h>
+#include <sndio.h>
+#include <mutex>
 
 using namespace musik::core::sdk;
 
@@ -60,6 +62,8 @@ class SndioOut : public IOutput {
         virtual IDevice* GetDefaultDevice() override;
 
     private:
+        bool InitDevice(IBuffer *buffer);
+    
         enum State {
             StateStopped,
             StatePaused,
@@ -68,4 +72,10 @@ class SndioOut : public IOutput {
 
         State state;
         double volume;
+        sio_hdl* handle;
+        sio_par pars;
+        short* buffer;
+        long bufferSamples;
+        double latency;
+        std::recursive_mutex mutex;
 };
