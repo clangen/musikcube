@@ -55,6 +55,7 @@ SndioOut::SndioOut() {
     this->bufferSamples = 0;
     this->latency = 0.0;
     this->pars = { 0 };
+    this->ditherState = 0.0;
 }
 
 SndioOut::~SndioOut() {
@@ -214,7 +215,18 @@ int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     float* src = buffer->BufferPointer();
     short* dst = this->buffer;
     for (long i = 0; i < samples; i++) {
-        *dst = (short)((*src) * SHRT_MAX);
+        float sample = *src;
+        if (sample > 1.0f) sample = 1.0f;
+        if (sample < -1.0f) sample = -1.0f;
+        sample *= SHRT_MAX;
+
+        /* triangle (high pass) dither, based on Audacity's
+        implementation */
+        float r = (rand() / (float) RAND_MAX - 0.5f);
+        sample = sample + r - this->ditherState;
+        this->ditherState = r;
+
+        *dst = sample;
         ++dst; ++src;
     }
     
@@ -227,10 +239,16 @@ int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     while (totalWritten < dataLength && this->state == StatePlaying) {
         size_t remaining = dataLength - totalWritten;
         size_t written = 0;
+
         {
             LOCK()
             written = sio_write(this->handle, data, remaining);
         }
+
+        if (written == 0) {
+            break;
+        }
+
         totalWritten += written;
         data += written;
     }

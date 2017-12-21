@@ -77,5 +77,6 @@ class SndioOut : public IOutput {
         short* buffer;
         long bufferSamples;
         double latency;
+        float ditherState;
         std::recursive_mutex mutex;
 };
