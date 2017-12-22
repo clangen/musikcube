@@ -58,10 +58,11 @@ static const char* KEY_AUDIO_SERVER_ENABLED = "http_server_enabled";
 static const char* KEY_AUDIO_SERVER_PORT = "http_server_port";
 static const char* KEY_TRANSCODER_CACHE_COUNT = "transcoder_cache_count";
 static const char* KEY_TRANSCODER_SYNCHRONOUS = "transcoder_synchronous";
+static const char* KEY_USE_IPV6 = "use_ipv6";
 static const char* KEY_PASSWORD = "password";
 
 #define VERTICAL_PADDING 2
-#define DEFAULT_HEIGHT 17
+#define DEFAULT_HEIGHT 18
 #define DEFAULT_WIDTH 45
 
 static void applyLabelOverlayStyle(TextLabel& label) {
@@ -166,6 +167,10 @@ void ServerOverlay::InitViews() {
     this->httpPortLabel->SetText(_TSTR("settings_server_port"), text::AlignRight);
     this->httpPortInput.reset(new TextInput(TextInput::StyleLine));
 
+    /* ipv6 */
+    this->ipv6Cb.reset(new Checkbox());
+    this->ipv6Cb->SetText(_TSTR("settings_server_use_ipv6"));
+
     /* transcoder */
     this->enableSyncTransCb.reset(new Checkbox());
     this->enableSyncTransCb->SetText(_TSTR("settings_server_transcoder_synchronous"));
@@ -188,6 +193,7 @@ void ServerOverlay::InitViews() {
     applyCheckboxOverlayStyle(*this->enableHttpCb);
     applyLabelOverlayStyle(*this->httpPortLabel);
     applyInputOverlayStyle(*this->httpPortInput);
+    applyCheckboxOverlayStyle(*this->ipv6Cb);
     applyCheckboxOverlayStyle(*this->enableSyncTransCb);
     applyLabelOverlayStyle(*this->transCacheLabel);
     applyInputOverlayStyle(*this->transCacheInput);
@@ -202,6 +208,7 @@ void ServerOverlay::InitViews() {
     this->AddWindow(this->enableHttpCb);
     this->AddWindow(this->httpPortLabel);
     this->AddWindow(this->httpPortInput);
+    this->AddWindow(this->ipv6Cb);
     this->AddWindow(this->enableSyncTransCb);
     this->AddWindow(this->transCacheLabel);
     this->AddWindow(this->transCacheInput);
@@ -215,6 +222,7 @@ void ServerOverlay::InitViews() {
     this->wssPortInput->SetFocusOrder(order++);
     this->enableHttpCb->SetFocusOrder(order++);
     this->httpPortInput->SetFocusOrder(order++);
+    this->ipv6Cb->SetFocusOrder(order++);
     this->enableSyncTransCb->SetFocusOrder(order++);
     this->transCacheInput->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
@@ -245,6 +253,8 @@ void ServerOverlay::Layout() {
     this->httpPortLabel->MoveAndResize(x + 4, y, httpPortLabelWidth, 1);
     this->httpPortInput->MoveAndResize(x + 4 + httpPortLabelWidth + 1, y, 8, 1);
     y += 2;
+
+    this->ipv6Cb->MoveAndResize(x, y++, clientWidth, 1);
 
     const int transCcacheLabelWidth = TEXT_WIDTH(transCacheLabel);
     this->enableSyncTransCb->MoveAndResize(x, y++, clientWidth, 1);
@@ -283,6 +293,7 @@ void ServerOverlay::Load() {
 
     this->wssPortInput->SetText(settingIntToString(prefs, KEY_METADATA_SERVER_PORT, 7905));
     this->httpPortInput->SetText(settingIntToString(prefs, KEY_AUDIO_SERVER_PORT, 7906));
+    this->ipv6Cb->SetChecked(prefs->GetBool(KEY_USE_IPV6, false));
     this->transCacheInput->SetText(settingIntToString(prefs, KEY_TRANSCODER_CACHE_COUNT, 50));
     this->pwInput->SetText(prefs->GetString(KEY_PASSWORD, ""));
 }
@@ -298,6 +309,7 @@ bool ServerOverlay::Save() {
 
     this->prefs->SetBool(KEY_METADATA_SERVER_ENABLED, this->enableWssCb->IsChecked());
     this->prefs->SetBool(KEY_AUDIO_SERVER_ENABLED, this->enableHttpCb->IsChecked());
+    this->prefs->SetBool(KEY_USE_IPV6, this->ipv6Cb->IsChecked());
     this->prefs->SetBool(KEY_TRANSCODER_SYNCHRONOUS, this->enableSyncTransCb->IsChecked());
     this->prefs->SetInt(KEY_METADATA_SERVER_PORT, wssPort);
     this->prefs->SetInt(KEY_AUDIO_SERVER_PORT, httpPort);

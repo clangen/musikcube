@@ -147,11 +147,19 @@ void WebSocketServer::ThreadProc() {
             wss->clear_access_channels(websocketpp::log::alevel::none);
         }
 
+        using namespace websocketpp::lib::asio::ip;
+
+        const int port = context.prefs->GetInt(
+            prefs::websocket_server_port.c_str(), defaults::websocket_server_port);
+
+        const bool ipv6 = context.prefs->GetBool(
+            prefs::use_ipv6.c_str(), defaults::use_ipv6);
+
         wss->init_asio();
         wss->set_message_handler(std::bind(&WebSocketServer::OnMessage, this, wss.get(), ::_1, ::_2));
         wss->set_open_handler(std::bind(&WebSocketServer::OnOpen, this, ::_1));
         wss->set_close_handler(std::bind(&WebSocketServer::OnClose, this, ::_1));
-        wss->listen(context.prefs->GetInt(prefs::websocket_server_port.c_str(), defaults::websocket_server_port));
+        wss->listen(ipv6 ? tcp::v6() : tcp::v4(), port);
         wss->start_accept();
 
         wss->run();
@@ -224,7 +232,7 @@ void WebSocketServer::HandleAuthentication(connection_hdl connection, json& requ
             this->connections[connection] = true; /* mark as authed */
 
             this->RespondWithOptions(
-                connection, request, json({ 
+                connection, request, json({
                     { key::authenticated, true },
                     { key::environment, getEnvironment(context) }
                 }));

@@ -61,6 +61,7 @@
         "settings_server_password": "password:",
         "settings_server_invalid_settings_title": "invalid settings",
         "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",
+        "settings_server_use_ipv6": "use ipv6",
 
         "settings_preamp": "preamp / replay gain",
         "settings_preamp_label": "preamp gain (dB):",
