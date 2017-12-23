@@ -35,6 +35,7 @@
 #include "SndioOut.h"
 
 #include <core/sdk/constants.h>
+#include <core/sdk/IPreferences.h>
 #include <math.h>
 #include <limits.h>
 #include <iostream>
@@ -43,9 +44,22 @@
 #define ERROR(str) std::cerr << "SndioOut Error: " << str << "\n";
 #define INFO(str) std::cerr << "SndioOut Info: " << str << "\n";
 #define LOCK() std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
+#define PREF_DEVICE_ID "device_id"
 
 using namespace musik::core::sdk;
+
+static char* deviceId = nullptr;
+
+extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
+    size_t len = prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
+    if (len > 1) {
+        delete[] deviceId;
+        deviceId = new char[len];
+        prefs->GetString(PREF_DEVICE_ID, deviceId, len, "");
+        prefs->Save();
+        INFO("setting deviceId to " + std::string(deviceId));
+    }
+}
 
 SndioOut::SndioOut() { 
     this->volume = 1.0f;
@@ -144,7 +158,9 @@ IDevice* SndioOut::GetDefaultDevice() {
 }
 
 bool SndioOut::InitDevice(IBuffer *buffer) {
-    this->handle = sio_open(nullptr, SIO_PLAY, 0);
+    const char* device = (::deviceId && strlen(::deviceId)) ? deviceId : nullptr;
+
+    this->handle = sio_open(device, SIO_PLAY, 0);
 
     if (this->handle == nullptr) {
         return false;
