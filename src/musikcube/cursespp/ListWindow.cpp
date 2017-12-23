@@ -101,7 +101,7 @@ void ListWindow::DecorateFrame() {
                 waddch(frame, (i == offset) ? ' ' : ACS_VLINE);
                 if (i == offset) wattroff(frame, A_REVERSE);
 #else
-                waddch(frame, (i == offset) ? ACS_D_VLINE : ACS_VLINE);
+                wadd_wch(frame, (i == offset) ? WACS_D_VLINE : WACS_VLINE);
 #endif
             }
         }
