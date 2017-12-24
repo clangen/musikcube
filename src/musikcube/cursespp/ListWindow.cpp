@@ -94,11 +94,17 @@ void ListWindow::DecorateFrame() {
                 offset = (int)(range * percent) + 1;
             }
 
+            auto frame = this->GetFrame();
+            int x = getcurx(frame);
+            int y = getcury(frame);
+
             for (int i = 1; i < height - 1; i++) {
-                int64_t ch = (i == offset) ? SCROLLER : ACS_VLINE;
-                wmove(this->GetFrame(), i, this->GetWidth() - 1);
-                waddch(this->GetFrame(), ch);
+                chtype ch = (i == offset) ? SCROLLER : ACS_VLINE;
+                wmove(frame, i, this->GetWidth() - 1);
+                waddch(frame, ch);
             }
+
+            wmove(frame, y, x);
         }
     }
 }
