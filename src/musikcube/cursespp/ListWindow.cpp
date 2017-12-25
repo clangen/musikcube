@@ -36,11 +36,7 @@
 #include <algorithm>
 #include "ListWindow.h"
 
-#ifdef WIN32
-#define SCROLLER 0x258A
-#else
-#define SCROLLER (' ' | A_REVERSE)
-#endif
+#define WIN32_SCROLLER 0x258A
 
 using namespace cursespp;
 
@@ -95,16 +91,17 @@ void ListWindow::DecorateFrame() {
             }
 
             auto frame = this->GetFrame();
-            int x = getcurx(frame);
-            int y = getcury(frame);
 
             for (int i = 1; i < height - 1; i++) {
-                chtype ch = (i == offset) ? SCROLLER : ACS_VLINE;
                 wmove(frame, i, this->GetWidth() - 1);
-                waddch(frame, ch);
+#ifdef WIN32
+                waddch(frame, (i == offset) ? WIN32_SCROLLER : ACS_VLINE);
+#else
+                if (i == offset) wattron(frame, A_REVERSE);
+                waddch(frame, (i == offset) ? ' ' : ACS_VLINE);
+                if (i == offset) wattroff(frame, A_REVERSE);
+#endif
             }
-
-            wmove(frame, y, x);
         }
     }
 }
