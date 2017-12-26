@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.database.ContentObserver
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -510,30 +511,29 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             if (Strings.notEmpty(externalId)) {
                 val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
                 val protocol = if (ssl) "https" else "http"
+                val port = prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT)
+                val host = prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS)
+
+                val remoteUri = Uri.Builder()
+                    .scheme(protocol)
+                    .encodedAuthority("$host:$port")
+                    .appendPath("audio")
+                    .appendPath("external_id")
+                    .appendPath(externalId)
 
                 /* transcoding bitrate, if selected by the user */
-                var bitrateQueryParam = ""
                 val bitrateIndex = prefs.getInt(
                     Prefs.Key.TRANSCODER_BITRATE_INDEX,
                     Prefs.Default.TRANSCODER_BITRATE_INDEX)
 
                 if (bitrateIndex > 0) {
                     val r = Application.instance!!.resources
-
-                    bitrateQueryParam = String.format(
-                        Locale.ENGLISH,
-                        "?bitrate=%s",
-                        r.getStringArray(R.array.transcode_bitrate_array)[bitrateIndex])
+                    val bitrate = r.getStringArray(R.array.transcode_bitrate_array)[bitrateIndex]
+                    remoteUri.appendQueryParameter("bitrate", bitrate)
                 }
 
-                return String.format(
-                    Locale.ENGLISH,
-                    "%s://%s:%d/audio/external_id/%s%s&format=mp3",
-                    protocol,
-                    prefs.getString(Prefs.Key.ADDRESS, Prefs.Default.ADDRESS),
-                    prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT),
-                    URLEncoder.encode(externalId),
-                    bitrateQueryParam)
+                remoteUri.appendQueryParameter("format", "mp3");
+                return remoteUri.build().toString()
             }
         }
         return null
