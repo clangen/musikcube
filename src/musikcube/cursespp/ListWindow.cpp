@@ -96,10 +96,12 @@ void ListWindow::DecorateFrame() {
                 wmove(frame, i, this->GetWidth() - 1);
 #ifdef WIN32
                 waddch(frame, (i == offset) ? WIN32_SCROLLER : ACS_VLINE);
-#else
+#elif defined __APPLE__
                 if (i == offset) wattron(frame, A_REVERSE);
                 waddch(frame, (i == offset) ? ' ' : ACS_VLINE);
                 if (i == offset) wattroff(frame, A_REVERSE);
+#else
+                waddch(frame, (i == offset) ? ACS_D_VLINE : ACS_VLINE);
 #endif
             }
         }
