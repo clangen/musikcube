@@ -120,82 +120,24 @@ install(
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
     WORLD_EXECUTE WORLD_READ)
 
-# install the plugins
-if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-  if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-    set(ADDITIONAL_OUTPUTS bin/plugins/libalsaout.so)
-  else()
-    set(ADDITIONAL_OUTPUTS bin/plugins/libsndioout.so)
-  endif()
-  
-  if (${FFMPEG_DECODER} MATCHES "true")
-    install(
-      FILES
-        bin/plugins/libpulseout.so
-        bin/plugins/libnullout.so
-        ${ADDITIONAL_OUTPUTS}
-        bin/plugins/libffmpegdecoder.so
-        bin/plugins/libtaglibreader.so
-        bin/plugins/libserver.so
-        bin/plugins/libhttpdatastream.so
-        bin/plugins/libstockencoders.so
-      DESTINATION share/musikcube/plugins)
-  else()
-    install(
-      FILES
-        bin/plugins/libpulseout.so
-        bin/plugins/libnullout.so
-        ${ADDITIONAL_OUTPUTS}
-        bin/plugins/libflacdecoder.so
-        bin/plugins/libm4adecoder.so
-        bin/plugins/libnomaddecoder.so
-        bin/plugins/liboggdecoder.so
-        bin/plugins/libtaglibreader.so
-        bin/plugins/libserver.so
-        bin/plugins/libhttpdatastream.so
-        bin/plugins/libstockencoders.so
-      DESTINATION share/musikcube/plugins)
-  endif()
-else () # macOS
-  if (${FFMPEG_DECODER} MATCHES "true")
-    install(
-      FILES
-        bin/plugins/libcoreaudioout.dylib
-        bin/plugins/libnullout.dylib
-        bin/plugins/libffmpegdecoder.dylib
-        bin/plugins/libtaglibreader.dylib
-        bin/plugins/libserver.dylib
-        bin/plugins/libhttpdatastream.dylib
-        bin/plugins/libstockencoders.dylib
-      DESTINATION share/musikcube/plugins)
-  else()
-    install(
-      FILES
-        bin/plugins/libcoreaudioout.dylib
-        bin/plugins/libnullout.dylib
-        bin/plugins/libflacdecoder.dylib
-        bin/plugins/libm4adecoder.dylib
-        bin/plugins/libnomaddecoder.dylib
-        bin/plugins/liboggdecoder.dylib
-        bin/plugins/libtaglibreader.dylib
-        bin/plugins/libserver.dylib
-        bin/plugins/libhttpdatastream.dylib
-        bin/plugins/libstockencoders.dylib
-      DESTINATION share/musikcube/plugins)
-  endif()
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  file(GLOB plugins "bin/plugins/*.dylib")
+  install(FILES ${plugins} DESTINATION share/musikcube/plugins)
+else ()
+  file(GLOB plugins "bin/plugins/*.so")
+  install(FILES ${plugins} DESTINATION share/musikcube/plugins)
 endif ()
 
 file(GLOB sdk_headers "src/core/sdk/*.h")
-file(GLOB themes "src/musikcube/data/themes/*.json")
-file(GLOB locales "src/musikcube/data/locales/*.json")
+install(FILES ${sdk_headers} DESTINATION include/musikcube/core/sdk)
 
+file(GLOB themes "src/musikcube/data/themes/*.json")
 file(COPY ${themes} DESTINATION bin/themes)
 install(FILES ${themes} DESTINATION share/musikcube/themes)
 
+file(GLOB locales "src/musikcube/data/locales/*.json")
 file(COPY ${locales} DESTINATION bin/locales)
 install(FILES ${locales} DESTINATION share/musikcube/locales)
-
-install(FILES ${sdk_headers} DESTINATION include/musikcube/core/sdk)
 
 # shell script that starts the app.
 install(
