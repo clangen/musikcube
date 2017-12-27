@@ -104,10 +104,14 @@ add_dependencies(taglibreader taglib)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/plugins/alsaout)
-  add_subdirectory(src/plugins/pulseout)
+  if (NOT ${ENABLE_PULSEAUDIO} MATCHES "false") # enabled by default
+    add_subdirectory(src/plugins/pulseout)
+  endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   add_subdirectory(src/plugins/sndioout)
-  add_subdirectory(src/plugins/pulseout)
+  if (${ENABLE_PULSEAUDIO} MATCHES "true")
+    add_subdirectory(src/plugins/pulseout) # disabled by default
+  endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   add_subdirectory(src/plugins/coreaudioout)
 endif()
