@@ -392,6 +392,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
                 album = _TSTR("tracklist_unknown_album");
             }
 
+            album = text::Ellipsize(album, this->GetWidth());
+
             std::shared_ptr<TrackListEntry> entry(new
                 TrackListEntry(album, trackIndex, RowType::Separator));
 
