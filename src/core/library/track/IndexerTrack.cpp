@@ -286,7 +286,7 @@ static int64_t writeToTracksTable(
         query =
             "INSERT INTO tracks "
             "(track, disc, bpm, duration, filesize, title, filename, filetime, path_id, external_id) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 
     db::Statement stmt(query.c_str(), dbConnection);
@@ -303,7 +303,7 @@ static int64_t writeToTracksTable(
     stmt.BindText(9, track.GetString("external_id"));
 
     if (id != 0) {
-        stmt.BindInt64(11, id);
+        stmt.BindInt64(10, id);
     }
 
     if (stmt.Step() == db::Done) {
