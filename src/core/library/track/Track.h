@@ -66,6 +66,7 @@ namespace musik { namespace core {
             virtual void SetValue(const char* key, const char* value) = 0;
             virtual void ClearValue(const char* key) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;
+            virtual bool Contains(const char* key) = 0;
             virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) = 0;
 
             /* IResource */
@@ -112,6 +113,7 @@ namespace musik { namespace core {
             virtual void Release() override;
             virtual void SetValue(const char* key, const char* value) override;
             virtual void ClearValue(const char* key) override;
+            virtual bool Contains(const char* key) override;
             virtual void SetThumbnail(const char *data, long size) override;
             virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
 

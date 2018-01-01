@@ -48,7 +48,8 @@ namespace musik { namespace core { namespace sdk {
             virtual void Retain() = 0;
             virtual void Release() = 0;
             virtual void SetValue(const char* key, const char* value) = 0;
-            virtual void ClearValue(const char* value) = 0;
+            virtual void ClearValue(const char* key) = 0;
+            virtual bool Contains(const char* key) = 0;
             virtual void SetThumbnail(const char *data, long size) = 0;
             virtual void SetReplayGain(const ReplayGain& replayGain) = 0;
     };

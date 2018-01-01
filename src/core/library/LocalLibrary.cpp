@@ -50,7 +50,7 @@ using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 
-#define DATABASE_VERSION 6
+#define DATABASE_VERSION 7
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -336,6 +336,14 @@ static void upgradeV5ToV6(db::Connection& db) {
     scheduleSyncDueToDbUpgrade = true;
 }
 
+static void upgradeV6ToV7(db::Connection& db) {
+    db.Execute("UPDATE tracks SET filetime=0");
+    db.Execute("DELETE FROM track_meta;");
+    db.Execute("DELETE FROM meta_keys;");
+    db.Execute("DELETE FROM meta_values;");
+    scheduleSyncDueToDbUpgrade = true;
+}
+
 static void setVersion(db::Connection& db, int version) {
     db.Execute("DELETE FROM version");
 
@@ -354,7 +362,6 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "bpm REAL DEFAULT 0,"
             "duration INTEGER DEFAULT 0,"
             "filesize INTEGER DEFAULT 0,"
-            "year INTEGER DEFAULT 0,"
             "visual_genre_id INTEGER DEFAULT 0,"
             "visual_artist_id INTEGER DEFAULT 0,"
             "album_artist_id INTEGER DEFAULT 0,"
@@ -506,7 +513,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute(
         "CREATE VIEW tracks_view AS "
         "SELECT DISTINCT "
-            " t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, "
+            " t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, "
             " t.thumbnail_id, t.external_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, "
             " ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id "
         "FROM "
@@ -551,6 +558,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     if (lastVersion >= 1 && lastVersion < 6) {
         upgradeV5ToV6(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 7) {
+        upgradeV6ToV7(db);
     }
 
     /* ensure our version is set correctly */

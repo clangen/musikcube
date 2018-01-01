@@ -98,6 +98,37 @@ static const std::string FILTERED_GENRE_QUERY =
     "WHERE genres.id = tracks.visual_genre_id AND LOWER(genres.name) LIKE ? AND tracks.visible = 1 %s"
     "ORDER BY genres.sort_order;";
 
+static const std::string REGULAR_EXTENDED_PROPERTY_QUERY =
+    "SELECT DISTINCT meta_values.* "
+    "FROM meta_values, track_meta, tracks "
+    "WHERE "
+    "  meta_values.id = track_meta.meta_value_id AND "
+    "  track_meta.track_id = tracks.id AND "
+    "  tracks.visible = 1 AND "
+    "  meta_values.meta_key_id IN( "
+    "    SELECT DISTINCT meta_keys.id "
+    "    FROM meta_keys "
+    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
+    "  ) "
+    "%s "
+    "ORDER BY meta_values.content ASC";
+
+static const std::string FILTERED_EXTENDED_PROPERTY_QUERY =
+    "SELECT DISTINCT meta_values.* "
+    "FROM meta_values, track_meta, tracks "
+    "WHERE "
+    "  meta_values.id = track_meta.meta_value_id AND "
+    "  track_meta.track_id = tracks.id AND "
+    "  tracks.visible = 1 AND "
+    "  meta_values.meta_key_id IN( "
+    "    SELECT DISTINCT meta_keys.id "
+    "    FROM meta_keys "
+    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
+    "  ) "
+    "AND LOWER(meta_values.content) LIKE LOWER(?) "
+    "%s "
+    "ORDER BY meta_values.content ASC";
+
 static const std::string REGULAR_PLAYLISTS_QUERY =
     "SELECT DISTINCT id, name "
     "FROM playlists %s "

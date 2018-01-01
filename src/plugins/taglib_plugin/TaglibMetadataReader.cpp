@@ -97,6 +97,10 @@ static inline std::wstring utf8to16(const char* utf8) {
 }
 #endif
 
+static bool isValidYear(const std::string& year) {
+    return std::stoi(year) > 0;
+}
+
 static float toReplayGainFloat(const std::string& input) {
     /* trim any trailing " db" or "db" noise... */
     std::string lower = boost::algorithm::to_lower_copy(input);
@@ -377,16 +381,25 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
 
         /* year */
 
-        if (!allTags["TYER"].isEmpty()) { /* ID3v2.3*/
-            this->SetTagValue("year", allTags["TYER"].front()->toString().substr(0, 4), track);
+        if (!track->Contains("year") && !allTags["TYER"].isEmpty()) { /* ID3v2.3*/
+            auto year = allTags["TYER"].front()->toString().substr(0, 4);
+            if (isValidYear(year.to8Bit())) {
+                this->SetTagValue("year", year, track);
+            }
         }
 
-        if (!allTags["TDRC"].isEmpty()) { /* ID3v2.4*/
-            this->SetTagValue("year", allTags["TDRC"].front()->toString().substr(0, 4), track);
+        if (!track->Contains("year") && !allTags["TDRC"].isEmpty()) { /* ID3v2.4*/
+            auto year = allTags["TDRC"].front()->toString().substr(0, 4);
+            if (isValidYear(year.to8Bit())) {
+                this->SetTagValue("year", year, track);
+            }
         }
 
-        if (!allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
-            this->SetTagValue("year", allTags["TCOP"].front()->toString().substr(0, 4), track);
+        if (!track->Contains("year") && !allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
+            auto year = allTags["TCOP"].front()->toString().substr(0, 4);
+            if (isValidYear(year.to8Bit())) {
+                this->SetTagValue("year", year, track);
+            }
         }
 
         /* replay gain */

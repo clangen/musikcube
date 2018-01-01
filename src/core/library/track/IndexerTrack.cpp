@@ -134,6 +134,11 @@ void IndexerTrack::ClearValue(const char* metakey) {
     }
 }
 
+bool IndexerTrack::Contains(const char* metakey) {
+    auto md = this->internalMetadata;
+    return md && md->metadata.find(metakey) != md->metadata.end();
+}
+
 void IndexerTrack::SetThumbnail(const char *data, long size) {
     if (this->internalMetadata->thumbnailData) {
         delete[] this->internalMetadata->thumbnailData;
@@ -273,14 +278,14 @@ static int64_t writeToTracksTable(
     if (id != 0) {
         query =
             "UPDATE tracks "
-            "SET track=?, disc=?, bpm=?, duration=?, filesize=?, year=?, "
+            "SET track=?, disc=?, bpm=?, duration=?, filesize=?, "
             "    title=?, filename=?, filetime=?, path_id=?, external_id=? "
             "WHERE id=?";
     }
     else {
         query =
             "INSERT INTO tracks "
-            "(track, disc, bpm, duration, filesize, year, title, filename, filetime, path_id, external_id) "
+            "(track, disc, bpm, duration, filesize, title, filename, filetime, path_id, external_id) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     }
 
@@ -291,12 +296,11 @@ static int64_t writeToTracksTable(
     stmt.BindText(2, track.GetString("bpm"));
     stmt.BindInt32(3, track.GetInt32("duration"));
     stmt.BindInt32(4, track.GetInt32("filesize"));
-    stmt.BindText(5, track.GetString("year"));
-    stmt.BindText(6, track.GetString("title"));
-    stmt.BindText(7, track.GetString("filename"));
-    stmt.BindInt32(8, track.GetInt32("filetime"));
-    stmt.BindInt64(9, track.GetInt64("path_id"));
-    stmt.BindText(10, track.GetString("external_id"));
+    stmt.BindText(5, track.GetString("title"));
+    stmt.BindText(6, track.GetString("filename"));
+    stmt.BindInt32(7, track.GetInt32("filetime"));
+    stmt.BindInt64(8, track.GetInt64("path_id"));
+    stmt.BindText(9, track.GetString("external_id"));
 
     if (id != 0) {
         stmt.BindInt64(11, id);
@@ -327,7 +331,6 @@ static void removeKnownFields(Track::MetadataMap& metadata) {
     metadata.erase("disc");
     metadata.erase("bpm");
     metadata.erase("duration");
-    metadata.erase("year");
     metadata.erase("title");
     metadata.erase("filename");
     metadata.erase("filetime");
@@ -497,13 +500,9 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
             }
         }
 
-        if (keyCached && valueCached) {
-            continue; /* duplicate info. we don't need to save it again. */
-        }
-
         /* now that we have a keyId and a valueId, create the relationship */
 
-        if (valueId != 0) {
+        if (valueId != 0 && keyId != 0) {
             insertTrackMeta.Reset();
             insertTrackMeta.BindInt64(0, this->id);
             insertTrackMeta.BindInt64(1, valueId);

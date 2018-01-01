@@ -104,6 +104,7 @@ class SdkWrapper : public Track {
         virtual void SetValue(const char* key, const char* value) override { NO_IMPL }
         virtual void ClearValue(const char* key) override { NO_IMPL }
         virtual void SetThumbnail(const char *data, long size) override { NO_IMPL }
+        virtual bool Contains(const char* key) override { NO_IMPL }
         virtual void SetReplayGain(const ReplayGain& replayGain) override { NO_IMPL }
         virtual void SetId(int64_t id) override { NO_IMPL }
         virtual std::string GetString(const char* metakey) override { NO_IMPL }
@@ -184,6 +185,10 @@ void TagStore::SetValue(const char* key, const char* value) {
 
 void TagStore::ClearValue(const char* key) {
     this->track->ClearValue(key);
+}
+
+bool TagStore::Contains(const char* key) {
+    return this->track->Contains(key);
 }
 
 void TagStore::SetThumbnail(const char *data, long size) {

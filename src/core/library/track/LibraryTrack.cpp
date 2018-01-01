@@ -117,6 +117,11 @@ void LibraryTrack::ClearValue(const char* metakey) {
     this->metadata.erase(metakey);
 }
 
+bool LibraryTrack::Contains(const char* metakey) {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return this->metadata.find(metakey) != this->metadata.end();
+}
+
 void LibraryTrack::SetThumbnail(const char *data, long size) {
     /* do nothing. we implement a fat interface; this is just used by
     IndexerTrack. */
@@ -209,7 +214,7 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         "ORDER BY tm.id", db);
 
     db::Statement trackQuery(
-        "SELECT t.track, t.disc, t.bpm, t.duration, t.filesize, t.year, t.title, t.filename, t.thumbnail_id, al.name, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id " \
+        "SELECT t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id " \
         "FROM tracks t, paths p, albums al " \
         "WHERE t.id=? AND t.album_id=al.id", db);
 
@@ -220,16 +225,15 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         target->SetValue("bpm", trackQuery.ColumnText(2));
         target->SetValue("duration", trackQuery.ColumnText(3));
         target->SetValue("filesize", trackQuery.ColumnText(4));
-        target->SetValue("year", trackQuery.ColumnText(5));
-        target->SetValue("title", trackQuery.ColumnText(6));
-        target->SetValue("filename", trackQuery.ColumnText(7));
-        target->SetValue("thumbnail_id", trackQuery.ColumnText(8));
-        target->SetValue("album", trackQuery.ColumnText(9));
-        target->SetValue("filetime", trackQuery.ColumnText(10));
-        target->SetValue("visual_genre_id", trackQuery.ColumnText(11));
-        target->SetValue("visual_artist_id", trackQuery.ColumnText(12));
-        target->SetValue("album_artist_id", trackQuery.ColumnText(13));
-        target->SetValue("album_id", trackQuery.ColumnText(14));
+        target->SetValue("title", trackQuery.ColumnText(5));
+        target->SetValue("filename", trackQuery.ColumnText(6));
+        target->SetValue("thumbnail_id", trackQuery.ColumnText(7));
+        target->SetValue("album", trackQuery.ColumnText(8));
+        target->SetValue("filetime", trackQuery.ColumnText(9));
+        target->SetValue("visual_genre_id", trackQuery.ColumnText(10));
+        target->SetValue("visual_artist_id", trackQuery.ColumnText(11));
+        target->SetValue("album_artist_id", trackQuery.ColumnText(12));
+        target->SetValue("album_id", trackQuery.ColumnText(13));
 
         genresQuery.BindInt64(0, (int64_t) target->GetId());
         while (genresQuery.Step() == db::Row) {
