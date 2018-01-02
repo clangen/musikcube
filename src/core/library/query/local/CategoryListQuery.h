@@ -35,6 +35,7 @@
 #pragma once
 
 #include <core/library/query/local/LocalQueryBase.h>
+#include <core/db/Statement.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IValueList.h>
 #include <core/support/Common.h>
@@ -96,9 +97,17 @@ namespace musik { namespace core { namespace db { namespace local {
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 
+        private:
+            enum Type { Regular, Extended, Playlist };
+
+            void QueryRegular(musik::core::db::Connection &db);
+            void QueryExtended(musik::core::db::Connection &db);
+            void ProcessResult(musik::core::db::Statement &stmt);
+
             std::string trackField;
             std::string filter;
             std::string predicateField;
+            Type type;
             int64_t predicateFieldId;
             ResultList result;
     };
