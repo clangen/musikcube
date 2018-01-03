@@ -66,7 +66,7 @@ static const std::string EXTENDED_QUERY_PREDICATE_TABLES =
     ", track_meta tm, meta_keys mk, meta_values mv ";
 
 static const std::string EXTENDED_QUERY_PREDICATE =
-    " AND t.id=tm.track_id "
+    " AND tracks.id=tm.track_id "
     " AND tm.meta_value_id=mv.id "
     " AND mv.meta_key_id=mk.id "
     " AND mk.id=? "
@@ -98,36 +98,36 @@ static const std::string FILTERED_PROPERTY_QUERY =
     "WHERE {{table}}.id = tracks.{{id_column}} AND LOWER({{table}}.name) LIKE ? AND tracks.visible = 1 {{predicate}} "
     "ORDER BY {{table}}.sort_order;";
 
-static const std::string UNFILTERED_EXTENDED_PROPERTY_QUERY =
-    "SELECT DISTINCT meta_values.* "
-    "FROM meta_values, track_meta, tracks "
-    "WHERE "
-    "  meta_values.id = track_meta.meta_value_id AND "
-    "  track_meta.track_id = tracks.id AND "
-    "  tracks.visible = 1 AND "
-    "  meta_values.meta_key_id IN( "
-    "    SELECT DISTINCT meta_keys.id "
-    "    FROM meta_keys "
-    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
-    "  ) "
-    "{{predicate}} "
-    "ORDER BY meta_values.content ASC";
-
-static const std::string FILTERED_EXTENDED_PROPERTY_QUERY =
-    "SELECT DISTINCT meta_values.* "
-    "FROM meta_values, track_meta, tracks "
-    "WHERE "
-    "  meta_values.id = track_meta.meta_value_id AND "
-    "  track_meta.track_id = tracks.id AND "
-    "  tracks.visible = 1 AND "
-    "  meta_values.meta_key_id IN( "
-    "    SELECT DISTINCT meta_keys.id "
-    "    FROM meta_keys "
-    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
-    "  ) "
-    "AND LOWER(meta_values.content) LIKE LOWER(?) "
-    "{{predicate}} "
-    "ORDER BY meta_values.content ASC";
+//static const std::string UNFILTERED_EXTENDED_PROPERTY_QUERY =
+//    "SELECT DISTINCT meta_values.* "
+//    "FROM meta_values, track_meta, tracks "
+//    "WHERE "
+//    "  meta_values.id = track_meta.meta_value_id AND "
+//    "  track_meta.track_id = tracks.id AND "
+//    "  tracks.visible = 1 AND "
+//    "  meta_values.meta_key_id IN( "
+//    "    SELECT DISTINCT meta_keys.id "
+//    "    FROM meta_keys "
+//    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
+//    "  ) "
+//    "{{predicate}} "
+//    "ORDER BY meta_values.content ASC";
+//
+//static const std::string FILTERED_EXTENDED_PROPERTY_QUERY =
+//    "SELECT DISTINCT meta_values.* "
+//    "FROM meta_values, track_meta, tracks "
+//    "WHERE "
+//    "  meta_values.id = track_meta.meta_value_id AND "
+//    "  track_meta.track_id = tracks.id AND "
+//    "  tracks.visible = 1 AND "
+//    "  meta_values.meta_key_id IN( "
+//    "    SELECT DISTINCT meta_keys.id "
+//    "    FROM meta_keys "
+//    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
+//    "  ) "
+//    "AND LOWER(meta_values.content) LIKE LOWER(?) "
+//    "{{predicate}} "
+//    "ORDER BY meta_values.content ASC";
 
 static const std::string UNFILTERED_PLAYLISTS_QUERY =
     "SELECT DISTINCT id, name "
@@ -173,17 +173,15 @@ static void replaceAll(std::string& input, const std::string& find, const std::s
 
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField, const std::string& filter)
-: CategoryListQuery(trackField, "", -1LL, filter) {
+: CategoryListQuery(trackField, { "", -1LL }, filter) {
 }
 
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField,
-    const std::string& predicateField,
-    int64_t predicateFieldId,
+    const Predicate predicate,
     const std::string& filter)
 : trackField(trackField)
-, predicateField(predicateField)
-, predicateFieldId(predicateFieldId)
+, predicate(predicate)
 , filter(filter) {
     RESET_RESULT(result);
 
@@ -231,9 +229,9 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
     bool filtered = this->filter.size() > 0;
 
     bool predicated =
-        predicateField.size() &&
-        predicateField != Playlists::TABLE_NAME &&
-        predicateFieldId > 0;
+        predicate.first.size() &&
+        predicate.first != Playlists::TABLE_NAME &&
+        predicate.second > 0;
 
     std::string query;
 
@@ -249,27 +247,27 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
 
     int64_t extendedKeyId = 0;
     std::string predicateTables = "";
-    std::string predicate = "";
+    std::string predicateStatement = "";
 
     if (predicated) {
         auto end = PREDICATE_TO_COLUMN_MAP.end();
-        if (PREDICATE_TO_COLUMN_MAP.find(predicateField) != end) {
+        if (PREDICATE_TO_COLUMN_MAP.find(predicate.first) != end) {
             /* regular/simple/optimized predicate... */
-            predicate = boost::str(boost::format(
-                REGULAR_QUERY_PREDICATE) % PREDICATE_TO_COLUMN_MAP[predicateField]);
+            predicateStatement = boost::str(boost::format(
+                REGULAR_QUERY_PREDICATE) % PREDICATE_TO_COLUMN_MAP[predicate.first]);
 
             predicateTables = REGULAR_QUERY_PREDICATE_TABLES;
         }
         else {
             /* extended metadata predicate. gotta do more work. whee... */
             Statement keyQuery("SELECT DISTINCT id FROM meta_keys WHERE LOWER(name)=LOWER(?)", db);
-            keyQuery.BindText(0, this->trackField);
+            keyQuery.BindText(0, this->predicate.first);
             if (keyQuery.Step() == db::Row) {
                 extendedKeyId = keyQuery.ColumnInt64(0);
             }
 
             if (extendedKeyId > 0) {
-                predicate = EXTENDED_QUERY_PREDICATE;
+                predicateStatement = EXTENDED_QUERY_PREDICATE;
                 predicateTables = EXTENDED_QUERY_PREDICATE_TABLES;
             }
             else {
@@ -278,7 +276,7 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
         }
     }
 
-    replaceAll(query, "{{predicate}}", predicate);
+    replaceAll(query, "{{predicate}}", predicateStatement);
     replaceAll(query, "{{extended_tables}}", predicateTables);
 
     int bindIndex = 0;
@@ -289,7 +287,13 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
     }
 
     if (predicated) {
-        stmt.BindInt64(bindIndex++, predicateFieldId);
+        if (extendedKeyId > 0) {
+            stmt.BindInt64(bindIndex++, extendedKeyId);
+            stmt.BindInt64(bindIndex++, predicate.second);
+        }
+        else {
+            stmt.BindInt64(bindIndex++, predicate.second);
+        }
     }
 
     this->ProcessResult(stmt);

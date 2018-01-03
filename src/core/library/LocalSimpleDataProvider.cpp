@@ -370,11 +370,12 @@ IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicate(
     const char* type, const char* predicateType, int64_t predicateId, const char* filter)
 {
     try {
+        std::string field = predicateType ? predicateType : "";
+
         std::shared_ptr<CategoryListQuery> search(
             new CategoryListQuery(
                 type,
-                predicateType ? predicateType : "",
-                predicateId,
+                { field, predicateId },
                 std::string(filter ? filter : "")));
 
         this->library->Enqueue(search, ILibrary::QuerySynchronous);

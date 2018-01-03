@@ -72,6 +72,9 @@ namespace musik { namespace core { namespace db { namespace local {
                 int64_t id;
             };
 
+            using Predicate = std::pair<std::string, int64_t>;
+            using PredicateList = std::vector<Predicate>;
+
             typedef std::shared_ptr<std::vector<
                 std::shared_ptr<Result> > > ResultList;
 
@@ -81,8 +84,7 @@ namespace musik { namespace core { namespace db { namespace local {
 
             CategoryListQuery(
                 const std::string& trackField,
-                const std::string& predicateField,
-                const int64_t predicateFieldId,
+                const Predicate predicate,
                 const std::string& filter = "");
 
             virtual ~CategoryListQuery();
@@ -106,9 +108,8 @@ namespace musik { namespace core { namespace db { namespace local {
 
             std::string trackField;
             std::string filter;
-            std::string predicateField;
             Type type;
-            int64_t predicateFieldId;
+            Predicate predicate;
             ResultList result;
     };
 
