@@ -74,6 +74,8 @@ namespace musik { namespace core { namespace db { namespace local {
 
             using Predicate = std::pair<std::string, int64_t>;
             using PredicateList = std::vector<Predicate>;
+            struct Argument { virtual void Bind(Statement& stmt, int pos) const = 0; };
+            using ArgumentList = std::vector<std::shared_ptr<Argument>>;
 
             typedef std::shared_ptr<std::vector<
                 std::shared_ptr<Result> > > ResultList;
@@ -85,6 +87,11 @@ namespace musik { namespace core { namespace db { namespace local {
             CategoryListQuery(
                 const std::string& trackField,
                 const Predicate predicate,
+                const std::string& filter = "");
+
+            CategoryListQuery(
+                const std::string& trackField,
+                const PredicateList predicate,
                 const std::string& filter = "");
 
             virtual ~CategoryListQuery();
@@ -100,16 +107,32 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
-            enum Type { Regular, Extended, Playlist };
+            enum OutputType { Regular, Extended, Playlist };
 
+            void QueryPlaylist(musik::core::db::Connection &db);
             void QueryRegular(musik::core::db::Connection &db);
             void QueryExtended(musik::core::db::Connection &db);
             void ProcessResult(musik::core::db::Statement &stmt);
 
+            static std::string JoinRegular(
+                const PredicateList& pred,
+                ArgumentList& args,
+                const std::string& prefix = "");
+
+            static std::string InnerJoinExtended(
+                const PredicateList& pred, ArgumentList& args);
+
+            static std::string JoinExtended(
+                const PredicateList& pred, ArgumentList& args);
+
+            static void Apply(
+                musik::core::db::Statement& stmt,
+                const ArgumentList& args);
+
             std::string trackField;
             std::string filter;
-            Type type;
-            Predicate predicate;
+            OutputType outputType;
+            PredicateList regular, extended;
             ResultList result;
     };
 

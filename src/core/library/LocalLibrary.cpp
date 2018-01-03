@@ -609,7 +609,11 @@ void LocalLibrary::CreateIndexes(db::Connection &db) {
     db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index1 ON track_meta (track_id,meta_value_id)");
     db.Execute("CREATE INDEX IF NOT EXISTS trackmeta_index2 ON track_meta (meta_value_id,track_id)");
     db.Execute("CREATE INDEX IF NOT EXISTS metakey_index1 ON meta_keys (name)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metakey_index2 ON meta_keys (id, name)");
     db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index1 ON meta_values (meta_key_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index2 ON meta_values (content)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index3 ON meta_values (id, meta_key_id, content)");
+    db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index4 ON meta_values (id, content)");
 
     db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)");
 

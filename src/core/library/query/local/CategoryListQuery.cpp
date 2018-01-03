@@ -50,7 +50,7 @@ using namespace musik::core::db::local;
 
 #define RESET_RESULT(x) x.reset(new std::vector<std::shared_ptr<Result>>);
 
-#if 0
+#if 1
 #ifdef WIN32
 #define DUMP(x) OutputDebugStringA(x.c_str()); OutputDebugStringA("\n");
 #else
@@ -59,19 +59,6 @@ using namespace musik::core::db::local;
 #endif
 #endif
 
-static const std::string REGULAR_QUERY_PREDICATE = " AND %s=? ";
-static const std::string REGULAR_QUERY_PREDICATE_TABLES = "";
-
-static const std::string EXTENDED_QUERY_PREDICATE_TABLES =
-    ", track_meta tm, meta_keys mk, meta_values mv ";
-
-static const std::string EXTENDED_QUERY_PREDICATE =
-    " AND tracks.id=tm.track_id "
-    " AND tm.meta_value_id=mv.id "
-    " AND mv.meta_key_id=mk.id "
-    " AND mk.id=? "
-    " AND mv.id=? ";
-
 static std::map<std::string, std::string> PREDICATE_TO_COLUMN_MAP = {
     { Track::ALBUM, "album_id" },
     { Track::ARTIST, "visual_artist_id" },
@@ -79,55 +66,49 @@ static std::map<std::string, std::string> PREDICATE_TO_COLUMN_MAP = {
     { Track::GENRE, "visual_genre_id" }
 };
 
-static std::map<std::string, std::pair<std::string, std::string>> PROPERTY_MAP = {
-    { "album",{ "albums", "album_id" } },
-    { "artist",{ "artists", "visual_artist_id" } },
-    { "album_artist",{ "artists", "album_artist_id" } },
+static std::map<std::string, std::pair<std::string, std::string>> REGULAR_PROPERTY_MAP = {
+    { "album", { "albums", "album_id" } },
+    { "artist", { "artists", "visual_artist_id" } },
+    { "album_artist", { "artists", "album_artist_id" } },
     { "genre", { "genres", "visual_genre_id" } }
 };
 
-static const std::string UNFILTERED_PROPERTY_QUERY =
-    "SELECT DISTINCT {{table}}.id, {{table}}.name "
-    "FROM {{table}}, tracks {{extended_tables}} "
-    "WHERE {{table}}.id = tracks.{{id_column}} AND tracks.visible = 1 {{predicate}}"
-    "ORDER BY {{table}}.sort_order;";
+static const std::string REGULAR_PREDICATE = " tracks.{{fk_id}}=? ";
+static const std::string REGULAR_FILTER = " AND LOWER({{table}}.name) LIKE ? ";
 
-static const std::string FILTERED_PROPERTY_QUERY =
-    "SELECT DISTINCT {{table}}.id, {{table}}.name "
-    "FROM {{table}}, tracks {{extended_tables}} "
-    "WHERE {{table}}.id = tracks.{{id_column}} AND LOWER({{table}}.name) LIKE ? AND tracks.visible = 1 {{predicate}} "
-    "ORDER BY {{table}}.sort_order;";
+static const std::string EXTENDED_PREDICATE = " (key=? AND meta_value_id=?) ";
+static const std::string EXTENDED_FILTER = " AND LOWER(extended_metadata.value) LIKE ?";
 
-//static const std::string UNFILTERED_EXTENDED_PROPERTY_QUERY =
-//    "SELECT DISTINCT meta_values.* "
-//    "FROM meta_values, track_meta, tracks "
-//    "WHERE "
-//    "  meta_values.id = track_meta.meta_value_id AND "
-//    "  track_meta.track_id = tracks.id AND "
-//    "  tracks.visible = 1 AND "
-//    "  meta_values.meta_key_id IN( "
-//    "    SELECT DISTINCT meta_keys.id "
-//    "    FROM meta_keys "
-//    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
-//    "  ) "
-//    "{{predicate}} "
-//    "ORDER BY meta_values.content ASC";
-//
-//static const std::string FILTERED_EXTENDED_PROPERTY_QUERY =
-//    "SELECT DISTINCT meta_values.* "
-//    "FROM meta_values, track_meta, tracks "
-//    "WHERE "
-//    "  meta_values.id = track_meta.meta_value_id AND "
-//    "  track_meta.track_id = tracks.id AND "
-//    "  tracks.visible = 1 AND "
-//    "  meta_values.meta_key_id IN( "
-//    "    SELECT DISTINCT meta_keys.id "
-//    "    FROM meta_keys "
-//    "    WHERE LOWER(meta_keys.name) = LOWER(?) "
-//    "  ) "
-//    "AND LOWER(meta_values.content) LIKE LOWER(?) "
-//    "{{predicate}} "
-//    "ORDER BY meta_values.content ASC";
+static const std::string EXTENDED_INNER_JOIN =
+    "INNER JOIN ( "
+    "  SELECT id AS track_id "
+    "  FROM extended_metadata "
+    "  WHERE {{extended_predicates}} "
+    "  GROUP BY track_id "
+    "  HAVING COUNT(track_id)={{extended_predicate_count}} "
+    ") AS md ON tracks.id=md.track_id ";
+
+static const std::string REGULAR_PROPERTY_QUERY =
+    "SELECT DISTINCT {{table}}.id, {{table}}.name "
+    "FROM {{table}}, tracks "
+    "{{extended_predicates}} "
+    "WHERE {{table}}.id=tracks.{{fk_id}} AND tracks.visible=1 "
+    "{{regular_predicates}} "
+    "{{regular_filter}} "
+    "ORDER BY {{table}}.sort_order";
+
+static const std::string EXTENDED_PROPERTY_QUERY =
+    "SELECT DISTINCT meta_value_id, value "
+    "FROM extended_metadata "
+    "INNER JOIN ( "
+    "  SELECT id AS track_id "
+    "  FROM tracks "
+    "  WHERE tracks.visible=1 {{regular_predicates}} "
+    ") AS reg on extended_metadata.id=reg.track_id "
+    "{{extended_predicates}} "
+    "WHERE extended_metadata.key=? "
+    "{{extended_filter}} "
+    "ORDER BY extended_metadata.value ASC";
 
 static const std::string UNFILTERED_PLAYLISTS_QUERY =
     "SELECT DISTINCT id, name "
@@ -139,6 +120,19 @@ static const std::string FILTERED_PLAYLISTS_QUERY =
     "FROM playlists"
     "WHERE LOWER(name) LIKE LOWER(?) "
     "ORDER BY name;";
+
+/* quick and dirty structures used to track bind arguments */
+struct Id : public CategoryListQuery::Argument {
+    int64_t id;
+    Id(int64_t id) : id(id) { }
+    virtual void Bind(Statement& stmt, int pos) const { stmt.BindInt64(pos, id); }
+};
+
+struct String : public CategoryListQuery::Argument {
+    std::string str;
+    String(const std::string& str) : str(str) { }
+    virtual void Bind(Statement& stmt, int pos) const { stmt.BindText(pos, str.c_str()); }
+};
 
 /* data structure that we can return to plugins who need metadata info */
 class ValueList : public musik::core::sdk::IValueList {
@@ -173,15 +167,21 @@ static void replaceAll(std::string& input, const std::string& find, const std::s
 
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField, const std::string& filter)
-: CategoryListQuery(trackField, { "", -1LL }, filter) {
+: CategoryListQuery(trackField, PredicateList(), filter) {
 }
 
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField,
     const Predicate predicate,
     const std::string& filter)
+: CategoryListQuery(trackField, PredicateList{ predicate }, filter) {
+}
+
+CategoryListQuery::CategoryListQuery(
+    const std::string& trackField,
+    const PredicateList predicates,
+    const std::string& filter)
 : trackField(trackField)
-, predicate(predicate)
 , filter(filter) {
     RESET_RESULT(result);
 
@@ -192,19 +192,87 @@ CategoryListQuery::CategoryListQuery(
         this->filter = "%" + wild + "%";
     }
 
-    if (trackField == "playlists") {
-        this->type = Playlist;
+    auto end = REGULAR_PROPERTY_MAP.end();
+
+    for (auto p : predicates) {
+        if (REGULAR_PROPERTY_MAP.find(p.first) != end) {
+            this->regular.push_back(p);
+        }
+        else {
+            this->extended.push_back(p);
+        }
     }
-    else if (PROPERTY_MAP.find(trackField) != PROPERTY_MAP.end()) {
-        this->type = Regular;
+
+    if (trackField == "playlists") {
+        this->outputType = Playlist;
+    }
+    else if (REGULAR_PROPERTY_MAP.find(trackField) != end) {
+        this->outputType = Regular;
     }
     else {
-        this->type = Extended;
+        this->outputType = Extended;
     }
 }
 
 CategoryListQuery::~CategoryListQuery() {
 
+}
+
+std::string CategoryListQuery::JoinRegular(
+    const PredicateList& pred, ArgumentList& args, const std::string& prefix)
+{
+    std::string result;
+    if (pred.size()) {
+        for (size_t i = 0; i < pred.size(); i++) {
+            if (i > 0) { result += " AND "; }
+            auto p = pred[i];
+            auto str = REGULAR_PREDICATE;
+            auto map = REGULAR_PROPERTY_MAP[p.first];
+            replaceAll(str, "{{fk_id}}", map.second);
+            result += str;
+            args.push_back(std::make_shared<Id>(p.second));
+        }
+
+        if (prefix.size()) {
+            result = prefix + result;
+        }
+    }
+    return result;
+}
+
+std::string CategoryListQuery::InnerJoinExtended(
+    const PredicateList& pred, ArgumentList& args)
+{
+    std::string result;
+
+    std::string joined = JoinExtended(pred, args);
+    if (joined.size()) {
+        result = EXTENDED_INNER_JOIN;
+        replaceAll(result, "{{extended_predicates}}", joined);
+        replaceAll(result, "{{extended_predicate_count}}", std::to_string(pred.size()));
+    }
+
+    return result;
+}
+
+std::string CategoryListQuery::JoinExtended(
+    const PredicateList& pred, ArgumentList& args)
+{
+    std::string result;
+    for (size_t i = 0; i < pred.size(); i++) {
+        if (i > 0) { result += " OR "; }
+        result += EXTENDED_PREDICATE;
+        auto p = pred[i];
+        args.push_back(std::make_shared<String>(p.first));
+        args.push_back(std::make_shared<Id>(p.second));
+    }
+    return result;
+}
+
+void CategoryListQuery::Apply(Statement& stmt, const ArgumentList& args) {
+    for (size_t i = 0; i < args.size(); i++) {
+        args[i]->Bind(stmt, (int) i);
+    }
 }
 
 CategoryListQuery::ResultList CategoryListQuery::GetResult() {
@@ -225,82 +293,72 @@ int CategoryListQuery::GetIndexOf(int64_t id) {
     return -1;
 }
 
-void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
-    bool filtered = this->filter.size() > 0;
+void CategoryListQuery::QueryPlaylist(musik::core::db::Connection& db) {
+    bool filtered = this->filter.size();
 
-    bool predicated =
-        predicate.first.size() &&
-        predicate.first != Playlists::TABLE_NAME &&
-        predicate.second > 0;
+    std::string query = filtered
+        ? FILTERED_PLAYLISTS_QUERY
+        : UNFILTERED_PLAYLISTS_QUERY;
 
-    std::string query;
-
-    if (this->type == Playlist) {
-        query = filtered ? FILTERED_PLAYLISTS_QUERY : UNFILTERED_PLAYLISTS_QUERY;
-    }
-    else {
-        query = filtered ? FILTERED_PROPERTY_QUERY : UNFILTERED_PROPERTY_QUERY;
-        auto fields = PROPERTY_MAP.find(this->trackField);
-        replaceAll(query, "{{table}}", fields->second.first);
-        replaceAll(query, "{{id_column}}", fields->second.second);
-    }
-
-    int64_t extendedKeyId = 0;
-    std::string predicateTables = "";
-    std::string predicateStatement = "";
-
-    if (predicated) {
-        auto end = PREDICATE_TO_COLUMN_MAP.end();
-        if (PREDICATE_TO_COLUMN_MAP.find(predicate.first) != end) {
-            /* regular/simple/optimized predicate... */
-            predicateStatement = boost::str(boost::format(
-                REGULAR_QUERY_PREDICATE) % PREDICATE_TO_COLUMN_MAP[predicate.first]);
-
-            predicateTables = REGULAR_QUERY_PREDICATE_TABLES;
-        }
-        else {
-            /* extended metadata predicate. gotta do more work. whee... */
-            Statement keyQuery("SELECT DISTINCT id FROM meta_keys WHERE LOWER(name)=LOWER(?)", db);
-            keyQuery.BindText(0, this->predicate.first);
-            if (keyQuery.Step() == db::Row) {
-                extendedKeyId = keyQuery.ColumnInt64(0);
-            }
-
-            if (extendedKeyId > 0) {
-                predicateStatement = EXTENDED_QUERY_PREDICATE;
-                predicateTables = EXTENDED_QUERY_PREDICATE_TABLES;
-            }
-            else {
-                predicated = false;
-            }
-        }
-    }
-
-    replaceAll(query, "{{predicate}}", predicateStatement);
-    replaceAll(query, "{{extended_tables}}", predicateTables);
-
-    int bindIndex = 0;
-    Statement stmt(query.c_str(), db);
+    Statement stmt(query.c_str() , db);
 
     if (filtered) {
-        stmt.BindText(bindIndex++, this->filter);
+        stmt.BindText(0, this->filter);
     }
 
-    if (predicated) {
-        if (extendedKeyId > 0) {
-            stmt.BindInt64(bindIndex++, extendedKeyId);
-            stmt.BindInt64(bindIndex++, predicate.second);
-        }
-        else {
-            stmt.BindInt64(bindIndex++, predicate.second);
-        }
+    ProcessResult(stmt);
+}
+
+void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
+    ArgumentList args;
+
+    auto prop = REGULAR_PROPERTY_MAP[this->trackField];
+    std::string query = REGULAR_PROPERTY_QUERY;
+    std::string extended = InnerJoinExtended(this->extended, args);
+    std::string regular = JoinRegular(this->regular, args, " AND ");
+    std::string regularFilter;
+
+    if (this->filter.size()) {
+        regularFilter = REGULAR_FILTER;
+        replaceAll(regularFilter, "{{table}}", prop.first);
+        args.push_back(std::make_shared<String>(this->filter));
     }
 
-    this->ProcessResult(stmt);
+    replaceAll(query, "{{table}}", prop.first);
+    replaceAll(query, "{{fk_id}}", prop.second);
+    replaceAll(query, "{{extended_predicates}}", extended);
+    replaceAll(query, "{{regular_predicates}}", regular);
+    replaceAll(query, "{{regular_filter}}", regularFilter);
+
+    Statement stmt(query.c_str(), db);
+    Apply(stmt, args);
+    ProcessResult(stmt);
 }
 
 void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
+    ArgumentList args;
 
+    std::string query = EXTENDED_PROPERTY_QUERY;
+    std::string regular = JoinRegular(this->regular, args, " AND ");
+    std::string extended = InnerJoinExtended(this->extended, args);
+    std::string extendedFilter;
+
+    if (this->filter.size()) {
+        extendedFilter = EXTENDED_FILTER;
+        args.push_back(std::make_shared<String>(this->filter));
+    }
+
+    replaceAll(query, "{{regular_predicates}}", regular);
+    replaceAll(query, "{{extended_predicates}}", extended);
+    replaceAll(query, "{{extended_filter}}", extendedFilter);
+
+    args.push_back(std::make_shared<String>(this->trackField));
+
+    DUMP(query);
+
+    Statement stmt(query.c_str(), db);
+    Apply(stmt, args);
+    ProcessResult(stmt);
 }
 
 void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
@@ -315,6 +373,12 @@ void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
 
 bool CategoryListQuery::OnRun(Connection& db) {
     RESET_RESULT(result);
-    (this->type == Extended) ? QueryExtended(db) : QueryRegular(db);
+
+    switch (this->outputType) {
+        case Playlist: QueryPlaylist(db); break;
+        case Regular: QueryRegular(db); break;
+        case Extended: QueryExtended(db); break;
+    }
+
     return true;
 }
