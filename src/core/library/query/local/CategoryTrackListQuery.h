@@ -37,6 +37,7 @@
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
 #include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/query/local/util/CategoryQueryUtil.h>
 #include <core/db/Statement.h>
 
 #include "TrackListQueryBase.h"
@@ -51,6 +52,16 @@ namespace musik { namespace core { namespace db { namespace local {
                 int64_t id,
                 const std::string& filter = "");
 
+            CategoryTrackListQuery(
+                musik::core::ILibraryPtr library,
+                const category::Predicate predicate,
+                const std::string& filter = "");
+
+            CategoryTrackListQuery(
+                musik::core::ILibraryPtr library,
+                const category::PredicateList predicates,
+                const std::string& filter = "");
+
             virtual ~CategoryTrackListQuery();
 
             virtual std::string Name() { return "CategoryTrackListQuery"; }
@@ -63,19 +74,17 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
-            enum Type { Playlist, Regular, Extended };
+            enum Type { Playlist, Regular };
 
             void PlaylistQuery(musik::core::db::Connection &db);
             void RegularQuery(musik::core::db::Connection &db);
-            void ExtendedQuery(musik::core::db::Connection &db);
             void ProcessResult(musik::core::db::Statement& stmt);
 
             musik::core::ILibraryPtr library;
             Result result;
             Headers headers;
-            std::string column;
             Type type;
-            int64_t id;
+            category::PredicateList regular, extended;
             size_t hash;
             std::string filter;
     };

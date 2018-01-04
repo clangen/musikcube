@@ -211,11 +211,9 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
         int64_t selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
+            auto column = this->categoryList->GetFieldName();
             this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-                new CategoryTrackListQuery(
-                    this->library,
-                    this->categoryList->GetFieldName(),
-                    selectedId)));
+                new CategoryTrackListQuery(this->library, column, selectedId)));
         }
         else {
             this->trackList->Clear();

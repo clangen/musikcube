@@ -43,8 +43,6 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <map>
-
 using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
@@ -56,34 +54,44 @@ using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
 using namespace boost::algorithm;
 
-static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY = {
-    { Track::ALBUM, Track::ALBUM_ID },
-    { Track::ARTIST, Track::ARTIST_ID },
-    { Track::GENRE, Track::GENRE_ID },
-    { Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID },
-    { Playlists::TABLE_NAME, Playlists::TABLE_NAME }
-};
+CategoryTrackListQuery::CategoryTrackListQuery(
+    musik::core::ILibraryPtr library,
+    const std::string& column,
+    int64_t id,
+    const std::string& filter)
+: CategoryTrackListQuery(library, { column, id }, filter)
+{
+}
 
 CategoryTrackListQuery::CategoryTrackListQuery(
-    ILibraryPtr library, const std::string& column, int64_t id, const std::string& filter)
+    ILibraryPtr library,
+    const category::Predicate predicate,
+    const std::string& filter)
+: CategoryTrackListQuery(library, category::PredicateList { predicate }, filter)
+{
+}
+
+CategoryTrackListQuery::CategoryTrackListQuery(
+    ILibraryPtr library,
+    const category::PredicateList predicates,
+    const std::string& filter)
 {
     this->library = library;
-    this->id = id;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
-    this->hash = 0;
+    this->hash = category::Hash(predicates);
+
+    category::SplitPredicates(predicates, this->regular, this->extended);
 
     if (filter.size()) {
         this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
     }
 
-    if (FIELD_TO_FOREIGN_KEY.find(column) != FIELD_TO_FOREIGN_KEY.end()) {
-        this->type = (column == Playlists::TABLE_NAME) ? Playlist : Regular;
-        this->column = FIELD_TO_FOREIGN_KEY[column]; /* optimized query */
+    if (predicates.size() == 1 && predicates[0].first == Playlists::TABLE_NAME) {
+        this->type = Playlist;
     }
     else {
-        this->type = Extended;
-        this->column = column; /* generalized query */
+        this->type = Regular;
     }
 }
 
@@ -100,100 +108,44 @@ CategoryTrackListQuery::Headers CategoryTrackListQuery::GetHeaders() {
 }
 
 size_t CategoryTrackListQuery::GetQueryHash() {
-    if (this->hash == 0) {
-        std::string parts = boost::str(
-            boost::format("%s-%s") % this->column % this->id);
-
-        this->hash = std::hash<std::string>()(parts);
-    }
-
     return this->hash;
 }
 
 void CategoryTrackListQuery::PlaylistQuery(musik::core::db::Connection &db) {
     /* playlists are a special case. we already have a query for this, so
     delegate to that. */
-    GetPlaylistQuery query(this->library, this->id);
+    GetPlaylistQuery query(this->library, this->extended[0].second);
     query.Run(db);
     this->result = query.GetResult();
 }
 
 void CategoryTrackListQuery::RegularQuery(musik::core::db::Connection &db) {
-    /* these are the most common queries in the app, and are more optimized
-    than extended metadata queries. */
-    std::string query =
-        "SELECT DISTINCT t.id, al.name "
-        "FROM tracks t, albums al, artists ar, genres gn "
-        "WHERE t.visible=1 AND t.%s=? AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id ";
+    category::ArgumentList args;
+
+    /* order of operations with args is important! otherwise bind params
+    will be out of order! */
+    std::string query = category::CATEGORY_TRACKLIST_QUERY;
+    std::string extended = InnerJoinExtended(this->extended, args);
+    std::string regular = JoinRegular(this->regular, args, " AND ");
+    std::string trackFilter;
+    std::string limitAndOffset = this->GetLimitAndOffset();
 
     if (this->filter.size()) {
-        query += " AND (t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
+        trackFilter = " AND " + category::CATEGORY_TRACKLIST_FILTER;
+        args.push_back(category::StringArgument(this->filter));
+        args.push_back(category::StringArgument(this->filter));
+        args.push_back(category::StringArgument(this->filter));
+        args.push_back(category::StringArgument(this->filter));
     }
 
-    query += "ORDER BY al.name, disc, track, ar.name %s";
-    query = boost::str(boost::format(query) % this->column % this->GetLimitAndOffset());
+    category::ReplaceAll(query, "{{extended_predicates}}", extended);
+    category::ReplaceAll(query, "{{regular_predicates}}", regular);
+    category::ReplaceAll(query, "{{tracklist_filter}}", trackFilter);
+    category::ReplaceAll(query, "{{limit_and_offset}}", limitAndOffset);
 
-    Statement trackQuery(query.c_str(), db);
-
-    if (this->filter.size()) {
-        trackQuery.BindInt64(0, this->id);
-        trackQuery.BindText(1, this->filter);
-        trackQuery.BindText(2, this->filter);
-        trackQuery.BindText(3, this->filter);
-        trackQuery.BindText(4, this->filter);
-    }
-    else {
-        trackQuery.BindInt64(0, this->id);
-    }
-
-    this->ProcessResult(trackQuery);
-}
-
-void CategoryTrackListQuery::ExtendedQuery(musik::core::db::Connection &db) {
-    int64_t keyId = 0;
-
-    {
-        Statement keyQuery("SELECT DISTINCT id FROM meta_keys WHERE LOWER(name)=LOWER(?)", db);
-        keyQuery.BindText(0, this->column);
-        if (keyQuery.Step() == db::Row) {
-            keyId = keyQuery.ColumnInt64(0);
-        }
-    }
-
-    if (keyId > 0) {
-        /* the core library allows for storage of arbitrary metadata in the form
-        of key/value pairs linked to tracks. they are slower and require additional
-        joins and subqueries, but are fully supported here. */
-        std::string query =
-            "SELECT DISTINCT t.id, al.name "
-            "FROM tracks t, albums al, artists ar, genres gn, track_meta tm, meta_keys mk, meta_values mv "
-            "WHERE t.visible=1 "
-            "  AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "  AND t.id=tm.track_id AND tm.meta_value_id=mv.id AND mv.meta_key_id=mk.id "
-            "  AND mk.id=? AND mv.id=? ";
-
-        if (this->filter.size()) {
-            query += " AND (t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
-        }
-
-        query += "ORDER BY al.name, disc, track, ar.name %s";
-        query = boost::str(boost::format(query) % this->GetLimitAndOffset());
-
-        Statement trackQuery(query.c_str(), db);
-
-        int bindOffset = 0;
-        trackQuery.BindInt64(bindOffset++, keyId);
-        trackQuery.BindInt64(bindOffset++, this->id);
-
-        if (this->filter.size()) {
-            trackQuery.BindText(bindOffset++, this->filter);
-            trackQuery.BindText(bindOffset++, this->filter);
-            trackQuery.BindText(bindOffset++, this->filter);
-            trackQuery.BindText(bindOffset++, this->filter);
-        }
-
-        this->ProcessResult(trackQuery);
-    }
+    Statement stmt(query.c_str(), db);
+    category::Apply(stmt, args);
+    this->ProcessResult(stmt);
 }
 
 void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuery) {
@@ -223,7 +175,6 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
     switch (this->type) {
         case Playlist: this->PlaylistQuery(db); break;
         case Regular: this->RegularQuery(db); break;
-        case Extended: this->ExtendedQuery(db); break;
     }
 
     return true;

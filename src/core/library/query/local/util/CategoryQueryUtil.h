@@ -102,8 +102,8 @@ namespace musik { namespace core { namespace db { namespace local {
         //           HAVING COUNT(track_id) = 2
         //       ) AS md ON tracks.id = md.track_id
         //       WHERE
-        //       albums.id = tracks.album_id AND
-        //       tracks.visible = 1;
+        //           albums.id = tracks.album_id AND
+        //           tracks.visible = 1;
 
         static const std::string REGULAR_PROPERTY_QUERY =
             "SELECT DISTINCT {{table}}.id, {{table}}.name "
@@ -130,12 +130,13 @@ namespace musik { namespace core { namespace db { namespace local {
         //            SELECT id AS track_id
         //            FROM extended_metadata
         //            WHERE
-        //            (key = "composer" AND value = "J. Cantrell")
+        //                (key = "composer" AND value = "J. Cantrell") OR
+        //                ...
         //            GROUP BY track_id
         //            HAVING COUNT(track_id) = 1
         //        ) AS md ON extended_metadata.id = md.track_id
         //        WHERE
-        //        extended_metadata.key = "year";
+        //            extended_metadata.key = "year";
 
         static const std::string EXTENDED_PROPERTY_QUERY =
             "SELECT DISTINCT meta_value_id, value "
@@ -150,6 +151,38 @@ namespace musik { namespace core { namespace db { namespace local {
             "{{extended_filter}} "
             "ORDER BY extended_metadata.value ASC";
 
+        /* used to select all tracks that match a specified set of predicates. both
+        regular and extended predicates are supported. in essense: */
+
+        //    SELECT DISTINCT tracks.*
+        //        FROM tracks
+        //        INNER JOIN(
+        //            SELECT id AS track_id
+        //            FROM extended_metadata
+        //            WHERE
+        //                (key = "year" AND value = "1995") OR
+        //                (key = "composer" AND value = "J. Cantrell")
+        //            GROUP BY track_id
+        //            HAVING COUNT(track_id) = 2
+        //        ) AS md ON tracks.id = md.track_id;
+
+        static const std::string CATEGORY_TRACKLIST_FILTER =
+            " AND (tracks.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
+
+        static const std::string CATEGORY_TRACKLIST_QUERY =
+            "SELECT DISTINCT tracks.id, al.name "
+            "FROM tracks, albums al, artists ar, genres gn "
+            "{{extended_predicates}} "
+            "WHERE "
+            "    tracks.visible=1 AND "
+            "    tracks.album_id=al.id AND "
+            "    tracks.visual_genre_id=gn.id AND "
+            "    tracks.visual_artist_id=ar.id "
+            "    {{regular_predicates}} "
+            "    {{tracklist_filter}} "
+            "ORDER BY al.name, disc, track, ar.name "
+            "{{limit_and_offset}} ";
+
         using Predicate = std::pair<std::string, int64_t>;
         using PredicateList = std::vector<Predicate>;
         struct Argument { virtual void Bind(Statement& stmt, int pos) const = 0; };
@@ -159,6 +192,13 @@ namespace musik { namespace core { namespace db { namespace local {
 
         extern std::shared_ptr<Argument> IdArgument(int64_t);
         extern std::shared_ptr<Argument> StringArgument(const std::string);
+
+        extern size_t Hash(const PredicateList& input);
+
+        extern void ReplaceAll(
+            std::string& input,
+            const std::string& find,
+            const std::string& replace);
 
         extern void SplitPredicates(
             const PredicateList& input,

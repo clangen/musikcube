@@ -34,12 +34,8 @@
 
 #include "pch.hpp"
 #include "CategoryListQuery.h"
-
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
-
-#include <mutex>
-#include <map>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -49,15 +45,6 @@ using namespace musik::core::library::constants;
 using namespace musik::core::db::local;
 
 #define RESET_RESULT(x) x.reset(new std::vector<std::shared_ptr<Result>>);
-
-#if 1
-#ifdef WIN32
-#define DUMP(x) OutputDebugStringA(x.c_str()); OutputDebugStringA("\n");
-#else
-#include <iostream>
-#define DUMP(x) std::cout << x << "\n";
-#endif
-#endif
 
 static const std::string UNFILTERED_PLAYLISTS_QUERY =
     "SELECT DISTINCT id, name "
@@ -93,14 +80,6 @@ class ValueList : public musik::core::sdk::IValueList {
         CategoryListQuery::ResultList results;
 };
 
-static void replaceAll(std::string& input, const std::string& find, const std::string& replace) {
-    size_t pos = input.find(find);
-    while (pos != std::string::npos) {
-        input.replace(pos, find.size(), replace);
-        pos = input.find(find, pos + replace.size());
-    }
-}
-
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField, const std::string& filter)
 : CategoryListQuery(trackField, category::PredicateList(), filter) {
@@ -127,7 +106,6 @@ CategoryListQuery::CategoryListQuery(
         std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
         this->filter = "%" + wild + "%";
     }
-
 
     category::SplitPredicates(predicates, this->regular, this->extended);
 
@@ -184,6 +162,8 @@ void CategoryListQuery::QueryPlaylist(musik::core::db::Connection& db) {
 void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
     category::ArgumentList args;
 
+    /* order of operations with args is important! otherwise bind params
+    will be out of order! */
     auto prop = category::REGULAR_PROPERTY_MAP[this->trackField];
     std::string query = category::REGULAR_PROPERTY_QUERY;
     std::string extended = InnerJoinExtended(this->extended, args);
@@ -192,15 +172,15 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
 
     if (this->filter.size()) {
         regularFilter = category::REGULAR_FILTER;
-        replaceAll(regularFilter, "{{table}}", prop.first);
+        category::ReplaceAll(regularFilter, "{{table}}", prop.first);
         args.push_back(category::StringArgument(this->filter));
     }
 
-    replaceAll(query, "{{table}}", prop.first);
-    replaceAll(query, "{{fk_id}}", prop.second);
-    replaceAll(query, "{{extended_predicates}}", extended);
-    replaceAll(query, "{{regular_predicates}}", regular);
-    replaceAll(query, "{{regular_filter}}", regularFilter);
+    category::ReplaceAll(query, "{{table}}", prop.first);
+    category::ReplaceAll(query, "{{fk_id}}", prop.second);
+    category::ReplaceAll(query, "{{extended_predicates}}", extended);
+    category::ReplaceAll(query, "{{regular_predicates}}", regular);
+    category::ReplaceAll(query, "{{regular_filter}}", regularFilter);
 
     Statement stmt(query.c_str(), db);
     Apply(stmt, args);
@@ -210,6 +190,8 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
 void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
     category::ArgumentList args;
 
+    /* order of operations with args is important! otherwise bind params
+    will be out of order! */
     std::string query = category::EXTENDED_PROPERTY_QUERY;
     std::string regular = category::JoinRegular(this->regular, args, " AND ");
     std::string extended = category::InnerJoinExtended(this->extended, args);
@@ -220,13 +202,11 @@ void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
         args.push_back(category::StringArgument(this->filter));
     }
 
-    replaceAll(query, "{{regular_predicates}}", regular);
-    replaceAll(query, "{{extended_predicates}}", extended);
-    replaceAll(query, "{{extended_filter}}", extendedFilter);
+    category::ReplaceAll(query, "{{regular_predicates}}", regular);
+    category::ReplaceAll(query, "{{extended_predicates}}", extended);
+    category::ReplaceAll(query, "{{extended_filter}}", extendedFilter);
 
     args.push_back(category::StringArgument(this->trackField));
-
-    DUMP(query);
 
     Statement stmt(query.c_str(), db);
     Apply(stmt, args);

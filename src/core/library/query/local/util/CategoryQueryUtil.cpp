@@ -45,14 +45,6 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::db::local;
 
-static void replaceAll(std::string& input, const std::string& find, const std::string& replace) {
-    size_t pos = input.find(find);
-    while (pos != std::string::npos) {
-        input.replace(pos, find.size(), replace);
-        pos = input.find(find, pos + replace.size());
-    }
-}
-
 namespace musik { namespace core { namespace db { namespace local { namespace category {
 
     struct Id : public Argument {
@@ -75,6 +67,18 @@ namespace musik { namespace core { namespace db { namespace local { namespace ca
         return std::make_shared<String>(str);
     }
 
+    void ReplaceAll(
+        std::string& input,
+        const std::string& find,
+        const std::string& replace)
+    {
+        size_t pos = input.find(find);
+        while (pos != std::string::npos) {
+            input.replace(pos, find.size(), replace);
+            pos = input.find(find, pos + replace.size());
+        }
+    }
+
     PropertyType GetPropertyType(const std::string& property) {
         auto found = REGULAR_PROPERTY_MAP.find(property);
         auto end = REGULAR_PROPERTY_MAP.end();
@@ -82,6 +86,14 @@ namespace musik { namespace core { namespace db { namespace local { namespace ca
         return (found == end)
             ? category::PropertyType::Extended
             : category::PropertyType::Regular;
+    }
+
+    size_t Hash(const PredicateList& input) {
+        std::string key = "";
+        for (auto p : input) {
+            key += p.first + std::to_string(p.second);
+        }
+        return std::hash<std::string>()(key);
     }
 
     void SplitPredicates(
@@ -113,7 +125,7 @@ namespace musik { namespace core { namespace db { namespace local { namespace ca
                 auto p = pred[i];
                 auto str = REGULAR_PREDICATE;
                 auto map = REGULAR_PROPERTY_MAP[p.first];
-                replaceAll(str, "{{fk_id}}", map.second);
+                ReplaceAll(str, "{{fk_id}}", map.second);
                 result += str;
                 args.push_back(std::make_shared<Id>(p.second));
             }
@@ -133,8 +145,8 @@ namespace musik { namespace core { namespace db { namespace local { namespace ca
         std::string joined = JoinExtended(pred, args);
         if (joined.size()) {
             result = EXTENDED_INNER_JOIN;
-            replaceAll(result, "{{extended_predicates}}", joined);
-            replaceAll(result, "{{extended_predicate_count}}", std::to_string(pred.size()));
+            ReplaceAll(result, "{{extended_predicates}}", joined);
+            ReplaceAll(result, "{{extended_predicate_count}}", std::to_string(pred.size()));
         }
 
         return result;

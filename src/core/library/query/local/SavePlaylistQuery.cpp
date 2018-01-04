@@ -115,7 +115,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Replace(
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Rename(
     musik::core::ILibraryPtr library,
-    const int64_t playlistId, 
+    const int64_t playlistId,
     const std::string& playlistName)
 {
     return std::shared_ptr<SavePlaylistQuery>(
