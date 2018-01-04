@@ -79,15 +79,16 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
     }
 
     override fun setFilter(filter: String) {
-        lastFilter = filter
-        filterDebouncer.call(filter)
+        if (filter != lastFilter) {
+            lastFilter = filter
+            filterDebouncer.call(filter)
+        }
     }
 
     private fun initObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { state ->
                 if (state.first == IDataProvider.State.Connected) {
-                    filterDebouncer.call()
                     requery()
                 }
                 else {
