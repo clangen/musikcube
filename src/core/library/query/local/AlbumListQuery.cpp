@@ -38,64 +38,46 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 
-using musik::core::db::Statement;
-using musik::core::db::Row;
-
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::library::constants;
-using namespace musik::core::sdk;
-
-static std::map<std::string, std::string> FIELD_TO_FOREIGN_KEY = {
-    std::make_pair(Track::ALBUM, Track::ALBUM_ID),
-    std::make_pair(Track::ARTIST, Track::ARTIST_ID),
-    std::make_pair(Track::GENRE, Track::GENRE_ID),
-    std::make_pair(Track::ALBUM_ARTIST, Track::ALBUM_ARTIST_ID)
-};
 
 #define RESET_RESULT(x) x.reset(new MetadataMapList())
 
-static const std::string COLUMNS =
-    "albums.id, "
-    "albums.name as album, "
-    "tracks.album_artist_id, "
-    "artists.name as album_artist, "
-    "albums.thumbnail_id ";
-
-static const std::string TABLES =
-    "albums, tracks, artists ";
-
-static const std::string VISIBLE_PREDICATE =
-    " tracks.visible == 1 AND ";
-
-static const std::string FILTER_PREDICATE =
-    " (LOWER(album) like ? OR LOWER(album_artist) like ?) AND ";
-
-static const std::string CATEGORY_PREDICATE =
-    " tracks.%s=? AND ";
-
-static const std::string GENERAL_PREDICATE =
-    "albums.id = tracks.album_id AND "
-    "artists.id = tracks.album_artist_id ";
-
-static const std::string ORDER =
-    "albums.name asc ";
-
 AlbumListQuery::AlbumListQuery(const std::string& filter)
-: filter(filter)
-, fieldIdValue(-1) {
-    RESET_RESULT(result);
+: AlbumListQuery(category::PredicateList(), filter)
+{
 }
 
 AlbumListQuery::AlbumListQuery(
     const std::string& fieldIdName,
     int64_t fieldIdValue,
     const std::string& filter)
-: filter(filter)
-, fieldIdValue(fieldIdValue) {
-    this->fieldIdName = FIELD_TO_FOREIGN_KEY[fieldIdName];
+: AlbumListQuery(category::Predicate{ fieldIdName, fieldIdValue }, filter)
+{
+}
+
+AlbumListQuery::AlbumListQuery(
+    const category::Predicate predicate,
+    const std::string& filter)
+: AlbumListQuery(category::PredicateList { predicate }, filter)
+{
+}
+
+AlbumListQuery::AlbumListQuery(
+    const category::PredicateList predicates,
+    const std::string& filter)
+{
     RESET_RESULT(result);
+
+    if (filter.size()) {
+        std::string wild = filter;
+        std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
+        this->filter = "%" + wild + "%";
+    }
+
+    category::SplitPredicates(predicates, this->regular, this->extended);
 }
 
 AlbumListQuery::~AlbumListQuery() {
@@ -113,35 +95,27 @@ musik::core::sdk::IMapList* AlbumListQuery::GetSdkResult() {
 bool AlbumListQuery::OnRun(Connection& db) {
     RESET_RESULT(result);
 
-    bool filtered = this->filter.size() > 0;
-    bool category = fieldIdName.size() && fieldIdValue != -1;
+    category::ArgumentList args;
 
-    std::string query = "SELECT DISTINCT " + COLUMNS + " FROM " + TABLES + " WHERE ";
-    query += VISIBLE_PREDICATE;
-    query += filtered ? FILTER_PREDICATE : "";
+    /* order of operations with args is important! otherwise bind params
+    will be out of order! */
+    std::string query = category::ALBUM_LIST_QUERY;
+    std::string extended = InnerJoinExtended(this->extended, args);
+    std::string regular = JoinRegular(this->regular, args, " AND ");
+    std::string albumFilter;
 
-    if (category) {
-        query += boost::str(boost::format(CATEGORY_PREDICATE) % fieldIdName);
+    if (this->filter.size()) {
+        albumFilter = category::ALBUM_LIST_FILTER;
+        args.push_back(category::StringArgument(this->filter));
+        args.push_back(category::StringArgument(this->filter));
     }
 
-    query += GENERAL_PREDICATE + " ORDER BY " + ORDER + ";";
+    category::ReplaceAll(query, "{{extended_predicates}}", extended);
+    category::ReplaceAll(query, "{{regular_predicates}}", regular);
+    category::ReplaceAll(query, "{{album_list_filter}}", albumFilter);
 
     Statement stmt(query.c_str(), db);
-
-    int bindIndex = 0;
-
-    if (filtered) {
-        /* transform "FilteR" => "%filter%" */
-        std::string wild = this->filter;
-        std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
-        wild = "%" + wild + "%";
-        stmt.BindText(bindIndex++, wild);
-        stmt.BindText(bindIndex++, wild);
-    }
-
-    if (category) {
-        stmt.BindInt64(bindIndex, this->fieldIdValue);
-    }
+    Apply(stmt, args);
 
     while (stmt.Step() == Row) {
         std::shared_ptr<MetadataMap> row(new MetadataMap(

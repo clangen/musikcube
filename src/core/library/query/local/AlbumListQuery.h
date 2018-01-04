@@ -35,6 +35,7 @@
 #pragma once
 
 #include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/query/local/util/CategoryQueryUtil.h>
 #include <core/library/metadata/MetadataMapList.h>
 #include <core/db/Connection.h>
 
@@ -43,11 +44,19 @@ namespace musik { namespace core { namespace db { namespace local {
     class AlbumListQuery : public musik::core::db::LocalQueryBase {
         public:
             AlbumListQuery(
+                const std::string& filter = "");
+
+            AlbumListQuery(
                 const std::string& fieldIdName,
                 int64_t fieldIdValue,
                 const std::string& filter = "");
 
             AlbumListQuery(
+                const category::Predicate predicate,
+                const std::string& filter = "");
+
+            AlbumListQuery(
+                const category::PredicateList predicates,
                 const std::string& filter = "");
 
             virtual ~AlbumListQuery();
@@ -61,8 +70,7 @@ namespace musik { namespace core { namespace db { namespace local {
             virtual bool OnRun(musik::core::db::Connection &db);
 
             std::string filter;
-            std::string fieldIdName;
-            int64_t fieldIdValue;
+            category::PredicateList regular, extended;
             musik::core::MetadataMapListPtr result;
     };
 

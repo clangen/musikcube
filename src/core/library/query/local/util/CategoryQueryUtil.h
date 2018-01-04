@@ -147,8 +147,9 @@ namespace musik { namespace core { namespace db { namespace local {
             "  WHERE tracks.visible=1 {{regular_predicates}} "
             ") AS reg on extended_metadata.id=reg.track_id "
             "{{extended_predicates}} "
-            "WHERE extended_metadata.key=? "
-            "{{extended_filter}} "
+            "WHERE "
+            "  extended_metadata.key=? "
+            "  {{extended_filter}} "
             "ORDER BY extended_metadata.value ASC";
 
         /* used to select all tracks that match a specified set of predicates. both
@@ -174,19 +175,47 @@ namespace musik { namespace core { namespace db { namespace local {
             "FROM tracks, albums al, artists ar, genres gn "
             "{{extended_predicates}} "
             "WHERE "
-            "    tracks.visible=1 AND "
-            "    tracks.album_id=al.id AND "
-            "    tracks.visual_genre_id=gn.id AND "
-            "    tracks.visual_artist_id=ar.id "
-            "    {{regular_predicates}} "
-            "    {{tracklist_filter}} "
+            "  tracks.visible=1 AND "
+            "  tracks.album_id=al.id AND "
+            "  tracks.visual_genre_id=gn.id AND "
+            "  tracks.visual_artist_id=ar.id "
+            "  {{regular_predicates}} "
+            "  {{tracklist_filter}} "
             "ORDER BY al.name, disc, track, ar.name "
             "{{limit_and_offset}} ";
+
+        /* ALBUM_LIST_QUERY is like a specialized REGULAR_PROPERTY_QUERY used by
+        LocalSimpleDataProvider to return album resources with thumbnail, artist,
+        and other supplementary information. */
+
+        static const std::string ALBUM_LIST_FILTER =
+            " AND (LOWER(album) like ? OR LOWER(album_artist) like ?) ";
+
+        static const std::string ALBUM_LIST_QUERY =
+            "SELECT DISTINCT "
+            "  albums.id, "
+            "  albums.name as album, "
+            "  tracks.album_artist_id, "
+            "  artists.name as album_artist, "
+            "  albums.thumbnail_id "
+            "FROM albums, tracks, artists "
+            "{{extended_predicates}} "
+            "WHERE "
+            "  albums.id = tracks.album_id AND "
+            "  artists.id = tracks.album_artist_id AND "
+            "  tracks.visible=1 "
+            "  {{regular_predicates}} "
+            "  {{album_list_filter}} "
+            "ORDER BY albums.name ASC ";
+
+        /* data types */
 
         using Predicate = std::pair<std::string, int64_t>;
         using PredicateList = std::vector<Predicate>;
         struct Argument { virtual void Bind(Statement& stmt, int pos) const = 0; };
         using ArgumentList = std::vector<std::shared_ptr<Argument>>;
+
+        /* functions */
 
         extern PropertyType GetPropertyType(const std::string& key);
 
