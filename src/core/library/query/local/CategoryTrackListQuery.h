@@ -48,6 +48,10 @@ namespace musik { namespace core { namespace db { namespace local {
         public:
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
+                const std::string& filter = "");
+
+            CategoryTrackListQuery(
+                musik::core::ILibraryPtr library,
                 const std::string& column,
                 int64_t id,
                 const std::string& filter = "");

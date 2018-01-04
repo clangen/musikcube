@@ -341,8 +341,13 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
             search.reset(new GetPlaylistQuery(this->library, selectedId));
         }
         else {
-            search.reset(new CategoryTrackListQuery(
-                this->library, categoryType, selectedId, filter));
+            if (categoryType && strlen(categoryType) && selectedId > 0) {
+                search.reset(new CategoryTrackListQuery(
+                    this->library, categoryType, selectedId, filter));
+            }
+            else {
+                search.reset(new CategoryTrackListQuery(this->library, filter));
+            }
         }
 
         if (limit >= 0) {

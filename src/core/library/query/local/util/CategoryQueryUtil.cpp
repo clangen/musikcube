@@ -104,11 +104,13 @@ namespace musik { namespace core { namespace db { namespace local { namespace ca
         auto end = REGULAR_PROPERTY_MAP.end();
 
         for (auto p : input) {
-            if (REGULAR_PROPERTY_MAP.find(p.first) != end) {
-                regular.push_back(p);
-            }
-            else {
-                extended.push_back(p);
+            if (p.first.size() && p.second > 0) {
+                if (REGULAR_PROPERTY_MAP.find(p.first) != end) {
+                    regular.push_back(p);
+                }
+                else {
+                    extended.push_back(p);
+                }
             }
         }
     }

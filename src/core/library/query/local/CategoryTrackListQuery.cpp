@@ -56,6 +56,13 @@ using namespace boost::algorithm;
 
 CategoryTrackListQuery::CategoryTrackListQuery(
     musik::core::ILibraryPtr library,
+    const std::string& filter)
+: CategoryTrackListQuery(library, category::PredicateList(), filter)
+{
+}
+
+CategoryTrackListQuery::CategoryTrackListQuery(
+    musik::core::ILibraryPtr library,
     const std::string& column,
     int64_t id,
     const std::string& filter)

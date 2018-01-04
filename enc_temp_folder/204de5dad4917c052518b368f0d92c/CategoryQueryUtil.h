@@ -114,7 +114,7 @@ namespace musik { namespace core { namespace db { namespace local {
             "{{regular_filter}} "
             "ORDER BY {{table}}.sort_order";
 
-        /* EXTENDED_PROPERTY_QUERY is similar to REGULAR_PROPERTY_QUERY, but is used to
+        /* REGULAR_PROPERTY_QUERY is similar to REGULAR_PROPERTY_QUERY, but is used to
         retrieve non-standard metadata fields. it's slower, has (potentially) more joins,
         and is generally more difficult to use. here's an example where we select all
         "years" for a particular artist "595" where the composer is "J. Cantrell": */
