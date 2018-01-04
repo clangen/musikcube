@@ -117,6 +117,7 @@
     <ClCompile Include="library\query\local\SavePlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\SearchTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\TrackMetadataQuery.cpp" />
+    <ClCompile Include="library\query\local\util\CategoryQueryUtil.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="library\query\local\TrackListQueryBase.h" />
     <ClInclude Include="Library\query\local\LocalQueryBase.h" />
     <ClInclude Include="library\query\local\TrackMetadataQuery.h" />
+    <ClInclude Include="library\query\local\util\CategoryQueryUtil.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\Track.h" />

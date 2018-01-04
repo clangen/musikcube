@@ -59,6 +59,9 @@
     <Filter Include="src\sdk\metadata">
       <UniqueIdentifier>{a39a447a-65ad-465c-839d-b96cc4a8e2e9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\library\query\local\util">
+      <UniqueIdentifier>{3c3cc444-39fd-482f-aca9-3e67b98d8fc0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -198,6 +201,9 @@
     </ClCompile>
     <ClCompile Include="library\query\local\ReplayGainQuery.cpp">
       <Filter>src\library\query\local</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\local\util\CategoryQueryUtil.cpp">
+      <Filter>src\library\query\local\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -485,6 +491,9 @@
     </ClInclude>
     <ClInclude Include="library\query\local\ReplayGainQuery.h">
       <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\util\CategoryQueryUtil.h">
+      <Filter>src\library\query\local\util</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
