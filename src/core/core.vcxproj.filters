@@ -205,6 +205,9 @@
     <ClCompile Include="library\query\local\util\CategoryQueryUtil.cpp">
       <Filter>src\library\query\local\util</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\AllCategoriesQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -494,6 +497,12 @@
     </ClInclude>
     <ClInclude Include="library\query\local\util\CategoryQueryUtil.h">
       <Filter>src\library\query\local\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\util\SdkWrappers.h">
+      <Filter>src\library\query\local\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\AllCategoriesQuery.h">
+      <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

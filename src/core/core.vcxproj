@@ -107,6 +107,7 @@
     <ClCompile Include="library\metadata\MetadataMap.cpp" />
     <ClCompile Include="library\metadata\MetadataMapList.cpp" />
     <ClCompile Include="library\query\local\AlbumListQuery.cpp" />
+    <ClCompile Include="library\query\local\AllCategoriesQuery.cpp" />
     <ClCompile Include="library\query\local\AppendPlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\CategoryListQuery.cpp" />
     <ClCompile Include="library\query\local\CategoryTrackListQuery.cpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="library\metadata\MetadataMap.h" />
     <ClInclude Include="library\metadata\MetadataMapList.h" />
     <ClInclude Include="library\query\local\AlbumListQuery.h" />
+    <ClInclude Include="library\query\local\AllCategoriesQuery.h" />
     <ClInclude Include="library\query\local\AppendPlaylistQuery.h" />
     <ClInclude Include="library\query\local\CategoryListQuery.h" />
     <ClInclude Include="library\query\local\CategoryTrackListQuery.h" />
@@ -178,6 +180,7 @@
     <ClInclude Include="Library\query\local\LocalQueryBase.h" />
     <ClInclude Include="library\query\local\TrackMetadataQuery.h" />
     <ClInclude Include="library\query\local\util\CategoryQueryUtil.h" />
+    <ClInclude Include="library\query\local\util\SdkWrappers.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\Track.h" />

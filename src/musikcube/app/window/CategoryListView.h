@@ -117,7 +117,7 @@ namespace musik {
                 std::string fieldName, fieldIdColumn;
                 std::string filter;
                 int64_t selectAfterQuery;
-                musik::core::db::local::CategoryListQuery::ResultList metadata;
+                musik::core::db::local::CategoryListQuery::Result metadata;
         };
     }
 }

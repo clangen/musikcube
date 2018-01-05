@@ -44,8 +44,6 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::db::local;
 
-#define RESET_RESULT(x) x.reset(new std::vector<std::shared_ptr<Result>>);
-
 static const std::string UNFILTERED_PLAYLISTS_QUERY =
     "SELECT DISTINCT id, name "
     "FROM playlists "
@@ -56,29 +54,6 @@ static const std::string FILTERED_PLAYLISTS_QUERY =
     "FROM playlists"
     "WHERE LOWER(name) LIKE LOWER(?) "
     "ORDER BY name;";
-
-/* data structure that we can return to plugins who need metadata info */
-class ValueList : public musik::core::sdk::IValueList {
-    public:
-        ValueList(CategoryListQuery::ResultList results) {
-            this->results = results;
-        }
-
-        virtual void Release() {
-            delete this;
-        }
-
-        virtual size_t Count() {
-            return this->results->size();
-        }
-
-        virtual musik::core::sdk::IValue* GetAt(size_t index) {
-            return this->results->at(index).get();
-        }
-
-    private:
-        CategoryListQuery::ResultList results;
-};
 
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField, const std::string& filter)
@@ -98,7 +73,7 @@ CategoryListQuery::CategoryListQuery(
     const std::string& filter)
 : trackField(trackField)
 , filter(filter) {
-    RESET_RESULT(result);
+    result.reset(new SdkValueList());
 
     if (this->filter.size()) {
         /* transform "FilteR" => "%filter%" */
@@ -125,18 +100,18 @@ CategoryListQuery::CategoryListQuery(
 CategoryListQuery::~CategoryListQuery() {
 }
 
-CategoryListQuery::ResultList CategoryListQuery::GetResult() {
+CategoryListQuery::Result CategoryListQuery::GetResult() {
     return this->result;
 }
 
 musik::core::sdk::IValueList* CategoryListQuery::GetSdkResult() {
-    return new ValueList(this->result);
+    return new SdkValueList(this->result);
 }
 
 int CategoryListQuery::GetIndexOf(int64_t id) {
     auto result = this->GetResult();
-    for (size_t i = 0; i < result->size(); i++) {
-        if (id == (*result)[i]->id) {
+    for (size_t i = 0; i < result->Count(); i++) {
+        if (id == result->GetAt(i)->GetId()) {
             return i;
         }
     }
@@ -215,16 +190,17 @@ void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
 
 void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
     while (stmt.Step() == Row) {
-        std::shared_ptr<Result> row(new Result());
-        row->id = stmt.ColumnInt64(0);
-        row->displayValue = stmt.ColumnText(1);
-        row->type = this->trackField;
-        result->push_back(row);
+        auto row = std::make_shared<SdkValue>(
+            stmt.ColumnText(1),
+            stmt.ColumnInt64(0),
+            this->trackField);
+
+        result->Add(row);
     }
 }
 
 bool CategoryListQuery::OnRun(Connection& db) {
-    RESET_RESULT(result);
+    result.reset(new SdkValueList());
 
     switch (this->outputType) {
         case Playlist: QueryPlaylist(db); break;

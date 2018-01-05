@@ -91,13 +91,11 @@ static inline void touchOperationExpiry() {
     lastOperationExpiry = now() + duration_cast<milliseconds>(Seconds(60));
 }
 
-static inline int findPlaylistIndex(CategoryListQuery::ResultList result, int64_t playlistId) {
-    int i = 0;
-    for (auto it : *(result.get())) {
-        if (it->id == playlistId) {
-            return i;
+static inline int findPlaylistIndex(CategoryListQuery::Result result, int64_t playlistId) {
+    for (size_t i = 0; i < result->Count(); i++) {
+        if (result->At(i)->GetId() == playlistId) {
+            return (int)i;
         }
-        ++i;
     }
     return -1;
 }
@@ -141,12 +139,10 @@ static std::shared_ptr<CategoryListQuery> queryPlaylists(ILibraryPtr library) {
 }
 
 static void addPlaylistsToAdapter(
-    std::shared_ptr<Adapter> adapter, CategoryListQuery::ResultList result)
+    std::shared_ptr<Adapter> adapter, CategoryListQuery::Result result)
 {
-    auto it = result->begin();
-    while (it != result->end()) {
-        adapter->AddEntry((*it)->displayValue);
-        ++it;
+    for (size_t i = 0; i < result->Count(); i++) {
+        adapter->AddEntry(result->At(i)->ToString());
     }
 }
 
@@ -390,7 +386,7 @@ static void showAddCategorySelectionToPlaylistOverlay(
                     createNewPlaylist(queue, library, categoryType, categoryId);
                 }
                 else { /* add to existing */
-                    int64_t playlistId = (*result)[index - 1]->id;
+                    int64_t playlistId = (*result)[index - 1]->GetId();
                     setLastPlaylistId(playlistId);
 
                     auto query = SavePlaylistQuery::Append(
@@ -435,7 +431,7 @@ static void showAddTrackToPlaylistOverlay(
                     createNewPlaylist(queue, list, library);
                 }
                 else { /* add to existing */
-                    int64_t playlistId = (*result)[index - 1]->id;
+                    int64_t playlistId = (*result)[index - 1]->GetId();
                     setLastPlaylistId(playlistId);
                     library->Enqueue(SavePlaylistQuery::Append(library, playlistId, list), 0);
                 }
@@ -623,7 +619,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
 
-    if (!result->size()) {
+    if (!result->Count()) {
         showNoPlaylistsDialog();
         return;
     }
@@ -638,7 +634,7 @@ void PlayQueueOverlays::ShowLoadPlaylistOverlay(
         [library, result, callback]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION && callback) {
-                int64_t playlistId = (*result)[index]->id;
+                int64_t playlistId = (*result)[index]->GetId();
                 callback(playlistId);
             }
         });
@@ -662,8 +658,8 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
     select by default. if they did, try to find it */
     size_t selectedIndex = 0;
     if (selectedPlaylistId != -1) {
-        for (size_t i = 0; i < result->size(); i++) {
-            if (result->at(i)->id == selectedPlaylistId) {
+        for (size_t i = 0; i < result->Count(); i++) {
+            if (result->At(i)->GetId() == selectedPlaylistId) {
                 selectedIndex = i + 1; /* offset "new..." */
                 break;
             }
@@ -683,8 +679,8 @@ void PlayQueueOverlays::ShowSavePlaylistOverlay(
             }
             else { /* replace existing */
                 --index;
-                int64_t playlistId = (*result)[index]->id;
-                std::string playlistName = (*result)[index]->displayValue;
+                int64_t playlistId = (*result)[index]->GetId();
+                std::string playlistName = (*result)[index]->ToString();
                 confirmOverwritePlaylist(library, playlistName, playlistId, tracks);
             }
         },
@@ -695,7 +691,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
 
-    if (!result->size()) {
+    if (!result->Count()) {
         showNoPlaylistsDialog();
         return;
     }
@@ -709,8 +705,8 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(ILibraryPtr library) {
         adapter,
         [library, result](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
-                int64_t playlistId = (*result)[index]->id;
-                std::string playlistName = (*result)[index]->displayValue;
+                int64_t playlistId = (*result)[index]->GetId();
+                std::string playlistName = (*result)[index]->ToString();
                 ShowRenamePlaylistOverlay(library, playlistId, playlistName);
             }
         });
@@ -720,7 +716,7 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(ILibraryPtr library) {
     std::shared_ptr<CategoryListQuery> query = queryPlaylists(library);
     auto result = query->GetResult();
 
-    if (!result->size()) {
+    if (!result->Count()) {
         showNoPlaylistsDialog();
         return;
     }
@@ -735,8 +731,8 @@ void PlayQueueOverlays::ShowDeletePlaylistOverlay(ILibraryPtr library) {
         [library, result]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             if (index != ListWindow::NO_SELECTION) {
-                int64_t playlistId = (*result)[index]->id;
-                std::string playlistName = (*result)[index]->displayValue;
+                int64_t playlistId = (*result)[index]->GetId();
+                std::string playlistName = (*result)[index]->ToString();
                 ShowConfirmDeletePlaylistOverlay(library, playlistName, playlistId);
             }
         });

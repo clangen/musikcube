@@ -114,22 +114,22 @@ void CategoryListView::Requery(const std::string& filter, const int64_t selectAf
 }
 
 void CategoryListView::Reset() {
-    this->metadata.reset(new std::vector<std::shared_ptr<CategoryListQuery::Result> >()); /* ugh */
+    this->metadata.reset(new SdkValueList()); /* ugh */
     this->OnAdapterChanged();
 }
 
 int64_t CategoryListView::GetSelectedId() {
     size_t index = this->GetSelectedIndex();
-    if (index != NO_SELECTION && this->metadata && index < this->metadata->size()) {
-        return this->metadata->at(index)->id;
+    if (index != NO_SELECTION && this->metadata && index < this->metadata->Count()) {
+        return this->metadata->At(index)->GetId();
     }
     return -1;
 }
 
 std::string CategoryListView::GetSelectedValue() {
     size_t index = this->GetSelectedIndex();
-    if (index != NO_SELECTION && this->metadata && index < this->metadata->size()) {
-        return this->metadata->at(index)->displayValue;
+    if (index != NO_SELECTION && this->metadata && index < this->metadata->Count()) {
+        return this->metadata->At(index)->ToString();
     }
     return "";
 }
@@ -169,8 +169,8 @@ void CategoryListView::ScrollToPlaying() {
         /* by ID: preferred. */
         if (fieldIdColumn.size()) {
             int64_t id = this->playing->GetInt64(fieldIdColumn.c_str(), 0);
-            for (size_t i = 0; i < this->metadata->size(); i++) {
-                if (this->metadata->at(i)->id == id) {
+            for (size_t i = 0; i < this->metadata->Count(); i++) {
+                if (this->metadata->At(i)->GetId() == id) {
                     selected = i;
                     break;
                 }
@@ -183,8 +183,8 @@ void CategoryListView::ScrollToPlaying() {
             if (value.size()) {
                 /* binary search would be better, but need to research if sqlite
                 properly sorts utf8 strings. */
-                for (size_t i = 0; i < this->metadata->size(); i++) {
-                    if (this->metadata->at(i)->displayValue == value) {
+                for (size_t i = 0; i < this->metadata->Count(); i++) {
+                    if (this->metadata->At(i)->ToString() == value) {
                         selected = i;
                         break;
                     }
@@ -259,11 +259,11 @@ CategoryListView::Adapter::Adapter(CategoryListView &parent)
 }
 
 size_t CategoryListView::Adapter::GetEntryCount() {
-    return parent.metadata ? parent.metadata->size() : 0;
+    return parent.metadata ? parent.metadata->Count() : 0;
 }
 
 IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
-    std::string value = parent.metadata->at(index)->displayValue;
+    std::string value = parent.metadata->At(index)->ToString();
 
     bool playing = false;
 
@@ -271,7 +271,7 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::Scrollabl
         /* we should generally be able to match by ID; if not, fall back to by name */
         if (parent.fieldIdColumn.size()) {
             auto playingId = parent.playing->GetInt64(parent.fieldIdColumn.c_str(), 0);
-            playing = (playingId == parent.metadata->at(index)->id);
+            playing = (playingId == parent.metadata->At(index)->GetId());
         }
         else {
             playing = parent.playing->GetString(parent.fieldName.c_str()) == value;

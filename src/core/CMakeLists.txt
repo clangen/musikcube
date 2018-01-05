@@ -21,6 +21,7 @@ set(CORE_SOURCES
   ./library/LocalLibrary.cpp
   ./library/LocalSimpleDataProvider.cpp
   ./library/query/local/AlbumListQuery.cpp
+  ./library/query/local/AllCategoriesQuery.cpp
   ./library/query/local/AppendPlaylistQuery.cpp
   ./library/query/local/GetPlaylistQuery.cpp
   ./library/query/local/CategoryListQuery.cpp

@@ -86,7 +86,7 @@ static inline std::string getModifiedText() {
 
 static inline std::string getTitleForCategory(const std::string& fieldName) {
     return FIELD_TO_TITLE.find(fieldName) == FIELD_TO_TITLE.end()
-        ? _TSTR("browse_title_category") : _TSTR(FIELD_TO_TITLE[fieldName]);
+        ? _TSTR(fieldName) : _TSTR(FIELD_TO_TITLE[fieldName]);
 }
 
 BrowseLayout::BrowseLayout(

@@ -35,58 +35,27 @@
 #pragma once
 
 #include <core/library/query/local/LocalQueryBase.h>
-#include <core/library/query/local/util/CategoryQueryUtil.h>
 #include <core/library/query/local/util/SdkWrappers.h>
-#include <core/db/Statement.h>
-#include <core/db/Connection.h>
 #include <core/sdk/IValueList.h>
-#include <core/support/Common.h>
-#include <memory>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class CategoryListQuery : public musik::core::db::LocalQueryBase {
+    class AllCategoriesQuery : public musik::core::db::LocalQueryBase {
         public:
             using Result = SdkValueList::Shared;
 
-            CategoryListQuery(
-                const std::string& trackField,
-                const std::string& filter = "");
+            AllCategoriesQuery();
+            virtual ~AllCategoriesQuery();
 
-            CategoryListQuery(
-                const std::string& trackField,
-                const category::Predicate predicate,
-                const std::string& filter = "");
-
-            CategoryListQuery(
-                const std::string& trackField,
-                const category::PredicateList predicate,
-                const std::string& filter = "");
-
-            virtual ~CategoryListQuery();
-
-            std::string Name() { return "CategoryListQuery"; }
+            std::string Name() { return "AllCategoriesQuery"; }
 
             virtual Result GetResult();
-            virtual int GetIndexOf(int64_t id);
-
             musik::core::sdk::IValueList* GetSdkResult();
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
-            enum OutputType { Regular, Extended, Playlist };
-
-            void QueryPlaylist(musik::core::db::Connection &db);
-            void QueryRegular(musik::core::db::Connection &db);
-            void QueryExtended(musik::core::db::Connection &db);
-            void ProcessResult(musik::core::db::Statement &stmt);
-
-            std::string trackField;
-            std::string filter;
-            OutputType outputType;
-            category::PredicateList regular, extended;
             Result result;
     };
 
