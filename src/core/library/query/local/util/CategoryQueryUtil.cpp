@@ -84,8 +84,8 @@ namespace musik { namespace core { namespace db { namespace local { namespace ca
         auto end = REGULAR_PROPERTY_MAP.end();
 
         return (found == end)
-            ? category::PropertyType::Extended
-            : category::PropertyType::Regular;
+            ? PropertyType::Extended
+            : PropertyType::Regular;
     }
 
     size_t Hash(const PredicateList& input) {
@@ -139,7 +139,7 @@ namespace musik { namespace core { namespace db { namespace local { namespace ca
         return result;
     }
 
-    std::string category::InnerJoinExtended(
+    std::string InnerJoinExtended(
         const PredicateList& pred, ArgumentList& args)
     {
         std::string result;
