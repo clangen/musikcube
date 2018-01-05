@@ -142,6 +142,7 @@ class WebSocketServer {
         void RespondWithQueryAlbums(connection_hdl connection, json& request);
         void RespondWithPlayTracks(connection_hdl connection, json& request);
         void RespondWithQueryTracksByCategory(connection_hdl connection, json& request);
+        void RespondWithListCategories(connection_hdl connection, json& request);
         void RespondWithQueryCategory(connection_hdl connection, json& request);
         void RespondWithPlayAllTracks(connection_hdl connection, json& request);
         void RespondWithPlayTracksByCategory(connection_hdl connection, json& request);

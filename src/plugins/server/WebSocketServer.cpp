@@ -352,6 +352,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             RespondWithPlaybackOverview(connection, request);
             return;
         }
+        else if (name == request::list_categories) {
+            RespondWithListCategories(connection, request);
+            return;
+        }
         else if (name == request::query_category) {
             RespondWithQueryCategory(connection, request);
             return;
@@ -810,6 +814,25 @@ void WebSocketServer::RespondWithQueryTracksByCategory(connection_hdl connection
     }
 
     this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+}
+
+void WebSocketServer::RespondWithListCategories(connection_hdl connection, json& request) {
+    IValueList* result = context.dataProvider->ListCategories();
+
+    if (result != nullptr) {
+        json list = json::array();
+
+        for (size_t i = 0; i < result->Count(); i++) {
+            list[i] = GetValueString(result->GetAt(i));
+        }
+
+        result->Release();
+
+        this->RespondWithOptions(connection, request, { { key::data, list } });
+    }
+    else {
+        this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+    }
 }
 
 void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& request) {

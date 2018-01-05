@@ -21,6 +21,7 @@ class Messages {
         PlayTracks("play_tracks"),
         PlayTracksByCategory("play_tracks_by_category"),
         QueryTracks("query_tracks"),
+        ListCategories("list_categories"),
         QueryTracksByCategory("query_tracks_by_category"),
         QueryTracksByExternalIds("query_tracks_by_external_ids"),
         QueryCategory("query_category"),

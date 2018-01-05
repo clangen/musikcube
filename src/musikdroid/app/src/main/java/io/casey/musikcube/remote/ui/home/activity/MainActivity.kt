@@ -39,6 +39,7 @@ import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.util.Duration
 import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.reactivex.rxkotlin.subscribeBy
 
 class MainActivity : BaseActivity() {
     private val handler = Handler()

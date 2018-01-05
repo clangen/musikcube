@@ -158,6 +158,7 @@ namespace request {
     static const std::string toggle_mute = "toggle_mute";
     static const std::string get_playback_overview = "get_playback_overview";
     static const std::string get_current_time = "get_current_time";
+    static const std::string list_categories = "list_categories";
     static const std::string query_category = "query_category";
     static const std::string query_tracks = "query_tracks";
     static const std::string query_tracks_by_external_ids = "query_tracks_by_external_ids";

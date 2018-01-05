@@ -38,6 +38,7 @@
 #include <core/debug.h>
 #include <core/db/ScopedTransaction.h>
 #include <core/library/query/local/AlbumListQuery.h>
+#include <core/library/query/local/AllCategoriesQuery.h>
 #include <core/library/query/local/AppendPlaylistQuery.h>
 #include <core/library/query/local/CategoryListQuery.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
@@ -370,6 +371,23 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
 IValueList* LocalSimpleDataProvider::QueryCategory(const char* type, const char* filter) {
     return QueryCategoryWithPredicate(type, "", -1LL, filter);
 }
+
+IValueList* LocalSimpleDataProvider::ListCategories() {
+    try {
+        auto query = std::make_shared<AllCategoriesQuery>();
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+        if (query->GetStatus() == IQuery::Finished) {
+            return query->GetSdkResult();
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "ListCategories failed");
+    }
+
+    return nullptr;
+}
+
 
 IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicate(
     const char* type, const char* predicateType, int64_t predicateId, const char* filter)

@@ -99,6 +99,17 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    override fun listCategories(): Observable<List<String>> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.ListCategories)
+            .build()
+
+        return service.observe(message, client)
+            .observeOn(Schedulers.computation())
+            .flatMap<List<String>> { socketMessage -> toStringList(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     override fun getTracks(filter: String): Observable<List<ITrack>> =
         getTracks(-1, -1, filter)
 
