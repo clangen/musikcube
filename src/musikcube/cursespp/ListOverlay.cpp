@@ -230,7 +230,7 @@ void ListOverlay::Redraw() {
     if (this->title.size()) {
         wmove(c, currentY, currentX);
         wattron(c, A_BOLD);
-        checked_wprintw(c, text::Ellipsize(this->title, this->width - 4).c_str());
+        checked_wprintw(c, text::Align(this->title, text::AlignCenter, this->width - 4).c_str());
         wattroff(c, A_BOLD);
         currentY += 2;
     }
