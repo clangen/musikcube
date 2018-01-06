@@ -65,6 +65,14 @@ namespace musik { namespace core { namespace db { namespace local {
                     int limit = -1,
                     int offset = 0) override;
 
+            virtual musik::core::sdk::ITrackList*
+                QueryTracksByCategories(
+                    musik::core::sdk::IValue** categories,
+                    size_t categoryCount,
+                    const char* filter = "",
+                    int limit = -1,
+                    int offset = 0) override;
+
             virtual musik::core::sdk::ITrackList* QueryTracksByExternalId(
                 const char** externalIds, size_t externalIdCount) override;
 
@@ -80,6 +88,13 @@ namespace musik { namespace core { namespace db { namespace local {
                     const char* type,
                     const char* predicateType,
                     int64_t predicateId,
+                    const char* filter = "") override;
+
+            virtual musik::core::sdk::IValueList*
+                QueryCategoryWithPredicates(
+                    const char* type,
+                    musik::core::sdk::IValue** predicates,
+                    size_t predicateCount,
                     const char* filter = "") override;
 
             virtual musik::core::sdk::IMapList*

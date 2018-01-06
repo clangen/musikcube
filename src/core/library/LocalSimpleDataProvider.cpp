@@ -52,6 +52,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
+#include <core/support/Common.h>
 #include <vector>
 #include <map>
 
@@ -63,6 +64,35 @@ using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
+
+using PredicateList = musik::core::db::local::category::PredicateList;
+
+/* HELPERS */
+
+#ifdef __APPLE__
+static __thread char threadLocalBuffer[4096];
+#else
+static thread_local char threadLocalBuffer[4096];
+#endif
+
+static inline std::string getValue(IValue* value) {
+    threadLocalBuffer[0] = 0;
+    if (value->GetValue(threadLocalBuffer, sizeof(threadLocalBuffer))) {
+        return std::string(threadLocalBuffer);
+    }
+    return "";
+}
+
+static inline PredicateList toPredicateList(IValue** predicates, size_t count) {
+    PredicateList predicateList;
+    if (predicates && count) {
+        for (size_t i = 0; i < count; i++) {
+            IValue* predicate = predicates[i];
+            predicateList.push_back({ getValue(predicate), predicate->GetId() });
+        }
+    }
+    return predicateList;
+}
 
 /* QUERIES */
 
@@ -329,11 +359,7 @@ ITrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* externalId) 
 }
 
 ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
-    const char* categoryType,
-    int64_t selectedId,
-    const char* filter,
-    int limit,
-    int offset)
+    const char* categoryType, int64_t selectedId, const char* filter, int limit, int offset)
 {
     try {
         std::shared_ptr<TrackListQueryBase> search;
@@ -359,6 +385,31 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
 
         if (search->GetStatus() == IQuery::Finished) {
             return search->GetSdkResult();
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "QueryTracksByCategory failed");
+    }
+
+    return nullptr;
+}
+
+ITrackList* LocalSimpleDataProvider::QueryTracksByCategories(
+    IValue** categories, size_t categoryCount, const char* filter, int limit, int offset)
+{
+    try {
+        PredicateList list = toPredicateList(categories, categoryCount);
+
+        auto query = std::make_shared<CategoryTrackListQuery>(this->library, list, filter);
+
+        if (limit >= 0) {
+            query->SetLimitAndOffset(limit, offset);
+        }
+
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+        if (query->GetStatus() == IQuery::Finished) {
+            return query->GetSdkResult();
         }
     }
     catch (...) {
@@ -414,10 +465,30 @@ IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicate(
     return nullptr;
 }
 
+IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicates(
+    const char* type, IValue** predicates, size_t predicateCount, const char* filter)
+{
+    try {
+        auto predicateList = toPredicateList(predicates, predicateCount);
+
+        auto query = std::make_shared<CategoryListQuery>(
+            type, predicateList, std::string(filter ? filter : ""));
+
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+        if (query->GetStatus() == IQuery::Finished) {
+            return query->GetSdkResult();
+        }
+    }
+    catch (...) {
+        musik::debug::err(TAG, "QueryCategory failed");
+    }
+
+    return nullptr;
+}
+
 IMapList* LocalSimpleDataProvider::QueryAlbums(
-    const char* categoryIdName,
-    int64_t categoryIdValue,
-    const char* filter)
+    const char* categoryIdName, int64_t categoryIdValue, const char* filter)
 {
     try {
         std::shared_ptr<AlbumListQuery> search(new AlbumListQuery(

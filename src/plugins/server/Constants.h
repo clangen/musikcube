@@ -124,6 +124,7 @@ namespace key {
     static const std::string sort_orders = "sort_orders";
     static const std::string predicate_category = "predicate_category";
     static const std::string predicate_id = "predicate_id";
+    static const std::string predicates = "predicates";
     static const std::string sdk_version = "sdk_version";
     static const std::string api_version = "api_version";
 }

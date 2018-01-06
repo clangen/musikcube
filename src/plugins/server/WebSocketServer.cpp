@@ -84,7 +84,7 @@ static std::shared_ptr<char*> jsonToStringArray(const json& jsonArray) {
 
 template <typename T>
 static std::shared_ptr<T> jsonToIntArray(json& arr) {
-    size_t count = arr.size();
+    size_t count = arr.is_array() ? arr.size() : 0;
 
     T* idArray = new T[count];
     if (count > 0) {
@@ -93,6 +93,25 @@ static std::shared_ptr<T> jsonToIntArray(json& arr) {
 
     return std::shared_ptr<T>(idArray, [count](T* result) {
         delete[] result;
+    });
+}
+
+static std::shared_ptr<IValue*> jsonToPredicateList(json& arr) {
+    size_t count = arr.is_array() ? arr.size() : 0;
+    IValue** valueArray = new IValue*[count];
+
+    for (size_t i = 0; i < count; i++) {
+        valueArray[i] = CreateValue(
+            arr[i]["category"],
+            arr[i]["id"],
+            "category");
+    }
+
+    return std::shared_ptr<IValue*>(valueArray, [count](IValue** del) {
+        for (size_t i = 0; i < count; i++) {
+            del[i]->Release();
+        }
+        delete[] del;
     });
 }
 
@@ -720,7 +739,7 @@ void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& re
 
         std::string filter = options.value(key::filter, "");
         std::string category = options.value(key::category, "");
-        uint64_t categoryId = options.value(key::category_id, -1);
+        int64_t categoryId = options.value<int64_t>(key::category_id, -1);
 
         IMapList* albumList = context.dataProvider
             ->QueryAlbums(category.c_str(), categoryId, filter.c_str());
@@ -789,16 +808,25 @@ ITrackList* WebSocketServer::QueryTracksByCategory(json& request, int& limit, in
     if (request.find(message::options) != request.end()) {
         json& options = request[message::options];
 
-        std::string category = options[key::category];
-        uint64_t selectedId = options[key::id];
+        std::string category = options.value(key::category, "");
+        int64_t selectedId = options.value<int64_t>(key::id, -1);
+        json& predicates = options.value(key::predicates, json::array());
 
         std::string filter = options.value(key::filter, "");
 
         limit = -1, offset = 0;
         this->GetLimitAndOffset(options, limit, offset);
 
-        return context.dataProvider->QueryTracksByCategory(
-            category.c_str(), selectedId, filter.c_str(), limit, offset);
+        if (predicates.size()) {
+            auto predicateList = jsonToPredicateList(predicates);
+
+            return context.dataProvider->QueryTracksByCategories(
+                predicateList.get(), predicates.size(), filter.c_str(), limit, offset);
+        }
+        else {
+            return context.dataProvider->QueryTracksByCategory(
+                category.c_str(), selectedId, filter.c_str(), limit, offset);
+        }
     }
 
     return nullptr;
@@ -840,16 +868,34 @@ void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& 
         auto& options = request[message::options];
         std::string category = options[key::category];
         std::string filter = options.value(key::filter, "");
+
+        /* single predicate */
         std::string predicate = options.value(key::predicate_category, "");
-        int64_t predicateId = options.value(key::predicate_id, -1LL);
+        int64_t predicateId = options.value<int64_t>(key::predicate_id, -1LL);
+
+        /* multiple predicates */
+        json& predicates = options.value(key::predicates, json::array());
 
         if (category.size()) {
-            IValueList* result = context.dataProvider
-                ->QueryCategoryWithPredicate(
-                    category.c_str(),
-                    predicate.c_str(),
-                    predicateId,
-                    filter.c_str());
+            IValueList* result;
+
+            if (predicates.size()) {
+                auto predicateList = jsonToPredicateList(predicates);
+                result = context.dataProvider
+                    ->QueryCategoryWithPredicates(
+                        category.c_str(),
+                        predicateList.get(),
+                        predicates.size(),
+                        filter.c_str());
+            }
+            else {
+                result = context.dataProvider
+                    ->QueryCategoryWithPredicate(
+                        category.c_str(),
+                        predicate.c_str(),
+                        predicateId,
+                        filter.c_str());
+            }
 
             if (result != nullptr) {
                 json list = json::array();
@@ -928,7 +974,7 @@ void WebSocketServer::RespondWithSavePlaylist(connection_hdl connection, json& r
     /* TODO: a lot of copy/paste between this method and RespondWithAppendToPlaylist */
 
     auto& options = request[message::options];
-    int64_t id = options.value(key::playlist_id, 0);
+    int64_t id = options.value<int64_t>(key::playlist_id, 0);
     std::string name = options.value(key::playlist_name, "");
 
     /* by external id (slower, more reliable) */
@@ -1018,7 +1064,7 @@ void WebSocketServer::RespondWithAppendToPlaylist(connection_hdl connection, jso
 
     auto& options = request[message::options];
     int offset = options.value(key::offset, -1);
-    int64_t id = options.value(key::playlist_id, 0);
+    int64_t id = options.value<int64_t>(key::playlist_id, 0);
 
     if (id) {
         /* by external id */
@@ -1082,7 +1128,7 @@ void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connect
     auto end = options.end();
     auto externalIdsIt = options.find(key::external_ids);
     auto sortOrdersIt = options.find(key::sort_orders);
-    int64_t id = options.value(key::playlist_id, 0);
+    int64_t id = options.value<int64_t>(key::playlist_id, 0);
     size_t updated = 0;
 
     bool valid =

@@ -77,6 +77,13 @@ static std::string GetValueString(musik::core::sdk::IValue* value) {
     return std::string(threadLocalBuffer);
 }
 
+extern musik::core::sdk::IValue* CreateValue(
+    const std::string& value, int64_t id, const std::string& type);
+
+extern std::string urlEncode(const std::string& s);
+
+extern std::string urlDecode(const std::string& str);
+
 #ifdef WIN32
 static inline std::wstring utf8to16(const char* utf8) {
     int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
@@ -88,6 +95,3 @@ static inline std::wstring utf8to16(const char* utf8) {
     return utf16fn;
 }
 #endif
-
-std::string urlEncode(const std::string& s);
-std::string urlDecode(const std::string& str);

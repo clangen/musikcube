@@ -59,6 +59,13 @@ namespace musik { namespace core { namespace sdk {
                 int limit = -1,
                 int offset = 0) = 0;
 
+            virtual ITrackList* QueryTracksByCategories(
+                IValue** categories,
+                size_t categoryCount,
+                const char* filter = "",
+                int limit = -1,
+                int offset = 0) = 0;
+
             virtual ITrackList* QueryTracksByExternalId(
                 const char** externalIds, size_t externalIdCount) = 0;
 
@@ -72,6 +79,12 @@ namespace musik { namespace core { namespace sdk {
                 const char* type,
                 const char* predicateType,
                 int64_t predicateId,
+                const char* filter = "") = 0;
+
+            virtual IValueList* QueryCategoryWithPredicates(
+                const char* type,
+                IValue** predicates,
+                size_t predicateCount,
                 const char* filter = "") = 0;
 
             virtual IMapList* QueryAlbums(const char* filter = "") = 0;
