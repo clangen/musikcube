@@ -426,6 +426,8 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
     MetadataMap unknownFields(this->internalMetadata->metadata);
     removeKnownFields(unknownFields);
 
+    std::map<int64_t, std::set<int64_t>> processed;
+
     db::Statement selectMetaKey("SELECT id FROM meta_keys WHERE name=?", connection);
     db::Statement selectMetaValue("SELECT id FROM meta_values WHERE meta_key_id=? AND content=?", connection);
     db::Statement insertMetaValue("INSERT INTO meta_values (meta_key_id,content) VALUES (?,?)", connection);
@@ -503,10 +505,31 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
         /* now that we have a keyId and a valueId, create the relationship */
 
         if (valueId != 0 && keyId != 0) {
-            insertTrackMeta.Reset();
-            insertTrackMeta.BindInt64(0, this->id);
-            insertTrackMeta.BindInt64(1, valueId);
-            insertTrackMeta.Step();
+
+            /* we allow multiple values for the same key (for example, multiple composers
+            for a track. but we don't allow duplicates. keep track of what keys and
+            values we've already attached to this track, and dont add dupes. */
+
+            bool process = true;
+            if (processed.find(valueId) != processed.end()) {
+                auto keys = processed[valueId];
+                if (keys.find(keyId) != keys.end()) {
+                    process = false;
+                }
+                else {
+                    keys.insert(keyId);
+                }
+            }
+            else {
+                processed[valueId] = { keyId };
+            }
+
+            if (process) {
+                insertTrackMeta.Reset();
+                insertTrackMeta.BindInt64(0, this->id);
+                insertTrackMeta.BindInt64(1, valueId);
+                insertTrackMeta.Step();
+            }
         }
     }
 }
