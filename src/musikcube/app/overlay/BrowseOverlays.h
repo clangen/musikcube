@@ -32,50 +32,18 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-#include "AllCategoriesQuery.h"
-#include <core/db/Statement.h>
+#pragma once
 
-using musik::core::db::Statement;
-using musik::core::db::Row;
+#include <core/library/ILibrary.h>
+#include <functional>
 
-using namespace musik::core::db;
-using namespace musik::core::db::local;
-
-AllCategoriesQuery::AllCategoriesQuery() {
-    this->result.reset(new SdkValueList());
-}
-
-AllCategoriesQuery::~AllCategoriesQuery() {
-}
-
-AllCategoriesQuery::Result AllCategoriesQuery::GetResult() {
-    return this->result;
-}
-
-musik::core::sdk::IValueList* AllCategoriesQuery::GetSdkResult() {
-    return new SdkValueList(this->result);
-}
-
-bool AllCategoriesQuery::OnRun(Connection& db) {
-    this->result.reset(new SdkValueList());
-    Statement stmt("SELECT DISTINCT name FROM meta_keys ORDER BY name", db);
-
-    this->result->Add(std::make_shared<SdkValue>("album", 0, "category"));
-    this->result->Add(std::make_shared<SdkValue>("artist", 0, "category"));
-    this->result->Add(std::make_shared<SdkValue>("album_artist", 0, "category"));
-    this->result->Add(std::make_shared<SdkValue>("genre", 0, "category"));
-
-    while (stmt.Step() == db::Row) {
-        this->result->Add(std::make_shared<SdkValue>(
-            stmt.ColumnText(0), 0, "category"
-        ));
+namespace musik {
+    namespace cube {
+        class BrowseOverlays {
+            public:
+                static void ShowCategoryChooser(
+                    musik::core::ILibraryPtr library,
+                    std::function<void(std::string)> callback);
+        };
     }
-
-    using Value = const SdkValue::Shared;
-    this->result->Sort([](Value& a, Value& b) -> bool {
-        return a->ToString() < b->ToString();
-    });
-
-    return true;
 }

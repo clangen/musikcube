@@ -20,6 +20,7 @@
         "browse_title_tracks": "tracks",
         "browse_title_playlists": "playlists",
         "browse_playlist_modified": "playlist modified. press '%s' to save.",
+        "browse_categories_title": "select category",
 
         "console_command_output_title": "command output",
         "console_debug_logs_title": "debug logs",
@@ -156,6 +157,7 @@
         "playqueue_playlist_add_to_queue_overlay": 35,
         "playqueue_playlist_list_overlay": 35,
         "playqueue_playlist_name_overlay": 35,
+        "browse_categories_overlay": 35,
         "server_overlay_width": 45,
         "preamp_overlay_width": 40
     }

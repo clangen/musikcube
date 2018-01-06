@@ -10,6 +10,7 @@ set (CUBE_SRCS
 	./app/layout/SearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp
 	./app/model/DirectoryAdapter.cpp
+	./app/overlay/BrowseOverlays.cpp
 	./app/overlay/ColorThemeOverlay.cpp
 	./app/overlay/LocaleOverlay.cpp
 	./app/overlay/PlaybackOverlays.cpp

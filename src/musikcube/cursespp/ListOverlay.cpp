@@ -80,6 +80,11 @@ void ListOverlay::Layout() {
             this->GetContentWidth() - 2,
             this->height - 4); /* top and bottom padding + title */
 
+        auto index = this->listWindow->GetSelectedIndex();
+        if (!this->listWindow->IsEntryVisible(index)) {
+            this->listWindow->ScrollTo(index);
+        }
+
         this->Redraw();
     }
 }

@@ -133,6 +133,32 @@ namespace musik { namespace core { namespace db { namespace local {
                 std::sort(values->begin(), values->end(), compare);
             }
 
+            Shared Filter(std::function<bool(const SdkValue::Shared&)> keep) {
+                Shared result = std::make_shared<SdkValueList>();
+                for (size_t i = 0; i < values->size(); i++) {
+                    SdkValue::Shared value = values->at(i);
+                    if (keep(value)) {
+                        result->Add(value);
+                    }
+                }
+                return result;
+            }
+
+            template <typename T>
+            std::vector<T> Map(std::function<T(const SdkValue::Shared&)> fun) {
+                std::vector<T> result;
+                for (size_t i = 0; i < values->size(); i++) {
+                    result.push_back(fun(values->at(i)));
+                }
+                return result;
+            }
+
+            void Each(std::function<void(const SdkValue::Shared&)> fun) {
+                for (size_t i = 0; i < values->size(); i++) {
+                    fun(values->at(i));
+                }
+            }
+
         private:
             SharedValueList values;
     };

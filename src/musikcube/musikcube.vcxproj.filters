@@ -147,6 +147,9 @@
     <ClCompile Include="app\overlay\PreampOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\BrowseOverlays.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -344,6 +347,9 @@
       <Filter>cursespp</Filter>
     </ClInclude>
     <ClInclude Include="app\overlay\PreampOverlay.h">
+      <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\BrowseOverlays.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>
