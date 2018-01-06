@@ -810,7 +810,7 @@ ITrackList* WebSocketServer::QueryTracksByCategory(json& request, int& limit, in
 
         std::string category = options.value(key::category, "");
         int64_t selectedId = options.value<int64_t>(key::id, -1);
-        json& predicates = options.value(key::predicates, json::array());
+        auto predicates = options.value(key::predicates, json::array());
 
         std::string filter = options.value(key::filter, "");
 
@@ -874,7 +874,7 @@ void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& 
         int64_t predicateId = options.value<int64_t>(key::predicate_id, -1LL);
 
         /* multiple predicates */
-        json& predicates = options.value(key::predicates, json::array());
+        auto predicates = options.value(key::predicates, json::array());
 
         if (category.size()) {
             IValueList* result;

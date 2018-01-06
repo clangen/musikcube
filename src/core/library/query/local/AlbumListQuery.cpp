@@ -114,8 +114,6 @@ bool AlbumListQuery::OnRun(Connection& db) {
     category::ReplaceAll(query, "{{regular_predicates}}", regular);
     category::ReplaceAll(query, "{{album_list_filter}}", albumFilter);
 
-    OutputDebugStringA(query.c_str());
-
     Statement stmt(query.c_str(), db);
     Apply(stmt, args);
 
