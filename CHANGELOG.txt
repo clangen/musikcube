@@ -1,3 +1,39 @@
+0.35.0
+
+infastructure:
+* automated Linux builds via CircleCI! (dvdmuckle)
+
+musikcube:
+* added ReplayGain support. settings > replay gain to configure. when support
+  is active, and ReplayGain is applied, a green "RG" symbol will appear in
+  the transport view next to the volume slider.
+* added initial support for FreeBSD using sndio. big thanks to gregf for the
+  support and troubleshooting.
+* exposed extended metadata -- browse by new fields like year, composer,
+  language, etc. press `6` in library > browse view.
+* fixed a couple bugs in the metadata indexer -- extended metadata properties
+  were not always getting scanned and stored properly.
+* fixed build paths so app can be built against MacPorts. (reynhout)
+* fixed a bug where themes were getting clobbered after every reinstall on some
+  platforms. users can now put their custom themes in `~/.musikcube/themes`.
+* made overlay title text alignment consistent across (center horizontal).
+
+musikcore:
+* database and query updates to support track, category, and album queries
+  with multiple predicates. (e.g. all artists with composer=X AND year=Y).
+* new `sndio` output plugin. this is the default output for FreeBSD, and is
+  optional (disabled by default) on Linux.
+* new `ffmpeg_decoder` plugin. not enabled by default, but will probably
+  eventually replace nomad, ogg, mp4, and flac plugins.
+
+server:
+* api support for multi-predicate queries.
+
+musikdroid:
+* fixed bug where non-transcoded audio would not always play properly.
+
+--------------------------------------------------------------------------------
+
 0.31.0
 
 musikcube:
