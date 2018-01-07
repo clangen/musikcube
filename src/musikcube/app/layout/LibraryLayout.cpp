@@ -154,15 +154,11 @@ void LibraryLayout::ShowTrackSearch() {
 
 void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
-
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
-
     this->searchLayout.reset(new SearchLayout(this->playback, this->library));
     this->searchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnSearchResultSelected);
-
     this->trackSearch.reset(new TrackSearchLayout(this->playback, this->library));
-
-    this->transportView.reset(new TransportWindow(this->playback));
+    this->transportView.reset(new TransportWindow(this->library, this->playback));
 
     this->AddWindow(this->transportView);
     this->ShowBrowse();

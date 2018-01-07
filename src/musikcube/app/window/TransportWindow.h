@@ -60,7 +60,10 @@ namespace musik {
                     FocusTime = 2
                 };
 
-                TransportWindow(musik::core::audio::PlaybackService& playback);
+                TransportWindow(
+                    musik::core::ILibraryPtr library,
+                    musik::core::audio::PlaybackService& playback);
+
                 virtual ~TransportWindow();
 
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
@@ -90,8 +93,11 @@ namespace musik {
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
                 void OnPlaybackShuffled(bool shuffled);
+                void UpdateReplayGainState();
 
                 bool paused;
+                bool hasReplayGain;
+                musik::core::ILibraryPtr library;
                 musik::core::audio::ITransport& transport;
                 musik::core::audio::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;

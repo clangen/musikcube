@@ -44,6 +44,8 @@
 
 #include <core/debug.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/query/local/ReplayGainQuery.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/runtime/Message.h>
 
 #include <app/util/Hotkeys.h>
@@ -304,12 +306,16 @@ static inline bool dec(const std::string& kn) {
     return (Hotkeys::Is(Hotkeys::Left, kn));
 }
 
-TransportWindow::TransportWindow(musik::core::audio::PlaybackService& playback)
+TransportWindow::TransportWindow(
+    musik::core::ILibraryPtr library,
+    musik::core::audio::PlaybackService& playback)
 : Window(nullptr)
+, library(library)
 , displayCache(new TransportDisplayCache())
 , playback(playback)
 , transport(playback.GetTransport())
-, focus(FocusNone) {
+, focus(FocusNone)
+, hasReplayGain(false) {
     Strings.Initialize();
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
@@ -418,6 +424,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
     this->lastTime = DEFAULT_TIME;
+    this->UpdateReplayGainState();
     DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
@@ -439,6 +446,30 @@ void TransportWindow::OnPlaybackShuffled(bool shuffled) {
 
 void TransportWindow::OnRedraw() {
     this->Update();
+}
+
+void TransportWindow::UpdateReplayGainState() {
+    using Mode = prefs::values::ReplayGainMode;
+    using Query = db::local::ReplayGainQuery;
+
+    this->hasReplayGain = false;
+    auto prefs = Preferences::ForComponent(prefs::components::Playback);
+
+    prefs::values::ReplayGainMode mode = (Mode)
+        prefs->GetInt(prefs::keys::ReplayGainMode.c_str(), (int)Mode::Disabled);
+
+    if (mode != Mode::Disabled) {
+        if (this->currentTrack) {
+            auto query = std::make_shared<Query>(this->currentTrack->GetId());
+            if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
+                auto result = query->GetResult();
+
+                this->hasReplayGain = result && (
+                    result->albumGain != 1.0f || result->albumPeak != 1.0f ||
+                    result->trackGain != 1.0f || result->albumPeak != 1.0f);
+            }
+        }
+    }
 }
 
 void TransportWindow::Update(TimeMode timeMode) {
@@ -513,7 +544,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         volume += boost::str(boost::format(
             " %d") % (int)std::round(this->transport.Volume() * 100));
 
-        volume += "%%  ";
+        volume += this->hasReplayGain ? "%% " : "%%  ";
     }
 
     /* repeat mode setup */
@@ -577,8 +608,11 @@ void TransportWindow::Update(TimeMode timeMode) {
     const std::string currentTime = musik::glue::duration::Duration(
         std::min(secondsCurrent, displayCache->secondsTotal));
 
+    const std::string replayGain = this->hasReplayGain ? "RG  " : "";
+
     int bottomRowControlsWidth =
         displayCache->Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
+        u8cols(replayGain) +
         u8cols(currentTime) + 1 + /* +1 for space padding */
         /* timer track with thumb */
         1 + displayCache->totalTimeCols + /* +1 for space padding */
@@ -607,6 +641,10 @@ void TransportWindow::Update(TimeMode timeMode) {
     ON(c, volumeAttrs);
     checked_wprintw(c, volume.c_str());
     OFF(c, volumeAttrs);
+
+    ON(c, gb);
+    checked_wprintw(c, "%s", replayGain.c_str());
+    OFF(c, gb);
 
     ON(c, currentTimeAttrs); /* blink if paused */
     checked_wprintw(c, "%s ", currentTime.c_str());
