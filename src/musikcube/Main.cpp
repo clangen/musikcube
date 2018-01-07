@@ -168,7 +168,6 @@ int main(int argc, char* argv[]) {
         /* theme */
         std::string colorTheme = prefs->GetString(musik::cube::prefs::keys::ColorTheme);
         if (colorTheme.size()) {
-            colorTheme = GetApplicationDirectory() + "/themes/" + colorTheme + ".json";
             app.SetColorTheme(colorTheme);
         }
 

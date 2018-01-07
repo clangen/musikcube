@@ -115,6 +115,15 @@ static std::string getOutputDeviceName() {
     return deviceName;
 }
 
+static std::string resolveThemeName(const std::string& themePath) {
+    const boost::filesystem::path p(themePath);
+    if (p.has_extension() && p.extension().string() == ".json") {
+        std::string fn = p.filename().string();
+        return fn.substr(0, fn.rfind("."));
+    }
+    return _TSTR("settings_default_theme_name");
+}
+
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
@@ -564,7 +573,9 @@ void SettingsLayout::LoadPreferences() {
         colorTheme = _TSTR("settings_8color_theme_name");
     }
 
-    this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + colorTheme);
+    this->themeDropdown->SetText(
+        arrow + _TSTR("settings_color_theme") +
+        resolveThemeName(colorTheme));
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->CheckChanged.disconnect(this);

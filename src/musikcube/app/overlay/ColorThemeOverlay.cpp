@@ -58,6 +58,11 @@ using namespace boost::filesystem;
 
 using Callback = std::function<void()>;
 
+struct ThemeInfo {
+    std::string name;
+    std::string path;
+};
+
 static void showNeedsRestart(Callback cb = Callback()) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -73,8 +78,23 @@ static void showNeedsRestart(Callback cb = Callback()) {
     App::Overlays().Push(dialog);
 }
 
-static std::string ThemesDirectory() {
-    return musik::core::GetApplicationDirectory() + "/themes/";
+static void indexThemes(
+    const std::string& directory,
+    std::shared_ptr<std::vector<ThemeInfo>> themes)
+{
+    path colorPath(directory);
+    if (exists(colorPath)) {
+        directory_iterator end;
+        for (directory_iterator file(colorPath); file != end; file++) {
+            const path& p = file->path();
+
+            if (p.has_extension() && p.extension().string() == ".json") {
+                std::string fn = p.filename().string();
+                std::string name = fn.substr(0, fn.rfind("."));
+                themes->push_back({ name, p.string() });
+            }
+        }
+    }
 }
 
 ColorThemeOverlay::ColorThemeOverlay() {
@@ -96,27 +116,21 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     adapter->AddEntry(_TSTR("settings_default_theme_name"));
     adapter->AddEntry(_TSTR("settings_8color_theme_name"));
 
-    std::shared_ptr<std::vector<std::string>> themes(new std::vector<std::string>());
+    std::shared_ptr<std::vector<ThemeInfo>> themes(new std::vector<ThemeInfo>());
+    indexThemes(musik::core::GetApplicationDirectory() + "/themes/", themes);
+    indexThemes(musik::core::GetDataDirectory() + "/themes/", themes);
 
-    path colorPath(ThemesDirectory());
-    if (exists(colorPath)) {
-        int i = 2;
-        directory_iterator end;
-        for (directory_iterator file(colorPath); file != end; file++) {
-            const path& p = file->path();
+    std::sort(
+        themes->begin(),
+        themes->end(),
+        [](const ThemeInfo& a, const ThemeInfo& b) -> bool {
+            return a.name < b.name;
+        });
 
-            if (p.has_extension() && p.extension().string() == ".json") {
-                std::string fn = p.filename().string();
-                fn = fn.substr(0, fn.rfind("."));
-                themes->push_back(fn);
-                adapter->AddEntry(fn);
-
-                if (currentTheme == fn) {
-                    selectedIndex = i;
-                }
-
-                ++i;
-            }
+    for (size_t i = 0; i < themes->size(); i++) {
+        adapter->AddEntry(themes->at(i).name);
+        if (themes->at(i).path == currentTheme) {
+            selectedIndex = i + 2;
         }
     }
 
@@ -149,11 +163,11 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
                     }
                 }
                 else {
-                    std::string selected = themes->at(index - 2).c_str();
+                    std::string selected = themes->at(index - 2).path;
                     if (selected != currentTheme) {
                         prefs->SetString(cube::prefs::keys::ColorTheme, selected.c_str());
                         prefs->SetBool(cube::prefs::keys::DisableCustomColors, false);
-                        Colors::SetTheme(ThemesDirectory() + selected + ".json");
+                        Colors::SetTheme(selected);
 
                         if (disableCustomColors) {
                             showNeedsRestart();
