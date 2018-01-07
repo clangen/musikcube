@@ -36,8 +36,6 @@
 #include <algorithm>
 #include "ListWindow.h"
 
-#define WIN32_SCROLLER 0x258A
-
 using namespace cursespp;
 
 typedef IScrollAdapter::ScrollPosition ScrollPos;
@@ -94,15 +92,9 @@ void ListWindow::DecorateFrame() {
 
             for (int i = 1; i < height - 1; i++) {
                 wmove(frame, i, this->GetWidth() - 1);
-#ifdef WIN32
-                waddch(frame, (i == offset) ? WIN32_SCROLLER : ACS_VLINE);
-#elif defined __APPLE__
                 if (i == offset) wattron(frame, A_REVERSE);
                 waddch(frame, (i == offset) ? ' ' : ACS_VLINE);
                 if (i == offset) wattroff(frame, A_REVERSE);
-#else
-                wadd_wch(frame, (i == offset) ? WACS_D_VLINE : WACS_VLINE);
-#endif
             }
         }
     }
