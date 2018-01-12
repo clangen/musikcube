@@ -78,7 +78,7 @@ using namespace musik::core::audio;
 using namespace musik::cube;
 using namespace cursespp;
 
-#define MIN_WIDTH 48
+#define MIN_WIDTH 54
 #define MIN_HEIGHT 12
 
 #ifdef WIN32
