@@ -72,6 +72,8 @@ using namespace musik::glue;
 using namespace std::chrono;
 using namespace cursespp;
 
+using ReplayGainMode = musik::core::prefs::values::ReplayGainMode;
+
 #define REFRESH_INTERVAL_MS 1000
 #define DEFAULT_TIME -1.0f
 #define TIME_SLOP 3.0f
@@ -311,6 +313,7 @@ TransportWindow::TransportWindow(
     musik::core::audio::PlaybackService& playback)
 : Window(nullptr)
 , library(library)
+, replayGainMode(prefs::values::ReplayGainMode::Disabled)
 , displayCache(new TransportDisplayCache())
 , playback(playback)
 , transport(playback.GetTransport())
@@ -325,6 +328,7 @@ TransportWindow::TransportWindow(
     this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
     this->lastTime = DEFAULT_TIME;
+    this->UpdateReplayGainState();
 }
 
 TransportWindow::~TransportWindow() {
@@ -452,13 +456,14 @@ void TransportWindow::UpdateReplayGainState() {
     using Mode = prefs::values::ReplayGainMode;
     using Query = db::local::ReplayGainQuery;
 
-    this->hasReplayGain = false;
     auto prefs = Preferences::ForComponent(prefs::components::Playback);
 
-    prefs::values::ReplayGainMode mode = (Mode)
+    this->replayGainMode = (Mode)
         prefs->GetInt(prefs::keys::ReplayGainMode.c_str(), (int)Mode::Disabled);
 
-    if (mode != Mode::Disabled) {
+    this->hasReplayGain = false;
+
+    if (this->replayGainMode != Mode::Disabled) {
         if (this->currentTrack) {
             auto query = std::make_shared<Query>(this->currentTrack->GetId());
             if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
@@ -485,9 +490,11 @@ void TransportWindow::Update(TimeMode timeMode) {
     bool paused = (transport.GetPlaybackState() == PlaybackPaused);
     bool stopped = (transport.GetPlaybackState() == PlaybackStopped);
     bool muted = transport.IsMuted();
+    bool replayGainEnabled = (this->replayGainMode != prefs::values::ReplayGainMode::Disabled);
 
     int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     int64_t disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
+    int64_t bright = COLOR_PAIR(CURSESPP_TEXT_DEFAULT);
 
     int64_t volumeAttrs = CURSESPP_DEFAULT_COLOR;
     if (this->focus == FocusVolume) {
@@ -544,7 +551,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         volume += boost::str(boost::format(
             " %d") % (int)std::round(this->transport.Volume() * 100));
 
-        volume += this->hasReplayGain ? "%% " : "%%  ";
+        volume += replayGainEnabled ? "%% " : "%%  ";
     }
 
     /* repeat mode setup */
@@ -608,11 +615,11 @@ void TransportWindow::Update(TimeMode timeMode) {
     const std::string currentTime = musik::glue::duration::Duration(
         std::min(secondsCurrent, displayCache->secondsTotal));
 
-    const std::string replayGain = this->hasReplayGain ? "RG  " : "";
+    const std::string replayGain = replayGainEnabled  ? "rg" : "";
 
     int bottomRowControlsWidth =
         displayCache->Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
-        u8cols(replayGain) +
+        (replayGainEnabled ? (u8cols(replayGain) + 4) : 0) +  /* [] brackets */
         u8cols(currentTime) + 1 + /* +1 for space padding */
         /* timer track with thumb */
         1 + displayCache->totalTimeCols + /* +1 for space padding */
@@ -642,9 +649,12 @@ void TransportWindow::Update(TimeMode timeMode) {
     checked_wprintw(c, volume.c_str());
     OFF(c, volumeAttrs);
 
-    ON(c, gb);
-    checked_wprintw(c, "%s", replayGain.c_str());
-    OFF(c, gb);
+    if (replayGainEnabled) {
+        auto rgStyle = this->hasReplayGain ? gb : disabled;
+        checked_wprintw(c, "[");
+        ON(c, rgStyle); checked_wprintw(c, "%s", replayGain.c_str()); OFF(c, rgStyle);
+        checked_wprintw(c, "]  ");
+    }
 
     ON(c, currentTimeAttrs); /* blink if paused */
     checked_wprintw(c, "%s ", currentTime.c_str());

@@ -347,16 +347,16 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
                 buffer = player->stream->GetNextProcessedOutputBuffer();
 
-                /* apply replay gain, if specified */
-                if (gain != 1.0f) {
-                    float* samples = buffer->BufferPointer();
-                    for (long i = 0; i < buffer->Samples(); i++) {
-                        samples[i] *= gain;
-                    }
-                }
-
                 /* lock it down until it's processed */
                 if (buffer) {
+                    /* apply replay gain, if specified */
+                    if (gain != 1.0f) {
+                        float* samples = buffer->BufferPointer();
+                        for (long i = 0; i < buffer->Samples(); i++) {
+                            samples[i] *= gain;
+                        }
+                    }
+
                     ++player->pendingBufferCount;
                 }
             }

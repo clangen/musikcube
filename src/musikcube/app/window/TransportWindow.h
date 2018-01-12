@@ -39,6 +39,7 @@
 #include <core/library/track/Track.h>
 #include <core/runtime/IMessage.h>
 #include <core/audio/PlaybackService.h>
+#include <core/support/PreferenceKeys.h>
 #include <sigslot/sigslot.h>
 
 namespace musik {
@@ -97,6 +98,7 @@ namespace musik {
 
                 bool paused;
                 bool hasReplayGain;
+                musik::core::prefs::values::ReplayGainMode replayGainMode;
                 musik::core::ILibraryPtr library;
                 musik::core::audio::ITransport& transport;
                 musik::core::audio::PlaybackService& playback;
