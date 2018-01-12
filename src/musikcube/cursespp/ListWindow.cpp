@@ -71,6 +71,7 @@ void ListWindow::Invalidate() {
 }
 
 void ListWindow::DecorateFrame() {
+#ifndef __FreeBSD__
     if (this->showScrollbar) {
         int height = this->GetHeight();
         auto *adapter = &this->GetScrollAdapter();
@@ -98,6 +99,7 @@ void ListWindow::DecorateFrame() {
             }
         }
     }
+#endif
 }
 
 void ListWindow::ScrollToTop() {
