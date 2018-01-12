@@ -9,6 +9,7 @@ musikcube:
   the transport view next to the volume slider.
 * added initial support for FreeBSD using sndio. big thanks to gregf for the
   support and troubleshooting.
+* added scroll indicators to list windows (disabled on FreeBSD for now)
 * exposed extended metadata -- browse by new fields like year, composer,
   language, etc. press `6` in library > browse view.
 * fixed a couple bugs in the metadata indexer -- extended metadata properties
