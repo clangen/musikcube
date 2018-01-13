@@ -103,12 +103,11 @@ endif()
 add_dependencies(taglibreader taglib)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  # alsa, pulseuadio on by default. sndio off by default.
   add_subdirectory(src/plugins/alsaout)
+  add_subdirectory(src/plugins/pulseout)
   if (${ENABLE_SNDIO} MATCHES "true")
     add_subdirectory(src/plugins/sndioout) 
   endif()
-  add_subdirectory(src/plugins/pulseout)
 elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   add_subdirectory(src/plugins/sndioout)
   if (${ENABLE_PULSEAUDIO} MATCHES "true")

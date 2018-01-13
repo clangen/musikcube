@@ -1,6 +1,6 @@
 %define name musikcube
 %define build_timestamp %{lua: print(os.date("%Y%m%d"))}
-%define version 0.35.0
+%define version 0.35.1
 Name: %{name}           
 Version: %{version}     
 Release: %{dist}
@@ -21,7 +21,7 @@ A cross-platform, terminal-based audio engine, library, player and server writte
 
 
 %build
-cmake -D CMAKE_INSTALL_PREFIX:PATH=%{_prefix} .
+cmake -D CMAKE_INSTALL_PREFIX:PATH=%{_prefix} -DCMAKE_BUILD_TYPE=Release .
 make -j2
 cmake .
 
