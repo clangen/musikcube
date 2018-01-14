@@ -9,7 +9,6 @@ jobs:
       - run: apt-get install -y build-essential clang cmake libboost-thread1.58-dev libboost-system1.58-dev libboost-filesystem1.58-dev libboost-date-time1.58-dev libboost-atomic1.58-dev libboost-chrono1.58-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=xenial -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
-      - run: cmake .
       - run: make package
       - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
@@ -25,7 +24,6 @@ jobs:
       - run: apt-get install -y build-essential clang cmake libboost-thread1.63-dev libboost-system1.63-dev libboost-filesystem1.63-dev libboost-date-time1.63-dev libboost-atomic1.63-dev libboost-chrono1.63-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=artful -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
-      - run: cmake .
       - run: make package
       - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
@@ -41,7 +39,6 @@ jobs:
       - run: apt-get -y install build-essential clang cmake libboost-thread1.62-dev libboost-system1.62-dev libboost-filesystem1.62-dev libboost-date-time1.62-dev libboost-atomic1.62-dev libboost-chrono1.62-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=zesty -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
-      - run: cmake .
       - run: make package
       - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/

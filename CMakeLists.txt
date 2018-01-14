@@ -102,19 +102,26 @@ endif()
 
 add_dependencies(taglibreader taglib)
 
+add_dependencies(musikcube musikcore musikglue taglibreader nullout server httpdatastream stockencoders)
+
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/plugins/alsaout)
   add_subdirectory(src/plugins/pulseout)
+  add_dependencies(musikcube alsaout pulseout)
   if (${ENABLE_SNDIO} MATCHES "true")
     add_subdirectory(src/plugins/sndioout) 
+    add_dependencies(musikcube sndioout)
   endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   add_subdirectory(src/plugins/sndioout)
+  add_dependencies(musikcube sndioout)
   if (${ENABLE_PULSEAUDIO} MATCHES "true")
     add_subdirectory(src/plugins/pulseout) # disabled by default
+    add_dependencies(musikcube pulseout)
   endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   add_subdirectory(src/plugins/coreaudioout)
+  add_dependencies(musikcube coreaudioout)
 endif()
 
 # install the binary
@@ -191,3 +198,9 @@ if (GENERATE_DEB MATCHES "1")
     include(CPack)
   endif()
 endif()
+
+# run `cmake .` again to pick up build plugin build artifacts that we need
+# to file glob in. these won't be picked up on the initial build because
+# they don't yet exist!
+add_custom_target(postbuild ALL DEPENDS musikcube)
+add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)

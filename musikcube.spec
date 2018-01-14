@@ -23,7 +23,6 @@ A cross-platform, terminal-based audio engine, library, player and server writte
 %build
 cmake -D CMAKE_INSTALL_PREFIX:PATH=%{_prefix} -DCMAKE_BUILD_TYPE=Release .
 make -j2
-cmake .
 
 %install
 make install DESTDIR=%{buildroot}
