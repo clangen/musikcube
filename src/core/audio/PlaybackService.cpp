@@ -582,19 +582,22 @@ void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t in
 
 void PlaybackService::ReloadOutput() {
     auto state = this->GetPlaybackState();
-    auto index = this->GetIndex();
-    double time = this->GetPosition();
-    this->Stop();
-    this->transport.ReloadOutput();
 
-    if (index != NO_POSITION) {
-        this->Play(index);
-        if (time > 0.0f) {
-            this->transport.SetPosition(time);
-        }
+    if (state != PlaybackStopped) {
+        auto index = this->GetIndex();
+        double time = this->GetPosition();
+        this->Stop();
+        this->transport.ReloadOutput();
 
-        if (state == PlaybackPaused) {
-            this->transport.Pause();
+        if (index != NO_POSITION) {
+            this->Play(index);
+            if (time > 0.0f) {
+                this->transport.SetPosition(time);
+            }
+
+            if (state == PlaybackPaused) {
+                this->transport.Pause();
+            }
         }
     }
 }
@@ -1015,7 +1018,7 @@ std::string PlaybackService::UriAtIndex(size_t index) {
 }
 
 ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
-    using Mode = values::ReplayGainMode;
+    using Mode = ReplayGainMode;
 
     ITransport::Gain result;
 
@@ -1023,8 +1026,7 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
     result.preamp = powf(10.0f, (preampDb / 20.0f));
     result.peakValid = false;
 
-    values::ReplayGainMode mode = (Mode)
-        prefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+    Mode mode = (Mode) prefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
 
     if (mode != Mode::Disabled && index < this->playlist.Count()) {
         int64_t id = this->playlist.Get(index)->GetId();

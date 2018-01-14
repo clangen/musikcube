@@ -98,7 +98,7 @@ namespace musik {
 
                 bool paused;
                 bool hasReplayGain;
-                musik::core::prefs::values::ReplayGainMode replayGainMode;
+                musik::core::sdk::ReplayGainMode replayGainMode;
                 musik::core::ILibraryPtr library;
                 musik::core::audio::ITransport& transport;
                 musik::core::audio::PlaybackService& playback;

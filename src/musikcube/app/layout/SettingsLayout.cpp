@@ -224,7 +224,7 @@ void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label)
 }
 
 void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
-    PreampOverlay::Show([this]() { this->LoadPreferences(); });
+    PreampOverlay::Show(this->playback, [this]() { this->LoadPreferences(); });
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {

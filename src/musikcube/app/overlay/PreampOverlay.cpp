@@ -85,13 +85,14 @@ static void applyInputOverlayStyle(TextInput& input) {
 using Callback = PreampOverlay::Callback;
 
 static std::string getReplayGainMode(std::shared_ptr<Preferences> prefs) {
-    using Mode = core::prefs::values::ReplayGainMode;
+    ReplayGainMode mode = (ReplayGainMode)prefs->GetInt(
+        core::prefs::keys::ReplayGainMode.c_str(),
+        (int)ReplayGainMode::Disabled);
 
-    Mode mode = (Mode)prefs->GetInt(core::prefs::keys::ReplayGainMode.c_str(), (int)Mode::Disabled);
     switch (mode) {
-        case Mode::Disabled: return _TSTR("settings_replay_gain_mode_disabled");
-        case Mode::Album: return _TSTR("settings_replay_gain_mode_album");
-        case Mode::Track: return _TSTR("settings_replay_gain_mode_track");
+        case ReplayGainMode::Disabled: return _TSTR("settings_replay_gain_mode_disabled");
+        case ReplayGainMode::Album: return _TSTR("settings_replay_gain_mode_album");
+        case ReplayGainMode::Track: return _TSTR("settings_replay_gain_mode_track");
     }
 
     return _TSTR("settings_replay_gain_mode_disabled");
@@ -128,8 +129,8 @@ static float getFloatFromTextInput(TextInput* input) {
     return INVALID_PREAMP_GAIN;
 }
 
-PreampOverlay::PreampOverlay(Callback callback)
-    : OverlayBase()
+PreampOverlay::PreampOverlay(IPlaybackService& playback, Callback callback)
+: OverlayBase(), playback(playback)
 {
     this->callback = callback;
     this->prefs = Preferences::ForComponent(prefs::components::Playback);
@@ -209,11 +210,14 @@ void PreampOverlay::Layout() {
 }
 
 void PreampOverlay::OnReplayGainPressed(cursespp::TextLabel* label) {
-    PlaybackOverlays::ShowReplayGainOverlay([this]() { this->Load(); });
+    PlaybackOverlays::ShowReplayGainOverlay([this]() {
+        this->playback.ReloadOutput();
+        this->Load();
+    });
 }
 
-void PreampOverlay::Show(Callback callback) {
-    std::shared_ptr<PreampOverlay> overlay(new PreampOverlay(callback));
+void PreampOverlay::Show(IPlaybackService& playback, Callback callback) {
+    std::shared_ptr<PreampOverlay> overlay(new PreampOverlay(playback, callback));
     App::Overlays().Push(overlay);
 }
 

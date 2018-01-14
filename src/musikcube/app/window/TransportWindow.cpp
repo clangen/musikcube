@@ -72,8 +72,6 @@ using namespace musik::glue;
 using namespace std::chrono;
 using namespace cursespp;
 
-using ReplayGainMode = musik::core::prefs::values::ReplayGainMode;
-
 #define REFRESH_INTERVAL_MS 1000
 #define DEFAULT_TIME -1.0f
 #define TIME_SLOP 3.0f
@@ -313,7 +311,7 @@ TransportWindow::TransportWindow(
     musik::core::audio::PlaybackService& playback)
 : Window(nullptr)
 , library(library)
-, replayGainMode(prefs::values::ReplayGainMode::Disabled)
+, replayGainMode(ReplayGainMode::Disabled)
 , displayCache(new TransportDisplayCache())
 , playback(playback)
 , transport(playback.GetTransport())
@@ -453,13 +451,13 @@ void TransportWindow::OnRedraw() {
 }
 
 void TransportWindow::UpdateReplayGainState() {
-    using Mode = prefs::values::ReplayGainMode;
+    using Mode = ReplayGainMode;
     using Query = db::local::ReplayGainQuery;
 
     auto prefs = Preferences::ForComponent(prefs::components::Playback);
 
     this->replayGainMode = (Mode)
-        prefs->GetInt(prefs::keys::ReplayGainMode.c_str(), (int)Mode::Disabled);
+        prefs->GetInt(prefs::keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
 
     this->hasReplayGain = false;
 
@@ -490,7 +488,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     bool paused = (transport.GetPlaybackState() == PlaybackPaused);
     bool stopped = (transport.GetPlaybackState() == PlaybackStopped);
     bool muted = transport.IsMuted();
-    bool replayGainEnabled = (this->replayGainMode != prefs::values::ReplayGainMode::Disabled);
+    bool replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
 
     int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     int64_t disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);

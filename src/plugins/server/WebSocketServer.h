@@ -156,6 +156,8 @@ class WebSocketServer {
         void RespondWithRunIndexer(connection_hdl connection, json& request);
         void RespondWithListOutputDrivers(connection_hdl connection, json& request);
         void RespondWithSetDefaultOutputDriver(connection_hdl connection, json& request);
+        void RespondWithGetGainSettings(connection_hdl connection, json& request);
+        void RespondWithUpdateGainSettings(connection_hdl connection, json& request);
 
         void BroadcastPlaybackOverview();
         void BroadcastPlayQueueChanged();

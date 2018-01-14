@@ -277,7 +277,7 @@ void PlaybackOverlays::ShowReplayGainOverlay(std::function<void()> callback) {
 
     auto selectedIndex = prefs->GetInt(
         prefs::keys::ReplayGainMode.c_str(),
-        (int) prefs::values::ReplayGainMode::Disabled);
+        (int) ReplayGainMode::Disabled);
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -285,10 +285,10 @@ void PlaybackOverlays::ShowReplayGainOverlay(std::function<void()> callback) {
         .SetTitle(_TSTR("settings_replay_gain_title"))
         .SetSelectedIndex((size_t) selectedIndex)
         .SetItemSelectedCallback(
-            [callback, prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            [callback, selectedIndex, prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 prefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) index);
                 prefs->Save();
-                if (callback) {
+                if (selectedIndex != index && callback) {
                     callback();
                 }
             });

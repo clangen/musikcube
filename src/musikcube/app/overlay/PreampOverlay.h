@@ -37,6 +37,7 @@
 #include <functional>
 
 #include <core/sdk/IPlugin.h>
+#include <core/sdk/IPlaybackService.h>
 #include <core/support/Preferences.h>
 
 #include <cursespp/Checkbox.h>
@@ -55,7 +56,9 @@ namespace musik {
         public:
             using Callback = std::function<void()>;
 
-            static void Show(Callback callback);
+            static void Show(
+                musik::core::sdk::IPlaybackService& playback,
+                Callback callback);
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
@@ -63,7 +66,9 @@ namespace musik {
             void OnReplayGainPressed(cursespp::TextLabel* label);
 
         private:
-            PreampOverlay(Callback callback);
+            PreampOverlay(
+                musik::core::sdk::IPlaybackService& playback,
+                Callback callback);
 
             void RecalculateSize();
             void InitViews();
@@ -73,6 +78,7 @@ namespace musik {
             Callback callback;
             int width, height, x, y;
 
+            musik::core::sdk::IPlaybackService& playback;
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<cursespp::TextLabel> titleLabel, preampLabel, replayGainDropdown;
             std::shared_ptr<cursespp::TextInput> preampInput;

@@ -36,6 +36,7 @@
 
 #include <functional>
 #include <glue/audio/MasterTransport.h>
+#include <core/sdk/IPlaybackService.h>
 
 namespace musik {
     namespace cube {

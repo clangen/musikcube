@@ -102,6 +102,12 @@ namespace musik {
                 ScanRollback
             };
 
+            enum class ReplayGainMode : int {
+                Disabled = 0,
+                Track = 1,
+                Album = 2
+            };
+
             namespace category {
                 static const char* Album = "album";
                 static const char* Artist = "artist";

@@ -44,6 +44,7 @@
 #include <core/audio/Streams.h>
 #include <core/audio/Outputs.h>
 #include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/library/LocalSimpleDataProvider.h>
 
 #include <core/sdk/IIndexerNotifier.h>
@@ -62,6 +63,7 @@ typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 static ILibraryPtr library;
 static IPlaybackService* playback = nullptr;
 static LocalSimpleDataProvider* dataProvider = nullptr;
+static std::shared_ptr<Preferences> playbackPrefs;
 
 static class Environment : public IEnvironment {
     public:
@@ -129,7 +131,7 @@ static class Environment : public IEnvironment {
                 std::string currentDeviceId = currentDevice ? currentDevice->Id() : "";
                 if (newName != currentName || newDeviceId != currentDeviceId) {
                     outputs::SelectOutput(output);
-                    if (playback) {
+                    if (::playback) {
                         playback->ReloadOutput();
                     }
                 }
@@ -137,14 +139,51 @@ static class Environment : public IEnvironment {
         }
 
         virtual void ReindexMetadata() override {
-            if (library) {
-                library->Indexer()->Schedule(IIndexer::SyncType::Local);
+            if (::library) {
+                ::library->Indexer()->Schedule(IIndexer::SyncType::Local);
             }
         }
 
         virtual void RebuildMetadata() override {
-            if (library) {
-                library->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
+            if (::library) {
+                ::library->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
+            }
+        }
+
+        virtual ReplayGainMode GetReplayGainMode() override {
+            if (::playbackPrefs) {
+                return (ReplayGainMode) ::playbackPrefs->GetInt(
+                    prefs::keys::ReplayGainMode.c_str(),
+                    (int) ReplayGainMode::Disabled);
+            }
+            return ReplayGainMode::Disabled;
+        }
+
+        virtual void SetReplayGainMode(ReplayGainMode mode) override {
+            if (::playbackPrefs) {
+                ::playbackPrefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) mode);
+            }
+        }
+
+        virtual float GetPreampGain() override {
+            if (::playbackPrefs) {
+                return (float) ::playbackPrefs->GetDouble(
+                    prefs::keys::PreampDecibels.c_str(), 1.0f);
+            }
+            return 1.0f;
+        }
+
+        virtual void SetPreampGain(float gain) override {
+            if (::playbackPrefs) {
+                if (gain > 20.0f) { gain = 20.0f; }
+                if (gain < -20.0f) { gain = -20.0f; }
+                ::playbackPrefs->SetDouble(prefs::keys::PreampDecibels.c_str(), gain);
+            }
+        }
+
+        virtual void ReloadPlaybackOutput() override {
+            if (playback) {
+                playback->ReloadOutput();
             }
         }
 } environment;
@@ -160,6 +199,7 @@ namespace musik { namespace core { namespace plugin {
         ::library = library;
         ::playback = playback;
         ::dataProvider = new LocalSimpleDataProvider(library);
+        ::playbackPrefs = Preferences::ForComponent(prefs::components::Playback);
 
         PluginFactory::Instance().QueryFunction<SetSimpleDataProvider>(
             "SetSimpleDataProvider",
@@ -200,6 +240,7 @@ namespace musik { namespace core { namespace plugin {
         ::dataProvider = nullptr;
         ::library.reset();
         ::playback = nullptr;
+        ::playbackPrefs.reset();
 
         /* indexer */
         PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(

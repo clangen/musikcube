@@ -131,6 +131,8 @@ namespace key {
     static const std::string devices = "devices";
     static const std::string device_name = "device_name";
     static const std::string device_id = "device_id";
+    static const std::string replaygain_mode = "replaygain_mode";
+    static const std::string preamp_gain = "preamp_gain";
 }
 
 namespace value {
@@ -184,6 +186,8 @@ namespace request {
     static const std::string run_indexer = "run_indexer";
     static const std::string list_output_drivers = "list_output_drivers";
     static const std::string set_default_output_driver = "set_default_output_driver";
+    static const std::string get_gain_settings = "get_gain_settings";
+    static const std::string update_gain_settings = "update_gain_settings";
 }
 
 namespace fragment {
@@ -208,6 +212,12 @@ static auto REPEAT_MODE_TO_STRING = makeBimap<musik::core::sdk::RepeatMode, std:
     { musik::core::sdk::RepeatNone, "none" },
     { musik::core::sdk::RepeatTrack, "track" },
     { musik::core::sdk::RepeatList, "list" }
+});
+
+static auto REPLAYGAIN_MODE_TO_STRING = makeBimap<musik::core::sdk::ReplayGainMode, std::string>({
+    { musik::core::sdk::ReplayGainMode::Disabled, "disabled" },
+    { musik::core::sdk::ReplayGainMode::Album, "album" },
+    { musik::core::sdk::ReplayGainMode::Track, "track" },
 });
 
 static const int ApiVersion = 12;

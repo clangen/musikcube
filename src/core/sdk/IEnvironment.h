@@ -54,6 +54,11 @@ namespace musik { namespace core { namespace sdk {
             virtual size_t GetOutputCount() = 0;
             virtual IOutput* GetOutputAtIndex(size_t index) = 0;
             virtual IOutput* GetOutputWithName(const char* name) = 0;
+            virtual ReplayGainMode GetReplayGainMode() = 0;
+            virtual void SetReplayGainMode(ReplayGainMode mode) = 0;
+            virtual float GetPreampGain() = 0;
+            virtual void SetPreampGain(float gain) = 0;
+            virtual void ReloadPlaybackOutput() = 0;
             virtual void SetDefaultOutput(IOutput* output) = 0;
             virtual void ReindexMetadata() = 0;
             virtual void RebuildMetadata() = 0;

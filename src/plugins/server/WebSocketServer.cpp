@@ -451,6 +451,14 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithSetDefaultOutputDriver(connection, request);
             return;
         }
+        else if (name == request::get_gain_settings) {
+            this->RespondWithGetGainSettings(connection, request);
+            return;
+        }
+        else if (name == request::update_gain_settings) {
+            this->RespondWithUpdateGainSettings(connection, request);
+            return;
+        }
     }
 
     this->RespondWithInvalidRequest(connection, name, id);
@@ -1201,6 +1209,47 @@ void WebSocketServer::RespondWithSetDefaultOutputDriver(connection_hdl connectio
         }
     }
     this->RespondWithFailure(connection, request);
+}
+
+void WebSocketServer::RespondWithGetGainSettings(connection_hdl connection, json& request) {
+    auto replayGainMode = context.environment->GetReplayGainMode();
+    float preampGain = context.environment->GetPreampGain();
+
+    this->RespondWithOptions(connection, request, {
+        { key::replaygain_mode, REPLAYGAIN_MODE_TO_STRING.left.find(replayGainMode)->second },
+        { key::preamp_gain, preampGain }
+    });
+}
+
+void WebSocketServer::RespondWithUpdateGainSettings(connection_hdl connection, json& request) {
+    bool reload = false;
+
+    auto& options = request[message::options];
+
+    float currentGain = context.environment->GetPreampGain();
+    auto currentMode = context.environment->GetReplayGainMode();
+    auto currentModeString = REPLAYGAIN_MODE_TO_STRING.left.find(currentMode)->second;
+
+    ReplayGainMode newMode = REPLAYGAIN_MODE_TO_STRING.right.find(
+        options.value(key::replaygain_mode, currentModeString))->second;
+
+    float newGain = options.value(key::preamp_gain, currentGain);
+
+    if (newMode != currentMode) {
+        context.environment->SetReplayGainMode(newMode);
+        reload = true;
+    }
+
+    if (newGain != currentGain) {
+        context.environment->SetPreampGain(newGain);
+        reload = true;
+    }
+
+    if (reload) {
+        context.environment->ReloadPlaybackOutput();
+    }
+
+    this->RespondWithSuccess(connection, request);
 }
 
 void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connection, json& request) {
