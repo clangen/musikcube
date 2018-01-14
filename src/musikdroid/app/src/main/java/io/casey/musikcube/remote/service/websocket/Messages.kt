@@ -31,7 +31,9 @@ class Messages {
         RenamePlaylist("rename_playlist"),
         DeletePlaylist("delete_playlist"),
         AppendToPlaylist("append_to_playlist"),
-        RemoveTracksFromPlaylist("remove_tracks_from_playlist");
+        RemoveTracksFromPlaylist("remove_tracks_from_playlist"),
+        ListOutputDrivers("list_output_drivers"),
+        SetDefaultOutputDriver("set_default_output_driver");
 
         override fun toString(): String = rawValue
         fun matches(name: String): Boolean = (rawValue == name)
@@ -98,6 +100,8 @@ class Messages {
             val SUCCESS = "success"
             val EXTERNAL_IDS = "external_ids"
             val SORT_ORDERS = "sort_orders"
+            val DRIVER_NAME = "driver_name"
+            val DEVICE_ID = "device_id"
         }
     }
 

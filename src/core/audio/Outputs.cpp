@@ -129,7 +129,8 @@ namespace musik {
 
                 musik::core::sdk::IOutput* GetUnmanagedOutput(size_t index) {
                     auto all = queryOutputs<NullDeleter>();
-                    auto output = (*all.erase(all.begin() + index)).get();
+                    auto output = all[index].get();
+                    all.erase(all.begin() + index);
                     release(all);
                     return output;
                 }

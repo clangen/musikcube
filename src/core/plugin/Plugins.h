@@ -35,10 +35,14 @@
 #pragma once
 
 #include <core/library/ILibrary.h>
+#include <core/sdk/IPlaybackService.h>
 
 namespace musik { namespace core { namespace plugin {
 
-    void InstallDependencies(musik::core::ILibraryPtr library);
+    void InstallDependencies(
+        musik::core::sdk::IPlaybackService* playback,
+        musik::core::ILibraryPtr library);
+
     void UninstallDependencies();
 
 } } }

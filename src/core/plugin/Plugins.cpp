@@ -60,6 +60,7 @@ typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
 typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 
 static ILibraryPtr library;
+static IPlaybackService* playback = nullptr;
 static LocalSimpleDataProvider* dataProvider = nullptr;
 
 static class Environment : public IEnvironment {
@@ -118,7 +119,21 @@ static class Environment : public IEnvironment {
         }
 
         virtual void SetDefaultOutput(IOutput* output) override {
-            outputs::SelectOutput(output);
+            if (output) {
+                auto current = outputs::SelectedOutput();
+                std::string newName = output->Name();
+                std::string currentName = current ? current->Name() : "";
+                auto newDevice = output->GetDefaultDevice();
+                auto currentDevice = current->GetDefaultDevice();
+                std::string newDeviceId = newDevice ? newDevice->Id() : "";
+                std::string currentDeviceId = currentDevice ? currentDevice->Id() : "";
+                if (newName != currentName || newDeviceId != currentDeviceId) {
+                    outputs::SelectOutput(output);
+                    if (playback) {
+                        playback->ReloadOutput();
+                    }
+                }
+            }
         }
 
         virtual void ReindexMetadata() override {
@@ -136,13 +151,14 @@ static class Environment : public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void InstallDependencies(ILibraryPtr library) {
+    void InstallDependencies(IPlaybackService* playback, ILibraryPtr library) {
         /* preferences */
         Preferences::LoadPluginPreferences();
 
         /* data providers */
         delete dataProvider;
         ::library = library;
+        ::playback = playback;
         ::dataProvider = new LocalSimpleDataProvider(library);
 
         PluginFactory::Instance().QueryFunction<SetSimpleDataProvider>(
@@ -183,6 +199,7 @@ namespace musik { namespace core { namespace plugin {
         delete dataProvider;
         ::dataProvider = nullptr;
         ::library.reset();
+        ::playback = nullptr;
 
         /* indexer */
         PluginFactory::Instance().QueryFunction<SetIndexerNotifier>(

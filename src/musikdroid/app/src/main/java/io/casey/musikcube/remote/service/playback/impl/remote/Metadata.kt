@@ -31,4 +31,18 @@ object Metadata {
             val THUMBNAIL_ID = "thumbnail_id"
         }
     }
+
+    interface Output {
+        companion object {
+            val DRIVER_NAME = "driver_name"
+            val DEVICES = "devices"
+        }
+    }
+
+    interface Device {
+        companion object {
+            val DEVICE_NAME = "device_name"
+            val DEVICE_ID = "device_id"
+        }
+    }
 }

@@ -127,6 +127,10 @@ namespace key {
     static const std::string predicates = "predicates";
     static const std::string sdk_version = "sdk_version";
     static const std::string api_version = "api_version";
+    static const std::string driver_name = "driver_name";
+    static const std::string devices = "devices";
+    static const std::string device_name = "device_name";
+    static const std::string device_id = "device_id";
 }
 
 namespace value {
@@ -178,6 +182,8 @@ namespace request {
     static const std::string append_to_playlist = "append_to_playlist";
     static const std::string remove_tracks_from_playlist = "remove_tracks_from_playlist";
     static const std::string run_indexer = "run_indexer";
+    static const std::string list_output_drivers = "list_output_drivers";
+    static const std::string set_default_output_driver = "set_default_output_driver";
 }
 
 namespace fragment {

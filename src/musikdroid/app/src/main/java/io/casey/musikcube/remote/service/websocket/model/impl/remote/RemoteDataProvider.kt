@@ -401,6 +401,28 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    override fun listOutputDrivers(): Observable<List<IOutput>> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.ListOutputDrivers)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<List<IOutput>> { socketMessage -> toOutputList(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun setDefaultOutputDriver(driverName: String, deviceId: String): Observable<Boolean> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SetDefaultOutputDriver)
+            .addOption(Messages.Key.DRIVER_NAME, driverName)
+            .addOption(Messages.Key.DEVICE_ID, deviceId)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> =
         connectionStatePublisher.observeOn(AndroidSchedulers.mainThread())
 
@@ -486,6 +508,15 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
                 values.add(converter(json.getJSONObject(i), type))
             }
             return Observable.just(values)
+        }
+
+        private fun toOutputList(socketMessage: SocketMessage): Observable<List<IOutput>> {
+            val outputs = ArrayList<IOutput>()
+            val json = socketMessage.getJsonArrayOption(Messages.Key.DATA, JSONArray())!!
+            for (i in 0 until json.length()) {
+                outputs.add(RemoteOutput(json.getJSONObject(i)))
+            }
+            return Observable.just(outputs)
         }
 
         private fun toTrackList(socketMessage: SocketMessage): Observable<List<ITrack>> {

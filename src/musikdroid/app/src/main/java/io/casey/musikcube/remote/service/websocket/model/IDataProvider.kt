@@ -48,5 +48,8 @@ interface IDataProvider {
     fun deletePlaylist(playlistId: Long): Observable<Boolean>
     fun removeTracksFromPlaylist(playlistId: Long, externalIds: List<String>, sortOrders: List<Int>): Observable<Int>
 
+    fun listOutputDrivers(): Observable<List<IOutput>>
+    fun setDefaultOutputDriver(driverName: String, deviceId: String = "default"): Observable<Boolean>
+
     val state: State
 }

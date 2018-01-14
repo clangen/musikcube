@@ -443,6 +443,14 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithRunIndexer(connection, request);
             return;
         }
+        else if (name == request::list_output_drivers) {
+            this->RespondWithListOutputDrivers(connection, request);
+            return;
+        }
+        else if (name == request::set_default_output_driver) {
+            this->RespondWithSetDefaultOutputDriver(connection, request);
+            return;
+        }
     }
 
     this->RespondWithInvalidRequest(connection, name, id);
@@ -1137,6 +1145,62 @@ void WebSocketServer::RespondWithRunIndexer(connection_hdl connection, json& req
         context.environment->ReindexMetadata();
     }
     this->RespondWithSuccess(connection, request);
+}
+
+void WebSocketServer::RespondWithListOutputDrivers(connection_hdl connection, json& request) {
+    json outputs = json::array();
+
+    size_t count = context.environment->GetOutputCount();
+    for (size_t i = 0; i < count; i++) {
+        auto output = context.environment->GetOutputAtIndex(i);
+        json devices = json::array();
+        auto deviceList = output->GetDeviceList();
+        if (deviceList) {
+            for (size_t j = 0; j < deviceList->Count(); j++) {
+                auto device = deviceList->At(j);
+                devices.push_back({
+                    { key::device_name, device->Name() },
+                    { key::device_id, device->Id() }
+                });
+            }
+            deviceList->Release();
+        }
+
+        outputs.push_back({
+            { key::driver_name, output->Name() },
+            { key::devices, devices }
+        });
+
+        output->Release();
+    }
+
+    this->RespondWithOptions(connection, request, { { key::data, outputs } });
+}
+
+void WebSocketServer::RespondWithSetDefaultOutputDriver(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+    std::string driver = options.value(key::driver_name, "");
+    if (driver.size()) {
+        auto output = context.environment->GetOutputWithName(driver.c_str());
+        if (output) {
+            std::string device = options.value(key::device_id, "");
+            auto devices = output->GetDeviceList();
+            if (devices) {
+                for (size_t i = 0; i < devices->Count(); i++) {
+                    if (devices->At(0)->Id() == device) {
+                        output->SetDefaultDevice(device.c_str());
+                        break;
+                    }
+                }
+                devices->Release();
+            }
+            context.environment->SetDefaultOutput(output);
+            output->Release();
+            this->RespondWithSuccess(connection, request);
+            return;
+        }
+    }
+    this->RespondWithFailure(connection, request);
 }
 
 void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connection, json& request) {
