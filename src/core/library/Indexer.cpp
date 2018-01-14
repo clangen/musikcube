@@ -233,6 +233,11 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     LocalLibrary::DropIndexes(this->dbConnection);
 
+    if (type == SyncType::Rebuild) {
+        LocalLibrary::InvalidateTrackMetadata(this->dbConnection);
+        type = SyncType::All;
+    }
+
     /* process ALL IIndexerSource plugins, if applicable */
 
     if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {

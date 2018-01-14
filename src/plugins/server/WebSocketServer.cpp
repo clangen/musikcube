@@ -439,6 +439,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithRemoveTracksFromPlaylist(connection, request);
             return;
         }
+        else if (name == request::run_indexer) {
+            this->RespondWithRunIndexer(connection, request);
+            return;
+        }
     }
 
     this->RespondWithInvalidRequest(connection, name, id);
@@ -1121,6 +1125,18 @@ void WebSocketServer::RespondWithAppendToPlaylist(connection_hdl connection, jso
     /* no id list or external id list */
     this->RespondWithInvalidRequest(
         connection, request[message::name], request[message::id]);
+}
+
+void WebSocketServer::RespondWithRunIndexer(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+    auto type = options.value(key::type, value::reindex);
+    if (type == value::rebuild) {
+        context.environment->RebuildMetadata();
+    }
+    else {
+        context.environment->ReindexMetadata();
+    }
+    this->RespondWithSuccess(connection, request);
 }
 
 void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connection, json& request) {

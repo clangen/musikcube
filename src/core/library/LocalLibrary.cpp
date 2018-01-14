@@ -337,10 +337,7 @@ static void upgradeV5ToV6(db::Connection& db) {
 }
 
 static void upgradeV6ToV7(db::Connection& db) {
-    db.Execute("UPDATE tracks SET filetime=0");
-    db.Execute("DELETE FROM track_meta;");
-    db.Execute("DELETE FROM meta_keys;");
-    db.Execute("DELETE FROM meta_values;");
+    LocalLibrary::InvalidateTrackMetadata(db);
     scheduleSyncDueToDbUpgrade = true;
 }
 
@@ -620,4 +617,11 @@ void LocalLibrary::CreateIndexes(db::Connection &db) {
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_1 ON playlist_tracks (track_external_id,playlist_id,sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_2 ON playlist_tracks (track_external_id,sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_3 ON playlist_tracks (track_external_id)");
+}
+
+void LocalLibrary::InvalidateTrackMetadata(db::Connection& db) {
+    db.Execute("UPDATE tracks SET filetime=0");
+    db.Execute("DELETE FROM track_meta;");
+    db.Execute("DELETE FROM meta_keys;");
+    db.Execute("DELETE FROM meta_values;");
 }

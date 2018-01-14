@@ -39,6 +39,7 @@
 #include "IDecoder.h"
 #include "IEncoder.h"
 #include "IPreferences.h"
+#include "IOutput.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -50,6 +51,12 @@ namespace musik { namespace core { namespace sdk {
             virtual IEncoder* GetEncoder(const char* type) = 0;
             virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) = 0;
             virtual IPreferences* GetPreferences(const char* name) = 0;
+            virtual size_t GetOutputCount() = 0;
+            virtual IOutput* GetOutputAtIndex(size_t index) = 0;
+            virtual IOutput* GetOutputWithName(const char* name) = 0;
+            virtual void SetDefaultOutput(IOutput* output) = 0;
+            virtual void ReindexMetadata() = 0;
+            virtual void RebuildMetadata() = 0;
     };
 
 } } }

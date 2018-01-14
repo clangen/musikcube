@@ -50,9 +50,10 @@ namespace musik { namespace core {
                 StateIndexing
             };
 
-            enum class SyncType{
+            enum class SyncType {
                 All,
                 Local,
+                Rebuild,
                 Sources
             };
 

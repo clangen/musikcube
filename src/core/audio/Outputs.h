@@ -39,8 +39,12 @@
 
 namespace musik { namespace core { namespace audio { namespace outputs {
 
-    std::vector<std::shared_ptr<musik::core::sdk::IOutput> > GetAllOutputs();
+    std::vector<std::shared_ptr<musik::core::sdk::IOutput>> GetAllOutputs();
     void SelectOutput(std::shared_ptr<musik::core::sdk::IOutput> output);
+    void SelectOutput(musik::core::sdk::IOutput* output);
     std::shared_ptr<musik::core::sdk::IOutput> SelectedOutput();
+    size_t GetOutputCount();
+    musik::core::sdk::IOutput* GetUnmanagedOutput(size_t index);
+    musik::core::sdk::IOutput* GetUnmanagedOutput(const std::string& name);
 
 } } } }

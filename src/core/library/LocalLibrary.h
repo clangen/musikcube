@@ -94,6 +94,7 @@ namespace musik { namespace core { namespace library {
             /* indexes */
             static void DropIndexes(db::Connection &db);
             static void CreateIndexes(db::Connection &db);
+            static void InvalidateTrackMetadata(db::Connection &db);
 
         private:
             class QueryCompletedMessage;

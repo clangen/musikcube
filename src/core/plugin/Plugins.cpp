@@ -42,6 +42,7 @@
 #include <core/io/DataStreamFactory.h>
 #include <core/audio/Buffer.h>
 #include <core/audio/Streams.h>
+#include <core/audio/Outputs.h>
 #include <core/support/Preferences.h>
 #include <core/library/LocalSimpleDataProvider.h>
 
@@ -66,22 +67,10 @@ static class Environment : public IEnvironment {
         virtual size_t GetPath(PathType type, char* dst, int size) override {
             std::string path;
             switch (type) {
-                case PathUserHome: path =
-                    GetHomeDirectory();
-                    break;
-
-                case PathData:
-                    path = GetDataDirectory();
-                    break;
-
-                case PathApplication:
-                    path = GetApplicationDirectory();
-                    break;
-
-                case PathPlugins:
-                    path = GetPluginDirectory();
-                    break;
-
+                case PathUserHome: path = GetHomeDirectory(); break;
+                case PathData: path = GetDataDirectory(); break;
+                case PathApplication: path = GetApplicationDirectory(); break;
+                case PathPlugins: path = GetPluginDirectory(); break;
                 case PathLibrary: {
                     if (library) {
                         path = GetDataDirectory() + std::to_string(library->Id()) + "/";
@@ -114,6 +103,34 @@ static class Environment : public IEnvironment {
             buffer->SetSampleRate(rate);
             buffer->SetSamples(samples);
             return buffer;
+        }
+
+        virtual size_t GetOutputCount() override {
+            return outputs::GetOutputCount();
+        }
+
+        virtual IOutput* GetOutputAtIndex(size_t index) override {
+            return outputs::GetUnmanagedOutput(index);
+        }
+
+        virtual IOutput* GetOutputWithName(const char* name) override {
+            return outputs::GetUnmanagedOutput(name ? name : "");
+        }
+
+        virtual void SetDefaultOutput(IOutput* output) override {
+            outputs::SelectOutput(output);
+        }
+
+        virtual void ReindexMetadata() override {
+            if (library) {
+                library->Indexer()->Schedule(IIndexer::SyncType::Local);
+            }
+        }
+
+        virtual void RebuildMetadata() override {
+            if (library) {
+                library->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
+            }
         }
 } environment;
 

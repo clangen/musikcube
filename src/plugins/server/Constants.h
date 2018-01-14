@@ -135,6 +135,8 @@ namespace value {
     static const std::string up = "up";
     static const std::string down = "down";
     static const std::string delta = "delta";
+    static const std::string reindex = "reindex";
+    static const std::string rebuild = "rebuild";
 }
 
 namespace type {
@@ -175,6 +177,7 @@ namespace request {
     static const std::string delete_playlist = "delete_playlist";
     static const std::string append_to_playlist = "append_to_playlist";
     static const std::string remove_tracks_from_playlist = "remove_tracks_from_playlist";
+    static const std::string run_indexer = "run_indexer";
 }
 
 namespace fragment {

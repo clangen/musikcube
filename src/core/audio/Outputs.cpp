@@ -65,24 +65,19 @@ namespace musik {
     namespace core {
         namespace audio {
             namespace outputs {
-                Output FindByName(const std::string& name, const OutputList& list) {
-                    if (name.size()) {
-                        auto it = list.begin();
-                        while (it != list.end()) {
-                            if ((*it)->Name() == name) {
-                                return (*it);
-                            }
-                            ++it;
-                        }
+                using ReleaseDeleter = PluginFactory::ReleaseDeleter<IOutput>;
+                using NullDeleter = PluginFactory::NullDeleter<IOutput>;
+
+                static inline void release(OutputList outputs) {
+                    for (auto output : outputs) {
+                        output->Release();
                     }
-                    return Output();
                 }
 
-                OutputList GetAllOutputs() {
-                    using OutputDeleter = PluginFactory::ReleaseDeleter<IOutput>;
-
+                template <typename D>
+                OutputList queryOutputs() {
                     OutputList result = PluginFactory::Instance()
-                        .QueryInterface<IOutput, OutputDeleter>("GetAudioOutput");
+                        .QueryInterface<IOutput, D>("GetAudioOutput");
 
                     std::sort(
                         result.begin(),
@@ -98,26 +93,74 @@ namespace musik {
                     return result;
                 }
 
-                void SelectOutput(std::shared_ptr<musik::core::sdk::IOutput> output) {
-                    std::shared_ptr<Preferences> prefs =
-                        Preferences::ForComponent(components::Playback);
+                static Output findByName(const std::string& name, const OutputList& list) {
+                    if (name.size()) {
+                        auto it = list.begin();
+                        while (it != list.end()) {
+                            if ((*it)->Name() == name) {
+                                return (*it);
+                            }
+                            ++it;
+                        }
+                    }
+                    return Output();
+                }
 
-                    prefs->SetString(keys::OutputPlugin, output->Name());
+                OutputList GetAllOutputs() {
+                    return queryOutputs<ReleaseDeleter>();
+                }
+
+                void SelectOutput(std::shared_ptr<musik::core::sdk::IOutput> output) {
+                    SelectOutput(output.get());
+                }
+
+                void SelectOutput(musik::core::sdk::IOutput* output) {
+                    if (output) {
+                        std::shared_ptr<Preferences> prefs =
+                            Preferences::ForComponent(components::Playback);
+
+                        prefs->SetString(keys::OutputPlugin, output->Name());
+                    }
+                }
+
+                size_t GetOutputCount() {
+                    return queryOutputs<ReleaseDeleter>().size();
+                }
+
+                musik::core::sdk::IOutput* GetUnmanagedOutput(size_t index) {
+                    auto all = queryOutputs<NullDeleter>();
+                    auto output = (*all.erase(all.begin() + index)).get();
+                    release(all);
+                    return output;
+                }
+
+                musik::core::sdk::IOutput* GetUnmanagedOutput(const std::string& name) {
+                    auto all = queryOutputs<NullDeleter>();
+                    IOutput* output = nullptr;
+                    for (size_t i = 0; i < all.size(); i++) {
+                        if (all[i]->Name() == name) {
+                            output = all[i].get();
+                            all.erase(all.begin() + i);
+                            break;
+                        }
+                    }
+                    release(all);
+                    return output;
                 }
 
                 Output SelectedOutput() {
                     std::shared_ptr<Preferences> prefs =
                         Preferences::ForComponent(components::Playback);
 
-                    const OutputList plugins = GetAllOutputs();
+                    const OutputList plugins = queryOutputs<ReleaseDeleter>();
 
                     if (plugins.size()) {
                         /* try to find the user selected plugin first */
-                        Output result = FindByName(prefs->GetString(keys::OutputPlugin), plugins);
+                        Output result = findByName(prefs->GetString(keys::OutputPlugin), plugins);
 
                         if (!result) {
                             /* fall back to the default */
-                            result = FindByName(defaultOutput, plugins);
+                            result = findByName(defaultOutput, plugins);
                         }
 
                         if (!result) {
