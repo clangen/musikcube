@@ -53,7 +53,7 @@ static std::string LAST_SELECTED;
 
 void BrowseOverlays::ShowCategoryChooser(
     musik::core::ILibraryPtr library,
-    std::function<void(std::string)> callback) 
+    std::function<void(std::string)> callback)
 {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
@@ -82,13 +82,38 @@ void BrowseOverlays::ShowCategoryChooser(
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("browse_categories_title"))
-        .SetWidth(_DIMEN("browse_categories_overlay", 35))
+        .SetWidth(_DIMEN("browse_categories_overlay_width", 35))
         .SetSelectedIndex(index)
         .SetItemSelectedCallback(
         [callback, filtered]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
             LAST_SELECTED = filtered->At(index)->ToString();
             callback(LAST_SELECTED);
+        });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void BrowseOverlays::ShowIndexer(musik::core::ILibraryPtr library) {
+    using Adapter = cursespp::SimpleScrollAdapter;
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->AddEntry(_TSTR("indexer_overlay_reindex"));
+    adapter->AddEntry(_TSTR("indexer_overlay_rebuild"));
+    adapter->SetSelectable(true);
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("indexer_overlay_title"))
+        .SetWidth(_DIMEN("indexer_overlay_width", 28))
+        .SetSelectedIndex(0)
+        .SetItemSelectedCallback(
+        [library]
+        (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+            switch (index) {
+                case 0: library->Indexer()->Schedule(IIndexer::SyncType::Local); break;
+                case 1: library->Indexer()->Schedule(IIndexer::SyncType::Rebuild); break;
+            }
         });
 
     cursespp::App::Overlays().Push(dialog);

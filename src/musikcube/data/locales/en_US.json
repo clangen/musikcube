@@ -139,6 +139,10 @@
         "transport_repeat_track": "repeat track",
         "transport_repeat_off": "repeat off",
 
+        "indexer_overlay_title": "metadata indexer",
+        "indexer_overlay_reindex": "scan for changes",
+        "indexer_overlay_rebuild": "rebuild library",
+
         "tracklist_unknown_album": "[unknown album]",
         "tracklist_hot_swap_success_toast": "play queue hot-swapped with current list",
 
@@ -153,11 +157,12 @@
 
     "dimensions": {
         "output_device_overlay_width": 35,
-        "playqueue_album_header_overlay": 35,
-        "playqueue_playlist_add_to_queue_overlay": 35,
-        "playqueue_playlist_list_overlay": 35,
-        "playqueue_playlist_name_overlay": 35,
-        "browse_categories_overlay": 35,
+        "playqueue_album_header_overlay_width": 35,
+        "playqueue_playlist_add_to_queue_overlay_width": 35,
+        "playqueue_playlist_list_overlay_width": 35,
+        "playqueue_playlist_name_overlay_width": 35,
+        "browse_categories_overlay_width": 35,
+        "indexer_overlay_width": 28,
         "server_overlay_width": 45,
         "preamp_overlay_width": 40
     }

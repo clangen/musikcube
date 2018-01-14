@@ -156,7 +156,7 @@ static void showPlaylistListOverlay(
 
     dialog->SetAdapter(adapter)
         .SetTitle(title)
-        .SetWidth(_DIMEN("playqueue_playlist_list_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetWidth(_DIMEN("playqueue_playlist_list_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(callback);
 
@@ -197,7 +197,7 @@ static void createNewPlaylist(
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
     dialog->SetTitle(_TSTR("playqueue_overlay_playlist_name_title"))
-        .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetWidth(_DIMEN("playqueue_playlist_name_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetText("")
         .SetInputAcceptedCallback(
             [&queue, tracks, library, callback](const std::string& name) {
@@ -223,7 +223,7 @@ static void createNewPlaylist(
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
     dialog->SetTitle(_TSTR("playqueue_overlay_playlist_name_title"))
-        .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetWidth(_DIMEN("playqueue_playlist_name_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetText("")
         .SetInputAcceptedCallback(
             [&queue, library, categoryType, categoryId](const std::string& name) {
@@ -245,7 +245,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(
     std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
     dialog->SetTitle(_TSTR("playqueue_overlay_new_playlist_name_title"))
-        .SetWidth(_DIMEN("playqueue_playlist_name_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetWidth(_DIMEN("playqueue_playlist_name_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetText(oldName)
         .SetInputAcceptedCallback(
             [library, playlistId, callback](const std::string& name) {
@@ -468,7 +468,7 @@ void PlayQueueOverlays::ShowAddTrackOverlay(
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playqueue_overlay_track_actions_title"))
-        .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [track, library, &messageQueue, &playback]
@@ -530,7 +530,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playqueue_overlay_add_category_title"))
-        .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetWidth(_DIMEN("playqueue_playlist_add_to_queue_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [&playback, &messageQueue, library, fieldColumn, fieldId]
@@ -572,7 +572,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playqueue_overlay_album_header_actions_title"))
-        .SetWidth(_DIMEN("playqueue_album_header_overlay", DEFAULT_OVERLAY_WIDTH))
+        .SetWidth(_DIMEN("playqueue_album_header_overlay_width", DEFAULT_OVERLAY_WIDTH))
         .SetSelectedIndex(0)
         .SetItemSelectedCallback(
             [&playback, library, &messageQueue, firstTrack]

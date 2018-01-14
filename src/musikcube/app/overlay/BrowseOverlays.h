@@ -44,6 +44,8 @@ namespace musik {
                 static void ShowCategoryChooser(
                     musik::core::ILibraryPtr library,
                     std::function<void(std::string)> callback);
+
+                static void ShowIndexer(musik::core::ILibraryPtr library);
         };
     }
 }

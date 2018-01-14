@@ -37,6 +37,7 @@
 #include "Hotkeys.h"
 
 #include <app/overlay/VisualizerOverlay.h>
+#include <app/overlay/BrowseOverlays.h>
 #include <app/util/Playback.h>
 
 #include <core/audio/Visualizer.h>
@@ -104,7 +105,7 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::RescanMetadata, kn)) {
-        library->Indexer()->Schedule(IIndexer::SyncType::All);
+        BrowseOverlays::ShowIndexer(this->library);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleVisualizer, kn)) {
