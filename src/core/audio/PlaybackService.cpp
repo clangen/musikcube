@@ -580,6 +580,25 @@ void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t in
     }
 }
 
+void PlaybackService::ReloadOutput() {
+    auto state = this->GetPlaybackState();
+    auto index = this->GetIndex();
+    double time = this->GetPosition();
+    this->Stop();
+    this->transport.ReloadOutput();
+
+    if (index != NO_POSITION) {
+        this->Play(index);
+        if (time > 0.0f) {
+            this->transport.SetPosition(time);
+        }
+
+        if (state == PlaybackPaused) {
+            this->transport.Pause();
+        }
+    }
+}
+
 void PlaybackService::CopyTo(TrackList& target) {
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
     target.CopyFrom(this->playlist);

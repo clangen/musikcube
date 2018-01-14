@@ -207,7 +207,7 @@ void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label)
 
             if (currentName != newName) {
                 this->LoadPreferences();
-                this->transport.ReloadOutput();
+                this->playback.ReloadOutput();
             }
         });
 }
@@ -218,7 +218,7 @@ void SettingsLayout::OnOutputDeviceDropdownActivated(cursespp::TextLabel* label)
         std::string newName = getOutputDeviceName();
         if (currentName != newName) {
             this->LoadPreferences();
-            this->transport.ReloadOutput();
+            this->playback.ReloadOutput();
         }
     });
 }

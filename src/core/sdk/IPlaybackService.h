@@ -85,6 +85,9 @@ namespace musik { namespace core { namespace sdk {
             /* sdk v5 */
             virtual musik::core::sdk::TimeChangeMode GetTimeChangeMode() = 0;
             virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) = 0;
+
+            /* sdk v13 */
+            virtual void ReloadOutput() = 0;
     };
 
 } } }

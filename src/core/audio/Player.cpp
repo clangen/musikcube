@@ -232,7 +232,10 @@ void Player::SetPosition(double seconds) {
     std::unique_lock<std::mutex> queueLock(this->queueMutex);
 
     if (this->stream) {
-        seconds = std::min(this->stream->GetDuration(), seconds);
+        auto duration = this->stream->GetDuration();
+        if (duration > 0.0f) {
+            seconds = std::min(duration, seconds);
+        }
     }
 
     this->seekToPosition.store(std::max(0.0, seconds));
