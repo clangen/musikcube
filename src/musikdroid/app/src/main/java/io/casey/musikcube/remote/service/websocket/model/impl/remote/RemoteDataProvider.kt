@@ -423,6 +423,30 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    override fun getGainSettings(): Observable<IGainSettings> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.GetGainSettings)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<IGainSettings> { socketMessage ->
+                Observable.just(RemoteGainSettings(socketMessage.getJsonObject()))
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun updateGainSettings(replayGainMode: IGainSettings.ReplayGainMode, preampGain: Float): Observable<Boolean> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.UpdateGainSettings)
+            .addOption(Messages.Key.REPLAYGAIN_MODE, replayGainMode.rawValue)
+            .addOption(Messages.Key.PREAMP_GAIN, preampGain)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> =
         connectionStatePublisher.observeOn(AndroidSchedulers.mainThread())
 

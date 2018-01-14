@@ -51,5 +51,8 @@ interface IDataProvider {
     fun listOutputDrivers(): Observable<List<IOutput>>
     fun setDefaultOutputDriver(driverName: String, deviceId: String = "default"): Observable<Boolean>
 
+    fun getGainSettings(): Observable<IGainSettings>
+    fun updateGainSettings(replayGainMode: IGainSettings.ReplayGainMode, preampGain: Float): Observable<Boolean>
+
     val state: State
 }

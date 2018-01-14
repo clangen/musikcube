@@ -33,20 +33,20 @@ class Messages {
         AppendToPlaylist("append_to_playlist"),
         RemoveTracksFromPlaylist("remove_tracks_from_playlist"),
         ListOutputDrivers("list_output_drivers"),
-        SetDefaultOutputDriver("set_default_output_driver");
+        SetDefaultOutputDriver("set_default_output_driver"),
+        GetGainSettings("get_gain_settings"),
+        UpdateGainSettings("update_gain_settings");
 
         override fun toString(): String = rawValue
         fun matches(name: String): Boolean = (rawValue == name)
 
         companion object {
-
             fun from(rawValue: String): Request? {
-                for (value in Request.values()) {
-                    if (value.toString() == rawValue) {
-                        return value
+                Request.values().forEach {
+                    if (it.toString() == rawValue) {
+                        return it
                     }
                 }
-
                 return null
             }
         }
@@ -61,12 +61,11 @@ class Messages {
 
         companion object {
             fun from(rawValue: String): Broadcast? {
-                for (value in Broadcast.values()) {
-                    if (value.toString() == rawValue) {
-                        return value
+                Broadcast.values().forEach {
+                    if (it.toString() == rawValue) {
+                        return it
                     }
                 }
-
                 return null
             }
         }
@@ -102,6 +101,8 @@ class Messages {
             val SORT_ORDERS = "sort_orders"
             val DRIVER_NAME = "driver_name"
             val DEVICE_ID = "device_id"
+            val REPLAYGAIN_MODE = "replaygain_mode"
+            val PREAMP_GAIN = "preamp_gain"
         }
     }
 

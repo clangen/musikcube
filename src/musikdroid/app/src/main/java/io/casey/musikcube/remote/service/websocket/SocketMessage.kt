@@ -111,6 +111,10 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
         return defaultValue
     }
 
+    fun getJsonObject(): JSONObject {
+        return JSONObject(options.toString())
+    }
+
     @JvmOverloads fun getJsonObjectOption(key: String, defaultValue: JSONObject? = null): JSONObject? {
         if (options.has(key)) {
             try {
