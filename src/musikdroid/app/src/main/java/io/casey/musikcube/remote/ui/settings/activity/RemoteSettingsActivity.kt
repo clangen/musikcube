@@ -85,8 +85,10 @@ class RemoteSettingsActivity: BaseActivity() {
     private fun drawNormal() {
         if (!initialized) {
             preampSeekbar.progress = ((viewModel.preampGain + 20.0f) * 100).toInt()
+            driverSpinner.onItemSelectedListener = null
             driverSpinner.adapter = DriverAdapter(viewModel.outputDrivers)
             driverSpinner.setSelection(viewModel.selectedDriverIndex)
+            driverSpinner.onItemSelectedListener = driverChangeListener
             deviceSpinner.adapter = DevicesAdapter(viewModel.devicesAt(viewModel.selectedDriverIndex))
             deviceSpinner.setSelection(viewModel.selectedDeviceIndex)
             replayGainSpinner.setSelection(REPLAYGAIN_MODE_TO_INDEX[viewModel.replayGainMode]!!)
@@ -107,13 +109,12 @@ class RemoteSettingsActivity: BaseActivity() {
         var driverName = ""
         var deviceId = ""
 
-        if (driverSpinner.adapter.count > 0) {
-            val selectedDriver = driverSpinner.selectedItemPosition
-            val selectedDevice = deviceSpinner.selectedItemPosition
-
+        val selectedDriver = driverSpinner.selectedItemPosition
+        val selectedDevice = deviceSpinner.selectedItemPosition
+        if (selectedDriver >= 0 && driverSpinner.adapter.count > selectedDriver) {
             driverName = viewModel.outputDrivers[selectedDriver].name
 
-            if (deviceSpinner.adapter.count > 0) {
+            if (selectedDevice >= 0 && deviceSpinner.adapter.count > selectedDevice) {
                 deviceId = viewModel.devicesAt(selectedDriver)[selectedDevice].id
             }
         }
@@ -138,6 +139,9 @@ class RemoteSettingsActivity: BaseActivity() {
                 onError = { rebuildButton.isEnabled = true }
             )
         })
+
+        /* devices */
+        driverSpinner.onItemSelectedListener = driverChangeListener
 
         /* replaygain / preamp */
         val replayGainModes = ArrayAdapter.createFromResource(
@@ -185,6 +189,21 @@ class RemoteSettingsActivity: BaseActivity() {
         ))
     }
 
+    private val driverChangeListener = object:AdapterView.OnItemSelectedListener {
+        override fun onNothingSelected(parent: AdapterView<*>?) {
+        }
+
+        override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+            deviceSpinner.adapter = DevicesAdapter(viewModel.devicesAt(driverSpinner.selectedItemPosition))
+            if (pos == viewModel.selectedDriverIndex) {
+                deviceSpinner.setSelection(viewModel.selectedDeviceIndex)
+            }
+            else {
+                deviceSpinner.setSelection(0)
+            }
+        }
+    }
+
     private class DriverAdapter(private val outputs: List<IOutput>): BaseAdapter() {
         override fun getView(pos: Int, view: View?, parent: ViewGroup?): View {
             var bind = view
@@ -206,7 +225,7 @@ class RemoteSettingsActivity: BaseActivity() {
             var bind = view
             if (view == null) {
                 bind = LayoutInflater.from(parent?.context).inflate(
-                        android.R.layout.simple_spinner_dropdown_item, parent, false)
+                    android.R.layout.simple_spinner_dropdown_item, parent, false)
             }
             (bind as TextView).text = devices[pos].name
             return bind
