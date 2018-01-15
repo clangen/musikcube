@@ -222,3 +222,7 @@ fun fallback(input: String?, fallback: String): String =
 
 fun fallback(input: String?, fallback: Int): String =
     if (input.isNullOrEmpty()) Application.Companion.instance!!.getString(fallback) else input!!
+
+fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+
+fun AppCompatActivity.slideThisDown() = overridePendingTransition(R.anim.stay_put, R.anim.slide_down)

@@ -1,10 +1,8 @@
 package io.casey.musikcube.remote.ui.settings.viewmodel
 
 import io.casey.musikcube.remote.framework.ViewModel
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.service.websocket.model.IGainSettings
-import io.casey.musikcube.remote.service.websocket.model.IOutput
-import io.casey.musikcube.remote.service.websocket.model.IOutputs
+import io.casey.musikcube.remote.service.websocket.model.*
+import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -43,12 +41,33 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
             return ""
         }
 
+    val selectedDriverIndex: Int
+        get() {
+            var index = 0
+            outputs?.let {
+                index = it.outputs.indexOfFirst { it.name == driverName }
+            }
+            return Math.max(0, index)
+        }
+
     val deviceId: String
         get() {
             outputs?.let {
                 return it.selectedDeviceId
             }
             return ""
+        }
+
+    val selectedDeviceIndex: Int
+        get() {
+            var deviceIndex = 0
+            val driverIndex = selectedDriverIndex
+            if (driverIndex >= 0) {
+                outputs?.let {
+                    deviceIndex = it.outputs[driverIndex].devices.indexOfFirst { it.id == deviceId }
+                }
+            }
+            return Math.max(0, deviceIndex)
         }
 
     val replayGainMode: IGainSettings.ReplayGainMode
@@ -75,29 +94,54 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
             return listOf()
         }
 
+    fun devicesAt(index: Int): List<IDevice> {
+        outputs?.let {
+            if (index >= 0 && it.outputs.size > index) {
+                return it.outputs[index].devices
+            }
+        }
+        return listOf()
+    }
+
+    private fun save(replayGainMode: IGainSettings.ReplayGainMode, preampGain: Float)
+    {
+        provider?.let {
+            val oldState = state
+            state = State.Saving
+            it.updateGainSettings(replayGainMode, preampGain)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeBy(
+                    onNext = {
+                        if (it) { state = State.Saved }
+                        state = oldState
+                    },
+                    onError = { state = oldState })
+        }
+    }
+
     fun save(replayGainMode: IGainSettings.ReplayGainMode,
              preampGain: Float,
              outputDriver: String,
              outputDeviceId: String)
     {
-        provider?.let {
-            val oldState = state
-            state = State.Saving
-            val gainQuery = it.updateGainSettings(replayGainMode, preampGain)
-            val outputQuery = it.setDefaultOutputDriver(outputDriver, outputDeviceId)
-            Observable.zip<Boolean, Boolean, Boolean>(
-                gainQuery, outputQuery, BiFunction { b1, b2 -> b1 && b2 })
+        if (Strings.empty(outputDriver)) {
+            save(replayGainMode, preampGain)
+        }
+        else {
+            provider?.let {
+                val oldState = state
+                state = State.Saving
+                val gainQuery = it.updateGainSettings(replayGainMode, preampGain)
+                val outputQuery = it.setDefaultOutputDriver(outputDriver, outputDeviceId)
+                Observable.zip<Boolean, Boolean, Boolean>(gainQuery, outputQuery, BiFunction { b1, b2 -> b1 && b2 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = {
-                        if (it) {
-                            state = State.Saved
-                        }
+                        if (it) { state = State.Saved }
                         state = oldState
                     },
-                    onError = {
-                        state = oldState
-                    })
+                    onError = { state = oldState })
+            }
         }
     }
 

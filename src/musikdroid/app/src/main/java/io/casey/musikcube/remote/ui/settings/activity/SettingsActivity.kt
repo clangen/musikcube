@@ -70,10 +70,16 @@ class SettingsActivity : BaseActivity() {
         return true
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+        slideThisDown()
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
                 finish()
+                slideThisDown()
                 return true
             }
             R.id.action_save -> {

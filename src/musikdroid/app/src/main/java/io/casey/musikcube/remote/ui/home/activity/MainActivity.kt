@@ -35,12 +35,12 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.extension.setCheckWithoutEvent
 import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
+import io.casey.musikcube.remote.ui.shared.extension.slideNextUp
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.util.Duration
 import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
-import io.reactivex.rxkotlin.subscribeBy
 
 class MainActivity : BaseActivity() {
     private val handler = Handler()
@@ -133,6 +133,7 @@ class MainActivity : BaseActivity() {
 
             R.id.action_settings -> {
                 startActivity(SettingsActivity.getStartIntent(this))
+                slideNextUp()
                 return true
             }
 
@@ -154,6 +155,7 @@ class MainActivity : BaseActivity() {
 
             R.id.action_remote_manage -> {
                 startActivity(RemoteSettingsActivity.getStartIntent(this))
+                slideNextUp()
                 return true
             }
         }
@@ -413,7 +415,7 @@ class MainActivity : BaseActivity() {
 
     private fun navigateToPlayQueue() {
         startActivity(PlayQueueActivity.getStartIntent(this@MainActivity, playback.service.queuePosition))
-        overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+        slideNextUp()
     }
 
     private fun scheduleUpdateTime(immediate: Boolean) {

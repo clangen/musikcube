@@ -3,25 +3,26 @@ package io.casey.musikcube.remote.ui.settings.activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
-import android.widget.ArrayAdapter
-import android.widget.SeekBar
-import android.widget.Spinner
-import android.widget.TextView
+import android.view.*
+import android.widget.*
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.ViewModel
+import io.casey.musikcube.remote.service.websocket.model.IDevice
+import io.casey.musikcube.remote.service.websocket.model.IGainSettings
+import io.casey.musikcube.remote.service.websocket.model.IOutput
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.extension.slideThisDown
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.rxkotlin.subscribeBy
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel.State as ViewModelState
 
 class RemoteSettingsActivity: BaseActivity() {
-
+    private var initialized = false
     private lateinit var data: DataProviderMixin
     private lateinit var viewModel: RemoteSettingsViewModel
+    private lateinit var loadingOverlay: View
     private lateinit var driverSpinner: Spinner
     private lateinit var deviceSpinner: Spinner
     private lateinit var replayGainSpinner: Spinner
@@ -41,6 +42,7 @@ class RemoteSettingsActivity: BaseActivity() {
         title = getString(R.string.remote_settings_title)
 
         setContentView(R.layout.activity_remote_settings)
+        loadingOverlay = findViewById(R.id.loading_overlay)
         driverSpinner = findViewById(R.id.output_driver_spinner)
         deviceSpinner = findViewById(R.id.output_device_spinner)
         replayGainSpinner = findViewById(R.id.replaygain_spinner)
@@ -66,9 +68,14 @@ class RemoteSettingsActivity: BaseActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_save) {
-            saveAndFinish()
+            save()
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        slideThisDown()
     }
 
     override fun <T : ViewModel<*>> createViewModel(): T? {
@@ -76,19 +83,42 @@ class RemoteSettingsActivity: BaseActivity() {
     }
 
     private fun drawNormal() {
-        loadValues()
+        if (!initialized) {
+            preampSeekbar.progress = ((viewModel.preampGain + 20.0f) * 100).toInt()
+            driverSpinner.adapter = DriverAdapter(viewModel.outputDrivers)
+            driverSpinner.setSelection(viewModel.selectedDriverIndex)
+            deviceSpinner.adapter = DevicesAdapter(viewModel.devicesAt(viewModel.selectedDriverIndex))
+            deviceSpinner.setSelection(viewModel.selectedDeviceIndex)
+            replayGainSpinner.setSelection(REPLAYGAIN_MODE_TO_INDEX[viewModel.replayGainMode]!!)
+            initialized = true
+        }
+
+        loadingOverlay.visibility = View.GONE
     }
 
     private fun drawLoading() {
-
+        loadingOverlay.visibility = View.VISIBLE
     }
 
-    private fun saveAndFinish() {
-        /* TODO */
-    }
+    private fun save() {
+        val replayGainMode = indexToReplayGain(replayGainSpinner.selectedItemPosition)
+        val preampGain = (preampSeekbar.progress.toFloat() / 100.0f) - 20.0f
 
-    private fun loadValues() {
-        preampSeekbar.progress = ((viewModel.preampGain + 20.0f) * 100).toInt()
+        var driverName = ""
+        var deviceId = ""
+
+        if (driverSpinner.adapter.count > 0) {
+            val selectedDriver = driverSpinner.selectedItemPosition
+            val selectedDevice = deviceSpinner.selectedItemPosition
+
+            driverName = viewModel.outputDrivers[selectedDriver].name
+
+            if (deviceSpinner.adapter.count > 0) {
+                deviceId = viewModel.devicesAt(selectedDriver)[selectedDevice].id
+            }
+        }
+
+        viewModel.save(replayGainMode, preampGain, driverName, deviceId)
     }
 
     private fun initListeners() {
@@ -111,7 +141,7 @@ class RemoteSettingsActivity: BaseActivity() {
 
         /* replaygain / preamp */
         val replayGainModes = ArrayAdapter.createFromResource(
-            this, R.array.replaygain_mode_array, android.R.layout.simple_spinner_item)
+            this, R.array.replaygain_mode_array, android.R.layout.simple_spinner_dropdown_item)
 
         replayGainModes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
 
@@ -124,10 +154,10 @@ class RemoteSettingsActivity: BaseActivity() {
                     R.string.remote_settings_preamp_gain_format, gain)
             }
 
-            override fun onStartTrackingTouch(p0: SeekBar?) {
+            override fun onStartTrackingTouch(view: SeekBar?) {
             }
 
-            override fun onStopTrackingTouch(p0: SeekBar?) {
+            override fun onStopTrackingTouch(view: SeekBar?) {
             }
         })
 
@@ -135,11 +165,6 @@ class RemoteSettingsActivity: BaseActivity() {
     }
 
     private fun initObservers() {
-//        disposables.add(data.provider.observeState().subscribeBy(
-//            onNext = { },
-//            onError = { /* error */ }
-//        ))
-
         disposables.add(viewModel.observe().subscribeBy(
             onNext = {
                 when (it) {
@@ -153,13 +178,60 @@ class RemoteSettingsActivity: BaseActivity() {
                     }
                     ViewModelState.Saved -> {
                         finish()
+                        slideThisDown()
                     }
                 }
             }
         ))
     }
 
+    private class DriverAdapter(private val outputs: List<IOutput>): BaseAdapter() {
+        override fun getView(pos: Int, view: View?, parent: ViewGroup?): View {
+            var bind = view
+            if (view == null) {
+                bind = LayoutInflater.from(parent?.context).inflate(
+                    android.R.layout.simple_spinner_dropdown_item, parent, false)
+            }
+            (bind as TextView).text = outputs[pos].name
+            return bind
+        }
+
+        override fun getItem(pos: Int): Any = outputs[pos]
+        override fun getItemId(pos: Int): Long = pos.toLong()
+        override fun getCount(): Int = outputs.size
+    }
+
+    private class DevicesAdapter(private val devices: List<IDevice>): BaseAdapter() {
+        override fun getView(pos: Int, view: View?, parent: ViewGroup?): View {
+            var bind = view
+            if (view == null) {
+                bind = LayoutInflater.from(parent?.context).inflate(
+                        android.R.layout.simple_spinner_dropdown_item, parent, false)
+            }
+            (bind as TextView).text = devices[pos].name
+            return bind
+        }
+
+        override fun getItem(pos: Int): Any = devices[pos]
+        override fun getItemId(pos: Int): Long = pos.toLong()
+        override fun getCount(): Int = devices.size
+    }
+
     companion object {
+        val REPLAYGAIN_MODE_TO_INDEX = mapOf(
+            IGainSettings.ReplayGainMode.Disabled to 0,
+                IGainSettings.ReplayGainMode.Track to 1,
+                IGainSettings.ReplayGainMode.Album to 2)
+
+        fun indexToReplayGain(index: Int): IGainSettings.ReplayGainMode {
+            REPLAYGAIN_MODE_TO_INDEX.forEach {
+                if (it.value == index) {
+                    return it.key
+                }
+            }
+            return IGainSettings.ReplayGainMode.Disabled
+        }
+
         fun getStartIntent(context: Context):Intent =
             Intent(context, RemoteSettingsActivity::class.java)
     }
