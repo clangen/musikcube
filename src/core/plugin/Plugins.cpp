@@ -138,6 +138,10 @@ static class Environment : public IEnvironment {
             }
         }
 
+        virtual IOutput* GetDefaultOutput() override {
+            return outputs::GetUnmanagedSelectedOutput();
+        }
+
         virtual void ReindexMetadata() override {
             if (::library) {
                 ::library->Indexer()->Schedule(IIndexer::SyncType::Local);

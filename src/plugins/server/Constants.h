@@ -128,6 +128,8 @@ namespace key {
     static const std::string sdk_version = "sdk_version";
     static const std::string api_version = "api_version";
     static const std::string driver_name = "driver_name";
+    static const std::string all = "all";
+    static const std::string selected = "selected";
     static const std::string devices = "devices";
     static const std::string device_name = "device_name";
     static const std::string device_id = "device_id";

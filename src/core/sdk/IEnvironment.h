@@ -60,6 +60,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetPreampGain(float gain) = 0;
             virtual void ReloadPlaybackOutput() = 0;
             virtual void SetDefaultOutput(IOutput* output) = 0;
+            virtual IOutput* GetDefaultOutput() = 0;
             virtual void ReindexMetadata() = 0;
             virtual void RebuildMetadata() = 0;
     };

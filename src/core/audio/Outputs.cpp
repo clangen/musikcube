@@ -149,6 +149,36 @@ namespace musik {
                     return output;
                 }
 
+                musik::core::sdk::IOutput* GetUnmanagedSelectedOutput() {
+                    IOutput* output = nullptr;
+
+                    OutputList plugins = queryOutputs<NullDeleter>();
+
+                    if (plugins.size()) {
+                        std::shared_ptr<Preferences> prefs =
+                            Preferences::ForComponent(components::Playback);
+
+                        const std::string name = prefs->GetString(keys::OutputPlugin);
+
+                        for (size_t i = 0; i < plugins.size(); i++) {
+                            if (plugins[i]->Name() == name) {
+                                output = plugins[i].get();
+                                plugins.erase(plugins.begin() + i);
+                                break;
+                            }
+                        }
+
+                        if (!output) {
+                            output = plugins[0].get();
+                            plugins.erase(plugins.begin());
+                        }
+                    }
+
+                    release(plugins);
+
+                    return output;
+                }
+
                 Output SelectedOutput() {
                     std::shared_ptr<Preferences> prefs =
                         Preferences::ForComponent(components::Playback);

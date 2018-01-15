@@ -46,5 +46,6 @@ namespace musik { namespace core { namespace audio { namespace outputs {
     size_t GetOutputCount();
     musik::core::sdk::IOutput* GetUnmanagedOutput(size_t index);
     musik::core::sdk::IOutput* GetUnmanagedOutput(const std::string& name);
+    musik::core::sdk::IOutput* GetUnmanagedSelectedOutput();
 
 } } } }

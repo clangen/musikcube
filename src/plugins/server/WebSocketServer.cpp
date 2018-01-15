@@ -1158,10 +1158,29 @@ void WebSocketServer::RespondWithRunIndexer(connection_hdl connection, json& req
 void WebSocketServer::RespondWithListOutputDrivers(connection_hdl connection, json& request) {
     json outputs = json::array();
 
+    std::string selectedDriverName, selectedDeviceId;
+
     size_t count = context.environment->GetOutputCount();
     for (size_t i = 0; i < count; i++) {
-        auto output = context.environment->GetOutputAtIndex(i);
+        auto output = context.environment->GetDefaultOutput();
+
+        if (output) {
+            selectedDriverName = output->Name();
+            auto device = output->GetDefaultDevice();
+            if (device) {
+                selectedDeviceId = device->Id();
+            }
+            output->Release();
+        }
+
+        output = context.environment->GetOutputAtIndex(i);
         json devices = json::array();
+
+        devices.push_back({
+            { key::device_name, "default" },
+            { key::device_id, "" }
+        });
+
         auto deviceList = output->GetDeviceList();
         if (deviceList) {
             for (size_t j = 0; j < deviceList->Count(); j++) {
@@ -1182,7 +1201,13 @@ void WebSocketServer::RespondWithListOutputDrivers(connection_hdl connection, js
         output->Release();
     }
 
-    this->RespondWithOptions(connection, request, { { key::data, outputs } });
+    this->RespondWithOptions(connection, request, {
+        { key::all, outputs },
+        { key::selected, {
+            { key::driver_name, selectedDriverName },
+            { key::device_id, selectedDeviceId }
+        }
+    }});
 }
 
 void WebSocketServer::RespondWithSetDefaultOutputDriver(connection_hdl connection, json& request) {
