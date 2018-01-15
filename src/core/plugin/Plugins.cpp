@@ -172,7 +172,7 @@ static class Environment : public IEnvironment {
         virtual float GetPreampGain() override {
             if (::playbackPrefs) {
                 return (float) ::playbackPrefs->GetDouble(
-                    prefs::keys::PreampDecibels.c_str(), 1.0f);
+                    prefs::keys::PreampDecibels.c_str(), 0.0f);
             }
             return 1.0f;
         }
