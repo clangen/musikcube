@@ -48,11 +48,14 @@ interface IDataProvider {
     fun deletePlaylist(playlistId: Long): Observable<Boolean>
     fun removeTracksFromPlaylist(playlistId: Long, externalIds: List<String>, sortOrders: List<Int>): Observable<Int>
 
-    fun listOutputDrivers(): Observable<List<IOutput>>
+    fun listOutputDrivers(): Observable<IOutputs>
     fun setDefaultOutputDriver(driverName: String, deviceId: String = "default"): Observable<Boolean>
 
     fun getGainSettings(): Observable<IGainSettings>
     fun updateGainSettings(replayGainMode: IGainSettings.ReplayGainMode, preampGain: Float): Observable<Boolean>
+
+    fun reindexMetadata(): Observable<Boolean>
+    fun rebuildMetadata(): Observable<Boolean>
 
     val state: State
 }

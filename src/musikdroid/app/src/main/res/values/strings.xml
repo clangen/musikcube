@@ -66,6 +66,7 @@
     <string name="transport_not_playing">not playing</string>
     <string name="search_hint">search</string>
     <string name="menu_settings">settings</string>
+    <string name="menu_remote_manage">remote management</string>
     <string name="menu_genres">genres</string>
     <string name="menu_playlists">playlists</string>
     <string name="menu_remote_toggle">remote playback</string>
@@ -117,6 +118,18 @@
     <string name="settings_playback_engine_exo">ExoPlayer (stable)</string>
     <string name="settings_playback_engine_exo_gapless">ExoPlayer Gapless (experimental)</string>
     <string name="settings_playback_engine_mp">MediaPlayer (deprecated)</string>
+    <string name="remote_settings_title">remote management</string>
+    <string name="remote_settings_output_driver">output driver</string>
+    <string name="remote_settings_output_device">output device</string>
+    <string name="remote_settings_replaygain_mode">replaygain mode</string>
+    <string name="remote_settings_preamp_gain">preamp gain</string>
+    <string name="remote_settings_preamp_gain_format">%.1f dB</string>
+    <string name="remote_settings_metadata_actions">metadata library</string>
+    <string name="remote_settings_reindex_button">rescan</string>
+    <string name="remote_settings_rebuild_button">rebuild</string>
+    <string name="replaygain_mode_disabled">disabled</string>
+    <string name="replaygain_mode_track">track</string>
+    <string name="replaygain_mode_album">album</string>
     <string name="connections_no_presets">no saved connection presets.</string>
     <string name="empty_show_offline_tracks_button">show offline songs</string>
     <string name="empty_no_offline_tracks_message">oops, you don\'t seem to have any songs available offline.\n\nnext time you\'re connected, stream some music!</string>

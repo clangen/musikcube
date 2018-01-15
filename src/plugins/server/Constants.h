@@ -222,4 +222,4 @@ static auto REPLAYGAIN_MODE_TO_STRING = makeBimap<musik::core::sdk::ReplayGainMo
     { musik::core::sdk::ReplayGainMode::Track, "track" },
 });
 
-static const int ApiVersion = 12;
+static const int ApiVersion = 13;

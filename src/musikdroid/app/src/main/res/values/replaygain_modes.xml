@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="replaygain_mode_array">
+        <item>@string/replaygain_mode_disabled</item>
+        <item>@string/replaygain_mode_track</item>
+        <item>@string/replaygain_mode_album</item>
+    </string-array>
+</resources>

@@ -401,13 +401,13 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun listOutputDrivers(): Observable<List<IOutput>> {
+    override fun listOutputDrivers(): Observable<IOutputs> {
         val message = SocketMessage.Builder
             .request(Messages.Request.ListOutputDrivers)
             .build()
 
         return service.observe(message, client)
-            .flatMap<List<IOutput>> { socketMessage -> toOutputList(socketMessage) }
+            .flatMap<IOutputs> { socketMessage -> toOutputs(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -447,6 +447,14 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    override fun reindexMetadata(): Observable<Boolean> {
+        return runIndexer(Messages.Value.REINDEX)
+    }
+
+    override fun rebuildMetadata(): Observable<Boolean> {
+        return runIndexer(Messages.Value.REBUILD)
+    }
+
     override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> =
         connectionStatePublisher.observeOn(AndroidSchedulers.mainThread())
 
@@ -468,6 +476,17 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
     override fun destroy() {
         detach()
         disposables.dispose()
+    }
+
+    private fun runIndexer(type: String): Observable<Boolean> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.RunIndexer)
+            .addOption(Messages.Key.TYPE, type)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     private val client: WebSocketService.Client = object : WebSocketService.Client {
@@ -534,13 +553,20 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             return Observable.just(values)
         }
 
-        private fun toOutputList(socketMessage: SocketMessage): Observable<List<IOutput>> {
-            val outputs = ArrayList<IOutput>()
-            val json = socketMessage.getJsonArrayOption(Messages.Key.DATA, JSONArray())!!
-            for (i in 0 until json.length()) {
-                outputs.add(RemoteOutput(json.getJSONObject(i)))
+        private fun toOutputs(socketMessage: SocketMessage): Observable<IOutputs> {
+            val outputList = ArrayList<IOutput>()
+            val allOutputs = socketMessage.getJsonArrayOption(Messages.Key.ALL, JSONArray())!!
+            val selectedOutput = socketMessage.getJsonObjectOption(Messages.Key.SELECTED, JSONObject())!!
+
+            for (i in 0 until allOutputs.length()) {
+                outputList.add(RemoteOutput(allOutputs.getJSONObject(i)))
             }
-            return Observable.just(outputs)
+
+            return Observable.just(RemoteOutputs(
+                selectedOutput.optString(Messages.Key.DRIVER_NAME, ""),
+                selectedOutput.optString(Messages.Key.DEVICE_ID, ""),
+                outputList
+            ))
         }
 
         private fun toTrackList(socketMessage: SocketMessage): Observable<List<ITrack>> {

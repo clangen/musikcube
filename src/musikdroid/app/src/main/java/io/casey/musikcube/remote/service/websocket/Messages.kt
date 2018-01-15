@@ -35,7 +35,8 @@ class Messages {
         ListOutputDrivers("list_output_drivers"),
         SetDefaultOutputDriver("set_default_output_driver"),
         GetGainSettings("get_gain_settings"),
-        UpdateGainSettings("update_gain_settings");
+        UpdateGainSettings("update_gain_settings"),
+        RunIndexer("run_indexer");
 
         override fun toString(): String = rawValue
         fun matches(name: String): Boolean = (rawValue == name)
@@ -76,6 +77,8 @@ class Messages {
             val CATEGORY = "category"
             val CATEGORY_ID = "category_id"
             val DATA = "data"
+            val ALL = "all"
+            val SELECTED = "selected"
             val ID = "id"
             val COUNT = "count"
             val COUNT_ONLY = "count_only"
@@ -110,6 +113,8 @@ class Messages {
         companion object {
             val UP = "up"
             val DOWN = "down"
+            val REINDEX = "reindex"
+            val REBUILD = "rebuild"
         }
     }
 

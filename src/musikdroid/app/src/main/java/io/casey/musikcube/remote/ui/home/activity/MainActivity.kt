@@ -28,6 +28,7 @@ import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
+import io.casey.musikcube.remote.ui.settings.activity.RemoteSettingsActivity
 import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
@@ -115,6 +116,7 @@ class MainActivity : BaseActivity() {
 
         menu.findItem(R.id.action_playlists).isEnabled = connected
         menu.findItem(R.id.action_genres).isEnabled = connected
+        menu.findItem(R.id.action_remote_manage).isEnabled = connected
 
         menu.findItem(R.id.action_remote_toggle).setIcon(
             if (streaming) R.drawable.ic_toolbar_streaming else R.drawable.ic_toolbar_remote)
@@ -147,6 +149,11 @@ class MainActivity : BaseActivity() {
 
             R.id.action_offline_tracks -> {
                 onOfflineTracksSelected()
+                return true
+            }
+
+            R.id.action_remote_manage -> {
+                startActivity(RemoteSettingsActivity.getStartIntent(this))
                 return true
             }
         }

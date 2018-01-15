@@ -12,16 +12,13 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import java.util.concurrent.atomic.AtomicLong
 
-abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCallbacks {
+    abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCallbacks {
     val id: Long = nextId.incrementAndGet()
     private val publisher by lazy { createSubject() }
 
     interface Provider {
         fun <T: ViewModel<*>> createViewModel(): T?
     }
-
-    protected var listener: T? = null
-        private set
 
     open fun onPause() {
     }
@@ -30,7 +27,6 @@ abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCa
     }
 
     open fun onDestroy() {
-        listener = null
         handler.postDelayed(cleanup, cleanupDelayMs)
     }
 
@@ -47,7 +43,6 @@ abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCa
     val context: Context = Application.instance!!
 
     internal val cleanup = Runnable {
-        listener = null
         idToInstance.remove(id)
         onCleanup()
     }
