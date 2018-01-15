@@ -1217,16 +1217,7 @@ void WebSocketServer::RespondWithSetDefaultOutputDriver(connection_hdl connectio
         auto output = context.environment->GetOutputWithName(driver.c_str());
         if (output) {
             std::string device = options.value(key::device_id, "");
-            auto devices = output->GetDeviceList();
-            if (devices) {
-                for (size_t i = 0; i < devices->Count(); i++) {
-                    if (devices->At(0)->Id() == device) {
-                        output->SetDefaultDevice(device.c_str());
-                        break;
-                    }
-                }
-                devices->Release();
-            }
+            output->SetDefaultDevice(device.c_str());
             context.environment->SetDefaultOutput(output);
             output->Release();
             this->RespondWithSuccess(connection, request);
