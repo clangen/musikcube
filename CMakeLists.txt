@@ -93,11 +93,13 @@ add_subdirectory(src/plugins/stockencoders)
 
 if (${FFMPEG_DECODER} MATCHES "true")
   add_subdirectory(src/plugins/ffmpegdecoder)
+  add_dependencies(musikcube ffmpegdecoder)
 else()
   add_subdirectory(src/plugins/m4adecoder)
   add_subdirectory(src/plugins/oggdecoder)
   add_subdirectory(src/plugins/nomaddecoder)
   add_subdirectory(src/plugins/flacdecoder)
+  add_dependencies(musikcube m4adecoder oggdecoder nomaddecoder flacdecoder)
 endif()
 
 add_dependencies(taglibreader taglib)
