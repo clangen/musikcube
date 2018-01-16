@@ -211,6 +211,12 @@
     <ClCompile Include="audio\ProxyTransport.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
+    <ClCompile Include="support\Playback.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="support\Duration.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -509,6 +515,12 @@
     </ClInclude>
     <ClInclude Include="audio\ProxyTransport.h">
       <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="support\Duration.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="support\Playback.h">
+      <Filter>src\support</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

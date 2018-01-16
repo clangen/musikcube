@@ -47,8 +47,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nomaddecoder", "src\plugins
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "directsoundout", "src\plugins\directsoundout\directsoundout.vcxproj", "{51C18730-DC48-411A-829D-F2B3B7AC4C97}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glue", "src\glue\glue.vcxproj", "{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullout", "src\plugins\nullout\nullout.vcxproj", "{BA3902E0-8915-4E59-AD3B-F9960507F234}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "src\plugins\server\server.vcxproj", "{43A78C57-C9A3-4852-B0BE-05335C5C077D}"
@@ -151,12 +149,6 @@ Global
 		{51C18730-DC48-411A-829D-F2B3B7AC4C97}.Release|Win32.ActiveCfg = Release|Win32
 		{51C18730-DC48-411A-829D-F2B3B7AC4C97}.Release|Win32.Build.0 = Release|Win32
 		{51C18730-DC48-411A-829D-F2B3B7AC4C97}.Release|x64.ActiveCfg = Release|Win32
-		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Debug|Win32.ActiveCfg = Debug|Win32
-		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Debug|Win32.Build.0 = Debug|Win32
-		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Debug|x64.ActiveCfg = Debug|Win32
-		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Release|Win32.ActiveCfg = Release|Win32
-		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Release|Win32.Build.0 = Release|Win32
-		{01869283-4CC3-4DA4-A06C-3DF6A0DE98CC}.Release|x64.ActiveCfg = Release|Win32
 		{BA3902E0-8915-4E59-AD3B-F9960507F234}.Debug|Win32.ActiveCfg = Debug|Win32
 		{BA3902E0-8915-4E59-AD3B-F9960507F234}.Debug|Win32.Build.0 = Debug|Win32
 		{BA3902E0-8915-4E59-AD3B-F9960507F234}.Debug|x64.ActiveCfg = Debug|Win32

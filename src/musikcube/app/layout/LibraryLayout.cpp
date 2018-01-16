@@ -46,7 +46,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
 
-#include <glue/util/Playback.h>
+#include <core/support/Playback.h>
 
 #include "LibraryLayout.h"
 
@@ -358,7 +358,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == " " || key == "M- ") {
-        musik::glue::playback::PauseOrResume(this->transport);
+        musik::core::playback::PauseOrResume(this->transport);
         return true;
     }
 

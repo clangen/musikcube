@@ -44,7 +44,9 @@ set(CORE_SOURCES
   ./plugin/Plugins.cpp
   ./runtime/Message.cpp
   ./runtime/MessageQueue.cpp
+  ./support/Duration.cpp
   ./support/Common.cpp
+  ./support/Playback.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp
   ../3rdparty/src/sqlite/sqlite3.c

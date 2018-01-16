@@ -32,7 +32,31 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "Duration.h"
+#include <boost/lexical_cast.hpp>
 
-#include <core/config.h>
-#include <algorithm>
+namespace musik { namespace core { namespace duration {
+
+    std::string Duration(int seconds) {
+        int mins = (seconds / 60);
+        int secs = seconds - (mins * 60);
+        char buffer[12];
+        snprintf(buffer, sizeof(buffer), "%d:%02d", mins, secs);
+        return std::string(buffer);
+    }
+
+    std::string Duration(double seconds) {
+        return Duration((int) round(seconds));
+    }
+
+    std::string Duration(const std::string& str) {
+        if (str.size()) {
+            int seconds = boost::lexical_cast<int>(str);
+            return Duration(seconds);
+        }
+
+        return "0:00";
+    }
+
+} } }

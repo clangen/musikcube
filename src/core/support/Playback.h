@@ -32,4 +32,19 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
+#pragma once
+
+#include <core/audio/ITransport.h>
+#include <core/sdk/IPlaybackService.h>
+
+namespace musik {
+    namespace core {
+        namespace playback {
+            void VolumeUp(musik::core::audio::ITransport& transport);
+            void VolumeDown(musik::core::audio::ITransport& transport);
+            void SeekForward(musik::core::sdk::IPlaybackService& playback);
+            void SeekBack(musik::core::sdk::IPlaybackService& playback);
+            void PauseOrResume(musik::core::audio::ITransport& transport);
+        }
+    }
+}

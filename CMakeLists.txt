@@ -83,7 +83,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 endif()
 
 add_subdirectory(src/core)
-add_subdirectory(src/glue)
 add_subdirectory(src/musikcube)
 add_subdirectory(src/plugins/taglib_plugin)
 add_subdirectory(src/plugins/nullout)
@@ -104,7 +103,7 @@ endif()
 
 add_dependencies(taglibreader taglib)
 
-add_dependencies(musikcube musikcore musikglue taglibreader nullout server httpdatastream stockencoders)
+add_dependencies(musikcube musikcore taglibreader nullout server httpdatastream stockencoders)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/plugins/alsaout)

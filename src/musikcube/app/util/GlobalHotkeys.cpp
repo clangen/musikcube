@@ -42,7 +42,7 @@
 
 #include <core/audio/Visualizer.h>
 
-#include <glue/util/Playback.h>
+#include <core/support/Playback.h>
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -65,15 +65,15 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::TogglePause, kn)) {
-        musik::glue::playback::PauseOrResume(this->transport);
+        core::playback::PauseOrResume(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeUp, kn)) {
-        musik::glue::playback::VolumeUp(this->transport);
+        core::playback::VolumeUp(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::VolumeDown, kn)) {
-        musik::glue::playback::VolumeDown(this->transport);
+        core::playback::VolumeDown(this->transport);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::Previous, kn)) {
@@ -85,11 +85,11 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekBack, kn)) {
-        musik::glue::playback::SeekBack(this->playback);
+        core::playback::SeekBack(this->playback);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SeekForward, kn)) {
-        musik::glue::playback::SeekForward(this->playback);
+        core::playback::SeekForward(this->playback);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {

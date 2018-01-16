@@ -39,14 +39,14 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
 
-#include <glue/util/Duration.h>
-#include <glue/util/Playback.h>
+#include <core/support/Duration.h>
 
 #include <core/debug.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/ReplayGainQuery.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/runtime/Message.h>
+#include <core/support/Playback.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -68,7 +68,6 @@ using namespace musik::core::db;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::cube;
-using namespace musik::glue;
 using namespace std::chrono;
 using namespace cursespp;
 
@@ -219,7 +218,7 @@ struct musik::cube::TransportDisplayCache {
                     }
                 }
 
-                totalTime = musik::glue::duration::Duration(secondsTotal);
+                totalTime = musik::core::duration::Duration(secondsTotal);
                 totalTimeCols = u8cols(totalTime);
             }
         }
@@ -610,7 +609,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         secondsCurrent = (int) round(this->lastTime);
     }
 
-    const std::string currentTime = musik::glue::duration::Duration(
+    const std::string currentTime = musik::core::duration::Duration(
         std::min(secondsCurrent, displayCache->secondsTotal));
 
     const std::string replayGain = replayGainEnabled  ? "rg" : "";

@@ -32,19 +32,44 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "Playback.h"
+#include <core/sdk/constants.h>
+#include <cmath>
 
-#include <core/audio/ITransport.h>
-#include <core/sdk/IPlaybackService.h>
+using namespace musik::core::audio;
+using namespace musik::core::sdk;
 
 namespace musik {
-    namespace glue {
+    namespace core {
         namespace playback {
-            void VolumeUp(musik::core::audio::ITransport& transport);
-            void VolumeDown(musik::core::audio::ITransport& transport);
-            void SeekForward(musik::core::sdk::IPlaybackService& playback);
-            void SeekBack(musik::core::sdk::IPlaybackService& playback);
-            void PauseOrResume(musik::core::audio::ITransport& transport);
+            void PauseOrResume(ITransport& transport) {
+                int state = transport.GetPlaybackState();
+                if (state == PlaybackPaused) {
+                    transport.Resume();
+                }
+                else if (state == PlaybackPlaying) {
+                    transport.Pause();
+                }
+            }
+
+            void VolumeUp(ITransport& transport) {
+                double delta = round(transport.Volume() * 100.0) >= 10.0 ? 0.05 : 0.01;
+                transport.SetVolume(transport.Volume() + delta);
+            }
+
+            void VolumeDown(ITransport& transport) {
+                double delta = round(transport.Volume() * 100.0) > 10.0 ? 0.05 : 0.01;
+                transport.SetVolume(transport.Volume() - delta);
+            }
+
+            void SeekForward(IPlaybackService& playback) {
+                playback.SetPosition(playback.GetPosition() + 10.0f);
+            }
+
+            void SeekBack(IPlaybackService& playback) {
+                playback.SetPosition(playback.GetPosition() - 10.0f);
+            }
         }
     }
 }

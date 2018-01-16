@@ -42,7 +42,7 @@
 #include <app/overlay/PlayQueueOverlays.h>
 #include <core/library/query/local/NowPlayingTrackListQuery.h>
 #include <core/library/query/local/GetPlaylistQuery.h>
-#include <glue/util/Duration.h>
+#include <core/support/Duration.h>
 #include "NowPlayingLayout.h"
 
 #include <set>
@@ -55,7 +55,6 @@ using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::cube;
 using namespace musik::core::db::local;
-using namespace musik::glue;
 using namespace cursespp;
 
 static std::set<std::string> EDIT_KEYS;
