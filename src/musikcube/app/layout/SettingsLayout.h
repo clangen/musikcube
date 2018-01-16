@@ -44,11 +44,11 @@
 #include <cursespp/TextInput.h>
 #include <cursespp/DialogOverlay.h>
 
-#include <app/window/TrackListView.h>
 #include <core/audio/PlaybackService.h>
-#include <app/model/DirectoryAdapter.h>
+#include <core/audio/ProxyTransport.h>
 
-#include <glue/audio/MasterTransport.h>
+#include <app/window/TrackListView.h>
+#include <app/model/DirectoryAdapter.h>
 
 #include <core/library/ILibrary.h>
 #include <core/support/Preferences.h>
@@ -72,7 +72,7 @@ namespace musik {
                     cursespp::App& app,
                     musik::core::ILibraryPtr library,
                     musik::core::sdk::IPlaybackService& playback,
-                    musik::glue::audio::MasterTransport& transport);
+                    musik::core::audio::ProxyTransport& transport);
 
                 virtual ~SettingsLayout();
 
@@ -119,7 +119,7 @@ namespace musik {
                 musik::core::ILibraryPtr library;
                 musik::core::IIndexer* indexer;
                 musik::core::sdk::IPlaybackService& playback;
-                musik::glue::audio::MasterTransport& transport;
+                musik::core::audio::ProxyTransport& transport;
 
                 std::shared_ptr<musik::core::Preferences> prefs;
 

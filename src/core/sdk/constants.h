@@ -108,6 +108,11 @@ namespace musik {
                 Album = 2
             };
 
+            enum class TransportType : int {
+                Gapless = 0,
+                Crossfade = 1
+            };
+
             namespace category {
                 static const char* Album = "album";
                 static const char* Artist = "artist";

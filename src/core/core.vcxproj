@@ -94,6 +94,7 @@
     <ClCompile Include="audio\GaplessTransport.cpp" />
     <ClCompile Include="audio\Outputs.cpp" />
     <ClCompile Include="audio\PlaybackService.cpp" />
+    <ClCompile Include="audio\ProxyTransport.cpp" />
     <ClCompile Include="audio\Streams.cpp" />
     <ClCompile Include="audio\Visualizer.cpp" />
     <ClCompile Include="debug.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="audio\ITransport.h" />
     <ClInclude Include="audio\Outputs.h" />
     <ClInclude Include="audio\PlaybackService.h" />
+    <ClInclude Include="audio\ProxyTransport.h" />
     <ClInclude Include="audio\Streams.h" />
     <ClInclude Include="audio\Visualizer.h" />
     <ClInclude Include="debug.h" />

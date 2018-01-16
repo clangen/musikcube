@@ -46,7 +46,7 @@
 #include <core/library/ILibrary.h>
 #include <core/runtime/IMessageTarget.h>
 
-#include <glue/audio/MasterTransport.h>
+#include <core/audio/ProxyTransport.h>
 
 #include "ITopLevelLayout.h"
 
@@ -66,7 +66,7 @@ namespace musik {
                 MainLayout(
                     cursespp::App& app,
                     musik::core::audio::PlaybackService& playback,
-                    musik::glue::audio::MasterTransport& transport,
+                    musik::core::audio::ProxyTransport& transport,
                     musik::core::ILibraryPtr library);
 
                 virtual ~MainLayout();

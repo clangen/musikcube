@@ -34,7 +34,7 @@
 
 #include <pch.hpp>
 
-#include "MasterTransport.h"
+#include "ProxyTransport.h"
 
 #include <core/audio/GaplessTransport.h>
 #include <core/audio/CrossfadeTransport.h>
@@ -46,19 +46,17 @@ using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 
-using namespace musik::glue::audio;
-
-MasterTransport::MasterTransport()
+ProxyTransport::ProxyTransport()
 : prefs(Preferences::ForComponent(components::Playback)) {
-    this->type = (Type) this->prefs->GetInt(keys::Transport, Gapless);
+    this->type = (Type) this->prefs->GetInt(keys::Transport, (int) Type::Gapless);
     this->SwitchTo(this->type);
 }
 
-MasterTransport::~MasterTransport() {
+ProxyTransport::~ProxyTransport() {
 
 }
 
-void MasterTransport::SwitchTo(Type type) {
+void ProxyTransport::SwitchTo(Type type) {
     if (!this->transport || this->type != type) {
         this->type = type;
         this->prefs->SetInt(keys::Transport, (int) this->type);
@@ -66,7 +64,7 @@ void MasterTransport::SwitchTo(Type type) {
         double volume = this->transport ? this->transport->Volume() : -1;
 
         switch (this->type) {
-            case Gapless:
+            case Type::Gapless:
                 if (this->transport) {
                     /* hacky -- we know it's a crossfade transport, stop it
                     immediately without fading out so we don't block the UI
@@ -78,7 +76,7 @@ void MasterTransport::SwitchTo(Type type) {
                 this->transport.reset(new GaplessTransport());
                 break;
 
-            case Crossfade:
+            case Type::Crossfade:
                 this->transport.reset(new CrossfadeTransport());
                 break;
         }
@@ -88,91 +86,91 @@ void MasterTransport::SwitchTo(Type type) {
         }
 
         this->transport->PlaybackEvent.connect(
-            this, &MasterTransport::OnPlaybackEvent);
+            this, &ProxyTransport::OnPlaybackEvent);
 
         this->transport->StreamEvent.connect(
-            this, &MasterTransport::OnStreamEvent);
+            this, &ProxyTransport::OnStreamEvent);
 
         this->transport->TimeChanged.connect(
-            this, &MasterTransport::OnTimeChanged);
+            this, &ProxyTransport::OnTimeChanged);
 
         this->transport->VolumeChanged.connect(
-            this, &MasterTransport::OnVolumeChanged);
+            this, &ProxyTransport::OnVolumeChanged);
     }
 }
 
-MasterTransport::Type MasterTransport::GetType() {
+ProxyTransport::Type ProxyTransport::GetType() {
     return this->type;
 }
 
-void MasterTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
+void ProxyTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
     this->transport->PrepareNextTrack(trackUrl, gain);
 }
 
-void MasterTransport::Start(const std::string& trackUrl, Gain gain) {
+void ProxyTransport::Start(const std::string& trackUrl, Gain gain) {
     this->transport->Start(trackUrl, gain);
 }
 
-void MasterTransport::Stop() {
+void ProxyTransport::Stop() {
     this->transport->Stop();
 }
 
-bool MasterTransport::Pause() {
+bool ProxyTransport::Pause() {
     return this->transport->Pause();
 }
 
-bool MasterTransport::Resume() {
+bool ProxyTransport::Resume() {
     return this->transport->Resume();
 }
 
-double MasterTransport::Position() {
+double ProxyTransport::Position() {
     return this->transport->Position();
 }
 
-void MasterTransport::SetPosition(double seconds) {
+void ProxyTransport::SetPosition(double seconds) {
     this->transport->SetPosition(seconds);
 }
 
-double MasterTransport::Volume() {
+double ProxyTransport::Volume() {
     return this->transport->Volume();
 }
 
-void MasterTransport::SetVolume(double volume) {
+void ProxyTransport::SetVolume(double volume) {
     this->transport->SetVolume(volume);
 }
 
-double MasterTransport::GetDuration() {
+double ProxyTransport::GetDuration() {
     return this->transport->GetDuration();
 }
 
-bool MasterTransport::IsMuted() {
+bool ProxyTransport::IsMuted() {
     return this->transport->IsMuted();
 }
 
-void MasterTransport::SetMuted(bool muted) {
+void ProxyTransport::SetMuted(bool muted) {
     this->transport->SetMuted(muted);
 }
 
-void MasterTransport::ReloadOutput() {
+void ProxyTransport::ReloadOutput() {
     this->transport->ReloadOutput();
 }
 
-PlaybackState MasterTransport::GetPlaybackState() {
+PlaybackState ProxyTransport::GetPlaybackState() {
     return this->transport->GetPlaybackState();
 }
 
-void MasterTransport::OnStreamEvent(int type, std::string url) {
+void ProxyTransport::OnStreamEvent(int type, std::string url) {
     this->StreamEvent(type, url);
 }
 
-void MasterTransport::OnPlaybackEvent(int type) {
+void ProxyTransport::OnPlaybackEvent(int type) {
     this->PlaybackEvent(type);
 }
 
-void MasterTransport::OnVolumeChanged() {
+void ProxyTransport::OnVolumeChanged() {
     this->VolumeChanged();
 }
 
-void MasterTransport::OnTimeChanged(double time) {
+void ProxyTransport::OnTimeChanged(double time) {
     this->TimeChanged(time);
 }

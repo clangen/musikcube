@@ -35,7 +35,7 @@
 #pragma once
 
 #include <functional>
-#include <glue/audio/MasterTransport.h>
+#include <core/audio/ProxyTransport.h>
 #include <core/sdk/IPlaybackService.h>
 
 namespace musik {
@@ -43,14 +43,14 @@ namespace musik {
         class PlaybackOverlays {
             public:
                 static void ShowOutputDriverOverlay(
-                    musik::glue::audio::MasterTransport::Type transportType,
+                    musik::core::audio::ProxyTransport::Type transportType,
                     std::function<void()> callback);
 
                 static void ShowOutputDeviceOverlay(std::function<void()> callback);
 
                 static void ShowTransportOverlay(
-                    musik::glue::audio::MasterTransport::Type transportType,
-                    std::function<void(int)> callback);
+                    musik::core::audio::ProxyTransport::Type transportType,
+                    std::function<void(musik::core::audio::ProxyTransport::Type)> callback);
 
                 static void ShowReplayGainOverlay(std::function<void()> callback);
 

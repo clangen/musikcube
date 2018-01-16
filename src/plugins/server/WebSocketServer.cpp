@@ -459,6 +459,14 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithUpdateGainSettings(connection, request);
             return;
         }
+        else if (name == request::get_transport_type) {
+            this->RespondWithGetTransportType(connection, request);
+            return;
+        }
+        else if (name == request::set_transport_type) {
+            this->RespondWithSetTransportType(connection, request);
+            return;
+        }
     }
 
     this->RespondWithInvalidRequest(connection, name, id);
@@ -1263,6 +1271,29 @@ void WebSocketServer::RespondWithUpdateGainSettings(connection_hdl connection, j
 
     if (reload) {
         context.environment->ReloadPlaybackOutput();
+    }
+
+    this->RespondWithSuccess(connection, request);
+}
+
+void WebSocketServer::RespondWithGetTransportType(connection_hdl connection, json& request) {
+    auto type = context.environment->GetTransportType();
+    this->RespondWithOptions(connection, request, {
+        { key::type, TRANSPORT_TYPE_TO_STRING.left.find(type)->second }
+    });
+}
+
+void WebSocketServer::RespondWithSetTransportType(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+
+    std::string currentType = TRANSPORT_TYPE_TO_STRING.left
+        .find(context.environment->GetTransportType())->second;
+
+    auto newType = options.value(key::type, currentType);
+
+    if (currentType != newType) {
+        auto enumType = TRANSPORT_TYPE_TO_STRING.right.find(newType)->second;
+        context.environment->SetTransportType(enumType);
     }
 
     this->RespondWithSuccess(connection, request);

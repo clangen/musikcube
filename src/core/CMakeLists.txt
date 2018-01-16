@@ -4,6 +4,7 @@ set(CORE_SOURCES
   ./audio/Crossfader.cpp
   ./audio/CrossfadeTransport.cpp
   ./audio/GaplessTransport.cpp
+  ./audio/ProxyTransport.cpp
   ./audio/Outputs.cpp
   ./audio/PlaybackService.cpp
   ./audio/Player.cpp

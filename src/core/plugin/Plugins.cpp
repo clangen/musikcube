@@ -138,6 +138,28 @@ static class Environment : public IEnvironment {
             }
         }
 
+        virtual TransportType GetTransportType() override {
+            if (::playbackPrefs) {
+                return (TransportType) ::playbackPrefs->GetInt(
+                    prefs::keys::Transport.c_str(), (int) TransportType::Gapless);
+
+                ::playbackPrefs->Save();
+            }
+            return TransportType::Gapless;
+        }
+
+        virtual void SetTransportType(TransportType type) override {
+            if (::playbackPrefs) {
+                auto currentType = GetTransportType();
+                if (currentType != type) {
+                    ::playbackPrefs->SetInt(prefs::keys::Transport.c_str(), (int) type);
+                    if (::playback) {
+                        ::playback->ReloadOutput();
+                    }
+                }
+            }
+        }
+
         virtual IOutput* GetDefaultOutput() override {
             return outputs::GetUnmanagedSelectedOutput();
         }
@@ -166,6 +188,7 @@ static class Environment : public IEnvironment {
         virtual void SetReplayGainMode(ReplayGainMode mode) override {
             if (::playbackPrefs) {
                 ::playbackPrefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) mode);
+                ::playbackPrefs->Save();
             }
         }
 
@@ -182,6 +205,7 @@ static class Environment : public IEnvironment {
                 if (gain > 20.0f) { gain = 20.0f; }
                 if (gain < -20.0f) { gain = -20.0f; }
                 ::playbackPrefs->SetDouble(prefs::keys::PreampDecibels.c_str(), gain);
+                ::playbackPrefs->Save();
             }
         }
 

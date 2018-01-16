@@ -208,6 +208,9 @@
     <ClCompile Include="library\query\local\AllCategoriesQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
+    <ClCompile Include="audio\ProxyTransport.cpp">
+      <Filter>src\audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -503,6 +506,9 @@
     </ClInclude>
     <ClInclude Include="library\query\local\AllCategoriesQuery.h">
       <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\ProxyTransport.h">
+      <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

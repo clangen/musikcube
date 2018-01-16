@@ -41,7 +41,7 @@
 #include <core/library/track/Track.h>
 #include <core/library/track/TrackList.h>
 #include <core/library/ILibrary.h>
-#include <core/audio/ITransport.h>
+#include <core/audio/ProxyTransport.h>
 #include <core/support/Preferences.h>
 #include <core/runtime/IMessageQueue.h>
 
@@ -70,7 +70,7 @@ namespace musik { namespace core { namespace audio {
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
                 musik::core::ILibraryPtr library,
-                musik::core::audio::ITransport& transport);
+                musik::core::audio::ProxyTransport& transport);
 
             ~PlaybackService();
 
@@ -192,7 +192,7 @@ namespace musik { namespace core { namespace audio {
             musik::core::TrackPtr playingTrack;
 
             musik::core::ILibraryPtr library;
-            musik::core::audio::ITransport& transport;
+            musik::core::audio::ProxyTransport& transport;
             size_t index, nextIndex;
 
             musik::core::sdk::RepeatMode repeatMode;

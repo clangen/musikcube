@@ -34,19 +34,20 @@
 
 #pragma once
 
+#include <core/sdk/constants.h>
 #include <core/audio/ITransport.h>
 #include <core/support/Preferences.h>
 
-namespace musik { namespace glue { namespace audio {
-    class MasterTransport :
+namespace musik { namespace core { namespace audio {
+    class ProxyTransport :
         public sigslot::has_slots<>,
         public musik::core::audio::ITransport
     {
         public:
-            enum Type { Gapless, Crossfade };
+            using Type = musik::core::sdk::TransportType;
 
-            MasterTransport();
-            virtual ~MasterTransport();
+            ProxyTransport();
+            virtual ~ProxyTransport();
 
             virtual void Start(const std::string& trackUrl, Gain gain);
             virtual void PrepareNextTrack(const std::string& trackUrl, Gain gain);

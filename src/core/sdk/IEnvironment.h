@@ -61,6 +61,8 @@ namespace musik { namespace core { namespace sdk {
             virtual void ReloadPlaybackOutput() = 0;
             virtual void SetDefaultOutput(IOutput* output) = 0;
             virtual IOutput* GetDefaultOutput() = 0;
+            virtual TransportType GetTransportType() = 0;
+            virtual void SetTransportType(TransportType type) = 0;
             virtual void ReindexMetadata() = 0;
             virtual void RebuildMetadata() = 0;
     };

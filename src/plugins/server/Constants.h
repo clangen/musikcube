@@ -190,6 +190,8 @@ namespace request {
     static const std::string set_default_output_driver = "set_default_output_driver";
     static const std::string get_gain_settings = "get_gain_settings";
     static const std::string update_gain_settings = "update_gain_settings";
+    static const std::string get_transport_type = "get_transport_type";
+    static const std::string set_transport_type = "set_transport_type";
 }
 
 namespace fragment {
@@ -220,6 +222,11 @@ static auto REPLAYGAIN_MODE_TO_STRING = makeBimap<musik::core::sdk::ReplayGainMo
     { musik::core::sdk::ReplayGainMode::Disabled, "disabled" },
     { musik::core::sdk::ReplayGainMode::Album, "album" },
     { musik::core::sdk::ReplayGainMode::Track, "track" },
+});
+
+static auto TRANSPORT_TYPE_TO_STRING = makeBimap<musik::core::sdk::TransportType, std::string>({
+    { musik::core::sdk::TransportType::Gapless, "gapless" },
+    { musik::core::sdk::TransportType::Crossfade, "crossfade" },
 });
 
 static const int ApiVersion = 13;

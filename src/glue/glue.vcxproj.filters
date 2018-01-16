@@ -15,9 +15,6 @@
     <ClInclude Include="pch.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="audio\MasterTransport.h">
-      <Filter>src\audio</Filter>
-    </ClInclude>
     <ClInclude Include="util\Playback.h">
       <Filter>src\util</Filter>
     </ClInclude>
@@ -28,9 +25,6 @@
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="audio\MasterTransport.cpp">
-      <Filter>src\audio</Filter>
     </ClCompile>
     <ClCompile Include="util\Playback.cpp">
       <Filter>src\util</Filter>

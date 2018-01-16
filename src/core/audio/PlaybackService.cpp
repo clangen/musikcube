@@ -77,6 +77,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_NOTIFY_EDITED 1007
 #define MESSAGE_NOTIFY_RESET 1008
 #define MESSAGE_SEEK 1009
+#define MESSAGE_RELOAD_OUTPUT 1010
 
 class StreamMessage : public Message {
     public:
@@ -132,7 +133,7 @@ static inline void savePreferences(
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
     ILibraryPtr library,
-    ITransport& transport)
+    ProxyTransport& transport)
 : library(library)
 , transport(transport)
 , playlist(library)
@@ -383,6 +384,35 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             this->seekPosition = -1.0f;
         }
     }
+    else if (type == MESSAGE_RELOAD_OUTPUT) {
+        auto state = this->GetPlaybackState();
+        auto index = this->GetIndex();
+        double time = this->GetPosition();
+
+        TransportType transportType = (TransportType)
+            prefs->GetInt(keys::Transport.c_str(),
+            (int)TransportType::Gapless);
+
+        if (this->transport.GetType() != transportType) {
+            this->transport.SwitchTo(transportType);
+        }
+
+        if (state != PlaybackStopped) {
+            this->Stop();
+            this->transport.ReloadOutput();
+
+            if (index != NO_POSITION) {
+                this->Play(index);
+                if (time > 0.0f) {
+                    this->transport.SetPosition(time);
+                }
+
+                if (state == PlaybackPaused) {
+                    this->transport.Pause();
+                }
+            }
+        }
+    }
 }
 
 void PlaybackService::NotifyRemotesModeChanged() {
@@ -581,25 +611,7 @@ void PlaybackService::Play(const musik::core::sdk::ITrackList* source, size_t in
 }
 
 void PlaybackService::ReloadOutput() {
-    auto state = this->GetPlaybackState();
-
-    if (state != PlaybackStopped) {
-        auto index = this->GetIndex();
-        double time = this->GetPosition();
-        this->Stop();
-        this->transport.ReloadOutput();
-
-        if (index != NO_POSITION) {
-            this->Play(index);
-            if (time > 0.0f) {
-                this->transport.SetPosition(time);
-            }
-
-            if (state == PlaybackPaused) {
-                this->transport.Pause();
-            }
-        }
-    }
+    messageQueue.Debounce(Message::Create(this, MESSAGE_RELOAD_OUTPUT), 500);
 }
 
 void PlaybackService::CopyTo(TrackList& target) {

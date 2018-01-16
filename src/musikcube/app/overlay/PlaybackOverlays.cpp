@@ -48,7 +48,6 @@
 #include <vector>
 
 using namespace musik::cube;
-using namespace musik::glue::audio;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -103,7 +102,7 @@ PlaybackOverlays::PlaybackOverlays() {
 }
 
 void PlaybackOverlays::ShowOutputDriverOverlay(
-    MasterTransport::Type transportType,
+    ProxyTransport::Type transportType,
     std::function<void()> callback)
 {
     plugins = outputs::GetAllOutputs();
@@ -139,7 +138,7 @@ void PlaybackOverlays::ShowOutputDriverOverlay(
         .SetItemSelectedCallback(
             [callback, transportType](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
 
-                if (transportType == MasterTransport::Crossfade) {
+                if (transportType == ProxyTransport::Type::Crossfade) {
                     std::string output = outputs::GetAllOutputs().at(index)->Name();
                     if (invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end()) {
                         showOutputCannotCrossfadeMessage(output);
@@ -224,8 +223,8 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
 }
 
 void PlaybackOverlays::ShowTransportOverlay(
-    MasterTransport::Type transportType,
-    std::function<void(int)> callback)
+    ProxyTransport::Type transportType,
+    std::function<void(ProxyTransport::Type)> callback)
 {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
@@ -235,7 +234,7 @@ void PlaybackOverlays::ShowTransportOverlay(
     adapter->AddEntry(_TSTR("settings_transport_type_crossfade"));
     adapter->SetSelectable(true);
 
-    size_t selectedIndex = (transportType == MasterTransport::Gapless) ? 0 : 1;
+    size_t selectedIndex = (transportType == ProxyTransport::Type::Gapless) ? 0 : 1;
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -244,13 +243,13 @@ void PlaybackOverlays::ShowTransportOverlay(
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
             [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                int result = (index == 0)
-                    ? MasterTransport::Gapless
-                    : MasterTransport::Crossfade;
+                auto result = (index == 0)
+                    ? ProxyTransport::Type::Gapless
+                    : ProxyTransport::Type::Crossfade;
 
                 std::string output = outputs::SelectedOutput()->Name();
 
-                if (result == MasterTransport::Crossfade &&
+                if (result == ProxyTransport::Type::Crossfade &&
                     invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end())
                 {
                     showOutputCannotCrossfadeMessage(output);

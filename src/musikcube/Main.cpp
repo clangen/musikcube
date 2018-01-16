@@ -50,7 +50,7 @@
 #include <core/i18n/Locale.h>
 #include <core/audio/PlaybackService.h>
 
-#include <glue/audio/MasterTransport.h>
+#include <core/audio/ProxyTransport.h>
 
 #include <core/debug.h>
 #include <core/library/LibraryFactory.h>
@@ -71,8 +71,6 @@
 #endif
 
 using namespace musik;
-using namespace musik::glue;
-using namespace musik::glue::audio;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::cube;
@@ -131,7 +129,7 @@ int main(int argc, char* argv[]) {
     auto prefs = Preferences::ForComponent(
         musik::core::prefs::components::Settings);
 
-    MasterTransport transport;
+    ProxyTransport transport;
     PlaybackService playback(Window::MessageQueue(), library, transport);
 
     GlobalHotkeys globalHotkeys(playback, library);

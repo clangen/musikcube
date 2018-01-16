@@ -67,7 +67,6 @@ using namespace musik::core::audio;
 using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 using namespace musik::cube;
-using namespace musik::glue::audio;
 using namespace cursespp;
 using namespace std::placeholders;
 
@@ -128,7 +127,7 @@ SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
     musik::core::sdk::IPlaybackService& playback,
-    musik::glue::audio::MasterTransport& transport)
+    musik::core::audio::ProxyTransport& transport)
 : LayoutBase()
 , app(app)
 , library(library)
@@ -228,13 +227,13 @@ void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
-    const MasterTransport::Type current = this->transport.GetType();
+    const ProxyTransport::Type current = this->transport.GetType();
 
     PlaybackOverlays::ShowTransportOverlay(
         this->transport.GetType(),
-        [this, current](int selected) {
+        [this, current](ProxyTransport::Type selected) {
             if (selected != current) {
-                this->transport.SwitchTo((MasterTransport::Type) selected);
+                this->transport.SwitchTo(selected);
                 this->LoadPreferences();
             }
         });
@@ -604,7 +603,7 @@ void SettingsLayout::LoadPreferences() {
 
     /* transport type */
     std::string transportName =
-        this->transport.GetType() == MasterTransport::Gapless
+        this->transport.GetType() == ProxyTransport::Type::Gapless
             ? _TSTR("settings_transport_type_gapless")
             : _TSTR("settings_transport_type_crossfade");
 
