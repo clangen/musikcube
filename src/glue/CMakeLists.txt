@@ -1,5 +1,4 @@
 set(GLUE_SOURCES
-  ./audio/MasterTransport.cpp
   ./util/Duration.cpp
   ./util/Playback.cpp
 )
