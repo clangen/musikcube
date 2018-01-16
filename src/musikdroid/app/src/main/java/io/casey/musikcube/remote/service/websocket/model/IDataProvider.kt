@@ -52,10 +52,13 @@ interface IDataProvider {
     fun setDefaultOutputDriver(driverName: String, deviceId: String = "default"): Observable<Boolean>
 
     fun getGainSettings(): Observable<IGainSettings>
-    fun updateGainSettings(replayGainMode: IGainSettings.ReplayGainMode, preampGain: Float): Observable<Boolean>
+    fun updateGainSettings(replayGainMode: ReplayGainMode, preampGain: Float): Observable<Boolean>
 
     fun reindexMetadata(): Observable<Boolean>
     fun rebuildMetadata(): Observable<Boolean>
+
+    fun getTransportType(): Observable<TransportType>
+    fun setTransportType(type: TransportType): Observable<Boolean>
 
     val state: State
 }

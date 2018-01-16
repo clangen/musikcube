@@ -46,7 +46,24 @@
 
             <android.support.v4.widget.Space
                 android:layout_width="0dp"
-                android:layout_height="32dp"/>
+                android:layout_height="24dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="8dp"
+                android:text="@string/remote_settings_transport_type"/>
+
+            <Spinner
+                android:id="@+id/transport_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="24dp"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="24dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -97,7 +114,7 @@
 
             <android.support.v4.widget.Space
                 android:layout_width="0dp"
-                android:layout_height="32dp"/>
+                android:layout_height="24dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -138,6 +155,7 @@
         android:id="@+id/loading_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="gone"
         android:background="@color/theme_button_background_transparent">
         <ProgressBar
             android:layout_width="wrap_content"

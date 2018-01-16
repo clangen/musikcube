@@ -8,8 +8,9 @@ import android.widget.*
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.service.websocket.model.IDevice
-import io.casey.musikcube.remote.service.websocket.model.IGainSettings
 import io.casey.musikcube.remote.service.websocket.model.IOutput
+import io.casey.musikcube.remote.service.websocket.model.ReplayGainMode
+import io.casey.musikcube.remote.service.websocket.model.TransportType
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.slideThisDown
@@ -25,6 +26,7 @@ class RemoteSettingsActivity: BaseActivity() {
     private lateinit var loadingOverlay: View
     private lateinit var driverSpinner: Spinner
     private lateinit var deviceSpinner: Spinner
+    private lateinit var transportSpinner: Spinner
     private lateinit var replayGainSpinner: Spinner
     private lateinit var preampSeekbar: SeekBar
     private lateinit var preampTextView: TextView
@@ -45,6 +47,7 @@ class RemoteSettingsActivity: BaseActivity() {
         loadingOverlay = findViewById(R.id.loading_overlay)
         driverSpinner = findViewById(R.id.output_driver_spinner)
         deviceSpinner = findViewById(R.id.output_device_spinner)
+        transportSpinner = findViewById(R.id.transport_spinner)
         replayGainSpinner = findViewById(R.id.replaygain_spinner)
         preampSeekbar = findViewById(R.id.gain_seekbar)
         preampTextView = findViewById(R.id.gain_textview)
@@ -91,6 +94,7 @@ class RemoteSettingsActivity: BaseActivity() {
             driverSpinner.onItemSelectedListener = driverChangeListener
             deviceSpinner.adapter = DevicesAdapter(viewModel.devicesAt(viewModel.selectedDriverIndex))
             deviceSpinner.setSelection(viewModel.selectedDeviceIndex)
+            transportSpinner.setSelection(TRANSPORT_TYPE_TO_INDEX[viewModel.transportType]!!)
             replayGainSpinner.setSelection(REPLAYGAIN_MODE_TO_INDEX[viewModel.replayGainMode]!!)
             initialized = true
         }
@@ -119,7 +123,9 @@ class RemoteSettingsActivity: BaseActivity() {
             }
         }
 
-        viewModel.save(replayGainMode, preampGain, driverName, deviceId)
+        val transport = indexToTransportType(transportSpinner.selectedItemPosition)
+
+        viewModel.save(replayGainMode, preampGain, transport, driverName, deviceId)
     }
 
     private fun initListeners() {
@@ -145,10 +151,10 @@ class RemoteSettingsActivity: BaseActivity() {
 
         /* replaygain / preamp */
         val replayGainModes = ArrayAdapter.createFromResource(
-            this, R.array.replaygain_mode_array, android.R.layout.simple_spinner_dropdown_item)
+            this, R.array.replaygain_mode_array,
+                android.R.layout.simple_spinner_dropdown_item)
 
         replayGainModes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-
         replayGainSpinner.adapter = replayGainModes
 
         preampSeekbar.setOnSeekBarChangeListener(object:SeekBar.OnSeekBarChangeListener {
@@ -166,6 +172,14 @@ class RemoteSettingsActivity: BaseActivity() {
         })
 
         preampSeekbar.progress = 2000
+
+        /* transport */
+        val transportModes = ArrayAdapter.createFromResource(
+            this, R.array.transport_type_array,
+            android.R.layout.simple_spinner_dropdown_item)
+
+        transportModes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        transportSpinner.adapter = transportModes
     }
 
     private fun initObservers() {
@@ -238,17 +252,30 @@ class RemoteSettingsActivity: BaseActivity() {
 
     companion object {
         val REPLAYGAIN_MODE_TO_INDEX = mapOf(
-            IGainSettings.ReplayGainMode.Disabled to 0,
-                IGainSettings.ReplayGainMode.Track to 1,
-                IGainSettings.ReplayGainMode.Album to 2)
+            ReplayGainMode.Disabled to 0,
+                ReplayGainMode.Track to 1,
+                ReplayGainMode.Album to 2)
 
-        fun indexToReplayGain(index: Int): IGainSettings.ReplayGainMode {
+        val TRANSPORT_TYPE_TO_INDEX = mapOf(
+        TransportType.Gapless to 0,
+            TransportType.Crossfade to 1)
+
+        fun indexToReplayGain(index: Int): ReplayGainMode {
             REPLAYGAIN_MODE_TO_INDEX.forEach {
                 if (it.value == index) {
                     return it.key
                 }
             }
-            return IGainSettings.ReplayGainMode.Disabled
+            return ReplayGainMode.Disabled
+        }
+
+        fun indexToTransportType(index: Int): TransportType {
+            TRANSPORT_TYPE_TO_INDEX.forEach {
+                if (it.value == index) {
+                    return it.key
+                }
+            }
+            return TransportType.Gapless
         }
 
         fun getStartIntent(context: Context):Intent =

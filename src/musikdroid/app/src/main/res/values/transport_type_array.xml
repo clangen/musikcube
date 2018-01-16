@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="transport_type_array">
+        <item>@string/transport_type_gapless</item>
+        <item>@string/transport_type_crossfade</item>
+    </string-array>
+</resources>

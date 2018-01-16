@@ -435,7 +435,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun updateGainSettings(replayGainMode: IGainSettings.ReplayGainMode, preampGain: Float): Observable<Boolean> {
+    override fun updateGainSettings(replayGainMode: ReplayGainMode, preampGain: Float): Observable<Boolean> {
         val message = SocketMessage.Builder
             .request(Messages.Request.UpdateGainSettings)
             .addOption(Messages.Key.REPLAYGAIN_MODE, replayGainMode.rawValue)
@@ -453,6 +453,31 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
     override fun rebuildMetadata(): Observable<Boolean> {
         return runIndexer(Messages.Value.REBUILD)
+    }
+
+    override fun getTransportType(): Observable<TransportType> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.GetTransportType)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<TransportType> { socketMessage ->
+                Observable.just(TransportType.find(
+                    socketMessage.getStringOption(Messages.Key.TYPE,
+                    TransportType.Gapless.rawValue)))
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun setTransportType(type: TransportType): Observable<Boolean> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SetTransportType)
+            .addOption(Messages.Key.TYPE, type.rawValue)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
     }
 
     override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> =

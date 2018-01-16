@@ -7,6 +7,7 @@ import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.BiFunction
+import io.reactivex.functions.Function3
 import io.reactivex.rxkotlin.subscribeBy
 
 class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
@@ -32,6 +33,11 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
             ))
         }
     }
+
+    var transportType: TransportType = TransportType.Gapless
+        private set(value) {
+            field = value
+        }
 
     val driverName: String
         get() {
@@ -70,12 +76,12 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
             return Math.max(0, deviceIndex)
         }
 
-    val replayGainMode: IGainSettings.ReplayGainMode
+    val replayGainMode: ReplayGainMode
         get() {
             gain?.let {
                 return it.replayGainMode
             }
-            return IGainSettings.ReplayGainMode.Disabled
+            return ReplayGainMode.Disabled
         }
 
     val preampGain: Float
@@ -103,12 +109,19 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
         return listOf()
     }
 
-    private fun save(replayGainMode: IGainSettings.ReplayGainMode, preampGain: Float)
+    private fun save(replayGainMode: ReplayGainMode,
+                     preampGain: Float,
+                     transport: TransportType)
     {
         provider?.let {
             val oldState = state
             state = State.Saving
-            it.updateGainSettings(replayGainMode, preampGain)
+            val gainQuery = it.updateGainSettings(replayGainMode, preampGain)
+            val transportQuery = it.setTransportType(transport)
+            Observable.zip<Boolean, Boolean, Boolean>(
+                    gainQuery,
+                    transportQuery,
+                    BiFunction { b1, b2 -> b1 && b2 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = {
@@ -119,13 +132,14 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
         }
     }
 
-    fun save(replayGainMode: IGainSettings.ReplayGainMode,
+    fun save(replayGainMode: ReplayGainMode,
              preampGain: Float,
+             transport: TransportType,
              outputDriver: String,
              outputDeviceId: String)
     {
         if (Strings.empty(outputDriver)) {
-            save(replayGainMode, preampGain)
+            save(replayGainMode, preampGain, transport)
         }
         else {
             provider?.let {
@@ -133,7 +147,12 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
                 state = State.Saving
                 val gainQuery = it.updateGainSettings(replayGainMode, preampGain)
                 val outputQuery = it.setDefaultOutputDriver(outputDriver, outputDeviceId)
-                Observable.zip<Boolean, Boolean, Boolean>(gainQuery, outputQuery, BiFunction { b1, b2 -> b1 && b2 })
+                val transportQuery = it.setTransportType(transport)
+                Observable.zip<Boolean, Boolean, Boolean, Boolean>(
+                    gainQuery,
+                    outputQuery,
+                    transportQuery,
+                    Function3 { b1, b2, b3 -> b1 && b2 && b3 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = {
@@ -162,22 +181,21 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
             state = State.Loading
             val gainQuery = it.getGainSettings()
             val outputsQuery = it.listOutputDrivers()
-            Observable.zip<IGainSettings, IOutputs, Pair<IGainSettings, IOutputs>>(
+            val transportQuery = it.getTransportType()
+            Observable.zip<IGainSettings, IOutputs, TransportType, Boolean>(
                 gainQuery,
                 outputsQuery,
-                BiFunction { gainSettings, outputs ->
-                    Pair(gainSettings, outputs)
+                transportQuery,
+                Function3 { gainSettings, outputs, transportType ->
+                    this.gain = gainSettings
+                    this.outputs = outputs
+                    this.transportType = transportType
+                    true
                 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
-                    onNext = {
-                        gain = it.first
-                        outputs = it.second
-                        state = State.Ready
-                    },
-                    onError = {
-                        state = State.Disconnected
-                    })
+                    onNext = { state = State.Ready },
+                    onError = { state = State.Disconnected })
         }
     }
 
