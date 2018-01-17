@@ -34,7 +34,7 @@ class Prefs {
             val CERT_VALIDATION_DISABLED = false
             val TRANSCODER_BITRATE_INDEX = 0
             val DISK_CACHE_SIZE_INDEX = 2
-            val PLAYBACK_ENGINE_INDEX = 0
+            val PLAYBACK_ENGINE_INDEX = 1
         }
     }
 
