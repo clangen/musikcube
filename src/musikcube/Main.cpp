@@ -135,7 +135,8 @@ int main(int argc, char* argv[]) {
     GlobalHotkeys globalHotkeys(playback, library);
     Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
-    musik::core::plugin::InstallDependencies(&playback, library);
+    musik::core::plugin::InstallDependencies(
+        &Window::MessageQueue(), &playback, library);
 
     {
         App app("musikcube"); /* must be before layout creation */

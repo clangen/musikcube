@@ -46,6 +46,8 @@
 #include <core/support/Preferences.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/library/LocalSimpleDataProvider.h>
+#include <core/runtime/Message.h>
+#include <core/support/Messages.h>
 
 #include <core/sdk/IIndexerNotifier.h>
 #include <core/sdk/IEnvironment.h>
@@ -54,16 +56,28 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::db::local;
 using namespace musik::core::io;
+using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 
 typedef void(*SetEnvironment)(IEnvironment*);
 typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
 typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 
+static IMessageQueue* messageQueue = nullptr;
 static ILibraryPtr library;
 static IPlaybackService* playback = nullptr;
 static LocalSimpleDataProvider* dataProvider = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
+
+static void saveEnvironment() {
+    if (::playbackPrefs) {
+        ::playbackPrefs->Save();
+    }
+    if (::messageQueue) {
+        ::messageQueue->Broadcast(
+            Message::Create(nullptr, message::EnvironmentUpdated));
+    }
+}
 
 static class Environment : public IEnvironment {
     public:
@@ -135,6 +149,7 @@ static class Environment : public IEnvironment {
                         playback->ReloadOutput();
                     }
                 }
+                saveEnvironment();
             }
         }
 
@@ -142,8 +157,6 @@ static class Environment : public IEnvironment {
             if (::playbackPrefs) {
                 return (TransportType) ::playbackPrefs->GetInt(
                     prefs::keys::Transport.c_str(), (int) TransportType::Gapless);
-
-                ::playbackPrefs->Save();
             }
             return TransportType::Gapless;
         }
@@ -156,6 +169,7 @@ static class Environment : public IEnvironment {
                     if (::playback) {
                         ::playback->ReloadOutput();
                     }
+                    saveEnvironment();
                 }
             }
         }
@@ -188,7 +202,7 @@ static class Environment : public IEnvironment {
         virtual void SetReplayGainMode(ReplayGainMode mode) override {
             if (::playbackPrefs) {
                 ::playbackPrefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) mode);
-                ::playbackPrefs->Save();
+                saveEnvironment();
             }
         }
 
@@ -205,7 +219,7 @@ static class Environment : public IEnvironment {
                 if (gain > 20.0f) { gain = 20.0f; }
                 if (gain < -20.0f) { gain = -20.0f; }
                 ::playbackPrefs->SetDouble(prefs::keys::PreampDecibels.c_str(), gain);
-                ::playbackPrefs->Save();
+                saveEnvironment();
             }
         }
 
@@ -218,12 +232,13 @@ static class Environment : public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void InstallDependencies(IPlaybackService* playback, ILibraryPtr library) {
+    void InstallDependencies(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
         /* preferences */
         Preferences::LoadPluginPreferences();
 
         /* data providers */
         delete dataProvider;
+        ::messageQueue = messageQueue;
         ::library = library;
         ::playback = playback;
         ::dataProvider = new LocalSimpleDataProvider(library);
@@ -265,6 +280,7 @@ namespace musik { namespace core { namespace plugin {
             });
 
         delete dataProvider;
+        ::messageQueue = nullptr;
         ::dataProvider = nullptr;
         ::library.reset();
         ::playback = nullptr;

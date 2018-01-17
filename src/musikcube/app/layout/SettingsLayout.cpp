@@ -45,6 +45,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Outputs.h>
+#include <core/support/Messages.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -112,6 +113,18 @@ static std::string getOutputDeviceName() {
     }
 
     return deviceName;
+}
+
+static TransportType getTransportType() {
+    auto playback = Preferences::ForComponent(core::prefs::components::Playback);
+
+    return (TransportType) playback->GetInt(
+        core::prefs::keys::Transport, (int)TransportType::Gapless);
+}
+
+static void setTransportType(TransportType type) {
+    auto playback = Preferences::ForComponent(core::prefs::components::Playback);
+    playback->SetInt(core::prefs::keys::Transport, (int) type);
 }
 
 static std::string resolveThemeName(const std::string& themePath) {
@@ -198,7 +211,7 @@ void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label)
     currentName = currentPlugin ? currentPlugin->Name() : currentName;
 
     PlaybackOverlays::ShowOutputDriverOverlay(
-        this->transport.GetType(),
+        getTransportType(),
         [this, currentName] {
             std::string newName;
             std::shared_ptr<IOutput> newPlugin = outputs::SelectedOutput();
@@ -227,13 +240,14 @@ void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
-    const ProxyTransport::Type current = this->transport.GetType();
+    const ProxyTransport::Type current = getTransportType();
 
     PlaybackOverlays::ShowTransportOverlay(
-        this->transport.GetType(),
+        current,
         [this, current](ProxyTransport::Type selected) {
             if (selected != current) {
-                this->transport.SwitchTo(selected);
+                setTransportType(selected);
+                this->playback.ReloadOutput();
                 this->LoadPreferences();
             }
         });
@@ -522,6 +536,27 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
+void SettingsLayout::OnAddedToParent(IWindow* parent) {
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+    std::enable_shared_from_this<LayoutBase>* receiver =
+        (std::enable_shared_from_this<LayoutBase>*) this;
+#else
+    auto receiver = this;
+#endif
+    MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
+}
+
+void SettingsLayout::OnRemovedFromParent(IWindow* parent) {
+    MessageQueue().UnregisterForBroadcasts(this);
+}
+
+void SettingsLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
+    LayoutBase::ProcessMessage(message);
+    if (message.Type() == core::message::EnvironmentUpdated) {
+        this->LoadPreferences();
+    }
+}
+
 void SettingsLayout::CheckShowFirstRunDialog() {
     if (!this->prefs->GetBool(cube::prefs::keys::FirstRunSettingsDisplayed)) {
         if (!this->firstRunDialog) {
@@ -603,7 +638,7 @@ void SettingsLayout::LoadPreferences() {
 
     /* transport type */
     std::string transportName =
-        this->transport.GetType() == ProxyTransport::Type::Gapless
+        getTransportType() == ProxyTransport::Type::Gapless
             ? _TSTR("settings_transport_type_gapless")
             : _TSTR("settings_transport_type_crossfade");
 

@@ -78,9 +78,11 @@ namespace musik {
 
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
+                virtual void OnAddedToParent(IWindow* parent);
+                virtual void OnRemovedFromParent(IWindow* parent);
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
-                virtual void SetShortcutsWindow(
-                    cursespp::ShortcutsWindow* w);
+                virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w);
 
             protected:
                 virtual void OnLayout();
