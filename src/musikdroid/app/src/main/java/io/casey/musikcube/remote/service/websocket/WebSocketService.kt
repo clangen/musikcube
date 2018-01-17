@@ -61,7 +61,15 @@ class WebSocketService constructor(private val context: Context) {
 
             /* registered callback for THIS message */
             val mdr = messageCallbacks.remove(msg.id)
-            if (mdr != null && mdr.callback != null) {
+            val error = msg.getStringOption("error")
+
+            if (error.isNotEmpty()) {
+                mdr?.error?.let {
+                    it.invoke(error)
+                    dispatched = true
+                }
+            }
+            else if (mdr?.callback != null) {
                 mdr.callback?.invoke(msg)
                 dispatched = true
             }
@@ -108,7 +116,7 @@ class WebSocketService constructor(private val context: Context) {
         var intercepted: Boolean = false
         var client: Client? = null
         var callback: ((response: SocketMessage) -> Unit)? = null
-        var error: (() -> Unit)? = null
+        var error: ((message: String) -> Unit)? = null
         var type: Type = Type.Callback
     }
 
@@ -401,7 +409,7 @@ class WebSocketService constructor(private val context: Context) {
             val entry = it.next()
             val mdr = entry.value
             if (predicate(mdr)) {
-                mdr.error?.invoke()
+                mdr.error?.invoke("canceled")
                 it.remove()
             }
         }

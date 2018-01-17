@@ -76,6 +76,13 @@ class RemoteSettingsActivity: BaseActivity() {
         return super.onOptionsItemSelected(item)
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        menu?.findItem(R.id.action_save)?.isEnabled =
+            viewModel.state == RemoteSettingsViewModel.State.Ready
+
+        return super.onPrepareOptionsMenu(menu)
+    }
+
     override fun onBackPressed() {
         super.onBackPressed()
         slideThisDown()
@@ -199,6 +206,7 @@ class RemoteSettingsActivity: BaseActivity() {
                         slideThisDown()
                     }
                 }
+                invalidateOptionsMenu()
             }
         ))
     }

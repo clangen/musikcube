@@ -70,7 +70,11 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
             val driverIndex = selectedDriverIndex
             if (driverIndex >= 0) {
                 outputs?.let {
-                    deviceIndex = it.outputs[driverIndex].devices.indexOfFirst { it.id == deviceId }
+                    if (it.outputs.size > driverIndex) {
+                        deviceIndex = it.outputs[driverIndex].devices.indexOfFirst {
+                            it.id == deviceId
+                        }
+                    }
                 }
             }
             return Math.max(0, deviceIndex)
@@ -98,6 +102,14 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
                 return it.outputs
             }
             return listOf()
+        }
+
+    var state: State = State.Disconnected
+        set(value) {
+            if (state != value) {
+                field = value
+                publish(state)
+            }
         }
 
     fun devicesAt(index: Int): List<IDevice> {
@@ -198,12 +210,4 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
                     onError = { state = State.Disconnected })
         }
     }
-
-    private var state: State = State.Disconnected
-        set(value) {
-            if (state != value) {
-                field = value
-                publish(state)
-            }
-        }
 }
