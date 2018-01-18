@@ -28,7 +28,6 @@
                 android:id="@+id/output_driver_spinner"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginBottom="8dp"
                 android:layout_marginLeft="24dp"/>
 
             <TextView
@@ -68,7 +67,6 @@
                 android:id="@+id/replaygain_spinner"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_marginBottom="8dp"
                 android:layout_marginLeft="24dp"/>
 
             <TextView
@@ -82,7 +80,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="24dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:orientation="vertical">
 
                 <SeekBar
@@ -100,6 +98,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:layout_gravity="center_horizontal"
+                    android:textSize="11sp"
                     tools:text="0.0 dB"/>
 
             </LinearLayout>
@@ -115,7 +114,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="24dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
                 <TextView

@@ -125,7 +125,7 @@
     <string name="remote_settings_replaygain_mode">replaygain mode</string>
     <string name="remote_settings_preamp_gain">preamp gain</string>
     <string name="remote_settings_preamp_gain_format">%.1f dB</string>
-    <string name="remote_settings_metadata_actions">metadata library</string>
+    <string name="remote_settings_metadata_actions">music library</string>
     <string name="remote_settings_reindex_button">rescan</string>
     <string name="remote_settings_rebuild_button">rebuild</string>
     <string name="remote_settings_transport_type">playback transport</string>
