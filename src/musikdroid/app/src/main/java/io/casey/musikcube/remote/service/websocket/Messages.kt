@@ -35,7 +35,7 @@ class Messages {
         ListOutputDrivers("list_output_drivers"),
         SetDefaultOutputDriver("set_default_output_driver"),
         GetGainSettings("get_gain_settings"),
-        UpdateGainSettings("update_gain_settings"),
+        SetGainSettings("set_gain_settings"),
         RunIndexer("run_indexer"),
         GetTransportType("get_transport_type"),
         SetTransportType("set_transport_type");
