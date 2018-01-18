@@ -208,14 +208,14 @@
     <ClCompile Include="library\query\local\AllCategoriesQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
-    <ClCompile Include="audio\ProxyTransport.cpp">
-      <Filter>src\audio</Filter>
-    </ClCompile>
     <ClCompile Include="support\Playback.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
     <ClCompile Include="support\Duration.cpp">
       <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="audio\MasterTransport.cpp">
+      <Filter>src\audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -513,14 +513,14 @@
     <ClInclude Include="library\query\local\AllCategoriesQuery.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
-    <ClInclude Include="audio\ProxyTransport.h">
-      <Filter>src\audio</Filter>
-    </ClInclude>
     <ClInclude Include="support\Duration.h">
       <Filter>src\support</Filter>
     </ClInclude>
     <ClInclude Include="support\Playback.h">
       <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="audio\MasterTransport.h">
+      <Filter>src\audio</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

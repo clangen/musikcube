@@ -133,7 +133,7 @@ static inline void savePreferences(
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
     ILibraryPtr library,
-    ProxyTransport& transport)
+    MasterTransport& transport)
 : library(library)
 , transport(transport)
 , playlist(library)

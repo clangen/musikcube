@@ -102,7 +102,7 @@ PlaybackOverlays::PlaybackOverlays() {
 }
 
 void PlaybackOverlays::ShowOutputDriverOverlay(
-    ProxyTransport::Type transportType,
+    MasterTransport::Type transportType,
     std::function<void()> callback)
 {
     plugins = outputs::GetAllOutputs();
@@ -138,7 +138,7 @@ void PlaybackOverlays::ShowOutputDriverOverlay(
         .SetItemSelectedCallback(
             [callback, transportType](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
 
-                if (transportType == ProxyTransport::Type::Crossfade) {
+                if (transportType == MasterTransport::Type::Crossfade) {
                     std::string output = outputs::GetAllOutputs().at(index)->Name();
                     if (invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end()) {
                         showOutputCannotCrossfadeMessage(output);
@@ -223,8 +223,8 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
 }
 
 void PlaybackOverlays::ShowTransportOverlay(
-    ProxyTransport::Type transportType,
-    std::function<void(ProxyTransport::Type)> callback)
+    MasterTransport::Type transportType,
+    std::function<void(MasterTransport::Type)> callback)
 {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
@@ -234,7 +234,7 @@ void PlaybackOverlays::ShowTransportOverlay(
     adapter->AddEntry(_TSTR("settings_transport_type_crossfade"));
     adapter->SetSelectable(true);
 
-    size_t selectedIndex = (transportType == ProxyTransport::Type::Gapless) ? 0 : 1;
+    size_t selectedIndex = (transportType == MasterTransport::Type::Gapless) ? 0 : 1;
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
 
@@ -244,12 +244,12 @@ void PlaybackOverlays::ShowTransportOverlay(
         .SetItemSelectedCallback(
             [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 auto result = (index == 0)
-                    ? ProxyTransport::Type::Gapless
-                    : ProxyTransport::Type::Crossfade;
+                    ? MasterTransport::Type::Gapless
+                    : MasterTransport::Type::Crossfade;
 
                 std::string output = outputs::SelectedOutput()->Name();
 
-                if (result == ProxyTransport::Type::Crossfade &&
+                if (result == MasterTransport::Type::Crossfade &&
                     invalidCrossfadeOutputs.find(output) != invalidCrossfadeOutputs.end())
                 {
                     showOutputCannotCrossfadeMessage(output);

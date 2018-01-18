@@ -45,7 +45,7 @@
 #include <cursespp/DialogOverlay.h>
 
 #include <core/audio/PlaybackService.h>
-#include <core/audio/ProxyTransport.h>
+#include <core/audio/MasterTransport.h>
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
@@ -72,7 +72,7 @@ namespace musik {
                     cursespp::App& app,
                     musik::core::ILibraryPtr library,
                     musik::core::sdk::IPlaybackService& playback,
-                    musik::core::audio::ProxyTransport& transport);
+                    musik::core::audio::MasterTransport& transport);
 
                 virtual ~SettingsLayout();
 
@@ -121,7 +121,7 @@ namespace musik {
                 musik::core::ILibraryPtr library;
                 musik::core::IIndexer* indexer;
                 musik::core::sdk::IPlaybackService& playback;
-                musik::core::audio::ProxyTransport& transport;
+                musik::core::audio::MasterTransport& transport;
 
                 std::shared_ptr<musik::core::Preferences> prefs;
 

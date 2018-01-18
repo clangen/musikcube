@@ -34,7 +34,7 @@
 
 #include <pch.hpp>
 
-#include "ProxyTransport.h"
+#include "MasterTransport.h"
 
 #include <core/audio/GaplessTransport.h>
 #include <core/audio/CrossfadeTransport.h>
@@ -46,17 +46,17 @@ using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 
-ProxyTransport::ProxyTransport()
+MasterTransport::MasterTransport()
 : prefs(Preferences::ForComponent(components::Playback)) {
     this->type = (Type) this->prefs->GetInt(keys::Transport, (int) Type::Gapless);
     this->SwitchTo(this->type);
 }
 
-ProxyTransport::~ProxyTransport() {
+MasterTransport::~MasterTransport() {
 
 }
 
-void ProxyTransport::SwitchTo(Type type) {
+void MasterTransport::SwitchTo(Type type) {
     if (!this->transport || this->type != type) {
         this->type = type;
         this->prefs->SetInt(keys::Transport, (int) this->type);
@@ -86,91 +86,91 @@ void ProxyTransport::SwitchTo(Type type) {
         }
 
         this->transport->PlaybackEvent.connect(
-            this, &ProxyTransport::OnPlaybackEvent);
+            this, &MasterTransport::OnPlaybackEvent);
 
         this->transport->StreamEvent.connect(
-            this, &ProxyTransport::OnStreamEvent);
+            this, &MasterTransport::OnStreamEvent);
 
         this->transport->TimeChanged.connect(
-            this, &ProxyTransport::OnTimeChanged);
+            this, &MasterTransport::OnTimeChanged);
 
         this->transport->VolumeChanged.connect(
-            this, &ProxyTransport::OnVolumeChanged);
+            this, &MasterTransport::OnVolumeChanged);
     }
 }
 
-ProxyTransport::Type ProxyTransport::GetType() {
+MasterTransport::Type MasterTransport::GetType() {
     return this->type;
 }
 
-void ProxyTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
+void MasterTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
     this->transport->PrepareNextTrack(trackUrl, gain);
 }
 
-void ProxyTransport::Start(const std::string& trackUrl, Gain gain) {
+void MasterTransport::Start(const std::string& trackUrl, Gain gain) {
     this->transport->Start(trackUrl, gain);
 }
 
-void ProxyTransport::Stop() {
+void MasterTransport::Stop() {
     this->transport->Stop();
 }
 
-bool ProxyTransport::Pause() {
+bool MasterTransport::Pause() {
     return this->transport->Pause();
 }
 
-bool ProxyTransport::Resume() {
+bool MasterTransport::Resume() {
     return this->transport->Resume();
 }
 
-double ProxyTransport::Position() {
+double MasterTransport::Position() {
     return this->transport->Position();
 }
 
-void ProxyTransport::SetPosition(double seconds) {
+void MasterTransport::SetPosition(double seconds) {
     this->transport->SetPosition(seconds);
 }
 
-double ProxyTransport::Volume() {
+double MasterTransport::Volume() {
     return this->transport->Volume();
 }
 
-void ProxyTransport::SetVolume(double volume) {
+void MasterTransport::SetVolume(double volume) {
     this->transport->SetVolume(volume);
 }
 
-double ProxyTransport::GetDuration() {
+double MasterTransport::GetDuration() {
     return this->transport->GetDuration();
 }
 
-bool ProxyTransport::IsMuted() {
+bool MasterTransport::IsMuted() {
     return this->transport->IsMuted();
 }
 
-void ProxyTransport::SetMuted(bool muted) {
+void MasterTransport::SetMuted(bool muted) {
     this->transport->SetMuted(muted);
 }
 
-void ProxyTransport::ReloadOutput() {
+void MasterTransport::ReloadOutput() {
     this->transport->ReloadOutput();
 }
 
-PlaybackState ProxyTransport::GetPlaybackState() {
+PlaybackState MasterTransport::GetPlaybackState() {
     return this->transport->GetPlaybackState();
 }
 
-void ProxyTransport::OnStreamEvent(int type, std::string url) {
+void MasterTransport::OnStreamEvent(int type, std::string url) {
     this->StreamEvent(type, url);
 }
 
-void ProxyTransport::OnPlaybackEvent(int type) {
+void MasterTransport::OnPlaybackEvent(int type) {
     this->PlaybackEvent(type);
 }
 
-void ProxyTransport::OnVolumeChanged() {
+void MasterTransport::OnVolumeChanged() {
     this->VolumeChanged();
 }
 
-void ProxyTransport::OnTimeChanged(double time) {
+void MasterTransport::OnTimeChanged(double time) {
     this->TimeChanged(time);
 }

@@ -157,7 +157,7 @@ class WebSocketServer {
         void RespondWithListOutputDrivers(connection_hdl connection, json& request);
         void RespondWithSetDefaultOutputDriver(connection_hdl connection, json& request);
         void RespondWithGetGainSettings(connection_hdl connection, json& request);
-        void RespondWithUpdateGainSettings(connection_hdl connection, json& request);
+        void RespondWithSetGainSettings(connection_hdl connection, json& request);
         void RespondWithGetTransportType(connection_hdl connection, json& request);
         void RespondWithSetTransportType(connection_hdl connection, json& request);
 

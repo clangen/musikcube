@@ -97,7 +97,7 @@ static void updateSyncingText(TextLabel* label, int updates) {
 MainLayout::MainLayout(
     cursespp::App& app,
     musik::core::audio::PlaybackService& playback,
-    musik::core::audio::ProxyTransport& transport,
+    musik::core::audio::MasterTransport& transport,
     ILibraryPtr library)
 : shortcutsFocused(false)
 , topLevelLayout(nullptr)

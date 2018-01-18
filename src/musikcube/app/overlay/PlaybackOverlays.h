@@ -35,7 +35,7 @@
 #pragma once
 
 #include <functional>
-#include <core/audio/ProxyTransport.h>
+#include <core/audio/MasterTransport.h>
 #include <core/sdk/IPlaybackService.h>
 
 namespace musik {
@@ -43,14 +43,14 @@ namespace musik {
         class PlaybackOverlays {
             public:
                 static void ShowOutputDriverOverlay(
-                    musik::core::audio::ProxyTransport::Type transportType,
+                    musik::core::audio::MasterTransport::Type transportType,
                     std::function<void()> callback);
 
                 static void ShowOutputDeviceOverlay(std::function<void()> callback);
 
                 static void ShowTransportOverlay(
-                    musik::core::audio::ProxyTransport::Type transportType,
-                    std::function<void(musik::core::audio::ProxyTransport::Type)> callback);
+                    musik::core::audio::MasterTransport::Type transportType,
+                    std::function<void(musik::core::audio::MasterTransport::Type)> callback);
 
                 static void ShowReplayGainOverlay(std::function<void()> callback);
 

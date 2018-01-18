@@ -140,7 +140,7 @@ SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
     musik::core::sdk::IPlaybackService& playback,
-    musik::core::audio::ProxyTransport& transport)
+    musik::core::audio::MasterTransport& transport)
 : LayoutBase()
 , app(app)
 , library(library)
@@ -240,11 +240,11 @@ void SettingsLayout::OnReplayGainDropdownActivated(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
-    const ProxyTransport::Type current = getTransportType();
+    const MasterTransport::Type current = getTransportType();
 
     PlaybackOverlays::ShowTransportOverlay(
         current,
-        [this, current](ProxyTransport::Type selected) {
+        [this, current](MasterTransport::Type selected) {
             if (selected != current) {
                 setTransportType(selected);
                 this->playback.ReloadOutput();
@@ -638,7 +638,7 @@ void SettingsLayout::LoadPreferences() {
 
     /* transport type */
     std::string transportName =
-        getTransportType() == ProxyTransport::Type::Gapless
+        getTransportType() == MasterTransport::Type::Gapless
             ? _TSTR("settings_transport_type_gapless")
             : _TSTR("settings_transport_type_crossfade");
 

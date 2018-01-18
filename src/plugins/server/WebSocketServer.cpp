@@ -455,8 +455,8 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithGetGainSettings(connection, request);
             return;
         }
-        else if (name == request::update_gain_settings) {
-            this->RespondWithUpdateGainSettings(connection, request);
+        else if (name == request::set_gain_settings) {
+            this->RespondWithSetGainSettings(connection, request);
             return;
         }
         else if (name == request::get_transport_type) {
@@ -1245,7 +1245,7 @@ void WebSocketServer::RespondWithGetGainSettings(connection_hdl connection, json
     });
 }
 
-void WebSocketServer::RespondWithUpdateGainSettings(connection_hdl connection, json& request) {
+void WebSocketServer::RespondWithSetGainSettings(connection_hdl connection, json& request) {
     bool reload = false;
 
     auto& options = request[message::options];

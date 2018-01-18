@@ -39,15 +39,15 @@
 #include <core/support/Preferences.h>
 
 namespace musik { namespace core { namespace audio {
-    class ProxyTransport :
+    class MasterTransport :
         public sigslot::has_slots<>,
         public musik::core::audio::ITransport
     {
         public:
             using Type = musik::core::sdk::TransportType;
 
-            ProxyTransport();
-            virtual ~ProxyTransport();
+            MasterTransport();
+            virtual ~MasterTransport();
 
             virtual void Start(const std::string& trackUrl, Gain gain);
             virtual void PrepareNextTrack(const std::string& trackUrl, Gain gain);
