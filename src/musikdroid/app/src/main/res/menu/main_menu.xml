@@ -8,12 +8,7 @@
         app:showAsAction="always"
         android:title="@string/menu_remote_toggle"
         android:icon="@drawable/ic_toolbar_remote" />
-
-    <item
-        android:id="@+id/action_playlists"
-        app:showAsAction="never"
-        android:title="@string/menu_playlists"/>
-
+    
     <item
         android:id="@+id/action_genres"
         app:showAsAction="never"

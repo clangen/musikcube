@@ -114,7 +114,6 @@ class MainActivity : BaseActivity() {
         val connected = data.wss.state === WebSocketService.State.Connected
         val streaming = isStreamingSelected
 
-        menu.findItem(R.id.action_playlists).isEnabled = connected
         menu.findItem(R.id.action_genres).isEnabled = connected
         menu.findItem(R.id.action_remote_manage).isEnabled = connected
 
@@ -139,12 +138,6 @@ class MainActivity : BaseActivity() {
 
             R.id.action_genres -> {
                 startActivity(CategoryBrowseActivity.getStartIntent(this, Messages.Category.GENRE))
-                return true
-            }
-
-            R.id.action_playlists -> {
-                startActivity(CategoryBrowseActivity.getStartIntent(
-                    this, Messages.Category.PLAYLISTS, NavigationType.Tracks))
                 return true
             }
 
@@ -307,6 +300,15 @@ class MainActivity : BaseActivity() {
 
         findViewById<View>(R.id.button_albums).setOnClickListener { _: View ->
             startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity))
+        }
+
+        findViewById<View>(R.id.button_albums).setOnClickListener { _: View ->
+            startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity))
+        }
+
+        findViewById<View>(R.id.button_playlists).setOnClickListener {
+            startActivity(CategoryBrowseActivity.getStartIntent(
+                this, Messages.Category.PLAYLISTS, NavigationType.Tracks))
         }
 
         findViewById<View>(R.id.button_play_queue).setOnClickListener { _ -> navigateToPlayQueue() }

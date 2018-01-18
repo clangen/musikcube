@@ -26,6 +26,19 @@
                 android:layout_width="0dp"
                 android:layout_height="2dp" />
 
+            <TextView
+                style="@style/QueueButton"
+                android:layout_weight="1.0"
+                android:id="@+id/button_play_queue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/button_play_queue"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="0dp"
+                android:layout_height="2dp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -74,11 +87,11 @@
                 <TextView
                     style="@style/BrowseButton"
                     android:layout_weight="1.0"
-                    android:id="@+id/button_play_queue"
+                    android:id="@+id/button_playlists"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="@string/button_play_queue"/>
+                    android:text="@string/button_playlists"/>
 
             </LinearLayout>
 
