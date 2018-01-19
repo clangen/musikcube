@@ -85,6 +85,7 @@
     <string name="menu_rename_playlist">rename</string>
     <string name="menu_edit_playlist">edit</string>
     <string name="menu_play_playlist">play now</string>
+    <string name="menu_categories">categories</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>
     <string name="snackbar_remote_enabled">switched to remote control mode</string>
@@ -170,8 +171,21 @@
     <string name="playlist_edit_save_success">playlist \'%s\' saved</string>
     <string name="playlist_edit_save_changes_title">save changes?</string>
     <string name="playlist_edit_save_changes_message">do you want to save the changes you made to this playlist?</string>
+    <string name="category_activity">categories</string>
     <string name="remove_from_playlist_dialog_title">confirm</string>
     <string name="remove_from_playlist_dialog_message">are you sure you want to remove \`%s\` from this playlist?</string>
     <string name="spotlight_playback_mode_title">playback mode</string>
     <string name="spotlight_playback_mode_message">want to listen to music from your phone?\n\nclick here to switch between remote control and streaming playback modes.</string>
+    <string name="category_album">album</string>
+    <string name="category_album_artist">album artist</string>
+    <string name="category_artist">artist</string>
+    <string name="category_bitrate">bitrate</string>
+    <string name="category_comment">comment</string>
+    <string name="category_composer">composer</string>
+    <string name="category_conductor">conductor</string>
+    <string name="category_copyright">copyright</string>
+    <string name="category_encoder">encoder</string>
+    <string name="category_genre">genre</string>
+    <string name="category_publisher">publisher</string>
+    <string name="category_year">year</string>
 </resources>

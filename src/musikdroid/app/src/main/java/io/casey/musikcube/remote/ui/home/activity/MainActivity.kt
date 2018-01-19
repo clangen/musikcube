@@ -23,6 +23,7 @@ import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
@@ -114,7 +115,7 @@ class MainActivity : BaseActivity() {
         val connected = data.wss.state === WebSocketService.State.Connected
         val streaming = isStreamingSelected
 
-        menu.findItem(R.id.action_genres).isEnabled = connected
+        menu.findItem(R.id.action_categories).isEnabled = connected
         menu.findItem(R.id.action_remote_manage).isEnabled = connected
 
         menu.findItem(R.id.action_remote_toggle).setIcon(
@@ -136,8 +137,8 @@ class MainActivity : BaseActivity() {
                 return true
             }
 
-            R.id.action_genres -> {
-                startActivity(CategoryBrowseActivity.getStartIntent(this, Messages.Category.GENRE))
+            R.id.action_categories -> {
+                startActivity(AllCategoriesActivity.getStartIntent(this))
                 return true
             }
 

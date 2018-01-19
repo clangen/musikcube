@@ -60,7 +60,13 @@ class CategoryBrowseAdapter(private val listener: EventListener,
 
         internal fun bind(categoryValue: ICategoryValue) {
             action.tag = categoryValue
-            action.visibility = if (navigationType == NavigationType.Select) View.GONE else View.VISIBLE
+
+            if (navigationType != NavigationType.Select && OVERFLOW_SUPPORTED.contains(category)) {
+                action.visibility = View.VISIBLE
+            }
+            else {
+                action.visibility = View.GONE
+            }
 
             val playing = playback.service.playingTrack
             val playingId = playing.getCategoryId(category)
@@ -74,5 +80,9 @@ class CategoryBrowseAdapter(private val listener: EventListener,
             title.setTextColor(getColorCompat(titleColor))
             itemView.tag = categoryValue
         }
+    }
+
+    companion object {
+        private val OVERFLOW_SUPPORTED = setOf("album", "artist", "album_artist", "genre", "playlists")
     }
 }

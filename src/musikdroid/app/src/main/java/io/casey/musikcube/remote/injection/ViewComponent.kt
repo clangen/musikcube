@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.injection
 
 import dagger.Component
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
@@ -19,6 +20,7 @@ import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 @Component(dependencies = arrayOf(AppComponent::class))
 interface ViewComponent {
     fun inject(activity: AlbumBrowseActivity)
+    fun inject(activity: AllCategoriesActivity)
     fun inject(activity: BaseActivity)
     fun inject(activity: CategoryBrowseActivity)
     fun inject(activity: ConnectionsActivity)

@@ -13,6 +13,7 @@ import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
+import io.casey.musikcube.remote.ui.category.constant.categoryToString
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.extension.*
@@ -27,7 +28,6 @@ import io.reactivex.rxkotlin.subscribeBy
 import io.casey.musikcube.remote.service.websocket.WebSocketService.State as SocketState
 
 class CategoryBrowseActivity : BaseActivity(), Filterable {
-
     private lateinit var adapter: CategoryBrowseAdapter
     private var navigationType: NavigationType = NavigationType.Tracks
     private var lastFilter: String? = null
@@ -54,7 +54,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category)
 
         setContentView(R.layout.recycler_view_activity)
-        setTitleFromIntent(categoryTitleStringId)
+        setTitleFromIntent(categoryTitleString)
 
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
         val fab = findViewById<View>(R.id.fab)
@@ -62,7 +62,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
 
         emptyView = findViewById(R.id.empty_list_view)
         emptyView.capability = EmptyListView.Capability.OnlineOnly
-        emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(categoryTypeStringId))
+        emptyView.emptyMessage = getString(R.string.empty_no_items_format, categoryTypeString)
         emptyView.alternateView = recyclerView
 
         setupDefaultRecyclerView(recyclerView, adapter)
@@ -119,11 +119,21 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
             }))
     }
 
-    private val categoryTypeStringId: Int
-        get() = CATEGORY_NAME_TO_EMPTY_TYPE[category] ?: R.string.unknown_value
+    private val categoryTypeString: String
+        get() {
+            CATEGORY_NAME_TO_EMPTY_TYPE[category]?.let {
+                return getString(it)
+            }
+            return categoryToString(this, category)
+        }
 
-    private val categoryTitleStringId: Int
-        get() = CATEGORY_NAME_TO_TITLE[category] ?: R.string.unknown_value
+    private val categoryTitleString: String
+        get() {
+            CATEGORY_NAME_TO_TITLE[category]?.let {
+                return getString(it)
+            }
+            return categoryToString(this, category)
+        }
 
     private fun requery() {
         data.provider.getCategoryValues(category, predicateType, predicateId, lastFilter ?: "").subscribeBy(
@@ -195,10 +205,10 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
             Messages.Category.PLAYLISTS to R.string.playlists_title)
 
         private val CATEGORY_NAME_TO_RELATED_TITLE: Map<String, Int> = mapOf(
-                Messages.Category.ALBUM_ARTIST to R.string.artists_from_category,
-                Messages.Category.GENRE to R.string.genres_from_category,
-                Messages.Category.ARTIST to R.string.artists_from_category,
-                Messages.Category.ALBUM to R.string.albums_by_title)
+            Messages.Category.ALBUM_ARTIST to R.string.artists_from_category,
+            Messages.Category.GENRE to R.string.genres_from_category,
+            Messages.Category.ARTIST to R.string.artists_from_category,
+            Messages.Category.ALBUM to R.string.albums_by_title)
 
         private val CATEGORY_NAME_TO_EMPTY_TYPE: Map<String, Int> = mapOf(
             Messages.Category.ALBUM_ARTIST to R.string.browse_type_artists,

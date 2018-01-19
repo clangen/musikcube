@@ -65,6 +65,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name="io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.settings.activity.ConnectionsActivity"
             android:label="@string/connections_title"
             android:windowSoftInputMode="adjustResize" />
