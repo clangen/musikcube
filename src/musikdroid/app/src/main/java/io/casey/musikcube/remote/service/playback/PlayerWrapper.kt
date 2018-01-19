@@ -69,7 +69,7 @@ abstract class PlayerWrapper {
             }
         }
 
-    abstract fun play(uri: String, metadata: ITrack)
+    abstract fun play(uri: String, metadata: ITrack, offsetMs: Int = 0)
     abstract fun prefetch(uri: String, metadata: ITrack)
     abstract fun pause()
     abstract fun resume()

@@ -32,7 +32,7 @@ class MediaPlayerWrapper : PlayerWrapper() {
         this.prefs = context!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     }
 
-    override fun play(uri: String, metadata: ITrack) {
+    override fun play(uri: String, metadata: ITrack, offsetMs: Int) {
         Preconditions.throwIfNotOnMainThread()
 
         try {

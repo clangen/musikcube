@@ -54,13 +54,14 @@ class ExoPlayerWrapper : PlayerWrapper() {
         this.transcoding = this.prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
-    override fun play(uri: String, metadata: ITrack) {
+    override fun play(uri: String, metadata: ITrack, offsetMs: Int) {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {
             this.metadata = metadata
             this.originalUri = uri
             this.proxyUri = streamProxy.getProxyUrl(uri)
+
             Log.d("ExoPlayerWrapper", "originalUri: ${this.originalUri} proxyUri: ${this.proxyUri}")
 
             addCacheListener()

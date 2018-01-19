@@ -15,19 +15,18 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
-import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.util.Preconditions
 import java.io.File
 
 class GaplessExoPlayerWrapper : PlayerWrapper() {
-    private var sourceFactory: DataSource.Factory =
-        DefaultDataSourceFactory(context, Util.getUserAgent(context, "musikdroid"))
+    private var sourceFactory: DataSource.Factory = DefaultHttpDataSourceFactory(
+        Util.getUserAgent(context, "musikdroid"), null, TIMEOUT, TIMEOUT, true)
 
     private val extractorsFactory = DefaultExtractorsFactory()
     private var source: MediaSource? = null
@@ -38,12 +37,13 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     private var originalUri: String? = null
     private var proxyUri: String? = null
     private val transcoding: Boolean
+    private var initialOffsetMs: Int = 0
 
     init {
         this.transcoding = prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
-    override fun play(uri: String, metadata: ITrack) {
+    override fun play(uri: String, metadata: ITrack, offsetMs: Int) {
         Preconditions.throwIfNotOnMainThread()
 
         if (!dead()) {
@@ -52,6 +52,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             this.metadata = metadata
             this.originalUri = uri
             this.proxyUri = streamProxy.getProxyUrl(uri)
+            this.initialOffsetMs = offsetMs
 
             addCacheListener()
 
@@ -125,11 +126,13 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             if (gaplessPlayer?.playbackState != ExoPlayer.STATE_IDLE) {
                 if (gaplessPlayer?.isCurrentWindowSeekable == true) {
                     var offset = millis.toLong()
+                    val isInitialSeek = initialOffsetMs > 0 && (position == initialOffsetMs)
 
                     /* if we're transcoding we don't want to seek arbitrarily because it may put
                     a lot of pressure on the backend. just allow seeking up to what we currently
-                    have buffered! */
-                    if (transcoding && percentAvailable != 100) {
+                    have buffered! one exception: if we transfer playback context from the backend
+                    to here, we want to wait until we are able to pickup where we left off. */
+                    if (!isInitialSeek && transcoding && percentAvailable != 100) {
                         /* give ourselves 2% wiggle room! */
                         val percent = Math.max(0, percentAvailable - 2).toFloat() / 100.0f
                         val totalMs = gaplessPlayer?.duration
@@ -137,6 +140,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
                         offset = Math.min(millis.toLong(), available)
                     }
 
+                    initialOffsetMs = 0
                     gaplessPlayer?.seekTo(offset)
                 }
             }
@@ -287,6 +291,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     }
 
     companion object {
+        const val TIMEOUT = 1000 * 60 * 2 /* 2 minutes; makes seeking an incomplete transcode work most of the time */
         private val prefs: SharedPreferences by lazy { Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
         private val context: Context by lazy { Application.instance!! }
         private val trackSelector = DefaultTrackSelector(AdaptiveTrackSelection.Factory(DefaultBandwidthMeter()))
