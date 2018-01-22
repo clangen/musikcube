@@ -665,6 +665,8 @@ void PlaybackService::CopyFrom(const musik::core::sdk::ITrackList* source) {
 }
 
 void PlaybackService::Play(size_t index) {
+    index = std::min(this->Count(), index);
+
     std::string uri = this->UriAtIndex(index);
 
     if (uri.size()) {

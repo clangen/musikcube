@@ -736,7 +736,11 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         ITrackListEditor* editor = context.playback->EditPlaylist();
 
         int trackCount = (int)context.playback->Count();
-        int to = std::min(trackCount, offset + limit);
+        int to = trackCount;
+
+        if (offset >= 0 && limit >= 0) {
+            to = std::min(trackCount, offset + limit);
+        }
 
         for (int i = offset; i < to; i++) {
             tracks.push_back(std::shared_ptr<ITrack>(context.playback->GetTrack(i), deleter));
@@ -748,8 +752,15 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         as soon as this scope ends. */
         json data = json::array();
 
+        bool idsOnly = request[message::options].value(key::ids_only, false);
+
         for (auto track : tracks) {
-            data.push_back(this->ReadTrackMetadata(track.get()));
+            if (idsOnly) {
+                data.push_back(GetMetadataString(track.get(), key::external_id));
+            }
+            else {
+                data.push_back(this->ReadTrackMetadata(track.get()));
+            }
         }
 
         this->RespondWithOptions(connection, request, {
@@ -803,6 +814,8 @@ void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& re
 }
 
 void WebSocketServer::RespondWithPlayTracks(connection_hdl connection, json& request) {
+    bool success = false;
+
     if (request.find(message::options) != request.end()) {
         json& options = request[message::options];
 
@@ -818,26 +831,51 @@ void WebSocketServer::RespondWithPlayTracks(connection_hdl connection, json& req
                     ++count;
                 }
 
+                success = true;
                 editor->Release();
+            }
+        }
+        else if (options.find(key::external_ids) != options.end()) {
+            json& externalIds = options[key::ids];
+            if (externalIds.is_array()) {
+                auto externalIdArray = jsonToStringArray(externalIds);
 
-                if (count > 0) {
-                    size_t index = request[message::options].value(key::index, 0);
-                    double time = request[message::options].value(key::time, 0.0);
+                ITrackList* trackList = context.dataProvider
+                    ->QueryTracksByExternalId(
+                    (const char**)externalIdArray.get(),
+                    externalIds.size());
 
-                    context.playback->Play(count > index ? index : 0);
+                if (trackList && trackList->Count()) {
+                    ITrackListEditor* editor = context.playback->EditPlaylist();
+                    editor->Clear();
 
-                    if (time > 0.0) {
-                        context.playback->SetPosition(time);
+                    for (size_t i = 0; i < trackList->Count(); i++) {
+                        editor->Add(trackList->GetId(i));
                     }
 
-                    this->RespondWithSuccess(connection, request);
-                    return;
+                    editor->Release();
+                    trackList->Release();
+                    success = true;
                 }
             }
         }
     }
 
-    this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+    if (success) {
+        size_t index = request[message::options].value(key::index, 0);
+        double time = request[message::options].value(key::time, 0.0);
+
+        context.playback->Play(index);
+
+        if (time > 0.0) {
+            context.playback->SetPosition(time);
+        }
+
+        this->RespondWithSuccess(connection, request);
+    }
+    else {
+        this->RespondWithInvalidRequest(connection, request[message::name], value::invalid);
+    }
 }
 
 ITrackList* WebSocketServer::QueryTracksByCategory(json& request, int& limit, int& offset) {
@@ -976,7 +1014,7 @@ void WebSocketServer::RespondWithPlayAllTracks(connection_hdl connection, json& 
 
     if (tracks) {
         context.playback->Play(tracks, index);
-        
+
         if (time > 0.0) {
             context.playback->SetPosition(time);
         }
