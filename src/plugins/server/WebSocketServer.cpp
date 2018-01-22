@@ -821,7 +821,15 @@ void WebSocketServer::RespondWithPlayTracks(connection_hdl connection, json& req
                 editor->Release();
 
                 if (count > 0) {
-                    context.playback->Play(0);
+                    size_t index = request[message::options].value(key::index, 0);
+                    double time = request[message::options].value(key::time, 0.0);
+
+                    context.playback->Play(count > index ? index : 0);
+
+                    if (time > 0.0) {
+                        context.playback->SetPosition(time);
+                    }
+
                     this->RespondWithSuccess(connection, request);
                     return;
                 }
@@ -956,16 +964,23 @@ void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& 
 void WebSocketServer::RespondWithPlayAllTracks(connection_hdl connection, json& request) {
     size_t index = 0;
     std::string filter;
+    double time = 0.0;
 
     if (request.find(message::options) != request.end()) {
         index = request[message::options].value(key::index, 0);
         filter = request[message::options].value(key::filter, "");
+        time = request[message::options].value(key::time, 0.0);
     }
 
     ITrackList* tracks = context.dataProvider->QueryTracks(filter.c_str());
 
     if (tracks) {
         context.playback->Play(tracks, index);
+        
+        if (time > 0.0) {
+            context.playback->SetPosition(time);
+        }
+
         tracks->Release();
     }
 
@@ -978,7 +993,14 @@ void WebSocketServer::RespondWithPlayTracksByCategory(connection_hdl connection,
 
     if (tracks) {
         size_t index = request[message::options].value(key::index, 0);
+        double time = request[message::options].value(key::time, 0.0);
+
         context.playback->Play(tracks, index);
+
+        if (time > 0.0) {
+            context.playback->SetPosition(time);
+        }
+
         tracks->Release();
     }
 

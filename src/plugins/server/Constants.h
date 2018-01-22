@@ -135,6 +135,7 @@ namespace key {
     static const std::string device_id = "device_id";
     static const std::string replaygain_mode = "replaygain_mode";
     static const std::string preamp_gain = "preamp_gain";
+    static const std::string time = "time";
 }
 
 namespace value {
