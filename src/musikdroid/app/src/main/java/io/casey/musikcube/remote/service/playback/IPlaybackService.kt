@@ -1,7 +1,7 @@
 package io.casey.musikcube.remote.service.playback
 
 import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
+import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 
 interface IPlaybackService {
     fun connect(listener: () -> Unit)
@@ -11,6 +11,8 @@ interface IPlaybackService {
     fun playAll(index: Int, filter: String)
     fun play(category: String, categoryId: Long, index: Int = 0, filter: String = "")
     fun playAt(index: Int)
+
+    fun playFrom(service: IPlaybackService)
 
     fun pauseOrResume()
     fun pause()
@@ -45,7 +47,8 @@ interface IPlaybackService {
     fun toggleRepeatMode()
     val repeatMode: RepeatMode
 
-    val playlistQueryFactory: TrackListSlidingWindow.QueryFactory
+    val playlistQueryFactory: ITrackListQueryFactory
+    val queryContext: QueryContext?
 
     val playingTrack: ITrack
 }

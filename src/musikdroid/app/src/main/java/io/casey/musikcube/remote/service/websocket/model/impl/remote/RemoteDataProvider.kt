@@ -163,11 +163,11 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun getPlayQueueTracksCount(filter: String): Observable<Int> {
+    override fun getPlayQueueTracksCount(type: PlayQueueType): Observable<Int> {
         val message = SocketMessage.Builder
             .request(Messages.Request.QueryPlayQueueTracks)
-            .addOption(Messages.Key.FILTER, filter)
             .addOption(Messages.Key.COUNT_ONLY, true)
+            .addOption(Messages.Key.TYPE, type.rawValue)
             .build()
 
         return service.observe(message, client)
@@ -175,13 +175,13 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun getPlayQueueTracks(filter: String): Observable<List<ITrack>> =
-        getPlayQueueTracks(-1, -1, filter)
+    override fun getPlayQueueTracks(type: PlayQueueType): Observable<List<ITrack>> =
+        getPlayQueueTracks(-1, -1, type)
 
-    override fun getPlayQueueTracks(limit: Int, offset: Int, filter: String): Observable<List<ITrack>> {
+    override fun getPlayQueueTracks(limit: Int, offset: Int, type: PlayQueueType): Observable<List<ITrack>> {
         val builder = SocketMessage.Builder
             .request(Messages.Request.QueryPlayQueueTracks)
-            .addOption(Messages.Key.FILTER, filter)
+            .addOption(Messages.Key.TYPE, type.rawValue)
 
         if (limit > 0 && offset >= 0) {
             builder.addOption(Messages.Key.LIMIT, limit)
@@ -191,6 +191,36 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         return service.observe(builder.build(), client)
             .observeOn(Schedulers.computation())
             .flatMap<List<ITrack>> { socketMessage -> toTrackList(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun getPlayQueueTrackIds(type: PlayQueueType): Observable<List<String>> =
+        getPlayQueueTrackIds(-1, -1, type)
+
+    override fun snapshotPlayQueue(): Observable<Boolean> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SnapshotPlayQueue)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun getPlayQueueTrackIds(limit: Int, offset: Int, type: PlayQueueType): Observable<List<String>> {
+        val builder = SocketMessage.Builder
+            .request(Messages.Request.QueryPlayQueueTracks)
+            .addOption(Messages.Key.IDS_ONLY, true)
+            .addOption(Messages.Key.TYPE, type.rawValue)
+
+        if (limit > 0 && offset >= 0) {
+            builder.addOption(Messages.Key.LIMIT, limit)
+            builder.addOption(Messages.Key.OFFSET, offset)
+        }
+
+        return service.observe(builder.build(), client)
+            .observeOn(Schedulers.computation())
+            .flatMap<List<String>> { socketMessage -> toStringList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 

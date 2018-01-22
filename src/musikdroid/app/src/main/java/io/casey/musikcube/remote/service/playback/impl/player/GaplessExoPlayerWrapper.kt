@@ -15,6 +15,7 @@ import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
 import io.casey.musikcube.remote.Application
@@ -25,9 +26,7 @@ import io.casey.musikcube.remote.util.Preconditions
 import java.io.File
 
 class GaplessExoPlayerWrapper : PlayerWrapper() {
-    private var sourceFactory: DataSource.Factory = DefaultHttpDataSourceFactory(
-        Util.getUserAgent(context, "musikdroid"), null, TIMEOUT, TIMEOUT, true)
-
+    private var sourceFactory: DataSource.Factory
     private val extractorsFactory = DefaultExtractorsFactory()
     private var source: MediaSource? = null
     private var metadata: ITrack? = null
@@ -40,6 +39,12 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     private var initialOffsetMs: Int = 0
 
     init {
+        val userAgent = Util.getUserAgent(context, "musikdroid")
+
+        val httpFactory: DataSource.Factory = DefaultHttpDataSourceFactory(
+            userAgent, null, TIMEOUT, TIMEOUT, true)
+
+        this.sourceFactory = DefaultDataSourceFactory(context, null, httpFactory)
         this.transcoding = prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
@@ -58,7 +63,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
             this.source = ExtractorMediaSource(Uri.parse(proxyUri), sourceFactory, extractorsFactory, null, null)
 
-            addPlayer(this, this.source!!, playNow = true)
+            addPlayer(this, this.source!!)
 
             state = State.Preparing
         }
@@ -126,7 +131,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             if (gaplessPlayer?.playbackState != ExoPlayer.STATE_IDLE) {
                 if (gaplessPlayer?.isCurrentWindowSeekable == true) {
                     var offset = millis.toLong()
-                    val isInitialSeek = initialOffsetMs > 0 && (position == initialOffsetMs)
+                    val isInitialSeek = initialOffsetMs > 0 && (millis == initialOffsetMs)
 
                     /* if we're transcoding we don't want to seek arbitrarily because it may put
                     a lot of pressure on the backend. just allow seeking up to what we currently
@@ -242,6 +247,9 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
                         gaplessPlayer?.seekTo(lastPosition)
                         lastPosition = -1
                     }
+                    else if (initialOffsetMs > 0) {
+                        position = initialOffsetMs
+                    }
 
                     if (!prefetch) {
                         gaplessPlayer?.playWhenReady = true
@@ -334,7 +342,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             }
         }
 
-        private fun addPlayer(wrapper: GaplessExoPlayerWrapper, source: MediaSource, playNow: Boolean = false) {
+        private fun addPlayer(wrapper: GaplessExoPlayerWrapper, source: MediaSource) {
             addActivePlayer(wrapper)
 
             if (all.size == 0) {
@@ -343,10 +351,6 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
             dcms.addMediaSource(source)
             all.add(wrapper)
-
-            if (playNow) {
-                gaplessPlayer?.playWhenReady = true
-            }
 
             if (dcms.size == 1) {
                 gaplessPlayer?.prepare(dcms)

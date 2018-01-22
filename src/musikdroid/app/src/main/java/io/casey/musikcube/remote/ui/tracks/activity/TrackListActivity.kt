@@ -19,8 +19,9 @@ import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow.QueryFactory
+import io.casey.musikcube.remote.ui.shared.model.ITrackListSlidingWindow
+import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
+import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView.Capability
 import io.casey.musikcube.remote.ui.tracks.adapter.TrackListAdapter
@@ -30,7 +31,7 @@ import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 
 class TrackListActivity : BaseActivity(), Filterable {
-    private lateinit var tracks: TrackListSlidingWindow
+    private lateinit var tracks: DefaultSlidingWindow
     private lateinit var emptyView: EmptyListView
     private lateinit var transport: TransportFragment
     private lateinit var adapter: TrackListAdapter
@@ -66,7 +67,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         val queryFactory = createCategoryQueryFactory(categoryType, categoryId)
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
 
-        tracks = TrackListSlidingWindow(recyclerView, data.provider, queryFactory)
+        tracks = DefaultSlidingWindow(recyclerView, data.provider, queryFactory)
         adapter = TrackListAdapter(tracks, eventListener, playback)
 
         setupDefaultRecyclerView(recyclerView, adapter)
@@ -209,10 +210,10 @@ class TrackListActivity : BaseActivity(), Filterable {
         }
     }
 
-    private fun createCategoryQueryFactory(categoryType: String?, categoryId: Long): QueryFactory {
+    private fun createCategoryQueryFactory(categoryType: String?, categoryId: Long): ITrackListQueryFactory {
         if (isValidCategory(categoryType, categoryId)) {
             /* tracks for a specified category (album, artists, genres, etc */
-            return object : QueryFactory() {
+            return object : ITrackListQueryFactory {
                override fun count(): Observable<Int> =
                    data.provider.getTrackCountByCategory(categoryType ?: "", categoryId, lastFilter)
 
@@ -225,7 +226,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         }
         else {
             /* all tracks */
-            return object : QueryFactory() {
+            return object : ITrackListQueryFactory {
                 override fun count(): Observable<Int> =
                     data.provider.getTrackCount(lastFilter)
 
@@ -238,7 +239,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         }
     }
 
-    private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
+    private val slidingWindowListener = object : ITrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) {
             emptyView.update(data.provider.state, count)
         }

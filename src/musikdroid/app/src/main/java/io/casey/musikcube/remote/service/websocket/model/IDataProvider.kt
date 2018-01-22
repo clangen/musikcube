@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.service.websocket.model
 
+import io.casey.musikcube.remote.service.websocket.Messages
 import io.reactivex.Observable
 
 interface IDataProvider {
@@ -28,9 +29,12 @@ interface IDataProvider {
     fun getTracksByCategory(category: String, id: Long, filter: String = ""): Observable<List<ITrack>>
     fun getTracksByCategory(category: String, id: Long, limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
 
-    fun getPlayQueueTracksCount(filter: String = ""): Observable<Int>
-    fun getPlayQueueTracks(filter: String = ""): Observable<List<ITrack>>
-    fun getPlayQueueTracks(limit: Int, offset: Int, filter: String = ""): Observable<List<ITrack>>
+    fun getPlayQueueTracksCount(type: PlayQueueType = PlayQueueType.Live): Observable<Int>
+    fun getPlayQueueTracks(type: PlayQueueType = PlayQueueType.Live): Observable<List<ITrack>>
+    fun getPlayQueueTracks(limit: Int, offset: Int, type: PlayQueueType = PlayQueueType.Live): Observable<List<ITrack>>
+    fun getPlayQueueTrackIds(limit: Int, offset: Int, type: PlayQueueType = PlayQueueType.Live): Observable<List<String>>
+    fun getPlayQueueTrackIds(type: PlayQueueType = PlayQueueType.Live): Observable<List<String>>
+    fun snapshotPlayQueue(): Observable<Boolean>
 
     fun getPlaylists(): Observable<List<IPlaylist>>
 
@@ -49,7 +53,7 @@ interface IDataProvider {
     fun removeTracksFromPlaylist(playlistId: Long, externalIds: List<String>, sortOrders: List<Int>): Observable<Int>
 
     fun listOutputDrivers(): Observable<IOutputs>
-    fun setDefaultOutputDriver(driverName: String, deviceId: String = "default"): Observable<Boolean>
+    fun setDefaultOutputDriver(driverName: String, deviceId: String = ""): Observable<Boolean>
 
     fun getGainSettings(): Observable<IGainSettings>
     fun updateGainSettings(replayGainMode: ReplayGainMode, preampGain: Float): Observable<Boolean>

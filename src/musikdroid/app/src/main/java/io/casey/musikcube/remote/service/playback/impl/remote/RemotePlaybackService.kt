@@ -5,6 +5,7 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackState
+import io.casey.musikcube.remote.service.playback.QueryContext
 import io.casey.musikcube.remote.service.playback.RepeatMode
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
@@ -12,7 +13,7 @@ import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
+import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.reactivex.Observable
 import org.json.JSONObject
 import java.util.*
@@ -21,16 +22,16 @@ import javax.inject.Inject
 class RemotePlaybackService : IPlaybackService {
     private interface Key {
         companion object {
-            val STATE = "state"
-            val REPEAT_MODE = "repeat_mode"
-            val VOLUME = "volume"
-            val SHUFFLED = "shuffled"
-            val MUTED = "muted"
-            val PLAY_QUEUE_COUNT = "track_count"
-            val PLAY_QUEUE_POSITION = "play_queue_position"
-            val PLAYING_DURATION = "playing_duration"
-            val PLAYING_CURRENT_TIME = "playing_current_time"
-            val PLAYING_TRACK = "playing_track"
+            const val STATE = "state"
+            const val REPEAT_MODE = "repeat_mode"
+            const val VOLUME = "volume"
+            const val SHUFFLED = "shuffled"
+            const val MUTED = "muted"
+            const val PLAY_QUEUE_COUNT = "track_count"
+            const val PLAY_QUEUE_POSITION = "play_queue_position"
+            const val PLAYING_DURATION = "playing_duration"
+            const val PLAYING_CURRENT_TIME = "playing_current_time"
+            const val PLAYING_TRACK = "playing_track"
         }
     }
 
@@ -173,6 +174,35 @@ class RemotePlaybackService : IPlaybackService {
             .addOption(Messages.Key.INDEX, index)
             .addOption(Messages.Key.FILTER, filter)
             .build())
+    }
+
+    override fun playFrom(service: IPlaybackService) {
+        service.queryContext?.let {qc ->
+            val time = service.currentTime
+            val index = service.queuePosition
+
+            when (qc.type) {
+                Messages.Request.PlaySnapshotTracks -> {
+                    wss.send(SocketMessage.Builder
+                        .request(Messages.Request.PlaySnapshotTracks)
+                        .addOption(Messages.Key.TIME, time)
+                        .addOption(Messages.Key.INDEX, index)
+                        .build())
+                }
+                Messages.Request.QueryTracks,
+                Messages.Request.QueryTracksByCategory -> {
+                    wss.send(SocketMessage.Builder
+                        .request(Messages.Request.PlayTracksByCategory)
+                        .addOption(Messages.Key.CATEGORY, qc.category)
+                        .addOption(Messages.Key.ID, qc.categoryId)
+                        .addOption(Messages.Key.FILTER, qc.filter)
+                        .addOption(Messages.Key.TIME, time)
+                        .addOption(Messages.Key.INDEX, index)
+                        .build())
+                }
+                else -> { }
+            }
+        }
     }
 
     override fun prev() {
@@ -371,7 +401,10 @@ class RemotePlaybackService : IPlaybackService {
         }
     }
 
-    override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
+    override val queryContext: QueryContext?
+        get() = QueryContext(Messages.Request.QueryPlayQueueTracks)
+
+    override val playlistQueryFactory: ITrackListQueryFactory = object : ITrackListQueryFactory {
         override fun count(): Observable<Int> = dataProvider.getPlayQueueTracksCount()
         override fun page(offset: Int, limit: Int): Observable<List<ITrack>> = dataProvider.getPlayQueueTracks(limit, offset)
         override fun offline(): Boolean  = false

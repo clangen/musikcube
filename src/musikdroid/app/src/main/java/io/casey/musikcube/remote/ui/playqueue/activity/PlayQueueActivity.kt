@@ -18,7 +18,8 @@ import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
+import io.casey.musikcube.remote.ui.shared.model.ITrackListSlidingWindow
+import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -26,7 +27,7 @@ class PlayQueueActivity : BaseActivity() {
     private var offlineQueue: Boolean = false
     private lateinit var data: DataProviderMixin
     private lateinit var playback: PlaybackMixin
-    private lateinit var tracks: TrackListSlidingWindow
+    private lateinit var tracks: DefaultSlidingWindow
     private lateinit var adapter: PlayQueueAdapter
     private lateinit var emptyView: EmptyListView
 
@@ -45,7 +46,7 @@ class PlayQueueActivity : BaseActivity() {
         offlineQueue = playback.service.playlistQueryFactory.offline()
 
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
-        tracks = TrackListSlidingWindow(recyclerView, data.provider, queryFactory)
+        tracks = DefaultSlidingWindow(recyclerView, data.provider, queryFactory)
         tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
         adapter = PlayQueueAdapter(tracks, playback, adapterListener)
@@ -120,7 +121,7 @@ class PlayQueueActivity : BaseActivity() {
         adapter.notifyDataSetChanged()
     }
 
-    private val slidingWindowListener = object : TrackListSlidingWindow.OnMetadataLoadedListener {
+    private val slidingWindowListener = object : ITrackListSlidingWindow.OnMetadataLoadedListener {
         override fun onReloaded(count: Int) =
             emptyView.update(data.provider.state, count)
 
@@ -128,7 +129,7 @@ class PlayQueueActivity : BaseActivity() {
     }
 
     companion object {
-        private val EXTRA_PLAYING_INDEX = "extra_playing_index"
+        private const val EXTRA_PLAYING_INDEX = "extra_playing_index"
 
         fun getStartIntent(context: Context, playingIndex: Int): Intent {
             return Intent(context, PlayQueueActivity::class.java)

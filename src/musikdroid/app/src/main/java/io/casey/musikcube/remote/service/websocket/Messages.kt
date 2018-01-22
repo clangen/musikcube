@@ -20,6 +20,7 @@ class Messages {
         PlayAllTracks("play_all_tracks"),
         PlayTracks("play_tracks"),
         PlayTracksByCategory("play_tracks_by_category"),
+        PlaySnapshotTracks("play_snapshot_tracks"),
         QueryTracks("query_tracks"),
         ListCategories("list_categories"),
         QueryTracksByCategory("query_tracks_by_category"),
@@ -38,7 +39,8 @@ class Messages {
         SetGainSettings("set_gain_settings"),
         RunIndexer("run_indexer"),
         GetTransportType("get_transport_type"),
-        SetTransportType("set_transport_type");
+        SetTransportType("set_transport_type"),
+        SnapshotPlayQueue("snapshot_play_queue");
 
         override fun toString(): String = rawValue
         fun matches(name: String): Boolean = (rawValue == name)
@@ -76,58 +78,59 @@ class Messages {
 
     class Key {
         companion object {
-            val CATEGORY = "category"
-            val CATEGORY_ID = "category_id"
-            val DATA = "data"
-            val ALL = "all"
-            val SELECTED = "selected"
-            val ID = "id"
-            val COUNT = "count"
-            val COUNT_ONLY = "count_only"
-            val IDS_ONLY = "ids_only"
-            val OFFSET = "offset"
-            val LIMIT = "limit"
-            val INDEX = "index"
-            val DELTA = "delta"
-            val POSITION = "position"
-            val VALUE = "value"
-            val FILTER = "filter"
-            val RELATIVE = "relative"
-            val PLAYING_CURRENT_TIME = "playing_current_time"
-            val PLAYLIST_ID = "playlist_id"
-            val PLAYLIST_NAME = "playlist_name"
-            val PREDICATE_CATEGORY = "predicate_category"
-            val PREDICATE_ID = "predicate_id"
-            val SUBQUERY = "subquery"
-            val TYPE = "type"
-            val OPTIONS = "options"
-            val SUCCESS = "success"
-            val EXTERNAL_IDS = "external_ids"
-            val SORT_ORDERS = "sort_orders"
-            val DRIVER_NAME = "driver_name"
-            val DEVICE_ID = "device_id"
-            val REPLAYGAIN_MODE = "replaygain_mode"
-            val PREAMP_GAIN = "preamp_gain"
+            const val CATEGORY = "category"
+            const val CATEGORY_ID = "category_id"
+            const val DATA = "data"
+            const val ALL = "all"
+            const val SELECTED = "selected"
+            const val ID = "id"
+            const val COUNT = "count"
+            const val COUNT_ONLY = "count_only"
+            const val IDS_ONLY = "ids_only"
+            const val OFFSET = "offset"
+            const val LIMIT = "limit"
+            const val INDEX = "index"
+            const val DELTA = "delta"
+            const val POSITION = "position"
+            const val VALUE = "value"
+            const val FILTER = "filter"
+            const val RELATIVE = "relative"
+            const val PLAYING_CURRENT_TIME = "playing_current_time"
+            const val PLAYLIST_ID = "playlist_id"
+            const val PLAYLIST_NAME = "playlist_name"
+            const val PREDICATE_CATEGORY = "predicate_category"
+            const val PREDICATE_ID = "predicate_id"
+            const val SUBQUERY = "subquery"
+            const val TYPE = "type"
+            const val TIME = "time"
+            const val OPTIONS = "options"
+            const val SUCCESS = "success"
+            const val EXTERNAL_IDS = "external_ids"
+            const val SORT_ORDERS = "sort_orders"
+            const val DRIVER_NAME = "driver_name"
+            const val DEVICE_ID = "device_id"
+            const val REPLAYGAIN_MODE = "replaygain_mode"
+            const val PREAMP_GAIN = "preamp_gain"
         }
     }
 
     interface Value {
         companion object {
-            val UP = "up"
-            val DOWN = "down"
-            val REINDEX = "reindex"
-            val REBUILD = "rebuild"
+            const val UP = "up"
+            const val DOWN = "down"
+            const val REINDEX = "reindex"
+            const val REBUILD = "rebuild"
         }
     }
 
     interface Category {
         companion object {
-            val OFFLINE = "offline"
-            val ALBUM = "album"
-            val ARTIST = "artist"
-            val ALBUM_ARTIST = "album_artist"
-            val GENRE = "genre"
-            val PLAYLISTS = "playlists"
+            const val OFFLINE = "offline"
+            const val ALBUM = "album"
+            const val ARTIST = "artist"
+            const val ALBUM_ARTIST = "album_artist"
+            const val GENRE = "genre"
+            const val PLAYLISTS = "playlists"
         }
     }
 }

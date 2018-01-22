@@ -17,6 +17,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
 import io.casey.musikcube.remote.service.websocket.Messages
@@ -118,8 +119,11 @@ class MainActivity : BaseActivity() {
         menu.findItem(R.id.action_categories).isEnabled = connected
         menu.findItem(R.id.action_remote_manage).isEnabled = connected
 
-        menu.findItem(R.id.action_remote_toggle).setIcon(
-            if (streaming) R.drawable.ic_toolbar_streaming else R.drawable.ic_toolbar_remote)
+        val remoteToggle = menu.findItem(R.id.action_remote_toggle)
+
+        remoteToggle.setIcon(
+            if (streaming) R.drawable.ic_toolbar_streaming
+            else R.drawable.ic_toolbar_remote)
 
         return super.onPrepareOptionsMenu(menu)
     }
@@ -204,21 +208,31 @@ class MainActivity : BaseActivity() {
             Prefs.Key.STREAMING_PLAYBACK,
             Prefs.Default.STREAMING_PLAYBACK)
 
-    private fun togglePlaybackService() {
-        val streaming = isStreamingSelected
+    private fun togglePlaybackService(transfer: Boolean = false) {
+        val isStreaming = isStreamingSelected
+        prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !isStreaming)?.apply()
 
-        if (streaming) {
-            playback.service.stop()
-        }
-
-        prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !streaming)?.apply()
-
-        val messageId = if (streaming)
+        val messageId = if (isStreaming)
             R.string.snackbar_remote_enabled
         else
             R.string.snackbar_streaming_enabled
 
         showSnackbar(mainLayout, messageId)
+
+        if (transfer) {
+            val streaming = PlaybackServiceFactory.streaming(this)
+            val remote = PlaybackServiceFactory.remote(this)
+
+            if (!isStreaming) {
+                streaming.playFrom(remote)
+            } else {
+                remote.playFrom(streaming)
+            }
+        }
+
+        if (isStreaming) {
+            playback.service.stop()
+        }
 
         playback.reload()
 

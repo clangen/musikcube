@@ -12,23 +12,20 @@ import android.util.Log
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
-import io.casey.musikcube.remote.service.playback.IPlaybackService
-import io.casey.musikcube.remote.service.playback.PlaybackState
-import io.casey.musikcube.remote.service.playback.PlayerWrapper
-import io.casey.musikcube.remote.service.playback.RepeatMode
+import io.casey.musikcube.remote.service.playback.*
 import io.casey.musikcube.remote.service.system.SystemService
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
+import io.casey.musikcube.remote.service.websocket.model.PlayQueueType
 import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
 import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.subscribeBy
 import org.json.JSONObject
-import java.net.URLEncoder
 import java.util.*
 import javax.inject.Inject
 
@@ -37,7 +34,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val listeners = HashSet<() -> Unit>()
-    private var params: QueueParams? = null
     private var playContext = PlaybackContext()
     private var audioManager: AudioManager? = null
     private var lastSystemVolume: Int = 0
@@ -120,24 +116,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
     }
 
-    private class QueueParams {
-        internal val category: String?
-        internal val categoryId: Long
-        internal val filter: String
-
-        constructor(filter: String) {
-            this.filter = filter
-            this.categoryId = -1
-            this.category = null
-        }
-
-        constructor(category: String, categoryId: Long, filter: String) {
-            this.category = category
-            this.categoryId = categoryId
-            this.filter = filter
-        }
-    }
-
     init {
         DaggerServiceComponent.builder()
             .appComponent(Application.appComponent)
@@ -172,22 +150,62 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override fun playAll(index: Int, filter: String) {
         if (requestAudioFocus()) {
             trackMetadataCache.clear()
-            loadQueueAndPlay(QueueParams(filter), index)
+            resetPlayContextAndQueryFactory()
+            val type = Messages.Request.QueryTracks
+            loadQueueAndPlay(QueryContext(filter, type), index)
         }
     }
 
     override fun play(category: String, categoryId: Long, index: Int, filter: String) {
         if (requestAudioFocus()) {
             trackMetadataCache.clear()
-            loadQueueAndPlay(QueueParams(category, categoryId, filter), index)
+            resetPlayContextAndQueryFactory()
+            val type = Messages.Request.QueryTracksByCategory
+            loadQueueAndPlay(QueryContext(category, categoryId, filter, type), index)
         }
     }
 
     override fun playAt(index: Int) {
-        if (params != null) {
+        if (queryContext != null) {
             if (requestAudioFocus()) {
-                playContext.stopPlaybackAndReset()
-                loadQueueAndPlay(params!!, index)
+                resetPlayContextAndQueryFactory()
+                loadQueueAndPlay(queryContext!!, index)
+            }
+        }
+    }
+
+    override fun playFrom(service: IPlaybackService) {
+        /* we only support switching from a play queue context! */
+        if (service.queryContext?.type == Messages.Request.QueryPlayQueueTracks) {
+            val dummyListener: (() -> Unit) = { }
+            connect(dummyListener)
+            service.queryContext?.let { _ ->
+                dataProvider.snapshotPlayQueue().subscribeBy(
+                onNext = {
+                    disconnect(dummyListener)
+
+                    resetPlayContextAndQueryFactory()
+                    val index = service.queuePosition
+                    val offsetMs = (service.currentTime * 1000).toInt()
+                    val context = QueryContext(Messages.Request.PlaySnapshotTracks)
+                    val type = PlayQueueType.Snapshot
+
+                    snapshotQueryFactory = object: ITrackListQueryFactory {
+                        override fun count(): Observable<Int>? =
+                            dataProvider.getPlayQueueTracksCount(type)
+
+                        override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? =
+                            dataProvider.getPlayQueueTracks(limit, offset, type)
+
+                        override fun offline(): Boolean = false
+                    }
+
+                    service.pause()
+                    loadQueueAndPlay(context, index, offsetMs)
+                },
+                onError = {
+                    disconnect(dummyListener)
+                })
             }
         }
     }
@@ -377,6 +395,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             return 0.0
         }
 
+    private fun resetPlayContextAndQueryFactory() {
+        playContext.stopPlaybackAndReset()
+        snapshotQueryFactory = null
+    }
+
     private fun pauseTransient() {
         if (state !== PlaybackState.Paused) {
             pausedByTransientLoss = true
@@ -439,7 +462,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
     private fun moveToPrevTrack() {
         if (playContext.queueCount > 0) {
-            loadQueueAndPlay(params!!, resolvePrevIndex(
+            loadQueueAndPlay(queryContext!!, resolvePrevIndex(
                 playContext.currentIndex, playContext.queueCount))
         }
     }
@@ -455,7 +478,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             manually (this will automatically load the current and next tracks */
             val next = resolveNextIndex(index, playContext.queueCount, userInitiated)
             if (next >= 0) {
-                loadQueueAndPlay(params!!, next)
+                loadQueueAndPlay(queryContext!!, next)
             }
             else {
                 stop()
@@ -642,7 +665,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
     private fun prefetchNextTrackMetadata() {
         if (playContext.nextMetadata == null) {
-            val originalParams = params
+            val originalParams = queryContext
             val nextIndex = resolveNextIndex(playContext.currentIndex, playContext.queueCount, false)
 
             if (trackMetadataCache.containsKey(nextIndex)) {
@@ -660,7 +683,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                         .subscribeOn(AndroidSchedulers.mainThread())
                         .subscribe(
                             { track ->
-                                if (originalParams === params && playContext.currentIndex == currentIndex) {
+                                if (originalParams === queryContext && playContext.currentIndex == currentIndex) {
                                     if (playContext.nextMetadata == null) {
                                         playContext.nextIndex = nextIndex
                                         playContext.nextMetadata = track.firstOrNull()
@@ -676,7 +699,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
     }
 
-    private fun loadQueueAndPlay(newParams: QueueParams, startIndex: Int) {
+    private fun loadQueueAndPlay(newParams: QueryContext, startIndex: Int, offsetMs: Int = 0) {
         state = PlaybackState.Buffering
 
         cancelScheduledPausedSleep()
@@ -689,7 +712,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         playContext = newPlayContext
         playContext.currentIndex = startIndex
 
-        params = newParams
+        queryContext = newParams
 
         val countMessage = playlistQueryFactory.count() ?: return
 
@@ -711,7 +734,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     state = PlaybackState.Stopped
                 },
                 onComplete = {
-                    if (this.params === newParams && playContext === newPlayContext) {
+                    if (this.queryContext === newParams && playContext === newPlayContext) {
                         notifyEventListeners()
 
                         val uri = getUri(playContext.currentMetadata)
@@ -719,11 +742,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                         if (uri != null) {
                             playContext.currentPlayer = PlayerWrapper.newInstance(prefs)
                             playContext.currentPlayer?.setOnStateChangedListener(onCurrentPlayerStateChanged)
-                            playContext.currentPlayer?.play(uri, playContext.currentMetadata!!)
+                            playContext.currentPlayer?.play(uri, playContext.currentMetadata!!, offsetMs)
                         }
                     }
                     else {
-                        Log.d(TAG, "onComplete fired, but params/context changed. discarding!")
+                        Log.d(TAG, "onComplete fired, but queryContext/context changed. discarding!")
                     }
                 })
     }
@@ -738,7 +761,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     private fun precacheTrackMetadata(start: Int, count: Int) {
-        val originalParams = params
+        val originalParams = queryContext
         val query = playlistQueryFactory.page(start, count)
 
         if (query != null) {
@@ -746,7 +769,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     { response ->
-                        if (originalParams === this.params) {
+                        if (originalParams === this.queryContext) {
                             response.forEachIndexed { i, track ->
                                 trackMetadataCache.put(start + i, track)
                             }
@@ -758,11 +781,16 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
     }
 
-    override val playlistQueryFactory: TrackListSlidingWindow.QueryFactory = object : TrackListSlidingWindow.QueryFactory() {
+    override var queryContext: QueryContext? = null
+        private set(value) { field = value }
+
+    var snapshotQueryFactory: ITrackListQueryFactory? = null
+
+    val defaultQueryFactory: ITrackListQueryFactory = object : ITrackListQueryFactory {
         override fun count(): Observable<Int>? {
-            val params = params
+            val params = queryContext
             if (params != null) {
-                if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
+                if (params.hasCategory()) {
                     return dataProvider.getTrackCountByCategory(
                         params.category ?: "", params.categoryId, params.filter)
                 }
@@ -774,9 +802,9 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
 
         override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? {
-            val params = params
+            val params = queryContext
             if (params != null) {
-                if (Strings.notEmpty(params.category) && (params.categoryId >= 0)) {
+                if (params.hasCategory()) {
                     return dataProvider.getTracksByCategory(
                         params.category ?: "", params.categoryId, limit, offset, params.filter)
                 }
@@ -788,8 +816,19 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
 
         override fun offline(): Boolean {
-            return params?.category == Messages.Category.OFFLINE
+            return queryContext?.category == Messages.Category.OFFLINE
         }
+    }
+
+    override val playlistQueryFactory: ITrackListQueryFactory = object : ITrackListQueryFactory {
+        override fun count(): Observable<Int>? =
+            snapshotQueryFactory?.count() ?: defaultQueryFactory.count()
+
+        override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? =
+            snapshotQueryFactory?.page(offset, limit) ?: defaultQueryFactory.page(offset, limit)
+
+        override fun offline(): Boolean =
+            snapshotQueryFactory?.offline() ?: defaultQueryFactory.offline()
     }
 
     init {
@@ -862,12 +901,12 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     companion object {
-        private val TAG = "StreamingPlayback"
-        private val REPEAT_MODE_PREF = "streaming_playback_repeat_mode"
-        private val PREV_TRACK_GRACE_PERIOD_MILLIS = 3500
-        private val MAX_TRACK_METADATA_CACHE_SIZE = 50
-        private val PRECACHE_METADATA_SIZE = 10
-        private val PAUSED_SERVICE_SLEEP_DELAY_MS = 1000 * 60 * 5 /* 5 minutes */
-        private val DATA_PROVIDER_DISCONNECT_DELAY_MS = 5000
+        private const val TAG = "StreamingPlayback"
+        private const val REPEAT_MODE_PREF = "streaming_playback_repeat_mode"
+        private const val PREV_TRACK_GRACE_PERIOD_MILLIS = 3500
+        private const val MAX_TRACK_METADATA_CACHE_SIZE = 50
+        private const val PRECACHE_METADATA_SIZE = 10
+        private const val PAUSED_SERVICE_SLEEP_DELAY_MS = 1000 * 60 * 5 /* 5 minutes */
+        private const val DATA_PROVIDER_DISCONNECT_DELAY_MS = 5000
     }
 }

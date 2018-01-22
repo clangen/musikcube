@@ -10,9 +10,9 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import io.casey.musikcube.remote.ui.shared.model.TrackListSlidingWindow
+import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
 
-class TrackListAdapter(private val tracks: TrackListSlidingWindow,
+class TrackListAdapter(private val tracks: DefaultSlidingWindow,
                        private val listener: EventListener?,
                        private var playback: PlaybackMixin) : RecyclerView.Adapter<TrackListAdapter.ViewHolder>()
 {

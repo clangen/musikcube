@@ -141,6 +141,7 @@ class MainMetadataView : FrameLayout {
 
             if (Strings.empty(artist) || Strings.empty(album)) {
                 setMetadataDisplayMode(DisplayMode.NoArtwork)
+                loadedAlbumArtUrl = null
             }
             else {
                 val newUrl = getAlbumArtUrl(playing, Size.Mega) ?: ""
