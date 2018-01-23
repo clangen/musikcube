@@ -128,7 +128,8 @@ static json getEnvironment(Context& context) {
 
 WebSocketServer::WebSocketServer(Context& context)
 : context(context)
-, running(false) {
+, running(false)
+, playQueueSnapshot(nullptr) {
 
 }
 
@@ -195,6 +196,12 @@ void WebSocketServer::ThreadProc() {
 
     this->wss.reset();
     this->running = false;
+
+    if (playQueueSnapshot) {
+        playQueueSnapshot->Release();
+        playQueueSnapshot = nullptr;
+    }
+
     this->exitCondition.notify_all();
 }
 
@@ -467,6 +474,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithSetTransportType(connection, request);
             return;
         }
+        else if (name == request::snapshot_play_queue) {
+            this->RespondWithSnapshotPlayQueue(connection, request);
+            return;
+        }
     }
 
     this->RespondWithInvalidRequest(connection, name, id);
@@ -712,9 +723,16 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
     int limit = -1;
     int offset = 0;
 
+    /* note: the user can query the "live" (i.e. current) play queue, or a
+    a previously "snapshotted" playqueue. the former is generally used for
+    remote playback, the latter is used for transfering context from remote
+    to streaming. */
+    std::string type = value::live;
+
     if (request.find(message::options) != request.end()) {
         json& options = request[message::options];
         countOnly = options.value(key::count_only, false);
+        type = options.value(key::type, type);
 
         if (!countOnly) {
             this->GetLimitAndOffset(options, limit, offset);
@@ -722,18 +740,30 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
     }
 
     if (countOnly) {
+        size_t count = context.playback->Count();
+
+        if (type == value::snapshot) {
+            count = this->playQueueSnapshot ? this->playQueueSnapshot->Count() : 0;
+        }
+
         this->RespondWithOptions(connection, request, {
             { key::data, json::array() },
-            { key::count, context.playback->Count() }
+            { key::count, count }
         });
     }
     else {
-        static auto deleter = [](ITrack* track) { track->Release(); };
+        static auto releaseDeleter = [](ITrack* track) { track->Release(); };
+        static auto nullDeleter = [](ITrack* track) { };
+
         std::vector<std::shared_ptr<ITrack>> tracks;
 
         /* edit the playlist so it can be changed while we're getting the tracks
-        out of it. */
-        ITrackListEditor* editor = context.playback->EditPlaylist();
+        out of it. only applicable for the "live" type. */
+        ITrackListEditor* editor = nullptr;
+
+        if (type == value::live) {
+            editor = context.playback->EditPlaylist();
+        }
 
         int trackCount = (int)context.playback->Count();
         int to = trackCount;
@@ -742,11 +772,20 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
             to = std::min(trackCount, offset + limit);
         }
 
+        ITrack* track;
+        std::function<void(ITrack*)> deleter;
+
+        if (editor) { deleter = releaseDeleter; }
+        else { deleter = nullDeleter; }
+
         for (int i = offset; i < to; i++) {
-            tracks.push_back(std::shared_ptr<ITrack>(context.playback->GetTrack(i), deleter));
+            track = editor ? context.playback->GetTrack(i) : playQueueSnapshot->GetTrack(i);
+            tracks.push_back(std::shared_ptr<ITrack>(track, deleter));
         }
 
-        editor->Release();
+        if (editor) {
+            editor->Release();
+        }
 
         /* now add the tracks to the output. they will be Release()'d automatically
         as soon as this scope ends. */
@@ -1357,6 +1396,19 @@ void WebSocketServer::RespondWithSetTransportType(connection_hdl connection, jso
     }
 
     this->RespondWithSuccess(connection, request);
+}
+
+void WebSocketServer::RespondWithSnapshotPlayQueue(connection_hdl connection, json& request) {
+    if (this->playQueueSnapshot) {
+        this->playQueueSnapshot->Release();
+        this->playQueueSnapshot = nullptr;
+    }
+
+    this->playQueueSnapshot = context.playback->Clone();
+
+    !!this->playQueueSnapshot
+        ? this->RespondWithSuccess(connection, request)
+        : this->RespondWithFailure(connection, request);
 }
 
 void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connection, json& request) {

@@ -119,6 +119,7 @@ class WebSocketServer {
         std::shared_ptr<std::thread> thread;
         std::mutex exitMutex;
         std::condition_variable exitCondition;
+        ITrackList* playQueueSnapshot;
         volatile bool running;
 
         void ThreadProc();
@@ -160,6 +161,7 @@ class WebSocketServer {
         void RespondWithSetGainSettings(connection_hdl connection, json& request);
         void RespondWithGetTransportType(connection_hdl connection, json& request);
         void RespondWithSetTransportType(connection_hdl connection, json& request);
+        void RespondWithSnapshotPlayQueue(connection_hdl connection, json& request);
 
         void BroadcastPlaybackOverview();
         void BroadcastPlayQueueChanged();

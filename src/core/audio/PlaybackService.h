@@ -106,6 +106,7 @@ namespace musik { namespace core { namespace audio {
             virtual musik::core::sdk::TimeChangeMode GetTimeChangeMode() override;
             virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) override;
             virtual void ReloadOutput() override;
+            virtual musik::core::sdk::ITrackList* Clone() override;
 
             /* TODO: include in SDK? */
             virtual bool HotSwap(const TrackList& source, size_t index = 0);

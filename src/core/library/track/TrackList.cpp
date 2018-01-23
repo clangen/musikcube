@@ -40,6 +40,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
 #include <core/library/query/local/TrackMetadataQuery.h>
+#include <core/library/query/local/util/SdkWrappers.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 
@@ -167,6 +168,10 @@ void TrackList::CopyFrom(const TrackList& from) {
         std::back_inserter(this->ids));
 }
 
+void TrackList::CopyTo(TrackList& to) {
+    to.CopyFrom(this);
+}
+
 int TrackList::IndexOf(int64_t id) const {
     auto it = std::find(this->ids.begin(), this->ids.end(), id);
     return (it == this->ids.end()) ? -1 : it - this->ids.begin();
@@ -220,6 +225,10 @@ void TrackList::AddToCache(int64_t key, TrackPtr value) const {
         cacheMap.erase(this->cacheMap.find(*last));
         cacheList.erase(last);
     }
+}
+
+ITrackList* TrackList::GetSdkValue() {
+    return new SdkTrackList(shared_from_this());
 }
 
 /* * * * * TrackListEditor * * * * */

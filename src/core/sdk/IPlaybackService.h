@@ -88,6 +88,7 @@ namespace musik { namespace core { namespace sdk {
 
             /* sdk v13 */
             virtual void ReloadOutput() = 0;
+            virtual ITrackList* Clone() = 0;
     };
 
 } } }

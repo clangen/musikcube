@@ -1031,6 +1031,13 @@ std::string PlaybackService::UriAtIndex(size_t index) {
     return "";
 }
 
+ITrackList* PlaybackService::Clone() {
+    std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+    std::shared_ptr<TrackList> to = std::make_shared<TrackList>(this->library);
+    this->playlist.CopyTo(*to.get());
+    return to->GetSdkValue();
+}
+
 ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
     using Mode = ReplayGainMode;
 

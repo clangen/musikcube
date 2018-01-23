@@ -35,7 +35,9 @@
 #pragma once
 
 #include <core/sdk/IValueList.h>
+#include <core/sdk/ITrackList.h>
 #include <core/support/Common.h>
+#include <core/library/track/TrackList.h>
 #include <vector>
 #include <memory>
 
@@ -161,6 +163,39 @@ namespace musik { namespace core { namespace db { namespace local {
 
         private:
             SharedValueList values;
+    };
+
+    class SdkTrackList : public musik::core::sdk::ITrackList {
+        public:
+            SdkTrackList(std::shared_ptr<musik::core::TrackList> wrapped) {
+                this->wrapped = wrapped;
+            }
+
+            virtual ~SdkTrackList() {
+            }
+
+            virtual void Release() override {
+                delete this;
+            }
+
+            virtual size_t Count() const override {
+                return this->wrapped->Count();
+            }
+
+            virtual int64_t GetId(size_t index) const override {
+                return this->wrapped->GetId(index);
+            }
+
+            virtual int IndexOf(int64_t id) const override {
+                return this->wrapped->IndexOf(id);
+            }
+
+            virtual musik::core::sdk::ITrack* GetTrack(size_t index) const override {
+                return this->wrapped->GetTrack(index);
+            }
+
+        private:
+            std::shared_ptr<musik::core::TrackList> wrapped;
     };
 
 } } } }

@@ -146,6 +146,8 @@ namespace value {
     static const std::string delta = "delta";
     static const std::string reindex = "reindex";
     static const std::string rebuild = "rebuild";
+    static const std::string live = "live";
+    static const std::string snapshot = "snapshot";
 }
 
 namespace type {
@@ -193,6 +195,7 @@ namespace request {
     static const std::string set_gain_settings = "set_gain_settings";
     static const std::string get_transport_type = "get_transport_type";
     static const std::string set_transport_type = "set_transport_type";
+    static const std::string snapshot_play_queue = "snapshot_play_queue";
 }
 
 namespace fragment {

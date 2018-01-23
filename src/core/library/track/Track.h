@@ -37,7 +37,6 @@
 #include <core/sdk/ITagStore.h>
 #include <core/library/ILibrary.h>
 #include <core/sdk/ITrack.h>
-#include <boost/shared_ptr.hpp>
 #include <atomic>
 #include <vector>
 #include <map>

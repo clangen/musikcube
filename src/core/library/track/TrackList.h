@@ -45,7 +45,10 @@
 
 namespace musik { namespace core {
 
-    class TrackList : public musik::core::sdk::ITrackList {
+    class TrackList :
+        public musik::core::sdk::ITrackList,
+        public std::enable_shared_from_this<TrackList>
+    {
         public:
             TrackList(ILibraryPtr library);
             TrackList(TrackList* other);
@@ -74,6 +77,9 @@ namespace musik { namespace core {
             void ClearCache();
             void Swap(TrackList& list);
             void CopyFrom(const TrackList& from);
+            void CopyTo(TrackList& to);
+
+            musik::core::sdk::ITrackList* GetSdkValue();
 
         private:
             typedef std::list<int64_t> CacheList;

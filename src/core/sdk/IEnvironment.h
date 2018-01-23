@@ -40,6 +40,7 @@
 #include "IEncoder.h"
 #include "IPreferences.h"
 #include "IOutput.h"
+#include "ITrackList.h"
 
 namespace musik { namespace core { namespace sdk {
 
