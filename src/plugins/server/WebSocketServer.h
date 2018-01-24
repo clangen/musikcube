@@ -146,6 +146,7 @@ class WebSocketServer {
         void RespondWithListCategories(connection_hdl connection, json& request);
         void RespondWithQueryCategory(connection_hdl connection, json& request);
         void RespondWithPlayAllTracks(connection_hdl connection, json& request);
+        void RespondWithPlaySnapshotTracks(connection_hdl connection, json& request);
         void RespondWithPlayTracksByCategory(connection_hdl connection, json& request);
         void RespondWithEnvironment(connection_hdl connection, json& request);
         void RespondWithCurrentTime(connection_hdl connection, json& request);

@@ -410,6 +410,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithPlayAllTracks(connection, request);
             return;
         }
+        else if (name == request::play_snapshot_tracks) {
+            this->RespondWithPlaySnapshotTracks(connection, request);
+            return;
+        }
         else if (name == request::play_tracks) {
             this->RespondWithPlayTracks(connection, request);
             return;
@@ -702,6 +706,7 @@ void WebSocketServer::RespondWithQueryTracksByExternalIds(connection_hdl connect
                     track = trackList->GetTrack(i);
                     externalId = GetMetadataString(track, track::ExternalId);
                     tracks[externalId] = this->ReadTrackMetadata(track);
+                    track->Release();
                 }
 
                 trackList->Release();
@@ -752,53 +757,48 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         });
     }
     else {
+        bool idsOnly = request[message::options].value(key::ids_only, false);
+
         static auto releaseDeleter = [](ITrack* track) { track->Release(); };
         static auto nullDeleter = [](ITrack* track) { };
-
-        std::vector<std::shared_ptr<ITrack>> tracks;
-
-        /* edit the playlist so it can be changed while we're getting the tracks
-        out of it. only applicable for the "live" type. */
-        ITrackListEditor* editor = nullptr;
-
-        if (type == value::live) {
-            editor = context.playback->EditPlaylist();
-        }
-
-        int trackCount = (int)context.playback->Count();
-        int to = trackCount;
-
-        if (offset >= 0 && limit >= 0) {
-            to = std::min(trackCount, offset + limit);
-        }
-
-        ITrack* track;
-        std::function<void(ITrack*)> deleter;
-
-        if (editor) { deleter = releaseDeleter; }
-        else { deleter = nullDeleter; }
-
-        for (int i = offset; i < to; i++) {
-            track = editor ? context.playback->GetTrack(i) : playQueueSnapshot->GetTrack(i);
-            tracks.push_back(std::shared_ptr<ITrack>(track, deleter));
-        }
-
-        if (editor) {
-            editor->Release();
-        }
 
         /* now add the tracks to the output. they will be Release()'d automatically
         as soon as this scope ends. */
         json data = json::array();
 
-        bool idsOnly = request[message::options].value(key::ids_only, false);
+        if (type == value::live) {
+            /* edit the playlist so it can be changed while we're getting the tracks
+            out of it. only applicable for the "live" type. */
+            ITrackListEditor* editor = context.playback->EditPlaylist();
+            int to = (int)context.playback->Count();
 
-        for (auto track : tracks) {
-            if (idsOnly) {
-                data.push_back(GetMetadataString(track.get(), key::external_id));
+            if (offset >= 0 && limit >= 0) {
+                to = std::min(to, offset + limit);
             }
-            else {
-                data.push_back(this->ReadTrackMetadata(track.get()));
+
+            for (int i = offset; i < to; i++) {
+                ITrack* track = context.playback->GetTrack(i);
+                if (idsOnly) { data.push_back(GetMetadataString(track, key::external_id)); }
+                else { data.push_back(this->ReadTrackMetadata(track)); }
+                track->Release();
+            }
+
+            editor->Release();
+        }
+        else if (type == value::snapshot) {
+            if (this->playQueueSnapshot) {
+                int to = (int)this->playQueueSnapshot->Count();
+
+                if (offset >= 0 && limit >= 0) {
+                    to = std::min(to, offset + limit);
+                }
+
+                for (int i = offset; i < to; i++) {
+                    ITrack* track = playQueueSnapshot->GetTrack(i);
+                    if (idsOnly) { data.push_back(GetMetadataString(track, key::external_id)); }
+                    else { data.push_back(this->ReadTrackMetadata(track)); }
+                    track->Release();
+                }
             }
         }
 
@@ -1059,6 +1059,32 @@ void WebSocketServer::RespondWithPlayAllTracks(connection_hdl connection, json& 
         }
 
         tracks->Release();
+    }
+
+    RespondWithSuccess(connection, request);
+}
+
+void WebSocketServer::RespondWithPlaySnapshotTracks(connection_hdl connection, json& request) {
+    if (this->playQueueSnapshot) {
+        size_t index = 0;
+        double time = 0.0;
+
+        if (request.find(message::options) != request.end()) {
+            index = request[message::options].value(key::index, 0);
+            time = request[message::options].value(key::time, 0.0);
+        }
+
+        context.playback->Play(this->playQueueSnapshot, index);
+
+        if (time > 0.0) {
+            context.playback->SetPosition(time);
+        }
+    }
+    else {
+        context.playback->Stop();
+        auto editor = context.playback->EditPlaylist();
+        editor->Clear();
+        editor->Release();
     }
 
     RespondWithSuccess(connection, request);

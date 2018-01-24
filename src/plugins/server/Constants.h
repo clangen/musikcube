@@ -179,6 +179,7 @@ namespace request {
     static const std::string query_albums = "query_albums";
     static const std::string query_tracks_by_category = "query_tracks_by_category";
     static const std::string play_all_tracks = "play_all_tracks";
+    static const std::string play_snapshot_tracks = "play_snapshot_tracks";
     static const std::string play_tracks = "play_tracks";
     static const std::string play_tracks_by_category = "play_tracks_by_category";
     static const std::string query_play_queue_tracks = "query_play_queue_tracks";

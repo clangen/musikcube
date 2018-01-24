@@ -150,9 +150,7 @@ TrackPtr TrackList::Get(size_t index) const {
 }
 
 ITrack* TrackList::GetTrack(size_t index) const {
-    auto track = this->Get(index).get();
-    track->Retain();
-    return track;
+    return this->Get(index)->GetSdkValue();
 }
 
 int64_t TrackList::GetId(size_t index) const {
