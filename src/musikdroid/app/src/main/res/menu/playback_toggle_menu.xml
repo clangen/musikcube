@@ -5,6 +5,10 @@
         android:title="@string/playback_switch_seamless"/>
 
     <item
+        android:id="@+id/menu_switch_copy"
+        android:title="@string/playback_switch_copy"/>
+
+    <item
         android:id="@+id/menu_switch_normal"
         android:title="@string/playback_switch_new"/>
 </menu>

@@ -42,6 +42,8 @@ import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 
 class MainActivity : BaseActivity() {
+    private enum class SwitchMode { Seamless, Copy, Normal }
+
     private val handler = Handler()
     private var updateCheck: UpdateCheck = UpdateCheck()
     private var seekbarValue = -1
@@ -118,22 +120,32 @@ class MainActivity : BaseActivity() {
 
         val remoteToggle = menu.findItem(R.id.action_remote_toggle)
 
-        remoteToggle.setIcon(
+        remoteToggle.actionView?.findViewById<ImageView>(R.id.icon)?.setImageResource(
             if (streaming) R.drawable.ic_toolbar_streaming
             else R.drawable.ic_toolbar_remote)
+
+        remoteToggle.actionView?.setOnClickListener {
+            togglePlaybackService()
+        }
+
+        remoteToggle.actionView?.setOnLongClickListener {
+            showPlaybackTogglePopup()
+            true
+        }
 
         return super.onPrepareOptionsMenu(menu)
     }
 
-    fun showPlaybackTogglePopup() {
+    private fun showPlaybackTogglePopup() {
         val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
         val popup = PopupMenu(this, toolbarButton)
         popup.inflate(R.menu.playback_toggle_menu)
 
         popup.setOnMenuItemClickListener { it ->
             when(it.itemId) {
-                R.id.menu_switch_seamless -> togglePlaybackService(true)
-                R.id.menu_switch_normal -> togglePlaybackService()
+                R.id.menu_switch_seamless -> togglePlaybackService(SwitchMode.Seamless)
+                R.id.menu_switch_copy -> togglePlaybackService(SwitchMode.Copy)
+                R.id.menu_switch_normal -> togglePlaybackService(SwitchMode.Normal)
                 else -> { }
             }
             true
@@ -227,7 +239,7 @@ class MainActivity : BaseActivity() {
             Prefs.Key.STREAMING_PLAYBACK,
             Prefs.Default.STREAMING_PLAYBACK)
 
-    private fun togglePlaybackService(transfer: Boolean = false) {
+    private fun togglePlaybackService(mode: SwitchMode = SwitchMode.Normal) {
         val isStreaming = isStreamingSelected
         prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !isStreaming)?.apply()
 
@@ -238,19 +250,27 @@ class MainActivity : BaseActivity() {
 
         showSnackbar(mainLayout, messageId)
 
-        if (transfer) {
+        if (mode == SwitchMode.Normal) {
+            if (isStreaming) {
+                playback.service.pause()
+            }
+        }
+        else {
             val streaming = PlaybackServiceFactory.streaming(this)
             val remote = PlaybackServiceFactory.remote(this)
 
             if (!isStreaming) {
                 streaming.playFrom(remote)
-            } else {
-                remote.playFrom(streaming)
+                if (mode == SwitchMode.Seamless) {
+                    remote.pause()
+                }
             }
-        }
-
-        if (isStreaming) {
-            playback.service.stop()
+            else {
+                remote.playFrom(streaming)
+                if (mode == SwitchMode.Seamless) {
+                    streaming.pause()
+                }
+            }
         }
 
         playback.reload()

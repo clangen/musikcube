@@ -177,6 +177,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override fun playFrom(service: IPlaybackService) {
         /* we only support switching from a play queue context! */
         if (service.queryContext?.type == Messages.Request.QueryPlayQueueTracks) {
+            val index = service.queuePosition
+            val offsetMs = (service.currentTime * 1000).toInt()
+            val context = QueryContext(Messages.Request.PlaySnapshotTracks)
+            val type = PlayQueueType.Snapshot
+
             val dummyListener: (() -> Unit) = { }
             connect(dummyListener)
             service.queryContext?.let { _ ->
@@ -185,10 +190,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     disconnect(dummyListener)
 
                     resetPlayContextAndQueryFactory()
-                    val index = service.queuePosition
-                    val offsetMs = (service.currentTime * 1000).toInt()
-                    val context = QueryContext(Messages.Request.PlaySnapshotTracks)
-                    val type = PlayQueueType.Snapshot
 
                     snapshotQueryFactory = object: ITrackListQueryFactory {
                         override fun count(): Observable<Int>? =
@@ -200,7 +201,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                         override fun offline(): Boolean = false
                     }
 
-                    service.pause()
                     loadQueueAndPlay(context, index, offsetMs)
                 },
                 onError = {

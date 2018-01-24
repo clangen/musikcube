@@ -188,6 +188,7 @@
     <string name="category_genre">genre</string>
     <string name="category_publisher">publisher</string>
     <string name="category_year">year</string>
-    <string name="playback_switch_seamless">seamless switch</string>
+    <string name="playback_switch_seamless">transfer session</string>
+    <string name="playback_switch_copy">copy session</string>
     <string name="playback_switch_new">new session</string>
 </resources>
