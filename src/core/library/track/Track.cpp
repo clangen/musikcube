@@ -46,7 +46,7 @@ class SdkWrapper : public Track {
     public:
         SdkWrapper(TrackPtr track) {
             this->track = track;
-            this->count = 0;
+            this->count = 1;
         }
 
         virtual ~SdkWrapper() {

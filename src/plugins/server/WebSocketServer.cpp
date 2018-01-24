@@ -759,9 +759,6 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
     else {
         bool idsOnly = request[message::options].value(key::ids_only, false);
 
-        static auto releaseDeleter = [](ITrack* track) { track->Release(); };
-        static auto nullDeleter = [](ITrack* track) { };
-
         /* now add the tracks to the output. they will be Release()'d automatically
         as soon as this scope ends. */
         json data = json::array();
