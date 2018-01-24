@@ -574,7 +574,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
     private fun resolveNextIndex(currentIndex: Int, count: Int, userInitiated: Boolean): Int {
         if (shuffled) { /* our shuffle matches actually random for now. */
-            if (count <= 0) {
+            if (count <= 1) {
                 return currentIndex
             }
 
