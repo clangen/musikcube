@@ -21,7 +21,7 @@ class InvalidPasswordDialogFragment : DialogFragment() {
     }
 
     companion object {
-        val TAG = "InvalidPasswordDialogFragment"
+        const val TAG = "InvalidPasswordDialogFragment"
 
         fun newInstance(): InvalidPasswordDialogFragment {
             return InvalidPasswordDialogFragment()

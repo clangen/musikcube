@@ -168,7 +168,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override fun playAt(index: Int) {
         if (queryContext != null) {
             if (requestAudioFocus()) {
-                resetPlayContextAndQueryFactory()
+                playContext.stopPlaybackAndReset()
                 loadQueueAndPlay(queryContext!!, index)
             }
         }

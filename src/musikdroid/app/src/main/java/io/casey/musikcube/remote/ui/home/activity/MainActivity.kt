@@ -11,10 +11,7 @@ import android.os.Handler
 import android.support.v4.app.DialogFragment
 import android.support.v7.app.AlertDialog
 import android.view.*
-import android.widget.CheckBox
-import android.widget.CompoundButton
-import android.widget.SeekBar
-import android.widget.TextView
+import android.widget.*
 import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
@@ -128,10 +125,32 @@ class MainActivity : BaseActivity() {
         return super.onPrepareOptionsMenu(menu)
     }
 
+    fun showPlaybackTogglePopup() {
+        val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
+        val popup = PopupMenu(this, toolbarButton)
+        popup.inflate(R.menu.playback_toggle_menu)
+
+        popup.setOnMenuItemClickListener { it ->
+            when(it.itemId) {
+                R.id.menu_switch_seamless -> togglePlaybackService(true)
+                R.id.menu_switch_normal -> togglePlaybackService()
+                else -> { }
+            }
+            true
+        }
+
+        popup.show()
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_remote_toggle -> {
-                togglePlaybackService()
+                if (playback.service.state != PlaybackState.Stopped) {
+                    showPlaybackTogglePopup()
+                }
+                else {
+                    togglePlaybackService()
+                }
                 return true
             }
 
@@ -559,9 +578,9 @@ class MainActivity : BaseActivity() {
         }
 
         companion object {
-            val TAG = "update_available_dialog"
-            val EXTRA_VERSION = "extra_version"
-            val EXTRA_URL = "extra_url"
+            const val TAG = "update_available_dialog"
+            const val EXTRA_VERSION = "extra_version"
+            const val EXTRA_URL = "extra_url"
 
             var displayed: Boolean = false
 
@@ -590,13 +609,13 @@ class MainActivity : BaseActivity() {
         }
 
         companion object {
-            val TAG = "switch_to_offline_tracks_dialog"
+            const val TAG = "switch_to_offline_tracks_dialog"
             fun newInstance(): SwitchToOfflineTracksDialog = SwitchToOfflineTracksDialog()
         }
     }
 
     companion object {
-        private val SPOTLIGHT_STREAMING_ID = "streaming_mode"
+        private const val SPOTLIGHT_STREAMING_ID = "streaming_mode"
         private var spotlightDisplayed = false
 
         private var REPEAT_TO_STRING_ID: MutableMap<RepeatMode, Int> = mutableMapOf(
