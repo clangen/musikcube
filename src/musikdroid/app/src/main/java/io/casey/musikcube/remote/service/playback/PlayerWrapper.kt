@@ -6,9 +6,7 @@ import io.casey.musikcube.remote.injection.DaggerPlaybackComponent
 import io.casey.musikcube.remote.service.gapless.GaplessHeaderService
 import io.casey.musikcube.remote.service.gapless.db.GaplessDb
 import io.casey.musikcube.remote.service.gapless.db.GaplessTrack
-import io.casey.musikcube.remote.service.playback.impl.player.ExoPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.player.GaplessExoPlayerWrapper
-import io.casey.musikcube.remote.service.playback.impl.player.MediaPlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineDb
 import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineTrack
@@ -31,19 +29,6 @@ abstract class PlayerWrapper {
         DaggerPlaybackComponent.builder()
             .appComponent(Application.appComponent)
             .build().inject(this)
-    }
-
-    private enum class Type(prefIndex: Int) {
-        ExoPlayer(0), ExoPlayerGapless(1), MediaPlayer(2);
-
-        companion object {
-            fun fromPrefIndex(index: Int): Type =
-                when(index) {
-                    2 -> MediaPlayer
-                    1 -> ExoPlayerGapless
-                    else -> ExoPlayer
-                }
-        }
     }
 
     enum class State {
@@ -108,8 +93,8 @@ abstract class PlayerWrapper {
     }
 
     companion object {
-        private val DUCK_COEF = 0.2f /* volume = 20% when ducked */
-        private val DUCK_NONE = -1.0f
+        private const val DUCK_COEF = 0.2f /* volume = 20% when ducked */
+        private const val DUCK_NONE = -1.0f
 
         private val activePlayers = HashSet<PlayerWrapper>()
         private var globalVolume = 1.0f
@@ -175,17 +160,7 @@ abstract class PlayerWrapper {
             }
         }
 
-        fun newInstance(prefs: SharedPreferences): PlayerWrapper {
-            val type = prefs.getInt(
-                Prefs.Key.PLAYBACK_ENGINE_INDEX,
-                Prefs.Default.PLAYBACK_ENGINE_INDEX)
-
-            return when (Type.fromPrefIndex(type)) {
-                Type.ExoPlayer -> ExoPlayerWrapper()
-                Type.ExoPlayerGapless -> GaplessExoPlayerWrapper()
-                Type.MediaPlayer -> MediaPlayerWrapper()
-            }
-        }
+        fun newInstance(): PlayerWrapper = GaplessExoPlayerWrapper()
 
         fun addActivePlayer(player: PlayerWrapper) {
             Preconditions.throwIfNotOnMainThread()

@@ -45,12 +45,9 @@ class SettingsActivity : BaseActivity() {
     private lateinit var certCheckbox: CheckBox
     private lateinit var bitrateSpinner: Spinner
     private lateinit var cacheSpinner: Spinner
-    private lateinit var playbackEngineSpinner: Spinner
     private lateinit var prefs: SharedPreferences
     private lateinit var playback: PlaybackMixin
     private lateinit var data: DataProviderMixin
-
-    private var engineType = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         data = mixin(DataProviderMixin())
@@ -142,21 +139,6 @@ class SettingsActivity : BaseActivity() {
         cacheSpinner.setSelection(prefs.getInt(
             Keys.DISK_CACHE_SIZE_INDEX, Defaults.DISK_CACHE_SIZE_INDEX))
 
-        /* playback engine */
-        val engines = ArrayAdapter.createFromResource(
-            this, R.array.playback_engine_array, android.R.layout.simple_spinner_item)
-
-        engines.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-
-        val engineType = prefs.getInt(Keys.PLAYBACK_ENGINE_INDEX, Defaults.PLAYBACK_ENGINE_INDEX)
-
-        if (this.engineType == -1) {
-            this.engineType = engineType
-        }
-
-        playbackEngineSpinner.adapter = engines
-        playbackEngineSpinner.setSelection(engineType)
-
         /* advanced */
         albumArtCheckbox.isChecked = prefs.getBoolean(
             Keys.LASTFM_ENABLED, Defaults.LASTFM_ENABLED)
@@ -212,7 +194,6 @@ class SettingsActivity : BaseActivity() {
         this.softwareVolume = findViewById(R.id.software_volume)
         this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner)
         this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner)
-        this.playbackEngineSpinner = findViewById(R.id.streaming_playback_engine)
         this.sslCheckbox = findViewById(R.id.ssl_checkbox)
         this.certCheckbox = findViewById(R.id.cert_validation)
     }
@@ -271,12 +252,6 @@ class SettingsActivity : BaseActivity() {
         val password = passwordText.text.toString()
 
         try {
-            val engineType = playbackEngineSpinner.selectedItemPosition
-
-            val streaming = prefs.getBoolean(
-                    Prefs.Key.STREAMING_PLAYBACK,
-                    Prefs.Default.STREAMING_PLAYBACK)
-
             prefs.edit()
                 .putString(Keys.ADDRESS, addr)
                 .putInt(Keys.MAIN_PORT, if (port.isNotEmpty()) port.toInt() else 0)
@@ -289,15 +264,10 @@ class SettingsActivity : BaseActivity() {
                 .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
                 .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
                 .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
-                .putInt(Keys.PLAYBACK_ENGINE_INDEX, engineType)
                 .apply()
 
             if (!softwareVolume.isChecked) {
                 PlayerWrapper.setVolume(1.0f)
-            }
-
-            if (streaming && engineType != this.engineType) {
-                playback.service.stop()
             }
 
             streamProxy.reload()
@@ -352,8 +322,8 @@ class SettingsActivity : BaseActivity() {
         }
 
         companion object {
-            private val LEARN_MORE_URL = "https://github.com/clangen/musikcube/wiki/ssl-server-setup"
-            val TAG = "ssl_alert_dialog_tag"
+            private const val LEARN_MORE_URL = "https://github.com/clangen/musikcube/wiki/ssl-server-setup"
+            const val TAG = "ssl_alert_dialog_tag"
 
             fun newInstance(): SslAlertDialog {
                 return SslAlertDialog()
@@ -377,7 +347,7 @@ class SettingsActivity : BaseActivity() {
         }
 
         companion object {
-            val TAG = "disable_cert_verify_dialog"
+            const val TAG = "disable_cert_verify_dialog"
 
             fun newInstance(): DisableCertValidationAlertDialog {
                 return DisableCertValidationAlertDialog()
@@ -398,8 +368,8 @@ class SettingsActivity : BaseActivity() {
         }
 
         companion object {
-            val TAG = "invalid_connection_dialog"
-            private val EXTRA_MESSAGE_ID = "extra_message_id"
+            const val TAG = "invalid_connection_dialog"
+            private const val EXTRA_MESSAGE_ID = "extra_message_id"
             fun newInstance(messageId: Int = R.string.settings_invalid_connection_message): InvalidConnectionDialog {
                 val args = Bundle()
                 args.putInt(EXTRA_MESSAGE_ID, messageId)
@@ -429,8 +399,8 @@ class SettingsActivity : BaseActivity() {
         }
 
         companion object {
-            val TAG = "confirm_overwrite_dialog"
-            private val EXTRA_CONNECTION = "extra_connection"
+            const val TAG = "confirm_overwrite_dialog"
+            private const val EXTRA_CONNECTION = "extra_connection"
 
             fun newInstance(connection: Connection): ConfirmOverwriteDialog {
                 val args = Bundle()
@@ -473,7 +443,7 @@ class SettingsActivity : BaseActivity() {
         }
 
         companion object {
-            val TAG = "save_as_dialog"
+            const val TAG = "save_as_dialog"
 
             fun newInstance(): SaveAsDialog {
                 return SaveAsDialog()
@@ -482,7 +452,7 @@ class SettingsActivity : BaseActivity() {
     }
 
     companion object {
-        val CONNECTIONS_REQUEST_CODE = 1000
+        const val CONNECTIONS_REQUEST_CODE = 1000
 
         fun getStartIntent(context: Context): Intent {
             return Intent(context, SettingsActivity::class.java)
@@ -512,7 +482,7 @@ private class SaveAsTask(val db: ConnectionsDb,
     }
 
     companion object {
-        val NAME = "SaveAsTask"
+        const val NAME = "SaveAsTask"
 
         fun nameFor(connection: Connection): String {
             return "$NAME.${connection.name}"
