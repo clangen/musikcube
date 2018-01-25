@@ -393,6 +393,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
 
     private fun resetPlayContextAndQueryFactory() {
+        trackMetadataCache.clear()
         playContext.stopPlaybackAndReset()
         snapshotQueryFactory = null
     }
