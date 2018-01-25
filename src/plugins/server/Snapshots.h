@@ -36,6 +36,7 @@
 
 #include <core/sdk/ITrackList.h>
 #include <map>
+#include <string>
 
 class Snapshots {
     public:
