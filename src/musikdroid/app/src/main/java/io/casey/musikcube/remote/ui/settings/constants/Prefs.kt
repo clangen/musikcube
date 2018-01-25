@@ -16,6 +16,7 @@ class Prefs {
             const val TRANSCODER_BITRATE_INDEX = "transcoder_bitrate_index"
             const val DISK_CACHE_SIZE_INDEX = "disk_cache_size_index"
             const val UPDATE_DIALOG_SUPPRESSED_VERSION = "update_dialog_suppressed_version"
+            const val DEVICE_ID = "device_id"
         }
     }
 

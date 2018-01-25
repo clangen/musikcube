@@ -1,6 +1,7 @@
 set (server_SOURCES
   HttpServer.cpp
   main.cpp
+  Snapshots.cpp
   Transcoder.cpp
   TranscodingDataStream.cpp
   Util.cpp

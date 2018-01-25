@@ -256,6 +256,8 @@ class MainActivity : BaseActivity() {
             }
         }
         else {
+            playback.connectAll()
+
             val streaming = PlaybackServiceFactory.streaming(this)
             val remote = PlaybackServiceFactory.remote(this)
 

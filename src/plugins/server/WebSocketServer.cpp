@@ -128,8 +128,7 @@ static json getEnvironment(Context& context) {
 
 WebSocketServer::WebSocketServer(Context& context)
 : context(context)
-, running(false)
-, playQueueSnapshot(nullptr) {
+, running(false) {
 
 }
 
@@ -196,11 +195,7 @@ void WebSocketServer::ThreadProc() {
 
     this->wss.reset();
     this->running = false;
-
-    if (playQueueSnapshot) {
-        playQueueSnapshot->Release();
-        playQueueSnapshot = nullptr;
-    }
+    this->snapshots.Reset();
 
     this->exitCondition.notify_all();
 }
@@ -281,6 +276,12 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
 
     std::string name = request[message::name];
     std::string id = request[message::id];
+
+    auto deviceId = request.value(message::device_id, "");
+    if (deviceId.size() == 0) {
+        deviceId = "default_device_id";
+        request[message::device_id] = deviceId;
+    }
 
     if (!name.size() || !id.size()) {
         RespondWithInvalidRequest(connection, name, id);
@@ -480,6 +481,11 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
         }
         else if (name == request::snapshot_play_queue) {
             this->RespondWithSnapshotPlayQueue(connection, request);
+            return;
+        }
+        else if (name == request::invalidate_play_queue_snapshot) {
+            this->snapshots.Remove(deviceId);
+            this->RespondWithSuccess(connection, request);
             return;
         }
     }
@@ -748,7 +754,8 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         size_t count = context.playback->Count();
 
         if (type == value::snapshot) {
-            count = this->playQueueSnapshot ? this->playQueueSnapshot->Count() : 0;
+            auto snapshot = snapshots.Get(request[message::device_id]);
+            count = snapshot ? snapshot->Count() : 0;
         }
 
         this->RespondWithOptions(connection, request, {
@@ -783,15 +790,16 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
             editor->Release();
         }
         else if (type == value::snapshot) {
-            if (this->playQueueSnapshot) {
-                int to = (int)this->playQueueSnapshot->Count();
+            auto snapshot = snapshots.Get(request[message::device_id]);
+            if (snapshot) {
+                int to = (int) snapshot->Count();
 
                 if (offset >= 0 && limit >= 0) {
                     to = std::min(to, offset + limit);
                 }
 
                 for (int i = offset; i < to; i++) {
-                    ITrack* track = playQueueSnapshot->GetTrack(i);
+                    ITrack* track = snapshot->GetTrack(i);
                     if (idsOnly) { data.push_back(GetMetadataString(track, key::external_id)); }
                     else { data.push_back(this->ReadTrackMetadata(track)); }
                     track->Release();
@@ -1062,7 +1070,8 @@ void WebSocketServer::RespondWithPlayAllTracks(connection_hdl connection, json& 
 }
 
 void WebSocketServer::RespondWithPlaySnapshotTracks(connection_hdl connection, json& request) {
-    if (this->playQueueSnapshot) {
+    auto snapshot = this->snapshots.Get(request[message::device_id]);
+    if (snapshot) {
         size_t index = 0;
         double time = 0.0;
 
@@ -1071,7 +1080,7 @@ void WebSocketServer::RespondWithPlaySnapshotTracks(connection_hdl connection, j
             time = request[message::options].value(key::time, 0.0);
         }
 
-        context.playback->Play(this->playQueueSnapshot, index);
+        context.playback->Play(snapshot, index);
 
         if (time > 0.0) {
             context.playback->SetPosition(time);
@@ -1422,16 +1431,10 @@ void WebSocketServer::RespondWithSetTransportType(connection_hdl connection, jso
 }
 
 void WebSocketServer::RespondWithSnapshotPlayQueue(connection_hdl connection, json& request) {
-    if (this->playQueueSnapshot) {
-        this->playQueueSnapshot->Release();
-        this->playQueueSnapshot = nullptr;
-    }
-
-    this->playQueueSnapshot = context.playback->Clone();
-
-    !!this->playQueueSnapshot
-        ? this->RespondWithSuccess(connection, request)
-        : this->RespondWithFailure(connection, request);
+    auto deviceId = request[message::device_id];
+    this->snapshots.Remove(deviceId);
+    this->snapshots.Put(deviceId, context.playback->Clone());
+    this->RespondWithSuccess(connection, request);
 }
 
 void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connection, json& request) {

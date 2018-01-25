@@ -1,6 +1,7 @@
 package io.casey.musikcube.remote.service.websocket
 
 import android.util.Log
+import io.casey.musikcube.remote.Application
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -144,6 +145,7 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
             val json = JSONObject()
             json.put("name", name)
             json.put("id", id)
+            json.put("device_id", Application.deviceId)
             json.put("type", type.rawType)
             json.put("options", options)
             return json.toString()

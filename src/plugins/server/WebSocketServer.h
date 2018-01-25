@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Context.h"
+#include "Snapshots.h"
 
 #include <core/sdk/constants.h>
 #include <core/sdk/ITrack.h>
@@ -119,7 +120,7 @@ class WebSocketServer {
         std::shared_ptr<std::thread> thread;
         std::mutex exitMutex;
         std::condition_variable exitCondition;
-        ITrackList* playQueueSnapshot;
+        Snapshots snapshots;
         volatile bool running;
 
         void ThreadProc();
@@ -163,6 +164,7 @@ class WebSocketServer {
         void RespondWithGetTransportType(connection_hdl connection, json& request);
         void RespondWithSetTransportType(connection_hdl connection, json& request);
         void RespondWithSnapshotPlayQueue(connection_hdl connection, json& request);
+        void RespondWithInvalidatePlayQueueSnapshot(connection_hdl connection, json& request);
 
         void BroadcastPlaybackOverview();
         void BroadcastPlayQueueChanged();

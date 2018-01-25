@@ -94,6 +94,9 @@
     <ClCompile Include="Transcoder.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="Snapshots.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="3rdparty\include\websocketpp\random\none.hpp">
@@ -463,6 +466,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="Transcoder.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="Snapshots.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

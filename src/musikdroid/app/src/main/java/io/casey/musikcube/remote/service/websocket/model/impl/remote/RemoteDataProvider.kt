@@ -7,6 +7,7 @@ import io.casey.musikcube.remote.service.websocket.model.*
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.ReplaySubject
@@ -205,6 +206,17 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         return service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun invalidatePlayQueueSnapshot() {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.InvalidatePlayQueueSnapshot)
+            .build()
+
+        service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBy(onError = { })
     }
 
     override fun getPlayQueueTrackIds(limit: Int, offset: Int, type: PlayQueueType): Observable<List<String>> {

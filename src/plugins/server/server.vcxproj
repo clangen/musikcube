@@ -166,6 +166,7 @@
     <ClCompile Include="3rdparty\win32_src\microhttpd\tsearch.c" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Snapshots.cpp" />
     <ClCompile Include="Transcoder.cpp" />
     <ClCompile Include="TranscodingDataStream.cpp" />
     <ClCompile Include="Util.cpp" />
@@ -291,6 +292,7 @@
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Context.h" />
     <ClInclude Include="HttpServer.h" />
+    <ClInclude Include="Snapshots.h" />
     <ClInclude Include="Transcoder.h" />
     <ClInclude Include="TranscodingDataStream.h" />
     <ClInclude Include="Util.h" />

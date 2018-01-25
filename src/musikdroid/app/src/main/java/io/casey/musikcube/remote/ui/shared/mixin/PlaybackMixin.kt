@@ -33,6 +33,11 @@ class PlaybackMixin(var listener: (() -> Unit)? = null): MixinBase() {
         reload()
     }
 
+    fun connectAll() {
+        connect(PlaybackServiceFactory.streaming(context))
+        connect(PlaybackServiceFactory.remote(context))
+    }
+
     fun reload() {
         if (active) {
             disconnect()
@@ -59,13 +64,21 @@ class PlaybackMixin(var listener: (() -> Unit)? = null): MixinBase() {
 
     private fun connect() {
         service = PlaybackServiceFactory.instance(context)
+        connect(service)
+    }
+
+    private fun disconnect() {
+        disconnect(service)
+    }
+
+    private fun connect(service: IPlaybackService) {
         val listener = this.listener
         if (listener != null) {
             service.connect(listener)
         }
     }
 
-    private fun disconnect() {
+    private fun disconnect(service: IPlaybackService) {
         val listener = this.listener
         if (listener != null) {
             service.disconnect(listener)

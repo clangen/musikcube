@@ -40,7 +40,8 @@ class Messages {
         RunIndexer("run_indexer"),
         GetTransportType("get_transport_type"),
         SetTransportType("set_transport_type"),
-        SnapshotPlayQueue("snapshot_play_queue");
+        SnapshotPlayQueue("snapshot_play_queue"),
+        InvalidatePlayQueueSnapshot("invalidate_play_queue_snapshot");
 
         override fun toString(): String = rawValue
         fun matches(name: String): Boolean = (rawValue == name)

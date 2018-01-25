@@ -63,6 +63,7 @@ namespace prefs {
 namespace message {
     static const std::string name = "name";
     static const std::string id = "id";
+    static const std::string device_id = "device_id";
     static const std::string type = "type";
     static const std::string options = "options";
 }
@@ -197,6 +198,7 @@ namespace request {
     static const std::string get_transport_type = "get_transport_type";
     static const std::string set_transport_type = "set_transport_type";
     static const std::string snapshot_play_queue = "snapshot_play_queue";
+    static const std::string invalidate_play_queue_snapshot = "invalidate_play_queue_snapshot";
 }
 
 namespace fragment {

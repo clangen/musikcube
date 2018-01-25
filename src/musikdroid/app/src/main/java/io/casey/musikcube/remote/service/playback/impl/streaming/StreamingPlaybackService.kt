@@ -150,6 +150,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override fun playAll(index: Int, filter: String) {
         if (requestAudioFocus()) {
             trackMetadataCache.clear()
+            dataProvider.invalidatePlayQueueSnapshot()
             resetPlayContextAndQueryFactory()
             val type = Messages.Request.QueryTracks
             loadQueueAndPlay(QueryContext(filter, type), index)
@@ -159,6 +160,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override fun play(category: String, categoryId: Long, index: Int, filter: String) {
         if (requestAudioFocus()) {
             trackMetadataCache.clear()
+            dataProvider.invalidatePlayQueueSnapshot()
             resetPlayContextAndQueryFactory()
             val type = Messages.Request.QueryTracksByCategory
             loadQueueAndPlay(QueryContext(category, categoryId, filter, type), index)
@@ -182,13 +184,9 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             val context = QueryContext(Messages.Request.PlaySnapshotTracks)
             val type = PlayQueueType.Snapshot
 
-            val dummyListener: (() -> Unit) = { }
-            connect(dummyListener)
             service.queryContext?.let { _ ->
                 dataProvider.snapshotPlayQueue().subscribeBy(
                 onNext = {
-                    disconnect(dummyListener)
-
                     resetPlayContextAndQueryFactory()
 
                     snapshotQueryFactory = object: ITrackListQueryFactory {
@@ -204,7 +202,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     loadQueueAndPlay(context, index, offsetMs)
                 },
                 onError = {
-                    disconnect(dummyListener)
                 })
             }
         }

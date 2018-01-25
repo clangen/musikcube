@@ -35,6 +35,7 @@ interface IDataProvider {
     fun getPlayQueueTrackIds(limit: Int, offset: Int, type: PlayQueueType = PlayQueueType.Live): Observable<List<String>>
     fun getPlayQueueTrackIds(type: PlayQueueType = PlayQueueType.Live): Observable<List<String>>
     fun snapshotPlayQueue(): Observable<Boolean>
+    fun invalidatePlayQueueSnapshot()
 
     fun getPlaylists(): Observable<List<IPlaylist>>
 
