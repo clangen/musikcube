@@ -52,7 +52,8 @@ using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
 
-static const std::string check = "√";
+static const std::string unchecked = "[ ]";
+static const std::string checked = "[x]";
 
 struct PluginInfo {
     std::string name;
@@ -90,7 +91,7 @@ class PluginAdapter : public ScrollAdapterBase {
 
             std::string display =
                 " " +
-                (plugin->enabled ? check : " ") + " " +
+                (plugin->enabled ? checked : unchecked) + " " +
                 plugin->name + " (" + plugin->fn + ")";
 
             SinglePtr result = SinglePtr(new SingleLineEntry(text::Ellipsize(display, this->GetWidth())));

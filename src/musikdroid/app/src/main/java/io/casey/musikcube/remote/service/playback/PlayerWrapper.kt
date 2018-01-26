@@ -15,6 +15,7 @@ import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import java.util.*
 import javax.inject.Inject
@@ -89,7 +90,7 @@ abstract class PlayerWrapper {
         }
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe()
+        .subscribeBy(onError = { })
     }
 
     companion object {
