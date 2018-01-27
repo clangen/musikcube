@@ -188,7 +188,11 @@
     <string name="category_genre">genre</string>
     <string name="category_publisher">publisher</string>
     <string name="category_year">year</string>
-    <string name="playback_switch_seamless">transfer session</string>
-    <string name="playback_switch_copy">copy session</string>
-    <string name="playback_switch_new">new session</string>
+    <string name="playback_transfer_move_to_server">move to server</string>
+    <string name="playback_transfer_copy_to_server">copy to server</string>
+    <string name="playback_transfer_move_from_server">move from server</string>
+    <string name="playback_transfer_copy_from_server">copy from server</string>
+    <string name="main_api_mismatch_title">server out of date</string>
+    <string name="main_api_mismatch_message">this version of musikdroid is not compatible with the version of musikcube on your server.\n\nplease visit the releases page to make sure everything is up to date.</string>
+    <string name="main_api_mismatch_releases_page">show releases</string>
 </resources>

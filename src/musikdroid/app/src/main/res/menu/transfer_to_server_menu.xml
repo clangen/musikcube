@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_switch_seamless"
+        android:title="@string/playback_transfer_move_to_server"/>
+
+    <item
+        android:id="@+id/menu_switch_copy"
+        android:title="@string/playback_transfer_copy_to_server"/>
+</menu>

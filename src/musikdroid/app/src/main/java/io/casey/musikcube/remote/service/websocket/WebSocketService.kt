@@ -13,7 +13,6 @@ import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.ReplaySubject
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
@@ -128,6 +127,7 @@ class WebSocketService constructor(private val context: Context) {
     private val networkChanged = NetworkChangedReceiver()
     private var thread: ConnectThread? = null
     private val interceptors = HashSet<(SocketMessage, Responder) -> Boolean>()
+    private var serverVersion = -1
 
     init {
         scheduleRemoveStaleCallbacks()
@@ -138,6 +138,10 @@ class WebSocketService constructor(private val context: Context) {
             Preconditions.throwIfNotOnMainThread()
 
             Log.d(TAG, "state = " + newState)
+
+            if (state == State.Disconnected) {
+                serverVersion = -1
+            }
 
             if (state != newState) {
                 val old = state
@@ -206,6 +210,10 @@ class WebSocketService constructor(private val context: Context) {
     fun cancelMessage(id: Long) {
         Preconditions.throwIfNotOnMainThread()
         removeCallbacks { mrd: MessageResultDescriptor -> mrd.id == id }
+    }
+
+    fun shouldUpgrade(): Boolean {
+        return serverVersion > 0 && serverVersion > MINIMUM_SUPPORTED_API_VERSION
     }
 
     private fun scheduleRemoveStaleCallbacks() {
@@ -490,6 +498,9 @@ class WebSocketService constructor(private val context: Context) {
             val message = SocketMessage.create(text!!)
             if (message != null) {
                 if (message.name == Messages.Request.Authenticate.toString()) {
+                    serverVersion = message.getJsonObjectOption("environment")?.
+                        optInt("api_version", -1) ?: -1
+
                     handler.sendMessage(Message.obtain(
                         handler, MESSAGE_CONNECT_THREAD_FINISHED, websocket))
                 }
@@ -594,6 +605,7 @@ class WebSocketService constructor(private val context: Context) {
         private val AUTO_DISCONNECT_DELAY_MILLIS = 10000L
         private val FLAG_AUTHENTICATION_FAILED = 0xbeef
         private val WEBSOCKET_FLAG_POLICY_VIOLATION = 1008
+        private val MINIMUM_SUPPORTED_API_VERSION = 13
 
         private val MESSAGE_BASE = 0xcafedead.toInt()
         private val MESSAGE_CONNECT_THREAD_FINISHED = MESSAGE_BASE + 0

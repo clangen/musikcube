@@ -42,7 +42,7 @@ import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 
 class MainActivity : BaseActivity() {
-    private enum class SwitchMode { Seamless, Copy, Normal }
+    private enum class SwitchMode { Transfer, Copy, Swap }
 
     private val handler = Handler()
     private var updateCheck: UpdateCheck = UpdateCheck()
@@ -139,13 +139,17 @@ class MainActivity : BaseActivity() {
     private fun showPlaybackTogglePopup() {
         val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
         val popup = PopupMenu(this, toolbarButton)
-        popup.inflate(R.menu.playback_toggle_menu)
+
+        val menuId =
+            if (isStreamingSelected) R.menu.transfer_to_server_menu
+            else R.menu.transfer_from_server_menu
+
+        popup.inflate(menuId)
 
         popup.setOnMenuItemClickListener { it ->
             when(it.itemId) {
-                R.id.menu_switch_seamless -> togglePlaybackService(SwitchMode.Seamless)
+                R.id.menu_switch_seamless -> togglePlaybackService(SwitchMode.Transfer)
                 R.id.menu_switch_copy -> togglePlaybackService(SwitchMode.Copy)
-                R.id.menu_switch_normal -> togglePlaybackService(SwitchMode.Normal)
                 else -> { }
             }
             true
@@ -199,6 +203,7 @@ class MainActivity : BaseActivity() {
                     IDataProvider.State.Connected -> {
                         rebindUi()
                         checkShowSpotlight()
+                        checkShowApiMismatch()
                     }
                     IDataProvider.State.Disconnected -> {
                         clearUi()
@@ -239,7 +244,7 @@ class MainActivity : BaseActivity() {
             Prefs.Key.STREAMING_PLAYBACK,
             Prefs.Default.STREAMING_PLAYBACK)
 
-    private fun togglePlaybackService(mode: SwitchMode = SwitchMode.Normal) {
+    private fun togglePlaybackService(mode: SwitchMode = SwitchMode.Swap) {
         val isStreaming = isStreamingSelected
         prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !isStreaming)?.apply()
 
@@ -250,7 +255,7 @@ class MainActivity : BaseActivity() {
 
         showSnackbar(mainLayout, messageId)
 
-        if (mode == SwitchMode.Normal) {
+        if (mode == SwitchMode.Swap) {
             if (isStreaming) {
                 playback.service.pause()
             }
@@ -263,13 +268,13 @@ class MainActivity : BaseActivity() {
 
             if (!isStreaming) {
                 streaming.playFrom(remote)
-                if (mode == SwitchMode.Seamless) {
+                if (mode == SwitchMode.Transfer) {
                     remote.pause()
                 }
             }
             else {
                 remote.playFrom(streaming)
-                if (mode == SwitchMode.Seamless) {
+                if (mode == SwitchMode.Transfer) {
                     streaming.pause()
                 }
             }
@@ -466,13 +471,25 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    private fun checkShowApiMismatch() {
+        if (!apiMismatchDisplayed && data.wss.shouldUpgrade()) {
+            val tag = ApiMismatchDialog.TAG
+            if (supportFragmentManager.findFragmentByTag(tag) == null) {
+                ApiMismatchDialog.newInstance().show(supportFragmentManager, tag)
+            }
+            apiMismatchDisplayed = true
+        }
+    }
+
     private fun clearUi() {
         metadataView.clear()
         rebindUi()
     }
 
     private fun navigateToPlayQueue() {
-        startActivity(PlayQueueActivity.getStartIntent(this@MainActivity, playback.service.queuePosition))
+        startActivity(PlayQueueActivity.getStartIntent(
+            this@MainActivity, playback.service.queuePosition))
+
         slideNextUp()
     }
 
@@ -617,7 +634,7 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    class SwitchToOfflineTracksDialog : DialogFragment() {
+    class SwitchToOfflineTracksDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.main_switch_to_streaming_title)
@@ -636,9 +653,36 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    class ApiMismatchDialog: DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val dlg = AlertDialog.Builder(activity)
+                .setTitle(R.string.main_api_mismatch_title)
+                .setMessage(R.string.main_api_mismatch_message)
+                .setNegativeButton(R.string.button_close, null)
+                .setPositiveButton(R.string.main_api_mismatch_releases_page) { _, _ ->
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(DEFAULT_UPGRADE_URL)))
+                    }
+                    catch (ex: Exception) {
+                    }
+                }
+                .create()
+
+            dlg.setCancelable(false)
+            return dlg
+        }
+
+        companion object {
+            const val TAG = "api_mismatch_dialog"
+            fun newInstance(): ApiMismatchDialog = ApiMismatchDialog()
+        }
+    }
+
     companion object {
         private const val SPOTLIGHT_STREAMING_ID = "streaming_mode"
+        private const val DEFAULT_UPGRADE_URL = "https://github.com/clangen/musikcube/releases/"
         private var spotlightDisplayed = false
+        private var apiMismatchDisplayed = false
 
         private var REPEAT_TO_STRING_ID: MutableMap<RepeatMode, Int> = mutableMapOf(
             RepeatMode.None to R.string.button_repeat_off,
