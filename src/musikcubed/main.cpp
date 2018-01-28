@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
+#include <iostream>
 
 #include <core/audio/PlaybackService.h>
 #include <core/audio/MasterTransport.h>
@@ -20,6 +22,27 @@ using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
+
+#ifdef __APPLE__
+#define LOCKFILE "/tmp/musikcubed.lock"
+#else
+#define LOCKFILE "/var/lock/musikcubed.lock"
+#endif
+
+bool exitIfRunning() {
+    std::ifstream lock(LOCKFILE);
+    if (lock.good()) {
+        int pid;
+        lock >> pid;
+        if (kill((pid_t) pid, 0) == 0) {
+            std::cerr << "musikcubed is already running!\n";
+            exit(EXIT_SUCCESS);
+            return true;
+        }
+    }
+    std::cerr << "musikcubed is starting...\n";
+    return false;
+}
 
 void startDaemon() {
     pid_t pid = fork();
@@ -45,13 +68,18 @@ void startDaemon() {
 
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
-    close(STDERR_FILENO);
+    freopen("/tmp/musikcube.log", "w", stderr);
+
+    std::ofstream lock(LOCKFILE);
+    if (lock.good()) {
+        lock << std::to_string((int) getpid());
+    }
 }
 
 int main() {
+    exitIfRunning();
     startDaemon();
 
-    freopen("/tmp/musikcube.log", "w", stderr);
     srand((unsigned int) time(0));
 
     std::locale locale = std::locale();

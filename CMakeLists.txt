@@ -112,7 +112,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/plugins/pulseout)
   add_dependencies(musikcube alsaout pulseout)
   if (${ENABLE_SNDIO} MATCHES "true")
-    add_subdirectory(src/plugins/sndioout) 
+    add_subdirectory(src/plugins/sndioout)
     add_dependencies(musikcube sndioout)
   endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
@@ -126,14 +126,6 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   add_subdirectory(src/plugins/coreaudioout)
   add_dependencies(musikcube coreaudioout)
 endif()
-
-# install the binary
-install(
-  FILES bin/musikcube DESTINATION share/musikcube
-  PERMISSIONS
-    OWNER_EXECUTE OWNER_READ OWNER_WRITE
-    GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    WORLD_EXECUTE WORLD_READ)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   file(GLOB plugins "bin/plugins/*.dylib")
@@ -154,7 +146,21 @@ file(GLOB locales "src/musikcube/data/locales/*.json")
 file(COPY ${locales} DESTINATION bin/locales)
 install(FILES ${locales} DESTINATION share/musikcube/locales)
 
-# shell script that starts the app.
+# libmusikcore sshared library
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  install(FILES "bin/libmusikcore.dylib" DESTINATION share/musikcube)
+else ()
+  install(FILES "bin/libmusikcore.so" DESTINATION share/musikcube)
+endif ()
+
+# executable and shell script for musikcube
+install(
+  FILES bin/musikcube DESTINATION share/musikcube
+  PERMISSIONS
+    OWNER_EXECUTE OWNER_READ OWNER_WRITE
+    GROUP_EXECUTE GROUP_READ GROUP_WRITE
+    WORLD_EXECUTE WORLD_READ)
+
 install(
   FILES src/musikcube/musikcube
   DESTINATION bin/
@@ -163,6 +169,23 @@ install(
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
     WORLD_EXECUTE WORLD_READ)
 
+# executable and shell script for daemon
+install(
+  FILES bin/musikcubed DESTINATION share/musikcube
+  PERMISSIONS
+    OWNER_EXECUTE OWNER_READ OWNER_WRITE
+    GROUP_EXECUTE GROUP_READ GROUP_WRITE
+    WORLD_EXECUTE WORLD_READ)
+
+install(
+  FILES src/musikcubed/musikcubed
+  DESTINATION bin/
+  PERMISSIONS
+    OWNER_EXECUTE OWNER_READ OWNER_WRITE
+    GROUP_EXECUTE GROUP_READ GROUP_WRITE
+    WORLD_EXECUTE WORLD_READ)
+
+# deb generation
 if (GENERATE_DEB MATCHES "1")
   if (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(DEB_BOOST_VERSION "1.55.0")

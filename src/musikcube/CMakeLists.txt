@@ -52,7 +52,6 @@ set (CUBE_SRCS
 )
 
 set(musikcube_INSTALL_DIR ${HOMEBREW_PREFIX})
-
 if (NOT DEFINED musikcube_INSTALL_DIR)
 	set(musikcube_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
 endif()
@@ -60,8 +59,9 @@ endif()
 configure_file("musikcube.in" "musikcube" @ONLY)
 
 add_executable(musikcube ${CUBE_SRCS})
-
 add_definitions(-DNCURSES_WIDECHAR)
+
+set_target_properties(musikcube PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 	target_link_libraries(musikcube ${musikcube_LINK_LIBS} ncursesw panelw musikcore)

@@ -62,5 +62,9 @@ include_directories(
   ../3rdparty/include/sqlite
 )
 
-add_library(musikcore STATIC ${CORE_SOURCES})
+add_library(musikcore SHARED ${CORE_SOURCES})
+
+set_target_properties(musikcore PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${musikcube_SOURCE_DIR}/bin)
+
 target_link_libraries(musikcore ${musikcube_LINK_LIBS})
