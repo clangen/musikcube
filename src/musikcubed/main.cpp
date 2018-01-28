@@ -23,10 +23,10 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
 
-#ifdef __APPLE__
-#define LOCKFILE "/tmp/musikcubed.lock"
-#else
+#ifdef __linux__
 #define LOCKFILE "/var/lock/musikcubed.lock"
+#else
+#define LOCKFILE "/tmp/musikcubed.lock"
 #endif
 
 bool exitIfRunning() {
