@@ -1,0 +1,80 @@
+#include <iostream>
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <core/audio/PlaybackService.h>
+#include <core/audio/MasterTransport.h>
+#include <core/debug.h>
+#include <core/library/LibraryFactory.h>
+#include <core/plugin/Plugins.h>
+#include <core/runtime/MessageQueue.h>
+#include <core/support/PreferenceKeys.h>
+#include <core/support/Common.h>
+
+#include <boost/locale.hpp>
+#include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+
+using namespace musik;
+using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::core::runtime;
+
+void startDaemon() {
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid > 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    umask(0);
+
+    pid_t sid = setsid();
+    if (sid < 0) {
+        exit(EXIT_SUCCESS);
+    }
+
+    if (chdir("/") < 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+}
+
+int main() {
+    startDaemon();
+
+    freopen("/tmp/musikcube.log", "w", stderr);
+    srand((unsigned int) time(0));
+
+    std::locale locale = std::locale();
+    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
+    boost::filesystem::path::imbue(utf8Locale);
+
+    debug::init();
+
+    MessageQueue messageQueue;
+    MasterTransport transport;
+    auto library = LibraryFactory::Libraries().at(0);
+    auto prefs = Preferences::ForComponent(prefs::components::Settings);
+
+    library->SetMessageQueue(messageQueue);
+    PlaybackService playback(messageQueue, library, transport);
+
+    plugin::InstallDependencies(&messageQueue, &playback, library);
+
+    if (prefs->GetBool(prefs::keys::SyncOnStartup, true)) {
+        library->Indexer()->Schedule(IIndexer::SyncType::All);
+    }
+
+    while (true) {
+        messageQueue.WaitAndDispatch();
+    }
+}

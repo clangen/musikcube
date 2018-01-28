@@ -84,6 +84,7 @@ endif()
 
 add_subdirectory(src/core)
 add_subdirectory(src/musikcube)
+add_subdirectory(src/musikcubed)
 add_subdirectory(src/plugins/taglib_plugin)
 add_subdirectory(src/plugins/nullout)
 add_subdirectory(src/plugins/server)
@@ -104,6 +105,7 @@ endif()
 add_dependencies(taglibreader taglib)
 
 add_dependencies(musikcube musikcore taglibreader nullout server httpdatastream stockencoders)
+add_dependencies(musikcubed musikcube)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_subdirectory(src/plugins/alsaout)
@@ -203,5 +205,5 @@ endif()
 # run `cmake .` again to pick up build plugin build artifacts that we need
 # to file glob in. these won't be picked up on the initial build because
 # they don't yet exist!
-add_custom_target(postbuild ALL DEPENDS musikcube)
+add_custom_target(postbuild ALL DEPENDS musikcube musikcubed)
 add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)
