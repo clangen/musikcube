@@ -1,3 +1,62 @@
+0.40.0
+
+musikcube:
+* `^R` now displays an indexer dialog that allows the user to choose between a
+  quick scan and full metadata rebuild.
+* made checkboxes prettier.
+* fixed playlist track numbers -- they should always be sequential, not pulled
+  from metadata.
+
+musikcubed:
+* `NEW!`: run musikcube as a daemon on macOS, Linux and BSD.
+
+musikdroid:
+* added remote server configuration! users can now change output drivers and
+  devices, ReplayGain and preamp settings, transport type, and schedule the
+  metadata indexer from `musikdroid`. see: toolbar menu > remote management.
+* promoted `playlists` to main screen, and moved the `play queue` button to
+  stand out a bit more.
+* added the ability to query albums by extended metadata categories, including
+  "composer", "producer", "year" and more. see: toolbar menu > categories.
+* removed legacy playback engines. only `ExoPlayer Gapless` is supported now.
+* show a warning if the server is running an older api version.
+* fixed a crash when streaming play queue contains one file, and "random" is on.
+
+musikcore:
+* added the following functionality to IEnvironment:
+  - query output devices and drivers
+  - select the system's default output device and driver
+  - re-index and re-build library metadata
+  - get/set preamp and ReplayGain settings
+  - get/set transport type (gapless, crossfade)
+* switching output devices, transport, and ReplayGain settings no longer
+  abruptly stop playback. there may generally be a short pause, but playback
+  will continue where it left off.
+* removed `musikglue` project. move functionalilty into `musikcore`.
+* bumped sdk version to 14
+
+server:
+* messages for new IEnvironment updates (see above)
+  - `run_indexer`
+  - `list_output_drivers`
+  - `set_default_output_driver`
+  - `get_gain_settings`
+  - `set_gain_settings`
+  - `get_transport_type`
+  - `set_transport_type`
+* play queue snapshotting; remote clients can use this functionality to help
+  transfer playback context from server to client.
+  - `snapshot_play_queue`
+  - `invalidate_play_queue_snapshot`
+  - `play_snapshot_tracks`
+* all messages that start playback can now be passed a `time` parameter, which
+  will seek initial playback to the specified time (in seconds).
+* `query_play_queue_tracks` now accepts an optional parameter called `type`;
+  allowed values are `live` (default) and `snapshot`. 
+* bumped api version to 14
+
+--------------------------------------------------------------------------------
+
 0.35.0
 
 infastructure:
