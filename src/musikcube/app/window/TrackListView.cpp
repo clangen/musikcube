@@ -88,6 +88,7 @@ TrackListView::TrackListView(
     this->lastChanged = now();
     this->formatter = formatter;
     this->decorator = decorator;
+    this->trackNumType = TrackNumType::Metadata;
 }
 
 TrackListView::~TrackListView() {
@@ -102,6 +103,13 @@ void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
 
 void TrackListView::SelectFirstTrack() {
     this->SetSelectedIndex(this->headers.HeaderAt(0) ? 1 : 0);
+}
+
+void TrackListView::SetTrackNumType(TrackNumType type) {
+    if (this->trackNumType != type) {
+        this->trackNumType = type;
+        this->OnAdapterChanged();
+    }
 }
 
 void TrackListView::OnQueryCompleted(IQuery* query) {
@@ -339,12 +347,24 @@ size_t TrackListView::Adapter::GetEntryCount() {
 #define TRACK_COL_WIDTH 3
 #define ARTIST_COL_WIDTH 17
 #define DURATION_COL_WIDTH 5 /* 00:00 */
+#define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
 
-static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
-    std::string trackNum = text::Align(
-        track->GetString(constants::Track::TRACK_NUM),
-        text::AlignRight,
-        TRACK_COL_WIDTH);
+using TrackNumType = TrackListView::TrackNumType;
+
+static std::string formatWithoutAlbum(TrackPtr track, size_t index, size_t width, TrackNumType type) {
+    std::string trackNum;
+
+    int trackColWidth = TRACK_COL_WIDTH;
+    if (type == TrackNumType::Metadata) {
+        trackNum = text::Align(
+            track->GetString(constants::Track::TRACK_NUM),
+            text::AlignRight,
+            TRACK_COL_WIDTH);
+    }
+    else {
+        trackColWidth = std::max(TRACK_COL_WIDTH, DIGITS(index + 1));
+        trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
+    }
 
     std::string duration = text::Align(
         musik::core::duration::Duration(track->GetString(constants::Track::DURATION)),
@@ -358,7 +378,7 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t width) {
 
     int titleWidth =
         width -
-        TRACK_COL_WIDTH -
+        trackColWidth -
         DURATION_COL_WIDTH -
         ARTIST_COL_WIDTH -
         (3 * 3); /* 3 = spacing */
@@ -442,7 +462,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
     std::string text = parent.formatter
         ? parent.formatter(track, this->GetWidth())
-        : formatWithoutAlbum(track, this->GetWidth());
+        : formatWithoutAlbum(track, rawIndex, this->GetWidth(), parent.trackNumType);
 
     std::shared_ptr<TrackListEntry> entry(
         new TrackListEntry(text, trackIndex, RowType::Track));

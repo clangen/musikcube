@@ -56,6 +56,8 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                enum class TrackNumType: int { Metadata = 0, Sequential = 1 };
+
                 typedef musik::core::TrackPtr TrackPtr;
                 typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
 
@@ -89,6 +91,7 @@ namespace musik {
                 void Clear();
                 size_t TrackCount();
                 size_t EntryCount();
+                void SetTrackNumType(TrackNumType type);
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
 
@@ -162,6 +165,7 @@ namespace musik {
                 RowFormatter formatter;
                 RowDecorator decorator;
                 std::chrono::milliseconds lastChanged;
+                TrackNumType trackNumType;
         };
     }
 }
