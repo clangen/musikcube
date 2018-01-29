@@ -236,4 +236,4 @@ static auto TRANSPORT_TYPE_TO_STRING = makeBimap<musik::core::sdk::TransportType
     { musik::core::sdk::TransportType::Crossfade, "crossfade" },
 });
 
-static const int ApiVersion = 13;
+static const int ApiVersion = 14;
