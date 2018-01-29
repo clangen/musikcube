@@ -193,6 +193,6 @@
     <string name="playback_transfer_move_from_server">move from server</string>
     <string name="playback_transfer_copy_from_server">copy from server</string>
     <string name="main_api_mismatch_title">server out of date</string>
-    <string name="main_api_mismatch_message">this version of musikdroid is not compatible with the version of musikcube on your server.\n\nplease visit the releases page to make sure everything is up to date.</string>
+    <string name="main_api_mismatch_message">this version of musikdroid may not be compatible with the version of musikcube on your server.\n\nif you experience bugs or crashes, please visit our releases page to upgrade.</string>
     <string name="main_api_mismatch_releases_page">show releases</string>
 </resources>
