@@ -1,8 +1,8 @@
 %define name musikcube
 %define build_timestamp %{lua: print(os.date("%Y%m%d"))}
-%define version 0.35.1
-Name: %{name}           
-Version: %{version}     
+%define version 0.40.0
+Name: %{name}
+Version: %{version}
 Release: %{dist}
 Summary: A cross-platform, terminal-based audio engine, library, player and server written in C++
 Source0: https://github.com/clangen/musikcube/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
@@ -18,7 +18,6 @@ A cross-platform, terminal-based audio engine, library, player and server writte
 %global debug_package %{nil}
 %prep
 %autosetup -n %{name}-%{version}
-
 
 %build
 cmake -D CMAKE_INSTALL_PREFIX:PATH=%{_prefix} -DCMAKE_BUILD_TYPE=Release .
