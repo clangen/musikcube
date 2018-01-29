@@ -544,6 +544,7 @@ void SettingsLayout::OnAddedToParent(IWindow* parent) {
     auto receiver = this;
 #endif
     MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
+    MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
 }
 
 void SettingsLayout::OnRemovedFromParent(IWindow* parent) {

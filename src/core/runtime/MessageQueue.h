@@ -65,15 +65,25 @@ namespace musik { namespace core { namespace runtime {
             }
 
         private:
+            typedef std::weak_ptr<IMessageTarget> IWeakMessageTarget;
+
+
             struct EnqueuedMessage {
                 IMessagePtr message;
                 std::chrono::milliseconds time;
             };
 
+            struct WeakPtrLess { /* https://stackoverflow.com/a/12875729 */
+                template <typename T>
+                bool operator() (const std::weak_ptr<T>& l, const std::weak_ptr<T>& r) const {
+                    return l.lock().get() < r.lock().get();
+                }
+            };
+
             std::mutex queueMutex;
             std::list<EnqueuedMessage*> queue;
             std::list<EnqueuedMessage*> dispatch;
-            std::set<IMessageTargetPtr> receivers;
+            std::set<IWeakMessageTarget, WeakPtrLess> receivers;
             std::condition_variable_any waitForDispatch;
             std::atomic<int64_t> nextMessageTime;
 

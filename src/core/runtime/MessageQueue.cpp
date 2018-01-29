@@ -132,7 +132,8 @@ void MessageQueue::RegisterForBroadcasts(IMessageTargetPtr target) {
 void MessageQueue::UnregisterForBroadcasts(IMessageTarget *target) {
     LockT lock(this->queueMutex);
     for (auto it : this->receivers) {
-        if (it.get() == target) {
+        auto shared = it.lock();
+        if (shared && shared.get() == target) {
             this->receivers.erase(it);
             return;
         }
@@ -242,19 +243,40 @@ void MessageQueue::Dispatch(IMessagePtr message) {
         message->Target()->ProcessMessage(*message);
     }
     else {
-        std::set<IMessageTargetPtr> copy;
+        std::set<IWeakMessageTarget, WeakPtrLess> copy;
 
+        /* copy to dispatch outside of a lock */
         {
             LockT lock(this->queueMutex);
-
             std::copy(
                 receivers.begin(),
                 receivers.end(),
                 std::inserter(copy, copy.begin()));
         }
 
+        /* dispatch */
+        bool prune = false;
         for (auto receiver : copy) {
-            receiver->ProcessMessage(*message);
+            auto shared = receiver.lock();
+            if (shared) {
+                shared->ProcessMessage(*message);
+            }
+            else {
+                prune = true;
+            }
+        }
+
+        if (prune) { /* at least one of our weak_ptrs is dead. */
+            LockT lock(this->queueMutex);
+            auto it = this->receivers.begin();
+            while (it != this->receivers.end()) {
+                if (it->expired()) {
+                    it = this->receivers.erase(it);
+                }
+                else {
+                    ++it;
+                }
+            }
         }
     }
 }
