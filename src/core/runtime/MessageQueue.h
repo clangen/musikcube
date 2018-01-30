@@ -67,7 +67,6 @@ namespace musik { namespace core { namespace runtime {
         private:
             typedef std::weak_ptr<IMessageTarget> IWeakMessageTarget;
 
-
             struct EnqueuedMessage {
                 IMessagePtr message;
                 std::chrono::milliseconds time;

@@ -65,7 +65,7 @@ namespace musik {
                 sigslot::signal1<musik::core::db::local::TrackListQueryBase*> Requeried;
 
                 /* types */
-                typedef std::function<std::string(TrackPtr, size_t)> RowFormatter;
+                typedef std::function<std::string(TrackPtr, size_t, size_t)> RowFormatter;
                 typedef std::function<int64_t(TrackPtr, size_t)> RowDecorator;
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 

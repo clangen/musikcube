@@ -461,7 +461,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     }
 
     std::string text = parent.formatter
-        ? parent.formatter(track, this->GetWidth())
+        ? parent.formatter(track, rawIndex, this->GetWidth())
         : formatWithoutAlbum(track, rawIndex, this->GetWidth(), parent.trackNumType);
 
     std::shared_ptr<TrackListEntry> entry(

@@ -59,7 +59,7 @@ using namespace cursespp;
 
 static std::set<std::string> EDIT_KEYS;
 
-static std::string formatWithAlbum(TrackPtr track, size_t width);
+static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width);
 
 NowPlayingLayout::NowPlayingLayout(
     musik::core::audio::PlaybackService& playback,
@@ -126,7 +126,7 @@ void NowPlayingLayout::InitializeWindows() {
     this->trackListView.reset(new TrackListView(
         this->playback,
         this->library,
-        std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2),
+        std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
         std::bind(&NowPlayingLayout::RowDecorator, this, std::placeholders::_1, std::placeholders::_2)));
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
@@ -283,12 +283,11 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
 #define ARTIST_COL_WIDTH 14
 #define ALBUM_COL_WIDTH 14
 #define DURATION_COL_WIDTH 5 /* 00:00 */
+#define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
 
-static std::string formatWithAlbum(TrackPtr track, size_t width) {
-    std::string trackNum = text::Align(
-        track->GetString(constants::Track::TRACK_NUM),
-        text::AlignRight,
-        TRACK_COL_WIDTH);
+static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width) {
+    size_t trackColWidth = std::max(TRACK_COL_WIDTH, DIGITS(index + 1));
+    std::string trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
 
     std::string duration = text::Align(
         duration::Duration(track->GetString(constants::Track::DURATION)),
@@ -307,7 +306,7 @@ static std::string formatWithAlbum(TrackPtr track, size_t width) {
 
     int titleWidth =
         width -
-        TRACK_COL_WIDTH -
+        trackColWidth -
         DURATION_COL_WIDTH -
         ALBUM_COL_WIDTH -
         ARTIST_COL_WIDTH -
