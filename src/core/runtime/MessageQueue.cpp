@@ -36,6 +36,7 @@
 #include "MessageQueue.h"
 
 #include <algorithm>
+#include <chrono>
 
 using namespace std::chrono;
 using namespace musik::core::runtime;
@@ -46,21 +47,30 @@ MessageQueue::MessageQueue() {
     this->nextMessageTime.store(1);
 }
 
-void MessageQueue::WaitAndDispatch() {
+void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
     {
         LockT lock(this->queueMutex);
 
         if (this->queue.size()) {
-            auto waitTime =
+            auto waitTime = duration_cast<milliseconds>(
                 this->queue.front()->time -
-                system_clock::now().time_since_epoch();
+                system_clock::now().time_since_epoch());
+
+            if (timeoutMillis >= 0 && waitTime.count() > timeoutMillis) {
+                waitTime = milliseconds(timeoutMillis);
+            }
 
             if (waitTime.count() > 0) {
                 waitForDispatch.wait_for(lock, waitTime);
             }
        }
         else {
-            waitForDispatch.wait(lock);
+            if (timeoutMillis >= 0) {
+                waitForDispatch.wait_for(lock, milliseconds(timeoutMillis));
+            }
+            else {
+                waitForDispatch.wait(lock);
+            }
         }
     }
 

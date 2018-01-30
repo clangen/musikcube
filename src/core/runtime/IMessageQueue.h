@@ -50,7 +50,7 @@ namespace musik {
                     virtual void Debounce(IMessagePtr message, int64_t delayMs = 0) = 0;
                     virtual void RegisterForBroadcasts(IMessageTargetPtr target) = 0;
                     virtual void UnregisterForBroadcasts(IMessageTarget *target) = 0;
-                    virtual void WaitAndDispatch() = 0;
+                    virtual void WaitAndDispatch(int64_t timeoutMillis = -1) = 0;
                     virtual void Dispatch() = 0;
             };
         }

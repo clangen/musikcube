@@ -24,22 +24,18 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
 
+#define MESSAGE_QUEUE_TIMEOUT_MS 500
+
 #ifdef __linux__
 #define LOCKFILE "/var/lock/musikcubed.lock"
 #else
 #define LOCKFILE "/tmp/musikcubed.lock"
 #endif
 
-static MessageQueue messageQueue;
 static volatile bool quit = false;
 
 static void sigtermHandler(int signal) {
     quit = true;
-
-    /* pump a dummy message in the queue so it wakes up
-    immediately and goes back to the top of the loop, where
-    the quit flag will be processed */
-    messageQueue.Broadcast(Message::Create(nullptr, 0));
 }
 
 static bool exitIfRunning() {
@@ -103,6 +99,7 @@ int main() {
 
     debug::init();
 
+    MessageQueue messageQueue;
     MasterTransport transport;
     auto library = LibraryFactory::Libraries().at(0);
     auto prefs = Preferences::ForComponent(prefs::components::Settings);
@@ -117,7 +114,7 @@ int main() {
     }
 
     while (!quit) {
-        messageQueue.WaitAndDispatch();
+        messageQueue.WaitAndDispatch(MESSAGE_QUEUE_TIMEOUT_MS);
     }
 
     remove(LOCKFILE);

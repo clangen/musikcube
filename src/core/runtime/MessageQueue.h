@@ -56,7 +56,7 @@ namespace musik { namespace core { namespace runtime {
             virtual void Debounce(IMessagePtr message, int64_t delayMs = 0);
             virtual void RegisterForBroadcasts(IMessageTargetPtr target);
             virtual void UnregisterForBroadcasts(IMessageTarget *target);
-            virtual void WaitAndDispatch();
+            virtual void WaitAndDispatch(int64_t timeoutMillis = -1);
             virtual void Dispatch();
 
         protected:
