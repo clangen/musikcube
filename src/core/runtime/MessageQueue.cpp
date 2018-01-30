@@ -56,8 +56,11 @@ void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
                 this->queue.front()->time -
                 system_clock::now().time_since_epoch());
 
-            if (timeoutMillis >= 0 && waitTime.count() > timeoutMillis) {
-                waitTime = milliseconds(timeoutMillis);
+            if (timeoutMillis >= 0) {
+                auto timeoutDuration = milliseconds(timeoutMillis);
+                if (waitTime > timeoutDuration) {
+                    waitTime = timeoutDuration;
+                }
             }
 
             if (waitTime.count() > 0) {
