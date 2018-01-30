@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-
+#include <csignal>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,6 +12,7 @@
 #include <core/library/LibraryFactory.h>
 #include <core/plugin/Plugins.h>
 #include <core/runtime/MessageQueue.h>
+#include <core/runtime/Message.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/support/Common.h>
 
@@ -29,7 +30,19 @@ using namespace musik::core::runtime;
 #define LOCKFILE "/tmp/musikcubed.lock"
 #endif
 
-bool exitIfRunning() {
+static MessageQueue messageQueue;
+static volatile bool quit = false;
+
+static void sigtermHandler(int signal) {
+    quit = true;
+
+    /* pump a dummy message in the queue so it wakes up
+    immediately and goes back to the top of the loop, where
+    the quit flag will be processed */
+    messageQueue.Broadcast(Message::Create(nullptr, 0));
+}
+
+static bool exitIfRunning() {
     std::ifstream lock(LOCKFILE);
     if (lock.good()) {
         int pid;
@@ -44,7 +57,7 @@ bool exitIfRunning() {
     return false;
 }
 
-void startDaemon() {
+static void startDaemon() {
     pid_t pid = fork();
 
     if (pid < 0) {
@@ -82,13 +95,14 @@ int main() {
 
     srand((unsigned int) time(0));
 
+    std::signal(SIGTERM, sigtermHandler);
+
     std::locale locale = std::locale();
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
 
     debug::init();
 
-    MessageQueue messageQueue;
     MasterTransport transport;
     auto library = LibraryFactory::Libraries().at(0);
     auto prefs = Preferences::ForComponent(prefs::components::Settings);
@@ -102,7 +116,9 @@ int main() {
         library->Indexer()->Schedule(IIndexer::SyncType::All);
     }
 
-    while (true) {
+    while (!quit) {
         messageQueue.WaitAndDispatch();
     }
+
+    remove(LOCKFILE);
 }
