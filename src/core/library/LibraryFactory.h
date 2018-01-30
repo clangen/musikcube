@@ -56,6 +56,7 @@ namespace musik { namespace core {
 
             static LibraryFactory& Instance();
             static LibraryVector& Libraries();
+            static ILibraryPtr Default();
 
             ILibraryPtr CreateLibrary(const std::string& name, int type);
             void Shutdown();

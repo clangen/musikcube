@@ -120,6 +120,10 @@ LibraryFactory::LibraryVector& LibraryFactory::Libraries() {
     return LibraryFactory::Instance().libraries;
 }
 
+ILibraryPtr LibraryFactory::Default() {
+    return LibraryFactory::Instance().libraries.at(0);
+}
+
 ILibraryPtr LibraryFactory::GetLibrary(int identifier) {
     if (identifier) {
         LibraryMap::iterator lib = this->libraryMap.find(identifier);

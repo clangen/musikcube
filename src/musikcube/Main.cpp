@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 
     musik::debug::init();
 
-    ILibraryPtr library = LibraryFactory::Libraries().at(0);
+    ILibraryPtr library = LibraryFactory::Default();
     library->SetMessageQueue(Window::MessageQueue());
 
     auto prefs = Preferences::ForComponent(

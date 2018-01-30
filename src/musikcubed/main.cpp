@@ -25,13 +25,11 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
 
-#define MESSAGE_QUEUE_TIMEOUT_MS 500
 #define LOCKFILE "/tmp/musikcubed.lock"
 
 static const short EVENT_DISPATCH = 1;
 static const short EVENT_QUIT = 2;
-
-static void sigtermHandler(ev::sig &signal, int revents);
+static int pipeFd[2] = { 0 };
 
 class EvMessageQueue: public MessageQueue {
     public:
@@ -39,7 +37,7 @@ class EvMessageQueue: public MessageQueue {
             MessageQueue::Post(message, delayMs);
 
             if (delayMs <= 0) {
-                write(fd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
+                write(pipeFd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
             }
             else {
                 double delayTs = (double) delayMs / 1000.0;
@@ -54,9 +52,13 @@ class EvMessageQueue: public MessageQueue {
             this->Dispatch();
         }
 
+        static void SignalCallback(ev::sig& signal, int revents) {
+            write(pipeFd[1], &EVENT_QUIT, sizeof(EVENT_QUIT));
+        }
+
         void ReadCallback(ev::io& watcher, int revents) {
             short type;
-            if (read(this->fd[0], &type, sizeof(type)) == 0) {
+            if (read(pipeFd[0], &type, sizeof(type)) == 0) {
                 std::cerr << "read() failed.\n";
                 exit(EXIT_FAILURE);
             }
@@ -67,39 +69,28 @@ class EvMessageQueue: public MessageQueue {
         }
 
         void Run() {
-            if (pipe(this->fd) != 0) {
-                std::cerr << "couldn't create pipe\n";
-                exit(EXIT_FAILURE);
-            }
-
             io.set(loop);
-            io.set(this->fd[0], ev::READ);
+            io.set(pipeFd[0], ev::READ);
             io.set<EvMessageQueue, &EvMessageQueue::ReadCallback>(this);
             io.start();
 
             sio.set(loop);
-            sio.set<&sigtermHandler>();
+            sio.set<&EvMessageQueue::SignalCallback>();
             sio.start(SIGTERM);
 
-            write(fd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
+            write(pipeFd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
 
             loop.run(0);
         }
 
         void Quit() {
-            write(fd[1], &EVENT_QUIT, sizeof(EVENT_QUIT));
         }
 
     private:
-        int fd[2];
         ev::dynamic_loop loop;
         ev::io io;
         ev::sig sio;
-} messageQueue;
-
-static void sigtermHandler(ev::sig &signal, int revents) {
-    messageQueue.Quit();
-}
+};
 
 static void exitIfRunning() {
     std::ifstream lock(LOCKFILE);
@@ -136,6 +127,11 @@ static void startDaemon() {
         exit(EXIT_FAILURE);
     }
 
+    if (pipe(pipeFd) != 0) {
+        std::cerr << "couldn't create pipe\n";
+        exit(EXIT_FAILURE);
+    }
+ 
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     freopen("/tmp/musikcube.log", "w", stderr);
@@ -158,15 +154,16 @@ int main() {
 
     debug::init();
 
+    EvMessageQueue messageQueue;
     MasterTransport transport;
-    auto library = LibraryFactory::Libraries().at(0);
-    auto prefs = Preferences::ForComponent(prefs::components::Settings);
+    auto library = LibraryFactory::Default();
 
     library->SetMessageQueue(messageQueue);
     PlaybackService playback(messageQueue, library, transport);
 
     plugin::InstallDependencies(&messageQueue, &playback, library);
 
+    auto prefs = Preferences::ForComponent(prefs::components::Settings);
     if (prefs->GetBool(prefs::keys::SyncOnStartup, true)) {
         library->Indexer()->Schedule(IIndexer::SyncType::All);
     }
