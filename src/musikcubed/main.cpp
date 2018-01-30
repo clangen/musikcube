@@ -1,10 +1,10 @@
 #include <iostream>
+#include <fstream>
 
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
-#include <iostream>
 
 #include <core/audio/PlaybackService.h>
 #include <core/audio/MasterTransport.h>
