@@ -26,12 +26,7 @@ using namespace musik::core::audio;
 using namespace musik::core::runtime;
 
 #define MESSAGE_QUEUE_TIMEOUT_MS 500
-
-#ifdef __linux__
-#define LOCKFILE "/var/lock/musikcubed.lock"
-#else
 #define LOCKFILE "/tmp/musikcubed.lock"
-#endif
 
 static const short EVENT_DISPATCH = 1;
 static const short EVENT_QUIT = 2;
@@ -106,7 +101,7 @@ static void sigtermHandler(ev::sig &signal, int revents) {
     messageQueue.Quit();
 }
 
-static bool exitIfRunning() {
+static void exitIfRunning() {
     std::ifstream lock(LOCKFILE);
     if (lock.good()) {
         int pid;
@@ -114,11 +109,9 @@ static bool exitIfRunning() {
         if (kill((pid_t) pid, 0) == 0) {
             std::cerr << "musikcubed is already running!\n";
             exit(EXIT_SUCCESS);
-            return true;
         }
     }
     std::cerr << "musikcubed is starting...\n";
-    return false;
 }
 
 static void startDaemon() {
