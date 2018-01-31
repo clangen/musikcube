@@ -20,16 +20,25 @@
 #include <boost/locale.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
+#include "../musikcube/app/util/Version.h"
+
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
 
-#define LOCKFILE "/tmp/musikcubed.lock"
-
+static const char* LOCKFILE = "/tmp/musikcubed.lock";
 static const short EVENT_DISPATCH = 1;
 static const short EVENT_QUIT = 2;
+static const pid_t NOT_RUNNING = (pid_t) -1;
 static int pipeFd[2] = { 0 };
+
+static void printHelp();
+static void handleCommandLine(int argc, char** argv);
+static void exitIfRunning();
+static pid_t getDaemonPid();
+static void startDaemon();
+static void stopDaemon();
 
 class EvMessageQueue: public MessageQueue {
     public:
@@ -92,17 +101,85 @@ class EvMessageQueue: public MessageQueue {
         ev::sig sio;
 };
 
-static void exitIfRunning() {
+static void printHelp() {
+    std::cout << "\n  musikcubed:\n";
+    std::cout << "    --start: start the daemon\n";
+    std::cout << "    --stop: shut down the daemon\n";
+    std::cout << "    --running: check if the daemon is running\n";
+    std::cout << "    --version: print the version\n";
+    std::cout << "    --help: show this message\n\n";
+}
+
+static void handleCommandLine(int argc, char** argv) {
+    if (argc >= 2) {
+        const std::string command = std::string(argv[1]);
+        if (command == "--start") {
+            return;
+        }
+        else if (command == "--stop") {
+            stopDaemon();
+        }
+        else if (command == "--version") {
+            std::cout << "\n  musikcubed version: " << VERSION << "\n\n";
+        }
+        else if (command == "--running") {
+            pid_t pid = getDaemonPid();
+            if (pid == NOT_RUNNING) {
+                std::cout << "\n  musikcubed is NOT running\n\n";
+            }
+            else {
+                std::cout << "\n  musikcubed is running with pid " << pid << "\n\n";
+            }
+        }
+        else {
+            printHelp();
+        }
+        exit(EXIT_SUCCESS);
+    }
+}
+
+static void stopDaemon() {
+    pid_t pid = getDaemonPid();
+    if (pid == NOT_RUNNING) {
+        std::cout << "\n  musikcubed is not running\n\n";
+    }
+    else {
+        std::cout << "\n  stopping musikcubed...";
+        kill(pid, SIGTERM);
+        int count = 0;
+        bool dead = false;
+        while (!dead && count++ < 5) { /* try for 5 seconds */
+            if (kill(pid, 0) == 0) {
+                std::cout << ".";
+                std::cout.flush();
+                usleep(500000);
+            }
+            else {
+                dead = true;
+            }
+        }
+        std::cout << (dead ? " success" : " failed") << "\n\n";
+    }
+}
+
+static pid_t getDaemonPid() {
     std::ifstream lock(LOCKFILE);
     if (lock.good()) {
         int pid;
         lock >> pid;
         if (kill((pid_t) pid, 0) == 0) {
-            std::cerr << "musikcubed is already running!\n";
-            exit(EXIT_SUCCESS);
+            return pid;
         }
     }
-    std::cerr << "musikcubed is starting...\n";
+    return NOT_RUNNING;
+}
+
+static void exitIfRunning() {
+    if (getDaemonPid() != NOT_RUNNING) {
+        std::cerr << "\n musikcubed is already running!\n\n";
+        exit(EXIT_SUCCESS);
+    }
+    std::cerr << "\n  musikcubed is starting...\n\n";
 }
 
 static void startDaemon() {
@@ -128,7 +205,7 @@ static void startDaemon() {
     }
 
     if (pipe(pipeFd) != 0) {
-        std::cerr << "couldn't create pipe\n";
+        std::cerr << "\n  ERROR! couldn't create pipe\n\n";
         exit(EXIT_FAILURE);
     }
  
@@ -142,7 +219,8 @@ static void startDaemon() {
     }
 }
 
-int main() {
+int main(int argc, char** argv) {
+    handleCommandLine(argc, argv);
     exitIfRunning();
     startDaemon();
 
