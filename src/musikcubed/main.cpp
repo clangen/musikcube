@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <ev++.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/audio/MasterTransport.h>
@@ -32,10 +33,77 @@ using namespace musik::core::runtime;
 #define LOCKFILE "/tmp/musikcubed.lock"
 #endif
 
-static volatile bool quit = false;
+static const short EVENT_DISPATCH = 1;
+static const short EVENT_QUIT = 2;
 
-static void sigtermHandler(int signal) {
-    quit = true;
+static void sigtermHandler(ev::sig &signal, int revents);
+
+class EvMessageQueue: public MessageQueue {
+    public:
+        void Post(IMessagePtr message, int64_t delayMs) {
+            MessageQueue::Post(message, delayMs);
+
+            if (delayMs <= 0) {
+                write(fd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
+            }
+            else {
+                double delayTs = (double) delayMs / 1000.0;
+                loop.once<
+                    EvMessageQueue,
+                    &EvMessageQueue::DelayedDispatch
+                >(-1, ev::TIMER, (ev::tstamp) delayTs, this);
+            }
+        }
+
+        void DelayedDispatch(int revents) {
+            this->Dispatch();
+        }
+
+        void ReadCallback(ev::io& watcher, int revents) {
+            short type;
+            if (read(this->fd[0], &type, sizeof(type)) == 0) {
+                std::cerr << "read() failed.\n";
+                exit(EXIT_FAILURE);
+            }
+            switch (type) {
+                case EVENT_DISPATCH: this->Dispatch(); break;
+                case EVENT_QUIT: loop.break_loop(ev::ALL); break;
+            }
+        }
+
+        void Run() {
+            if (pipe(this->fd) != 0) {
+                std::cerr << "couldn't create pipe\n";
+                exit(EXIT_FAILURE);
+            }
+
+            io.set(loop);
+            io.set(this->fd[0], ev::READ);
+            io.set<EvMessageQueue, &EvMessageQueue::ReadCallback>(this);
+            io.start();
+
+            sio.set(loop);
+            sio.set<&sigtermHandler>();
+            sio.start(SIGTERM);
+
+            write(fd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
+
+            loop.run(0);
+        }
+
+        void Quit() {
+            write(fd[1], &EVENT_QUIT, sizeof(EVENT_QUIT));
+        }
+
+    private:
+        int fd[2];
+        ev::dynamic_loop loop;
+        ev::io io;
+        ev::sig sio;
+} messageQueue;
+
+static void sigtermHandler(ev::sig &signal, int revents) {
+    messageQueue.Quit();
 }
 
 static bool exitIfRunning() {
@@ -91,15 +159,12 @@ int main() {
 
     srand((unsigned int) time(0));
 
-    std::signal(SIGTERM, sigtermHandler);
-
     std::locale locale = std::locale();
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
 
     debug::init();
 
-    MessageQueue messageQueue;
     MasterTransport transport;
     auto library = LibraryFactory::Libraries().at(0);
     auto prefs = Preferences::ForComponent(prefs::components::Settings);
@@ -113,9 +178,7 @@ int main() {
         library->Indexer()->Schedule(IIndexer::SyncType::All);
     }
 
-    while (!quit) {
-        messageQueue.WaitAndDispatch(MESSAGE_QUEUE_TIMEOUT_MS);
-    }
+    messageQueue.Run();
 
     remove(LOCKFILE);
 }
