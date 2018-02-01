@@ -175,6 +175,7 @@ void WebSocketServer::ThreadProc() {
             prefs::use_ipv6.c_str(), defaults::use_ipv6);
 
         wss->init_asio();
+        wss->set_reuse_addr(true);
         wss->set_message_handler(std::bind(&WebSocketServer::OnMessage, this, wss.get(), ::_1, ::_2));
         wss->set_open_handler(std::bind(&WebSocketServer::OnOpen, this, ::_1));
         wss->set_close_handler(std::bind(&WebSocketServer::OnClose, this, ::_1));

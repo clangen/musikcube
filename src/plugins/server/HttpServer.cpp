@@ -298,6 +298,7 @@ bool HttpServer::Start() {
             MHD_OPTION_UNESCAPE_CALLBACK,
             &HttpServer::HandleUnescape,
             this,
+            MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
             MHD_OPTION_END);
 
         this->running = (httpServer != nullptr);
