@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 pushd @musikcube_INSTALL_DIR@/share/musikcube/ > /dev/null
 {
-  ./musikcube && popd
+  ./musikcube "$@" && popd
 } || popd > /dev/null
