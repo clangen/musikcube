@@ -67,6 +67,13 @@ include_directories (
   "${musikcube_SOURCE_DIR}/src/3rdparty/include"
   "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
 
+# ensure the binaries can find libmusikcore.so, which lives in the
+# same directory.
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  set(CMAKE_INSTALL_RPATH "$ORIGIN")
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+endif()
+
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
 # "/opt/local" is the default installation location for MacPorts
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
