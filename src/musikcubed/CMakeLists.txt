@@ -7,6 +7,7 @@ if (NOT DEFINED musikcube_INSTALL_DIR)
 	set(musikcube_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
 endif()
 
+configure_file("musikcubed.in" "musikcubed" @ONLY)
 add_executable(musikcubed ${DAEMON_SRCS})
 
 if (${LINK_STATICALLY} MATCHES "true")
