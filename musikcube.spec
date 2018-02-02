@@ -31,6 +31,7 @@ rm -rf %{buildroot}
 
 %files
 %{_prefix}/bin/musikcube
+%{_prefix}/bin/musikcubed
 %{_prefix}/share/musikcube/
 %{_prefix}/include/musikcube/
 %doc
