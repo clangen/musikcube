@@ -1,11 +1,11 @@
 %define name musikcube
 %define build_timestamp %{lua: print(os.date("%Y%m%d"))}
-%define version 0.40.0-1
+%define version 0.40.0
 Name: %{name}
 Version: %{version}
 Release: %{dist}
 Summary: A cross-platform, terminal-based audio engine, library, player and server written in C++
-Source0: https://github.com/clangen/musikcube/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
+Source0: https://github.com/clangen/musikcube/archive/%{version}-2.tar.gz#/%{name}-%{version}.tar.gz
 License: BSD-3-Clause
 Packager: David Muckle <dvdmuckle@dvdmuckle.xyz>
 BuildRequires: gcc-c++ cmake boost-devel libogg-devel libvorbis-devel flac-devel faad2-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel make
@@ -25,7 +25,7 @@ make -j2
 
 %install
 make install DESTDIR=%{buildroot}
-find %buildroot -type f \( -name '*.so' -o -name '*.so.*' \) -exec chmod 755 {} +
+find %{buildroot} -type f \( -name '*.so' -o -name '*.so.*' \) -exec chmod 755 {} +
 
 %clean
 rm -rf %{buildroot}
