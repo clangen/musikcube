@@ -148,7 +148,7 @@ static void stopDaemon() {
         kill(pid, SIGTERM);
         int count = 0;
         bool dead = false;
-        while (!dead && count++ < 5) { /* try for 5 seconds */
+        while (!dead && count++ < 7) { /* try for 7 seconds */
             if (kill(pid, 0) == 0) {
                 std::cout << ".";
                 std::cout.flush();
@@ -159,6 +159,9 @@ static void stopDaemon() {
             }
         }
         std::cout << (dead ? " success" : " failed") << "\n\n";
+        if (!dead) {
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
