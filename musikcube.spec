@@ -1,6 +1,6 @@
 %define name musikcube
 %define build_timestamp %{lua: print(os.date("%Y%m%d"))}
-%define version 0.40.0
+%define version 0.40.0-1
 Name: %{name}
 Version: %{version}
 Release: %{dist}
@@ -25,6 +25,7 @@ make -j2
 
 %install
 make install DESTDIR=%{buildroot}
+find %buildroot -type f \( -name '*.so' -o -name '*.so.*' \) -exec chmod 755 {} +
 
 %clean
 rm -rf %{buildroot}
