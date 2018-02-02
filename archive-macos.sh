@@ -21,12 +21,16 @@ rm -rf "$OUTPATH"
 mkdir -p "$OUTPATH/plugins"
 mkdir -p "$OUTPATH/locales"
 mkdir -p "$OUTPATH/themes"
-cp bin/musikcube "$OUTPATH" 
+cp bin/musikcube "$OUTPATH"
+cp bin/musikcubed "$OUTPATH"
+cp bin/libmusikcore.dylib "$OUTPATH"
 cp bin/plugins/*.dylib "$OUTPATH/plugins"
 cp bin/locales/*.json "$OUTPATH/locales"
 cp bin/themes/*.json "$OUTPATH/themes"
 
 strip bin/musikcube
+strip bin/musikcubed
+strip bin/libmusikcore.dylib
 strip bin/plugins/*.dylib
 
 pushd bin/dist 
