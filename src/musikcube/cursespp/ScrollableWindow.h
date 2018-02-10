@@ -82,6 +82,8 @@ namespace cursespp {
             virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
 
         protected:
+            friend class Scrollbar;
+
             virtual IScrollAdapter& GetScrollAdapter();
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
             virtual void OnRedraw();

@@ -180,6 +180,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
     <ClCompile Include="cursespp\Screen.cpp" />
     <ClCompile Include="cursespp\ScrollableWindow.cpp" />
     <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
+    <ClCompile Include="cursespp\Scrollbar.cpp" />
     <ClCompile Include="cursespp\ShortcutsWindow.cpp" />
     <ClCompile Include="cursespp\SimpleScrollAdapter.cpp" />
     <ClCompile Include="cursespp\SingleLineEntry.cpp" />
@@ -253,6 +254,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
     <ClInclude Include="cursespp\Screen.h" />
     <ClInclude Include="cursespp\ScrollableWindow.h" />
     <ClInclude Include="cursespp\ScrollAdapterBase.h" />
+    <ClInclude Include="cursespp\Scrollbar.h" />
     <ClInclude Include="cursespp\ShortcutsWindow.h" />
     <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
     <ClInclude Include="cursespp\SingleLineEntry.h" />

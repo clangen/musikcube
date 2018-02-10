@@ -42,6 +42,7 @@ set (CUBE_SRCS
 	./cursespp/Screen.cpp
 	./cursespp/ScrollableWindow.cpp
 	./cursespp/ScrollAdapterBase.cpp
+	./cursespp/Scrollbar.cpp
 	./cursespp/SimpleScrollAdapter.cpp
 	./cursespp/SingleLineEntry.cpp
 	./cursespp/Text.cpp

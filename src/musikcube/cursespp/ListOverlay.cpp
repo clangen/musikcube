@@ -34,6 +34,7 @@
 
 #include <stdafx.h>
 #include "ListOverlay.h"
+#include "Scrollbar.h"
 #include "Colors.h"
 #include "Screen.h"
 #include "Text.h"
@@ -42,6 +43,40 @@ using namespace cursespp;
 
 #define VERTICAL_PADDING 2
 #define DEFAULT_WIDTH 26
+
+/* a little custom type that allows us to draw a scrollbar
+ourself, outside of the list window frame. */
+class ListOverlay::CustomListWindow : public ListWindow {
+    public:
+        using Callback = std::function<void()>;
+
+        CustomListWindow(Callback decorator, Callback adapterChanged)
+        : ListWindow() {
+            this->decorator = decorator;
+            this->adapterChanged = adapterChanged;
+        }
+
+        virtual void OnAdapterChanged() {
+            if (adapterChanged) { adapterChanged(); };
+            ListWindow::OnAdapterChanged();
+        }
+
+        void Reset() {
+            decorator = adapterChanged = Callback();
+        }
+
+        size_t EntryCount() {
+            return this->GetScrollAdapter().GetEntryCount();
+        }
+
+    protected:
+        virtual void DecorateFrame() {
+            if (decorator) { decorator(); }
+        }
+
+    private:
+        Callback decorator, adapterChanged;
+};
 
 ListOverlay::ListOverlay() {
     this->SetFrameVisible(true);
@@ -53,7 +88,20 @@ ListOverlay::ListOverlay() {
     this->width = this->height = 0;
     this->setWidth = this->setWidthPercent = 0;
 
-    this->listWindow.reset(new ListWindow());
+    auto decorator = [this] {
+        if (this->ScrollbarVisible()) {
+            Scrollbar::Draw(this->listWindow.get(), this->scrollbar.get());
+        }
+    };
+
+    auto adapterChanged = [this] { this->Layout(); };
+
+    this->scrollbar.reset(new Window());
+    this->scrollbar->SetFrameVisible(false);
+    this->scrollbar->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->AddWindow(this->scrollbar);
+
+    this->listWindow.reset(new CustomListWindow(decorator, adapterChanged));
     this->listWindow->SetContentColor(CURSESPP_OVERLAY_CONTENT);
     this->listWindow->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
     this->listWindow->SetFrameVisible(false);
@@ -62,6 +110,7 @@ ListOverlay::ListOverlay() {
 }
 
 ListOverlay::~ListOverlay() {
+    this->listWindow->Reset();
 }
 
 void ListOverlay::Layout() {
@@ -74,19 +123,39 @@ void ListOverlay::Layout() {
             this->width,
             this->height);
 
-        this->listWindow->MoveAndResize(
-            1, /* one pixel padding L and R */
-            2, /* below the title, plus an extra space */
-            this->GetContentWidth() - 2,
-            this->height - 4); /* top and bottom padding + title */
+        bool scrollbar = this->ScrollbarVisible();
+        auto contentWidth = this->GetContentWidth() - 2; /* subtract padding */
+        auto contentHeight = this->height - 4; /* top and bottom padding + title */
+        auto startX = 1; /* L padding */
+        auto startY = 2; /* below the title, plus an extra space */
+        auto listWidth = scrollbar ? contentWidth - 2 : contentWidth;
+
+        this->listWindow->MoveAndResize(startX, startY, listWidth, contentHeight);
 
         auto index = this->listWindow->GetSelectedIndex();
         if (!this->listWindow->IsEntryVisible(index)) {
             this->listWindow->ScrollTo(index);
         }
 
+        if (scrollbar) {
+            this->scrollbar->Show();
+            this->scrollbar->MoveAndResize(contentWidth, startY, 1, contentHeight);
+        }
+        else {
+            this->scrollbar->Hide();
+        }
+
         this->Redraw();
     }
+}
+
+bool ListOverlay::ScrollbarVisible() {
+#ifndef __FreeBSD__
+    auto contentHeight = this->height - 4; /* top and bottom padding + title */
+    return (int) this->listWindow->EntryCount() > contentHeight;
+#else
+    return false;
+#endif
 }
 
 ListOverlay& ListOverlay::SetTitle(const std::string& title) {

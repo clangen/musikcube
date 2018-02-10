@@ -150,6 +150,9 @@
     <ClCompile Include="app\overlay\BrowseOverlays.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\Scrollbar.cpp">
+      <Filter>cursespp\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -351,6 +354,9 @@
     </ClInclude>
     <ClInclude Include="app\overlay\BrowseOverlays.h">
       <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\Scrollbar.h">
+      <Filter>cursespp\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

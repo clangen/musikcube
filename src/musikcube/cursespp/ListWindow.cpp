@@ -35,6 +35,7 @@
 #include <stdafx.h>
 #include <algorithm>
 #include "ListWindow.h"
+#include "Scrollbar.h"
 
 using namespace cursespp;
 
@@ -71,35 +72,9 @@ void ListWindow::Invalidate() {
 }
 
 void ListWindow::DecorateFrame() {
-#ifndef __FreeBSD__
-    if (this->showScrollbar) {
-        int height = this->GetHeight();
-        auto *adapter = &this->GetScrollAdapter();
-        if (adapter && this->IsFrameVisible() && height > 2) {
-            auto& pos = this->GetScrollPosition();
-            float range = (float)height - 2.0f;
-            float total = (float)std::max((size_t)1, adapter->GetEntryCount());
-
-            int offset;
-            if (range > total) {
-                offset = -1;
-            }
-            else {
-                float percent = (float)pos.logicalIndex / total;
-                offset = (int)(range * percent) + 1;
-            }
-
-            auto frame = this->GetFrame();
-
-            for (int i = 1; i < height - 1; i++) {
-                wmove(frame, i, this->GetWidth() - 1);
-                if (i == offset) wattron(frame, A_REVERSE);
-                waddch(frame, (i == offset) ? ' ' : ACS_VLINE);
-                if (i == offset) wattroff(frame, A_REVERSE);
-            }
-        }
+    if (this->IsFrameVisible()) {
+        Scrollbar::Draw(this);
     }
-#endif
 }
 
 void ListWindow::ScrollToTop() {

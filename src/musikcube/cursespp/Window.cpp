@@ -239,7 +239,7 @@ void Window::MoveAndResize(int x, int y, int width, int height) {
         absX != this->lastAbsoluteX ||
         absY != this->lastAbsoluteY;
 
-    if (sizeChanged || positionChanged || badBounds) {
+    if (sizeChanged || positionChanged || this->badBounds || !this->content) {
         this->lastAbsoluteX = absX;
         this->lastAbsoluteY = absY;
         this->width = width;
