@@ -156,8 +156,9 @@ void LibraryLayout::ShowTrackSearch() {
         : this->ChangeMainLayout(this->trackSearch);
 }
 
-void LibraryLayout::ShowDirectories() {
+void LibraryLayout::ShowDirectories(const std::string& directory) {
     this->ChangeMainLayout(this->directoryLayout);
+    this->directoryLayout->SetDirectory(directory);
 }
 
 void LibraryLayout::InitializeWindows() {
@@ -385,7 +386,11 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseDirectories, key)) {
-        this->ShowDirectories();
+        BrowseOverlays::ShowDirectoryChooser(
+            this->library,
+            [this](std::string directory) {
+                this->ShowDirectories(directory);
+            });
         return true;
     }
     else if (this->GetFocus() == this->transportView && Hotkeys::Is(Hotkeys::Up, key)) {

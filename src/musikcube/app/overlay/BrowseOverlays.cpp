@@ -51,6 +51,17 @@ using namespace musik::core::db::local;
 static std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id" };
 static std::string LAST_SELECTED;
 
+static void showNoPathsError() {
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle(_TSTR("browse_no_paths_overlay_error_title"))
+        .SetMessage(_TSTR("browse_no_paths_overlay_error_message"))
+        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
+
+    App::Overlays().Push(dialog);
+}
+
 void BrowseOverlays::ShowCategoryChooser(
     musik::core::ILibraryPtr library,
     std::function<void(std::string)> callback)
@@ -92,6 +103,44 @@ void BrowseOverlays::ShowCategoryChooser(
         });
 
     cursespp::App::Overlays().Push(dialog);
+}
+
+void BrowseOverlays::ShowDirectoryChooser(
+    musik::core::ILibraryPtr library,
+    std::function<void(std::string)> callback)
+{
+    using StringList = std::vector<std::string>;
+    using Adapter = cursespp::SimpleScrollAdapter;
+
+    std::shared_ptr<StringList> paths = std::make_shared<StringList>();
+    library->Indexer()->GetPaths(*paths.get());
+
+    if (paths->size() == 0) {
+        showNoPathsError();
+    }
+    else {
+        std::shared_ptr<Adapter> adapter(new Adapter());
+        adapter->SetSelectable(true);
+        for (auto path : *paths) {
+            adapter->AddEntry(path);
+        }
+
+        std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+        dialog->SetAdapter(adapter)
+            .SetTitle(_TSTR("browse_pick_path_overlay_title"))
+            .SetWidthPercent(80)
+            .SetSelectedIndex(0)
+            .SetItemSelectedCallback(
+                [paths, callback]
+                (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                    if (callback) {
+                        callback(paths->at(index));
+                    }
+                });
+
+        cursespp::App::Overlays().Push(dialog);
+    }
 }
 
 void BrowseOverlays::ShowIndexer(musik::core::ILibraryPtr library) {

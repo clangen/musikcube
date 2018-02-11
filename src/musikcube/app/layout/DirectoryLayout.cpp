@@ -34,11 +34,7 @@
 
 #include "stdafx.h"
 
-#include <cursespp/Colors.h>
-#include <cursespp/Screen.h>
-#include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/CategoryTrackListQuery.h>
-#include <core/library/query/local/SavePlaylistQuery.h>
+#include <core/library/query/local/DirectoryTrackListQuery.h>
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
 #include <app/util/Hotkeys.h>
@@ -97,12 +93,17 @@ void DirectoryLayout::InitializeWindows() {
         this, &DirectoryLayout::OnDirectoryChanged);
 }
 
+void DirectoryLayout::SetDirectory(const std::string& directory) {
+
+}
+
 void DirectoryLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
-    // if (visible) {
+    if (visible) {
+        this->RequeryTrackList(this->trackList.get());
     //     this->categoryList->Requery();
-    // }
+    }
 }
 
 void DirectoryLayout::RequeryTrackList(ListWindow *view) {
@@ -117,6 +118,9 @@ void DirectoryLayout::RequeryTrackList(ListWindow *view) {
     //         this->trackList->Clear();
     //     }
     // }
+
+    this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
+        new DirectoryTrackListQuery(this->library, "E:\\music\\amazon_new\\Cracker\\Kerosene Hat")));
 }
 
 void DirectoryLayout::OnDirectoryChanged(

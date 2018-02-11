@@ -45,6 +45,10 @@ namespace musik {
                     musik::core::ILibraryPtr library,
                     std::function<void(std::string)> callback);
 
+                static void ShowDirectoryChooser(
+                    musik::core::ILibraryPtr library,
+                    std::function<void(std::string)> callback);
+
                 static void ShowIndexer(musik::core::ILibraryPtr library);
         };
     }

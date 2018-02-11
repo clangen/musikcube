@@ -23,6 +23,11 @@
         "browse_playlist_modified": "playlist modified. press '%s' to save.",
         "browse_categories_title": "select category",
 
+        "browse_pick_path_overlay_title": "select root directory",
+        "browse_pick_path_last_directory": "last directory",
+        "browse_no_paths_overlay_error_title": "no paths configured",
+        "browse_no_paths_overlay_error_message": "you have not configured any metadata paths.\n\nyou must add at least one path in the settings screen before you can browse by directory.",
+
         "console_command_output_title": "command output",
         "console_debug_logs_title": "debug logs",
         "console_command_title": "command",
