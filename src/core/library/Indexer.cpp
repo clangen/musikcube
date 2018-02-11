@@ -679,8 +679,9 @@ void Indexer::SyncCleanup() {
     this->dbConnection.Execute("DELETE FROM meta_values WHERE id NOT IN (SELECT DISTINCT(meta_value_id) FROM track_meta)");
     this->dbConnection.Execute("DELETE FROM meta_keys WHERE id NOT IN (SELECT DISTINCT(meta_key_id) FROM meta_values)");
 
-    /* orphaned replay gain */
+    /* orphaned replay gain and directories */
     this->dbConnection.Execute("DELETE FROM replay_gain WHERE track_id NOT IN (SELECT id FROM tracks)");
+    this->dbConnection.Execute("DELETE FROM directories WHERE directory_id NOT IN (SELECT DISTINCT directory_id FROM tracks)");
 
     /* NOTE: we used to remove orphaned local library tracks here, but we don't anymore because
     the indexer generates stable external ids by hashing various file and metadata fields */

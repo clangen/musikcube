@@ -700,6 +700,42 @@ int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
         ARTIST_TRACK_FOREIGN_KEY);
 }
 
+void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename) {
+    try {
+        std::string dir = boost::filesystem::path(filename).parent_path().string();
+        int64_t dirId = -1;
+        if (metadataIdCache.find("directoryId-" + dir) != metadataIdCache.end()) {
+            dirId = metadataIdCache["directoryId-" + dir];
+        }
+        else {
+            db::Statement find("SELECT id FROM directories WHERE directory=?", db);
+            find.BindText(0, dir.c_str());
+            if (find.Step() == db::Row) {
+                dirId = find.ColumnInt64(0);
+            }
+            else {
+                db::Statement insert("INSERT INTO directories (directory) VALUES (?)", db);
+                insert.BindText(0, dir);
+                if (insert.Step() == db::Done) {
+                    dirId = db.LastInsertedId();
+                }
+            }
+
+            if (dirId != -1) {
+                db::Statement update("UPDATE tracks SET directory_id=? WHERE id=?", db);
+                update.BindInt64(0, dirId);
+                update.BindInt64(1, this->id);
+                update.Step();
+            }
+        }
+
+    }
+    catch (...) {
+        /* not much we can do, but we don't want the app to die if we're
+        unable to parse its directory. */
+    }
+}
+
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
     std::unique_lock<std::mutex> lock(sharedWriteMutex);
 
@@ -765,6 +801,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     }
 
     ProcessNonStandardMetadata(dbConnection);
+    SaveDirectory(dbConnection, this->GetString("filename"));
     SaveReplayGain(dbConnection);
 
     return true;

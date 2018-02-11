@@ -50,7 +50,7 @@ using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 
-#define DATABASE_VERSION 7
+#define DATABASE_VERSION 8
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -341,6 +341,12 @@ static void upgradeV6ToV7(db::Connection& db) {
     scheduleSyncDueToDbUpgrade = true;
 }
 
+static void upgradeV7ToV8(db::Connection& db) {
+    db.Execute("ALTER TABLE tracks ADD COLUMN directory_id INTEGER");
+    LocalLibrary::InvalidateTrackMetadata(db);
+    scheduleSyncDueToDbUpgrade = true;
+}
+
 static void setVersion(db::Connection& db, int version) {
     db.Execute("DELETE FROM version");
 
@@ -363,6 +369,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "visual_artist_id INTEGER DEFAULT 0,"
             "album_artist_id INTEGER DEFAULT 0,"
             "path_id INTEGER,"
+            "directory_id INTEGER,"
             "album_id INTEGER DEFAULT 0,"
             "title TEXT DEFAULT '',"
             "filename TEXT DEFAULT '',"
@@ -428,12 +435,17 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "thumbnail_id INTEGER default 0,"
             "sort_order INTEGER DEFAULT 0)");
 
-    /* paths */
+    /* indexer paths */
     db.Execute(
         "CREATE TABLE IF NOT EXISTS paths ("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "path TEXT default ''"
-            ")");
+            "path TEXT default '')");
+
+    /* browse directories */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS directories ("
+        "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "directory TEXT NOT NULL)");
 
     /* thumbnails */
     db.Execute(
@@ -559,6 +571,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     if (lastVersion >= 1 && lastVersion < 7) {
         upgradeV6ToV7(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 8) {
+        upgradeV7ToV8(db);
     }
 
     /* ensure our version is set correctly */

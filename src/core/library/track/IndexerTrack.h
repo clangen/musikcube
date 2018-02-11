@@ -130,6 +130,10 @@ namespace musik { namespace core {
                 const std::string& relationJunctionTableName = "",
                 const std::string& relationJunctionTableColumn = "");
 
+            void SaveDirectory(
+                db::Connection& dbConnection,
+                const std::string& filename);
+
             void SaveReplayGain(db::Connection& dbConnection);
 
             void ProcessNonStandardMetadata(db::Connection& connection);
