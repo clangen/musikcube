@@ -3,6 +3,7 @@ set (CUBE_SRCS
 	./stdafx.cpp
 	./app/layout/BrowseLayout.cpp
 	./app/layout/ConsoleLayout.cpp
+	./app/layout/DirectoryLayout.cpp
 	./app/layout/SettingsLayout.cpp
 	./app/layout/LibraryLayout.cpp
 	./app/layout/MainLayout.cpp

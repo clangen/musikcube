@@ -42,6 +42,7 @@
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
 
+#include <app/overlay/BrowseOverlays.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -136,8 +137,11 @@ void LibraryLayout::ShowNowPlaying() {
     this->ChangeMainLayout(this->nowPlayingLayout);
 }
 
-void LibraryLayout::ShowBrowse() {
+void LibraryLayout::ShowBrowse(const std::string& category) {
     this->ChangeMainLayout(this->browseLayout);
+    if (category.size()) {
+        this->browseLayout->SwitchCategory(category);
+    }
 }
 
 void LibraryLayout::ShowSearch() {
@@ -152,8 +156,13 @@ void LibraryLayout::ShowTrackSearch() {
         : this->ChangeMainLayout(this->trackSearch);
 }
 
+void LibraryLayout::ShowDirectories() {
+    this->ChangeMainLayout(this->directoryLayout);
+}
+
 void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
+    this->directoryLayout.reset(new DirectoryLayout(this->playback, this->library));
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
     this->searchLayout.reset(new SearchLayout(this->playback, this->library));
     this->searchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnSearchResultSelected);
@@ -196,7 +205,6 @@ void LibraryLayout::UpdateShortcutsWindow() {
         if (this->shortcuts->IsFocused() && this->visibleLayout) {
             this->visibleLayout->SetFocus(IWindowPtr());
         }
-
         if (this->visibleLayout == this->browseLayout) {
             this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryBrowse));
         }
@@ -327,6 +335,39 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {
+    if (this->visibleLayout == this->browseLayout ||
+        this->visibleLayout == this->directoryLayout)
+    {
+        if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
+            this->ShowBrowse(constants::Track::ARTIST);
+            return true;
+        }
+        else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
+            this->ShowBrowse(constants::Track::ALBUM);
+            return true;
+        }
+        else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
+            this->ShowBrowse(constants::Track::GENRE);
+            return true;
+        }
+        else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
+            this->ShowBrowse(constants::Track::ALBUM_ARTIST);
+            return true;
+        }
+        else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowsePlaylists, key)) {
+            this->ShowBrowse(constants::Playlists::TABLE_NAME);
+            return true;
+        }
+        else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseChooseCategory, key)) {
+            BrowseOverlays::ShowCategoryChooser(
+                this->library,
+                [this](std::string category) {
+                    this->ShowBrowse(category);
+                });
+            return true;
+        }
+    }
+
     if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, key)) {
         this->ShowNowPlaying();
         return true;
@@ -341,6 +382,10 @@ bool LibraryLayout::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryTracks, key)) {
         this->ShowTrackSearch();
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseDirectories, key)) {
+        this->ShowDirectories();
         return true;
     }
     else if (this->GetFocus() == this->transportView && Hotkeys::Is(Hotkeys::Up, key)) {

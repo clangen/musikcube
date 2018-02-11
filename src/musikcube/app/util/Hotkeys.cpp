@@ -71,6 +71,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_library_album_artists", Id::NavigateLibraryBrowseAlbumArtists },
     { "navigate_library_playlists", Id::NavigateLibraryBrowsePlaylists },
     { "navigate_library_choose_category", Id::NavigateLibraryBrowseChooseCategory },
+    { "navigate_library_browse_directories", Id::NavigateLibraryBrowseDirectories },
     { "navigate_library_filter", Id::NavigateLibraryFilter },
     { "navigate_library_tracks", Id::NavigateLibraryTracks },
     { "navigate_library_play_queue", Id::NavigateLibraryPlayQueue },
@@ -132,6 +133,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibraryBrowseAlbumArtists, "4" },
     { Id::NavigateLibraryBrowsePlaylists, "5" },
     { Id::NavigateLibraryBrowseChooseCategory, "6" },
+    { Id::NavigateLibraryBrowseDirectories, "d" },
 
     { Id::NavigateLibraryFilter, "f" },
     { Id::NavigateLibraryTracks, "t" },

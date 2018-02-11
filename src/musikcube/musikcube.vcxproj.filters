@@ -153,6 +153,9 @@
     <ClCompile Include="cursespp\Scrollbar.cpp">
       <Filter>cursespp\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\DirectoryLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -357,6 +360,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\Scrollbar.h">
       <Filter>cursespp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\DirectoryLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

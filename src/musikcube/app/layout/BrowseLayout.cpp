@@ -45,7 +45,6 @@
 #include <app/util/Playback.h>
 #include <app/util/Messages.h>
 #include <app/overlay/PlayQueueOverlays.h>
-#include <app/overlay/BrowseOverlays.h>
 
 #include "BrowseLayout.h"
 
@@ -264,34 +263,6 @@ bool BrowseLayout::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
         this->categoryList->Requery();
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseArtists, key)) {
-        this->SwitchCategory(constants::Track::ARTIST);
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbums, key)) {
-        this->SwitchCategory(constants::Track::ALBUM);
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseGenres, key)) {
-        this->SwitchCategory(constants::Track::GENRE);
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseAlbumArtists, key)) {
-        this->SwitchCategory(constants::Track::ALBUM_ARTIST);
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowsePlaylists, key)) {
-        this->SwitchCategory(constants::Playlists::TABLE_NAME);
-        return true;
-    }
-    else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseChooseCategory, key)) {
-        BrowseOverlays::ShowCategoryChooser(
-            this->library,
-            [this](std::string category) {
-                this->SwitchCategory(category);
-            });
         return true;
     }
     else if (ProcessPlaylistOperation(key)) {

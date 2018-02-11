@@ -65,15 +65,15 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+
                 void ScrollTo(const std::string& fieldType, int64_t fieldId);
+                void SwitchCategory(const std::string& fieldName);
 
             protected:
                 virtual void OnLayout();
 
             private:
                 void InitializeWindows();
-
-                void SwitchCategory(const std::string& fieldName);
 
                 void OnIndexerProgress(int count);
                 void RequeryTrackList(cursespp::ListWindow *view);

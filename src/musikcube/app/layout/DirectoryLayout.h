@@ -35,13 +35,10 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
-#include <cursespp/ShortcutsWindow.h>
+#include <cursespp/TextLabel.h>
 
-#include <app/layout/BrowseLayout.h>
-#include <app/layout/DirectoryLayout.h>
-#include <app/layout/NowPlayingLayout.h>
-#include <app/layout/SearchLayout.h>
-#include <app/layout/TrackSearchLayout.h>
+#include <app/window/CategoryListView.h>
+#include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
 #include <core/audio/PlaybackService.h>
 
@@ -49,70 +46,39 @@
 
 #include <sigslot/sigslot.h>
 
-#include "ITopLevelLayout.h"
-
 namespace musik {
     namespace cube {
-        class LibraryLayout :
+        class DirectoryLayout :
             public cursespp::LayoutBase,
-            public ITopLevelLayout,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            public std::enable_shared_from_this<DirectoryLayout>,
+#endif
             public sigslot::has_slots<>
         {
             public:
-                LibraryLayout(
+                DirectoryLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
-                virtual ~LibraryLayout();
+                virtual ~DirectoryLayout();
 
-                virtual cursespp::IWindowPtr FocusNext();
-                virtual cursespp::IWindowPtr FocusPrev();
-                virtual cursespp::IWindowPtr GetFocus();
-                virtual bool SetFocus(cursespp::IWindowPtr window);
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-
-                virtual void SetShortcutsWindow(
-                    cursespp::ShortcutsWindow* w);
-
+                virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
             protected:
                 virtual void OnLayout();
-                virtual void OnAddedToParent(IWindow* newParent);
-                virtual void OnRemovedFromParent(IWindow* oldParent);
 
             private:
-                void OnSearchResultSelected(
-                    SearchLayout* layout,
-                    std::string fieldType,
-                    int64_t fieldId);
-
-                void OnMainLayoutFocusTerminated(
-                    LayoutBase::FocusDirection direction);
-
                 void InitializeWindows();
+                void RequeryTrackList(cursespp::ListWindow *view);
 
-                void ShowNowPlaying();
-                void ShowBrowse(const std::string& category = "");
-                void ShowSearch();
-                void ShowTrackSearch();
-                void ShowDirectories();
-
-                void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
-                void OnLayoutChanged();
-                void UpdateShortcutsWindow();
+                void OnDirectoryChanged(
+                    cursespp::ListWindow *view, size_t newIndex, size_t oldIndex);
 
                 musik::core::audio::PlaybackService& playback;
-                musik::core::audio::ITransport& transport;
                 musik::core::ILibraryPtr library;
-                std::shared_ptr<BrowseLayout> browseLayout;
-                std::shared_ptr<DirectoryLayout> directoryLayout;
-                std::shared_ptr<TransportWindow> transportView;
-                std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
-                std::shared_ptr<SearchLayout> searchLayout;
-                std::shared_ptr<TrackSearchLayout> trackSearch;
-                std::shared_ptr<cursespp::LayoutBase> visibleLayout;
-                cursespp::ShortcutsWindow* shortcuts;
+                std::shared_ptr<cursespp::ListWindow> directoryList;
+                std::shared_ptr<TrackListView> trackList;
         };
     }
 }

@@ -141,6 +141,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="app\layout\BrowseLayout.cpp" />
+    <ClCompile Include="app\layout\DirectoryLayout.cpp" />
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
     <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
@@ -198,6 +199,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app\layout\BrowseLayout.h" />
+    <ClInclude Include="app\layout\DirectoryLayout.h" />
     <ClInclude Include="app\layout\ITopLevelLayout.h" />
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\ConsoleLayout.h" />

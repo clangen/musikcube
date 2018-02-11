@@ -19,6 +19,7 @@
         "browse_title_category": "category",
         "browse_title_tracks": "tracks",
         "browse_title_playlists": "playlists",
+        "browse_title_directory": "directory",
         "browse_playlist_modified": "playlist modified. press '%s' to save.",
         "browse_categories_title": "select category",
 
