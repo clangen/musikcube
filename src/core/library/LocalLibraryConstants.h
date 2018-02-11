@@ -64,6 +64,7 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* ARTIST = "artist";
         static const char* ALBUM = "album";
         static const char* ALBUM_ARTIST = "album_artist";
+        static const char* DIRECTORY = "directory";
     }
 
     namespace Genres {

@@ -708,13 +708,13 @@ void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename
             dirId = metadataIdCache["directoryId-" + dir];
         }
         else {
-            db::Statement find("SELECT id FROM directories WHERE directory=?", db);
+            db::Statement find("SELECT id FROM directories WHERE name=?", db);
             find.BindText(0, dir.c_str());
             if (find.Step() == db::Row) {
                 dirId = find.ColumnInt64(0);
             }
             else {
-                db::Statement insert("INSERT INTO directories (directory) VALUES (?)", db);
+                db::Statement insert("INSERT INTO directories (name) VALUES (?)", db);
                 insert.BindText(0, dir);
                 if (insert.Step() == db::Done) {
                     dirId = db.LastInsertedId();

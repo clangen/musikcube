@@ -217,6 +217,9 @@
     <ClCompile Include="audio\MasterTransport.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\DirectoryTrackListQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -521,6 +524,9 @@
     </ClInclude>
     <ClInclude Include="audio\MasterTransport.h">
       <Filter>src\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\DirectoryTrackListQuery.h">
+      <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

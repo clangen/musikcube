@@ -445,7 +445,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
     db.Execute(
         "CREATE TABLE IF NOT EXISTS directories ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-        "directory TEXT NOT NULL)");
+        "name TEXT NOT NULL)");
 
     /* thumbnails */
     db.Execute(

@@ -57,15 +57,17 @@ namespace musik { namespace core { namespace db { namespace local {
             { constants::Track::ALBUM, "album_id" },
             { constants::Track::ARTIST, "visual_artist_id" },
             { constants::Track::ALBUM_ARTIST, "album_artist_id" },
-            { constants::Track::GENRE, "visual_genre_id" }
+            { constants::Track::GENRE, "visual_genre_id" },
+            { constants::Track::DIRECTORY, "directory_id" }
         };
 
         /* resource type to a pair { <table_name>, <track_table_fk_name> } */
         static std::map<std::string, std::pair<std::string, std::string>> REGULAR_PROPERTY_MAP = {
-            { "album",{ "albums", "album_id" } },
-            { "artist",{ "artists", "visual_artist_id" } },
-            { "album_artist",{ "artists", "album_artist_id" } },
-            { "genre",{ "genres", "visual_genre_id" } }
+            { "album", { "albums", "album_id" } },
+            { "artist", { "artists", "visual_artist_id" } },
+            { "album_artist", { "artists", "album_artist_id" } },
+            { "genre", { "genres", "visual_genre_id" } },
+            { "directory", { "directories", "directory_id" } }
         };
 
         static const std::string REGULAR_PREDICATE = " tracks.{{fk_id}}=? ";
