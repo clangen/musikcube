@@ -73,8 +73,9 @@ namespace musik {
             private:
                 void InitializeWindows();
                 void Refresh(bool requery = false);
-                void Requery();
+                void Requery(bool invalidate = false);
                 void RequeryTrackList(cursespp::ListWindow *view);
+                void UpdateTitle();
                 bool IsParentSelected();
                 bool IsParentRoot();
 
@@ -89,6 +90,8 @@ namespace musik {
                     size_t newIndex,
                     size_t oldIndex);
 
+                void OnIndexerProgress(int count);
+
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
                 std::string rootDirectory;
@@ -96,6 +99,7 @@ namespace musik {
                 std::shared_ptr<cursespp::ListWindow> directoryList;
                 std::shared_ptr<TrackListView> trackList;
                 size_t queryHash;
+                bool hasSubdirectories;
         };
     }
 }

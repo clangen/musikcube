@@ -22,6 +22,7 @@
         "browse_title_directory": "directory",
         "browse_playlist_modified": "playlist modified. press '%s' to save.",
         "browse_categories_title": "select category",
+        "browse_title_directory_tracks": "tracks in ",
 
         "browse_pick_path_overlay_title": "select root directory",
         "browse_pick_path_last_directory": "last directory",

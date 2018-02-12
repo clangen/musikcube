@@ -64,8 +64,11 @@ DirectoryLayout::DirectoryLayout(
 : LayoutBase()
 , playback(playback)
 , library(library)
-, queryHash(0) {
+, queryHash(0)
+, hasSubdirectories(true) {
     this->InitializeWindows();
+    this->library->Indexer()->Progress.connect(this, &DirectoryLayout::OnIndexerProgress);
+    this->library->Indexer()->Finished.connect(this, &DirectoryLayout::OnIndexerProgress);
 }
 
 DirectoryLayout::~DirectoryLayout() {
@@ -74,11 +77,20 @@ DirectoryLayout::~DirectoryLayout() {
 void DirectoryLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
     size_t x = 0, y = 0;
-    size_t directoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
-    this->directoryList->MoveAndResize(x, y, directoryWidth, cy);
-    this->trackList->MoveAndResize(x + directoryWidth, y, cx - directoryWidth, cy);
-    this->directoryList->SetFocusOrder(0);
-    this->trackList->SetFocusOrder(1);
+
+    if (this->hasSubdirectories) {
+        size_t directoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
+        this->directoryList->Show();
+        this->directoryList->MoveAndResize(x, y, directoryWidth, cy);
+        this->trackList->MoveAndResize(x + directoryWidth, y, cx - directoryWidth, cy);
+        this->directoryList->SetFocusOrder(0);
+        this->trackList->SetFocusOrder(1);
+    }
+    else {
+        this->directoryList->Hide();
+        this->trackList->MoveAndResize(x, y, cx, cy);
+        this->trackList->SetFocusOrder(0);
+    }
 }
 
 void DirectoryLayout::InitializeWindows() {
@@ -114,6 +126,7 @@ void DirectoryLayout::SetDirectory(const std::string& directory) {
     this->rootDirectory = directory;
     this->adapter->SetRootDirectory(directory);
     this->directoryList->SetSelectedIndex(0);
+    this->UpdateTitle();
     this->Refresh(true);
 }
 
@@ -122,6 +135,10 @@ void DirectoryLayout::OnVisibilityChanged(bool visible) {
     if (visible) {
         this->Refresh(true);
     }
+}
+
+void DirectoryLayout::OnIndexerProgress(int count) {
+    this->Requery(true);
 }
 
 void DirectoryLayout::RequeryTrackList(ListWindow *view) {
@@ -156,15 +173,28 @@ void DirectoryLayout::RequeryTrackList(ListWindow *view) {
 void DirectoryLayout::OnDirectoryChanged(
     ListWindow *view, size_t newIndex, size_t oldIndex)
 {
+    this->UpdateTitle();
     this->RequeryTrackList(view);
+}
+
+void DirectoryLayout::UpdateTitle() {
+    std::string title =
+        _TSTR("browse_title_directory_tracks") +
+        this->adapter->GetCurrentPath();
+
+    this->trackList->SetFrameTitle(title);
 }
 
 void DirectoryLayout::Refresh(bool requery) {
     this->adapter->Refresh();
+    this->hasSubdirectories = this->adapter->HasSubDirectories();
     if (requery) { this->Requery(); }
 }
 
-void DirectoryLayout::Requery() {
+void DirectoryLayout::Requery(bool invalidate) {
+    if (invalidate) {
+        this->queryHash = 0;
+    }
     this->RequeryTrackList(this->directoryList.get());
 }
 

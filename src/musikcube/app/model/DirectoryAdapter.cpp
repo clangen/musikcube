@@ -46,7 +46,7 @@ using namespace cursespp;
 using namespace boost::filesystem;
 
 #ifdef WIN32
-void buildDriveList(std::vector<std::string>& target) {
+static void buildDriveList(std::vector<std::string>& target) {
     target.clear();
     static char buffer[4096];
     DWORD result = ::GetLogicalDriveStringsA(4096, buffer);
@@ -60,7 +60,30 @@ void buildDriveList(std::vector<std::string>& target) {
 }
 #endif
 
-void buildDirectoryList(
+static bool hasSubdirectories(
+    boost::filesystem::path p, bool showDotfiles)
+{
+    try {
+        directory_iterator end;
+        directory_iterator file(p);
+
+        while (file != end) {
+            if (is_directory(file->status())) {
+                if (showDotfiles || file->path().leaf().string()[0] != '.') {
+                    return true;
+                }
+            }
+            ++file;
+        }
+    }
+    catch (...) {
+    }
+
+    return false;
+}
+
+
+static void buildDirectoryList(
     const path& p,
     std::vector<std::string>& target,
     bool showDotfiles)
@@ -82,7 +105,6 @@ void buildDirectoryList(
         }
     }
     catch (...) {
-        /* todo: log maybe? */
     }
 
     std::sort(target.begin(), target.end(), std::locale(""));
@@ -228,9 +250,11 @@ bool DirectoryAdapter::HasSubDirectories(size_t index) {
     }
 
     index = hasParent ? index - 1 : index;
-    std::vector<std::string> subdirs;
-    buildDirectoryList(this->dir / this->subdirs[index], subdirs, this->showDotfiles);
-    return subdirs.size() > 0;
+    return hasSubdirectories(this->dir / this->subdirs[index], this->showDotfiles);
+}
+
+bool DirectoryAdapter::HasSubDirectories() {
+    return hasSubdirectories(this->dir, this->showDotfiles);
 }
 
 IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {

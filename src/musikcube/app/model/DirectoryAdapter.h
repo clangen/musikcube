@@ -58,6 +58,7 @@ namespace musik {
                 std::string GetFullPathAt(size_t index);
                 std::string GetLeafAt(size_t index);
                 bool HasSubDirectories(size_t index);
+                bool HasSubDirectories();
                 void SetRootDirectory(const std::string& fullPath);
                 void SetAllowEscapeRoot(bool allowEscape);
                 size_t IndexOf(const std::string& leaf);
