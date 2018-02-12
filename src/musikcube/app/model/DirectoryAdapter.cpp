@@ -88,6 +88,10 @@ void buildDirectoryList(
     std::sort(target.begin(), target.end(), std::locale(""));
 }
 
+static std::string normalizePath(boost::filesystem::path path) {
+    return musik::core::NormalizeDir(path.string());
+}
+
 DirectoryAdapter::DirectoryAdapter() {
     this->showDotfiles = false;
     this->dir = musik::core::GetHomeDirectory();
@@ -98,11 +102,16 @@ DirectoryAdapter::~DirectoryAdapter() {
 
 }
 
-size_t DirectoryAdapter::Select(cursespp::ListWindow* window, size_t index) {
-    bool hasParent = dir.has_parent_path();
-    size_t selectedIndex = 0;
+void DirectoryAdapter::SetAllowEscapeRoot(bool allow) {
+    this->allowEscapeRoot = allow;
+}
 
-    if (hasParent && index == 0) {
+size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
+    bool hasParent = this->ShowParentPath();
+    size_t selectedIndex = NO_INDEX;
+    size_t initialIndex = window->GetSelectedIndex();
+
+    if (hasParent && initialIndex == 0) {
         if (selectedIndexStack.size()) {
             selectedIndex = this->selectedIndexStack.top();
             this->selectedIndexStack.pop();
@@ -111,8 +120,8 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window, size_t index) {
         this->dir = this->dir.parent_path();
     }
     else {
-        selectedIndexStack.push(window->GetSelectedIndex());
-        dir /= this->subdirs[hasParent ? index - 1 : index];
+        selectedIndexStack.push(initialIndex);
+        this->dir /= this->subdirs[hasParent ? initialIndex - 1 : initialIndex];
     }
 
 #ifdef WIN32
@@ -124,28 +133,57 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window, size_t index) {
         buildDriveList(subdirs);
         return selectedIndex;
     }
-
 #endif
 
     buildDirectoryList(dir, subdirs, showDotfiles);
+    window->OnAdapterChanged();
 
     return selectedIndex;
 }
 
-std::string DirectoryAdapter::GetFullPathAt(size_t index) {
-    bool hasParent = dir.has_parent_path();
+void DirectoryAdapter::SetRootDirectory(const std::string& directory) {
+    if (directory.size()) {
+        dir = rootDir = directory;
+    }
+    else {
+        dir = musik::core::GetHomeDirectory();
+        rootDir = boost::filesystem::path();
+    }
 
+    buildDirectoryList(dir, subdirs, showDotfiles);
+}
+
+std::string DirectoryAdapter::GetFullPathAt(size_t index) {
+    bool hasParent = this->ShowParentPath();
     if (hasParent && index == 0) {
         return "";
     }
 
     index = (hasParent ? index - 1 : index);
-    return (dir / this->subdirs[index]).string();
+    return normalizePath((dir / this->subdirs[index]).string());
+}
+
+std::string DirectoryAdapter::GetLeafAt(size_t index) {
+    if (this->ShowParentPath() && index == 0) {
+        return "..";
+    }
+
+    return this->subdirs[index];
+}
+
+size_t DirectoryAdapter::IndexOf(const std::string& leaf) {
+   for (size_t i = 0; i < this->subdirs.size(); i++) {
+        if (this->subdirs[i] == leaf) {
+            return i;
+        }
+    }
+
+   return NO_INDEX;
 }
 
 size_t DirectoryAdapter::GetEntryCount() {
     size_t count = subdirs.size();
-    return dir.has_parent_path() ? count + 1 : count;
+    return this->ShowParentPath() ? count + 1 : count;
 }
 
 void DirectoryAdapter::SetDotfilesVisible(bool visible) {
@@ -155,8 +193,48 @@ void DirectoryAdapter::SetDotfilesVisible(bool visible) {
     }
 }
 
+std::string DirectoryAdapter::GetParentPath() {
+    if (dir.has_parent_path() &&
+        normalizePath(this->dir) != normalizePath(this->rootDir))
+    {
+        return normalizePath(dir.parent_path().string());
+    }
+
+    return "";
+}
+
+std::string DirectoryAdapter::GetCurrentPath() {
+    return normalizePath(dir.string());
+}
+
+void DirectoryAdapter::Refresh() {
+    buildDirectoryList(dir, subdirs, showDotfiles);
+}
+
+bool DirectoryAdapter::ShowParentPath() {
+    if (normalizePath(this->dir) == normalizePath(this->rootDir)
+        && !this->allowEscapeRoot)
+    {
+        return false;
+    }
+
+    return dir.has_parent_path();
+}
+
+bool DirectoryAdapter::HasSubDirectories(size_t index) {
+    bool hasParent = this->ShowParentPath();
+    if (index == 0 && hasParent) {
+        return true;
+    }
+
+    index = hasParent ? index - 1 : index;
+    std::vector<std::string> subdirs;
+    buildDirectoryList(this->dir / this->subdirs[index], subdirs, this->showDotfiles);
+    return subdirs.size() > 0;
+}
+
 IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
-    if (dir.has_parent_path()) {
+    if (this->ShowParentPath()) {
         if (index == 0) {
             return IScrollAdapter::EntryPtr(new SingleLineEntry(".."));
         }

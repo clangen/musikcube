@@ -702,7 +702,9 @@ int64_t IndexerTrack::SaveArtist(db::Connection& dbConnection) {
 
 void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename) {
     try {
-        std::string dir = boost::filesystem::path(filename).parent_path().string();
+        std::string dir = NormalizeDir(
+            boost::filesystem::path(filename).parent_path().string());
+
         int64_t dirId = -1;
         if (metadataIdCache.find("directoryId-" + dir) != metadataIdCache.end()) {
             dirId = metadataIdCache["directoryId-" + dir];

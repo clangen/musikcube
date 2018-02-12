@@ -44,22 +44,33 @@ namespace musik {
     namespace cube {
         class DirectoryAdapter : public cursespp::ScrollAdapterBase {
             public:
+                static const size_t NO_INDEX = (size_t)-1;
+
                 DirectoryAdapter();
                 virtual ~DirectoryAdapter();
 
                 virtual size_t GetEntryCount();
                 virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
 
-                size_t Select(cursespp::ListWindow* window, size_t index);
+                size_t Select(cursespp::ListWindow* window);
+                std::string GetParentPath();
+                std::string GetCurrentPath();
                 std::string GetFullPathAt(size_t index);
-
+                std::string GetLeafAt(size_t index);
+                bool HasSubDirectories(size_t index);
+                void SetRootDirectory(const std::string& fullPath);
+                void SetAllowEscapeRoot(bool allowEscape);
+                size_t IndexOf(const std::string& leaf);
                 void SetDotfilesVisible(bool visible);
+                void Refresh();
 
             private:
-                boost::filesystem::path dir;
+                bool ShowParentPath();
+
+                boost::filesystem::path dir, rootDir;
                 std::vector<std::string> subdirs;
                 std::stack<size_t> selectedIndexStack;
-                bool showDotfiles;
+                bool showDotfiles, allowEscapeRoot;
         };
     }
 }

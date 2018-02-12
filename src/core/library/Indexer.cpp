@@ -38,7 +38,6 @@
 #include <core/library/Indexer.h>
 
 #include <core/config.h>
-#include <core/config.h>
 #include <core/library/track/IndexerTrack.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -82,17 +81,6 @@ using Thread = std::unique_ptr<boost::thread>;
 using TagReaderDestroyer = PluginFactory::ReleaseDeleter<ITagReader>;
 using DecoderDeleter = PluginFactory::ReleaseDeleter<IDecoderFactory>;
 using SourceDeleter = PluginFactory::ReleaseDeleter<IIndexerSource>;
-
-static std::string normalizeDir(std::string path) {
-    path = boost::filesystem::path(path).make_preferred().string();
-
-    std::string sep(1, boost::filesystem::path::preferred_separator);
-    if (path.substr(path.size() - 1, 1) != sep) {
-        path += sep;
-    }
-
-    return path;
-}
 
 static void openLogFile() {
     if (!logFile) {
@@ -193,7 +181,7 @@ void Indexer::Schedule(SyncType type, IIndexerSource* source) {
 void Indexer::AddPath(const std::string& path) {
     Indexer::AddRemoveContext context;
     context.add = true;
-    context.path = normalizeDir(path);
+    context.path = NormalizeDir(path);
 
     {
         boost::mutex::scoped_lock lock(this->stateMutex);
@@ -209,7 +197,7 @@ void Indexer::AddPath(const std::string& path) {
 void Indexer::RemovePath(const std::string& path) {
     Indexer::AddRemoveContext context;
     context.add = false;
-    context.path = normalizeDir(path);
+    context.path = NormalizeDir(path);
 
     {
         boost::mutex::scoped_lock lock(this->stateMutex);
@@ -472,8 +460,8 @@ void Indexer::SyncDirectory(
         return;
     }
 
-    std::string normalizedSyncRoot = normalizeDir(syncRoot);
-    std::string normalizedCurrentPath = normalizeDir(currentPath);
+    std::string normalizedSyncRoot = NormalizeDir(syncRoot);
+    std::string normalizedCurrentPath = NormalizeDir(currentPath);
     std::string leaf = boost::filesystem::path(currentPath).leaf().string(); /* trailing subdir in currentPath */
 
     /* start recursive filesystem scan */
@@ -681,7 +669,7 @@ void Indexer::SyncCleanup() {
 
     /* orphaned replay gain and directories */
     this->dbConnection.Execute("DELETE FROM replay_gain WHERE track_id NOT IN (SELECT id FROM tracks)");
-    this->dbConnection.Execute("DELETE FROM directories WHERE directory_id NOT IN (SELECT DISTINCT directory_id FROM tracks)");
+    this->dbConnection.Execute("DELETE FROM directories WHERE id NOT IN (SELECT DISTINCT directory_id FROM tracks)");
 
     /* NOTE: we used to remove orphaned local library tracks here, but we don't anymore because
     the indexer generates stable external ids by hashing various file and metadata fields */

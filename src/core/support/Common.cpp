@@ -284,3 +284,14 @@ close_and_return:
 
     return success;
 }
+
+std::string musik::core::NormalizeDir(std::string path) {
+    path = boost::filesystem::path(path).make_preferred().string();
+
+    std::string sep(1, boost::filesystem::path::preferred_separator);
+    if (path.size() && path.substr(path.size() - 1, 1) != sep) {
+        path += sep;
+    }
+
+    return path;
+}

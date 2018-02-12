@@ -157,8 +157,8 @@ void LibraryLayout::ShowTrackSearch() {
 }
 
 void LibraryLayout::ShowDirectories(const std::string& directory) {
-    this->ChangeMainLayout(this->directoryLayout);
     this->directoryLayout->SetDirectory(directory);
+    this->ChangeMainLayout(this->directoryLayout);
 }
 
 void LibraryLayout::InitializeWindows() {

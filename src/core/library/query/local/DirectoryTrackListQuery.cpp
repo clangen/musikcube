@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 #include <core/library/LocalLibraryConstants.h>
+#include <core/i18n/Locale.h>
 #include "DirectoryTrackListQuery.h"
 #include "CategoryTrackListQuery.h"
 
@@ -63,19 +64,39 @@ DirectoryTrackListQuery::~DirectoryTrackListQuery() {
 }
 
 bool DirectoryTrackListQuery::OnRun(Connection& db) {
-    Statement query("SELECT id FROM directories WHERE name=?", db);
-    query.BindText(0, this->directory);
+    result.reset(new musik::core::TrackList(this->library));
+    headers.reset(new std::set<size_t>());
 
-    if (query.Step() == db::Row) {
-        int64_t id = query.ColumnInt64(0);
+    std::string query =
+        " SELECT t.id, al.name "
+        " FROM tracks t, albums al, artists ar, genres gn "
+        " WHERE t.visible=1 AND directory_id IN ("
+        "   SELECT id FROM directories WHERE name LIKE ?)"
+        " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+        " ORDER BY al.name, disc, track, ar.name ";
 
-        auto tracklistQuery = std::make_shared<CategoryTrackListQuery>(
-            this->library, constants::Track::DIRECTORY, id, this->filter);
+    query += this->GetLimitAndOffset();
 
-        if (this->library->Enqueue(tracklistQuery, ILibrary::QuerySynchronous)) {
-            this->result = tracklistQuery->GetResult();
-            this->headers = tracklistQuery->GetHeaders();
+    Statement select(query.c_str(), db);
+    select.BindText(0, this->directory + "%");
+
+    std::string lastAlbum;
+    size_t index = 0;
+    while (select.Step() == db::Row) {
+        int64_t id = select.ColumnInt64(0);
+        std::string album = select.ColumnText(1);
+
+        if (!album.size()) {
+            album = _TSTR("tracklist_unknown_album");
         }
+
+        if (album != lastAlbum) {
+            headers->insert(index);
+            lastAlbum = album;
+        }
+
+        result->Add(id);
+        ++index;
     }
 
     return true;

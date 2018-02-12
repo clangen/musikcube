@@ -40,6 +40,7 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
+#include <app/model/DirectoryAdapter.h>
 #include <core/audio/PlaybackService.h>
 
 #include <core/library/ILibrary.h>
@@ -71,13 +72,27 @@ namespace musik {
 
             private:
                 void InitializeWindows();
+                void Refresh(bool requery = false);
+                void Requery();
                 void RequeryTrackList(cursespp::ListWindow *view);
+                bool IsParentSelected();
+                bool IsParentRoot();
+
+                int64_t DirectoryLayout::ListItemDecorator(
+                    cursespp::ScrollableWindow* scrollable,
+                    size_t index,
+                    size_t line,
+                    cursespp::IScrollAdapter::EntryPtr entry);
 
                 void OnDirectoryChanged(
-                    cursespp::ListWindow *view, size_t newIndex, size_t oldIndex);
+                    cursespp::ListWindow *view,
+                    size_t newIndex,
+                    size_t oldIndex);
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
+                std::string rootDirectory;
+                std::shared_ptr<DirectoryAdapter> adapter;
                 std::shared_ptr<cursespp::ListWindow> directoryList;
                 std::shared_ptr<TrackListView> trackList;
         };

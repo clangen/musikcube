@@ -649,14 +649,16 @@ void SettingsLayout::LoadPreferences() {
 void SettingsLayout::AddSelectedDirectory() {
     size_t index = this->browseList->GetSelectedIndex();
 
-    if (index != ListWindow::NO_SELECTION) {
-        std::string path = this->browseAdapter->GetFullPathAt(index);
+    if (index == ListWindow::NO_SELECTION) {
+        index = 0;
+    }
 
-        if (path.size()) {
-            this->indexer->AddPath(path);
-            this->RefreshAddedPaths();
-            this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
-        }
+    std::string path = this->browseAdapter->GetFullPathAt(index);
+
+    if (path.size()) {
+        this->indexer->AddPath(path);
+        this->RefreshAddedPaths();
+        this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
     }
 }
 
@@ -673,10 +675,12 @@ void SettingsLayout::RemoveSelectedDirectory() {
 }
 
 void SettingsLayout::DrillIntoSelectedDirectory() {
-    size_t selectIndexAt = this->browseAdapter->Select(
-        this->browseList.get(), this->browseList->GetSelectedIndex());
+    size_t selectIndexAt = this->browseAdapter->Select(this->browseList.get());
 
-    this->browseList->OnAdapterChanged();
+    if (selectIndexAt == DirectoryAdapter::NO_INDEX) {
+        selectIndexAt = 0;
+    }
+
     this->browseList->SetSelectedIndex(selectIndexAt);
     this->browseList->ScrollTo(selectIndexAt);
 }

@@ -37,6 +37,7 @@
 #include <core/library/query/local/DirectoryTrackListQuery.h>
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
+#include <cursespp/Colors.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 #include <app/util/Messages.h>
@@ -80,8 +81,22 @@ void DirectoryLayout::OnLayout() {
 }
 
 void DirectoryLayout::InitializeWindows() {
+    ScrollAdapterBase::ItemDecorator decorator =
+        std::bind(
+            &DirectoryLayout::ListItemDecorator,
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3,
+            std::placeholders::_4);
+
+    this->adapter = std::make_shared<DirectoryAdapter>();
+    this->adapter->SetAllowEscapeRoot(false);
+    this->adapter->SetItemDecorator(decorator);
+
     this->directoryList.reset(new ListWindow());
     this->directoryList->SetFrameTitle(_TSTR("browse_title_directory"));
+    this->directoryList->SetAdapter(this->adapter);
 
     this->trackList.reset(new TrackListView(this->playback, this->library));
     this->trackList->SetFrameTitle(_TSTR("browse_title_tracks"));
@@ -94,33 +109,32 @@ void DirectoryLayout::InitializeWindows() {
 }
 
 void DirectoryLayout::SetDirectory(const std::string& directory) {
-
+    this->rootDirectory = directory;
+    this->adapter->SetRootDirectory(directory);
+    this->Refresh();
 }
 
 void DirectoryLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
-
     if (visible) {
-        this->RequeryTrackList(this->trackList.get());
-    //     this->categoryList->Requery();
+        this->Refresh(true);
     }
 }
 
 void DirectoryLayout::RequeryTrackList(ListWindow *view) {
-    // if (view == this->categoryList.get()) {
-    //     int64_t selectedId = this->categoryList->GetSelectedId();
-    //     if (selectedId != -1) {
-    //         auto column = this->categoryList->GetFieldName();
-    //         this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-    //             new CategoryTrackListQuery(this->library, column, selectedId)));
-    //     }
-    //     else {
-    //         this->trackList->Clear();
-    //     }
-    // }
+    size_t selected = this->directoryList->GetSelectedIndex();
+    if (selected != ListWindow::NO_SELECTION) {
+        if (selected == 0 && this->adapter->GetLeafAt(0) == "..") {
+            return;
+        }
 
-    this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-        new DirectoryTrackListQuery(this->library, "E:\\music\\amazon_new\\Cracker\\Kerosene Hat")));
+        std::string fullPath = this->adapter->GetFullPathAt(selected);
+        if (fullPath.size()) {
+            fullPath = NormalizeDir(fullPath);
+            this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
+                new DirectoryTrackListQuery(this->library, fullPath)));
+        }
+    }
 }
 
 void DirectoryLayout::OnDirectoryChanged(
@@ -129,22 +143,66 @@ void DirectoryLayout::OnDirectoryChanged(
     this->RequeryTrackList(view);
 }
 
+void DirectoryLayout::Refresh(bool requery) {
+    this->adapter->Refresh();
+    if (requery) { this->Requery(); }
+}
+
+void DirectoryLayout::Requery() {
+    this->RequeryTrackList(this->directoryList.get());
+}
+
+bool DirectoryLayout::IsParentSelected() {
+    return
+        this->directoryList->GetSelectedIndex() == 0 &&
+        this->adapter->GetLeafAt(0) == "..";
+}
+
+bool DirectoryLayout::IsParentRoot() {
+    std::string root = NormalizeDir(this->rootDirectory);
+    return
+        root == this->adapter->GetParentPath() ||
+        root == this->adapter->GetCurrentPath();
+}
+
 bool DirectoryLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
-        /* if the tracklist is NOT focused (i.e. the focus is on a
-        category window), start playback from the top. */
-        if (this->GetFocus() != this->trackList) {
-            auto tracks = trackList->GetTrackList();
-            if (tracks) {
-                playback.Play(*tracks.get(), 0);
+        if (this->GetFocus() = this->directoryList) {
+            if (!this->adapter->HasSubDirectories(this->directoryList->GetSelectedIndex())) {
                 return true;
             }
+
+            size_t index = this->adapter->Select(this->directoryList.get());
+            if (index == DirectoryAdapter::NO_INDEX) {
+                index = IsParentRoot() ? 1 : 0;
+            }
+
+            this->directoryList->SetSelectedIndex(index);
+            if (!this->directoryList->IsEntryVisible(index)) {
+                this->directoryList->ScrollTo(index);
+            }
+
+            this->Requery();
         }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
-        // this->categoryList->Requery();
+        this->Refresh();
         return true;
     }
 
     return LayoutBase::KeyPress(key);
+}
+
+int64_t DirectoryLayout::ListItemDecorator(
+    ScrollableWindow* scrollable,
+    size_t index,
+    size_t line,
+    IScrollAdapter::EntryPtr entry)
+{
+    if (scrollable == this->directoryList.get()) {
+        if (this->directoryList->GetSelectedIndex() == index) {
+            return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
+        }
+    }
+    return -1;
 }
