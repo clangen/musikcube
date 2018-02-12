@@ -63,7 +63,8 @@ DirectoryLayout::DirectoryLayout(
     ILibraryPtr library)
 : LayoutBase()
 , playback(playback)
-, library(library) {
+, library(library)
+, queryHash(0) {
     this->InitializeWindows();
 }
 
@@ -109,8 +110,10 @@ void DirectoryLayout::InitializeWindows() {
 }
 
 void DirectoryLayout::SetDirectory(const std::string& directory) {
+    this->SetFocus(this->directoryList);
     this->rootDirectory = directory;
     this->adapter->SetRootDirectory(directory);
+    this->directoryList->SetSelectedIndex(0);
     this->Refresh();
 }
 
@@ -129,10 +132,19 @@ void DirectoryLayout::RequeryTrackList(ListWindow *view) {
         }
 
         std::string fullPath = this->adapter->GetFullPathAt(selected);
+
         if (fullPath.size()) {
             fullPath = NormalizeDir(fullPath);
-            this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-                new DirectoryTrackListQuery(this->library, fullPath)));
+
+            auto query = std::shared_ptr<TrackListQueryBase>(
+                new DirectoryTrackListQuery(this->library, fullPath));
+
+            auto hash = query->GetQueryHash();
+
+            if (hash != this->queryHash) {
+                this->queryHash = hash;
+                this->trackList->Requery(query);
+            }
         }
     }
 }
@@ -186,6 +198,7 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
         }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
+        this->queryHash = 0;
         this->Refresh();
         return true;
     }

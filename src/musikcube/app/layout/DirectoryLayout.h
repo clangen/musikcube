@@ -95,6 +95,7 @@ namespace musik {
                 std::shared_ptr<DirectoryAdapter> adapter;
                 std::shared_ptr<cursespp::ListWindow> directoryList;
                 std::shared_ptr<TrackListView> trackList;
+                size_t queryHash;
         };
     }
 }
