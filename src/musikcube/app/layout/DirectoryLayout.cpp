@@ -114,7 +114,7 @@ void DirectoryLayout::SetDirectory(const std::string& directory) {
     this->rootDirectory = directory;
     this->adapter->SetRootDirectory(directory);
     this->directoryList->SetSelectedIndex(0);
-    this->Refresh();
+    this->Refresh(true);
 }
 
 void DirectoryLayout::OnVisibilityChanged(bool visible) {
@@ -126,25 +126,29 @@ void DirectoryLayout::OnVisibilityChanged(bool visible) {
 
 void DirectoryLayout::RequeryTrackList(ListWindow *view) {
     size_t selected = this->directoryList->GetSelectedIndex();
-    if (selected != ListWindow::NO_SELECTION) {
-        if (selected == 0 && this->adapter->GetLeafAt(0) == "..") {
-            return;
-        }
+    std::string fullPath = "";
 
-        std::string fullPath = this->adapter->GetFullPathAt(selected);
+    if (selected == 0 && this->adapter->GetLeafAt(0) == "..") {
+        return;
+    }
+    else if (selected == ListWindow::NO_SELECTION) {
+        fullPath = this->rootDirectory; /* no sub directories */
+    }
+    else {
+        fullPath = this->adapter->GetFullPathAt(selected);
+    }
 
-        if (fullPath.size()) {
-            fullPath = NormalizeDir(fullPath);
+    if (fullPath.size()) {
+        fullPath = NormalizeDir(fullPath);
 
-            auto query = std::shared_ptr<TrackListQueryBase>(
-                new DirectoryTrackListQuery(this->library, fullPath));
+        auto query = std::shared_ptr<TrackListQueryBase>(
+            new DirectoryTrackListQuery(this->library, fullPath));
 
-            auto hash = query->GetQueryHash();
+        auto hash = query->GetQueryHash();
 
-            if (hash != this->queryHash) {
-                this->queryHash = hash;
-                this->trackList->Requery(query);
-            }
+        if (hash != this->queryHash) {
+            this->queryHash = hash;
+            this->trackList->Requery(query);
         }
     }
 }

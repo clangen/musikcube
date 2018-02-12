@@ -35,7 +35,7 @@
 #include "stdafx.h"
 
 #include <core/support/Common.h>
-
+#include <cursespp/Text.h>
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/SingleLineEntry.h>
 
@@ -241,5 +241,6 @@ IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* 
         --index;
     }
 
-    return IScrollAdapter::EntryPtr(new SingleLineEntry(this->subdirs[index]));
+    auto text = text::Ellipsize(this->subdirs[index], this->GetWidth());
+    return IScrollAdapter::EntryPtr(new SingleLineEntry(text));
 }
