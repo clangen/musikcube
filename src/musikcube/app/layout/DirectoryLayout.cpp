@@ -83,13 +83,10 @@ void DirectoryLayout::OnLayout() {
         this->directoryList->Show();
         this->directoryList->MoveAndResize(x, y, directoryWidth, cy);
         this->trackList->MoveAndResize(x + directoryWidth, y, cx - directoryWidth, cy);
-        this->directoryList->SetFocusOrder(0);
-        this->trackList->SetFocusOrder(1);
     }
     else {
         this->directoryList->Hide();
         this->trackList->MoveAndResize(x, y, cx, cy);
-        this->trackList->SetFocusOrder(0);
     }
 }
 
@@ -110,9 +107,11 @@ void DirectoryLayout::InitializeWindows() {
     this->directoryList.reset(new ListWindow());
     this->directoryList->SetFrameTitle(_TSTR("browse_title_directory"));
     this->directoryList->SetAdapter(this->adapter);
+    this->directoryList->SetFocusOrder(0);
 
     this->trackList.reset(new TrackListView(this->playback, this->library));
     this->trackList->SetFrameTitle(_TSTR("browse_title_tracks"));
+    this->trackList->SetFocusOrder(1);
 
     this->AddWindow(this->directoryList);
     this->AddWindow(this->trackList);
