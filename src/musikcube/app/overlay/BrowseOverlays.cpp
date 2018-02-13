@@ -48,8 +48,8 @@ using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 
-static std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id" };
-static std::string LAST_SELECTED;
+static const std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id" };
+static std::string lastSelectedCategory, lastSelectedDirectory;
 
 static void showNoPathsError() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -81,7 +81,7 @@ void BrowseOverlays::ShowCategoryChooser(
         auto str = value->ToString();
         if (BLACKLIST.find(str) == BLACKLIST.end()) {
             adapter->AddEntry(str);
-            if (LAST_SELECTED == str) {
+            if (lastSelectedCategory == str) {
                 index = adapter->GetEntryCount() - 1;
             }
             return true;
@@ -98,8 +98,8 @@ void BrowseOverlays::ShowCategoryChooser(
         .SetItemSelectedCallback(
         [callback, filtered]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-            LAST_SELECTED = filtered->At(index)->ToString();
-            callback(LAST_SELECTED);
+        lastSelectedCategory = filtered->At(index)->ToString();
+            callback(lastSelectedCategory);
         });
 
     cursespp::App::Overlays().Push(dialog);
@@ -118,11 +118,22 @@ void BrowseOverlays::ShowDirectoryChooser(
     if (paths->size() == 0) {
         showNoPathsError();
     }
+    else if (paths->size() == 1) {
+        if (callback) {
+            callback(paths->at(0));
+        }
+    }
     else {
         std::shared_ptr<Adapter> adapter(new Adapter());
         adapter->SetSelectable(true);
-        for (auto path : *paths) {
-            adapter->AddEntry(path);
+
+        size_t selectedIndex = 0;
+        for (size_t i = 0; i < paths->size(); i++) {
+            auto dir = paths->at(i);
+            adapter->AddEntry(dir);
+            if (dir == lastSelectedDirectory) {
+                selectedIndex = i;
+            }
         }
 
         std::shared_ptr<ListOverlay> dialog(new ListOverlay());
@@ -130,12 +141,13 @@ void BrowseOverlays::ShowDirectoryChooser(
         dialog->SetAdapter(adapter)
             .SetTitle(_TSTR("browse_pick_path_overlay_title"))
             .SetWidthPercent(80)
-            .SetSelectedIndex(0)
+            .SetSelectedIndex(selectedIndex)
             .SetItemSelectedCallback(
                 [paths, callback]
                 (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                     if (callback) {
-                        callback(paths->at(index));
+                        lastSelectedDirectory = paths->at(index);
+                        callback(lastSelectedDirectory);
                     }
                 });
 
