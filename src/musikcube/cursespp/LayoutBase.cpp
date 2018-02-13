@@ -133,6 +133,11 @@ void LayoutBase::OnParentVisibilityChanged(bool visible) {
     }
 }
 
+void LayoutBase::OnChildVisibilityChanged(bool visible, IWindow* child) {
+    Window::OnParentVisibilityChanged(visible);
+    this->IndexFocusables();
+}
+
 void LayoutBase::BringToTop() {
     Window::BringToTop();
 
@@ -211,7 +216,9 @@ void LayoutBase::IndexFocusables() {
 
     this->focusable.clear();
     for (IWindowPtr window : this->children) {
-        AddFocusable(window);
+        if (window->IsVisible()) {
+            AddFocusable(window);
+        }
     }
 
     if (focusedWindow) {
@@ -347,7 +354,7 @@ IWindowPtr LayoutBase::FocusLast() {
 }
 
 IWindowPtr LayoutBase::GetFocus() {
-    if (this->focused >= 0 && this->focusable.size() > 0) {
+    if (this->focused >= 0 && (int) this->focusable.size() > this->focused) {
         auto view = this->focusable[this->focused];
         if (view->IsVisible()) {
             return view;

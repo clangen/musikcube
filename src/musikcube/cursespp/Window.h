@@ -115,6 +115,7 @@ namespace cursespp {
 
             virtual IWindow* GetParent() const;
             virtual void OnParentVisibilityChanged(bool visible);
+            virtual void OnChildVisibilityChanged(bool visible, IWindow* child);
 
             bool HasBadBounds() { return this->badBounds; }
 

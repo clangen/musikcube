@@ -65,6 +65,7 @@ namespace cursespp {
             virtual void Hide();
             virtual void Invalidate();
             virtual void OnParentVisibilityChanged(bool visible);
+            virtual void OnChildVisibilityChanged(bool visible, IWindow* child);
 
             /* IOrderable */
             virtual void BringToTop();

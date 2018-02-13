@@ -196,12 +196,16 @@ void Window::RemoveMessage(int messageType) {
 void Window::SetParent(IWindow* parent) {
     if (this->parent != parent) {
         IWindowGroup* group = dynamic_cast<IWindowGroup*>(this->parent);
-
         IWindow* oldParent = this->parent;
+        bool visible = !!this->frame;
+
+        if (visible) {
+            this->Hide();
+        }
+
         this->parent = parent;
 
-        if (this->frame) {
-            this->Hide();
+        if (visible) {
             this->Show();
         }
 
@@ -306,6 +310,10 @@ void Window::OnAddedToParent(IWindow* newParent) {
 }
 
 void Window::OnRemovedFromParent(IWindow* oldParent) {
+    /* for subclass use */
+}
+
+void Window::OnChildVisibilityChanged(bool visible, IWindow* child) {
     /* for subclass use */
 }
 
@@ -457,37 +465,44 @@ void Window::Show() {
         return;
     }
 
+    bool notifyParent = false;
+
     if (this->badBounds) {
         if (!this->CheckForBoundsError()) {
             this->Recreate();
             this->badBounds = false;
+            notifyParent = true;
         }
-
         this->isVisibleInParent = true;
-        return;
-    }
-
-    if (this->framePanel) {
-        if (!this->isVisibleInParent) {
-            show_panel(this->framePanel);
-
-            if (this->framePanel != this->contentPanel) {
-                show_panel(this->contentPanel);
-            }
-
-            this->isVisibleInParent = true;
-            drawPending = true;
-
-            this->OnVisibilityChanged(true);
-        }
     }
     else {
-        this->Create();
-        this->isVisibleInParent = true;
+        if (this->framePanel) {
+            if (!this->isVisibleInParent) {
+                show_panel(this->framePanel);
+
+                if (this->framePanel != this->contentPanel) {
+                    show_panel(this->contentPanel);
+                }
+
+                this->isVisibleInParent = true;
+                drawPending = true;
+                notifyParent = true;
+                this->OnVisibilityChanged(true);
+            }
+        }
+        else {
+            this->Create();
+            notifyParent = true;
+            this->isVisibleInParent = true;
+        }
+
+        if (this->isDirty) {
+            this->Redraw();
+        }
     }
 
-    if (this->isDirty) {
-        this->Redraw();
+    if (notifyParent && this->parent) {
+        this->parent->OnChildVisibilityChanged(true, this);
     }
 }
 
@@ -677,20 +692,33 @@ void Window::Create() {
 
         if (hadBadBounds && this->isVisibleInParent) {
             this->OnVisibilityChanged(true);
+            if (this->parent) {
+                this->parent->OnChildVisibilityChanged(true, this);
+            }
         }
     }
 }
 
 void Window::Hide() {
+    bool notifyParent = false;
+    this->Blur();
     if (this->frame) {
         if (this->isVisibleInParent) {
             this->Destroy();
             this->isVisibleInParent = false;
             this->OnVisibilityChanged(false);
+            notifyParent = (this->parent != nullptr);
         }
     }
     else {
-        this->isVisibleInParent = false;
+        if (this->isVisibleInParent) {
+            notifyParent = (this->parent != nullptr);
+            this->isVisibleInParent = false;
+        }
+    }
+
+    if (notifyParent) {
+        this->parent->OnChildVisibilityChanged(false, this);
     }
 }
 

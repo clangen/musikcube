@@ -84,6 +84,7 @@ namespace cursespp {
             virtual bool IsFocused() = 0;
             virtual IWindow* GetParent() const = 0;
             virtual void OnParentVisibilityChanged(bool visible) = 0;
+            virtual void OnChildVisibilityChanged(bool visible, IWindow* child) = 0;
             virtual bool IsTop() = 0;
             virtual void SetFrameTitle(const std::string& title) = 0;
             virtual std::string GetFrameTitle() const = 0;
