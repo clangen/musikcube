@@ -177,9 +177,15 @@ void DirectoryLayout::OnDirectoryChanged(
 }
 
 void DirectoryLayout::UpdateTitle() {
-    std::string title =
-        _TSTR("browse_title_directory_tracks") +
-        this->adapter->GetCurrentPath();
+    std::string title = _TSTR("browse_title_tracks");
+
+    size_t selected = this->directoryList->GetSelectedIndex();
+    if (selected != ListWindow::NO_SELECTION) {
+        std::string fullPath = this->adapter->GetFullPathAt(selected);
+        if (fullPath.size()) {
+            title = _TSTR("browse_title_directory_tracks") + fullPath;
+        }
+    }
 
     this->trackList->SetFrameTitle(title);
 }
