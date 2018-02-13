@@ -134,7 +134,7 @@ void LayoutBase::OnParentVisibilityChanged(bool visible) {
 }
 
 void LayoutBase::OnChildVisibilityChanged(bool visible, IWindow* child) {
-    Window::OnParentVisibilityChanged(visible);
+    Window::OnChildVisibilityChanged(visible, child);
     this->IndexFocusables();
 }
 
