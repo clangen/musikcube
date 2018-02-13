@@ -79,7 +79,7 @@ namespace musik {
                 bool IsParentSelected();
                 bool IsParentRoot();
 
-                int64_t DirectoryLayout::ListItemDecorator(
+                int64_t ListItemDecorator(
                     cursespp::ScrollableWindow* scrollable,
                     size_t index,
                     size_t line,
