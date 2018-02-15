@@ -38,6 +38,7 @@
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
 #include <cursespp/Colors.h>
+#include <cursespp/ToastOverlay.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 #include <app/util/Messages.h>
@@ -218,8 +219,11 @@ bool DirectoryLayout::IsParentRoot() {
 
 bool DirectoryLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
-        if (this->GetFocus() = this->directoryList) {
+        if (this->GetFocus() == this->directoryList) {
             if (!this->adapter->HasSubDirectories(this->directoryList->GetSelectedIndex())) {
+                std::string message = _TSTR("browse_no_subdirectories_toast");
+                message = (boost::format(message) % Hotkeys::Get(Hotkeys::ContextMenu)).str();
+                ToastOverlay::Show(message);
                 return true;
             }
 
@@ -235,6 +239,12 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
 
             this->Requery();
         }
+    }
+    else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
+        auto tracks = this->trackList->GetTrackList();
+        auto index = this->trackList->GetSelectedTrackIndex();
+        index = (index == ListWindow::NO_SELECTION) ? 0 : index;
+        this->playback.Play(*tracks.get(), index);
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
         this->queryHash = 0;
