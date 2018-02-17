@@ -125,30 +125,31 @@ namespace musik {
 
                 std::shared_ptr<musik::core::Preferences> prefs;
 
-                std::shared_ptr<cursespp::TextLabel> localeDropdown;
-                std::shared_ptr<cursespp::TextLabel> outputDriverDropdown;
-                std::shared_ptr<cursespp::TextLabel> outputDeviceDropdown;
-                std::shared_ptr<cursespp::TextLabel> replayGainDropdown;
-                std::shared_ptr<cursespp::TextLabel> transportDropdown;
-                std::shared_ptr<cursespp::TextLabel> pluginsDropdown;
-                std::shared_ptr<cursespp::TextLabel> hotkeyDropdown;
-                std::shared_ptr<cursespp::TextLabel> serverDropdown;
-                std::shared_ptr<cursespp::TextLabel> updateDropdown;
+                using Text = std::shared_ptr<cursespp::TextLabel>;
+                Text localeDropdown;
+                Text outputDriverDropdown;
+                Text outputDeviceDropdown;
+                Text replayGainDropdown;
+                Text transportDropdown;
+                Text pluginsDropdown;
+                Text hotkeyDropdown;
+                Text serverDropdown;
+                Text updateDropdown;
+                Text themeDropdown;
 
-                std::shared_ptr<cursespp::TextLabel> themeDropdown;
-                std::shared_ptr<cursespp::Checkbox> paletteCheckbox;
-
-                std::shared_ptr<cursespp::Checkbox> dotfileCheckbox;
-                std::shared_ptr<cursespp::Checkbox> syncOnStartupCheckbox;
-                std::shared_ptr<cursespp::Checkbox> removeCheckbox;
-                std::shared_ptr<cursespp::Checkbox> seekScrubCheckbox;
-                std::shared_ptr<cursespp::Checkbox> minimizeToTrayCheckbox;
-                std::shared_ptr<cursespp::Checkbox> startMinimizedCheckbox;
-                std::shared_ptr<cursespp::Checkbox> autoUpdateCheckbox;
+                using Check = std::shared_ptr<cursespp::Checkbox>;
+                Check paletteCheckbox;
+                Check dotfileCheckbox;
+                Check syncOnStartupCheckbox;
+                Check removeCheckbox;
+                Check seekScrubCheckbox;
+                Check minimizeToTrayCheckbox;
+                Check startMinimizedCheckbox;
+                Check saveSessionCheckbox;
+                Check autoUpdateCheckbox;
 
                 std::shared_ptr<cursespp::ListWindow> browseList;
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;
-
                 std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;
 
                 std::shared_ptr<cursespp::SimpleScrollAdapter> addedPathsAdapter;

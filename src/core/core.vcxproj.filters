@@ -220,6 +220,9 @@
     <ClCompile Include="library\query\local\DirectoryTrackListQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\PersistedPlayQueueQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -526,6 +529,9 @@
       <Filter>src\audio</Filter>
     </ClInclude>
     <ClInclude Include="library\query\local\DirectoryTrackListQuery.h">
+      <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\PersistedPlayQueueQuery.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>

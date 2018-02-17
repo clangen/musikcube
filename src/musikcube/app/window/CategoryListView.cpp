@@ -74,7 +74,7 @@ CategoryListView::CategoryListView(
     const std::string& fieldName)
 : ListWindow(nullptr)
 , playback(playback) {
-    this->selectAfterQuery = 0;
+    this->selectAfterQuery = -1LL;
     this->library = library;
     this->library->QueryCompleted.connect(this, &CategoryListView::OnQueryCompleted);
     this->fieldName = fieldName;
@@ -113,6 +113,10 @@ void CategoryListView::Requery(const std::string& filter, const int64_t selectAf
     this->RequeryWithField(this->fieldName, filter, selectAfterQuery);
 }
 
+void CategoryListView::Requery(const int64_t selectAfterQuery) {
+    this->RequeryWithField(this->fieldName, this->filter, selectAfterQuery);
+}
+
 void CategoryListView::Reset() {
     this->metadata.reset(new SdkValueList()); /* ugh */
     this->OnAdapterChanged();
@@ -123,7 +127,7 @@ int64_t CategoryListView::GetSelectedId() {
     if (index != NO_SELECTION && this->metadata && index < this->metadata->Count()) {
         return this->metadata->At(index)->GetId();
     }
-    return -1;
+    return this->selectAfterQuery == -1LL ? -1LL : this->selectAfterQuery;
 }
 
 std::string CategoryListView::GetSelectedValue() {
@@ -149,7 +153,7 @@ void CategoryListView::OnTrackChanged(size_t index, musik::core::TrackPtr track)
 
 void CategoryListView::SetFieldName(const std::string& fieldName) {
     if (this->fieldName != fieldName) {
-        this->selectAfterQuery = 0;
+        this->selectAfterQuery = -1LL;
         this->fieldName = fieldName;
         this->SetSelectedIndex(0);
         this->ScrollToTop();
@@ -200,7 +204,7 @@ void CategoryListView::ScrollToPlaying() {
 bool CategoryListView::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         int64_t id = this->GetSelectedId();
-        if (id != -1) {
+        if (id != -1LL) {
             PlayQueueOverlays::ShowAddCategoryOverlay(
                 this->MessageQueue(),
                 this->playback,
@@ -223,7 +227,7 @@ void CategoryListView::OnQueryCompleted(IQuery* query) {
     auto active = this->activeQuery;
     if (active && query == active.get()) {
         int selectedIndex = -1;
-        if (this->selectAfterQuery != 0) {
+        if (this->selectAfterQuery != -1LL) {
             selectedIndex = active->GetIndexOf(this->selectAfterQuery);
         }
 

@@ -39,7 +39,8 @@
 #include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <app/util/Hotkeys.h>
-#include "SearchLayout.h"
+#include <app/util/PreferenceKeys.h>
+#include "CategorySearchLayout.h"
 
 using namespace musik::core::library::constants;
 
@@ -49,6 +50,9 @@ using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;
 
+namespace keys = musik::cube::prefs::keys;
+namespace components = musik::core::prefs::components;
+
 #define SEARCH_HEIGHT 3
 
 #define IS_CATEGORY(x) \
@@ -56,17 +60,29 @@ using namespace cursespp;
     x == this->artists || \
     x == this->genres
 
-SearchLayout::SearchLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
+CategorySearchLayout::CategorySearchLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase() {
     this->library = library;
+    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows(playback);
 }
 
-SearchLayout::~SearchLayout() {
+CategorySearchLayout::~CategorySearchLayout() {
 
 }
 
-void SearchLayout::OnLayout() {
+void CategorySearchLayout::LoadLastSession() {
+    const std::string lastFilter = this->prefs->GetString(keys::LastTrackFilter);
+    if (lastFilter.size()) {
+        this->input->SetText(lastFilter);
+    }
+}
+
+void CategorySearchLayout::SaveSession() {
+    this->prefs->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
+}
+
+void CategorySearchLayout::OnLayout() {
     size_t cx = this->GetWidth(), cy = this->GetHeight();
     size_t x = 0, y = 0;
 
@@ -92,10 +108,10 @@ void SearchLayout::OnLayout() {
     this->AddWindow(view); \
     view->SetFocusOrder(order);
 
-void SearchLayout::InitializeWindows(musik::core::audio::PlaybackService& playback) {
+void CategorySearchLayout::InitializeWindows(musik::core::audio::PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
-    this->input->TextChanged.connect(this, &SearchLayout::OnInputChanged);
-    this->input->EnterPressed.connect(this, &SearchLayout::OnEnterPressed);
+    this->input->TextChanged.connect(this, &CategorySearchLayout::OnInputChanged);
+    this->input->EnterPressed.connect(this, &CategorySearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
 
     this->AddWindow(this->input);
@@ -105,28 +121,28 @@ void SearchLayout::InitializeWindows(musik::core::audio::PlaybackService& playba
     CREATE_CATEGORY(this->genres, _TSTR("browse_title_genres"), constants::Track::GENRE, 3);
 }
 
-void SearchLayout::Requery() {
+void CategorySearchLayout::Requery() {
     const std::string& value = this->input->GetText();
     this->albums->Requery(value);
     this->artists->Requery(value);
     this->genres->Requery(value);
 }
 
-void SearchLayout::FocusInput() {
+void CategorySearchLayout::FocusInput() {
     this->SetFocus(this->input);
 }
 
-void SearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
+void CategorySearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
         this->Requery();
     }
 }
 
-void SearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
+void CategorySearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
     this->SetFocus(this->albums);
 }
 
-void SearchLayout::OnVisibilityChanged(bool visible) {
+void CategorySearchLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
@@ -134,6 +150,7 @@ void SearchLayout::OnVisibilityChanged(bool visible) {
         this->Requery();
     }
     else {
+        this->SaveSession();
         this->input->SetText("");
         this->albums->Reset();
         this->artists->Reset();
@@ -141,7 +158,7 @@ void SearchLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-bool SearchLayout::KeyPress(const std::string& key) {
+bool CategorySearchLayout::KeyPress(const std::string& key) {
     IWindowPtr focus = this->GetFocus();
     CategoryListView* category = dynamic_cast<CategoryListView*>(focus.get());
 

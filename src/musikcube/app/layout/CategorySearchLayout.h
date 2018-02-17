@@ -35,39 +35,41 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
+#include <cursespp/TextInput.h>
 #include <cursespp/TextLabel.h>
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
+
 #include <core/audio/PlaybackService.h>
-#include <core/support/Preferences.h>
 #include <core/library/ILibrary.h>
+#include <core/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
 
 namespace musik {
     namespace cube {
-        class BrowseLayout :
+        class CategorySearchLayout :
             public cursespp::LayoutBase,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<BrowseLayout>,
+            public std::enable_shared_from_this<CategorySearchLayout>,
 #endif
             public sigslot::has_slots<>
         {
             public:
-                BrowseLayout(
+                sigslot::signal3<CategorySearchLayout*, std::string, int64_t> SearchResultSelected;
+
+                CategorySearchLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
-                virtual ~BrowseLayout();
+                virtual ~CategorySearchLayout();
 
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
-                void ScrollTo(const std::string& fieldType, int64_t fieldId);
-                void SwitchCategory(const std::string& fieldName);
+                void FocusInput();
 
                 void LoadLastSession();
 
@@ -75,30 +77,22 @@ namespace musik {
                 virtual void OnLayout();
 
             private:
-                void InitializeWindows();
+                void InitializeWindows(musik::core::audio::PlaybackService& playback);
+                void Requery();
                 void SaveSession();
 
-                void OnIndexerProgress(int count);
-                void RequeryTrackList(cursespp::ListWindow *view);
+                void OnEnterPressed(cursespp::TextInput* sender);
 
-                void OnCategoryViewSelectionChanged(
-                    cursespp::ListWindow *view, size_t newIndex, size_t oldIndex);
+                void OnInputChanged(
+                    cursespp::TextInput* sender,
+                    std::string value);
 
-                void OnCategoryViewInvalidated(
-                    cursespp::ListWindow *view, size_t selectedIndex);
-
-                bool IsPlaylist();
-                bool ProcessEditOperation(const std::string& key);
-                bool ProcessPlaylistOperation(const std::string& key);
-                void ShowModifiedLabel(bool show);
-
-                bool playlistModified;
-                musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<CategoryListView> categoryList;
-                std::shared_ptr<TrackListView> trackList;
-                std::shared_ptr<cursespp::TextLabel> modifiedLabel;
+                std::shared_ptr<CategoryListView> albums;
+                std::shared_ptr<CategoryListView> artists;
+                std::shared_ptr<CategoryListView> genres;
+                std::shared_ptr<cursespp::TextInput> input;
         };
     }
 }

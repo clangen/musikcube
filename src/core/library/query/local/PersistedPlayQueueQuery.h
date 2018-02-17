@@ -34,29 +34,45 @@
 
 #pragma once
 
-#include <string>
+#include <core/library/query/local/LocalQueryBase.h>
+#include <core/audio/PlaybackService.h>
 
-namespace musik { namespace cube { namespace prefs {
+namespace musik { namespace core { namespace db { namespace local {
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string SaveSessionOnExit;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string LastPlayQueueIndex;
+    class PersistedPlayQueueQuery : public musik::core::db::LocalQueryBase {
+        public:
+            static PersistedPlayQueueQuery* Save(
+                musik::core::ILibraryPtr library,
+                musik::core::audio::PlaybackService& playback) 
+            {
+                return new PersistedPlayQueueQuery(library, playback, Type::Save);
+            }
 
-    }
+            static PersistedPlayQueueQuery* Restore(
+                musik::core::ILibraryPtr library,
+                musik::core::audio::PlaybackService& playback)
+            {
+                return new PersistedPlayQueueQuery(library, playback, Type::Restore);
+            }
 
-} } }
+            virtual ~PersistedPlayQueueQuery();
 
+            virtual std::string Name() { return "PersistedPlayQueueQuery"; }
+
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
+
+        private:
+            enum class Type { Save, Restore };
+
+            PersistedPlayQueueQuery(
+                musik::core::ILibraryPtr library,
+                musik::core::audio::PlaybackService& playback,
+                Type type);
+
+            musik::core::ILibraryPtr library;
+            musik::core::audio::PlaybackService& playback;
+            Type type;
+    };
+
+} } } }

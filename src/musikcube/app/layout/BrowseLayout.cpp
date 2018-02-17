@@ -36,13 +36,16 @@
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
+
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/SavePlaylistQuery.h>
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
+
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
+#include <app/util/PreferenceKeys.h>
 #include <app/util/Messages.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
@@ -56,6 +59,9 @@ using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;
+
+namespace keys = musik::cube::prefs::keys;
+namespace components = musik::core::prefs::components;
 
 static size_t MAX_CATEGORY_WIDTH = 40;
 static int MIN_LIST_TITLE_HEIGHT = 26;
@@ -104,10 +110,12 @@ BrowseLayout::BrowseLayout(
     this->library = library;
     this->library->Indexer()->Progress.connect(this, &BrowseLayout::OnIndexerProgress);
     this->library->Indexer()->Finished.connect(this, &BrowseLayout::OnIndexerProgress);
+    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 }
 
 BrowseLayout::~BrowseLayout() {
+    this->SaveSession();
 }
 
 void BrowseLayout::OnLayout() {
@@ -157,6 +165,21 @@ void BrowseLayout::InitializeWindows() {
         this, &BrowseLayout::OnCategoryViewInvalidated);
 }
 
+void BrowseLayout::LoadLastSession() {
+    const std::string field = prefs->GetString(keys::LastBrowseCategoryType, "");
+    const int64_t id = (int64_t) prefs->GetDouble(keys::LastBrowseCategoryId, -1.0);
+    if (field.size()) {
+        this->ScrollTo(field, id);
+    }
+}
+
+void BrowseLayout::SaveSession() {
+    const std::string type = this->categoryList->GetFieldName().c_str();
+    const double id = (double)this->categoryList->GetSelectedId();
+    this->prefs->SetString(keys::LastBrowseCategoryType, type.c_str());
+    this->prefs->SetDouble(keys::LastBrowseCategoryId, id);
+}
+
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     switch (message.Type()) {
         case cube::message::IndexerProgress: {
@@ -199,7 +222,8 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->categoryList->Requery();
+        this->categoryList->Requery(
+            this->categoryList->GetSelectedId());
     }
 }
 

@@ -46,7 +46,7 @@
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-
+#include <app/util/PreferenceKeys.h>
 #include <core/support/Playback.h>
 
 #include "LibraryLayout.h"
@@ -68,12 +68,26 @@ using namespace musik::cube;
 using namespace musik::core::runtime;
 using namespace cursespp;
 
+namespace type {
+    const std::string CategoryFilter = "CategoryFilter";
+    const std::string TrackFilter = "TrackFilter";
+    const std::string Browse = "Browse";
+    const std::string Directory = "Directory";
+    const std::string NowPlaying = "NowPlaying";
+};
+
+namespace keys = musik::cube::prefs::keys;
+namespace components = musik::core::prefs::components;
+
+#define REMEMBER(key, value) { this->prefs->SetString(key, value.c_str()); this->prefs->Save(); }
+
 LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase()
 , playback(playback)
 , shortcuts(nullptr)
 , transport(playback.GetTransport()) {
     this->library = library;
+    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 }
 
@@ -135,6 +149,7 @@ void LibraryLayout::OnLayoutChanged() {
 
 void LibraryLayout::ShowNowPlaying() {
     this->ChangeMainLayout(this->nowPlayingLayout);
+    REMEMBER(keys::LastLibraryView, type::NowPlaying);
 }
 
 void LibraryLayout::ShowBrowse(const std::string& category) {
@@ -142,36 +157,86 @@ void LibraryLayout::ShowBrowse(const std::string& category) {
     if (category.size()) {
         this->browseLayout->SwitchCategory(category);
     }
+
+    REMEMBER(keys::LastLibraryView, type::Browse);
 }
 
-void LibraryLayout::ShowSearch() {
-    SHOULD_REFOCUS(this->searchLayout)
-        ? this->searchLayout->FocusInput()
-        : this->ChangeMainLayout(this->searchLayout);
+void LibraryLayout::ShowCategorySearch() {
+    SHOULD_REFOCUS(this->categorySearchLayout)
+        ? this->categorySearchLayout->FocusInput()
+        : this->ChangeMainLayout(this->categorySearchLayout);
+
+    REMEMBER(keys::LastLibraryView, type::CategoryFilter);
 }
 
 void LibraryLayout::ShowTrackSearch() {
-    SHOULD_REFOCUS(this->trackSearch)
-        ? this->trackSearch->FocusInput()
-        : this->ChangeMainLayout(this->trackSearch);
+    SHOULD_REFOCUS(this->trackSearchLayout)
+        ? this->trackSearchLayout->FocusInput()
+        : this->ChangeMainLayout(this->trackSearchLayout);
+
+    REMEMBER(keys::LastLibraryView, type::TrackFilter);
 }
 
 void LibraryLayout::ShowDirectories(const std::string& directory) {
     this->directoryLayout->SetDirectory(directory);
     this->ChangeMainLayout(this->directoryLayout);
+
+    REMEMBER(keys::LastLibraryView, type::Directory);
+    REMEMBER(keys::LastBrowseDirectoryRoot, directory);
 }
 
 void LibraryLayout::InitializeWindows() {
     this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
     this->directoryLayout.reset(new DirectoryLayout(this->playback, this->library));
     this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
-    this->searchLayout.reset(new SearchLayout(this->playback, this->library));
-    this->searchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnSearchResultSelected);
-    this->trackSearch.reset(new TrackSearchLayout(this->playback, this->library));
+    this->categorySearchLayout.reset(new CategorySearchLayout(this->playback, this->library));
+    this->categorySearchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnCategorySearchResultSelected);
+    this->trackSearchLayout.reset(new TrackSearchLayout(this->playback, this->library));
     this->transportView.reset(new TransportWindow(this->library, this->playback));
 
     this->AddWindow(this->transportView);
-    this->ShowBrowse();
+    this->LoadLastSession();
+}
+
+void LibraryLayout::LoadLastSession() {
+    if (this->prefs->GetBool(keys::SaveSessionOnExit, false)) {
+        this->nowPlayingLayout->LoadLastSession(); /* always load now playing */
+
+        const std::string type = this->prefs->GetString(keys::LastLibraryView, type::Browse);
+        if (type == type::Directory) {
+            const std::string lastDirectoryRoot =
+                this->prefs->GetString(keys::LastBrowseDirectoryRoot, "");
+
+            std::vector<std::string> paths;
+            this->library->Indexer()->GetPaths(paths);
+            for (auto p : paths) {
+                if (p == lastDirectoryRoot) {
+                    this->ShowDirectories(p);
+                    return;
+                }
+            }
+
+            this->ShowBrowse();
+        }
+        else if (type == type::CategoryFilter) {
+            this->ShowCategorySearch();
+            this->categorySearchLayout->LoadLastSession();
+        }
+        else if (type == type::TrackFilter) {
+            this->ShowTrackSearch();
+            this->trackSearchLayout->LoadLastSession();
+        }
+        else if (type == type::NowPlaying) {
+            this->ShowNowPlaying();
+        }
+        else /*if (type == type::Browse)*/ {
+            this->ShowBrowse();
+            this->browseLayout->LoadLastSession();
+        }
+    }
+    else {
+        this->ShowBrowse();
+    }
 }
 
 void LibraryLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -212,10 +277,10 @@ void LibraryLayout::UpdateShortcutsWindow() {
         else if (this->visibleLayout == nowPlayingLayout) {
             this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue));
         }
-        else if (this->visibleLayout == searchLayout) {
+        else if (this->visibleLayout == categorySearchLayout) {
             this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryFilter));
         }
-        else if (this->visibleLayout == trackSearch) {
+        else if (this->visibleLayout == trackSearchLayout) {
             this->shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibraryTracks));
         }
     }
@@ -235,8 +300,8 @@ void LibraryLayout::OnRemovedFromParent(IWindow* parent) {
     MessageQueue().UnregisterForBroadcasts(this);
 }
 
-void LibraryLayout::OnSearchResultSelected(
-    SearchLayout* layout, std::string fieldType, int64_t fieldId)
+void LibraryLayout::OnCategorySearchResultSelected(
+    CategorySearchLayout* layout, std::string fieldType, int64_t fieldId)
 {
     this->ShowBrowse();
     this->browseLayout->ScrollTo(fieldType, fieldId);
@@ -315,7 +380,7 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
 
             auto type = JUMP_TYPE_TO_COLUMN[(int)message.UserData1()];
             auto id = message.UserData2();
-            this->OnSearchResultSelected(nullptr, type, id);
+            this->OnCategorySearchResultSelected(nullptr, type, id);
         }
         break;
 
@@ -378,7 +443,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryFilter, key)) {
-        this->ShowSearch();
+        this->ShowCategorySearch();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryTracks, key)) {

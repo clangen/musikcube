@@ -40,8 +40,10 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
+#include <app/util/PreferenceKeys.h>
 #include <core/library/query/local/NowPlayingTrackListQuery.h>
 #include <core/library/query/local/GetPlaylistQuery.h>
+#include <core/library/query/local/PersistedPlayQueueQuery.h>
 #include <core/support/Duration.h>
 #include "NowPlayingLayout.h"
 
@@ -57,6 +59,9 @@ using namespace musik::cube;
 using namespace musik::core::db::local;
 using namespace cursespp;
 
+namespace keys = musik::cube::prefs::keys;
+namespace components = musik::core::prefs::components;
+
 static std::set<std::string> EDIT_KEYS;
 
 static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width);
@@ -69,6 +74,7 @@ NowPlayingLayout::NowPlayingLayout(
 , library(library)
 , lastPlaylistQueryId(-1)
 , reselectIndex(-1) {
+    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 
     this->playback.QueueEdited.connect(this, &NowPlayingLayout::RequeryTrackList);
@@ -81,7 +87,23 @@ NowPlayingLayout::NowPlayingLayout(
 }
 
 NowPlayingLayout::~NowPlayingLayout() {
+    this->SaveSession();
+}
 
+void NowPlayingLayout::LoadLastSession() {
+    auto query = std::shared_ptr<PersistedPlayQueueQuery>(
+        PersistedPlayQueueQuery::Restore(this->library, this->playback));
+
+    this->library->Enqueue(query, ILibrary::QuerySynchronous);
+}
+
+void NowPlayingLayout::SaveSession() {
+    if (this->prefs->GetBool(keys::SaveSessionOnExit, false)) {
+        auto query = std::shared_ptr<PersistedPlayQueueQuery>(
+            PersistedPlayQueueQuery::Save(this->library, this->playback));
+
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+    }
 }
 
 int64_t NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {

@@ -8,7 +8,7 @@ set (CUBE_SRCS
 	./app/layout/LibraryLayout.cpp
 	./app/layout/MainLayout.cpp
 	./app/layout/NowPlayingLayout.cpp
-	./app/layout/SearchLayout.cpp
+	./app/layout/CategorySearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp
 	./app/model/DirectoryAdapter.cpp
 	./app/overlay/BrowseOverlays.cpp

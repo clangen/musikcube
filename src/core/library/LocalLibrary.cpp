@@ -548,6 +548,12 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "meta_values.id = track_meta.meta_value_id AND "
             "meta_values.meta_key_id == meta_keys.id ");
 
+    /* session play queue table */
+    db.Execute(
+        "CREATE TABLE IF NOT EXISTS last_session_play_queue ( "
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "track_id INTEGER)");
+
     /* upgrade playlist tracks table */
     if (lastVersion == 1) {
         upgradeV1toV2(db);

@@ -34,60 +34,61 @@
 
 #pragma once
 
-#include <cursespp/LayoutBase.h>
-#include <cursespp/TextInput.h>
-#include <cursespp/TextLabel.h>
+#include "pch.hpp"
+#include "PersistedPlayQueueQuery.h"
+#include <core/db/Statement.h>
+#include <core/db/ScopedTransaction.h>
+#include <core/library/track/TrackList.h>
 
-#include <app/window/CategoryListView.h>
-#include <app/window/TrackListView.h>
-#include <app/window/TransportWindow.h>
-#include <core/audio/PlaybackService.h>
+using namespace musik::core;
+using namespace musik::core::db;
+using namespace musik::core::db::local;
 
-#include <core/library/ILibrary.h>
+PersistedPlayQueueQuery::PersistedPlayQueueQuery(
+    musik::core::ILibraryPtr library,
+    musik::core::audio::PlaybackService& playback,
+    Type type)
+: library(library)
+, playback(playback)
+, type(type)
+{
 
-#include <sigslot/sigslot.h>
+}
 
-namespace musik {
-    namespace cube {
-        class SearchLayout :
-            public cursespp::LayoutBase,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<SearchLayout>,
-#endif
-            public sigslot::has_slots<>
+PersistedPlayQueueQuery::~PersistedPlayQueueQuery() {
+
+}
+
+bool PersistedPlayQueueQuery::OnRun(musik::core::db::Connection &db) {
+    ScopedTransaction transaction(db);
+
+    if (this->type == Type::Save) {
+        TrackList tracks(this->library);
+        this->playback.CopyTo(tracks);
+
         {
-            public:
-                sigslot::signal3<SearchLayout*, std::string, int64_t> SearchResultSelected;
+            Statement deleteTracks("DELETE FROM last_session_play_queue", db);
+            deleteTracks.Step();
+        }
 
-                SearchLayout(
-                    musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
-
-                virtual ~SearchLayout();
-
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
-
-                void FocusInput();
-
-            protected:
-                virtual void OnLayout();
-
-            private:
-                void InitializeWindows(musik::core::audio::PlaybackService& playback);
-                void Requery();
-
-                void OnEnterPressed(cursespp::TextInput* sender);
-
-                void OnInputChanged(
-                    cursespp::TextInput* sender,
-                    std::string value);
-
-                musik::core::ILibraryPtr library;
-                std::shared_ptr<CategoryListView> albums;
-                std::shared_ptr<CategoryListView> artists;
-                std::shared_ptr<CategoryListView> genres;
-                std::shared_ptr<cursespp::TextInput> input;
-        };
+        {
+            Statement insert("INSERT INTO last_session_play_queue (track_id) VALUES (?)", db);
+            for (size_t i = 0; i < tracks.Count(); i++) {
+                insert.Reset();
+                insert.BindInt64(0, tracks.GetId(i));
+                insert.Step();
+            }
+        }
     }
+    else if (this->type == Type::Restore) {
+        auto editor = this->playback.Edit();
+        editor.Clear();
+
+        Statement query("SELECT track_id FROM last_session_play_queue ORDER BY id ASC", db);
+        while (query.Step() == db::Row) {
+            editor.Add(query.ColumnInt64(0));
+        }
+    }
+
+    return true;
 }

@@ -40,6 +40,7 @@
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
 #include <core/audio/PlaybackService.h>
+#include <core/support/Preferences.h>
 
 #include <core/library/ILibrary.h>
 
@@ -64,12 +65,15 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
+                void LoadLastSession();
+
             protected:
                 virtual void OnLayout();
 
             private:
                 void InitializeWindows();
                 void RequeryTrackList();
+                void SaveSession();
                 bool ProcessEditOperation(const std::string& key);
 
                 /* callbacks */
@@ -80,6 +84,7 @@ namespace musik {
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<TrackListView> trackListView;
+                std::shared_ptr<musik::core::Preferences> prefs;
                 int reselectIndex; /* sigh... */
                 int lastPlaylistQueryId;
         };

@@ -145,7 +145,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
     <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
-    <ClCompile Include="app\layout\SearchLayout.cpp" />
+    <ClCompile Include="app\layout\CategorySearchLayout.cpp" />
     <ClCompile Include="app\layout\MainLayout.cpp" />
     <ClCompile Include="app\layout\SettingsLayout.cpp" />
     <ClCompile Include="app\layout\TrackSearchLayout.cpp" />
@@ -204,7 +204,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e</
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\ConsoleLayout.h" />
     <ClInclude Include="app\layout\NowPlayingLayout.h" />
-    <ClInclude Include="app\layout\SearchLayout.h" />
+    <ClInclude Include="app\layout\CategorySearchLayout.h" />
     <ClInclude Include="app\layout\MainLayout.h" />
     <ClInclude Include="app\layout\SettingsLayout.h" />
     <ClInclude Include="app\layout\TrackSearchLayout.h" />

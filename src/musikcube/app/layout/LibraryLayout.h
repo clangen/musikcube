@@ -40,11 +40,11 @@
 #include <app/layout/BrowseLayout.h>
 #include <app/layout/DirectoryLayout.h>
 #include <app/layout/NowPlayingLayout.h>
-#include <app/layout/SearchLayout.h>
+#include <app/layout/CategorySearchLayout.h>
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
 #include <core/audio/PlaybackService.h>
-
+#include <core/support/Preferences.h>
 #include <core/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
@@ -82,8 +82,10 @@ namespace musik {
                 virtual void OnRemovedFromParent(IWindow* oldParent);
 
             private:
-                void OnSearchResultSelected(
-                    SearchLayout* layout,
+                void LoadLastSession();
+
+                void OnCategorySearchResultSelected(
+                    CategorySearchLayout* layout,
                     std::string fieldType,
                     int64_t fieldId);
 
@@ -94,7 +96,7 @@ namespace musik {
 
                 void ShowNowPlaying();
                 void ShowBrowse(const std::string& category = "");
-                void ShowSearch();
+                void ShowCategorySearch();
                 void ShowTrackSearch();
                 void ShowDirectories(const std::string& directory);
 
@@ -105,12 +107,13 @@ namespace musik {
                 musik::core::audio::PlaybackService& playback;
                 musik::core::audio::ITransport& transport;
                 musik::core::ILibraryPtr library;
+                std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<BrowseLayout> browseLayout;
                 std::shared_ptr<DirectoryLayout> directoryLayout;
                 std::shared_ptr<TransportWindow> transportView;
                 std::shared_ptr<NowPlayingLayout> nowPlayingLayout;
-                std::shared_ptr<SearchLayout> searchLayout;
-                std::shared_ptr<TrackSearchLayout> trackSearch;
+                std::shared_ptr<CategorySearchLayout> categorySearchLayout;
+                std::shared_ptr<TrackSearchLayout> trackSearchLayout;
                 std::shared_ptr<cursespp::LayoutBase> visibleLayout;
                 cursespp::ShortcutsWindow* shortcuts;
         };

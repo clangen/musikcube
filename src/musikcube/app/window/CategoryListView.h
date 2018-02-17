@@ -68,11 +68,13 @@ namespace musik {
                 void RequeryWithField(
                     const std::string& fieldName,
                     const std::string& filter = "",
-                    const int64_t selectAfterQuery = 0);
+                    const int64_t selectAfterQuery = -1LL);
 
                 void Requery(
                     const std::string& filter = "",
-                    const int64_t selectAfterQuery = 0);
+                    const int64_t selectAfterQuery = -1LL);
+
+                void Requery(const int64_t selectAfterQuery);
 
                 virtual bool KeyPress(const std::string& key);
 

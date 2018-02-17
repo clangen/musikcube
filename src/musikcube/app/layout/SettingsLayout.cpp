@@ -196,6 +196,9 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->prefs->SetBool(cube::prefs::keys::StartMinimized, checked);
     }
 #endif
+    else if (cb == saveSessionCheckbox.get()) {
+        this->prefs->SetBool(cube::prefs::keys::SaveSessionOnExit, checked);
+    }
     else if (cb == autoUpdateCheckbox.get()) {
         this->prefs->SetBool(cube::prefs::keys::AutoUpdateCheck, checked);
     }
@@ -330,6 +333,7 @@ void SettingsLayout::OnLayout() {
     this->minimizeToTrayCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
+    this->saveSessionCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->autoUpdateCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 
     y++;
@@ -438,6 +442,7 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->minimizeToTrayCheckbox, _TSTR("settings_minimize_to_tray"));
     CREATE_CHECKBOX(this->startMinimizedCheckbox, _TSTR("settings_start_minimized"));
 #endif
+    CREATE_CHECKBOX(this->saveSessionCheckbox, _TSTR("settings_save_session_on_exit"));
     CREATE_CHECKBOX(this->autoUpdateCheckbox, _TSTR("settings_auto_update_check"));
 
     int order = 0;
@@ -467,6 +472,7 @@ void SettingsLayout::InitializeWindows() {
     this->minimizeToTrayCheckbox->SetFocusOrder(order++);
     this->startMinimizedCheckbox->SetFocusOrder(order++);
 #endif
+    this->saveSessionCheckbox->SetFocusOrder(order++);
     this->autoUpdateCheckbox->SetFocusOrder(order++);
     this->updateDropdown->SetFocusOrder(order++);
 
@@ -497,6 +503,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->minimizeToTrayCheckbox);
     this->AddWindow(this->startMinimizedCheckbox);
 #endif
+    this->AddWindow(this->saveSessionCheckbox);
     this->AddWindow(this->autoUpdateCheckbox);
     this->AddWindow(updateDropdown);
 }
@@ -622,6 +629,7 @@ void SettingsLayout::LoadPreferences() {
     this->minimizeToTrayCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::MinimizeToTray, false));
     this->startMinimizedCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::StartMinimized, false));
 #endif
+    this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::SaveSessionOnExit, false));
     this->autoUpdateCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true));
 
     /* output driver */

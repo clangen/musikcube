@@ -38,9 +38,10 @@
 #include <cursespp/TextInput.h>
 
 #include <app/window/TrackListView.h>
-#include <core/audio/PlaybackService.h>
 
+#include <core/audio/PlaybackService.h>
 #include <core/library/ILibrary.h>
+#include <core/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
 
@@ -64,12 +65,14 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key);
 
                 void FocusInput();
+                void LoadLastSession();
 
             protected:
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
                 virtual void OnLayout();
 
             private:
+                void SaveSession();
                 void InitializeWindows();
                 void Requery();
 
@@ -81,6 +84,7 @@ namespace musik {
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
+                std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextInput> input;
         };

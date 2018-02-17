@@ -30,9 +30,6 @@
     <ClCompile Include="app\layout\BrowseLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
-    <ClCompile Include="app\layout\SearchLayout.cpp">
-      <Filter>app\layout</Filter>
-    </ClCompile>
     <ClCompile Include="app\util\Playback.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
@@ -156,6 +153,9 @@
     <ClCompile Include="app\layout\DirectoryLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\CategorySearchLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -214,9 +214,6 @@
       <Filter>app\layout</Filter>
     </ClInclude>
     <ClInclude Include="app\layout\BrowseLayout.h">
-      <Filter>app\layout</Filter>
-    </ClInclude>
-    <ClInclude Include="app\layout\SearchLayout.h">
       <Filter>app\layout</Filter>
     </ClInclude>
     <ClInclude Include="app\util\Playback.h">
@@ -362,6 +359,9 @@
       <Filter>cursespp\util</Filter>
     </ClInclude>
     <ClInclude Include="app\layout\DirectoryLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\CategorySearchLayout.h">
       <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>

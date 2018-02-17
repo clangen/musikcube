@@ -36,11 +36,15 @@
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
+
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/SearchTrackListQuery.h>
+#include <core/support/PreferenceKeys.h>
+
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
 #include <app/util/Playback.h>
+#include <app/util/PreferenceKeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
 #include "TrackSearchLayout.h"
@@ -54,6 +58,9 @@ using namespace musik::core::runtime;
 using namespace musik::cube;
 using namespace cursespp;
 
+namespace keys = musik::cube::prefs::keys;
+namespace components = musik::core::prefs::components;
+
 #define SEARCH_HEIGHT 3
 #define REQUERY_INTERVAL_MS 300
 
@@ -63,10 +70,22 @@ TrackSearchLayout::TrackSearchLayout(
 : LayoutBase()
 , playback(playback)
 , library(library) {
+    this->prefs = Preferences::ForComponent(components::Settings);
     this->InitializeWindows();
 }
 
 TrackSearchLayout::~TrackSearchLayout() {
+}
+
+void TrackSearchLayout::LoadLastSession() {
+    const std::string lastFilter = this->prefs->GetString(keys::LastTrackFilter);
+    if (lastFilter.size()) {
+        this->input->SetText(lastFilter);
+    }
+}
+
+void TrackSearchLayout::SaveSession() {
+    this->prefs->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
 }
 
 void TrackSearchLayout::OnLayout() {
@@ -107,6 +126,7 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
         this->Requery();
     }
     else {
+        this->SaveSession();
         this->input->SetText("");
         this->trackList->Clear();
     }
