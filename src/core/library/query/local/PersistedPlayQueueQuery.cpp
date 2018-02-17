@@ -32,8 +32,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
 #include "pch.hpp"
 #include "PersistedPlayQueueQuery.h"
 #include <core/db/Statement.h>

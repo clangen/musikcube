@@ -41,7 +41,7 @@ namespace musik { namespace core { namespace duration {
     std::string Duration(int seconds) {
         int mins = (seconds / 60);
         int secs = seconds - (mins * 60);
-        char buffer[12];
+        char buffer[128];
         snprintf(buffer, sizeof(buffer), "%d:%02d", mins, secs);
         return std::string(buffer);
     }
