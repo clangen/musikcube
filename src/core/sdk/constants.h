@@ -40,17 +40,19 @@ namespace musik {
     namespace core {
         namespace sdk {
             enum PlaybackState {
-                PlaybackStopped,
-                PlaybackPaused,
-                PlaybackPlaying
+                PlaybackStopped = 1,
+                PlaybackPaused = 2,
+                PlaybackPrepared = 3,
+                PlaybackPlaying = 4,
             };
 
             enum StreamEventType {
                 StreamScheduled = 1,
-                StreamPlaying = 2,
-                StreamAlmostDone = 3,
-                StreamFinished = 4,
-                StreamStopped = 5,
+                StreamPrepared = 2,
+                StreamPlaying = 3,
+                StreamAlmostDone = 4,
+                StreamFinished = 5,
+                StreamStopped = 6,
                 StreamError = -1
             };
 

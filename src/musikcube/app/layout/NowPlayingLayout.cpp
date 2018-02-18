@@ -95,10 +95,22 @@ void NowPlayingLayout::LoadLastSession() {
         PersistedPlayQueueQuery::Restore(this->library, this->playback));
 
     this->library->Enqueue(query, ILibrary::QuerySynchronous);
+
+    int index = this->prefs->GetInt(keys::LastPlayQueueIndex, -1);
+    if (index >= 0) {
+        this->playback.Prepare(index);
+    }
 }
 
 void NowPlayingLayout::SaveSession() {
     if (this->prefs->GetBool(keys::SaveSessionOnExit, false)) {
+        if (playback.GetPlaybackState() != sdk::PlaybackStopped) {
+            this->prefs->SetInt(keys::LastPlayQueueIndex, (int) playback.GetIndex());
+        }
+        else {
+            this->prefs->SetInt(keys::LastPlayQueueIndex, -1);
+        }
+
         auto query = std::shared_ptr<PersistedPlayQueueQuery>(
             PersistedPlayQueueQuery::Save(this->library, this->playback));
 

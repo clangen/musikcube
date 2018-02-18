@@ -80,15 +80,15 @@ PlaybackState GaplessTransport::GetPlaybackState() {
     return this->state;
 }
 
-void GaplessTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
+void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     bool startNext = false;
     {
         LockT lock(this->stateMutex);
 
         RESET_NEXT_PLAYER(this);
 
-        if (trackUrl.size()) {
-            this->nextPlayer = Player::Create(trackUrl, this->output, Player::NoDrain, this, gain);
+        if (uri.size()) {
+            this->nextPlayer = Player::Create(uri, this->output, Player::NoDrain, this, gain);
             startNext = this->nextCanStart;
         }
     }
@@ -98,16 +98,16 @@ void GaplessTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) 
     }
 }
 
-void GaplessTransport::Start(const std::string& url, Gain gain) {
-    musik::debug::info(TAG, "we were asked to start the track at " + url);
+void GaplessTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
+    musik::debug::info(TAG, "we were asked to start the track at " + uri);
 
-    Player* newPlayer = Player::Create(url, this->output, Player::NoDrain, this, gain);
+    Player* newPlayer = Player::Create(uri, this->output, Player::NoDrain, this, gain);
     musik::debug::info(TAG, "Player created successfully");
 
-    this->StartWithPlayer(newPlayer);
+    this->StartWithPlayer(newPlayer, mode);
 }
 
-void GaplessTransport::StartWithPlayer(Player* newPlayer) {
+void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
     if (newPlayer) {
         bool playingNext = false;
 
@@ -134,8 +134,10 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer) {
         this->StopInternal(true, !playingNext, newPlayer);
         this->SetNextCanStart(false);
         this->output->Resume();
-        newPlayer->Play();
-        musik::debug::info(TAG, "play()");
+
+        if (mode == StartMode::Immediate) {
+            newPlayer->Play();
+        }
 
         this->RaiseStreamEvent(StreamScheduled, newPlayer);
     }
@@ -149,6 +151,11 @@ void GaplessTransport::ReloadOutput() {
 
 void GaplessTransport::Stop() {
     this->StopInternal(false, true);
+}
+
+std::string GaplessTransport::Uri() {
+    auto player = this->activePlayer;
+    return player ? player->GetUrl() : "";
 }
 
 void GaplessTransport::StopInternal(
@@ -284,6 +291,13 @@ void GaplessTransport::SetVolume(double volume) {
 void GaplessTransport::SetNextCanStart(bool nextCanStart) {
     LockT lock(this->stateMutex);
     this->nextCanStart = nextCanStart;
+}
+
+void GaplessTransport::OnPlayerPrepared(Player* player) {
+    if (player == this->activePlayer) {
+        this->RaiseStreamEvent(StreamPrepared, player);
+        this->SetPlaybackState(PlaybackPrepared);
+    }
 }
 
 void GaplessTransport::OnPlayerStarted(Player* player) {

@@ -69,32 +69,41 @@ PlaybackState CrossfadeTransport::GetPlaybackState() {
     return this->state;
 }
 
-void CrossfadeTransport::PrepareNextTrack(const std::string& trackUrl, Gain gain) {
+void CrossfadeTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     Lock lock(this->stateMutex);
-    this->next.Reset(trackUrl, this, gain);
+    this->next.Reset(uri, this, gain, false);
 }
 
-void CrossfadeTransport::Start(const std::string& url, Gain gain) {
+void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
     {
         Lock lock(this->stateMutex);
 
-        musik::debug::info(TAG, "trying to play " + url);
+        musik::debug::info(TAG, "trying to play " + uri);
+
+        bool immediate = mode == StartMode::Immediate;
 
         /* in many cases (e.g. the user is skipping through tracks,
         the requested track may already be queued up. use it, if it is */
-        if (this->next.player && this->next.player->GetUrl() == url) {
+        if (this->next.player && this->next.player->GetUrl() == uri) {
             this->active.Reset();
             this->next.TransferTo(this->active);
-            this->active.Start(this->volume);
+
+            if (immediate) {
+                this->active.Start(this->volume);
+            }
         }
         else {
-            this->active.Reset(url, this, gain);
+            this->active.Reset(uri, this, gain, immediate);
             this->next.Stop();
         }
-
     }
 
     this->RaiseStreamEvent(StreamScheduled, this->active.player);
+}
+
+std::string CrossfadeTransport::Uri() {
+    auto player = this->active.player;
+    return player ? player->GetUrl() : "";
 }
 
 void CrossfadeTransport::ReloadOutput() {
@@ -141,7 +150,7 @@ bool CrossfadeTransport::Resume() {
     {
         Lock lock(this->stateMutex);
         this->crossfader.Resume();
-        this->active.Resume();
+        this->active.Resume(this->volume);
     }
 
     if (this->active.player) {
@@ -262,11 +271,18 @@ void CrossfadeTransport::OnPlayerPrepared(Player* player) {
 
         if (player == active.player) {
             active.canFade = canFade;
-            active.Start(this->volume);
+            if (active.startImmediate) {
+                active.Start(this->volume);
+            }
         }
         else if (player == next.player) {
             next.canFade = canFade;
         }
+    }
+
+    if (player == this->active.player) {
+        this->RaiseStreamEvent(StreamPrepared, player);
+        this->SetPlaybackState(PlaybackPrepared);
     }
 }
 
@@ -368,7 +384,8 @@ CrossfadeTransport::PlayerContext::PlayerContext(
 : transport(transport)
 , crossfader(crossfader)
 , player(nullptr)
-, canFade(false) {
+, canFade(false)
+, startImmediate(false) {
 }
 
 void CrossfadeTransport::PlayerContext::StopIf(Player* player) {
@@ -378,17 +395,19 @@ void CrossfadeTransport::PlayerContext::StopIf(Player* player) {
 }
 
 void CrossfadeTransport::PlayerContext::Reset() {
-    this->Reset("", nullptr, Gain());
+    this->Reset("", nullptr, Gain(), false);
 }
 
 void CrossfadeTransport::PlayerContext::Reset(
     const std::string& url,
     Player::EventListener* listener,
-    Gain gain)
+    Gain gain,
+    bool startImmediate)
 {
+    this->startImmediate = false;
+
     if (this->player && this->output) {
         this->player->Detach(&this->transport);
-
         if (this->started && this->canFade) {
             crossfader.Cancel(
                 this->player,
@@ -407,6 +426,7 @@ void CrossfadeTransport::PlayerContext::Reset(
         }
     }
 
+    this->startImmediate = startImmediate;
     this->canFade = this->started = false;
     this->output = url.size() ? outputs::SelectedOutput() : nullptr;
     this->player = url.size() ? Player::Create(url, this->output, Player::Drain, listener, gain) : nullptr;
@@ -462,12 +482,17 @@ void CrossfadeTransport::PlayerContext::Pause() {
     }
 }
 
-void CrossfadeTransport::PlayerContext::Resume() {
-    if (this->output) {
-        this->output->Resume();
+void CrossfadeTransport::PlayerContext::Resume(double transportVolume) {
+    if (!this->started) {
+        this->Start(transportVolume);
+    }
+    else {
+        if (this->output) {
+            this->output->Resume();
 
-        if (this->player) {
-            this->player->Play();
+            if (this->player) {
+                this->player->Play();
+            }
         }
     }
 }

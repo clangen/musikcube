@@ -45,7 +45,7 @@ namespace musik {
         namespace playback {
             void PauseOrResume(ITransport& transport) {
                 int state = transport.GetPlaybackState();
-                if (state == PlaybackPaused) {
+                if (state == PlaybackPaused || state == PlaybackPrepared) {
                     transport.Resume();
                 }
                 else if (state == PlaybackPlaying) {

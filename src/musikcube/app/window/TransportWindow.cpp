@@ -484,8 +484,9 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     WINDOW *c = this->GetContent();
-    bool paused = (transport.GetPlaybackState() == PlaybackPaused);
-    bool stopped = (transport.GetPlaybackState() == PlaybackStopped);
+    auto state = transport.GetPlaybackState();
+    bool paused = (state == PlaybackPrepared || state == PlaybackPaused);
+    bool stopped = (state == PlaybackStopped);
     bool muted = transport.IsMuted();
     bool replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
 

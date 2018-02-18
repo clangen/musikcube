@@ -328,6 +328,16 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         if (eventType == PlaybackStopped) {
             this->OnTrackChanged(NO_POSITION, TrackPtr());
         }
+        else if (eventType == PlaybackPrepared) {
+            /* notify track change as soon as we're prepared. if we wait until
+            we start playing, it may be a while until the UI knows to redraw! */
+            if (this->UriAtIndex(this->index) == transport.Uri()) {
+                auto track = this->playlist.Get(this->index);
+                if (track) {
+                    this->OnTrackChanged(this->index, track);
+                }
+            }
+        }
 
         for (auto it = remotes.begin(); it != remotes.end(); it++) {
             (*it)->OnPlaybackStateChanged((PlaybackState) eventType);
@@ -664,19 +674,25 @@ void PlaybackService::CopyFrom(const musik::core::sdk::ITrackList* source) {
     }
 }
 
-void PlaybackService::Play(size_t index) {
+void PlaybackService::PlayAt(size_t index, ITransport::StartMode mode) {
     index = std::min(this->Count(), index);
 
     std::string uri = this->UriAtIndex(index);
+    auto gain = this->GainAtIndex(index);
 
     if (uri.size()) {
-        transport.Start(
-            this->UriAtIndex(index),
-            this->GainAtIndex(index));
-
+        transport.Start(uri, gain, mode);
         this->nextIndex = NO_POSITION;
         this->index = index;
     }
+}
+
+void PlaybackService::Play(size_t index) {
+    this->PlayAt(index, ITransport::StartMode::Immediate);
+}
+
+void PlaybackService::Prepare(size_t index) {
+    this->PlayAt(index, ITransport::StartMode::Wait);
 }
 
 size_t PlaybackService::GetIndex() {
@@ -694,7 +710,7 @@ void PlaybackService::PauseOrResume() {
             this->Play(0);
         }
     }
-    else if (state == PlaybackPaused) {
+    else if (state == PlaybackPaused || state == PlaybackPrepared) {
         transport.Resume();
     }
     else if (state == PlaybackPlaying) {

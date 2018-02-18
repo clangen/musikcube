@@ -45,6 +45,10 @@ namespace musik { namespace core { namespace audio {
         public:
             using Gain = Player::Gain;
 
+            enum class StartMode : int {
+                Immediate = 0, Wait = 1
+            };
+
             sigslot::signal2<int, std::string> StreamEvent;
             sigslot::signal1<int> PlaybackEvent;
             sigslot::signal0<> VolumeChanged;
@@ -52,8 +56,10 @@ namespace musik { namespace core { namespace audio {
 
             virtual ~ITransport() { }
 
-            virtual void Start(const std::string& trackUrl, Gain gain) = 0;
-            virtual void PrepareNextTrack(const std::string& trackUrl, Gain gain) = 0;
+            virtual void Start(const std::string& uri, Gain gain, StartMode mode) = 0;
+            virtual void PrepareNextTrack(const std::string& uri, Gain gain) = 0;
+
+            virtual std::string Uri() = 0;
 
             virtual void Stop() = 0;
             virtual bool Pause() = 0;

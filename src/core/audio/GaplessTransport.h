@@ -53,8 +53,10 @@ namespace musik { namespace core { namespace audio {
             GaplessTransport();
             virtual ~GaplessTransport();
 
-            virtual void Start(const std::string& trackUrl, Gain gain);
-            virtual void PrepareNextTrack(const std::string& trackUrl, Gain gain);
+            virtual void Start(const std::string& uri, Gain gain, StartMode mode);
+            virtual void PrepareNextTrack(const std::string& uri, Gain gain);
+
+            virtual std::string Uri();
 
             virtual void Stop();
             virtual bool Pause();
@@ -78,7 +80,7 @@ namespace musik { namespace core { namespace audio {
         private:
             using LockT = std::unique_lock<std::recursive_mutex>;
 
-            void StartWithPlayer(Player* player);
+            void StartWithPlayer(Player* player, StartMode mode = StartMode::Immediate);
 
             void StopInternal(
                 bool suppressStopEvent,
@@ -91,6 +93,7 @@ namespace musik { namespace core { namespace audio {
             void SetPlaybackState(int state);
 
             virtual void OnPlayerStarted(Player* player);
+            virtual void OnPlayerPrepared(Player* player);
             virtual void OnPlayerAlmostEnded(Player* player);
             virtual void OnPlayerFinished(Player* player);
             virtual void OnPlayerError(Player* player);
