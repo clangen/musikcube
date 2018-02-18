@@ -2,13 +2,12 @@
 
 /* $Id: pdcwin.h,v 1.6 2008/07/13 06:36:32 wmcbrine Exp $ */
 
-
 #ifdef PDC_WIDE
 #ifndef UNICODE
-# define UNICODE
+#define UNICODE
 #endif
 #ifndef _UNICODE
-# define _UNICODE
+#define _UNICODE
 #endif
 #endif
 
@@ -21,7 +20,7 @@
      /* out the following line if you're dealing with a really old  */
      /* system,  or just don't want to use a fallback font.         */
    #define USE_FALLBACK_FONT
-   #endif
+#endif
 
 /* Windows.h will #define MOUSE_MOVED to 0x1,  which is what the
 Windows API expects.  In Curses,  MOUSE_MOVED is a macro indicating
@@ -85,9 +84,9 @@ for alternate chars.  With 16-bit chtypes,  there are only eight
 bits available to the character.  PDC_REAL_ATTR_SHIFT gives the
 number of low bits devoted to storing characters. */
 
-# if(CHTYPE_LONG >= 2)     /* 64-bit chtypes */
+#if(CHTYPE_LONG >= 2)     /* 64-bit chtypes */
     # define PDC_REAL_ATTR_SHIFT  21
-# else
+#else
 #ifdef CHTYPE_LONG         /* 32-bit chtypes */
     # define PDC_REAL_ATTR_SHIFT  17
 #else                      /* 16-bit chtypes */

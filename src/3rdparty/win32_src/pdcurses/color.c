@@ -148,8 +148,8 @@ int init_pair(short pair, short fg, short bg)
 
     _normalize(&fg, &bg);
 
-    /* To allow the PDC_PRESERVE_SCREEN option to work, we only reset 
-       curscr if this call to init_pair() alters a color pair created by 
+    /* To allow the PDC_PRESERVE_SCREEN option to work, we only reset
+       curscr if this call to init_pair() alters a color pair created by
        the user. */
 
     if (pair_set[pair])
@@ -199,7 +199,7 @@ int color_content(short color, short *red, short *green, short *blue)
         return PDC_color_content(color, red, green, blue);
     else
     {
-        /* Simulated values for platforms that don't support palette 
+        /* Simulated values for platforms that don't support palette
            changing */
 
         short maxval = (color & 8) ? 1000 : 680;

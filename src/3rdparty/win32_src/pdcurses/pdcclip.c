@@ -82,24 +82,24 @@ int PDC_getclipboard(char **contents, long *length)
             size_t len = strlen( tptr);
 #endif
 
-        *contents = (char *)GlobalAlloc( GMEM_FIXED, len + 1);
+            *contents = (char *)GlobalAlloc( GMEM_FIXED, len + 1);
 
-        if( !*contents)
-            rval = PDC_CLIP_MEMORY_ERROR;
-        else
-        {
+            if( !*contents)
+                rval = PDC_CLIP_MEMORY_ERROR;
+            else
+            {
 #ifdef PDC_WIDE
                 len = PDC_wcstombs( (char *)*contents, tptr, len);
 #else
                 strcpy((char *)*contents, tptr);
 #endif
             }
-           *length = (long)len;
+            *length = (long)len;
             GlobalUnlock( handle);
         }
         else
             rval = PDC_CLIP_MEMORY_ERROR;
-    CloseClipboard();
+        CloseClipboard();
     }
     return rval;
 }
