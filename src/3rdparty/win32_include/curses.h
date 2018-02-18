@@ -1770,6 +1770,9 @@ void    PDC_set_resize_limits( const int new_min_lines,
 int     PDC_set_function_key( const unsigned function,
                               const int new_key);
 
+int     PDC_set_preferred_fontface( const wchar_t* fontface);
+void    PDC_set_default_menu_visibility(int visible);
+
 WINDOW *Xinitscr(int, char **);
 #ifdef XCURSES
 void    XCursesExit(void);

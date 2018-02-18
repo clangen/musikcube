@@ -2277,6 +2277,19 @@ int PDC_set_function_key( const unsigned function, const int new_key)
     return( old_key);
 }
 
+/* Used to define whether or not the Font/Paste menu is visible by default.
+If this method is not call, it will be true. Must be called before the main
+window has been created. */
+void    PDC_set_default_menu_visibility( int visible)
+{
+    extern HWND PDC_hWnd;
+    if ( !PDC_hWnd)
+    {
+        menu_shown = (visible) ? 1 : 0;
+    }
+}
+
+
 /* https://msdn.microsoft.com/en-us/library/windows/desktop/dd162826(v=vs.85).aspx
 The code at the above link provides general methods for positioning a window
 on a multiple-display setup.  The only instance we're using is the

@@ -222,13 +222,59 @@ static LONG scale_font_for_current_dpi( LONG size)
 }
 
 int PDC_font_size = -1;
-TCHAR PDC_font_name[80];
+TCHAR PDC_font_name[128];
+TCHAR PDC_preferred_fontface[128]; /* can be set by application */
+static TCHAR* PDC_default_font_name = _T("Courier New");
+
+/* The calling application can override the default fontface with
+their preferred one. If that font fails to load, we will fallback
+to the global default (currently "Courier New") */
+int PDC_set_preferred_fontface( const TCHAR* fontface)
+{
+    int len = fontface == 0 ? 0 : wcslen( fontface);
+    if ( len < sizeof( PDC_preferred_fontface))
+    {
+        wcsncpy( PDC_preferred_fontface, fontface, len);
+        return 1;
+    }
+    return 0;
+}
+
+static int CALLBACK EnumFontCallback(
+    ENUMLOGFONT* lplf, NEWTEXTMETRIC* lpntm, DWORD type, LPVOID user)
+{
+    /* we specified a filter in PDC_fontface_exists, so if we get here
+    at all, that means the font exists. */
+    *((int*)user) = 1;
+    return 1;
+}
+
+static int PDC_fontface_exists( const TCHAR* fontface)
+{
+    extern HWND PDC_hWnd;
+    int result = 0;
+    LOGFONT lf = { 0 };
+    HDC hdc;
+
+    hdc = GetDC( PDC_hWnd);
+    wcscpy( lf.lfFaceName, fontface);
+    EnumFontFamiliesEx( hdc, &lf, EnumFontCallback, (LPARAM) &result, 0);
+    ReleaseDC( PDC_hWnd, hdc);
+
+    return result != 0;
+}
 
 static LOGFONT PDC_get_logical_font( const int font_idx)
 {
     if ( PDC_font_size < 0)
     {
-        PDC_font_size = scale_font_for_current_dpi(12); /* default 12 points */
+        PDC_font_size = scale_font_for_current_dpi( 15); /* default 15 points */
+    }
+
+    /* see if the user has overridden the default fontface. */
+    if ( wcslen( PDC_font_name) == 0 && PDC_fontface_exists(PDC_preferred_fontface))
+    {
+        wcsncpy( PDC_font_name, PDC_preferred_fontface, sizeof(PDC_font_name));
     }
 
     LOGFONT lf;
