@@ -98,7 +98,8 @@ void NowPlayingLayout::LoadLastSession() {
 
     int index = this->prefs->GetInt(keys::LastPlayQueueIndex, -1);
     if (index >= 0) {
-        this->playback.Prepare(index);
+        double time = this->prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
+        this->playback.Prepare(index, time);
     }
 }
 
@@ -106,9 +107,11 @@ void NowPlayingLayout::SaveSession() {
     if (this->prefs->GetBool(keys::SaveSessionOnExit, false)) {
         if (playback.GetPlaybackState() != sdk::PlaybackStopped) {
             this->prefs->SetInt(keys::LastPlayQueueIndex, (int) playback.GetIndex());
+            this->prefs->SetDouble(keys::LastPlayQueueTime, playback.GetPosition());
         }
         else {
             this->prefs->SetInt(keys::LastPlayQueueIndex, -1);
+            this->prefs->SetDouble(keys::LastPlayQueueTime, 0.0f);
         }
 
         auto query = std::shared_ptr<PersistedPlayQueueQuery>(

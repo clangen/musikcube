@@ -115,7 +115,7 @@ namespace musik { namespace core { namespace audio {
             concrete data types with known optimizations */
             musik::core::audio::ITransport& GetTransport() { return this->transport; }
             void Play(const musik::core::TrackList& tracks, size_t index);
-            void Prepare(size_t index);
+            void Prepare(size_t index, double position = 0.0f);
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetTrackAtIndex(size_t index);

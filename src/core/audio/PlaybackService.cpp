@@ -691,8 +691,11 @@ void PlaybackService::Play(size_t index) {
     this->PlayAt(index, ITransport::StartMode::Immediate);
 }
 
-void PlaybackService::Prepare(size_t index) {
+void PlaybackService::Prepare(size_t index, double position) {
     this->PlayAt(index, ITransport::StartMode::Wait);
+    if (position > 0.0) {
+        this->transport.SetPosition(position);
+    }
 }
 
 size_t PlaybackService::GetIndex() {

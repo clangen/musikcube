@@ -244,10 +244,6 @@ void GaplessTransport::SetPosition(double seconds) {
         }
     }
 
-    if (this->state == PlaybackPaused) {
-        SetPlaybackState(PlaybackPlaying);
-    }
-
     if (this->activePlayer) {
         this->TimeChanged(seconds);
     }

@@ -55,6 +55,7 @@ namespace musik { namespace cube { namespace prefs {
         extern const std::string LastCategoryFilter;
         extern const std::string LastTrackFilter;
         extern const std::string LastPlayQueueIndex;
+        extern const std::string LastPlayQueueTime;
 
     }
 
