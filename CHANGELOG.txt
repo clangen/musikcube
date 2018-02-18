@@ -1,3 +1,16 @@
+0.42.0
+
+musikcube:
+* added the ability to browse by directory! add music directories to the list
+  of `indexed paths` in the settings screen, then press `d` in browse view to
+  browse.
+* added a new setting to save session on exit. when enabled, musikcube will
+  remember the last selected view and the current playback context, and restore
+  everything on next app start.
+* added scrollbar support to ListOverlay
+
+--------------------------------------------------------------------------------
+
 0.40.0
 
 musikcube:
