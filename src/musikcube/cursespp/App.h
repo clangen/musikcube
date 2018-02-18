@@ -70,6 +70,9 @@ namespace cursespp {
             static bool Running(const std::string& title);
             void SetIcon(int resourceId);
             void SetSingleInstanceId(const std::string& uniqueId);
+            static bool RegisterFont(const std::string& filename);
+            static void SetDefaultFontface(const std::string& fontface);
+            static void SetDefaultMenuVisibility(bool visible);
 #endif
 
             void Run(ILayoutPtr layout);

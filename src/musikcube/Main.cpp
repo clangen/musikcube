@@ -139,6 +139,14 @@ int main(int argc, char* argv[]) {
         &Window::MessageQueue(), &playback, library);
 
     {
+#ifdef WIN32
+        auto font = GetApplicationDirectory() + "fonts/SourceCodePro-Medium.ttf";
+        if (App::RegisterFont(font)) {
+            App::SetDefaultFontface("Source Code Pro Medium");
+            App::SetDefaultMenuVisibility(false);
+        }
+#endif
+
         App app("musikcube"); /* must be before layout creation */
 
 #ifdef WIN32

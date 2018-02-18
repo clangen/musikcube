@@ -275,6 +275,14 @@ namespace cursespp {
                 FreeLibrary(shcoreDll);
             }
         }
+
+        int RegisterFont(const std::string& filename) {
+            return AddFontResourceEx(u8to16(filename).c_str(), FR_PRIVATE, 0);
+        }
+
+        int UnregisterFont(const std::string& filename) {
+            return RemoveFontResourceEx(u8to16(filename).c_str(), FR_PRIVATE, 0);
+        }
     }
 }
 

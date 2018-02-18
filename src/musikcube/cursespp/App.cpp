@@ -163,6 +163,18 @@ void App::SetIcon(int resourceId) {
 void App::SetSingleInstanceId(const std::string& uniqueId) {
     this->uniqueId = uniqueId;
 }
+
+bool App::RegisterFont(const std::string& filename) {
+    return win32::RegisterFont(filename) > 0;
+}
+
+void App::SetDefaultFontface(const std::string& fontface) {
+    PDC_set_preferred_fontface(u8to16(fontface).c_str());
+}
+
+void App::SetDefaultMenuVisibility(bool visible) {
+    PDC_set_default_menu_visibility(visible);
+}
 #endif
 
 void App::SetMinimizeToTray(bool minimizeToTray) {
