@@ -94,7 +94,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*" "$(TargetDir)fonts\" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -140,7 +140,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*" "$(TargetDir)fonts\" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
