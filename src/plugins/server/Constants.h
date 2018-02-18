@@ -216,6 +216,7 @@ namespace broadcast {
 static auto PLAYBACK_STATE_TO_STRING = makeBimap<musik::core::sdk::PlaybackState, std::string>({
     { musik::core::sdk::PlaybackStopped, "stopped" },
     { musik::core::sdk::PlaybackPlaying, "playing" },
+    { musik::core::sdk::PlaybackPrepared, "paused" },
     { musik::core::sdk::PlaybackPaused, "paused" }
 });
 
