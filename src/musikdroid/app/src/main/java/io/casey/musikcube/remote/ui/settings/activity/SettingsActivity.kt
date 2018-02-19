@@ -43,6 +43,7 @@ class SettingsActivity : BaseActivity() {
     private lateinit var softwareVolume: CheckBox
     private lateinit var sslCheckbox: CheckBox
     private lateinit var certCheckbox: CheckBox
+    private lateinit var transferCheckbox: CheckBox
     private lateinit var bitrateSpinner: Spinner
     private lateinit var cacheSpinner: Spinner
     private lateinit var prefs: SharedPreferences
@@ -140,6 +141,10 @@ class SettingsActivity : BaseActivity() {
             Keys.DISK_CACHE_SIZE_INDEX, Defaults.DISK_CACHE_SIZE_INDEX))
 
         /* advanced */
+        transferCheckbox.isChecked = prefs.getBoolean(
+            Keys.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT,
+            Defaults.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT)
+
         albumArtCheckbox.isChecked = prefs.getBoolean(
             Keys.LASTFM_ENABLED, Defaults.LASTFM_ENABLED)
         
@@ -196,6 +201,7 @@ class SettingsActivity : BaseActivity() {
         this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner)
         this.sslCheckbox = findViewById(R.id.ssl_checkbox)
         this.certCheckbox = findViewById(R.id.cert_validation)
+        this.transferCheckbox = findViewById(R.id.transfer_on_disconnect_checkbox)
     }
 
     private fun bindListeners() {
@@ -262,6 +268,7 @@ class SettingsActivity : BaseActivity() {
                 .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
                 .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)
                 .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
+                .putBoolean(Keys.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT, transferCheckbox.isChecked)
                 .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
                 .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
                 .apply()

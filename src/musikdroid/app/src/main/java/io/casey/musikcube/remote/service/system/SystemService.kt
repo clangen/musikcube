@@ -24,6 +24,7 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.GlideApp
 import io.casey.musikcube.remote.injection.GlideRequest
+import io.casey.musikcube.remote.service.playback.Playback
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
@@ -475,7 +476,21 @@ class SystemService : Service() {
     private val headsetUnpluggedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY) {
-                playback?.pause()
+                playback?.let { pb ->
+                    val switchOnDisconnect = prefs.getBoolean(
+                        Prefs.Key.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT,
+                        Prefs.Default.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT)
+
+                    val isPlaying =
+                        (pb.state == PlaybackState.Playing) ||
+                        (pb.state == PlaybackState.Buffering)
+
+                    pb.pause()
+
+                    if (switchOnDisconnect && isPlaying) {
+                        Playback.transferPlayback(this@SystemService, Playback.SwitchMode.Transfer)
+                    }
+                }
             }
         }
     }

@@ -216,7 +216,7 @@ namespace broadcast {
 static auto PLAYBACK_STATE_TO_STRING = makeBimap<musik::core::sdk::PlaybackState, std::string>({
     { musik::core::sdk::PlaybackStopped, "stopped" },
     { musik::core::sdk::PlaybackPlaying, "playing" },
-    { musik::core::sdk::PlaybackPrepared, "paused" },
+    { musik::core::sdk::PlaybackPrepared, "prepared" },
     { musik::core::sdk::PlaybackPaused, "paused" }
 });
 
@@ -237,4 +237,4 @@ static auto TRANSPORT_TYPE_TO_STRING = makeBimap<musik::core::sdk::TransportType
     { musik::core::sdk::TransportType::Crossfade, "crossfade" },
 });
 
-static const int ApiVersion = 14;
+static const int ApiVersion = 15;

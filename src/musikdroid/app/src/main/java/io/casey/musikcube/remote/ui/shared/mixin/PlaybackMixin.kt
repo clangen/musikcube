@@ -10,7 +10,7 @@ import io.casey.musikcube.remote.service.playback.IPlaybackService
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 
-class PlaybackMixin(var listener: (() -> Unit)? = null): MixinBase() {
+class PlaybackMixin(var listener: (() -> Unit)? = { }): MixinBase() {
     private lateinit var prefs: SharedPreferences
     private val context = Application.instance!!
 

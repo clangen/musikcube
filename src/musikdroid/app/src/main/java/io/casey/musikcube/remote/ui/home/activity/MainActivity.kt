@@ -14,6 +14,7 @@ import android.view.*
 import android.widget.*
 import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.service.playback.Playback
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
@@ -42,8 +43,6 @@ import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 
 class MainActivity : BaseActivity() {
-    private enum class SwitchMode { Transfer, Copy, Swap }
-
     private val handler = Handler()
     private var updateCheck: UpdateCheck = UpdateCheck()
     private var seekbarValue = -1
@@ -148,8 +147,8 @@ class MainActivity : BaseActivity() {
 
         popup.setOnMenuItemClickListener { it ->
             when(it.itemId) {
-                R.id.menu_switch_seamless -> togglePlaybackService(SwitchMode.Transfer)
-                R.id.menu_switch_copy -> togglePlaybackService(SwitchMode.Copy)
+                R.id.menu_switch_seamless -> togglePlaybackService(Playback.SwitchMode.Transfer)
+                R.id.menu_switch_copy -> togglePlaybackService(Playback.SwitchMode.Copy)
                 else -> { }
             }
             true
@@ -244,7 +243,7 @@ class MainActivity : BaseActivity() {
             Prefs.Key.STREAMING_PLAYBACK,
             Prefs.Default.STREAMING_PLAYBACK)
 
-    private fun togglePlaybackService(mode: SwitchMode = SwitchMode.Swap) {
+    private fun togglePlaybackService(mode: Playback.SwitchMode = Playback.SwitchMode.Swap) {
         val isStreaming = isStreamingSelected
         prefs.edit().putBoolean(Prefs.Key.STREAMING_PLAYBACK, !isStreaming)?.apply()
 
@@ -255,32 +254,7 @@ class MainActivity : BaseActivity() {
 
         showSnackbar(mainLayout, messageId)
 
-        if (mode == SwitchMode.Swap) {
-            if (isStreaming) {
-                playback.service.pause()
-            }
-        }
-        else {
-            playback.connectAll()
-
-            val streaming = PlaybackServiceFactory.streaming(this)
-            val remote = PlaybackServiceFactory.remote(this)
-
-            if (!isStreaming) {
-                streaming.playFrom(remote)
-                if (mode == SwitchMode.Transfer) {
-                    remote.pause()
-                }
-            }
-            else {
-                remote.playFrom(streaming)
-                if (mode == SwitchMode.Transfer) {
-                    streaming.pause()
-                }
-            }
-        }
-
-        playback.reload()
+        Playback.transferPlayback(this, playback, mode)
 
         invalidateOptionsMenu()
         rebindUi()

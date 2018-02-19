@@ -16,11 +16,11 @@ enum class PlaybackState constructor(private val rawValue: String) {
             else if (Playing.rawValue == rawValue) {
                 return Playing
             }
-            else if (Paused.rawValue == rawValue) {
+            else if (Paused.rawValue == rawValue || "prepared" == rawValue) {
                 return Paused
             }
 
-            throw IllegalArgumentException("rawValue matches invalid")
+            throw IllegalArgumentException("rawValue '$rawValue' is unknown")
         }
     }
 }

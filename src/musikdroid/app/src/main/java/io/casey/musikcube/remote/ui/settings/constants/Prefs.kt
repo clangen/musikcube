@@ -16,6 +16,7 @@ class Prefs {
             const val TRANSCODER_BITRATE_INDEX = "transcoder_bitrate_index"
             const val DISK_CACHE_SIZE_INDEX = "disk_cache_size_index"
             const val UPDATE_DIALOG_SUPPRESSED_VERSION = "update_dialog_suppressed_version"
+            const val TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT = "transfer_to_server_on_headset_disconnect"
             const val DEVICE_ID = "device_id"
         }
     }
@@ -33,6 +34,7 @@ class Prefs {
             const val SSL_ENABLED = false
             const val CERT_VALIDATION_DISABLED = false
             const val TRANSCODER_BITRATE_INDEX = 0
+            const val TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT = false
             const val DISK_CACHE_SIZE_INDEX = 2
         }
     }

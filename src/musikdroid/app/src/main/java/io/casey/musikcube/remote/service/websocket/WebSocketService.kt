@@ -605,7 +605,7 @@ class WebSocketService constructor(private val context: Context) {
         private val AUTO_DISCONNECT_DELAY_MILLIS = 10000L
         private val FLAG_AUTHENTICATION_FAILED = 0xbeef
         private val WEBSOCKET_FLAG_POLICY_VIOLATION = 1008
-        private val MINIMUM_SUPPORTED_API_VERSION = 14
+        private val MINIMUM_SUPPORTED_API_VERSION = 15
 
         private val MESSAGE_BASE = 0xcafedead.toInt()
         private val MESSAGE_CONNECT_THREAD_FINISHED = MESSAGE_BASE + 0

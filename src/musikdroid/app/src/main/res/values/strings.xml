@@ -120,6 +120,7 @@
     <string name="settings_playback_engine_exo">ExoPlayer (stable)</string>
     <string name="settings_playback_engine_exo_gapless">ExoPlayer Gapless (default)</string>
     <string name="settings_playback_engine_mp">MediaPlayer (legacy)</string>
+    <string name="settings_transfer_to_server_on_disconnect">transfer playback to server on headset disconnect</string>
     <string name="remote_settings_title">remote management</string>
     <string name="remote_settings_output_driver">output driver</string>
     <string name="remote_settings_output_device">output device</string>
