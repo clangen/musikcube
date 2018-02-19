@@ -97,7 +97,6 @@ static void updateSyncingText(TextLabel* label, int updates) {
 MainLayout::MainLayout(
     cursespp::App& app,
     musik::core::audio::PlaybackService& playback,
-    musik::core::audio::MasterTransport& transport,
     ILibraryPtr library)
 : shortcutsFocused(false)
 , topLevelLayout(nullptr)
@@ -114,8 +113,8 @@ MainLayout::MainLayout(
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
 
     this->libraryLayout.reset(new LibraryLayout(playback, library));
-    this->consoleLayout.reset(new ConsoleLayout(transport, library));
-    this->settingsLayout.reset(new SettingsLayout(app, library, playback, transport));
+    this->consoleLayout.reset(new ConsoleLayout(playback.GetTransport(), library));
+    this->settingsLayout.reset(new SettingsLayout(app, library, playback));
 
     /* take user to settings if they don't have a valid configuration. otherwise,
     switch to the library view immediately */

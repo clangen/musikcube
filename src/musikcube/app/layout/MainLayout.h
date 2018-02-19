@@ -66,7 +66,6 @@ namespace musik {
                 MainLayout(
                     cursespp::App& app,
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::audio::MasterTransport& transport,
                     musik::core::ILibraryPtr library);
 
                 virtual ~MainLayout();

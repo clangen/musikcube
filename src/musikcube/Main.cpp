@@ -46,11 +46,9 @@
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
-#include <app/util/Playback.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/audio/Visualizer.h>
-#include <core/audio/MasterTransport.h>
 #include <core/debug.h>
 #include <core/i18n/Locale.h>
 #include <core/library/LibraryFactory.h>
@@ -131,16 +129,13 @@ int main(int argc, char* argv[]) {
     auto prefs = Preferences::ForComponent(
         musik::core::prefs::components::Settings);
 
-    MasterTransport transport;
-    PlaybackService playback(Window::MessageQueue(), library, transport);
+    PlaybackService playback(Window::MessageQueue(), library);
 
     GlobalHotkeys globalHotkeys(playback, library);
     Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
     musik::core::plugin::InstallDependencies(
         &Window::MessageQueue(), &playback, library);
-
-    playback::LoadPlaybackContext(prefs, library, playback);
 
     {
 #ifdef WIN32
@@ -192,7 +187,7 @@ int main(int argc, char* argv[]) {
 
         /* main layout */
         using Main = std::shared_ptr<MainLayout>;
-        Main mainLayout(new MainLayout(app, playback, transport, library));
+        Main mainLayout(new MainLayout(app, playback, library));
 
         mainLayout->Start();
 
@@ -214,8 +209,6 @@ int main(int argc, char* argv[]) {
         win32::HideMainWindow();
 #endif
     }
-
-    playback::SavePlaybackContext(prefs, library, playback);
 
     musik::core::audio::vis::HideSelectedVisualizer();
     musik::core::plugin::UninstallDependencies();

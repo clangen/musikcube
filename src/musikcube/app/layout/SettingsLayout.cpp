@@ -139,13 +139,11 @@ static std::string resolveThemeName(const std::string& themePath) {
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
-    musik::core::sdk::IPlaybackService& playback,
-    musik::core::audio::MasterTransport& transport)
+    musik::core::audio::PlaybackService& playback)
 : LayoutBase()
 , app(app)
 , library(library)
 , indexer(library->Indexer())
-, transport(transport)
 , playback(playback) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->browseAdapter.reset(new DirectoryAdapter());
@@ -197,7 +195,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
 #endif
     else if (cb == saveSessionCheckbox.get()) {
-        this->prefs->SetBool(cube::prefs::keys::SaveSessionOnExit, checked);
+        this->prefs->SetBool(core::prefs::keys::SaveSessionOnExit, checked);
     }
     else if (cb == autoUpdateCheckbox.get()) {
         this->prefs->SetBool(cube::prefs::keys::AutoUpdateCheck, checked);
@@ -629,7 +627,7 @@ void SettingsLayout::LoadPreferences() {
     this->minimizeToTrayCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::MinimizeToTray, false));
     this->startMinimizedCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::StartMinimized, false));
 #endif
-    this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::SaveSessionOnExit, false));
+    this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SaveSessionOnExit, false));
     this->autoUpdateCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true));
 
     /* output driver */

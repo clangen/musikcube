@@ -41,6 +41,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
+#include <core/support/PreferenceKeys.h>
 
 #include <app/overlay/BrowseOverlays.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -199,7 +200,7 @@ void LibraryLayout::InitializeWindows() {
 }
 
 void LibraryLayout::LoadLastSession() {
-    if (this->prefs->GetBool(keys::SaveSessionOnExit, false)) {
+    if (this->prefs->GetBool(musik::core::prefs::keys::SaveSessionOnExit, false)) {
         const std::string type = this->prefs->GetString(keys::LastLibraryView, type::Browse);
         if (type == type::Directory) {
             const std::string lastDirectoryRoot =

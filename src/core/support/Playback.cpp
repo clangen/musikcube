@@ -34,11 +34,18 @@
 
 #include "pch.hpp"
 #include "Playback.h"
+#include <core/library/query/local/PersistedPlayQueueQuery.h>
 #include <core/sdk/constants.h>
+#include <core/support/PreferenceKeys.h>
 #include <cmath>
 
+using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::db::local;
 using namespace musik::core::sdk;
+
+namespace keys = musik::core::prefs::keys;
+using Prefs = std::shared_ptr<Preferences>;
 
 namespace musik {
     namespace core {
@@ -69,6 +76,37 @@ namespace musik {
 
             void SeekBack(IPlaybackService& playback) {
                 playback.SetPosition(playback.GetPosition() - 10.0f);
+            }
+
+            void LoadPlaybackContext(Prefs prefs, ILibraryPtr library, PlaybackService& playback) {
+                auto query = std::shared_ptr<PersistedPlayQueueQuery>(
+                    PersistedPlayQueueQuery::Restore(library, playback));
+
+                library->Enqueue(query, ILibrary::QuerySynchronous);
+
+                int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
+                if (index >= 0) {
+                    double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
+                    playback.Prepare(index, time);
+                }
+            }
+
+            void SavePlaybackContext(Prefs prefs, ILibraryPtr library, PlaybackService& playback) {
+                if (prefs->GetBool(keys::SaveSessionOnExit, false)) {
+                    if (playback.GetPlaybackState() != sdk::PlaybackStopped) {
+                        prefs->SetInt(keys::LastPlayQueueIndex, (int)playback.GetIndex());
+                        prefs->SetDouble(keys::LastPlayQueueTime, playback.GetPosition());
+                    }
+                    else {
+                        prefs->SetInt(keys::LastPlayQueueIndex, -1);
+                        prefs->SetDouble(keys::LastPlayQueueTime, 0.0f);
+                    }
+
+                    auto query = std::shared_ptr<PersistedPlayQueueQuery>(
+                        PersistedPlayQueueQuery::Save(library, playback));
+
+                    library->Enqueue(query, ILibrary::QuerySynchronous);
+                }
             }
         }
     }

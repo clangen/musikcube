@@ -36,7 +36,7 @@
 
 #include "PlaybackService.h"
 
-#include <core/audio/ITransport.h>
+#include <core/audio/MasterTransport.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
 #include <core/library/query/local/ReplayGainQuery.h>
@@ -44,6 +44,7 @@
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
 #include <core/support/PreferenceKeys.h>
+#include <core/support/Playback.h>
 
 #include <boost/lexical_cast.hpp>
 
@@ -105,13 +106,13 @@ class StreamMessage : public Message {
         musik::core::runtime::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
 static inline void loadPreferences(
-    ITransport& transport,
+    std::shared_ptr<ITransport> transport,
     IPlaybackService& playback,
     std::shared_ptr<Preferences> prefs)
 {
     double volume = prefs->GetDouble(keys::Volume, 1.0f);
     volume = std::max(0.0f, std::min(1.0f, (float)volume));
-    transport.SetVolume(volume);
+    transport->SetVolume(volume);
 
     int repeatMode = prefs->GetInt(keys::RepeatMode, RepeatNone);
     repeatMode = (repeatMode > RepeatList || repeatMode < RepeatNone) ? RepeatNone : repeatMode;
@@ -133,30 +134,40 @@ static inline void savePreferences(
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
     ILibraryPtr library,
-    MasterTransport& transport)
+    std::shared_ptr<ITransport> transport)
 : library(library)
 , transport(transport)
 , playlist(library)
 , unshuffled(library)
 , repeatMode(RepeatNone)
 , messageQueue(messageQueue)
-, prefs(Preferences::ForComponent(components::Playback)) {
-    transport.StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
-    transport.PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
-    transport.VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
-    transport.TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
+, seekPosition(-1.0f)
+, index(NO_POSITION)
+, nextIndex(NO_POSITION)
+, playbackPrefs(Preferences::ForComponent(components::Playback))
+, appPrefs(Preferences::ForComponent(components::Settings)) {
+    transport->StreamEvent.connect(this, &PlaybackService::OnStreamEvent);
+    transport->PlaybackEvent.connect(this, &PlaybackService::OnPlaybackEvent);
+    transport->VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
+    transport->TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
     library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
-    loadPreferences(this->transport, *this, prefs);
-    this->seekPosition = -1.0f;
-    this->index = NO_POSITION;
-    this->nextIndex = NO_POSITION;
+    loadPreferences(this->transport, *this, playbackPrefs);
+    playback::LoadPlaybackContext(appPrefs, library, *this);
     this->InitRemotes();
 }
 
+PlaybackService::PlaybackService(
+    IMessageQueue& messageQueue,
+    ILibraryPtr library)
+: PlaybackService(messageQueue, library, std::make_shared<MasterTransport>()) {
+
+}
+
 PlaybackService::~PlaybackService() {
+    playback::SavePlaybackContext(appPrefs, library, *this);
+    savePreferences(*this, playbackPrefs);
     this->Stop();
     this->ResetRemotes();
-    savePreferences(*this, prefs);
 }
 
 void PlaybackService::InitRemotes() {
@@ -183,7 +194,7 @@ void PlaybackService::PrepareNextTrack() {
         /* repeat track, just keep playing the same thing over and over */
         if (this->repeatMode == RepeatTrack) {
             this->nextIndex = this->index;
-            this->transport.PrepareNextTrack(
+            this->transport->PrepareNextTrack(
                 this->UriAtIndex(this->index),
                 this->GainAtIndex(this->index));
         }
@@ -195,7 +206,7 @@ void PlaybackService::PrepareNextTrack() {
                 if (this->playlist.Count() > 0) {
                     this->index = NO_POSITION;
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(
+                    this->transport->PrepareNextTrack(
                         this->UriAtIndex(nextIndex),
                         this->GainAtIndex(nextIndex));
                 }
@@ -204,7 +215,7 @@ void PlaybackService::PrepareNextTrack() {
             else if (this->playlist.Count() > this->index + 1) {
                 if (this->nextIndex != this->index + 1) {
                     this->nextIndex = this->index + 1;
-                    this->transport.PrepareNextTrack(
+                    this->transport->PrepareNextTrack(
                         this->UriAtIndex(nextIndex),
                         this->GainAtIndex(nextIndex));
                 }
@@ -213,14 +224,14 @@ void PlaybackService::PrepareNextTrack() {
             else if (this->repeatMode == RepeatList) {
                 if (this->nextIndex != 0) {
                     this->nextIndex = 0;
-                    this->transport.PrepareNextTrack(
+                    this->transport->PrepareNextTrack(
                         this->UriAtIndex(nextIndex),
                         this->GainAtIndex(nextIndex));
                 }
             }
             else {
                 /* nothing to prepare if we get here. */
-                this->transport.PrepareNextTrack("", ITransport::Gain());
+                this->transport->PrepareNextTrack("", ITransport::Gain());
             }
         }
     }
@@ -300,7 +311,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                     quickly. make compare the track URIs before we update internal state. */
                     if (this->nextIndex >= this->Count()) {
                         this->nextIndex = NO_POSITION;
-                        this->transport.PrepareNextTrack("", ITransport::Gain());
+                        this->transport->PrepareNextTrack("", ITransport::Gain());
                         return;
                     }
 
@@ -331,7 +342,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         else if (eventType == PlaybackPrepared) {
             /* notify track change as soon as we're prepared. if we wait until
             we start playing, it may be a while until the UI knows to redraw! */
-            if (this->UriAtIndex(this->index) == transport.Uri()) {
+            if (this->UriAtIndex(this->index) == transport->Uri()) {
                 auto track = this->playlist.Get(this->index);
                 if (track) {
                     this->OnTrackChanged(this->index, track);
@@ -346,7 +357,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         this->PlaybackEvent((PlaybackState) eventType);
     }
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
-        if (transport.GetPlaybackState() != PlaybackStopped) {
+        if (transport->GetPlaybackState() != PlaybackStopped) {
             size_t updatedIndex = (size_t)message.UserData1();
 
             if (updatedIndex != NO_POSITION) {
@@ -358,7 +369,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == MESSAGE_VOLUME_CHANGED) {
-        double volume = transport.Volume();
+        double volume = transport->Volume();
         for (auto it = remotes.begin(); it != remotes.end(); it++) {
             (*it)->OnVolumeChanged(volume);
         }
@@ -373,10 +384,10 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         this->Shuffled(!!message.UserData1());
     }
     else if (type == MESSAGE_TIME_CHANGED) {
-        this->TimeChanged(transport.Position());
-        double volume = transport.Volume();
+        this->TimeChanged(transport->Position());
+        double volume = transport->Volume();
         for (auto remote : this->remotes) {
-            remote->OnPlaybackTimeChanged(transport.Position());
+            remote->OnPlaybackTimeChanged(transport->Position());
         }
     }
     else if (type == MESSAGE_NOTIFY_EDITED ||
@@ -390,7 +401,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
     else if (type == MESSAGE_SEEK) {
         if (this->seekPosition != -1.0f) {
-            this->transport.SetPosition(this->seekPosition + 0.5f);
+            this->transport->SetPosition(this->seekPosition + 0.5f);
             this->seekPosition = -1.0f;
         }
     }
@@ -399,26 +410,34 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         auto index = this->GetIndex();
         double time = this->GetPosition();
 
-        TransportType transportType = (TransportType)
-            prefs->GetInt(keys::Transport.c_str(),
-            (int)TransportType::Gapless);
+        /* we generally have a MasterTransport available, but apps may
+        choose to implement their own transport and use it instead, so
+        do this nasty check first... */
+        MasterTransport* masterTransport =
+            dynamic_cast<MasterTransport*>(this->transport.get());
 
-        if (this->transport.GetType() != transportType) {
-            this->transport.SwitchTo(transportType);
+        if (masterTransport) {
+            TransportType transportType = (TransportType)
+                playbackPrefs->GetInt(keys::Transport.c_str(),
+                (int)TransportType::Gapless);
+
+            if (masterTransport->GetType() != transportType) {
+                masterTransport->SwitchTo(transportType);
+            }
         }
 
         if (state != PlaybackStopped) {
             this->Stop();
-            this->transport.ReloadOutput();
+            this->transport->ReloadOutput();
 
             if (index != NO_POSITION) {
                 this->Play(index);
                 if (time > 0.0f) {
-                    this->transport.SetPosition(time);
+                    this->transport->SetPosition(time);
                 }
 
                 if (state == PlaybackPaused) {
-                    this->transport.Pause();
+                    this->transport->Pause();
                 }
             }
         }
@@ -443,7 +462,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
 }
 
 bool PlaybackService::Next() {
-    if (transport.GetPlaybackState() == PlaybackStopped) {
+    if (transport->GetPlaybackState() == PlaybackStopped) {
         return false;
     }
 
@@ -462,13 +481,13 @@ bool PlaybackService::Next() {
 }
 
 bool PlaybackService::Previous() {
-    if (transport.GetPlaybackState() == PlaybackStopped) {
+    if (transport->GetPlaybackState() == PlaybackStopped) {
         return false;
     }
 
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
-    if (transport.Position() > PREVIOUS_GRACE_PERIOD) {
+    if (transport->Position() > PREVIOUS_GRACE_PERIOD) {
         this->Play(index);
         return true;
     }
@@ -513,7 +532,7 @@ void PlaybackService::ToggleRepeatMode() {
 }
 
 PlaybackState PlaybackService::GetPlaybackState() {
-    return transport.GetPlaybackState();
+    return transport->GetPlaybackState();
 }
 
 bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
@@ -681,7 +700,7 @@ void PlaybackService::PlayAt(size_t index, ITransport::StartMode mode) {
     auto gain = this->GainAtIndex(index);
 
     if (uri.size()) {
-        transport.Start(uri, gain, mode);
+        transport->Start(uri, gain, mode);
         this->nextIndex = NO_POSITION;
         this->index = index;
     }
@@ -694,7 +713,7 @@ void PlaybackService::Play(size_t index) {
 void PlaybackService::Prepare(size_t index, double position) {
     this->PlayAt(index, ITransport::StartMode::Wait);
     if (position > 0.0) {
-        this->transport.SetPosition(position);
+        this->transport->SetPosition(position);
     }
 }
 
@@ -703,34 +722,34 @@ size_t PlaybackService::GetIndex() {
 }
 
 double PlaybackService::GetVolume() {
-    return transport.Volume();
+    return transport->Volume();
 }
 
 void PlaybackService::PauseOrResume() {
-    int state = transport.GetPlaybackState();
+    int state = transport->GetPlaybackState();
     if (state == PlaybackStopped) {
         if (this->Count()) {
             this->Play(0);
         }
     }
     else if (state == PlaybackPaused || state == PlaybackPrepared) {
-        transport.Resume();
+        transport->Resume();
     }
     else if (state == PlaybackPlaying) {
-        transport.Pause();
+        transport->Pause();
     }
 }
 
 bool PlaybackService::IsMuted() {
-    return transport.IsMuted();
+    return transport->IsMuted();
 }
 
 void PlaybackService::ToggleMute() {
-    transport.SetMuted(!transport.IsMuted());
+    transport->SetMuted(!transport->IsMuted());
 }
 
 void PlaybackService::SetVolume(double vol) {
-    transport.SetVolume(vol);
+    transport->SetVolume(vol);
 }
 
 double PlaybackService::GetPosition() {
@@ -738,7 +757,7 @@ double PlaybackService::GetPosition() {
         return this->seekPosition;
     }
 
-    return transport.Position();
+    return transport->Position();
 }
 
 void PlaybackService::SetPosition(double seconds) {
@@ -749,14 +768,14 @@ void PlaybackService::SetPosition(double seconds) {
         messageQueue.Debounce(Message::Create(this, MESSAGE_SEEK), 500);
     }
     else { /* TimeChangeScrub */
-        transport.SetPosition(seconds);
+        transport->SetPosition(seconds);
     }
 }
 
 double PlaybackService::GetDuration() {
     TrackPtr track;
 
-    double duration = this->transport.GetDuration();
+    double duration = this->transport->GetDuration();
 
     if (duration > 0) {
         return duration;
@@ -1062,11 +1081,11 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
 
     ITransport::Gain result;
 
-    float preampDb = (float) prefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f);
+    float preampDb = (float)playbackPrefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f);
     result.preamp = powf(10.0f, (preampDb / 20.0f));
     result.peakValid = false;
 
-    Mode mode = (Mode) prefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+    Mode mode = (Mode)playbackPrefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
 
     if (mode != Mode::Disabled && index < this->playlist.Count()) {
         int64_t id = this->playlist.Get(index)->GetId();

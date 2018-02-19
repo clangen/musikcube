@@ -70,7 +70,11 @@ namespace musik { namespace core { namespace audio {
             PlaybackService(
                 musik::core::runtime::IMessageQueue& messageQueue,
                 musik::core::ILibraryPtr library,
-                musik::core::audio::MasterTransport& transport);
+                std::shared_ptr<musik::core::audio::ITransport> transport);
+
+            PlaybackService(
+                musik::core::runtime::IMessageQueue& messageQueue,
+                musik::core::ILibraryPtr library);
 
             ~PlaybackService();
 
@@ -81,7 +85,7 @@ namespace musik { namespace core { namespace audio {
             virtual void Play(size_t index) override;
             virtual bool Next() override;
             virtual bool Previous() override;
-            virtual void Stop()  override { transport.Stop(); }
+            virtual void Stop()  override { transport->Stop(); }
             virtual musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
             virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
             virtual void ToggleRepeatMode() override;
@@ -113,7 +117,7 @@ namespace musik { namespace core { namespace audio {
 
             /* app-specific implementation. similar to some SDK methods, but use
             concrete data types with known optimizations */
-            musik::core::audio::ITransport& GetTransport() { return this->transport; }
+            musik::core::audio::ITransport& GetTransport() { return *this->transport.get(); }
             void Play(const musik::core::TrackList& tracks, size_t index);
             void Prepare(size_t index, double position = 0.0f);
             void CopyTo(musik::core::TrackList& target);
@@ -192,11 +196,12 @@ namespace musik { namespace core { namespace audio {
             std::recursive_mutex playlistMutex;
 
             std::vector<std::shared_ptr<musik::core::sdk::IPlaybackRemote>> remotes;
-            std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<musik::core::Preferences> playbackPrefs;
+            std::shared_ptr<musik::core::Preferences> appPrefs;
             musik::core::TrackPtr playingTrack;
 
             musik::core::ILibraryPtr library;
-            musik::core::audio::MasterTransport& transport;
+            std::shared_ptr<musik::core::audio::ITransport> transport;
             size_t index, nextIndex;
 
             musik::core::sdk::RepeatMode repeatMode;

@@ -39,6 +39,7 @@ static void exitIfRunning();
 static pid_t getDaemonPid();
 static void startDaemon();
 static void stopDaemon();
+static void initUtf8();
 
 class EvMessageQueue: public MessageQueue {
     public:
@@ -222,25 +223,26 @@ static void startDaemon() {
     }
 }
 
+static void initUtf8() {
+    std::locale locale = std::locale();
+    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
+    boost::filesystem::path::imbue(utf8Locale);
+}
+
 int main(int argc, char** argv) {
     handleCommandLine(argc, argv);
     exitIfRunning();
     startDaemon();
+    initUtf8();
 
     srand((unsigned int) time(0));
-
-    std::locale locale = std::locale();
-    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-    boost::filesystem::path::imbue(utf8Locale);
 
     debug::init();
 
     EvMessageQueue messageQueue;
-    MasterTransport transport;
     auto library = LibraryFactory::Default();
-
     library->SetMessageQueue(messageQueue);
-    PlaybackService playback(messageQueue, library, transport);
+    PlaybackService playback(messageQueue, library);
 
     plugin::InstallDependencies(&messageQueue, &playback, library);
 

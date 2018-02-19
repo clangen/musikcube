@@ -55,6 +55,9 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::IndexerLogEnabled = "IndexerLogEnabled";
     const std::string keys::ReplayGainMode = "ReplayGainMode";
     const std::string keys::PreampDecibels = "PreampDecibels";
+    const std::string keys::SaveSessionOnExit = "SaveSessionOnExit";
+    const std::string keys::LastPlayQueueIndex = "LastPlayQueueIndex";
+    const std::string keys::LastPlayQueueTime = "LastPlayQueueTime";
 
 } } }
 

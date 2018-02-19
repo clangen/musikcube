@@ -59,6 +59,9 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string IndexerLogEnabled;
         extern const std::string ReplayGainMode;
         extern const std::string PreampDecibels;
+        extern const std::string SaveSessionOnExit;
+        extern const std::string LastPlayQueueIndex;
+        extern const std::string LastPlayQueueTime;
     }
 
 } } }

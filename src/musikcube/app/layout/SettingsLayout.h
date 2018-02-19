@@ -71,8 +71,7 @@ namespace musik {
                 SettingsLayout(
                     cursespp::App& app,
                     musik::core::ILibraryPtr library,
-                    musik::core::sdk::IPlaybackService& playback,
-                    musik::core::audio::MasterTransport& transport);
+                    musik::core::audio::PlaybackService& playback);
 
                 virtual ~SettingsLayout();
 
@@ -120,8 +119,7 @@ namespace musik {
                 cursespp::App& app;
                 musik::core::ILibraryPtr library;
                 musik::core::IIndexer* indexer;
-                musik::core::sdk::IPlaybackService& playback;
-                musik::core::audio::MasterTransport& transport;
+                musik::core::audio::PlaybackService& playback;
 
                 std::shared_ptr<musik::core::Preferences> prefs;
 

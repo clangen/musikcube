@@ -46,7 +46,6 @@ namespace musik { namespace cube { namespace prefs {
         extern const std::string MinimizeToTray;
         extern const std::string StartMinimized;
         extern const std::string AutoUpdateCheck;
-        extern const std::string SaveSessionOnExit;
         extern const std::string LastAcknowledgedUpdateVersion;
         extern const std::string LastLibraryView;
         extern const std::string LastBrowseCategoryType;
@@ -54,8 +53,6 @@ namespace musik { namespace cube { namespace prefs {
         extern const std::string LastBrowseDirectoryRoot;
         extern const std::string LastCategoryFilter;
         extern const std::string LastTrackFilter;
-        extern const std::string LastPlayQueueIndex;
-        extern const std::string LastPlayQueueTime;
 
     }
 
