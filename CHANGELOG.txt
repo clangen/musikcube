@@ -7,6 +7,12 @@ musikcube:
 * added a new setting to save session on exit. when enabled, musikcube will
   remember the last selected view and the current playback context, and restore
   everything on next app start.
+* better first-run experience for new Windows users:
+  - included "Source Code Pro Medium" font, and use it by default.
+  - updated the default font size to be a bit larger.
+  - hid the main menu bar with "Font" and "Paste" buttons; this functionality
+    is still available by clicking the musikcube icon in the upper left portion
+    of the window.
 * added scrollbar support to ListOverlay
 
 --------------------------------------------------------------------------------
