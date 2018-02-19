@@ -65,15 +65,12 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
-                void LoadLastSession();
-
             protected:
                 virtual void OnLayout();
 
             private:
                 void InitializeWindows();
                 void RequeryTrackList();
-                void SaveSession();
                 bool ProcessEditOperation(const std::string& key);
 
                 /* callbacks */

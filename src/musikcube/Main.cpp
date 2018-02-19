@@ -46,17 +46,17 @@
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
+#include <app/util/Playback.h>
 
-#include <core/i18n/Locale.h>
 #include <core/audio/PlaybackService.h>
-
+#include <core/audio/Visualizer.h>
 #include <core/audio/MasterTransport.h>
-
 #include <core/debug.h>
+#include <core/i18n/Locale.h>
 #include <core/library/LibraryFactory.h>
 #include <core/plugin/Plugins.h>
 #include <core/support/PreferenceKeys.h>
-#include <core/audio/Visualizer.h>
+#include <core/sdk/constants.h>
 #include <core/support/Common.h>
 
 #include <boost/locale.hpp>
@@ -78,6 +78,8 @@ using namespace cursespp;
 
 #define MIN_WIDTH 54
 #define MIN_HEIGHT 12
+
+namespace keys = musik::cube::prefs::keys;
 
 #ifdef WIN32
 int _main(int argc, wchar_t* argv[]);
@@ -138,6 +140,8 @@ int main(int argc, char* argv[]) {
     musik::core::plugin::InstallDependencies(
         &Window::MessageQueue(), &playback, library);
 
+    playback::LoadPlaybackContext(prefs, library, playback);
+
     {
 #ifdef WIN32
         auto font = GetApplicationDirectory() + "fonts/SourceCodePro-Medium.ttf";
@@ -161,11 +165,11 @@ int main(int argc, char* argv[]) {
         /* set color mode (basic, palette, rgb) */
         Colors::Mode colorMode = Colors::RGB;
 
-        if (prefs->GetBool(musik::cube::prefs::keys::DisableCustomColors.c_str(), false)) {
+        if (prefs->GetBool(keys::DisableCustomColors.c_str(), false)) {
             colorMode = Colors::Basic;
         }
 #ifndef WIN32
-        else if (prefs->GetBool(musik::cube::prefs::keys::UsePaletteColors.c_str(), true)) {
+        else if (prefs->GetBool(keys::UsePaletteColors.c_str(), true)) {
             colorMode = Colors::Palette;
         }
 #endif
@@ -173,14 +177,14 @@ int main(int argc, char* argv[]) {
         app.SetColorMode(colorMode);
 
         /* theme */
-        std::string colorTheme = prefs->GetString(musik::cube::prefs::keys::ColorTheme);
+        std::string colorTheme = prefs->GetString(keys::ColorTheme);
         if (colorTheme.size()) {
             app.SetColorTheme(colorTheme);
         }
 
         /* tray icon */
-        app.SetMinimizeToTray(prefs->GetBool(musik::cube::prefs::keys::MinimizeToTray, false));
-        if (prefs->GetBool(musik::cube::prefs::keys::StartMinimized, false)) {
+        app.SetMinimizeToTray(prefs->GetBool(keys::MinimizeToTray, false));
+        if (prefs->GetBool(keys::StartMinimized, false)) {
             app.Minimize();
         }
 
@@ -210,6 +214,8 @@ int main(int argc, char* argv[]) {
         win32::HideMainWindow();
 #endif
     }
+
+    playback::SavePlaybackContext(prefs, library, playback);
 
     musik::core::audio::vis::HideSelectedVisualizer();
     musik::core::plugin::UninstallDependencies();

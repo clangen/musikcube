@@ -37,6 +37,9 @@
 #include "stdafx.h"
 
 #include <core/audio/PlaybackService.h>
+#include <core/support/Preferences.h>
+#include <core/library/ILibrary.h>
+
 #include <app/window/TrackListView.h>
 
 namespace musik {
@@ -48,6 +51,16 @@ namespace musik {
 
             bool HotSwap(
                 musik::cube::TrackListView& trackList,
+                musik::core::audio::PlaybackService& playback);
+
+            void LoadPlaybackContext(
+                std::shared_ptr<musik::core::Preferences> prefs,
+                musik::core::ILibraryPtr library,
+                musik::core::audio::PlaybackService& playback);
+
+            void SavePlaybackContext(
+                std::shared_ptr<musik::core::Preferences> prefs,
+                musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
         }
     }

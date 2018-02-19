@@ -200,8 +200,6 @@ void LibraryLayout::InitializeWindows() {
 
 void LibraryLayout::LoadLastSession() {
     if (this->prefs->GetBool(keys::SaveSessionOnExit, false)) {
-        this->nowPlayingLayout->LoadLastSession(); /* always load now playing */
-
         const std::string type = this->prefs->GetString(keys::LastLibraryView, type::Browse);
         if (type == type::Directory) {
             const std::string lastDirectoryRoot =
