@@ -92,7 +92,7 @@ namespace musik {
             }
 
             void SavePlaybackContext(Prefs prefs, ILibraryPtr library, PlaybackService& playback) {
-                if (prefs->GetBool(keys::SaveSessionOnExit, false)) {
+                if (prefs->GetBool(keys::SaveSessionOnExit, true)) {
                     if (playback.GetPlaybackState() != sdk::PlaybackStopped) {
                         prefs->SetInt(keys::LastPlayQueueIndex, (int)playback.GetIndex());
                         prefs->SetDouble(keys::LastPlayQueueTime, playback.GetPosition());

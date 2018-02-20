@@ -200,7 +200,7 @@ void LibraryLayout::InitializeWindows() {
 }
 
 void LibraryLayout::LoadLastSession() {
-    if (this->prefs->GetBool(musik::core::prefs::keys::SaveSessionOnExit, false)) {
+    if (this->prefs->GetBool(musik::core::prefs::keys::SaveSessionOnExit, true)) {
         const std::string type = this->prefs->GetString(keys::LastLibraryView, type::Browse);
         if (type == type::Directory) {
             const std::string lastDirectoryRoot =

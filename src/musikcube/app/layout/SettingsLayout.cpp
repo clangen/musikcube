@@ -627,7 +627,7 @@ void SettingsLayout::LoadPreferences() {
     this->minimizeToTrayCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::MinimizeToTray, false));
     this->startMinimizedCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::StartMinimized, false));
 #endif
-    this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SaveSessionOnExit, false));
+    this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SaveSessionOnExit, true));
     this->autoUpdateCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true));
 
     /* output driver */
