@@ -242,16 +242,19 @@ int main(int argc, char** argv) {
     EvMessageQueue messageQueue;
     auto library = LibraryFactory::Default();
     library->SetMessageQueue(messageQueue);
-    PlaybackService playback(messageQueue, library);
 
-    plugin::InstallDependencies(&messageQueue, &playback, library);
+    {
+        PlaybackService playback(messageQueue, library);
 
-    auto prefs = Preferences::ForComponent(prefs::components::Settings);
-    if (prefs->GetBool(prefs::keys::SyncOnStartup, true)) {
-        library->Indexer()->Schedule(IIndexer::SyncType::All);
+        plugin::InstallDependencies(&messageQueue, &playback, library);
+
+        auto prefs = Preferences::ForComponent(prefs::components::Settings);
+        if (prefs->GetBool(prefs::keys::SyncOnStartup, true)) {
+            library->Indexer()->Schedule(IIndexer::SyncType::All);
+        }
+
+        messageQueue.Run();
     }
-
-    messageQueue.Run();
 
     remove(LOCKFILE);
 }

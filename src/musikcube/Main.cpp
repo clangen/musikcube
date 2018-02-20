@@ -126,18 +126,18 @@ int main(int argc, char* argv[]) {
     ILibraryPtr library = LibraryFactory::Default();
     library->SetMessageQueue(Window::MessageQueue());
 
-    auto prefs = Preferences::ForComponent(
-        musik::core::prefs::components::Settings);
-
-    PlaybackService playback(Window::MessageQueue(), library);
-
-    GlobalHotkeys globalHotkeys(playback, library);
-    Window::SetNavigationKeys(Hotkeys::NavigationKeys());
-
-    musik::core::plugin::InstallDependencies(
-        &Window::MessageQueue(), &playback, library);
-
     {
+        auto prefs = Preferences::ForComponent(
+            musik::core::prefs::components::Settings);
+
+        PlaybackService playback(Window::MessageQueue(), library);
+
+        GlobalHotkeys globalHotkeys(playback, library);
+        Window::SetNavigationKeys(Hotkeys::NavigationKeys());
+
+        musik::core::plugin::InstallDependencies(
+            &Window::MessageQueue(), &playback, library);
+
 #ifdef WIN32
         auto font = GetApplicationDirectory() + "fonts/SourceCodePro-Medium.ttf";
         if (App::RegisterFont(font)) {
