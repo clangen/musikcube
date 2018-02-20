@@ -15,6 +15,10 @@ musikcube:
     of the window.
 * added scrollbar support to ListOverlay
 
+musikdroid:
+* added the ability to automatically transfer playback from mobile to server
+  when headset (or bluetooth device) is disconnected.
+
 --------------------------------------------------------------------------------
 
 0.40.0
