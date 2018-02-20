@@ -79,15 +79,17 @@ namespace musik {
             }
 
             void LoadPlaybackContext(Prefs prefs, ILibraryPtr library, PlaybackService& playback) {
-                auto query = std::shared_ptr<PersistedPlayQueueQuery>(
-                    PersistedPlayQueueQuery::Restore(library, playback));
+                if (prefs->GetBool(keys::SaveSessionOnExit, true)) {
+                    auto query = std::shared_ptr<PersistedPlayQueueQuery>(
+                        PersistedPlayQueueQuery::Restore(library, playback));
 
-                library->Enqueue(query, ILibrary::QuerySynchronous);
+                    library->Enqueue(query, ILibrary::QuerySynchronous);
 
-                int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
-                if (index >= 0) {
-                    double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
-                    playback.Prepare(index, time);
+                    int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
+                    if (index >= 0) {
+                        double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
+                        playback.Prepare(index, time);
+                    }
                 }
             }
 
