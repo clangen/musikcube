@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.support.v4.app.NotificationCompat
+import android.support.v4.content.ContextCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
@@ -76,6 +77,8 @@ class SystemService : Service() {
         prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         registerReceivers()
+
+        wakeupNow()
     }
 
     override fun onDestroy() {
@@ -115,8 +118,10 @@ class SystemService : Service() {
             wakeLock = powerManager.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService")
 
-            wakeLock?.setReferenceCounted(false)
-            wakeLock?.acquire()
+            wakeLock?.let {
+                it.setReferenceCounted(false)
+                it.acquire()
+            }
         }
 
         if (sleeping) {
@@ -555,17 +560,20 @@ class SystemService : Service() {
 
         fun wakeup() {
             val c = Application.instance
-            c?.startService(Intent(c, SystemService::class.java).setAction(ACTION_WAKE_UP))
+            ContextCompat.startForegroundService(
+                c, Intent(c, SystemService::class.java).setAction(ACTION_WAKE_UP))
         }
 
         fun shutdown() {
             val c = Application.instance
-            c?.startService(Intent(c, SystemService::class.java).setAction(ACTION_SHUT_DOWN))
+            ContextCompat.startForegroundService(
+                c, Intent(c, SystemService::class.java).setAction(ACTION_SHUT_DOWN))
         }
 
         fun sleep() {
             val c = Application.instance
-            c?.startService(Intent(c, SystemService::class.java).setAction(ACTION_SLEEP))
+            ContextCompat.startForegroundService(
+                c, Intent(c, SystemService::class.java).setAction(ACTION_SLEEP))
         }
     }
 }
