@@ -58,16 +58,11 @@ void PDC_add_clipboard_to_key_queue( void)
 #ifdef PDC_WIDE
             const long len = (long)wcslen((wchar_t *)handle);
 #else
-            const long len = strlen((char *)handle);
+            const long len = (long)strlen((char *)handle);
 #endif
 
             clipboard_contents = (TCHAR *)calloc( len + 1, sizeof( TCHAR));
             memcpy( clipboard_contents, (TCHAR *)handle, (len + 1) * sizeof( TCHAR));
-#ifdef PDC_WIDE
-            printf( "ilen = %ld\n", len);
-            for( i = 0; i < len; i++)
-               printf( "%x ", clipboard_contents[i]);
-#endif
             CloseClipboard( );
             for( i = j = 0; i < len; i++)
                 if( clipboard_contents[i] != 10)

@@ -241,7 +241,7 @@ int PDC_set_preferred_fontface( const TCHAR* fontface)
 }
 
 static int CALLBACK EnumFontCallback(
-    ENUMLOGFONT* lplf, NEWTEXTMETRIC* lpntm, DWORD type, LPVOID user)
+    const LOGFONT* lplf, const TEXTMETRIC* lpntm, DWORD type, LPARAM user)
 {
     /* we specified a filter in PDC_fontface_exists, so if we get here
     at all, that means the font exists. */
@@ -398,6 +398,11 @@ static COLORREF dimmed_color( COLORREF ival)
       #define USING_COMBINING_CHARACTER_SCHEME
       int PDC_expand_combined_characters( const cchar_t c, cchar_t *added);  /* addch.c */
    #endif
+
+   /* PDC_get_rgb_values(), extract_packed_rgb(), intensified_component(), */
+   /* intensified_color(),  and dimmed_color() each exist in x11/x11.c,    */
+   /* win32a/pdcdisp.c,  and sdl2/pdcdisp.c in forms slightly modified for */
+   /* each platform.  But they all look pretty much alike.  */
 
             /* PDCurses stores RGBs in fifteen bits,  five bits each */
             /* for red, green, blue.  A COLORREF uses eight bits per */
