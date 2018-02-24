@@ -105,6 +105,18 @@
       <AdditionalLibraryDirectories>../../../boost_1_66_0/lib32-msvc-14.1;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
+if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
+xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
+if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -143,6 +155,18 @@
       <AdditionalLibraryDirectories>../../../boost_1_66_0/lib32-msvc-14.1;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
+if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
+xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
+if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>

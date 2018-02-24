@@ -36,15 +36,14 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
 #include <core/library/query/local/SearchTrackListQuery.h>
-#include <glue/util/Playback.h>
-#include <glue/util/Duration.h>
+#include <core/support/Playback.h>
+#include <core/support/Duration.h>
 
 using namespace musik::win;
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
-using namespace musik::glue;
 using namespace musik::core::db::local;
 using namespace musik::core::library;
 using namespace win32cpp;
@@ -106,19 +105,19 @@ class MainController::TrackListModel : public ListView::Model, public sigslot::h
                 uistring value;
 
                 if (column == sNumberColumn) {
-                    value = u8to16(track->GetValue(constants::Track::TRACK_NUM));
+                    value = u8to16(track->GetString(constants::Track::TRACK_NUM));
                 }
                 else if (column == sTitleColumn) {
-                    value = u8to16(track->GetValue(constants::Track::TITLE));
+                    value = u8to16(track->GetString(constants::Track::TITLE));
                 }
                 else if (column == sDurationColumn) {
-                    value = u8to16(duration::Duration(track->GetValue(constants::Track::DURATION)));
+                    value = u8to16(duration::Duration(track->GetString(constants::Track::DURATION)));
                 }
                 else if (column == sAlbumColumn) {
-                    value = u8to16(track->GetValue(constants::Track::ALBUM));
+                    value = u8to16(track->GetString(constants::Track::ALBUM));
                 }
                 else if (column == sArtistColumn) {
-                    value = u8to16(track->GetValue(constants::Track::ARTIST));
+                    value = u8to16(track->GetString(constants::Track::ARTIST));
                 }
 
                 if (value.size()) {

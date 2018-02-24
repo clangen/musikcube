@@ -46,8 +46,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <core/support/Preferences.h>
 #include <core/audio/Visualizer.h>
 
-#include <glue/audio/MasterTransport.h>
-
 #include <app/view/MainWindow.h>
 #include <app/controller/MainController.h>
 
@@ -55,8 +53,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::glue;
-using namespace musik::glue::audio;
 using namespace musik::win;
 using namespace win32cpp;
 
@@ -71,15 +67,15 @@ int APIENTRY _tWinMain(HINSTANCE instance, HINSTANCE previousInstance, LPTSTR co
     mainWindow.Resize(640, 400);
     mainWindow.MoveTo(200, 200);
 
-    ILibraryPtr library = LibraryFactory::Libraries().at(0);
+    ILibraryPtr library = LibraryFactory::Default();
     library->SetMessageQueue(mainWindow.Queue());
 
-    MasterTransport transport;
-    PlaybackService playback(mainWindow.Queue(), library, transport);
+    {
+        PlaybackService playback(mainWindow.Queue(), library);
+        MainController mainController(mainWindow, playback, library);
 
-    MainController mainController(mainWindow, playback, library);
-
-    app.Run(mainWindow);
+        app.Run(mainWindow);
+    }
 
     Preferences::SavePluginPreferences();
     LibraryFactory::Instance().Shutdown();
