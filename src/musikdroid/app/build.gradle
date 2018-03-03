@@ -21,8 +21,8 @@ android {
         applicationId "io.casey.musikcube.remote"
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 30
-        versionName "0.26.0"
+        versionCode 31
+        versionName "0.27.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
@@ -88,8 +88,8 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxjava:2.1.6'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
     implementation 'io.reactivex.rxjava2:rxkotlin:2.1.0'
-    implementation 'com.google.android.exoplayer:exoplayer:2.6.1'
-    implementation 'com.google.android.exoplayer:extension-okhttp:2.6.1'
+    implementation 'com.google.android.exoplayer:exoplayer:2.7.0'
+    implementation 'com.google.android.exoplayer:extension-okhttp:2.7.0'
     implementation 'com.simplecityapps:recyclerview-fastscroll:1.0.16'
     implementation 'com.facebook.stetho:stetho:1.5.0'
     implementation 'com.github.wooplr:Spotlight:1.2.3'

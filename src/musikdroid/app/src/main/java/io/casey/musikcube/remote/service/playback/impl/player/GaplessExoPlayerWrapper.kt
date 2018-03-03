@@ -213,7 +213,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     }
 
     private var eventListener = object : Player.EventListener {
-        override fun onTimelineChanged(timeline: Timeline, manifest: Any?) {
+        override fun onTimelineChanged(timeline: Timeline, manifest: Any?, reason: Int) {
         }
 
         override fun onTracksChanged(trackGroups: TrackGroupArray, trackSelections: TrackSelectionArray) {

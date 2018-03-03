@@ -57,6 +57,8 @@ class SystemService : Service() {
     private val sessionData = SessionMetadata()
 
     override fun onCreate() {
+        RUNNING = true
+
         super.onCreate()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -82,6 +84,7 @@ class SystemService : Service() {
     }
 
     override fun onDestroy() {
+        RUNNING = false
         super.onDestroy()
         unregisterReceivers()
     }
@@ -548,6 +551,7 @@ class SystemService : Service() {
         var ACTION_WAKE_UP = "io.casey.musikcube.remote.WAKE_UP"
         var ACTION_SHUT_DOWN = "io.casey.musikcube.remote.SHUT_DOWN"
         var ACTION_SLEEP = "io.casey.musikcube.remote.SLEEP"
+        var RUNNING = false
 
         private val BITMAP_OPTIONS = RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL)
 
@@ -565,15 +569,19 @@ class SystemService : Service() {
         }
 
         fun shutdown() {
-            val c = Application.instance
-            ContextCompat.startForegroundService(
-                c, Intent(c, SystemService::class.java).setAction(ACTION_SHUT_DOWN))
+            if (RUNNING) {
+                val c = Application.instance
+                ContextCompat.startForegroundService(
+                    c, Intent(c, SystemService::class.java).setAction(ACTION_SHUT_DOWN))
+            }
         }
 
         fun sleep() {
-            val c = Application.instance
-            ContextCompat.startForegroundService(
-                c, Intent(c, SystemService::class.java).setAction(ACTION_SLEEP))
+            if (RUNNING) {
+                val c = Application.instance
+                ContextCompat.startForegroundService(
+                    c, Intent(c, SystemService::class.java).setAction(ACTION_SLEEP))
+            }
         }
     }
 }
