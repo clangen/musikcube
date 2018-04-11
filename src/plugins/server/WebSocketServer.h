@@ -123,6 +123,9 @@ class WebSocketServer {
         Snapshots snapshots;
         volatile bool running;
 
+        /* gross extra state */
+        std::string lastPlaybackOverview;
+
         void ThreadProc();
         void HandleAuthentication(connection_hdl connection, json& request);
         void HandleRequest(connection_hdl connection, json& request);

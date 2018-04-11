@@ -1482,7 +1482,15 @@ void WebSocketServer::BroadcastPlaybackOverview() {
 
     json options;
     this->BuildPlaybackOverview(options);
-    this->Broadcast(broadcast::playback_overview_changed, options);
+
+    /* note that sometimes multiple independent components will request an
+    overview broadcast, so we always remember the last one, and won't
+    re-broadcast if status hasn't changed */
+    std::string newPlaybackOverview = options.dump();
+    if (newPlaybackOverview != lastPlaybackOverview) {
+        this->Broadcast(broadcast::playback_overview_changed, options);
+        this->lastPlaybackOverview = newPlaybackOverview;
+    }
 }
 
 void WebSocketServer::BroadcastPlayQueueChanged() {
