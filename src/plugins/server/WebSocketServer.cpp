@@ -598,6 +598,8 @@ void WebSocketServer::RespondWithSetVolume(connection_hdl connection, json& requ
     else {
         context.playback->SetVolume(options[key::volume]);
     }
+
+    this->RespondWithSuccess(connection, request);
 }
 
 void WebSocketServer::RespondWithPlaybackOverview(connection_hdl connection, json& request) {
