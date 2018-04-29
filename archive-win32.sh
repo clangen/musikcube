@@ -38,7 +38,7 @@ cp bin/release/*.dll "$MILKDROP"
 cp bin/release/plugins/*.dll "$MILKDROP/plugins"
 cp bin/release/themes/*.json "$MILKDROP/themes"
 cp bin/release/locales/*.json "$MILKDROP/locales"
-cp bin/release/fonts/*.ttf "$VANILLA/fonts"
+cp bin/release/fonts/*.ttf "$MILKDROP/fonts"
 cp -rfp bin/release/plugins/Milkdrop2 "$MILKDROP/plugins"
 pushd $MILKDROP
 7z a -tzip "musikcube_win32_with_milkdrop2_$VERSION.zip" ./* -mx=9
