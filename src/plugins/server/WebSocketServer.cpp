@@ -652,7 +652,7 @@ bool WebSocketServer::RespondWithTracks(
             this->RespondWithOptions(connection, request, {
                 { key::data, data },
                 { key::count, data.size() },
-                { key::limit, limit },
+                { key::limit, std::max(0, limit) },
                 { key::offset, offset },
             });
 
@@ -813,7 +813,7 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
         this->RespondWithOptions(connection, request, {
             { key::data, data },
             { key::count, data.size() },
-            { key::limit, limit },
+            { key::limit, std::max(0, limit) },
             { key::offset, offset },
         });
     }
