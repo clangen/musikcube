@@ -41,10 +41,10 @@
 #include <cursespp/DialogOverlay.h>
 
 #include <core/runtime/Message.h>
+#include <core/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
-#include <app/util/Version.h>
 
 using namespace nlohmann;
 using namespace musik::cube;

@@ -534,5 +534,8 @@
     <ClInclude Include="library\query\local\PersistedPlayQueueQuery.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
+    <ClInclude Include="io\HttpClient.h">
+      <Filter>src\io</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

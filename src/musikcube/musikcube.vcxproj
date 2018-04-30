@@ -228,7 +228,6 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\UpdateCheck.h" />
-    <ClInclude Include="app\util\Version.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />

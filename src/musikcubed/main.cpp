@@ -20,7 +20,7 @@
 #include <boost/locale.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
-#include "../musikcube/app/util/Version.h"
+#include "../core/version.h"
 
 using namespace musik;
 using namespace musik::core;

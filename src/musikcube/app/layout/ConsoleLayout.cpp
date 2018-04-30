@@ -43,9 +43,9 @@
 
 #include <core/sdk/IPlugin.h>
 #include <core/plugin/PluginFactory.h>
+#include <core/version.h>
 
 #include <app/util/Hotkeys.h>
-#include <app/util/Version.h>
 #include <app/util/Messages.h>
 
 #include <boost/algorithm/string.hpp>

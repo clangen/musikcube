@@ -160,6 +160,7 @@
     <ClInclude Include="debug.h" />
     <ClInclude Include="i18n\Locale.h" />
     <ClInclude Include="io\DataStreamFactory.h" />
+    <ClInclude Include="io\HttpClient.h" />
     <ClInclude Include="io\LocalFileStream.h" />
     <ClInclude Include="library\IIndexer.h" />
     <ClInclude Include="library\ILibrary.h" />

@@ -246,9 +246,6 @@
     <ClInclude Include="cursespp\IOverlay.h">
       <Filter>cursespp</Filter>
     </ClInclude>
-    <ClInclude Include="app\util\Version.h">
-      <Filter>app\util</Filter>
-    </ClInclude>
     <ClInclude Include="app\overlay\VisualizerOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
