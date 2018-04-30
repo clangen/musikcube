@@ -62,17 +62,10 @@ namespace musik { namespace core { namespace io {
             HttpClient<T>& Decorator(DecoratorCallback decoratorCb);
             HttpClient<T>& Canceled(CanceledCallback canceledCb);
 
-            const T& Stream() {
-                return this->ostream;
-            }
-
-            const HttpHeaders& ResponseHeaders() {
-                return this->responseHeaders;
-            }
-
-            const HttpHeaders& RequestHeaders() {
-                return this->requestHeaders;
-            }
+            const T& Stream() const { return this->ostream; }
+            const HttpHeaders& ResponseHeaders() const { return this->responseHeaders; }
+            const HttpHeaders& RequestHeaders() const { return this->requestHeaders; }
+            const std::string& Url() const { return this->url; }
 
             HttpClient<T>& Run(Callback callback = Callback());
             void Wait();
@@ -190,6 +183,7 @@ namespace musik { namespace core { namespace io {
         }
 
         this->curl = curl_easy_init();
+
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_HEADER, 0);
         curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
@@ -204,16 +198,17 @@ namespace musik { namespace core { namespace io {
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3000);
         curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 7500);
         curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 500);
+
+        if (this->decoratorCb) {
+            this->decoratorCb(this->curl);
+        }
+
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &CurlWriteCallback);
         curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
         curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &CurlTransferCallback);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &CurlHeaderCallback);
-
-        if (this->decoratorCb) {
-            this->decoratorCb(this->curl);
-        }
 
         if (this->requestHeaders.size()) {
             struct curl_slist* slist = nullptr;
