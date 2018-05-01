@@ -39,18 +39,19 @@
 
 namespace musik { namespace core {
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    std::string NormalizeDir(std::string path);
-    int64_t Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
+    extern std::string GetHomeDirectory();
+    extern std::string GetApplicationDirectory();
+    extern std::string GetDataDirectory(bool create = true);
+    extern std::string GetPath(const std::string &sFile);
+    extern std::string GetPluginDirectory();
+    extern std::string NormalizeDir(std::string path);
+    extern void OpenFile(const std::string& path);
+    extern int64_t Checksum(char *data,unsigned int bytes);
+    extern size_t CopyString(const std::string& src, char* dst, size_t size);
+    extern bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
 
     /* renames ~/.mC2 -> ~/.musikcube */
-    void MigrateOldDataDirectory();
-    void RemoveOldDlls();
+    extern void MigrateOldDataDirectory();
+    extern void RemoveOldDlls();
 
 } }

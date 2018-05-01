@@ -44,6 +44,8 @@ namespace musik { namespace core { namespace io {
     template <typename T>
     class HttpClient {
         public:
+            enum class Thread { Current, Background };
+
             using HttpHeaders = std::unordered_map<std::string, std::string>;
             using Callback = std::function<void(HttpClient<T>* caller, int, CURLcode)>;
             using DecoratorCallback = std::function<void(CURL*)>;
@@ -61,6 +63,7 @@ namespace musik { namespace core { namespace io {
             HttpClient<T>& Headers(HeaderCallback headersCb);
             HttpClient<T>& Decorator(DecoratorCallback decoratorCb);
             HttpClient<T>& Canceled(CanceledCallback canceledCb);
+            HttpClient<T>& Mode(Thread mode);
 
             const T& Stream() const { return this->ostream; }
             const HttpHeaders& ResponseHeaders() const { return this->responseHeaders; }
@@ -79,6 +82,8 @@ namespace musik { namespace core { namespace io {
             static size_t CurlHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
             static std::string DefaultUserAgent();
 
+            void RunOnCurrentThread(Callback callback);
+
             std::recursive_mutex mutex;
             std::shared_ptr<std::thread> thread;
 
@@ -89,6 +94,7 @@ namespace musik { namespace core { namespace io {
             DecoratorCallback decoratorCb;
             CanceledCallback canceledCallback;
             bool cancel;
+            Thread mode{ Thread::Background };
             CURL* curl;
     };
 
@@ -219,24 +225,34 @@ namespace musik { namespace core { namespace io {
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
         }
 
-        this->thread.reset(new std::thread([callback, this] {
-            if (this->cancel) {
-                if (this->canceledCallback) {
-                    this->canceledCallback(this);
-                }
-            }
-            else {
-                CURLcode curlCode = curl_easy_perform(this->curl);
-                int httpStatus = 0;
-                curl_easy_getinfo(this->curl, CURLINFO_RESPONSE_CODE, &httpStatus);
-
-                if (callback) {
-                    callback(this, httpStatus, curlCode);
-                }
-            }
-        }));
+        if (mode == Thread::Background) {
+            this->thread.reset(new std::thread([callback, this] {
+                this->RunOnCurrentThread(callback);
+            }));
+        }
+        else {
+            this->RunOnCurrentThread(callback);
+        }
 
         return *this;
+    }
+
+    template <typename T>
+    void HttpClient<T>::RunOnCurrentThread(Callback callback) {
+        CURLcode curlCode = curl_easy_perform(this->curl);
+
+        if (this->cancel) {
+            if (this->canceledCallback) {
+                this->canceledCallback(this);
+            }
+        }
+
+        int httpStatus = 0;
+        curl_easy_getinfo(this->curl, CURLINFO_RESPONSE_CODE, &httpStatus);
+
+        if (callback) {
+            callback(this, httpStatus, curlCode);
+        }
     }
 
     template <typename T>
@@ -251,6 +267,12 @@ namespace musik { namespace core { namespace io {
     template <typename T>
     HttpClient<T>& HttpClient<T>::Url(const std::string& url) {
         this->url = url;
+        return *this;
+    }
+
+    template <typename T>
+    HttpClient<T>& HttpClient<T>::Mode(Thread mode) {
+        this->mode = mode;
         return *this;
     }
 

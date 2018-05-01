@@ -51,6 +51,9 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::LastBrowseDirectoryRoot = "LastBrowseDirectoryRoot";
     const std::string keys::LastCategoryFilter = "LastCategoryFilter";
     const std::string keys::LastTrackFilter = "LastTrackFilter";
+    const std::string keys::LastFmToken = "LastFmToken";
+    const std::string keys::LastFmSessionId = "LastFmSessionId";
+    const std::string keys::LastFmUsername = "LastFmUsername";
 
 } } }
 

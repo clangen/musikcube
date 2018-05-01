@@ -42,7 +42,7 @@
 #include <boost/format.hpp>
 
 #ifdef WIN32
-    /* nothing special for Win32 */
+    #include <shellapi.h>
 #elif __APPLE__
     #include <mach-o/dyld.h>
 #else
@@ -57,69 +57,7 @@
     #include <sys/sysctl.h>
 #endif
 
-std::string musik::core::GetPluginDirectory() {
-    std::string path(GetApplicationDirectory());
-    path.append("/plugins/");
-    return path;
-}
-
-std::string musik::core::GetApplicationDirectory() {
-    std::string result;
-
-    #ifdef WIN32
-        wchar_t widePath[2048];
-        int length = GetModuleFileName(NULL, widePath, 2048);
-        if (length != 0 && length < 2048) {
-            result.assign(GetPath(u16to8(widePath).c_str()));
-        }
-    #elif __APPLE__
-        char pathbuf[PATH_MAX + 1];
-        uint32_t bufsize = sizeof(pathbuf);
-        _NSGetExecutablePath(pathbuf, &bufsize);
-        result.assign(pathbuf);
-        size_t last = result.find_last_of("/");
-        result = result.substr(0, last); /* remove filename component */
-    #else
-        char pathbuf[PATH_MAX + 1] = { 0 };
-
-        #ifdef __FreeBSD__
-            int mib[4];
-            mib[0] = CTL_KERN;
-            mib[1] = KERN_PROC;
-            mib[2] = KERN_PROC_PATHNAME;
-            mib[3] = -1;
-            size_t bufsize = sizeof(pathbuf);
-            sysctl(mib, 4, pathbuf, &bufsize, nullptr, 0);
-        #else
-            std::string pathToProc = boost::str(boost::format("/proc/%d/exe") % (int) getpid());
-            readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
-	#endif
-
-        result.assign(pathbuf);
-        size_t last = result.find_last_of("/");
-        result = result.substr(0, last); /* remove filename component */
-    #endif
-
-    return result;
-}
-
-std::string musik::core::GetHomeDirectory() {
-    std::string directory;
-
-#ifdef WIN32
-    DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
-    wchar_t *buffer = new wchar_t[bufferSize + 2];
-    GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
-    directory.assign(u16to8(buffer));
-    delete[] buffer;
-#else
-    directory = std::string(std::getenv("HOME"));
-#endif
-
-    return directory;
-}
-
-static std::string GetDataDirectoryRoot() {
+static std::string getDataDirectoryRoot() {
     std::string directory;
 
 #ifdef WIN32
@@ -135,163 +73,241 @@ static std::string GetDataDirectoryRoot() {
     return directory;
 }
 
-std::string musik::core::GetDataDirectory(bool create) {
-    std::string directory =
-
-#ifdef WIN32
-    GetDataDirectoryRoot() + std::string("/musikcube/");
-#else
-    GetDataDirectoryRoot() + std::string("/.musikcube/");
-#endif
-
-    if (create) {
-        boost::filesystem::path path(directory);
-        if (!boost::filesystem::exists(path)) {
-            boost::filesystem::create_directories(path);
-        }
-    }
-
-    return directory;
-}
-
-inline void silentDelete(const std::string fn) {
+static inline void silentDelete(const std::string fn) {
     boost::system::error_code ec;
     boost::filesystem::remove(boost::filesystem::path(fn), ec);
 }
 
-void musik::core::RemoveOldDlls() {
-#ifdef WIN32
-    std::string path = GetPluginDirectory();
-    silentDelete(path + "libcurl.dll");
-    silentDelete(path + "crypto-41.dll");
-    silentDelete(path + "ssl-43.dll");
-    silentDelete(path + "tls-15.dll");
-#endif
-}
+namespace musik { namespace core {
 
-void musik::core::MigrateOldDataDirectory() {
-    std::string oldDirectory =
-
-#ifdef WIN32
-        GetDataDirectoryRoot() + std::string("/mC2/");
-#else
-        GetDataDirectoryRoot() + std::string("/.mC2/");
-#endif
-
-    std::string newDirectory = GetDataDirectory(false);
-
-    boost::filesystem::path oldPath(oldDirectory);
-    boost::filesystem::path newPath(newDirectory);
-
-    if (boost::filesystem::exists(oldPath) &&
-        !boost::filesystem::exists(newPath))
-    {
-        boost::filesystem::rename(oldPath, newPath);
-    }
-}
-
-std::string musik::core::GetPath(const std::string &sFile) {
-    std::string sPath;
-    int length;
-
-#ifdef WIN32
-    wchar_t widePath[2048];
-    wchar_t *szFile = NULL;
-
-    length = GetFullPathName(u8to16(sFile).c_str(), 2048, widePath, &szFile);
-    if(length != 0 && length < 2048) {
-        sPath.assign(u16to8(widePath).c_str());
-        if(szFile!=0) {
-            std::string sTheFile = u16to8(szFile);
-            sPath.assign(sPath.substr(0,length-sTheFile.length()));
-        }
-    }
-    else {
-        sPath.assign(sFile);
-    }
- #else
-    char* szDir;
-    sPath.assign(getcwd((char*)szDir, (size_t) length));
- #endif
-
-    return sPath;
-}
-
-int64_t musik::core::Checksum(char *data,unsigned int bytes) {
-    int64_t sum = 0;
-    for(unsigned int i = 0; i < bytes; ++i) {
-        char ch = *(data + i);
-        sum += (int64_t) ch;
-    }
-    return sum;
-}
-
-size_t musik::core::CopyString(const std::string& src, char* dst, size_t size) {
-    size_t len = src.size() + 1; /* space for the null terminator */
-    if (dst) {
-        size_t copied = src.copy(dst, size - 1);
-        dst[copied] = '\0';
-        return copied + 1;
-    }
-    return len;
-}
-
-bool musik::core::FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate) {
-#ifdef WIN32
-    std::wstring u16fn = u8to16(path);
-    FILE* file = _wfopen(u16fn.c_str(), L"rb");
-#else
-    FILE* file = fopen(path.c_str(), "rb");
-#endif
-
-    *target = nullptr;
-    size = 0;
-
-    if (!file) {
-        return false;
+    std::string GetPluginDirectory() {
+        std::string path(GetApplicationDirectory());
+        path.append("/plugins/");
+        return path;
     }
 
-    bool success = false;
+    std::string GetApplicationDirectory() {
+        std::string result;
 
-    if (fseek(file, 0L, SEEK_END) == 0) {
-        long fileSize = ftell(file);
-        if (fileSize == -1) {
-            goto close_and_return;
+        #ifdef WIN32
+            wchar_t widePath[2048];
+            int length = GetModuleFileName(NULL, widePath, 2048);
+            if (length != 0 && length < 2048) {
+                result.assign(GetPath(u16to8(widePath).c_str()));
+            }
+        #elif __APPLE__
+            char pathbuf[PATH_MAX + 1];
+            uint32_t bufsize = sizeof(pathbuf);
+            _NSGetExecutablePath(pathbuf, &bufsize);
+            result.assign(pathbuf);
+            size_t last = result.find_last_of("/");
+            result = result.substr(0, last); /* remove filename component */
+        #else
+            char pathbuf[PATH_MAX + 1] = { 0 };
+
+            #ifdef __FreeBSD__
+                int mib[4];
+                mib[0] = CTL_KERN;
+                mib[1] = KERN_PROC;
+                mib[2] = KERN_PROC_PATHNAME;
+                mib[3] = -1;
+                size_t bufsize = sizeof(pathbuf);
+                sysctl(mib, 4, pathbuf, &bufsize, nullptr, 0);
+            #else
+                std::string pathToProc = boost::str(boost::format("/proc/%d/exe") % (int) getpid());
+                readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
+	    #endif
+
+            result.assign(pathbuf);
+            size_t last = result.find_last_of("/");
+            result = result.substr(0, last); /* remove filename component */
+        #endif
+
+        return result;
+    }
+
+    std::string GetHomeDirectory() {
+        std::string directory;
+
+    #ifdef WIN32
+        DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
+        wchar_t *buffer = new wchar_t[bufferSize + 2];
+        GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
+        directory.assign(u16to8(buffer));
+        delete[] buffer;
+    #else
+        directory = std::string(std::getenv("HOME"));
+    #endif
+
+        return directory;
+    }
+
+    std::string GetDataDirectory(bool create) {
+        std::string directory =
+
+    #ifdef WIN32
+        getDataDirectoryRoot() + std::string("/musikcube/");
+    #else
+        getDataDirectoryRoot() + std::string("/.musikcube/");
+    #endif
+
+        if (create) {
+            boost::filesystem::path path(directory);
+            if (!boost::filesystem::exists(path)) {
+                boost::filesystem::create_directories(path);
+            }
         }
 
-        if (fseek(file, 0L, SEEK_SET) != 0) {
-            goto close_and_return;
+        return directory;
+    }
+
+    void RemoveOldDlls() {
+    #ifdef WIN32
+        std::string path = GetPluginDirectory();
+        silentDelete(path + "libcurl.dll");
+        silentDelete(path + "crypto-41.dll");
+        silentDelete(path + "ssl-43.dll");
+        silentDelete(path + "tls-15.dll");
+    #endif
+    }
+
+    void MigrateOldDataDirectory() {
+        std::string oldDirectory =
+
+    #ifdef WIN32
+            getDataDirectoryRoot() + std::string("/mC2/");
+    #else
+            getDataDirectoryRoot() + std::string("/.mC2/");
+    #endif
+
+        std::string newDirectory = GetDataDirectory(false);
+
+        boost::filesystem::path oldPath(oldDirectory);
+        boost::filesystem::path newPath(newDirectory);
+
+        if (boost::filesystem::exists(oldPath) &&
+            !boost::filesystem::exists(newPath))
+        {
+            boost::filesystem::rename(oldPath, newPath);
+        }
+    }
+
+    std::string GetPath(const std::string &sFile) {
+        std::string sPath;
+        int length;
+
+    #ifdef WIN32
+        wchar_t widePath[2048];
+        wchar_t *szFile = NULL;
+
+        length = GetFullPathName(u8to16(sFile).c_str(), 2048, widePath, &szFile);
+        if(length != 0 && length < 2048) {
+            sPath.assign(u16to8(widePath).c_str());
+            if(szFile!=0) {
+                std::string sTheFile = u16to8(szFile);
+                sPath.assign(sPath.substr(0,length-sTheFile.length()));
+            }
+        }
+        else {
+            sPath.assign(sFile);
+        }
+     #else
+        char* szDir;
+        sPath.assign(getcwd((char*)szDir, (size_t) length));
+     #endif
+
+        return sPath;
+    }
+
+    int64_t Checksum(char *data,unsigned int bytes) {
+        int64_t sum = 0;
+        for(unsigned int i = 0; i < bytes; ++i) {
+            char ch = *(data + i);
+            sum += (int64_t) ch;
+        }
+        return sum;
+    }
+
+    size_t CopyString(const std::string& src, char* dst, size_t size) {
+        size_t len = src.size() + 1; /* space for the null terminator */
+        if (dst) {
+            size_t copied = src.copy(dst, size - 1);
+            dst[copied] = '\0';
+            return copied + 1;
+        }
+        return len;
+    }
+
+    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate) {
+    #ifdef WIN32
+        std::wstring u16fn = u8to16(path);
+        FILE* file = _wfopen(u16fn.c_str(), L"rb");
+    #else
+        FILE* file = fopen(path.c_str(), "rb");
+    #endif
+
+        *target = nullptr;
+        size = 0;
+
+        if (!file) {
+            return false;
         }
 
-        *target = (char*)malloc(sizeof(char) * (fileSize + (nullTerminate ? 1 : 0)));
-        size = fread(*target, sizeof(char), fileSize, file);
+        bool success = false;
 
-        if (size == fileSize) {
-            if (nullTerminate) {
-                (*target)[size] = 0;
+        if (fseek(file, 0L, SEEK_END) == 0) {
+            long fileSize = ftell(file);
+            if (fileSize == -1) {
+                goto close_and_return;
             }
 
-            success = true;
+            if (fseek(file, 0L, SEEK_SET) != 0) {
+                goto close_and_return;
+            }
+
+            *target = (char*)malloc(sizeof(char) * (fileSize + (nullTerminate ? 1 : 0)));
+            size = fread(*target, sizeof(char), fileSize, file);
+
+            if (size == fileSize) {
+                if (nullTerminate) {
+                    (*target)[size] = 0;
+                }
+
+                success = true;
+            }
         }
+
+    close_and_return:
+        fclose(file);
+
+        if (!success) {
+            free(*target);
+        }
+
+        return success;
     }
 
-close_and_return:
-    fclose(file);
+    std::string NormalizeDir(std::string path) {
+        path = boost::filesystem::path(path).make_preferred().string();
 
-    if (!success) {
-        free(*target);
+        std::string sep(1, boost::filesystem::path::preferred_separator);
+        if (path.size() && path.substr(path.size() - 1, 1) != sep) {
+            path += sep;
+        }
+
+        return path;
     }
 
-    return success;
-}
-
-std::string musik::core::NormalizeDir(std::string path) {
-    path = boost::filesystem::path(path).make_preferred().string();
-
-    std::string sep(1, boost::filesystem::path::preferred_separator);
-    if (path.size() && path.substr(path.size() - 1, 1) != sep) {
-        path += sep;
+    void OpenFile(const std::string& path) {
+    #ifdef WIN32
+        ShellExecuteA(nullptr, nullptr, path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    #elif __APPLE__
+        string command = "open " + path;
+        system(command.c_str());
+    #else
+        string command = "xdg-open " + path;
+        system(command.c_str());
+    #endif
     }
 
-    return path;
-}
+} }

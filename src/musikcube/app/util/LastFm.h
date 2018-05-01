@@ -37,5 +37,15 @@
 #include "stdafx.h"
 
 namespace musik { namespace cube { namespace lastfm {
-    extern const std::string InitiateLink();
+    struct Session {
+        bool valid{ false };
+        std::string username, token, sessionId;
+    };
+
+    extern Session LoadSession();
+    extern void SaveSession(const Session& session);
+    extern const std::string CreateAccountLinkToken();
+    extern const std::string CreateLinkUrl(const std::string& token);
+    extern Session CreateSession(const std::string& token);
+    extern void ClearSession();
 } } }
