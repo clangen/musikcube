@@ -109,6 +109,7 @@ namespace musik {
                 void OnLocaleDropdownActivate(cursespp::TextLabel* label);
                 void OnServerDropdownActivate(cursespp::TextLabel* label);
                 void OnUpdateDropdownActivate(cursespp::TextLabel* label);
+                void OnLastFmDropdownActivate(cursespp::TextLabel* label);
 
                 int64_t ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -129,6 +130,7 @@ namespace musik {
                 Text outputDeviceDropdown;
                 Text replayGainDropdown;
                 Text transportDropdown;
+                Text lastFmDropdown;
                 Text pluginsDropdown;
                 Text hotkeyDropdown;
                 Text serverDropdown;

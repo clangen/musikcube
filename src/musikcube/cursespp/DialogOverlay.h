@@ -50,6 +50,7 @@ namespace cursespp {
     {
         public:
             using ButtonCallback = std::function<void(std::string key)>;
+            using DismissCallback = std::function<void()>;
 
             DialogOverlay();
             virtual ~DialogOverlay();
@@ -57,16 +58,23 @@ namespace cursespp {
             DialogOverlay& SetTitle(const std::string& title);
             DialogOverlay& SetMessage(const std::string& message);
 
+            DialogOverlay& ClearButtons();
+
             DialogOverlay& AddButton(
                 const std::string& rawKey,
                 const std::string& key,
                 const std::string& caption,
                 ButtonCallback callback = ButtonCallback());
 
+            DialogOverlay& OnDismiss(DismissCallback dismissCb);
+
             DialogOverlay& SetAutoDismiss(bool dismiss = true);
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
+
+        protected:
+            virtual void OnDismissed();
 
         private:
             void Redraw();
@@ -78,6 +86,7 @@ namespace cursespp {
             std::shared_ptr<ShortcutsWindow> shortcuts;
             int width, height;
             bool autoDismiss;
+            DismissCallback dismissCb;
 
             std::map<std::string, ButtonCallback> buttons;
     };

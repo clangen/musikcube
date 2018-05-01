@@ -101,6 +101,11 @@ DialogOverlay& DialogOverlay::SetAutoDismiss(bool dismiss) {
     return *this;
 }
 
+DialogOverlay& DialogOverlay::ClearButtons() {
+    this->shortcuts->RemoveAll();
+    return *this;
+}
+
 DialogOverlay& DialogOverlay::AddButton(
     const std::string& rawKey,
     const std::string& key,
@@ -111,6 +116,11 @@ DialogOverlay& DialogOverlay::AddButton(
     this->buttons[rawKey] = callback;
     this->Layout();
     this->Invalidate();
+    return *this;
+}
+
+DialogOverlay& DialogOverlay::OnDismiss(DismissCallback dismissCb) {
+    this->dismissCb = dismissCb;
     return *this;
 }
 
@@ -132,6 +142,12 @@ bool DialogOverlay::KeyPress(const std::string& key) {
     }
 
     return LayoutBase::KeyPress(key);
+}
+
+void DialogOverlay::OnDismissed() {
+    if (this->dismissCb) {
+        this->dismissCb();
+    }
 }
 
 void DialogOverlay::RecalculateSize() {

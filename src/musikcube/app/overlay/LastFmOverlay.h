@@ -34,56 +34,35 @@
 
 #pragma once
 
-#include "IOverlay.h"
-#include "LayoutBase.h"
-#include "OverlayStack.h"
+#include <cursespp/DialogOverlay.h>
+#include <app/util/LastFm.h>
 
-namespace cursespp {
-    class OverlayBase : public LayoutBase, public IOverlay {
+namespace musik { namespace cube {
+    /* in general we probably shouldn't subclass DialogOverlay because
+    callers can mutate the title and body... but... meh. this is easy. */
+    class LastFmOverlay : public cursespp::DialogOverlay
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        , public std::enable_shared_from_this<DialogOverlay>
+#endif
+    {
         public:
-            OverlayBase() : LayoutBase() {
-
-            }
-
-            virtual ~OverlayBase() {
-                this->stack = nullptr;
-            }
-
-            virtual void SetOverlayStack(OverlayStack* stack) {
-                this->stack = stack;
-            }
-
-            virtual bool IsTop() {
-                if (LayoutBase::IsTop()) {
-                    return true;
-                }
-
-                for (size_t i = 0; i < this->GetWindowCount(); i++) {
-                    if (this->GetWindowAt(i)->IsTop()) {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-        protected:
-            OverlayStack* GetOverlayStack() {
-                return this->stack;
-            }
-
-            void Dismiss() {
-                if (this->stack) {
-                    stack->Remove(this);
-                    this->OnDismissed();
-                }
-            }
-
-            virtual void OnDismissed() {
-                /* for subclass use */
-            }
+            static void Show();
+            virtual ~LastFmOverlay();
 
         private:
-            OverlayStack* stack;
+            LastFmOverlay();
+
+            enum class State {
+                Unregistered,
+                ObtainingToken,
+                WaitingForUser,
+                RegisteringSession,
+                Registered
+            };
+
+            void SetState(State state);
+
+            State state{ State::Unregistered };
+            std::string linkToken;
     };
-}
+} }

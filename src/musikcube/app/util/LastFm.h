@@ -42,10 +42,11 @@ namespace musik { namespace cube { namespace lastfm {
         std::string username, token, sessionId;
     };
 
-    extern Session LoadSession();
-    extern void SaveSession(const Session& session);
     extern const std::string CreateAccountLinkToken();
     extern const std::string CreateLinkUrl(const std::string& token);
     extern Session CreateSession(const std::string& token);
+
+    extern Session LoadSession();
+    extern void SaveSession(const Session& session);
     extern void ClearSession();
 } } }

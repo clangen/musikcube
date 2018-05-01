@@ -62,6 +62,7 @@
         "settings_auto_update_check": "check for updates on startup",
         "settings_save_session_on_exit": "save session on exit",
         "settings_check_for_updates": "check for updates now",
+        "settings_last_fm": "last fm",
 
         "settings_server_enable_websockets": "metadata server enabled",
         "settings_server_enable_http": "audio streaming enabled",

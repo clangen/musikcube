@@ -32,58 +32,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stdafx.h"
+#include "LastFmOverlay.h"
+#include <cursespp/App.h>
 
-#include "IOverlay.h"
-#include "LayoutBase.h"
-#include "OverlayStack.h"
+using namespace musik::cube;
+using namespace cursespp;
 
-namespace cursespp {
-    class OverlayBase : public LayoutBase, public IOverlay {
-        public:
-            OverlayBase() : LayoutBase() {
+void LastFmOverlay::Show() {
+    std::shared_ptr<LastFmOverlay> overlay(new LastFmOverlay());
+    App::Overlays().Push(overlay);
+}
 
-            }
+LastFmOverlay::LastFmOverlay()
+: DialogOverlay() {
 
-            virtual ~OverlayBase() {
-                this->stack = nullptr;
-            }
+}
 
-            virtual void SetOverlayStack(OverlayStack* stack) {
-                this->stack = stack;
-            }
+LastFmOverlay::~LastFmOverlay() {
 
-            virtual bool IsTop() {
-                if (LayoutBase::IsTop()) {
-                    return true;
-                }
+}
 
-                for (size_t i = 0; i < this->GetWindowCount(); i++) {
-                    if (this->GetWindowAt(i)->IsTop()) {
-                        return true;
-                    }
-                }
+void LastFmOverlay::SetState(State state) {
 
-                return false;
-            }
-
-        protected:
-            OverlayStack* GetOverlayStack() {
-                return this->stack;
-            }
-
-            void Dismiss() {
-                if (this->stack) {
-                    stack->Remove(this);
-                    this->OnDismissed();
-                }
-            }
-
-            virtual void OnDismissed() {
-                /* for subclass use */
-            }
-
-        private:
-            OverlayStack* stack;
-    };
 }

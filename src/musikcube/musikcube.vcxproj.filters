@@ -159,6 +159,9 @@
     <ClCompile Include="app\util\LastFm.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\LastFmOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -366,6 +369,9 @@
     </ClInclude>
     <ClInclude Include="app\util\LastFm.h">
       <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\LastFmOverlay.h">
+      <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
