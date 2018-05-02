@@ -62,7 +62,7 @@ using LastFmClient = musik::core::io::HttpClient<std::stringstream>;
 using Preferences = musik::core::Preferences;
 using Prefs = std::shared_ptr<Preferences>;
 
-static std::unique_ptr<LastFmClient> createClient() {
+static std::shared_ptr<LastFmClient> createClient() {
     return LastFmClient::Create(std::stringstream());
 }
 
@@ -114,15 +114,15 @@ static inline Prefs settings() {
 
 namespace musik { namespace cube { namespace lastfm {
 
-    const std::string CreateAccountLinkToken() {
+    void CreateAccountLinkToken(TokenCallback callback) {
         std::string url = generateSignedUrl(GET_TOKEN);
-        std::string token;
 
         auto client = createClient();
         client->Url(url)
-            .Mode(LastFmClient::Thread::Current)
-            .Run([&token](LastFmClient* client, int statusCode, CURLcode curlCode) {
+            .Mode(LastFmClient::Thread::Background)
+            .Run([callback](LastFmClient* client, int statusCode, CURLcode curlCode) {
                 if (statusCode == 200) {
+                    std::string token;
                     try {
                         auto json = nlohmann::json::parse(client->Stream().str());
                         token = json.value("token", "");
@@ -130,22 +130,21 @@ namespace musik { namespace cube { namespace lastfm {
                     catch (...) {
                         /* not much we can do... */
                     }
+                    callback(token);
                 }
         });
-
-        return token;
     }
 
-    extern Session CreateSession(const std::string& token) {
+    extern void CreateSession(const std::string& token, SessionCallback callback) {
         std::string url = generateSignedUrl(GET_SESSION, { { "token", token } });
-
-        Session session;
-        session.token = token;
 
         auto client = createClient();
         client->Url(url)
-            .Mode(LastFmClient::Thread::Current)
-            .Run([&session](LastFmClient* client, int statusCode, CURLcode curlCode) {
+            .Mode(LastFmClient::Thread::Background)
+            .Run([token, callback](LastFmClient* client, int statusCode, CURLcode curlCode) {
+                Session session;
+                session.token = token;
+
                 if (statusCode == 200) {
                     try {
                         auto json = nlohmann::json::parse(client->Stream().str());
@@ -157,10 +156,10 @@ namespace musik { namespace cube { namespace lastfm {
                         /* not much we can do... */
                     }
                 }
-        });
 
-        validate(session);
-        return session;
+                validate(session);
+                callback(session);
+        });
     }
 
     const std::string CreateLinkUrl(const std::string& token) {

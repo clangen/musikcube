@@ -46,21 +46,32 @@ namespace musik { namespace cube {
 #endif
     {
         public:
+            enum class State {
+                Unregistered = 0,
+                ObtainingToken = 1,
+                WaitingForUser = 2,
+                RegisteringSession = 3,
+                Registered = 4,
+                Error = 5
+            };
+
             static void Show();
             virtual ~LastFmOverlay();
+
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
         private:
             LastFmOverlay();
 
-            enum class State {
-                Unregistered,
-                ObtainingToken,
-                WaitingForUser,
-                RegisteringSession,
-                Registered
-            };
+            void LoadDefaultState();
+            void UpdateMessage();
+            void UpdateButtons();
 
             void SetState(State state);
+            void PostState(State state);
+
+            void GetLinkToken();
+            void CreateSession();
 
             State state{ State::Unregistered };
             std::string linkToken;

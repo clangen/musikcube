@@ -42,9 +42,12 @@ namespace musik { namespace cube { namespace lastfm {
         std::string username, token, sessionId;
     };
 
-    extern const std::string CreateAccountLinkToken();
+    using TokenCallback = std::function<void(std::string)>;
+    using SessionCallback = std::function<void(Session)>;
+
+    extern void CreateAccountLinkToken(TokenCallback callback);
     extern const std::string CreateLinkUrl(const std::string& token);
-    extern Session CreateSession(const std::string& token);
+    extern void CreateSession(const std::string& token, SessionCallback session);
 
     extern Session LoadSession();
     extern void SaveSession(const Session& session);

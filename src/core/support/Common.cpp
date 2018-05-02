@@ -298,6 +298,14 @@ namespace musik { namespace core {
         return path;
     }
 
+    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace) {
+        size_t pos = input.find(find);
+        while (pos != std::string::npos) {
+            input.replace(pos, find.size(), replace);
+            pos = input.find(find, pos + replace.size());
+        }
+    }
+
     void OpenFile(const std::string& path) {
     #ifdef WIN32
         ShellExecuteA(nullptr, nullptr, path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);

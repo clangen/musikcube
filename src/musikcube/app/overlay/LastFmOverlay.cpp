@@ -34,25 +34,204 @@
 
 #include "stdafx.h"
 #include "LastFmOverlay.h"
+#include <app/util/LastFm.h>
+#include <app/util/Messages.h>
+#include <core/support/Common.h>
 #include <cursespp/App.h>
+#include <map>
+#include <vector>
 
 using namespace musik::cube;
+using namespace musik;
 using namespace cursespp;
+
+static std::map<LastFmOverlay::State, std::string> stateToText = {
+    {
+        LastFmOverlay::State::Unregistered,
+        "no last.fm account linked.\n\n"
+        "press ENTER to begin the linking process."
+    },
+    {
+        LastFmOverlay::State::ObtainingToken,
+        "contacting last.fm for an account link token..."
+    },
+    {
+        LastFmOverlay::State::WaitingForUser,
+        "press 'o' to open the account link page in your default browser, "
+        "or manually navigate to the following url:"
+        "\n\n{{link}}\n\n"
+        "after granting permission, press 'ENTER' to continue.\n\n"
+        "(note: you may be asked to sign into your last.fm account.)"
+    },
+    {
+        LastFmOverlay::State::RegisteringSession,
+        "getting a session token, please wait..."
+    },
+    {
+        LastFmOverlay::State::Registered,
+        "registered with account: '{{username}}'."
+    },
+    {
+        LastFmOverlay::State::Error,
+        "failed to link your last.fm account.\n\n"
+        "please try again later."
+    }
+};
 
 void LastFmOverlay::Show() {
     std::shared_ptr<LastFmOverlay> overlay(new LastFmOverlay());
     App::Overlays().Push(overlay);
 }
 
+static lastfm::Session session() {
+    return lastfm::LoadSession();
+}
+
 LastFmOverlay::LastFmOverlay()
 : DialogOverlay() {
-
+    this->SetTitle("last.fm registration");
+    this->SetAutoDismiss(false);
+    this->LoadDefaultState();
 }
 
 LastFmOverlay::~LastFmOverlay() {
 
 }
 
-void LastFmOverlay::SetState(State state) {
+void LastFmOverlay::LoadDefaultState() {
+    this->SetState(session().valid ? State::Registered : State::Unregistered);
+}
 
+void LastFmOverlay::GetLinkToken() {
+    this->SetState(State::ObtainingToken);
+    lastfm::CreateAccountLinkToken([this](std::string token) {
+        this->linkToken = token;
+        if (token.size()) {
+            this->PostState(State::WaitingForUser);
+        }
+        else {
+            this->PostState(State::Error);
+        }
+    });
+}
+
+void LastFmOverlay::CreateSession() {
+    this->SetState(State::RegisteringSession);
+    lastfm::CreateSession(this->linkToken, [this](lastfm::Session session) {
+        if (session.valid) {
+            lastfm::SaveSession(session);
+            this->PostState(State::Registered);
+        }
+        else {
+            this->PostState(State::Error);
+        }
+    });
+}
+
+void LastFmOverlay::PostState(State state) {
+    this->PostMessage(message::SetLastFmState, (int64_t) state);
+}
+
+void LastFmOverlay::SetState(State state) {
+    this->state = state;
+    this->UpdateMessage();
+    this->UpdateButtons();
+}
+
+void LastFmOverlay::UpdateMessage() {
+    std::string message = stateToText[state];
+
+    switch (this->state) {
+        case State::Registered: {
+            auto session = lastfm::LoadSession();
+            core::ReplaceAll(message, "{{username}}", session.username);
+            break;
+        }
+
+        case State::WaitingForUser: {
+            std::string url = lastfm::CreateLinkUrl(this->linkToken);
+            core::ReplaceAll(message, "{{link}}", url);
+            break;
+        }
+    }
+
+    this->SetMessage(message);
+}
+
+void LastFmOverlay::UpdateButtons() {
+    this->ClearButtons();
+
+    switch (this->state) {
+        case State::Unregistered: {
+            this->AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                "start",
+                [this](std::string key) {
+                    this->GetLinkToken();
+                });
+            break;
+        }
+
+        case State::Registered: {
+            this->AddButton(
+                "u",
+                "u",
+                "unregister",
+                [this](std::string key) {
+                    lastfm::ClearSession();
+                    this->LoadDefaultState();
+                });
+            break;
+        }
+
+        case State::WaitingForUser: {
+            this->AddButton(
+                "o",
+                "o",
+                "open url",
+                [this](std::string key) {
+                    core::OpenFile(lastfm::CreateLinkUrl(this->linkToken));
+                });
+
+            this->AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                "start",
+                [this](std::string key) {
+                    this->CreateSession();
+                });
+            break;
+        }
+
+        case State::Error: {
+            this->AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                _TSTR("button_ok"),
+                [this](std::string key) {
+                    this->Dismiss();
+                });
+            break;
+        }
+    }
+
+    if (this->state != State::Error) {
+        this->AddButton(
+            "^[",
+            "ESC",
+            _TSTR("button_close"),
+            [this](std::string key) {
+                this->Dismiss();
+            });
+    }
+}
+
+void LastFmOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
+    if (message.Type() == message::SetLastFmState) {
+        this->SetState((State) message.UserData1());
+    }
+    else {
+        DialogOverlay::ProcessMessage(message);
+    }
 }

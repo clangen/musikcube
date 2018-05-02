@@ -60,6 +60,7 @@ namespace musik {
             static const int JumpToConsole          = First + 9;
             static const int JumpToLibrary          = First + 10;
             static const int JumpToSettings         = First + 11;
+            static const int SetLastFmState         = First + 12;
         }
     }
 }

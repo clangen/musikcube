@@ -39,10 +39,11 @@
 #include <thread>
 #include <mutex>
 #include <unordered_map>
+#include <set>
 
 namespace musik { namespace core { namespace io {
     template <typename T>
-    class HttpClient {
+    class HttpClient: public std::enable_shared_from_this<HttpClient<T>> {
         public:
             enum class Thread { Current, Background };
 
@@ -52,8 +53,8 @@ namespace musik { namespace core { namespace io {
             using HeaderCallback = std::function<void(std::string, std::string)>;
             using CanceledCallback = std::function<void(HttpClient<T>* caller)>;
 
-            static std::unique_ptr<HttpClient<T>> Create(T&& stream) {
-               return std::unique_ptr<HttpClient<T>>(new HttpClient<T>(std::move(stream)));
+            static std::shared_ptr<HttpClient<T>> Create(T&& stream) {
+               return std::shared_ptr<HttpClient<T>>(new HttpClient<T>(std::move(stream)));
             }
 
             ~HttpClient();
@@ -84,7 +85,7 @@ namespace musik { namespace core { namespace io {
 
             void RunOnCurrentThread(Callback callback);
 
-            std::recursive_mutex mutex;
+            std::mutex mutex;
             std::shared_ptr<std::thread> thread;
 
             T ostream;
@@ -96,7 +97,16 @@ namespace musik { namespace core { namespace io {
             bool cancel;
             Thread mode{ Thread::Background };
             CURL* curl;
+
+            static std::mutex instanceMutex;
+            static std::set<std::shared_ptr<HttpClient<T>>> instances;
     };
+
+    template <typename T>
+    std::mutex HttpClient<T>::instanceMutex;
+
+    template <typename T>
+    std::set<std::shared_ptr<HttpClient<T>>> HttpClient<T>::instances;
 
     template <typename T>
     std::string HttpClient<T>::DefaultUserAgent() {
@@ -168,7 +178,7 @@ namespace musik { namespace core { namespace io {
 
     template <typename T>
     HttpClient<T>::~HttpClient() {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        std::unique_lock<std::mutex> lock(this->mutex);
 
         if (this->curl) {
             curl_easy_cleanup(this->curl);
@@ -182,7 +192,7 @@ namespace musik { namespace core { namespace io {
 
     template <typename T>
     HttpClient<T>& HttpClient<T>::Run(Callback callback) {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        std::unique_lock<std::mutex> lock(this->mutex);
 
         if (this->thread) {
             throw std::runtime_error("already started");
@@ -226,6 +236,9 @@ namespace musik { namespace core { namespace io {
         }
 
         if (mode == Thread::Background) {
+            std::unique_lock<std::mutex> lock(instanceMutex);
+            instances.insert(this->shared_from_this());
+
             this->thread.reset(new std::thread([callback, this] {
                 this->RunOnCurrentThread(callback);
             }));
@@ -253,11 +266,21 @@ namespace musik { namespace core { namespace io {
         if (callback) {
             callback(this, httpStatus, curlCode);
         }
+
+        if (this->thread) {
+            this->thread->detach();
+            this->thread.reset();
+        }
+
+        {
+            std::unique_lock<std::mutex> lock(instanceMutex);
+            instances.erase(instances.find(this->shared_from_this()));
+        }
     }
 
     template <typename T>
     void HttpClient<T>::Wait() {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        std::unique_lock<std::mutex> lock(this->mutex);
 
         if (this->thread && this->thread->joinable()) {
             this->thread->join();
@@ -302,7 +325,7 @@ namespace musik { namespace core { namespace io {
 
     template <typename T>
     void HttpClient<T>::Cancel() {
-        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        std::unique_lock<std::mutex> lock(this->mutex);
 
         if (this->thread) {
             this->cancel = true;

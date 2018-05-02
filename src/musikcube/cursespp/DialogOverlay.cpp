@@ -83,6 +83,7 @@ DialogOverlay& DialogOverlay::SetTitle(const std::string& title) {
     this->title = title;
     this->RecalculateSize();
     this->Layout();
+    this->Clear();
     this->Invalidate();
     return *this;
 }
@@ -92,6 +93,7 @@ DialogOverlay& DialogOverlay::SetMessage(const std::string& message) {
     this->width = 0; /* implicitly triggers a new BreakLines() */
     this->RecalculateSize();
     this->Layout();
+    this->Clear();
     this->Invalidate();
     return *this;
 }

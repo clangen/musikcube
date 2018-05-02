@@ -48,6 +48,7 @@ namespace musik { namespace core {
     extern void OpenFile(const std::string& path);
     extern int64_t Checksum(char *data,unsigned int bytes);
     extern size_t CopyString(const std::string& src, char* dst, size_t size);
+    extern void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
     extern bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
 
     /* renames ~/.mC2 -> ~/.musikcube */
