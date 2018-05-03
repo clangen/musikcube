@@ -70,7 +70,7 @@
         "settings_last_fm_dialog_message_obtaining_token": "contacting last.fm for an account link token...",
         "settings_last_fm_dialog_message_waiting_for_user": "press 'o' to open the account link page in your default browser, or manually navigate to the following url:\n\n{{link}}\n\nafter granting permission, press 'ENTER' to continue.\n\n(note: you may be asked to sign into your last.fm account.)",
         "settings_last_fm_dialog_message_registering_session": "getting a session token, please wait...",
-        "settings_last_fm_dialog_message_registered": "registered with account: '{{username}}'.\n\ngo listen to some music!",
+        "settings_last_fm_dialog_message_registered": "registered with account: '{{username}}'\n\ngo listen to some music!",
         "settings_last_fm_dialog_message_link_error": "failed to get an account link token from last.fm.\n\nplease try again later.",
         "settings_last_fm_dialog_message_register_error": "failed link your last.fm account.\n\nplease make sure you open the following url and grant permission:\n\n{{link}}\n\npress ENTER to try again.",
 
