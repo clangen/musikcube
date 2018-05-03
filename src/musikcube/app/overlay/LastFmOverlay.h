@@ -52,7 +52,8 @@ namespace musik { namespace cube {
                 WaitingForUser = 2,
                 RegisteringSession = 3,
                 Registered = 4,
-                Error = 5
+                LinkError = 5,
+                RegisterError = 6
             };
 
             static void Show();

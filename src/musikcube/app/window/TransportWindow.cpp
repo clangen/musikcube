@@ -50,6 +50,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
+#include <app/util/LastFm.h>
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
@@ -426,6 +427,11 @@ void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track
     this->currentTrack = track;
     this->lastTime = DEFAULT_TIME;
     this->UpdateReplayGainState();
+
+    if (playback.GetPlaybackState() == PlaybackPlaying) {
+        lastfm::Scrobble(track);
+    }
+
     DEBOUNCE_REFRESH(TimeSync, 0);
 }
 

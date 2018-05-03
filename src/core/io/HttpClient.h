@@ -46,6 +46,7 @@ namespace musik { namespace core { namespace io {
     class HttpClient: public std::enable_shared_from_this<HttpClient<T>> {
         public:
             enum class Thread { Current, Background };
+            enum class HttpMethod { Get, Post };
 
             using HttpHeaders = std::unordered_map<std::string, std::string>;
             using Callback = std::function<void(HttpClient<T>* caller, int, CURLcode)>;
@@ -65,6 +66,8 @@ namespace musik { namespace core { namespace io {
             HttpClient<T>& Decorator(DecoratorCallback decoratorCb);
             HttpClient<T>& Canceled(CanceledCallback canceledCb);
             HttpClient<T>& Mode(Thread mode);
+            HttpClient<T>& PostBody(const std::string& postBody);
+            HttpClient<T>& Method(HttpMethod mode);
 
             const T& Stream() const { return this->ostream; }
             const HttpHeaders& ResponseHeaders() const { return this->responseHeaders; }
@@ -90,12 +93,14 @@ namespace musik { namespace core { namespace io {
 
             T ostream;
             std::string url;
+            std::string postBody;
             HttpHeaders requestHeaders, responseHeaders;
             HeaderCallback headersCb;
             DecoratorCallback decoratorCb;
             CanceledCallback canceledCallback;
             bool cancel;
             Thread mode{ Thread::Background };
+            HttpMethod method{ HttpMethod::Get };
             CURL* curl;
 
             static std::mutex instanceMutex;
@@ -226,6 +231,11 @@ namespace musik { namespace core { namespace io {
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &CurlHeaderCallback);
 
+#if 0
+        curl_easy_setopt(curl, CURLOPT_PROXY, "http://localhost");
+        curl_easy_setopt(curl, CURLOPT_PROXYPORT, 8080);
+#endif
+
         if (this->requestHeaders.size()) {
             struct curl_slist* slist = nullptr;
             for (auto it : this->requestHeaders) {
@@ -233,6 +243,14 @@ namespace musik { namespace core { namespace io {
                 slist = curl_slist_append(slist, header.c_str());
             }
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
+        }
+
+        if (this->method == HttpMethod::Post) {
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+            if (this->postBody.size()) {
+                curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, this->postBody.c_str());
+            }
         }
 
         if (mode == Thread::Background) {
@@ -294,8 +312,20 @@ namespace musik { namespace core { namespace io {
     }
 
     template <typename T>
+    HttpClient<T>& HttpClient<T>::PostBody(const std::string& postBody) {
+        this->postBody = postBody;
+        return *this;
+    }
+
+    template <typename T>
     HttpClient<T>& HttpClient<T>::Mode(Thread mode) {
         this->mode = mode;
+        return *this;
+    }
+
+    template <typename T>
+    HttpClient<T>& HttpClient<T>::Method(HttpMethod method) {
+        this->method = method;
         return *this;
     }
 

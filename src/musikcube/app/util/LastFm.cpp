@@ -53,6 +53,7 @@ static const std::string API_SECRET = "6dc09da925fe5c115b90320213c53b46";
 static const std::string URL_BASE = "http://ws.audioscrobbler.com/2.0/";
 static const std::string GET_TOKEN = "auth.getToken";
 static const std::string GET_SESSION = "auth.getSession";
+static const std::string UPDATE_NOW_PLAYING = "track.scrobble";
 static const std::string ACCOUNT_LINK_URL_BASE = "http://www.last.fm/api/auth/?api_key=" + API_KEY + "&token=";
 
 using namespace musik;
@@ -73,20 +74,32 @@ static void validate(musik::cube::lastfm::Session& session) {
         session.token.size();
 }
 
-static std::string generateSignedUrl(
+static std::string encode(std::string value) {
+    static CURL* curl = curl_easy_init();
+    if (curl && value.c_str()) {
+        char* encoded = curl_easy_escape(curl, value.c_str(), value.size());
+        if (encoded) {
+            value = encoded;
+            curl_free(encoded);
+        }
+    }
+    return value;
+}
+
+static std::string gernateSignedUrlParams(
     const std::string& method,
-    std::map<std::string, std::string>&& params = { })
+    std::map<std::string, std::string>&& params = {})
 {
     params["method"] = method;
     params["api_key"] = API_KEY;
 
     std::string toHash;
-    std::string url = URL_BASE;
+    std::string urlParams;
     bool first = true;
 
     for (auto it : params) {
         toHash += it.first + it.second;
-        url += (first ? "?" : "&") + it.first + "=" + it.second;
+        urlParams += (first ? "" : "&") + it.first + "=" + encode(it.second);
         first = false;
     }
 
@@ -103,9 +116,15 @@ static std::string generateSignedUrl(
     }
     hexDigest[32] = 0;
 
-    url += "&format=json&api_sig=" + std::string(hexDigest);
+    urlParams += "&format=json&api_sig=" + std::string(hexDigest);
+    return urlParams;
+}
 
-    return url;
+static std::string generateSignedUrl(
+    const std::string& method,
+    std::map<std::string, std::string>&& params = { })
+{
+    return URL_BASE + "?" + gernateSignedUrlParams(method, std::move(params));
 }
 
 static inline Prefs settings() {
@@ -188,6 +207,30 @@ namespace musik { namespace cube { namespace lastfm {
     void ClearSession() {
         Session session;
         SaveSession(session);
+    }
+
+    void Scrobble(musik::core::TrackPtr track) {
+        if (track) {
+            auto session = LoadSession();
+            if (session.valid) {
+                std::string postBody = gernateSignedUrlParams(UPDATE_NOW_PLAYING, {
+                    { "track", track->GetString("title") },
+                    { "album", track->GetString("album") },
+                    { "artist", track->GetString("artist") },
+                    { "albumArtist", track->GetString("album_artist") },
+                    { "trackNumber", track->GetString("track") },
+                    { "timestamp", std::to_string(std::time(0)) },
+                    { "sk", session.sessionId }
+                });
+
+                createClient()->Url(URL_BASE)
+                    .Mode(LastFmClient::Thread::Background)
+                    .Header("Content-Type", "application/x-www-form-urlencoded")
+                    .Method(LastFmClient::HttpMethod::Post)
+                    .PostBody(postBody)
+                    .Run();
+            }
+        }
     }
 
 } } }

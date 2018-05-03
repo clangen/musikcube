@@ -46,36 +46,13 @@ using namespace musik;
 using namespace cursespp;
 
 static std::map<LastFmOverlay::State, std::string> stateToText = {
-    {
-        LastFmOverlay::State::Unregistered,
-        "no last.fm account linked.\n\n"
-        "press ENTER to begin the linking process."
-    },
-    {
-        LastFmOverlay::State::ObtainingToken,
-        "contacting last.fm for an account link token..."
-    },
-    {
-        LastFmOverlay::State::WaitingForUser,
-        "press 'o' to open the account link page in your default browser, "
-        "or manually navigate to the following url:"
-        "\n\n{{link}}\n\n"
-        "after granting permission, press 'ENTER' to continue.\n\n"
-        "(note: you may be asked to sign into your last.fm account.)"
-    },
-    {
-        LastFmOverlay::State::RegisteringSession,
-        "getting a session token, please wait..."
-    },
-    {
-        LastFmOverlay::State::Registered,
-        "registered with account: '{{username}}'."
-    },
-    {
-        LastFmOverlay::State::Error,
-        "failed to link your last.fm account.\n\n"
-        "please try again later."
-    }
+    { LastFmOverlay::State::Unregistered, "settings_last_fm_dialog_message_unregistered" },
+    { LastFmOverlay::State::ObtainingToken, "settings_last_fm_dialog_message_obtaining_token" },
+    { LastFmOverlay::State::WaitingForUser, "settings_last_fm_dialog_message_waiting_for_user" },
+    { LastFmOverlay::State::RegisteringSession, "settings_last_fm_dialog_message_registering_session" },
+    { LastFmOverlay::State::Registered, "settings_last_fm_dialog_message_registered" },
+    { LastFmOverlay::State::LinkError, "settings_last_fm_dialog_message_link_error" },
+    { LastFmOverlay::State::RegisterError, "settings_last_fm_dialog_message_register_error" }
 };
 
 void LastFmOverlay::Show() {
@@ -110,7 +87,7 @@ void LastFmOverlay::GetLinkToken() {
             this->PostState(State::WaitingForUser);
         }
         else {
-            this->PostState(State::Error);
+            this->PostState(State::LinkError);
         }
     });
 }
@@ -123,7 +100,7 @@ void LastFmOverlay::CreateSession() {
             this->PostState(State::Registered);
         }
         else {
-            this->PostState(State::Error);
+            this->PostState(State::RegisterError);
         }
     });
 }
@@ -139,7 +116,7 @@ void LastFmOverlay::SetState(State state) {
 }
 
 void LastFmOverlay::UpdateMessage() {
-    std::string message = stateToText[state];
+    std::string message = _TSTR(stateToText[state]);
 
     switch (this->state) {
         case State::Registered: {
@@ -148,7 +125,8 @@ void LastFmOverlay::UpdateMessage() {
             break;
         }
 
-        case State::WaitingForUser: {
+        case State::WaitingForUser:
+        case State::RegisterError: {
             std::string url = lastfm::CreateLinkUrl(this->linkToken);
             core::ReplaceAll(message, "{{link}}", url);
             break;
@@ -164,66 +142,71 @@ void LastFmOverlay::UpdateButtons() {
     switch (this->state) {
         case State::Unregistered: {
             this->AddButton(
-                "KEY_ENTER",
-                "ENTER",
-                "start",
+                "KEY_ENTER", "ENTER", _TSTR("button_start"),
                 [this](std::string key) {
                     this->GetLinkToken();
+                });
+
+            this->AddButton(
+                "^[", "ESC", _TSTR("button_cancel"),
+                [this](std::string key) {
+                    this->Dismiss();
                 });
             break;
         }
 
         case State::Registered: {
             this->AddButton(
-                "u",
-                "u",
-                "unregister",
+                "u", "u", "unregister",
                 [this](std::string key) {
                     lastfm::ClearSession();
                     this->LoadDefaultState();
                 });
-            break;
-        }
-
-        case State::WaitingForUser: {
-            this->AddButton(
-                "o",
-                "o",
-                "open url",
-                [this](std::string key) {
-                    core::OpenFile(lastfm::CreateLinkUrl(this->linkToken));
-                });
 
             this->AddButton(
-                "KEY_ENTER",
-                "ENTER",
-                "start",
-                [this](std::string key) {
-                    this->CreateSession();
-                });
-            break;
-        }
-
-        case State::Error: {
-            this->AddButton(
-                "KEY_ENTER",
-                "ENTER",
-                _TSTR("button_ok"),
+                "KEY_ENTER", "ENTER", _TSTR("button_close"),
                 [this](std::string key) {
                     this->Dismiss();
                 });
             break;
         }
-    }
 
-    if (this->state != State::Error) {
-        this->AddButton(
-            "^[",
-            "ESC",
-            _TSTR("button_close"),
-            [this](std::string key) {
-                this->Dismiss();
-            });
+        case State::WaitingForUser:
+        case State::RegisterError: {
+            this->AddButton(
+                "o", "o", "open url",
+                [this](std::string key) {
+                    core::OpenFile(lastfm::CreateLinkUrl(this->linkToken));
+                });
+
+
+            std::string continueText = _TSTR(
+                (state == State::WaitingForUser)
+                    ? "button_continue"
+                    : "button_retry");
+
+            this->AddButton(
+                "KEY_ENTER", "ENTER", continueText,
+                [this](std::string key) {
+                    this->CreateSession();
+                });
+
+            this->AddButton(
+                "^[", "ESC", _TSTR("button_cancel"),
+                [this](std::string key) {
+                    this->Dismiss();
+                });
+            break;
+        }
+
+        case State::LinkError: {
+            this->AddButton(
+                "KEY_ENTER", "ENTER", _TSTR("button_ok"),
+                [this](std::string key) {
+                    this->Dismiss();
+                });
+            break;
+        }
     }
 }
 

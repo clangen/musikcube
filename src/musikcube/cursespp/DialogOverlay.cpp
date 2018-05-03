@@ -105,6 +105,7 @@ DialogOverlay& DialogOverlay::SetAutoDismiss(bool dismiss) {
 
 DialogOverlay& DialogOverlay::ClearButtons() {
     this->shortcuts->RemoveAll();
+    this->buttons.clear();
     return *this;
 }
 

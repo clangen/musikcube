@@ -35,6 +35,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include <core/library/track/Track.h>
 
 namespace musik { namespace cube { namespace lastfm {
     struct Session {
@@ -48,6 +49,7 @@ namespace musik { namespace cube { namespace lastfm {
     extern void CreateAccountLinkToken(TokenCallback callback);
     extern const std::string CreateLinkUrl(const std::string& token);
     extern void CreateSession(const std::string& token, SessionCallback session);
+    extern void Scrobble(musik::core::TrackPtr track);
 
     extern Session LoadSession();
     extern void SaveSession(const Session& session);
