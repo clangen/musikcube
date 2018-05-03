@@ -56,7 +56,8 @@ namespace musik { namespace cube {
                 RegisterError = 6
             };
 
-            static void Show();
+            static void Start();
+
             virtual ~LastFmOverlay();
 
             virtual void ProcessMessage(musik::core::runtime::IMessage &message);

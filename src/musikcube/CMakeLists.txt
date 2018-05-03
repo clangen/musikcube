@@ -13,6 +13,7 @@ set (CUBE_SRCS
 	./app/model/DirectoryAdapter.cpp
 	./app/overlay/BrowseOverlays.cpp
 	./app/overlay/ColorThemeOverlay.cpp
+	./app/overlay/LastFmOverlay.cpp
 	./app/overlay/LocaleOverlay.cpp
 	./app/overlay/PlaybackOverlays.cpp
 	./app/overlay/PlayQueueOverlays.cpp
@@ -20,8 +21,9 @@ set (CUBE_SRCS
 	./app/overlay/PreampOverlay.cpp
 	./app/overlay/ServerOverlay.cpp
 	./app/overlay/VisualizerOverlay.cpp
-	./app/util/Hotkeys.cpp
 	./app/util/GlobalHotkeys.cpp
+	./app/util/Hotkeys.cpp
+	./app/util/LastFm.cpp
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
 	./app/util/UpdateCheck.cpp

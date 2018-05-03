@@ -55,9 +55,9 @@ link_directories (
   ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib)
 
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread)
+  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
 else()
-  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} dl curl pthread)
+  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} dl curl pthread crypto)
 endif()
 
 include_directories (

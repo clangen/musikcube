@@ -310,10 +310,10 @@ namespace musik { namespace core {
     #ifdef WIN32
         ShellExecuteA(nullptr, nullptr, path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
     #elif __APPLE__
-        string command = "open " + path;
+        std::string command = "open " + path;
         system(command.c_str());
     #else
-        string command = "xdg-open " + path;
+        std::string command = "xdg-open " + path;
         system(command.c_str());
     #endif
     }

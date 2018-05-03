@@ -365,8 +365,4 @@ namespace musik { namespace core { namespace io {
         }
     }
 
-    template <typename T>
-    const T& Stream() {
-        return this->ostream;
-    }
 } } }

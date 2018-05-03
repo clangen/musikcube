@@ -256,7 +256,7 @@ void SettingsLayout::OnTransportDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnLastFmDropdownActivate(cursespp::TextLabel* label) {
-    LastFmOverlay::Show();
+    LastFmOverlay::Start();
 }
 
 void SettingsLayout::OnPluginsDropdownActivate(cursespp::TextLabel* label) {

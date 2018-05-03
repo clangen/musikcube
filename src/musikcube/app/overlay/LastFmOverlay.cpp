@@ -55,7 +55,7 @@ static std::map<LastFmOverlay::State, std::string> stateToText = {
     { LastFmOverlay::State::RegisterError, "settings_last_fm_dialog_message_register_error" }
 };
 
-void LastFmOverlay::Show() {
+void LastFmOverlay::Start() {
     std::shared_ptr<LastFmOverlay> overlay(new LastFmOverlay());
     App::Overlays().Push(overlay);
 }
