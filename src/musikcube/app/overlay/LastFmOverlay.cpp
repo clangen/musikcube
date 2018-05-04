@@ -34,14 +34,15 @@
 
 #include "stdafx.h"
 #include "LastFmOverlay.h"
-#include <app/util/LastFm.h>
 #include <app/util/Messages.h>
+#include <core/support/LastFm.h>
 #include <core/support/Common.h>
 #include <cursespp/App.h>
 #include <map>
 #include <vector>
 
 using namespace musik::cube;
+using namespace musik::core;
 using namespace musik;
 using namespace cursespp;
 
@@ -131,6 +132,9 @@ void LastFmOverlay::UpdateMessage() {
             core::ReplaceAll(message, "{{link}}", url);
             break;
         }
+
+        default:
+            break;
     }
 
     this->SetMessage(message);
@@ -207,6 +211,9 @@ void LastFmOverlay::UpdateButtons() {
                 });
             break;
         }
+
+        default:
+            break;
     }
 }
 

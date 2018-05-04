@@ -39,7 +39,6 @@
 #include <core/support/Preferences.h>
 #include <core/io/HttpClient.h>
 #include <core/support/PreferenceKeys.h>
-#include <app/util/PreferenceKeys.h>
 #include <json.hpp>
 #include <sstream>
 #include <map>
@@ -65,7 +64,7 @@ static std::shared_ptr<LastFmClient> createClient() {
     return LastFmClient::Create(std::stringstream());
 }
 
-static void validate(musik::cube::lastfm::Session& session) {
+static void validate(musik::core::lastfm::Session& session) {
     session.valid =
         session.sessionId.size() &&
         session.username.size() &&
@@ -129,7 +128,7 @@ static inline Prefs settings() {
     return Preferences::ForComponent(components::Settings);
 }
 
-namespace musik { namespace cube { namespace lastfm {
+namespace musik { namespace core { namespace lastfm {
 
     void CreateAccountLinkToken(TokenCallback callback) {
         std::string url = generateSignedUrl(GET_TOKEN);
@@ -184,7 +183,7 @@ namespace musik { namespace cube { namespace lastfm {
     }
 
     Session LoadSession() {
-        namespace keys = cube::prefs::keys;
+        namespace keys = core::prefs::keys;
         auto prefs = settings();
         Session session;
         session.token = prefs->GetString(keys::LastFmToken);
@@ -195,7 +194,7 @@ namespace musik { namespace cube { namespace lastfm {
     }
 
     void SaveSession(const Session& session) {
-        namespace keys = cube::prefs::keys;
+        namespace keys = core::prefs::keys;
         auto prefs = settings();
         prefs->SetString(keys::LastFmToken.c_str(), session.token.c_str());
         prefs->SetString(keys::LastFmSessionId.c_str(), session.sessionId.c_str());

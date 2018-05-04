@@ -23,7 +23,6 @@ set (CUBE_SRCS
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/GlobalHotkeys.cpp
 	./app/util/Hotkeys.cpp
-	./app/util/LastFm.cpp
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
 	./app/util/UpdateCheck.cpp

@@ -367,9 +367,6 @@
     <ClInclude Include="app\layout\CategorySearchLayout.h">
       <Filter>app\layout</Filter>
     </ClInclude>
-    <ClInclude Include="app\util\LastFm.h">
-      <Filter>app\util</Filter>
-    </ClInclude>
     <ClInclude Include="app\overlay\LastFmOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>

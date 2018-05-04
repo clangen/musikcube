@@ -227,7 +227,6 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\Hotkeys.h" />
-    <ClInclude Include="app\util\LastFm.h" />
     <ClInclude Include="app\util\Messages.h" />
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\PreferenceKeys.h" />

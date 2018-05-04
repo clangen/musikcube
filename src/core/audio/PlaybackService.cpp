@@ -45,6 +45,7 @@
 #include <core/runtime/Message.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/support/Playback.h>
+#include <core/support/LastFm.h>
 
 #include <boost/lexical_cast.hpp>
 
@@ -455,6 +456,10 @@ void PlaybackService::NotifyRemotesModeChanged() {
 void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
     this->playingTrack = track;
     this->TrackChanged(this->index, track);
+
+    if (track && this->GetPlaybackState() == PlaybackPlaying) {
+        lastfm::Scrobble(track);
+    }
 
     for (auto it = remotes.begin(); it != remotes.end(); it++) {
         (*it)->OnTrackChanged(track.get());

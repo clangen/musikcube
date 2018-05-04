@@ -62,6 +62,9 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string SaveSessionOnExit;
         extern const std::string LastPlayQueueIndex;
         extern const std::string LastPlayQueueTime;
+        extern const std::string LastFmToken;
+        extern const std::string LastFmSessionId;
+        extern const std::string LastFmUsername;
     }
 
 } } }

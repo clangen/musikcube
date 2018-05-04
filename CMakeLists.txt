@@ -81,6 +81,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   include_directories("/usr/local/include")
   link_directories ("/opt/local/lib")
   include_directories("/opt/local/include")
+  include_directories("/usr/local/opt/openssl/include")
 endif ()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)

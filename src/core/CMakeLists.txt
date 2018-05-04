@@ -48,6 +48,7 @@ set(CORE_SOURCES
   ./runtime/MessageQueue.cpp
   ./support/Duration.cpp
   ./support/Common.cpp
+  ./support/LastFm.cpp
   ./support/Playback.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp

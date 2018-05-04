@@ -37,7 +37,7 @@
 #include "stdafx.h"
 #include <core/library/track/Track.h>
 
-namespace musik { namespace cube { namespace lastfm {
+namespace musik { namespace core { namespace lastfm {
     struct Session {
         bool valid{ false };
         std::string username, token, sessionId;

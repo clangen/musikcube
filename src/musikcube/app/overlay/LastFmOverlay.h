@@ -35,7 +35,6 @@
 #pragma once
 
 #include <cursespp/DialogOverlay.h>
-#include <app/util/LastFm.h>
 
 namespace musik { namespace cube {
     /* in general we probably shouldn't subclass DialogOverlay because
