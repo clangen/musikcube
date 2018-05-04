@@ -142,6 +142,7 @@
     <ClCompile Include="runtime\MessageQueue.cpp" />
     <ClCompile Include="support\Common.cpp" />
     <ClCompile Include="support\Duration.cpp" />
+    <ClCompile Include="support\LastFm.cpp" />
     <ClCompile Include="support\Playback.cpp" />
     <ClCompile Include="support\PreferenceKeys.cpp" />
     <ClCompile Include="support\Preferences.cpp" />
@@ -246,6 +247,7 @@
     <ClInclude Include="sdk\IVisualizer.h" />
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\Duration.h" />
+    <ClInclude Include="support\LastFm.h" />
     <ClInclude Include="support\Messages.h" />
     <ClInclude Include="support\Playback.h" />
     <ClInclude Include="support\PreferenceKeys.h" />

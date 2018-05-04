@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include "stdafx.h"
 #include <core/library/track/Track.h>
 
 namespace musik { namespace core { namespace lastfm {

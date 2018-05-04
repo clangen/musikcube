@@ -223,6 +223,9 @@
     <ClCompile Include="library\query\local\PersistedPlayQueueQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
+    <ClCompile Include="support\LastFm.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -536,6 +539,9 @@
     </ClInclude>
     <ClInclude Include="io\HttpClient.h">
       <Filter>src\io</Filter>
+    </ClInclude>
+    <ClInclude Include="support\LastFm.h">
+      <Filter>src\support</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

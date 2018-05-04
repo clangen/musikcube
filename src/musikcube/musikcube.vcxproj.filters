@@ -156,9 +156,6 @@
     <ClCompile Include="app\layout\CategorySearchLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
-    <ClCompile Include="app\util\LastFm.cpp">
-      <Filter>app\util</Filter>
-    </ClCompile>
     <ClCompile Include="app\overlay\LastFmOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>

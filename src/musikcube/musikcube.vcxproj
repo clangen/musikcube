@@ -166,7 +166,6 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\Hotkeys.cpp" />
-    <ClCompile Include="app\util\LastFm.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
     <ClCompile Include="app\util\UpdateCheck.cpp" />

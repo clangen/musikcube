@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "pch.hpp"
 #include "LastFm.h"
 #include <curl/curl.h>
 #include <openssl/md5.h>
