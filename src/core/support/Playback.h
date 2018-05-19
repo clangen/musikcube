@@ -44,6 +44,8 @@ namespace musik {
             void VolumeDown(musik::core::audio::ITransport& transport);
             void SeekForward(musik::core::sdk::IPlaybackService& playback);
             void SeekBack(musik::core::sdk::IPlaybackService& playback);
+            void SeekForwardProportional(musik::core::sdk::IPlaybackService& playback);
+            void SeekBackProportional(musik::core::sdk::IPlaybackService& playback);
             void PauseOrResume(musik::core::audio::ITransport& transport);
 
             void LoadPlaybackContext(

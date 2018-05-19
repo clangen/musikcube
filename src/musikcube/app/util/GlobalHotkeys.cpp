@@ -92,6 +92,14 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         core::playback::SeekForward(this->playback);
         return true;
     }
+    else if (Hotkeys::Is(Hotkeys::SeekForwardProportional, kn)) {
+        core::playback::SeekForwardProportional(this->playback);
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::SeekBackProportional, kn)) {
+        core::playback::SeekBackProportional(this->playback);
+        return true;
+    }
     else if (Hotkeys::Is(Hotkeys::ToggleRepeat, kn)) {
         this->playback.ToggleRepeatMode();
         return true;
