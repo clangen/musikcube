@@ -78,6 +78,16 @@ namespace musik {
                 playback.SetPosition(playback.GetPosition() - 10.0f);
             }
 
+            void SeekForwardProportional(IPlaybackService& playback) {
+                double moveBy = 0.05f * playback.GetDuration();
+                playback.SetPosition(playback.GetPosition() + moveBy);
+            }
+
+            void SeekBackProportional(IPlaybackService& playback) {
+                double moveBy = 0.05f * playback.GetDuration();
+                playback.SetPosition(playback.GetPosition() - moveBy);
+            }
+
             void LoadPlaybackContext(Prefs prefs, ILibraryPtr library, PlaybackService& playback) {
                 if (prefs->GetBool(keys::SaveSessionOnExit, true)) {
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(

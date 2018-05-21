@@ -82,6 +82,8 @@ namespace musik {
                     VolumeUp,
                     VolumeDown,
                     SeekForward,
+                    SeekForwardProportional,
+                    SeekBackProportional,
                     SeekBack,
                     ToggleRepeat,
                     ToggleShuffle,
