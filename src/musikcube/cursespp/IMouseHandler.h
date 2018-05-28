@@ -55,6 +55,14 @@ namespace cursespp {
                 bool Button2DoubleClicked() const { return state & BUTTON2_DOUBLE_CLICKED; }
                 bool Button3DoubleClicked() const { return state & BUTTON3_DOUBLE_CLICKED; }
 
+#ifdef WIN32
+                bool MouseWheelUp() const { return MOUSE_WHEEL_UP; }
+                bool MouseWheelDown() const { return MOUSE_WHEEL_DOWN; }
+#else
+                bool MouseWheelUp() const { return false; }
+                bool MouseWheelDown() const { return false; }
+#endif
+
                 int x, y;
                 mmask_t state;
             };

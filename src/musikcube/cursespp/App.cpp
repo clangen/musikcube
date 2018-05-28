@@ -330,7 +330,14 @@ process:
                         using Event = IMouseHandler::Event;
                         auto window = dynamic_cast<IWindow*>(active.get());
                         Event event(mouseEvent, window);
-                        active->MouseEvent(event);
+                        if (event.MouseWheelDown() || event.MouseWheelUp()) {
+                            if (state.focused) {
+                                state.focused->MouseEvent(event);
+                            }
+                        }
+                        else {
+                            active->MouseEvent(event);
+                        }
                     }
                 }
             }

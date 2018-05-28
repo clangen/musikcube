@@ -147,6 +147,14 @@ bool ScrollableWindow::MouseEvent(const IMouseHandler::Event& event) {
         this->FocusInParent();
         return true;
     }
+    else if (event.MouseWheelDown()) {
+        this->PageDown();
+        return true;
+    }
+    else if (event.MouseWheelUp()) {
+        this->PageUp();
+        return true;
+    }
     return false;
 }
 
