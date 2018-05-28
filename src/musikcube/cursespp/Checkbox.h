@@ -59,6 +59,7 @@ namespace cursespp {
         virtual std::string GetText() { return this->buffer; }
         virtual bool IsChecked() { return this->checked; }
         virtual bool KeyPress(const std::string& key);
+        virtual bool MouseEvent(const IMouseHandler::Event& event);
         virtual void OnRedraw();
 
     private:

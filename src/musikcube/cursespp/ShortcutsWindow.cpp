@@ -147,6 +147,28 @@ bool ShortcutsWindow::KeyPress(const std::string& key) {
     return false;
 }
 
+bool ShortcutsWindow::MouseEvent(const IMouseHandler::Event& mouseEvent) {
+    if (mouseEvent.Button1Clicked()) {
+        for (auto entry : this->entries) {
+            auto& pos = entry->position;
+            if (mouseEvent.x >= pos.offset &&
+                mouseEvent.x < pos.offset + pos.width)
+            {
+                this->activeKey = entry->key;
+
+                this->Redraw();
+
+                if (this->changedCallback) {
+                    this->changedCallback(this->activeKey);
+                }
+
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void ShortcutsWindow::OnFocusChanged(bool focused) {
     if (focused) {
         this->originalKey = this->activeKey;
@@ -180,6 +202,7 @@ void ShortcutsWindow::OnRedraw() {
     size_t leftPadding = this->CalculateLeftPadding();
     wmove(c, 0, leftPadding);
 
+    size_t currentX = leftPadding;
     size_t remaining = this->GetContentWidth();
     for (size_t i = 0; i < this->entries.size() && remaining > 0; i++) {
         auto e = this->entries[i];
@@ -197,6 +220,14 @@ void ShortcutsWindow::OnRedraw() {
         std::string key = " " + e->key + " ";
         std::string value = " " + e->description + " ";
 
+        /* calculate the offset and width, this is used for mouse
+        click handling! */
+        size_t width = u8cols(key + value);
+        e->position.offset = currentX;
+        e->position.width = width;
+        currentX += 1 + width; /* 1 is the extra leading space */
+
+        /* draw the shortcut key */
         size_t len = u8cols(key);
         if (len > remaining) {
             key = text::Ellipsize(key, remaining);
@@ -213,6 +244,7 @@ void ShortcutsWindow::OnRedraw() {
             continue;
         }
 
+        /* draw the description */
         len = u8cols(value);
         if (len > remaining) {
             value = text::Ellipsize(value, remaining);
@@ -220,7 +252,6 @@ void ShortcutsWindow::OnRedraw() {
         }
 
         checked_wprintw(c, value.c_str());
-
         remaining -= len;
     }
 }

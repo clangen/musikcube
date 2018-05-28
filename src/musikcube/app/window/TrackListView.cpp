@@ -212,22 +212,23 @@ void TrackListView::ProcessMessage(IMessage &message) {
     }
 }
 
+void TrackListView::OnEntryActivated(size_t index) {
+    if (headers.HeaderAt(this->GetSelectedIndex())) {
+        TrackPtr track = this->GetSelectedTrack();
+        PlayQueueOverlays::ShowAlbumDividerOverlay(
+            MessageQueue(), this->playback, this->library, track);
+    }
+    else {
+        playback::Play(*this, this->playback);
+    }
+
+    ListWindow::OnEntryActivated(index);
+}
+
 bool TrackListView::KeyPress(const std::string& key) {
     bool handled = false;
 
-    if (key == "KEY_ENTER") {
-        if (headers.HeaderAt(this->GetSelectedIndex())) {
-            TrackPtr track = this->GetSelectedTrack();
-            PlayQueueOverlays::ShowAlbumDividerOverlay(
-                MessageQueue(), this->playback, this->library, track);
-        }
-        else {
-            playback::Play(*this, this->playback);
-        }
-
-        handled = true;
-    }
-    else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
+    if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         TrackPtr track = this->GetSelectedTrack();
         if (!headers.HeaderAt(this->GetSelectedIndex())) {
             if (track) {

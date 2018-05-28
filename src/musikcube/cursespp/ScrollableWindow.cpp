@@ -142,6 +142,15 @@ bool ScrollableWindow::KeyPress(const std::string& key) {
     return false;
 }
 
+bool ScrollableWindow::MouseEvent(const IMouseHandler::Event& event) {
+    if (event.Button1Clicked()) {
+        this->FocusInParent();
+        return true;
+    }
+    return false;
+}
+
+
 void ScrollableWindow::OnRedraw() {
     IScrollAdapter *adapter = &GetScrollAdapter();
     ScrollPos &pos = this->GetMutableScrollPosition();

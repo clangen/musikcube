@@ -68,6 +68,7 @@ namespace cursespp {
         virtual void OnRedraw();
 
         virtual bool KeyPress(const std::string& key);
+        virtual bool MouseEvent(const IMouseHandler::Event& event);
 
     private:
         std::string buffer;

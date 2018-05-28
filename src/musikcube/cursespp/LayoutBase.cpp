@@ -405,3 +405,21 @@ bool LayoutBase::KeyPress(const std::string& key) {
 
     return false;
 }
+
+bool LayoutBase::MouseEvent(const IMouseHandler::Event& mouseEvent) {
+    for (auto window : this->children) {
+        auto x = window->GetX();
+        auto y = window->GetY();
+        auto cx = window->GetWidth();
+        auto cy = window->GetHeight();
+        if (mouseEvent.x >= x && mouseEvent.x < x + cx &&
+            mouseEvent.y >= y && mouseEvent.y < y + cy)
+        {
+            auto relative = IMouseHandler::Event(mouseEvent, window.get());
+            if (window->MouseEvent(relative)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

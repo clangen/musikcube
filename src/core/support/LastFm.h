@@ -45,12 +45,12 @@ namespace musik { namespace core { namespace lastfm {
     using TokenCallback = std::function<void(std::string)>;
     using SessionCallback = std::function<void(Session)>;
 
-    extern void CreateAccountLinkToken(TokenCallback callback);
-    extern const std::string CreateLinkUrl(const std::string& token);
-    extern void CreateSession(const std::string& token, SessionCallback session);
-    extern void Scrobble(musik::core::TrackPtr track);
+    void CreateAccountLinkToken(TokenCallback callback);
+    const std::string CreateAccountLinkUrl(const std::string& token);
+    void CreateSession(const std::string& token, SessionCallback session);
+    void Scrobble(musik::core::TrackPtr track);
 
-    extern Session LoadSession();
-    extern void SaveSession(const Session& session);
-    extern void ClearSession();
+    Session LoadSession();
+    void SaveSession(const Session& session);
+    void ClearSession();
 } } }

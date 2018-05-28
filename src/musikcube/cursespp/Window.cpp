@@ -36,6 +36,7 @@
 #include "Window.h"
 #include "IWindowGroup.h"
 #include "IInput.h"
+#include "ILayout.h"
 #include "Colors.h"
 #include "Screen.h"
 #include "Text.h"
@@ -820,6 +821,18 @@ void Window::Blur() {
 
 void Window::SetNavigationKeys(std::shared_ptr<INavigationKeys> keys) {
     ::keys = keys;
+}
+
+bool Window::MouseEvent(const IMouseHandler::Event& mouseEvent) {
+    return false;
+}
+
+bool Window::FocusInParent() {
+    auto layout = dynamic_cast<ILayout*>(this->GetParent());
+    if (layout) {
+        return layout->SetFocus(shared_from_this());
+    }
+    return false;
 }
 
 /* default keys for navigating around sub-views. apps can override this shim to

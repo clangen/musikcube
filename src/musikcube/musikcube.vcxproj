@@ -177,6 +177,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="cursespp\Checkbox.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\DialogOverlay.cpp" />
+    <ClCompile Include="cursespp\IMouseHandler.cpp" />
     <ClCompile Include="cursespp\InputOverlay.cpp" />
     <ClCompile Include="cursespp\LayoutBase.cpp" />
     <ClCompile Include="cursespp\ListOverlay.cpp" />
@@ -243,6 +244,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="cursespp\IInput.h" />
     <ClInclude Include="cursespp\IKeyHandler.h" />
     <ClInclude Include="cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\IMouseHandler.h" />
     <ClInclude Include="cursespp\INavigationKeys.h" />
     <ClInclude Include="cursespp\InputOverlay.h" />
     <ClInclude Include="cursespp\IOrderable.h" />

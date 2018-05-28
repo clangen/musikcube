@@ -178,7 +178,7 @@ namespace musik { namespace core { namespace lastfm {
         });
     }
 
-    const std::string CreateLinkUrl(const std::string& token) {
+    const std::string CreateAccountLinkUrl(const std::string& token) {
         return ACCOUNT_LINK_URL_BASE + token;
     }
 

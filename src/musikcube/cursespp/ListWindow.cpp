@@ -287,6 +287,42 @@ void ListWindow::OnDimensionsChanged() {
     this->ScrollTo(this->GetScrollPosition().firstVisibleEntryIndex);
 }
 
+bool ListWindow::KeyPress(const std::string& key) {
+    if (key == "KEY_ENTER") {
+        auto selected = this->GetSelectedIndex();
+        if (selected != NO_SELECTION) {
+            this->OnEntryActivated(selected);
+        }
+    }
+    return ScrollableWindow::KeyPress(key);
+}
+
+bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
+    bool result = ScrollableWindow::MouseEvent(event);
+
+    auto first = this->scrollPosition.firstVisibleEntryIndex;
+
+    if (first == NO_SELECTION) {
+        return result;
+    }
+
+    size_t offset = first + (size_t) event.y;
+
+    if (event.Button1Clicked()) {
+        this->SetSelectedIndex(offset);
+    }
+    else if (event.Button1DoubleClicked()) {
+        this->SetSelectedIndex(offset);
+        this->OnEntryActivated(offset); /* internal */
+    }
+
+    return result;
+}
+
+void ListWindow::OnEntryActivated(size_t index) {
+    this->EntryActivated(this, index); /* external */
+}
+
 IScrollAdapter::ScrollPosition& ListWindow::GetMutableScrollPosition() {
     this->scrollPosition.logicalIndex = this->GetSelectedIndex(); /* hack */
     return this->scrollPosition;

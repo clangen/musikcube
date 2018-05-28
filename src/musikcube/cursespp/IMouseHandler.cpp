@@ -34,25 +34,40 @@
 
 #pragma once
 
-#include <string>
-#include <core/config.h>
+#include <stdafx.h>
+#include "IMouseHandler.h"
+#include "IWindow.h"
 
-namespace musik { namespace core {
+using namespace cursespp;
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    std::string NormalizeDir(std::string path);
-    void OpenFile(const std::string& path);
-    int64_t Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
+IMouseHandler::Event::Event(const Event& original, int childX, int childY) {
+    x = original.x - childX;
+    y = original.y - childY;
+    state = original.state;
+}
 
-    /* file-migration stuff. */
-    void MigrateOldDataDirectory(); /* renames ~/.mC2 -> ~/.musikcube */
-    void RemoveOldDlls();
+IMouseHandler::Event::Event(const Event& original, IWindow* parent) {
+    if (parent) {
+        int frameOffset = parent->IsFrameVisible() ? 1 : 0;
+        x = original.x - parent->GetX() - frameOffset;
+        y = original.y - parent->GetY() - frameOffset;
+    }
+    else {
+        x = original.x;
+        y = original.y;
+    }
+    state = original.state;
+}
 
-} }
+IMouseHandler::Event::Event(const MEVENT& original, IWindow* parent) {
+    if (parent) {
+        int frameOffset = parent->IsFrameVisible() ? 1 : 0;
+        x = original.x - parent->GetX() - frameOffset;
+        y = original.y - parent->GetY() - frameOffset;
+    }
+    else {
+        x = original.x;
+        y = original.y;
+    }
+    state = original.bstate;
+}

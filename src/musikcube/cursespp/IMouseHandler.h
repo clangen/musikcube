@@ -34,25 +34,32 @@
 
 #pragma once
 
-#include <string>
-#include <core/config.h>
+#include <stdafx.h>
+#include "curses_config.h"
 
-namespace musik { namespace core {
+namespace cursespp {
+    class IWindow;
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    std::string NormalizeDir(std::string path);
-    void OpenFile(const std::string& path);
-    int64_t Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
+    class IMouseHandler {
+        public:
+            struct Event {
+                Event(const Event& original, int childX, int childY);
+                Event(const Event& original, IWindow* parent = nullptr);
+                Event(const MEVENT& original, IWindow* parent = nullptr);
 
-    /* file-migration stuff. */
-    void MigrateOldDataDirectory(); /* renames ~/.mC2 -> ~/.musikcube */
-    void RemoveOldDlls();
+                bool Button1Clicked() const { return state & BUTTON1_CLICKED; }
+                bool Button2Clicked() const { return state & BUTTON2_CLICKED; }
+                bool Button3Clicked() const { return state & BUTTON3_CLICKED; }
 
-} }
+                bool Button1DoubleClicked() const { return state & BUTTON1_DOUBLE_CLICKED; }
+                bool Button2DoubleClicked() const { return state & BUTTON2_DOUBLE_CLICKED; }
+                bool Button3DoubleClicked() const { return state & BUTTON3_DOUBLE_CLICKED; }
+
+                int x, y;
+                mmask_t state;
+            };
+
+            virtual ~IMouseHandler() { }
+            virtual bool MouseEvent(const Event& mouseEvent) = 0;
+    };
+}

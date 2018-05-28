@@ -60,6 +60,14 @@ namespace components = musik::core::prefs::components;
     x == this->artists || \
     x == this->genres
 
+#define CREATE_CATEGORY(view, title, type, order) \
+    view.reset(new CategoryListView(playback, this->library, type)); \
+    view->EntryActivated.connect(this, &CategorySearchLayout::OnCategoryEntryActivated); \
+    view->SetFrameTitle(title); \
+    view->SetAllowArrowKeyPropagation(); \
+    this->AddWindow(view); \
+    view->SetFocusOrder(order);
+
 CategorySearchLayout::CategorySearchLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase() {
     this->library = library;
@@ -100,13 +108,6 @@ void CategorySearchLayout::OnLayout() {
     this->artists->MoveAndResize(categoryWidth, categoryY, categoryWidth, categoryHeight);
     this->genres->MoveAndResize(categoryWidth * 2, categoryY, lastCategoryWidth, categoryHeight);
 }
-
-#define CREATE_CATEGORY(view, title, type, order) \
-    view.reset(new CategoryListView(playback, this->library, type)); \
-    view->SetFrameTitle(title); \
-    view->SetAllowArrowKeyPropagation(); \
-    this->AddWindow(view); \
-    view->SetFocusOrder(order);
 
 void CategorySearchLayout::InitializeWindows(musik::core::audio::PlaybackService& playback) {
     this->input.reset(new cursespp::TextInput());
@@ -158,23 +159,22 @@ void CategorySearchLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
+void CategorySearchLayout::OnCategoryEntryActivated(
+    cursespp::ListWindow* listWindow, size_t index)
+{
+    CategoryListView* category =
+        static_cast<CategoryListView*>(listWindow);
+
+    if ((int) index >= 0) {
+        this->SearchResultSelected(
+            this,
+            category->GetFieldName(),
+            category->GetSelectedId());
+    }
+}
+
 bool CategorySearchLayout::KeyPress(const std::string& key) {
     IWindowPtr focus = this->GetFocus();
-    CategoryListView* category = dynamic_cast<CategoryListView*>(focus.get());
-
-    if (category) {
-        if (key == "KEY_ENTER") {
-            int index = (int) category->GetSelectedIndex();
-            if (index >= 0) {
-                this->SearchResultSelected(
-                    this,
-                    category->GetFieldName(),
-                    category->GetSelectedId());
-            }
-
-            return true;
-        }
-    }
 
     if (Hotkeys::Is(Hotkeys::Down, key)) {
         if (this->GetFocus() == this->input) {

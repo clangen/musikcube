@@ -260,3 +260,12 @@ void TextInput::SetHint(const std::string& hint) {
     this->hintText = hint;
     this->Redraw();
 }
+
+bool TextInput::MouseEvent(const IMouseHandler::Event& event) {
+    if (event.Button1Clicked()) {
+        this->position = std::max(0, std::min((int)this->bufferLength, event.x));
+        this->FocusInParent();
+        return true;
+    }
+    return false;
+}

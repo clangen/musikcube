@@ -159,6 +159,9 @@
     <ClCompile Include="app\overlay\LastFmOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\IMouseHandler.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -366,6 +369,9 @@
     </ClInclude>
     <ClInclude Include="app\overlay\LastFmOverlay.h">
       <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\IMouseHandler.h">
+      <Filter>cursespp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

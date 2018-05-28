@@ -78,6 +78,7 @@ namespace musik {
 
             private:
                 void InitializeWindows(musik::core::audio::PlaybackService& playback);
+                void OnCategoryEntryActivated(cursespp::ListWindow* sender, size_t index);
                 void Requery();
                 void SaveSession();
 

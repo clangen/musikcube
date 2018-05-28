@@ -152,6 +152,10 @@ void ServerOverlay::InitViews() {
     this->shortcuts->AddShortcut("ESC", _TSTR("button_cancel"));
     this->shortcuts->AddShortcut("M-s", _TSTR("button_save"));
 
+    this->shortcuts->SetChangedCallback([this](std::string key) {
+        this->KeyPress(key);
+    });
+
     /* web socket server */
     this->enableWssCb.reset(new Checkbox());
     this->enableWssCb->SetText(_TSTR("settings_server_enable_websockets"));
@@ -323,7 +327,7 @@ bool ServerOverlay::Save() {
 }
 
 bool ServerOverlay::KeyPress(const std::string& key) {
-    if (key == "^[") { /* esc closes */
+    if (key == "^[" || key == "ESC") { /* esc closes */
         this->Dismiss();
         return true;
     }

@@ -1959,6 +1959,7 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
 {
     int button_down = -1, button_up = -1;
     static int mouse_buttons_pressed = 0;
+    static int mouse_click_type = -1;
     static LPARAM mouse_lParam;
     static uint64_t last_click_time[PDC_MAX_MOUSE_BUTTONS];
                                /* in millisec since 1970 */
@@ -2128,9 +2129,15 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
                       BUTTON4_PRESSED, BUTTON5_PRESSED };
 
             modified_key_to_return = 0;
-            if( SP && (SP->_trap_mbe & remap_table[wParam]))
-                set_mouse( (const int) wParam, BUTTON_PRESSED, mouse_lParam);
+            if (SP && (SP->_trap_mbe & remap_table[wParam]))
+            {
+                if ( mouse_click_type != -1)
+                {
+                    set_mouse( (const int)wParam, mouse_click_type, mouse_lParam);
+                }
+            }
             KillTimer( PDC_hWnd, (int)wParam);
+            mouse_click_type = -1;
             mouse_buttons_pressed ^= (1 << wParam);
         }
         else if( SP && curscr && curscr->_y)
@@ -2195,27 +2202,35 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     if( button_down >= 0)
     {
         modified_key_to_return = 0;
-        SetTimer( hwnd, button_down, SP->mouse_wait, NULL);
         mouse_buttons_pressed |= (1 << button_down);
         mouse_lParam = lParam;
     }
     if( button_up >= 0)
     {
-        int message_to_send = -1;
+        static const int single_remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                    { BUTTON1_CLICKED, BUTTON2_CLICKED, BUTTON3_CLICKED,
+                    BUTTON4_CLICKED, BUTTON5_CLICKED };
+
+        static const int double_remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                    { BUTTON1_DOUBLE_CLICKED, BUTTON2_DOUBLE_CLICKED,
+                    BUTTON3_DOUBLE_CLICKED, BUTTON4_DOUBLE_CLICKED,
+                    BUTTON5_DOUBLE_CLICKED };
+
+        static const int triple_remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                    { BUTTON1_TRIPLE_CLICKED, BUTTON2_TRIPLE_CLICKED,
+                    BUTTON3_TRIPLE_CLICKED, BUTTON4_TRIPLE_CLICKED,
+                    BUTTON5_TRIPLE_CLICKED };
+
+        static const int released_remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                    { BUTTON1_RELEASED, BUTTON2_RELEASED, BUTTON3_RELEASED,
+                    BUTTON4_RELEASED, BUTTON5_RELEASED };
 
         modified_key_to_return = 0;
         if( (mouse_buttons_pressed >> button_up) & 1)
         {
             const uint64_t curr_click_time =
                              milliseconds_since_1970( );
-            static const int double_remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                      { BUTTON1_DOUBLE_CLICKED, BUTTON2_DOUBLE_CLICKED,
-                        BUTTON3_DOUBLE_CLICKED, BUTTON4_DOUBLE_CLICKED,
-                        BUTTON5_DOUBLE_CLICKED };
-            static const int triple_remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                      { BUTTON1_TRIPLE_CLICKED, BUTTON2_TRIPLE_CLICKED,
-                        BUTTON3_TRIPLE_CLICKED, BUTTON4_TRIPLE_CLICKED,
-                        BUTTON5_TRIPLE_CLICKED };
+
             static int n_previous_clicks;
 
             if( curr_click_time <
@@ -2224,36 +2239,27 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
             else                         /* zero for a "normal" click, 1  */
                n_previous_clicks = 0;   /* for a dblclick, 2 for a triple */
 
-            if( n_previous_clicks >= 2 &&
-                            (SP->_trap_mbe & triple_remap_table[button_up]))
-                message_to_send = BUTTON_TRIPLE_CLICKED;
-            else if( n_previous_clicks >= 1 &&
-                            (SP->_trap_mbe & double_remap_table[button_up]))
-                message_to_send = BUTTON_DOUBLE_CLICKED;
-            else         /* either it's not a doubleclick, or we aren't */
-            {            /* checking for double clicks */
-                static const int remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                          { BUTTON1_CLICKED, BUTTON2_CLICKED, BUTTON3_CLICKED,
-                            BUTTON4_CLICKED, BUTTON5_CLICKED };
+            if (n_previous_clicks >= 2 &&
+                (SP->_trap_mbe & triple_remap_table[button_up]))
+                mouse_click_type = BUTTON_TRIPLE_CLICKED;
+            else if (n_previous_clicks >= 1 &&
+                (SP->_trap_mbe & double_remap_table[button_up]))
+                mouse_click_type = BUTTON_DOUBLE_CLICKED;
+            else if (SP->_trap_mbe & single_remap_table[button_up])
+                /* either it's not a doubleclick, or we aren't */
+                /* checking for double clicks */
+                mouse_click_type = BUTTON_CLICKED;
+            else
+                mouse_click_type = -1;
 
-                if( SP->_trap_mbe & remap_table[button_up])
-                    message_to_send = BUTTON_CLICKED;
-            }
             KillTimer( hwnd, button_up);
+            SetTimer( hwnd, button_up, SP->mouse_wait, NULL);
             mouse_buttons_pressed ^= (1 << button_up);
             last_click_time[button_up] = curr_click_time;
         }
-        if( message_to_send == -1)   /* might just send as a 'released' msg */
-        {
-            static const int remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                     { BUTTON1_RELEASED, BUTTON2_RELEASED, BUTTON3_RELEASED,
-                       BUTTON4_RELEASED, BUTTON5_RELEASED };
 
-            if( SP->_trap_mbe & remap_table[button_up])
-                message_to_send = BUTTON_RELEASED;
-        }
-        if( message_to_send != -1)
-            set_mouse( button_up, message_to_send, lParam);
+        if( SP->_trap_mbe & released_remap_table[button_up])
+            set_mouse(button_up, BUTTON_RELEASED, lParam);
     }
 
     return DefWindowProc( hwnd, message, wParam, lParam) ;

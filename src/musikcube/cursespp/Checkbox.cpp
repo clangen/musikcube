@@ -105,3 +105,12 @@ bool Checkbox::KeyPress(const std::string& key) {
     }
     return false;
 }
+
+bool Checkbox::MouseEvent(const IMouseHandler::Event& event) {
+    if (event.Button1Clicked()) {
+        this->FocusInParent();
+        this->SetChecked(!this->checked);
+        return true;
+    }
+    return false;
+}

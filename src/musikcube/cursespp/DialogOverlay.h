@@ -79,6 +79,7 @@ namespace cursespp {
         private:
             void Redraw();
             void RecalculateSize();
+            bool ProcessKey(const std::string& key);
 
             std::string title;
             std::string message;

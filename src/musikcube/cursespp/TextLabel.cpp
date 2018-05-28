@@ -37,6 +37,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
+#include <cursespp/ILayout.h>
 
 #include "TextLabel.h"
 
@@ -115,5 +116,14 @@ bool TextLabel::KeyPress(const std::string& key) {
         }
     }
 
+    return false;
+}
+
+bool TextLabel::MouseEvent(const IMouseHandler::Event& event) {
+    if (event.Button1Clicked()) {
+        this->FocusInParent();
+        this->Activated(this);
+        return true;
+    }
     return false;
 }

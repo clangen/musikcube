@@ -119,6 +119,8 @@ namespace cursespp {
 
             bool HasBadBounds() { return this->badBounds; }
 
+            bool MouseEvent(const IMouseHandler::Event& mouseEvent);
+
             static bool WriteToScreen(IInput* input);
             static void InvalidateScreen();
             static void Freeze();
@@ -134,11 +136,14 @@ namespace cursespp {
             void PostMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void DebounceMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
             void RemoveMessage(int messageType);
+            bool FocusInParent();
+
             static INavigationKeys& NavigationKeys();
 
             virtual void Create();
             virtual void Destroy();
             virtual void DecorateFrame();
+
             void Recreate();
             void Clear();
             void DrawFrameAndTitle();

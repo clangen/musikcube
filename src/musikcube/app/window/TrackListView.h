@@ -97,6 +97,8 @@ namespace musik {
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
+                virtual void OnEntryActivated(size_t index);
+
                 void OnQueryCompleted(musik::core::db::IQuery* query);
 
                 /* this view has headers and track entry types */
@@ -151,6 +153,7 @@ namespace musik {
                 };
 
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+
                 void ScrollToPlaying();
                 void SelectFirstTrack();
 

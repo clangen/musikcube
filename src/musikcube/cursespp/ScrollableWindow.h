@@ -64,6 +64,7 @@ namespace cursespp {
             virtual void OnDimensionsChanged();
 
             virtual bool KeyPress(const std::string& key);
+            virtual bool MouseEvent(const IMouseHandler::Event& event);
 
             virtual void ScrollToTop();
             virtual void ScrollToBottom();

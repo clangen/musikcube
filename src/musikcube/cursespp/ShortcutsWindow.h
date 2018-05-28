@@ -65,6 +65,7 @@ namespace cursespp {
             void SetActive(const std::string& key);
 
             virtual bool KeyPress(const std::string& key) override;
+            virtual bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
         protected:
             virtual void OnRedraw() override;
@@ -74,6 +75,10 @@ namespace cursespp {
             size_t CalculateLeftPadding();
             int getActiveIndex();
 
+            struct Position {
+                int offset{ 0 }, width{ 0 };
+            };
+
             struct Entry {
                 Entry(const std::string& key, const std::string& desc, int64_t attrs = -1) {
                     this->key = key;
@@ -81,6 +86,7 @@ namespace cursespp {
                     this->attrs = attrs;
                 }
 
+                Position position;
                 std::string key;
                 std::string description;
                 int64_t attrs;

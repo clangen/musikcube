@@ -128,7 +128,7 @@ void LastFmOverlay::UpdateMessage() {
 
         case State::WaitingForUser:
         case State::RegisterError: {
-            std::string url = lastfm::CreateLinkUrl(this->linkToken);
+            std::string url = lastfm::CreateAccountLinkUrl(this->linkToken);
             core::ReplaceAll(message, "{{link}}", url);
             break;
         }
@@ -180,7 +180,7 @@ void LastFmOverlay::UpdateButtons() {
             this->AddButton(
                 "o", "o", "open url",
                 [this](std::string key) {
-                    core::OpenFile(lastfm::CreateLinkUrl(this->linkToken));
+                    core::OpenFile(lastfm::CreateAccountLinkUrl(this->linkToken));
                 });
 
 

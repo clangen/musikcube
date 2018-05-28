@@ -88,6 +88,7 @@ App::App(const std::string& title) {
 
     this->quit = false;
     this->minWidth = this->minHeight = 0;
+    this->mouseEnabled = true;
 
 #ifdef WIN32
     this->iconId = 0;
@@ -111,6 +112,7 @@ App::App(const std::string& title) {
     keypad(stdscr, TRUE);
     refresh();
     curs_set(0);
+    mousemask(ALL_MOUSE_EVENTS, nullptr);
 
 #ifndef WIN32
     set_escdelay(20);
@@ -228,6 +230,10 @@ void App::Quit() {
     this->quit = true;
 }
 
+void App::SetMouseEnabled(bool enabled) {
+    this->mouseEnabled = enabled;
+}
+
 #ifdef WIN32
 bool App::Running(const std::string& uniqueId) {
     return App::Running(uniqueId, uniqueId);
@@ -258,6 +264,7 @@ void App::Run(ILayoutPtr layout) {
         Colors::SetTheme(this->colorTheme);
     }
 
+    MEVENT mouseEvent;
     int64_t ch;
     std::string kn;
 
@@ -311,6 +318,21 @@ process:
             }
             else if (kn == "KEY_RESIZE") {
                 resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
+            }
+            else if (this->mouseEnabled && kn == "KEY_MOUSE") {
+#ifdef WIN32
+                if (nc_getmouse(&mouseEvent) == 0) {
+#else
+                if (getmouse(&mouseEvent) == 0) {
+#endif
+                    auto active = this->state.ActiveLayout();
+                    if (active) {
+                        using Event = IMouseHandler::Event;
+                        auto window = dynamic_cast<IWindow*>(active.get());
+                        Event event(mouseEvent, window);
+                        active->MouseEvent(event);
+                    }
+                }
             }
             /* order: focused input, global key handler, then layout. */
             else if (!this->state.input ||

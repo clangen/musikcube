@@ -53,6 +53,11 @@ DialogOverlay::DialogOverlay() {
 
     this->shortcuts.reset(new ShortcutsWindow());
     this->shortcuts->SetAlignment(text::AlignRight);
+
+    this->shortcuts->SetChangedCallback([this](std::string key) {
+        this->ProcessKey(key);
+    });
+
     this->LayoutBase::AddWindow(this->shortcuts);
 }
 
@@ -116,7 +121,8 @@ DialogOverlay& DialogOverlay::AddButton(
     ButtonCallback callback)
 {
     this->shortcuts->AddShortcut(key, caption);
-    this->buttons[rawKey] = callback;
+    this->buttons[rawKey] = callback; /* for KeyPress() */
+    this->buttons[key] = callback; /* for ShortcutsWindow::ChangedCallback */
     this->Layout();
     this->Invalidate();
     return *this;
@@ -127,7 +133,7 @@ DialogOverlay& DialogOverlay::OnDismiss(DismissCallback dismissCb) {
     return *this;
 }
 
-bool DialogOverlay::KeyPress(const std::string& key) {
+bool DialogOverlay::ProcessKey(const std::string& key) {
     auto it = this->buttons.find(key);
 
     if (it != this->buttons.end()) {
@@ -144,6 +150,13 @@ bool DialogOverlay::KeyPress(const std::string& key) {
         return true;
     }
 
+    return false;
+}
+
+bool DialogOverlay::KeyPress(const std::string& key) {
+    if (this->ProcessKey(key)) {
+        return true;
+    }
     return LayoutBase::KeyPress(key);
 }
 

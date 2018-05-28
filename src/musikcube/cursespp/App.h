@@ -60,6 +60,7 @@ namespace cursespp {
             void SetColorMode(Colors::Mode mode);
             void SetColorTheme(const std::string& fn);
             void SetMinimumSize(int width, int height);
+            void SetMouseEnabled(bool enabled);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
             void SetMinimizeToTray(bool minimizeToTray);
             void Minimize();
@@ -123,6 +124,7 @@ namespace cursespp {
             Colors::Mode colorMode;
             std::string colorTheme;
             int minWidth, minHeight;
+            bool mouseEnabled;
             bool quit;
 
 #ifdef WIN32

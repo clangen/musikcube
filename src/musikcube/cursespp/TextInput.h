@@ -72,6 +72,7 @@ namespace cursespp {
                 virtual InputMode GetInputMode() { return this->inputMode; }
 
                 virtual bool KeyPress(const std::string& key);
+                virtual bool MouseEvent(const IMouseHandler::Event& event);
 
                 virtual void SetText(const std::string& value);
                 virtual std::string GetText() { return this->buffer; }

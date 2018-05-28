@@ -51,6 +51,7 @@ namespace cursespp {
 
             sigslot::signal3<ListWindow*, size_t, size_t> SelectionChanged;
             sigslot::signal2<ListWindow*, size_t> Invalidated;
+            sigslot::signal2<ListWindow*, size_t> EntryActivated;
 
             ListWindow(std::shared_ptr<IScrollAdapter> adapter, IWindow *parent = nullptr);
             ListWindow(IWindow *parent = nullptr);
@@ -73,10 +74,14 @@ namespace cursespp {
 
             virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
 
+            virtual bool KeyPress(const std::string& key);
+            virtual bool MouseEvent(const IMouseHandler::Event& event);
+
             void SetScrollbarVisible(bool visible);
 
         protected:
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
+            virtual void OnEntryActivated(size_t index);
             virtual void OnInvalidated();
             virtual void OnDimensionsChanged();
             virtual void DecorateFrame();

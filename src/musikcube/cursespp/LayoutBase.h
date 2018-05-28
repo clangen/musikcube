@@ -95,6 +95,9 @@ namespace cursespp {
             /* IKeyHandler */
             virtual bool KeyPress(const std::string& key);
 
+            /* IMouseHandler */
+            virtual bool MouseEvent(const IMouseHandler::Event& mouseEvent);
+
             /* IWindowGroup */
             virtual bool AddWindow(IWindowPtr window);
             virtual bool RemoveWindow(IWindowPtr window);

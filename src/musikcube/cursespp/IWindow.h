@@ -37,6 +37,7 @@
 #include "curses_config.h"
 #include "IDisplayable.h"
 #include "IOrderable.h"
+#include "IMouseHandler.h"
 
 #include <core/runtime/IMessage.h>
 #include <core/runtime/IMessageTarget.h>
@@ -45,6 +46,7 @@ namespace cursespp {
     class IWindow :
         public IOrderable,
         public IDisplayable,
+        public IMouseHandler,
         public musik::core::runtime::IMessageTarget
     {
         public:

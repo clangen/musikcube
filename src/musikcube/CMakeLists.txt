@@ -35,6 +35,7 @@ set (CUBE_SRCS
 	./cursespp/Colors.cpp
 	./cursespp/DialogOverlay.cpp
 	./cursespp/InputOverlay.cpp
+	./cursespp/IMouseHandler.cpp
 	./cursespp/LayoutBase.cpp
 	./cursespp/ListOverlay.cpp
 	./cursespp/ListWindow.cpp

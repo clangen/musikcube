@@ -37,10 +37,17 @@
 #include "IWindowGroup.h"
 #include "IDisplayable.h"
 #include "IKeyHandler.h"
+#include "IMouseHandler.h"
 #include <memory>
 
 namespace cursespp {
-    class ILayout : public IWindowGroup, public IKeyHandler, public IOrderable, public IDisplayable {
+    class ILayout:
+        public IWindowGroup,
+        public IKeyHandler,
+        public IMouseHandler,
+        public IOrderable,
+        public IDisplayable
+    {
         public:
             enum FocusMode {
                 FocusModeCircular = 0,
