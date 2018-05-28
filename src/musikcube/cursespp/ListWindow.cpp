@@ -312,6 +312,7 @@ bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
         this->SetSelectedIndex(offset);
     }
     else if (event.Button1DoubleClicked()) {
+        this->FocusInParent();
         this->SetSelectedIndex(offset);
         this->OnEntryActivated(offset); /* internal */
     }
