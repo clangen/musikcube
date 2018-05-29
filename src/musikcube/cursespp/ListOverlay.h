@@ -42,7 +42,8 @@
 
 namespace cursespp {
     class ListOverlay :
-        public OverlayBase
+        public OverlayBase,
+        public sigslot::has_slots<>
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
         , public std::enable_shared_from_this<ListOverlay>
 #endif
@@ -72,6 +73,8 @@ namespace cursespp {
             virtual void OnVisibilityChanged(bool visible);
 
         private:
+            void OnListEntryActivated(cursespp::ListWindow* sender, size_t index);
+
             class CustomListWindow;
 
             void Redraw();

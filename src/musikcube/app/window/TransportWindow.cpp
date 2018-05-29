@@ -325,6 +325,10 @@ TransportWindow::TransportWindow(
     this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->paused = false;
     this->lastTime = DEFAULT_TIME;
+    this->shufflePos.y = 0;
+    this->repeatPos.y = 1;
+    this->volumePos.y = 1;
+    this->timePos.y = 1;
     this->UpdateReplayGainState();
 }
 
@@ -378,6 +382,44 @@ bool TransportWindow::KeyPress(const std::string& kn) {
         }
     }
 
+    return false;
+}
+
+bool TransportWindow::MouseEvent(const IMouseHandler::Event& event) {
+    if (event.Button1Clicked()) {
+        if (this->shufflePos.Contains(event)) {
+            this->playback.ToggleShuffle();
+            return true;
+        }
+        else if (this->repeatPos.Contains(event)) {
+            this->playback.ToggleRepeatMode();
+            return true;
+        }
+        else if (this->volumePos.Contains(event)) {
+            if (playback.IsMuted()) {
+                playback.ToggleMute();
+            }
+            else {
+                playback.SetVolume(this->volumePos.Percent(event.x));
+            }
+            return true;
+        }
+        else if (this->timePos.Contains(event)) {
+            if (playback.GetPlaybackState() != PlaybackStopped) {
+                double duration = playback.GetDuration();
+                double percent = this->timePos.Percent(event.x);
+                playback.SetPosition(duration * percent);
+            }
+            return true;
+        }
+    }
+    else if (event.Button3Clicked()) {
+        if (this->volumePos.Contains(event)) {
+            if (!playback.IsMuted()) {
+                playback.ToggleMute();
+            }
+        }
+    }
     return false;
 }
 
@@ -508,7 +550,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     /* prepare the "shuffle" label */
 
     std::string shuffleLabel = Strings.SHUFFLE;
-    size_t shuffleLabelLen = displayCache->Columns(shuffleLabel);
+    size_t shuffleWidth = displayCache->Columns(shuffleLabel);
 
     /* playing SONG TITLE from ALBUM NAME */
 
@@ -520,14 +562,17 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
     else {
         displayCache->Update(transport, this->currentTrack);
-        writePlayingFormat(c, *this->displayCache, cx - shuffleLabelLen);
+        writePlayingFormat(c, *this->displayCache, cx - shuffleWidth);
     }
 
-    wmove(c, 0, cx - shuffleLabelLen);
+    /* draw the "shuffle" label */
+    const int shuffleOffset = cx - shuffleWidth;
+    wmove(c, 0, shuffleOffset);
     int64_t shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
     checked_wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
+    this->shufflePos.Set(shuffleOffset, shuffleWidth);
 
     /* volume slider */
 
@@ -538,9 +583,11 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (muted) {
         volume = Strings.MUTED;
+        this->volumePos.Set(0, u8cols(Strings.MUTED));
     }
     else {
         volume = Strings.VOLUME;
+        this->volumePos.Set(u8cols(Strings.VOLUME), 10);
 
         for (int i = 0; i < 10; i++) {
             volume += (i == thumbOffset) ? "■" : "─";
@@ -659,11 +706,13 @@ void TransportWindow::Update(TimeMode timeMode) {
     OFF(c, currentTimeAttrs);
 
     ON(c, timerAttrs);
+    this->timePos.Set(getcurx(c), u8cols(timerTrack));
     checked_waddstr(c, timerTrack.c_str()); /* may be a very long string */
     checked_wprintw(c, " %s", displayCache->totalTime.c_str());
     OFF(c, timerAttrs);
 
     ON(c, repeatAttrs);
+    this->repeatPos.Set(getcurx(c), u8cols(repeatModeLabel));
     checked_wprintw(c, repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
 

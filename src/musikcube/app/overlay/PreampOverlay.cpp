@@ -156,6 +156,10 @@ void PreampOverlay::InitViews() {
     this->shortcuts->AddShortcut("ESC", _TSTR("button_cancel"));
     this->shortcuts->AddShortcut("M-s", _TSTR("button_save"));
 
+    this->shortcuts->SetChangedCallback([this](std::string key) {
+        this->KeyPress(key);
+    });
+
     /* preamp gain */
     this->preampLabel.reset(new TextLabel());
     this->preampLabel->SetText(_TSTR("settings_preamp_label"), text::AlignLeft);
@@ -252,7 +256,7 @@ bool PreampOverlay::Save() {
 }
 
 bool PreampOverlay::KeyPress(const std::string& key) {
-    if (key == "^[") { /* esc closes */
+    if (key == "^[" || key == "ESC") { /* esc closes */
         this->Dismiss();
         return true;
     }

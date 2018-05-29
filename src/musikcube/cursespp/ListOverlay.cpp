@@ -99,13 +99,15 @@ ListOverlay::ListOverlay() {
     this->scrollbar.reset(new Window());
     this->scrollbar->SetFrameVisible(false);
     this->scrollbar->SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    this->AddWindow(this->scrollbar);
 
     this->listWindow.reset(new CustomListWindow(decorator, adapterChanged));
     this->listWindow->SetContentColor(CURSESPP_OVERLAY_CONTENT);
     this->listWindow->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
     this->listWindow->SetFrameVisible(false);
+    this->listWindow->EntryActivated.connect(this, &ListOverlay::OnListEntryActivated);
+
     this->listWindow->SetFocusOrder(0);
+    this->AddWindow(this->scrollbar);
     this->AddWindow(this->listWindow);
 }
 
@@ -222,21 +224,24 @@ ListOverlay& ListOverlay::SetDeleteKeyCallback(DeleteKeyCallback cb) {
     return *this;
 }
 
+void ListOverlay::OnListEntryActivated(cursespp::ListWindow* sender, size_t index) {
+    if (itemSelectedCallback) {
+        itemSelectedCallback(this, this->adapter, index);
+    }
+    if (this->autoDismiss) {
+        this->Dismiss();
+    }
+}
+
 bool ListOverlay::KeyPress(const std::string& key) {
     if (key == "^[") { /* esc closes */
         this->Dismiss();
         return true;
     }
-    else if (key == "KEY_ENTER" || key == " ") {
-        if (itemSelectedCallback) {
-            itemSelectedCallback(
-                this,
-                this->adapter,
-                listWindow->GetSelectedIndex());
-        }
-        if (this->autoDismiss) {
-            this->Dismiss();
-        }
+    else if (key == " ") { /* space bar also toggles activation */
+        this->OnListEntryActivated(
+            this->listWindow.get(),
+            this->listWindow->GetSelectedIndex());
         return true;
     }
     else if (key == "KEY_BACKSPACE" || key == "KEY_DC") {

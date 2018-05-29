@@ -71,6 +71,7 @@ namespace musik {
                 virtual void OnFocusChanged(bool focused);
                 virtual void OnRedraw();
                 virtual bool KeyPress(const std::string& key);
+                virtual bool MouseEvent(const IMouseHandler::Event& mouseEvent);
 
                 void SetFocus(FocusTarget target);
                 FocusTarget GetFocus() const;
@@ -87,6 +88,33 @@ namespace musik {
                     TimeSync = 2
                 };
 
+                /* a little structure used to make mouse event handling a bit
+                less verbose. */
+                struct Position {
+                    Position() {
+                        this->x = this->y = this->width = 0;
+                    }
+                    Position(int x, int y, int width) {
+                        this->x = x;
+                        this->y = y;
+                        this->width = width;
+                    }
+                    void Set(int x, int width) {
+                        this->x = x;
+                        this->width = width;
+                    }
+                    double Percent(int x) {
+                        return std::max(0.0, std::min(1.0,
+                            double(x - this->x) / double(this->width - 1)));
+                    }
+                    bool Contains(const IMouseHandler::Event& event) {
+                        return event.y == this->y &&
+                            event.x >= this->x &&
+                            event.x < this->x + this->width;
+                    }
+                    int x, y, width;
+                };
+
                 void Update(TimeMode mode = TimeSmooth);
 
                 void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
@@ -98,6 +126,7 @@ namespace musik {
 
                 bool paused;
                 bool hasReplayGain;
+                Position shufflePos, repeatPos, volumePos, timePos;
                 musik::core::sdk::ReplayGainMode replayGainMode;
                 musik::core::ILibraryPtr library;
                 musik::core::audio::ITransport& transport;
