@@ -226,6 +226,7 @@ bool TextInput::KeyPress(const std::string& key) {
             removeUtf8Char(this->buffer, this->position + 1);
             this->bufferLength = u8len(buffer);
             this->Redraw();
+            this->TextChanged(this, this->buffer);
             return true;
         }
     }
