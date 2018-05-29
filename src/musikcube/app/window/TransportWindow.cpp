@@ -576,8 +576,8 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* volume slider */
 
-    int volumePercent = (size_t) round(this->transport.Volume() * 100.0f) - 1;
-    int thumbOffset = std::min(9, (volumePercent * 10) / 100);
+    int volumePercent = (size_t) round(this->transport.Volume() * 100.0f);
+    int thumbOffset = std::min(10, (volumePercent * 10) / 100);
 
     std::string volume;
 
@@ -587,9 +587,9 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
     else {
         volume = Strings.VOLUME;
-        this->volumePos.Set(u8cols(Strings.VOLUME), 10);
+        this->volumePos.Set(u8cols(Strings.VOLUME), 11);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 11; i++) {
             volume += (i == thumbOffset) ? "■" : "─";
         }
 
