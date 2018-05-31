@@ -9,6 +9,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
+import io.casey.musikcube.remote.ui.shared.extension.letMany
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
 
@@ -30,12 +31,16 @@ class TrackListAdapter(private val tracks: DefaultSlidingWindow,
 
         view.setOnClickListener({ v ->
             val tag = v.tag as Tag
-            listener?.onItemClick(v, tag.track!!, tag.position!!)
+            letMany(listener, tag.track, tag.position) { listener, track, pos ->
+                listener.onItemClick(v, track, pos)
+            }
         })
 
         view.findViewById<View>(R.id.action).setOnClickListener({ v ->
             val tag = v.tag as Tag
-            listener?.onActionItemClick(v, tag.track!!, tag.position!!)
+            letMany(listener, tag.track, tag.position) { listener, track, position ->
+                listener.onActionItemClick(v, track, position)
+            }
         })
 
         return ViewHolder(view, playback)

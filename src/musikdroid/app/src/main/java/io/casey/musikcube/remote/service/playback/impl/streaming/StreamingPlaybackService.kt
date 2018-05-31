@@ -475,7 +475,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             /* failed! reset by loading as if the user selected the next track
             manually (this will automatically load the current and next tracks */
             val next = resolveNextIndex(index, playContext.queueCount, userInitiated)
-            if (next >= 0) {
+            if (next >= 0 && queryContext != null) {
                 loadQueueAndPlay(queryContext!!, next)
             }
             else {

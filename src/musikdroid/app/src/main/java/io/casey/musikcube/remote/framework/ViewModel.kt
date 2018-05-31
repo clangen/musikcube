@@ -16,14 +16,19 @@ import java.util.concurrent.atomic.AtomicLong
     val id: Long = nextId.incrementAndGet()
     private val publisher by lazy { createSubject() }
 
+    var paused = false
+        private set
+
     interface Provider {
         fun <T: ViewModel<*>> createViewModel(): T?
     }
 
     open fun onPause() {
+        paused = true
     }
 
     open fun onResume() {
+        paused = false
     }
 
     open fun onDestroy() {

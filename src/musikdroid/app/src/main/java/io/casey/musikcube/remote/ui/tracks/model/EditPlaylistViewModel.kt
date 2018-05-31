@@ -46,7 +46,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
 
     val count: Int
         get() {
-            if (externalIds.isEmpty() && status != Status.Loading) {
+            if (!paused && externalIds.isEmpty() && status != Status.Loading) {
                 if (!modified) {
                     refreshTrackIds()
                 }
