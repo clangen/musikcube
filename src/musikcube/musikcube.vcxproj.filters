@@ -162,6 +162,12 @@
     <ClCompile Include="cursespp\IMouseHandler.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\HotkeysLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
+    <ClCompile Include="app\model\HotkeysAdapter.cpp">
+      <Filter>app\model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -372,6 +378,12 @@
     </ClInclude>
     <ClInclude Include="cursespp\IMouseHandler.h">
       <Filter>cursespp</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\HotkeysLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\model\HotkeysAdapter.h">
+      <Filter>app\model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

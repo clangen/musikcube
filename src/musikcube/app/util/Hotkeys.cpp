@@ -42,6 +42,8 @@
 using namespace musik::cube;
 using namespace musik::core;
 
+#define ENSURE_LOADED() { if (!prefs) { loadPreferences(); } }
+
 using Id = Hotkeys::Id;
 
 /* sigh: http://stackoverflow.com/a/24847480 */
@@ -77,6 +79,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_library_play_queue", Id::NavigateLibraryPlayQueue },
     { "navigate_settings", Id::NavigateSettings },
     { "navigate_console", Id::NavigateConsole },
+    { "navigate_hotkeys", Id::NavigateHotkeys},
     { "navigate_jump_to_playing", Id::NavigateJumpToPlaying },
 
     { "play_queue_move_up", Id::PlayQueueMoveUp },
@@ -142,6 +145,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibraryPlayQueue, "n" },
     { Id::NavigateSettings, "s" },
     { Id::NavigateConsole, "`" },
+    { Id::NavigateHotkeys, "?" },
     { Id::NavigateJumpToPlaying, "x" },
 
 #ifdef __APPLE__
@@ -264,15 +268,8 @@ bool Hotkeys::Is(Id id, const std::string& kn) {
     return false;
 }
 
-std::string Hotkeys::Get(Id id) {
-    if (!prefs) {
-        loadPreferences();
-    }
-
-    auto custom = customIdToKey.find(id);
-    if (custom != customIdToKey.end()) {
-        return custom->second;
-    }
+std::string Hotkeys::Default(Id id) {
+    ENSURE_LOADED()
 
     auto it = ID_TO_DEFAULT.find(id);
     if (it != ID_TO_DEFAULT.end()) {
@@ -280,6 +277,30 @@ std::string Hotkeys::Get(Id id) {
     }
 
     return "";
+}
+
+std::string Hotkeys::Get(Id id) {
+    ENSURE_LOADED()
+
+    auto custom = customIdToKey.find(id);
+    if (custom != customIdToKey.end()) {
+        return custom->second;
+    }
+
+    return Default(id);
+}
+
+bool Hotkeys::IsDefault(Id id, const std::string& kn) {
+    return Default(id) == kn;
+}
+
+std::string Hotkeys::Name(Id id) {
+    for (auto entry : NAME_TO_ID) {
+        if (entry.second == id) {
+            return entry.first;
+        }
+    }
+    return "<error>";
 }
 
 class NavigationKeysImpl : public cursespp::INavigationKeys {

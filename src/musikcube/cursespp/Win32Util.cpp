@@ -233,7 +233,7 @@ namespace cursespp {
         }
 
         bool AlreadyRunning() {
-            return /*!IsDebuggerPresent() &&*/ (runningMutexLastError == ERROR_ALREADY_EXISTS);
+            return !IsDebuggerPresent() && (runningMutexLastError == ERROR_ALREADY_EXISTS);
         }
 
         void ShowOtherInstance(const std::string& title) {

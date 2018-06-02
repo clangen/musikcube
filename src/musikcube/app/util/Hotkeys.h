@@ -44,7 +44,7 @@ namespace musik {
             public:
                 enum Id {
                     /* selection */
-                    Up,
+                    Up = 0,
                     Down,
                     Left,
                     Right,
@@ -68,6 +68,7 @@ namespace musik {
                     NavigateLibraryPlayQueue,
                     NavigateSettings,
                     NavigateConsole,
+                    NavigateHotkeys,
                     NavigateJumpToPlaying,
 
                     /* views */
@@ -109,11 +110,17 @@ namespace musik {
                     RescanMetadata,
 
                     /* general */
-                    ContextMenu
+                    ContextMenu,
+
+                    /* :3 */
+                    COUNT
                 };
 
                 static bool Is(Id id, const std::string& kn);
                 static std::string Get(Id id);
+                static std::string Name(Id id);
+                static std::string Default(Id id);
+                static bool IsDefault(Id id, const std::string& kn);
                 static std::shared_ptr<cursespp::INavigationKeys> NavigationKeys();
 
             private:

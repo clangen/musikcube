@@ -45,6 +45,7 @@
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LibraryLayout.h>
 #include <app/layout/SettingsLayout.h>
+#include <app/layout/HotkeysLayout.h>
 #include <app/util/Hotkeys.h>
 
 #include <map>
@@ -112,9 +113,10 @@ MainLayout::MainLayout(
     library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
 
-    this->libraryLayout.reset(new LibraryLayout(playback, library));
-    this->consoleLayout.reset(new ConsoleLayout(playback.GetTransport(), library));
-    this->settingsLayout.reset(new SettingsLayout(app, library, playback));
+    this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
+    this->consoleLayout = std::make_shared<ConsoleLayout>(playback.GetTransport(), library);
+    this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
+    this->hotkeysLayout = std::make_shared<HotkeysLayout>();
 
     /* take user to settings if they don't have a valid configuration. otherwise,
     switch to the library view immediately */
@@ -284,6 +286,10 @@ bool MainLayout::KeyPress(const std::string& key) {
     /* deal with top-level view switching first. */
     if (Hotkeys::Is(Hotkeys::NavigateConsole, key)) {
         this->SetMainLayout(consoleLayout);
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateHotkeys, key)) {
+        this->SetMainLayout(hotkeysLayout);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
