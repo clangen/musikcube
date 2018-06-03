@@ -35,6 +35,7 @@
 #include "stdafx.h"
 #include "HotkeysAdapter.h"
 #include <app/util/Hotkeys.h>
+#include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
 
@@ -59,7 +60,7 @@ Entry HotkeysAdapter::GetEntry(ScrollableWindow* window, size_t index) {
     auto key = Hotkeys::Get(id);
 
     int width = window->GetContentWidth();
-    int avail = std::max(0, width - int(u8cols(name)) - 1 - 1 - 1);
+    int avail = std::max(0, width - int(u8cols(name)) - 1 - 1);
 
     auto value = " " + name + " " + text::Align(key + " ", text::AlignRight, avail);
 

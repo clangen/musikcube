@@ -77,6 +77,7 @@ namespace cursespp {
                 virtual void SetText(const std::string& value);
                 virtual std::string GetText() { return this->buffer; }
 
+                void SetRawKeyBlacklist(const std::vector<std::string>&& blacklist);
                 void SetTruncate(bool truncate);
                 void SetHint(const std::string& hint);
                 void SetEnterEnabled(bool enabled);
@@ -85,6 +86,7 @@ namespace cursespp {
             private:
                 bool OffsetPosition(int delta);
 
+                std::vector<std::string> rawBlacklist;
                 std::string buffer, hintText;
                 int position;
                 bool enterEnabled;

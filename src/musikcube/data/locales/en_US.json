@@ -38,6 +38,8 @@
         "console_command_title": "command",
 
         "hotkeys_title": "hotkey configuration",
+        "hotkeys_reset_defaults": "reset all",
+        "hotkeys_reassign_overlay_title": "reassign hotkey",
 
         "settings_space_to_add": "browse (SPACE to add)",
         "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
@@ -185,6 +187,7 @@
         "playqueue_playlist_name_overlay_width": 35,
         "browse_categories_overlay_width": 35,
         "indexer_overlay_width": 28,
+        "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
         "preamp_overlay_width": 40
     }

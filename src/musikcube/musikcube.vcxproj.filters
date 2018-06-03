@@ -168,6 +168,9 @@
     <ClCompile Include="app\model\HotkeysAdapter.cpp">
       <Filter>app\model</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\ReassignHotkeyOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -384,6 +387,9 @@
     </ClInclude>
     <ClInclude Include="app\model\HotkeysAdapter.h">
       <Filter>app\model</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\ReassignHotkeyOverlay.h">
+      <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

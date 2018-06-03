@@ -35,7 +35,10 @@
 #include "stdafx.h"
 #include "HotkeysLayout.h"
 #include <cursespp/Colors.h>
+#include <app/util/Hotkeys.h>
 #include <app/model/HotkeysAdapter.h>
+#include <app/overlay/ReassignHotkeyOverlay.h>
+#include <app/util/Messages.h>
 
 using namespace cursespp;
 using namespace musik::cube;
@@ -45,18 +48,18 @@ using Entry = IScrollAdapter::EntryPtr;
 HotkeysLayout::HotkeysLayout() {
     auto adapter = std::make_shared<HotkeysAdapter>();
 
-    adapter->SetItemDecorator([this](ScrollableWindow*, size_t index, size_t, Entry) -> int64_t {
+    adapter->SetItemDecorator([&adapter, this](ScrollableWindow*, size_t index, size_t, Entry) -> int64_t {
         if (this->listWindow->GetSelectedIndex() == index) {
             return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
         }
-        return -1;
+        return -1LL;
     });
 
     this->listWindow = std::make_shared<ListWindow>();
     this->listWindow->SetFrameVisible(true);
     this->listWindow->SetAdapter(adapter);
     this->listWindow->SetFrameTitle(_TSTR("hotkeys_title"));
-
+    this->listWindow->EntryActivated.connect(this, &HotkeysLayout::OnEntryActivated);
     this->AddWindow(this->listWindow);
     this->listWindow->SetFocusOrder(0);
 }
@@ -64,8 +67,40 @@ HotkeysLayout::HotkeysLayout() {
 HotkeysLayout::~HotkeysLayout() {
 }
 
-void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
+void HotkeysLayout::OnEntryActivated(cursespp::ListWindow* w, size_t index) {
+    Hotkeys::Id id = static_cast<Hotkeys::Id>(index);
+    ReassignHotkeyOverlay::Show(id, [](std::string) {
+    });
+}
 
+void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
+    if (shortcuts) {
+        shortcuts->AddShortcut("M-r", _TSTR("hotkeys_reset_defaults"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
+        shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+
+        shortcuts->SetChangedCallback([this](std::string key) {
+            this->KeyPress(key);
+        });
+    }
+}
+
+bool HotkeysLayout::KeyPress(const std::string& kn) {
+    if (kn == "M-r") {
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {
+        this->BroadcastMessage(message::JumpToSettings);
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibrary, kn)) {
+        this->BroadcastMessage(message::JumpToLibrary);
+        return true;
+    }
+    else {
+        return LayoutBase::KeyPress(kn);
+    }
 }
 
 void HotkeysLayout::OnLayout() {

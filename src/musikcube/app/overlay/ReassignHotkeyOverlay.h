@@ -34,39 +34,41 @@
 
 #pragma once
 
-#include <cursespp/LayoutBase.h>
-#include <cursespp/ListWindow.h>
-#include <vector>
+#include <functional>
 
-#include "ITopLevelLayout.h"
+#include <cursespp/TextInput.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/OverlayBase.h>
+#include <cursespp/ShortcutsWindow.h>
+#include <app/util/Hotkeys.h>
 
 namespace musik {
     namespace cube {
-        class HotkeysLayout :
-            public cursespp::LayoutBase,
+        class ReassignHotkeyOverlay : public cursespp::OverlayBase, public sigslot::has_slots<>
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<HotkeysLayout>,
+            , public std::enable_shared_from_this<ReassignHotkeyOverlay>
 #endif
-            public ITopLevelLayout,
-            public sigslot::has_slots<>
         {
-            public:
-                HotkeysLayout();
+        public:
+            using Callback = std::function<void(std::string)>;
 
-                ~HotkeysLayout();
+            static void Show(Hotkeys::Id id, Callback callback);
 
-                virtual void SetShortcutsWindow(
-                    cursespp::ShortcutsWindow* shortcuts);
+            virtual void Layout();
+            virtual bool KeyPress(const std::string& key);
 
-                virtual bool KeyPress(const std::string& kn);
+        private:
+            ReassignHotkeyOverlay(Hotkeys::Id id, Callback callback);
 
-            protected:
-                virtual void OnLayout();
-
-            private:
-                void OnEntryActivated(cursespp::ListWindow* w, size_t index);
-
-                std::shared_ptr<cursespp::ListWindow> listWindow;
+            void RecalculateSize();
+            void InitViews();
+            
+            Hotkeys::Id id;
+            Callback callback;
+            int width, height, x, y;
+            std::shared_ptr<cursespp::TextLabel> titleLabel, hotkeyLabel;
+            std::shared_ptr<cursespp::TextInput> hotkeyInput;
+            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
         };
     }
 }

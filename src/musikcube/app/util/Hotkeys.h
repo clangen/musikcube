@@ -118,9 +118,11 @@ namespace musik {
 
                 static bool Is(Id id, const std::string& kn);
                 static std::string Get(Id id);
+                static void Set(Id id, const std::string& kn);
+                static void Reset();
                 static std::string Name(Id id);
                 static std::string Default(Id id);
-                static bool IsDefault(Id id, const std::string& kn);
+                static std::string Custom(Id id);
                 static std::shared_ptr<cursespp::INavigationKeys> NavigationKeys();
 
             private:

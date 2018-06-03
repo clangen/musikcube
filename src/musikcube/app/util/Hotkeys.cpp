@@ -198,7 +198,6 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 };
 
 /* custom keys */
-static std::unordered_set<std::string> customKeys;
 static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 
 /* preferences file */
@@ -218,16 +217,12 @@ static void loadPreferences() {
     prefs = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
 
     try {
-        /* load all of the custom key mappings into customKeys and
-        customIdToKey structures for quick lookup. */
         if (prefs) {
-            customKeys.clear();
             std::vector<std::string> names;
             prefs->GetKeys(names);
             for (auto n : names) {
                 auto it = NAME_TO_ID.find(n);
                 if (it != NAME_TO_ID.end()) {
-                    customKeys.insert(prefs->GetString(n));
                     customIdToKey[it->second] = prefs->GetString(n);
                 }
             }
@@ -239,7 +234,6 @@ static void loadPreferences() {
     }
     catch (...) {
         std::cerr << "failed to load hotkeys.json! default hotkeys selected.";
-        customKeys.clear();
         customIdToKey.clear();
     }
 }
@@ -268,30 +262,43 @@ bool Hotkeys::Is(Id id, const std::string& kn) {
     return false;
 }
 
-std::string Hotkeys::Default(Id id) {
-    ENSURE_LOADED()
-
-    auto it = ID_TO_DEFAULT.find(id);
-    if (it != ID_TO_DEFAULT.end()) {
+template <typename T>
+std::string find(Id id, T& map) {
+    auto it = map.find(id);
+    if (it != map.end()) {
         return it->second;
     }
-
     return "";
 }
 
-std::string Hotkeys::Get(Id id) {
-    ENSURE_LOADED()
-
-    auto custom = customIdToKey.find(id);
-    if (custom != customIdToKey.end()) {
-        return custom->second;
+template <typename T>
+void findMany(const std::string& kn, T& map, std::vector<std::string>& target) {
+    for (int i = 0; i < Id::COUNT; i++) {
+        Id id = static_cast<Id>(i);
+        std::string thisKn = find(id, map);
+        if (thisKn == kn) {
+            target.push_back(thisKn);
+        }
     }
-
-    return Default(id);
 }
 
-bool Hotkeys::IsDefault(Id id, const std::string& kn) {
-    return Default(id) == kn;
+std::string Hotkeys::Default(Id id) {
+    ENSURE_LOADED()
+    return find(id, ID_TO_DEFAULT);
+}
+
+std::string Hotkeys::Custom(Id id) {
+    ENSURE_LOADED()
+    return find(id, customIdToKey);
+}
+
+std::string Hotkeys::Get(Id id) {
+    auto kn = Custom(id);
+    return kn.size() ? kn : Default(id);
+}
+
+void Hotkeys::Set(Id id, const std::string& kn) {
+    /* CAL TODO */
 }
 
 std::string Hotkeys::Name(Id id) {
