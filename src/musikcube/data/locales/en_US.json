@@ -43,7 +43,7 @@
         "hotkeys_reset_all_title": "reset hotkeys",
         "hotkeys_reset_all_message": "are you sure you want to reset all hotkeys to their default values?\n\nexisting custom hotkeys will be forgotten!",
         "hotkeys_conflict_title": "hotkey conflict",
-        "hotkeys_conflict_message": "the hotkey '{{hotkey}}' conflicts with '{{existing}}'.\n\nare you sure you want to assign this binding?",
+        "hotkeys_conflict_message": "the hotkey '{{hotkey}}' *may* conflict with '{{existing}}', depending on context.\n\nare you sure you want to assign this binding?",
 
         "settings_space_to_add": "browse (SPACE to add)",
         "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",

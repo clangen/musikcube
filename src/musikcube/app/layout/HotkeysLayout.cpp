@@ -67,7 +67,7 @@ static void confirmResetHotkeys() {
     App::Overlays().Push(dialog);
 }
 
-static void checkConflictAndSave(Hotkeys::Id id, const std::string& key) {
+static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, std::function<void()> cb) {
     const std::string existing = Hotkeys::Existing(key);
 
     if (existing == Hotkeys::Name(id)) {
@@ -89,14 +89,20 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key) {
                 "KEY_ENTER",
                 "ENTER",
                 _TSTR("button_yes"),
-                [id, key](const std::string& str) {
+                [id, key, cb](const std::string& str) {
                     Hotkeys::Set(id, key);
+                    if (cb) {
+                        cb();
+                    }
                 });
 
         App::Overlays().Push(dialog);
     }
     else {
         Hotkeys::Set(id, key);
+        if (cb) {
+            cb();
+        }
     }
 }
 
@@ -122,16 +128,24 @@ HotkeysLayout::HotkeysLayout() {
 HotkeysLayout::~HotkeysLayout() {
 }
 
-void HotkeysLayout::OnEntryActivated(cursespp::ListWindow* w, size_t index) {
+void HotkeysLayout::OnEntryActivated(cursespp::ListWindow* list, size_t index) {
     Hotkeys::Id id = static_cast<Hotkeys::Id>(index);
+    auto shortcuts = this->shortcuts;
 
-    ReassignHotkeyOverlay::Show(id, [id](std::string key) {
-        checkConflictAndSave(id, key);
+    ReassignHotkeyOverlay::Show(id, [this, list, id](std::string key) {
+        checkConflictAndSave(id, key, [this, list]() {
+            list->OnAdapterChanged();
+            this->SetShortcutsWindow(this->shortcuts);
+        });
     });
 }
 
 void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
+    this->shortcuts = shortcuts;
+
     if (shortcuts) {
+        shortcuts->RemoveAll();
+
         shortcuts->AddShortcut("M-r", _TSTR("hotkeys_reset_defaults"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));

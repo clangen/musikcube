@@ -272,14 +272,13 @@ std::string find(Id id, T& map) {
 }
 
 template <typename T>
-void findMany(const std::string& kn, T& map, std::vector<std::string>& target) {
-    for (int i = 0; i < Id::COUNT; i++) {
-        Id id = static_cast<Id>(i);
-        std::string thisKn = find(id, map);
-        if (thisKn == kn) {
-            target.push_back(thisKn);
+Hotkeys::Id find(const std::string& kn, T& map) {
+    for (auto it : map) {
+        if (it.second == kn) {
+            return it.first;
         }
     }
+    return Hotkeys::COUNT;
 }
 
 std::string Hotkeys::Default(Id id) {
@@ -298,7 +297,8 @@ std::string Hotkeys::Get(Id id) {
 }
 
 void Hotkeys::Set(Id id, const std::string& kn) {
-    /* CAL TODO */
+    customIdToKey[id] = kn;
+    savePreferences();
 }
 
 void Hotkeys::Reset() {
@@ -308,7 +308,17 @@ void Hotkeys::Reset() {
 }
 
 std::string Hotkeys::Existing(const std::string& kn) {
-    return "TODO!!";
+    auto id = find(kn, customIdToKey);
+    if (id == Hotkeys::COUNT) {
+        id = find(kn, ID_TO_DEFAULT);
+        if (customIdToKey.find(id) != customIdToKey.end()) {
+            /* we found a default key for this one, but that default
+            binding has already been overridden! ensure we return
+            that it's available. */
+            id = Hotkeys::COUNT;
+        }
+    }
+    return id != Hotkeys::COUNT ? Name(id) : "";
 }
 
 std::string Hotkeys::Name(Id id) {

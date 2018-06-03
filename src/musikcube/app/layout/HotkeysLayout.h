@@ -36,6 +36,7 @@
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
+#include <cursespp/ShortcutsWindow.h>
 #include <vector>
 
 #include "ITopLevelLayout.h"
@@ -67,6 +68,7 @@ namespace musik {
                 void OnEntryActivated(cursespp::ListWindow* w, size_t index);
 
                 std::shared_ptr<cursespp::ListWindow> listWindow;
+                cursespp::ShortcutsWindow* shortcuts;
         };
     }
 }
