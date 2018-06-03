@@ -120,6 +120,7 @@ namespace musik {
                 static std::string Get(Id id);
                 static void Set(Id id, const std::string& kn);
                 static void Reset();
+                static std::string Existing(const std::string& kn);
                 static std::string Name(Id id);
                 static std::string Default(Id id);
                 static std::string Custom(Id id);

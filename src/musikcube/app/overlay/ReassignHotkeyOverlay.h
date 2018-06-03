@@ -62,7 +62,7 @@ namespace musik {
 
             void RecalculateSize();
             void InitViews();
-            
+
             Hotkeys::Id id;
             Callback callback;
             int width, height, x, y;

@@ -189,6 +189,10 @@ void TextInput::SetRawKeyBlacklist(const std::vector<std::string>&& blacklist) {
 }
 
 bool TextInput::KeyPress(const std::string& key) {
+    if (this->inputMode == InputMode::InputRaw) {
+        return false;
+    }
+
     if (key == "M-KEY_BACKSPACE") {
         this->SetText("");
         return true;

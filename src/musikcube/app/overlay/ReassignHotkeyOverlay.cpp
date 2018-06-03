@@ -70,9 +70,6 @@ void ReassignHotkeyOverlay::Layout() {
     this->hotkeyLabel->MoveAndResize(1, 2, clientWidth - 2, 3);
     this->hotkeyInput->MoveAndResize(1, 3, clientWidth - 2, 3);
     this->shortcuts->MoveAndResize(0, clientHeight - 1, clientWidth, 1);
-
-    int x = 1;
-    int y = 2;
 }
 
 bool ReassignHotkeyOverlay::KeyPress(const std::string& key) {
@@ -81,13 +78,18 @@ bool ReassignHotkeyOverlay::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "KEY_ENTER") {
-        return true;
+        auto current = this->hotkeyInput->GetText();
+        if (u8len(current)) {
+            callback(current);
+            this->Dismiss();
+            return true;
+        }
     }
 
     return LayoutBase::KeyPress(key);
 }
 
-ReassignHotkeyOverlay::ReassignHotkeyOverlay(Hotkeys::Id id, Callback callback) 
+ReassignHotkeyOverlay::ReassignHotkeyOverlay(Hotkeys::Id id, Callback callback)
 : id(id), callback(callback) {
     LayoutBase();
     this->InitViews();

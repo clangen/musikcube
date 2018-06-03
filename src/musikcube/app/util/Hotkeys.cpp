@@ -301,6 +301,14 @@ void Hotkeys::Set(Id id, const std::string& kn) {
     /* CAL TODO */
 }
 
+void Hotkeys::Reset() {
+    /* CAL TODO */
+}
+
+std::string Hotkeys::Existing(const std::string& kn) {
+    return "TODO!!";
+}
+
 std::string Hotkeys::Name(Id id) {
     for (auto entry : NAME_TO_ID) {
         if (entry.second == id) {

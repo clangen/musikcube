@@ -34,7 +34,10 @@
 
 #include "stdafx.h"
 #include "HotkeysLayout.h"
+#include <core/support/Common.h>
+#include <cursespp/App.h>
 #include <cursespp/Colors.h>
+#include <cursespp/DialogOverlay.h>
 #include <app/util/Hotkeys.h>
 #include <app/model/HotkeysAdapter.h>
 #include <app/overlay/ReassignHotkeyOverlay.h>
@@ -42,8 +45,56 @@
 
 using namespace cursespp;
 using namespace musik::cube;
+using namespace musik::core;
 
 using Entry = IScrollAdapter::EntryPtr;
+
+static void confirmResetHotkeys() {
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    (*dialog)
+        .SetTitle(_TSTR("hotkeys_reset_all_title"))
+        .SetMessage(_TSTR("hotkeys_reset_all_message"))
+        .AddButton("^[", "ESC", _TSTR("button_no"))
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            _TSTR("button_yes"),
+            [](const std::string& str) {
+                Hotkeys::Reset();
+            });
+
+    App::Overlays().Push(dialog);
+}
+
+static void checkConflictAndSave(Hotkeys::Id id, const std::string& key) {
+    const std::string existing = Hotkeys::Existing(key);
+
+    if (existing.size()) {
+        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+        std::string message = _TSTR("hotkeys_conflict_message");
+        ReplaceAll(message, "{{hotkey}}", key);
+        ReplaceAll(message, "{{existing}}", existing);
+
+        (*dialog)
+            .SetTitle(_TSTR("hotkeys_conflict_title"))
+            .SetMessage(message)
+            .AddButton("^[", "ESC", _TSTR("button_no"))
+            .AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                _TSTR("button_yes"),
+                [id, key](const std::string& str) {
+                    Hotkeys::Set(id, key);
+                });
+
+        App::Overlays().Push(dialog);
+    }
+    else {
+        Hotkeys::Set(id, key);
+    }
+}
 
 HotkeysLayout::HotkeysLayout() {
     auto adapter = std::make_shared<HotkeysAdapter>();
@@ -69,7 +120,9 @@ HotkeysLayout::~HotkeysLayout() {
 
 void HotkeysLayout::OnEntryActivated(cursespp::ListWindow* w, size_t index) {
     Hotkeys::Id id = static_cast<Hotkeys::Id>(index);
-    ReassignHotkeyOverlay::Show(id, [](std::string) {
+
+    ReassignHotkeyOverlay::Show(id, [id](std::string key) {
+        checkConflictAndSave(id, key);
     });
 }
 
@@ -88,6 +141,7 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 
 bool HotkeysLayout::KeyPress(const std::string& kn) {
     if (kn == "M-r") {
+        confirmResetHotkeys();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {
