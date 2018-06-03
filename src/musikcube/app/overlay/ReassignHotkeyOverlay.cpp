@@ -125,6 +125,7 @@ void ReassignHotkeyOverlay::InitViews() {
     this->hotkeyInput->SetRawKeyBlacklist({ "KEY_ENTER", "^[" });
     this->hotkeyInput->SetFocusOrder(0);
     this->hotkeyInput->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
+    this->hotkeyInput->SetText(Hotkeys::Get(this->id));
     this->hotkeyInput->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
 
     this->shortcuts = std::make_shared<ShortcutsWindow>();

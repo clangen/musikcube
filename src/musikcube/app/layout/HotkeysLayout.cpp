@@ -70,6 +70,10 @@ static void confirmResetHotkeys() {
 static void checkConflictAndSave(Hotkeys::Id id, const std::string& key) {
     const std::string existing = Hotkeys::Existing(key);
 
+    if (existing == Hotkeys::Name(id)) {
+        return;
+    }
+
     if (existing.size()) {
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -99,7 +103,7 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key) {
 HotkeysLayout::HotkeysLayout() {
     auto adapter = std::make_shared<HotkeysAdapter>();
 
-    adapter->SetItemDecorator([&adapter, this](ScrollableWindow*, size_t index, size_t, Entry) -> int64_t {
+    adapter->SetItemDecorator([this](ScrollableWindow*, size_t index, size_t, Entry) -> int64_t {
         if (this->listWindow->GetSelectedIndex() == index) {
             return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
         }
@@ -142,6 +146,7 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 bool HotkeysLayout::KeyPress(const std::string& kn) {
     if (kn == "M-r") {
         confirmResetHotkeys();
+        this->listWindow->OnAdapterChanged();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {

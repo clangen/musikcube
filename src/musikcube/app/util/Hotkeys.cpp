@@ -204,7 +204,7 @@ static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 static std::shared_ptr<Preferences> prefs;
 
 static void savePreferences() {
-    for (const std::pair<std::string, Id>& pair : NAME_TO_ID) {
+    for (const auto& pair : NAME_TO_ID) {
         prefs->SetString(
             pair.first.c_str(),
             Hotkeys::Get(pair.second).c_str());
@@ -302,7 +302,9 @@ void Hotkeys::Set(Id id, const std::string& kn) {
 }
 
 void Hotkeys::Reset() {
-    /* CAL TODO */
+    customIdToKey.clear();
+    savePreferences();
+    loadPreferences();
 }
 
 std::string Hotkeys::Existing(const std::string& kn) {
