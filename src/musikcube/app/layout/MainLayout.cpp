@@ -347,7 +347,6 @@ void MainLayout::Stop() {
     MessageQueue().UnregisterForBroadcasts(this);
 }
 
-
 void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     int type = message.Type();
 
@@ -356,6 +355,9 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
     else if (type == message::JumpToSettings) {
         this->SetMainLayout(settingsLayout);
+    }
+    else if (type == message::JumpToHotkeys) {
+        this->SetMainLayout(hotkeysLayout);
     }
     else if (type == message::JumpToLibrary) {
         this->SetMainLayout(libraryLayout);

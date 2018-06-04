@@ -264,9 +264,7 @@ void SettingsLayout::OnPluginsDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
-    std::shared_ptr<InputOverlay> overlay(new InputOverlay());
-    overlay->SetTitle(_TSTR("settings_hotkey_tester")).SetInputMode(IInput::InputRaw);
-    App::Overlays().Push(overlay);
+    this->BroadcastMessage(message::JumpToHotkeys);
 }
 
 void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {

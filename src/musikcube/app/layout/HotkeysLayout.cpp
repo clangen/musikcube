@@ -50,6 +50,7 @@ using namespace musik::cube;
 using namespace musik::core;
 
 using Entry = IScrollAdapter::EntryPtr;
+using Callback = std::function<void()>;
 
 static std::string formattedTime() {
     char buffer[128];
@@ -61,7 +62,7 @@ static std::string formattedTime() {
     return std::string(buffer);
 }
 
-static void confirmResetHotkeys() {
+static void confirmResetHotkeys(Callback cb) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
     (*dialog)
@@ -72,14 +73,15 @@ static void confirmResetHotkeys() {
             "KEY_ENTER",
             "ENTER",
             _TSTR("button_yes"),
-            [](const std::string& str) {
+            [cb](const std::string& str) {
                 Hotkeys::Reset();
+                if (cb) { cb(); }
             });
 
     App::Overlays().Push(dialog);
 }
 
-static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, std::function<void()> cb) {
+static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, Callback cb) {
     const std::string existing = Hotkeys::Existing(key);
 
     if (existing == Hotkeys::Name(id)) {
@@ -103,18 +105,14 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, std::fu
                 _TSTR("button_yes"),
                 [id, key, cb](const std::string& str) {
                     Hotkeys::Set(id, key);
-                    if (cb) {
-                        cb();
-                    }
+                    if (cb) { cb(); }
                 });
 
         App::Overlays().Push(dialog);
     }
     else {
         Hotkeys::Set(id, key);
-        if (cb) {
-            cb();
-        }
+        if (cb) { cb(); }
     }
 }
 
@@ -149,6 +147,29 @@ static void backupAndShowDialog() {
 
         App::Overlays().Push(dialog);
     }
+}
+
+static void showDeleteOverlay(Hotkeys::Id id, Callback cb) {
+    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+    std::string message = _TSTR("hotkeys_delete_binding_message");
+    ReplaceAll(message, "{{key}}", Hotkeys::Name(id));
+    ReplaceAll(message, "{{default}}", Hotkeys::Default(id));
+
+    (*dialog)
+        .SetTitle(_TSTR("hotkeys_delete_binding_title"))
+        .SetMessage(message)
+        .AddButton("^[", "ESC", _TSTR("button_no"))
+        .AddButton(
+            "KEY_ENTER",
+            "ENTER",
+            _TSTR("button_yes"),
+            [id, cb](const std::string& str) {
+                Hotkeys::Set(id, Hotkeys::Default(id));
+                if (cb) { cb(); }
+            });
+
+    App::Overlays().Push(dialog);
 }
 
 HotkeysLayout::HotkeysLayout() {
@@ -216,9 +237,20 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 }
 
 bool HotkeysLayout::KeyPress(const std::string& kn) {
-    if (Hotkeys::Is(Hotkeys::HotkeysResetToDefault, kn)) {
-        confirmResetHotkeys();
+    auto refresh = [this]() {
         this->listWindow->OnAdapterChanged();
+        this->SetShortcutsWindow(this->shortcuts);
+    };
+
+    if (kn == "KEY_DC") {
+        auto index = this->listWindow->GetSelectedIndex();
+        if (index != ListWindow::NO_SELECTION) {
+            showDeleteOverlay(static_cast<Hotkeys::Id>(index), refresh);
+            return true;
+        }
+    }
+    else if (Hotkeys::Is(Hotkeys::HotkeysResetToDefault, kn)) {
+        confirmResetHotkeys(refresh);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::HotkeysBackup, kn)) {
@@ -233,9 +265,8 @@ bool HotkeysLayout::KeyPress(const std::string& kn) {
         this->BroadcastMessage(message::JumpToLibrary);
         return true;
     }
-    else {
-        return LayoutBase::KeyPress(kn);
-    }
+
+    return LayoutBase::KeyPress(kn);
 }
 
 void HotkeysLayout::OnLayout() {
