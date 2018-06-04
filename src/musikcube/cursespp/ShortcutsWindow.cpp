@@ -69,6 +69,7 @@ void ShortcutsWindow::AddShortcut(
 
 void ShortcutsWindow::RemoveAll() {
     this->entries.clear();
+    this->activeKey = this->originalKey = "";
     this->Redraw();
 }
 

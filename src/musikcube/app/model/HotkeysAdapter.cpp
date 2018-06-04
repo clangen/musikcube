@@ -32,28 +32,37 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "stdafx.h"
+#include "HotkeysAdapter.h"
+#include <app/util/Hotkeys.h>
+#include <cursespp/Colors.h>
+#include <cursespp/SingleLineEntry.h>
+#include <cursespp/Text.h>
 
-#include <string>
-#include <core/config.h>
+using namespace cursespp;
+using namespace musik::cube;
 
-namespace musik { namespace core {
+using Entry = IScrollAdapter::EntryPtr;
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    std::string NormalizeDir(std::string path);
-    void OpenFile(const std::string& path);
-    bool CopyFile(const std::string& from, const std::string& to);
-    int64_t Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
+HotkeysAdapter::HotkeysAdapter() {
+}
 
-    /* file-migration stuff. */
-    void MigrateOldDataDirectory(); /* renames ~/.mC2 -> ~/.musikcube */
-    void RemoveOldDlls();
+HotkeysAdapter::~HotkeysAdapter() {
+}
 
-} }
+size_t HotkeysAdapter::GetEntryCount() {
+    return Hotkeys::COUNT;
+}
+
+Entry HotkeysAdapter::GetEntry(ScrollableWindow* window, size_t index) {
+    auto id = static_cast<Hotkeys::Id>(index);
+    auto name = Hotkeys::Name(id);
+    auto key = Hotkeys::Get(id);
+
+    int width = window->GetContentWidth();
+    int avail = std::max(0, width - int(u8cols(name)) - 1 - 1);
+
+    auto value = " " + name + " " + text::Align(key + " ", text::AlignRight, avail);
+
+    return IScrollAdapter::EntryPtr(new SingleLineEntry(value));
+}

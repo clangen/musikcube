@@ -146,6 +146,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
   <ItemGroup>
     <ClCompile Include="app\layout\BrowseLayout.cpp" />
     <ClCompile Include="app\layout\DirectoryLayout.cpp" />
+    <ClCompile Include="app\layout\HotkeysLayout.cpp" />
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
     <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
@@ -154,6 +155,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\layout\SettingsLayout.cpp" />
     <ClCompile Include="app\layout\TrackSearchLayout.cpp" />
     <ClCompile Include="app\model\DirectoryAdapter.cpp" />
+    <ClCompile Include="app\model\HotkeysAdapter.cpp" />
     <ClCompile Include="app\overlay\BrowseOverlays.cpp" />
     <ClCompile Include="app\overlay\ColorThemeOverlay.cpp" />
     <ClCompile Include="app\overlay\LastFmOverlay.cpp" />
@@ -162,6 +164,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\overlay\PlayQueueOverlays.cpp" />
     <ClCompile Include="app\overlay\PluginOverlay.cpp" />
     <ClCompile Include="app\overlay\PreampOverlay.cpp" />
+    <ClCompile Include="app\overlay\ReassignHotkeyOverlay.cpp" />
     <ClCompile Include="app\overlay\ServerOverlay.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
@@ -206,6 +209,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
   <ItemGroup>
     <ClInclude Include="app\layout\BrowseLayout.h" />
     <ClInclude Include="app\layout\DirectoryLayout.h" />
+    <ClInclude Include="app\layout\HotkeysLayout.h" />
     <ClInclude Include="app\layout\ITopLevelLayout.h" />
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\ConsoleLayout.h" />
@@ -215,6 +219,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\layout\SettingsLayout.h" />
     <ClInclude Include="app\layout\TrackSearchLayout.h" />
     <ClInclude Include="app\model\DirectoryAdapter.h" />
+    <ClInclude Include="app\model\HotkeysAdapter.h" />
     <ClInclude Include="app\overlay\BrowseOverlays.h" />
     <ClInclude Include="app\overlay\ColorThemeOverlay.h" />
     <ClInclude Include="app\overlay\LastFmOverlay.h" />
@@ -223,6 +228,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\overlay\PlayQueueOverlays.h" />
     <ClInclude Include="app\overlay\PluginOverlay.h" />
     <ClInclude Include="app\overlay\PreampOverlay.h" />
+    <ClInclude Include="app\overlay\ReassignHotkeyOverlay.h" />
     <ClInclude Include="app\overlay\ServerOverlay.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />

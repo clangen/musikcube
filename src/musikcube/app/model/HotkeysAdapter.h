@@ -34,26 +34,20 @@
 
 #pragma once
 
-#include <string>
-#include <core/config.h>
+#include <cursespp/ScrollAdapterBase.h>
+#include <cursespp/ScrollableWindow.h>
 
-namespace musik { namespace core {
+namespace musik {
+    namespace cube {
+        class HotkeysAdapter : public cursespp::ScrollAdapterBase {
+            public:
+                static const size_t NO_INDEX = (size_t)-1;
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    std::string NormalizeDir(std::string path);
-    void OpenFile(const std::string& path);
-    bool CopyFile(const std::string& from, const std::string& to);
-    int64_t Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
+                HotkeysAdapter();
+                virtual ~HotkeysAdapter();
 
-    /* file-migration stuff. */
-    void MigrateOldDataDirectory(); /* renames ~/.mC2 -> ~/.musikcube */
-    void RemoveOldDlls();
-
-} }
+                virtual size_t GetEntryCount();
+                virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
+        };
+    }
+}

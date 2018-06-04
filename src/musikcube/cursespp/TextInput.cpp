@@ -143,6 +143,10 @@ bool TextInput::Write(const std::string& key) {
     int len = u8len(key);
     if (len == 1 || (len > 1 && this->inputMode == InputRaw)) {
         if (this->inputMode == InputRaw) {
+            auto& bl = this->rawBlacklist;
+            if (std::find(bl.begin(), bl.end(), key) != bl.end()) {
+                return false;
+            }
             this->buffer = key;
             this->bufferLength = len;
             this->position = len;
@@ -180,7 +184,15 @@ void TextInput::SetEnterEnabled(bool enabled) {
     this->enterEnabled = enabled;
 }
 
+void TextInput::SetRawKeyBlacklist(const std::vector<std::string>&& blacklist) {
+    this->rawBlacklist = blacklist;
+}
+
 bool TextInput::KeyPress(const std::string& key) {
+    if (this->inputMode == InputMode::InputRaw) {
+        return false;
+    }
+
     if (key == "M-KEY_BACKSPACE") {
         this->SetText("");
         return true;

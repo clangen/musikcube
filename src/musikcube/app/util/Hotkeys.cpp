@@ -42,6 +42,8 @@
 using namespace musik::cube;
 using namespace musik::core;
 
+#define ENSURE_LOADED() { if (!prefs) { loadPreferences(); } }
+
 using Id = Hotkeys::Id;
 
 /* sigh: http://stackoverflow.com/a/24847480 */
@@ -77,6 +79,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_library_play_queue", Id::NavigateLibraryPlayQueue },
     { "navigate_settings", Id::NavigateSettings },
     { "navigate_console", Id::NavigateConsole },
+    { "navigate_hotkeys", Id::NavigateHotkeys},
     { "navigate_jump_to_playing", Id::NavigateJumpToPlaying },
 
     { "play_queue_move_up", Id::PlayQueueMoveUp },
@@ -113,6 +116,9 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
 
     { "metadata_rescan", Id::RescanMetadata },
 
+    { "hotkeys_reset_to_default", Id::HotkeysResetToDefault },
+    { "hotkeys_backup", Id::HotkeysBackup },
+
     { "context_menu", Id::ContextMenu }
 };
 
@@ -142,6 +148,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibraryPlayQueue, "n" },
     { Id::NavigateSettings, "s" },
     { Id::NavigateConsole, "`" },
+    { Id::NavigateHotkeys, "?" },
     { Id::NavigateJumpToPlaying, "x" },
 
 #ifdef __APPLE__
@@ -190,18 +197,20 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 
     { Id::RescanMetadata, "^R"},
 
+    { Id::HotkeysResetToDefault, "M-r" },
+    { Id::HotkeysBackup, "M-b" },
+
     { Id::ContextMenu, "M-enter" }
 };
 
 /* custom keys */
-static std::unordered_set<std::string> customKeys;
 static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 
 /* preferences file */
 static std::shared_ptr<Preferences> prefs;
 
 static void savePreferences() {
-    for (const std::pair<std::string, Id>& pair : NAME_TO_ID) {
+    for (const auto& pair : NAME_TO_ID) {
         prefs->SetString(
             pair.first.c_str(),
             Hotkeys::Get(pair.second).c_str());
@@ -214,16 +223,12 @@ static void loadPreferences() {
     prefs = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
 
     try {
-        /* load all of the custom key mappings into customKeys and
-        customIdToKey structures for quick lookup. */
         if (prefs) {
-            customKeys.clear();
             std::vector<std::string> names;
             prefs->GetKeys(names);
             for (auto n : names) {
                 auto it = NAME_TO_ID.find(n);
                 if (it != NAME_TO_ID.end()) {
-                    customKeys.insert(prefs->GetString(n));
                     customIdToKey[it->second] = prefs->GetString(n);
                 }
             }
@@ -235,7 +240,6 @@ static void loadPreferences() {
     }
     catch (...) {
         std::cerr << "failed to load hotkeys.json! default hotkeys selected.";
-        customKeys.clear();
         customIdToKey.clear();
     }
 }
@@ -264,22 +268,72 @@ bool Hotkeys::Is(Id id, const std::string& kn) {
     return false;
 }
 
-std::string Hotkeys::Get(Id id) {
-    if (!prefs) {
-        loadPreferences();
-    }
-
-    auto custom = customIdToKey.find(id);
-    if (custom != customIdToKey.end()) {
-        return custom->second;
-    }
-
-    auto it = ID_TO_DEFAULT.find(id);
-    if (it != ID_TO_DEFAULT.end()) {
+template <typename T>
+std::string find(Id id, T& map) {
+    auto it = map.find(id);
+    if (it != map.end()) {
         return it->second;
     }
-
     return "";
+}
+
+template <typename T>
+Hotkeys::Id find(const std::string& kn, T& map) {
+    for (auto it : map) {
+        if (it.second == kn) {
+            return it.first;
+        }
+    }
+    return Hotkeys::COUNT;
+}
+
+std::string Hotkeys::Default(Id id) {
+    ENSURE_LOADED()
+    return find(id, ID_TO_DEFAULT);
+}
+
+std::string Hotkeys::Custom(Id id) {
+    ENSURE_LOADED()
+    return find(id, customIdToKey);
+}
+
+std::string Hotkeys::Get(Id id) {
+    auto kn = Custom(id);
+    return kn.size() ? kn : Default(id);
+}
+
+void Hotkeys::Set(Id id, const std::string& kn) {
+    customIdToKey[id] = kn;
+    savePreferences();
+}
+
+void Hotkeys::Reset() {
+    customIdToKey.clear();
+    savePreferences();
+    loadPreferences();
+}
+
+std::string Hotkeys::Existing(const std::string& kn) {
+    auto id = find(kn, customIdToKey);
+    if (id == Hotkeys::COUNT) {
+        id = find(kn, ID_TO_DEFAULT);
+        if (customIdToKey.find(id) != customIdToKey.end()) {
+            /* we found a default key for this one, but that default
+            binding has already been overridden! ensure we return
+            that it's available. */
+            id = Hotkeys::COUNT;
+        }
+    }
+    return id != Hotkeys::COUNT ? Name(id) : "";
+}
+
+std::string Hotkeys::Name(Id id) {
+    for (auto entry : NAME_TO_ID) {
+        if (entry.second == id) {
+            return entry.first;
+        }
+    }
+    return "<error>";
 }
 
 class NavigationKeysImpl : public cursespp::INavigationKeys {

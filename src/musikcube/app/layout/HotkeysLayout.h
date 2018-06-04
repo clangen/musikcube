@@ -34,26 +34,41 @@
 
 #pragma once
 
-#include <string>
-#include <core/config.h>
+#include <cursespp/LayoutBase.h>
+#include <cursespp/ListWindow.h>
+#include <cursespp/ShortcutsWindow.h>
+#include <vector>
 
-namespace musik { namespace core {
+#include "ITopLevelLayout.h"
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    std::string NormalizeDir(std::string path);
-    void OpenFile(const std::string& path);
-    bool CopyFile(const std::string& from, const std::string& to);
-    int64_t Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
+namespace musik {
+    namespace cube {
+        class HotkeysLayout :
+            public cursespp::LayoutBase,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            public std::enable_shared_from_this<HotkeysLayout>,
+#endif
+            public ITopLevelLayout,
+            public sigslot::has_slots<>
+        {
+            public:
+                HotkeysLayout();
 
-    /* file-migration stuff. */
-    void MigrateOldDataDirectory(); /* renames ~/.mC2 -> ~/.musikcube */
-    void RemoveOldDlls();
+                ~HotkeysLayout();
 
-} }
+                virtual void SetShortcutsWindow(
+                    cursespp::ShortcutsWindow* shortcuts);
+
+                virtual bool KeyPress(const std::string& kn);
+
+            protected:
+                virtual void OnLayout();
+
+            private:
+                void OnEntryActivated(cursespp::ListWindow* w, size_t index);
+
+                std::shared_ptr<cursespp::ListWindow> listWindow;
+                cursespp::ShortcutsWindow* shortcuts;
+        };
+    }
+}
