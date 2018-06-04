@@ -4,6 +4,7 @@ set (CUBE_SRCS
 	./app/layout/BrowseLayout.cpp
 	./app/layout/ConsoleLayout.cpp
 	./app/layout/DirectoryLayout.cpp
+	./app/layout/HotkeysLayout.cpp
 	./app/layout/SettingsLayout.cpp
 	./app/layout/LibraryLayout.cpp
 	./app/layout/MainLayout.cpp
@@ -11,6 +12,7 @@ set (CUBE_SRCS
 	./app/layout/CategorySearchLayout.cpp
 	./app/layout/TrackSearchLayout.cpp
 	./app/model/DirectoryAdapter.cpp
+	./app/model/HotkeysAdapter.cpp
 	./app/overlay/BrowseOverlays.cpp
 	./app/overlay/ColorThemeOverlay.cpp
 	./app/overlay/LastFmOverlay.cpp
@@ -19,6 +21,7 @@ set (CUBE_SRCS
 	./app/overlay/PlayQueueOverlays.cpp
 	./app/overlay/PluginOverlay.cpp
 	./app/overlay/PreampOverlay.cpp
+	./app/overlay/ReassignHotkeyOverlay.cpp
 	./app/overlay/ServerOverlay.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/GlobalHotkeys.cpp
