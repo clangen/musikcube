@@ -116,6 +116,9 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
 
     { "metadata_rescan", Id::RescanMetadata },
 
+    { "hotkeys_reset_to_default", Id::HotkeysResetToDefault },
+    { "hotkeys_backup", Id::HotkeysBackup },
+
     { "context_menu", Id::ContextMenu }
 };
 
@@ -193,6 +196,9 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::ToggleVisualizer, "v" },
 
     { Id::RescanMetadata, "^R"},
+
+    { Id::HotkeysResetToDefault, "M-r" },
+    { Id::HotkeysBackup, "M-b" },
 
     { Id::ContextMenu, "M-enter" }
 };

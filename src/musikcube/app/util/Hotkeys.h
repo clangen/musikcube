@@ -109,6 +109,10 @@ namespace musik {
                     /* indexer */
                     RescanMetadata,
 
+                    /* hotkeys */
+                    HotkeysResetToDefault,
+                    HotkeysBackup,
+
                     /* general */
                     ContextMenu,
 

@@ -318,4 +318,18 @@ namespace musik { namespace core {
     #endif
     }
 
+    bool CopyFile(const std::string& from, const std::string& to) {
+        if (from.size() && to.size() && from != to) {
+            std::ifstream in(from);
+            if (in.is_open()) {
+                std::ofstream out(to);
+                if (out.is_open()) {
+                    out << in.rdbuf();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
 } }

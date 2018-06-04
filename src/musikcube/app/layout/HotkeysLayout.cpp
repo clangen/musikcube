@@ -42,12 +42,24 @@
 #include <app/model/HotkeysAdapter.h>
 #include <app/overlay/ReassignHotkeyOverlay.h>
 #include <app/util/Messages.h>
+#include <ctime>
+#include <time.h>
 
 using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
 
 using Entry = IScrollAdapter::EntryPtr;
+
+static std::string formattedTime() {
+    char buffer[128];
+    time_t rawtime;
+    struct tm* timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer, sizeof(buffer), "%F-%H-%M-%S", timeinfo);
+    return std::string(buffer);
+}
 
 static void confirmResetHotkeys() {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -106,6 +118,39 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, std::fu
     }
 }
 
+static void backupAndShowDialog() {
+    std::string dir = NormalizeDir(GetDataDirectory());
+    std::string in = dir + "hotkeys.json";
+    std::string out = dir + "hotkeys-" + formattedTime() + ".json";
+
+    if (CopyFile(in, out)) {
+        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+        std::string message = _TSTR("hotkeys_backup_success_message");
+        ReplaceAll(message, "{{path}}", out);
+
+        (*dialog)
+            .SetTitle(_TSTR("hotkeys_backup_success_title"))
+            .SetMessage(message)
+            .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
+
+        App::Overlays().Push(dialog);
+    }
+    else {
+        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+
+        std::string message = _TSTR("hotkeys_backup_failure_message");
+        ReplaceAll(message, "{{path}}", dir);
+
+        (*dialog)
+            .SetTitle(_TSTR("hotkeys_backup_failure_title"))
+            .SetMessage(message)
+            .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
+
+        App::Overlays().Push(dialog);
+    }
+}
+
 HotkeysLayout::HotkeysLayout() {
     auto adapter = std::make_shared<HotkeysAdapter>();
 
@@ -146,9 +191,22 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     if (shortcuts) {
         shortcuts->RemoveAll();
 
-        shortcuts->AddShortcut("M-r", _TSTR("hotkeys_reset_defaults"));
-        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
-        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
+        shortcuts->AddShortcut(
+            Hotkeys::Get(Hotkeys::HotkeysResetToDefault),
+            _TSTR("hotkeys_reset_defaults"));
+
+        shortcuts->AddShortcut(
+            Hotkeys::Get(Hotkeys::HotkeysBackup),
+            _TSTR("hotkeys_backup"));
+
+        shortcuts->AddShortcut(
+            Hotkeys::Get(Hotkeys::NavigateLibrary),
+            _TSTR("shortcuts_library"));
+
+        shortcuts->AddShortcut(
+            Hotkeys::Get(Hotkeys::NavigateSettings),
+            _TSTR("shortcuts_settings"));
+
         shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
 
         shortcuts->SetChangedCallback([this](std::string key) {
@@ -158,9 +216,13 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 }
 
 bool HotkeysLayout::KeyPress(const std::string& kn) {
-    if (kn == "M-r") {
+    if (Hotkeys::Is(Hotkeys::HotkeysResetToDefault, kn)) {
         confirmResetHotkeys();
         this->listWindow->OnAdapterChanged();
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::HotkeysBackup, kn)) {
+        backupAndShowDialog();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {

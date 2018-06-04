@@ -39,11 +39,16 @@
 
         "hotkeys_title": "hotkey configuration",
         "hotkeys_reset_defaults": "reset all",
+        "hotkeys_backup": "backup",
         "hotkeys_reassign_overlay_title": "reassign hotkey",
         "hotkeys_reset_all_title": "reset hotkeys",
         "hotkeys_reset_all_message": "are you sure you want to reset all hotkeys to their default values?\n\nexisting custom hotkeys will be forgotten!",
         "hotkeys_conflict_title": "hotkey conflict",
         "hotkeys_conflict_message": "the hotkey '{{hotkey}}' *may* conflict with '{{existing}}', depending on context.\n\nare you sure you want to assign this binding?",
+        "hotkeys_backup_success_title": "backup succeeded",
+        "hotkeys_backup_success_message": "hotkeys were backed up to the following location:\n\n{{path}}",
+        "hotkeys_backup_failure_title": "backup failed",
+        "hotkeys_backup_failure_message": "hotkey backup was *NOT* successful! please make sure you have write permission to the following directory:\n\n{{path}}",
 
         "settings_space_to_add": "browse (SPACE to add)",
         "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
