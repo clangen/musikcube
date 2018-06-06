@@ -38,6 +38,7 @@
 #include <utf8/utf8.h>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 
 #include <boost/format.hpp>
 
