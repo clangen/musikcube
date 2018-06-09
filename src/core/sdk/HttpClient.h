@@ -37,8 +37,9 @@
 #include <mutex>
 #include <unordered_map>
 #include <set>
+#include "constants.h"
 
-namespace musik { namespace core { namespace io {
+namespace musik { namespace core { namespace sdk {
     template <typename T>
     class HttpClient: public std::enable_shared_from_this<HttpClient<T>> {
         public:
@@ -65,6 +66,7 @@ namespace musik { namespace core { namespace io {
             HttpClient<T>& Mode(Thread mode);
             HttpClient<T>& PostBody(const std::string& postBody);
             HttpClient<T>& Method(HttpMethod mode);
+            HttpClient<T>& UserAgent(const std::string& userAgent);
 
             const T& Stream() const { return this->ostream; }
             const HttpHeaders& ResponseHeaders() const { return this->responseHeaders; }
@@ -94,6 +96,7 @@ namespace musik { namespace core { namespace io {
             T ostream;
             std::string url;
             std::string postBody;
+            std::string userAgent;
             HttpHeaders requestHeaders, responseHeaders;
             HeaderCallback headersCb;
             DecoratorCallback decoratorCb;
@@ -123,11 +126,8 @@ namespace musik { namespace core { namespace io {
         static const std::string PLATFORM = "linux";
 #endif
 
-        return
-            "musikcube " +
-            std::to_string(VERSION_MAJOR) + "." +
-            std::to_string(VERSION_MINOR) + "." +
-            std::to_string(VERSION_PATCH) +
+        return "musikcore sdk " +
+            std::to_string(SdkVersion) + "." +
             "(" + PLATFORM + ")";
     }
 
@@ -229,16 +229,13 @@ namespace musik { namespace core { namespace io {
 
         this->curl = curl_easy_init();
 
-        const std::string userAgent = this->userAgent.size()
-            ? userAgent : DefaultUserAgent();
-
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_HEADER, 0);
         curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
         curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
         curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, userAgent.c_str());
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, DefaultUserAgent().c_str());
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
@@ -341,12 +338,6 @@ namespace musik { namespace core { namespace io {
     template <typename T>
     HttpClient<T>& HttpClient<T>::PostBody(const std::string& postBody) {
         this->postBody = postBody;
-        return *this;
-    }
-
-    template <typename T>
-    HttpClient<T>& HttpClient<T>::DefaultUserAgent(const std::string& userAgent) {
-        this->userAgent = userAgent;
         return *this;
     }
 

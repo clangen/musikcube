@@ -37,7 +37,7 @@
 #include <curl/curl.h>
 #include <openssl/md5.h>
 #include <core/support/Preferences.h>
-#include <core/io/HttpClient.h>
+#include <core/sdk/HttpClient.h>
 #include <core/support/PreferenceKeys.h>
 #include <json.hpp>
 #include <sstream>
@@ -56,7 +56,7 @@ static const std::string ACCOUNT_LINK_URL_BASE = "http://www.last.fm/api/auth/?a
 using namespace musik;
 using namespace musik::core::prefs;
 
-using LastFmClient = musik::core::io::HttpClient<std::stringstream>;
+using LastFmClient = musik::core::sdk::HttpClient<std::stringstream>;
 using Preferences = musik::core::Preferences;
 using Prefs = std::shared_ptr<Preferences>;
 

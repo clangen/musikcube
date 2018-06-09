@@ -205,6 +205,7 @@
     <ClInclude Include="runtime\Message.h" />
     <ClInclude Include="runtime\MessageQueue.h" />
     <ClInclude Include="sdk\constants.h" />
+    <ClInclude Include="sdk\HttpClient.h" />
     <ClInclude Include="sdk\IAnalyzer.h" />
     <ClInclude Include="sdk\IBuffer.h" />
     <ClInclude Include="sdk\IDecoder.h" />

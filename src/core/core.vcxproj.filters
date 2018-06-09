@@ -543,5 +543,8 @@
     <ClInclude Include="support\LastFm.h">
       <Filter>src\support</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\HttpClient.h">
+      <Filter>src\sdk\io</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -391,6 +391,9 @@
     <ClInclude Include="app\overlay\ReassignHotkeyOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>app</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="cursespp">
