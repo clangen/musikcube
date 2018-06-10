@@ -14,6 +14,7 @@ musikcube:
 * added support for Fedora 28
 * added windows theme support so the menu bar draws nicer
 * updated PDCurses (windows build)
+* retired binary distribution for Raspbian Jessie (Stretch still supported!)
 
 musikdroid:
 * fixed a handful of random crashes that showed up in fabric.io
