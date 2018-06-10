@@ -1,3 +1,34 @@
+0.50.0
+
+musikcube:
+* added last.fm scrobbling support (settings > last.fm)
+* added a built-in hotkey viewer and editor (settings > key bindings)
+* added basic mouse handling support -- click / double click / mouse wheel
+  works mostly the way you'd expect
+* added an Italian translation (anonik9900)
+* added a Russian translation (adem4ik)
+* added a "proportional seek" functionality (benterris)
+* fixed a bug where the "Source Code Pro" font was not being included in the
+  win32 build with milkdrop.
+* added support for Ubuntu Bionic
+* added support for Fedora 28
+* added windows theme support so the menu bar draws nicer
+* updated PDCurses (windows build)
+
+musikdroid:
+* fixed a handful of random crashes that showed up in fabric.io
+
+server:
+* fixed a bug where the same playback overview may be broadcast multiple
+  times.
+* fixed a bug where `set_volume` was not returning a response
+* fixed a couple bugs where negative limits may be returned
+
+sdk:
+* added a simple HttpClient wrapper around libcurl that can be used by plugins
+
+--------------------------------------------------------------------------------
+
 0.42.0
 
 musikcube:
