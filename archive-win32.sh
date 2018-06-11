@@ -32,7 +32,7 @@ popd
 mkdir -p "$MILKDROP/plugins"
 mkdir -p "$MILKDROP/themes"
 mkdir -p "$MILKDROP/locales"
-mkdir -p "$VANILLA/fonts"
+mkdir -p "$MILKDROP/fonts"
 cp bin/release/musikcube.exe "$MILKDROP"
 cp bin/release/*.dll "$MILKDROP" 
 cp bin/release/plugins/*.dll "$MILKDROP/plugins"
