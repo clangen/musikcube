@@ -10,6 +10,6 @@ class AppModule {
     @Provides
     @ApplicationScope
     fun providesContext(): Context {
-        return Application.instance!!
+        return Application.instance
     }
 }

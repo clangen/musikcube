@@ -115,7 +115,7 @@ class UpdateCheck {
                 .build()
 
         private val VERSION by lazy {
-            val context = Application.instance!!
+            val context = Application.instance
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
         }
 

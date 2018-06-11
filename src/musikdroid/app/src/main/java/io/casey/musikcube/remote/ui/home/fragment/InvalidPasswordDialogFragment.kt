@@ -10,6 +10,7 @@ import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
 
 class InvalidPasswordDialogFragment : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val activity = this.activity!!
         return AlertDialog.Builder(activity)
             .setTitle(R.string.invalid_password_dialog_title)
             .setMessage(R.string.invalid_password_dialog_message)

@@ -24,7 +24,7 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
 import javax.inject.Inject
 
-private val EXTRA_CONNECTION = "extra_connection"
+private const val EXTRA_CONNECTION = "extra_connection"
 
 class ConnectionsActivity : BaseActivity() {
     @Inject lateinit var connectionsDb: ConnectionsDb
@@ -106,7 +106,7 @@ class ConnectionsActivity : BaseActivity() {
     }
 
     companion object {
-        val EXTRA_SELECTED_CONNECTION = "extra_selected_connection"
+        const val EXTRA_SELECTED_CONNECTION = "extra_selected_connection"
         fun getStartIntent(context: Context): Intent {
             return Intent(context, ConnectionsActivity::class.java)
         }
@@ -142,12 +142,12 @@ private class Adapter(val clickListener: (View) -> Unit,
 {
     var items = listOf<Connection>()
 
-    override fun onBindViewHolder(holder: ViewHolder?, position: Int) {
-        holder?.rebind(items[position])
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.rebind(items[position])
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent?.context)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.connection_row, parent, false)
 
         return ViewHolder(view, clickListener, longClickListener)
@@ -164,7 +164,7 @@ private class LoadTask(val db: ConnectionsDb) : Tasks.Blocking<List<Connection>,
     }
 
     companion object {
-        val NAME = "LoadTask"
+        const val NAME = "LoadTask"
     }
 }
 
@@ -176,7 +176,7 @@ private class DeleteTask(val db: ConnectionsDb, val connection: Connection) : Ta
     }
 
     companion object {
-        val NAME = "DeleteTask"
+        const val NAME = "DeleteTask"
     }
 }
 
@@ -190,16 +190,16 @@ private class RenameTask(val db: ConnectionsDb, val connection: Connection, val 
     }
 
     companion object {
-        val NAME = "RenameTask"
+        const val NAME = "RenameTask"
     }
 }
 
 class ConfirmDeleteDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val connection = arguments.getParcelable<Connection>(EXTRA_CONNECTION)
+        val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
         val message = getString(R.string.settings_confirm_delete_message, connection.name)
 
-        val dlg = AlertDialog.Builder(activity)
+        val dlg = AlertDialog.Builder(activity!!)
             .setTitle(R.string.settings_confirm_delete_title)
             .setMessage(message)
             .setNegativeButton(R.string.button_no, null)
@@ -213,11 +213,12 @@ class ConfirmDeleteDialog : DialogFragment() {
     }
 
     companion object {
-        val TAG = "confirm_delete_dialog"
+        const val TAG = "confirm_delete_dialog"
         fun newInstance(connection: Connection): ConfirmDeleteDialog {
             val result = ConfirmDeleteDialog()
-            result.arguments = Bundle()
-            result.arguments.putParcelable(EXTRA_CONNECTION, connection)
+            result.arguments = Bundle().apply {
+                putParcelable(EXTRA_CONNECTION, connection)
+            }
             return result
         }
     }
@@ -225,7 +226,7 @@ class ConfirmDeleteDialog : DialogFragment() {
 
 class RenameDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val connection = arguments.getParcelable<Connection>(EXTRA_CONNECTION)
+        val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
 
         val inflater = LayoutInflater.from(context)
         val view = inflater.inflate(R.layout.dialog_edit, null)
@@ -234,7 +235,7 @@ class RenameDialog : DialogFragment() {
         edit.setText(connection.name)
         edit.selectAll()
 
-        val dlg = AlertDialog.Builder(activity)
+        val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.settings_save_as_title)
                 .setNegativeButton(R.string.button_cancel, null)
                 .setPositiveButton(R.string.button_save) { _, _ ->
@@ -260,11 +261,12 @@ class RenameDialog : DialogFragment() {
     }
 
     companion object {
-        val TAG = "rename_dialog"
+        const val TAG = "rename_dialog"
         fun newInstance(connection: Connection): RenameDialog {
             val result = RenameDialog()
-            result.arguments = Bundle()
-            result.arguments.putParcelable(EXTRA_CONNECTION, connection)
+            result.arguments = Bundle().apply {
+                putParcelable(EXTRA_CONNECTION, connection)
+            }
             return result
         }
     }

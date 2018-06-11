@@ -30,7 +30,7 @@ class GaplessHeaderService {
     @Inject lateinit var db: GaplessDb
     @Inject lateinit var streamProxy: StreamProxy
 
-    private val prefs = Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+    private val prefs = Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val thread: HandlerThread
     private val handler: Handler
     private val httpClient: OkHttpClient
@@ -125,7 +125,7 @@ class GaplessHeaderService {
     }
 
     companion object {
-        val MESSAGE_PROCESS = 1
-        val HEADER_SIZE_BYTES = 6400
+        const val MESSAGE_PROCESS = 1
+        const val HEADER_SIZE_BYTES = 6400
     }
 }

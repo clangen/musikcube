@@ -13,7 +13,7 @@ class RunnerMixin(private val callbacks: Runner.TaskCallbacks,
 
     override fun onCreate(bundle: Bundle) {
         super.onCreate(bundle)
-        this.runner = Runner.attach(Application.instance!!, callingType, callbacks, bundle, null)
+        this.runner = Runner.attach(Application.instance, callingType, callbacks, bundle, null)
     }
 
     override fun onResume() {

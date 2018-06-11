@@ -54,7 +54,7 @@ class Application : android.app.Application() {
         var deviceId: String = ""
             private set
 
-        var instance: Application? = null
+        lateinit var instance: Application
             private set
     }
 }

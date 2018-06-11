@@ -28,9 +28,9 @@ class TransportFragment: BaseFragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater?, container: ViewGroup?, savedInstanceState: Bundle?): View?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
-        this.rootView = inflater!!.inflate(R.layout.fragment_transport, container, false)
+        this.rootView = inflater.inflate(R.layout.fragment_transport, container, false)
         bindEventHandlers()
         rebindUi()
         return this.rootView
@@ -59,17 +59,22 @@ class TransportFragment: BaseFragment() {
 
         titleBar?.setOnClickListener { _: View ->
             if (playback.service.state != PlaybackState.Stopped) {
-                startActivity(PlayQueueActivity
-                    .getStartIntent(activity, playback.service.queuePosition)
-                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
+                activity?.let {
+                    startActivity(PlayQueueActivity
+                        .getStartIntent(it, playback.service.queuePosition)
+                        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
 
-                activity.overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+                    it.overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+                }
             }
         }
 
         titleBar?.setOnLongClickListener { _: View ->
-            startActivity(MainActivity.getStartIntent(activity))
-            true
+            activity?.let {
+                startActivity(MainActivity.getStartIntent(it))
+                return@setOnLongClickListener true
+            }
+            false
         }
 
         this.rootView.findViewById<View>(R.id.button_prev)?.setOnClickListener { _: View -> playback.service.prev() }
@@ -114,7 +119,7 @@ class TransportFragment: BaseFragment() {
     }
 
     companion object {
-        val TAG = "TransportFragment"
+        const val TAG = "TransportFragment"
         fun newInstance(): TransportFragment = TransportFragment()
     }
 }

@@ -53,7 +53,7 @@ private val badUrlCache = LruCache<String, Boolean>(100)
 private val inFlight = mutableMapOf<String, CountDownLatch>()
 
 private val prefs by lazy {
-    Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+    Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 }
 
 fun getUrl(album: IAlbum, size: Size = Size.Small): String? {

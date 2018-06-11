@@ -128,14 +128,12 @@ class EditPlaylistActivity: BaseActivity() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val editActivity = activity as EditPlaylistActivity
 
-            val dlg = AlertDialog.Builder(activity)
+            return AlertDialog.Builder(editActivity)
                 .setTitle(R.string.playlist_edit_save_changes_title)
                 .setMessage(R.string.playlist_edit_save_changes_message)
                 .setNegativeButton(R.string.button_discard, { _, _ -> editActivity.finish() })
                 .setPositiveButton(R.string.button_save, { _, _ -> editActivity.saveAndFinish() })
                 .create()
-
-            return dlg
         }
 
         companion object {

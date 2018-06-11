@@ -300,8 +300,8 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
     companion object {
         const val TIMEOUT = 1000 * 60 * 2 /* 2 minutes; makes seeking an incomplete transcode work most of the time */
-        private val prefs: SharedPreferences by lazy { Application.instance!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
-        private val context: Context by lazy { Application.instance!! }
+        private val prefs: SharedPreferences by lazy { Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
+        private val context: Context by lazy { Application.instance }
         private val trackSelector = DefaultTrackSelector(AdaptiveTrackSelection.Factory(DefaultBandwidthMeter()))
         private var all = mutableListOf<GaplessExoPlayerWrapper>()
         private lateinit var dcms: DynamicConcatenatingMediaSource

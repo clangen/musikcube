@@ -138,16 +138,16 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             })
     }
 
-    fun addToPlaylist(track: ITrack) =
+    private fun addToPlaylist(track: ITrack) =
         addToPlaylist(listOf(track))
 
-    fun addToPlaylist(tracks: List<ITrack>) {
+    private fun addToPlaylist(tracks: List<ITrack>) {
         showPlaylistChooser { id, name ->
             addWithErrorHandler(id, name, provider.appendToPlaylist(id, tracks))
         }
     }
 
-    fun addToPlaylist(category: ICategoryValue) {
+    private fun addToPlaylist(category: ICategoryValue) {
         showPlaylistChooser { id, name ->
             addWithErrorHandler(id, name, provider.appendToPlaylist(id, category))
         }
@@ -239,7 +239,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         popup.show()
     }
 
-    fun showForPlaylist(playlistName: String, playlistId: Long, anchorView: View) {
+    private fun showForPlaylist(playlistName: String, playlistId: Long, anchorView: View) {
         val popup = PopupMenu(activity, anchorView)
         popup.inflate(R.menu.playlist_item_context_menu)
 
@@ -256,7 +256,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     EnterPlaylistNameDialog.showForRename(activity, this, playlistName, playlistId)
                 }
                 R.id.menu_playlist_play -> {
-                    val playback = PlaybackServiceFactory.instance(Application.instance!!)
+                    val playback = PlaybackServiceFactory.instance(Application.instance)
                     playback.play(Messages.Category.PLAYLISTS, playlistId)
                 }
             }
@@ -382,13 +382,14 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         private lateinit var mixin: ItemContextMenuMixin
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val playlistId = arguments.getLong(EXTRA_PLAYLIST_ID, -1)
-            val playlistName = arguments.getString(EXTRA_PLAYLIST_NAME) ?: ""
-            val trackTitle = arguments.getString(EXTRA_TRACK_TITLE, "")
-            val trackExternalId = arguments.getString(EXTRA_TRACK_EXTERNAL_ID, "")
-            val trackPosition = arguments.getInt(EXTRA_TRACK_POSITION, -1)
+            val args = this.arguments ?: Bundle()
+            val playlistId = args.getLong(EXTRA_PLAYLIST_ID, -1)
+            val playlistName = args.getString(EXTRA_PLAYLIST_NAME) ?: ""
+            val trackTitle = args.getString(EXTRA_TRACK_TITLE, "")
+            val trackExternalId = args.getString(EXTRA_TRACK_EXTERNAL_ID, "")
+            val trackPosition = args.getInt(EXTRA_TRACK_POSITION, -1)
 
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.playlist_confirm_delete_title)
                 .setMessage(getString(R.string.playlist_confirm_delete_message, trackTitle))
                 .setNegativeButton(R.string.button_no, null)
@@ -402,12 +403,12 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
 
         companion object {
-            val TAG = "confirm_delete_playlist_dialog"
-            private val EXTRA_PLAYLIST_ID = "extra_playlist_id"
-            private val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
-            private val EXTRA_TRACK_TITLE = "extra_track_title"
-            private val EXTRA_TRACK_EXTERNAL_ID = "extra_track_external_id"
-            private val EXTRA_TRACK_POSITION = "extra_track_position"
+            const val TAG = "confirm_delete_playlist_dialog"
+            private const val EXTRA_PLAYLIST_ID = "extra_playlist_id"
+            private const val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
+            private const val EXTRA_TRACK_TITLE = "extra_track_title"
+            private const val EXTRA_TRACK_EXTERNAL_ID = "extra_track_external_id"
+            private const val EXTRA_TRACK_POSITION = "extra_track_position"
 
             fun rebind(activity: AppCompatActivity, mixin: ItemContextMenuMixin) {
                 find<ConfirmRemoveFromPlaylistDialog>(activity, TAG)?.mixin = mixin
@@ -433,14 +434,15 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         private lateinit var mixin: ItemContextMenuMixin
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val playlistName = arguments.getString(EXTRA_PLAYLIST_NAME, "") ?: ""
+            val args = this.arguments ?: Bundle()
+            val playlistName = args.getString(EXTRA_PLAYLIST_NAME, "") ?: ""
 
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.playlist_confirm_delete_title)
                 .setMessage(getString(R.string.playlist_confirm_delete_message, playlistName))
                 .setNegativeButton(R.string.button_no, null)
                 .setPositiveButton(R.string.button_yes, { _: DialogInterface, _: Int ->
-                    val playlistId = arguments.getLong(EXTRA_PLAYLIST_ID, -1)
+                    val playlistId = args.getLong(EXTRA_PLAYLIST_ID, -1)
                     mixin.deletePlaylistConfirmed(playlistId, playlistName)
                 })
                 .create()
@@ -450,9 +452,9 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
 
         companion object {
-            val TAG = "confirm_delete_playlist_dialog"
-            private val EXTRA_PLAYLIST_ID = "extra_playlist_id"
-            private val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
+            const val TAG = "confirm_delete_playlist_dialog"
+            private const val EXTRA_PLAYLIST_ID = "extra_playlist_id"
+            private const val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
 
             fun rebind(activity: AppCompatActivity, mixin: ItemContextMenuMixin) {
                 find<ConfirmDeletePlaylistDialog>(activity, TAG)?.mixin = mixin
@@ -478,10 +480,11 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         private lateinit var mixin: ItemContextMenuMixin
 
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val args = arguments ?: Bundle()
             val editText = EditText(activity)
-            val action = arguments.getSerializable(EXTRA_ACTION)
-            val name = arguments.getString(EXTRA_NAME, "")
-            val id = arguments.getLong(EXTRA_ID, -1)
+            val action = args.getSerializable(EXTRA_ACTION)
+            val name = args.getString(EXTRA_NAME, "")
+            val id = args.getLong(EXTRA_ID, -1)
 
             val buttonId = if (action == Action.Rename)
                 R.string.button_rename else R.string.button_create
@@ -490,6 +493,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 editText.setText(name)
                 editText.selectAll()
             }
+
+            val activity = this.activity!!
 
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.playlist_name_title)
@@ -527,10 +532,10 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
 
         companion object {
-            val TAG = "EnterPlaylistNameDialog"
-            private val EXTRA_ACTION = "extra_action"
-            private val EXTRA_NAME = "extra_name"
-            private val EXTRA_ID = "extra_id"
+            const val TAG = "EnterPlaylistNameDialog"
+            private const val EXTRA_ACTION = "extra_action"
+            private const val EXTRA_NAME = "extra_name"
+            private const val EXTRA_ID = "extra_id"
 
             fun rebind(activity: AppCompatActivity, mixin: ItemContextMenuMixin) {
                 find<EnterPlaylistNameDialog>(activity, TAG)?.mixin = mixin

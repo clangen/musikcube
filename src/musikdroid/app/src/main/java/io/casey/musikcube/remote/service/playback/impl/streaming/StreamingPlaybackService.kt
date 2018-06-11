@@ -548,7 +548,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     Prefs.Default.TRANSCODER_BITRATE_INDEX)
 
                 if (bitrateIndex > 0) {
-                    val r = Application.instance!!.resources
+                    val r = Application.instance.resources
                     val bitrate = r.getStringArray(R.array.transcode_bitrate_array)[bitrateIndex]
                     remoteUri.appendQueryParameter("bitrate", bitrate)
                 }
@@ -830,7 +830,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     init {
-        this.audioManager = Application.instance?.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        this.audioManager = Application.instance.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         this.lastSystemVolume = audioManager?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: 0
         this.repeatMode = RepeatMode.from(this.prefs.getString(REPEAT_MODE_PREF, RepeatMode.None.toString())!!)
         this.audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager

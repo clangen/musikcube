@@ -548,6 +548,7 @@ class MainActivity : BaseActivity() {
 
     class UpdateAvailableDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val activity = this.activity!!
             val inflater = LayoutInflater.from(activity)
             val view = inflater.inflate(R.layout.dialog_checkbox, null)
             val checkbox = view.findViewById<CheckBox>(R.id.checkbox)
@@ -610,7 +611,7 @@ class MainActivity : BaseActivity() {
 
     class SwitchToOfflineTracksDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.main_switch_to_streaming_title)
                 .setMessage(R.string.main_switch_to_streaming_message)
                 .setNegativeButton(R.string.button_no, null)
@@ -629,7 +630,7 @@ class MainActivity : BaseActivity() {
 
     class ApiMismatchDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.main_api_mismatch_title)
                 .setMessage(R.string.main_api_mismatch_message)
                 .setNegativeButton(R.string.button_close, null)

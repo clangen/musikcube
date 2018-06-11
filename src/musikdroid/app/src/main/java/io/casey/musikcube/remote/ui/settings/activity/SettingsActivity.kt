@@ -307,7 +307,7 @@ class SettingsActivity : BaseActivity() {
 
     class SslAlertDialog : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.settings_ssl_dialog_title)
                 .setMessage(R.string.settings_ssl_dialog_message)
                 .setPositiveButton(R.string.button_enable, null)
@@ -340,7 +340,7 @@ class SettingsActivity : BaseActivity() {
 
     class DisableCertValidationAlertDialog : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.settings_disable_cert_validation_title)
                 .setMessage(R.string.settings_disable_cert_validation_message)
                 .setPositiveButton(R.string.button_enable, null)
@@ -364,9 +364,9 @@ class SettingsActivity : BaseActivity() {
 
     class InvalidConnectionDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.settings_invalid_connection_title)
-                .setMessage(arguments.getInt(EXTRA_MESSAGE_ID))
+                .setMessage(arguments!!.getInt(EXTRA_MESSAGE_ID))
                 .setNegativeButton(R.string.button_ok, null)
                 .create()
 
@@ -389,12 +389,12 @@ class SettingsActivity : BaseActivity() {
 
     class ConfirmOverwriteDialog : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.settings_confirm_overwrite_title)
                 .setMessage(R.string.settings_confirm_overwrite_message)
                 .setNegativeButton(R.string.button_no, null)
                 .setPositiveButton(R.string.button_yes) { _, _ ->
-                    val connection = arguments.getParcelable<Connection>(EXTRA_CONNECTION)
+                    val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
                     val db = (activity as SettingsActivity).connectionsDb
                     val saveAs = SaveAsTask(db, connection, true)
                     (activity as SettingsActivity).runner.run(SaveAsTask.nameFor(connection), saveAs)
@@ -425,7 +425,7 @@ class SettingsActivity : BaseActivity() {
             val view = inflater.inflate(R.layout.dialog_edit, null)
             val edit = view.findViewById<EditText>(R.id.edit)
 
-            val dlg = AlertDialog.Builder(activity)
+            val dlg = AlertDialog.Builder(activity!!)
                 .setTitle(R.string.settings_save_as_title)
                 .setNegativeButton(R.string.button_cancel, null)
                 .setPositiveButton(R.string.button_save) { _, _ ->

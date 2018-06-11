@@ -42,9 +42,9 @@ open class BaseDialogFragment: DialogFragment(), ViewModel.Provider {
         mixins.onActivityResult(requestCode, resultCode, data)
     }
 
-    override fun onSaveInstanceState(outState: Bundle?) {
+    override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        mixins.onSaveInstanceState(outState ?: Bundle())
+        mixins.onSaveInstanceState(outState)
     }
 
     override fun onDestroy() {

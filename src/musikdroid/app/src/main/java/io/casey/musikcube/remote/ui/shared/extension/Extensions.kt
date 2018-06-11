@@ -44,7 +44,7 @@ fun View.getColorCompat(resourceId: Int): Int =
     ContextCompat.getColor(context, resourceId)
 
 fun Fragment.getColorCompat(resourceId: Int): Int =
-    ContextCompat.getColor(activity, resourceId)
+    ContextCompat.getColor(activity!!, resourceId)
 
 fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
     ContextCompat.getColor(this, resourceId)
@@ -163,10 +163,10 @@ fun AppCompatActivity.hideKeyboard(view: View? = null) {
     hideKeyboard(this, v)
 }
 
-fun DialogFragment.showKeyboard() = showKeyboard(activity)
+fun DialogFragment.showKeyboard() = showKeyboard(activity!!)
 
 fun DialogFragment.hideKeyboard() =
-    hideKeyboard(activity, activity.findViewById(android.R.id.content))
+    hideKeyboard(activity!!, activity!!.findViewById(android.R.id.content))
 
 fun AppCompatActivity.dialogVisible(tag: String): Boolean =
     this.supportFragmentManager.findFragmentByTag(tag) != null
@@ -191,19 +191,19 @@ fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int, buttonTex
 }
 
 fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showSnackbar(view, Application.instance!!.getString(stringId), bgColor, fgColor, buttonText, buttonCb)
+    showSnackbar(view, Application.instance.getString(stringId), bgColor, fgColor, buttonText, buttonCb)
 
 fun showSnackbar(view: View, text: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
     showSnackbar(view, text, R.color.color_primary, R.color.theme_foreground, buttonText, buttonCb)
 
 fun showSnackbar(view: View, stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showSnackbar(view, Application.instance!!.getString(stringId), buttonText, buttonCb)
+    showSnackbar(view, Application.instance.getString(stringId), buttonText, buttonCb)
 
 fun showErrorSnackbar(view: View, text: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
     showSnackbar(view, text, R.color.theme_red, R.color.theme_foreground, buttonText, buttonCb)
 
 fun showErrorSnackbar(view: View, stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showErrorSnackbar(view, Application.instance!!.getString(stringId), buttonText, buttonCb)
+    showErrorSnackbar(view, Application.instance.getString(stringId), buttonText, buttonCb)
 
 fun AppCompatActivity.showErrorSnackbar(stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
     showErrorSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
@@ -221,7 +221,7 @@ fun fallback(input: String?, fallback: String): String =
     if (input.isNullOrEmpty()) fallback else input!!
 
 fun fallback(input: String?, fallback: Int): String =
-    if (input.isNullOrEmpty()) Application.Companion.instance!!.getString(fallback) else input!!
+    if (input.isNullOrEmpty()) Application.Companion.instance.getString(fallback) else input!!
 
 fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
 
