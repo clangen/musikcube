@@ -56,6 +56,9 @@ class ListOverlay::CustomListWindow : public ListWindow {
             this->adapterChanged = adapterChanged;
         }
 
+        virtual ~CustomListWindow() {
+        }
+
         virtual void OnAdapterChanged() {
             if (adapterChanged) { adapterChanged(); };
             ListWindow::OnAdapterChanged();
@@ -259,6 +262,8 @@ bool ListOverlay::KeyPress(const std::string& key) {
 }
 
 void ListOverlay::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+
     if (visible) {
         this->LayoutBase::SetFocus(this->listWindow);
         this->Redraw();
