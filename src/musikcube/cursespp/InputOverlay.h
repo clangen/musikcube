@@ -46,6 +46,11 @@ namespace cursespp {
 #endif
     {
         public:
+            struct IValidator {
+                virtual bool IsValid(const std::string& input) const = 0;
+                virtual const std::string ErrorMessage() const = 0;
+            };
+
             using InputAcceptedCallback = std::function<void(const std::string&)>;
 
             InputOverlay();
@@ -54,6 +59,7 @@ namespace cursespp {
             InputOverlay& SetTitle(const std::string& title);
             InputOverlay& SetText(const std::string& text);
             InputOverlay& SetInputAcceptedCallback(InputAcceptedCallback cb);
+            InputOverlay& SetValidator(std::shared_ptr<IValidator> validator);
             InputOverlay& SetWidth(int width);
             InputOverlay& SetInputMode(IInput::InputMode mode);
 
@@ -74,6 +80,7 @@ namespace cursespp {
             int width, height;
             int setWidth;
             std::shared_ptr<TextInput> textInput;
+            std::shared_ptr<IValidator> validator;
             InputAcceptedCallback inputAcceptedCallback;
     };
 }

@@ -110,6 +110,14 @@
         "settings_replay_gain_mode_track": "track",
         "settings_replay_gain_mode_album": "album",
 
+        "settings_configure_plugin_title": "configure \"{{name}}\"",
+        "settings_no_plugin_config_title": "no configuration",
+        "settings_no_plugin_config_message": "plugin \"{{name}}\" does not provide any configurable settings.",
+
+        "validator_dialog_title": "validation error",
+        "validator_dialog_int_parse_error": "please enter a number to continue",
+        "validator_dialog_double_parse_error": "please enter a number to continue",
+
         "track_filter_title": "track filter results",
 
         "locale_overlay_select_title": "select locale",

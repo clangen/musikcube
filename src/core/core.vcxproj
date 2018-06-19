@@ -222,6 +222,7 @@
     <ClInclude Include="sdk\IIndexerWriter.h" />
     <ClInclude Include="sdk\IMap.h" />
     <ClInclude Include="sdk\IMapList.h" />
+    <ClInclude Include="sdk\ISchema.h" />
     <ClInclude Include="sdk\ITagReader.h" />
     <ClInclude Include="sdk\IResource.h" />
     <ClInclude Include="sdk\IValue.h" />

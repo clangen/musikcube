@@ -282,7 +282,7 @@ std::shared_ptr<IPlugin> ServerOverlay::FindServerPlugin() {
     using Deleter = PluginFactory::ReleaseDeleter<IPlugin>;
     PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
         "GetPlugin",
-        [&result](std::shared_ptr<IPlugin> plugin, const std::string& fn) {
+        [&result](IPlugin* unused, std::shared_ptr<IPlugin> plugin, const std::string& fn) {
             if (std::string(plugin->Guid()) == WEBSOCKET_PLUGIN_GUID) {
                 result = plugin;
             }

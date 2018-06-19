@@ -546,5 +546,8 @@
     <ClInclude Include="sdk\HttpClient.h">
       <Filter>src\sdk\io</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\ISchema.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

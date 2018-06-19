@@ -72,7 +72,7 @@ namespace musik { namespace core {
 
             template <class T, class D> void QueryInterface(
                 const std::string& functionName,
-                std::function<void(std::shared_ptr<T>, const std::string&)> handler)
+                std::function<void(musik::core::sdk::IPlugin*, std::shared_ptr<T>, const std::string&)> handler)
             {
                 std::unique_lock<std::mutex> lock(this->mutex);
 
@@ -90,7 +90,7 @@ namespace musik { namespace core {
                             T* result = funcPtr();
 
                             if (result) {
-                                handler(std::shared_ptr<T>(result, D()), descriptor->filename);
+                                handler(descriptor->plugin, std::shared_ptr<T>(result, D()), descriptor->filename);
                             }
                         }
                     }
@@ -102,9 +102,13 @@ namespace musik { namespace core {
 
                 QueryInterface<T, D>(
                     functionName,
-                    [&plugins](std::shared_ptr<T> plugin, const std::string& fn) {
-                        plugins.push_back(plugin);
-                    });
+                    [&plugins](
+                        musik::core::sdk::IPlugin* unused,
+                        std::shared_ptr<T> plugin, 
+                        const std::string& fn)
+                        {
+                            plugins.push_back(plugin);
+                        });
 
                 return plugins;
             }

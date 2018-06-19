@@ -51,6 +51,8 @@ namespace cursespp {
         public:
             using ItemSelectedCallback = std::function<void(ListOverlay* sender, IScrollAdapterPtr adapter, size_t index)>;
             using DeleteKeyCallback = std::function<void(ListOverlay* sender, IScrollAdapterPtr adapter, size_t index)>;
+            using DismissedCallback = std::function<void(ListOverlay* sender)>;
+            using KeyInterceptorCallback = std::function<bool(ListOverlay* sender, std::string key)>;
 
             ListOverlay();
             virtual ~ListOverlay();
@@ -59,10 +61,14 @@ namespace cursespp {
             ListOverlay& SetAdapter(IScrollAdapterPtr adapter);
             ListOverlay& SetItemSelectedCallback(ItemSelectedCallback cb);
             ListOverlay& SetDeleteKeyCallback(DeleteKeyCallback cb);
+            ListOverlay& SetDismissedCallback(DismissedCallback cb);
+            ListOverlay& SetKeyInterceptorCallback(KeyInterceptorCallback cb);
             ListOverlay& SetSelectedIndex(size_t index);
             ListOverlay& SetWidth(int width);
             ListOverlay& SetWidthPercent(int percent);
             ListOverlay& SetAutoDismiss(bool autoDismiss);
+
+            size_t GetSelectedIndex();
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
@@ -70,7 +76,8 @@ namespace cursespp {
             void RefreshAdapter();
 
         protected:
-            virtual void OnVisibilityChanged(bool visible);
+            virtual void OnVisibilityChanged(bool visible) override;
+            virtual void OnDismissed() override;
 
         private:
             void OnListEntryActivated(cursespp::ListWindow* sender, size_t index);
@@ -91,5 +98,7 @@ namespace cursespp {
             std::shared_ptr<Window> scrollbar;
             ItemSelectedCallback itemSelectedCallback;
             DeleteKeyCallback deleteKeyCallback;
+            DismissedCallback dismissedCallback;
+            KeyInterceptorCallback keyInterceptorCallback;
     };
 }

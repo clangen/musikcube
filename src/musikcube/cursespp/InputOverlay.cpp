@@ -33,7 +33,9 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include "App.h"
 #include "InputOverlay.h"
+#include "DialogOverlay.h"
 #include "Colors.h"
 #include "Screen.h"
 #include "Text.h"
@@ -135,15 +137,33 @@ bool InputOverlay::KeyPress(const std::string& key) {
 
 void InputOverlay::OnInputEnterPressed(TextInput* input) {
     if (input->GetText().size()) {
-        if (inputAcceptedCallback) {
-            inputAcceptedCallback(input->GetText());
-        }
+        if (validator && !validator->IsValid(input->GetText())) {
+            std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
-        this->Dismiss();
+            (*dialog)
+                .SetTitle(_TSTR("validator_dialog_title"))
+                .SetMessage(validator->ErrorMessage())
+                .AddButton("KEY_ENTER", "ENTER", _TSTR("button_ok"));
+
+            App::Overlays().Push(dialog);
+        }
+        else {
+            if (inputAcceptedCallback) {
+                inputAcceptedCallback(input->GetText());
+            }
+
+            this->Dismiss();
+        }
     }
 }
+
 InputOverlay& InputOverlay::SetInputMode(IInput::InputMode mode) {
     this->textInput->SetInputMode(mode);
+    return *this;
+}
+
+InputOverlay& InputOverlay::SetValidator(std::shared_ptr<IValidator> validator) {
+    this->validator = validator;
     return *this;
 }
 
