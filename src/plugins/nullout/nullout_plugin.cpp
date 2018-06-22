@@ -36,6 +36,7 @@
 
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
+#include <core/sdk/ISchema.h>
 #include "NullOut.h"
 
 #ifdef WIN32
@@ -70,3 +71,5 @@ extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
 extern "C" DLLEXPORT musik::core::sdk::IOutput* GetAudioOutput() {
     return new NullOut();
 }
+
+extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema();

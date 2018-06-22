@@ -36,6 +36,7 @@
 
 #include <core/sdk/constants.h>
 #include <core/sdk/IPreferences.h>
+#include <core/sdk/ISchema.h>
 
 using namespace musik::core::sdk;
 
@@ -48,10 +49,25 @@ using namespace musik::core::sdk;
     #define DLLEXPORT
 #endif
 
+#define PREF_MULTIPLIER "playback_speed_multiplier"
+
 static float speedMultiplier = 1.0f;
+static IPreferences* prefs = nullptr;
+
+static void reloadMultiplier() {
+    if (::prefs) {
+        ::speedMultiplier = (float)prefs->GetDouble(PREF_MULTIPLIER, 1.0f);
+    }
+}
 
 extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
-    ::speedMultiplier = (float) prefs->GetDouble("playback_speed_multiplier", 1.0f);
+    ::prefs = prefs;
+}
+
+extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema() {
+    auto schema = new TSchema<>();
+    schema->AddDouble(PREF_MULTIPLIER, 1.0, 0.25, 1000.0);
+    return schema;
 }
 
 NullOut::NullOut() {
@@ -71,6 +87,7 @@ void NullOut::Pause() {
 }
 
 void NullOut::Resume() {
+    reloadMultiplier();
     this->state = StatePlaying;
 }
 
