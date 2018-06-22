@@ -118,8 +118,8 @@
         "settings_no_plugin_config_message": "plugin \"{{name}}\" does not provide any configurable settings.",
 
         "validator_dialog_title": "validation error",
-        "validator_dialog_int_parse_error": "please enter a number to continue",
-        "validator_dialog_double_parse_error": "please enter a number to continue",
+        "validator_dialog_number_parse_bounded_error": "please enter a number between {{minimum}} and {{maximum}} to continue.",
+        "validator_dialog_number_parse_error": "please enter a number to continue.",
 
         "track_filter_title": "track filter results",
 

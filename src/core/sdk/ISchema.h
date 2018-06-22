@@ -35,6 +35,8 @@
 #pragma once
 
 #include <stddef.h>
+#include <float.h>
+#include <climits>
 #include <vector>
 #include <memory>
 #include <string>
@@ -59,11 +61,15 @@ namespace musik { namespace core { namespace sdk {
 
             struct IntEntry {
                 Entry entry;
+                int minValue;
+                int maxValue;
                 int defaultValue;
             };
 
             struct DoubleEntry {
                 Entry entry;
+                double minValue;
+                double maxValue;
                 double defaultValue;
             };
 
@@ -130,20 +136,34 @@ namespace musik { namespace core { namespace sdk {
                 return *this;
             }
 
-            TSchema& AddInt(const std::string& name, int defaultValue) {
+            TSchema& AddInt(
+                const std::string& name,
+                int defaultValue,
+                int min = INT_MIN,
+                int max = INT_MAX) 
+            {
                 auto entry = new IntEntry();
                 entry->entry.type = ISchema::Type::Int;
                 entry->entry.name = AllocString(name);
                 entry->defaultValue = defaultValue;
+                entry->minValue = min;
+                entry->maxValue = max;
                 entries.push_back(reinterpret_cast<Entry*>(entry));
                 return *this;
             }
 
-            TSchema& AddDouble(const std::string& name, double defaultValue) {
+            TSchema& AddDouble(
+                const std::string& name, 
+                double defaultValue, 
+                double min = DBL_MIN,
+                double max = DBL_MAX)
+            {
                 auto entry = new DoubleEntry();
                 entry->entry.type = ISchema::Type::Double;
                 entry->entry.name = AllocString(name);
                 entry->defaultValue = defaultValue;
+                entry->minValue = min;
+                entry->maxValue = max;
                 entries.push_back(reinterpret_cast<Entry*>(entry));
                 return *this;
             }

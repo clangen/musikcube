@@ -53,6 +53,7 @@
 
 #include <ostream>
 #include <iomanip>
+#include <limits>
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -192,28 +193,45 @@ class SchemaAdapter: public ScrollAdapterBase {
         }
 
     private:
-        struct IntValidator : public InputOverlay::IValidator {
+        template <typename T>
+        struct NumberValidator : public InputOverlay::IValidator {
+            using Formatter = std::function<std::string(T)>;
+
+            NumberValidator(T minimum, T maximum, Formatter formatter)
+                : minimum(minimum), maximum(maximum), formatter(formatter) {
+            }
+
             virtual bool IsValid(const std::string& input) const override {
-                try { std::stoi(input); }
-                catch (std::invalid_argument) { return false; }
+                try { 
+                    int result = std::stoi(input); 
+                    if (bounded() && (result < minimum || result > maximum)) {
+                        return false;
+                    }
+                }
+                catch (std::invalid_argument) {
+                    return false;
+                }
                 return true;
             }
 
             virtual const std::string ErrorMessage() const {
-                return _TSTR("validator_dialog_int_parse_error");
-            }
-        };
-
-        struct DoubleValidator : public InputOverlay::IValidator {
-            virtual bool IsValid(const std::string& input) const override {
-                try { std::stod(input); }
-                catch (std::invalid_argument) { return false; }
-                return true;
+                if (bounded()) {
+                    std::string result = _TSTR("validator_dialog_number_parse_bounded_error");
+                    ReplaceAll(result, "{{minimum}}", formatter(minimum));
+                    ReplaceAll(result, "{{maximum}}", formatter(maximum));
+                    return result;
+                }
+                return _TSTR("validator_dialog_number_parse_error");
             }
 
-            virtual const std::string ErrorMessage() const {
-                return _TSTR("validator_dialog_double_parse_error");
+            bool bounded() const {
+                return 
+                    minimum != std::numeric_limits<T>::min() && 
+                    maximum != std::numeric_limits<T>::max();
             }
+
+            Formatter formatter;
+            T minimum, maximum;
         };
 
         void ShowListOverlay(
@@ -263,10 +281,17 @@ class SchemaAdapter: public ScrollAdapterBase {
 
         void ShowIntOverlay(const ISchema::IntEntry* entry) {
             auto name = entry->entry.name;
+
+            auto validator = std::make_shared<NumberValidator<int>>(
+                entry->minValue,  entry->maxValue, [](int value) -> std::string { 
+                    return std::to_string(value);
+                });
+
             std::shared_ptr<InputOverlay> dialog(new InputOverlay());
+
             dialog->SetTitle(name)
                 .SetText(stringValueFor(prefs, entry))
-                .SetValidator(std::make_shared<IntValidator>())
+                .SetValidator(validator)
                 .SetInputAcceptedCallback([this, name](const std::string& value) {
                     this->prefs->SetInt(name, std::stoi(value));
                     this->changed = true;
@@ -276,10 +301,16 @@ class SchemaAdapter: public ScrollAdapterBase {
 
         void ShowDoubleOverlay(const ISchema::DoubleEntry* entry) {
             auto name = entry->entry.name;
+
+            auto validator = std::make_shared<NumberValidator<double>>(
+                entry->minValue, entry->maxValue, [](double value) -> std::string {
+                    return stringValueForDouble(value);
+                });
+
             std::shared_ptr<InputOverlay> dialog(new InputOverlay());
             dialog->SetTitle(name)
                 .SetText(stringValueFor(prefs, entry))
-                .SetValidator(std::make_shared<DoubleValidator>())
+                .SetValidator(validator)
                 .SetInputAcceptedCallback([this, name](const std::string& value) {
                     this->prefs->SetDouble(name, std::stod(value));
                     this->changed = true;
