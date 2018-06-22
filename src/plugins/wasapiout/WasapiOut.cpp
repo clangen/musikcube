@@ -35,6 +35,7 @@
 #include "WasapiOut.h"
 #include <core/sdk/constants.h>
 #include <core/sdk/IPreferences.h>
+#include <core/sdk/ISchema.h>
 #include <AudioSessionTypes.h>
 #include <Functiondiscoverykeys_devpkey.h>
 #include <iostream>
@@ -42,8 +43,6 @@
 #include <thread>
 #include <algorithm>
 #include <vector>
-
-#define MAX_BUFFERS_PER_OUTPUT 16
 
 #define PREF_DEVICE_ID "device_id"
 #define PREF_ENDPOINT_ROUTING "enable_audio_endpoint_routing"
@@ -107,6 +106,12 @@ extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferen
     prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
     prefs->GetBool(PREF_ENDPOINT_ROUTING, false);
     prefs->Save();
+}
+
+extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema() {
+    auto schema = new TSchema<>();
+    schema->AddBool(PREF_ENDPOINT_ROUTING, false);
+    return schema;
 }
 
 static bool audioRoutingEnabled() {
