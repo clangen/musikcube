@@ -298,6 +298,7 @@ bool ListWindow::KeyPress(const std::string& key) {
 }
 
 bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
+    /* CAL TODO: this method assumes each row is a single cell tall. */
     bool result = ScrollableWindow::MouseEvent(event);
 
     auto first = this->scrollPosition.firstVisibleEntryIndex;
@@ -308,13 +309,15 @@ bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
 
     size_t offset = first + (size_t) event.y;
 
-    if (event.Button1Clicked()) {
-        this->SetSelectedIndex(offset);
-    }
-    else if (event.Button1DoubleClicked()) {
-        this->FocusInParent();
-        this->SetSelectedIndex(offset);
-        this->OnEntryActivated(offset); /* internal */
+    if (offset < this->GetScrollAdapter().GetEntryCount()) {
+        if (event.Button1Clicked()) {
+            this->SetSelectedIndex(offset);
+        }
+        else if (event.Button1DoubleClicked()) {
+            this->FocusInParent();
+            this->SetSelectedIndex(offset);
+            this->OnEntryActivated(offset); /* internal */
+        }
     }
 
     return result;
