@@ -51,6 +51,7 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
 
+#include <algorithm>
 #include <ostream>
 #include <iomanip>
 #include <limits>
@@ -77,10 +78,43 @@ using SchemaPtr = std::shared_ptr<ISchema>;
 
 #define DEFAULT(type) reinterpret_cast<const ISchema::##type*>(entry)->defaultValue
 
-std::string stringValueForDouble(const double value, const int precision = 3) {
+static size_t DEFAULT_INPUT_WIDTH = 26;
+
+static std::string stringValueForDouble(const double value, const int precision = 2) {
     std::ostringstream out;
     out << std::fixed << std::setprecision(precision) << value;
     return out.str();
+}
+
+static std::function<std::string(int)> INT_FORMATTER =
+[](int value) -> std::string {
+    return std::to_string(value);
+};
+
+static std::function<std::string(double)> DOUBLE_FORMATTER =
+[](double value) -> std::string {
+    return stringValueForDouble(value);
+};
+
+template <typename T>
+bool bounded(T minimum, T maximum) {
+    return
+        minimum != std::numeric_limits<T>::min() &&
+        maximum != std::numeric_limits<T>::max();
+}
+
+template <typename T>
+std::string numberInputTitle(
+    std::string keyName,
+    T minimum,
+    T maximum,
+    std::function<std::string(T)> formatter) 
+{
+    if (bounded(minimum, maximum)) {
+        return keyName + " (" + formatter(minimum) 
+            + " - " + formatter(maximum) + ")";
+    }
+    return keyName;
 }
 
 template <typename T>
@@ -154,14 +188,13 @@ class SchemaAdapter: public ScrollAdapterBase {
         virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override {
             auto entry = schema->At(index);
 
-            /* CAL TODO: ellipsize key if too long to fit */
             std::string name = entry->name;
             std::string value = stringValueFor(prefs, entry);
             int width = window->GetContentWidth();
             int avail = std::max(0, width - int(u8cols(name)) - 1 - 1);
             auto display = " " + name + " " + text::Align(value + " ", text::AlignRight, avail);
 
-            SinglePtr result = SinglePtr(new SingleLineEntry(display));
+            SinglePtr result = SinglePtr(new SingleLineEntry(text::Ellipsize(display, width)));
 
             result->SetAttrs(CURSESPP_DEFAULT_COLOR);
             if (index == window->GetScrollPosition().logicalIndex) {
@@ -204,7 +237,7 @@ class SchemaAdapter: public ScrollAdapterBase {
             virtual bool IsValid(const std::string& input) const override {
                 try { 
                     int result = std::stoi(input); 
-                    if (bounded() && (result < minimum || result > maximum)) {
+                    if (bounded(minimum, maximum) && (result < minimum || result > maximum)) {
                         return false;
                     }
                 }
@@ -215,19 +248,13 @@ class SchemaAdapter: public ScrollAdapterBase {
             }
 
             virtual const std::string ErrorMessage() const {
-                if (bounded()) {
+                if (bounded(minimum, maximum)) {
                     std::string result = _TSTR("validator_dialog_number_parse_bounded_error");
                     ReplaceAll(result, "{{minimum}}", formatter(minimum));
                     ReplaceAll(result, "{{maximum}}", formatter(maximum));
                     return result;
                 }
                 return _TSTR("validator_dialog_number_parse_error");
-            }
-
-            bool bounded() const {
-                return 
-                    minimum != std::numeric_limits<T>::min() && 
-                    maximum != std::numeric_limits<T>::max();
             }
 
             Formatter formatter;
@@ -282,39 +309,50 @@ class SchemaAdapter: public ScrollAdapterBase {
         void ShowIntOverlay(const ISchema::IntEntry* entry) {
             auto name = entry->entry.name;
 
+            auto title = numberInputTitle(
+                name, entry->minValue, entry->maxValue, INT_FORMATTER);
+
             auto validator = std::make_shared<NumberValidator<int>>(
-                entry->minValue,  entry->maxValue, [](int value) -> std::string { 
-                    return std::to_string(value);
-                });
+                entry->minValue,  entry->maxValue, INT_FORMATTER);
+
+            auto width = std::max(u8cols(title), DEFAULT_INPUT_WIDTH);
 
             std::shared_ptr<InputOverlay> dialog(new InputOverlay());
 
-            dialog->SetTitle(name)
+            dialog->SetTitle(title)
                 .SetText(stringValueFor(prefs, entry))
                 .SetValidator(validator)
+                .SetWidth(width)
                 .SetInputAcceptedCallback([this, name](const std::string& value) {
                     this->prefs->SetInt(name, std::stoi(value));
                     this->changed = true;
                 });
+
             App::Overlays().Push(dialog);
         }
 
         void ShowDoubleOverlay(const ISchema::DoubleEntry* entry) {
             auto name = entry->entry.name;
 
+            auto title = numberInputTitle(
+                name, entry->minValue, entry->maxValue, DOUBLE_FORMATTER);
+
             auto validator = std::make_shared<NumberValidator<double>>(
-                entry->minValue, entry->maxValue, [](double value) -> std::string {
-                    return stringValueForDouble(value);
-                });
+                entry->minValue, entry->maxValue, DOUBLE_FORMATTER);
+
+            auto width = std::max(u8cols(title) + 4, DEFAULT_INPUT_WIDTH);
 
             std::shared_ptr<InputOverlay> dialog(new InputOverlay());
-            dialog->SetTitle(name)
+
+            dialog->SetTitle(title)
                 .SetText(stringValueFor(prefs, entry))
                 .SetValidator(validator)
+                .SetWidth(width)
                 .SetInputAcceptedCallback([this, name](const std::string& value) {
                     this->prefs->SetDouble(name, std::stod(value));
                     this->changed = true;
                 });
+
             App::Overlays().Push(dialog);
         }
 
