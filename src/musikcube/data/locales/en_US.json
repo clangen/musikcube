@@ -12,6 +12,8 @@
         "button_start": "start",
         "button_retry": "retry",
         "button_continue": "continue",
+        "button_unregister": "unregister",
+        "button_open_url": "open url",
         "button_dont_remind_me": "don't remind me again",
         "button_remind_me_later": "remind me later",
 
@@ -81,6 +83,7 @@
         "settings_save_session_on_exit": "save session on exit",
         "settings_check_for_updates": "check for updates now",
         "settings_last_fm": "last.fm",
+        "settings_last_fm_dialog_title": "last.fm registration",
         "settings_last_fm_dialog_message_unregistered": "no last.fm account registered.\n\npress ENTER to begin the linking process.",
         "settings_last_fm_dialog_message_obtaining_token": "contacting last.fm for an account link token...",
         "settings_last_fm_dialog_message_waiting_for_user": "press 'o' to open the account link page in your default browser, or manually navigate to the following url:\n\n{{link}}\n\nafter granting permission, press 'ENTER' to continue.\n\n(note: you may be asked to sign into your last.fm account.)",

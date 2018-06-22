@@ -67,7 +67,7 @@ static lastfm::Session session() {
 
 LastFmOverlay::LastFmOverlay()
 : DialogOverlay() {
-    this->SetTitle("last.fm registration");
+    this->SetTitle(_TSTR("settings_last_fm_dialog_title"));
     this->SetAutoDismiss(false);
     this->LoadDefaultState();
 }
@@ -161,7 +161,7 @@ void LastFmOverlay::UpdateButtons() {
 
         case State::Registered: {
             this->AddButton(
-                "u", "u", "unregister",
+                "u", "u", _TSTR("button_unregister"),
                 [this](std::string key) {
                     lastfm::ClearSession();
                     this->LoadDefaultState();
@@ -178,7 +178,7 @@ void LastFmOverlay::UpdateButtons() {
         case State::WaitingForUser:
         case State::RegisterError: {
             this->AddButton(
-                "o", "o", "open url",
+                "o", "o", _TSTR("button_open_url"),
                 [this](std::string key) {
                     core::OpenFile(lastfm::CreateAccountLinkUrl(this->linkToken));
                 });
