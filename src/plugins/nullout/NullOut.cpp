@@ -64,7 +64,7 @@ extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
     ::prefs = prefs;
 }
 
-extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema() {
+extern "C" DLLEXPORT musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
     schema->AddDouble(PREF_MULTIPLIER, 1.0, 0.25, 1000.0);
     return schema;

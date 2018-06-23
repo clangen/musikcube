@@ -40,6 +40,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <cstring>
 
 namespace musik { namespace core { namespace sdk {
 

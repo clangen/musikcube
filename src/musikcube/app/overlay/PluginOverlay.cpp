@@ -76,7 +76,7 @@ using PrefsPtr = std::shared_ptr<Preferences>;
 using SinglePtr = std::shared_ptr<SingleLineEntry>;
 using SchemaPtr = std::shared_ptr<ISchema>;
 
-#define DEFAULT(type) reinterpret_cast<const ISchema::##type*>(entry)->defaultValue
+#define DEFAULT(type) reinterpret_cast<const ISchema::type*>(entry)->defaultValue
 
 static size_t DEFAULT_INPUT_WIDTH = 26;
 

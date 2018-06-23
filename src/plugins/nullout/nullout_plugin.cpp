@@ -72,4 +72,4 @@ extern "C" DLLEXPORT musik::core::sdk::IOutput* GetAudioOutput() {
     return new NullOut();
 }
 
-extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema();
+extern "C" DLLEXPORT musik::core::sdk::ISchema* GetSchema();
