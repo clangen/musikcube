@@ -108,10 +108,10 @@ std::string numberInputTitle(
     std::string keyName,
     T minimum,
     T maximum,
-    std::function<std::string(T)> formatter) 
+    std::function<std::string(T)> formatter)
 {
     if (bounded(minimum, maximum)) {
-        return keyName + " (" + formatter(minimum) 
+        return keyName + " (" + formatter(minimum)
             + " - " + formatter(maximum) + ")";
     }
     return keyName;
@@ -122,7 +122,7 @@ static std::string stringValueFor(
     PrefsPtr prefs,
     const T* entry,
     ISchema::Type type,
-    const std::string& name) 
+    const std::string& name)
 {
     switch (type) {
         case ISchema::Type::Bool:
@@ -235,8 +235,8 @@ class SchemaAdapter: public ScrollAdapterBase {
             }
 
             virtual bool IsValid(const std::string& input) const override {
-                try { 
-                    int result = std::stoi(input); 
+                try {
+                    int result = std::stoi(input);
                     if (bounded(minimum, maximum) && (result < minimum || result > maximum)) {
                         return false;
                     }
@@ -269,7 +269,7 @@ class SchemaAdapter: public ScrollAdapterBase {
         {
             auto stringAdapter = std::make_shared<StringListAdapter>(items);
             std::shared_ptr<ListOverlay> dialog(new ListOverlay());
-            
+
             size_t width = u8cols(title) + 4; /* extra padding for border and spacing */
             size_t index = 0;
 
@@ -299,7 +299,7 @@ class SchemaAdapter: public ScrollAdapterBase {
         void ShowBoolOverlay(const ISchema::BoolEntry* entry) {
             auto name = entry->entry.name;
             std::vector<std::string> items = { "true", "false" };
-            ShowListOverlay(name, items, stringValueFor(prefs, entry), 
+            ShowListOverlay(name, items, stringValueFor(prefs, entry),
                 [this, name](std::string value) {
                     this->prefs->SetBool(name, value == "true");
                     this->changed = true;
@@ -376,7 +376,7 @@ class SchemaAdapter: public ScrollAdapterBase {
                 items.push_back(entry->values[i]);
             }
 
-            ShowListOverlay(name, items, stringValueFor(prefs, entry), 
+            ShowListOverlay(name, items, stringValueFor(prefs, entry),
                 [this, name](std::string value) {
                     this->prefs->SetString(name, value.c_str());
                     this->changed = true;
