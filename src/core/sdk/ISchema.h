@@ -71,6 +71,7 @@ namespace musik { namespace core { namespace sdk {
                 Entry entry;
                 double minValue;
                 double maxValue;
+                int precision;
                 double defaultValue;
             };
 
@@ -141,7 +142,7 @@ namespace musik { namespace core { namespace sdk {
                 const std::string& name,
                 int defaultValue,
                 int min = INT_MIN,
-                int max = INT_MAX) 
+                int max = INT_MAX)
             {
                 auto entry = new IntEntry();
                 entry->entry.type = ISchema::Type::Int;
@@ -154,8 +155,9 @@ namespace musik { namespace core { namespace sdk {
             }
 
             TSchema& AddDouble(
-                const std::string& name, 
-                double defaultValue, 
+                const std::string& name,
+                double defaultValue,
+                int precision = 2,
                 double min = DBL_MIN,
                 double max = DBL_MAX)
             {
@@ -163,6 +165,7 @@ namespace musik { namespace core { namespace sdk {
                 entry->entry.type = ISchema::Type::Double;
                 entry->entry.name = AllocString(name);
                 entry->defaultValue = defaultValue;
+                entry->precision = precision;
                 entry->minValue = min;
                 entry->maxValue = max;
                 entries.push_back(reinterpret_cast<Entry*>(entry));
@@ -181,7 +184,7 @@ namespace musik { namespace core { namespace sdk {
             TSchema& AddEnum(
                 const std::string& name,
                 const std::vector<std::string>&& values,
-                const std::string& defaultValue) 
+                const std::string& defaultValue)
             {
                 auto entry = new EnumEntry();
                 entry->entry.type = ISchema::Type::Enum;
@@ -211,7 +214,11 @@ namespace musik { namespace core { namespace sdk {
 
             const char* AllocString(const std::string& str) {
                 char* result = new char[str.size() + 1];
+#ifdef WIN32
+                strncpy_s(result, str.size() + 1, str.c_str(), str.size());
+#else
                 strncpy(result, str.c_str(), str.size());
+#endif
                 result[str.size()] = 0;
                 return result;
             }

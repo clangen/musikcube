@@ -91,10 +91,11 @@ static std::function<std::string(int)> INT_FORMATTER =
     return std::to_string(value);
 };
 
-static std::function<std::string(double)> DOUBLE_FORMATTER =
-[](double value) -> std::string {
-    return stringValueForDouble(value);
-};
+static std::function<std::string(double)> doubleFormatter(int precision) {
+    return [precision](double value) -> std::string {
+        return stringValueForDouble(value, precision);
+    };
+}
 
 template <typename T>
 bool bounded(T minimum, T maximum) {
@@ -129,8 +130,12 @@ static std::string stringValueFor(
             return prefs->GetBool(name, DEFAULT(BoolEntry)) ? "true" : "false";
         case ISchema::Type::Int:
             return std::to_string(prefs->GetInt(name, DEFAULT(IntEntry)));
-        case ISchema::Type::Double:
-            return stringValueForDouble(prefs->GetDouble(name, DEFAULT(DoubleEntry)));
+        case ISchema::Type::Double: {
+            auto doubleEntry = reinterpret_cast<const ISchema::DoubleEntry*>(entry);
+            auto defaultValue = doubleEntry->defaultValue;
+            auto precision = doubleEntry->precision;
+            return stringValueForDouble(prefs->GetDouble(name, defaultValue), precision);
+        }
         case ISchema::Type::String:
             return prefs->GetString(name, DEFAULT(StringEntry));
         case ISchema::Type::Enum:
@@ -334,11 +339,13 @@ class SchemaAdapter: public ScrollAdapterBase {
         void ShowDoubleOverlay(const ISchema::DoubleEntry* entry) {
             auto name = entry->entry.name;
 
+            auto formatter = doubleFormatter(entry->precision);
+
             auto title = numberInputTitle(
-                name, entry->minValue, entry->maxValue, DOUBLE_FORMATTER);
+                name, entry->minValue, entry->maxValue, formatter);
 
             auto validator = std::make_shared<NumberValidator<double>>(
-                entry->minValue, entry->maxValue, DOUBLE_FORMATTER);
+                entry->minValue, entry->maxValue, formatter);
 
             auto width = std::max(u8cols(title) + 4, DEFAULT_INPUT_WIDTH);
 
