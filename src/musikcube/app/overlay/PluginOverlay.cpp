@@ -213,20 +213,15 @@ class SchemaAdapter: public ScrollAdapterBase {
             auto entry = schema->At(index);
             switch (entry->type) {
                 case ISchema::Type::Bool:
-                    ShowBoolOverlay(reinterpret_cast<const ISchema::BoolEntry*>(entry));
-                    break;
+                    return ShowBoolOverlay(reinterpret_cast<const ISchema::BoolEntry*>(entry));
                 case ISchema::Type::Int:
-                    ShowIntOverlay(reinterpret_cast<const ISchema::IntEntry*>(entry));
-                    break;
+                    return ShowIntOverlay(reinterpret_cast<const ISchema::IntEntry*>(entry));
                 case ISchema::Type::Double:
-                    ShowDoubleOverlay(reinterpret_cast<const ISchema::DoubleEntry*>(entry));
-                    break;
+                    return ShowDoubleOverlay(reinterpret_cast<const ISchema::DoubleEntry*>(entry));
                 case ISchema::Type::String:
-                    ShowStringOverlay(reinterpret_cast<const ISchema::StringEntry*>(entry));
-                    break;
+                    return ShowStringOverlay(reinterpret_cast<const ISchema::StringEntry*>(entry));
                 case ISchema::Type::Enum:
-                    ShowEnumOverlay(reinterpret_cast<const ISchema::EnumEntry*>(entry));
-                    break;
+                    return ShowEnumOverlay(reinterpret_cast<const ISchema::EnumEntry*>(entry));
             }
         }
 
