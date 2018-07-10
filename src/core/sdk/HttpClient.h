@@ -354,6 +354,12 @@ namespace musik { namespace core { namespace sdk {
     }
 
     template <typename T>
+    HttpClient<T>& HttpClient<T>::UserAgent(const std::string& userAgent) {
+        this->userAgent = userAgent;
+        return *this;
+    }
+
+    template <typename T>
     HttpClient<T>& HttpClient<T>::Header(const std::string& key, const std::string& value) {
         this->requestHeaders[key] = value;
         return *this;
