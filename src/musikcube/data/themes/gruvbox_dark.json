@@ -59,8 +59,8 @@
       "palette": 124
     },    
     "shortcuts_background": {
-      "hex": "#7c6f64",
-      "palette": 243
+      "hex": "#504945",
+      "palette": 239
     },
     "shortcuts_foreground": {
       "hex": "#ebdbb2",
@@ -111,12 +111,12 @@
       "palette": 237
     },
     "list_header_foreground": {
-      "hex": "#fbf1c7",
-      "palette": 229
+      "hex": "#fabd2f",
+      "palette": 214
     },
       "list_header_highlighted_background": {
-      "hex": "#b8bb26",
-      "palette": 142
+      "hex": "#fabd2f",
+      "palette": 214
     },
     "list_header_highlighted_foreground": {
       "hex": "#3c3836",
