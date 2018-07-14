@@ -413,9 +413,10 @@ void Window::DrawFrameAndTitle() {
         if (max > 3) { /* 3 = first character plus ellipse (e.g. 'F..')*/
             std::string adjusted = " " + text::Ellipsize(this->title, (size_t) max - 2) + " ";
             wmove(this->frame, 0, 2);
-            wattron(this->frame, A_BOLD);
+            bool focused = IsFocused();
+            if (focused) { wattron(this->frame, A_BOLD); }
             checked_waddstr(this->frame, adjusted.c_str());
-            wattroff(this->frame, A_BOLD);
+            if (focused) { wattroff(this->frame, A_BOLD); }
         }
     }
 

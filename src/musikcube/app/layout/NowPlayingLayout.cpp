@@ -111,6 +111,7 @@ int64_t NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index
             else {
                 attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
             }
+            attrs |= A_BOLD;
         }
     }
 
