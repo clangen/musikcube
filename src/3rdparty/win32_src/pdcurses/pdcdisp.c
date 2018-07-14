@@ -14,6 +14,11 @@ for details. */
 
 #define USE_UNICODE_ACS_CHARS 1
 
+/* The default PDC implementation shifts colors towards white when
+the A_BOLD attr is set. Setting this flag disables that behavior. */
+
+#define DISABLE_BOLD_INTENSIFY 1
+
 #include "acs_defs.h"
 
 static const unsigned short starting_ascii_to_unicode[32] = {
@@ -461,8 +466,10 @@ void PDC_get_rgb_values( const chtype srcp,
         *background_rgb = temp;
     }
 
+#if (DISABLE_BOLD_INTENSIFY == 0)
     if( srcp & A_BOLD)
         *foreground_rgb = intensified_color( *foreground_rgb);
+#endif
     if( intensify_backgnd)
         *background_rgb = intensified_color( *background_rgb);
     if( srcp & A_DIM)
