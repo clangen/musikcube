@@ -196,7 +196,7 @@ void ShortcutsWindow::OnRedraw() {
     this->Clear();
 
     int64_t normalAttrs = COLOR_PAIR(CURSESPP_BUTTON_NORMAL);
-    int64_t activeAttrs = COLOR_PAIR(CURSESPP_BUTTON_HIGHLIGHTED);
+    int64_t activeAttrs = COLOR_PAIR(CURSESPP_BUTTON_HIGHLIGHTED) | A_BOLD;
 
     WINDOW* c = this->GetContent();
 
@@ -207,9 +207,10 @@ void ShortcutsWindow::OnRedraw() {
     size_t remaining = this->GetContentWidth();
     for (size_t i = 0; i < this->entries.size() && remaining > 0; i++) {
         auto e = this->entries[i];
+        auto isActive = (e->key == this->activeKey);
 
         int64_t keyAttrs = (e->attrs == -1) ? normalAttrs : COLOR_PAIR(e->attrs);
-        keyAttrs = (e->key == this->activeKey) ? activeAttrs : keyAttrs;
+        keyAttrs = isActive ? activeAttrs : keyAttrs;
 
         checked_wprintw(c, " ");
         --remaining;
@@ -252,7 +253,10 @@ void ShortcutsWindow::OnRedraw() {
             len = remaining;
         }
 
+        if (isActive) { wattron(c, A_BOLD); }
         checked_wprintw(c, value.c_str());
+        if (isActive) { wattroff(c, A_BOLD); }
+
         remaining -= len;
     }
 }
