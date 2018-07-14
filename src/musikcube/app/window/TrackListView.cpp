@@ -458,7 +458,6 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
             else {
                 attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
             }
-            attrs |= A_BOLD;
         }
     }
 

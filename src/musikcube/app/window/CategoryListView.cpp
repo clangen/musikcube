@@ -295,7 +295,6 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::Scrollabl
         else {
             attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
         }
-        attrs |= A_BOLD;
     }
 
     value = text::Ellipsize(value, this->GetWidth());
