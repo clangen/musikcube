@@ -236,7 +236,7 @@ static size_t writePlayingFormat(
     tokenize(Strings.PLAYING_FORMAT, tokens);
 
     int64_t dim = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
-    int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE) | A_BOLD;
+    int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     size_t remaining = width;
 
     auto it = tokens.begin();
@@ -532,8 +532,9 @@ void TransportWindow::Update(TimeMode timeMode) {
     bool muted = transport.IsMuted();
     bool replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
 
-    int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE) | A_BOLD;
+    int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
     int64_t disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
+    int64_t bright = COLOR_PAIR(CURSESPP_TEXT_DEFAULT);
 
     int64_t volumeAttrs = CURSESPP_DEFAULT_COLOR;
     if (this->focus == FocusVolume) {

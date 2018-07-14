@@ -418,8 +418,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
                 TrackListEntry(album, trackIndex, RowType::Separator));
 
             entry->SetAttrs(selected
-                ? COLOR_PAIR(CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER) | A_BOLD
-                : COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER) | A_BOLD);
+                ? COLOR_PAIR(CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER)
+                : COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER));
 
             return entry;
         }
