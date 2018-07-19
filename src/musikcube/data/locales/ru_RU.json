@@ -12,6 +12,8 @@
         "button_start": "старт",
         "button_retry": "повторить",
         "button_continue": "продолжить",
+        "button_unregister": "отключить",
+        "button_open_url": "открыть ссылку",
         "button_dont_remind_me": "не напоминать снова",
         "button_remind_me_later": "напомнить позже",
 
@@ -21,7 +23,7 @@
         "browse_title_album_artists": "исполнители альбома",
         "browse_title_category": "категория",
         "browse_title_tracks": "треки",
-        "browse_title_playlists": "плейлист",
+        "browse_title_playlists": "плейлисты",
         "browse_title_directory": "папка",
         "browse_playlist_modified": "плейлист изменён. нажмите '%s' для сохранения.",
         "browse_categories_title": "выбрать категорию",
@@ -34,10 +36,10 @@
         "browse_no_subdirectories_toast": "подпапок нет.\n\nнажмите '%s' для воспроизведения выбранного.",
 
         "console_command_output_title": "вывод команды",
-        "console_debug_logs_title": "журнал отладки",
+        "console_debug_logs_title": "журналы отладки",
         "console_command_title": "команда",
-		
-		"hotkeys_title": "привязки клавиш",
+
+        "hotkeys_title": "привязки клавиш",
         "hotkeys_reset_defaults": "сбросить все",
         "hotkeys_backup": "резервная копия",
         "hotkeys_reassign_overlay_title": "переназначить привязку клавиши",
@@ -62,7 +64,7 @@
         "settings_output_device_default": "стандартное",
         "settings_transport_type": "режим воспроизведения: ",
         "settings_degrade_256": "ухудшение до 256 цветов",
-		"settings_show_dotfiles": "показывать файлы с точкой в обзоре папок",
+        "settings_show_dotfiles": "показывать файлы с точкой в обзоре папок",
         "settings_sync_on_startup": "синхронизировать метаданные при старте",
         "settings_remove_missing": "удалить отсутствующие файлы из фонотеки",
         "settings_default_theme_name": "стандартная",
@@ -81,8 +83,9 @@
         "settings_save_session_on_exit": "сохранять сеанс при выходе",
         "settings_check_for_updates": "проверить обновления сейчас",
         "settings_last_fm": "last.fm",
+        "settings_last_fm_dialog_title": "подключение last.fm",
         "settings_last_fm_dialog_message_unregistered": "нет подключённого аккаунта last.fm.\n\nнажмите ENTER для начала привязки.",
-        "settings_last_fm_dialog_message_obtaining_token": "запрос ключа аккаунта last.fm...",
+        "settings_last_fm_dialog_message_obtaining_token": "запрос ключа аккаунта для подключения last.fm...",
         "settings_last_fm_dialog_message_waiting_for_user": "нажмите 'o' для открытия страницы привязки аккаунта в браузере, или вручную перейдите по ссылке:\n\n{{link}}\n\nпосле получения прав нажмите 'ENTER' для настройки.\n\n(замечание: вас могут попросить войти в аккаунт last.fm.)",
         "settings_last_fm_dialog_message_registering_session": "получение ключа сеанса, пожалуйста подождите...",
         "settings_last_fm_dialog_message_registered": "подключённый аккаунт: '{{username}}'\n\nтеперь вы можете слушать музыку!",
@@ -109,6 +112,14 @@
         "settings_replay_gain_mode_disabled": "отключена",
         "settings_replay_gain_mode_track": "для трека",
         "settings_replay_gain_mode_album": "для альбома",
+
+        "settings_configure_plugin_title": "настроить \"{{name}}\"",
+        "settings_no_plugin_config_title": "не настроен",
+        "settings_no_plugin_config_message": "плагин \"{{name}}\" не предоставляет возможность настройки.",
+
+        "validator_dialog_title": "ошибка валидации",
+        "validator_dialog_number_parse_bounded_error": "пожалуйста, введите число между {{minimum}} и {{maximum}} для продолжения.",
+        "validator_dialog_number_parse_error": "пожалуйста, введите число для продолжения.",
 
         "track_filter_title": "результаты фильтра треков",
 
@@ -198,7 +209,7 @@
         "playqueue_playlist_name_overlay_width": 35,
         "browse_categories_overlay_width": 35,
         "indexer_overlay_width": 28,
-		"reassign_hotkey_overlay_width": 35,
+        "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
         "preamp_overlay_width": 40
     }
