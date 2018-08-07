@@ -47,7 +47,9 @@ namespace musik { namespace core {
 
             enum State {
                 StateIdle,
-                StateIndexing
+                StateIndexing,
+                StateStopping,
+                StateStopped
             };
 
             enum class SyncType {
@@ -62,6 +64,7 @@ namespace musik { namespace core {
             virtual void RemovePath(const std::string& path) = 0;
             virtual void GetPaths(std::vector<std::string>& paths) = 0;
             virtual void Schedule(SyncType type) = 0;
+            virtual void Stop() = 0;
             virtual State GetState() = 0;
     };
 } }

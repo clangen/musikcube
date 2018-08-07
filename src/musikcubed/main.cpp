@@ -254,6 +254,8 @@ int main(int argc, char** argv) {
         }
 
         messageQueue.Run();
+
+        library->Indexer()->Stop();
     }
 
     remove(LOCKFILE);

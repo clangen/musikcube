@@ -71,25 +71,26 @@ namespace musik { namespace core {
             virtual ~Indexer();
 
             /* IIndexer */
-            virtual void AddPath(const std::string& path);
-            virtual void RemovePath(const std::string& path);
-            virtual void GetPaths(std::vector<std::string>& paths);
-            virtual void Schedule(SyncType type);
-            virtual State GetState() { return this->state; }
+            virtual void AddPath(const std::string& path) override;
+            virtual void RemovePath(const std::string& path) override;
+            virtual void GetPaths(std::vector<std::string>& paths) override;
+            virtual void Schedule(SyncType type) override;
+            virtual void Stop() override;
+            virtual State GetState() override { return this->state; }
 
             /* IIndexerWriter */
             virtual musik::core::sdk::ITagStore* CreateWriter();
-            virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri);
-            virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id);
-            virtual int RemoveAll(musik::core::sdk::IIndexerSource* source);
+            virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
+            virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
+            virtual int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
 
             virtual bool Save(
                 musik::core::sdk::IIndexerSource* source,
                 musik::core::sdk::ITagStore* store,
-                const char* externalId = "");
+                const char* externalId = "") override;
 
             /* IIndexerNotifier */
-            virtual void ScheduleRescan(musik::core::sdk::IIndexerSource* source);
+            virtual void ScheduleRescan(musik::core::sdk::IIndexerSource* source) override;
 
         private:
             struct AddRemoveContext {
@@ -112,8 +113,6 @@ namespace musik { namespace core {
                 musik::core::sdk::IIndexerSource>> IndexerSourceList;
 
             void ThreadLoop();
-
-            bool Exited();
 
             void Synchronize(const SyncContext& context, boost::asio::io_service* io);
 
@@ -140,11 +139,12 @@ namespace musik { namespace core {
                 const boost::filesystem::path& path,
                 const std::string& pathId);
 
+            bool Bail();
+
             db::Connection dbConnection;
             std::string libraryPath;
             std::string dbFilename;
-            bool exit;
-            State state;
+            std::atomic<State> state;
             boost::mutex stateMutex;
             boost::condition waitCondition;
             boost::thread *thread;

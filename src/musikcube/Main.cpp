@@ -209,6 +209,8 @@ int main(int argc, char* argv[]) {
 #ifdef WIN32
         win32::HideMainWindow();
 #endif
+
+        library->Indexer()->Stop();
     }
 
     musik::core::audio::vis::HideSelectedVisualizer();

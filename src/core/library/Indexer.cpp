@@ -107,8 +107,7 @@ static std::string normalizePath(const std::string& path) {
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
 , tracksScanned(0)
-, exit(false)
-, state(StateIdle)
+, state(StateStopped)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
     if (prefs->GetBool(prefs::keys::IndexerLogEnabled, false) && !logFile) {
@@ -126,7 +125,6 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 
     this->dbFilename = dbFilename;
     this->libraryPath = libraryPath;
-    this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
 
     db::Connection connection;
     connection.Open(this->dbFilename.c_str());
@@ -138,11 +136,16 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 
 Indexer::~Indexer() {
     closeLogFile();
+    this->Stop();
+}
 
+void Indexer::Stop() {
     if (this->thread) {
         {
             boost::mutex::scoped_lock lock(this->stateMutex);
-            this->exit = true;
+
+            this->syncQueue.clear();
+            this->state = StateStopping;
 
             if (this->currentSource) {
                 this->currentSource->Interrupt();
@@ -162,6 +165,11 @@ void Indexer::Schedule(SyncType type) {
 
 void Indexer::Schedule(SyncType type, IIndexerSource* source) {
     boost::mutex::scoped_lock lock(this->stateMutex);
+
+    if (!this->thread) {
+        this->state = StateIdle;
+        this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
+    }
 
     int sourceId = source ? source->SourceId() : 0;
     for (SyncContext& context : this->syncQueue) {
@@ -230,7 +238,7 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {
         for (auto it : this->sources) {
-            if (this->Exited()) {
+            if (this->Bail()) {
                 break;
             }
 
@@ -250,7 +258,7 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     else if (type == SyncType::Sources && sourceId != 0) {
         for (auto it : this->sources) {
-            if (this->Exited()) {
+            if (this->Bail()) {
                 break;
             }
 
@@ -315,7 +323,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
     auto type = context.type;
 
     if (type != SyncType::Sources) {
-        if (!this->Exited()) {
+        if (!this->Bail()) {
             this->SyncDelete();
         }
     }
@@ -323,14 +331,14 @@ void Indexer::FinalizeSync(const SyncContext& context) {
     /* cleanup -- remove stale artists, albums, genres, etc */
     musik::debug::info(TAG, "cleanup 2/2");
 
-    if (!this->Exited()) {
+    if (!this->Bail()) {
         this->SyncCleanup();
     }
 
     /* optimize and sort */
     musik::debug::info(TAG, "optimizing");
 
-    if (!this->Exited()) {
+    if (!this->Bail()) {
         this->SyncOptimize();
     }
 
@@ -339,8 +347,6 @@ void Indexer::FinalizeSync(const SyncContext& context) {
 
     /* run analyzers. */
     this->RunAnalyzers();
-
-    this->state = StateIdle;
 
     IndexerTrack::ResetIdCache();
 }
@@ -456,7 +462,7 @@ void Indexer::SyncDirectory(
     const std::string &currentPath,
     int64_t pathId)
 {
-    if (this->Exited()) {
+    if (this->Bail()) {
         return;
     }
 
@@ -477,7 +483,7 @@ void Indexer::SyncDirectory(
         std::string pathIdStr = boost::lexical_cast<std::string>(pathId);
         std::vector<Thread> threads;
 
-        for( ; file != end && !this->Exited(); file++) {
+        for( ; file != end && !this->Bail(); file++) {
             if (is_directory(file->status())) {
                 /* recursion here */
                 musik::debug::info(TAG, "scanning " + file->path().string());
@@ -559,12 +565,13 @@ void Indexer::ThreadLoop() {
         /* wait for some work. */
         {
             boost::mutex::scoped_lock lock(this->stateMutex);
-            while (!this->exit && this->syncQueue.size() == 0) {
+            while (!this->Bail() && this->syncQueue.size() == 0) {
+                this->state = StateIdle;
                 this->waitCondition.wait(lock);
             }
         }
 
-        if (this->exit) {
+        if (this->Bail()) {
             return;
         }
 
@@ -604,7 +611,7 @@ void Indexer::ThreadLoop() {
 
         this->dbConnection.Close();
 
-        if (!this->Exited()) {
+        if (!this->Bail()) {
             this->Finished(this->tracksScanned);
         }
 
@@ -628,7 +635,7 @@ void Indexer::SyncDelete() {
             "WHERE source_id == 0", /* IIndexerSources delete their own tracks */
             this->dbConnection);
 
-        while (allTracks.Step() == db::Row && !this->Exited()) {
+        while (allTracks.Step() == db::Row && !this->Bail()) {
             bool remove = false;
             std::string fn = allTracks.ColumnText(1);
 
@@ -901,17 +908,12 @@ void Indexer::RunAnalyzers() {
             }
         }
 
-        if (this->Exited()) {
+        if (this->Bail()) {
             return;
         }
 
         getNextTrack.BindInt64(0, trackId);
     }
-}
-
-bool Indexer::Exited() {
-    boost::mutex::scoped_lock lock(this->stateMutex);
-    return this->exit;
 }
 
 ITagStore* Indexer::CreateWriter() {
@@ -1002,4 +1004,10 @@ void Indexer::ScheduleRescan(IIndexerSource* source) {
     if (source->SourceId() != 0) {
         this->Schedule(SyncType::Sources, source);
     }
+}
+
+bool Indexer::Bail() {
+    return
+        this->state == StateStopping ||
+        this->state == StateStopped;
 }
