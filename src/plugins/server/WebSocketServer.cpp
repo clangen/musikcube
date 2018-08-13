@@ -1509,19 +1509,19 @@ void WebSocketServer::BroadcastPlayQueueChanged() {
 
 json WebSocketServer::WebSocketServer::ReadTrackMetadata(ITrack* track) {
     return {
-        { key::id, track->GetId() },
+        { key::id, track ? track->GetId() : -1LL },
         { key::external_id, GetMetadataString(track, key::external_id) },
         { key::title, GetMetadataString(track, key::title) },
-        { key::track_num, track->GetInt32(key::track_num.c_str(), 0) },
+        { key::track_num, GetMetadataInt32(track, key::track_num.c_str(), 0) },
         { key::album, GetMetadataString(track, key::album) },
-        { key::album_id, track->GetInt64(key::album_id.c_str()) },
+        { key::album_id, GetMetadataInt64(track, key::album_id.c_str()) },
         { key::album_artist, GetMetadataString(track, key::album_artist) },
-        { key::album_artist_id, track->GetInt64(key::album_artist_id.c_str()) },
+        { key::album_artist_id, GetMetadataInt64(track, key::album_artist_id.c_str()) },
         { key::artist, GetMetadataString(track, key::artist) },
-        { key::artist_id, track->GetInt64(key::visual_artist_id.c_str()) },
+        { key::artist_id, GetMetadataInt64(track, key::visual_artist_id.c_str()) },
         { key::genre, GetMetadataString(track, key::genre) },
-        { key::genre_id, track->GetInt64(key::visual_genre_id.c_str()) },
-        { key::thumbnail_id, track->GetInt64(key::thumbnail_id.c_str()) },
+        { key::genre_id, GetMetadataInt64(track, key::visual_genre_id.c_str()) },
+        { key::thumbnail_id, GetMetadataInt64(track, key::thumbnail_id.c_str()) },
     };
 }
 
