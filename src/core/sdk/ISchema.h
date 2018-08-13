@@ -110,6 +110,9 @@ namespace musik { namespace core { namespace sdk {
                             FreeStringList(entry->values, entry->count);
                             break;
                         }
+
+                        default:
+                            break;
                     }
 
                     FreeString(it->name);
