@@ -70,8 +70,8 @@ namespace cursespp {
 
             size_t GetSelectedIndex();
 
-            virtual void Layout();
-            virtual bool KeyPress(const std::string& key);
+            virtual void Layout() override;
+            virtual bool KeyPress(const std::string& key) override;
 
             void RefreshAdapter();
 

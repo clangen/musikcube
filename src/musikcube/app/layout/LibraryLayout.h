@@ -65,21 +65,21 @@ namespace musik {
 
                 virtual ~LibraryLayout();
 
-                virtual cursespp::IWindowPtr FocusNext();
-                virtual cursespp::IWindowPtr FocusPrev();
-                virtual cursespp::IWindowPtr GetFocus();
-                virtual bool SetFocus(cursespp::IWindowPtr window);
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+                virtual cursespp::IWindowPtr FocusNext() override;
+                virtual cursespp::IWindowPtr FocusPrev() override;
+                virtual cursespp::IWindowPtr GetFocus() override;
+                virtual bool SetFocus(cursespp::IWindowPtr window) override;
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
                 virtual void SetShortcutsWindow(
-                    cursespp::ShortcutsWindow* w);
+                    cursespp::ShortcutsWindow* w) override;
 
-                virtual bool KeyPress(const std::string& key);
+                virtual bool KeyPress(const std::string& key) override;
 
             protected:
                 virtual void OnLayout();
-                virtual void OnAddedToParent(IWindow* newParent);
-                virtual void OnRemovedFromParent(IWindow* oldParent);
+                virtual void OnAddedToParent(IWindow* newParent) override;
+                virtual void OnRemovedFromParent(IWindow* oldParent) override;
 
             private:
                 void LoadLastSession();

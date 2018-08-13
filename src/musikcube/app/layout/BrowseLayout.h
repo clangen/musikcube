@@ -62,9 +62,9 @@ namespace musik {
 
                 virtual ~BrowseLayout();
 
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+                virtual void OnVisibilityChanged(bool visible) override;
+                virtual bool KeyPress(const std::string& key) override;
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
                 void ScrollTo(const std::string& fieldType, int64_t fieldId);
                 void SwitchCategory(const std::string& fieldName);
@@ -72,7 +72,7 @@ namespace musik {
                 void LoadLastSession();
 
             protected:
-                virtual void OnLayout();
+                virtual void OnLayout() override;
 
             private:
                 void InitializeWindows();
