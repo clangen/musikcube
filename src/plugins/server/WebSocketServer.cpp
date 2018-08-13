@@ -785,9 +785,15 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
 
             for (int i = offset; i < to; i++) {
                 ITrack* track = context.playback->GetTrack(i);
-                if (idsOnly) { data.push_back(GetMetadataString(track, key::external_id)); }
-                else { data.push_back(this->ReadTrackMetadata(track)); }
-                track->Release();
+                if (idsOnly) {
+                    data.push_back(GetMetadataString(track, key::external_id));
+                }
+                else {
+                    data.push_back(this->ReadTrackMetadata(track));
+                }
+                if (track) {
+                    track->Release();
+                }
             }
 
             editor->Release();
@@ -803,9 +809,15 @@ void WebSocketServer::RespondWithPlayQueueTracks(connection_hdl connection, json
 
                 for (int i = offset; i < to; i++) {
                     ITrack* track = snapshot->GetTrack(i);
-                    if (idsOnly) { data.push_back(GetMetadataString(track, key::external_id)); }
-                    else { data.push_back(this->ReadTrackMetadata(track)); }
-                    track->Release();
+                    if (idsOnly) {
+                        data.push_back(GetMetadataString(track, key::external_id));
+                    }
+                    else {
+                        data.push_back(this->ReadTrackMetadata(track));
+                    }
+                    if (track) {
+                        track->Release();
+                    }
                 }
             }
         }

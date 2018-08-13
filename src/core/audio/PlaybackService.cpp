@@ -809,7 +809,10 @@ ITrack* PlaybackService::GetTrack(size_t index) {
     const size_t count = this->playlist.Count();
 
     if (count && index < this->playlist.Count()) {
-        return this->playlist.Get(index)->GetSdkValue();
+        auto track = this->playlist.Get(index);
+        if (track) {
+            return track->GetSdkValue();
+        }
     }
 
     return nullptr;
@@ -1093,17 +1096,20 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
     Mode mode = (Mode)playbackPrefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
 
     if (mode != Mode::Disabled && index < this->playlist.Count()) {
-        int64_t id = this->playlist.Get(index)->GetId();
-        auto query = std::make_shared<ReplayGainQuery>(id);
-        if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
-            auto rg = query->GetResult();
-            float gain = (mode == Mode::Album) ? rg->albumGain : rg->trackGain;
-            float peak = (mode == Mode::Album) ? rg->albumPeak : rg->trackPeak;
-            if (gain != 1.0f) {
-                /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
-                result.gain = powf(10.0f, (gain / 20.0f));
-                result.peak = (1.0f / peak);
-                result.peakValid = true;
+        auto track = this->playlist.Get(index);
+        if (track) {
+            int64_t id = track->GetId();
+            auto query = std::make_shared<ReplayGainQuery>(id);
+            if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
+                auto rg = query->GetResult();
+                float gain = (mode == Mode::Album) ? rg->albumGain : rg->trackGain;
+                float peak = (mode == Mode::Album) ? rg->albumPeak : rg->trackPeak;
+                if (gain != 1.0f) {
+                    /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
+                    result.gain = powf(10.0f, (gain / 20.0f));
+                    result.peak = (1.0f / peak);
+                    result.peakValid = true;
+                }
             }
         }
     }

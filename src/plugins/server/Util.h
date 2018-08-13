@@ -68,11 +68,11 @@ static std::string GetPreferenceString(
 
 template <typename MetadataT>
 static std::string GetMetadataString(
-    MetadataT* metadata, 
-    const std::string& key, 
+    MetadataT* metadata,
+    const std::string& key,
     const std::string& defaultValue = "missing metadata!")
 {
-    if (!metadata) { defaultValue; }
+    if (!metadata) { return defaultValue; }
     metadata->GetString(key.c_str(), threadLocalBuffer, sizeof(threadLocalBuffer));
     return std::string(threadLocalBuffer);
 }
@@ -89,7 +89,7 @@ static int64_t GetMetadataInt64(MetadataT* metadata, const std::string& key, int
 
 static std::string GetValueString(
     musik::core::sdk::IValue* value,
-    const std::string& defaultValue = "missing metadata!") 
+    const std::string& defaultValue = "missing metadata!")
 {
     if (!value) { return defaultValue; }
     value->GetValue(threadLocalBuffer, sizeof(threadLocalBuffer));
