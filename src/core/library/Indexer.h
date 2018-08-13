@@ -79,7 +79,7 @@ namespace musik { namespace core {
             virtual State GetState() override { return this->state; }
 
             /* IIndexerWriter */
-            virtual musik::core::sdk::ITagStore* CreateWriter();
+            virtual musik::core::sdk::ITagStore* CreateWriter() override;
             virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
             virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
             virtual int RemoveAll(musik::core::sdk::IIndexerSource* source) override;

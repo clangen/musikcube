@@ -125,7 +125,7 @@ namespace musik { namespace core { namespace sdk {
                 return entries.size();
             }
 
-            virtual const Entry* At(size_t index) {
+            virtual const Entry* At(size_t index) override {
                 return entries[index];
             }
 
