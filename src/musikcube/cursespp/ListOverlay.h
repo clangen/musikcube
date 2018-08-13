@@ -84,9 +84,9 @@ namespace cursespp {
 
             class CustomListWindow;
 
-            void Redraw();
             void RecalculateSize();
             bool ScrollbarVisible();
+            void UpdateContents();
 
             std::string title;
             int x, y;

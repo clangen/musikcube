@@ -77,7 +77,7 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key) override;
 
             protected:
-                virtual void OnLayout();
+                virtual void OnLayout() override;
                 virtual void OnAddedToParent(IWindow* newParent) override;
                 virtual void OnRemovedFromParent(IWindow* oldParent) override;
 

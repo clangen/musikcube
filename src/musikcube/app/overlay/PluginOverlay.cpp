@@ -247,7 +247,7 @@ class SchemaAdapter: public ScrollAdapterBase {
                 return true;
             }
 
-            virtual const std::string ErrorMessage() const {
+            virtual const std::string ErrorMessage() const override {
                 if (bounded(minimum, maximum)) {
                     std::string result = _TSTR("validator_dialog_number_parse_bounded_error");
                     ReplaceAll(result, "{{minimum}}", formatter(minimum));

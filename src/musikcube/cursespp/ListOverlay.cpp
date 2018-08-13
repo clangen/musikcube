@@ -150,7 +150,7 @@ void ListOverlay::Layout() {
             this->scrollbar->Hide();
         }
 
-        this->Redraw();
+        this->UpdateContents();
     }
 }
 
@@ -283,7 +283,7 @@ void ListOverlay::OnVisibilityChanged(bool visible) {
 
     if (visible) {
         this->LayoutBase::SetFocus(this->listWindow);
-        this->Redraw();
+        this->UpdateContents();
     }
 }
 
@@ -319,7 +319,7 @@ void ListOverlay::RecalculateSize() {
     this->x = (Screen::GetWidth() / 2) - (this->width / 2);
 }
 
-void ListOverlay::Redraw() {
+void ListOverlay::UpdateContents() {
     if (!this->IsVisible() || this->width <= 0 || this->height <= 0) {
         return;
     }
