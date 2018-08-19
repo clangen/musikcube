@@ -522,17 +522,9 @@ size_t PlaybackService::Count() {
 void PlaybackService::ToggleRepeatMode() {
     RepeatMode mode = GetRepeatMode();
     switch (mode) {
-    case RepeatNone:
-        SetRepeatMode(RepeatList);
-        break;
-
-    case RepeatList:
-        SetRepeatMode(RepeatTrack);
-        break;
-
-    default:
-        SetRepeatMode(RepeatNone);
-        break;
+        case RepeatNone: SetRepeatMode(RepeatList); break;
+        case RepeatList: SetRepeatMode(RepeatTrack); break;
+        default: SetRepeatMode(RepeatNone); break;
     }
 }
 

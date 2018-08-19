@@ -313,6 +313,10 @@ bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
         if (event.Button1Clicked()) {
             this->SetSelectedIndex(offset);
         }
+        if (event.Button3Clicked()) {
+            this->SetSelectedIndex(offset);
+            this->OnEntryContextMenu(offset);
+        }
         else if (event.Button1DoubleClicked()) {
             this->FocusInParent();
             this->SetSelectedIndex(offset);
@@ -325,6 +329,10 @@ bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
 
 void ListWindow::OnEntryActivated(size_t index) {
     this->EntryActivated(this, index); /* external */
+}
+
+void ListWindow::OnEntryContextMenu(size_t index) {
+    this->EntryContextMenu(this, index); /* external */
 }
 
 IScrollAdapter::ScrollPosition& ListWindow::GetMutableScrollPosition() {

@@ -203,17 +203,8 @@ void CategoryListView::ScrollToPlaying() {
 
 bool CategoryListView::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        int64_t id = this->GetSelectedId();
-        if (id != -1LL) {
-            PlayQueueOverlays::ShowAddCategoryOverlay(
-                this->MessageQueue(),
-                this->playback,
-                this->library,
-                this->fieldName,
-                this->GetSelectedValue(),
-                id);
-            return true;
-        }
+        this->ShowContextMenu();
+        return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
@@ -221,6 +212,25 @@ bool CategoryListView::KeyPress(const std::string& key) {
     }
 
     return ListWindow::KeyPress(key);
+}
+
+void CategoryListView::OnEntryContextMenu(size_t index) {
+    ListWindow::OnEntryContextMenu(index);
+    this->ShowContextMenu();
+}
+
+void CategoryListView::ShowContextMenu() {
+    int64_t id = this->GetSelectedId();
+
+    if (id != -1LL) {
+        PlayQueueOverlays::ShowAddCategoryOverlay(
+            this->MessageQueue(),
+            this->playback,
+            this->library,
+            this->fieldName,
+            this->GetSelectedValue(),
+            id);
+    }
 }
 
 void CategoryListView::OnQueryCompleted(IQuery* query) {

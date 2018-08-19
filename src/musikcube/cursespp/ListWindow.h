@@ -52,6 +52,7 @@ namespace cursespp {
             sigslot::signal3<ListWindow*, size_t, size_t> SelectionChanged;
             sigslot::signal2<ListWindow*, size_t> Invalidated;
             sigslot::signal2<ListWindow*, size_t> EntryActivated;
+            sigslot::signal2<ListWindow*, size_t> EntryContextMenu;
 
             ListWindow(std::shared_ptr<IScrollAdapter> adapter, IWindow *parent = nullptr);
             ListWindow(IWindow *parent = nullptr);
@@ -82,6 +83,7 @@ namespace cursespp {
         protected:
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
             virtual void OnEntryActivated(size_t index);
+            virtual void OnEntryContextMenu(size_t index);
             virtual void OnInvalidated();
             virtual void OnDimensionsChanged();
             virtual void DecorateFrame();

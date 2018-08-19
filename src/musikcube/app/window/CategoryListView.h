@@ -76,9 +76,9 @@ namespace musik {
 
                 void Requery(const int64_t selectAfterQuery);
 
-                virtual bool KeyPress(const std::string& key);
-
                 void Reset();
+
+                virtual bool KeyPress(const std::string& key);
 
                 int64_t GetSelectedId();
                 std::string GetSelectedValue();
@@ -88,7 +88,10 @@ namespace musik {
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
+                virtual void OnEntryContextMenu(size_t index);
+
                 void OnQueryCompleted(musik::core::db::IQuery* query);
+                void ShowContextMenu();
 
                 class Adapter : public cursespp::ScrollAdapterBase {
                 public:

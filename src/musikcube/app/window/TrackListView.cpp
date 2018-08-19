@@ -225,22 +225,31 @@ void TrackListView::OnEntryActivated(size_t index) {
     ListWindow::OnEntryActivated(index);
 }
 
+void TrackListView::OnEntryContextMenu(size_t index) {
+    ListWindow::OnEntryContextMenu(index);
+    this->ShowContextMenu();
+}
+
+void TrackListView::ShowContextMenu() {
+    TrackPtr track = this->GetSelectedTrack();
+    if (!headers.HeaderAt(this->GetSelectedIndex())) {
+        if (track) {
+            PlayQueueOverlays::ShowAddTrackOverlay(
+                MessageQueue(), this->library, this->playback, track);
+        }
+    }
+    else {
+        PlayQueueOverlays::ShowAlbumDividerOverlay(
+            MessageQueue(), this->playback, this->library, track);
+    }
+}
+
 bool TrackListView::KeyPress(const std::string& key) {
     bool handled = false;
 
     if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        TrackPtr track = this->GetSelectedTrack();
-        if (!headers.HeaderAt(this->GetSelectedIndex())) {
-            if (track) {
-                PlayQueueOverlays::ShowAddTrackOverlay(
-                    MessageQueue(), this->library, this->playback, track);
-                handled = true;
-            }
-        }
-        else {
-            PlayQueueOverlays::ShowAlbumDividerOverlay(
-                MessageQueue(), this->playback, this->library, track);
-        }
+        this->ShowContextMenu();
+        handled = true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateJumpToPlaying, key)) {
         this->ScrollToPlaying();
