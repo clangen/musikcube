@@ -236,7 +236,7 @@ class SchemaAdapter: public ScrollAdapterBase {
 
             virtual bool IsValid(const std::string& input) const override {
                 try {
-                    int result = std::stoi(input);
+                    double result = std::stod(input);
                     if (bounded(minimum, maximum) && (result < minimum || result > maximum)) {
                         return false;
                     }
