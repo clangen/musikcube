@@ -37,6 +37,7 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IDevice.h>
 #include <core/sdk/IPreferences.h>
+#include <core/sdk/ISchema.h>
 
 #include <cassert>
 #include <iostream>
@@ -44,23 +45,33 @@
 #include <thread>
 #include <vector>
 
-#define MAX_BUFFERS_PER_OUTPUT 16
 #define READ_CURSOR_INITIAL_OFFSET 128
-#define DEVICE_ID "device_id"
+#define BYTES_PER_SAMPLE sizeof(float)
 
-#define BUFFER_SIZE_BYTES_PER_CHANNEL \
-    (2048 * sizeof(float) * MAX_BUFFERS_PER_OUTPUT)
+#define DEFAULT_SAMPLES_PER_CHANNEL 2048
+#define DEFAULT_BUFFER_COUNT 16
+
+#define PREF_DEVICE_ID "device_id"
+#define PREF_BUFFER_COUNT "buffer_count"
+#define PREF_SAMPLES_PER_CHANNEL "buffer_samples_per_channel"
 
 musik::core::sdk::IPreferences* prefs = nullptr;
 
 extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     ::prefs = prefs;
-    prefs->GetString(DEVICE_ID, nullptr, 0, "");
+    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
     prefs->Save();
 }
 
+extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema() {
+    auto schema = new TSchema<>();
+    schema->AddInt(PREF_BUFFER_COUNT, DEFAULT_BUFFER_COUNT, 8, 64);
+    schema->AddInt(PREF_SAMPLES_PER_CHANNEL, DEFAULT_SAMPLES_PER_CHANNEL, 512, 8192);
+    return schema;
+}
+
 static std::string getDeviceId() {
-    return getPreferenceString<std::string>(prefs, DEVICE_ID, "");
+    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
 }
 
 class DxDevice : public musik::core::sdk::IDevice {
@@ -422,7 +433,7 @@ IDeviceList* DirectSoundOut::GetDeviceList() {
 }
 
 bool DirectSoundOut::SetDefaultDevice(const char* deviceId) {
-    return setDefaultDevice<IPreferences, DxDevice, IOutput>(prefs, this, DEVICE_ID, deviceId);
+    return setDefaultDevice<IPreferences, DxDevice, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
 }
 
 IDevice* DirectSoundOut::GetDefaultDevice() {
@@ -596,8 +607,16 @@ bool DirectSoundOut::Configure(IBuffer *buffer) {
         wf.dwChannelMask = speakerConfig;
         wf.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
 
+        int samplePerChannel = ::prefs->GetInt(
+            PREF_SAMPLES_PER_CHANNEL, DEFAULT_SAMPLES_PER_CHANNEL);
+
+        int bufferCount = ::prefs->GetInt(
+            PREF_BUFFER_COUNT, DEFAULT_BUFFER_COUNT);
+
+        DWORD bytePerChannel = samplePerChannel * (sizeof(float)) * bufferCount;
+
         bufferInfo.lpwfxFormat = (WAVEFORMATEX*) &wf;
-        bufferInfo.dwBufferBytes = BUFFER_SIZE_BYTES_PER_CHANNEL * buffer->Channels();
+        bufferInfo.dwBufferBytes = bytePerChannel * buffer->Channels();
 
         this->bufferSize = bufferInfo.dwBufferBytes;
 

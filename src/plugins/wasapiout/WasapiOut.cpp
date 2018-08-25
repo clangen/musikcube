@@ -46,6 +46,7 @@
 
 #define PREF_DEVICE_ID "device_id"
 #define PREF_ENDPOINT_ROUTING "enable_audio_endpoint_routing"
+#define PREF_BUFFER_LENGTH_SECONDS "buffer_length_seconds"
 
 /* NOTE! device init and deinit logic was stolen and modified from
 QMMP's WASAPI output plugin! http://qmmp.ylsoftware.com/ */
@@ -111,6 +112,7 @@ extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferen
 extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
     schema->AddBool(PREF_ENDPOINT_ROUTING, false);
+    schema->AddDouble(PREF_BUFFER_LENGTH_SECONDS, 1.0, 2, 0.25, 5.0);
     return schema;
 }
 
@@ -608,7 +610,8 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         streamFlags |= AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM;
     }
 
-    REFERENCE_TIME hundredNanos = 1000 * 1000 * 10; /* 1 second in nanos */
+    double bufferLengthSeconds = ::prefs->GetDouble(PREF_BUFFER_LENGTH_SECONDS, 1.0);
+    REFERENCE_TIME hundredNanos = REFERENCE_TIME (1000.0 * 1000.0 * 10.0 * bufferLengthSeconds);
     if ((result = this->audioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, streamFlags, hundredNanos, 0, (WAVEFORMATEX *) &wf, NULL)) != S_OK) {
         return false;
     }
