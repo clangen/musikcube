@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong
     }
 
     open fun onDestroy() {
-        handler.postDelayed(cleanup, cleanupDelayMs)
+        handler.postDelayed(cleanup, CLEANUP_DELAY_MS)
     }
 
     open fun onCleanup() {
@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong
             .subscribeOn(AndroidSchedulers.mainThread())
     }
 
-    val context: Context = Application.instance!!
+    val context: Context = Application.instance
 
     internal val cleanup = Runnable {
         idToInstance.remove(id)
@@ -67,7 +67,7 @@ import java.util.concurrent.atomic.AtomicLong
     }
 
     companion object {
-        private val cleanupDelayMs = 3000L
+        private const val CLEANUP_DELAY_MS = 3000L
         private val nextId = AtomicLong(System.currentTimeMillis() + 0)
         private val handler by lazy { Handler(Looper.getMainLooper()) }
         private val idToInstance = mutableMapOf<Long, ViewModel<*>>()
