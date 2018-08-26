@@ -1,3 +1,30 @@
+0.51.0
+
+musikcube:
+* added a new "gruvbox" theme (https://github.com/morhetz/gruvbox)
+* added the ability to graphically configure plugin properties via new SDK
+  `ISchema` interface.
+* added the ability to right click entries to display their context menu
+* updated the Russian translation (adem4ik)
+* fixed a bug where shutdown may be delayed while the indexer is running
+* fixed a couple strings that were not properly localized
+* fixed a bug that could cause overlays to not always properly disappear
+* fixed a bug in the win32 milkdrop distribution where the preferred default
+  font wasn't getting included
+
+musikdroid:
+* updated to compile against Android Studio 3.1.4
+
+server:
+* fixed a crash while querying play queue tracks that have been removed from
+  the library.
+
+sdk:
+* added the ability for plugins to provide configuration schemas that can be
+  configured by the user in the gui. see `sdk/ISchema.h`
+
+--------------------------------------------------------------------------------
+
 0.50.0
 
 musikcube:
