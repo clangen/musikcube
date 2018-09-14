@@ -124,11 +124,11 @@ static class PlaybackRemote : public IPlaybackRemote {
 
     private:
         void ThreadProc() {
-            if (context.prefs->GetBool(prefs::http_server_enabled.c_str(), true)) {
+            if (context.prefs->GetBool(prefs::http_server_enabled.c_str())) {
                 httpServer.Start();
             }
 
-            if (context.prefs->GetBool(prefs::websocket_server_enabled.c_str(), true)) {
+            if (context.prefs->GetBool(prefs::websocket_server_enabled.c_str())) {
                 webSocketServer.Start();
             }
 
@@ -188,10 +188,10 @@ extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs)
     context.prefs = prefs;
 
     if (prefs) {
-        prefs->GetBool(prefs::websocket_server_enabled.c_str(), true);
+        prefs->GetBool(prefs::websocket_server_enabled.c_str(), false);
         prefs->GetInt(prefs::websocket_server_port.c_str(), defaults::websocket_server_port);
         prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port);
-        prefs->GetBool(prefs::http_server_enabled.c_str(), true);
+        prefs->GetBool(prefs::http_server_enabled.c_str(), false);
         prefs->GetString(key::password.c_str(), nullptr, 0, defaults::password.c_str());
         prefs->GetInt(prefs::transcoder_cache_count.c_str(), defaults::transcoder_cache_count);
         prefs->GetBool(prefs::transcoder_synchronous.c_str(), defaults::transcoder_synchronous);
