@@ -83,7 +83,12 @@ namespace cursespp {
                 Basic
             };
 
-            static void Init(Mode mode = Mode::Basic);
+            enum BgType {
+                Theme,
+                Inherit,
+            };
+
+            static void Init(Mode mode = Mode::Basic, BgType bgType = BgType::Theme);
             static void SetTheme(const std::string& fn);
     };
 }

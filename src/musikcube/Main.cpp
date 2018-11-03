@@ -170,7 +170,13 @@ int main(int argc, char* argv[]) {
         }
 #endif
 
+        Colors::BgType bgType = Colors::Theme;
+        if (prefs->GetBool(keys::InheritBackgroundColor.c_str(), false)) {
+            bgType = Colors::Inherit;
+        }
+
         app.SetColorMode(colorMode);
+        app.SetColorBackgroundType(bgType);
 
         /* theme */
         std::string colorTheme = prefs->GetString(keys::ColorTheme);

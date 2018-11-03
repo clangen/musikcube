@@ -378,8 +378,8 @@ struct Theme {
 
     /* initializes all of the color pairs from the specified colors, then applies them
     to the current session! */
-    void Apply(Colors::Mode mode) {
-        int backgroundId = background.Id(mode, -1);
+    void Apply(Colors::Mode mode, Colors::BgType bgType) {
+        int backgroundId = (bgType == Colors::BgType::Theme) ? background.Id(mode, -1) : -1;
         int foregroundId = foreground.Id(mode, -1);
 
         /* main */
@@ -545,28 +545,30 @@ Colors::Colors() {
 
 static Theme theme;
 static Colors::Mode colorMode = Colors::Basic;
+static Colors::BgType bgType = Colors::Theme;
 
-void Colors::Init(Colors::Mode mode) {
+void Colors::Init(Colors::Mode mode, Colors::BgType bgType) {
     start_color();
     use_default_colors();
 
-    colorMode = Colors::Basic;
+    ::colorMode = Colors::Basic;
+    ::bgType = bgType;
 
     if (mode != Colors::Basic && COLORS > 8) {
         if (mode == Colors::RGB && canChangeColors()) {
-            colorMode = Colors::RGB;
+            ::colorMode = Colors::RGB;
         }
         else {
-            colorMode = Colors::Palette;
+            ::colorMode = Colors::Palette;
         }
     }
 
     theme.Reset();
-    theme.Apply(colorMode);
+    theme.Apply(::colorMode, ::bgType);
 }
 
 void Colors::SetTheme(const std::string& fn) {
     theme.Reset();
     theme.LoadFromFile(fn);
-    theme.Apply(colorMode);
+    theme.Apply(::colorMode, ::bgType);
 }

@@ -58,6 +58,7 @@ namespace cursespp {
             void SetKeyHook(KeyHandler hook);
             void SetResizeHandler(ResizeHandler handler);
             void SetColorMode(Colors::Mode mode);
+            void SetColorBackgroundType(Colors::BgType bgType);
             void SetColorTheme(const std::string& fn);
             void SetMinimumSize(int width, int height);
             void SetMouseEnabled(bool enabled);
@@ -121,7 +122,8 @@ namespace cursespp {
             WindowState state;
             KeyHandler keyHandler, keyHook;
             ResizeHandler resizeHandler;
-            Colors::Mode colorMode;
+            Colors::Mode colorMode { Colors::Palette };
+            Colors::BgType bgType { Colors::Theme };
             std::string colorTheme;
             int minWidth, minHeight;
             bool mouseEnabled;

@@ -41,6 +41,7 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::UsePaletteColors = "UsePaletteColors";
     const std::string keys::FirstRunSettingsDisplayed = "FirstRunSettingsDisplayed";
     const std::string keys::ColorTheme = "ColorTheme";
+    const std::string keys::InheritBackgroundColor = "InheritBackgroundColor";
     const std::string keys::MinimizeToTray = "MinimizeToTray";
     const std::string keys::StartMinimized = "StartMinimized";
     const std::string keys::AutoUpdateCheck = "AutoUpdateCheck";
