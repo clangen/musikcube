@@ -16,13 +16,12 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 28
 
     defaultConfig {
         applicationId "io.casey.musikcube.remote"
         minSdkVersion 21
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 32
         versionName "0.30.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

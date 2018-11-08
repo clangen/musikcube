@@ -373,7 +373,7 @@ int PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
 
 double PulseOut::Latency() {
     Lock lock(this->stateMutex);
-    
+
     if (!this->audioConnection) {
         return 0.0;
     }

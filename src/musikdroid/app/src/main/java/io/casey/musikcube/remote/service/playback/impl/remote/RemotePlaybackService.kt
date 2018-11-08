@@ -438,7 +438,7 @@ class RemotePlaybackService : IPlaybackService {
     }
 
     companion object {
-        private val NANOSECONDS_PER_SECOND = 1000000000.0
-        private val SYNC_TIME_INTERVAL_MS = 5000L
+        private const val NANOSECONDS_PER_SECOND = 1000000000.0
+        private const val SYNC_TIME_INTERVAL_MS = 5000L
     }
 }
