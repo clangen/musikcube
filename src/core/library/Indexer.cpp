@@ -375,7 +375,6 @@ void Indexer::ReadMetadataFromFile(
 
                     if ((*it)->Read(file.string().c_str(), store)) {
                         saveToDb = true;
-                        break;
                     }
                 }
             }

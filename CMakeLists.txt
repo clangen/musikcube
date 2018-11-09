@@ -25,7 +25,7 @@ ExternalProject_Add(taglib
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-unused-result -Wno-deprecated-declarations")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -no-pie")
 # enable for additional memory checking with fsanitize
 # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -fsanitize=address,undefined")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
@@ -98,6 +98,7 @@ add_subdirectory(src/plugins/nullout)
 add_subdirectory(src/plugins/server)
 add_subdirectory(src/plugins/httpdatastream)
 add_subdirectory(src/plugins/stockencoders)
+add_subdirectory(src/plugins/externalart)
 
 if (${FFMPEG_DECODER} MATCHES "true")
   add_subdirectory(src/plugins/ffmpegdecoder)
@@ -112,7 +113,7 @@ endif()
 
 add_dependencies(taglibreader taglib)
 
-add_dependencies(musikcube musikcore taglibreader nullout server httpdatastream stockencoders)
+add_dependencies(musikcube musikcore taglibreader nullout server httpdatastream stockencoders externalart)
 add_dependencies(musikcubed musikcube)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
