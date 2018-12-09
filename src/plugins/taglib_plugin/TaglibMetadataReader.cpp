@@ -549,21 +549,25 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
             }
         }
 
-        /* thumbnail */
+        /* thumbnail -- should come last, otherwise ::ContainsThumbnail() may
+        not be reliable; the thumbnails are computed and stored at the album level
+        so the album and album artist names need to have already been parsed. */
 
-        TagLib::ID3v2::FrameList pictures = allTags["APIC"];
-        if(!pictures.isEmpty()) {
-            /* there can be multiple pictures, apparently. let's just use
-            the first one. */
+        if (!track->ContainsThumbnail()) {
+            TagLib::ID3v2::FrameList pictures = allTags["APIC"];
+            if (!pictures.isEmpty()) {
+                /* there can be multiple pictures, apparently. let's just use
+                the first one. */
 
-            TagLib::ID3v2::AttachedPictureFrame *picture =
-                static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
+                TagLib::ID3v2::AttachedPictureFrame *picture =
+                    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
 
-            TagLib::ByteVector pictureData = picture->picture();
-            long long size = pictureData.size();
+                TagLib::ByteVector pictureData = picture->picture();
+                long long size = pictureData.size();
 
-            if(size > 32) {    /* noticed that some id3tags have like a 4-8 byte size with no thumbnail */
-                track->SetThumbnail(pictureData.data(), size);
+                if(size > 32) {    /* noticed that some id3tags have like a 4-8 byte size with no thumbnail */
+                    track->SetThumbnail(pictureData.data(), size);
+                }
             }
         }
 

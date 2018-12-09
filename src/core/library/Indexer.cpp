@@ -220,6 +220,8 @@ void Indexer::RemovePath(const std::string& path) {
 }
 
 void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
+    IndexerTrack::OnIndexerStarted(this->dbConnection);
+
     this->ProcessAddRemoveQueue();
 
     this->tracksScanned = 0;
@@ -348,7 +350,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
     /* run analyzers. */
     this->RunAnalyzers();
 
-    IndexerTrack::ResetIdCache();
+    IndexerTrack::OnIndexerFinished(this->dbConnection);
 }
 
 void Indexer::ReadMetadataFromFile(

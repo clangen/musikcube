@@ -60,14 +60,44 @@ using namespace musik::core::sdk;
 
 std::mutex IndexerTrack::sharedWriteMutex;
 static std::unordered_map<std::string, int64_t> metadataIdCache;
+static std::unordered_map<int, int64_t> thumbnailIdCache; /* albumId:thumbnailId */
 
-void IndexerTrack::ResetIdCache() {
-    metadataIdCache.clear();
+/* http://stackoverflow.com/a/2351171 */
+static size_t hash32(const char* str) {
+    unsigned int h;
+    unsigned char *p;
+    h = 0;
+    for (p = (unsigned char*)str; *p != '\0'; p++) {
+        h = 37 * h + *p;
+    }
+    h += (h >> 5);
+    return h;
 }
 
-IndexerTrack::IndexerTrack(int64_t id)
+void IndexerTrack::OnIndexerStarted(db::Connection &dbConnection) {
+    /* unused, for now */
+}
+
+void IndexerTrack::OnIndexerFinished(db::Connection &dbConnection) {
+    metadataIdCache.clear();
+
+    /* if we got some new album art, make sure all of the tracks for the
+    album get the updated ID! */
+    std::string query = "UPDATE tracks SET thumbnail_id=? WHERE album_id=?)";
+    db::ScopedTransaction transaction(dbConnection);
+    for (auto it : thumbnailIdCache) {
+        db::Statement stmt(query.c_str(), dbConnection);
+        stmt.BindInt64(0, it.second);
+        stmt.BindInt64(1, it.first);
+        stmt.Step();
+    }
+
+    thumbnailIdCache.clear();
+}
+
+IndexerTrack::IndexerTrack(int64_t trackId)
 : internalMetadata(new IndexerTrack::InternalMetadata())
-, id(id)
+, trackId(trackId)
 {
 }
 
@@ -150,6 +180,26 @@ void IndexerTrack::SetThumbnail(const char *data, long size) {
     memcpy(this->internalMetadata->thumbnailData, data, size);
 }
 
+int64_t IndexerTrack::GetThumbnailId() {
+    std::string key = this->GetString("album") + "-" + this->GetString("album_artist");
+    size_t id = hash32(key.c_str());
+    auto it = thumbnailIdCache.find(id);
+    if (it != thumbnailIdCache.end()) {
+        return it->second;
+    }
+    return 0;
+}
+
+bool IndexerTrack::ContainsThumbnail() {
+    if (this->internalMetadata->thumbnailData &&
+        this->internalMetadata->thumbnailSize)
+    {
+        return true;
+    }
+    std::unique_lock<std::mutex> lock(sharedWriteMutex);
+    return this->GetThumbnailId() != 0;
+}
+
 void IndexerTrack::SetReplayGain(const ReplayGain& replayGain) {
     this->internalMetadata->replayGain.reset();
     this->internalMetadata->replayGain = std::make_shared<ReplayGain>();
@@ -187,7 +237,7 @@ Track::MetadataIteratorRange IndexerTrack::GetAllValues() {
 }
 
 int64_t IndexerTrack::GetId() {
-    return this->id;
+    return this->trackId;
 }
 
 bool IndexerTrack::NeedsToBeIndexed(
@@ -219,7 +269,7 @@ bool IndexerTrack::NeedsToBeIndexed(
         bool fileDifferent = true;
 
         if (stmt.Step() == db::Row) {
-            this->id = stmt.ColumnInt64(0);
+            this->trackId = stmt.ColumnInt64(0);
             int dbFileSize = stmt.ColumnInt32(2);
             int dbFileTime = stmt.ColumnInt32(3);
 
@@ -353,7 +403,7 @@ void IndexerTrack::SaveReplayGain(db::Connection& dbConnection)
     if (replayGain) {
         {
             db::Statement removeOld("DELETE FROM replay_gain WHERE track_id=?", dbConnection);
-            removeOld.BindInt64(0, this->id);
+            removeOld.BindInt64(0, this->trackId);
             removeOld.Step();
         }
 
@@ -367,7 +417,7 @@ void IndexerTrack::SaveReplayGain(db::Connection& dbConnection)
                     "VALUES (?, ?, ?, ?, ?);",
                     dbConnection);
 
-                insert.BindInt64(0, this->id);
+                insert.BindInt64(0, this->trackId);
                 insert.BindFloat(1, replayGain->albumGain);
                 insert.BindFloat(2, replayGain->albumPeak);
                 insert.BindFloat(3, replayGain->trackGain);
@@ -526,24 +576,12 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 
             if (process) {
                 insertTrackMeta.Reset();
-                insertTrackMeta.BindInt64(0, this->id);
+                insertTrackMeta.BindInt64(0, this->trackId);
                 insertTrackMeta.BindInt64(1, valueId);
                 insertTrackMeta.Step();
             }
         }
     }
-}
-
-/* http://stackoverflow.com/a/2351171 */
-static size_t hash32(const char* str) {
-    unsigned int h;
-    unsigned char *p;
-    h = 0;
-    for (p = (unsigned char*)str; *p != '\0'; p++) {
-        h = 37 * h + *p;
-    }
-    h += (h >> 5);
-    return h;
 }
 
 static std::string createTrackExternalId(IndexerTrack& track) {
@@ -565,8 +603,10 @@ int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection, int64_t thumbnailI
     std::string value = album + "-" + this->GetString("album_artist");
 
     /* ideally we'd use std::hash<>, but on some platforms this returns a 64-bit
-    unsigned number, which cannot be easily used with sqlite3. */
-    size_t id = hash32(value.c_str());
+    unsigned number, which cannot be easily used with sqlite3. TODO: this seems
+    really strange, why don't we just cast to a signed int and be done with it?
+    something to do with negative values? i can't remember now. */
+    size_t albumId = hash32(value.c_str());
 
     std::string cacheKey = "album-" + value;
     if (metadataIdCache.find(cacheKey) != metadataIdCache.end()) {
@@ -575,11 +615,11 @@ int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection, int64_t thumbnailI
     else {
         std::string insertStatement = "INSERT INTO albums (id, name) VALUES (?, ?)";
         db::Statement insertValue(insertStatement.c_str(), dbConnection);
-        insertValue.BindInt64(0, id);
+        insertValue.BindInt64(0, albumId);
         insertValue.BindText(1, album);
 
         if (insertValue.Step() == db::Done) {
-            metadataIdCache[cacheKey] = id;
+            metadataIdCache[cacheKey] = albumId;
         }
     }
 
@@ -588,11 +628,13 @@ int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection, int64_t thumbnailI
             "UPDATE albums SET thumbnail_id=? WHERE id=?", dbConnection);
 
         updateStatement.BindInt64(0, thumbnailId);
-        updateStatement.BindInt64(1, id);
+        updateStatement.BindInt64(1, albumId);
         updateStatement.Step();
+
+        thumbnailIdCache[albumId] = thumbnailId;
     }
 
-    return id;
+    return albumId;
 }
 
 int64_t IndexerTrack::SaveSingleValueField(
@@ -726,7 +768,7 @@ void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename
             if (dirId != -1) {
                 db::Statement update("UPDATE tracks SET directory_id=? WHERE id=?", db);
                 update.BindInt64(0, dirId);
-                update.BindInt64(1, this->id);
+                update.BindInt64(1, this->trackId);
                 update.Step();
             }
         }
@@ -751,21 +793,27 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     /* remove existing relations -- we're going to update them with fresh data */
 
-    if (this->id != 0) {
-        removeRelation(dbConnection, "track_genres", this->id);
-        removeRelation(dbConnection, "track_artists", this->id);
-        removeRelation(dbConnection, "track_meta", this->id);
+    if (this->trackId != 0) {
+        removeRelation(dbConnection, "track_genres", this->trackId);
+        removeRelation(dbConnection, "track_artists", this->trackId);
+        removeRelation(dbConnection, "track_meta", this->trackId);
     }
 
     /* write generic info to the tracks table */
 
-    this->id = writeToTracksTable(dbConnection, *this);
+    this->trackId = writeToTracksTable(dbConnection, *this);
 
-    if (!this->id) {
+    if (!this->trackId) {
         return false;
     }
 
+    /* see if the metadata reader plugin extracted a thumbnail. if not, we call
+    this->GetThumbnailId() to see if one already exists for the album */
     int64_t thumbnailId = this->SaveThumbnail(dbConnection, libraryDirectory);
+    if (thumbnailId == 0) {
+        thumbnailId = this->GetThumbnailId();
+    }
+
     int64_t albumId = this->SaveAlbum(dbConnection, thumbnailId);
     int64_t genreId = this->SaveGenre(dbConnection);
     int64_t artistId = this->SaveArtist(dbConnection);
@@ -798,7 +846,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
         stmt.BindInt64(3, albumArtistId);
         stmt.BindInt64(4, thumbnailId);
         stmt.BindInt64(5, sourceId);
-        stmt.BindInt64(6, this->id);
+        stmt.BindInt64(6, this->trackId);
         stmt.Step();
     }
 
@@ -861,7 +909,7 @@ int64_t IndexerTrack::SaveNormalizedFieldValue(
             % relationJunctionTableName % relationJunctionTableColumn);
 
         db::Statement stmt(query.c_str(), dbConnection);
-        stmt.BindInt64(0, this->id);
+        stmt.BindInt64(0, this->trackId);
         stmt.BindInt64(1, fieldId);
         stmt.Step();
     }
@@ -870,7 +918,7 @@ int64_t IndexerTrack::SaveNormalizedFieldValue(
 }
 
 TrackPtr IndexerTrack::Copy() {
-    return TrackPtr(new IndexerTrack(this->id));
+    return TrackPtr(new IndexerTrack(this->trackId));
 }
 
 IndexerTrack::InternalMetadata::InternalMetadata()
