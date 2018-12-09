@@ -25,7 +25,7 @@ import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
 
-val EXTRA_ACTIVITY_TITLE = "extra_title"
+const val EXTRA_ACTIVITY_TITLE = "extra_title"
 
 fun AppCompatActivity.setupDefaultRecyclerView(
     recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
@@ -221,7 +221,7 @@ fun fallback(input: String?, fallback: String): String =
     if (input.isNullOrEmpty()) fallback else input!!
 
 fun fallback(input: String?, fallback: Int): String =
-    if (input.isNullOrEmpty()) Application.Companion.instance.getString(fallback) else input!!
+    if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input!!
 
 fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
 

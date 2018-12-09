@@ -29,30 +29,29 @@ class TrackListAdapter(private val tracks: DefaultSlidingWindow,
         val view = inflater.inflate(R.layout.simple_list_item, parent, false)
         view.tag = Tag(null, null)
 
-        view.setOnClickListener({ v ->
+        view.setOnClickListener { v ->
             val tag = v.tag as Tag
             letMany(listener, tag.track, tag.position) { listener, track, pos ->
                 listener.onItemClick(v, track, pos)
             }
-        })
+        }
 
-        view.findViewById<View>(R.id.action).setOnClickListener({ v ->
+        view.findViewById<View>(R.id.action).setOnClickListener { v ->
             val tag = v.tag as Tag
             letMany(listener, tag.track, tag.position) { listener, track, position ->
                 listener.onActionItemClick(v, track, position)
             }
-        })
+        }
 
         return ViewHolder(view, playback)
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) =
         holder.bind(tracks.getTrack(position), position)
-    }
 
     override fun getItemCount(): Int = tracks.count
 
-    class ViewHolder internal constructor(private val view: View,
+    class ViewHolder internal constructor(view: View,
         private val playback: PlaybackMixin) : RecyclerView.ViewHolder(view)
     {
         private val title: TextView = view.findViewById(R.id.title)

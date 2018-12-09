@@ -119,7 +119,7 @@ class SystemService : Service() {
 
         if (wakeLock == null) {
             wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService")
+                PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService:")
 
             wakeLock?.let {
                 it.setReferenceCounted(false)
@@ -225,7 +225,7 @@ class SystemService : Service() {
                 albumArt.reset(track)
                 albumArt.request = originalRequest
                 albumArt.target = originalRequest.into(object : SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
-                    override fun onResourceReady(bitmap: Bitmap?, transition: Transition<in Bitmap>?) {
+                    override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
                         /* make sure the instance's current request is the same as this request. it's
                         possible we had another download request come in before this one finished */
                         if (albumArt.request == originalRequest) {
@@ -290,7 +290,7 @@ class SystemService : Service() {
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
-            .setContentText(artist + " - " + album)
+            .setContentText("$artist - $album")
             .setContentIntent(contentIntent)
             .setUsesChronometer(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -354,7 +354,7 @@ class SystemService : Service() {
         return NotifAction.Builder(icon, title, pendingIntent).build()
     }
 
-    private fun handlePlaybackAction(action: String): Boolean {
+    private fun handlePlaybackAction(action: String?): Boolean {
         if (this.playback != null && Strings.notEmpty(action)) {
             when (action) {
                 ACTION_NOTIFICATION_NEXT -> {
@@ -389,14 +389,10 @@ class SystemService : Service() {
 
     private val headsetHookDebouncer = object : Debouncer<Void>(HEADSET_HOOK_DEBOUNCE_MS) {
         override fun onDebounced(last: Void?) {
-            if (headsetHookPressCount == 1) {
-                playback?.pauseOrResume()
-            }
-            else if (headsetHookPressCount == 2) {
-                playback?.next()
-            }
-            else if (headsetHookPressCount > 2) {
-                playback?.prev()
+            when (headsetHookPressCount) {
+                1 -> playback?.pauseOrResume()
+                2 -> playback?.next()
+                3 -> playback?.prev()
             }
             headsetHookPressCount = 0
         }
@@ -539,15 +535,15 @@ class SystemService : Service() {
     }
 
     companion object {
-        private val TAG = "SystemService"
-        private val NOTIFICATION_ID = 0xdeadbeef.toInt()
-        private val NOTIFICATION_CHANNEL = "musikdroid"
-        private val HEADSET_HOOK_DEBOUNCE_MS = 500L
-        private val ACTION_NOTIFICATION_PLAY = "io.casey.musikcube.remote.NOTIFICATION_PLAY"
-        private val ACTION_NOTIFICATION_PAUSE = "io.casey.musikcube.remote.NOTIFICATION_PAUSE"
-        private val ACTION_NOTIFICATION_NEXT = "io.casey.musikcube.remote.NOTIFICATION_NEXT"
-        private val ACTION_NOTIFICATION_PREV = "io.casey.musikcube.remote.NOTIFICATION_PREV"
-        val ACTION_NOTIFICATION_STOP = "io.casey.musikcube.remote.PAUSE_SHUT_DOWN"
+        private const val TAG = "SystemService"
+        private const val NOTIFICATION_ID = 0xdeadbeef.toInt()
+        private const val NOTIFICATION_CHANNEL = "musikdroid"
+        private const val HEADSET_HOOK_DEBOUNCE_MS = 500L
+        private const val ACTION_NOTIFICATION_PLAY = "io.casey.musikcube.remote.NOTIFICATION_PLAY"
+        private const val ACTION_NOTIFICATION_PAUSE = "io.casey.musikcube.remote.NOTIFICATION_PAUSE"
+        private const val ACTION_NOTIFICATION_NEXT = "io.casey.musikcube.remote.NOTIFICATION_NEXT"
+        private const val ACTION_NOTIFICATION_PREV = "io.casey.musikcube.remote.NOTIFICATION_PREV"
+        const val ACTION_NOTIFICATION_STOP = "io.casey.musikcube.remote.PAUSE_SHUT_DOWN"
         var ACTION_WAKE_UP = "io.casey.musikcube.remote.WAKE_UP"
         var ACTION_SHUT_DOWN = "io.casey.musikcube.remote.SHUT_DOWN"
         var ACTION_SLEEP = "io.casey.musikcube.remote.SLEEP"
@@ -555,7 +551,7 @@ class SystemService : Service() {
 
         private val BITMAP_OPTIONS = RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL)
 
-        private val MEDIA_SESSION_ACTIONS =
+        private const val MEDIA_SESSION_ACTIONS =
             PlaybackStateCompat.ACTION_PLAY_PAUSE or
             PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
             PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
