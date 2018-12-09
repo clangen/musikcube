@@ -73,6 +73,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         setupDefaultRecyclerView(recyclerView, adapter)
 
         emptyView = findViewById(R.id.empty_list_view)
+
         emptyView.let {
             it.capability = if (isOfflineTracks) Capability.OfflineOk else Capability.OnlineOnly
             it.emptyMessage = emptyMessage
@@ -82,9 +83,8 @@ class TrackListActivity : BaseActivity(), Filterable {
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
         transport = addTransportFragment(object: TransportFragment.OnModelChangedListener {
-            override fun onChanged(fragment: TransportFragment) {
+            override fun onChanged(fragment: TransportFragment) =
                 adapter.notifyDataSetChanged()
-            }
         })!!
     }
 
@@ -156,7 +156,7 @@ class TrackListActivity : BaseActivity(), Filterable {
 
         override fun onActionItemClick(view: View, track: ITrack, position: Int) {
             val mixin = mixin(ItemContextMenuMixin::class.java)!!
-            if (categoryType == Messages.Category.Companion.PLAYLISTS) {
+            if (categoryType == Messages.Category.PLAYLISTS) {
                 mixin.showForPlaylistTrack(track, position, categoryId, categoryValue, view)
             }
             else {
@@ -240,9 +240,8 @@ class TrackListActivity : BaseActivity(), Filterable {
     }
 
     private val slidingWindowListener = object : ITrackListSlidingWindow.OnMetadataLoadedListener {
-        override fun onReloaded(count: Int) {
+        override fun onReloaded(count: Int) =
             emptyView.update(data.provider.state, count)
-        }
 
         override fun onMetadataLoaded(offset: Int, count: Int) {}
     }
@@ -261,11 +260,11 @@ class TrackListActivity : BaseActivity(), Filterable {
         }
 
     companion object {
-        private val EXTRA_CATEGORY_TYPE = "extra_category_type"
-        private val EXTRA_SELECTED_ID = "extra_selected_id"
-        private val EXTRA_TITLE_ID = "extra_title_id"
-        private val EXTRA_CATEGORY_VALUE = "extra_category_value"
-        private val REQUEST_CODE_EDIT_PLAYLIST = 72
+        private const val EXTRA_CATEGORY_TYPE = "extra_category_type"
+        private const val EXTRA_SELECTED_ID = "extra_selected_id"
+        private const val EXTRA_TITLE_ID = "extra_title_id"
+        private const val EXTRA_CATEGORY_VALUE = "extra_category_value"
+        private const val REQUEST_CODE_EDIT_PLAYLIST = 72
 
         fun getStartIntent(context: Context, type: String, id: Long): Intent =
             getStartIntent(context, type, id, "")

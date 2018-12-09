@@ -110,7 +110,7 @@ class EditPlaylistActivity: BaseActivity() {
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,
             ItemTouchHelper.LEFT)
     {
-        override fun onMove(recyclerView: RecyclerView?, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+        override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
             val from = viewHolder.adapterPosition
             val to = target.adapterPosition
             viewModel.move(from, to)

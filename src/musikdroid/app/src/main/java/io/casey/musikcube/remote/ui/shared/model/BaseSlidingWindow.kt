@@ -56,7 +56,7 @@ abstract class BaseSlidingWindow(
     protected abstract fun getPageAround(index: Int)
 
     protected fun notifyAdapterChanged() =
-        recyclerView.adapter.notifyDataSetChanged()
+        recyclerView.adapter?.notifyDataSetChanged()
 
     protected fun notifyMetadataLoaded(offset: Int, count: Int) =
         loadedListener?.onMetadataLoaded(offset, count)
@@ -65,7 +65,7 @@ abstract class BaseSlidingWindow(
         scrollState != RecyclerView.SCROLL_STATE_IDLE || fastScrollerActive
 
     private val recyclerViewScrollListener = object : RecyclerView.OnScrollListener() {
-        override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {
+        override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
             scrollState = newState
             if (!scrolling()) {
                 notifyAdapterChanged()

@@ -17,11 +17,11 @@ import io.casey.musikcube.remote.ui.shared.model.albumart.intercept as intercept
 
 @GlideModule
 class GlideModule : AppGlideModule() {
-    override fun registerComponents(context: Context?, glide: Glide?, registry: Registry?) {
-        val prefs: SharedPreferences = context!!.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+   override fun registerComponents(context: Context, glide: Glide, registry: Registry) {
+        val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
 
         /* intercept requests made against our server, and inject the auth token */
-        val client = OkHttpClient.Builder().addInterceptor({ chain ->
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
             var req = chain.request()
             val serverHost = prefs.getString(Prefs.Key.ADDRESS, "")
             val requestHost = req.url().host()
@@ -35,9 +35,9 @@ class GlideModule : AppGlideModule() {
             }
 
             if (req != null) chain.proceed(req) else error(chain)
-        }).build()
+        }.build()
 
-        registry?.replace(GlideUrl::class.java, InputStream::class.java, OkHttpUrlLoader.Factory(client))
+        registry.replace(GlideUrl::class.java, InputStream::class.java, OkHttpUrlLoader.Factory(client))
     }
 
     private fun error(chain: Interceptor.Chain): Response {

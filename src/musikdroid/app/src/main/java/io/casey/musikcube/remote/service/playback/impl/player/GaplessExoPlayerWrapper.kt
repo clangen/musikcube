@@ -6,10 +6,7 @@ import android.net.Uri
 import com.danikula.videocache.CacheListener
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
-import com.google.android.exoplayer2.source.DynamicConcatenatingMediaSource
-import com.google.android.exoplayer2.source.ExtractorMediaSource
-import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.TrackGroupArray
+import com.google.android.exoplayer2.source.*
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
@@ -128,7 +125,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             Preconditions.throwIfNotOnMainThread()
 
             this.lastPosition = -1
-            if (gaplessPlayer?.playbackState != ExoPlayer.STATE_IDLE) {
+            if (gaplessPlayer?.playbackState != Player.STATE_IDLE) {
                 if (gaplessPlayer?.isCurrentWindowSeekable == true) {
                     var offset = millis.toLong()
                     val isInitialSeek = initialOffsetMs > 0 && (millis == initialOffsetMs)
@@ -231,10 +228,10 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
             Preconditions.throwIfNotOnMainThread()
 
-            if (playbackState == ExoPlayer.STATE_BUFFERING) {
+            if (playbackState == Player.STATE_BUFFERING) {
                 state = State.Buffering
             }
-            else if (playbackState == ExoPlayer.STATE_READY) {
+            else if (playbackState == Player.STATE_READY) {
                 if (dead()) {
                     dispose()
                 }
@@ -260,7 +257,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
                     }
                 }
             }
-            else if (playbackState == ExoPlayer.STATE_ENDED) {
+            else if (playbackState == Player.STATE_ENDED) {
                 state = State.Finished
                 dispose()
             }
@@ -304,7 +301,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         private val context: Context by lazy { Application.instance }
         private val trackSelector = DefaultTrackSelector(AdaptiveTrackSelection.Factory(DefaultBandwidthMeter()))
         private var all = mutableListOf<GaplessExoPlayerWrapper>()
-        private lateinit var dcms: DynamicConcatenatingMediaSource
+        private lateinit var dcms: ConcatenatingMediaSource
         private var gaplessPlayer: SimpleExoPlayer? = null
 
         private fun promoteNext() {
@@ -327,7 +324,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             gaplessPlayer?.stop()
             gaplessPlayer?.release()
             gaplessPlayer = ExoPlayerFactory.newSimpleInstance(context, trackSelector)
-            dcms = DynamicConcatenatingMediaSource()
+            dcms = ConcatenatingMediaSource()
         }
 
         private fun removePending() {
