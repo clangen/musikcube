@@ -47,7 +47,7 @@ android {
 }
 
 repositories {
-    flatDir { dirs 'libs' }
+    flatDir { dirs 'libs', '../../3rdparty/bin/android/codecs' }
     maven { url "https://jitpack.io" }
     maven { url 'https://maven.google.com' }
     mavenCentral()
