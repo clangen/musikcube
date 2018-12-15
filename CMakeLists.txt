@@ -78,9 +78,8 @@ endif()
 # "/opt/local" is the default installation location for MacPorts
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   link_directories ("/usr/local/lib")
+  link_directories ("/usr/local/opt/openssl/lib")
   include_directories("/usr/local/include")
-  link_directories ("/opt/local/lib")
-  include_directories("/opt/local/include")
   include_directories("/usr/local/opt/openssl/include")
 endif ()
 
