@@ -1,4 +1,4 @@
-/* $OpenBSD: bio.h,v 1.29 2015/06/20 01:17:27 doug Exp $ */
+/* $OpenBSD: bio.h,v 1.40 2018/03/17 15:05:55 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -102,6 +102,12 @@ extern "C" {
 #define BIO_TYPE_DESCRIPTOR	0x0100	/* socket, fd, connect or accept */
 #define BIO_TYPE_FILTER		0x0200
 #define BIO_TYPE_SOURCE_SINK	0x0400
+
+/*
+ * BIO_TYPE_START is the first user-allocated BIO type. No pre-defined type,
+ * flag bits aside, may exceed this value.
+ */
+#define BIO_TYPE_START 128
 
 /* BIO_FILENAME_READ|BIO_CLOSE to open or close on free.
  * BIO_set_fp(in,stdin,BIO_NOCLOSE); */
@@ -264,6 +270,7 @@ const char * BIO_method_name(const BIO *b);
 int BIO_method_type(const BIO *b);
 
 typedef void bio_info_cb(struct bio_st *, int, const char *, int, long, long);
+typedef int BIO_info_cb(BIO *, int, int);
 
 typedef struct bio_method_st {
 	int type;
@@ -327,6 +334,27 @@ typedef struct bio_f_buffer_ctx_struct {
 /* Prefix and suffix callback in ASN1 BIO */
 typedef int asn1_ps_func(BIO *b, unsigned char **pbuf, int *plen, void *parg);
 
+/* BIO_METHOD accessors */
+BIO_METHOD *BIO_meth_new(int type, const char *name);
+void BIO_meth_free(BIO_METHOD *biom);
+int (*BIO_meth_get_write(BIO_METHOD *biom))(BIO *, const char *, int);
+int BIO_meth_set_write(BIO_METHOD *biom,
+    int (*write)(BIO *, const char *, int));
+int (*BIO_meth_get_read(BIO_METHOD *biom))(BIO *, char *, int);
+int BIO_meth_set_read(BIO_METHOD *biom, int (*read)(BIO *, char *, int));
+int (*BIO_meth_get_puts(BIO_METHOD *biom))(BIO *, const char *);
+int BIO_meth_set_puts(BIO_METHOD *biom, int (*puts)(BIO *, const char *));
+int (*BIO_meth_get_gets(BIO_METHOD *biom))(BIO *, char *, int);
+int BIO_meth_set_gets(BIO_METHOD *biom, int (*gets)(BIO *, char *, int));
+long (*BIO_meth_get_ctrl(BIO_METHOD *biom))(BIO *, int, long, void *);
+int BIO_meth_set_ctrl(BIO_METHOD *biom, long (*ctrl)(BIO *, int, long, void *));
+int (*BIO_meth_get_create(BIO_METHOD *biom))(BIO *);
+int BIO_meth_set_create(BIO_METHOD *biom, int (*create)(BIO *));
+int (*BIO_meth_get_destroy(BIO_METHOD *biom))(BIO *);
+int BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy)(BIO *));
+long (*BIO_meth_get_callback_ctrl(BIO_METHOD *biom))(BIO *, int, BIO_info_cb *);
+int BIO_meth_set_callback_ctrl(BIO_METHOD *biom,
+    long (*callback_ctrl)(BIO *, int, BIO_info_cb *));
 
 /* connect BIO stuff */
 #define BIO_CONN_S_BEFORE		1
@@ -474,11 +502,11 @@ typedef int asn1_ps_func(BIO *b, unsigned char **pbuf, int *plen, void *parg);
 #define BIO_get_ssl(b,sslp)	BIO_ctrl(b,BIO_C_GET_SSL,0,(char *)sslp)
 #define BIO_set_ssl_mode(b,client)	BIO_ctrl(b,BIO_C_SSL_MODE,client,NULL)
 #define BIO_set_ssl_renegotiate_bytes(b,num) \
-	BIO_ctrl(b,BIO_C_SET_SSL_RENEGOTIATE_BYTES,num,NULL);
+	BIO_ctrl(b,BIO_C_SET_SSL_RENEGOTIATE_BYTES,num,NULL)
 #define BIO_get_num_renegotiates(b) \
-	BIO_ctrl(b,BIO_C_GET_SSL_NUM_RENEGOTIATES,0,NULL);
+	BIO_ctrl(b,BIO_C_GET_SSL_NUM_RENEGOTIATES,0,NULL)
 #define BIO_set_ssl_renegotiate_timeout(b,seconds) \
-	BIO_ctrl(b,BIO_C_SET_SSL_RENEGOTIATE_TIMEOUT,seconds,NULL);
+	BIO_ctrl(b,BIO_C_SET_SSL_RENEGOTIATE_TIMEOUT,seconds,NULL)
 
 /* defined in evp.h */
 /* #define BIO_set_md(b,md)	BIO_ctrl(b,BIO_C_SET_MD,1,(char *)md) */
@@ -568,6 +596,7 @@ int
 BIO_asn1_get_suffix(BIO *b, asn1_ps_func **psuffix,
 asn1_ps_func **psuffix_free);
 
+int BIO_get_new_index(void);
 BIO_METHOD *BIO_s_file(void );
 BIO *BIO_new_file(const char *filename, const char *mode);
 BIO *BIO_new_fp(FILE *stream, int close_flag);
@@ -575,6 +604,12 @@ BIO *BIO_new_fp(FILE *stream, int close_flag);
 BIO *	BIO_new(BIO_METHOD *type);
 int	BIO_set(BIO *a, BIO_METHOD *type);
 int	BIO_free(BIO *a);
+int	BIO_up_ref(BIO *bio);
+void 	*BIO_get_data(BIO *a);
+void 	BIO_set_data(BIO *a, void *ptr);
+void 	BIO_set_init(BIO *a, int init);
+int	BIO_get_shutdown(BIO *a);
+void	BIO_set_shutdown(BIO *a, int shut);
 void	BIO_vfree(BIO *a);
 int	BIO_read(BIO *b, void *data, int len)
 		__attribute__((__bounded__(__buffer__,2,3)));

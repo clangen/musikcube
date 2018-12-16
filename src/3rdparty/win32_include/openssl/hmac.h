@@ -1,4 +1,4 @@
-/* $OpenBSD: hmac.h,v 1.12 2014/06/21 13:39:46 jsing Exp $ */
+/* $OpenBSD: hmac.h,v 1.13 2018/02/17 14:53:59 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -83,8 +83,10 @@ typedef struct hmac_ctx_st {
 
 #define HMAC_size(e)	(EVP_MD_size((e)->md))
 
-
+HMAC_CTX *HMAC_CTX_new(void);
+void HMAC_CTX_free(HMAC_CTX *ctx);
 void HMAC_CTX_init(HMAC_CTX *ctx);
+int HMAC_CTX_reset(HMAC_CTX *ctx);
 void HMAC_CTX_cleanup(HMAC_CTX *ctx);
 
 #define HMAC_cleanup(ctx) HMAC_CTX_cleanup(ctx) /* deprecated */
@@ -100,6 +102,7 @@ unsigned char *HMAC(const EVP_MD *evp_md, const void *key, int key_len,
 int HMAC_CTX_copy(HMAC_CTX *dctx, HMAC_CTX *sctx);
 
 void HMAC_CTX_set_flags(HMAC_CTX *ctx, unsigned long flags);
+const EVP_MD *HMAC_CTX_get_md(const HMAC_CTX *ctx);
 
 #ifdef  __cplusplus
 }

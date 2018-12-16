@@ -2549,6 +2549,20 @@
 #define NID_dcObject		390
 #define OBJ_dcObject		OBJ_Enterprises,1466L,344L
 
+#define OBJ_extendedValidation		OBJ_Enterprises,311L,60L
+
+#define LN_jurisdictionLocalityName		"jurisdictionLocalityName"
+#define NID_jurisdictionLocalityName		956
+#define OBJ_jurisdictionLocalityName		OBJ_extendedValidation,2L,1L,1L
+
+#define LN_jurisdictionStateOrProvinceName		"jurisdictionStateOrProvinceName"
+#define NID_jurisdictionStateOrProvinceName		957
+#define OBJ_jurisdictionStateOrProvinceName		OBJ_extendedValidation,2L,1L,2L
+
+#define LN_jurisdictionCountryName		"jurisdictionCountryName"
+#define NID_jurisdictionCountryName		958
+#define OBJ_jurisdictionCountryName		OBJ_extendedValidation,2L,1L,3L
+
 #define SN_mime_mhs		"mime-mhs"
 #define LN_mime_mhs		"MIME MHS"
 #define NID_mime_mhs		504
@@ -4102,6 +4116,10 @@
 #define LN_chacha20		"chacha"
 #define NID_chacha20		937
 
+#define SN_chacha20_poly1305		"ChaCha20-Poly1305"
+#define LN_chacha20_poly1305		"chacha20-poly1305"
+#define NID_chacha20_poly1305		967
+
 #define SN_gost89_ecb		"gost89-ecb"
 #define NID_gost89_ecb		938
 
@@ -4177,4 +4195,36 @@
 #define SN_Ed448ph		"Ed448ph"
 #define NID_Ed448ph		955
 #define OBJ_Ed448ph		1L,3L,101L,115L
+
+#define SN_kx_rsa		"KxRSA"
+#define LN_kx_rsa		"kx-rsa"
+#define NID_kx_rsa		959
+
+#define SN_kx_ecdhe		"KxECDHE"
+#define LN_kx_ecdhe		"kx-ecdhe"
+#define NID_kx_ecdhe		960
+
+#define SN_kx_dhe		"KxDHE"
+#define LN_kx_dhe		"kx-dhe"
+#define NID_kx_dhe		961
+
+#define SN_kx_gost		"KxGOST"
+#define LN_kx_gost		"kx-gost"
+#define NID_kx_gost		962
+
+#define SN_auth_rsa		"AuthRSA"
+#define LN_auth_rsa		"auth-rsa"
+#define NID_auth_rsa		963
+
+#define SN_auth_ecdsa		"AuthECDSA"
+#define LN_auth_ecdsa		"auth-ecdsa"
+#define NID_auth_ecdsa		964
+
+#define SN_auth_gost01		"AuthGOST01"
+#define LN_auth_gost01		"auth-gost01"
+#define NID_auth_gost01		965
+
+#define SN_auth_null		"AuthNULL"
+#define LN_auth_null		"auth-null"
+#define NID_auth_null		966
 

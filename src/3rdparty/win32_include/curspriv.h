@@ -79,7 +79,6 @@ void    PDC_napms(int);
 int     PDC_pair_content(short, short *, short *);
 void    PDC_reset_prog_mode(void);
 void    PDC_reset_shell_mode(void);
-int     PDC_resize_screen(int, int);
 void    PDC_restore_screen_mode(int);
 void    PDC_save_screen_mode(int);
 void    PDC_scr_close(void);

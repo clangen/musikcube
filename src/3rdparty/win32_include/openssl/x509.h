@@ -1,4 +1,4 @@
-/* $OpenBSD: x509.h,v 1.26 2016/12/27 16:05:57 jsing Exp $ */
+/* $OpenBSD: x509.h,v 1.44 2018/03/17 15:28:27 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -619,6 +619,20 @@ extern "C" {
 #define		X509_CRL_get_issuer(x) ((x)->crl->issuer)
 #define		X509_CRL_get_REVOKED(x) ((x)->crl->revoked)
 
+int X509_CRL_up_ref(X509_CRL *x);
+int X509_CRL_get_signature_nid(const X509_CRL *crl);
+
+const STACK_OF(X509_EXTENSION) *X509_CRL_get0_extensions(const X509_CRL *crl);
+const ASN1_TIME *X509_CRL_get0_lastUpdate(const X509_CRL *crl);
+const ASN1_TIME *X509_CRL_get0_nextUpdate(const X509_CRL *crl);
+void X509_CRL_get0_signature(const X509_CRL *crl, const ASN1_BIT_STRING **psig,
+    const X509_ALGOR **palg);
+
+int X509_REQ_get_signature_nid(const X509_REQ *req);
+
+void X509_REQ_get0_signature(const X509_REQ *req, const ASN1_BIT_STRING **psig,
+    const X509_ALGOR **palg);
+
 void X509_CRL_set_default_method(const X509_CRL_METHOD *meth);
 X509_CRL_METHOD *X509_CRL_METHOD_new(
 	int (*crl_init)(X509_CRL *crl),
@@ -763,6 +777,7 @@ void X509_ALGOR_set_md(X509_ALGOR *alg, const EVP_MD *md);
 int X509_ALGOR_cmp(const X509_ALGOR *a, const X509_ALGOR *b);
 
 X509_NAME *X509_NAME_dup(X509_NAME *xn);
+int X509_NAME_get0_der(X509_NAME *nm, const unsigned char **pder, size_t *pderlen);
 X509_NAME_ENTRY *X509_NAME_ENTRY_dup(X509_NAME_ENTRY *ne);
 
 int		X509_cmp_time(const ASN1_TIME *s, time_t *t);
@@ -804,6 +819,7 @@ extern const ASN1_ITEM X509_PUBKEY_it;
 
 int		X509_PUBKEY_set(X509_PUBKEY **x, EVP_PKEY *pkey);
 EVP_PKEY *	X509_PUBKEY_get(X509_PUBKEY *key);
+EVP_PKEY *	X509_PUBKEY_get0(X509_PUBKEY *key);
 int		X509_get_pubkey_parameters(EVP_PKEY *pkey,
 					   STACK_OF(X509) *chain);
 int		i2d_PUBKEY(EVP_PKEY *a,unsigned char **pp);
@@ -900,6 +916,9 @@ int X509_set_ex_data(X509 *r, int idx, void *arg);
 void *X509_get_ex_data(X509 *r, int idx);
 int		i2d_X509_AUX(X509 *a,unsigned char **pp);
 X509 *		d2i_X509_AUX(X509 **a,const unsigned char **pp,long length);
+void X509_get0_signature(const ASN1_BIT_STRING **psig,
+    const X509_ALGOR **palg, const X509 *x);
+int X509_get_signature_nid(const X509 *x);
 
 int X509_alias_set1(X509 *x, unsigned char *name, int len);
 int X509_keyid_set1(X509 *x, unsigned char *id, int len);
@@ -914,14 +933,17 @@ void X509_reject_clear(X509 *x);
 
 X509_REVOKED *X509_REVOKED_new(void);
 void X509_REVOKED_free(X509_REVOKED *a);
+X509_REVOKED *X509_REVOKED_dup(X509_REVOKED *a);
 X509_REVOKED *d2i_X509_REVOKED(X509_REVOKED **a, const unsigned char **in, long len);
 int i2d_X509_REVOKED(X509_REVOKED *a, unsigned char **out);
 extern const ASN1_ITEM X509_REVOKED_it;
+
 X509_CRL_INFO *X509_CRL_INFO_new(void);
 void X509_CRL_INFO_free(X509_CRL_INFO *a);
 X509_CRL_INFO *d2i_X509_CRL_INFO(X509_CRL_INFO **a, const unsigned char **in, long len);
 int i2d_X509_CRL_INFO(X509_CRL_INFO *a, unsigned char **out);
 extern const ASN1_ITEM X509_CRL_INFO_it;
+
 X509_CRL *X509_CRL_new(void);
 void X509_CRL_free(X509_CRL *a);
 X509_CRL *d2i_X509_CRL(X509_CRL **a, const unsigned char **in, long len);
@@ -971,7 +993,9 @@ int ASN1_item_sign_ctx(const ASN1_ITEM *it,
 	     	ASN1_BIT_STRING *signature, void *asn, EVP_MD_CTX *ctx);
 #endif
 
-int 		X509_set_version(X509 *x,long version);
+const STACK_OF(X509_EXTENSION) *X509_get0_extensions(const X509 *x);
+const X509_ALGOR *X509_get0_tbs_sigalg(const X509 *x);
+int 		X509_set_version(X509 *x, long version);
 int 		X509_set_serialNumber(X509 *x, ASN1_INTEGER *serial);
 ASN1_INTEGER *	X509_get_serialNumber(X509 *x);
 int 		X509_set_issuer_name(X509 *x, X509_NAME *name);
@@ -979,10 +1003,17 @@ X509_NAME *	X509_get_issuer_name(X509 *a);
 int 		X509_set_subject_name(X509 *x, X509_NAME *name);
 X509_NAME *	X509_get_subject_name(X509 *a);
 int 		X509_set_notBefore(X509 *x, const ASN1_TIME *tm);
+int 		X509_set1_notBefore(X509 *x, const ASN1_TIME *tm);
 int 		X509_set_notAfter(X509 *x, const ASN1_TIME *tm);
+int 		X509_set1_notAfter(X509 *x, const ASN1_TIME *tm);
+const ASN1_TIME *X509_get0_notBefore(const X509 *x);
+ASN1_TIME *X509_getm_notBefore(const X509 *x);
+const ASN1_TIME *X509_get0_notAfter(const X509 *x);
+ASN1_TIME *X509_getm_notAfter(const X509 *x);
 int 		X509_set_pubkey(X509 *x, EVP_PKEY *pkey);
 EVP_PKEY *	X509_get_pubkey(X509 *x);
-ASN1_BIT_STRING * X509_get0_pubkey_bitstr(const X509 *x);
+EVP_PKEY *	X509_get0_pubkey(X509 *x);
+ASN1_BIT_STRING *X509_get0_pubkey_bitstr(const X509 *x);
 int		X509_certificate_type(X509 *x,EVP_PKEY *pubkey /* optional */);
 
 int		X509_REQ_set_version(X509_REQ *x,long version);
@@ -1017,11 +1048,16 @@ int X509_REQ_add1_attr_by_txt(X509_REQ *req,
 int X509_CRL_set_version(X509_CRL *x, long version);
 int X509_CRL_set_issuer_name(X509_CRL *x, X509_NAME *name);
 int X509_CRL_set_lastUpdate(X509_CRL *x, const ASN1_TIME *tm);
+int X509_CRL_set1_lastUpdate(X509_CRL *x, const ASN1_TIME *tm);
 int X509_CRL_set_nextUpdate(X509_CRL *x, const ASN1_TIME *tm);
+int X509_CRL_set1_nextUpdate(X509_CRL *x, const ASN1_TIME *tm);
 int X509_CRL_sort(X509_CRL *crl);
 
-int X509_REVOKED_set_serialNumber(X509_REVOKED *x, ASN1_INTEGER *serial);
+const STACK_OF(X509_EXTENSION) *X509_REVOKED_get0_extensions(const X509_REVOKED *x);
+const ASN1_TIME *X509_REVOKED_get0_revocationDate(const X509_REVOKED *x);
+const ASN1_INTEGER *X509_REVOKED_get0_serialNumber(const X509_REVOKED *x);
 int X509_REVOKED_set_revocationDate(X509_REVOKED *r, ASN1_TIME *tm);
+int X509_REVOKED_set_serialNumber(X509_REVOKED *x, ASN1_INTEGER *serial);
 
 int		X509_REQ_check_private_key(X509_REQ *x509,EVP_PKEY *pkey);
 
@@ -1100,6 +1136,7 @@ int 		X509_NAME_ENTRY_set_data(X509_NAME_ENTRY *ne, int type,
 			const unsigned char *bytes, int len);
 ASN1_OBJECT *	X509_NAME_ENTRY_get_object(X509_NAME_ENTRY *ne);
 ASN1_STRING *	X509_NAME_ENTRY_get_data(X509_NAME_ENTRY *ne);
+int		X509_NAME_ENTRY_set(const X509_NAME_ENTRY *ne);
 
 int		X509v3_get_ext_count(const STACK_OF(X509_EXTENSION) *x);
 int		X509v3_get_ext_by_NID(const STACK_OF(X509_EXTENSION) *x,
@@ -1288,6 +1325,7 @@ char *X509_TRUST_get0_name(X509_TRUST *xp);
 int X509_TRUST_get_trust(X509_TRUST *xp);
 
 int X509_up_ref(X509 *x);
+STACK_OF(X509) *X509_chain_up_ref(STACK_OF(X509) *chain);
 
 /* BEGIN ERROR CODES */
 /* The following lines are auto generated by the script mkerr.pl. Any changes

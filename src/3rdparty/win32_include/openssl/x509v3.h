@@ -1,4 +1,4 @@
-/* $OpenBSD: x509v3.h,v 1.21 2016/12/30 16:19:24 jsing Exp $ */
+/* $OpenBSD: x509v3.h,v 1.22 2017/06/22 17:28:00 jsing Exp $ */
 /* Written by Dr Stephen N Henson (steve@openssl.org) for the OpenSSL
  * project 1999.
  */
@@ -411,23 +411,21 @@ struct ISSUING_DIST_POINT_st
 
 /* X509_PURPOSE stuff */
 
-#define EXFLAG_BCONS		0x1
-#define EXFLAG_KUSAGE		0x2
-#define EXFLAG_XKUSAGE		0x4
-#define EXFLAG_NSCERT		0x8
+#define EXFLAG_BCONS		0x0001
+#define EXFLAG_KUSAGE		0x0002
+#define EXFLAG_XKUSAGE		0x0004
+#define EXFLAG_NSCERT		0x0008
 
-#define EXFLAG_CA		0x10
-/* Really self issued not necessarily self signed */
-#define EXFLAG_SI		0x20
-#define EXFLAG_SS		0x20
-#define EXFLAG_V1		0x40
-#define EXFLAG_INVALID		0x80
-#define EXFLAG_SET		0x100
-#define EXFLAG_CRITICAL		0x200
-#define EXFLAG_PROXY		0x400
-
-#define EXFLAG_INVALID_POLICY	0x800
+#define EXFLAG_CA		0x0010
+#define EXFLAG_SI		0x0020  /* Self issued. */
+#define EXFLAG_V1		0x0040
+#define EXFLAG_INVALID		0x0080
+#define EXFLAG_SET		0x0100
+#define EXFLAG_CRITICAL		0x0200
+#define EXFLAG_PROXY		0x0400
+#define EXFLAG_INVALID_POLICY	0x0800
 #define EXFLAG_FRESHEST		0x1000
+#define EXFLAG_SS               0x2000	/* Self signed. */
 
 #define KU_DIGITAL_SIGNATURE	0x0080
 #define KU_NON_REPUDIATION	0x0040

@@ -1,4 +1,4 @@
-/* $OpenBSD: tls1.h,v 1.29 2017/03/25 14:15:11 jsing Exp $ */
+/* $OpenBSD: tls1.h,v 1.32 2018/02/17 15:08:21 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -258,9 +258,6 @@ extern "C" {
 /* Temporary extension type */
 #define TLSEXT_TYPE_renegotiate                 0xff01
 
-/* This is not an IANA defined extension number */
-#define TLSEXT_TYPE_next_proto_neg		13172
-
 /* NameType value from RFC 3546. */
 #define TLSEXT_NAMETYPE_host_name 0
 /* status request value from RFC 3546 */
@@ -357,11 +354,15 @@ SSL_CTX_ctrl(ctx,SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG,0, (void *)arg)
 #define SSL_CTX_set_tlsext_ticket_keys(ctx, keys, keylen) \
 	SSL_CTX_ctrl((ctx),SSL_CTRL_SET_TLSEXT_TICKET_KEYS,(keylen),(keys))
 
+#define SSL_CTX_get_tlsext_status_cb(ssl, cb) \
+SSL_CTX_callback_ctrl(ssl,SSL_CTRL_GET_TLSEXT_STATUS_REQ_CB,(void (*)(void))cb)
 #define SSL_CTX_set_tlsext_status_cb(ssl, cb) \
 SSL_CTX_callback_ctrl(ssl,SSL_CTRL_SET_TLSEXT_STATUS_REQ_CB,(void (*)(void))cb)
 
+#define SSL_CTX_get_tlsext_status_arg(ssl, arg) \
+SSL_CTX_ctrl(ssl,SSL_CTRL_GET_TLSEXT_STATUS_REQ_CB_ARG,0,(void *)arg)
 #define SSL_CTX_set_tlsext_status_arg(ssl, arg) \
-SSL_CTX_ctrl(ssl,SSL_CTRL_SET_TLSEXT_STATUS_REQ_CB_ARG,0, (void *)arg)
+SSL_CTX_ctrl(ssl,SSL_CTRL_SET_TLSEXT_STATUS_REQ_CB_ARG,0,(void *)arg)
 
 #define SSL_CTX_set_tlsext_ticket_key_cb(ssl, cb) \
 SSL_CTX_callback_ctrl(ssl,SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB,(void (*)(void))cb)
@@ -534,9 +535,6 @@ SSL_CTX_callback_ctrl(ssl,SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB,(void (*)(void))cb)
 #define TLS1_CK_ECDH_RSA_WITH_AES_256_GCM_SHA384        0x0300C032
 
 /* ChaCha20-Poly1305 based ciphersuites. */
-#define TLS1_CK_ECDHE_RSA_CHACHA20_POLY1305_OLD		0x0300CC13
-#define TLS1_CK_ECDHE_ECDSA_CHACHA20_POLY1305_OLD	0x0300CC14
-#define TLS1_CK_DHE_RSA_CHACHA20_POLY1305_OLD		0x0300CC15
 #define TLS1_CK_ECDHE_RSA_CHACHA20_POLY1305		0x0300CCA8
 #define TLS1_CK_ECDHE_ECDSA_CHACHA20_POLY1305		0x0300CCA9
 #define TLS1_CK_DHE_RSA_CHACHA20_POLY1305		0x0300CCAA
@@ -701,9 +699,6 @@ SSL_CTX_callback_ctrl(ssl,SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB,(void (*)(void))cb)
 #define TLS1_TXT_ECDH_RSA_WITH_AES_256_GCM_SHA384       "ECDH-RSA-AES256-GCM-SHA384"
 
 /* ChaCha20-Poly1305 based ciphersuites. */
-#define TLS1_TXT_ECDHE_RSA_WITH_CHACHA20_POLY1305_OLD	"ECDHE-RSA-CHACHA20-POLY1305-OLD"
-#define TLS1_TXT_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_OLD	"ECDHE-ECDSA-CHACHA20-POLY1305-OLD"
-#define TLS1_TXT_DHE_RSA_WITH_CHACHA20_POLY1305_OLD	"DHE-RSA-CHACHA20-POLY1305-OLD"
 #define TLS1_TXT_ECDHE_RSA_WITH_CHACHA20_POLY1305	"ECDHE-RSA-CHACHA20-POLY1305"
 #define TLS1_TXT_ECDHE_ECDSA_WITH_CHACHA20_POLY1305	"ECDHE-ECDSA-CHACHA20-POLY1305"
 #define TLS1_TXT_DHE_RSA_WITH_CHACHA20_POLY1305		"DHE-RSA-CHACHA20-POLY1305"

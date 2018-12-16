@@ -1,4 +1,4 @@
-/* $OpenBSD: dh.h,v 1.18 2016/11/04 18:35:30 jsing Exp $ */
+/* $OpenBSD: dh.h,v 1.25 2018/02/22 16:41:04 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -183,10 +183,22 @@ DH *	DH_new(void);
 void	DH_free(DH *dh);
 int	DH_up_ref(DH *dh);
 int	DH_size(const DH *dh);
+int	DH_bits(const DH *dh);
 int DH_get_ex_new_index(long argl, void *argp, CRYPTO_EX_new *new_func,
 	     CRYPTO_EX_dup *dup_func, CRYPTO_EX_free *free_func);
 int DH_set_ex_data(DH *d, int idx, void *arg);
 void *DH_get_ex_data(DH *d, int idx);
+
+ENGINE *DH_get0_engine(DH *d);
+void DH_get0_pqg(const DH *dh, const BIGNUM **p, const BIGNUM **q,
+    const BIGNUM **g);
+int DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g);
+void DH_get0_key(const DH *dh, const BIGNUM **pub_key, const BIGNUM **priv_key);
+int DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key);
+void DH_clear_flags(DH *dh, int flags);
+int DH_test_flags(const DH *dh, int flags);
+void DH_set_flags(DH *dh, int flags);
+int DH_set_length(DH *dh, long length);
 
 /* Deprecated version */
 #ifndef OPENSSL_NO_DEPRECATED

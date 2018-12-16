@@ -2431,9 +2431,10 @@ INLINE int set_up_window( void)
     debug_printf( "WindowTitle = '%ls'\n", WindowTitle);
 #endif
 
-    get_default_sizes_from_registry( &n_default_columns, &n_default_rows, &xloc, &yloc,
-                     &menu_shown);
-    if( PDC_n_rows > 2 && PDC_n_cols > 2)
+    BOOL error = get_default_sizes_from_registry(
+        &n_default_columns, &n_default_rows, &xloc, &yloc, &menu_shown);
+
+    if( error && PDC_n_rows > 2 && PDC_n_cols > 2)
     {
         n_default_columns = PDC_n_cols;
         n_default_rows    = PDC_n_rows;

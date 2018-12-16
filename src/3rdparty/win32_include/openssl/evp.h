@@ -1,4 +1,4 @@
-/* $OpenBSD: evp.h,v 1.52 2017/02/28 14:15:37 jsing Exp $ */
+/* $OpenBSD: evp.h,v 1.58 2018/02/20 18:05:28 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -535,15 +535,19 @@ int EVP_Cipher(EVP_CIPHER_CTX *c, unsigned char *out, const unsigned char *in,
 #define EVP_delete_digest_alias(alias) \
 	OBJ_NAME_remove(alias,OBJ_NAME_TYPE_MD_METH|OBJ_NAME_ALIAS);
 
+EVP_MD_CTX *EVP_MD_CTX_new(void);
+void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
 void EVP_MD_CTX_init(EVP_MD_CTX *ctx);
-int EVP_MD_CTX_cleanup(EVP_MD_CTX *ctx);
+int EVP_MD_CTX_reset(EVP_MD_CTX *ctx);
 EVP_MD_CTX *EVP_MD_CTX_create(void);
 void EVP_MD_CTX_destroy(EVP_MD_CTX *ctx);
+int EVP_MD_CTX_cleanup(EVP_MD_CTX *ctx);
 int EVP_MD_CTX_copy_ex(EVP_MD_CTX *out, const EVP_MD_CTX *in);
 void EVP_MD_CTX_set_flags(EVP_MD_CTX *ctx, int flags);
 void EVP_MD_CTX_clear_flags(EVP_MD_CTX *ctx, int flags);
 int EVP_MD_CTX_ctrl(EVP_MD_CTX *ctx, int type, int arg, void *ptr);
 int EVP_MD_CTX_test_flags(const EVP_MD_CTX *ctx, int flags);
+
 int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl);
 int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *d, size_t cnt);
 int EVP_DigestFinal_ex(EVP_MD_CTX *ctx, unsigned char *md, unsigned int *s);
@@ -640,6 +644,7 @@ void EVP_CIPHER_CTX_init(EVP_CIPHER_CTX *a);
 int EVP_CIPHER_CTX_cleanup(EVP_CIPHER_CTX *a);
 EVP_CIPHER_CTX *EVP_CIPHER_CTX_new(void);
 void EVP_CIPHER_CTX_free(EVP_CIPHER_CTX *a);
+int EVP_CIPHER_CTX_reset(EVP_CIPHER_CTX *a);
 int EVP_CIPHER_CTX_set_key_length(EVP_CIPHER_CTX *x, int keylen);
 int EVP_CIPHER_CTX_set_padding(EVP_CIPHER_CTX *c, int pad);
 int EVP_CIPHER_CTX_ctrl(EVP_CIPHER_CTX *ctx, int type, int arg, void *ptr);
@@ -870,23 +875,27 @@ void *EVP_PKEY_get0(EVP_PKEY *pkey);
 
 #ifndef OPENSSL_NO_RSA
 struct rsa_st;
-int EVP_PKEY_set1_RSA(EVP_PKEY *pkey, struct rsa_st *key);
+struct rsa_st *EVP_PKEY_get0_RSA(EVP_PKEY *pkey);
 struct rsa_st *EVP_PKEY_get1_RSA(EVP_PKEY *pkey);
+int EVP_PKEY_set1_RSA(EVP_PKEY *pkey, struct rsa_st *key);
 #endif
 #ifndef OPENSSL_NO_DSA
 struct dsa_st;
-int EVP_PKEY_set1_DSA(EVP_PKEY *pkey, struct dsa_st *key);
+struct dsa_st *EVP_PKEY_get0_DSA(EVP_PKEY *pkey);
 struct dsa_st *EVP_PKEY_get1_DSA(EVP_PKEY *pkey);
+int EVP_PKEY_set1_DSA(EVP_PKEY *pkey, struct dsa_st *key);
 #endif
 #ifndef OPENSSL_NO_DH
 struct dh_st;
-int EVP_PKEY_set1_DH(EVP_PKEY *pkey, struct dh_st *key);
+struct dh_st *EVP_PKEY_get0_DH(EVP_PKEY *pkey);
 struct dh_st *EVP_PKEY_get1_DH(EVP_PKEY *pkey);
+int EVP_PKEY_set1_DH(EVP_PKEY *pkey, struct dh_st *key);
 #endif
 #ifndef OPENSSL_NO_EC
 struct ec_key_st;
-int EVP_PKEY_set1_EC_KEY(EVP_PKEY *pkey, struct ec_key_st *key);
+struct ec_key_st *EVP_PKEY_get0_EC_KEY(EVP_PKEY *pkey);
 struct ec_key_st *EVP_PKEY_get1_EC_KEY(EVP_PKEY *pkey);
+int EVP_PKEY_set1_EC_KEY(EVP_PKEY *pkey, struct ec_key_st *key);
 #endif
 #ifndef OPENSSL_NO_GOST
 struct gost_key_st;
@@ -894,6 +903,7 @@ struct gost_key_st;
 
 EVP_PKEY *EVP_PKEY_new(void);
 void EVP_PKEY_free(EVP_PKEY *pkey);
+int EVP_PKEY_up_ref(EVP_PKEY *pkey);
 
 EVP_PKEY *d2i_PublicKey(int type, EVP_PKEY **a, const unsigned char **pp,
     long length);
@@ -1222,7 +1232,6 @@ const EVP_AEAD *EVP_aead_aes_256_gcm(void);
 #if !defined(OPENSSL_NO_CHACHA) && !defined(OPENSSL_NO_POLY1305)
 /* EVP_aead_chacha20_poly1305 is ChaCha20 with a Poly1305 authenticator. */
 const EVP_AEAD *EVP_aead_chacha20_poly1305(void);
-const EVP_AEAD *EVP_aead_chacha20_poly1305_old(void);
 #endif
 
 /* EVP_AEAD_key_length returns the length of the keys used. */
