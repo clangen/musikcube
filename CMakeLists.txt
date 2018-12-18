@@ -97,6 +97,7 @@ add_subdirectory(src/plugins/nullout)
 add_subdirectory(src/plugins/server)
 add_subdirectory(src/plugins/httpdatastream)
 add_subdirectory(src/plugins/stockencoders)
+add_subdirectory(src/plugins/supereqdsp)
 
 if (${FFMPEG_DECODER} MATCHES "true")
   add_subdirectory(src/plugins/ffmpegdecoder)
@@ -217,13 +218,13 @@ if (GENERATE_DEB MATCHES "1")
     endif()
 
     set(DEPENDENCIES "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libmicrohttpd${DEB_MICROHTTPD_VERSION}, libcurl${DEB_LIBCURL_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libncursesw5, libasound2, libpulse0, pulseaudio, libmp3lame0, libev4,")
- 
+
     if (${FFMPEG_DECODER} MATCHES "true")
       set(DEPENDENCIES "${DEPENDENCIES} libavcodec-extra, libavutil55, libavformat57, libswresample2")
     else()
       set(DEPENDENCIES "${DEPENDENCIES} libflac8, libfaad2")
     endif()
- 
+
     set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGE_DESCRIPTION "musikcube, a terminal-based music player and library")
     set(CPACK_PACKAGE_VERSION_MAJOR "${musikcube_VERSION_MAJOR}")

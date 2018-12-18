@@ -31,17 +31,21 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-
 #pragma once
 
-#include "IBuffer.h"
+#include <core/sdk/IDSP.h>
+#include "supereq/Equ.h"
 
-namespace musik { namespace core { namespace sdk {
+using namespace musik::core::sdk;
 
-    class IDSP {
-        public:
-            virtual void Release() = 0;
-            virtual bool Process(IBuffer* buffer) = 0;
-    };
+class SuperEqDsp : public IDSP {
+    public:
+        SuperEqDsp();
+        ~SuperEqDsp();
 
-} } }
+        virtual void Release() override;
+        virtual bool Process(IBuffer *buffer) override;
+
+    private:
+        SuperEqState* supereq {nullptr};
+};

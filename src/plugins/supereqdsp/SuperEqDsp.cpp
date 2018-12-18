@@ -32,16 +32,55 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "SuperEqDsp.h"
 
-#include "IBuffer.h"
+#include <core/sdk/constants.h>
+#include <core/sdk/IPreferences.h>
+#include <core/sdk/ISchema.h>
 
-namespace musik { namespace core { namespace sdk {
+using namespace musik::core::sdk;
 
-    class IDSP {
-        public:
-            virtual void Release() = 0;
-            virtual bool Process(IBuffer* buffer) = 0;
-    };
+SuperEqDsp::SuperEqDsp() {
 
-} } }
+}
+
+SuperEqDsp::~SuperEqDsp() {
+    if (this->supereq) {
+        equ_quit(this->supereq);
+        delete this->supereq;
+    }
+}
+
+void SuperEqDsp::Release() {
+    delete this;
+}
+
+bool SuperEqDsp::Process(IBuffer* buffer) {
+    int channels = buffer->Channels();
+
+    if (!this->supereq) {
+        this->supereq = new SuperEqState();
+        equ_init(this->supereq, 10, channels);
+
+        void *params = paramlist_alloc();
+        float bands[18];
+
+        for (int i = 0; i < 18; i++) {
+            bands[i] = 1.0f; //i > 9 ? -0.0f : 1.0f;
+        }
+
+        equ_makeTable(
+            this->supereq,
+            bands,
+            params,
+            buffer->SampleRate());
+
+        paramlist_free(params);
+    }
+
+    return equ_modifySamples_float(
+        this->supereq,
+        (char*) buffer->BufferPointer(),
+        buffer->Samples() / channels,
+        channels) != 0;
+}

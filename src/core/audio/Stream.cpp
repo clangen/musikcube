@@ -61,7 +61,7 @@ Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int o
 , capabilities(0)
 , rawBuffer(nullptr) {
     if ((this->options & NoDSP) == 0) {
-        streams::GetDspPlugins();
+        dsps = streams::GetDspPlugins();
     }
 
     this->decoderBuffer = new Buffer();
