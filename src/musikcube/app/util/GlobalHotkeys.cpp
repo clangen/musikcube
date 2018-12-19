@@ -36,12 +36,12 @@
 #include "GlobalHotkeys.h"
 #include "Hotkeys.h"
 
-#include <app/overlay/VisualizerOverlay.h>
 #include <app/overlay/BrowseOverlays.h>
+#include <app/overlay/EqualizerOverlay.h>
+#include <app/overlay/VisualizerOverlay.h>
 #include <app/util/Playback.h>
 
 #include <core/audio/Visualizer.h>
-
 #include <core/support/Playback.h>
 
 using namespace musik::core;
@@ -123,6 +123,12 @@ bool GlobalHotkeys::Handle(const std::string& kn) {
         }
         else {
             VisualizerOverlay::Show();
+        }
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::ShowEqualizer, kn)) {
+        if (EqualizerOverlay::FindPlugin()) {
+            EqualizerOverlay::ShowOverlay();
         }
         return true;
     }

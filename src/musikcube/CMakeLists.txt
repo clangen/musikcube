@@ -15,6 +15,7 @@ set (CUBE_SRCS
 	./app/model/HotkeysAdapter.cpp
 	./app/overlay/BrowseOverlays.cpp
 	./app/overlay/ColorThemeOverlay.cpp
+	./app/overlay/EqualizerOverlay.cpp
 	./app/overlay/LastFmOverlay.cpp
 	./app/overlay/LocaleOverlay.cpp
 	./app/overlay/PlaybackOverlays.cpp

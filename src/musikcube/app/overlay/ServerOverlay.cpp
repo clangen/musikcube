@@ -65,28 +65,6 @@ static const char* KEY_PASSWORD = "password";
 #define DEFAULT_HEIGHT 18
 #define DEFAULT_WIDTH 45
 
-static void applyLabelOverlayStyle(TextLabel& label) {
-    label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-}
-
-static void applyCheckboxOverlayStyle(Checkbox& cb) {
-    cb.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    cb.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
-}
-
-static void applyInputOverlayStyle(TextInput& input) {
-    if (input.GetStyle() == TextInput::StyleBox) {
-        input.SetFrameColor(CURSESPP_OVERLAY_FRAME);
-        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-        input.SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
-        input.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
-    }
-    else {
-        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-        input.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
-    }
-}
-
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
 

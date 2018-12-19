@@ -74,6 +74,7 @@ namespace musik {
                     /* views */
                     ViewRefresh,
                     ToggleVisualizer,
+                    ShowEqualizer,
 
                     /* playback */
                     ToggleMute,

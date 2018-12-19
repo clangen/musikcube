@@ -114,6 +114,8 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
 
     { "toggle_visualizer", Id::ToggleVisualizer },
 
+    { "show_equalizer", Id::ShowEqualizer },
+
     { "metadata_rescan", Id::RescanMetadata },
 
     { "hotkeys_reset_to_default", Id::HotkeysResetToDefault },
@@ -194,6 +196,8 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::ViewRefresh, "KEY_F(5)" },
 
     { Id::ToggleVisualizer, "v" },
+
+    { Id::ShowEqualizer, "^E" },
 
     { Id::RescanMetadata, "^R"},
 

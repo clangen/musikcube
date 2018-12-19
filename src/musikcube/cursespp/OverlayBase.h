@@ -34,9 +34,13 @@
 
 #pragma once
 
+#include "Colors.h"
 #include "IOverlay.h"
 #include "LayoutBase.h"
 #include "OverlayStack.h"
+#include "TextLabel.h"
+#include "Checkbox.h"
+#include "TextInput.h"
 
 namespace cursespp {
     class OverlayBase : public LayoutBase, public IOverlay {
@@ -68,6 +72,28 @@ namespace cursespp {
             }
 
         protected:
+            static void applyLabelOverlayStyle(TextLabel& label) {
+                label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+            }
+
+            static void applyCheckboxOverlayStyle(Checkbox& cb) {
+                cb.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+                cb.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
+            }
+
+            static void applyInputOverlayStyle(TextInput& input) {
+                if (input.GetStyle() == TextInput::StyleBox) {
+                    input.SetFrameColor(CURSESPP_OVERLAY_FRAME);
+                    input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+                    input.SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
+                    input.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+                }
+                else {
+                    input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+                    input.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
+                }
+            }
+
             OverlayStack* GetOverlayStack() {
                 return this->stack;
             }

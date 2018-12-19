@@ -32,64 +32,43 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "EqualizerOverlay.h"
+#include <cursespp/Screen.h>
+#include <core/plugin/PluginFactory.h>
 
-#include "curses_config.h"
-#include <string>
+using namespace cursespp;
+using namespace musik::core;
+using namespace musik::core::sdk;
+using namespace musik::cube;
 
-#define CURSESPP_DEFAULT_COLOR -1LL
+static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
 
-#define CURSESPP_SELECTED_LIST_ITEM 1
-#define CURSESPP_HIGHLIGHTED_LIST_ITEM 2
-#define CURSESPP_HIGHLIGHTED_ERROR_LIST_ITEM 3
-#define CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM 4
-#define CURSESPP_LIST_ITEM_HEADER 5
-#define CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER 6
+static std::string formatBandRow(const std::string& band, float value) {
+    return band + "khz";
+}
 
-#define CURSESPP_DEFAULT_CONTENT_COLOR 7
-#define CURSESPP_DEFAULT_FRAME_COLOR 8
-#define CURSESPP_FOCUSED_FRAME_COLOR 9
+static int calculateWidth() {
+    return (int)(0.8f * Screen::GetWidth());
+}
 
-#define CURSESPP_TEXT_DEFAULT 10
-#define CURSESPP_TEXT_DISABLED 11
-#define CURSESPP_TEXT_FOCUSED 12
-#define CURSESPP_TEXT_ACTIVE 13
-#define CURSESPP_TEXT_WARNING 14
-#define CURSESPP_TEXT_ERROR 15
-#define CURSESPP_TEXT_HIDDEN 16
+EqualizerOverlay::EqualizerOverlay()
+: OverlayBase() {
+    this->plugin = this->FindPlugin();
+    this->prefs = Preferences::ForPlugin(this->plugin->Name());
+}
 
-#define CURSESPP_BUTTON_NORMAL 17
-#define CURSESPP_BUTTON_HIGHLIGHTED 18
+void EqualizerOverlay::ShowOverlay() {
+}
 
-#define CURSESPP_SHORTCUT_ROW_NORMAL 19
-#define CURSESPP_SHORTCUT_ROW_FOCUSED 20
-
-#define CURSESPP_OVERLAY_FRAME 21
-#define CURSESPP_OVERLAY_CONTENT 22
-#define CURSESPP_OVERLAY_INPUT_FRAME 23
-#define CURSESPP_OVERLAY_TEXT_FOCUSED 24
-
-#define CURSESPP_BANNER 25
-#define CURSESPP_FOOTER 26
-
-namespace cursespp {
-    class Colors {
-        private:
-            Colors();
-
-        public:
-            enum Mode {
-                RGB,
-                Palette,
-                Basic
-            };
-
-            enum BgType {
-                Theme,
-                Inherit,
-            };
-
-            static void Init(Mode mode = Mode::Basic, BgType bgType = BgType::Theme);
-            static void SetTheme(const std::string& fn);
-    };
+std::shared_ptr<IPlugin> EqualizerOverlay::FindPlugin() {
+    std::shared_ptr<IPlugin> result;
+    using Deleter = PluginFactory::ReleaseDeleter<IPlugin>;
+    PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
+        "GetPlugin",
+        [&result](IPlugin* unused, std::shared_ptr<IPlugin> plugin, const std::string& fn) {
+            if (std::string(plugin->Guid()) == SUPEREQ_PLUGIN_GUID) {
+                result = plugin;
+            }
+        });
+    return result;
 }

@@ -34,62 +34,35 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include <string>
+#include <core/sdk/IPlugin.h>
+#include <core/support/Preferences.h>
+#include <cursespp/OverlayBase.h>
+#include <cursespp/Checkbox.h>
+#include <cursespp/ListWindow.h>
+#include <sigslot/sigslot.h>
+#include <memory>
 
-#define CURSESPP_DEFAULT_COLOR -1LL
+namespace musik {
+    namespace cube {
+        class EqualizerOverlay: public cursespp::OverlayBase, public sigslot::has_slots<>
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+            , public std::enable_shared_from_this<EqualizerOverlay>
+#endif
+        {
+            public:
+                static void ShowOverlay();
+                static std::shared_ptr<musik::core::sdk::IPlugin> FindPlugin();
 
-#define CURSESPP_SELECTED_LIST_ITEM 1
-#define CURSESPP_HIGHLIGHTED_LIST_ITEM 2
-#define CURSESPP_HIGHLIGHTED_ERROR_LIST_ITEM 3
-#define CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM 4
-#define CURSESPP_LIST_ITEM_HEADER 5
-#define CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER 6
+                virtual void Layout() override;
+                virtual bool KeyPress(const std::string& key) override;
 
-#define CURSESPP_DEFAULT_CONTENT_COLOR 7
-#define CURSESPP_DEFAULT_FRAME_COLOR 8
-#define CURSESPP_FOCUSED_FRAME_COLOR 9
+            private:
+                EqualizerOverlay();
 
-#define CURSESPP_TEXT_DEFAULT 10
-#define CURSESPP_TEXT_DISABLED 11
-#define CURSESPP_TEXT_FOCUSED 12
-#define CURSESPP_TEXT_ACTIVE 13
-#define CURSESPP_TEXT_WARNING 14
-#define CURSESPP_TEXT_ERROR 15
-#define CURSESPP_TEXT_HIDDEN 16
-
-#define CURSESPP_BUTTON_NORMAL 17
-#define CURSESPP_BUTTON_HIGHLIGHTED 18
-
-#define CURSESPP_SHORTCUT_ROW_NORMAL 19
-#define CURSESPP_SHORTCUT_ROW_FOCUSED 20
-
-#define CURSESPP_OVERLAY_FRAME 21
-#define CURSESPP_OVERLAY_CONTENT 22
-#define CURSESPP_OVERLAY_INPUT_FRAME 23
-#define CURSESPP_OVERLAY_TEXT_FOCUSED 24
-
-#define CURSESPP_BANNER 25
-#define CURSESPP_FOOTER 26
-
-namespace cursespp {
-    class Colors {
-        private:
-            Colors();
-
-        public:
-            enum Mode {
-                RGB,
-                Palette,
-                Basic
-            };
-
-            enum BgType {
-                Theme,
-                Inherit,
-            };
-
-            static void Init(Mode mode = Mode::Basic, BgType bgType = BgType::Theme);
-            static void SetTheme(const std::string& fn);
-    };
+                std::shared_ptr<musik::core::sdk::IPlugin> plugin;
+                std::shared_ptr<musik::core::Preferences> prefs;
+                std::shared_ptr<cursespp::Checkbox> enabledCb;
+                std::shared_ptr<cursespp::ListWindow> listView;
+        };
+    }
 }
