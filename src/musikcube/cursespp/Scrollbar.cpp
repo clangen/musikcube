@@ -68,7 +68,7 @@ void Scrollbar::Draw(ListWindow* list, Window* target) {
         float total = (float) std::max(minY, adapter->GetEntryCount());
 
         int yOffset;
-        if (range > total) {
+        if (range >= total) {
             yOffset = -1;
         }
         else {
