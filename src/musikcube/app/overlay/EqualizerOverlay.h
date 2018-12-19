@@ -62,6 +62,7 @@ namespace musik {
 
                 virtual void Layout() override;
                 virtual bool KeyPress(const std::string& key) override;
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             private:
                 class BandsAdapter : public cursespp::ScrollAdapterBase {
@@ -76,6 +77,9 @@ namespace musik {
                 };
 
                 bool CanScroll(int listViewHeight);
+                void UpdateSelectedBand(double delta);
+
+                void OnEnabledChanged(cursespp::Checkbox* cb, bool checked);
 
                 Plugin plugin;
                 Prefs prefs;

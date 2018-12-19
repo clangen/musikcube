@@ -163,8 +163,8 @@
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",
 
         "equalizer_overlay_title": "equalizer",
-        "equalizer_overlay_enabled": "equalizer enabled",
-        "equalizer_overlay_frequencies": "frequencies",
+        "equalizer_overlay_enabled": "enabled",
+        "equalizer_overlay_frequencies": "frequency bands",
 
         "plugin_overlay_title": "configure plugins",
 

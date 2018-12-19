@@ -33,11 +33,16 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "EqualizerOverlay.h"
+
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/Scrollbar.h>
-#include <core/plugin/PluginFactory.h>
 #include <cursespp/SingleLineEntry.h>
+#include <cursespp/Text.h>
+
+#include <core/plugin/PluginFactory.h>
+
+#include <app/util/Messages.h>
 
 using namespace cursespp;
 using namespace musik::core;
@@ -56,10 +61,27 @@ static const std::vector<std::string> BANDS = {
 };
 
 static const int VERTICAL_PADDING = 2;
-static const int MAX_HEIGHT = 8 + (int) BANDS.size();
+static const int MAX_HEIGHT = 7 + (int) BANDS.size();
 
-static std::string formatBandRow(const std::string& band, float value) {
-    return u8fmt("%s khz (%0.2f)", band.c_str(), value);
+static std::string formatBandRow(size_t width, const std::string& band, double value) {
+    width -= 2; /* left/right padding */
+    std::string left = u8fmt(" %s khz (%0.2f) ", band.c_str(), value);
+
+    int remain = width - u8cols(left);
+    int trackWidth = std::min(remain, 25);
+    trackWidth = (trackWidth % 2 == 0) ? trackWidth - 1 : trackWidth;
+
+    double percent = value / 2.0f;
+
+    std::string right;
+    size_t thumbOffset = std::min(trackWidth - 1, (int) (percent * trackWidth));
+    for (int i = 0; i < trackWidth; i++) {
+        right += (i == thumbOffset) ? "■" : "─";
+    }
+
+    remain = width - (u8cols(left) + u8cols(right));
+
+    return text::Align(left, text::AlignLeft, u8cols(left) + remain) + right;
 }
 
 EqualizerOverlay::EqualizerOverlay()
@@ -74,6 +96,7 @@ EqualizerOverlay::EqualizerOverlay()
     this->enabledCb = std::make_shared<Checkbox>();
     this->enabledCb->SetText(_TSTR("equalizer_overlay_enabled"));
     this->enabledCb->SetChecked(this->prefs->GetBool("enabled", false));
+    this->enabledCb->CheckChanged.connect(this, &EqualizerOverlay::OnEnabledChanged);
 
     this->adapter = std::make_shared<BandsAdapter>(prefs);
 
@@ -136,17 +159,47 @@ void EqualizerOverlay::Layout() {
     this->titleLabel->MoveAndResize(x, y, cx, 1);
     y += 2;
     this->enabledCb->MoveAndResize(x, y, cx, 1);
-    y += 2;
-    cy -= 4;
+    y += 1;
+    cy -= 3;
     this->listView->MoveAndResize(x, y, cx, cy);
 }
 
+void EqualizerOverlay::OnEnabledChanged(cursespp::Checkbox* cb, bool checked) {
+    this->prefs->SetBool("enabled", checked);
+    this->DebounceMessage(message::UpdateEqualizer, 0, 0, 500);
+}
+
 bool EqualizerOverlay::KeyPress(const std::string& key) {
+    auto& keys = NavigationKeys();
+
     if (key == "^[" || key == "ESC") { /* esc closes */
         this->Dismiss();
         return true;
     }
+    else if (keys.Left(key)) {
+        this->UpdateSelectedBand(-0.05f);
+        return true;
+    }
+    else if (keys.Right(key)) {
+        this->UpdateSelectedBand(0.05f);
+        return true;
+    }
     return OverlayBase::KeyPress(key);
+}
+
+void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
+    if (message.Type() == message::UpdateEqualizer) {
+        this->plugin->Reload();
+    }
+}
+
+void EqualizerOverlay::UpdateSelectedBand(double delta) {
+    const std::string band = BANDS[this->listView->GetSelectedIndex()];
+    double existing = this->prefs->GetDouble(band.c_str(), 1.0);
+    double updated = std::min(2.0, std::max(0.0, existing + delta));
+    this->prefs->SetDouble(band.c_str(), updated);
+    this->listView->OnAdapterChanged();
+    this->DebounceMessage(message::UpdateEqualizer, 0, 0, 500);
 }
 
 /* ~~~~~~ BandsAdapter ~~~~~ */
@@ -166,8 +219,8 @@ size_t EqualizerOverlay::BandsAdapter::GetEntryCount() {
 ScrollAdapterBase::EntryPtr EqualizerOverlay::BandsAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     const std::string band = BANDS[index];
 
-    auto entry = std::make_shared<SingleLineEntry>(
-        formatBandRow(band, prefs->GetDouble(band.c_str(), 1.0)));
+    auto entry = std::make_shared<SingleLineEntry>(formatBandRow(
+        window->GetContentWidth(), band, prefs->GetDouble(band.c_str(), 1.0)));
 
     entry->SetAttrs(CURSESPP_DEFAULT_COLOR);
     if (index == window->GetScrollPosition().logicalIndex) {
