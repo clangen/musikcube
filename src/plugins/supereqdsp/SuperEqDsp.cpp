@@ -75,10 +75,6 @@ void SuperEqDsp::Release() {
 }
 
 bool SuperEqDsp::Process(IBuffer* buffer) {
-    if (!this->enabled) {
-        return false;
-    }
-
     int channels = buffer->Channels();
     int current = ::currentState.load();
 
@@ -93,7 +89,7 @@ bool SuperEqDsp::Process(IBuffer* buffer) {
         float bands[17];
 
         for (int i = 0; i < BANDS.size(); i++) {
-            prefs->GetDouble(BANDS[i].c_str(), 1.0);
+            bands[i] = prefs->GetDouble(BANDS[i].c_str(), 1.0);
         }
 
         equ_makeTable(
@@ -103,6 +99,10 @@ bool SuperEqDsp::Process(IBuffer* buffer) {
             buffer->SampleRate());
 
         paramlist_free(params);
+    }
+
+    if (!this->enabled) {
+        return false;
     }
 
     return equ_modifySamples_float(

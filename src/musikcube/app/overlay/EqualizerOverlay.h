@@ -78,6 +78,7 @@ namespace musik {
 
                 bool CanScroll(int listViewHeight);
                 void UpdateSelectedBand(double delta);
+                void NotifyAndRedraw();
 
                 void OnEnabledChanged(cursespp::Checkbox* cb, bool checked);
 

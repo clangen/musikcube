@@ -60,12 +60,14 @@ static const std::vector<std::string> BANDS = {
     "11840", "16744"
 };
 
+static const int UPDATE_DEBOUNCE_MS = 350;
 static const int VERTICAL_PADDING = 2;
 static const int MAX_HEIGHT = 7 + (int) BANDS.size();
 
 static std::string formatBandRow(size_t width, const std::string& band, double value) {
     width -= 2; /* left/right padding */
-    std::string left = u8fmt(" %s khz (%0.2f) ", band.c_str(), value);
+
+    std::string left = u8fmt(" %s khz ", band.c_str());
 
     int remain = width - u8cols(left);
     int trackWidth = std::min(remain, 25);
@@ -79,7 +81,11 @@ static std::string formatBandRow(size_t width, const std::string& band, double v
         right += (i == thumbOffset) ? "■" : "─";
     }
 
-    remain = width - (u8cols(left) + u8cols(right));
+    right = u8fmt(" %s %0.2f", right.c_str(), value);
+
+    /* TODO: i'm dumb and it's late; we shouldn't need the `+ 1` here, there's
+    another calculation error that i'm currently blind to. */
+    remain = width - (u8cols(left) + u8cols(right)) + 1;
 
     return text::Align(left, text::AlignLeft, u8cols(left) + remain) + right;
 }
@@ -166,7 +172,7 @@ void EqualizerOverlay::Layout() {
 
 void EqualizerOverlay::OnEnabledChanged(cursespp::Checkbox* cb, bool checked) {
     this->prefs->SetBool("enabled", checked);
-    this->DebounceMessage(message::UpdateEqualizer, 0, 0, 500);
+    this->NotifyAndRedraw();
 }
 
 bool EqualizerOverlay::KeyPress(const std::string& key) {
@@ -176,15 +182,26 @@ bool EqualizerOverlay::KeyPress(const std::string& key) {
         this->Dismiss();
         return true;
     }
+    else if (key == "z") {
+        for (auto band : BANDS) {
+            this->prefs->SetDouble(band.c_str(), 1.0);
+        }
+        this->NotifyAndRedraw();
+    }
     else if (keys.Left(key)) {
-        this->UpdateSelectedBand(-0.05f);
+        this->UpdateSelectedBand(-0.1f);
         return true;
     }
     else if (keys.Right(key)) {
-        this->UpdateSelectedBand(0.05f);
+        this->UpdateSelectedBand(0.1f);
         return true;
     }
     return OverlayBase::KeyPress(key);
+}
+
+void EqualizerOverlay::NotifyAndRedraw() {
+    this->listView->OnAdapterChanged();
+    this->DebounceMessage(message::UpdateEqualizer, 0, 0, UPDATE_DEBOUNCE_MS);
 }
 
 void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
@@ -198,8 +215,7 @@ void EqualizerOverlay::UpdateSelectedBand(double delta) {
     double existing = this->prefs->GetDouble(band.c_str(), 1.0);
     double updated = std::min(2.0, std::max(0.0, existing + delta));
     this->prefs->SetDouble(band.c_str(), updated);
-    this->listView->OnAdapterChanged();
-    this->DebounceMessage(message::UpdateEqualizer, 0, 0, 500);
+    this->NotifyAndRedraw();
 }
 
 /* ~~~~~~ BandsAdapter ~~~~~ */
