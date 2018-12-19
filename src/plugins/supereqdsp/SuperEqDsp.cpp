@@ -32,16 +32,35 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include "constants.h"
 #include "SuperEqDsp.h"
-
 #include <core/sdk/constants.h>
 #include <core/sdk/IPreferences.h>
 #include <core/sdk/ISchema.h>
+#include <atomic>
 
 using namespace musik::core::sdk;
 
-SuperEqDsp::SuperEqDsp() {
+static IPreferences* prefs = nullptr;
+static std::atomic<int> currentState;
 
+static const std::vector<std::string> BANDS = {
+    "65", "92", "131", "185", "262",
+    "370", "523", "740", "1047", "1480",
+    "2093", "2960", "4186", "5920", "8372",
+    "11840", "16744"
+};
+
+extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
+    ::prefs = prefs;
+}
+
+void SuperEqDsp::NotifyChanged() {
+    currentState.fetch_add(1);
+}
+
+SuperEqDsp::SuperEqDsp() {
+    this->enabled = ::prefs && ::prefs->GetBool("enabled", false);
 }
 
 SuperEqDsp::~SuperEqDsp() {
@@ -56,17 +75,25 @@ void SuperEqDsp::Release() {
 }
 
 bool SuperEqDsp::Process(IBuffer* buffer) {
-    int channels = buffer->Channels();
+    if (!this->enabled) {
+        return false;
+    }
 
-    if (!this->supereq) {
+    int channels = buffer->Channels();
+    int current = ::currentState.load();
+
+    if (!this->supereq || this->lastUpdated != current) {
+        this->enabled = ::prefs && ::prefs->GetBool("enabled", false);
+        this->lastUpdated = current;
+
         this->supereq = new SuperEqState();
         equ_init(this->supereq, 10, channels);
 
         void *params = paramlist_alloc();
-        float bands[18];
+        float bands[17];
 
-        for (int i = 0; i < 18; i++) {
-            bands[i] = 1.0f; //i > 9 ? -0.0f : 1.0f;
+        for (int i = 0; i < BANDS.size(); i++) {
+            prefs->GetDouble(BANDS[i].c_str(), 1.0);
         }
 
         equ_makeTable(

@@ -41,12 +41,15 @@
 #include "TextLabel.h"
 #include "Checkbox.h"
 #include "TextInput.h"
+#include "ListWindow.h"
 
 namespace cursespp {
     class OverlayBase : public LayoutBase, public IOverlay {
         public:
             OverlayBase() : LayoutBase() {
-
+                this->SetFrameVisible(true);
+                this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
+                this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
             }
 
             virtual ~OverlayBase() {
@@ -72,16 +75,16 @@ namespace cursespp {
             }
 
         protected:
-            static void applyLabelOverlayStyle(TextLabel& label) {
+            static void style(TextLabel& label) {
                 label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
             }
 
-            static void applyCheckboxOverlayStyle(Checkbox& cb) {
+            static void style(Checkbox& cb) {
                 cb.SetContentColor(CURSESPP_OVERLAY_CONTENT);
                 cb.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
             }
 
-            static void applyInputOverlayStyle(TextInput& input) {
+            static void style(TextInput& input) {
                 if (input.GetStyle() == TextInput::StyleBox) {
                     input.SetFrameColor(CURSESPP_OVERLAY_FRAME);
                     input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
@@ -92,6 +95,12 @@ namespace cursespp {
                     input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
                     input.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
                 }
+            }
+
+            static void style(ListWindow& listWindow, bool frameVisible = false) {
+                listWindow.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+                listWindow.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+                listWindow.SetFrameVisible(frameVisible);
             }
 
             OverlayStack* GetOverlayStack() {

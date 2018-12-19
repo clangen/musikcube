@@ -66,12 +66,20 @@ void ListWindow::SetScrollbarVisible(bool visible) {
     }
 }
 
+void ListWindow::SetDecorator(Decorator decorator) {
+    this->decorator = decorator;
+}
+
 void ListWindow::Invalidate() {
     this->DecorateFrame();
     Window::Invalidate();
 }
 
 void ListWindow::DecorateFrame() {
+    if (this->decorator) {
+        this->decorator(this);
+    }
+
     if (this->IsFrameVisible()) {
         Scrollbar::Draw(this);
     }

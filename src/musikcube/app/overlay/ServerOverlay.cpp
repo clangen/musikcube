@@ -168,19 +168,19 @@ void ServerOverlay::InitViews() {
     this->pwInput.reset(new TextInput(TextInput::StyleLine, IInput::InputPassword));
 
     /* style 'em */
-    applyLabelOverlayStyle(*this->titleLabel);
-    applyCheckboxOverlayStyle(*this->enableWssCb);
-    applyLabelOverlayStyle(*this->wssPortLabel);
-    applyInputOverlayStyle(*this->wssPortInput);
-    applyCheckboxOverlayStyle(*this->enableHttpCb);
-    applyLabelOverlayStyle(*this->httpPortLabel);
-    applyInputOverlayStyle(*this->httpPortInput);
-    applyCheckboxOverlayStyle(*this->ipv6Cb);
-    applyCheckboxOverlayStyle(*this->enableSyncTransCb);
-    applyLabelOverlayStyle(*this->transCacheLabel);
-    applyInputOverlayStyle(*this->transCacheInput);
-    applyLabelOverlayStyle(*this->pwLabel);
-    applyInputOverlayStyle(*this->pwInput);
+    style(*this->titleLabel);
+    style(*this->enableWssCb);
+    style(*this->wssPortLabel);
+    style(*this->wssPortInput);
+    style(*this->enableHttpCb);
+    style(*this->httpPortLabel);
+    style(*this->httpPortInput);
+    style(*this->ipv6Cb);
+    style(*this->enableSyncTransCb);
+    style(*this->transCacheLabel);
+    style(*this->transCacheInput);
+    style(*this->pwLabel);
+    style(*this->pwInput);
 
     /* add 'em */
     this->AddWindow(this->titleLabel);

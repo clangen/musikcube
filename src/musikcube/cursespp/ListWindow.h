@@ -38,6 +38,7 @@
 #include "IScrollAdapter.h"
 #include "ScrollableWindow.h"
 #include <sigslot/sigslot.h>
+#include <functional>
 
 namespace cursespp {
     class ListWindow :
@@ -48,6 +49,8 @@ namespace cursespp {
      {
         public:
             static size_t NO_SELECTION;
+
+            using Decorator = std::function<void(ListWindow*)>;
 
             sigslot::signal3<ListWindow*, size_t, size_t> SelectionChanged;
             sigslot::signal2<ListWindow*, size_t> Invalidated;
@@ -79,6 +82,7 @@ namespace cursespp {
             virtual bool MouseEvent(const IMouseHandler::Event& event);
 
             void SetScrollbarVisible(bool visible);
+            void SetDecorator(Decorator decorator);
 
         protected:
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
@@ -95,5 +99,6 @@ namespace cursespp {
             bool showScrollbar;
             IScrollAdapter::ScrollPosition scrollPosition;
             size_t selectedIndex;
+            Decorator decorator;
     };
 }

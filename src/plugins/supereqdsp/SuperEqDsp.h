@@ -46,6 +46,10 @@ class SuperEqDsp : public IDSP {
         virtual void Release() override;
         virtual bool Process(IBuffer *buffer) override;
 
+        static void NotifyChanged();
+
     private:
         SuperEqState* supereq {nullptr};
+        int lastUpdated {0};
+        bool enabled;
 };

@@ -162,6 +162,10 @@
         "visualizer_overlay_title": "visualizers",
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",
 
+        "equalizer_overlay_title": "equalizer",
+        "equalizer_overlay_enabled": "equalizer enabled",
+        "equalizer_overlay_frequencies": "frequencies",
+
         "plugin_overlay_title": "configure plugins",
 
         "shortcuts_settings": "settings",

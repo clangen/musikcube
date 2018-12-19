@@ -39,6 +39,7 @@
 #include <cursespp/OverlayBase.h>
 #include <cursespp/Checkbox.h>
 #include <cursespp/ListWindow.h>
+#include <cursespp/ScrollAdapterBase.h>
 #include <sigslot/sigslot.h>
 #include <memory>
 
@@ -50,6 +51,12 @@ namespace musik {
 #endif
         {
             public:
+                using Plugin = std::shared_ptr<musik::core::sdk::IPlugin>;
+                using Prefs = std::shared_ptr<musik::core::Preferences>;
+
+                EqualizerOverlay();
+                virtual ~EqualizerOverlay();
+
                 static void ShowOverlay();
                 static std::shared_ptr<musik::core::sdk::IPlugin> FindPlugin();
 
@@ -57,10 +64,23 @@ namespace musik {
                 virtual bool KeyPress(const std::string& key) override;
 
             private:
-                EqualizerOverlay();
+                class BandsAdapter : public cursespp::ScrollAdapterBase {
+                    public:
+                        BandsAdapter(Prefs prefs);
+                        virtual ~BandsAdapter();
+                        virtual size_t GetEntryCount() override;
+                        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
-                std::shared_ptr<musik::core::sdk::IPlugin> plugin;
-                std::shared_ptr<musik::core::Preferences> prefs;
+                    private:
+                        Prefs prefs;
+                };
+
+                bool CanScroll(int listViewHeight);
+
+                Plugin plugin;
+                Prefs prefs;
+                std::shared_ptr<BandsAdapter> adapter;
+                std::shared_ptr<cursespp::TextLabel> titleLabel;
                 std::shared_ptr<cursespp::Checkbox> enabledCb;
                 std::shared_ptr<cursespp::ListWindow> listView;
         };
