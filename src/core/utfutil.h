@@ -4,6 +4,7 @@
 #include <wchar.h>
 #include <utf8/utf8.h>
 #include <algorithm>
+#include <memory>
 
 #ifdef WIN32
 #include <wcwidth.h>

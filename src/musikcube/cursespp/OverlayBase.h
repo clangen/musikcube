@@ -100,6 +100,8 @@ namespace cursespp {
             static void style(ListWindow& listWindow, bool frameVisible = false) {
                 listWindow.SetContentColor(CURSESPP_OVERLAY_CONTENT);
                 listWindow.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+                listWindow.SetFrameColor(CURSESPP_OVERLAY_LIST_FRAME);
+                listWindow.SetFocusedFrameColor(CURSESPP_OVERLAY_LIST_FRAME_FOCUSED);
                 listWindow.SetFrameVisible(frameVisible);
             }
 

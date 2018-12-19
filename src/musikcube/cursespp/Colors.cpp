@@ -402,6 +402,8 @@ struct Theme {
         init_pair(CURSESPP_OVERLAY_CONTENT, overlayForeground.Id(mode, -1), overlayBgId);
         init_pair(CURSESPP_OVERLAY_INPUT_FRAME, overlayFocusedBorder.Id(mode, COLOR_RED), overlayBgId);
         init_pair(CURSESPP_OVERLAY_TEXT_FOCUSED, overlayFocusedText.Id(mode, COLOR_RED), overlayBgId);
+        init_pair(CURSESPP_OVERLAY_LIST_FRAME, foregroundId, overlayBgId);
+        init_pair(CURSESPP_OVERLAY_LIST_FRAME_FOCUSED, focusedBorder.Id(mode, COLOR_RED), overlayBgId);
 
         /* shortcuts */
         init_pair(
