@@ -40,6 +40,7 @@
 #include <cursespp/Checkbox.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/ScrollAdapterBase.h>
+#include <cursespp/ShortcutsWindow.h>
 #include <sigslot/sigslot.h>
 #include <memory>
 
@@ -88,6 +89,7 @@ namespace musik {
                 std::shared_ptr<cursespp::TextLabel> titleLabel;
                 std::shared_ptr<cursespp::Checkbox> enabledCb;
                 std::shared_ptr<cursespp::ListWindow> listView;
+                std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
         };
     }
 }

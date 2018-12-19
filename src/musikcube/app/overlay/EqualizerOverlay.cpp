@@ -64,32 +64,43 @@ static const std::vector<std::string> BANDS = {
 
 static const int UPDATE_DEBOUNCE_MS = 350;
 static const int VERTICAL_PADDING = 2;
-static const int MAX_HEIGHT = 7 + (int) BANDS.size();
+static const int MAX_HEIGHT = 8 + (int) BANDS.size();
+static const int DEFAULT_WIDTH = 46;
+static const int TRACK_WIDTH = 21;
+static const int DB_LABEL_WIDTH = 6; /* "-XY dB" */
 
-static std::string formatBandRow(size_t width, const std::string& band, double value) {
+static std::string formatDbLabel(double db) {
+    return u8fmt("%d dB", (int)round(db));
+}
+
+static std::string formatBandRow(size_t width, const std::string& band, double db) {
     width -= 2; /* left/right padding */
+    int leftWidth = 10; /* "16744 hz " */
 
-    std::string left = u8fmt(" %s khz ", band.c_str());
+    /* frequency */
+    std::string leftText = u8fmt(" %s hz", band.c_str());
+    leftText = text::Align(leftText, text::AlignRight, leftWidth);
 
-    int remain = width - u8cols(left);
-    int trackWidth = std::min(remain, 25);
-    trackWidth = (trackWidth % 2 == 0) ? trackWidth - 1 : trackWidth;
-
-    double percent = value / 2.0f;
-
-    std::string right;
-    size_t thumbOffset = std::min(trackWidth - 1, (int) (percent * trackWidth));
-    for (int i = 0; i < trackWidth; i++) {
-        right += (i == thumbOffset) ? "■" : "─";
+    /* track */
+    double percent = (db + 20.0) / 40.0;
+    std::string trackText;
+    size_t thumbOffset = std::min(TRACK_WIDTH - 1, (int) (percent * TRACK_WIDTH));
+    for (int i = 0; i < TRACK_WIDTH; i++) {
+        trackText += (i == thumbOffset) ? "■" : "─";
     }
 
-    right = u8fmt(" %s %0.2f", right.c_str(), value);
+    /* db */
+    std::string dbText = text::Align(formatDbLabel(db), text::AlignRight, DB_LABEL_WIDTH);
+
+    /* track + db */
+    std::string rightText = u8fmt(" %s %s", trackText.c_str(), dbText.c_str());
 
     /* TODO: i'm dumb and it's late; we shouldn't need the `+ 1` here, there's
     another calculation error that i'm currently blind to. */
-    remain = width - (u8cols(left) + u8cols(right)) + 1;
+    int remain = width - (u8cols(leftText) + u8cols(rightText)) + 1;
 
-    return text::Align(left, text::AlignLeft, u8cols(left) + remain) + right;
+    /* pad the area between the left and right text, if necessary */
+    return text::Align(leftText, text::AlignLeft, u8cols(leftText) + remain) + rightText;
 }
 
 EqualizerOverlay::EqualizerOverlay()
@@ -111,10 +122,18 @@ EqualizerOverlay::EqualizerOverlay()
     this->listView = std::make_shared<ListWindow>(this->adapter);
     this->listView->SetFrameTitle(_TSTR("equalizer_overlay_frequencies"));
 
+    this->shortcuts = std::make_shared<ShortcutsWindow>();
+    // this->shortcuts->AddShortcut("l", _TSTR("equalizer_button_load"));
+    // this->shortcuts->AddShortcut("s", _TSTR("equalizer_button_save"));
+    this->shortcuts->AddShortcut("z", _TSTR("equalizer_button_zero"));
+    this->shortcuts->AddShortcut("ESC", _TSTR("button_close"));
+    this->shortcuts->SetAlignment(text::AlignRight);
+
     /* add */
     this->AddWindow(this->titleLabel);
     this->AddWindow(this->enabledCb);
     this->AddWindow(this->listView);
+    this->AddWindow(this->shortcuts);
 
     /* focus */
     int order = 0;
@@ -153,7 +172,7 @@ std::shared_ptr<IPlugin> EqualizerOverlay::FindPlugin() {
 }
 
 void EqualizerOverlay::Layout() {
-    int width = (int)(0.8f * (float) Screen::GetWidth());
+    int width = _DIMEN("equalizer_overlay_width", DEFAULT_WIDTH);
     int height = std::min(Screen::GetHeight() - 4, MAX_HEIGHT);
     int y = VERTICAL_PADDING;
     int x = (Screen::GetWidth() / 2) - (width / 2);
@@ -169,7 +188,10 @@ void EqualizerOverlay::Layout() {
     this->enabledCb->MoveAndResize(x, y, cx, 1);
     y += 1;
     cy -= 3;
-    this->listView->MoveAndResize(x, y, cx, cy);
+    this->listView->MoveAndResize(x, y, cx, cy - 1);
+
+    cy = this->GetContentHeight();
+    this->shortcuts->MoveAndResize(0, cy - 1, cx, 1);
 }
 
 void EqualizerOverlay::OnEnabledChanged(cursespp::Checkbox* cb, bool checked) {
@@ -186,17 +208,19 @@ bool EqualizerOverlay::KeyPress(const std::string& key) {
     }
     else if (key == "z") {
         for (auto band : BANDS) {
-            this->prefs->SetDouble(band.c_str(), 1.0);
+            this->prefs->SetDouble(band.c_str(), 0.0);
         }
         this->NotifyAndRedraw();
     }
-    else if (keys.Left(key)) {
-        this->UpdateSelectedBand(-0.1f);
-        return true;
-    }
-    else if (keys.Right(key)) {
-        this->UpdateSelectedBand(0.1f);
-        return true;
+    else if (this->GetFocus() == this->listView) {
+        if (keys.Left(key)) {
+            this->UpdateSelectedBand(-1.0);
+            return true;
+        }
+        else if (keys.Right(key)) {
+            this->UpdateSelectedBand(1.0);
+            return true;
+        }
     }
     return OverlayBase::KeyPress(key);
 }
@@ -214,8 +238,8 @@ void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
 
 void EqualizerOverlay::UpdateSelectedBand(double delta) {
     const std::string band = BANDS[this->listView->GetSelectedIndex()];
-    double existing = this->prefs->GetDouble(band.c_str(), 1.0);
-    double updated = std::min(2.0, std::max(0.0, existing + delta));
+    double existing = this->prefs->GetDouble(band.c_str(), 0.0);
+    double updated = std::min(20.0, std::max(-20.0, existing + delta));
     this->prefs->SetDouble(band.c_str(), updated);
     this->NotifyAndRedraw();
 }
@@ -238,7 +262,9 @@ ScrollAdapterBase::EntryPtr EqualizerOverlay::BandsAdapter::GetEntry(cursespp::S
     const std::string band = BANDS[index];
 
     auto entry = std::make_shared<SingleLineEntry>(formatBandRow(
-        window->GetContentWidth(), band, prefs->GetDouble(band.c_str(), 1.0)));
+        window->GetContentWidth(),
+        band,
+        prefs->GetDouble(band.c_str(), 0.0)));
 
     entry->SetAttrs(CURSESPP_DEFAULT_COLOR);
     if (index == window->GetScrollPosition().logicalIndex) {

@@ -165,6 +165,9 @@
         "equalizer_overlay_title": "equalizer",
         "equalizer_overlay_enabled": "enabled",
         "equalizer_overlay_frequencies": "frequency bands",
+        "equalizer_button_load": "load",
+        "equalizer_button_save": "save",
+        "equalizer_button_zero": "zero",
 
         "plugin_overlay_title": "configure plugins",
 
@@ -215,6 +218,7 @@
         "indexer_overlay_width": 28,
         "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
-        "preamp_overlay_width": 40
+        "preamp_overlay_width": 40,
+        "equalizer_overlay_width": 46
     }
 }
