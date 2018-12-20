@@ -39,13 +39,11 @@ using namespace musik::core::sdk;
 static IPreferences* prefs = nullptr;
 static std::atomic<int> currentState;
 
-static const double LN_10 = 2.3025850929940002f;
-
 static const std::vector<std::string> BANDS = {
     "65", "92", "131", "185", "262",
     "370", "523", "740", "1047", "1480",
     "2093", "2960", "4186", "5920", "8372",
-    "11840", "16744"
+    "11840", "16744", "22000",
 };
 
 extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
@@ -85,11 +83,11 @@ bool SuperEqDsp::Process(IBuffer* buffer) {
         }
 
         void *params = paramlist_alloc();
-        float bands[17];
+        float bands[18];
 
         for (size_t i = 0; i < BANDS.size(); i++) {
             double dB =  prefs->GetDouble(BANDS[i].c_str(), 0.0);
-            double amp = exp(LN_10 * dB / 20.f);
+            double amp = pow(10, dB / 20.f);
             bands[i] = (float) amp;
         }
 

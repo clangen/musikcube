@@ -41,6 +41,8 @@
 namespace cursespp {
     class SimpleScrollAdapter : public ScrollAdapterBase {
         public:
+            sigslot::signal1<SimpleScrollAdapter*> Changed;
+
             SimpleScrollAdapter();
             virtual ~SimpleScrollAdapter();
 
@@ -53,6 +55,7 @@ namespace cursespp {
 
             void SetSelectable(bool selectable);
             void AddEntry(const std::string& entry);
+            std::string StringAt(size_t index);
 
         private:
             typedef std::deque<EntryPtr> EntryList; /* TODO: this is O(n) lookup */

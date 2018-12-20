@@ -293,17 +293,14 @@ IScrollAdapter::EntryPtr CategoryListView::Adapter::GetEntry(cursespp::Scrollabl
     }
 
     bool selected = (index == parent.GetSelectedIndex());
-
-    int64_t attrs = selected
-        ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
-        : CURSESPP_DEFAULT_COLOR;
+    Color attrs = selected ? Color::ListItemHighlighted : Color::Default;
 
     if (playing) {
         if (selected) {
-            attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
+            attrs = Color::ListItemHighlightedSelected;
         }
         else {
-            attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
+            attrs = Color::ListItemSelected;
         }
     }
 

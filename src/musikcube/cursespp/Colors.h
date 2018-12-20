@@ -37,44 +37,68 @@
 #include "curses_config.h"
 #include <string>
 
-#define CURSESPP_DEFAULT_COLOR -1LL
-
-#define CURSESPP_SELECTED_LIST_ITEM 1
-#define CURSESPP_HIGHLIGHTED_LIST_ITEM 2
-#define CURSESPP_HIGHLIGHTED_ERROR_LIST_ITEM 3
-#define CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM 4
-#define CURSESPP_LIST_ITEM_HEADER 5
-#define CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER 6
-
-#define CURSESPP_DEFAULT_CONTENT_COLOR 7
-#define CURSESPP_DEFAULT_FRAME_COLOR 8
-#define CURSESPP_FOCUSED_FRAME_COLOR 9
-
-#define CURSESPP_TEXT_DEFAULT 10
-#define CURSESPP_TEXT_DISABLED 11
-#define CURSESPP_TEXT_FOCUSED 12
-#define CURSESPP_TEXT_ACTIVE 13
-#define CURSESPP_TEXT_WARNING 14
-#define CURSESPP_TEXT_ERROR 15
-#define CURSESPP_TEXT_HIDDEN 16
-
-#define CURSESPP_BUTTON_NORMAL 17
-#define CURSESPP_BUTTON_HIGHLIGHTED 18
-
-#define CURSESPP_SHORTCUT_ROW_NORMAL 19
-#define CURSESPP_SHORTCUT_ROW_FOCUSED 20
-
-#define CURSESPP_OVERLAY_FRAME 21
-#define CURSESPP_OVERLAY_CONTENT 22
-#define CURSESPP_OVERLAY_INPUT_FRAME 23
-#define CURSESPP_OVERLAY_TEXT_FOCUSED 24
-#define CURSESPP_OVERLAY_LIST_FRAME 25
-#define CURSESPP_OVERLAY_LIST_FRAME_FOCUSED 26
-
-#define CURSESPP_BANNER 27
-#define CURSESPP_FOOTER 28
-
 namespace cursespp {
+    class Color {
+        public:
+            enum Type {
+                Default = -1,
+
+                ListItemSelected = 1,
+                ListItemHighlighted = 2,
+                ListItemError = 3,
+                ListItemHighlightedSelected = 4,
+                ListItemHeader = 5,
+                ListItemHeaderHighlighted = 6,
+
+                ContentColorDefault = 7,
+                FrameColorDefault = 8,
+                FrameColorFocused = 9,
+
+                TextDefault = 10,
+                TextDisabled = 11,
+                TextFocused = 12,
+                TextActive = 13,
+                TextWarning = 14,
+                TextError = 15,
+                TextHidden = 16,
+
+                ButtonDefault = 17,
+                ButtonHighlighted = 18,
+
+                ShortcutRowDefault = 19,
+                ShortcutRowFocused = 20,
+
+                OverlayFrame = 21,
+                OverlayContent = 22,
+                OverlayTextInputFrame = 23,
+                OverlayTextFocused = 24,
+                OverlayListFrame = 25,
+                OverlayListFrameFocused = 26,
+
+                Banner = 27,
+                Footer = 28
+            };
+
+            Color() {
+                this->value = -1LL;
+            }
+
+            Color(Type type) {
+                this->value = (type == Default) ? -1LL : COLOR_PAIR(type);
+            }
+
+            Color(const Color& color) {
+                this->value = color;
+            }
+
+            operator int64_t() const {
+                return this->value;
+            }
+
+        private:
+            int64_t value;
+    };
+
     class Colors {
         private:
             Colors();
@@ -92,6 +116,7 @@ namespace cursespp {
             };
 
             static void Init(Mode mode = Mode::Basic, BgType bgType = BgType::Theme);
-            static void SetTheme(const std::string& fn);
+            static void SetTheme(const std::string& name);
+            static std::vector<std::string> ListThemes();
     };
 }

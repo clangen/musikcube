@@ -271,7 +271,7 @@ bool TrackListView::KeyPress(const std::string& key) {
     if (handled) {
         this->lastChanged = now();
 
-        this->DebounceMessage(
+        this->Debounce(
             WINDOW_MESSAGE_SCROLL_TO_PLAYING,
             0, 0, AUTO_SCROLL_COOLDOWN.count());
     }
@@ -427,8 +427,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
                 TrackListEntry(album, trackIndex, RowType::Separator));
 
             entry->SetAttrs(selected
-                ? COLOR_PAIR(CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER)
-                : COLOR_PAIR(CURSESPP_LIST_ITEM_HEADER));
+                ? Color::ListItemHeaderHighlighted
+                : Color::ListItemHeader);
 
             return entry;
         }
@@ -439,22 +439,17 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
     if (!track) {
         auto entry = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
-
-        entry->SetAttrs(COLOR_PAIR(selected
-            ? CURSESPP_HIGHLIGHTED_ERROR_LIST_ITEM : CURSESPP_TEXT_ERROR));
-
+        entry->SetAttrs(selected ? Color::ListItemHighlighted : Color::TextError);
         return entry;
     }
 
-    int64_t attrs = CURSESPP_DEFAULT_COLOR;
+    Color attrs = Color::Default;
 
     if (parent.decorator) {
         attrs = parent.decorator(track, trackIndex);
     }
     else {
-        attrs = selected
-            ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
-            : CURSESPP_DEFAULT_COLOR;
+        attrs = selected ? Color::ListItemHighlighted : Color::Default;
 
         TrackPtr playing = parent.playing;
         if (playing &&
@@ -462,10 +457,10 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
             playing->LibraryId() == track->LibraryId())
         {
             if (selected) {
-                attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
+                attrs = Color::ListItemHighlightedSelected;
             }
             else {
-                attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
+                attrs = Color::ListItemSelected;
             }
         }
     }

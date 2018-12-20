@@ -77,7 +77,6 @@ namespace musik {
                         Prefs prefs;
                 };
 
-                bool CanScroll(int listViewHeight);
                 void UpdateSelectedBand(double delta);
                 void NotifyAndRedraw();
 

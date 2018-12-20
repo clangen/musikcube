@@ -46,7 +46,7 @@ namespace cursespp {
 #endif
     {
         public:
-            static void Show(const std::string& text, long durationMs = 3000);
+            static void Show(const std::string& text, int durationMs = 3000);
 
             virtual ~ToastOverlay();
 

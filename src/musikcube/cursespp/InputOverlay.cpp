@@ -54,17 +54,17 @@ using namespace cursespp;
 
 InputOverlay::InputOverlay() {
     this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->SetFrameColor(Color::OverlayFrame);
+    this->SetContentColor(Color::OverlayContent);
 
     this->width = this->height = this->setWidth = 0;
 
     this->textInput.reset(new TextInput());
     this->textInput->SetFocusOrder(0);
-    this->textInput->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->textInput->SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    this->textInput->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
-    this->textInput->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->textInput->SetFrameColor(Color::OverlayFrame);
+    this->textInput->SetContentColor(Color::OverlayContent);
+    this->textInput->SetFocusedFrameColor(Color::OverlayTextInputFrame);
+    this->textInput->SetFocusedContentColor(Color::OverlayContent);
     this->textInput->EnterPressed.connect(this, &InputOverlay::OnInputEnterPressed);
     this->textInput->TextChanged.connect(this, &InputOverlay::OnInputKeyPress);
     this->AddWindow(this->textInput);

@@ -45,11 +45,6 @@ using namespace musik::cube;
 #define DEFAULT_HEIGHT 10
 #define DEFAULT_WIDTH 35
 
-static void applyLabelOverlayStyle(TextLabel& label) {
-    label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    label.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
-}
-
 void ReassignHotkeyOverlay::Show(Hotkeys::Id id, Callback callback) {
     using T = ReassignHotkeyOverlay;
     auto overlay = std::shared_ptr<T>(new T(id, callback));
@@ -108,25 +103,25 @@ void ReassignHotkeyOverlay::RecalculateSize() {
 
 void ReassignHotkeyOverlay::InitViews() {
     this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->SetFrameColor(Color::OverlayFrame);
+    this->SetContentColor(Color::OverlayContent);
 
     this->titleLabel = std::make_shared<TextLabel>();
-    applyLabelOverlayStyle(*this->titleLabel);
+    style(*this->titleLabel);
     this->titleLabel->SetText(_TSTR("hotkeys_reassign_overlay_title"), text::AlignCenter);
     this->titleLabel->SetBold(true);
 
     this->hotkeyLabel = std::make_shared<TextLabel>();
-    applyLabelOverlayStyle(*this->hotkeyLabel);
+    style(*this->hotkeyLabel);
 
     this->hotkeyInput = std::make_shared<TextInput>(
         TextInput::Style::StyleBox, TextInput::InputRaw);
 
     this->hotkeyInput->SetRawKeyBlacklist({ "KEY_ENTER", "^[" });
     this->hotkeyInput->SetFocusOrder(0);
-    this->hotkeyInput->SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
+    this->hotkeyInput->SetFocusedFrameColor(Color::OverlayTextInputFrame);
     this->hotkeyInput->SetText(Hotkeys::Get(this->id));
-    this->hotkeyInput->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->hotkeyInput->SetFocusedContentColor(Color::OverlayContent);
 
     this->shortcuts = std::make_shared<ShortcutsWindow>();
     this->shortcuts->SetAlignment(text::AlignRight);

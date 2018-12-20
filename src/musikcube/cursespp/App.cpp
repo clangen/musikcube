@@ -46,10 +46,13 @@
 
 #ifdef WIN32
 #include "Win32Util.h"
+#undef MOUSE_MOVED
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 
 #ifndef WIN32
 #include <csignal>
+#include <locale.h>
 #endif
 
 using namespace cursespp;
@@ -93,12 +96,15 @@ App::App(const std::string& title) {
 #ifdef WIN32
     this->iconId = 0;
     this->appTitle = title;
+    this->colorMode = Colors::RGB;
     win32::ConfigureDpiAwareness();
+    PDC_set_default_menu_visibility(0);
 #else
     setlocale(LC_ALL, "");
     std::signal(SIGWINCH, resizedHandler);
     std::signal(SIGHUP, hangupHandler);
     std::signal(SIGPIPE, SIG_IGN);
+    this->colorMode = Colors::Palette;
 #endif
 
 #ifdef __PDCURSES__
@@ -211,8 +217,9 @@ void App::OnResized() {
         Window::Unfreeze();
 
         if (this->state.layout) {
-            if (this->state.viewRoot) {
-                this->state.viewRoot->ResizeToViewport();
+            if (this->state.rootWindow) {
+                this->state.rootWindow->MoveAndResize(
+                    0, 0, Screen::GetWidth(), Screen::GetHeight());
             }
 
             this->state.layout->Layout();
@@ -459,10 +466,11 @@ void App::ChangeLayout(ILayoutPtr newLayout) {
 
     if (newLayout) {
         this->state.layout = newLayout;
-        this->state.viewRoot = dynamic_cast<IViewRoot*>(this->state.layout.get());
+        this->state.rootWindow = dynamic_cast<IWindow*>(this->state.layout.get());
 
-        if (this->state.viewRoot) {
-            this->state.viewRoot->ResizeToViewport();
+        if (this->state.rootWindow) {
+            this->state.rootWindow->MoveAndResize(
+                0, 0, Screen::GetWidth(), Screen::GetHeight());
         }
 
         this->state.layout->Show();

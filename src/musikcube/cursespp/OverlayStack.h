@@ -35,6 +35,7 @@
 #pragma once
 
 #include "ILayout.h"
+#include <vector>
 
 namespace cursespp {
     class OverlayStack {

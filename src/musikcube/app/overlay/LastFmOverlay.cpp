@@ -107,7 +107,7 @@ void LastFmOverlay::CreateSession() {
 }
 
 void LastFmOverlay::PostState(State state) {
-    this->PostMessage(message::SetLastFmState, (int64_t) state);
+    this->Post(message::SetLastFmState, (int64_t) state);
 }
 
 void LastFmOverlay::SetState(State state) {

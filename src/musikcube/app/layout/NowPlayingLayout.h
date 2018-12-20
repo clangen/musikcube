@@ -34,8 +34,8 @@
 
 #pragma once
 
+#include <cursespp/Colors.h>
 #include <cursespp/LayoutBase.h>
-
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/window/TransportWindow.h>
@@ -75,7 +75,7 @@ namespace musik {
 
                 /* callbacks */
                 void OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query);
-                int64_t RowDecorator(musik::core::TrackPtr track, size_t index);
+                cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(int64_t playlistId);
 
                 musik::core::audio::PlaybackService& playback;

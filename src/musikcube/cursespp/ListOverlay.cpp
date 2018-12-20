@@ -83,8 +83,8 @@ class ListOverlay::CustomListWindow : public ListWindow {
 
 ListOverlay::ListOverlay() {
     this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->SetFrameColor(Color::OverlayFrame);
+    this->SetContentColor(Color::OverlayContent);
 
     this->autoDismiss = true;
 
@@ -101,11 +101,11 @@ ListOverlay::ListOverlay() {
 
     this->scrollbar.reset(new Window());
     this->scrollbar->SetFrameVisible(false);
-    this->scrollbar->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->scrollbar->SetContentColor(Color::OverlayContent);
 
     this->listWindow.reset(new CustomListWindow(decorator, adapterChanged));
-    this->listWindow->SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    this->listWindow->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->listWindow->SetContentColor(Color::OverlayContent);
+    this->listWindow->SetFocusedContentColor(Color::OverlayContent);
     this->listWindow->SetFrameVisible(false);
     this->listWindow->EntryActivated.connect(this, &ListOverlay::OnListEntryActivated);
 

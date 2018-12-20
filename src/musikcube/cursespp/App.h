@@ -35,7 +35,6 @@
 #pragma once
 
 #include <queue>
-#include "IViewRoot.h"
 #include "ILayout.h"
 #include "IInput.h"
 #include "IKeyHandler.h"
@@ -59,7 +58,7 @@ namespace cursespp {
             void SetResizeHandler(ResizeHandler handler);
             void SetColorMode(Colors::Mode mode);
             void SetColorBackgroundType(Colors::BgType bgType);
-            void SetColorTheme(const std::string& fn);
+            void SetColorTheme(const std::string& name);
             void SetMinimumSize(int width, int height);
             void SetMouseEnabled(bool enabled);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
@@ -90,19 +89,12 @@ namespace cursespp {
         private:
             struct WindowState {
                 ILayoutPtr overlay;
-                IWindow* overlayWindow;
+                IWindow* overlayWindow{ nullptr };
                 ILayoutPtr layout;
                 IWindowPtr focused;
-                IViewRoot* viewRoot;
-                IInput* input;
-                IKeyHandler* keyHandler;
-
-                WindowState() {
-                    this->overlayWindow = nullptr;
-                    this->viewRoot = nullptr;
-                    this->input = nullptr;
-                    this->keyHandler = nullptr;
-                }
+                IWindow* rootWindow{ nullptr };
+                IInput* input{ nullptr };
+                IKeyHandler* keyHandler{ nullptr };
 
                 inline ILayoutPtr ActiveLayout() {
                     /* if there's a visible overlay, it's always the current

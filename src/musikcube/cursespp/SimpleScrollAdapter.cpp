@@ -62,6 +62,7 @@ void SimpleScrollAdapter::SetSelectable(bool selectable) {
 
 void SimpleScrollAdapter::Clear() {
     this->entries.clear();
+    this->Changed(this);
 }
 
 size_t SimpleScrollAdapter::GetEntryCount() {
@@ -77,17 +78,19 @@ EntryPtr SimpleScrollAdapter::GetEntry(cursespp::ScrollableWindow* window, size_
 
     /* this is pretty damned gross, but super convenient. */
     if (window && selectable) {
-        SingleLineEntry* single = dynamic_cast<SingleLineEntry*>(entry.get());
-        if (single) {
-            single->SetAttrs(CURSESPP_DEFAULT_COLOR);
-
+        SingleLineEntry* single = static_cast<SingleLineEntry*>(entry.get());
+        single->SetAttrs(Color(Color::Default));
             if (index == window->GetScrollPosition().logicalIndex) {
-                single->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+            single->SetAttrs(Color(Color::ListItemHighlighted));
             }
         }
-    }
 
     return entry;
+    }
+
+std::string SimpleScrollAdapter::StringAt(size_t index) {
+    auto entry = this->entries.at(index);
+    return static_cast<SingleLineEntry*>(entry.get())->GetValue();
 }
 
 void SimpleScrollAdapter::AddEntry(std::shared_ptr<IEntry> entry) {
@@ -97,6 +100,8 @@ void SimpleScrollAdapter::AddEntry(std::shared_ptr<IEntry> entry) {
     while (entries.size() > this->maxEntries) {
         entries.pop_front();
     }
+
+    this->Changed(this);
 }
 
 void SimpleScrollAdapter::AddEntry(const std::string& value) {

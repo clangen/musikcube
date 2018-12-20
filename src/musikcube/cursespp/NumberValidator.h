@@ -34,24 +34,51 @@
 
 #pragma once
 
-#ifdef WIN32
-#define PDC_WIDE
-#define PDC_FORCE_UTF8
-#undef MOUSE_MOVED
-#endif
+#include <f8n/str/util.h>
+#include <cursespp/InputOverlay.h>
 
-#if defined(WIN32) || defined(__APPLE__) || defined(NO_NCURSESW)
-    #include <curses.h>
-    #include <panel.h>
-#else
-    #include <ncursesw/curses.h>
-    #include <ncursesw/panel.h>
-#endif
+namespace cursespp {
 
-#include <stdarg.h>
+    template <typename T>
+    struct NumberValidator : public InputOverlay::IValidator {
+        using Formatter = std::function<std::string(T)>;
 
-#define checked_wprintw(window, format, ...) \
-    if (window && format) { wprintw(window, format, ##__VA_ARGS__); }
+        NumberValidator(T minimum, T maximum, Formatter formatter)
+            : minimum(minimum), maximum(maximum), formatter(formatter) {
+        }
 
-#define checked_waddstr(window, str) \
-    if (window && str) { waddstr(window, str); }
+        virtual bool IsValid(const std::string& input) const override {
+            try {
+                double result = std::stod(input);
+                if (bounded(minimum, maximum) && (result < minimum || result > maximum)) {
+                    return false;
+                }
+            }
+            catch (std::invalid_argument) {
+                return false;
+            }
+            return true;
+        }
+
+        virtual const std::string ErrorMessage() const override {
+            if (bounded(minimum, maximum)) {
+                std::string result = _TSTR("validator_dialog_number_parse_bounded_error");
+                f8n::str::replace(result, "{{minimum}}", formatter(minimum));
+                f8n::str::replace(result, "{{maximum}}", formatter(maximum));
+                return result;
+            }
+            return _TSTR("validator_dialog_number_parse_error");
+        }
+
+        static bool bounded(T minimum, T maximum) {
+            return
+                minimum != std::numeric_limits<T>::min() &&
+                maximum != std::numeric_limits<T>::max();
+        }
+
+
+        Formatter formatter;
+        T minimum, maximum;
+    };
+
+}

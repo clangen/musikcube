@@ -48,8 +48,6 @@
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 
-#include <boost/filesystem.hpp>
-
 using namespace musik;
 using namespace musik::core;
 using namespace musik::cube;
@@ -57,11 +55,6 @@ using namespace cursespp;
 using namespace boost::filesystem;
 
 using Callback = std::function<void()>;
-
-struct ThemeInfo {
-    std::string name;
-    std::string path;
-};
 
 static void showNeedsRestart(Callback cb = Callback()) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -76,25 +69,6 @@ static void showNeedsRestart(Callback cb = Callback()) {
         });
 
     App::Overlays().Push(dialog);
-}
-
-static void indexThemes(
-    const std::string& directory,
-    std::shared_ptr<std::vector<ThemeInfo>> themes)
-{
-    path colorPath(directory);
-    if (exists(colorPath)) {
-        directory_iterator end;
-        for (directory_iterator file(colorPath); file != end; file++) {
-            const path& p = file->path();
-
-            if (p.has_extension() && p.extension().string() == ".json") {
-                std::string fn = p.filename().string();
-                std::string name = fn.substr(0, fn.rfind("."));
-                themes->push_back({ name, p.string() });
-            }
-        }
-    }
 }
 
 ColorThemeOverlay::ColorThemeOverlay() {
@@ -113,24 +87,14 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     int selectedIndex = disableCustomColors ? 1 : 0;
 
     std::shared_ptr<Adapter> adapter(new Adapter());
-    adapter->AddEntry(_TSTR("settings_default_theme_name"));
     adapter->AddEntry(_TSTR("settings_8color_theme_name"));
 
-    std::shared_ptr<std::vector<ThemeInfo>> themes(new std::vector<ThemeInfo>());
-    indexThemes(musik::core::GetApplicationDirectory() + "/themes/", themes);
-    indexThemes(musik::core::GetDataDirectory() + "/themes/", themes);
+    auto themes = Colors::ListThemes();
 
-    std::sort(
-        themes->begin(),
-        themes->end(),
-        [](const ThemeInfo& a, const ThemeInfo& b) -> bool {
-            return a.name < b.name;
-        });
-
-    for (size_t i = 0; i < themes->size(); i++) {
-        adapter->AddEntry(themes->at(i).name);
-        if (themes->at(i).path == currentTheme) {
-            selectedIndex = i + 2;
+    for (size_t i = 0; i < themes.size(); i++) {
+        adapter->AddEntry(themes.at(i));
+        if (themes.at(i) == currentTheme) {
+            selectedIndex = i + 1;
         }
     }
 
@@ -147,15 +111,6 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index == 0) {
                     prefs->SetString(cube::prefs::keys::ColorTheme, "");
-                    prefs->SetBool(cube::prefs::keys::DisableCustomColors, false);
-                    Colors::SetTheme("");
-
-                    if (disableCustomColors) {
-                        showNeedsRestart();
-                    }
-                }
-                else if (index == 1) {
-                    prefs->SetString(cube::prefs::keys::ColorTheme, "");
                     prefs->SetBool(cube::prefs::keys::DisableCustomColors, true);
 
                     if (!disableCustomColors) {
@@ -163,12 +118,11 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
                     }
                 }
                 else {
-                    std::string selected = themes->at(index - 2).path;
+                    std::string selected = themes.at(index - 1);
                     if (selected != currentTheme) {
                         prefs->SetString(cube::prefs::keys::ColorTheme, selected.c_str());
                         prefs->SetBool(cube::prefs::keys::DisableCustomColors, false);
                         Colors::SetTheme(selected);
-
                         if (disableCustomColors) {
                             showNeedsRestart();
                         }

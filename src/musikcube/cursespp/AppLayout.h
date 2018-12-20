@@ -34,24 +34,53 @@
 
 #pragma once
 
-#ifdef WIN32
-#define PDC_WIDE
-#define PDC_FORCE_UTF8
-#undef MOUSE_MOVED
+#include <cursespp/App.h>
+#include <cursespp/LayoutBase.h>
+#include <cursespp/TextInput.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/ShortcutsWindow.h>
+#include <cursespp/ITopLevelLayout.h>
+
+#include <sigslot/sigslot.h>
+
+namespace cursespp {
+    class AppLayout :
+        public cursespp::LayoutBase,
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        public std::enable_shared_from_this<AppLayout>,
 #endif
+        public sigslot::has_slots<>
+    {
+        public:
+            AppLayout(cursespp::App& app);
 
-#if defined(WIN32) || defined(__APPLE__) || defined(NO_NCURSESW)
-    #include <curses.h>
-    #include <panel.h>
-#else
-    #include <ncursesw/curses.h>
-    #include <ncursesw/panel.h>
-#endif
+            virtual ~AppLayout();
 
-#include <stdarg.h>
+            virtual bool KeyPress(const std::string& key) override;
+            virtual void OnLayout() override;
+            virtual cursespp::IWindowPtr GetFocus() override;
+            virtual cursespp::IWindowPtr FocusNext() override;
+            virtual cursespp::IWindowPtr FocusPrev() override;
 
-#define checked_wprintw(window, format, ...) \
-    if (window && format) { wprintw(window, format, ##__VA_ARGS__); }
+            void SetLayout(std::shared_ptr<cursespp::LayoutBase> layout);
 
-#define checked_waddstr(window, str) \
-    if (window && str) { waddstr(window, str); }
+        protected:
+            virtual void SetPadding(size_t t, size_t l, size_t b, size_t r);
+
+        private:
+            void Initialize();
+
+            void EnableDemoModeIfNecessary();
+
+            cursespp::IWindowPtr BlurShortcuts();
+            void FocusShortcuts();
+
+            std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
+            std::shared_ptr<cursespp::LayoutBase> layout;
+            std::shared_ptr<cursespp::TextLabel> hotkey;
+            cursespp::IWindowPtr lastFocus;
+            ITopLevelLayout* topLevelLayout;
+            size_t paddingT{0}, paddingL{0}, paddingB{0}, paddingR{0};
+            bool shortcutsFocused;
+    };
+}

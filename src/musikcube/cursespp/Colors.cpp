@@ -35,9 +35,13 @@
 #include <stdafx.h>
 #include <json.hpp>
 #include "Colors.h"
+#include <boost/filesystem.hpp>
+#include <core/support/Common.h>
 
+using namespace musik::core;
 using namespace cursespp;
 using namespace nlohmann;
+using namespace boost::filesystem;
 
 /* if the terminal supports custom colors, these are the palette
 indicies we'll use to store them */
@@ -138,119 +142,73 @@ palette, use ones that most closely match our desired colors */
 
 #define SCALE(x) ((x * 1000) / 255)
 
-/* as much as I hate to do this, it was copied directly from
-musik::core::FileToByteArray to keep things properly encapsulated. */
-static bool fileToByteArray(const std::string& path, char** target, int& size) {
-#ifdef WIN32
-    std::wstring u16fn = u8to16(path);
-    FILE* file = _wfopen(u16fn.c_str(), L"rb");
-#else
-    FILE* file = fopen(path.c_str(), "rb");
-#endif
-
-    *target = nullptr;
-    size = 0;
-
-    if (!file) {
-        return false;
+struct ThemeColor {
+    ThemeColor() {
+        Set(0, 0, 0, 0, -1);
     }
 
-    bool success = false;
-
-    if (fseek(file, 0L, SEEK_END) == 0) {
-        long fileSize = ftell(file);
-        if (fileSize == -1) {
-            goto close_and_return;
-        }
-
-        if (fseek(file, 0L, SEEK_SET) != 0) {
-            goto close_and_return;
-        }
-
-        *target = (char*)malloc(sizeof(char) * (fileSize + 1));
-        size = fread(*target, sizeof(char), fileSize, file);
-
-        if (size == fileSize) {
-            (*target)[size] = 0;
-            success = true;
-        }
+    void Set(int colorId, int r, int g, int b, int palette) {
+        this->colorId = colorId;
+        this->r = r;
+        this->g = g;
+        this->b = b;
+        this->palette = palette;
     }
 
-close_and_return:
-    fclose(file);
+    void Set(const json& obj) {
+        if (!obj.is_null()) {
+            std::string hex = obj.value(JSON_KEY_HEX, "");
+            long palette = obj.value(JSON_KEY_PALETTE, -1);
 
-    if (!success) {
-        free(*target);
-    }
+            if (hex.length() == 7 && hex[0] == '#') {
+                int rgb = strtol(hex.substr(1).c_str(), 0, 16);
+                this->b = rgb & 0x0000ff;
+                this->r = rgb >> 16;
+                this->g = (rgb >> 8) & 0x0000ff;
+            }
+            else if (palette > 15 && palette < 256) {
+                /* we may have already been initialized with a default
+                color. but if we have a palette color, clear the RGB
+                values and prefer the value from the theme. */
+                this->r = this->b = this->g = -1;
+            }
 
-    return success;
-}
-
-struct Theme {
-    struct Color {
-        Color() {
-            Set(0, 0, 0, 0, -1);
-        }
-
-        void Set(int colorId, int r, int g, int b, int palette) {
-            this->colorId = colorId;
-            this->r = r;
-            this->g = g;
-            this->b = b;
-            this->palette = palette;
-        }
-
-        void Set(const json& obj) {
-            if (!obj.is_null()) {
-                std::string hex = obj.value(JSON_KEY_HEX, "");
-                long palette = obj.value(JSON_KEY_PALETTE, -1);
-
-                if (hex.length() == 7 && hex[0] == '#') {
-                    int rgb = strtol(hex.substr(1).c_str(), 0, 16);
-                    this->b = rgb & 0x0000ff;
-                    this->r = rgb >> 16;
-                    this->g = (rgb >> 8) & 0x0000ff;
-                }
-                else if (palette > 15 && palette < 256) {
-                    /* we may have already been initialized with a default
-                    color. but if we have a palette color, clear the RGB
-                    values and prefer the value from the theme. */
-                    this->r = this->b = this->g = -1;
-                }
-
-                if (palette != -1) {
-                    this->palette = palette;
-                }
+            if (palette != -1) {
+                this->palette = palette;
             }
         }
+    }
 
-        int Id(Colors::Mode mode, int defaultValue) {
-            if (mode == Colors::Basic) {
-                return defaultValue;
-            }
-            else if (mode == Colors::Palette) {
-                return this->palette;
+    int Id(Colors::Mode mode, int defaultValue) {
+        if (mode == Colors::Basic) {
+            return defaultValue;
+        }
+        else if (mode == Colors::Palette) {
+            return this->palette;
+        }
+        else {
+            if (this->colorId > 15 && this->r >= 0 && this->g >= 0 && this->b >= 0) {
+                init_color(this->colorId, SCALE(this->r), SCALE(this->g), SCALE(this->b));
+                return this->colorId;
             }
             else {
-                if (this->colorId > 15 && this->r >= 0 && this->g >= 0 && this->b >= 0) {
-                    init_color(this->colorId, SCALE(this->r), SCALE(this->g), SCALE(this->b));
-                    return this->colorId;
-                }
-                else {
-                    /* if RGB mode was requested but no RGB value exists, fall back to the
-                    palette value. */
-                    return this->palette;
-                }
+                /* if RGB mode was requested but no RGB value exists, fall back to the
+                palette value. */
+                return this->palette;
             }
-            return -1;
         }
+        return -1;
+    }
 
-        int colorId;
-        int r, g, b;
-        int palette;
-    };
+    int colorId;
+    int r, g, b;
+    int palette;
+};
 
+struct Theme {
     Theme() {
+        this->name = "default";
+        this->Reset();
     }
 
     void Reset() {
@@ -316,7 +274,7 @@ struct Theme {
         char* buffer = nullptr;
         int size = 0;
 
-        if (fileToByteArray(fn, &buffer, size)) {
+        if (FileToByteArray(fn, &buffer, size, true)) {
             try {
                 json data = json::parse(buffer);
 
@@ -365,6 +323,9 @@ struct Theme {
                     this->listActiveHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND, unset));
                     this->listActiveHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND, unset));
 
+                    this->fn = fn;
+                    this->name = data.value("name", "unnamed");
+
                     success = true;
                 }
             }
@@ -379,149 +340,155 @@ struct Theme {
     /* initializes all of the color pairs from the specified colors, then applies them
     to the current session! */
     void Apply(Colors::Mode mode, Colors::BgType bgType) {
+#ifdef WIN32
+        bgType = Colors::Theme;
+#endif
         int backgroundId = (bgType == Colors::BgType::Theme) ? background.Id(mode, -1) : -1;
         int foregroundId = foreground.Id(mode, -1);
 
         /* main */
-        init_pair(CURSESPP_DEFAULT_CONTENT_COLOR, foregroundId, backgroundId);
-        init_pair(CURSESPP_DEFAULT_FRAME_COLOR, foregroundId, backgroundId);
-        init_pair(CURSESPP_FOCUSED_FRAME_COLOR, focusedBorder.Id(mode, COLOR_RED),backgroundId);
+        init_pair(Color::ContentColorDefault, foregroundId, backgroundId);
+        init_pair(Color::FrameColorDefault, foregroundId, backgroundId);
+        init_pair(Color::FrameColorFocused, focusedBorder.Id(mode, COLOR_RED),backgroundId);
 
         /* text */
-        init_pair(CURSESPP_TEXT_DEFAULT, foregroundId, backgroundId);
-        init_pair(CURSESPP_TEXT_DISABLED, textDisabled.Id(mode, -1), backgroundId);
-        init_pair(CURSESPP_TEXT_FOCUSED, textFocused.Id(mode, COLOR_RED), backgroundId);
-        init_pair(CURSESPP_TEXT_ACTIVE, textActive.Id(mode, COLOR_GREEN), backgroundId);
-        init_pair(CURSESPP_TEXT_WARNING, textWarning.Id(mode, COLOR_YELLOW), backgroundId);
-        init_pair(CURSESPP_TEXT_ERROR, textError.Id(mode, COLOR_RED), backgroundId);
-        init_pair(CURSESPP_TEXT_HIDDEN, textHidden.Id(mode, COLOR_BLACK), backgroundId);
+        init_pair(Color::TextDefault, foregroundId, backgroundId);
+        init_pair(Color::TextDisabled, textDisabled.Id(mode, -1), backgroundId);
+        init_pair(Color::TextFocused, textFocused.Id(mode, COLOR_RED), backgroundId);
+        init_pair(Color::TextActive, textActive.Id(mode, COLOR_GREEN), backgroundId);
+        init_pair(Color::TextWarning, textWarning.Id(mode, COLOR_YELLOW), backgroundId);
+        init_pair(Color::TextError, textError.Id(mode, COLOR_RED), backgroundId);
+        init_pair(Color::TextHidden, textHidden.Id(mode, COLOR_BLACK), backgroundId);
 
         /* overlay */
         int overlayBgId = overlayBackground.Id(mode, -1);
-        init_pair(CURSESPP_OVERLAY_FRAME, overlayBorder.Id(mode, COLOR_BLUE), overlayBgId);
-        init_pair(CURSESPP_OVERLAY_CONTENT, overlayForeground.Id(mode, -1), overlayBgId);
-        init_pair(CURSESPP_OVERLAY_INPUT_FRAME, overlayFocusedBorder.Id(mode, COLOR_RED), overlayBgId);
-        init_pair(CURSESPP_OVERLAY_TEXT_FOCUSED, overlayFocusedText.Id(mode, COLOR_RED), overlayBgId);
-        init_pair(CURSESPP_OVERLAY_LIST_FRAME, foregroundId, overlayBgId);
-        init_pair(CURSESPP_OVERLAY_LIST_FRAME_FOCUSED, focusedBorder.Id(mode, COLOR_RED), overlayBgId);
+        init_pair(Color::OverlayFrame, overlayBorder.Id(mode, COLOR_BLUE), overlayBgId);
+        init_pair(Color::OverlayContent, overlayForeground.Id(mode, -1), overlayBgId);
+        init_pair(Color::OverlayTextInputFrame, overlayFocusedBorder.Id(mode, COLOR_RED), overlayBgId);
+        init_pair(Color::OverlayTextFocused, overlayFocusedText.Id(mode, COLOR_RED), overlayBgId);
+        init_pair(Color::OverlayListFrame, foregroundId, overlayBgId);
+        init_pair(Color::OverlayListFrameFocused, focusedBorder.Id(mode, COLOR_RED), overlayBgId);
 
         /* shortcuts */
         init_pair(
-            CURSESPP_SHORTCUT_ROW_NORMAL,
+            Color::ShortcutRowDefault,
             shortcutsForeground.Id(mode, COLOR_YELLOW),
             shortcutsBackground.Id(mode, -1));
 
         init_pair(
-            CURSESPP_SHORTCUT_ROW_FOCUSED,
+            Color::ShortcutRowFocused,
             focusedShortcutsForeground.Id(mode, COLOR_WHITE),
             focusedShortcutsBackground.Id(mode, COLOR_RED));
 
         /* buttons */
         init_pair(
-            CURSESPP_BUTTON_NORMAL,
+            Color::ButtonDefault,
             buttonForegroundNormal.Id(mode, COLOR_BLACK),
             buttonBackgroundNormal.Id(mode, COLOR_YELLOW));
 
         init_pair(
-            CURSESPP_BUTTON_HIGHLIGHTED,
+            Color::ButtonHighlighted,
             buttonForegroundActive.Id(mode, COLOR_BLACK),
             buttonBackgroundActive.Id(mode, COLOR_GREEN));
 
         /* banner */
         init_pair(
-            CURSESPP_BANNER,
+            Color::Banner,
             bannerForeground.Id(mode, COLOR_BLACK),
             bannerBackground.Id(mode, COLOR_YELLOW));
 
         /* footer */
         init_pair(
-            CURSESPP_FOOTER,
+            Color::Footer,
             footerForeground.Id(mode, COLOR_BLACK),
             footerBackground.Id(mode, COLOR_BLUE));
 
         /* list items */
         init_pair(
-            CURSESPP_LIST_ITEM_HEADER,
+            Color::ListItemHeader,
             listHeaderForeground.Id(mode, COLOR_GREEN),
             listHeaderBackground.Id(mode, -1));
 
         init_pair(
-            CURSESPP_LIST_ITEM_HIGHLIGHTED_HEADER,
+            Color::ListItemHeaderHighlighted,
             listHeaderHighlightedForeground.Id(mode, -1),
             listHeaderHighlightedBackground.Id(mode, COLOR_GREEN));
 
         init_pair(
-            CURSESPP_SELECTED_LIST_ITEM,
+            Color::ListItemSelected,
             listActiveForeground.Id(mode, COLOR_YELLOW),
             listActiveBackground.Id(mode, COLOR_BLACK));
 
         init_pair(
-            CURSESPP_HIGHLIGHTED_LIST_ITEM,
+            Color::ListItemHighlighted,
             listHighlightedForeground.Id(mode, COLOR_BLACK),
             listHighlightedBackground.Id(mode, COLOR_GREEN));
 
         init_pair(
-            CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM,
+            Color::ListItemHighlightedSelected,
             listActiveHighlightedForeground.Id(mode, COLOR_BLACK),
             listActiveHighlightedBackground.Id(mode, COLOR_YELLOW));
 
         init_pair(
-            CURSESPP_HIGHLIGHTED_ERROR_LIST_ITEM,
+            Color::ListItemError,
             textError.Id(mode, COLOR_RED),
             listHighlightedBackground.Id(mode, COLOR_GREEN));
     }
 
+    std::string name;
+    std::string fn;
+
     /* main */
-    Color background;
-    Color foreground;
-    Color focusedBorder;
+    ThemeColor background;
+    ThemeColor foreground;
+    ThemeColor focusedBorder;
 
     /* text */
-    Color textFocused;
-    Color textActive;
-    Color textDisabled;
-    Color textHidden;
-    Color textWarning;
-    Color textError;
+    ThemeColor textFocused;
+    ThemeColor textActive;
+    ThemeColor textDisabled;
+    ThemeColor textHidden;
+    ThemeColor textWarning;
+    ThemeColor textError;
 
     /* overlay */
-    Color overlayBackground;
-    Color overlayForeground;
-    Color overlayBorder;
-    Color overlayFocusedBorder;
-    Color overlayFocusedText;
+    ThemeColor overlayBackground;
+    ThemeColor overlayForeground;
+    ThemeColor overlayBorder;
+    ThemeColor overlayFocusedBorder;
+    ThemeColor overlayFocusedText;
 
     /* shortcut bar */
-    Color shortcutsBackground;
-    Color shortcutsForeground;
-    Color focusedShortcutsBackground;
-    Color focusedShortcutsForeground;
+    ThemeColor shortcutsBackground;
+    ThemeColor shortcutsForeground;
+    ThemeColor focusedShortcutsBackground;
+    ThemeColor focusedShortcutsForeground;
 
     /* buttons */
-    Color buttonBackgroundNormal;
-    Color buttonForegroundNormal;
-    Color buttonBackgroundActive;
-    Color buttonForegroundActive;
+    ThemeColor buttonBackgroundNormal;
+    ThemeColor buttonForegroundNormal;
+    ThemeColor buttonBackgroundActive;
+    ThemeColor buttonForegroundActive;
 
     /* banner */
-    Color bannerBackground;
-    Color bannerForeground;
+    ThemeColor bannerBackground;
+    ThemeColor bannerForeground;
 
     /* footer */
-    Color footerBackground;
-    Color footerForeground;
+    ThemeColor footerBackground;
+    ThemeColor footerForeground;
 
     /* listview */
-    Color listHeaderBackground;
-    Color listHeaderForeground;
-    Color listHeaderHighlightedBackground;
-    Color listHeaderHighlightedForeground;
-    Color listHighlightedBackground;
-    Color listHighlightedForeground;
-    Color listActiveForeground;
-    Color listActiveBackground;
-    Color listActiveHighlightedBackground;
-    Color listActiveHighlightedForeground;
+    ThemeColor listHeaderBackground;
+    ThemeColor listHeaderForeground;
+    ThemeColor listHeaderHighlightedBackground;
+    ThemeColor listHeaderHighlightedForeground;
+    ThemeColor listHighlightedBackground;
+    ThemeColor listHighlightedForeground;
+    ThemeColor listActiveForeground;
+    ThemeColor listActiveBackground;
+    ThemeColor listActiveHighlightedBackground;
+    ThemeColor listActiveHighlightedForeground;
 };
 
 /* some terminals report custom colors are supported, and also
@@ -545,9 +512,45 @@ static bool canChangeColors() {
 Colors::Colors() {
 }
 
+static std::string lastTheme = "default";
 static Theme theme;
+static std::vector<Theme> themes;
 static Colors::Mode colorMode = Colors::Basic;
 static Colors::BgType bgType = Colors::Theme;
+
+static void indexThemes(const std::string& directory) {
+    path colorPath(directory);
+    if (exists(colorPath)) {
+        directory_iterator end;
+        for (directory_iterator file(colorPath); file != end; file++) {
+            const path& p = file->path();
+
+            if (p.has_extension() && p.extension().string() == ".json") {
+                std::string fn = p.filename().string();
+                Theme theme;
+                if (theme.LoadFromFile(directory + "/" + fn)) {
+                   ::themes.push_back(theme);
+                }
+            }
+        }
+    }
+}
+
+static void indexThemes() {
+    if (!::themes.size()) {
+        ::themes.push_back(Theme()); /* default */
+
+        indexThemes(GetApplicationDirectory() + "/themes/");
+        indexThemes(GetDataDirectory() + "/themes/");
+
+        std::sort(
+            ::themes.begin(),
+            ::themes.end(),
+            [](const Theme& a, const Theme& b) -> bool {
+                return a.name < b.name;
+            });
+    }
+}
 
 void Colors::Init(Colors::Mode mode, Colors::BgType bgType) {
     start_color();
@@ -565,12 +568,24 @@ void Colors::Init(Colors::Mode mode, Colors::BgType bgType) {
         }
     }
 
-    theme.Reset();
-    theme.Apply(::colorMode, ::bgType);
+    SetTheme(::lastTheme);
 }
 
-void Colors::SetTheme(const std::string& fn) {
-    theme.Reset();
-    theme.LoadFromFile(fn);
-    theme.Apply(::colorMode, ::bgType);
+void Colors::SetTheme(const std::string& name) {
+    indexThemes();
+    for (auto& t : ::themes) {
+        if (name == t.name) {
+            ::lastTheme = name;
+            t.Apply(::colorMode, ::bgType);
+        }
+    }
+}
+
+std::vector<std::string> Colors::ListThemes() {
+    indexThemes();
+    std::vector<std::string> names;
+    for (auto& t : ::themes) {
+        names.push_back(t.name);
+    }
+    return names;
 }

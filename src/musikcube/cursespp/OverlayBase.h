@@ -48,8 +48,8 @@ namespace cursespp {
         public:
             OverlayBase() : LayoutBase() {
                 this->SetFrameVisible(true);
-                this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-                this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+                this->SetFrameColor(Color::OverlayFrame);
+                this->SetContentColor(Color::OverlayContent);
             }
 
             virtual ~OverlayBase() {
@@ -76,32 +76,33 @@ namespace cursespp {
 
         protected:
             static void style(TextLabel& label) {
-                label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
+                label.SetContentColor(Color::OverlayContent);
+                label.SetFocusedContentColor(Color::OverlayTextFocused);
             }
 
             static void style(Checkbox& cb) {
-                cb.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-                cb.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
+                cb.SetContentColor(Color::OverlayContent);
+                cb.SetFocusedContentColor(Color::OverlayTextFocused);
             }
 
             static void style(TextInput& input) {
                 if (input.GetStyle() == TextInput::StyleBox) {
-                    input.SetFrameColor(CURSESPP_OVERLAY_FRAME);
-                    input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-                    input.SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
-                    input.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+                    input.SetFrameColor(Color::OverlayFrame);
+                    input.SetContentColor(Color::OverlayContent);
+                    input.SetFocusedFrameColor(Color::OverlayTextInputFrame);
+                    input.SetFocusedContentColor(Color::OverlayContent);
                 }
                 else {
-                    input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-                    input.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
+                    input.SetContentColor(Color::OverlayContent);
+                    input.SetFocusedContentColor(Color::OverlayTextFocused);
                 }
             }
 
             static void style(ListWindow& listWindow, bool frameVisible = false) {
-                listWindow.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-                listWindow.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
-                listWindow.SetFrameColor(CURSESPP_OVERLAY_LIST_FRAME);
-                listWindow.SetFocusedFrameColor(CURSESPP_OVERLAY_LIST_FRAME_FOCUSED);
+                listWindow.SetContentColor(Color::OverlayContent);
+                listWindow.SetFocusedContentColor(Color::OverlayContent);
+                listWindow.SetFrameColor(Color::OverlayListFrame);
+                listWindow.SetFocusedFrameColor(Color::OverlayListFrameFocused);
                 listWindow.SetFrameVisible(frameVisible);
             }
 

@@ -124,10 +124,10 @@ void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 
         shortcuts->SetChangedCallback([this](std::string key) {
             if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
-                this->BroadcastMessage(message::JumpToSettings);
+                this->Broadcast(message::JumpToSettings);
             }
             if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
-                this->BroadcastMessage(message::JumpToLibrary);
+                this->Broadcast(message::JumpToLibrary);
             }
             else if (key == "^D") {
                 App::Instance().Quit();
@@ -141,7 +141,7 @@ void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     }
 }
 
-void ConsoleLayout::WriteOutput(const std::string& str, int64_t attrs) {
+void ConsoleLayout::WriteOutput(const std::string& str, Color attrs) {
     this->outputAdapter->AddEntry(EntryPtr(new MultiLineEntry(str, attrs)));
     this->output->OnAdapterChanged();
 }
@@ -150,14 +150,14 @@ void ConsoleLayout::OnEnterPressed(TextInput *input) {
     std::string command = this->commands->GetText();
     this->commands->SetText("");
 
-    this->WriteOutput("> " + command + "\n", COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
+    this->WriteOutput("> " + command + "\n", Color::TextDefault);
 
     if (!this->ProcessCommand(command)) {
         if (command.size()) {
             this->WriteOutput(
                 "illegal command: '" +
                 command +
-                "'\n", COLOR_PAIR(CURSESPP_TEXT_ERROR));
+                "'\n", Color::TextError);
         }
     }
 }
@@ -186,7 +186,7 @@ void ConsoleLayout::SetVolume(float volume) {
 }
 
 void ConsoleLayout::Help() {
-    int64_t s = -1;
+    Color s = Color::Default;
 
     this->WriteOutput("help:\n", s);
     this->WriteOutput("  <tab> to switch between windows", s);
@@ -241,7 +241,7 @@ bool ConsoleLayout::ProcessCommand(const std::string& cmd) {
     }
     else if (name == "version") {
         const std::string v = boost::str(boost::format("v%s") % VERSION);
-        this->WriteOutput(v, -1);
+        this->WriteOutput(v, Color::Default);
     }
     else if (name == "play" || name == "pl" || name == "p") {
         return this->PlayFile(args);
@@ -336,6 +336,6 @@ void ConsoleLayout::ListPlugins() {
             "    version: " + std::string((*it)->Version()) + "\n"
             "    by " + std::string((*it)->Author()) + "\n";
 
-        this->WriteOutput(format, COLOR_PAIR(CURSESPP_TEXT_DEFAULT));
+        this->WriteOutput(format, Color::TextDefault);
     }
 }

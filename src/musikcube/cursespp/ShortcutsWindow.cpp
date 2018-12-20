@@ -44,8 +44,8 @@ ShortcutsWindow::ShortcutsWindow()
 : Window(nullptr)
 , alignment(text::AlignCenter) {
     this->SetFrameVisible(false);
-    this->SetFocusedContentColor(CURSESPP_SHORTCUT_ROW_FOCUSED);
-    this->SetContentColor(CURSESPP_SHORTCUT_ROW_NORMAL);
+    this->SetFocusedContentColor(Color::ShortcutRowFocused);
+    this->SetContentColor(Color::ShortcutRowDefault);
 }
 
 ShortcutsWindow::~ShortcutsWindow() {
@@ -195,8 +195,8 @@ int ShortcutsWindow::getActiveIndex() {
 void ShortcutsWindow::OnRedraw() {
     this->Clear();
 
-    int64_t normalAttrs = COLOR_PAIR(CURSESPP_BUTTON_NORMAL);
-    int64_t activeAttrs = COLOR_PAIR(CURSESPP_BUTTON_HIGHLIGHTED);
+    Color normalAttrs = Color(Color::ButtonDefault);
+    Color activeAttrs = Color(Color::ButtonHighlighted);
 
     WINDOW* c = this->GetContent();
 
@@ -208,7 +208,7 @@ void ShortcutsWindow::OnRedraw() {
     for (size_t i = 0; i < this->entries.size() && remaining > 0; i++) {
         auto e = this->entries[i];
 
-        int64_t keyAttrs = (e->attrs == -1) ? normalAttrs : COLOR_PAIR(e->attrs);
+        int64_t keyAttrs = (e->attrs == -1) ? normalAttrs : e->attrs;
         keyAttrs = (e->key == this->activeKey) ? activeAttrs : keyAttrs;
 
         checked_wprintw(c, " ");
