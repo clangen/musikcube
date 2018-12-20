@@ -79,8 +79,10 @@ bool SuperEqDsp::Process(IBuffer* buffer) {
         this->enabled = ::prefs && ::prefs->GetBool("enabled", false);
         this->lastUpdated = current;
 
-        this->supereq = new SuperEqState();
-        equ_init(this->supereq, 10, channels);
+        if (!this->supereq) {
+            this->supereq = new SuperEqState();
+            equ_init(this->supereq, 10, channels);
+        }
 
         void *params = paramlist_alloc();
         float bands[17];
