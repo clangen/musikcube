@@ -384,14 +384,19 @@ process:
         this->CheckShowOverlay();
         this->EnsureFocusIsValid();
 
-        /* needs to happen here, or else flicker */
+        /* we want to dispatch messages here, before we call WriteToScreen(),
+        because dispatched messages may trigger UI updates, including layouts,
+        which may lead panels to get destroyed and recreated, which can
+        cause the screen to redraw outside of do_update() calls. so we dispatch
+        messages, ensure our overlay is on top, then do a redraw. */
         Window::MessageQueue().Dispatch();
 
-        if (Window::WriteToScreen(this->state.input)) {
-            if (this->state.overlayWindow && !this->state.overlayWindow->IsTop()) {
-                this->state.overlay->BringToTop(); /* active overlay is always on top... */
-            }
+        if (this->state.overlayWindow && !this->state.overlayWindow->IsTop()) {
+            this->state.overlay->BringToTop(); /* active overlay is always on top... */
         }
+
+        /* always last to avoid flicker. see above. */
+        Window::WriteToScreen(this->state.input);
     }
 
     overlays.Clear();
