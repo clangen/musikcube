@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <cursespp/Colors.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextLabel.h>
 
@@ -79,7 +80,7 @@ namespace musik {
                 bool IsParentSelected();
                 bool IsParentRoot();
 
-                int64_t ListItemDecorator(
+                cursespp::Color ListItemDecorator(
                     cursespp::ScrollableWindow* scrollable,
                     size_t index,
                     size_t line,

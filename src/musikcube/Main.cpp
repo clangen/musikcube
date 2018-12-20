@@ -63,10 +63,8 @@
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
 #ifdef WIN32
-    #include <cursespp/Win32Util.h>
-    #include "resource.h"
-    #undef MOUSE_MOVED
-    #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#include <cursespp/Win32Util.h>
+#include "resource.h"
 #endif
 
 using namespace musik;

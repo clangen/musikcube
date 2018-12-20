@@ -154,10 +154,6 @@ void EqualizerOverlay::ShowOverlay() {
     App::Overlays().Push(std::make_shared<EqualizerOverlay>());
 }
 
-bool EqualizerOverlay::CanScroll(int listViewHeight) {
-    return listViewHeight < this->adapter->GetEntryCount();
-}
-
 std::shared_ptr<IPlugin> EqualizerOverlay::FindPlugin() {
     std::shared_ptr<IPlugin> result;
     using Deleter = PluginFactory::ReleaseDeleter<IPlugin>;
@@ -227,7 +223,7 @@ bool EqualizerOverlay::KeyPress(const std::string& key) {
 
 void EqualizerOverlay::NotifyAndRedraw() {
     this->listView->OnAdapterChanged();
-    this->DebounceMessage(message::UpdateEqualizer, 0, 0, UPDATE_DEBOUNCE_MS);
+    this->Debounce(message::UpdateEqualizer, 0, 0, UPDATE_DEBOUNCE_MS);
 }
 
 void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
@@ -266,9 +262,9 @@ ScrollAdapterBase::EntryPtr EqualizerOverlay::BandsAdapter::GetEntry(cursespp::S
         band,
         prefs->GetDouble(band.c_str(), 0.0)));
 
-    entry->SetAttrs(CURSESPP_DEFAULT_COLOR);
+    entry->SetAttrs(Color::Default);
     if (index == window->GetScrollPosition().logicalIndex) {
-        entry->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+        entry->SetAttrs(Color::ListItemHighlighted);
     }
 
     return entry;

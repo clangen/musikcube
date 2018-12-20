@@ -39,7 +39,6 @@
 #include <cursespp/TextInput.h>
 #include <cursespp/TextLabel.h>
 #include <cursespp/ShortcutsWindow.h>
-#include <cursespp/IViewRoot.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/support/Preferences.h>
@@ -56,7 +55,6 @@ namespace musik {
     namespace cube {
         class MainLayout :
             public cursespp::LayoutBase,
-            public cursespp::IViewRoot,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
             public std::enable_shared_from_this<MainLayout>,
 #endif
@@ -78,7 +76,6 @@ namespace musik {
                 virtual cursespp::IWindowPtr GetFocus() override;
                 virtual cursespp::IWindowPtr FocusNext() override;
                 virtual cursespp::IWindowPtr FocusPrev() override;
-                virtual void ResizeToViewport() override;
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
                 void SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout);

@@ -36,6 +36,7 @@
 
 #include <cursespp/App.h>
 #include <cursespp/Checkbox.h>
+#include <cursespp/Colors.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/ShortcutsWindow.h>
@@ -111,7 +112,7 @@ namespace musik {
                 void OnUpdateDropdownActivate(cursespp::TextLabel* label);
                 void OnLastFmDropdownActivate(cursespp::TextLabel* label);
 
-                int64_t ListItemDecorator(
+                cursespp::Color ListItemDecorator(
                     cursespp::ScrollableWindow* w,
                     size_t index,
                     size_t line,

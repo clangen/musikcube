@@ -71,15 +71,15 @@ namespace cursespp {
             virtual void Focus();
             virtual void Blur();
 
-            virtual void SetContentColor(int64_t color);
-            virtual void SetFrameColor(int64_t color);
-            virtual void SetFocusedContentColor(int64_t color);
-            virtual void SetFocusedFrameColor(int64_t color);
+            virtual void SetContentColor(Color color);
+            virtual void SetFrameColor(Color color);
+            virtual void SetFocusedContentColor(Color color);
+            virtual void SetFocusedFrameColor(Color color);
 
-            virtual int64_t GetContentColor() { return this->contentColor; }
-            virtual int64_t GetFrameColor() { return this->frameColor; }
-            virtual int64_t GetFocusedContentColor() { return this->focusedContentColor; }
-            virtual int64_t GetFocusedFrameColor() { return this->focusedFrameColor; }
+            virtual Color GetContentColor() { return this->contentColor; }
+            virtual Color GetFrameColor() { return this->frameColor; }
+            virtual Color GetFocusedContentColor() { return this->focusedContentColor; }
+            virtual Color GetFocusedFrameColor() { return this->focusedFrameColor; }
 
             virtual void SetSize(int width, int height);
             virtual void SetPosition(int x, int y);
@@ -132,10 +132,10 @@ namespace cursespp {
 
         protected:
 
-            void BroadcastMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
-            void PostMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
-            void DebounceMessage(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
-            void RemoveMessage(int messageType);
+            void Broadcast(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
+            void Post(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
+            void Debounce(int messageType, int64_t user1 = 0, int64_t user2 = 0, int64_t delay = 0);
+            void Remove(int messageType);
             bool FocusInParent();
 
             static INavigationKeys& NavigationKeys();
@@ -172,8 +172,8 @@ namespace cursespp {
             bool isVisibleInParent, isFocused, isDirty;
             int focusOrder;
             int id;
-            int64_t contentColor, frameColor;
-            int64_t focusedContentColor, focusedFrameColor;
+            Color contentColor, frameColor;
+            Color focusedContentColor, focusedFrameColor;
             std::string title;
             int width, height, x, y;
             int lastAbsoluteX, lastAbsoluteY;

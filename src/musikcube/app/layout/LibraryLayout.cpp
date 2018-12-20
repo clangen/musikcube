@@ -251,7 +251,7 @@ void LibraryLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 
         this->shortcuts->SetChangedCallback([this](std::string key) {
             if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
-                this->BroadcastMessage(message::JumpToSettings);
+                this->Broadcast(message::JumpToSettings);
             }
             else if (key == "^D") {
                 App::Instance().Quit();

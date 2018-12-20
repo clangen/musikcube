@@ -109,11 +109,6 @@ ServerOverlay::ServerOverlay(Callback callback, Plugin plugin)
     this->plugin = plugin;
     this->prefs = Preferences::ForPlugin(plugin->Name());
     this->width = this->height = 0;
-
-    this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
-
     this->InitViews();
     this->Load();
 }

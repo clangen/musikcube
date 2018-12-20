@@ -79,10 +79,10 @@ using namespace cursespp;
 #define MIN_HEIGHT 2
 
 #define DEBOUNCE_REFRESH(mode, delay) \
-    this->DebounceMessage(message::RefreshTransport, (int64_t) mode, 0, delay);
+    this->Debounce(message::RefreshTransport, (int64_t) mode, 0, delay);
 
-#define ON(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattron(w, a); }
-#define OFF(w, a) if (a != CURSESPP_DEFAULT_COLOR) { wattroff(w, a); }
+#define ON(w, a) if (a != Color::Default) { wattron(w, a); }
+#define OFF(w, a) if (a != Color::Default) { wattroff(w, a); }
 
 struct Token {
     enum Type { Normal, Placeholder };
@@ -235,15 +235,15 @@ static size_t writePlayingFormat(
     TokenList tokens;
     tokenize(Strings.PLAYING_FORMAT, tokens);
 
-    int64_t dim = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
-    int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
+    Color dim = Color::TextDisabled;
+    Color gb = Color::TextActive;
     size_t remaining = width;
 
     auto it = tokens.begin();
     while (it != tokens.end() && remaining > 0) {
         Token *token = it->get();
 
-        int64_t attr = dim;
+        Color attr = dim;
         std::string value;
         size_t cols;
 
@@ -532,20 +532,20 @@ void TransportWindow::Update(TimeMode timeMode) {
     bool muted = transport.IsMuted();
     bool replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
 
-    int64_t gb = COLOR_PAIR(CURSESPP_TEXT_ACTIVE);
-    int64_t disabled = COLOR_PAIR(CURSESPP_TEXT_DISABLED);
-    int64_t bright = COLOR_PAIR(CURSESPP_TEXT_DEFAULT);
+    Color gb = Color::TextActive;
+    Color disabled = Color::TextDisabled;
+    Color bright = Color::TextDefault;
+    Color volumeAttrs = Color::Default;
 
-    int64_t volumeAttrs = CURSESPP_DEFAULT_COLOR;
     if (this->focus == FocusVolume) {
-        volumeAttrs = COLOR_PAIR(CURSESPP_TEXT_FOCUSED);
+        volumeAttrs = Color::TextFocused;
     }
     else if (muted) {
         volumeAttrs = gb;
     }
 
-    int64_t timerAttrs = (this->focus == FocusTime)
-        ? COLOR_PAIR(CURSESPP_TEXT_FOCUSED) : CURSESPP_DEFAULT_COLOR;
+    Color timerAttrs = (this->focus == FocusTime)
+        ? Color::TextFocused : Color::Default;
 
     /* prepare the "shuffle" label */
 
@@ -568,7 +568,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     /* draw the "shuffle" label */
     const int shuffleOffset = cx - shuffleWidth;
     wmove(c, 0, shuffleOffset);
-    int64_t shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
+    Color shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
     checked_wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
@@ -603,7 +603,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     RepeatMode mode = this->playback.GetRepeatMode();
     std::string repeatModeLabel;
-    int64_t repeatAttrs = CURSESPP_DEFAULT_COLOR;
+    Color repeatAttrs = Color::Default;
     switch (mode) {
         case RepeatList:
             repeatModeLabel += Strings.REPEAT_LIST;
@@ -621,14 +621,14 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* time slider */
 
-    int64_t currentTimeAttrs = timerAttrs;
+    Color currentTimeAttrs = timerAttrs;
 
     if (paused) { /* blink the track if paused */
         int64_t now = duration_cast<seconds>(
             system_clock::now().time_since_epoch()).count();
 
         if (now % 2 == 0) {
-            currentTimeAttrs = COLOR_PAIR(CURSESPP_TEXT_HIDDEN);
+            currentTimeAttrs = Color::TextHidden;
         }
     }
 

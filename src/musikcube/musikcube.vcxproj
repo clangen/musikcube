@@ -178,6 +178,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
     <ClCompile Include="cursespp\App.cpp" />
+    <ClCompile Include="cursespp\AppLayout.cpp" />
     <ClCompile Include="cursespp\Checkbox.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\DialogOverlay.cpp" />
@@ -244,6 +245,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
     <ClInclude Include="cursespp\App.h" />
+    <ClInclude Include="cursespp\AppLayout.h" />
     <ClInclude Include="cursespp\Checkbox.h" />
     <ClInclude Include="cursespp\Colors.h" />
     <ClInclude Include="cursespp\curses_config.h" />
@@ -259,13 +261,14 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="cursespp\IOverlay.h" />
     <ClInclude Include="cursespp\IScrollable.h" />
     <ClInclude Include="cursespp\IScrollAdapter.h" />
-    <ClInclude Include="cursespp\IViewRoot.h" />
+    <ClInclude Include="cursespp\ITopLevelLayout.h" />
     <ClInclude Include="cursespp\IWindow.h" />
     <ClInclude Include="cursespp\IWindowGroup.h" />
     <ClInclude Include="cursespp\LayoutBase.h" />
     <ClInclude Include="cursespp\ListOverlay.h" />
     <ClInclude Include="cursespp\ListWindow.h" />
     <ClInclude Include="cursespp\MultiLineEntry.h" />
+    <ClInclude Include="cursespp\NumberValidator.h" />
     <ClInclude Include="cursespp\OverlayBase.h" />
     <ClInclude Include="cursespp\OverlayStack.h" />
     <ClInclude Include="cursespp\Screen.h" />

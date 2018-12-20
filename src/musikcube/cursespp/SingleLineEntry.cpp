@@ -34,6 +34,7 @@
 
 #include <stdafx.h>
 #include "SingleLineEntry.h"
+#include "Text.h"
 
 using namespace cursespp;
 
@@ -50,7 +51,7 @@ int64_t SingleLineEntry::GetAttrs(size_t line) {
     return this->attrs;
 }
 
-void SingleLineEntry::SetAttrs(int64_t attrs) {
+void SingleLineEntry::SetAttrs(Color attrs) {
     this->attrs = attrs;
 }
 
@@ -59,5 +60,5 @@ size_t SingleLineEntry::GetLineCount() {
 }
 
 std::string SingleLineEntry::GetLine(size_t line) {
-    return u8substr(this->value, 0, this->width > 0 ? this->width : 0);
+    return text::Ellipsize(this->value, this->width);
 }

@@ -47,7 +47,7 @@ using namespace cursespp;
 
 typedef IScrollAdapter::IEntry IEntry;
 
-#define DEBOUNCE_REFRESH() this->DebounceMessage(message::RefreshLogs, 0, 0, 250)
+#define DEBOUNCE_REFRESH() this->Debounce(message::RefreshLogs, 0, 0, 250)
 
 LogWindow::LogWindow(IWindow *parent)
 : ScrollableWindow(nullptr, parent) {
@@ -96,18 +96,18 @@ void LogWindow::Update() {
     }
 
     for (size_t i = 0; i < pending.size(); i++) {
-        int64_t attrs = COLOR_PAIR(CURSESPP_TEXT_DEFAULT);
+        Color attrs = Color::TextDefault;
 
         LogEntry* entry = pending[i];
 
         switch (entry->level) {
             case musik::debug::level_error: {
-                attrs = COLOR_PAIR(CURSESPP_TEXT_ERROR);
+                attrs = Color::TextError;
                 break;
             }
 
             case musik::debug::level_warning: {
-                attrs = COLOR_PAIR(CURSESPP_TEXT_WARNING);
+                attrs = Color::TextWarning;
                 break;
             }
         }

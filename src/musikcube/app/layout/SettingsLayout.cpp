@@ -128,15 +128,6 @@ static void setTransportType(TransportType type) {
     playback->SetInt(core::prefs::keys::Transport, (int) type);
 }
 
-static std::string resolveThemeName(const std::string& themePath) {
-    const boost::filesystem::path p(themePath);
-    if (p.has_extension() && p.extension().string() == ".json") {
-        std::string fn = p.filename().string();
-        return fn.substr(0, fn.rfind("."));
-    }
-    return _TSTR("settings_default_theme_name");
-}
-
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
@@ -264,7 +255,7 @@ void SettingsLayout::OnPluginsDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
-    this->BroadcastMessage(message::JumpToHotkeys);
+    this->Broadcast(message::JumpToHotkeys);
 }
 
 void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
@@ -357,7 +348,7 @@ void SettingsLayout::RefreshAddedPaths() {
     this->addedPathsList->OnAdapterChanged();
 }
 
-int64_t SettingsLayout::ListItemDecorator(
+Color SettingsLayout::ListItemDecorator(
     ScrollableWindow* scrollable,
     size_t index,
     size_t line,
@@ -368,10 +359,10 @@ int64_t SettingsLayout::ListItemDecorator(
     {
          ListWindow* lw = static_cast<ListWindow*>(scrollable);
          if (lw->GetSelectedIndex() == index) {
-             return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
+             return Color::ListItemHighlighted;
          }
     }
-    return -1;
+    return Color::Default;
 }
 
 void SettingsLayout::InitializeWindows() {
@@ -525,10 +516,10 @@ void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 
         shortcuts->SetChangedCallback([this](std::string key) {
             if (Hotkeys::Is(Hotkeys::NavigateConsole, key)) {
-                this->BroadcastMessage(message::JumpToConsole);
+                this->Broadcast(message::JumpToConsole);
             }
             if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
-                this->BroadcastMessage(message::JumpToLibrary);
+                this->Broadcast(message::JumpToLibrary);
             }
             else if (key == "^D") {
                 app.Quit();
@@ -623,9 +614,7 @@ void SettingsLayout::LoadPreferences() {
         colorTheme = _TSTR("settings_8color_theme_name");
     }
 
-    this->themeDropdown->SetText(
-        arrow + _TSTR("settings_color_theme") +
-        resolveThemeName(colorTheme));
+    this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + colorTheme);
 
 #ifdef ENABLE_256_COLOR_OPTION
     this->paletteCheckbox->CheckChanged.disconnect(this);

@@ -58,24 +58,6 @@ using namespace cursespp;
 #define INPUT_LENGTH 7
 #define ARROW std::string("> ")
 
-static void applyLabelOverlayStyle(TextLabel& label) {
-    label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    label.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
-}
-
-static void applyInputOverlayStyle(TextInput& input) {
-    if (input.GetStyle() == TextInput::StyleBox) {
-        input.SetFrameColor(CURSESPP_OVERLAY_FRAME);
-        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-        input.SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
-        input.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
-    }
-    else {
-        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-        input.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
-    }
-}
-
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
 #define INVALID_PREAMP_GAIN -999.9f
@@ -137,8 +119,8 @@ PreampOverlay::PreampOverlay(IPlaybackService& playback, Callback callback)
     this->width = this->height = 0;
 
     this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->SetFrameColor(Color::OverlayFrame);
+    this->SetContentColor(Color::OverlayContent);
 
     this->InitViews();
     this->Load();
@@ -173,10 +155,10 @@ void PreampOverlay::InitViews() {
     this->replayGainDropdown->Activated.connect(this, &PreampOverlay::OnReplayGainPressed);
 
     /* style 'em */
-    applyLabelOverlayStyle(*this->titleLabel);
-    applyLabelOverlayStyle(*this->preampLabel);
-    applyInputOverlayStyle(*this->preampInput);
-    applyLabelOverlayStyle(*this->replayGainDropdown);
+    style(*this->titleLabel);
+    style(*this->preampLabel);
+    style(*this->preampInput);
+    style(*this->replayGainDropdown);
 
     /* add 'em */
     this->AddWindow(this->titleLabel);

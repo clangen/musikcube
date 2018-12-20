@@ -152,7 +152,7 @@ void TrackSearchLayout::ProcessMessage(IMessage &message) {
 
 void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
-        DebounceMessage(message::RequeryTrackList, 0, 0, REQUERY_INTERVAL_MS);
+        Debounce(message::RequeryTrackList, 0, 0, REQUERY_INTERVAL_MS);
     }
 }
 

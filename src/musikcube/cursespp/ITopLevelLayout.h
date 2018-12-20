@@ -34,11 +34,12 @@
 
 #pragma once
 
-#include <memory>
+#include <cursespp/ShortcutsWindow.h>
 
 namespace cursespp {
-    class IViewRoot {
+    class ITopLevelLayout {
         public:
-            virtual void ResizeToViewport() = 0;
+            virtual ~ITopLevelLayout() { }
+            virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) = 0;
     };
 }
