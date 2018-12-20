@@ -88,15 +88,15 @@ bool SuperEqDsp::Process(IBuffer* buffer) {
         void *params = paramlist_alloc();
         float bands[17];
 
-        for (int i = 0; i < BANDS.size(); i++) {
-            bands[i] = prefs->GetDouble(BANDS[i].c_str(), 1.0);
+        for (size_t i = 0; i < BANDS.size(); i++) {
+            bands[i] = (float) prefs->GetDouble(BANDS[i].c_str(), 1.0);
         }
 
         equ_makeTable(
             this->supereq,
             bands,
             params,
-            buffer->SampleRate());
+            (float) buffer->SampleRate());
 
         paramlist_free(params);
     }

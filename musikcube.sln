@@ -57,6 +57,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{CE0E
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "stockencoders", "src\plugins\stockencoders\stockencoders.vcxproj", "{8AD92D25-0921-44AB-BBEF-5244F5CFC6DA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "supereqdsp", "src\plugins\supereqdsp\supereqdsp.vcxproj", "{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -177,6 +179,12 @@ Global
 		{8AD92D25-0921-44AB-BBEF-5244F5CFC6DA}.Release|Win32.Build.0 = Release|Win32
 		{8AD92D25-0921-44AB-BBEF-5244F5CFC6DA}.Release|x64.ActiveCfg = Release|x64
 		{8AD92D25-0921-44AB-BBEF-5244F5CFC6DA}.Release|x64.Build.0 = Release|x64
+		{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730}.Debug|Win32.ActiveCfg = Debug|Win32
+		{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730}.Debug|Win32.Build.0 = Debug|Win32
+		{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730}.Debug|x64.ActiveCfg = Debug|Win32
+		{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730}.Release|Win32.ActiveCfg = Release|Win32
+		{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730}.Release|Win32.Build.0 = Release|Win32
+		{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -196,6 +204,7 @@ Global
 		{BA3902E0-8915-4E59-AD3B-F9960507F234} = {CE0E0AF3-A106-4992-BEBD-B842B983D0FE}
 		{FA74D37C-8184-4596-BFE9-766C159045E1} = {CE0E0AF3-A106-4992-BEBD-B842B983D0FE}
 		{8AD92D25-0921-44AB-BBEF-5244F5CFC6DA} = {CE0E0AF3-A106-4992-BEBD-B842B983D0FE}
+		{ED0F666A-C9E4-4B6C-AF89-BAFBB47C3730} = {CE0E0AF3-A106-4992-BEBD-B842B983D0FE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9B481265-6DD9-4083-8D4A-247B6A58644F}

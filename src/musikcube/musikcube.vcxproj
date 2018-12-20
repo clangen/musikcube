@@ -158,6 +158,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\model\HotkeysAdapter.cpp" />
     <ClCompile Include="app\overlay\BrowseOverlays.cpp" />
     <ClCompile Include="app\overlay\ColorThemeOverlay.cpp" />
+    <ClCompile Include="app\overlay\EqualizerOverlay.cpp" />
     <ClCompile Include="app\overlay\LastFmOverlay.cpp" />
     <ClCompile Include="app\overlay\LocaleOverlay.cpp" />
     <ClCompile Include="app\overlay\PlaybackOverlays.cpp" />
@@ -222,6 +223,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\model\HotkeysAdapter.h" />
     <ClInclude Include="app\overlay\BrowseOverlays.h" />
     <ClInclude Include="app\overlay\ColorThemeOverlay.h" />
+    <ClInclude Include="app\overlay\EqualizerOverlay.h" />
     <ClInclude Include="app\overlay\LastFmOverlay.h" />
     <ClInclude Include="app\overlay\LocaleOverlay.h" />
     <ClInclude Include="app\overlay\PlaybackOverlays.h" />

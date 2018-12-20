@@ -171,6 +171,9 @@
     <ClCompile Include="app\overlay\ReassignHotkeyOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\EqualizerOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -393,6 +396,9 @@
     </ClInclude>
     <ClInclude Include="version.h">
       <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\EqualizerOverlay.h">
+      <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
