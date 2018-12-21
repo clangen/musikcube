@@ -42,12 +42,7 @@
 #include <map>
 
 namespace cursespp {
-    class DialogOverlay :
-        public OverlayBase
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<DialogOverlay>
-#endif
-    {
+    class DialogOverlay: public OverlayBase {
         public:
             using ButtonCallback = std::function<void(std::string key)>;
             using DismissCallback = std::function<void()>;

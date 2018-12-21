@@ -42,58 +42,56 @@
 #include <vector>
 
 namespace cursespp {
-    class TextInput :
+    class TextInput:
         public cursespp::Window,
         public cursespp::IKeyHandler,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        public std::enable_shared_from_this<TextInput>,
-#endif
-        public cursespp::IInput {
-            public:
-                sigslot::signal1<TextInput*> EnterPressed;
-                sigslot::signal2<TextInput*, std::string> TextChanged;
+        public cursespp::IInput
+    {
+        public:
+            sigslot::signal1<TextInput*> EnterPressed;
+            sigslot::signal2<TextInput*, std::string> TextChanged;
 
-                enum Style { StyleBox, StyleLine };
+            enum Style { StyleBox, StyleLine };
 
-                TextInput(InputMode inputMode = IInput::InputNormal);
-                TextInput(Style style, InputMode inputMode = IInput::InputNormal);
+            TextInput(InputMode inputMode = IInput::InputNormal);
+            TextInput(Style style, InputMode inputMode = IInput::InputNormal);
 
-                virtual ~TextInput();
+            virtual ~TextInput();
 
-                virtual void OnRedraw();
+            virtual void OnRedraw();
 
-                virtual bool Write(const std::string& key);
-                virtual size_t Length();
-                virtual size_t Position();
+            virtual bool Write(const std::string& key);
+            virtual size_t Length();
+            virtual size_t Position();
 
-                virtual void SetInputMode(InputMode inputMode) {
-                    this->inputMode = inputMode;
-                };
+            virtual void SetInputMode(InputMode inputMode) {
+                this->inputMode = inputMode;
+            };
 
-                virtual InputMode GetInputMode() { return this->inputMode; }
+            virtual InputMode GetInputMode() { return this->inputMode; }
 
-                virtual bool KeyPress(const std::string& key);
-                virtual bool MouseEvent(const IMouseHandler::Event& event);
+            virtual bool KeyPress(const std::string& key);
+            virtual bool MouseEvent(const IMouseHandler::Event& event);
 
-                virtual void SetText(const std::string& value);
-                virtual std::string GetText() { return this->buffer; }
+            virtual void SetText(const std::string& value);
+            virtual std::string GetText() { return this->buffer; }
 
-                void SetRawKeyBlacklist(const std::vector<std::string>&& blacklist);
-                void SetTruncate(bool truncate);
-                void SetHint(const std::string& hint);
-                void SetEnterEnabled(bool enabled);
-                Style GetStyle() { return style; }
+            void SetRawKeyBlacklist(const std::vector<std::string>&& blacklist);
+            void SetTruncate(bool truncate);
+            void SetHint(const std::string& hint);
+            void SetEnterEnabled(bool enabled);
+            Style GetStyle() { return style; }
 
-            private:
-                bool OffsetPosition(int delta);
+        private:
+            bool OffsetPosition(int delta);
 
-                std::vector<std::string> rawBlacklist;
-                std::string buffer, hintText;
-                int position;
-                bool enterEnabled;
-                bool truncate;
-                size_t bufferLength;
-                Style style;
-                InputMode inputMode;
+            std::vector<std::string> rawBlacklist;
+            std::string buffer, hintText;
+            int position;
+            bool enterEnabled;
+            bool truncate;
+            size_t bufferLength;
+            Style style;
+            InputMode inputMode;
     };
 }

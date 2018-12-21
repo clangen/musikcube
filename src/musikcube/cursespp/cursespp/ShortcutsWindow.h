@@ -40,12 +40,9 @@
 #include <functional>
 
 namespace cursespp {
-    class ShortcutsWindow :
+    class ShortcutsWindow:
         public cursespp::Window,
         public cursespp::IKeyHandler
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<ShortcutsWindow>
-#endif
     {
         public:
             using ChangedCallback = std::function<void (std::string /* key */)>;

@@ -46,10 +46,9 @@
 
 namespace musik {
     namespace cube {
-        class EqualizerOverlay: public cursespp::OverlayBase, public sigslot::has_slots<>
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            , public std::enable_shared_from_this<EqualizerOverlay>
-#endif
+        class EqualizerOverlay:
+            public cursespp::OverlayBase,
+            public sigslot::has_slots<>
         {
             public:
                 using Plugin = std::shared_ptr<musik::core::sdk::IPlugin>;

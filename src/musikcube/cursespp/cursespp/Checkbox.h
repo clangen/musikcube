@@ -42,29 +42,25 @@
 namespace cursespp {
     class Checkbox :
         public cursespp::IKeyHandler,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        public cursespp::Window,
-        public std::enable_shared_from_this<Checkbox> {
-#else
-        public cursespp::Window {
-#endif
-    public:
-        sigslot::signal2<Checkbox*, bool> CheckChanged;
+        public cursespp::Window
+    {
+        public:
+            sigslot::signal2<Checkbox*, bool> CheckChanged;
 
-        Checkbox();
-        virtual ~Checkbox();
+            Checkbox();
+            virtual ~Checkbox();
 
-        virtual void SetText(const std::string& value);
-        virtual void SetChecked(bool checked);
-        virtual std::string GetText() { return this->buffer; }
-        virtual bool IsChecked() { return this->checked; }
-        virtual bool KeyPress(const std::string& key);
-        virtual bool MouseEvent(const IMouseHandler::Event& event);
-        virtual void OnRedraw();
+            virtual void SetText(const std::string& value);
+            virtual void SetChecked(bool checked);
+            virtual std::string GetText() { return this->buffer; }
+            virtual bool IsChecked() { return this->checked; }
+            virtual bool KeyPress(const std::string& key);
+            virtual bool MouseEvent(const IMouseHandler::Event& event);
+            virtual void OnRedraw();
 
-    private:
+        private:
 
-        std::string buffer;
-        bool checked;
+            std::string buffer;
+            bool checked;
     };
 }

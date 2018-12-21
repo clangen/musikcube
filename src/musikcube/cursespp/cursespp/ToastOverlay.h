@@ -38,12 +38,9 @@
 #include <vector>
 
 namespace cursespp {
-    class ToastOverlay :
+    class ToastOverlay:
         public OverlayBase,
         public sigslot::has_slots<>
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<ToastOverlay>
-#endif
     {
         public:
             static void Show(const std::string& text, int durationMs = 3000);

@@ -42,44 +42,39 @@
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
-    class TextLabel :
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
+    class TextLabel:
         public cursespp::Window,
-        public cursespp::IKeyHandler,
-        public std::enable_shared_from_this<TextLabel> {
-#else
-        public cursespp::Window,
-        public cursespp::IKeyHandler {
-#endif
-    public:
-        sigslot::signal1<TextLabel*> Activated;
+        public cursespp::IKeyHandler
+    {
+        public:
+            sigslot::signal1<TextLabel*> Activated;
 
-        TextLabel();
-        TextLabel(const std::string& value);
-        TextLabel(const std::string& value, const text::TextAlign alignment);
+            TextLabel();
+            TextLabel(const std::string& value);
+            TextLabel(const std::string& value, const text::TextAlign alignment);
 
-        virtual ~TextLabel();
+            virtual ~TextLabel();
 
-        virtual void SetText(
-            const std::string& value,
-            const text::TextAlign alignment);
+            virtual void SetText(
+                const std::string& value,
+                const text::TextAlign alignment);
 
-        virtual void SetText(const std::string& value);
+            virtual void SetText(const std::string& value);
 
-        virtual std::string GetText() { return this->buffer; }
-        virtual size_t Length() { return u8cols(this->buffer); }
-        virtual void SetBold(bool bold);
-        virtual bool IsBold() { return this->bold; }
-        virtual void OnRedraw();
+            virtual std::string GetText() { return this->buffer; }
+            virtual size_t Length() { return u8cols(this->buffer); }
+            virtual void SetBold(bool bold);
+            virtual bool IsBold() { return this->bold; }
+            virtual void OnRedraw();
 
-        virtual bool KeyPress(const std::string& key);
-        virtual bool MouseEvent(const IMouseHandler::Event& event);
+            virtual bool KeyPress(const std::string& key);
+            virtual bool MouseEvent(const IMouseHandler::Event& event);
 
-    private:
-        void ApplyDefaultStyle();
+        private:
+            void ApplyDefaultStyle();
 
-        std::string buffer;
-        text::TextAlign alignment;
-        bool bold;
+            std::string buffer;
+            text::TextAlign alignment;
+            bool bold;
     };
 }

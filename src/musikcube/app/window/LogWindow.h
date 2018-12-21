@@ -46,11 +46,8 @@
 
 namespace musik {
     namespace cube {
-        class LogWindow :
+        class LogWindow:
             public cursespp::ScrollableWindow,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<LogWindow>,
-#endif
             public sigslot::has_slots<>
         {
             public:

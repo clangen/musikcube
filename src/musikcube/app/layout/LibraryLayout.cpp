@@ -286,13 +286,7 @@ void LibraryLayout::UpdateShortcutsWindow() {
 }
 
 void LibraryLayout::OnAddedToParent(IWindow* parent) {
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-    std::enable_shared_from_this<LayoutBase>* receiver =
-        (std::enable_shared_from_this<LayoutBase>*) this;
-#else
-    auto receiver = this;
-#endif
-    MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
+    MessageQueue().RegisterForBroadcasts(this->shared_from_this());
 }
 
 void LibraryLayout::OnRemovedFromParent(IWindow* parent) {

@@ -62,9 +62,6 @@ namespace musik {
         class SettingsLayout :
             public cursespp::ITopLevelLayout,
             public cursespp::LayoutBase,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<SettingsLayout>,
-#endif
             public sigslot::has_slots<>
         {
             public:

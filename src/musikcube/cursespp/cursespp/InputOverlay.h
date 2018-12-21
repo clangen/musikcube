@@ -38,12 +38,9 @@
 #include <cursespp/TextInput.h>
 
 namespace cursespp {
-    class InputOverlay :
+    class InputOverlay:
         public OverlayBase,
         public sigslot::has_slots<>
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<InputOverlay>
-#endif
     {
         public:
             struct IValidator {

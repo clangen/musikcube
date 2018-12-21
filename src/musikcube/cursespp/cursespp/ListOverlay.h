@@ -41,12 +41,9 @@
 #include <map>
 
 namespace cursespp {
-    class ListOverlay :
+    class ListOverlay:
         public OverlayBase,
         public sigslot::has_slots<>
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<ListOverlay>
-#endif
     {
         public:
             using ItemSelectedCallback = std::function<void(ListOverlay* sender, IScrollAdapterPtr adapter, size_t index)>;
