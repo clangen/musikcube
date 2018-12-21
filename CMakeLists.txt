@@ -64,6 +64,7 @@ include_directories (
   "${musikcube_SOURCE_DIR}/src"
   "${musikcube_SOURCE_DIR}/src/core"
   "${musikcube_SOURCE_DIR}/src/musikcube"
+  "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
   "${musikcube_SOURCE_DIR}/src/3rdparty/include"
   "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
 
