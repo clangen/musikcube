@@ -111,6 +111,7 @@ void AppLayout::SetPadding(size_t t, size_t l, size_t b, size_t r) {
     this->paddingL = l;
     this->paddingB = b;
     this->paddingR = r;
+    this->Layout();
 }
 
 cursespp::IWindowPtr AppLayout::GetFocus() {

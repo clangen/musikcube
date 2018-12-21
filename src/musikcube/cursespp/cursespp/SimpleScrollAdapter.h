@@ -36,6 +36,7 @@
 
 #include <cursespp/curses_config.h>
 #include <cursespp/ScrollAdapterBase.h>
+#include <sigslot/sigslot.h>
 #include <deque>
 
 namespace cursespp {

@@ -268,7 +268,6 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="cursespp\cursespp\ListOverlay.h" />
     <ClInclude Include="cursespp\cursespp\ListWindow.h" />
     <ClInclude Include="cursespp\cursespp\MultiLineEntry.h" />
-    <ClInclude Include="cursespp\cursespp\NumberValidator.h" />
     <ClInclude Include="cursespp\cursespp\OverlayBase.h" />
     <ClInclude Include="cursespp\cursespp\OverlayStack.h" />
     <ClInclude Include="cursespp\cursespp\Screen.h" />

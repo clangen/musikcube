@@ -33,6 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <algorithm>
+#include <functional>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/Scrollbar.h>
 #include <cursespp/Colors.h>

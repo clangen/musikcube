@@ -36,6 +36,7 @@
 
 #include <cursespp/curses_config.h>
 #include <string>
+#include <vector>
 
 namespace cursespp {
     class Color {

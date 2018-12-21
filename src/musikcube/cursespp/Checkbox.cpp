@@ -37,7 +37,6 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
-
 #include <cursespp/Checkbox.h>
 
 using namespace cursespp;

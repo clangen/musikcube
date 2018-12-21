@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <algorithm>
 #include <cursespp/Scrollbar.h>
 
 using namespace cursespp;

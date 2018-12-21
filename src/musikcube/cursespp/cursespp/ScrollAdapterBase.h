@@ -36,6 +36,7 @@
 
 #include <cursespp/curses_config.h>
 #include <cursespp/IScrollAdapter.h>
+#include <functional>
 #include <deque>
 
 namespace cursespp {

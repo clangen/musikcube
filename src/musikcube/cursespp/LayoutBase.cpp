@@ -34,6 +34,7 @@
 
 #include <stdafx.h>
 #include <climits>
+#include <algorithm>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/Colors.h>
 

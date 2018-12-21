@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <cursespp/curses_config.h>
 #include <cursespp/Text.h>
 
 #include <math.h>

@@ -39,8 +39,6 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
 
-#include <core/debug.h>
-
 using namespace cursespp;
 
 static const size_t INVALID_INDEX = (size_t) -1;

@@ -358,9 +358,6 @@
     <ClInclude Include="cursespp\cursespp\MultiLineEntry.h">
       <Filter>cursespp\include</Filter>
     </ClInclude>
-    <ClInclude Include="cursespp\cursespp\NumberValidator.h">
-      <Filter>cursespp\include</Filter>
-    </ClInclude>
     <ClInclude Include="cursespp\cursespp\OverlayBase.h">
       <Filter>cursespp\include</Filter>
     </ClInclude>

@@ -34,6 +34,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 namespace cursespp {
     namespace text {
         enum TextAlign {

@@ -37,6 +37,7 @@
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/Window.h>
 #include <cursespp/Text.h>
+#include <functional>
 
 namespace cursespp {
     class ShortcutsWindow :

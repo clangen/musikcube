@@ -39,6 +39,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
+#include <core/i18n/Locale.h>
 
 using namespace cursespp;
 

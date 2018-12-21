@@ -36,6 +36,9 @@
 
 #ifdef WIN32
 
+#include <Windows.h>
+#include <string>
+
 namespace cursespp {
     namespace win32 {
         void InterceptWndProc();

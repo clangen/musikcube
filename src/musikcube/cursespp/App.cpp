@@ -34,6 +34,7 @@
 
 #include <stdafx.h>
 
+#include <cursespp/curses_config.h>
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <cursespp/ILayout.h>
@@ -41,7 +42,7 @@
 #include <cursespp/Window.h>
 #include <cursespp/Text.h>
 #include <cursespp/Screen.h>
-
+#include <algorithm>
 #include <thread>
 
 #ifdef WIN32

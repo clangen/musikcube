@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
+#include <algorithm>
 #include <cursespp/Text.h>
 #include <cursespp/MultiLineEntry.h>
 

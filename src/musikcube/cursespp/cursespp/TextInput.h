@@ -39,6 +39,7 @@
 #include <cursespp/IInput.h>
 #include <cursespp/IKeyHandler.h>
 #include <sigslot/sigslot.h>
+#include <vector>
 
 namespace cursespp {
     class TextInput :
