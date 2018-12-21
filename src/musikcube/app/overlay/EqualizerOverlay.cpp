@@ -62,7 +62,6 @@ static const std::vector<std::string> BANDS = {
     "11840", "16744", "22000"
 };
 
-static const int UPDATE_DEBOUNCE_MS = 350;
 static const int VERTICAL_PADDING = 2;
 static const int MAX_HEIGHT = 8 + (int) BANDS.size();
 static const int DEFAULT_WIDTH = 46;
@@ -223,7 +222,7 @@ bool EqualizerOverlay::KeyPress(const std::string& key) {
 
 void EqualizerOverlay::NotifyAndRedraw() {
     this->listView->OnAdapterChanged();
-    this->Debounce(message::UpdateEqualizer, 0, 0, UPDATE_DEBOUNCE_MS);
+    this->plugin->Reload();
 }
 
 void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
