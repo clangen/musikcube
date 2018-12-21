@@ -35,6 +35,7 @@ set (CUBE_SRCS
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp
 	./cursespp/App.cpp
+	./cursespp/AppLayout.cpp
 	./cursespp/Checkbox.cpp
 	./cursespp/Colors.cpp
 	./cursespp/DialogOverlay.cpp

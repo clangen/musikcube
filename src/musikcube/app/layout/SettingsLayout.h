@@ -44,6 +44,7 @@
 #include <cursespp/TextLabel.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/DialogOverlay.h>
+#include <cursespp/ITopLevelLayout.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/audio/MasterTransport.h>
@@ -56,12 +57,10 @@
 
 #include <sigslot/sigslot.h>
 
-#include "ITopLevelLayout.h"
-
 namespace musik {
     namespace cube {
         class SettingsLayout :
-            public ITopLevelLayout,
+            public cursespp::ITopLevelLayout,
             public cursespp::LayoutBase,
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
             public std::enable_shared_from_this<SettingsLayout>,

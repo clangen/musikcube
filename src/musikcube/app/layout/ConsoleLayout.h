@@ -39,6 +39,7 @@
 #include <cursespp/TextInput.h>
 #include <cursespp/ShortcutsWindow.h>
 #include <cursespp/ScrollableWindow.h>
+#include <cursespp/ITopLevelLayout.h>
 
 #include <app/window/LogWindow.h>
 #include <app/window/TransportWindow.h>
@@ -47,8 +48,6 @@
 
 #include <core/audio/ITransport.h>
 
-#include "ITopLevelLayout.h"
-
 namespace musik {
     namespace cube {
         class ConsoleLayout :
@@ -56,7 +55,7 @@ namespace musik {
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
             public std::enable_shared_from_this<ConsoleLayout>,
 #endif
-            public ITopLevelLayout,
+            public cursespp::ITopLevelLayout,
             public sigslot::has_slots<>
         {
             public:

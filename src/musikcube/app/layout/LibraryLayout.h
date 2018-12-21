@@ -36,7 +36,7 @@
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ShortcutsWindow.h>
-
+#include <cursespp/ITopLevelLayout.h>
 #include <app/layout/BrowseLayout.h>
 #include <app/layout/DirectoryLayout.h>
 #include <app/layout/NowPlayingLayout.h>
@@ -49,13 +49,11 @@
 
 #include <sigslot/sigslot.h>
 
-#include "ITopLevelLayout.h"
-
 namespace musik {
     namespace cube {
         class LibraryLayout :
             public cursespp::LayoutBase,
-            public ITopLevelLayout,
+            public cursespp::ITopLevelLayout,
             public sigslot::has_slots<>
         {
             public:

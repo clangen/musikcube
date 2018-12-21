@@ -37,9 +37,8 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/ShortcutsWindow.h>
+#include <cursespp/ITopLevelLayout.h>
 #include <vector>
-
-#include "ITopLevelLayout.h"
 
 namespace musik {
     namespace cube {
@@ -48,7 +47,7 @@ namespace musik {
 #if (__clang_major__ == 7 && __clang_minor__ == 3)
             public std::enable_shared_from_this<HotkeysLayout>,
 #endif
-            public ITopLevelLayout,
+            public cursespp::ITopLevelLayout,
             public sigslot::has_slots<>
         {
             public:
