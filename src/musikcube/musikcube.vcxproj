@@ -60,7 +60,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_68_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../;./cursespp;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_68_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;CURL_STATICLIB;_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -99,7 +99,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_68_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../;./cursespp;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_68_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;CURL_STATICLIB;NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -244,46 +244,46 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
-    <ClInclude Include="cursespp\App.h" />
-    <ClInclude Include="cursespp\AppLayout.h" />
-    <ClInclude Include="cursespp\Checkbox.h" />
-    <ClInclude Include="cursespp\Colors.h" />
-    <ClInclude Include="cursespp\curses_config.h" />
-    <ClInclude Include="cursespp\DialogOverlay.h" />
-    <ClInclude Include="cursespp\IDisplayable.h" />
-    <ClInclude Include="cursespp\IInput.h" />
-    <ClInclude Include="cursespp\IKeyHandler.h" />
-    <ClInclude Include="cursespp\ILayout.h" />
-    <ClInclude Include="cursespp\IMouseHandler.h" />
-    <ClInclude Include="cursespp\INavigationKeys.h" />
-    <ClInclude Include="cursespp\InputOverlay.h" />
-    <ClInclude Include="cursespp\IOrderable.h" />
-    <ClInclude Include="cursespp\IOverlay.h" />
-    <ClInclude Include="cursespp\IScrollable.h" />
-    <ClInclude Include="cursespp\IScrollAdapter.h" />
-    <ClInclude Include="cursespp\ITopLevelLayout.h" />
-    <ClInclude Include="cursespp\IWindow.h" />
-    <ClInclude Include="cursespp\IWindowGroup.h" />
-    <ClInclude Include="cursespp\LayoutBase.h" />
-    <ClInclude Include="cursespp\ListOverlay.h" />
-    <ClInclude Include="cursespp\ListWindow.h" />
-    <ClInclude Include="cursespp\MultiLineEntry.h" />
-    <ClInclude Include="cursespp\NumberValidator.h" />
-    <ClInclude Include="cursespp\OverlayBase.h" />
-    <ClInclude Include="cursespp\OverlayStack.h" />
-    <ClInclude Include="cursespp\Screen.h" />
-    <ClInclude Include="cursespp\ScrollableWindow.h" />
-    <ClInclude Include="cursespp\ScrollAdapterBase.h" />
-    <ClInclude Include="cursespp\Scrollbar.h" />
-    <ClInclude Include="cursespp\ShortcutsWindow.h" />
-    <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
-    <ClInclude Include="cursespp\SingleLineEntry.h" />
-    <ClInclude Include="cursespp\Text.h" />
-    <ClInclude Include="cursespp\TextInput.h" />
-    <ClInclude Include="cursespp\TextLabel.h" />
-    <ClInclude Include="cursespp\ToastOverlay.h" />
-    <ClInclude Include="cursespp\Win32Util.h" />
-    <ClInclude Include="cursespp\Window.h" />
+    <ClInclude Include="cursespp\cursespp\App.h" />
+    <ClInclude Include="cursespp\cursespp\AppLayout.h" />
+    <ClInclude Include="cursespp\cursespp\Checkbox.h" />
+    <ClInclude Include="cursespp\cursespp\Colors.h" />
+    <ClInclude Include="cursespp\cursespp\curses_config.h" />
+    <ClInclude Include="cursespp\cursespp\DialogOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\IDisplayable.h" />
+    <ClInclude Include="cursespp\cursespp\IInput.h" />
+    <ClInclude Include="cursespp\cursespp\IKeyHandler.h" />
+    <ClInclude Include="cursespp\cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\cursespp\IMouseHandler.h" />
+    <ClInclude Include="cursespp\cursespp\INavigationKeys.h" />
+    <ClInclude Include="cursespp\cursespp\InputOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\IOrderable.h" />
+    <ClInclude Include="cursespp\cursespp\IOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\IScrollable.h" />
+    <ClInclude Include="cursespp\cursespp\IScrollAdapter.h" />
+    <ClInclude Include="cursespp\cursespp\ITopLevelLayout.h" />
+    <ClInclude Include="cursespp\cursespp\IWindow.h" />
+    <ClInclude Include="cursespp\cursespp\IWindowGroup.h" />
+    <ClInclude Include="cursespp\cursespp\LayoutBase.h" />
+    <ClInclude Include="cursespp\cursespp\ListOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\ListWindow.h" />
+    <ClInclude Include="cursespp\cursespp\MultiLineEntry.h" />
+    <ClInclude Include="cursespp\cursespp\NumberValidator.h" />
+    <ClInclude Include="cursespp\cursespp\OverlayBase.h" />
+    <ClInclude Include="cursespp\cursespp\OverlayStack.h" />
+    <ClInclude Include="cursespp\cursespp\Screen.h" />
+    <ClInclude Include="cursespp\cursespp\ScrollableWindow.h" />
+    <ClInclude Include="cursespp\cursespp\ScrollAdapterBase.h" />
+    <ClInclude Include="cursespp\cursespp\Scrollbar.h" />
+    <ClInclude Include="cursespp\cursespp\ShortcutsWindow.h" />
+    <ClInclude Include="cursespp\cursespp\SimpleScrollAdapter.h" />
+    <ClInclude Include="cursespp\cursespp\SingleLineEntry.h" />
+    <ClInclude Include="cursespp\cursespp\Text.h" />
+    <ClInclude Include="cursespp\cursespp\TextInput.h" />
+    <ClInclude Include="cursespp\cursespp\TextLabel.h" />
+    <ClInclude Include="cursespp\cursespp\ToastOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\Win32Util.h" />
+    <ClInclude Include="cursespp\cursespp\Window.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="version.h" />

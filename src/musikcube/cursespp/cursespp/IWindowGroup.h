@@ -34,21 +34,15 @@
 
 #pragma once
 
-#include <stdafx.h>
+#include <cursespp/IWindow.h>
 
 namespace cursespp {
-    class IInput {
+    class IWindowGroup {
         public:
-            enum InputMode {
-                InputRaw,
-                InputNormal,
-                InputPassword
-            };
-
-            virtual ~IInput() { }
-            virtual bool Write(const std::string& key) = 0;
-            virtual size_t Length() = 0;
-            virtual size_t Position() = 0;
-            virtual InputMode GetInputMode() = 0;
+            virtual ~IWindowGroup() { }
+            virtual bool AddWindow(IWindowPtr window) = 0;
+            virtual bool RemoveWindow(IWindowPtr window) = 0;
+            virtual size_t GetWindowCount() = 0;
+            virtual IWindowPtr GetWindowAt(size_t position) = 0;
     };
 }

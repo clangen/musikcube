@@ -33,11 +33,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "ListOverlay.h"
-#include "Scrollbar.h"
-#include "Colors.h"
-#include "Screen.h"
-#include "Text.h"
+#include <cursespp/ListOverlay.h>
+#include <cursespp/Scrollbar.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 
 using namespace cursespp;
 

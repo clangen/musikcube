@@ -34,12 +34,44 @@
 
 #pragma once
 
-#include <stdafx.h>
+#include <cursespp/IWindowGroup.h>
+#include <cursespp/IDisplayable.h>
+#include <cursespp/IKeyHandler.h>
+#include <cursespp/IMouseHandler.h>
+#include <memory>
 
 namespace cursespp {
-    class IKeyHandler {
+    class ILayout:
+        public IWindowGroup,
+        public IKeyHandler,
+        public IMouseHandler,
+        public IOrderable,
+        public IDisplayable
+    {
         public:
-            virtual ~IKeyHandler() { }
-            virtual bool KeyPress(const std::string& key) = 0;
+            enum FocusMode {
+                FocusModeCircular = 0,
+                FocusModeTerminating = 1
+            };
+
+            virtual ~ILayout() { }
+            virtual IWindowPtr FocusNext() = 0;
+            virtual IWindowPtr FocusPrev() = 0;
+
+            virtual IWindowPtr GetFocus() = 0;
+            virtual int GetFocusIndex() = 0;
+
+            virtual bool SetFocus(IWindowPtr window) = 0;
+            virtual void SetFocusIndex(int index) = 0;
+
+            virtual int GetFocusableCount() = 0;
+            virtual IWindowPtr GetFocusableAt(int index) = 0;
+
+            virtual FocusMode GetFocusMode() const = 0;
+            virtual void SetFocusMode(FocusMode mode) = 0;
+
+            virtual void Layout() = 0;
     };
+
+    typedef std::shared_ptr<ILayout> ILayoutPtr;
 }

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include <core/support/Messages.h>
 
 namespace musik {

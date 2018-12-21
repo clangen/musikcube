@@ -34,40 +34,19 @@
 
 #pragma once
 
-#include <stdafx.h>
-#include "curses_config.h"
-
 namespace cursespp {
-    class IWindow;
-
-    class IMouseHandler {
+    class IInput {
         public:
-            struct Event {
-                Event(const Event& original, int childX, int childY);
-                Event(const Event& original, IWindow* parent = nullptr);
-                Event(const MEVENT& original, IWindow* parent = nullptr);
-
-                bool Button1Clicked() const { return state & BUTTON1_CLICKED; }
-                bool Button2Clicked() const { return state & BUTTON2_CLICKED; }
-                bool Button3Clicked() const { return state & BUTTON3_CLICKED; }
-
-                bool Button1DoubleClicked() const { return state & BUTTON1_DOUBLE_CLICKED; }
-                bool Button2DoubleClicked() const { return state & BUTTON2_DOUBLE_CLICKED; }
-                bool Button3DoubleClicked() const { return state & BUTTON3_DOUBLE_CLICKED; }
-
-#ifdef WIN32
-                bool MouseWheelUp() const { return MOUSE_WHEEL_UP; }
-                bool MouseWheelDown() const { return MOUSE_WHEEL_DOWN; }
-#else
-                bool MouseWheelUp() const { return false; }
-                bool MouseWheelDown() const { return false; }
-#endif
-
-                int x, y;
-                mmask_t state;
+            enum InputMode {
+                InputRaw,
+                InputNormal,
+                InputPassword
             };
 
-            virtual ~IMouseHandler() { }
-            virtual bool MouseEvent(const Event& mouseEvent) = 0;
+            virtual ~IInput() { }
+            virtual bool Write(const std::string& key) = 0;
+            virtual size_t Length() = 0;
+            virtual size_t Position() = 0;
+            virtual InputMode GetInputMode() = 0;
     };
 }

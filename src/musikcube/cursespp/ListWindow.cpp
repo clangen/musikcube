@@ -34,8 +34,8 @@
 
 #include <stdafx.h>
 #include <algorithm>
-#include "ListWindow.h"
-#include "Scrollbar.h"
+#include <cursespp/ListWindow.h>
+#include <cursespp/Scrollbar.h>
 
 using namespace cursespp;
 

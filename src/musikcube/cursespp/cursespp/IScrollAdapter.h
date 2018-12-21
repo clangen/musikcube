@@ -34,8 +34,6 @@
 
 #pragma once
 
-#include <stdafx.h>
-
 namespace cursespp {
     class ScrollableWindow;
 

@@ -34,14 +34,14 @@
 
 #pragma once
 
-#include "Colors.h"
-#include "IOverlay.h"
-#include "LayoutBase.h"
-#include "OverlayStack.h"
-#include "TextLabel.h"
-#include "Checkbox.h"
-#include "TextInput.h"
-#include "ListWindow.h"
+#include <cursespp/Colors.h>
+#include <cursespp/IOverlay.h>
+#include <cursespp/LayoutBase.h>
+#include <cursespp/OverlayStack.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/Checkbox.h>
+#include <cursespp/TextInput.h>
+#include <cursespp/ListWindow.h>
 
 namespace cursespp {
     class OverlayBase : public LayoutBase, public IOverlay {

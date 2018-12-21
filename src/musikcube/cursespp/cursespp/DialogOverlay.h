@@ -34,67 +34,61 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "Window.h"
-#include "IScrollAdapter.h"
-#include "IScrollable.h"
-#include "IKeyHandler.h"
+#include <cursespp/OverlayBase.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/ShortcutsWindow.h>
+
+#include <vector>
+#include <map>
 
 namespace cursespp {
-    class ScrollableWindow :
-        public Window,
-    #if (__clang_major__ == 7 && __clang_minor__ == 3)
-        public std::enable_shared_from_this<ScrollableWindow>,
-    #endif
-        public IScrollable,
-        public IKeyHandler
+    class DialogOverlay :
+        public OverlayBase
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        , public std::enable_shared_from_this<DialogOverlay>
+#endif
     {
         public:
-            ScrollableWindow(
-                std::shared_ptr<IScrollAdapter> adapter,
-                IWindow *parent = nullptr);
+            using ButtonCallback = std::function<void(std::string key)>;
+            using DismissCallback = std::function<void()>;
 
-            ScrollableWindow(IWindow *parent = nullptr);
+            DialogOverlay();
+            virtual ~DialogOverlay();
 
-            virtual ~ScrollableWindow();
+            DialogOverlay& SetTitle(const std::string& title);
+            DialogOverlay& SetMessage(const std::string& message);
 
-            virtual void SetAdapter(std::shared_ptr<IScrollAdapter> adapter);
+            DialogOverlay& ClearButtons();
 
-            virtual void Show();
-            virtual void OnDimensionsChanged();
+            DialogOverlay& AddButton(
+                const std::string& rawKey,
+                const std::string& key,
+                const std::string& caption,
+                ButtonCallback callback = ButtonCallback());
 
+            DialogOverlay& OnDismiss(DismissCallback dismissCb);
+
+            DialogOverlay& SetAutoDismiss(bool dismiss = true);
+
+            virtual void Layout();
             virtual bool KeyPress(const std::string& key);
-            virtual bool MouseEvent(const IMouseHandler::Event& event);
-
-            virtual void ScrollToTop();
-            virtual void ScrollToBottom();
-            virtual void ScrollUp(int delta = 1);
-            virtual void ScrollDown(int delta = 1);
-            virtual void PageUp();
-            virtual void PageDown();
-
-            virtual void Focus();
-            virtual void Blur();
-
-            virtual void OnAdapterChanged();
-
-            void SetAllowArrowKeyPropagation(bool allow = true);
-
-            virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
 
         protected:
-            friend class Scrollbar;
-
-            virtual IScrollAdapter& GetScrollAdapter();
-            virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
-            virtual void OnRedraw();
-
-            size_t GetPreviousPageEntryIndex();
-            bool IsLastItemVisible();
+            virtual void OnDismissed();
 
         private:
-            std::shared_ptr<IScrollAdapter> adapter;
-            IScrollAdapter::ScrollPosition scrollPosition;
-            bool allowArrowKeyPropagation;
+            void Redraw();
+            void RecalculateSize();
+            bool ProcessKey(const std::string& key);
+
+            std::string title;
+            std::string message;
+            std::vector<std::string> messageLines;
+            std::shared_ptr<ShortcutsWindow> shortcuts;
+            int width, height;
+            bool autoDismiss;
+            DismissCallback dismissCb;
+
+            std::map<std::string, ButtonCallback> buttons;
     };
 }

@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "HotkeysLayout.h"
 #include <core/support/Common.h>
 #include <cursespp/App.h>

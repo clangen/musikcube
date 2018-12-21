@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include "OverlayBase.h"
-#include "ListWindow.h"
+#include <cursespp/OverlayBase.h>
+#include <cursespp/ListWindow.h>
 
 #include <vector>
 #include <map>

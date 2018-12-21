@@ -34,9 +34,9 @@
 
 #pragma once
 
-#include "IKeyHandler.h"
-#include "Window.h"
-#include "Text.h"
+#include <cursespp/IKeyHandler.h>
+#include <cursespp/Window.h>
+#include <cursespp/Text.h>
 
 namespace cursespp {
     class ShortcutsWindow :

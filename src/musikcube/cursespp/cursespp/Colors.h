@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "curses_config.h"
+#include <cursespp/curses_config.h>
 #include <string>
 
 namespace cursespp {

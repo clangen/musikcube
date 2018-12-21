@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "Screen.h"
+#include <cursespp/Screen.h>
 
 using namespace cursespp;
 

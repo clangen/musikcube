@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "LastFmOverlay.h"
 #include <app/util/Messages.h>
 #include <core/support/LastFm.h>

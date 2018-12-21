@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <core/library/query/local/DirectoryTrackListQuery.h>
 #include <core/support/Messages.h>

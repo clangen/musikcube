@@ -34,9 +34,9 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "IWindow.h"
-#include "INavigationKeys.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/IWindow.h>
+#include <cursespp/INavigationKeys.h>
 #include <core/runtime/IMessageQueue.h>
 
 #ifdef WIN32

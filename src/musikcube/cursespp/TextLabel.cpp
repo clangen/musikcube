@@ -39,7 +39,7 @@
 #include <cursespp/Text.h>
 #include <cursespp/ILayout.h>
 
-#include "TextLabel.h"
+#include <cursespp/TextLabel.h>
 
 using namespace cursespp;
 

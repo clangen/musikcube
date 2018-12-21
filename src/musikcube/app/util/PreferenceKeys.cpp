@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "PreferenceKeys.h"
 
 namespace musik { namespace cube { namespace prefs {

@@ -99,6 +99,30 @@
     <ClCompile Include="app\overlay\EqualizerOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\PluginOverlay.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\SingleLineEntry.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Text.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\TextInput.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\TextLabel.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\ToastOverlay.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Win32Util.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\Window.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
     <ClCompile Include="cursespp\App.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
@@ -152,30 +176,6 @@
     </ClCompile>
     <ClCompile Include="cursespp\SimpleScrollAdapter.cpp">
       <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\SingleLineEntry.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\Text.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\TextInput.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\TextLabel.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\ToastOverlay.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\Win32Util.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="cursespp\Window.cpp">
-      <Filter>cursespp</Filter>
-    </ClCompile>
-    <ClCompile Include="app\overlay\PluginOverlay.cpp">
-      <Filter>app\overlay</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -286,128 +286,128 @@
     <ClInclude Include="app\overlay\EqualizerOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
-    <ClInclude Include="cursespp\IOverlay.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IScrollable.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IScrollAdapter.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ITopLevelLayout.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IWindow.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IWindowGroup.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\LayoutBase.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ListOverlay.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ListWindow.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\MultiLineEntry.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\NumberValidator.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\OverlayBase.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\OverlayStack.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Screen.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ScrollableWindow.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ScrollAdapterBase.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Scrollbar.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ShortcutsWindow.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\SimpleScrollAdapter.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\SingleLineEntry.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Text.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\TextInput.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\TextLabel.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ToastOverlay.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Win32Util.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Window.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\App.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\AppLayout.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Checkbox.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\Colors.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\curses_config.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\DialogOverlay.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IDisplayable.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IInput.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IKeyHandler.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\ILayout.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IMouseHandler.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\INavigationKeys.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\InputOverlay.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
-    <ClInclude Include="cursespp\IOrderable.h">
-      <Filter>cursespp</Filter>
-    </ClInclude>
     <ClInclude Include="app\overlay\PluginOverlay.h">
       <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\AppLayout.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\Checkbox.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\Colors.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\curses_config.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\DialogOverlay.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IDisplayable.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IInput.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IKeyHandler.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ILayout.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IMouseHandler.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\INavigationKeys.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\InputOverlay.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IOrderable.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IOverlay.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IScrollable.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IScrollAdapter.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ITopLevelLayout.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IWindow.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\IWindowGroup.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\LayoutBase.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ListOverlay.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ListWindow.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\MultiLineEntry.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\NumberValidator.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\OverlayBase.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\OverlayStack.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\Screen.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ScrollableWindow.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ScrollAdapterBase.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\Scrollbar.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ShortcutsWindow.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\SimpleScrollAdapter.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\SingleLineEntry.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\Text.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\TextInput.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\TextLabel.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\ToastOverlay.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\Win32Util.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\Window.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\App.h">
+      <Filter>cursespp\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -431,6 +431,9 @@
     </Filter>
     <Filter Include="app\overlay">
       <UniqueIdentifier>{a84f242d-d70b-49e9-975e-63fc73954a2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="cursespp\include">
+      <UniqueIdentifier>{fd8e872b-087d-4324-9f6f-be2e218aeaec}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

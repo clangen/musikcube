@@ -34,27 +34,53 @@
 
 #pragma once
 
-#include "IScrollAdapter.h"
-#include "Colors.h"
+#include <cursespp/OverlayBase.h>
+#include <cursespp/TextInput.h>
 
 namespace cursespp {
-    class SingleLineEntry : public IScrollAdapter::IEntry {
+    class InputOverlay :
+        public OverlayBase,
+        public sigslot::has_slots<>
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        , public std::enable_shared_from_this<InputOverlay>
+#endif
+    {
         public:
-            SingleLineEntry(const std::string& value);
-            virtual ~SingleLineEntry() { }
+            struct IValidator {
+                virtual bool IsValid(const std::string& input) const = 0;
+                virtual const std::string ErrorMessage() const = 0;
+            };
 
-            virtual void SetWidth(size_t width);
-            virtual int64_t GetAttrs(size_t line);
-            virtual size_t GetLineCount();
-            virtual std::string GetLine(size_t line);
+            using InputAcceptedCallback = std::function<void(const std::string&)>;
 
-            void SetAttrs(Color attrs);
+            InputOverlay();
+            virtual ~InputOverlay();
 
-            std::string GetValue() { return value; }
+            InputOverlay& SetTitle(const std::string& title);
+            InputOverlay& SetText(const std::string& text);
+            InputOverlay& SetInputAcceptedCallback(InputAcceptedCallback cb);
+            InputOverlay& SetValidator(std::shared_ptr<IValidator> validator);
+            InputOverlay& SetWidth(int width);
+            InputOverlay& SetInputMode(IInput::InputMode mode);
+
+            virtual void Layout();
+            virtual bool KeyPress(const std::string& key);
+
+        protected:
+            virtual void OnVisibilityChanged(bool visible);
+            virtual void OnInputEnterPressed(TextInput* input);
+            virtual void OnInputKeyPress(TextInput* input, std::string key);
 
         private:
-            size_t width;
-            std::string value;
-            int64_t attrs;
+            void Redraw();
+            void RecalculateSize();
+
+            std::string title, text;
+            int x, y;
+            int width, height;
+            int setWidth;
+            std::shared_ptr<TextInput> textInput;
+            std::shared_ptr<IValidator> validator;
+            InputAcceptedCallback inputAcceptedCallback;
     };
 }

@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "HotkeysAdapter.h"
 #include <app/util/Hotkeys.h>
 #include <cursespp/Colors.h>

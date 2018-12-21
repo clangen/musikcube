@@ -34,9 +34,9 @@
 
 #pragma once
 
-#include "IScrollable.h"
-#include "IScrollAdapter.h"
-#include "ScrollableWindow.h"
+#include <cursespp/IScrollable.h>
+#include <cursespp/IScrollAdapter.h>
+#include <cursespp/ScrollableWindow.h>
 #include <sigslot/sigslot.h>
 #include <functional>
 

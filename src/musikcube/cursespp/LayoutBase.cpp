@@ -34,8 +34,8 @@
 
 #include <stdafx.h>
 #include <climits>
-#include "LayoutBase.h"
-#include "Colors.h"
+#include <cursespp/LayoutBase.h>
+#include <cursespp/Colors.h>
 
 using namespace cursespp;
 

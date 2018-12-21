@@ -33,10 +33,10 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "ScrollAdapterBase.h"
-#include "ScrollableWindow.h"
-#include "MultiLineEntry.h"
-#include "ListWindow.h"
+#include <cursespp/ScrollAdapterBase.h>
+#include <cursespp/ScrollableWindow.h>
+#include <cursespp/MultiLineEntry.h>
+#include <cursespp/ListWindow.h>
 
 using namespace cursespp;
 

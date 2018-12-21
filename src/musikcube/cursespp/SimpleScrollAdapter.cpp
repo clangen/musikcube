@@ -32,13 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
-#include "SimpleScrollAdapter.h"
-#include "SingleLineEntry.h"
-#include "MultiLineEntry.h"
-#include "ScrollableWindow.h"
-#include "Colors.h"
+#include <cursespp/SimpleScrollAdapter.h>
+#include <cursespp/SingleLineEntry.h>
+#include <cursespp/MultiLineEntry.h>
+#include <cursespp/ScrollableWindow.h>
+#include <cursespp/Colors.h>
 #include <utf8/utf8/unchecked.h>
 
 using namespace cursespp;

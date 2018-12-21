@@ -33,11 +33,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "App.h"
-#include "ToastOverlay.h"
-#include "Colors.h"
-#include "Screen.h"
-#include "Text.h"
+#include <cursespp/App.h>
+#include <cursespp/ToastOverlay.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 
 static const int TOAST_MESSAGE_HIDE = 1000;
 

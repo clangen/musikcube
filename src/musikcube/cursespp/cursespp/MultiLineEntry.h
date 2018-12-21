@@ -34,43 +34,24 @@
 
 #pragma once
 
-#include "OverlayBase.h"
-#include <vector>
+#include <cursespp/IScrollAdapter.h>
 
 namespace cursespp {
-    class ToastOverlay :
-        public OverlayBase,
-        public sigslot::has_slots<>
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<ToastOverlay>
-#endif
-    {
+    class MultiLineEntry : public IScrollAdapter::IEntry {
         public:
-            static void Show(const std::string& text, int durationMs = 3000);
+            MultiLineEntry(const std::string& value, int64_t attrs = -1);
+            virtual ~MultiLineEntry() { }
 
-            virtual ~ToastOverlay();
-
-            ToastOverlay(const ToastOverlay& other) = delete;
-            ToastOverlay& operator=(const ToastOverlay& other) = delete;
-
-            virtual void Layout() override;
-            virtual bool KeyPress(const std::string& key) override;
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
-
-        protected:
-            virtual void OnVisibilityChanged(bool visible) override;
+            virtual size_t GetLineCount();
+            virtual std::string GetLine(size_t line);
+            virtual void SetWidth(size_t width);
+            virtual int64_t GetAttrs(size_t line);
 
         private:
-            ToastOverlay(const std::string& text, long durationMs);
-
-            virtual void OnRedraw() override;
-            void RecalculateSize();
-
-            bool ticking;
-            std::string title;
-            std::vector<std::string> titleLines;
-            int durationMs;
-            int x, y;
-            int width, height;
+            std::string value;
+            std::vector<std::string> lines;
+            size_t charCount;
+            int64_t attrs;
+            size_t width;
     };
 }

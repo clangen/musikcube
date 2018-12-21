@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include <json.hpp>
-#include "Colors.h"
+#include <cursespp/Colors.h>
 #include <boost/filesystem.hpp>
 #include <core/support/Common.h>
 

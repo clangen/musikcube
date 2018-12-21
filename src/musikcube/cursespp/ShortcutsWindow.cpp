@@ -32,11 +32,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
-#include "ShortcutsWindow.h"
-#include "Colors.h"
-#include "Text.h"
+#include <cursespp/ShortcutsWindow.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Text.h>
 
 using namespace cursespp;
 

@@ -33,8 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "Text.h"
-#include "MultiLineEntry.h"
+#include <cursespp/Text.h>
+#include <cursespp/MultiLineEntry.h>
 
 using namespace cursespp;
 

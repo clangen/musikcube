@@ -35,11 +35,11 @@
 #pragma once
 
 #include <queue>
-#include "ILayout.h"
-#include "IInput.h"
-#include "IKeyHandler.h"
-#include "OverlayStack.h"
-#include "Colors.h"
+#include <cursespp/ILayout.h>
+#include <cursespp/IInput.h>
+#include <cursespp/IKeyHandler.h>
+#include <cursespp/OverlayStack.h>
+#include <cursespp/Colors.h>
 
 namespace cursespp {
     class App {

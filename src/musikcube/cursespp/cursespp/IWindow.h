@@ -34,11 +34,11 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "IDisplayable.h"
-#include "IOrderable.h"
-#include "IMouseHandler.h"
-#include "Colors.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/IDisplayable.h>
+#include <cursespp/IOrderable.h>
+#include <cursespp/IMouseHandler.h>
+#include <cursespp/Colors.h>
 
 #include <core/runtime/IMessage.h>
 #include <core/runtime/IMessageTarget.h>

@@ -34,61 +34,10 @@
 
 #pragma once
 
-#include "OverlayBase.h"
-#include "TextLabel.h"
-#include "ShortcutsWindow.h"
-
-#include <vector>
-#include <map>
-
 namespace cursespp {
-    class DialogOverlay :
-        public OverlayBase
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<DialogOverlay>
-#endif
-    {
+    class IKeyHandler {
         public:
-            using ButtonCallback = std::function<void(std::string key)>;
-            using DismissCallback = std::function<void()>;
-
-            DialogOverlay();
-            virtual ~DialogOverlay();
-
-            DialogOverlay& SetTitle(const std::string& title);
-            DialogOverlay& SetMessage(const std::string& message);
-
-            DialogOverlay& ClearButtons();
-
-            DialogOverlay& AddButton(
-                const std::string& rawKey,
-                const std::string& key,
-                const std::string& caption,
-                ButtonCallback callback = ButtonCallback());
-
-            DialogOverlay& OnDismiss(DismissCallback dismissCb);
-
-            DialogOverlay& SetAutoDismiss(bool dismiss = true);
-
-            virtual void Layout();
-            virtual bool KeyPress(const std::string& key);
-
-        protected:
-            virtual void OnDismissed();
-
-        private:
-            void Redraw();
-            void RecalculateSize();
-            bool ProcessKey(const std::string& key);
-
-            std::string title;
-            std::string message;
-            std::vector<std::string> messageLines;
-            std::shared_ptr<ShortcutsWindow> shortcuts;
-            int width, height;
-            bool autoDismiss;
-            DismissCallback dismissCb;
-
-            std::map<std::string, ButtonCallback> buttons;
+            virtual ~IKeyHandler() { }
+            virtual bool KeyPress(const std::string& key) = 0;
     };
 }

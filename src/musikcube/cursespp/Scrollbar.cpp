@@ -32,8 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "Scrollbar.h"
+#include <stdafx.h>
+#include <cursespp/Scrollbar.h>
 
 using namespace cursespp;
 

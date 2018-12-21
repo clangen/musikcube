@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include "BrowseOverlays.h"
 #include <core/library/query/local/AllCategoriesQuery.h>

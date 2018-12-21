@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "ReassignHotkeyOverlay.h"
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>

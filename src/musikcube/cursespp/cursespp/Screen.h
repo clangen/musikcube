@@ -34,15 +34,15 @@
 
 #pragma once
 
-#include "IWindow.h"
+#include <cursespp/curses_config.h>
 
 namespace cursespp {
-    class IWindowGroup {
+    class Screen {
+        private:
+            Screen();
+
         public:
-            virtual ~IWindowGroup() { }
-            virtual bool AddWindow(IWindowPtr window) = 0;
-            virtual bool RemoveWindow(IWindowPtr window) = 0;
-            virtual size_t GetWindowCount() = 0;
-            virtual IWindowPtr GetWindowAt(size_t position) = 0;
+            static int GetWidth();
+            static int GetHeight();
     };
 }

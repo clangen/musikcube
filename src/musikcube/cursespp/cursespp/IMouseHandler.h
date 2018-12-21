@@ -34,44 +34,39 @@
 
 #pragma once
 
-#include "IWindowGroup.h"
-#include "IDisplayable.h"
-#include "IKeyHandler.h"
-#include "IMouseHandler.h"
-#include <memory>
+#include <cursespp/curses_config.h>
 
 namespace cursespp {
-    class ILayout:
-        public IWindowGroup,
-        public IKeyHandler,
-        public IMouseHandler,
-        public IOrderable,
-        public IDisplayable
-    {
+    class IWindow;
+
+    class IMouseHandler {
         public:
-            enum FocusMode {
-                FocusModeCircular = 0,
-                FocusModeTerminating = 1
+            struct Event {
+                Event(const Event& original, int childX, int childY);
+                Event(const Event& original, IWindow* parent = nullptr);
+                Event(const MEVENT& original, IWindow* parent = nullptr);
+
+                bool Button1Clicked() const { return state & BUTTON1_CLICKED; }
+                bool Button2Clicked() const { return state & BUTTON2_CLICKED; }
+                bool Button3Clicked() const { return state & BUTTON3_CLICKED; }
+
+                bool Button1DoubleClicked() const { return state & BUTTON1_DOUBLE_CLICKED; }
+                bool Button2DoubleClicked() const { return state & BUTTON2_DOUBLE_CLICKED; }
+                bool Button3DoubleClicked() const { return state & BUTTON3_DOUBLE_CLICKED; }
+
+#ifdef WIN32
+                bool MouseWheelUp() const { return MOUSE_WHEEL_UP; }
+                bool MouseWheelDown() const { return MOUSE_WHEEL_DOWN; }
+#else
+                bool MouseWheelUp() const { return false; }
+                bool MouseWheelDown() const { return false; }
+#endif
+
+                int x, y;
+                mmask_t state;
             };
 
-            virtual ~ILayout() { }
-            virtual IWindowPtr FocusNext() = 0;
-            virtual IWindowPtr FocusPrev() = 0;
-
-            virtual IWindowPtr GetFocus() = 0;
-            virtual int GetFocusIndex() = 0;
-
-            virtual bool SetFocus(IWindowPtr window) = 0;
-            virtual void SetFocusIndex(int index) = 0;
-
-            virtual int GetFocusableCount() = 0;
-            virtual IWindowPtr GetFocusableAt(int index) = 0;
-
-            virtual FocusMode GetFocusMode() const = 0;
-            virtual void SetFocusMode(FocusMode mode) = 0;
-
-            virtual void Layout() = 0;
+            virtual ~IMouseHandler() { }
+            virtual bool MouseEvent(const Event& mouseEvent) = 0;
     };
-
-    typedef std::shared_ptr<ILayout> ILayoutPtr;
 }

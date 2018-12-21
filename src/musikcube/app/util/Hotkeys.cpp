@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "Hotkeys.h"
 #include <core/support/Preferences.h>
 #include <app/util/Playback.h>

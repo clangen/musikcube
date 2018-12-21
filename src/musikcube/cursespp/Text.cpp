@@ -32,8 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "Text.h"
+#include <stdafx.h>
+#include <cursespp/Text.h>
 
 #include <math.h>
 

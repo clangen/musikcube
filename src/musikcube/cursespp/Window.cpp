@@ -33,13 +33,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "Window.h"
-#include "IWindowGroup.h"
-#include "IInput.h"
-#include "ILayout.h"
-#include "Colors.h"
-#include "Screen.h"
-#include "Text.h"
+#include <cursespp/Window.h>
+#include <cursespp/IWindowGroup.h>
+#include <cursespp/IInput.h>
+#include <cursespp/ILayout.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 
 #include <core/runtime/Message.h>
 #include <core/runtime/MessageQueue.h>

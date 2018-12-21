@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include "ILayout.h"
-#include "Window.h"
+#include <cursespp/ILayout.h>
+#include <cursespp/Window.h>
 
 #include <sigslot/sigslot.h>
 #include <vector>

@@ -34,10 +34,10 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "Window.h"
-#include "IInput.h"
-#include "IKeyHandler.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/Window.h>
+#include <cursespp/IInput.h>
+#include <cursespp/IKeyHandler.h>
 #include <sigslot/sigslot.h>
 
 namespace cursespp {

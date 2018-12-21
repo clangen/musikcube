@@ -34,18 +34,18 @@
 
 #include <stdafx.h>
 
-#include "App.h"
-#include "Colors.h"
-#include "ILayout.h"
-#include "IInput.h"
-#include "Window.h"
-#include "Text.h"
-#include "Screen.h"
+#include <cursespp/App.h>
+#include <cursespp/Colors.h>
+#include <cursespp/ILayout.h>
+#include <cursespp/IInput.h>
+#include <cursespp/Window.h>
+#include <cursespp/Text.h>
+#include <cursespp/Screen.h>
 
 #include <thread>
 
 #ifdef WIN32
-#include "Win32Util.h"
+#include <cursespp/Win32Util.h>
 #undef MOUSE_MOVED
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif

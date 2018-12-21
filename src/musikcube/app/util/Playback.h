@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/support/Preferences.h>

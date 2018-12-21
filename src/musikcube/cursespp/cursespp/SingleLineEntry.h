@@ -34,35 +34,27 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "ScrollAdapterBase.h"
-#include <deque>
+#include <cursespp/IScrollAdapter.h>
+#include <cursespp/Colors.h>
 
 namespace cursespp {
-    class SimpleScrollAdapter : public ScrollAdapterBase {
+    class SingleLineEntry : public IScrollAdapter::IEntry {
         public:
-            sigslot::signal1<SimpleScrollAdapter*> Changed;
+            SingleLineEntry(const std::string& value);
+            virtual ~SingleLineEntry() { }
 
-            SimpleScrollAdapter();
-            virtual ~SimpleScrollAdapter();
+            virtual void SetWidth(size_t width);
+            virtual int64_t GetAttrs(size_t line);
+            virtual size_t GetLineCount();
+            virtual std::string GetLine(size_t line);
 
-            virtual void AddEntry(EntryPtr entry);
-            virtual void SetMaxEntries(const size_t size = 500);
-            virtual void Clear();
+            void SetAttrs(Color attrs);
 
-            virtual size_t GetEntryCount();
-            virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
-
-            void SetSelectable(bool selectable);
-            void AddEntry(const std::string& entry);
-            std::string StringAt(size_t index);
+            std::string GetValue() { return value; }
 
         private:
-            typedef std::deque<EntryPtr> EntryList; /* TODO: this is O(n) lookup */
-            typedef EntryList::iterator Iterator;
-
-            EntryList entries;
-            size_t maxEntries;
-            bool selectable;
+            size_t width;
+            std::string value;
+            int64_t attrs;
     };
 }

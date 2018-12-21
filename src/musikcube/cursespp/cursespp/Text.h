@@ -34,15 +34,22 @@
 
 #pragma once
 
-#include "curses_config.h"
-
 namespace cursespp {
-    class Screen {
-        private:
-            Screen();
+    namespace text {
+        enum TextAlign {
+            AlignLeft,
+            AlignCenter,
+            AlignRight
+        };
 
-        public:
-            static int GetWidth();
-            static int GetHeight();
-    };
+        std::string Ellipsize(const std::string& str, size_t len);
+        std::string Align(const std::string& str, TextAlign align, size_t len);
+        std::vector<std::string> BreakLines(const std::string& line, size_t width);
+        std::vector<std::string> Split(const std::string& str, const std::string& delimiters = " ", bool trimEmpty = false);
+    }
+
+    namespace key {
+        std::string Normalize(const std::string& keyname);
+        std::string Read(int64_t ch);
+    }
 }

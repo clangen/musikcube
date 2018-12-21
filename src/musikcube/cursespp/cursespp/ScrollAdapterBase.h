@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include "curses_config.h"
-#include "IScrollAdapter.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/IScrollAdapter.h>
 #include <deque>
 
 namespace cursespp {

@@ -34,53 +34,35 @@
 
 #pragma once
 
-#include "OverlayBase.h"
-#include "TextInput.h"
+#include <cursespp/curses_config.h>
+#include <cursespp/ScrollAdapterBase.h>
+#include <deque>
 
 namespace cursespp {
-    class InputOverlay :
-        public OverlayBase,
-        public sigslot::has_slots<>
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<InputOverlay>
-#endif
-    {
+    class SimpleScrollAdapter : public ScrollAdapterBase {
         public:
-            struct IValidator {
-                virtual bool IsValid(const std::string& input) const = 0;
-                virtual const std::string ErrorMessage() const = 0;
-            };
+            sigslot::signal1<SimpleScrollAdapter*> Changed;
 
-            using InputAcceptedCallback = std::function<void(const std::string&)>;
+            SimpleScrollAdapter();
+            virtual ~SimpleScrollAdapter();
 
-            InputOverlay();
-            virtual ~InputOverlay();
+            virtual void AddEntry(EntryPtr entry);
+            virtual void SetMaxEntries(const size_t size = 500);
+            virtual void Clear();
 
-            InputOverlay& SetTitle(const std::string& title);
-            InputOverlay& SetText(const std::string& text);
-            InputOverlay& SetInputAcceptedCallback(InputAcceptedCallback cb);
-            InputOverlay& SetValidator(std::shared_ptr<IValidator> validator);
-            InputOverlay& SetWidth(int width);
-            InputOverlay& SetInputMode(IInput::InputMode mode);
+            virtual size_t GetEntryCount();
+            virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
 
-            virtual void Layout();
-            virtual bool KeyPress(const std::string& key);
-
-        protected:
-            virtual void OnVisibilityChanged(bool visible);
-            virtual void OnInputEnterPressed(TextInput* input);
-            virtual void OnInputKeyPress(TextInput* input, std::string key);
+            void SetSelectable(bool selectable);
+            void AddEntry(const std::string& entry);
+            std::string StringAt(size_t index);
 
         private:
-            void Redraw();
-            void RecalculateSize();
+            typedef std::deque<EntryPtr> EntryList; /* TODO: this is O(n) lookup */
+            typedef EntryList::iterator Iterator;
 
-            std::string title, text;
-            int x, y;
-            int width, height;
-            int setWidth;
-            std::shared_ptr<TextInput> textInput;
-            std::shared_ptr<IValidator> validator;
-            InputAcceptedCallback inputAcceptedCallback;
+            EntryList entries;
+            size_t maxEntries;
+            bool selectable;
     };
 }

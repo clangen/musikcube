@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "ILayout.h"
+#include <cursespp/ILayout.h>
 #include <vector>
 
 namespace cursespp {

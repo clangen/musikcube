@@ -33,12 +33,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "App.h"
-#include "InputOverlay.h"
-#include "DialogOverlay.h"
-#include "Colors.h"
-#include "Screen.h"
-#include "Text.h"
+#include <cursespp/App.h>
+#include <cursespp/InputOverlay.h>
+#include <cursespp/DialogOverlay.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 
 using namespace cursespp;
 

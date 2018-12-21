@@ -34,24 +34,43 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include <cursespp/OverlayBase.h>
+#include <vector>
 
 namespace cursespp {
-    namespace text {
-        enum TextAlign {
-            AlignLeft,
-            AlignCenter,
-            AlignRight
-        };
+    class ToastOverlay :
+        public OverlayBase,
+        public sigslot::has_slots<>
+#if (__clang_major__ == 7 && __clang_minor__ == 3)
+        , public std::enable_shared_from_this<ToastOverlay>
+#endif
+    {
+        public:
+            static void Show(const std::string& text, int durationMs = 3000);
 
-        std::string Ellipsize(const std::string& str, size_t len);
-        std::string Align(const std::string& str, TextAlign align, size_t len);
-        std::vector<std::string> BreakLines(const std::string& line, size_t width);
-        std::vector<std::string> Split(const std::string& str, const std::string& delimiters = " ", bool trimEmpty = false);
-    }
+            virtual ~ToastOverlay();
 
-    namespace key {
-        std::string Normalize(const std::string& keyname);
-        std::string Read(int64_t ch);
-    }
+            ToastOverlay(const ToastOverlay& other) = delete;
+            ToastOverlay& operator=(const ToastOverlay& other) = delete;
+
+            virtual void Layout() override;
+            virtual bool KeyPress(const std::string& key) override;
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+
+        protected:
+            virtual void OnVisibilityChanged(bool visible) override;
+
+        private:
+            ToastOverlay(const std::string& text, long durationMs);
+
+            virtual void OnRedraw() override;
+            void RecalculateSize();
+
+            bool ticking;
+            std::string title;
+            std::vector<std::string> titleLines;
+            int durationMs;
+            int x, y;
+            int width, height;
+    };
 }
