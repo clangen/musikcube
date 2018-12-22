@@ -11,6 +11,7 @@
 **/Debug
 **/*.deb
 **/*.aps
+**/.DS_Store
 .vs
 .vscode
 bin
