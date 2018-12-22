@@ -228,7 +228,7 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
             Hotkeys::Get(Hotkeys::NavigateSettings),
             _TSTR("shortcuts_settings"));
 
-        shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+        shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
 
         shortcuts->SetChangedCallback([this](std::string key) {
             this->KeyPress(key);

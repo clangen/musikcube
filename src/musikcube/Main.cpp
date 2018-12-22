@@ -151,6 +151,9 @@ int main(int argc, char* argv[]) {
         app.SetIcon(IDI_ICON1);
         app.SetSingleInstanceId("musikcube");
 #endif
+
+        app.SetQuitKey(prefs->GetString(keys::AppQuitKey, "^D"));
+
         /* fire up the indexer if configured to run on startup */
         if (prefs->GetBool(musik::core::prefs::keys::SyncOnStartup, true)) {
             library->Indexer()->Schedule(IIndexer::SyncType::All);

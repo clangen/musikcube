@@ -234,6 +234,14 @@ void App::OnResized() {
     }
 }
 
+void App::SetQuitKey(const std::string& kn) {
+    this->quitKey = kn;
+}
+
+std::string App::GetQuitKey() {
+    return this->quitKey;
+}
+
 void App::InjectKeyPress(const std::string& key) {
     this->injectedKeys.push(key);
 }
@@ -325,7 +333,7 @@ process:
             else if (kn == "KEY_BTAB") { /* shift-tab */
                 this->FocusPrevInLayout();
             }
-            else if (kn == "^D") { /* ctrl+d quits */
+            else if (kn == this->quitKey) { /* ctrl+d quits */
                 this->quit = true;
             }
             else if (kn == "KEY_RESIZE") {

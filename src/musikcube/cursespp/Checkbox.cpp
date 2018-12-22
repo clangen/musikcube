@@ -55,8 +55,7 @@ Checkbox::Checkbox()
 
 Checkbox::Checkbox(const std::string& value)
 : TextLabel(decorate(value, false))
-, originalText(value)
-, checked(checked) {
+, originalText(value) {
 }
 
 Checkbox::Checkbox(const std::string& value, const text::TextAlign alignment)

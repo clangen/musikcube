@@ -512,7 +512,7 @@ void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateConsole), _TSTR("shortcuts_console"));
-        shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+        shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
 
         shortcuts->SetChangedCallback([this](std::string key) {
             if (Hotkeys::Is(Hotkeys::NavigateConsole, key)) {
@@ -521,7 +521,7 @@ void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
             if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
                 this->Broadcast(message::JumpToLibrary);
             }
-            else if (key == "^D") {
+            else if (key == App::Instance().GetQuitKey()) {
                 app.Quit();
             }
             this->KeyPress(key);

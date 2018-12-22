@@ -63,6 +63,8 @@ namespace cursespp {
             void SetMouseEnabled(bool enabled);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
             void SetMinimizeToTray(bool minimizeToTray);
+            std::string GetQuitKey();
+            void SetQuitKey(const std::string& kn);
             void Minimize();
             void Restore();
 
@@ -117,6 +119,7 @@ namespace cursespp {
             Colors::Mode colorMode { Colors::Palette };
             Colors::BgType bgType { Colors::Theme };
             std::string colorTheme;
+            std::string quitKey{"^D"};
             int minWidth, minHeight;
             bool mouseEnabled;
             bool quit;
