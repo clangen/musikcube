@@ -162,8 +162,7 @@
         "visualizer_overlay_title": "visualizers",
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",
 
-        "equalizer_overlay_title": "equalizer",
-        "equalizer_overlay_enabled": "enabled",
+        "equalizer_overlay_enabled": "equalizer enabled",
         "equalizer_overlay_frequencies": "frequency bands",
         "equalizer_button_load": "load",
         "equalizer_button_save": "save",

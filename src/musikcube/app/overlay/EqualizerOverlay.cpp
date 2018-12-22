@@ -63,7 +63,7 @@ static const std::vector<std::string> BANDS = {
 };
 
 static const int VERTICAL_PADDING = 2;
-static const int MAX_HEIGHT = 8 + (int) BANDS.size();
+static const int MAX_HEIGHT = 7 + (int) BANDS.size();
 static const int DEFAULT_WIDTH = 46;
 static const int TRACK_WIDTH = 21;
 static const int DB_LABEL_WIDTH = 6; /* "-XY dB" */
@@ -107,12 +107,10 @@ EqualizerOverlay::EqualizerOverlay()
     this->plugin = this->FindPlugin();
     this->prefs = Preferences::ForPlugin(this->plugin->Name());
 
-    this->titleLabel = std::make_shared<TextLabel>();
-    this->titleLabel->SetText(_TSTR("equalizer_overlay_title"), text::AlignCenter);
-    this->titleLabel->SetBold(true);
-
     this->enabledCb = std::make_shared<Checkbox>();
     this->enabledCb->SetText(_TSTR("equalizer_overlay_enabled"));
+    this->enabledCb->SetAlignment(text::AlignCenter);
+    this->enabledCb->SetBold(true);
     this->enabledCb->SetChecked(this->prefs->GetBool("enabled", false));
     this->enabledCb->CheckChanged.connect(this, &EqualizerOverlay::OnEnabledChanged);
 
@@ -129,7 +127,6 @@ EqualizerOverlay::EqualizerOverlay()
     this->shortcuts->SetAlignment(text::AlignRight);
 
     /* add */
-    this->AddWindow(this->titleLabel);
     this->AddWindow(this->enabledCb);
     this->AddWindow(this->listView);
     this->AddWindow(this->shortcuts);
@@ -140,7 +137,6 @@ EqualizerOverlay::EqualizerOverlay()
     this->listView->SetFocusOrder(order++);
 
     /* style */
-    style(*this->titleLabel);
     style(*this->enabledCb);
     style(*this->listView);
     this->listView->SetFrameVisible(true);
@@ -178,11 +174,9 @@ void EqualizerOverlay::Layout() {
     x = 0;
     y = 0;
 
-    this->titleLabel->MoveAndResize(x, y, cx, 1);
-    y += 2;
     this->enabledCb->MoveAndResize(x, y, cx, 1);
-    y += 1;
-    cy -= 3;
+    y += 2;
+    cy -= 2;
     this->listView->MoveAndResize(x, y, cx, cy - 1);
 
     cy = this->GetContentHeight();

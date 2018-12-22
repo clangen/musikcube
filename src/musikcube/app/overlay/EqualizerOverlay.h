@@ -84,7 +84,6 @@ namespace musik {
                 Plugin plugin;
                 Prefs prefs;
                 std::shared_ptr<BandsAdapter> adapter;
-                std::shared_ptr<cursespp::TextLabel> titleLabel;
                 std::shared_ptr<cursespp::Checkbox> enabledCb;
                 std::shared_ptr<cursespp::ListWindow> listView;
                 std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
