@@ -35,32 +35,30 @@
 #pragma once
 
 #include <cursespp/curses_config.h>
-#include <cursespp/Window.h>
+#include <cursespp/TextLabel.h>
 #include <cursespp/IKeyHandler.h>
 #include <sigslot/sigslot.h>
 
 namespace cursespp {
-    class Checkbox :
-        public cursespp::IKeyHandler,
-        public cursespp::Window
-    {
+    class Checkbox: public cursespp::TextLabel {
         public:
             sigslot::signal2<Checkbox*, bool> CheckChanged;
 
             Checkbox();
+            Checkbox(const std::string& value);
+            Checkbox(const std::string& value, const text::TextAlign alignment);
+
             virtual ~Checkbox();
 
             virtual void SetText(const std::string& value);
+            virtual std::string GetText();
             virtual void SetChecked(bool checked);
-            virtual std::string GetText() { return this->buffer; }
             virtual bool IsChecked() { return this->checked; }
             virtual bool KeyPress(const std::string& key);
             virtual bool MouseEvent(const IMouseHandler::Event& event);
-            virtual void OnRedraw();
 
         private:
-
-            std::string buffer;
             bool checked;
+            std::string originalText;
     };
 }
