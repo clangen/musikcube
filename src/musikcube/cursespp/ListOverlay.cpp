@@ -157,12 +157,8 @@ void ListOverlay::Layout() {
 }
 
 bool ListOverlay::ScrollbarVisible() {
-#ifndef __FreeBSD__
     auto contentHeight = this->height - 4; /* top and bottom padding + title */
     return (int) this->listWindow->EntryCount() > contentHeight;
-#else
-    return false;
-#endif
 }
 
 ListOverlay& ListOverlay::SetTitle(const std::string& title) {

@@ -39,7 +39,6 @@
 using namespace cursespp;
 
 void Scrollbar::Draw(ListWindow* list, Window* target) {
-#ifndef __FreeBSD__
     int height = list->GetHeight();
     auto *adapter = &list->GetScrollAdapter();
     if (adapter && height > 2) {
@@ -84,5 +83,4 @@ void Scrollbar::Draw(ListWindow* list, Window* target) {
             if (i == yOffset) wattroff(frame, A_REVERSE);
         }
     }
-#endif
 }
