@@ -285,8 +285,8 @@ void App::Run(ILayoutPtr layout) {
     }
 #else
     if (!isLangUtf8()) {
-        std::cout << "This application requires a UTF-8 compatible LANG environment "
-        "variable to be set in the controlling terminal. Exiting.";
+        std::cout << "\n\nThis application requires a UTF-8 compatible LANG environment "
+        "variable to be set in the controlling terminal. Exiting.\n\n\n";
         return;
     }
 #endif
