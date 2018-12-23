@@ -105,6 +105,7 @@ namespace cursespp {
                 }
             };
 
+            void InitCurses();
             void UpdateFocusedWindow(IWindowPtr window);
             void EnsureFocusIsValid();
             void CheckShowOverlay();

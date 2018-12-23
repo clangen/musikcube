@@ -53,6 +53,7 @@
 
 #ifndef WIN32
 #include <csignal>
+#include <cstdlib>
 #include <locale.h>
 #endif
 
@@ -74,6 +75,16 @@ static void resizedHandler(int signal) {
     endwin(); /* required in *nix because? */
     resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
 }
+
+static bool isLangUtf8() {
+    const char* lang = std::getenv("LANG");
+    if (!lang) {
+        return false;
+    }
+    std::string str = std::string(lang);
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return str.find("utf-8") != std::string::npos;
+}
 #endif
 
 App& App::Instance() {
@@ -89,7 +100,6 @@ App::App(const std::string& title) {
     }
 
     instance = this; /* only one instance. */
-
     this->quit = false;
     this->minWidth = this->minHeight = 0;
     this->mouseEnabled = true;
@@ -99,7 +109,6 @@ App::App(const std::string& title) {
     this->appTitle = title;
     this->colorMode = Colors::RGB;
     win32::ConfigureDpiAwareness();
-    PDC_set_default_menu_visibility(0);
 #else
     setlocale(LC_ALL, "");
     std::signal(SIGWINCH, resizedHandler);
@@ -107,9 +116,21 @@ App::App(const std::string& title) {
     std::signal(SIGPIPE, SIG_IGN);
     this->colorMode = Colors::Palette;
 #endif
+}
 
-#ifdef __PDCURSES__
+App::~App() {
+    endwin();
+}
+
+void App::InitCurses() {
+#ifdef WIN32
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
+    PDC_set_default_menu_visibility(0);
+    PDC_set_title(title.c_str());
+    win32::InterceptWndProc();
+    win32::SetAppTitle(title);
+#else
+    set_escdelay(20);
 #endif
 
     initscr();
@@ -120,20 +141,6 @@ App::App(const std::string& title) {
     refresh();
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
-
-#ifndef WIN32
-    set_escdelay(20);
-#endif
-
-#ifdef __PDCURSES__
-    PDC_set_title(title.c_str());
-    win32::InterceptWndProc();
-    win32::SetAppTitle(title);
-#endif
-}
-
-App::~App() {
-    endwin();
 }
 
 void App::SetKeyHandler(KeyHandler handler) {
@@ -276,7 +283,15 @@ void App::Run(ILayoutPtr layout) {
     if (App::Running(this->uniqueId, this->appTitle)) {
         return;
     }
+#else
+    if (!isLangUtf8()) {
+        std::cout << "This application requires a UTF-8 compatible LANG environment "
+        "variable to be set in the controlling terminal. Exiting.";
+        return;
+    }
 #endif
+
+    this->InitCurses();
 
     Colors::Init(this->colorMode, this->bgType);
 
