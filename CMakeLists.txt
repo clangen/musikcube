@@ -164,14 +164,15 @@ endif ()
 
 # executable and shell script for musikcube
 install(
-  FILES bin/musikcube DESTINATION share/musikcube
+  FILES bin/musikcube
+  DESTINATION share/musikcube
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
     WORLD_EXECUTE WORLD_READ)
 
 install(
-  FILES src/musikcube/musikcube
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/src/musikcube/musikcube"
   DESTINATION bin/
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
@@ -180,14 +181,15 @@ install(
 
 # executable and shell script for daemon
 install(
-  FILES bin/musikcubed DESTINATION share/musikcube
+  FILES bin/musikcubed
+  DESTINATION share/musikcube
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
     WORLD_EXECUTE WORLD_READ)
 
 install(
-  FILES src/musikcubed/musikcubed
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/src/musikcubed/musikcubed"
   DESTINATION bin/
   PERMISSIONS
     OWNER_EXECUTE OWNER_READ OWNER_WRITE
