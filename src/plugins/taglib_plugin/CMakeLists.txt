@@ -6,4 +6,8 @@ set (taglibreader_SOURCES
 
 add_library(taglibreader SHARED ${taglibreader_SOURCES})
 
-target_link_libraries(taglibreader ${BOOST_LINK_LIBS} tag.a z)
+if (${USE_BUNDLED_TAGLIB} MATCHES "true")
+  target_link_libraries(taglibreader ${BOOST_LINK_LIBS} tag.a z)
+else()
+  target_link_libraries(taglibreader ${BOOST_LINK_LIBS} tag z)
+endif()

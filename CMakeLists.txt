@@ -13,16 +13,6 @@ set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${
 
 include(CMakeToolsHelpers OPTIONAL)
 
-include(ExternalProject)
-
-ExternalProject_Add(taglib
-    SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
-    BUILD_IN_SOURCE 0
-    DOWNLOAD_COMMAND ""
-    UPDATE_COMMAND ""
-    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
-    INSTALL_COMMAND make install)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-unused-result -Wno-deprecated-declarations")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
@@ -50,9 +40,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Mo
 set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 
-link_directories (
-  ${musikcube_SOURCE_DIR}/bin/plugins
-  ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib)
+link_directories ("${musikcube_SOURCE_DIR}/bin/plugins")
 
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
@@ -65,8 +53,7 @@ include_directories (
   "${musikcube_SOURCE_DIR}/src/core"
   "${musikcube_SOURCE_DIR}/src/musikcube"
   "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
-  "${musikcube_SOURCE_DIR}/src/3rdparty/include"
-  "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
+  "${musikcube_SOURCE_DIR}/src/3rdparty/include")
 
 # ensure the binaries can find libmusikcore.so, which lives in the
 # same directory.
@@ -111,7 +98,53 @@ else()
   add_dependencies(musikcube m4adecoder oggdecoder nomaddecoder flacdecoder)
 endif()
 
-add_dependencies(taglibreader taglib)
+# some versions of Ubuntu ship with a taglib binary that is missing some
+# symbols we depend on. for these distros, we compile taglib ourselves
+# and link against it statically.
+
+set(USE_BUNDLED_TAGLIB "true")
+
+if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  set(USE_BUNDLED_TAGLIB "false")
+elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  find_program(LSB_RELEASE lsb_release)
+
+  if(NOT ${LSB_RELEASE} MATCHES "LSB_RELEASE-NOTFOUND")
+    execute_process(
+      COMMAND ${LSB_RELEASE} -cs
+      OUTPUT_VARIABLE DISTRO
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    message(STATUS "[taglib] detected distro = ${DISTRO}")
+
+    if (DISTRO MATCHES "xenial" OR DISTRO MATCHES "zesty" OR DISTRO MATCHES "artful")
+      set(USE_BUNDLED_TAGLIB "true")
+    else()
+      set(USE_BUNDLED_TAGLIB "false")
+    endif()
+  endif()
+endif()
+
+message(STATUS "[taglib] using bundled taglib = ${USE_BUNDLED_TAGLIB}")
+
+if (${USE_BUNDLED_TAGLIB} MATCHES "true")
+  include(ExternalProject)
+
+  ExternalProject_Add(taglib
+    SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
+    BUILD_IN_SOURCE 0
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
+    INSTALL_COMMAND make install)
+
+  include_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
+  link_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib")
+  add_dependencies(taglibreader taglib)
+endif()
+
+# end gross taglib detection stuff
 
 add_dependencies(musikcube musikcore taglibreader nullout server httpdatastream stockencoders)
 add_dependencies(musikcubed musikcube)
