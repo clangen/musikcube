@@ -78,12 +78,17 @@ static void resizedHandler(int signal) {
 
 static bool isLangUtf8() {
     const char* lang = std::getenv("LANG");
+
     if (!lang) {
         return false;
     }
+
     std::string str = std::string(lang);
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    return str.find("utf-8") != std::string::npos;
+
+    return
+        str.find("utf-8") != std::string::npos ||
+        str.find("utf8") != std::string::npos;
 }
 #endif
 
