@@ -86,7 +86,7 @@ FfmpegDecoder::FfmpegDecoder() {
     this->codecContext = nullptr;
     this->decodedFrame = nullptr;
     this->resampler = nullptr;
-    this->bufferSize = FF_INPUT_BUFFER_PADDING_SIZE + BUFFER_SIZE;
+    this->bufferSize = AV_INPUT_BUFFER_PADDING_SIZE + BUFFER_SIZE;
     this->buffer = new unsigned char[this->bufferSize];
     this->decodedFrame = av_frame_alloc();
     av_init_packet(&this->packet);
@@ -262,6 +262,9 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                                 if (avcodec_open2(codecContext, codec, nullptr) < 0) {
                                     goto reset_and_fail;
                                 }
+                            }
+                            else {
+                                goto reset_and_fail;
                             }
                         }
 
