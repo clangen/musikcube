@@ -134,8 +134,6 @@ void App::InitCurses() {
     PDC_set_title(this->appTitle.c_str());
     win32::InterceptWndProc();
     win32::SetAppTitle(this->appTitle);
-#else
-    set_escdelay(20);
 #endif
 
     initscr();
@@ -146,6 +144,9 @@ void App::InitCurses() {
     refresh();
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
+#ifndef WIN32
+    set_escdelay(20);
+#endif
 }
 
 void App::SetKeyHandler(KeyHandler handler) {
