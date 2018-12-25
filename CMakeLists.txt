@@ -102,7 +102,7 @@ endif()
 # symbols we depend on. for these distros, we compile taglib ourselves
 # and link against it statically.
 
-set(USE_BUNDLED_TAGLIB "true")
+set(USE_BUNDLED_TAGLIB "false")
 
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "Darwin")
   set(USE_BUNDLED_TAGLIB "false")
@@ -120,8 +120,6 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     if (DISTRO MATCHES "xenial" OR DISTRO MATCHES "zesty" OR DISTRO MATCHES "artful")
       set(USE_BUNDLED_TAGLIB "true")
-    else()
-      set(USE_BUNDLED_TAGLIB "false")
     endif()
   endif()
 endif()
