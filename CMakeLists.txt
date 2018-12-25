@@ -88,6 +88,7 @@ add_subdirectory(src/plugins/stockencoders)
 add_subdirectory(src/plugins/supereqdsp)
 
 if (${FFMPEG_DECODER} MATCHES "true")
+  add_definitions(-DFFMPEG_DECODER)
   add_subdirectory(src/plugins/ffmpegdecoder)
   add_dependencies(musikcube ffmpegdecoder)
 else()
