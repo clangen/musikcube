@@ -105,6 +105,7 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
                 { "audio/monkeys-audio", AV_CODEC_ID_APE },
                 { ".wma", AV_CODEC_ID_WMAV2 },
                 { "audio/x-ms-wma", AV_CODEC_ID_WMAV2 },
+                { ".wv", AV_CODEC_ID_WAVPACK },
             };
 
             AVCodec* codec = av_codec_next(nullptr);
