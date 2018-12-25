@@ -131,9 +131,9 @@ void App::InitCurses() {
 #ifdef WIN32
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
     PDC_set_default_menu_visibility(0);
-    PDC_set_title(title.c_str());
+    PDC_set_title(this->appTitle.c_str());
     win32::InterceptWndProc();
-    win32::SetAppTitle(title);
+    win32::SetAppTitle(this->appTitle);
 #else
     set_escdelay(20);
 #endif
