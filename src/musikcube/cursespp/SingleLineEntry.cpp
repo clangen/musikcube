@@ -40,14 +40,14 @@ using namespace cursespp;
 
 SingleLineEntry::SingleLineEntry(const std::string& value) {
     this->value = value;
-    this->attrs = -1;
+    this->attrs = Color::Default;
 }
 
 void SingleLineEntry::SetWidth(size_t width) {
     this->width = width;
 }
 
-int64_t SingleLineEntry::GetAttrs(size_t line) {
+Color SingleLineEntry::GetAttrs(size_t line) {
     return this->attrs;
 }
 

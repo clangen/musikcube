@@ -35,9 +35,7 @@
         "browse_no_paths_overlay_error_message": "you have not configured any metadata paths.\n\nyou must add at least one path in the settings screen before you can browse by directory.",
         "browse_no_subdirectories_toast": "there are no more sub-directories.\n\npress '%s' to play the selection.",
 
-        "console_command_output_title": "command output",
-        "console_debug_logs_title": "debug logs",
-        "console_command_title": "command",
+        "console_list_title": "debug logs",
 
         "hotkeys_title": "key bindings",
         "hotkeys_reset_defaults": "reset all",
@@ -172,7 +170,7 @@
 
         "shortcuts_settings": "settings",
         "shortcuts_library": "library",
-        "shortcuts_console": "console",
+        "shortcuts_console": "logs",
         "shortcuts_quit": "quit",
         "shortcuts_browse": "browse",
         "shortcuts_filter": "filter",

@@ -80,6 +80,7 @@ static void updateSyncingText(TextLabel* label, int updates) {
 
 MainLayout::MainLayout(
     cursespp::App& app,
+    musik::cube::ConsoleLogger* logger,
     musik::core::audio::PlaybackService& playback,
     ILibraryPtr library)
 : shortcutsFocused(false)
@@ -93,7 +94,7 @@ MainLayout::MainLayout(
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
 
     this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
-    this->consoleLayout = std::make_shared<ConsoleLayout>(playback.GetTransport(), library);
+    this->consoleLayout = std::make_shared<ConsoleLayout>(logger);
     this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();
 

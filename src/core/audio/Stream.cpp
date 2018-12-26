@@ -123,7 +123,7 @@ bool Stream::OpenStream(std::string uri) {
     this->dataStream = DataStreamFactory::OpenSharedDataStream(uri.c_str());
 
     if (!this->dataStream) {
-        musik::debug::err(TAG, "failed to open " + uri);
+        musik::debug::error(TAG, "failed to open " + uri);
         return false;
     }
 

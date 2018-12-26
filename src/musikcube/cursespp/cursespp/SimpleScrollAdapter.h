@@ -35,9 +35,11 @@
 #pragma once
 
 #include <cursespp/curses_config.h>
+#include <cursespp/Colors.h>
 #include <cursespp/ScrollAdapterBase.h>
 #include <sigslot/sigslot.h>
 #include <deque>
+#include <map>
 
 namespace cursespp {
     class SimpleScrollAdapter : public ScrollAdapterBase {
@@ -61,7 +63,7 @@ namespace cursespp {
         private:
             typedef std::deque<EntryPtr> EntryList; /* TODO: this is O(n) lookup */
             typedef EntryList::iterator Iterator;
-
+            std::map<size_t, Color> indexToColor;
             EntryList entries;
             size_t maxEntries;
             bool selectable;

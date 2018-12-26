@@ -38,7 +38,6 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/MultiLineEntry.h>
 #include <cursespp/ScrollableWindow.h>
-#include <cursespp/Colors.h>
 #include <utf8/utf8/unchecked.h>
 
 using namespace cursespp;
@@ -76,12 +75,24 @@ void SimpleScrollAdapter::SetMaxEntries(size_t maxEntries) {
 EntryPtr SimpleScrollAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     auto entry = this->entries.at(index);
 
-    /* this is pretty damned gross, but super convenient. */
+    /* this is pretty damned gross, but super convenient; we always use SingleLineEntry
+    internally, so we can do a static_cast<>. we allow the user to customize the
+    color of the line when it's de-selected, so when it becomes selected we remember
+    the original color. upon de-select, the color is restored (see indexToColor) */
     if (window && selectable) {
         SingleLineEntry* single = static_cast<SingleLineEntry*>(entry.get());
-        single->SetAttrs(Color(Color::Default));
+        auto it = indexToColor.find(index);
         if (index == window->GetScrollPosition().logicalIndex) {
+            if (it == indexToColor.end()) {
+                indexToColor[index] = single->GetAttrs(0);
+            }
             single->SetAttrs(Color(Color::ListItemHighlighted));
+        }
+        else {
+            if (it != indexToColor.end()) {
+                single->SetAttrs(it->second);
+                indexToColor.erase(it);
+            }
         }
     }
 

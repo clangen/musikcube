@@ -43,6 +43,7 @@
 #include <cursespp/Screen.h>
 
 #include <app/layout/MainLayout.h>
+#include <app/util/ConsoleLogger.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
@@ -107,7 +108,7 @@ int main(int argc, char* argv[]) {
 
 #ifndef WIN32
     #if 1 /*DEBUG*/
-        freopen("/tmp/musikcube.log", "w", stderr);
+        freopen("/tmp/musikcube_error.log", "w", stderr);
     #else
         freopen("/dev/null", "w", stderr);
     #endif
@@ -120,7 +121,9 @@ int main(int argc, char* argv[]) {
 
     musik::core::MigrateOldDataDirectory();
 
-    musik::debug::init();
+    auto fileLogger = new musik::debug::SimpleFileBackend();
+    auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
+    musik::debug::Start({ fileLogger, consoleLogger });
 
     ILibraryPtr library = LibraryFactory::Default();
     library->SetMessageQueue(Window::MessageQueue());
@@ -194,8 +197,7 @@ int main(int argc, char* argv[]) {
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
         /* main layout */
-        using Main = std::shared_ptr<MainLayout>;
-        Main mainLayout(new MainLayout(app, playback, library));
+        auto mainLayout = std::make_shared<MainLayout>(app, consoleLogger, playback, library);
 
         mainLayout->Start();
 
@@ -209,8 +211,8 @@ int main(int argc, char* argv[]) {
 
         /* blocking event loop */
         app.Run(mainLayout);
-        /* done with the app */
 
+        /* done with the app */
         mainLayout->Stop();
 
 #ifdef WIN32
@@ -225,7 +227,7 @@ int main(int argc, char* argv[]) {
 
     LibraryFactory::Instance().Shutdown();
 
-    musik::debug::deinit();
+    musik::debug::Stop();
 
     return 0;
 }

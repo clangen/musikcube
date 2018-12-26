@@ -44,7 +44,7 @@ namespace cursespp {
             virtual ~SingleLineEntry() { }
 
             virtual void SetWidth(size_t width);
-            virtual int64_t GetAttrs(size_t line);
+            virtual Color GetAttrs(size_t line);
             virtual size_t GetLineCount();
             virtual std::string GetLine(size_t line);
 
@@ -55,6 +55,6 @@ namespace cursespp {
         private:
             size_t width;
             std::string value;
-            int64_t attrs;
+            Color attrs;
     };
 }

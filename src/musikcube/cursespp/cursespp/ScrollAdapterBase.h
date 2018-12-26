@@ -35,6 +35,7 @@
 #pragma once
 
 #include <cursespp/curses_config.h>
+#include <cursespp/Colors.h>
 #include <cursespp/IScrollAdapter.h>
 #include <functional>
 #include <deque>
@@ -42,7 +43,7 @@
 namespace cursespp {
     class ScrollAdapterBase : public IScrollAdapter {
         public:
-            typedef std::function<int64_t(
+            typedef std::function<Color(
                 ScrollableWindow*,
                 size_t,
                 size_t,

@@ -63,6 +63,7 @@ namespace musik {
             static const int JumpToHotkeys          = First + 12;
             static const int SetLastFmState         = First + 13;
             static const int UpdateEqualizer        = First + 14;
+            static const int DebugLog               = First + 15;
         }
     }
 }

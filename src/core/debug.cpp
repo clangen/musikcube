@@ -32,10 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.hpp"
-
-#include <core/debug.h>
-
+#include "debug.h"
+#include <core/support/Common.h>
 #include <functional>
 #include <string>
 #include <queue>
@@ -43,68 +41,71 @@
 #include <mutex>
 #include <condition_variable>
 #include <memory>
+#include <iostream>
+#include <time.h>
 
-using namespace musik;
+using namespace musik::core;
 
-sigslot::signal3<debug::log_level, std::string, std::string> debug::string_logged;
+class log_queue;
 
-namespace musik {
-    /*
-    * Basically ripped and simplified from message_queue. Log statements get
-    * enqueued and processed on a background thread.
-    */
-    class log_queue {
+static std::vector<std::unique_ptr<musik::debug::IBackend>> backends;
+static std::thread* thread = nullptr;
+static log_queue* queue = nullptr;
+static std::recursive_mutex mutex;
+static volatile bool cancel = true;
+
+enum class debug_level {
+    verbose = 0,
+    info = 1,
+    warning = 2,
+    error = 3
+};
+
+class log_queue {
     public:
         struct log_entry {
-            log_entry(debug::log_level l, const std::string& t, const std::string& m) {
-                level_ = l;
-                tag_ = t;
-                message_ = m;
+            log_entry(debug_level l, const std::string& t, const std::string& m) {
+                level = l;
+                tag = t;
+                message = m;
             }
 
-            debug::log_level level_;
-            std::string tag_;
-            std::string message_;
+            debug_level level;
+            std::string tag;
+            std::string message;
         };
 
         class stopped_exception {
         };
 
-    private:
-        std::queue<log_entry*> queue_;
-        std::condition_variable wait_for_next_item_condition_;
-        std::mutex queue_mutex_;
-        volatile bool active_;
-
-    public:
         log_queue() {
-            active_ = true;
+            active = true;
         }
 
         log_entry* pop_top() {
-            std::unique_lock<std::mutex> lock(queue_mutex_);
-            while ((queue_.size() == 0) && (active_ == true)) {
-                wait_for_next_item_condition_.wait(lock);
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            while ((queue.size() == 0) && (active == true)) {
+                wait_for_next_item_condition.wait(lock);
             }
 
-            if (!active_) {
-                return NULL;
+            if (!active) {
+                return nullptr;
             }
 
-            log_entry* top = queue_.front();
-            queue_.pop();
+            log_entry* top = queue.front();
+            queue.pop();
             return top;
         }
 
         bool push(log_entry* f) {
-            std::unique_lock<std::mutex> lock(queue_mutex_);
+            std::unique_lock<std::mutex> lock(queue_mutex);
 
-            if (active_) {
-                bool was_empty = (queue_.size() == 0);
-                queue_.push(f);
+            if (active) {
+                bool was_empty = (queue.size() == 0);
+                queue.push(f);
 
                 if (was_empty) {
-                    wait_for_next_item_condition_.notify_one();
+                    wait_for_next_item_condition.notify_one();
                 }
 
                 return true;
@@ -114,32 +115,46 @@ namespace musik {
         }
 
         void stop() {
-            std::unique_lock<std::mutex> lock(queue_mutex_);
-            active_ = false;
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            active = false;
 
-            while (queue_.size() > 0) {
-                log_entry* top = queue_.front();
-                queue_.pop();
+            while (queue.size() > 0) {
+                log_entry* top = queue.front();
+                queue.pop();
                 delete top;
             }
 
-            wait_for_next_item_condition_.notify_all();
+            wait_for_next_item_condition.notify_all();
         }
-    };
-} // namespace autom8
 
-static std::thread* thread_ = NULL;
-static log_queue* queue_ = NULL;
-static std::recursive_mutex system_mutex_;
-static volatile bool cancel_ = true;
+    private:
+        std::queue<log_entry*> queue;
+        std::condition_variable wait_for_next_item_condition;
+        std::mutex queue_mutex;
+        volatile bool active;
+};
 
 static void thread_proc() {
-    std::string s;
     try {
-        while (!cancel_) {
-            log_queue::log_entry* entry = queue_->pop_top();
+        while (!cancel) {
+            log_queue::log_entry* entry = queue->pop_top();
             if (entry) {
-                debug::string_logged(entry->level_, entry->tag_, entry->message_);
+                for (auto& backend : backends) {
+                    switch (entry->level) {
+                        case debug_level::verbose:
+                            backend->verbose(entry->tag, entry->message);
+                            break;
+                        case debug_level::info:
+                            backend->info(entry->tag, entry->message);
+                            break;
+                        case debug_level::warning:
+                            backend->warning(entry->tag, entry->message);
+                            break;
+                        case debug_level::error:
+                            backend->verbose(entry->tag, entry->message);
+                            break;
+                    }
+                }
                 delete entry;
             }
         }
@@ -148,57 +163,174 @@ static void thread_proc() {
     }
 }
 
-void debug::init() {
-    std::unique_lock<std::recursive_mutex> lock(system_mutex_);
+void musik::debug::Start(std::vector<musik::debug::IBackend*> backends) {
+    std::unique_lock<std::recursive_mutex> lock(mutex);
 
-    if (queue_ || thread_) {
+    if (queue || thread) {
         return;
     }
 
-    deinit();
+    for (auto backend : backends) {
+        ::backends.push_back(std::unique_ptr<musik::debug::IBackend>(backend));
+    }
 
-    cancel_ = false;
-    queue_ = new log_queue();
-    thread_ = new std::thread(std::bind(&thread_proc));
+    cancel = false;
+    queue = new log_queue();
+    thread = new std::thread(std::bind(&thread_proc));
+
+    info("LOG SESSION", "---------- START ----------");
 }
 
-void debug::deinit() {
-    std::unique_lock<std::recursive_mutex> lock(system_mutex_);
+void musik::debug::Stop() {
+    std::unique_lock<std::recursive_mutex> lock(mutex);
 
-    cancel_ = true;
+    cancel = true;
 
-    if (thread_ && queue_) {
-        /* ordering is important here... stop the queue, then
-        join the thread. stop will trigger a stopped_exception the
-        thread may be blocking on, waiting for the next message */
-        queue_->stop();
-        thread_->join();
+    if (thread && queue) {
+        queue->stop();
+        thread->join();
 
-        /* don't delete anything until the join has completed */
-        delete thread_;
-        thread_ = NULL;
-        delete queue_;
-        queue_ = NULL;
+        delete thread;
+        thread = nullptr;
+        delete queue;
+        queue = nullptr;
     }
 }
 
-void debug::info(const std::string& tag, const std::string& string) {
-    log(debug::level_info, tag, string);
-}
+static void enqueue(debug_level level, const std::string& tag, const std::string& string) {
+    std::unique_lock<std::recursive_mutex> lock(mutex);
 
-void debug::warn(const std::string& tag, const std::string& string) {
-    log(debug::level_warning, tag, string);
-}
-
-void debug::err(const std::string& tag, const std::string& string) {
-    log(debug::level_error, tag, string);
-}
-
-void debug::log(log_level level, const std::string& tag, const std::string& string) {
-    std::unique_lock<std::recursive_mutex> lock(system_mutex_);
-
-    if (queue_) {
-        queue_->push(new log_queue::log_entry(level, tag, string));
+    if (queue) {
+        queue->push(new log_queue::log_entry(level, tag, string));
     }
 }
 
+void musik::debug::verbose(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::verbose, tag, string);
+}
+
+void musik::debug::v(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::verbose, tag, string);
+}
+
+void musik::debug::info(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::info, tag, string);
+}
+
+void musik::debug::i(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::info, tag, string);
+}
+
+void musik::debug::warning(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::warning, tag, string);
+}
+
+void musik::debug::w(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::warning, tag, string);
+}
+
+void musik::debug::error(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::error, tag, string);
+}
+
+void musik::debug::e(const std::string& tag, const std::string& string) {
+    enqueue(debug_level::error, tag, string);
+}
+
+////////// backend utils //////////
+
+namespace musik {
+
+    static std::string timestamp() {
+        time_t rawtime = { 0 };
+        struct tm * timeinfo;
+        char buffer [64];
+        time(&rawtime);
+        timeinfo = localtime (&rawtime);
+        strftime (buffer, sizeof(buffer), "%T", timeinfo);
+        return std::string(buffer);
+    }
+
+    static void writeTo(
+        std::ostream& out,
+        const std::string& level,
+        const std::string& tag,
+        const std::string& message)
+    {
+        out << timestamp() << " [" << level << "] [" << tag << "] " << message << "\n";
+        out.flush();
+    }
+
+}
+
+////////// FileBackend //////////
+
+namespace musik {
+
+    debug::FileBackend::FileBackend(const std::string& fn)
+    : out(fn.c_str()) {
+
+    }
+
+    debug::FileBackend::FileBackend(FileBackend&& fn) {
+        this->out.swap(fn.out);
+    }
+
+    debug::FileBackend::~FileBackend() {
+    }
+
+    void debug::FileBackend::verbose(const std::string& tag, const std::string& string) {
+        writeTo(this->out, "verbose", tag, string);
+    }
+
+    void debug::FileBackend::info(const std::string& tag, const std::string& string) {
+        writeTo(this->out, "info", tag, string);
+    }
+
+    void debug::FileBackend::warning(const std::string& tag, const std::string& string) {
+        writeTo(this->out, "warning", tag, string);
+    }
+
+    void debug::FileBackend::error(const std::string& tag, const std::string& string) {
+        writeTo(this->out, "error", tag, string);
+    }
+
+}
+
+////////// SimpleFileBackend //////////
+
+namespace musik {
+
+    debug::SimpleFileBackend::SimpleFileBackend()
+    : FileBackend(GetDataDirectory() + "log.txt") {
+    }
+
+}
+
+////////// ConsoleBackend //////////
+
+namespace musik {
+
+    debug::ConsoleBackend::ConsoleBackend() {
+    }
+
+    debug::ConsoleBackend::~ConsoleBackend() {
+    }
+
+    void debug::ConsoleBackend::verbose(const std::string& tag, const std::string& string) {
+        writeTo(std::cout, "verbose", tag, string);
+    }
+
+    void debug::ConsoleBackend::info(const std::string& tag, const std::string& string) {
+        writeTo(std::cout, "info", tag, string);
+    }
+
+    void debug::ConsoleBackend::warning(const std::string& tag, const std::string& string) {
+        writeTo(std::cout, "warning", tag, string);
+    }
+
+    void debug::ConsoleBackend::error(const std::string& tag, const std::string& string) {
+        writeTo(std::cerr, "error", tag, string);
+    }
+
+}

@@ -46,6 +46,8 @@
 
 #include <core/audio/MasterTransport.h>
 
+#include <app/util/ConsoleLogger.h>
+
 #include <sigslot/sigslot.h>
 
 namespace musik {
@@ -54,6 +56,7 @@ namespace musik {
             public:
                 MainLayout(
                     cursespp::App& app,
+                    ConsoleLogger* logger,
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
