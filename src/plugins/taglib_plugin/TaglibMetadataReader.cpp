@@ -85,6 +85,10 @@
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 
+#ifdef WIN32
+#define FFMPEG_DECODER
+#endif
+
 using namespace musik::core::sdk;
 
 #ifdef WIN32
@@ -148,7 +152,7 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
         std::string ext(extension);
         boost::algorithm::to_lower(ext);
         return
-#if FFMPEG_DECODER
+#ifdef FFMPEG_DECODER
             ext.compare("opus") == 0 ||
             ext.compare("wv") == 0 ||
             ext.compare("wma") == 0 ||
