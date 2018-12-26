@@ -136,6 +136,7 @@ namespace musik {
 
                 using Check = std::shared_ptr<cursespp::Checkbox>;
                 Check paletteCheckbox;
+                Check enableTransparencyCheckbox;
                 Check dotfileCheckbox;
                 Check syncOnStartupCheckbox;
                 Check removeCheckbox;

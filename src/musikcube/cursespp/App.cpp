@@ -147,6 +147,14 @@ void App::InitCurses() {
 #ifndef WIN32
     set_escdelay(20);
 #endif
+
+    Colors::Init(this->colorMode, this->bgType);
+
+    if (this->colorTheme.size()) {
+        Colors::SetTheme(this->colorTheme);
+    }
+
+    this->initialized = true;
 }
 
 void App::SetKeyHandler(KeyHandler handler) {
@@ -163,14 +171,26 @@ void App::SetResizeHandler(ResizeHandler handler) {
 
 void App::SetColorMode(Colors::Mode mode) {
     this->colorMode = mode;
+
+    if (this->initialized) {
+        Colors::Init(this->colorMode, this->bgType);
+    }
 }
 
 void App::SetColorBackgroundType(Colors::BgType bgType) {
     this->bgType = bgType;
+
+    if (this->initialized) {
+        Colors::Init(this->colorMode, this->bgType);
+    }
 }
 
 void App::SetColorTheme(const std::string& colorTheme) {
     this->colorTheme = colorTheme;
+
+    if (this->initialized) {
+        Colors::SetTheme(colorTheme);
+    }
 }
 
 void App::SetMinimumSize(int minWidth, int minHeight) {
@@ -298,12 +318,6 @@ void App::Run(ILayoutPtr layout) {
 #endif
 
     this->InitCurses();
-
-    Colors::Init(this->colorMode, this->bgType);
-
-    if (this->colorTheme.size()) {
-        Colors::SetTheme(this->colorTheme);
-    }
 
     MEVENT mouseEvent;
     int64_t ch;

@@ -73,7 +73,7 @@ using namespace cursespp;
 using namespace std::placeholders;
 
 #ifndef WIN32
-#define ENABLE_256_COLOR_OPTION
+#define ENABLE_UNIX_TERMINAL_OPTIONS
 #endif
 
 #ifdef WIN32
@@ -168,13 +168,20 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode) == (int)TimeChangeSeek);
         this->playback.SetTimeChangeMode(mode);
     }
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     else if (cb == paletteCheckbox.get()) {
         ColorThemeOverlay::Show256ColorsInfo(
             checked,
             [this]() {
             this->LoadPreferences();
         });
+    }
+    else if (cb == enableTransparencyCheckbox.get()) {
+        auto bgType = Colors::Theme;
+        if (prefs->GetBool(cube::prefs::keys::InheritBackgroundColor.c_str(), false)) {
+            bgType = Colors::Inherit;
+        }
+        app.SetColorBackgroundType(bgType);
     }
 #endif
 #ifdef ENABLE_MINIMIZE_TO_TRAY
@@ -315,8 +322,9 @@ void SettingsLayout::OnLayout() {
     }
 
     y = BOTTOM(this->browseList);
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->enableTransparencyCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
     this->dotfileCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
@@ -432,8 +440,9 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
     CREATE_CHECKBOX(this->seekScrubCheckbox, _TSTR("settings_seek_not_scrub"));
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
+    CREATE_CHECKBOX(this->enableTransparencyCheckbox, _TSTR("settings_enable_transparency"));
 #endif
 #ifdef ENABLE_MINIMIZE_TO_TRAY
     CREATE_CHECKBOX(this->minimizeToTrayCheckbox, _TSTR("settings_minimize_to_tray"));
@@ -459,8 +468,9 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->SetFocusOrder(order++);
     }
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->SetFocusOrder(order++);
+    this->enableTransparencyCheckbox->SetFocusOrder(order++);
 #endif
     this->dotfileCheckbox->SetFocusOrder(order++);
     this->syncOnStartupCheckbox->SetFocusOrder(order++);
@@ -488,8 +498,9 @@ void SettingsLayout::InitializeWindows() {
         this->AddWindow(this->serverDropdown);
     }
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->AddWindow(this->paletteCheckbox);
+    this->AddWindow(this->enableTransparencyCheckbox);
 #endif
     this->AddWindow(this->hotkeyDropdown);
     this->AddWindow(this->pluginsDropdown);
@@ -609,10 +620,13 @@ void SettingsLayout::LoadPreferences() {
 
     this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + colorTheme);
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->CheckChanged.disconnect(this);
     this->paletteCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::UsePaletteColors, true));
     this->paletteCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
+
+    this->enableTransparencyCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::InheritBackgroundColor, false));
+    this->enableTransparencyCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 #endif
 
 #ifdef ENABLE_MINIMIZE_TO_TRAY
