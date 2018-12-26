@@ -9,7 +9,7 @@ Source0: https://github.com/clangen/musikcube/archive/%{version}.tar.gz#/%{name}
 License: BSD-3-Clause
 Packager: David Muckle <dvdmuckle@dvdmuckle.xyz>
 BuildRequires: gcc-c++ cmake boost-devel libogg-devel libvorbis-devel flac-devel faad2-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel openssl-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel taglib-devel make
-Requires: boost libogg libvorbis flac ncurses zlib alsa-lib pulseaudio-libs openssl libcurl libmicrohttpd lame libevn taglib
+Requires: boost libogg libvorbis flac ncurses zlib alsa-lib pulseaudio-libs openssl libcurl libmicrohttpd lame libev taglib
 Recommends: faad2
 
 %description
