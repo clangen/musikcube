@@ -177,10 +177,8 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         });
     }
     else if (cb == enableTransparencyCheckbox.get()) {
-        auto bgType = Colors::Theme;
-        if (prefs->GetBool(cube::prefs::keys::InheritBackgroundColor.c_str(), false)) {
-            bgType = Colors::Inherit;
-        }
+        auto bgType = checked ? Colors::Inherit : Colors::Theme;
+        prefs->SetBool(cube::prefs::keys::InheritBackgroundColor, checked);
         app.SetColorBackgroundType(bgType);
     }
 #endif
