@@ -15,9 +15,6 @@
     <ClCompile Include="app\window\CategoryListView.cpp">
       <Filter>app\window</Filter>
     </ClCompile>
-    <ClCompile Include="app\window\LogWindow.cpp">
-      <Filter>app\window</Filter>
-    </ClCompile>
     <ClCompile Include="app\util\GlobalHotkeys.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
@@ -177,14 +174,14 @@
     <ClCompile Include="cursespp\SimpleScrollAdapter.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\ConsoleLogger.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="app\layout\LibraryLayout.h">
       <Filter>app\layout</Filter>
-    </ClInclude>
-    <ClInclude Include="app\window\LogWindow.h">
-      <Filter>app\window</Filter>
     </ClInclude>
     <ClInclude Include="app\window\TrackListView.h">
       <Filter>app\window</Filter>
@@ -405,6 +402,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\cursespp\App.h">
       <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\ConsoleLogger.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

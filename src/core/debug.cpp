@@ -32,7 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "debug.h"
+#include <pch.hpp>
+#include <core/debug.h>
 #include <core/support/Common.h>
 #include <functional>
 #include <string>

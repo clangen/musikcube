@@ -1,9 +1,9 @@
-#include "ConsoleLogger.h"
+#include <stdafx.h>
+#include <app/util/ConsoleLogger.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/SingleLineEntry.h>
 #include <core/runtime/Message.h>
 #include <app/util/Messages.h>
-
 #include <time.h>
 
 using namespace musik;

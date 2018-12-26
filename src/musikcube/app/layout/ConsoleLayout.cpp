@@ -1,4 +1,5 @@
-#include "ConsoleLayout.h"
+#include <stdafx.h>
+#include <app/layout/ConsoleLayout.h>
 #include <core/i18n/Locale.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>

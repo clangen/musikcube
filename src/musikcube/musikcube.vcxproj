@@ -168,13 +168,13 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\overlay\ReassignHotkeyOverlay.cpp" />
     <ClCompile Include="app\overlay\ServerOverlay.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
+    <ClCompile Include="app\util\ConsoleLogger.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
     <ClCompile Include="app\util\UpdateCheck.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
-    <ClCompile Include="app\window\LogWindow.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
     <ClCompile Include="cursespp\App.cpp" />
@@ -234,6 +234,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\overlay\ReassignHotkeyOverlay.h" />
     <ClInclude Include="app\overlay\ServerOverlay.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
+    <ClInclude Include="app\util\ConsoleLogger.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\Hotkeys.h" />
     <ClInclude Include="app\util\Messages.h" />
@@ -241,7 +242,6 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\UpdateCheck.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
-    <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
     <ClInclude Include="cursespp\cursespp\App.h" />
