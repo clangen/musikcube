@@ -8,9 +8,8 @@ Summary: A cross-platform, terminal-based audio engine, library, player and serv
 Source0: https://github.com/clangen/musikcube/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 License: BSD-3-Clause
 Packager: David Muckle <dvdmuckle@dvdmuckle.xyz>
-BuildRequires: gcc-c++ cmake boost-devel libogg-devel libvorbis-devel flac-devel faad2-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel openssl-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel taglib-devel make
-Requires: boost libogg libvorbis flac ncurses zlib alsa-lib pulseaudio-libs openssl libcurl libmicrohttpd lame libev taglib
-Recommends: faad2
+BuildRequires: gcc-c++ cmake boost-devel libogg-devel libvorbis-devel ffmpeg-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel openssl-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel taglib-devel make
+Requires: boost libogg libvorbis ffmpeg-libs ncurses zlib alsa-lib pulseaudio-libs openssl libcurl libmicrohttpd lame libev taglib
 
 %description
 

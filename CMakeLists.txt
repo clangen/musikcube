@@ -97,6 +97,8 @@ else()
   add_definitions(-DFFMPEG_DECODER)
   add_subdirectory(src/plugins/ffmpegdecoder)
   add_dependencies(musikcube ffmpegdecoder)
+  include_directories("/usr/include/ffmpeg")
+  include_directories("/usr/local/include/ffmpeg")
 endif()
 
 # some versions of Ubuntu ship with a taglib binary that is missing some
