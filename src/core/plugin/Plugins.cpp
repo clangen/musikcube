@@ -258,7 +258,16 @@ static class Environment: public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void InstallDependencies(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
+    void InitDebug() {
+        /* debug */
+        PluginFactory::Instance().QueryFunction<SetDebug>(
+            "SetDebug",
+            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
+                func(&debugger);
+            });
+    }
+
+    void InitPlayback(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
         /* preferences */
         Preferences::LoadPluginPreferences();
 
@@ -292,16 +301,9 @@ namespace musik { namespace core { namespace plugin {
             [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
                 func(&environment);
             });
-
-        /* debug */
-        PluginFactory::Instance().QueryFunction<SetDebug>(
-            "SetDebug",
-            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
-                func(&debugger);
-            });
     }
 
-    void UninstallDependencies() {
+    void Deinit() {
         /* preferences */
         Preferences::SavePluginPreferences();
 

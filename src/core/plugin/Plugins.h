@@ -40,11 +40,13 @@
 
 namespace musik { namespace core { namespace plugin {
 
-    void InstallDependencies(
+    void InitDebug();
+
+    void InitPlayback(
         musik::core::runtime::IMessageQueue* messageQueue,
         musik::core::sdk::IPlaybackService* playback,
         musik::core::ILibraryPtr library);
 
-    void UninstallDependencies();
+    void Deinit();
 
 } } }

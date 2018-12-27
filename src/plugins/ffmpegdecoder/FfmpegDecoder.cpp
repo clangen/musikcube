@@ -62,6 +62,13 @@ static std::string getAvError(int errnum) {
     return std::string(buffer);
 }
 
+static void logAvError(const std::string& method, int errnum) {
+    if (errnum != 0) {
+        std::string err = method + "() failed: " + getAvError(errnum);
+        ::debug->Warning(TAG, err.c_str());
+    }
+}
+
 static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     FfmpegDecoder* decoder = static_cast<FfmpegDecoder*>(opaque);
     if (decoder && decoder->Stream()) {
@@ -92,6 +99,13 @@ static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
             case SEEK_END:
                 stream->SetPosition(stream->Length() - 1);
                 break;
+            default:
+                debug->Error(TAG, "unknown seek type!");
+                break;
+        }
+
+        if (stream->Position() >= stream->Length()) {
+            return -1;
         }
 
         return stream->Position();
@@ -152,9 +166,9 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
         buffer->SetChannels((long) this->channels);
         buffer->SetSamples(0);
 
-        int readFrameResult = av_read_frame(this->formatContext, &this->packet);
+        int errnum = av_read_frame(this->formatContext, &this->packet);
 
-        if (!readFrameResult) {
+        if (!errnum) {
             int frameDecoded = 0;
 
             avcodec_decode_audio4(
@@ -170,6 +184,20 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
                 int channels = this->codecContext->channels;
                 auto inFormat = this->codecContext->sample_fmt;
                 auto inLayout = this->codecContext->channel_layout;
+
+                if (inLayout == 0) {
+                    /* in some cases it seems the input channel layout cannot be detected.
+                    for this case, we configure it manually so the resampler is happy. */
+                    switch (channels) {
+                        case 1: inLayout = AV_CH_LAYOUT_MONO; break;
+                        case 2: inLayout = AV_CH_LAYOUT_STEREO; break;
+                        case 3: inLayout = AV_CH_LAYOUT_2POINT1; break;
+                        case 4: inLayout = AV_CH_LAYOUT_3POINT1; break;
+                        case 5: inLayout = AV_CH_LAYOUT_4POINT1; break;
+                        case 6: inLayout = AV_CH_LAYOUT_5POINT1; break;
+                        default: inLayout = AV_CH_LAYOUT_STEREO_DOWNMIX; break;
+                    }
+                }
 
                 int decodedSize = av_samples_get_buffer_size(
                     nullptr, channels, samples, inFormat, 1);
@@ -192,7 +220,9 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
                             0,
                             nullptr);
 
-                        swr_init(this->resampler);
+                        if ((errnum = swr_init(this->resampler)) != 0) {
+                            logAvError("swr_init", errnum);
+                        }
                     }
 
                     uint8_t* outData = (uint8_t*) buffer->BufferPointer();
@@ -201,9 +231,15 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
                     int convertedSamplesPerChannel = swr_convert(
                         this->resampler, &outData, samples, inData, samples);
 
-                    /* actual buffer size, based on resampler output. should be the same
-                    as the preferred size... */
-                    buffer->SetSamples(convertedSamplesPerChannel * this->channels);
+                    if (convertedSamplesPerChannel < 0) {
+                        logAvError("swr_convert", convertedSamplesPerChannel);
+                        buffer->SetSamples(0);
+                    }
+                    else {
+                        /* actual buffer size, based on resampler output. should be the same
+                        as the preferred size... */
+                        buffer->SetSamples(convertedSamplesPerChannel * this->channels);
+                    }
                 }
             }
             else {
@@ -214,11 +250,7 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
             return true;
         }
         else {
-            std::string err =
-                "av_read_frame() failed: " +
-                getAvError(readFrameResult);
-
-            ::debug->Warning(TAG, err.c_str());
+            logAvError("av_read_frame", errnum);
         }
     }
 
@@ -276,7 +308,8 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
             this->formatContext->flags = AVFMT_FLAG_CUSTOM_IO;
 
             unsigned char probe[PROBE_SIZE];
-            size_t count = stream->Read(probe, PROBE_SIZE);
+            memset(probe, 0, PROBE_SIZE);
+            size_t count = stream->Read(probe, PROBE_SIZE - AVPROBE_PADDING_SIZE);
             stream->SetPosition(0);
 
             AVProbeData probeData = { 0 };
@@ -298,7 +331,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                     }
 
                     if (this->streamId != -1) {
-                        ::debug->Info(TAG, "found audio!");
+                        ::debug->Info(TAG, "found audio stream!");
                         this->codecContext = this->formatContext->streams[this->streamId]->codec;
                         if (codecContext) {
                             this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;

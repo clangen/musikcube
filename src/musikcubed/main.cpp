@@ -238,6 +238,7 @@ int main(int argc, char** argv) {
     srand((unsigned int) time(0));
 
     debug::Start();
+    plugin::InitDebug();
 
     EvMessageQueue messageQueue;
     auto library = LibraryFactory::Default();
@@ -246,7 +247,7 @@ int main(int argc, char** argv) {
     {
         PlaybackService playback(messageQueue, library);
 
-        plugin::InstallDependencies(&messageQueue, &playback, library);
+        plugin::InitPlayback(&messageQueue, &playback, library);
 
         auto prefs = Preferences::ForComponent(prefs::components::Settings);
         if (prefs->GetBool(prefs::keys::SyncOnStartup, true)) {
@@ -257,6 +258,8 @@ int main(int argc, char** argv) {
 
         library->Indexer()->Stop();
     }
+
+    plugin::Deinit();
 
     remove(LOCKFILE);
 }
