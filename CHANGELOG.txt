@@ -10,6 +10,7 @@ musikcube:
 * added the ability to customize the key used to quit the app. it is currently
   not exposed in the ui, but it can be changed by editing
   `~/.musikcube/settings.json` and updating the `AppQuitKey`.
+* scrapped and re-implemented the debug log viewer, accessible via `ctrl+~`
 * added feodra 29 support (dvdmuckle)
 * fixed configuration script bugs that were causing breakage in FreeBSD
 * migrated to non-bundled `taglib` for macOS and most Linux distributions
@@ -18,6 +19,10 @@ musikcube:
 
 musikdroid:
 * updated to compile against the latest tooling
+
+sdk:
+* added a new `IDebug` interface plugins can request via `SetDebug` to write
+  log information to the standard location, just like the rest of the app.
 
 --------------------------------------------------------------------------------
 

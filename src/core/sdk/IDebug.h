@@ -34,51 +34,14 @@
 
 #pragma once
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IDecoder.h>
-#include <core/sdk/IDataStream.h>
+namespace musik { namespace core { namespace sdk {
 
-extern "C" {
-    #include <libavformat/avio.h>
-    #include <libavformat/avformat.h>
-    #include <libavcodec/avcodec.h>
-    #include <libavutil/samplefmt.h>
-    #include <libswresample/swresample.h>
-}
+    class IDebug {
+        public:
+            virtual void Verbose(const char* tag, const char* message) = 0;
+            virtual void Info(const char* tag, const char* message) = 0;
+            virtual void Warning(const char* tag, const char* message) = 0;
+            virtual void Error(const char* tag, const char* message) = 0;
+    };
 
-#include <stddef.h>
-
-using namespace musik::core::sdk;
-
-class FfmpegDecoder: public musik::core::sdk::IDecoder {
-    public:
-        FfmpegDecoder();
-        ~FfmpegDecoder();
-
-        virtual void Release() override;
-        virtual double SetPosition(double seconds) override;
-        virtual bool GetBuffer(IBuffer *buffer) override;
-        virtual double GetDuration() override;
-        virtual bool Open(musik::core::sdk::IDataStream *stream) override;
-        virtual bool Exhausted() override;
-
-        IDataStream* Stream() { return this->stream; }
-
-    private:
-        void Reset();
-
-    private:
-        musik::core::sdk::IDataStream* stream;
-        AVIOContext* ioContext;
-        AVFormatContext* formatContext;
-        AVCodecContext* codecContext;
-        AVPacket packet;
-        AVFrame* decodedFrame;
-        SwrContext* resampler;
-        unsigned char* buffer;
-        size_t bufferSize;
-        size_t rate, channels;
-        int streamId;
-        double duration;
-        bool exhausted{false};
-};
+} } }

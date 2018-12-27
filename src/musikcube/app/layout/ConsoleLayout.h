@@ -17,6 +17,7 @@ namespace musik { namespace cube {
 
             virtual void OnLayout() override;
             virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
+            virtual bool KeyPress(const std::string& kn) override;
 
         protected:
             void OnVisibilityChanged(bool visible) override;

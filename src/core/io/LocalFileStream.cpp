@@ -92,7 +92,6 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
 #endif
 
         if (this->file.load()) {
-            debug::info(TAG, "opened successfully");
             return true;
         }
     }

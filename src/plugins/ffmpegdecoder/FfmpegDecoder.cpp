@@ -33,12 +33,26 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "FfmpegDecoder.h"
+#include <core/sdk/IDebug.h>
 #include <algorithm>
+
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
 
 #define BUFFER_SIZE 4096
 #define PROBE_SIZE 32768
 
 using namespace musik::core::sdk;
+
+static const char* TAG = "ffmpegdecoder";
+static IDebug* debug = nullptr;
+
+extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
+    ::debug = debug;
+}
 
 static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     FfmpegDecoder* decoder = static_cast<FfmpegDecoder*>(opaque);
@@ -182,6 +196,9 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
             return true;
         }
     }
+
+    ::debug->Warning(TAG, "finished decoding.");
+    this->exhausted = true;
     return false;
 }
 
@@ -214,6 +231,8 @@ void FfmpegDecoder::Reset() {
 
 bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
     if (stream->Seekable() && this->ioContext == nullptr) {
+        ::debug->Info(TAG, "parsing data stream...");
+
         this->stream = stream;
 
         this->ioContext = avio_alloc_context(
@@ -254,6 +273,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                     }
 
                     if (this->streamId != -1) {
+                        ::debug->Info(TAG, "found audio!");
                         this->codecContext = this->formatContext->streams[this->streamId]->codec;
                         if (codecContext) {
                             this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
@@ -262,8 +282,10 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                                 if (avcodec_open2(codecContext, codec, nullptr) < 0) {
                                     goto reset_and_fail;
                                 }
+                                ::debug->Info(TAG, "resolved a codec!");
                             }
                             else {
+                                ::debug->Error(TAG, "couldn't find a codec.");
                                 goto reset_and_fail;
                             }
                         }
@@ -274,16 +296,20 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         this->duration = (double) this->formatContext->duration / (double) AV_TIME_BASE;
                         return true;
                     }
+                    else {
+                        ::debug->Error(TAG, "audio stream not found in input data.");
+                    }
                 }
             }
         }
     }
 
 reset_and_fail:
+    ::debug->Error(TAG, "failed to find compatible audio stream");
     this->Reset();
     return false;
 }
 
 bool FfmpegDecoder::Exhausted() {
-    return false;
+    return this->exhausted;
 }

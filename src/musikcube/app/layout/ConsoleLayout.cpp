@@ -6,6 +6,7 @@
 #include <cursespp/ToastOverlay.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
+#include <app/version.h>
 
 using namespace musik::cube;
 using namespace musik::core;
@@ -53,6 +54,18 @@ void ConsoleLayout::OnVisibilityChanged(bool visible) {
 
 void ConsoleLayout::OnItemActivated(cursespp::ListWindow* window, size_t index) {
     ToastOverlay::Show(this->logger->Adapter()->StringAt(index), -1);
+}
+
+bool ConsoleLayout::KeyPress(const std::string& kn) {
+    if (kn == "^_") { /* ctrl+/ */
+        ToastOverlay::Show(u8fmt(_TSTR("console_version"), VERSION), -1);
+        return true;
+    }
+    else if (kn == "x") {
+        this->adapter->Clear();
+        return true;
+    }
+    return LayoutBase::KeyPress(kn);
 }
 
 void ConsoleLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {

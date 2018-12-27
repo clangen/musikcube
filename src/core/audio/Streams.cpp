@@ -118,7 +118,7 @@ namespace musik { namespace core { namespace audio {
                 return nullptr;
             }
 
-            musik::debug::info(TAG, "about ready to play: " + uri);
+            musik::debug::info(TAG, "found a decoder for " + uri);
 
             return decoder;
         }

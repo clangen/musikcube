@@ -36,6 +36,7 @@
         "browse_no_subdirectories_toast": "there are no more sub-directories.\n\npress '%s' to play the selection.",
 
         "console_list_title": "debug logs",
+        "console_version": "musikcube version %s",
 
         "hotkeys_title": "key bindings",
         "hotkeys_reset_defaults": "reset all",
