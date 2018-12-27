@@ -35,6 +35,7 @@
 #include "FfmpegDecoder.h"
 #include <core/sdk/IDebug.h>
 #include <algorithm>
+#include <string>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
@@ -144,7 +145,9 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
         buffer->SetChannels((long) this->channels);
         buffer->SetSamples(0);
 
-        if (!av_read_frame(this->formatContext, &this->packet)) {
+        int readFrameResult = av_read_frame(this->formatContext, &this->packet);
+
+        if (!readFrameResult) {
             int frameDecoded = 0;
 
             avcodec_decode_audio4(
@@ -196,13 +199,23 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
                     buffer->SetSamples(convertedSamplesPerChannel * this->channels);
                 }
             }
+            else {
+                ::debug->Warning(TAG, "avcodec_decode_audio4() failed");
+            }
 
             av_frame_unref(this->decodedFrame);
             return true;
         }
+        else {
+            std::string err =
+                "av_read_frame() failed: " +
+                std::string(av_err2str(readFrameResult));
+
+            ::debug->Warning(TAG, err.c_str());
+        }
     }
 
-    ::debug->Warning(TAG, "finished decoding.");
+    ::debug->Info(TAG, "finished decoding.");
     this->exhausted = true;
     return false;
 }
@@ -287,7 +300,11 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                                 if (avcodec_open2(codecContext, codec, nullptr) < 0) {
                                     goto reset_and_fail;
                                 }
-                                ::debug->Info(TAG, "resolved a codec!");
+                                std::string codecName =
+                                    std::string("resolved codec: ") +
+                                    std::string(codec->long_name);
+
+                                ::debug->Info(TAG, codecName.c_str());
                             }
                             else {
                                 ::debug->Error(TAG, "couldn't find a codec.");
