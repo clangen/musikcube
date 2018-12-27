@@ -142,6 +142,7 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
     if (this->ioContext) {
         buffer->SetSampleRate((long) this->rate);
         buffer->SetChannels((long) this->channels);
+        buffer->SetSamples(0);
 
         if (!av_read_frame(this->formatContext, &this->packet)) {
             int frameDecoded = 0;
@@ -164,6 +165,7 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
                     nullptr, channels, samples, inFormat, 1);
 
                 if (decodedSize > 0) {
+                    /* preferred buffer size based on input data */
                     buffer->SetSamples(samples * channels);
 
                     if (!this->resampler) {
@@ -185,10 +187,13 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
 
                     uint8_t* outData = (uint8_t*) buffer->BufferPointer();
                     const uint8_t** inData = (const uint8_t**) this->decodedFrame->extended_data;
-                    swr_convert(this->resampler, &outData, samples, inData, samples);
-                }
-                else {
-                    buffer->SetSamples(0);
+
+                    int convertedSamplesPerChannel = swr_convert(
+                        this->resampler, &outData, samples, inData, samples);
+
+                    /* actual buffer size, based on resampler output. should be the same
+                    as the preferred size... */
+                    buffer->SetSamples(convertedSamplesPerChannel * this->channels);
                 }
             }
 

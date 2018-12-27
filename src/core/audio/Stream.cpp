@@ -235,6 +235,10 @@ void Stream::RefillInternalBuffers() {
                 break;
             }
 
+            if (this->decoderBuffer->Samples() == 0) {
+                continue;
+            }
+
             this->decoderSamplesRemain = this->decoderBuffer->Samples();
             this->decoderSampleOffset = 0;
         }
@@ -269,20 +273,21 @@ void Stream::RefillInternalBuffers() {
         targetSamplesRemain = this->samplesPerBuffer - targetSampleOffset;
         if (targetSamplesRemain > 0) {
             long samplesToCopy = std::min(this->decoderSamplesRemain, targetSamplesRemain);
+            if (samplesToCopy > 0) {
+                float* src = this->decoderBuffer->BufferPointer() + this->decoderSampleOffset;
+                target->Copy(src, samplesToCopy, targetSampleOffset);
 
-            float* src = this->decoderBuffer->BufferPointer() + this->decoderSampleOffset;
-            target->Copy(src, samplesToCopy, targetSampleOffset);
+                this->decoderPosition += samplesToCopy;
+                this->decoderSampleOffset += samplesToCopy;
+                this->decoderSamplesRemain -= samplesToCopy;
 
-            this->decoderPosition += samplesToCopy;
-            this->decoderSampleOffset += samplesToCopy;
-            this->decoderSamplesRemain -= samplesToCopy;
+                targetSampleOffset += samplesToCopy;
 
-            targetSampleOffset += samplesToCopy;
-
-            if (targetSampleOffset == this->samplesPerBuffer) {
-                targetSampleOffset = 0;
-                target = nullptr;
-                --count; /* target buffer has been filled. */
+                if (targetSampleOffset == this->samplesPerBuffer) {
+                    targetSampleOffset = 0;
+                    target = nullptr;
+                    --count; /* target buffer has been filled. */
+                }
             }
         }
     }
