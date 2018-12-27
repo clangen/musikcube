@@ -55,6 +55,13 @@ extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
     ::debug = debug;
 }
 
+static std::string getAvError(int errnum) {
+    char buffer[AV_ERROR_MAX_STRING_SIZE];
+    buffer[0] = '\0';
+    av_make_error_string(buffer, AV_ERROR_MAX_STRING_SIZE, errnum);
+    return std::string(buffer);
+}
+
 static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     FfmpegDecoder* decoder = static_cast<FfmpegDecoder*>(opaque);
     if (decoder && decoder->Stream()) {
@@ -209,7 +216,7 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
         else {
             std::string err =
                 "av_read_frame() failed: " +
-                std::string(av_err2str(readFrameResult));
+                getAvError(readFrameResult);
 
             ::debug->Warning(TAG, err.c_str());
         }
