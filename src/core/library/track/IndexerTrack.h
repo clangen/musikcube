@@ -42,7 +42,7 @@ namespace musik { namespace core {
 
     class IndexerTrack : public Track {
         public:
-            IndexerTrack(int64_t id);
+            IndexerTrack(int64_t trackId);
             virtual ~IndexerTrack(void);
 
             /* ITagStore */
@@ -50,6 +50,7 @@ namespace musik { namespace core {
             virtual void ClearValue(const char* metakey);
             virtual bool Contains(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);
+            virtual bool ContainsThumbnail();
             virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain);
 
             /* ITrack */
@@ -67,7 +68,7 @@ namespace musik { namespace core {
             virtual TrackPtr Copy();
 
             virtual int64_t GetId();
-            virtual void SetId(int64_t id) { this->id = id; }
+            virtual void SetId(int64_t trackId) { this->trackId = trackId; }
 
             bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,
@@ -77,14 +78,15 @@ namespace musik { namespace core {
                 db::Connection &dbConnection,
                 std::string libraryDirectory);
 
-            static void ResetIdCache();
+            static void OnIndexerStarted(db::Connection &dbConnection);
+            static void OnIndexerFinished(db::Connection &dbConnection);
 
         protected:
             friend class Indexer;
             static std::mutex sharedWriteMutex;
 
         private:
-            int64_t id;
+            int64_t trackId;
 
         private:
             class InternalMetadata {
@@ -103,6 +105,8 @@ namespace musik { namespace core {
             int64_t SaveThumbnail(
                 db::Connection& connection,
                 const std::string& libraryDirectory);
+
+            int64_t GetThumbnailId();
 
             int64_t SaveGenre(db::Connection& connection);
 

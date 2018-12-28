@@ -155,5 +155,5 @@ namespace musik {
                 static const char* ExternalId = "external_id";
             }
 
-            static const int SdkVersion = 14;
+            static const int SdkVersion = 15;
 } } }

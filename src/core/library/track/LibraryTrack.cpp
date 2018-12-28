@@ -127,6 +127,15 @@ void LibraryTrack::SetThumbnail(const char *data, long size) {
     IndexerTrack. */
 }
 
+bool LibraryTrack::ContainsThumbnail() {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    auto it = this->metadata.find("thumbnail_id");
+    if (it != this->metadata.end()) {
+        return it->second.size() > 0;
+    }
+    return false;
+}
+
 void LibraryTrack::SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) {
     /* do nothing, we don't use this value and this method should never be
     called. it's used by the IndexerTrack implementation, and also by the

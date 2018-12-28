@@ -62,6 +62,7 @@ namespace musik { namespace core {
             virtual void ClearValue(const char* metakey);
             virtual bool Contains(const char* metakey);
             virtual void SetThumbnail(const char *data, long size);
+            virtual bool ContainsThumbnail();
             virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain);
 
             /* ITrack */
