@@ -11,21 +11,26 @@ musikcube:
   not exposed in the ui, but it can be changed by editing
   `~/.musikcube/settings.json` and updating the `AppQuitKey`.
 * scrapped and re-implemented the debug log viewer, accessible via `ctrl+~`
-* added feodra 29 support (dvdmuckle)
+* added feodra 29 support. (dvdmuckle)
 * fixed configuration script bugs that were causing breakage in FreeBSD
 * improved indexer speed by not re-extracting album art if it has already
   been extracted for the album the track belongs to.
 * migrated to non-bundled `taglib` for macOS and most Linux distributions
-* fixed a ton of minor ui bugs
-* updated win32 dependencies: libressl, libcurl, libboost, and pdcurses
+* fixed a ton of minor ui bugs.
+* updated win32 dependencies: libressl, libcurl, libboost, and pdcurses.
 
 musikdroid:
-* updated to compile against the latest tooling
+* updated to compile against the latest tooling.
+* added the ability to change equalizer settings on the server from the
+  `remote management` screen.
+
+server:
+* added `get_equalizer_settings` and `set_equalizer_settings`.
 
 sdk:
 * added a new `IDebug` interface plugins can request via `SetDebug` to write
   log information to the standard location, just like the rest of the app.
-* added `ITagStore::ContainsThumbnail()`
+* added `ITagStore::ContainsThumbnail()`.
 
 --------------------------------------------------------------------------------
 
