@@ -251,16 +251,7 @@ void ServerOverlay::Show(Callback callback) {
 }
 
 std::shared_ptr<IPlugin> ServerOverlay::FindServerPlugin() {
-    std::shared_ptr<IPlugin> result;
-    using Deleter = PluginFactory::ReleaseDeleter<IPlugin>;
-    PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
-        "GetPlugin",
-        [&result](IPlugin* unused, std::shared_ptr<IPlugin> plugin, const std::string& fn) {
-            if (std::string(plugin->Guid()) == WEBSOCKET_PLUGIN_GUID) {
-                result = plugin;
-            }
-        });
-    return result;
+    return PluginFactory::Instance().QueryGuid(WEBSOCKET_PLUGIN_GUID);
 }
 
 void ServerOverlay::Load() {

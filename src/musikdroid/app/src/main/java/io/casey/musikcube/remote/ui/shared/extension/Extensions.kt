@@ -227,6 +227,10 @@ fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up,
 
 fun AppCompatActivity.slideThisDown() = overridePendingTransition(R.anim.stay_put, R.anim.slide_down)
 
+fun AppCompatActivity.slideNextLeft() = overridePendingTransition(R.anim.slide_left, R.anim.stay_put)
+
+fun AppCompatActivity.slideThisRight() = overridePendingTransition(R.anim.stay_put, R.anim.slide_right)
+
 fun <T1: Any, T2: Any, R: Any> letMany(p1: T1?, p2: T2?, block: (T1, T2) -> R?): R? {
     return if (p1 != null && p2 != null) block(p1, p2) else null
 }

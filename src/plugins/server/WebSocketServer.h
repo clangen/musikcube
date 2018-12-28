@@ -164,6 +164,8 @@ class WebSocketServer {
         void RespondWithSetDefaultOutputDriver(connection_hdl connection, json& request);
         void RespondWithGetGainSettings(connection_hdl connection, json& request);
         void RespondWithSetGainSettings(connection_hdl connection, json& request);
+        void RespondWithGetEqualizerSettings(connection_hdl connection, json& request);
+        void RespondWithSetEqualizerSettings(connection_hdl connection, json& request);
         void RespondWithGetTransportType(connection_hdl connection, json& request);
         void RespondWithSetTransportType(connection_hdl connection, json& request);
         void RespondWithSnapshotPlayQueue(connection_hdl connection, json& request);

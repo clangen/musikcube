@@ -61,6 +61,10 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetReplayGainMode(ReplayGainMode mode) = 0;
             virtual float GetPreampGain() = 0;
             virtual void SetPreampGain(float gain) = 0;
+            virtual bool GetEqualizerEnabled() = 0;
+            virtual void SetEqualizerEnabled(bool enabled) = 0;
+            virtual bool GetEqualizerBandValues(double target[], size_t count) = 0;
+            virtual bool SetEqualizerBandValues(double values[], size_t count) = 0;
             virtual void ReloadPlaybackOutput() = 0;
             virtual void SetDefaultOutput(IOutput* output) = 0;
             virtual IOutput* GetDefaultOutput() = 0;

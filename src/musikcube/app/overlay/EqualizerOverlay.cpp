@@ -150,16 +150,7 @@ void EqualizerOverlay::ShowOverlay() {
 }
 
 std::shared_ptr<IPlugin> EqualizerOverlay::FindPlugin() {
-    std::shared_ptr<IPlugin> result;
-    using Deleter = PluginFactory::ReleaseDeleter<IPlugin>;
-    PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
-        "GetPlugin",
-        [&result](IPlugin* unused, std::shared_ptr<IPlugin> plugin, const std::string& fn) {
-            if (std::string(plugin->Guid()) == SUPEREQ_PLUGIN_GUID) {
-                result = plugin;
-            }
-        });
-    return result;
+    return PluginFactory::Instance().QueryGuid(SUPEREQ_PLUGIN_GUID);
 }
 
 void EqualizerOverlay::Layout() {

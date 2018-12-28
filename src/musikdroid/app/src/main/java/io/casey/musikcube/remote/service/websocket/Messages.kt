@@ -37,6 +37,8 @@ class Messages {
         SetDefaultOutputDriver("set_default_output_driver"),
         GetGainSettings("get_gain_settings"),
         SetGainSettings("set_gain_settings"),
+        GetEqualizerSettings("get_equalizer_settings"),
+        SetEqualizerSettings("set_equalizer_settings"),
         RunIndexer("run_indexer"),
         GetTransportType("get_transport_type"),
         SetTransportType("set_transport_type"),
@@ -112,6 +114,8 @@ class Messages {
             const val DEVICE_ID = "device_id"
             const val REPLAYGAIN_MODE = "replaygain_mode"
             const val PREAMP_GAIN = "preamp_gain"
+            const val ENABLED = "enabled"
+            const val BANDS = "bands"
         }
     }
 

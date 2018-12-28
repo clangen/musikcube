@@ -131,6 +131,8 @@
     <string name="remote_settings_reindex_button">rescan</string>
     <string name="remote_settings_rebuild_button">rebuild</string>
     <string name="remote_settings_transport_type">playback transport</string>
+    <string name="remote_settings_equalizer">equalizer</string>
+    <string name="remote_settings_configure_eq_button">configure</string>
     <string name="transport_type_gapless">gapless</string>
     <string name="transport_type_crossfade">crossfade</string>
     <string name="replaygain_mode_disabled">disabled</string>

@@ -66,6 +66,8 @@ typedef void(*SetDebug)(IDebug*);
 typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
 typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 
+static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
+
 static IMessageQueue* messageQueue = nullptr;
 static ILibraryPtr library;
 static IPlaybackService* playback = nullptr;
@@ -79,6 +81,17 @@ static void saveEnvironment() {
     if (::messageQueue) {
         ::messageQueue->Broadcast(
             Message::Create(nullptr, message::EnvironmentUpdated));
+    }
+}
+
+static void getEqualizerPluginAndPrefs(
+    std::shared_ptr<IPlugin>& plugin,
+    std::shared_ptr<Preferences>& prefs)
+{
+    plugin = PluginFactory::Instance().QueryGuid(SUPEREQ_PLUGIN_GUID);
+
+    if (plugin) {
+        prefs = Preferences::ForPlugin(plugin->Name());
     }
 }
 
@@ -246,6 +259,71 @@ static class Environment: public IEnvironment {
                 if (gain < -20.0f) { gain = -20.0f; }
                 ::playbackPrefs->SetDouble(prefs::keys::PreampDecibels.c_str(), gain);
                 saveEnvironment();
+            }
+        }
+
+        virtual bool GetEqualizerBandValues(double target[], size_t count) override {
+            if (count != EqualizerBandCount) {
+                return false;
+            }
+
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                for (size_t i = 0; i < EqualizerBandCount; i++) {
+                    target[i] = prefs->GetDouble(std::to_string(EqualizerBands[i]), 0.0);
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        virtual bool SetEqualizerBandValues(double values[], size_t count) override {
+            if (count != EqualizerBandCount) {
+                return false;
+            }
+
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                for (size_t i = 0; i < EqualizerBandCount; i++) {
+                    prefs->SetDouble(std::to_string(EqualizerBands[i]), values[i]);
+                }
+                plugin->Reload();
+                return true;
+            }
+
+            return false;
+        }
+
+        virtual bool GetEqualizerEnabled() override {
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                return prefs->GetBool("enabled", false);
+            }
+
+            return false;
+        }
+
+
+        virtual void SetEqualizerEnabled(bool enabled) {
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                if (prefs->GetBool("enabled", false) != enabled) {
+                    prefs->SetBool("enabled", enabled);
+                    plugin->Reload();
+                }
             }
         }
 

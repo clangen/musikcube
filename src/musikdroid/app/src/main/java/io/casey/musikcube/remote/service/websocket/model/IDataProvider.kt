@@ -59,6 +59,9 @@ interface IDataProvider {
     fun getGainSettings(): Observable<IGainSettings>
     fun updateGainSettings(replayGainMode: ReplayGainMode, preampGain: Float): Observable<Boolean>
 
+    fun getEqualizerSettings(): Observable<IEqualizerSettings>
+    fun updateEqualizerSettings(enabled: Boolean, freqs: Array<Double>): Observable<Boolean>
+
     fun reindexMetadata(): Observable<Boolean>
     fun rebuildMetadata(): Observable<Boolean>
 

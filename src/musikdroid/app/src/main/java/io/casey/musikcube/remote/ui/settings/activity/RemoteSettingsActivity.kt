@@ -13,6 +13,7 @@ import io.casey.musikcube.remote.service.websocket.model.ReplayGainMode
 import io.casey.musikcube.remote.service.websocket.model.TransportType
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.extension.slideNextLeft
 import io.casey.musikcube.remote.ui.shared.extension.slideThisDown
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
@@ -30,6 +31,7 @@ class RemoteSettingsActivity: BaseActivity() {
     private lateinit var replayGainSpinner: Spinner
     private lateinit var preampSeekbar: SeekBar
     private lateinit var preampTextView: TextView
+    private lateinit var configureEq: TextView
     private lateinit var reindexButton: TextView
     private lateinit var rebuildButton: TextView
 
@@ -51,6 +53,7 @@ class RemoteSettingsActivity: BaseActivity() {
         replayGainSpinner = findViewById(R.id.replaygain_spinner)
         preampSeekbar = findViewById(R.id.gain_seekbar)
         preampTextView = findViewById(R.id.gain_textview)
+        configureEq = findViewById(R.id.configure_eq_button)
         reindexButton = findViewById(R.id.reindex_button)
         rebuildButton = findViewById(R.id.rebuild_button)
         initListeners()
@@ -137,21 +140,21 @@ class RemoteSettingsActivity: BaseActivity() {
 
     private fun initListeners() {
         /* metadata */
-        reindexButton.setOnClickListener({
+        reindexButton.setOnClickListener {
             reindexButton.isEnabled = false
             data.provider.reindexMetadata().subscribeBy(
                 onNext = { if (!it) reindexButton.isEnabled = true },
                 onError = { reindexButton.isEnabled = true }
             )
-        })
+        }
 
-        rebuildButton.setOnClickListener({
+        rebuildButton.setOnClickListener {
             rebuildButton.isEnabled = false
             data.provider.rebuildMetadata().subscribeBy(
                 onNext = { if (!it) rebuildButton.isEnabled = true },
                 onError = { rebuildButton.isEnabled = true }
             )
-        })
+        }
 
         /* devices */
         driverSpinner.onItemSelectedListener = driverChangeListener
@@ -179,6 +182,13 @@ class RemoteSettingsActivity: BaseActivity() {
         })
 
         preampSeekbar.progress = 2000
+
+        /* equalizer */
+        configureEq.setOnClickListener {
+            val intent = Intent(this, RemoteEqActivity::class.java)
+            startActivity(intent)
+            slideNextLeft()
+        }
 
         /* transport */
         val transportModes = ArrayAdapter.createFromResource(

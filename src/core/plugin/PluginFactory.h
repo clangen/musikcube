@@ -104,7 +104,7 @@ namespace musik { namespace core {
                     functionName,
                     [&plugins](
                         musik::core::sdk::IPlugin* unused,
-                        std::shared_ptr<T> plugin, 
+                        std::shared_ptr<T> plugin,
                         const std::string& fn)
                         {
                             plugins.push_back(plugin);
@@ -132,6 +132,20 @@ namespace musik { namespace core {
                         }
                     }
                 }
+            }
+
+            std::shared_ptr<musik::core::sdk::IPlugin> QueryGuid(const std::string& guid) {
+                using T = musik::core::sdk::IPlugin;
+                std::shared_ptr<T> result;
+                using Deleter = PluginFactory::ReleaseDeleter<T>;
+                Instance().QueryInterface<T, Deleter>(
+                    "GetPlugin",
+                    [&result, guid](T* unused, std::shared_ptr<T> plugin, const std::string& fn) {
+                        if (std::string(plugin->Guid()) == guid) {
+                            result = plugin;
+                        }
+                    });
+                return result;
             }
 
         private:
