@@ -2,6 +2,9 @@ package io.casey.musikcube.remote.ui.settings.activity
 
 import android.os.Bundle
 import android.view.View
+import android.widget.SeekBar
+import android.widget.TableLayout
+import android.widget.TextView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.ui.settings.viewmodel.BaseRemoteViewModel
@@ -17,6 +20,7 @@ class RemoteEqActivity: BaseActivity() {
     private lateinit var data: DataProviderMixin
     private lateinit var viewModel: RemoteEqViewModel
     private lateinit var loadingOverlay: View
+    private lateinit var table: TableLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
@@ -26,6 +30,7 @@ class RemoteEqActivity: BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_remote_eq)
         this.loadingOverlay = findViewById(R.id.loading_overlay)
+        this.table = findViewById(R.id.eq_table)
 
         viewModel = createViewModel()!!
 
@@ -49,6 +54,30 @@ class RemoteEqActivity: BaseActivity() {
 
     private fun drawNormal() {
         if (!initialized) {
+            table.removeAllViews()
+            viewModel.sortedBands.forEach { hz ->
+                val row = layoutInflater.inflate(R.layout.eq_band_row, table, false)
+                val value = (viewModel.bands[hz] ?: 0.0).toInt()
+                val progress = (value + 20.0).toInt()
+                val valueText = row.findViewById<TextView>(R.id.value)
+                row.findViewById<TextView>(R.id.label).text = getString(R.string.remote_settings_eq_label_format, hz)
+                row.findViewById<SeekBar>(R.id.seekbar).apply {
+                    this.progress = progress
+                    this.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                            valueText.text = getString(R.string.remote_settings_eq_value_format, progress - 20)
+                        }
+
+                        override fun onStartTrackingTouch(seekBar: SeekBar) {
+                        }
+
+                        override fun onStopTrackingTouch(seekBar: SeekBar) {
+                        }
+                    })
+                }
+                valueText.text = getString(R.string.remote_settings_eq_value_format, value)
+                table.addView(row)
+            }
             initialized = true
         }
 
@@ -65,6 +94,7 @@ class RemoteEqActivity: BaseActivity() {
                 drawNormal()
             }
             BaseRemoteViewModel.State.Disconnected,
+            BaseRemoteViewModel.State.Error,
             BaseRemoteViewModel.State.Loading,
             BaseRemoteViewModel.State.Saving -> {
                 drawLoading()

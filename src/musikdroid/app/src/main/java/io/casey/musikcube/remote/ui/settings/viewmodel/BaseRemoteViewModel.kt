@@ -6,10 +6,10 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
 
 abstract class BaseRemoteViewModel: ViewModel<BaseRemoteViewModel.State>() {
-    private var provider: IDataProvider? = null
+    protected var provider: IDataProvider? = null
     protected var disposables = CompositeDisposable()
 
-    enum class State { Disconnected, Saving, Saved, Loading, Ready }
+    enum class State { Disconnected, Saving, Saved, Loading, Ready, Error }
 
     fun attach(provider: IDataProvider) {
         this.provider = provider

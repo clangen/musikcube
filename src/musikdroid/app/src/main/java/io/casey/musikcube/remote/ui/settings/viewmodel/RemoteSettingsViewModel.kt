@@ -11,7 +11,6 @@ import io.reactivex.rxkotlin.subscribeBy
 class RemoteSettingsViewModel: BaseRemoteViewModel() {
     private var gain: IGainSettings? = null
     private var outputs: IOutputs? = null
-    private var provider: IDataProvider? = null
 
     var transportType: TransportType = TransportType.Gapless
         private set(value) {
