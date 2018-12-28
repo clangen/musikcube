@@ -44,6 +44,7 @@ namespace musik {
             static const int PlaylistRenamed        = First + 3;
             static const int PlaylistDeleted        = First + 4;
             static const int EnvironmentUpdated     = First + 5;
+            static const int EqualizerUpdated       = First + 6;
 
             static const int User                   = 4096;
         }

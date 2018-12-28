@@ -84,6 +84,13 @@ static void saveEnvironment() {
     }
 }
 
+static void broadcastEqualizerUpdated() {
+    if (::messageQueue) {
+        ::messageQueue->Broadcast(
+            Message::Create(nullptr, message::EqualizerUpdated));
+    }
+}
+
 static void getEqualizerPluginAndPrefs(
     std::shared_ptr<IPlugin>& plugin,
     std::shared_ptr<Preferences>& prefs)
@@ -275,6 +282,7 @@ static class Environment: public IEnvironment {
                 for (size_t i = 0; i < EqualizerBandCount; i++) {
                     target[i] = prefs->GetDouble(std::to_string(EqualizerBands[i]), 0.0);
                 }
+
                 return true;
             }
 
@@ -295,6 +303,7 @@ static class Environment: public IEnvironment {
                     prefs->SetDouble(std::to_string(EqualizerBands[i]), values[i]);
                 }
                 plugin->Reload();
+                broadcastEqualizerUpdated();
                 return true;
             }
 
@@ -314,7 +323,7 @@ static class Environment: public IEnvironment {
         }
 
 
-        virtual void SetEqualizerEnabled(bool enabled) {
+        virtual void SetEqualizerEnabled(bool enabled) override {
             std::shared_ptr<IPlugin> plugin;
             std::shared_ptr<Preferences> prefs;
             getEqualizerPluginAndPrefs(plugin, prefs);
@@ -323,6 +332,7 @@ static class Environment: public IEnvironment {
                 if (prefs->GetBool("enabled", false) != enabled) {
                     prefs->SetBool("enabled", enabled);
                     plugin->Reload();
+                    broadcastEqualizerUpdated();
                 }
             }
         }

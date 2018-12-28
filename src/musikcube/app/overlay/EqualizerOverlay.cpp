@@ -42,6 +42,7 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
 
+#include <core/support/Messages.h>
 #include <core/plugin/PluginFactory.h>
 
 #include <app/util/Messages.h>
@@ -143,10 +144,13 @@ EqualizerOverlay::EqualizerOverlay()
 }
 
 EqualizerOverlay::~EqualizerOverlay() {
+    MessageQueue().UnregisterForBroadcasts(this);
 }
 
 void EqualizerOverlay::ShowOverlay() {
-    App::Overlays().Push(std::make_shared<EqualizerOverlay>());
+    auto overlay = std::make_shared<EqualizerOverlay>();
+    App::Overlays().Push(overlay);
+    MessageQueue().RegisterForBroadcasts(overlay);
 }
 
 std::shared_ptr<IPlugin> EqualizerOverlay::FindPlugin() {
@@ -213,6 +217,10 @@ void EqualizerOverlay::NotifyAndRedraw() {
 void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == message::UpdateEqualizer) {
         this->plugin->Reload();
+    }
+    else if (message.Type() == musik::core::message::EqualizerUpdated) {
+        this->enabledCb->SetChecked(this->prefs->GetBool("enabled", false));
+        this->listView->OnAdapterChanged();
     }
 }
 
