@@ -505,7 +505,9 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         val message = SocketMessage.Builder
             .request(Messages.Request.SetEqualizerSettings)
             .addOption(Messages.Key.ENABLED, enabled)
-            .addOption(Messages.Key.BANDS, freqs.toDoubleArray())
+            .addOption(Messages.Key.BANDS, JSONArray().apply {
+                freqs.forEach { this.put(it) }
+            })
             .build()
 
         return service.observe(message, client)

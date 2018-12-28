@@ -1447,19 +1447,21 @@ void WebSocketServer::RespondWithGetEqualizerSettings(connection_hdl connection,
 }
 
 void WebSocketServer::RespondWithSetEqualizerSettings(connection_hdl connection, json& request) {
-    if (request.find("enabled") != request.end()) {
-        bool enabled = request.value("enabled", false);
+    auto& options = request[message::options];
+
+    if (options.find("enabled") != options.end()) {
+        bool enabled = options.value("enabled", false);
         context.environment->SetEqualizerEnabled(enabled);
     }
 
-    if (request.find("bands") != request.end()) {
-        auto bands = request.value("bands", json::array());
+    if (options.find("bands") != options.end()) {
+        auto bands = options.value("bands", json::array());
         if (bands.size() == EqualizerBandCount) {
             double values[EqualizerBandCount];
             for (size_t i = 0; i < EqualizerBandCount; i++) {
                 values[i] = bands[i];
-                context.environment->SetEqualizerBandValues(values, EqualizerBandCount);
             }
+            context.environment->SetEqualizerBandValues(values, EqualizerBandCount);
         }
     }
 

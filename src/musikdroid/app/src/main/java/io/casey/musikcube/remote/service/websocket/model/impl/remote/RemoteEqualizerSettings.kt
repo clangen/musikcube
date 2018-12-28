@@ -26,6 +26,6 @@ class RemoteEqualizerSettings(private val json: JSONObject): IEqualizerSettings 
     override val enabled: Boolean
         get() = json.optBoolean(Messages.Key.ENABLED, false)
 
-    override val bands: Map<Int, Double>
+    override val bands: MutableMap<Int, Double>
         get() = mutableMapOf<Int, Double>().apply { putAll(bandToFreqMap ) }
 }

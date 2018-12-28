@@ -1,28 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <TableLayout
-            android:id="@+id/eq_table"
-            android:layout_width="match_parent"
+        <CheckBox
+            android:id="@+id/enabled_checkbox"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:stretchColumns="2">
+            android:layout_marginTop="8dp"
+            android:layout_marginLeft="8dp"
+            android:text="@string/remote_settings_eq_enabled"/>
 
-            <!--<include layout="@layout/eq_band_row" />-->
-            <!--<include layout="@layout/eq_band_row" />-->
-            <!--<include layout="@layout/eq_band_row" />-->
-            <!--<include layout="@layout/eq_band_row" />-->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1.0" >
 
-        </TableLayout>
+            <TableLayout
+                android:id="@+id/eq_table"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:stretchColumns="2" />
 
-    </ScrollView>
+        </ScrollView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                style="@style/ConnectionButton"
+                android:id="@+id/button_revert"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.0"
+                android:text="@string/button_revert"/>
+
+            <android.support.v4.widget.Space
+                android:layout_width="2dp"
+                android:layout_height="0dp"/>
+
+            <TextView
+                style="@style/ConnectionButton"
+                android:id="@+id/button_zero"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.0"
+                android:text="@string/button_zero"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
 
     <FrameLayout
         android:id="@+id/loading_overlay"
