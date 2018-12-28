@@ -1,4 +1,4 @@
-/* $OpenBSD: dsa.h,v 1.22 2016/11/04 18:35:30 jsing Exp $ */
+/* $OpenBSD: dsa.h,v 1.30 2018/03/17 15:19:12 tb Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -183,6 +183,8 @@ DSA_SIG * DSA_SIG_new(void);
 void	DSA_SIG_free(DSA_SIG *a);
 int	i2d_DSA_SIG(const DSA_SIG *a, unsigned char **pp);
 DSA_SIG * d2i_DSA_SIG(DSA_SIG **v, const unsigned char **pp, long length);
+void	DSA_SIG_get0(const DSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps);
+int	DSA_SIG_set0(DSA_SIG *sig, BIGNUM *r, BIGNUM *s);
 
 DSA_SIG * DSA_do_sign(const unsigned char *dgst,int dlen,DSA *dsa);
 int	DSA_do_verify(const unsigned char *dgst,int dgst_len,
@@ -256,6 +258,23 @@ int	DSA_print_fp(FILE *bp, const DSA *x, int off);
  * (be careful to avoid small subgroup attacks when using this!) */
 DH *DSA_dup_DH(const DSA *r);
 #endif
+
+void DSA_get0_pqg(const DSA *d, const BIGNUM **p, const BIGNUM **q,
+    const BIGNUM **g);
+int DSA_set0_pqg(DSA *d, BIGNUM *p, BIGNUM *q, BIGNUM *g);
+void DSA_get0_key(const DSA *d, const BIGNUM **pub_key, const BIGNUM **priv_key);
+int DSA_set0_key(DSA *d, BIGNUM *pub_key, BIGNUM *priv_key);
+void DSA_clear_flags(DSA *d, int flags);
+int DSA_test_flags(const DSA *d, int flags);
+void DSA_set_flags(DSA *d, int flags);
+ENGINE *DSA_get0_engine(DSA *d);
+
+DSA_METHOD *DSA_meth_new(const char *name, int flags);
+void DSA_meth_free(DSA_METHOD *meth);
+DSA_METHOD *DSA_meth_dup(const DSA_METHOD *meth);
+int DSA_meth_set_sign(DSA_METHOD *meth,
+    DSA_SIG *(*sign)(const unsigned char *, int, DSA *));
+int DSA_meth_set_finish(DSA_METHOD *meth, int (*finish)(DSA *));
 
 #define EVP_PKEY_CTX_set_dsa_paramgen_bits(ctx, nbits) \
 	EVP_PKEY_CTX_ctrl(ctx, EVP_PKEY_DSA, EVP_PKEY_OP_PARAMGEN, \

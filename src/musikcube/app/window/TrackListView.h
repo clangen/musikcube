@@ -35,6 +35,7 @@
 #pragma once
 
 #include <cursespp/curses_config.h>
+#include <cursespp/Colors.h>
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/IKeyHandler.h>
 #include <cursespp/ListWindow.h>
@@ -48,11 +49,8 @@
 
 namespace musik {
     namespace cube {
-        class TrackListView :
+        class TrackListView:
             public cursespp::ListWindow,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<TrackListView>,
-#endif
             public sigslot::has_slots<>
         {
             public:
@@ -66,7 +64,7 @@ namespace musik {
 
                 /* types */
                 typedef std::function<std::string(TrackPtr, size_t, size_t)> RowFormatter;
-                typedef std::function<int64_t(TrackPtr, size_t)> RowDecorator;
+                typedef std::function<cursespp::Color(TrackPtr, size_t)> RowDecorator;
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
                 /* ctor, dtor */

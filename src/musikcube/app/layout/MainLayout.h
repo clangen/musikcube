@@ -35,11 +35,9 @@
 #pragma once
 
 #include <cursespp/App.h>
-#include <cursespp/LayoutBase.h>
+#include <cursespp/AppLayout.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/TextLabel.h>
-#include <cursespp/ShortcutsWindow.h>
-#include <cursespp/IViewRoot.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/support/Preferences.h>
@@ -48,23 +46,17 @@
 
 #include <core/audio/MasterTransport.h>
 
-#include "ITopLevelLayout.h"
+#include <app/util/ConsoleLogger.h>
 
 #include <sigslot/sigslot.h>
 
 namespace musik {
     namespace cube {
-        class MainLayout :
-            public cursespp::LayoutBase,
-            public cursespp::IViewRoot,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<MainLayout>,
-#endif
-            public sigslot::has_slots<>
-        {
+        class MainLayout : public cursespp::AppLayout {
             public:
                 MainLayout(
                     cursespp::App& app,
+                    ConsoleLogger* logger,
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
 
@@ -75,13 +67,7 @@ namespace musik {
 
                 virtual bool KeyPress(const std::string& key) override;
                 virtual void OnLayout() override;
-                virtual cursespp::IWindowPtr GetFocus() override;
-                virtual cursespp::IWindowPtr FocusNext() override;
-                virtual cursespp::IWindowPtr FocusPrev() override;
-                virtual void ResizeToViewport() override;
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
-
-                void SetMainLayout(std::shared_ptr<cursespp::LayoutBase> layout);
 
             private:
                 void OnIndexerStarted();
@@ -91,23 +77,13 @@ namespace musik {
                 void Initialize();
                 void RunUpdateCheck();
 
-                void EnableDemoModeIfNecessary();
-
-                cursespp::IWindowPtr BlurShortcuts();
-                void FocusShortcuts();
-
                 std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<cursespp::ShortcutsWindow> shortcuts;
-                std::shared_ptr<cursespp::LayoutBase> layout;
                 std::shared_ptr<cursespp::TextLabel> syncing;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
                 std::shared_ptr<cursespp::LayoutBase> libraryLayout;
                 std::shared_ptr<cursespp::LayoutBase> settingsLayout;
                 std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
-                std::shared_ptr<cursespp::TextLabel> hotkey;
                 musik::core::ILibraryPtr library;
-                cursespp::IWindowPtr lastFocus;
-                ITopLevelLayout* topLevelLayout;
                 bool shortcutsFocused;
                 int syncUpdateCount;
         };

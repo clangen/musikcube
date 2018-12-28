@@ -309,7 +309,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, i
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryTracks failed");
+        musik::debug::error(TAG, "QueryTracks failed");
     }
 
     return nullptr;
@@ -329,7 +329,7 @@ ITrack* LocalSimpleDataProvider::QueryTrackById(int64_t trackId) {
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryTrackById failed");
+        musik::debug::error(TAG, "QueryTrackById failed");
     }
 
     return nullptr;
@@ -351,7 +351,7 @@ ITrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* externalId) 
             }
         }
         catch (...) {
-            musik::debug::err(TAG, "QueryTrackByExternalId failed");
+            musik::debug::error(TAG, "QueryTrackByExternalId failed");
         }
     }
 
@@ -388,7 +388,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryTracksByCategory failed");
+        musik::debug::error(TAG, "QueryTracksByCategory failed");
     }
 
     return nullptr;
@@ -413,7 +413,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategories(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryTracksByCategory failed");
+        musik::debug::error(TAG, "QueryTracksByCategory failed");
     }
 
     return nullptr;
@@ -433,7 +433,7 @@ IValueList* LocalSimpleDataProvider::ListCategories() {
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "ListCategories failed");
+        musik::debug::error(TAG, "ListCategories failed");
     }
 
     return nullptr;
@@ -459,7 +459,7 @@ IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicate(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryCategory failed");
+        musik::debug::error(TAG, "QueryCategory failed");
     }
 
     return nullptr;
@@ -481,7 +481,7 @@ IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicates(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryCategory failed");
+        musik::debug::error(TAG, "QueryCategory failed");
     }
 
     return nullptr;
@@ -503,7 +503,7 @@ IMapList* LocalSimpleDataProvider::QueryAlbums(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryAlbums failed");
+        musik::debug::error(TAG, "QueryAlbums failed");
     }
 
     return nullptr;
@@ -555,7 +555,7 @@ static uint64_t savePlaylist(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "SavePlaylist failed");
+        musik::debug::error(TAG, "SavePlaylist failed");
     }
 
     return 0;
@@ -600,7 +600,7 @@ int64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "SavePlaylistWithExternalIds failed");
+        musik::debug::error(TAG, "SavePlaylistWithExternalIds failed");
     }
 
     return 0;
@@ -632,7 +632,7 @@ bool LocalSimpleDataProvider::RenamePlaylist(const int64_t playlistId, const cha
             }
         }
         catch (...) {
-            musik::debug::err(TAG, "RenamePlaylist failed");
+            musik::debug::error(TAG, "RenamePlaylist failed");
         }
     }
 
@@ -651,7 +651,7 @@ bool LocalSimpleDataProvider::DeletePlaylist(const int64_t playlistId) {
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "DeletePlaylist failed");
+        musik::debug::error(TAG, "DeletePlaylist failed");
     }
 
     return false;
@@ -676,7 +676,7 @@ static bool appendToPlaylist(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "AppendToPlaylist failed");
+        musik::debug::error(TAG, "AppendToPlaylist failed");
     }
 
     return false;
@@ -713,7 +713,7 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithExternalIds(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "AppendToPlaylistWithExternalIds failed");
+        musik::debug::error(TAG, "AppendToPlaylistWithExternalIds failed");
     }
 
     return 0;
@@ -748,7 +748,7 @@ size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "RemoveTracksFromPlaylist failed");
+        musik::debug::error(TAG, "RemoveTracksFromPlaylist failed");
     }
 
     return 0;
@@ -768,7 +768,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByExternalId(
         }
     }
     catch (...) {
-        musik::debug::err(TAG, "QueryTracksByExternalId failed");
+        musik::debug::error(TAG, "QueryTracksByExternalId failed");
     }
 
     return nullptr;

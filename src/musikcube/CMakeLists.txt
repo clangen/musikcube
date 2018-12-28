@@ -15,6 +15,7 @@ set (CUBE_SRCS
 	./app/model/HotkeysAdapter.cpp
 	./app/overlay/BrowseOverlays.cpp
 	./app/overlay/ColorThemeOverlay.cpp
+	./app/overlay/EqualizerOverlay.cpp
 	./app/overlay/LastFmOverlay.cpp
 	./app/overlay/LocaleOverlay.cpp
 	./app/overlay/PlaybackOverlays.cpp
@@ -24,16 +25,17 @@ set (CUBE_SRCS
 	./app/overlay/ReassignHotkeyOverlay.cpp
 	./app/overlay/ServerOverlay.cpp
 	./app/overlay/VisualizerOverlay.cpp
+	./app/util/ConsoleLogger.cpp
 	./app/util/GlobalHotkeys.cpp
 	./app/util/Hotkeys.cpp
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
 	./app/util/UpdateCheck.cpp
 	./app/window/CategoryListView.cpp
-	./app/window/LogWindow.cpp
 	./app/window/TrackListView.cpp
 	./app/window/TransportWindow.cpp
 	./cursespp/App.cpp
+	./cursespp/AppLayout.cpp
 	./cursespp/Checkbox.cpp
 	./cursespp/Colors.cpp
 	./cursespp/DialogOverlay.cpp

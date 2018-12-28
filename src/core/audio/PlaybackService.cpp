@@ -442,6 +442,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 }
             }
         }
+        else {
+            this->transport->ReloadOutput();
+        }
     }
 }
 

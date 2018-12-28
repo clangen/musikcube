@@ -34,8 +34,8 @@
 
 #include <stdafx.h>
 #include <algorithm>
-#include "ListWindow.h"
-#include "Scrollbar.h"
+#include <cursespp/ListWindow.h>
+#include <cursespp/Scrollbar.h>
 
 using namespace cursespp;
 
@@ -66,12 +66,20 @@ void ListWindow::SetScrollbarVisible(bool visible) {
     }
 }
 
+void ListWindow::SetDecorator(Decorator decorator) {
+    this->decorator = decorator;
+}
+
 void ListWindow::Invalidate() {
     this->DecorateFrame();
     Window::Invalidate();
 }
 
 void ListWindow::DecorateFrame() {
+    if (this->decorator) {
+        this->decorator(this);
+    }
+
     if (this->IsFrameVisible()) {
         Scrollbar::Draw(this);
     }
@@ -292,6 +300,12 @@ bool ListWindow::KeyPress(const std::string& key) {
         auto selected = this->GetSelectedIndex();
         if (selected != NO_SELECTION) {
             this->OnEntryActivated(selected);
+        }
+    }
+    else if (key == "M-enter") {
+        auto selected = this->GetSelectedIndex();
+        if (selected != NO_SELECTION) {
+            this->OnEntryContextMenu(selected);
         }
     }
     return ScrollableWindow::KeyPress(key);

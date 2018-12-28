@@ -35,9 +35,8 @@
         "browse_no_paths_overlay_error_message": "you have not configured any metadata paths.\n\nyou must add at least one path in the settings screen before you can browse by directory.",
         "browse_no_subdirectories_toast": "there are no more sub-directories.\n\npress '%s' to play the selection.",
 
-        "console_command_output_title": "command output",
-        "console_debug_logs_title": "debug logs",
-        "console_command_title": "command",
+        "console_list_title": "debug logs",
+        "console_version": "musikcube version %s",
 
         "hotkeys_title": "key bindings",
         "hotkeys_reset_defaults": "reset all",
@@ -101,6 +100,7 @@
         "settings_server_invalid_settings_title": "invalid settings",
         "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",
         "settings_server_use_ipv6": "use ipv6",
+        "settings_enable_transparency": "enable transparency support",
 
         "settings_preamp": "preamp and replaygain",
         "settings_preamp_label": "preamp gain (dB):",
@@ -162,11 +162,17 @@
         "visualizer_overlay_title": "visualizers",
         "visualizer_overlay_no_visualizers_message": "no visualizers found!",
 
+        "equalizer_overlay_enabled": "equalizer enabled",
+        "equalizer_overlay_frequencies": "frequency bands",
+        "equalizer_button_load": "load",
+        "equalizer_button_save": "save",
+        "equalizer_button_zero": "zero",
+
         "plugin_overlay_title": "configure plugins",
 
         "shortcuts_settings": "settings",
         "shortcuts_library": "library",
-        "shortcuts_console": "console",
+        "shortcuts_console": "logs",
         "shortcuts_quit": "quit",
         "shortcuts_browse": "browse",
         "shortcuts_filter": "filter",
@@ -211,6 +217,7 @@
         "indexer_overlay_width": 28,
         "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
-        "preamp_overlay_width": 40
+        "preamp_overlay_width": 40,
+        "equalizer_overlay_width": 46
     }
 }

@@ -39,6 +39,7 @@
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
 
+#include <core/debug.h>
 #include <core/io/DataStreamFactory.h>
 #include <core/audio/Buffer.h>
 #include <core/audio/Streams.h>
@@ -49,6 +50,7 @@
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
 
+#include <core/sdk/IDebug.h>
 #include <core/sdk/IIndexerNotifier.h>
 #include <core/sdk/IEnvironment.h>
 
@@ -60,8 +62,11 @@ using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 
 typedef void(*SetEnvironment)(IEnvironment*);
+typedef void(*SetDebug)(IDebug*);
 typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
 typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
+
+static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
 
 static IMessageQueue* messageQueue = nullptr;
 static ILibraryPtr library;
@@ -79,7 +84,44 @@ static void saveEnvironment() {
     }
 }
 
-static class Environment : public IEnvironment {
+static void broadcastEqualizerUpdated() {
+    if (::messageQueue) {
+        ::messageQueue->Broadcast(
+            Message::Create(nullptr, message::EqualizerUpdated));
+    }
+}
+
+static void getEqualizerPluginAndPrefs(
+    std::shared_ptr<IPlugin>& plugin,
+    std::shared_ptr<Preferences>& prefs)
+{
+    plugin = PluginFactory::Instance().QueryGuid(SUPEREQ_PLUGIN_GUID);
+
+    if (plugin) {
+        prefs = Preferences::ForPlugin(plugin->Name());
+    }
+}
+
+static class Debug: public IDebug {
+    public:
+        virtual void Verbose(const char* tag, const char* message) override {
+            musik::debug::verbose(tag, message);
+        }
+
+        virtual void Info(const char* tag, const char* message) override {
+            musik::debug::info(tag, message);
+        }
+
+        virtual void Warning(const char* tag, const char* message) override {
+            musik::debug::warning(tag, message);
+        }
+
+        virtual void Error(const char* tag, const char* message) override {
+            musik::debug::error(tag, message);
+        }
+} debugger;
+
+static class Environment: public IEnvironment {
     public:
         virtual size_t GetPath(PathType type, char* dst, int size) override {
             std::string path;
@@ -108,6 +150,10 @@ static class Environment : public IEnvironment {
 
         virtual IEncoder* GetEncoder(const char* type) override {
             return streams::GetEncoderForType(type);
+        }
+
+        virtual IDebug* GetDebug() override {
+            return &debugger;
         }
 
         virtual IPreferences* GetPreferences(const char* name) override {
@@ -223,6 +269,74 @@ static class Environment : public IEnvironment {
             }
         }
 
+        virtual bool GetEqualizerBandValues(double target[], size_t count) override {
+            if (count != EqualizerBandCount) {
+                return false;
+            }
+
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                for (size_t i = 0; i < EqualizerBandCount; i++) {
+                    target[i] = prefs->GetDouble(std::to_string(EqualizerBands[i]), 0.0);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        virtual bool SetEqualizerBandValues(double values[], size_t count) override {
+            if (count != EqualizerBandCount) {
+                return false;
+            }
+
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                for (size_t i = 0; i < EqualizerBandCount; i++) {
+                    prefs->SetDouble(std::to_string(EqualizerBands[i]), values[i]);
+                }
+                plugin->Reload();
+                broadcastEqualizerUpdated();
+                return true;
+            }
+
+            return false;
+        }
+
+        virtual bool GetEqualizerEnabled() override {
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                return prefs->GetBool("enabled", false);
+            }
+
+            return false;
+        }
+
+
+        virtual void SetEqualizerEnabled(bool enabled) override {
+            std::shared_ptr<IPlugin> plugin;
+            std::shared_ptr<Preferences> prefs;
+            getEqualizerPluginAndPrefs(plugin, prefs);
+
+            if (plugin && prefs) {
+                if (prefs->GetBool("enabled", false) != enabled) {
+                    prefs->SetBool("enabled", enabled);
+                    plugin->Reload();
+                    broadcastEqualizerUpdated();
+                }
+            }
+        }
+
         virtual void ReloadPlaybackOutput() override {
             if (playback) {
                 playback->ReloadOutput();
@@ -232,7 +346,16 @@ static class Environment : public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void InstallDependencies(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
+    void InitDebug() {
+        /* debug */
+        PluginFactory::Instance().QueryFunction<SetDebug>(
+            "SetDebug",
+            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
+                func(&debugger);
+            });
+    }
+
+    void InitPlayback(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
         /* preferences */
         Preferences::LoadPluginPreferences();
 
@@ -268,7 +391,7 @@ namespace musik { namespace core { namespace plugin {
             });
     }
 
-    void UninstallDependencies() {
+    void Deinit() {
         /* preferences */
         Preferences::SavePluginPreferences();
 
@@ -297,6 +420,13 @@ namespace musik { namespace core { namespace plugin {
         PluginFactory::Instance().QueryFunction<SetEnvironment>(
             "SetEnvironment",
             [](musik::core::sdk::IPlugin* plugin, SetEnvironment func) {
+                func(nullptr);
+            });
+
+        /* debug */
+        PluginFactory::Instance().QueryFunction<SetDebug>(
+            "SetDebug",
+            [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
                 func(nullptr);
             });
     }

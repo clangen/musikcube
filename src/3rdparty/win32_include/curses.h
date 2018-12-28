@@ -1772,6 +1772,7 @@ PDCEX int     PDC_set_function_key( const unsigned function,
 
 PDCEX int     PDC_set_preferred_fontface( const wchar_t* fontface);
 PDCEX void    PDC_set_default_menu_visibility(int visible);
+PDCEX int     PDC_resize_screen(int, int);
 
 PDCEX WINDOW *Xinitscr(int, char **);
 

@@ -32,13 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
-#include "Scrollbar.h"
+#include <stdafx.h>
+#include <algorithm>
+#include <cursespp/Scrollbar.h>
 
 using namespace cursespp;
 
 void Scrollbar::Draw(ListWindow* list, Window* target) {
-#ifndef __FreeBSD__
     int height = list->GetHeight();
     auto *adapter = &list->GetScrollAdapter();
     if (adapter && height > 2) {
@@ -68,7 +68,7 @@ void Scrollbar::Draw(ListWindow* list, Window* target) {
         float total = (float) std::max(minY, adapter->GetEntryCount());
 
         int yOffset;
-        if (range > total) {
+        if (range >= total) {
             yOffset = -1;
         }
         else {
@@ -83,5 +83,4 @@ void Scrollbar::Draw(ListWindow* list, Window* target) {
             if (i == yOffset) wattroff(frame, A_REVERSE);
         }
     }
-#endif
 }

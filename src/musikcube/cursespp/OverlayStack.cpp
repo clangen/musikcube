@@ -33,10 +33,10 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "OverlayStack.h"
-#include "DialogOverlay.h"
-#include "Colors.h"
-#include "Screen.h"
+#include <cursespp/OverlayStack.h>
+#include <cursespp/DialogOverlay.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
 
 using namespace cursespp;
 

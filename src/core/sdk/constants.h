@@ -35,6 +35,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 namespace musik {
     namespace core {
@@ -113,6 +114,13 @@ namespace musik {
             enum class TransportType : int {
                 Gapless = 0,
                 Crossfade = 1
+            };
+
+            static const size_t EqualizerBandCount = 18;
+
+            static const size_t EqualizerBands[] = {
+                65, 92, 131, 185, 262, 370, 523, 740, 1047, 1480,
+                2093, 2960, 4186, 5920, 8372, 11840, 16744, 22000
             };
 
             namespace category {

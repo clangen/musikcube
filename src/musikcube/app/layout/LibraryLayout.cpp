@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
@@ -247,13 +247,13 @@ void LibraryLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
         this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryTracks), _TSTR("shortcuts_tracks"));
         this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue), _TSTR("shortcuts_play_queue"));
         this->shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
-        this->shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+        this->shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
 
         this->shortcuts->SetChangedCallback([this](std::string key) {
             if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
-                this->BroadcastMessage(message::JumpToSettings);
+                this->Broadcast(message::JumpToSettings);
             }
-            else if (key == "^D") {
+            else if (key == App::Instance().GetQuitKey()) {
                 App::Instance().Quit();
             }
             else {
@@ -286,13 +286,7 @@ void LibraryLayout::UpdateShortcutsWindow() {
 }
 
 void LibraryLayout::OnAddedToParent(IWindow* parent) {
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-    std::enable_shared_from_this<LayoutBase>* receiver =
-        (std::enable_shared_from_this<LayoutBase>*) this;
-#else
-    auto receiver = this;
-#endif
-    MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
+    MessageQueue().RegisterForBroadcasts(this->shared_from_this());
 }
 
 void LibraryLayout::OnRemovedFromParent(IWindow* parent) {

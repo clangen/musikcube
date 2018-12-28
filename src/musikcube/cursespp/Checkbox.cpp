@@ -37,64 +37,51 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
-
-#include "Checkbox.h"
+#include <cursespp/Checkbox.h>
 
 using namespace cursespp;
 
-#define UNCHECKED std::string("[ ]")
-#define CHECKED std::string("[x]")
+static const std::string UNCHECKED = "[ ] ";
+static const std::string CHECKED = "[x] ";
+
+static std::string decorate(const std::string& str, bool checked) {
+    return (checked ? CHECKED : UNCHECKED) + str;
+}
 
 Checkbox::Checkbox()
-: Window()
+: TextLabel()
 , checked(false) {
-    this->SetFrameVisible(false);
-    this->SetFocusedContentColor(CURSESPP_TEXT_FOCUSED);
+}
+
+Checkbox::Checkbox(const std::string& value)
+: TextLabel(decorate(value, false))
+, originalText(value) {
+}
+
+Checkbox::Checkbox(const std::string& value, const text::TextAlign alignment)
+: TextLabel(decorate(value, false), alignment)
+, originalText(value) {
 }
 
 Checkbox::~Checkbox() {
 }
 
 void Checkbox::SetText(const std::string& value) {
-    if (value != this->buffer) {
-        this->buffer = value;
-        this->Redraw();
+    if (value != this->originalText) {
+        this->originalText = value;
+        TextLabel::SetText(decorate(value, this->checked));
     }
+}
+
+std::string Checkbox::GetText() {
+    return this->originalText;
 }
 
 void Checkbox::SetChecked(bool checked) {
     if (checked != this->checked) {
         this->checked = checked;
-        this->Redraw();
+        TextLabel::SetText(decorate(this->originalText, checked));
         this->CheckChanged(this, checked);
-    }
-}
-
-void Checkbox::OnRedraw() {
-    int cx = this->GetContentWidth();
-
-    if (cx > 0) {
-        WINDOW* c = this->GetContent();
-        werase(c);
-
-        int len = (int)u8cols(this->buffer);
-
-        std::string symbol = (this->checked ? CHECKED : UNCHECKED);
-        std::string ellipsized = text::Ellipsize(symbol + " " + this->buffer, cx);
-
-        int64_t attrs = this->IsFocused()
-            ? this->GetFocusedContentColor()
-            : this->GetContentColor();
-
-        if (attrs != -1) {
-            wattron(c, COLOR_PAIR(attrs));
-        }
-
-        checked_wprintw(c, ellipsized.c_str());
-
-        if (attrs != -1) {
-            wattroff(c, COLOR_PAIR(attrs));
-        }
     }
 }
 

@@ -50,6 +50,8 @@
     <string name="button_load">load</string>
     <string name="button_rename">rename</string>
     <string name="button_discard">discard</string>
+    <string name="button_revert">revert</string>
+    <string name="button_zero">zero</string>
     <string name="button_learn_more">learn more</string>
     <string name="button_view">view</string>
     <string name="invalid_password_dialog_title">invalid password</string>
@@ -131,6 +133,12 @@
     <string name="remote_settings_reindex_button">rescan</string>
     <string name="remote_settings_rebuild_button">rebuild</string>
     <string name="remote_settings_transport_type">playback transport</string>
+    <string name="remote_settings_equalizer">equalizer</string>
+    <string name="remote_settings_configure_eq_button">configure</string>
+    <string name="remote_settings_eq_title">equalizer</string>
+    <string name="remote_settings_eq_enabled">enable equalizer</string>
+    <string name="remote_settings_eq_label_format">%d hz</string>
+    <string name="remote_settings_eq_value_format">%d dB</string>
     <string name="transport_type_gapless">gapless</string>
     <string name="transport_type_crossfade">crossfade</string>
     <string name="replaygain_mode_disabled">disabled</string>

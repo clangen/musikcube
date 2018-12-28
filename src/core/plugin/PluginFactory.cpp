@@ -145,7 +145,7 @@ void PluginFactory::LoadPlugins() {
                     catch (...) {
                         std::cerr << "exception while loading plugin " << filename << std::endl;
 
-                        musik::debug::err(TAG, "exception while loading plugin " + filename);
+                        musik::debug::error(TAG, "exception while loading plugin " + filename);
                         continue;
                     }
 
@@ -154,7 +154,7 @@ void PluginFactory::LoadPlugins() {
 
                         std::cerr << "exception while loading plugin " << filename << " " << err << std::endl;
 
-                        musik::debug::err(
+                        musik::debug::error(
                             TAG,
                             "could not load shared library " + filename +
                             " error: " + std::string(err));

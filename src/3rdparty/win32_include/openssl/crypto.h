@@ -1,4 +1,4 @@
-/* $OpenBSD: crypto.h,v 1.40 2015/09/17 09:51:40 bcook Exp $ */
+/* $OpenBSD: crypto.h,v 1.45 2018/03/19 03:35:38 beck Exp $ */
 /* ====================================================================
  * Copyright (c) 1998-2006 The OpenSSL Project.  All rights reserved.
  *
@@ -330,6 +330,14 @@ int CRYPTO_is_mem_check_on(void);
 	CRYPTO_malloc_locked((int)num,__FILE__,__LINE__)
 #define OPENSSL_free_locked(addr) CRYPTO_free_locked(addr)
 
+const char *OpenSSL_version(int type);
+#define OPENSSL_VERSION		0
+#define OPENSSL_CFLAGS		1
+#define OPENSSL_BUILT_ON	2
+#define OPENSSL_PLATFORM	3
+#define OPENSSL_DIR		4
+#define OPENSSL_ENGINES_DIR	5
+unsigned long OpenSSL_version_num(void);
 
 const char *SSLeay_version(int type);
 unsigned long SSLeay(void);
@@ -499,9 +507,9 @@ uint64_t OPENSSL_cpu_caps(void);
 
 int OPENSSL_isservice(void);
 
+#ifndef LIBRESSL_INTERNAL
 void OPENSSL_init(void);
 
-#ifndef LIBRESSL_INTERNAL
 /* CRYPTO_memcmp returns zero iff the |len| bytes at |a| and |b| are equal. It
  * takes an amount of time dependent on |len|, but independent of the contents
  * of |a| and |b|. Unlike memcmp, it cannot be used to put elements into a
@@ -533,6 +541,40 @@ void ERR_load_CRYPTO_strings(void);
 /* Reason codes. */
 #define CRYPTO_R_FIPS_MODE_NOT_SUPPORTED		 101
 #define CRYPTO_R_NO_DYNLOCK_CREATE_CALLBACK		 100
+
+/*
+ * OpenSSL compatible OPENSSL_INIT options.
+ */
+
+#define OPENSSL_INIT_NO_LOAD_CONFIG		0x00000001L
+#define OPENSSL_INIT_LOAD_CONFIG		0x00000002L
+
+/* LibreSSL specific */
+#define _OPENSSL_INIT_FLAG_NOOP			0x80000000L
+
+/*
+ * These are provided for compatibiliy, but have no effect
+ * on how LibreSSL is initialized.
+ */
+#define OPENSSL_INIT_NO_LOAD_CRYPTO_STRINGS	_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_LOAD_CRYPTO_STRINGS	_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ADD_ALL_CIPHERS		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ADD_ALL_DIGESTS		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_NO_ADD_ALL_CIPHERS		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_NO_ADD_ALL_DIGESTS		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ASYNC			_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_RDRAND		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_DYNAMIC		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_OPENSSL		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_CRYPTODEV		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_CAPI		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_PADLOCK		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_AFALG		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_reserved_internal		_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ATFORK			_OPENSSL_INIT_FLAG_NOOP
+#define OPENSSL_INIT_ENGINE_ALL_BUILTIN		_OPENSSL_INIT_FLAG_NOOP
+
+int OPENSSL_init_crypto(uint64_t opts, const void *settings);
 
 #ifdef  __cplusplus
 }

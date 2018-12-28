@@ -33,12 +33,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "Text.h"
-#include "MultiLineEntry.h"
+#include <algorithm>
+#include <cursespp/Text.h>
+#include <cursespp/MultiLineEntry.h>
 
 using namespace cursespp;
 
-MultiLineEntry::MultiLineEntry(const std::string& value, int64_t attrs) {
+MultiLineEntry::MultiLineEntry(const std::string& value, Color attrs) {
     this->value = value;
     this->charCount = value.size();
     this->width = -1;
@@ -53,7 +54,7 @@ std::string MultiLineEntry::GetLine(size_t n) {
     return this->lines.at(n);
 }
 
-int64_t MultiLineEntry::GetAttrs(size_t line) {
+Color MultiLineEntry::GetAttrs(size_t line) {
     return this->attrs;
 }
 

@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
@@ -73,7 +73,7 @@ using namespace cursespp;
 using namespace std::placeholders;
 
 #ifndef WIN32
-#define ENABLE_256_COLOR_OPTION
+#define ENABLE_UNIX_TERMINAL_OPTIONS
 #endif
 
 #ifdef WIN32
@@ -128,15 +128,6 @@ static void setTransportType(TransportType type) {
     playback->SetInt(core::prefs::keys::Transport, (int) type);
 }
 
-static std::string resolveThemeName(const std::string& themePath) {
-    const boost::filesystem::path p(themePath);
-    if (p.has_extension() && p.extension().string() == ".json") {
-        std::string fn = p.filename().string();
-        return fn.substr(0, fn.rfind("."));
-    }
-    return _TSTR("settings_default_theme_name");
-}
-
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
     musik::core::ILibraryPtr library,
@@ -177,13 +168,18 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode) == (int)TimeChangeSeek);
         this->playback.SetTimeChangeMode(mode);
     }
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     else if (cb == paletteCheckbox.get()) {
         ColorThemeOverlay::Show256ColorsInfo(
             checked,
             [this]() {
             this->LoadPreferences();
         });
+    }
+    else if (cb == enableTransparencyCheckbox.get()) {
+        auto bgType = checked ? Colors::Inherit : Colors::Theme;
+        prefs->SetBool(cube::prefs::keys::InheritBackgroundColor, checked);
+        app.SetColorBackgroundType(bgType);
     }
 #endif
 #ifdef ENABLE_MINIMIZE_TO_TRAY
@@ -264,7 +260,7 @@ void SettingsLayout::OnPluginsDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
-    this->BroadcastMessage(message::JumpToHotkeys);
+    this->Broadcast(message::JumpToHotkeys);
 }
 
 void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
@@ -324,8 +320,9 @@ void SettingsLayout::OnLayout() {
     }
 
     y = BOTTOM(this->browseList);
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->enableTransparencyCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 #endif
     this->dotfileCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
@@ -357,7 +354,7 @@ void SettingsLayout::RefreshAddedPaths() {
     this->addedPathsList->OnAdapterChanged();
 }
 
-int64_t SettingsLayout::ListItemDecorator(
+Color SettingsLayout::ListItemDecorator(
     ScrollableWindow* scrollable,
     size_t index,
     size_t line,
@@ -368,10 +365,10 @@ int64_t SettingsLayout::ListItemDecorator(
     {
          ListWindow* lw = static_cast<ListWindow*>(scrollable);
          if (lw->GetSelectedIndex() == index) {
-             return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
+             return Color::ListItemHighlighted;
          }
     }
-    return -1;
+    return Color::Default;
 }
 
 void SettingsLayout::InitializeWindows() {
@@ -441,8 +438,9 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
     CREATE_CHECKBOX(this->seekScrubCheckbox, _TSTR("settings_seek_not_scrub"));
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
+    CREATE_CHECKBOX(this->enableTransparencyCheckbox, _TSTR("settings_enable_transparency"));
 #endif
 #ifdef ENABLE_MINIMIZE_TO_TRAY
     CREATE_CHECKBOX(this->minimizeToTrayCheckbox, _TSTR("settings_minimize_to_tray"));
@@ -468,8 +466,9 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->SetFocusOrder(order++);
     }
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->SetFocusOrder(order++);
+    this->enableTransparencyCheckbox->SetFocusOrder(order++);
 #endif
     this->dotfileCheckbox->SetFocusOrder(order++);
     this->syncOnStartupCheckbox->SetFocusOrder(order++);
@@ -497,8 +496,9 @@ void SettingsLayout::InitializeWindows() {
         this->AddWindow(this->serverDropdown);
     }
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->AddWindow(this->paletteCheckbox);
+    this->AddWindow(this->enableTransparencyCheckbox);
 #endif
     this->AddWindow(this->hotkeyDropdown);
     this->AddWindow(this->pluginsDropdown);
@@ -521,16 +521,16 @@ void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateConsole), _TSTR("shortcuts_console"));
-        shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+        shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
 
         shortcuts->SetChangedCallback([this](std::string key) {
             if (Hotkeys::Is(Hotkeys::NavigateConsole, key)) {
-                this->BroadcastMessage(message::JumpToConsole);
+                this->Broadcast(message::JumpToConsole);
             }
             if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
-                this->BroadcastMessage(message::JumpToLibrary);
+                this->Broadcast(message::JumpToLibrary);
             }
-            else if (key == "^D") {
+            else if (key == App::Instance().GetQuitKey()) {
                 app.Quit();
             }
             this->KeyPress(key);
@@ -552,14 +552,7 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 }
 
 void SettingsLayout::OnAddedToParent(IWindow* parent) {
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-    std::enable_shared_from_this<LayoutBase>* receiver =
-        (std::enable_shared_from_this<LayoutBase>*) this;
-#else
-    auto receiver = this;
-#endif
-    MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
-    MessageQueue().RegisterForBroadcasts(receiver->shared_from_this());
+    MessageQueue().RegisterForBroadcasts(this->shared_from_this());
 }
 
 void SettingsLayout::OnRemovedFromParent(IWindow* parent) {
@@ -623,14 +616,15 @@ void SettingsLayout::LoadPreferences() {
         colorTheme = _TSTR("settings_8color_theme_name");
     }
 
-    this->themeDropdown->SetText(
-        arrow + _TSTR("settings_color_theme") +
-        resolveThemeName(colorTheme));
+    this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + colorTheme);
 
-#ifdef ENABLE_256_COLOR_OPTION
+#ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->CheckChanged.disconnect(this);
     this->paletteCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::UsePaletteColors, true));
     this->paletteCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
+
+    this->enableTransparencyCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::InheritBackgroundColor, false));
+    this->enableTransparencyCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 #endif
 
 #ifdef ENABLE_MINIMIZE_TO_TRAY

@@ -1,4 +1,4 @@
-/* $OpenBSD: ocsp.h,v 1.11 2016/12/30 16:19:04 jsing Exp $ */
+/* $OpenBSD: ocsp.h,v 1.12 2018/03/17 14:44:34 jsing Exp $ */
 /* Written by Tom Titchener <Tom_Titchener@groove.net> for the OpenSSL
  * project. */
 
@@ -511,6 +511,7 @@ int	OCSP_SINGLERESP_add1_ext_i2d(OCSP_SINGLERESP *x, int nid, void *value,
 	    int crit, unsigned long flags);
 int	OCSP_SINGLERESP_add_ext(OCSP_SINGLERESP *x, X509_EXTENSION *ex,
 	    int loc);
+const OCSP_CERTID *OCSP_SINGLERESP_get0_id(const OCSP_SINGLERESP *x);
 
 OCSP_SINGLERESP *OCSP_SINGLERESP_new(void);
 void OCSP_SINGLERESP_free(OCSP_SINGLERESP *a);

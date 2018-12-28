@@ -1,38 +1,16 @@
 package io.casey.musikcube.remote.ui.settings.viewmodel
 
-import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.service.websocket.model.*
 import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.BiFunction
 import io.reactivex.functions.Function3
 import io.reactivex.rxkotlin.subscribeBy
 
-class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
+class RemoteSettingsViewModel: BaseRemoteViewModel() {
     private var gain: IGainSettings? = null
     private var outputs: IOutputs? = null
-    private var provider: IDataProvider? = null
-    private var disposables = CompositeDisposable()
-
-    enum class State { Disconnected, Saving, Saved, Loading, Ready }
-
-    fun attach(provider: IDataProvider) {
-        this.provider = provider
-        this.provider?.let {
-            this.disposables.add(it.observeState().subscribeBy(
-                onNext = {
-                    if (it.first == IDataProvider.State.Connected) {
-                        load()
-                    }
-                },
-                onError = {
-                    state = State.Disconnected
-                }
-            ))
-        }
-    }
 
     var transportType: TransportType = TransportType.Gapless
         private set(value) {
@@ -104,14 +82,6 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
             return listOf()
         }
 
-    var state: State = State.Disconnected
-        set(value) {
-            if (state != value) {
-                field = value
-                publish(state)
-            }
-        }
-
     fun devicesAt(index: Int): List<IDevice> {
         outputs?.let {
             if (index >= 0 && it.outputs.size > index) {
@@ -176,14 +146,7 @@ class RemoteSettingsViewModel: ViewModel<RemoteSettingsViewModel.State>() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        this.provider = null
-        this.disposables.dispose()
-        this.disposables = CompositeDisposable()
-    }
-
-    private fun load() {
+    override fun onConnected() {
         if (outputs != null && gain != null) {
             state = State.Ready
             return

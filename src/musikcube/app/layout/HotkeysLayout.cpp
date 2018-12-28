@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "HotkeysLayout.h"
 #include <core/support/Common.h>
 #include <cursespp/App.h>
@@ -175,11 +175,11 @@ static void showDeleteOverlay(Hotkeys::Id id, Callback cb) {
 HotkeysLayout::HotkeysLayout() {
     auto adapter = std::make_shared<HotkeysAdapter>();
 
-    adapter->SetItemDecorator([this](ScrollableWindow*, size_t index, size_t, Entry) -> int64_t {
+    adapter->SetItemDecorator([this](ScrollableWindow*, size_t index, size_t, Entry) -> Color {
         if (this->listWindow->GetSelectedIndex() == index) {
-            return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
+            return Color::ListItemHighlighted;
         }
-        return -1LL;
+        return Color::Default;
     });
 
     this->listWindow = std::make_shared<ListWindow>();
@@ -228,7 +228,7 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
             Hotkeys::Get(Hotkeys::NavigateSettings),
             _TSTR("shortcuts_settings"));
 
-        shortcuts->AddShortcut("^D", _TSTR("shortcuts_quit"));
+        shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
 
         shortcuts->SetChangedCallback([this](std::string key) {
             this->KeyPress(key);
@@ -258,11 +258,11 @@ bool HotkeysLayout::KeyPress(const std::string& kn) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateSettings, kn)) {
-        this->BroadcastMessage(message::JumpToSettings);
+        this->Broadcast(message::JumpToSettings);
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibrary, kn)) {
-        this->BroadcastMessage(message::JumpToLibrary);
+        this->Broadcast(message::JumpToLibrary);
         return true;
     }
 

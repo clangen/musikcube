@@ -80,4 +80,5 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         size_t rate, channels;
         int streamId;
         double duration;
+        bool exhausted{false};
 };

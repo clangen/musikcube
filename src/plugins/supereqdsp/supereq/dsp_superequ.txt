@@ -1,0 +1,30 @@
+
+Shibatch Super Equalizer ver 0.03 for winamp
+written by Naoki Shibata  shibatch@users.sourceforge.net
+
+Shibatch Super Equalizer is a graphic and parametric equalizer plugin
+for winamp. This plugin uses 16383th order FIR filter with FFT algorithm.
+It's equalization is very precise. Equalization setting can be done
+for each channel separately.
+
+Processes of internal equalizer in winamp are actually done by each
+input plugin, so the results may differ for each input plugin.
+With this plugin, this problem can be avoided.
+
+This plugin is optimized for processors which have cache equal to or
+greater than 128k bytes(16383*2*sizeof(float) = 128k). This plugin
+won't work efficiently with K6 series processors(buy Athlon!!!).
+
+Do not forget pressing "preview" button after changing setting.
+
+http://shibatch.sourceforge.net/
+
+***
+
+  This program(except FFT part) is distributed under LGPL. See LGPL.txt for
+details.
+
+  FFT part is a routine made by Mr.Ooura. This routine is a freeware. Contact
+Mr.Ooura for details of distributing licenses.
+
+http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html

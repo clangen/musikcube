@@ -47,7 +47,7 @@ android {
 }
 
 repositories {
-    flatDir { dirs 'libs' }
+    flatDir { dirs '../../3rdparty/bin/android/aar/' }
     maven { url "https://jitpack.io" }
     maven { url 'https://maven.google.com' }
     mavenCentral()
@@ -66,8 +66,9 @@ dependencies {
     })
 
     implementation(name:'android-taskrunner-0.5', ext:'aar')
-
+    implementation(name:'exoplayer-extension-flac-release-v2', ext:'aar')
     implementation(name:'videocache-2.8.0-clangen-5', ext:'aar')
+
     implementation 'org.slf4j:slf4j-android:1.7.21'
 
     implementation "android.arch.persistence.room:runtime:1.1.1"

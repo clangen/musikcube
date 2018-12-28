@@ -60,7 +60,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_66_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../;./cursespp;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_68_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;CURL_STATICLIB;_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -74,14 +74,14 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>../../../boost_1_66_0/lib32-msvc-14.1;../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../boost_1_68_0/lib32-msvc-14.1;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;crypto-41.lib;ssl-43.lib;tls-15.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;crypto-43.lib;ssl-45.lib;tls-17.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -91,7 +91,7 @@ if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\debug\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
@@ -99,7 +99,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>./;../;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_66_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;../;./cursespp;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_68_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;CURL_STATICLIB;NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -116,7 +116,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
       <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>../../../boost_1_66_0/lib32-msvc-14.1;../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../boost_1_68_0/lib32-msvc-14.1;../3rdparty/bin/win32/lib;../3rdparty/bin/win32/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -127,7 +127,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;crypto-41.lib;ssl-43.lib;tls-15.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;crypto-43.lib;ssl-45.lib;tls-17.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -137,7 +137,7 @@ if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libressl\release\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
@@ -158,6 +158,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\model\HotkeysAdapter.cpp" />
     <ClCompile Include="app\overlay\BrowseOverlays.cpp" />
     <ClCompile Include="app\overlay\ColorThemeOverlay.cpp" />
+    <ClCompile Include="app\overlay\EqualizerOverlay.cpp" />
     <ClCompile Include="app\overlay\LastFmOverlay.cpp" />
     <ClCompile Include="app\overlay\LocaleOverlay.cpp" />
     <ClCompile Include="app\overlay\PlaybackOverlays.cpp" />
@@ -167,16 +168,17 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="app\overlay\ReassignHotkeyOverlay.cpp" />
     <ClCompile Include="app\overlay\ServerOverlay.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
+    <ClCompile Include="app\util\ConsoleLogger.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
     <ClCompile Include="app\util\UpdateCheck.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
-    <ClCompile Include="app\window\LogWindow.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
     <ClCompile Include="app\window\TransportWindow.cpp" />
     <ClCompile Include="cursespp\App.cpp" />
+    <ClCompile Include="cursespp\AppLayout.cpp" />
     <ClCompile Include="cursespp\Checkbox.cpp" />
     <ClCompile Include="cursespp\Colors.cpp" />
     <ClCompile Include="cursespp\DialogOverlay.cpp" />
@@ -222,6 +224,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\model\HotkeysAdapter.h" />
     <ClInclude Include="app\overlay\BrowseOverlays.h" />
     <ClInclude Include="app\overlay\ColorThemeOverlay.h" />
+    <ClInclude Include="app\overlay\EqualizerOverlay.h" />
     <ClInclude Include="app\overlay\LastFmOverlay.h" />
     <ClInclude Include="app\overlay\LocaleOverlay.h" />
     <ClInclude Include="app\overlay\PlaybackOverlays.h" />
@@ -231,6 +234,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\overlay\ReassignHotkeyOverlay.h" />
     <ClInclude Include="app\overlay\ServerOverlay.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
+    <ClInclude Include="app\util\ConsoleLogger.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
     <ClInclude Include="app\util\Hotkeys.h" />
     <ClInclude Include="app\util\Messages.h" />
@@ -238,47 +242,47 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClInclude Include="app\util\PreferenceKeys.h" />
     <ClInclude Include="app\util\UpdateCheck.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
-    <ClInclude Include="app\window\LogWindow.h" />
     <ClInclude Include="app\window\TrackListView.h" />
     <ClInclude Include="app\window\TransportWindow.h" />
-    <ClInclude Include="cursespp\App.h" />
-    <ClInclude Include="cursespp\Checkbox.h" />
-    <ClInclude Include="cursespp\Colors.h" />
-    <ClInclude Include="cursespp\curses_config.h" />
-    <ClInclude Include="cursespp\DialogOverlay.h" />
-    <ClInclude Include="cursespp\IDisplayable.h" />
-    <ClInclude Include="cursespp\IInput.h" />
-    <ClInclude Include="cursespp\IKeyHandler.h" />
-    <ClInclude Include="cursespp\ILayout.h" />
-    <ClInclude Include="cursespp\IMouseHandler.h" />
-    <ClInclude Include="cursespp\INavigationKeys.h" />
-    <ClInclude Include="cursespp\InputOverlay.h" />
-    <ClInclude Include="cursespp\IOrderable.h" />
-    <ClInclude Include="cursespp\IOverlay.h" />
-    <ClInclude Include="cursespp\IScrollable.h" />
-    <ClInclude Include="cursespp\IScrollAdapter.h" />
-    <ClInclude Include="cursespp\IViewRoot.h" />
-    <ClInclude Include="cursespp\IWindow.h" />
-    <ClInclude Include="cursespp\IWindowGroup.h" />
-    <ClInclude Include="cursespp\LayoutBase.h" />
-    <ClInclude Include="cursespp\ListOverlay.h" />
-    <ClInclude Include="cursespp\ListWindow.h" />
-    <ClInclude Include="cursespp\MultiLineEntry.h" />
-    <ClInclude Include="cursespp\OverlayBase.h" />
-    <ClInclude Include="cursespp\OverlayStack.h" />
-    <ClInclude Include="cursespp\Screen.h" />
-    <ClInclude Include="cursespp\ScrollableWindow.h" />
-    <ClInclude Include="cursespp\ScrollAdapterBase.h" />
-    <ClInclude Include="cursespp\Scrollbar.h" />
-    <ClInclude Include="cursespp\ShortcutsWindow.h" />
-    <ClInclude Include="cursespp\SimpleScrollAdapter.h" />
-    <ClInclude Include="cursespp\SingleLineEntry.h" />
-    <ClInclude Include="cursespp\Text.h" />
-    <ClInclude Include="cursespp\TextInput.h" />
-    <ClInclude Include="cursespp\TextLabel.h" />
-    <ClInclude Include="cursespp\ToastOverlay.h" />
-    <ClInclude Include="cursespp\Win32Util.h" />
-    <ClInclude Include="cursespp\Window.h" />
+    <ClInclude Include="cursespp\cursespp\App.h" />
+    <ClInclude Include="cursespp\cursespp\AppLayout.h" />
+    <ClInclude Include="cursespp\cursespp\Checkbox.h" />
+    <ClInclude Include="cursespp\cursespp\Colors.h" />
+    <ClInclude Include="cursespp\cursespp\curses_config.h" />
+    <ClInclude Include="cursespp\cursespp\DialogOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\IDisplayable.h" />
+    <ClInclude Include="cursespp\cursespp\IInput.h" />
+    <ClInclude Include="cursespp\cursespp\IKeyHandler.h" />
+    <ClInclude Include="cursespp\cursespp\ILayout.h" />
+    <ClInclude Include="cursespp\cursespp\IMouseHandler.h" />
+    <ClInclude Include="cursespp\cursespp\INavigationKeys.h" />
+    <ClInclude Include="cursespp\cursespp\InputOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\IOrderable.h" />
+    <ClInclude Include="cursespp\cursespp\IOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\IScrollable.h" />
+    <ClInclude Include="cursespp\cursespp\IScrollAdapter.h" />
+    <ClInclude Include="cursespp\cursespp\ITopLevelLayout.h" />
+    <ClInclude Include="cursespp\cursespp\IWindow.h" />
+    <ClInclude Include="cursespp\cursespp\IWindowGroup.h" />
+    <ClInclude Include="cursespp\cursespp\LayoutBase.h" />
+    <ClInclude Include="cursespp\cursespp\ListOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\ListWindow.h" />
+    <ClInclude Include="cursespp\cursespp\MultiLineEntry.h" />
+    <ClInclude Include="cursespp\cursespp\OverlayBase.h" />
+    <ClInclude Include="cursespp\cursespp\OverlayStack.h" />
+    <ClInclude Include="cursespp\cursespp\Screen.h" />
+    <ClInclude Include="cursespp\cursespp\ScrollableWindow.h" />
+    <ClInclude Include="cursespp\cursespp\ScrollAdapterBase.h" />
+    <ClInclude Include="cursespp\cursespp\Scrollbar.h" />
+    <ClInclude Include="cursespp\cursespp\ShortcutsWindow.h" />
+    <ClInclude Include="cursespp\cursespp\SimpleScrollAdapter.h" />
+    <ClInclude Include="cursespp\cursespp\SingleLineEntry.h" />
+    <ClInclude Include="cursespp\cursespp\Text.h" />
+    <ClInclude Include="cursespp\cursespp\TextInput.h" />
+    <ClInclude Include="cursespp\cursespp\TextLabel.h" />
+    <ClInclude Include="cursespp\cursespp\ToastOverlay.h" />
+    <ClInclude Include="cursespp\cursespp\Win32Util.h" />
+    <ClInclude Include="cursespp\cursespp\Window.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="version.h" />

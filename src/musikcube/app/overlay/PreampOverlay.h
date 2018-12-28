@@ -48,11 +48,10 @@
 
 namespace musik {
     namespace cube {
-        class PreampOverlay : public cursespp::OverlayBase, public sigslot::has_slots<>
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            , public std::enable_shared_from_this<PreampOverlay>
-#endif
-        {
+        class PreampOverlay:
+            public cursespp::OverlayBase,
+            public sigslot::has_slots<>
+    {
         public:
             using Callback = std::function<void()>;
 

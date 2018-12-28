@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include "ServerOverlay.h"
 
@@ -64,28 +64,6 @@ static const char* KEY_PASSWORD = "password";
 #define VERTICAL_PADDING 2
 #define DEFAULT_HEIGHT 18
 #define DEFAULT_WIDTH 45
-
-static void applyLabelOverlayStyle(TextLabel& label) {
-    label.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-}
-
-static void applyCheckboxOverlayStyle(Checkbox& cb) {
-    cb.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    cb.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
-}
-
-static void applyInputOverlayStyle(TextInput& input) {
-    if (input.GetStyle() == TextInput::StyleBox) {
-        input.SetFrameColor(CURSESPP_OVERLAY_FRAME);
-        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-        input.SetFocusedFrameColor(CURSESPP_OVERLAY_INPUT_FRAME);
-        input.SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
-    }
-    else {
-        input.SetContentColor(CURSESPP_OVERLAY_CONTENT);
-        input.SetFocusedContentColor(CURSESPP_OVERLAY_TEXT_FOCUSED);
-    }
-}
 
 #define RIGHT(x) (x->GetX() + x->GetWidth())
 #define TEXT_WIDTH(x) ((int) u8cols(x->GetText()))
@@ -131,11 +109,6 @@ ServerOverlay::ServerOverlay(Callback callback, Plugin plugin)
     this->plugin = plugin;
     this->prefs = Preferences::ForPlugin(plugin->Name());
     this->width = this->height = 0;
-
-    this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
-
     this->InitViews();
     this->Load();
 }
@@ -190,19 +163,19 @@ void ServerOverlay::InitViews() {
     this->pwInput.reset(new TextInput(TextInput::StyleLine, IInput::InputPassword));
 
     /* style 'em */
-    applyLabelOverlayStyle(*this->titleLabel);
-    applyCheckboxOverlayStyle(*this->enableWssCb);
-    applyLabelOverlayStyle(*this->wssPortLabel);
-    applyInputOverlayStyle(*this->wssPortInput);
-    applyCheckboxOverlayStyle(*this->enableHttpCb);
-    applyLabelOverlayStyle(*this->httpPortLabel);
-    applyInputOverlayStyle(*this->httpPortInput);
-    applyCheckboxOverlayStyle(*this->ipv6Cb);
-    applyCheckboxOverlayStyle(*this->enableSyncTransCb);
-    applyLabelOverlayStyle(*this->transCacheLabel);
-    applyInputOverlayStyle(*this->transCacheInput);
-    applyLabelOverlayStyle(*this->pwLabel);
-    applyInputOverlayStyle(*this->pwInput);
+    style(*this->titleLabel);
+    style(*this->enableWssCb);
+    style(*this->wssPortLabel);
+    style(*this->wssPortInput);
+    style(*this->enableHttpCb);
+    style(*this->httpPortLabel);
+    style(*this->httpPortInput);
+    style(*this->ipv6Cb);
+    style(*this->enableSyncTransCb);
+    style(*this->transCacheLabel);
+    style(*this->transCacheInput);
+    style(*this->pwLabel);
+    style(*this->pwInput);
 
     /* add 'em */
     this->AddWindow(this->titleLabel);
@@ -278,16 +251,7 @@ void ServerOverlay::Show(Callback callback) {
 }
 
 std::shared_ptr<IPlugin> ServerOverlay::FindServerPlugin() {
-    std::shared_ptr<IPlugin> result;
-    using Deleter = PluginFactory::ReleaseDeleter<IPlugin>;
-    PluginFactory::Instance().QueryInterface<IPlugin, Deleter>(
-        "GetPlugin",
-        [&result](IPlugin* unused, std::shared_ptr<IPlugin> plugin, const std::string& fn) {
-            if (std::string(plugin->Guid()) == WEBSOCKET_PLUGIN_GUID) {
-                result = plugin;
-            }
-        });
-    return result;
+    return PluginFactory::Instance().QueryGuid(WEBSOCKET_PLUGIN_GUID);
 }
 
 void ServerOverlay::Load() {

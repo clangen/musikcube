@@ -229,11 +229,11 @@ static LONG scale_font_for_current_dpi( LONG size)
 int PDC_font_size = -1;
 TCHAR PDC_font_name[128];
 TCHAR PDC_preferred_fontface[128]; /* can be set by application */
-static TCHAR* PDC_default_font_name = _T("Courier New");
+static TCHAR* PDC_default_font_name = _T("Consolas");
 
 /* The calling application can override the default fontface with
 their preferred one. If that font fails to load, we will fallback
-to the global default (currently "Courier New") */
+to the global default (currently "Consolas") */
 int PDC_set_preferred_fontface( const TCHAR* fontface)
 {
     int len = fontface == 0 ? 0 : wcslen( fontface);
@@ -288,7 +288,7 @@ static LOGFONT PDC_get_logical_font( const int font_idx)
     lf.lfHeight = -PDC_font_size;
 #ifdef PDC_WIDE
     if( !*PDC_font_name)
-        wcscpy( PDC_font_name, _T("Courier New"));
+        wcscpy( PDC_font_name, _T("Consolas"));
     if( font_idx & 4)
         wcscpy( lf.lfFaceName, _T("Unifont"));
     else
@@ -296,7 +296,7 @@ static LOGFONT PDC_get_logical_font( const int font_idx)
 /*  wprintf( L"New font: %s\n", PDC_font_name); */
 #else
     if( !*PDC_font_name)
-        strcpy( PDC_font_name, "Courier New");
+        strcpy( PDC_font_name, "Consolas");
     if( font_idx & 4)
         strcpy( lf.lfFaceName, "Unifont");
     else

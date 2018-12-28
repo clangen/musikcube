@@ -1,4 +1,4 @@
-/* $OpenBSD: ecdsa.h,v 1.4 2015/02/08 13:35:06 jsing Exp $ */
+/* $OpenBSD: ecdsa.h,v 1.5 2018/03/17 15:24:44 tb Exp $ */
 /**
  * \file   crypto/ecdsa/ecdsa.h Include file for the OpenSSL ECDSA functions
  * \author Written by Nils Larsch for the OpenSSL project
@@ -132,6 +132,20 @@ int i2d_ECDSA_SIG(const ECDSA_SIG *sig, unsigned char **pp);
  *  \return pointer to the decoded ECDSA_SIG structure (or NULL)
  */
 ECDSA_SIG *d2i_ECDSA_SIG(ECDSA_SIG **sig, const unsigned char **pp, long len);
+
+/** Accessor for r and s fields of ECDSA_SIG
+ *  \param  sig  pointer to ECDSA_SIG pointer
+ *  \param  pr   pointer to BIGNUM pointer for r (may be NULL)
+ *  \param  ps   pointer to BIGNUM pointer for s (may be NULL)
+ */
+void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps);
+
+/** Setter for r and s fields of ECDSA_SIG
+ *  \param  sig  pointer to ECDSA_SIG pointer
+ *  \param  r    pointer to BIGNUM for r (may be NULL)
+ *  \param  s    pointer to BIGNUM for s (may be NULL)
+ */
+int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
 
 /** Computes the ECDSA signature of the given hash value using
  *  the supplied private key and returns the created signature.

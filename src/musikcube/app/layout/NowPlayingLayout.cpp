@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
@@ -89,13 +89,10 @@ NowPlayingLayout::NowPlayingLayout(
 NowPlayingLayout::~NowPlayingLayout() {
 }
 
-int64_t NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
+Color NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
     bool selected = index == trackListView->GetSelectedIndex();
 
-    int64_t attrs = selected
-        ? COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM)
-        : CURSESPP_DEFAULT_COLOR;
-
+    Color attrs = selected ? Color::ListItemHighlighted : Color::Default;
     size_t playingIndex = playback.GetIndex();
 
     if (index == playingIndex) {
@@ -106,10 +103,10 @@ int64_t NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index
             playing->LibraryId() == track->LibraryId())
         {
             if (selected) {
-                attrs = COLOR_PAIR(CURSESPP_HIGHLIGHTED_SELECTED_LIST_ITEM);
+                attrs = Color::ListItemHighlightedSelected;
             }
             else {
-                attrs = COLOR_PAIR(CURSESPP_SELECTED_LIST_ITEM);
+                attrs = Color::ListItemSelected;
             }
         }
     }

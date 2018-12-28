@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
@@ -151,7 +151,7 @@ void BrowseLayout::InitializeWindows() {
 
     this->modifiedLabel.reset(new TextLabel());
     this->modifiedLabel->SetText(getModifiedText(), text::AlignCenter);
-    this->modifiedLabel->SetContentColor(CURSESPP_BANNER);
+    this->modifiedLabel->SetContentColor(Color::Banner);
     this->modifiedLabel->Hide();
 
     this->AddWindow(this->categoryList);
@@ -228,7 +228,7 @@ void BrowseLayout::OnVisibilityChanged(bool visible) {
 }
 
 void BrowseLayout::OnIndexerProgress(int count) {
-    this->PostMessage(message::IndexerProgress);
+    this->Post(message::IndexerProgress);
 }
 
 void BrowseLayout::RequeryTrackList(ListWindow *view) {

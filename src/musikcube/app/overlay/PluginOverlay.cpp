@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include "PluginOverlay.h"
 
@@ -163,9 +163,9 @@ class StringListAdapter : public ScrollAdapterBase {
             auto entry = std::make_shared<SingleLineEntry>(
                 text::Ellipsize(items[index], window->GetWidth()));
 
-            entry->SetAttrs(CURSESPP_DEFAULT_COLOR);
+            entry->SetAttrs(Color::Default);
             if (index == window->GetScrollPosition().logicalIndex) {
-                entry->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+                entry->SetAttrs(Color::ListItemHighlighted);
             }
 
             return entry;
@@ -201,9 +201,9 @@ class SchemaAdapter: public ScrollAdapterBase {
 
             SinglePtr result = SinglePtr(new SingleLineEntry(text::Ellipsize(display, width)));
 
-            result->SetAttrs(CURSESPP_DEFAULT_COLOR);
+            result->SetAttrs(Color::Default);
             if (index == window->GetScrollPosition().logicalIndex) {
-                result->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+                result->SetAttrs(Color::ListItemHighlighted);
             }
 
             return result;
@@ -481,10 +481,9 @@ class PluginListAdapter : public ScrollAdapterBase {
 
             SinglePtr result = SinglePtr(new SingleLineEntry(text::Ellipsize(display, this->GetWidth())));
 
-            result->SetAttrs(CURSESPP_DEFAULT_COLOR);
-
+            result->SetAttrs(Color::Default);
             if (index == window->GetScrollPosition().logicalIndex) {
-                result->SetAttrs(COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM));
+                result->SetAttrs(Color::ListItemHighlighted);
             }
 
             return result;

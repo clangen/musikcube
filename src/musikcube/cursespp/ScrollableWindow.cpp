@@ -35,11 +35,9 @@
 #include <stdafx.h>
 #include <algorithm>
 
-#include "ScrollableWindow.h"
-#include "Screen.h"
-#include "Colors.h"
-
-#include <core/debug.h>
+#include <cursespp/ScrollableWindow.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
 
 using namespace cursespp;
 

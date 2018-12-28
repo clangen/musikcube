@@ -32,10 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include "stdafx.h"
-#include "Win32Util.h"
+#include <stdafx.h>
+#include <cursespp/Win32Util.h>
 #include <Windows.h>
 #include <Commctrl.h>
 #include <shellapi.h>

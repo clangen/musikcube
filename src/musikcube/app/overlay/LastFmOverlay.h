@@ -39,11 +39,7 @@
 namespace musik { namespace cube {
     /* in general we probably shouldn't subclass DialogOverlay because
     callers can mutate the title and body... but... meh. this is easy. */
-    class LastFmOverlay : public cursespp::DialogOverlay
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-        , public std::enable_shared_from_this<DialogOverlay>
-#endif
-    {
+    class LastFmOverlay : public cursespp::DialogOverlay {
         public:
             enum class State {
                 Unregistered = 0,

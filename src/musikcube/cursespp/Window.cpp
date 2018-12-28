@@ -33,13 +33,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "Window.h"
-#include "IWindowGroup.h"
-#include "IInput.h"
-#include "ILayout.h"
-#include "Colors.h"
-#include "Screen.h"
-#include "Text.h"
+#include <cursespp/Window.h>
+#include <cursespp/IWindowGroup.h>
+#include <cursespp/IInput.h>
+#include <cursespp/ILayout.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 
 #include <core/runtime/Message.h>
 #include <core/runtime/MessageQueue.h>
@@ -73,6 +73,16 @@ static inline void DrawCursor(IInput* input) {
     }
 }
 
+static inline void DrawTooSmall() {
+    static const std::string error = "terminal too small";
+    int64_t color = Color(Color::TextError);
+    wclear(stdscr);
+    wmove(stdscr, 0, 0);
+    wattron(stdscr, color);
+    waddstr(stdscr, error.c_str());
+    wattroff(stdscr, color);
+}
+
 bool Window::WriteToScreen(IInput* input) {
     if (drawPending && !freeze) {
         drawPending = false;
@@ -81,12 +91,16 @@ bool Window::WriteToScreen(IInput* input) {
         DrawCursor(input);
         return true;
     }
+    else if (freeze) {
+        drawPending = false;
+        DrawTooSmall();
+    }
 
     return false;
 }
 
 void Window::InvalidateScreen() {
-    wclear(stdscr);
+    werase(stdscr);
     drawPending = true;
 }
 
@@ -118,10 +132,10 @@ Window::Window(IWindow *parent) {
     this->y = 0;
     this->lastAbsoluteX = 0;
     this->lastAbsoluteY = 0;
-    this->contentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
-    this->frameColor = CURSESPP_DEFAULT_FRAME_COLOR;
-    this->focusedContentColor = CURSESPP_DEFAULT_CONTENT_COLOR;
-    this->focusedFrameColor = CURSESPP_FOCUSED_FRAME_COLOR;
+    this->contentColor = Color(Color::ContentColorDefault);
+    this->frameColor = Color(Color::FrameColorDefault);
+    this->focusedContentColor = Color(Color::ContentColorDefault);
+    this->focusedFrameColor = Color(Color::FrameColorFocused);
     this->drawFrame = true;
     this->isVisibleInParent = false;
     this->isFocused = false;
@@ -178,19 +192,19 @@ void Window::SendToBottom() {
     }
 }
 
-void Window::PostMessage(int messageType, int64_t user1, int64_t user2, int64_t delay) {
+void Window::Post(int messageType, int64_t user1, int64_t user2, int64_t delay) {
     messageQueue.Post(Message::Create(this, messageType, user1, user2), delay);
 }
 
-void Window::BroadcastMessage(int messageType, int64_t user1, int64_t user2, int64_t delay) {
+void Window::Broadcast(int messageType, int64_t user1, int64_t user2, int64_t delay) {
     messageQueue.Broadcast(Message::Create(nullptr, messageType, user1, user2), delay);
 }
 
-void Window::DebounceMessage(int messageType, int64_t user1, int64_t user2, int64_t delay) {
+void Window::Debounce(int messageType, int64_t user1, int64_t user2, int64_t delay) {
     messageQueue.Debounce(Message::Create(this, messageType, user1, user2), delay);
 }
 
-void Window::RemoveMessage(int messageType) {
+void Window::Remove(int messageType) {
     messageQueue.Remove(this, messageType);
 }
 
@@ -375,32 +389,36 @@ int Window::GetY() const {
     return this->y;
 }
 
-void Window::SetContentColor(int64_t color) {
-    this->contentColor = (color == CURSESPP_DEFAULT_COLOR)
-        ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
+void Window::SetContentColor(Color color) {
+    this->contentColor = (color == Color::Default)
+        ? Color::ContentColorDefault : color;
 
     this->RepaintBackground();
+    this->Redraw();
 }
 
-void Window::SetFocusedContentColor(int64_t color) {
-    this->focusedContentColor = (color == CURSESPP_DEFAULT_COLOR)
-        ? CURSESPP_DEFAULT_CONTENT_COLOR : color;
+void Window::SetFocusedContentColor(Color color) {
+    this->focusedContentColor = (color == Color::Default)
+        ? Color::ContentColorDefault : color;
 
     this->RepaintBackground();
+    this->Redraw();
 }
 
-void Window::SetFrameColor(int64_t color) {
-    this->frameColor = (color == CURSESPP_DEFAULT_COLOR)
-        ? CURSESPP_DEFAULT_FRAME_COLOR : color;
+void Window::SetFrameColor(Color color) {
+    this->frameColor = (color == Color::Default)
+        ? Color::FrameColorDefault : color;
 
     this->RepaintBackground();
+    this->Redraw();
 }
 
-void Window::SetFocusedFrameColor(int64_t color) {
-    this->focusedFrameColor = (color == CURSESPP_DEFAULT_COLOR)
-        ? CURSESPP_FOCUSED_FRAME_COLOR : color;
+void Window::SetFocusedFrameColor(Color color) {
+    this->focusedFrameColor = (color == Color::Default)
+        ? Color::FrameColorFocused : color;
 
     this->RepaintBackground();
+    this->Redraw();
 }
 
 void Window::DrawFrameAndTitle() {
@@ -424,19 +442,18 @@ void Window::RepaintBackground() {
     bool focused = IsFocused();
 
     if (this->drawFrame &&
-        this->frameColor != CURSESPP_DEFAULT_COLOR &&
+        this->frameColor != Color::Default &&
         this->frame &&
         this->content != this->frame)
     {
-        wbkgd(this->frame, COLOR_PAIR(focused
-            ? this->focusedFrameColor : this->frameColor));
-
+        werase(this->frame);
+        wbkgd(this->frame, focused? this->focusedFrameColor : this->frameColor);
         this->DrawFrameAndTitle();
     }
 
     if (this->content) {
-        wbkgd(this->content, COLOR_PAIR(focused
-            ? this->focusedContentColor : this->contentColor));
+        werase(this->content);
+        wbkgd(this->content, focused ? this->focusedContentColor : this->contentColor);
     }
 
     this->Invalidate();
@@ -653,10 +670,7 @@ void Window::Create() {
 
         if (!this->drawFrame) {
             this->content = this->frame;
-
-            if (currentContentColor != CURSESPP_DEFAULT_COLOR) {
-                wbkgd(this->frame, COLOR_PAIR(currentContentColor));
-            }
+            this->RepaintBackground();
         }
 
         /* otherwise we'll draw a box around the frame, and create a content
@@ -677,15 +691,7 @@ void Window::Create() {
             }
 
             this->contentPanel = new_panel(this->content);
-
-            if (currentFrameColor != CURSESPP_DEFAULT_COLOR) {
-                wbkgd(this->frame, COLOR_PAIR(currentFrameColor));
-            }
-
-            if (currentContentColor != CURSESPP_DEFAULT_COLOR) {
-                wbkgd(this->content, COLOR_PAIR(currentContentColor));
-            }
-
+            this->RepaintBackground();
             this->DrawFrameAndTitle();
         }
 
@@ -767,11 +773,11 @@ void Window::Clear() {
     int64_t frameColor = isFocused ? this->focusedFrameColor : this->frameColor;
 
     if (this->content == this->frame) {
-        wbkgd(this->frame, COLOR_PAIR(contentColor));
+        wbkgd(this->frame, contentColor);
     }
     else {
-        wbkgd(this->frame, COLOR_PAIR(frameColor));
-        wbkgd(this->content, COLOR_PAIR(contentColor));
+        wbkgd(this->frame, frameColor);
+        wbkgd(this->content, contentColor);
     }
 }
 

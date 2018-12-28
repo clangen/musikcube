@@ -99,11 +99,8 @@ void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
 }
 
 void GaplessTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
-    musik::debug::info(TAG, "we were asked to start the track at " + uri);
-
+    musik::debug::info(TAG, "starting track at " + uri);
     Player* newPlayer = Player::Create(uri, this->output, Player::NoDrain, this, gain);
-    musik::debug::info(TAG, "Player created successfully");
-
     this->StartWithPlayer(newPlayer, mode);
 }
 

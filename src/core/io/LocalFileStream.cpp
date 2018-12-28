@@ -57,7 +57,7 @@ LocalFileStream::~LocalFileStream() {
         this->Close();
     }
     catch (...) {
-        musik::debug::err(TAG, "error closing file");
+        musik::debug::error(TAG, "error closing file");
     }
 }
 
@@ -73,12 +73,12 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
         boost::filesystem::path file(filename);
 
         if (!boost::filesystem::exists(file)) {
-            debug::err(TAG, "open failed " + this->uri);
+            debug::error(TAG, "open failed " + this->uri);
             return false;
         }
 
         if (!boost::filesystem::is_regular(file)) {
-            debug::err(TAG, "not a regular file" + this->uri);
+            debug::error(TAG, "not a regular file" + this->uri);
             return false;
         }
 
@@ -92,14 +92,13 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
 #endif
 
         if (this->file.load()) {
-            debug::info(TAG, "opened successfully");
             return true;
         }
     }
     catch(...) {
     }
 
-    debug::err(TAG, "open failed " + std::string(filename));
+    debug::error(TAG, "open failed " + std::string(filename));
     return false;
 }
 

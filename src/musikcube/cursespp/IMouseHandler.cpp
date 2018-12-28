@@ -33,8 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "IMouseHandler.h"
-#include "IWindow.h"
+#include <cursespp/IMouseHandler.h>
+#include <cursespp/IWindow.h>
 
 using namespace cursespp;
 

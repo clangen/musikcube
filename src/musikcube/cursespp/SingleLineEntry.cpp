@@ -33,24 +33,25 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "SingleLineEntry.h"
+#include <cursespp/SingleLineEntry.h>
+#include <cursespp/Text.h>
 
 using namespace cursespp;
 
 SingleLineEntry::SingleLineEntry(const std::string& value) {
     this->value = value;
-    this->attrs = -1;
+    this->attrs = Color::Default;
 }
 
 void SingleLineEntry::SetWidth(size_t width) {
     this->width = width;
 }
 
-int64_t SingleLineEntry::GetAttrs(size_t line) {
+Color SingleLineEntry::GetAttrs(size_t line) {
     return this->attrs;
 }
 
-void SingleLineEntry::SetAttrs(int64_t attrs) {
+void SingleLineEntry::SetAttrs(Color attrs) {
     this->attrs = attrs;
 }
 
@@ -59,5 +60,5 @@ size_t SingleLineEntry::GetLineCount() {
 }
 
 std::string SingleLineEntry::GetLine(size_t line) {
-    return u8substr(this->value, 0, this->width > 0 ? this->width : 0);
+    return text::Ellipsize(this->value, this->width);
 }

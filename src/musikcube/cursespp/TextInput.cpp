@@ -35,9 +35,9 @@
 #include <stdafx.h>
 #include <limits.h>
 
-#include "Screen.h"
-#include "Colors.h"
-#include "TextInput.h"
+#include <cursespp/Screen.h>
+#include <cursespp/Colors.h>
+#include <cursespp/TextInput.h>
 
 using namespace cursespp;
 

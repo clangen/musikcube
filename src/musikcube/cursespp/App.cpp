@@ -34,22 +34,27 @@
 
 #include <stdafx.h>
 
-#include "App.h"
-#include "Colors.h"
-#include "ILayout.h"
-#include "IInput.h"
-#include "Window.h"
-#include "Text.h"
-#include "Screen.h"
-
+#include <cursespp/curses_config.h>
+#include <cursespp/App.h>
+#include <cursespp/Colors.h>
+#include <cursespp/ILayout.h>
+#include <cursespp/IInput.h>
+#include <cursespp/Window.h>
+#include <cursespp/Text.h>
+#include <cursespp/Screen.h>
+#include <algorithm>
 #include <thread>
 
 #ifdef WIN32
-#include "Win32Util.h"
+#include <cursespp/Win32Util.h>
+#undef MOUSE_MOVED
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #endif
 
 #ifndef WIN32
 #include <csignal>
+#include <cstdlib>
+#include <locale.h>
 #endif
 
 using namespace cursespp;
@@ -70,6 +75,21 @@ static void resizedHandler(int signal) {
     endwin(); /* required in *nix because? */
     resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
 }
+
+static bool isLangUtf8() {
+    const char* lang = std::getenv("LANG");
+
+    if (!lang) {
+        return false;
+    }
+
+    std::string str = std::string(lang);
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+
+    return
+        str.find("utf-8") != std::string::npos ||
+        str.find("utf8") != std::string::npos;
+}
 #endif
 
 App& App::Instance() {
@@ -85,7 +105,6 @@ App::App(const std::string& title) {
     }
 
     instance = this; /* only one instance. */
-
     this->quit = false;
     this->minWidth = this->minHeight = 0;
     this->mouseEnabled = true;
@@ -93,16 +112,28 @@ App::App(const std::string& title) {
 #ifdef WIN32
     this->iconId = 0;
     this->appTitle = title;
+    this->colorMode = Colors::RGB;
     win32::ConfigureDpiAwareness();
 #else
     setlocale(LC_ALL, "");
     std::signal(SIGWINCH, resizedHandler);
     std::signal(SIGHUP, hangupHandler);
     std::signal(SIGPIPE, SIG_IGN);
+    this->colorMode = Colors::Palette;
 #endif
+}
 
-#ifdef __PDCURSES__
+App::~App() {
+    endwin();
+}
+
+void App::InitCurses() {
+#ifdef WIN32
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
+    PDC_set_default_menu_visibility(0);
+    PDC_set_title(this->appTitle.c_str());
+    win32::InterceptWndProc();
+    win32::SetAppTitle(this->appTitle);
 #endif
 
     initscr();
@@ -113,20 +144,17 @@ App::App(const std::string& title) {
     refresh();
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
-
 #ifndef WIN32
     set_escdelay(20);
 #endif
 
-#ifdef __PDCURSES__
-    PDC_set_title(title.c_str());
-    win32::InterceptWndProc();
-    win32::SetAppTitle(title);
-#endif
-}
+    Colors::Init(this->colorMode, this->bgType);
 
-App::~App() {
-    endwin();
+    if (this->colorTheme.size()) {
+        Colors::SetTheme(this->colorTheme);
+    }
+
+    this->initialized = true;
 }
 
 void App::SetKeyHandler(KeyHandler handler) {
@@ -143,14 +171,26 @@ void App::SetResizeHandler(ResizeHandler handler) {
 
 void App::SetColorMode(Colors::Mode mode) {
     this->colorMode = mode;
+
+    if (this->initialized) {
+        Colors::Init(this->colorMode, this->bgType);
+    }
 }
 
 void App::SetColorBackgroundType(Colors::BgType bgType) {
     this->bgType = bgType;
+
+    if (this->initialized) {
+        Colors::Init(this->colorMode, this->bgType);
+    }
 }
 
 void App::SetColorTheme(const std::string& colorTheme) {
     this->colorTheme = colorTheme;
+
+    if (this->initialized) {
+        Colors::SetTheme(colorTheme);
+    }
 }
 
 void App::SetMinimumSize(int minWidth, int minHeight) {
@@ -211,8 +251,9 @@ void App::OnResized() {
         Window::Unfreeze();
 
         if (this->state.layout) {
-            if (this->state.viewRoot) {
-                this->state.viewRoot->ResizeToViewport();
+            if (this->state.rootWindow) {
+                this->state.rootWindow->MoveAndResize(
+                    0, 0, Screen::GetWidth(), Screen::GetHeight());
             }
 
             this->state.layout->Layout();
@@ -224,6 +265,14 @@ void App::OnResized() {
             this->state.overlay->BringToTop();
         }
     }
+}
+
+void App::SetQuitKey(const std::string& kn) {
+    this->quitKey = kn;
+}
+
+std::string App::GetQuitKey() {
+    return this->quitKey;
 }
 
 void App::InjectKeyPress(const std::string& key) {
@@ -260,13 +309,15 @@ void App::Run(ILayoutPtr layout) {
     if (App::Running(this->uniqueId, this->appTitle)) {
         return;
     }
+#else
+    if (!isLangUtf8()) {
+        std::cout << "\n\nThis application requires a UTF-8 compatible LANG environment "
+        "variable to be set in the controlling terminal. Exiting.\n\n\n";
+        return;
+    }
 #endif
 
-    Colors::Init(this->colorMode, this->bgType);
-
-    if (this->colorTheme.size()) {
-        Colors::SetTheme(this->colorTheme);
-    }
+    this->InitCurses();
 
     MEVENT mouseEvent;
     int64_t ch;
@@ -317,7 +368,7 @@ process:
             else if (kn == "KEY_BTAB") { /* shift-tab */
                 this->FocusPrevInLayout();
             }
-            else if (kn == "^D") { /* ctrl+d quits */
+            else if (kn == this->quitKey) { /* ctrl+d quits */
                 this->quit = true;
             }
             else if (kn == "KEY_RESIZE") {
@@ -377,14 +428,19 @@ process:
         this->CheckShowOverlay();
         this->EnsureFocusIsValid();
 
-        /* needs to happen here, or else flicker */
+        /* we want to dispatch messages here, before we call WriteToScreen(),
+        because dispatched messages may trigger UI updates, including layouts,
+        which may lead panels to get destroyed and recreated, which can
+        cause the screen to redraw outside of do_update() calls. so we dispatch
+        messages, ensure our overlay is on top, then do a redraw. */
         Window::MessageQueue().Dispatch();
 
-        if (Window::WriteToScreen(this->state.input)) {
-            if (this->state.overlayWindow && !this->state.overlayWindow->IsTop()) {
-                this->state.overlay->BringToTop(); /* active overlay is always on top... */
-            }
+        if (this->state.overlayWindow && !this->state.overlayWindow->IsTop()) {
+            this->state.overlay->BringToTop(); /* active overlay is always on top... */
         }
+
+        /* always last to avoid flicker. see above. */
+        Window::WriteToScreen(this->state.input);
     }
 
     overlays.Clear();
@@ -459,10 +515,11 @@ void App::ChangeLayout(ILayoutPtr newLayout) {
 
     if (newLayout) {
         this->state.layout = newLayout;
-        this->state.viewRoot = dynamic_cast<IViewRoot*>(this->state.layout.get());
+        this->state.rootWindow = dynamic_cast<IWindow*>(this->state.layout.get());
 
-        if (this->state.viewRoot) {
-            this->state.viewRoot->ResizeToViewport();
+        if (this->state.rootWindow) {
+            this->state.rootWindow->MoveAndResize(
+                0, 0, Screen::GetWidth(), Screen::GetHeight());
         }
 
         this->state.layout->Show();

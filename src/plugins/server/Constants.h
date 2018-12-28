@@ -136,6 +136,8 @@ namespace key {
     static const std::string device_id = "device_id";
     static const std::string replaygain_mode = "replaygain_mode";
     static const std::string preamp_gain = "preamp_gain";
+    static const std::string enabled = "enabled";
+    static const std::string bands = "bands";
     static const std::string time = "time";
 }
 
@@ -195,6 +197,8 @@ namespace request {
     static const std::string set_default_output_driver = "set_default_output_driver";
     static const std::string get_gain_settings = "get_gain_settings";
     static const std::string set_gain_settings = "set_gain_settings";
+    static const std::string get_equalizer_settings = "get_equalizer_settings";
+    static const std::string set_equalizer_settings = "set_equalizer_settings";
     static const std::string get_transport_type = "get_transport_type";
     static const std::string set_transport_type = "set_transport_type";
     static const std::string snapshot_play_queue = "snapshot_play_queue";

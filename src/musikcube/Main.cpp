@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <stdlib.h>
 #include <time.h>
@@ -43,6 +43,7 @@
 #include <cursespp/Screen.h>
 
 #include <app/layout/MainLayout.h>
+#include <app/util/ConsoleLogger.h>
 #include <app/util/GlobalHotkeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
@@ -63,10 +64,8 @@
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
 #ifdef WIN32
-    #include <cursespp/Win32Util.h>
-    #include "resource.h"
-    #undef MOUSE_MOVED
-    #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#include <cursespp/Win32Util.h>
+#include "resource.h"
 #endif
 
 using namespace musik;
@@ -109,7 +108,7 @@ int main(int argc, char* argv[]) {
 
 #ifndef WIN32
     #if 1 /*DEBUG*/
-        freopen("/tmp/musikcube.log", "w", stderr);
+        freopen("/tmp/musikcube_error.log", "w", stderr);
     #else
         freopen("/dev/null", "w", stderr);
     #endif
@@ -122,7 +121,10 @@ int main(int argc, char* argv[]) {
 
     musik::core::MigrateOldDataDirectory();
 
-    musik::debug::init();
+    auto fileLogger = new musik::debug::SimpleFileBackend();
+    auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
+    musik::debug::Start({ fileLogger, consoleLogger });
+    musik::core::plugin::InitDebug();
 
     ILibraryPtr library = LibraryFactory::Default();
     library->SetMessageQueue(Window::MessageQueue());
@@ -136,7 +138,7 @@ int main(int argc, char* argv[]) {
         GlobalHotkeys globalHotkeys(playback, library);
         Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
-        musik::core::plugin::InstallDependencies(
+        musik::core::plugin::InitPlayback(
             &Window::MessageQueue(), &playback, library);
 
 #ifdef WIN32
@@ -153,6 +155,9 @@ int main(int argc, char* argv[]) {
         app.SetIcon(IDI_ICON1);
         app.SetSingleInstanceId("musikcube");
 #endif
+
+        app.SetQuitKey(prefs->GetString(keys::AppQuitKey, "^D"));
+
         /* fire up the indexer if configured to run on startup */
         if (prefs->GetBool(musik::core::prefs::keys::SyncOnStartup, true)) {
             library->Indexer()->Schedule(IIndexer::SyncType::All);
@@ -193,8 +198,7 @@ int main(int argc, char* argv[]) {
         app.SetMinimumSize(MIN_WIDTH, MIN_HEIGHT);
 
         /* main layout */
-        using Main = std::shared_ptr<MainLayout>;
-        Main mainLayout(new MainLayout(app, playback, library));
+        auto mainLayout = std::make_shared<MainLayout>(app, consoleLogger, playback, library);
 
         mainLayout->Start();
 
@@ -208,8 +212,8 @@ int main(int argc, char* argv[]) {
 
         /* blocking event loop */
         app.Run(mainLayout);
-        /* done with the app */
 
+        /* done with the app */
         mainLayout->Stop();
 
 #ifdef WIN32
@@ -220,11 +224,11 @@ int main(int argc, char* argv[]) {
     }
 
     musik::core::audio::vis::HideSelectedVisualizer();
-    musik::core::plugin::UninstallDependencies();
+    musik::core::plugin::Deinit();
 
     LibraryFactory::Instance().Shutdown();
 
-    musik::debug::deinit();
+    musik::debug::Stop();
 
     return 0;
 }

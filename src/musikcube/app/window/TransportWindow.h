@@ -46,12 +46,9 @@ namespace musik {
     namespace cube {
         struct TransportDisplayCache;
 
-        class TransportWindow :
+        class TransportWindow:
             public cursespp::Window,
             public cursespp::IKeyHandler,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<TransportWindow>,
-#endif
             public sigslot::has_slots<>
         {
             public:

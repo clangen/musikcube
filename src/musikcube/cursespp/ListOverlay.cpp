@@ -33,11 +33,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "ListOverlay.h"
-#include "Scrollbar.h"
-#include "Colors.h"
-#include "Screen.h"
-#include "Text.h"
+#include <algorithm>
+#include <functional>
+#include <cursespp/ListOverlay.h>
+#include <cursespp/Scrollbar.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 
 using namespace cursespp;
 
@@ -83,8 +85,8 @@ class ListOverlay::CustomListWindow : public ListWindow {
 
 ListOverlay::ListOverlay() {
     this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->SetFrameColor(Color::OverlayFrame);
+    this->SetContentColor(Color::OverlayContent);
 
     this->autoDismiss = true;
 
@@ -101,11 +103,11 @@ ListOverlay::ListOverlay() {
 
     this->scrollbar.reset(new Window());
     this->scrollbar->SetFrameVisible(false);
-    this->scrollbar->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->scrollbar->SetContentColor(Color::OverlayContent);
 
     this->listWindow.reset(new CustomListWindow(decorator, adapterChanged));
-    this->listWindow->SetContentColor(CURSESPP_OVERLAY_CONTENT);
-    this->listWindow->SetFocusedContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->listWindow->SetContentColor(Color::OverlayContent);
+    this->listWindow->SetFocusedContentColor(Color::OverlayContent);
     this->listWindow->SetFrameVisible(false);
     this->listWindow->EntryActivated.connect(this, &ListOverlay::OnListEntryActivated);
 
@@ -155,12 +157,8 @@ void ListOverlay::Layout() {
 }
 
 bool ListOverlay::ScrollbarVisible() {
-#ifndef __FreeBSD__
     auto contentHeight = this->height - 4; /* top and bottom padding + title */
     return (int) this->listWindow->EntryCount() > contentHeight;
-#else
-    return false;
-#endif
 }
 
 ListOverlay& ListOverlay::SetTitle(const std::string& title) {

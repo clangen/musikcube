@@ -32,29 +32,65 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifndef __C_AUTOM8_DEBUG_HPP__
-#define __C_AUTOM8_DEBUG_HPP__
+#pragma once
 
-#include <sigslot/sigslot.h>
 #include <string>
+#include <vector>
+#include <fstream>
+#include <memory>
 
 namespace musik {
     class debug {
-    public:
-        enum log_level {
-            level_info = 0,
-            level_warning,
-            level_error
-        };
+        public:
+            class IBackend {
+                public:
+                    virtual ~IBackend() { }
+                    virtual void verbose(const std::string& tag, const std::string& string) = 0;
+                    virtual void info(const std::string& tag, const std::string& string) = 0;
+                    virtual void warning(const std::string& tag, const std::string& string) = 0;
+                    virtual void error(const std::string& tag, const std::string& string) = 0;
+            };
 
-        static void init();
-        static void deinit();
-        static sigslot::signal3<log_level, std::string, std::string> string_logged;
-        static void log(log_level level, const std::string& tag, const std::string& string);
-        static void info(const std::string& tag, const std::string& string);
-        static void warn(const std::string& tag, const std::string& string);
-        static void err(const std::string& tag, const std::string& string);
+            class FileBackend : public IBackend {
+                public:
+                    FileBackend(const std::string& fn);
+                    FileBackend(FileBackend&& fn);
+                    virtual ~FileBackend() override;
+                    virtual void verbose(const std::string& tag, const std::string& string) override;
+                    virtual void info(const std::string& tag, const std::string& string) override;
+                    virtual void warning(const std::string& tag, const std::string& string) override;
+                    virtual void error(const std::string& tag, const std::string& string) override;
+                private:
+                    std::ofstream out;
+            };
+
+            class SimpleFileBackend: public FileBackend {
+                public:
+                    SimpleFileBackend();
+                    SimpleFileBackend(const std::string& fn) = delete;
+                    SimpleFileBackend(FileBackend&& fn) = delete;
+            };
+
+            class ConsoleBackend : public IBackend {
+                public:
+                    ConsoleBackend();
+                    virtual ~ConsoleBackend() override;
+                    virtual void verbose(const std::string& tag, const std::string& string) override;
+                    virtual void info(const std::string& tag, const std::string& string) override;
+                    virtual void warning(const std::string& tag, const std::string& string) override;
+                    virtual void error(const std::string& tag, const std::string& string) override;
+            };
+
+            static void Start(std::vector<IBackend*> backends = { new SimpleFileBackend() });
+            static void Stop();
+
+            static void verbose(const std::string& tag, const std::string& string);
+            static void v(const std::string& tag, const std::string& string);
+            static void info(const std::string& tag, const std::string& string);
+            static void i(const std::string& tag, const std::string& string);
+            static void warning(const std::string& tag, const std::string& string);
+            static void w(const std::string& tag, const std::string& string);
+            static void error(const std::string& tag, const std::string& string);
+            static void e(const std::string& tag, const std::string& string);
     };
 }
-
-#endif

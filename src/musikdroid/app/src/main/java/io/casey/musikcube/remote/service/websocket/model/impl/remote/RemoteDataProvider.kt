@@ -489,6 +489,32 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
+    override fun getEqualizerSettings(): Observable<IEqualizerSettings> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.GetEqualizerSettings)
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<IEqualizerSettings> { socketMessage ->
+                Observable.just(RemoteEqualizerSettings(socketMessage.getJsonObject()))
+            }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
+    override fun updateEqualizerSettings(enabled: Boolean, freqs: Array<Double>): Observable<Boolean> {
+        val message = SocketMessage.Builder
+            .request(Messages.Request.SetEqualizerSettings)
+            .addOption(Messages.Key.ENABLED, enabled)
+            .addOption(Messages.Key.BANDS, JSONArray().apply {
+                freqs.forEach { this.put(it) }
+            })
+            .build()
+
+        return service.observe(message, client)
+            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .observeOn(AndroidSchedulers.mainThread())
+    }
+
     override fun reindexMetadata(): Observable<Boolean> {
         return runIndexer(Messages.Value.REINDEX)
     }

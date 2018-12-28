@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <cursespp/Colors.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextLabel.h>
 
@@ -51,9 +52,6 @@ namespace musik {
     namespace cube {
         class DirectoryLayout :
             public cursespp::LayoutBase,
-#if (__clang_major__ == 7 && __clang_minor__ == 3)
-            public std::enable_shared_from_this<DirectoryLayout>,
-#endif
             public sigslot::has_slots<>
         {
             public:
@@ -79,7 +77,7 @@ namespace musik {
                 bool IsParentSelected();
                 bool IsParentRoot();
 
-                int64_t ListItemDecorator(
+                cursespp::Color ListItemDecorator(
                     cursespp::ScrollableWindow* scrollable,
                     size_t index,
                     size_t line,

@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 #include "PreferenceKeys.h"
 
 namespace musik { namespace cube { namespace prefs {
@@ -52,6 +52,7 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::LastBrowseDirectoryRoot = "LastBrowseDirectoryRoot";
     const std::string keys::LastCategoryFilter = "LastCategoryFilter";
     const std::string keys::LastTrackFilter = "LastTrackFilter";
+    const std::string keys::AppQuitKey = "AppQuitKey";
 
 } } }
 

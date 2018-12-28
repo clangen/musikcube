@@ -99,7 +99,7 @@ namespace musik { namespace core { namespace audio {
 
             if (!factory) {
                 /* nothing can decode this type of file */
-                musik::debug::err(TAG, "nothing could open " + uri);
+                musik::debug::error(TAG, "nothing could open " + uri);
                 return nullptr;
             }
 
@@ -113,12 +113,12 @@ namespace musik { namespace core { namespace audio {
             /* ask the decoder to open the data stream. if it returns true we're
             good to start pulling data out of it! */
             if (!decoder->Open(dataStream)) {
-                musik::debug::err(TAG, "open ok, but decode failed " + uri);
+                musik::debug::error(TAG, "open ok, but decode failed " + uri);
                 decoder->Release();
                 return nullptr;
             }
 
-            musik::debug::info(TAG, "about ready to play: " + uri);
+            musik::debug::info(TAG, "found a decoder for " + uri);
 
             return decoder;
         }

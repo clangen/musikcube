@@ -472,6 +472,14 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithSetGainSettings(connection, request);
             return;
         }
+        else if (name == request::get_equalizer_settings) {
+            this->RespondWithGetEqualizerSettings(connection, request);
+            return;
+        }
+        else if (name == request::set_equalizer_settings) {
+            this->RespondWithSetEqualizerSettings(connection, request);
+            return;
+        }
         else if (name == request::get_transport_type) {
             this->RespondWithGetTransportType(connection, request);
             return;
@@ -1417,6 +1425,44 @@ void WebSocketServer::RespondWithSetGainSettings(connection_hdl connection, json
 
     if (reload) {
         context.environment->ReloadPlaybackOutput();
+    }
+
+    this->RespondWithSuccess(connection, request);
+}
+
+void WebSocketServer::RespondWithGetEqualizerSettings(connection_hdl connection, json& request) {
+    double values[EqualizerBandCount];
+    context.environment->GetEqualizerBandValues(values, EqualizerBandCount);
+    const bool enabled = context.environment->GetEqualizerEnabled();
+
+    std::map<std::string, double> freqToValue;
+    for (size_t i = 0; i < EqualizerBandCount; i++) {
+        freqToValue[std::to_string(EqualizerBands[i])] = values[i];
+    }
+
+    this->RespondWithOptions(connection, request, {
+        { key::enabled, enabled },
+        { key::bands, freqToValue }
+    });
+}
+
+void WebSocketServer::RespondWithSetEqualizerSettings(connection_hdl connection, json& request) {
+    auto& options = request[message::options];
+
+    if (options.find("enabled") != options.end()) {
+        bool enabled = options.value("enabled", false);
+        context.environment->SetEqualizerEnabled(enabled);
+    }
+
+    if (options.find("bands") != options.end()) {
+        auto bands = options.value("bands", json::array());
+        if (bands.size() == EqualizerBandCount) {
+            double values[EqualizerBandCount];
+            for (size_t i = 0; i < EqualizerBandCount; i++) {
+                values[i] = bands[i];
+            }
+            context.environment->SetEqualizerBandValues(values, EqualizerBandCount);
+        }
     }
 
     this->RespondWithSuccess(connection, request);

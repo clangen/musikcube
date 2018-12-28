@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include <stdafx.h>
 
 #include <core/library/query/local/DirectoryTrackListQuery.h>
 #include <core/support/Messages.h>
@@ -255,7 +255,7 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
     return LayoutBase::KeyPress(key);
 }
 
-int64_t DirectoryLayout::ListItemDecorator(
+Color DirectoryLayout::ListItemDecorator(
     ScrollableWindow* scrollable,
     size_t index,
     size_t line,
@@ -263,8 +263,8 @@ int64_t DirectoryLayout::ListItemDecorator(
 {
     if (scrollable == this->directoryList.get()) {
         if (this->directoryList->GetSelectedIndex() == index) {
-            return COLOR_PAIR(CURSESPP_HIGHLIGHTED_LIST_ITEM);
+            return Color::ListItemHighlighted;
         }
     }
-    return -1;
+    return Color::Default;
 }

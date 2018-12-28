@@ -39,20 +39,38 @@
 #include <cursespp/Text.h>
 #include <cursespp/ILayout.h>
 
-#include "TextLabel.h"
+#include <cursespp/TextLabel.h>
 
 using namespace cursespp;
 
 TextLabel::TextLabel()
 : Window()
 , alignment(text::AlignLeft) {
-    this->SetFrameVisible(false);
-    this->SetContentColor(CURSESPP_DEFAULT_COLOR);
-    this->SetFocusedContentColor(CURSESPP_TEXT_FOCUSED);
-    this->bold = false;
+    this->ApplyDefaultStyle();
+}
+
+TextLabel::TextLabel(const std::string& value)
+: Window()
+, alignment(text::AlignLeft) {
+    this->ApplyDefaultStyle();
+    this->SetText(value);
+}
+
+TextLabel::TextLabel(const std::string& value, const text::TextAlign alignment)
+: Window()
+, alignment(alignment) {
+    this->ApplyDefaultStyle();
+    this->SetText(value, alignment);
 }
 
 TextLabel::~TextLabel() {
+}
+
+void TextLabel::ApplyDefaultStyle() {
+    this->SetFrameVisible(false);
+    this->SetContentColor(Color::Default);
+    this->SetFocusedContentColor(Color::TextFocused);
+    this->bold = false;
 }
 
 void TextLabel::OnRedraw() {
@@ -61,36 +79,16 @@ void TextLabel::OnRedraw() {
 
     WINDOW* c = this->GetContent();
 
-    int64_t attrs = this->GetContentColor();
-    if (attrs != -1) {
-        wbkgd(c, COLOR_PAIR(attrs));
-    }
-    else {
-        werase(c);
-    }
-
-    attrs = this->IsFocused()
+    Color color = this->IsFocused()
         ? this->GetFocusedContentColor()
         : this->GetContentColor();
 
-    if (attrs != -1) {
-        wattron(c, COLOR_PAIR(attrs));
-    }
-
-    if (this->bold) {
-        wattron(c, A_BOLD);
-    }
-
+    wattron(c, color);
+    if (this->bold) { wattron(c, A_BOLD); }
     wmove(c, 0, 0);
     checked_waddstr(c, aligned.c_str());
-
-    if (this->bold) {
-        wattroff(c, A_BOLD);
-    }
-
-    if (attrs != -1) {
-        wattroff(c, COLOR_PAIR(attrs));
-    }
+    if (this->bold) { wattroff(c, A_BOLD); }
+    wattroff(c, color);
 }
 
 void TextLabel::SetText(const std::string& value, const text::TextAlign alignment) {
@@ -99,6 +97,17 @@ void TextLabel::SetText(const std::string& value, const text::TextAlign alignmen
         this->alignment = alignment;
         this->Redraw();
     }
+}
+
+void TextLabel::SetAlignment(const text::TextAlign alignment) {
+    if (this->alignment != alignment) {
+        this->alignment = alignment;
+        this->Redraw();
+    }
+}
+
+void TextLabel::SetText(const std::string& value) {
+    this->SetText(value, this->alignment);
 }
 
 void TextLabel::SetBold(bool bold) {

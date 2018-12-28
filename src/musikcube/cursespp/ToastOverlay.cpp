@@ -33,18 +33,18 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include "App.h"
-#include "ToastOverlay.h"
-#include "Colors.h"
-#include "Screen.h"
-#include "Text.h"
+#include <cursespp/App.h>
+#include <cursespp/ToastOverlay.h>
+#include <cursespp/Colors.h>
+#include <cursespp/Screen.h>
+#include <cursespp/Text.h>
 
-static const int MESSAGE_HIDE = 1000;
+static const int TOAST_MESSAGE_HIDE = 1000;
 
 using namespace cursespp;
 using namespace musik::core::runtime;
 
-void ToastOverlay::Show(const std::string& text, long durationMs) {
+void ToastOverlay::Show(const std::string& text, int durationMs) {
     std::shared_ptr<ToastOverlay> overlay(new ToastOverlay(text, durationMs));
     App::Overlays().Push(overlay);
 }
@@ -55,8 +55,8 @@ ToastOverlay::ToastOverlay(const std::string& text, long durationMs) {
     this->width = this->height = 0;
     this->ticking = false;
     this->SetFrameVisible(true);
-    this->SetFrameColor(CURSESPP_OVERLAY_FRAME);
-    this->SetContentColor(CURSESPP_OVERLAY_CONTENT);
+    this->SetFrameColor(Color::OverlayFrame);
+    this->SetContentColor(Color::OverlayContent);
 }
 
 ToastOverlay::~ToastOverlay() {
@@ -73,28 +73,30 @@ void ToastOverlay::Layout() {
 
 bool ToastOverlay::KeyPress(const std::string& key) {
     this->Dismiss(); /* any key closes */
-    this->RemoveMessage(MESSAGE_HIDE);
+    this->Remove(TOAST_MESSAGE_HIDE);
     return true;
 }
 
 void ToastOverlay::OnVisibilityChanged(bool visible) {
     if (visible && !ticking) {
-        PostMessage(MESSAGE_HIDE, 0, 0, this->durationMs);
+        if (this->durationMs >= 0) {
+            this->Post(TOAST_MESSAGE_HIDE, 0, 0, this->durationMs);
+        }
         this->ticking = true;
     }
 }
 
 void ToastOverlay::ProcessMessage(IMessage &message) {
-    if (message.Type() == MESSAGE_HIDE) {
+    if (message.Type() == TOAST_MESSAGE_HIDE) {
         this->Dismiss();
     }
 }
 
 void ToastOverlay::RecalculateSize() {
     int cols = (int) u8cols(this->title);
-    this->width = std::min(cols + 4, (Screen::GetWidth() * 2) / 3);
+    this->width = std::min(cols + 4, (Screen::GetWidth() * 4) / 5);
     this->titleLines = text::BreakLines(this->title, this->width - 4);
-    this->height = (int) this->titleLines.size() + 2;
+    this->height = std::min((int) this->titleLines.size() + 2, Screen::GetHeight() - 4);
     this->x = (Screen::GetWidth() / 2) - (this->width / 2);
     this->y = 2;
 }

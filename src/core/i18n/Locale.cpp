@@ -168,17 +168,16 @@ std::string Locale::Translate(const char* key) {
 
 int Locale::Dimension(const char* key, int defaultValue) {
     if (!this->localeData.is_null()) { /* current locale */
-        const nlohmann::json& strings = this->localeData.value(KEY_DIMENSIONS, empty);
-        auto it = strings.find(key);
-        if (it != strings.end()) {
+        const nlohmann::json& dimens = this->localeData.value(KEY_DIMENSIONS, empty);
+        auto it = dimens.find(key);
+        if (it != dimens.end()) {
             return it.value();
         }
     }
 
     if (!this->defaultLocaleData.is_null()) { /* fall back to default */
-        const nlohmann::json& strings = this->defaultLocaleData.value(KEY_DIMENSIONS, empty);
-        auto it = strings.find(key);
-        return (it != strings.end()) ? it.value() : key;
+        const nlohmann::json& dimens = this->defaultLocaleData.value(KEY_DIMENSIONS, empty);
+        return dimens.value(key, defaultValue);
     }
 
     return defaultValue; /* not found anywhere */

@@ -54,6 +54,7 @@
     #include <taglib/ogg/xiphcomment.h>
     #include <taglib/flac/flacfile.h>
     #include <taglib/toolkit/tpropertymap.h>
+    #include <taglib/wavpack/wavpackfile.h>
 #else
     #include <taglib/tlist.h>
     #include <taglib/tfile.h>
@@ -71,6 +72,7 @@
     #include <taglib/mp4file.h>
     #include <taglib/oggfile.h>
     #include <taglib/flacfile.h>
+    #include <taglib/wavpackfile.h>
     #include <taglib/xiphcomment.h>
     #include <taglib/tpropertymap.h>
 #include <taglib/textidentificationframe.h>
@@ -82,6 +84,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
+
+#ifdef WIN32
+#define FFMPEG_DECODER
+#endif
 
 using namespace musik::core::sdk;
 
@@ -141,19 +147,23 @@ void TaglibMetadataReader::Release() {
     delete this;
 }
 
-bool TaglibMetadataReader::CanRead(const char *extension){
+bool TaglibMetadataReader::CanRead(const char *extension) {
     if (extension) {
         std::string ext(extension);
         boost::algorithm::to_lower(ext);
-
         return
+#ifdef FFMPEG_DECODER
+            ext.compare("opus") == 0 ||
+            ext.compare("wv") == 0 ||
+            ext.compare("wma") == 0 ||
+            ext.compare("ape") == 0 ||
+            ext.compare("mpc") == 0 ||
+            ext.compare("aac") == 0 ||
+#endif
             ext.compare("mp3") == 0 ||
             ext.compare("ogg") == 0 ||
-            ext.compare("aac") == 0 ||
             ext.compare("m4a") == 0 ||
-            ext.compare("flac") == 0 ||
-            ext.compare("ape") == 0 ||
-            ext.compare("mpc") == 0;
+            ext.compare("flac") == 0;
     }
 
     return false;
@@ -259,6 +269,16 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, ITagStore *target) {
                         this->ExtractValueForKey(mp4TagMap, "aART", "album_artist", target);
                         this->ExtractValueForKey(mp4TagMap, "disk", "disc", target);
                         this->ExtractReplayGain(mp4TagMap, target);
+                        handled = true;
+                    }
+                }
+
+                if (!handled) {
+                    auto wvFile = dynamic_cast<TagLib::WavPack::File*>(file.file());
+                    if (wvFile && wvFile->hasAPETag()) {
+                        this->ReadFromMap(wvFile->properties(), target);
+                        this->ExtractReplayGain(wvFile->properties(), target);
+                        handled = true;
                     }
                 }
             }
