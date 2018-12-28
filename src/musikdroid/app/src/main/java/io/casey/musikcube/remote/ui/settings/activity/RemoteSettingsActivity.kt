@@ -18,7 +18,7 @@ import io.casey.musikcube.remote.ui.shared.extension.slideThisDown
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.rxkotlin.subscribeBy
-import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel.State as ViewModelState
+import io.casey.musikcube.remote.ui.settings.viewmodel.BaseRemoteViewModel.State as ViewModelState
 
 class RemoteSettingsActivity: BaseActivity() {
     private var initialized = false
@@ -81,7 +81,7 @@ class RemoteSettingsActivity: BaseActivity() {
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
         menu?.findItem(R.id.action_save)?.isEnabled =
-            viewModel.state == RemoteSettingsViewModel.State.Ready
+            viewModel.state == ViewModelState.Ready
 
         return super.onPrepareOptionsMenu(menu)
     }

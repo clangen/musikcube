@@ -4,6 +4,26 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TableLayout
+            android:id="@+id/eq_table"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:stretchColumns="2">
+
+            <!--<include layout="@layout/eq_band_row" />-->
+            <!--<include layout="@layout/eq_band_row" />-->
+            <!--<include layout="@layout/eq_band_row" />-->
+            <!--<include layout="@layout/eq_band_row" />-->
+
+        </TableLayout>
+
+    </ScrollView>
+
     <FrameLayout
         android:id="@+id/loading_overlay"
         android:layout_width="match_parent"

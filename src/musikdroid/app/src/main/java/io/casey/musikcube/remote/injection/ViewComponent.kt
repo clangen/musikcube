@@ -8,6 +8,7 @@ import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
 import io.casey.musikcube.remote.ui.settings.activity.ConnectionsActivity
+import io.casey.musikcube.remote.ui.settings.activity.RemoteEqActivity
 import io.casey.musikcube.remote.ui.settings.activity.RemoteSettingsActivity
 import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
@@ -26,6 +27,7 @@ interface ViewComponent {
     fun inject(activity: ConnectionsActivity)
     fun inject(activity: MainActivity)
     fun inject(activity: PlayQueueActivity)
+    fun inject(activity: RemoteEqActivity)
     fun inject(activity: RemoteSettingsActivity)
     fun inject(activity: SettingsActivity)
     fun inject(activity: TrackListActivity)
