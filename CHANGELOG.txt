@@ -23,6 +23,7 @@ musikdroid:
 * updated to compile against the latest tooling.
 * added the ability to change equalizer settings on the server from the
   `remote management` screen.
+* added the ability to specify title ellipsis mode (beginning/middle/end).
 
 server:
 * added `get_equalizer_settings` and `set_equalizer_settings`.
