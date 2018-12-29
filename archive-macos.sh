@@ -9,8 +9,8 @@ fi
 
 rm -rf bin/
 
-make clean
-cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true .
+./clean-nix.sh
+cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true -DFFMPEG_DECODER=false .
 make -j4
 
 DIRNAME="musikcube_macos_$VERSION"

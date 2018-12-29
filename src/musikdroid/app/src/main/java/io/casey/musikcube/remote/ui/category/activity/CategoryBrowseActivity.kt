@@ -51,7 +51,7 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         predicateType = intent.getStringExtra(EXTRA_PREDICATE_TYPE) ?: ""
         predicateId = intent.getLongExtra(EXTRA_PREDICATE_ID, -1)
         navigationType = NavigationType.get(intent.getIntExtra(EXTRA_NAVIGATION_TYPE, NavigationType.Albums.ordinal))
-        adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category)
+        adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category, prefs)
 
         setContentView(R.layout.recycler_view_activity)
         setTitleFromIntent(categoryTitleString)
@@ -69,7 +69,11 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         setFabVisible(fabVisible, fab, recyclerView)
         enableUpNavigation()
 
-        findViewById<View>(R.id.fab).setOnClickListener(fabClickListener)
+        findViewById<View>(R.id.fab).setOnClickListener {
+            if (category == Messages.Category.PLAYLISTS) {
+                mixin(ItemContextMenuMixin::class.java)?.createPlaylist()
+            }
+        }
 
         transport = addTransportFragment(object: TransportFragment.OnModelChangedListener {
             override fun onChanged(fragment: TransportFragment) {
@@ -81,12 +85,6 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     override fun onResume() {
         super.onResume()
         initObservers()
-    }
-
-    val fabClickListener = { _: View ->
-        if (category == Messages.Category.PLAYLISTS) {
-            mixin(ItemContextMenuMixin::class.java)?.createPlaylist()
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -189,13 +187,13 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
     }
 
     companion object {
-        val EXTRA_CATEGORY = "extra_category"
-        val EXTRA_ID = "extra_id"
-        val EXTRA_NAME = "extra_name"
-        private val EXTRA_PREDICATE_TYPE = "extra_predicate_type"
-        private val EXTRA_PREDICATE_ID = "extra_predicate_id"
-        private val EXTRA_NAVIGATION_TYPE = "extra_navigation_type"
-        private val EXTRA_TITLE = "extra_title"
+        const val EXTRA_CATEGORY = "extra_category"
+        const val EXTRA_ID = "extra_id"
+        const val EXTRA_NAME = "extra_name"
+        private const val EXTRA_PREDICATE_TYPE = "extra_predicate_type"
+        private const val EXTRA_PREDICATE_ID = "extra_predicate_id"
+        private const val EXTRA_NAVIGATION_TYPE = "extra_navigation_type"
+        private const val EXTRA_TITLE = "extra_title"
 
         private val CATEGORY_NAME_TO_TITLE: Map<String, Int> = mapOf(
             Messages.Category.ALBUM_ARTIST to R.string.artists_title,
