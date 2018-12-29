@@ -1,27 +1,12 @@
 version: 2.0
 jobs:
-  build_ubuntu_xenial:
-    docker:
-      - image: ubuntu:xenial
-    steps:
-      - checkout
-      - run: apt-get update
-      - run: apt-get install -y build-essential clang cmake libboost-thread1.58-dev libboost-system1.58-dev libboost-filesystem1.58-dev libboost-date-time1.58-dev libboost-atomic1.58-dev libboost-chrono1.58-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libssl-dev libcurl4-openssl-dev libev-dev
-      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=xenial -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make -j2
-      - run: make package
-      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
-      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/xenial /root/debs/*.deb
-      - store_artifacts:
-          path: /root/debs/
   build_ubuntu_artful:
     docker:
       - image: ubuntu:artful
     steps:
       - checkout
       - run: apt-get update
-      - run: apt-get install -y build-essential clang cmake libboost-thread1.63-dev libboost-system1.63-dev libboost-filesystem1.63-dev libboost-date-time1.63-dev libboost-atomic1.63-dev libboost-chrono1.63-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libssl-dev libcurl4-openssl-dev libev-dev
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.63-dev libboost-system1.63-dev libboost-filesystem1.63-dev libboost-date-time1.63-dev libboost-atomic1.63-dev libboost-chrono1.63-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=artful -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
@@ -36,13 +21,28 @@ jobs:
     steps:
       - checkout
       - run: apt-get update
-      - run: apt-get install -y build-essential clang cmake libboost-thread1.65-dev libboost-system1.65-dev libboost-filesystem1.65-dev libboost-date-time1.65-dev libboost-atomic1.65-dev libboost-chrono1.65-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libssl-dev libcurl4-openssl-dev libev-dev libtag1-dev
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.65-dev libboost-system1.65-dev libboost-filesystem1.65-dev libboost-date-time1.65-dev libboost-atomic1.65-dev libboost-chrono1.65-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=bionic -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
       - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/bionic /root/debs/*.deb
+      - store_artifacts:
+          path: /root/debs/
+  build_ubuntu_cosmic:
+    docker:
+      - image: ubuntu:cosmic
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get install build-essential clang cmake libboost-thread1.67-dev libboost-system1.67-dev libboost-filesystem1.67-dev libboost-date-time1.67-dev libboost-atomic1.67-dev libboost-chrono1.67-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev
+      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=cosmic -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2
+      - run: make package
+      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/cosmic /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_zesty:
@@ -53,7 +53,7 @@ jobs:
       - run: apt-get install sed
       - run: sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
       - run: apt-get update
-      - run: apt-get -y install build-essential clang cmake libboost-thread1.62-dev libboost-system1.62-dev libboost-filesystem1.62-dev libboost-date-time1.62-dev libboost-atomic1.62-dev libboost-chrono1.62-dev libogg-dev libvorbis-dev libflac-dev libfaad-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libssl-dev libcurl4-openssl-dev libev-dev
+      - run: apt-get -y install build-essential clang cmake libboost-thread1.61-dev libboost-system1.61-dev libboost-filesystem1.61-dev libboost-date-time1.61-dev libboost-atomic1.61-dev libboost-chrono1.61-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=zesty -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
@@ -130,8 +130,8 @@ workflows:
     jobs:
       - build_ubuntu_artful: *workflow_filters
       - build_ubuntu_bionic: *workflow_filters
+      - build_ubuntu_cosmic: *workflow_filters
       - build_ubuntu_zesty: *workflow_filters
-      - build_ubuntu_xenial: *workflow_filters
       - build_fedora_26: *workflow_filters
       - build_fedora_27: *workflow_filters
       - build_fedora_28: *workflow_filters
