@@ -68,7 +68,7 @@ class TrackListActivity : BaseActivity(), Filterable {
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
 
         tracks = DefaultSlidingWindow(recyclerView, data.provider, queryFactory)
-        adapter = TrackListAdapter(tracks, eventListener, playback)
+        adapter = TrackListAdapter(tracks, eventListener, playback, prefs)
 
         setupDefaultRecyclerView(recyclerView, adapter)
 

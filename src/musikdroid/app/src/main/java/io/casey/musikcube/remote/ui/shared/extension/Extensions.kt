@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.ui.shared.extension
 
 import android.app.SearchManager
 import android.content.Context
+import android.content.SharedPreferences
 import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
@@ -12,6 +13,7 @@ import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
+import android.text.TextUtils
 import android.view.Menu
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -21,6 +23,7 @@ import android.widget.EditText
 import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
@@ -244,4 +247,16 @@ fun <T1: Any, T2: Any, T3: Any, T4: Any, R: Any> letMany(p1: T1?, p2: T2?, p3: T
 }
 fun <T1: Any, T2: Any, T3: Any, T4: Any, T5: Any, R: Any> letMany(p1: T1?, p2: T2?, p3: T3?, p4: T4?, p5: T5?, block: (T1, T2, T3, T4, T5)->R?): R? {
     return if (p1 != null && p2 != null && p3 != null && p4 != null && p5 != null) block(p1, p2, p3, p4, p5) else null
+}
+
+fun titleEllipsizeMode(prefs: SharedPreferences): TextUtils.TruncateAt {
+    val modeIndex = prefs.getInt(
+            Prefs.Key.TITLE_ELLIPSIS_MODE_INDEX,
+            Prefs.Default.TITLE_ELLIPSIS_SIZE_INDEX)
+
+    return when(modeIndex) {
+        0 -> TextUtils.TruncateAt.START
+        1 -> TextUtils.TruncateAt.MIDDLE
+        else -> TextUtils.TruncateAt.END
+    }
 }

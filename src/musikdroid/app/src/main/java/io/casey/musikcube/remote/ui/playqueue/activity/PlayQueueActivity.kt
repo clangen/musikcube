@@ -49,7 +49,7 @@ class PlayQueueActivity : BaseActivity() {
         tracks = DefaultSlidingWindow(recyclerView, data.provider, queryFactory)
         tracks.setInitialPosition(intent.getIntExtra(EXTRA_PLAYING_INDEX, -1))
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
-        adapter = PlayQueueAdapter(tracks, playback, adapterListener)
+        adapter = PlayQueueAdapter(tracks, playback, prefs, adapterListener)
 
         setupDefaultRecyclerView(recyclerView, adapter)
 
@@ -57,18 +57,6 @@ class PlayQueueActivity : BaseActivity() {
         emptyView.capability = EmptyListView.Capability.OfflineOk
         emptyView.emptyMessage = getString(R.string.play_queue_empty)
         emptyView.alternateView = recyclerView
-
-        data.provider.observeState().subscribeBy(
-            onNext = { states ->
-                if (states.first == IDataProvider.State.Connected) {
-                    tracks.requery()
-                }
-                else {
-                    emptyView.update(states.first, adapter.itemCount)
-                }
-            },
-            onError = {
-            })
 
         setTitleFromIntent(R.string.play_queue_title)
         addTransportFragment()
@@ -82,12 +70,25 @@ class PlayQueueActivity : BaseActivity() {
 
     override fun onResume() {
         this.tracks.resume() /* needs to happen before */
-
         super.onResume()
-
+        initObservers()
         if (offlineQueue) {
             tracks.requery()
         }
+    }
+
+    private fun initObservers() {
+        disposables.add(data.provider.observeState().subscribeBy(
+            onNext = { states ->
+                if (states.first == IDataProvider.State.Connected) {
+                    tracks.requery()
+                }
+                else {
+                    emptyView.update(states.first, adapter.itemCount)
+                }
+            },
+            onError = {
+            }))
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

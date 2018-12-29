@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="title_ellipsis_mode_array">
+        <item>@string/ellipsis_mode_beginning</item>
+        <item>@string/ellipsis_mode_middle</item>
+        <item>@string/ellipsis_mode_end</item>
+    </string-array>
+</resources>

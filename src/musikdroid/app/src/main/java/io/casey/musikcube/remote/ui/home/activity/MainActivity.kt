@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.ui.home.activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -15,7 +14,6 @@ import android.widget.*
 import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.Playback
-import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
 import io.casey.musikcube.remote.service.websocket.Messages
@@ -48,7 +46,6 @@ class MainActivity : BaseActivity() {
     private var seekbarValue = -1
     private var blink = 0
 
-    private lateinit var prefs: SharedPreferences
     private lateinit var data: DataProviderMixin
     private lateinit var playback: PlaybackMixin
 
@@ -72,7 +69,7 @@ class MainActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
         data = mixin(DataProviderMixin())
-        playback = mixin(PlaybackMixin({ rebindUi() }))
+        playback = mixin(PlaybackMixin { rebindUi() })
 
         super.onCreate(savedInstanceState)
 
@@ -565,11 +562,11 @@ class MainActivity : BaseActivity() {
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.update_check_dialog_title)
                 .setMessage(getString(R.string.update_check_dialog_message, version))
-                .setNegativeButton(R.string.button_no, { _, _ ->
+                .setNegativeButton(R.string.button_no) { _, _ ->
                     if (checkbox.isChecked) {
                         silence()
                     }
-                })
+                }
                 .setPositiveButton(R.string.button_yes) { _, _ ->
                     if (checkbox.isChecked) {
                         silence()

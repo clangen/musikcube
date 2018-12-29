@@ -1,6 +1,8 @@
 package io.casey.musikcube.remote.ui.tracks.adapter
 
+import android.content.SharedPreferences
 import android.support.v7.widget.RecyclerView
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,13 +12,17 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.extension.letMany
+import io.casey.musikcube.remote.ui.shared.extension.titleEllipsizeMode
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
 
 class TrackListAdapter(private val tracks: DefaultSlidingWindow,
-                       private val listener: EventListener?,
-                       private var playback: PlaybackMixin) : RecyclerView.Adapter<TrackListAdapter.ViewHolder>()
+                       private val listener: EventListener,
+                       private var playback: PlaybackMixin,
+                       prefs: SharedPreferences) : RecyclerView.Adapter<TrackListAdapter.ViewHolder>()
 {
+    private val ellipsizeMode = titleEllipsizeMode(prefs)
+
     interface EventListener {
         fun onItemClick(view: View, track: ITrack, position: Int)
         fun onActionItemClick(view: View, track: ITrack, position: Int)
@@ -43,7 +49,7 @@ class TrackListAdapter(private val tracks: DefaultSlidingWindow,
             }
         }
 
-        return ViewHolder(view, playback)
+        return ViewHolder(view, playback, ellipsizeMode)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) =
@@ -51,12 +57,19 @@ class TrackListAdapter(private val tracks: DefaultSlidingWindow,
 
     override fun getItemCount(): Int = tracks.count
 
-    class ViewHolder internal constructor(view: View,
-        private val playback: PlaybackMixin) : RecyclerView.ViewHolder(view)
+    class ViewHolder internal constructor(
+        view: View,
+        private val playback: PlaybackMixin,
+        ellipsizeMode: TextUtils.TruncateAt)
+            : RecyclerView.ViewHolder(view)
     {
         private val title: TextView = view.findViewById(R.id.title)
         private val subtitle: TextView = view.findViewById(R.id.subtitle)
         private val action: View = view.findViewById(R.id.action)
+
+        init {
+            title.ellipsize = ellipsizeMode
+        }
 
         internal fun bind(track: ITrack?, position: Int) {
             val tag = itemView.tag as Tag

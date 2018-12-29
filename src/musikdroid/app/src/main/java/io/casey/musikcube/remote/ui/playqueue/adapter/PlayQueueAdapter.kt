@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.ui.playqueue.adapter
 
+import android.content.SharedPreferences
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
@@ -9,13 +10,17 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
+import io.casey.musikcube.remote.ui.shared.extension.titleEllipsizeMode
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
 
 class PlayQueueAdapter(val tracks: DefaultSlidingWindow,
                        val playback: PlaybackMixin,
+                       val prefs: SharedPreferences,
                        val listener: EventListener): RecyclerView.Adapter<PlayQueueAdapter.ViewHolder>()
 {
+    private val ellipsizeMode = titleEllipsizeMode(prefs)
+
     interface EventListener {
         fun onItemClicked(position: Int)
         fun onActionClicked(view: View, value: ITrack)
@@ -50,6 +55,7 @@ class PlayQueueAdapter(val tracks: DefaultSlidingWindow,
         private val action = itemView.findViewById<View>(R.id.action)
 
         internal fun bind(track: ITrack?, position: Int) {
+            title.ellipsize = ellipsizeMode
             trackNum.text = (position + 1).toString()
             itemView.tag = position
             action.tag = track

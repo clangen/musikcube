@@ -25,7 +25,7 @@ import io.reactivex.disposables.CompositeDisposable
 
 abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.TaskCallbacks {
     protected var disposables = CompositeDisposable()
-    private lateinit var prefs: SharedPreferences
+    protected lateinit var prefs: SharedPreferences
     private var paused = false
     private val mixins = MixinSet()
 

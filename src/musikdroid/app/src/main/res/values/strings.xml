@@ -144,6 +144,10 @@
     <string name="replaygain_mode_disabled">disabled</string>
     <string name="replaygain_mode_track">track</string>
     <string name="replaygain_mode_album">album</string>
+    <string name="title_ellipsis_mode">ellipsize titles:</string>
+    <string name="ellipsis_mode_beginning">beginning</string>
+    <string name="ellipsis_mode_middle">middle</string>
+    <string name="ellipsis_mode_end">end</string>
     <string name="connections_no_presets">no saved connection presets.</string>
     <string name="empty_show_offline_tracks_button">show offline songs</string>
     <string name="empty_no_offline_tracks_message">oops, you don\'t seem to have any songs available offline.\n\nnext time you\'re connected, stream some music!</string>

@@ -41,7 +41,7 @@ class EditPlaylistActivity: BaseActivity() {
         val recycler = findViewById<RecyclerView>(R.id.recycler_view)
         val touchHelper = ItemTouchHelper(touchHelperCallback)
         touchHelper.attachToRecyclerView(recycler)
-        adapter = EditPlaylistAdapter(viewModel, touchHelper)
+        adapter = EditPlaylistAdapter(viewModel, touchHelper, prefs)
         setupDefaultRecyclerView(recycler, adapter)
         setResult(RESULT_CANCELED)
     }
@@ -85,7 +85,7 @@ class EditPlaylistActivity: BaseActivity() {
 
     private fun saveAndFinish() {
         if (viewModel.modified) {
-            viewModel.save().subscribeBy(
+            disposables.add(viewModel.save().subscribeBy(
                 onNext = { playlistId ->
                     if (playlistId != -1L) {
                         val data = Intent()
@@ -99,7 +99,7 @@ class EditPlaylistActivity: BaseActivity() {
                 },
                 onError = {
                     showErrorSnackbar(R.string.playlist_edit_save_failed)
-                })
+                }))
         }
         else {
             finish()
@@ -131,8 +131,8 @@ class EditPlaylistActivity: BaseActivity() {
             return AlertDialog.Builder(editActivity)
                 .setTitle(R.string.playlist_edit_save_changes_title)
                 .setMessage(R.string.playlist_edit_save_changes_message)
-                .setNegativeButton(R.string.button_discard, { _, _ -> editActivity.finish() })
-                .setPositiveButton(R.string.button_save, { _, _ -> editActivity.saveAndFinish() })
+                .setNegativeButton(R.string.button_discard) { _, _ -> editActivity.finish() }
+                .setPositiveButton(R.string.button_save) { _, _ -> editActivity.saveAndFinish() }
                 .create()
         }
 
@@ -148,8 +148,8 @@ class EditPlaylistActivity: BaseActivity() {
     }
 
     companion object {
-        val EXTRA_PLAYLIST_ID = "extra_playlist_id"
-        val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
+        const val EXTRA_PLAYLIST_ID = "extra_playlist_id"
+        const val EXTRA_PLAYLIST_NAME = "extra_playlist_name"
 
         fun getStartIntent(context: Context, playlistName: String, playlistId: Long): Intent {
             return Intent(context, EditPlaylistActivity::class.java)

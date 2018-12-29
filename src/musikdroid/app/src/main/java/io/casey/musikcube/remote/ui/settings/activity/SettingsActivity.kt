@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.ui.settings.activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.DialogFragment
@@ -46,7 +45,7 @@ class SettingsActivity : BaseActivity() {
     private lateinit var transferCheckbox: CheckBox
     private lateinit var bitrateSpinner: Spinner
     private lateinit var cacheSpinner: Spinner
-    private lateinit var prefs: SharedPreferences
+    private lateinit var titleEllipsisSpinner: Spinner
     private lateinit var playback: PlaybackMixin
     private lateinit var data: DataProviderMixin
 
@@ -140,6 +139,16 @@ class SettingsActivity : BaseActivity() {
         cacheSpinner.setSelection(prefs.getInt(
             Keys.DISK_CACHE_SIZE_INDEX, Defaults.DISK_CACHE_SIZE_INDEX))
 
+        /* title ellipsis mode */
+        val ellipsisModes = ArrayAdapter.createFromResource(
+            this, R.array.title_ellipsis_mode_array, android.R.layout.simple_spinner_item)
+
+        ellipsisModes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+
+        titleEllipsisSpinner.adapter = ellipsisModes
+        titleEllipsisSpinner.setSelection(prefs.getInt(
+            Keys.TITLE_ELLIPSIS_MODE_INDEX, Defaults.TITLE_ELLIPSIS_SIZE_INDEX))
+
         /* advanced */
         transferCheckbox.isChecked = prefs.getBoolean(
             Keys.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT,
@@ -199,6 +208,7 @@ class SettingsActivity : BaseActivity() {
         this.softwareVolume = findViewById(R.id.software_volume)
         this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner)
         this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner)
+        this.titleEllipsisSpinner = findViewById(R.id.title_ellipsis_mode_spinner)
         this.sslCheckbox = findViewById(R.id.ssl_checkbox)
         this.certCheckbox = findViewById(R.id.cert_validation)
         this.transferCheckbox = findViewById(R.id.transfer_on_disconnect_checkbox)
@@ -271,6 +281,7 @@ class SettingsActivity : BaseActivity() {
                 .putBoolean(Keys.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT, transferCheckbox.isChecked)
                 .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
                 .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
+                .putInt(Keys.TITLE_ELLIPSIS_MODE_INDEX, titleEllipsisSpinner.selectedItemPosition)
                 .apply()
 
             if (!softwareVolume.isChecked) {
