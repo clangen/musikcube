@@ -67,16 +67,10 @@ class SettingsActivity : BaseActivity() {
         return true
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        slideThisDown()
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
                 finish()
-                slideThisDown()
                 return true
             }
             R.id.action_save -> {
@@ -107,6 +101,9 @@ class SettingsActivity : BaseActivity() {
 
         super.onActivityResult(requestCode, resultCode, data)
     }
+
+    override val transitionType: Transition
+        get() = Transition.Vertical
 
     private fun rebindUi() {
         /* connection info */

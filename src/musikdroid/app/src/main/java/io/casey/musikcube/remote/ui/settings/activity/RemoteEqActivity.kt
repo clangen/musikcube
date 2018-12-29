@@ -11,7 +11,6 @@ import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.ui.settings.viewmodel.BaseRemoteViewModel
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteEqViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.extension.slideThisRight
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.rxkotlin.subscribeBy
@@ -50,11 +49,6 @@ class RemoteEqActivity: BaseActivity() {
         super.onResume()
         initObservers()
         viewModel.attach(data.provider)
-    }
-
-    override fun finish() {
-        super.finish()
-        slideThisRight()
     }
 
     override fun <T : ViewModel<*>> createViewModel(): T? {

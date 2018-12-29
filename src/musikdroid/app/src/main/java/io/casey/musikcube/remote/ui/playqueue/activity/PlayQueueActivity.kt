@@ -77,20 +77,6 @@ class PlayQueueActivity : BaseActivity() {
         }
     }
 
-    private fun initObservers() {
-        disposables.add(data.provider.observeState().subscribeBy(
-            onNext = { states ->
-                if (states.first == IDataProvider.State.Connected) {
-                    tracks.requery()
-                }
-                else {
-                    emptyView.update(states.first, adapter.itemCount)
-                }
-            },
-            onError = {
-            }))
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val result = super.onOptionsItemSelected(item)
 
@@ -104,6 +90,23 @@ class PlayQueueActivity : BaseActivity() {
     override fun onBackPressed() {
         super.onBackPressed()
         overridePendingTransition(R.anim.stay_put, R.anim.slide_down)
+    }
+
+    override val transitionType: Transition
+        get() = Transition.Vertical
+
+    private fun initObservers() {
+        disposables.add(data.provider.observeState().subscribeBy(
+            onNext = { states ->
+                if (states.first == IDataProvider.State.Connected) {
+                    tracks.requery()
+                }
+                else {
+                    emptyView.update(states.first, adapter.itemCount)
+                }
+            },
+            onError = {
+            }))
     }
 
     private val adapterListener = object: PlayQueueAdapter.EventListener {

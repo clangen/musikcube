@@ -17,13 +17,17 @@ import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.ViewComponent
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.ui.shared.extension.hideKeyboard
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.mixin.RunnerMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
 
 abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.TaskCallbacks {
+    protected enum class Transition {
+        Horizontal, Vertical
+    }
+
     protected var disposables = CompositeDisposable()
     protected lateinit var prefs: SharedPreferences
     private var paused = false
@@ -35,6 +39,11 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
             .build()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        when (transitionType) {
+            Transition.Horizontal -> slideNextLeft()
+            Transition.Vertical -> slideNextUp()
+        }
+
         component.inject(this)
         mixin(RunnerMixin(this, javaClass))
         super.onCreate(savedInstanceState)
@@ -105,6 +114,16 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
 
     override fun onTaskError(s: String, l: Long, task: Task<*, *>, throwable: Throwable) {
     }
+
+    override fun finish() {
+        super.finish()
+        when (transitionType) {
+            Transition.Horizontal -> slideThisRight()
+            Transition.Vertical -> slideThisDown()
+        }
+    }
+
+    protected open val transitionType = Transition.Horizontal
 
     protected fun isPaused(): Boolean = paused
 

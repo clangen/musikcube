@@ -168,7 +168,6 @@ class MainActivity : BaseActivity() {
 
             R.id.action_settings -> {
                 startActivity(SettingsActivity.getStartIntent(this))
-                slideNextUp()
                 return true
             }
 
@@ -184,7 +183,6 @@ class MainActivity : BaseActivity() {
 
             R.id.action_remote_manage -> {
                 startActivity(RemoteSettingsActivity.getStartIntent(this))
-                slideNextUp()
                 return true
             }
         }
@@ -460,8 +458,6 @@ class MainActivity : BaseActivity() {
     private fun navigateToPlayQueue() {
         startActivity(PlayQueueActivity.getStartIntent(
             this@MainActivity, playback.service.queuePosition))
-
-        slideNextUp()
     }
 
     private fun scheduleUpdateTime(immediate: Boolean) {

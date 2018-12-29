@@ -86,14 +86,12 @@ class RemoteSettingsActivity: BaseActivity() {
         return super.onPrepareOptionsMenu(menu)
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        slideThisDown()
-    }
-
     override fun <T : ViewModel<*>> createViewModel(): T? {
         return RemoteSettingsViewModel() as T
     }
+
+    override val transitionType: Transition
+        get() = Transition.Vertical
 
     private fun drawNormal() {
         if (!initialized) {
@@ -187,7 +185,6 @@ class RemoteSettingsActivity: BaseActivity() {
         configureEq.setOnClickListener {
             val intent = Intent(this, RemoteEqActivity::class.java)
             startActivity(intent)
-            slideNextLeft()
         }
 
         /* transport */
@@ -213,7 +210,6 @@ class RemoteSettingsActivity: BaseActivity() {
                     }
                     ViewModelState.Saved -> {
                         finish()
-                        slideThisDown()
                     }
                 }
                 invalidateOptionsMenu()
