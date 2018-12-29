@@ -13,8 +13,6 @@ import io.casey.musikcube.remote.service.websocket.model.ReplayGainMode
 import io.casey.musikcube.remote.service.websocket.model.TransportType
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.extension.slideNextLeft
-import io.casey.musikcube.remote.ui.shared.extension.slideThisDown
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.rxkotlin.subscribeBy

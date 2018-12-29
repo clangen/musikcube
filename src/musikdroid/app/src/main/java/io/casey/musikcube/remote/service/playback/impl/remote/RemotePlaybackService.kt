@@ -12,8 +12,8 @@ import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
+import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
 import io.reactivex.Observable
 import org.json.JSONObject
 import java.util.*

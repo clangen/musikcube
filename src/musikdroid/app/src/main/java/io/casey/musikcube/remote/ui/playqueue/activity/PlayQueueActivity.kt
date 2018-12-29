@@ -18,8 +18,8 @@ import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import io.casey.musikcube.remote.ui.shared.model.ITrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
+import io.casey.musikcube.remote.ui.shared.model.ITrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.reactivex.rxkotlin.subscribeBy
 

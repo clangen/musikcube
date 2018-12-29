@@ -11,6 +11,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
@@ -19,9 +20,8 @@ import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import io.casey.musikcube.remote.ui.shared.model.ITrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
-import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
+import io.casey.musikcube.remote.ui.shared.model.ITrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView.Capability
 import io.casey.musikcube.remote.ui.tracks.adapter.TrackListAdapter

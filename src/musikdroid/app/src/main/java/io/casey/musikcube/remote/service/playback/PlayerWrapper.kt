@@ -1,6 +1,5 @@
 package io.casey.musikcube.remote.service.playback
 
-import android.content.SharedPreferences
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerPlaybackComponent
 import io.casey.musikcube.remote.service.gapless.GaplessHeaderService
@@ -11,7 +10,6 @@ import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineDb
 import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineTrack
 import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers

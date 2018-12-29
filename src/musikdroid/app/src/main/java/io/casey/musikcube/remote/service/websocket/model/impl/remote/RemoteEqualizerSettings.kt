@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.service.websocket.model.impl.remote
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IEqualizerSettings
 import org.json.JSONObject
-import java.lang.NumberFormatException
 
 class RemoteEqualizerSettings(private val json: JSONObject): IEqualizerSettings {
     private val bandToFreqMap: Map<Int, Double>

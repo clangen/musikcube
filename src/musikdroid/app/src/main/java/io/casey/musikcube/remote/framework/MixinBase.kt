@@ -2,7 +2,6 @@ package io.casey.musikcube.remote.framework
 
 import android.content.Intent
 import android.os.Bundle
-import io.casey.musikcube.remote.Application
 
 abstract class MixinBase : IMixin {
     enum class State {

@@ -1,6 +1,5 @@
 package io.casey.musikcube.remote.service.websocket.model
 
-import io.casey.musikcube.remote.service.websocket.Messages
 import io.reactivex.Observable
 
 interface IDataProvider {
