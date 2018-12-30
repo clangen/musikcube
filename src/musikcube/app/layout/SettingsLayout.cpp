@@ -37,6 +37,7 @@
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <cursespp/DialogOverlay.h>
+#include <cursespp/ToastOverlay.h>
 #include <cursespp/InputOverlay.h>
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
@@ -47,6 +48,7 @@
 #include <core/audio/Outputs.h>
 #include <core/support/Messages.h>
 
+#include <app/version.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
@@ -717,6 +719,10 @@ bool SettingsLayout::KeyPress(const std::string& key) {
             this->RemoveSelectedDirectory();
             return true;
         }
+    }
+    if (key == "^_" || key == "M-v") { /* ctrl+/ */
+        ToastOverlay::Show(u8fmt(_TSTR("console_version"), VERSION), -1);
+        return true;
     }
 
     return LayoutBase::KeyPress(key);
