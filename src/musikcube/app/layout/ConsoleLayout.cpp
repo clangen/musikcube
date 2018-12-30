@@ -57,7 +57,7 @@ void ConsoleLayout::OnItemActivated(cursespp::ListWindow* window, size_t index) 
 }
 
 bool ConsoleLayout::KeyPress(const std::string& kn) {
-    if (kn == "^_") { /* ctrl+/ */
+    if (kn == "^_" || kn == "M-v") { /* ctrl+/ */
         ToastOverlay::Show(u8fmt(_TSTR("console_version"), VERSION), -1);
         return true;
     }
