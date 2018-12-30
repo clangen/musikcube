@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2007-2017 musikcube team
+// Copyright (c) 2004-2019 musikcube team
 //
 // All rights reserved.
 //
@@ -43,7 +43,7 @@ namespace musik { namespace core { namespace db { namespace local {
         public:
             static PersistedPlayQueueQuery* Save(
                 musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback) 
+                musik::core::audio::PlaybackService& playback)
             {
                 return new PersistedPlayQueueQuery(library, playback, Type::Save);
             }

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2007-2017 musikcube team
+// Copyright (c) 2004-2019 musikcube team
 //
 // All rights reserved.
 //
@@ -117,7 +117,7 @@ bool CddaDataStream::Open(const char *uri, unsigned int options) {
         return false;
     }
 
-    /* MMC-3 Draft Revision 10g: Table 222 – Q Sub-channel control field */
+    /* MMC-3 Draft Revision 10g: Table 222 ï¿½ Q Sub-channel control field */
     if (this->toc.TrackData[trackIndex - 1].Control & 4) {
         /* nope, got a data track. */
         this->Close();

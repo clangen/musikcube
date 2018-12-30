@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2007-2017 musikcube team
+// Copyright (c) 2004-2019 musikcube team
 //
 // All rights reserved.
 //
@@ -63,7 +63,7 @@ class SndioOut : public IOutput {
 
     private:
         bool InitDevice(IBuffer *buffer);
-    
+
         enum State {
             StateStopped,
             StatePaused,

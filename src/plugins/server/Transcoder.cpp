@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2007-2017 musikcube team
+// Copyright (c) 2004-2019 musikcube team
 //
 // All rights reserved.
 //
@@ -120,7 +120,7 @@ static void getTempAndFinalFilename(
 }
 
 IDataStream* Transcoder::Transcode(
-    Context& context, 
+    Context& context,
     const std::string& uri,
     size_t bitrate,
     const std::string& format)

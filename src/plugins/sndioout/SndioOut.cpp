@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2007-2017 musikcube team
+// Copyright (c) 2004-2019 musikcube team
 //
 // All rights reserved.
 //
@@ -61,7 +61,7 @@ extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     }
 }
 
-SndioOut::SndioOut() { 
+SndioOut::SndioOut() {
     this->volume = 1.0f;
     this->state = StateStopped;
     this->handle = nullptr;
@@ -114,7 +114,7 @@ void SndioOut::Resume() {
 
 void SndioOut::SetVolume(double volume) {
     this->volume = volume;
-    
+
     if (this->handle) {
         sio_setvol(this->handle, lround(volume * SIO_MAXVOL));
     }
@@ -167,33 +167,33 @@ bool SndioOut::InitDevice(IBuffer *buffer) {
     }
 
     int n = 1; bool littleEndian = *(char *) &n == 1;
-    
+
     sio_initpar(&this->pars);
     this->pars.pchan = buffer->Channels();
     this->pars.rate = buffer->SampleRate();
     this->pars.sig = 1;
     this->pars.le = !!littleEndian;
     this->pars.bits = 16;
-    
+
     /* stolen from cmus; presumeably they've already iterated
     this value and it should be a reasonable default */
     this->pars.appbufsz = pars.rate * 300 / 1000;
-    
+
     if (!sio_setpar(this->handle, &this->pars)) {
         return false;
     }
-    
+
     if (!sio_getpar(this->handle, &this->pars)) {
         return false;
     }
-    
+
     if (!sio_start(this->handle)) {
         return false;
     }
 
-    this->latency = (double) 
-        this->pars.bufsz / 
-        this->pars.pchan / 
+    this->latency = (double)
+        this->pars.bufsz /
+        this->pars.pchan /
         this->pars.rate;
 
     this->SetVolume(this->volume);
@@ -213,13 +213,13 @@ int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         INFO("initialized");
         this->state = StateStopped;
     }
-        
+
     if (!this->handle || this->state == StatePaused) {
         return OutputInvalidState;
     }
-    
-    this->state = StatePlaying;    
-    
+
+    this->state = StatePlaying;
+
     /* convert to 16-bit PCM */
     long samples = buffer->Samples();
     if (!this->buffer || samples > this->bufferSamples) {
@@ -245,13 +245,13 @@ int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         *dst = sample;
         ++dst; ++src;
     }
-    
+
     /* write the entire output buffer. this may require multiple passes;
     that's ok, just loop until we're done */
     char* data = (char*) this->buffer;
     size_t dataLength = samples * sizeof(short);
     size_t totalWritten = 0;
-    
+
     while (totalWritten < dataLength && this->state == StatePlaying) {
         size_t remaining = dataLength - totalWritten;
         size_t written = 0;
@@ -268,7 +268,7 @@ int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         totalWritten += written;
         data += written;
     }
-        
+
     provider->OnBufferProcessed(buffer);
     return OutputBufferWritten;
 }

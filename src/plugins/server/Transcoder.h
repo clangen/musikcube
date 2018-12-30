@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2007-2017 musikcube team
+// Copyright (c) 2004-2019 musikcube team
 //
 // All rights reserved.
 //
@@ -55,13 +55,13 @@ class Transcoder {
             const std::string& format);
 
         static IDataStream* TranscodeAndWait(
-            Context& context, 
+            Context& context,
             const std::string& uri,
             size_t bitrate,
             const std::string& format);
 
         static IDataStream* TranscodeOnDemand(
-            Context& context, 
+            Context& context,
             const std::string& uri,
             size_t bitrate,
             const std::string& format);
