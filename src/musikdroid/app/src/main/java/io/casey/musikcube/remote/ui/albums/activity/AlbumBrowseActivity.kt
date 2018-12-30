@@ -51,7 +51,7 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
         setTitleFromIntent(R.string.albums_title)
         enableUpNavigation()
 
-        adapter = AlbumBrowseAdapter(eventListener, playback)
+        adapter = AlbumBrowseAdapter(eventListener, playback, prefs)
 
         val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
         setupDefaultRecyclerView(recyclerView, adapter)

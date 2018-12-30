@@ -1,6 +1,8 @@
 package io.casey.musikcube.remote.ui.albums.adapter
 
+import android.content.SharedPreferences
 import android.support.v7.widget.RecyclerView
+import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,12 +15,14 @@ import io.casey.musikcube.remote.injection.GlideApp
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
+import io.casey.musikcube.remote.ui.shared.extension.titleEllipsizeMode
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.albumart.Size
 import io.casey.musikcube.remote.ui.shared.model.albumart.getUrl
 
 class AlbumBrowseAdapter(private val listener: EventListener,
-                         private val playback: PlaybackMixin)
+                         private val playback: PlaybackMixin,
+                         val prefs: SharedPreferences)
     : RecyclerView.Adapter<AlbumBrowseAdapter.ViewHolder>()
 {
     interface EventListener {
@@ -27,6 +31,7 @@ class AlbumBrowseAdapter(private val listener: EventListener,
     }
 
     private var model: List<IAlbum> = listOf()
+    private val ellipsizeMode = titleEllipsizeMode(prefs)
 
     internal fun setModel(model: List<IAlbum>) {
         this.model = model
@@ -37,9 +42,9 @@ class AlbumBrowseAdapter(private val listener: EventListener,
         val inflater = LayoutInflater.from(parent.context)
         val view = inflater.inflate(R.layout.simple_list_item, parent, false)
         val action = view.findViewById<View>(R.id.action)
-        view.setOnClickListener({ v -> listener.onItemClicked(v.tag as IAlbum) })
-        action.setOnClickListener({ v -> listener.onActionClicked(v, v.tag as IAlbum) })
-        return ViewHolder(view, playback)
+        view.setOnClickListener { v -> listener.onItemClicked(v.tag as IAlbum) }
+        action.setOnClickListener { v -> listener.onActionClicked(v, v.tag as IAlbum) }
+        return ViewHolder(view, playback, ellipsizeMode)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -49,11 +54,19 @@ class AlbumBrowseAdapter(private val listener: EventListener,
     override fun getItemCount(): Int = model.size
 
     class ViewHolder internal constructor(
-            itemView: View, val playback: PlaybackMixin) : RecyclerView.ViewHolder(itemView) {
+            itemView: View,
+            val playback: PlaybackMixin,
+            ellipsizeMode: TextUtils.TruncateAt)
+                : RecyclerView.ViewHolder(itemView)
+    {
         private val title = itemView.findViewById<TextView>(R.id.title)
         private val subtitle = itemView.findViewById<TextView>(R.id.subtitle)
         private val artwork = itemView.findViewById<ImageView>(R.id.artwork)
         private val action = itemView.findViewById<View>(R.id.action)
+
+        init {
+            title.ellipsize = ellipsizeMode
+        }
 
         internal fun bind(album: IAlbum) {
             val playing = playback.service.playingTrack
