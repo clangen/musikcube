@@ -61,7 +61,6 @@ TrackList::TrackList(ILibraryPtr library) {
 TrackList::TrackList(TrackList* other)
 : ids(other->ids)
 , library(other->library) {
-    this->library = library;
 }
 
 TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)

@@ -38,6 +38,7 @@
 #include <app/util/Playback.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <iostream>
 
 using namespace musik::cube;
 using namespace musik::core;

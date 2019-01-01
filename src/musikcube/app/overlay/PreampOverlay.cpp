@@ -46,6 +46,8 @@
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/Screen.h>
 
+#include <sstream>
+
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::sdk;

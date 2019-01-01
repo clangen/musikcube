@@ -55,6 +55,7 @@
 #include <ostream>
 #include <iomanip>
 #include <limits>
+#include <sstream>
 
 using namespace musik::core;
 using namespace musik::core::sdk;
