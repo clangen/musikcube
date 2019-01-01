@@ -159,6 +159,7 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
             ext.compare("ape") == 0 ||
             ext.compare("mpc") == 0 ||
             ext.compare("aac") == 0 ||
+            ext.compare("alac") == 0 ||
 #endif
             ext.compare("mp3") == 0 ||
             ext.compare("ogg") == 0 ||
@@ -178,14 +179,19 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
         extension = path.substr(lastDot + 1).c_str();
     }
 
-    bool success = false;
+    try {
+        this->ReadGeneric(uri, track);
+    }
+    catch (...) {
+        std::cerr << "generic tag read for " << uri << "failed!";
+    }
 
     if (extension.size()) {
         boost::algorithm::to_lower(extension);
 
         if (extension == "mp3") {
             try {
-                success = this->ReadID3V2(uri, track);
+                this->ReadID3V2(uri, track);
             }
             catch (...) {
                 std::cerr << "id3v2 tag read for " << uri << "failed!";
@@ -193,14 +199,7 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
         }
     }
 
-    try {
-        success |= this->ReadGeneric(uri, track);
-    }
-    catch (...) {
-        std::cerr << "generic tag read for " << uri << "failed!";
-    }
-
-    return success;
+    return true;
 }
 
 bool TaglibMetadataReader::ReadGeneric(const char* uri, ITagStore *target) {
@@ -210,7 +209,10 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, ITagStore *target) {
     TagLib::FileRef file(uri);
 #endif
 
-    if (!file.isNull()) {
+    if (file.isNull()) {
+        this->SetTagValue("title", uri, target);
+    }
+    else {
         TagLib::Tag *tag = file.tag();
 
         if (tag) {
@@ -221,10 +223,10 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, ITagStore *target) {
                 this->SetTagValue("title", uri, target);
             }
 
-            this->SetTagValue("album",tag->album(), target);
-            this->SetSlashSeparatedValues("artist",tag->artist() , target);
-            this->SetTagValue("genre",tag->genre(), target);
-            this->SetTagValue("comment",tag->comment(), target);
+            this->SetTagValue("album", tag->album(),target);
+            this->SetSlashSeparatedValues("artist", tag->artist(), target);
+            this->SetTagValue("genre", tag->genre(), target);
+            this->SetTagValue("comment", tag->comment(), target);
 
             if (tag->track()) {
                 this->SetTagValue("track", tag->track(), target);
@@ -285,12 +287,10 @@ bool TaglibMetadataReader::ReadGeneric(const char* uri, ITagStore *target) {
 
             TagLib::AudioProperties *audio = file.audioProperties();
             this->SetAudioProperties(audio, target);
-
-            return true;
         }
     }
 
-    return false;
+    return true;
 }
 
 void TaglibMetadataReader::ExtractValueForKey(

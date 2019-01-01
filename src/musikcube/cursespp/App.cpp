@@ -44,6 +44,7 @@
 #include <cursespp/Screen.h>
 #include <algorithm>
 #include <thread>
+#include <iostream>
 
 #ifdef WIN32
 #include <cursespp/Win32Util.h>

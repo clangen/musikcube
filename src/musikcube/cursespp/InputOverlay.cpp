@@ -103,7 +103,6 @@ InputOverlay& InputOverlay::SetTitle(const std::string& title) {
 }
 
 InputOverlay& InputOverlay::SetText(const std::string& text) {
-    this->title = title;
     this->textInput->SetText(text);
     return *this;
 }
