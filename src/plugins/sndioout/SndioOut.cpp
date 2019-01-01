@@ -131,7 +131,6 @@ SndioOut::SndioOut() {
 
 SndioOut::~SndioOut() {
     this->PushCommand(Command::Quit);
-
     INFO("joining thread")
     this->writeThread->join();
     INFO("thread finished")
@@ -142,13 +141,13 @@ void SndioOut::Release() {
 }
 
 void SndioOut::PushCommand(Command command) {
-    INFO("PushCommand.start")
+    //INFO("PushCommand.start")
     {
         LOCK()
         commands.push_back(command);
     }
     NOTIFY()
-    INFO("PushCommand.end")
+    //INFO("PushCommand.end")
 }
 
 void SndioOut::Pause() {
@@ -252,9 +251,9 @@ void SndioOut::WriteLoop() {
             while (!quit && !this->commands.size() &&
                    (this->state != StatePlaying || !this->buffers.size()))
             {
-                INFO("waiting")
+                //INFO("waiting")
                 WAIT()
-                INFO("done waiting")
+                //INFO("done waiting")
             }
 
             if (quit) {
@@ -309,8 +308,8 @@ void SndioOut::WriteLoop() {
                 this->buffers.pop_front();
             }
             else {
-                INFO(std::string("state=") + std::to_string((int) this->state));
-                INFO(std::string("count=") + std::to_string((int) this->buffers.size()));
+                //INFO(std::string("state=") + std::to_string((int) this->state));
+                //INFO(std::string("count=") + std::to_string((int) this->buffers.size()));
                 continue;
             }
         }
