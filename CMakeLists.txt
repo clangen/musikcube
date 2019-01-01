@@ -164,6 +164,10 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
     add_subdirectory(src/plugins/pulseout) # disabled by default
     add_dependencies(musikcube pulseout)
   endif()
+  if (${ENABLE_ALSA} MATCHES "true")
+    add_subdirectory(src/plugins/alsaout) # disabled by default
+    add_dependencies(musikcube alsaout)
+  endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   add_subdirectory(src/plugins/coreaudioout)
   add_dependencies(musikcube coreaudioout)
