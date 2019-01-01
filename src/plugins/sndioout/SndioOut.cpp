@@ -39,11 +39,48 @@
 #include <math.h>
 #include <limits.h>
 #include <iostream>
+#include <unistd.h>
+#include <poll.h>
 
-#define DUMPSTATE() std::cerr << "handle=" << this->handle << " state=" << this->state << "\n";
+#define BUFFER_COUNT 16
 #define ERROR(str) std::cerr << "SndioOut Error: " << str << "\n";
 #define INFO(str) std::cerr << "SndioOut Info: " << str << "\n";
-#define LOCK() std::unique_lock<std::recursive_mutex> lock(this->mutex);
+#define LOCK() std::unique_lock<std::mutex> lock(this->mutex);
+#define WAIT() this->threadEvent.wait(lock);
+#define NOTIFY() this->threadEvent.notify_all();
+
+#define STOP() \
+  if(started) { \
+    if (!sio_stop(handle)) { \
+      INFO("failed to stop sndio") \
+      quit = true; \
+      continue; \
+    } \
+    else { \
+      INFO("stopped handle") \
+      started = false; \
+   } \
+  } \
+  else { \
+    INFO("already stopped") \
+  }
+
+#define START() \
+  if(!started) { \
+    if (!sio_start(handle)) { \
+      INFO("failed to start sndio") \
+      quit = true; \
+      continue; \
+    } \
+    else { \
+      INFO("started handle") \
+      started = true; \
+   } \
+  } \
+  else { \
+    INFO("handle already started") \
+  }
+
 #define PREF_DEVICE_ID "device_id"
 
 using namespace musik::core::sdk;
@@ -61,63 +98,70 @@ extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     }
 }
 
+static bool waitForDevice(sio_hdl* hdl) {
+    INFO("waiting for device")
+    int nfds, revents;
+    struct pollfd pfds[1];
+    do {
+        nfds = sio_pollfd(hdl, pfds, POLLOUT);
+        if (nfds > 0) {
+            if (poll(pfds, nfds, -1) < 0) {
+                INFO("poll failed");
+                return false;
+            }
+        }
+        revents = sio_revents(hdl, pfds);
+        if (revents & POLLHUP) {
+            INFO("device disappeared");
+            return false;
+        }
+    } while (!(revents & POLLOUT));
+    INFO("done waiting for device")
+    return true;
+}
+
 SndioOut::SndioOut() {
+    INFO("---------- sndout.ctor ----------")
     this->volume = 1.0f;
     this->state = StateStopped;
-    this->handle = nullptr;
-    this->buffer = nullptr;
-    this->bufferSamples = 0;
     this->latency = 0.0;
-    this->pars = { 0 };
-    this->ditherState = 0.0;
+    this->writeThread.reset(new std::thread(
+        std::bind(&SndioOut::WriteLoop, this)));
 }
 
 SndioOut::~SndioOut() {
-    this->Stop();
-    delete[] this->buffer;
-    this->bufferSamples = 0;
+    this->PushCommand(Command::Quit);
+
+    INFO("joining thread")
+    this->writeThread->join();
+    INFO("thread finished")
 }
 
 void SndioOut::Release() {
     delete this;
 }
 
-void SndioOut::Pause() {
-    INFO("Pause()")
-    LOCK()
-    if (this->handle && this->state == StatePlaying) {
-        if (!sio_stop(this->handle)) {
-            ERROR("pause failed")
-            this->Stop();
-        }
-        else {
-            INFO("paused")
-            this->state = StatePaused;
-        }
+void SndioOut::PushCommand(Command command) {
+    INFO("PushCommand.start")
+    {
+        LOCK()
+        commands.push_back(command);
     }
+    NOTIFY()
+    INFO("PushCommand.end")
+}
+
+void SndioOut::Pause() {
+    this->PushCommand(Command::Pause);
 }
 
 void SndioOut::Resume() {
-    INFO("Resume()")
-    LOCK()
-    if (this->handle && this->state == StatePaused) {
-        if (!sio_start(this->handle)) {
-            ERROR("resume failed")
-            this->Stop();
-        }
-        else {
-            INFO("playing")
-        }
-    }
-    this->state = StatePlaying;
+    this->PushCommand(Command::Resume);
 }
 
 void SndioOut::SetVolume(double volume) {
     this->volume = volume;
-
-    if (this->handle) {
-        sio_setvol(this->handle, lround(volume * SIO_MAXVOL));
-    }
+    this->PushCommand(Command::SetVolume);
 }
 
 double SndioOut::GetVolume() {
@@ -125,24 +169,11 @@ double SndioOut::GetVolume() {
 }
 
 void SndioOut::Stop() {
-    INFO("Stop()")
-    LOCK()
-    if (this->handle) {
-        sio_close(this->handle);
-    }
-    this->handle = nullptr;
-    this->pars = { 0 };
-    this->latency = 0;
-    this->state = StateStopped;
+    this->PushCommand(Command::Stop);
 }
 
 void SndioOut::Drain() {
-    INFO("Drain()")
-    LOCK()
-    if (this->handle) {
-        sio_stop(this->handle);
-        sio_start(this->handle);
-    }
+    this->PushCommand(Command::Drain);
 }
 
 IDeviceList* SndioOut::GetDeviceList() {
@@ -157,122 +188,254 @@ IDevice* SndioOut::GetDefaultDevice() {
     return nullptr;
 }
 
-bool SndioOut::InitDevice(IBuffer *buffer) {
-    const char* device = (::deviceId && strlen(::deviceId)) ? deviceId : nullptr;
-
-    this->handle = sio_open(device, SIO_PLAY, 0);
-
-    if (this->handle == nullptr) {
-        return false;
-    }
-
-    int n = 1; bool littleEndian = *(char *) &n == 1;
-
-    sio_initpar(&this->pars);
-    this->pars.pchan = buffer->Channels();
-    this->pars.rate = buffer->SampleRate();
-    this->pars.sig = 1;
-    this->pars.le = !!littleEndian;
-    this->pars.bits = 16;
-
-    /* stolen from cmus; presumeably they've already iterated
-    this value and it should be a reasonable default */
-    this->pars.appbufsz = pars.rate * 300 / 1000;
-
-    if (!sio_setpar(this->handle, &this->pars)) {
-        return false;
-    }
-
-    if (!sio_getpar(this->handle, &this->pars)) {
-        return false;
-    }
-
-    if (!sio_start(this->handle)) {
-        return false;
-    }
-
-    this->latency = (double)
-        this->pars.bufsz /
-        this->pars.pchan /
-        this->pars.rate;
-
-    this->SetVolume(this->volume);
-
-    return true;
-}
-
 int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
-    //DUMPSTATE()
+    std::this_thread::yield();
 
-    if (this->handle == nullptr) {
-        INFO("initializing device...");
-        if (!this->InitDevice(buffer)) {
-            ERROR("failed to initialize device")
-            return OutputInvalidState;
-        }
-        INFO("initialized");
-        this->state = StateStopped;
-    }
-
-    if (!this->handle || this->state == StatePaused) {
+    if (this->state != StatePlaying) {
         return OutputInvalidState;
     }
 
-    this->state = StatePlaying;
-
-    /* convert to 16-bit PCM */
-    long samples = buffer->Samples();
-    if (!this->buffer || samples > this->bufferSamples) {
-        delete[] this->buffer;
-        this->buffer = new short[samples];
-        this->bufferSamples = samples;
+    {
+        LOCK()
+        if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
+            return OutputBufferFull;
+        }
+        this->buffers.push_back(BufferContext{provider, buffer});
     }
 
-    float* src = buffer->BufferPointer();
-    short* dst = this->buffer;
-    for (long i = 0; i < samples; i++) {
-        float sample = *src;
-        if (sample > 1.0f) sample = 1.0f;
-        if (sample < -1.0f) sample = -1.0f;
-        sample *= SHRT_MAX;
+    NOTIFY()
+    return OutputBufferWritten;
+}
 
-        /* triangle (high pass) dither, based on Audacity's
-        implementation */
-        float r = (rand() / (float) RAND_MAX - 0.5f);
-        sample = sample + r - this->ditherState;
-        this->ditherState = r;
+void SndioOut::WriteLoop() {
+    bool started = false;
+    std::list<BufferContext> toNotify;
+    sio_hdl* handle = nullptr;
+    sio_par pars = { 0 };
+    short* pcm = nullptr;
+    long pcmSamples = 0;
+    float ditherState = 0.0;
+    bool quit = false;
+    BufferContext next {nullptr, nullptr};
 
-        *dst = sample;
-        ++dst; ++src;
+    /* open the output device. we only do this once */
+    const char* device = (::deviceId && strlen(::deviceId)) ? deviceId : nullptr;
+    handle = sio_open(device, SIO_PLAY, 0);
+    if (handle == nullptr) {
+        INFO("failed to init device")
+        quit = true;
+    }
+    else {
+        if (!sio_start(handle)) {
+            INFO("device opened, but couldn't start")
+            quit = true;
+        }
+        else {
+            started = true;
+            INFO("device handle initialized")
+        }
     }
 
-    /* write the entire output buffer. this may require multiple passes;
-    that's ok, just loop until we're done */
-    char* data = (char*) this->buffer;
-    size_t dataLength = samples * sizeof(short);
-    size_t totalWritten = 0;
-
-    while (totalWritten < dataLength && this->state == StatePlaying) {
-        size_t remaining = dataLength - totalWritten;
-        size_t written = 0;
+    while (!quit) {
+        /* drain any old buffers (we do this outside of the critical section */
+        if (toNotify.size()) {
+            INFO("cleaning up dead buffers")
+            for (auto& it : toNotify) {
+                it.provider->OnBufferProcessed(it.buffer);
+            }
+            toNotify.clear();
+        }
 
         {
+            /* we wait until we have commands to process or samples to play */
             LOCK()
-            written = sio_write(this->handle, data, remaining);
+            while (!quit && !this->commands.size() &&
+                   (this->state != StatePlaying || !this->buffers.size()))
+            {
+                INFO("waiting")
+                WAIT()
+                INFO("done waiting")
+            }
+
+            if (quit) {
+                continue;
+            }
+
+            /* process commands */
+            for (auto command : this->commands) {
+                switch (command) {
+                    case Command::Pause: {
+                        INFO("command.pause")
+                        STOP()
+                        this->state = StatePaused;
+                    } break;
+                    case Command::Resume: {
+                        INFO("command.resume")
+                        START()
+                        this->state = StatePlaying;
+                    } break;
+                    case Command::Stop: {
+                        INFO("command.stop")
+                        STOP()
+                        std::swap(toNotify, this->buffers);
+                        this->state = StateStopped;
+                    } break;
+                    case Command::SetVolume: {
+                        INFO("command.setvolume")
+                        if (handle) {
+                            sio_setvol(handle, lround(this->volume * SIO_MAXVOL));
+                        }
+                    } break;
+                    case Command::Drain: {
+                        INFO("command.drain")
+                        STOP()
+                        START()
+                    } break;
+                    case Command::Quit: {
+                        quit = true;
+                        continue;
+                    } break;
+                }
+            }
+
+            this->commands.clear();
+
+            /* play the next buffer, if it exists */
+            if (started &&
+                this->state == StatePlaying &&
+                this->buffers.size())
+            {
+                next = this->buffers.front();
+                this->buffers.pop_front();
+            }
+            else {
+                INFO(std::string("state=") + std::to_string((int) this->state));
+                INFO(std::string("count=") + std::to_string((int) this->buffers.size()));
+                continue;
+            }
         }
 
-        if (written == 0) {
-            break;
-        }
+        auto buffer = next.buffer;
 
-        totalWritten += written;
-        data += written;
+        if (buffer) {
+            /* ensure our output params are setup properly based on this
+            buffer's params */
+            if (pars.pchan != buffer->Channels() ||
+                pars.rate != buffer->SampleRate())
+            {
+                INFO("updating output params")
+
+                STOP()
+
+                sio_initpar(&pars);
+                pars.pchan = buffer->Channels();
+                pars.rate = buffer->SampleRate();
+                pars.sig = 1;
+                pars.le = SIO_LE_NATIVE;
+                pars.bits = 16;
+                pars.appbufsz = (pars.rate * 250) / 1000;
+
+                if (!sio_setpar(handle, &pars)) {
+                    INFO("sio_setpar() failed");
+                    quit = true;
+                    continue;
+                }
+
+                if (!sio_getpar(handle, &pars)) {
+                    INFO("sio_getpar() failed");
+                    quit = true;
+                    continue;
+                }
+
+                START()
+
+                this->latency = (double) pars.bufsz / pars.pchan / pars.rate;
+            }
+
+            /* allocate PCM buffer, if needed. most of the time we'll be
+            able to re-use the previously allocated one. */
+            long samples = buffer->Samples();
+            if (!pcm || samples > pcmSamples) {
+                delete[] pcm;
+                pcm = new short[samples];
+                pcmSamples = samples;
+            }
+
+            /* convert to 16-bit PCM */
+            float* src = buffer->BufferPointer();
+            short* dst = pcm;
+            for (long i = 0; i < samples; i++) {
+                float sample = *src;
+                if (sample > 1.0f) sample = 1.0f;
+                if (sample < -1.0f) sample = -1.0f;
+                sample *= SHRT_MAX;
+
+                /* triangle (high pass) dither, based on Audacity's
+                implementation */
+                float r = (rand() / (float) RAND_MAX - 0.5f);
+                sample = sample + r - ditherState;
+                ditherState = r;
+
+                *dst = sample;
+                ++dst; ++src;
+            }
+
+            /* write the entire output buffer. this may require multiple passes;
+            that's ok, just loop until we're done */
+            char* data = (char*) pcm;
+            size_t dataLength = samples * sizeof(short);
+            size_t totalWritten = 0;
+
+            {
+//              LOCK()
+//              INFO("start write")
+                while (totalWritten < dataLength) {
+                    size_t remaining = dataLength - totalWritten;
+                    size_t written = sio_write(handle, data, remaining);
+                    if (written == 0) { INFO("failed to write!") break; }
+//                  else { std::cerr << "wrote " << written << " of " << remaining << " bytes\n"; }
+                    totalWritten += written;
+                    data += written;
+                }
+//              INFO("end write")
+            }
+
+            next.provider->OnBufferProcessed(buffer);
+        }
     }
 
-    provider->OnBufferProcessed(buffer);
-    return OutputBufferWritten;
+    /* done, free remaining buffers and close the handle */
+    {
+        LOCK()
+        std::swap(toNotify, this->buffers);
+        this->buffers.clear();
+    }
+
+    if (handle) {
+        INFO("closing")
+        sio_close(handle);
+        handle = nullptr;
+    }
+
+    for (auto& it : toNotify) {
+    INFO("cleaning up dead buffer")
+        it.provider->OnBufferProcessed(it.buffer);
+    }
+
+    delete[] pcm;
 }
 
 double SndioOut::Latency() {
     return this->latency;
 }
+
+size_t SndioOut::CountBuffersWithProvider(IBufferProvider* provider) {
+    size_t count = 0;
+    for (auto& it : this->buffers) {
+        if (it.provider == provider) {
+            ++count;
+        }
+    }
+    return count;
+}
+

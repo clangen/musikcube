@@ -36,6 +36,9 @@
 #include <core/sdk/IOutput.h>
 #include <sndio.h>
 #include <mutex>
+#include <list>
+#include <thread>
+#include <condition_variable>
 
 using namespace musik::core::sdk;
 
@@ -62,21 +65,32 @@ class SndioOut : public IOutput {
         virtual IDevice* GetDefaultDevice() override;
 
     private:
-        bool InitDevice(IBuffer *buffer);
-
-        enum State {
-            StateStopped,
-            StatePaused,
-            StatePlaying
+        enum class Command: int {
+            Pause, Resume, Stop, SetVolume, Drain, Quit
         };
 
+        struct BufferContext {
+            IBufferProvider* provider;
+            IBuffer* buffer;
+        };
+
+        enum State {
+            StateStopped, StatePaused, StatePlaying
+        };
+
+        size_t CountBuffersWithProvider(IBufferProvider* provider);
+        void WriteLoop();
+        void PushCommand(Command command);
+
+        /* audio */
         State state;
         double volume;
-        sio_hdl* handle;
-        sio_par pars;
-        short* buffer;
-        long bufferSamples;
         double latency;
-        float ditherState;
-        std::recursive_mutex mutex;
+
+        /* threading */
+        std::list<Command> commands;
+        std::list<BufferContext> buffers;
+        std::unique_ptr<std::thread> writeThread;
+        std::condition_variable threadEvent;
+        std::mutex mutex;
 };
