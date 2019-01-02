@@ -1,3 +1,14 @@
+0.60.1
+
+musikcube:
+* fixed m4a playback
+* added support for aac and alac playback
+
+musikdroid:
+* fixed crash on startup on some versions of Android. oops.
+
+--------------------------------------------------------------------------------
+
 0.60.0
 
 musikcube:
