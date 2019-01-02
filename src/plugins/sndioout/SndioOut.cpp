@@ -39,8 +39,6 @@
 #include <math.h>
 #include <limits.h>
 #include <iostream>
-#include <unistd.h>
-#include <poll.h>
 
 #define BUFFER_COUNT 16
 #define ERROR(str) std::cerr << "SndioOut Error: " << str << "\n";
@@ -96,28 +94,6 @@ extern "C" void SetPreferences(musik::core::sdk::IPreferences* prefs) {
         prefs->Save();
         INFO("setting deviceId to " + std::string(deviceId));
     }
-}
-
-static bool waitForDevice(sio_hdl* hdl) {
-    INFO("waiting for device")
-    int nfds, revents;
-    struct pollfd pfds[1];
-    do {
-        nfds = sio_pollfd(hdl, pfds, POLLOUT);
-        if (nfds > 0) {
-            if (poll(pfds, nfds, -1) < 0) {
-                INFO("poll failed");
-                return false;
-            }
-        }
-        revents = sio_revents(hdl, pfds);
-        if (revents & POLLHUP) {
-            INFO("device disappeared");
-            return false;
-        }
-    } while (!(revents & POLLOUT));
-    INFO("done waiting for device")
-    return true;
 }
 
 SndioOut::SndioOut() {
