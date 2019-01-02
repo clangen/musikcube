@@ -145,6 +145,7 @@ double SndioOut::GetVolume() {
 
 void SndioOut::Stop() {
     this->PushCommand(Command::Stop);
+    this->DiscardBuffers();
 }
 
 void SndioOut::Drain() {
@@ -184,7 +185,6 @@ int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
 void SndioOut::WriteLoop() {
     bool started = false;
-    std::list<BufferContext> toNotify;
     sio_hdl* handle = nullptr;
     sio_par pars = { 0 };
     short* pcm = nullptr;
@@ -212,15 +212,6 @@ void SndioOut::WriteLoop() {
     }
 
     while (!quit) {
-        /* drain any old buffers (we do this outside of the critical section */
-        if (toNotify.size()) {
-            INFO("cleaning up dead buffers")
-            for (auto& it : toNotify) {
-                it.provider->OnBufferProcessed(it.buffer);
-            }
-            toNotify.clear();
-        }
-
         {
             /* we wait until we have commands to process or samples to play */
             LOCK()
@@ -252,7 +243,6 @@ void SndioOut::WriteLoop() {
                     case Command::Stop: {
                         INFO("command.stop")
                         STOP()
-                        std::swap(toNotify, this->buffers);
                         this->state = StateStopped;
                     } break;
                     case Command::SetVolume: {
@@ -380,28 +370,31 @@ void SndioOut::WriteLoop() {
     }
 
     /* done, free remaining buffers and close the handle */
-    {
-        LOCK()
-        std::swap(toNotify, this->buffers);
-        this->buffers.clear();
-    }
-
     if (handle) {
         INFO("closing")
         sio_close(handle);
         handle = nullptr;
     }
 
-    for (auto& it : toNotify) {
-    INFO("cleaning up dead buffer")
-        it.provider->OnBufferProcessed(it.buffer);
-    }
+    this->DiscardBuffers();
 
     delete[] pcm;
 }
 
 double SndioOut::Latency() {
     return this->latency;
+}
+
+void SndioOut::DiscardBuffers() {
+    std::list<BufferContext> toNotify;
+    {
+        LOCK()
+        std::swap(toNotify, this->buffers);
+    }
+
+    for (auto& it : toNotify) {
+        it.provider->OnBufferProcessed(it.buffer);
+    }
 }
 
 size_t SndioOut::CountBuffersWithProvider(IBufferProvider* provider) {
