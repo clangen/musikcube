@@ -81,6 +81,7 @@ class SndioOut : public IOutput {
         size_t CountBuffersWithProvider(IBufferProvider* provider);
         void WriteLoop();
         void PushCommand(Command command);
+        void DiscardBuffers();
 
         /* audio */
         State state;
