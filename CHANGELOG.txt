@@ -3,9 +3,11 @@
 musikcube:
 * fixed m4a playback
 * added support for aac and alac playback
+* refactored `sndio` output to be more resilient against buggy drivers
+* added support for ALSA in FreeBSD via `-DENABLE_ALSA=true` CMake switch.
 
 musikdroid:
-* fixed crash on startup on some versions of Android. oops.
+* fixed crash on startup on some versions of Android. ugh.
 
 --------------------------------------------------------------------------------
 
