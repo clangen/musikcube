@@ -45,7 +45,7 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream){
 }
 
 void GmeDecoder::Release() {
-	delete this;
+    delete this;
 }
 
 double GmeDecoder::SetPosition(double seconds) {
