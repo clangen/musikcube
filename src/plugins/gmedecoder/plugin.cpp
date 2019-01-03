@@ -32,29 +32,18 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include "Constants.h"
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IDecoderFactory.h>
-#include <string>
-#include <set>
 #include "GmeDecoder.h"
-
-#ifdef WIN32
-    #define DLLEXPORT __declspec(dllexport)
-#else
-    #define DLLEXPORT
-#endif
+#include "GmeIndexerSource.h"
 
 #ifdef WIN32
     BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
         return true;
     }
 #endif
-
-static const std::set<std::string> FORMATS = {
-    "vgm", "gym", "spc", "sap", "nsfe",
-    "nsf", "ay", "gbs", "hes", "kss"
-};
 
 static inline bool supported(const std::string& s) {
     for (auto& ext : FORMATS) {
@@ -68,7 +57,7 @@ static inline bool supported(const std::string& s) {
 class GmePlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Release() { delete this; };
-        virtual const char* Name() { return "GME IDecoder"; }
+        virtual const char* Name() { return PLUGIN_NAME.c_str(); }
         virtual const char* Version() { return "0.1.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "2c4eee19-6585-4984-a631-b52ff7d6d564"; }
@@ -105,4 +94,8 @@ extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
 
 extern "C" DLLEXPORT musik::core::sdk::IDecoderFactory* GetDecoderFactory() {
     return new GmeDecoderFactory();
+}
+
+extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
+    return new GmeIndexerSource();
 }

@@ -32,35 +32,34 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeDecoder.h"
+#include <core/sdk/IIndexerSource.h>
+#include <functional>
+#include <set>
 
-GmeDecoder::GmeDecoder() {
-}
+class GmeIndexerSource:
+    public musik::core::sdk::IIndexerSource {
+    public:
+        GmeIndexerSource();
+        ~GmeIndexerSource();
 
-GmeDecoder::~GmeDecoder() {
-}
+        /* IIndexerSource */
+        virtual void Release();
+        virtual void OnBeforeScan();
+        virtual void OnAfterScan();
+        virtual int SourceId();
 
-bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream){
-    return false;
-}
+        virtual musik::core::sdk::ScanResult Scan(
+            musik::core::sdk::IIndexerWriter* indexer,
+            const char** indexerPaths,
+            unsigned indexerPathsCount);
 
-void GmeDecoder::Release() {
-    delete this;
-}
+        virtual void ScanTrack(
+            musik::core::sdk::IIndexerWriter* indexer,
+            musik::core::sdk::ITagStore* tagStore,
+            const char* externalId);
 
-double GmeDecoder::SetPosition(double seconds) {
-    return -1;
-}
+        virtual void Interrupt();
+        virtual bool HasStableIds() { return true; }
 
-double GmeDecoder::GetDuration() {
-    return 0;
-}
-
-bool GmeDecoder::GetBuffer(IBuffer *buffer) {
-    return false;
-}
-
-bool GmeDecoder::Exhausted() {
-    return false;
-}
+    private:
+};

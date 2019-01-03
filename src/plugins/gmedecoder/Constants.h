@@ -32,35 +32,22 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeDecoder.h"
+#pragma once
 
-GmeDecoder::GmeDecoder() {
-}
+#include <string>
+#include <set>
+#include <iostream>
+#include <vector>
 
-GmeDecoder::~GmeDecoder() {
-}
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
 
-bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream){
-    return false;
-}
+static const std::string PLUGIN_NAME = "GME IDecoder";
 
-void GmeDecoder::Release() {
-    delete this;
-}
-
-double GmeDecoder::SetPosition(double seconds) {
-    return -1;
-}
-
-double GmeDecoder::GetDuration() {
-    return 0;
-}
-
-bool GmeDecoder::GetBuffer(IBuffer *buffer) {
-    return false;
-}
-
-bool GmeDecoder::Exhausted() {
-    return false;
-}
+static const std::set<std::string> FORMATS = {
+    "vgm", "gym", "spc", "sap", "nsfe",
+    "nsf", "ay", "gbs", "hes", "kss"
+};

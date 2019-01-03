@@ -1,6 +1,7 @@
 set (gmedecoder_SOURCES
   plugin.cpp
   GmeDecoder.cpp
+  GmeIndexerSource.cpp
   gme/c140.c
   gme/dac_control.c
   gme/fm.c
