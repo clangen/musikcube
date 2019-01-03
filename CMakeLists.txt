@@ -86,6 +86,7 @@ add_subdirectory(src/plugins/server)
 add_subdirectory(src/plugins/httpdatastream)
 add_subdirectory(src/plugins/stockencoders)
 add_subdirectory(src/plugins/supereqdsp)
+add_subdirectory(src/plugins/gmedecoder)
 
 if (${FFMPEG_DECODER} MATCHES "false")
   message(STATUS "[ffmpeg] decoder enabled = false")
