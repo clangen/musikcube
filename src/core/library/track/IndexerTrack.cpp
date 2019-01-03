@@ -37,6 +37,8 @@
 #include <core/library/track/IndexerTrack.h>
 
 #include <core/support/Common.h>
+#include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/library/LocalLibrary.h>
@@ -781,9 +783,13 @@ void IndexerTrack::SaveDirectory(db::Connection& db, const std::string& filename
 }
 
 bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirectory) {
+    static bool disableAlbumArtistFallback =
+        Preferences::ForComponent("settings")
+            ->GetBool(prefs::keys::DisableAlbumArtistFallback, false);
+
     std::unique_lock<std::mutex> lock(sharedWriteMutex);
 
-    if (this->GetString("album_artist") == "") {
+    if (!disableAlbumArtistFallback && this->GetString("album_artist") == "") {
         this->SetValue("album_artist", this->GetString("artist").c_str());
     }
 
