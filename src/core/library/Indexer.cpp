@@ -38,6 +38,7 @@
 #include <core/library/Indexer.h>
 
 #include <core/config.h>
+#include <core/debug.h>
 #include <core/library/track/IndexerTrack.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
@@ -236,8 +237,28 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         type = SyncType::All;
     }
 
-    /* process ALL IIndexerSource plugins, if applicable */
+    std::vector<std::string> paths;
+    std::vector<int64_t> pathIds;
 
+    /* resolve all the path and path ids (required for local files */
+    db::Statement stmt("SELECT id, path FROM paths", this->dbConnection);
+
+    while (stmt.Step() == db::Row) {
+        try {
+            int64_t id = stmt.ColumnInt64(0);
+            std::string path = stmt.ColumnText(1);
+            boost::filesystem::path dir(path);
+
+            if (boost::filesystem::exists(dir)) {
+                paths.push_back(path);
+                pathIds.push_back(id);
+            }
+        }
+        catch(...) {
+        }
+    }
+
+    /* process ALL IIndexerSource plugins, if applicable */
     if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {
         for (auto it : this->sources) {
             if (this->Bail()) {
@@ -245,7 +266,7 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
             }
 
             this->currentSource = it;
-            if (this->SyncSource(it.get()) == ScanRollback) {
+            if (this->SyncSource(it.get(), paths) == ScanRollback) {
                 this->trackTransaction->Cancel();
             }
             this->trackTransaction->CommitAndRestart();
@@ -257,7 +278,6 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
     }
 
     /* otherwise, we may have just been asked to index a single one... */
-
     else if (type == SyncType::Sources && sourceId != 0) {
         for (auto it : this->sources) {
             if (this->Bail()) {
@@ -266,7 +286,7 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
             if (it->SourceId() == sourceId) {
                 this->currentSource = it;
-                if (this->SyncSource(it.get()) == ScanRollback) {
+                if (this->SyncSource(it.get(), paths) == ScanRollback) {
                     this->trackTransaction->Cancel();
                 }
                 this->trackTransaction->CommitAndRestart();
@@ -282,35 +302,12 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
             fprintf(logFile, "\n\nSYNCING LOCAL FILES:\n");
         }
 
-        std::vector<std::string> paths;
-        std::vector<int64_t> pathIds;
-
-        /* resolve all the path and path ids (required for local files */
-        db::Statement stmt("SELECT id, path FROM paths", this->dbConnection);
-
-        while (stmt.Step() == db::Row) {
-            try {
-                int64_t id = stmt.ColumnInt64(0);
-                std::string path = stmt.ColumnText(1);
-                boost::filesystem::path dir(path);
-
-                if (boost::filesystem::exists(dir)) {
-                    paths.push_back(path);
-                    pathIds.push_back(id);
-                }
-            }
-            catch(...) {
-            }
-        }
-
         /* read metadata from the files  */
-
         for (std::size_t i = 0; i < paths.size(); ++i) {
             this->SyncDirectory(io, paths[i], paths[i], pathIds[i]);
         }
 
         /* close any pending transaction */
-
         this->trackTransaction->CommitAndRestart();
 
         /* re-index */
@@ -513,7 +510,10 @@ void Indexer::SyncDirectory(
     #undef WAIT_FOR_ACTIVE
 }
 
-ScanResult Indexer::SyncSource(IIndexerSource* source) {
+ScanResult Indexer::SyncSource(
+    IIndexerSource* source,
+    const std::vector<std::string>& paths)
+{
     if (logFile) {
         fprintf(logFile, "\n\nSYNCING SOURCE WITH ID: %d\n", source->SourceId());
     }
@@ -547,9 +547,34 @@ ScanResult Indexer::SyncSource(IIndexerSource* source) {
         }
     }
 
+    /* alloc/init fun interop; we pass all paths to the indexer source */
+    const char** pathsList = new const char*[paths.size()];
+    for (size_t i = 0; i < paths.size(); i++) {
+        auto& p = paths[i];
+        auto sz = p.size();
+        auto dst = new char[sz + 1];
+        strncpy(dst, p.c_str(), sz);
+        dst[sz] = '\0';
+        pathsList[i] = dst;
+    }
+
+    /* only commit if explicitly succeeded */
+    ScanResult result = ScanRollback;
+
     /* now tell it to do a wide-open scan. it can use this opportunity to
     remove old tracks, or add new ones. */
-    auto result = source->Scan(this);
+    try {
+        result = source->Scan(this, pathsList, paths.size());
+    }
+    catch (...) {
+        debug::error("Indexer", "failed to index " + std::to_string(source->SourceId()));
+    }
+
+    /* free fun interop -- it's done with the paths now. */
+    for (size_t i = 0; i < paths.size(); i++) {
+        delete[] pathsList[i];
+    }
+    delete[] pathsList;
 
     source->OnAfterScan();
 

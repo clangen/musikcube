@@ -304,7 +304,11 @@ void CddaIndexerSource::OnAfterScan() {
     /* nothing to do... */
 }
 
-ScanResult CddaIndexerSource::Scan(IIndexerWriter* indexer) {
+ScanResult CddaIndexerSource::Scan(
+    IIndexerWriter* indexer,
+    const char** indexerPaths,
+    unsigned indexerPathsCount)
+{
     using namespace std::placeholders;
 
     for (auto disc : this->discs) {

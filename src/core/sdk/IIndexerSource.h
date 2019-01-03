@@ -48,7 +48,10 @@ namespace musik { namespace core { namespace sdk {
 
             virtual void OnAfterScan() = 0;
 
-            virtual ScanResult Scan(IIndexerWriter* indexer) = 0;
+            virtual ScanResult Scan(
+                IIndexerWriter* indexer,
+                const char** indexerPaths,
+                unsigned indexerPathsCount) = 0;
 
             virtual void ScanTrack(
                 IIndexerWriter* indexer,

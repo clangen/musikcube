@@ -117,10 +117,16 @@ namespace musik { namespace core {
             void Synchronize(const SyncContext& context, boost::asio::io_service* io);
 
             void FinalizeSync(const SyncContext& context);
+
             void SyncDelete();
             void SyncCleanup();
+
             void SyncPlaylistTracksOrder();
-            musik::core::sdk::ScanResult SyncSource(musik::core::sdk::IIndexerSource* source);
+
+            musik::core::sdk::ScanResult SyncSource(
+                musik::core::sdk::IIndexerSource* source,
+                const std::vector<std::string>& paths);
+
             void ProcessAddRemoveQueue();
             void SyncOptimize();
             void RunAnalyzers();
