@@ -39,8 +39,7 @@
 #include <functional>
 #include <set>
 
-class GmeIndexerSource:
-    public musik::core::sdk::IIndexerSource {
+class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
     public:
         GmeIndexerSource();
         ~GmeIndexerSource();

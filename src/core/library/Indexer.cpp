@@ -258,46 +258,31 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
         }
     }
 
-    /* process ALL IIndexerSource plugins, if applicable */
-    if (type == SyncType::All || (type == SyncType::Sources && sourceId == 0)) {
-        for (auto it : this->sources) {
-            if (this->Bail()) {
-                break;
-            }
-
-            this->currentSource = it;
-            if (this->SyncSource(it.get(), paths) == ScanRollback) {
-                this->trackTransaction->Cancel();
-            }
-            this->trackTransaction->CommitAndRestart();
-
+    /* refresh sources */
+    for (auto it : this->sources) {
+        if (this->Bail()) {
             break;
         }
 
-        this->currentSource.reset();
-    }
-
-    /* otherwise, we may have just been asked to index a single one... */
-    else if (type == SyncType::Sources && sourceId != 0) {
-        for (auto it : this->sources) {
-            if (this->Bail()) {
-                break;
-            }
-
-            if (it->SourceId() == sourceId) {
-                this->currentSource = it;
-                if (this->SyncSource(it.get(), paths) == ScanRollback) {
-                    this->trackTransaction->Cancel();
-                }
-                this->trackTransaction->CommitAndRestart();
-            }
+        if (sourceId != 0 && sourceId != it->SourceId()) {
+            continue; /* asked to scan a specific source, and this isn't it. */
         }
 
-        this->currentSource.reset();
+        this->currentSource = it;
+        if (this->SyncSource(it.get(), paths) == ScanRollback) {
+            this->trackTransaction->Cancel();
+        }
+        this->trackTransaction->CommitAndRestart();
+
+        if (sourceId != 0) {
+            break; /* done with the one we were asked to scan */
+        }
     }
 
+    this->currentSource.reset();
+
     /* process local files */
-    if (type == SyncType::All || type == SyncType::Local) {
+    if (type != SyncType::Sources) {
         if (logFile) {
             fprintf(logFile, "\n\nSYNCING LOCAL FILES:\n");
         }
@@ -384,25 +369,6 @@ void Indexer::ReadMetadataFromFile(
             }
 
             it++;
-        }
-
-        /* no tag? well... if a decoder can play it, add it to the database
-        with the file as the name. */
-        if (!saveToDb) {
-            std::string fullPath = file.string();
-            auto it = this->audioDecoders.begin();
-            while (it != this->audioDecoders.end()) {
-                if ((*it)->CanHandle(fullPath.c_str())) {
-                    if (logFile) {
-                        fprintf(logFile, "    - %s\n", file.string().c_str());
-                    }
-
-                    saveToDb = true;
-                    track.SetValue("title", file.leaf().string().c_str());
-                    break;
-                }
-                ++it;
-            }
         }
 
         /* write it to the db, if read successfully */

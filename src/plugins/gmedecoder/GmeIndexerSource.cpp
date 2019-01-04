@@ -65,7 +65,11 @@ static bool exists(const std::string& externalId) {
     return access(fn.c_str(), R_OK) != -1;
 }
 
-static void updateMetadata(IIndexerSource* source, const std::string& fn, IIndexerWriter* indexer) {
+static void updateMetadata(
+    const std::string& fn,
+    IIndexerSource* source,
+    IIndexerWriter* indexer)
+{
     gme_t* data = nullptr;
     gme_err_t err = gme_open_file(fn.c_str(), &data, 44100);
     if (err) {
@@ -144,7 +148,8 @@ static void scanDirectory(const std::string& path, IIndexerSource* source, IInde
         else {
             std::string fn = entry->d_name;
             if (canHandle(fn)) {
-                updateMetadata(source, fn, indexer);
+                std::string fullFn = path + "/" + fn;
+                updateMetadata(fullFn, source, indexer);
             }
         }
     }

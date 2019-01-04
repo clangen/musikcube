@@ -53,11 +53,10 @@ static const std::set<std::string> FORMATS = {
     ".nsf", ".ay", ".gbs", ".hes", ".kss"
 };
 
-static inline bool canHandle(const std::string& fn) {
+static inline bool canHandle(std::string fn) {
+    std::transform(fn.begin(), fn.end(), fn.begin(), ::tolower);
     for (auto& ext : FORMATS) {
-        std::string lowerFn;
-        std::transform(fn.begin(), fn.end(), lowerFn.begin(), ::tolower);
-        if (lowerFn.rfind(ext) == lowerFn.size() - ext.size()) {
+        if (fn.rfind(ext) == fn.size() - ext.size()) {
             return true;
         }
     }
