@@ -56,8 +56,10 @@ class GmeDataStream: public musik::core::sdk::IDataStream {
         virtual bool CanPrefetch() override;
 
         int GetTrackNumber() { return this->trackNumber; }
+        std::string GetFilename() { return this->filename; }
 
     private:
         int trackNumber { 0 };
+        std::string filename;
         musik::core::sdk::IDataStream* stream { nullptr };
 };

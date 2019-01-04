@@ -39,31 +39,8 @@
 #include <set>
 #include <map>
 #include <gme.h>
-#include <unistd.h>
-#include <string.h>
-#include <dirent.h>
 
 using namespace musik::core::sdk;
-
-static std::string getM3uFor(const std::string& fn) {
-    size_t lastDot = fn.find_last_of(".");
-    if (lastDot != std::string::npos) {
-        std::string m3u = fn.substr(0, lastDot) + ".m3u";
-        if (access(m3u.c_str(), R_OK) != -1) {
-            return m3u;
-        }
-    }
-    return "";
-}
-
-static bool exists(const std::string& externalId) {
-    std::string fn;
-    int trackNum;
-    if (!parseExternalId(externalId, fn, trackNum)) {
-        return false;
-    }
-    return access(fn.c_str(), R_OK) != -1;
-}
 
 static void updateMetadata(
     const std::string& fn,
@@ -71,18 +48,18 @@ static void updateMetadata(
     IIndexerWriter* indexer)
 {
     gme_t* data = nullptr;
-    gme_err_t err = gme_open_file(fn.c_str(), &data, 44100);
+    gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
     if (err) {
         std::cerr << "error opening file: " << err << "\n";
     }
     else {
-        // std::string m3u = getM3uFor(fn);
-        // if (m3u.size()) {
-        //     err = gme_load_m3u(data, m3u.c_str());
-        //     if (err) {
-        //         std::cerr << "m3u found, but load failed: " << err << "\n";
-        //     }
-        // }
+        std::string m3u = getM3uFor(fn);
+        if (m3u.size()) {
+            err = gme_load_m3u(data, m3u.c_str());
+            if (err) {
+                std::cerr << "m3u found, but load failed: " << err << "\n";
+            }
+        }
 
         for (int i = 0; i < gme_track_count(data); i++) {
             gme_info_t* info = nullptr;

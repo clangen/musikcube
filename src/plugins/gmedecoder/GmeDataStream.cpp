@@ -41,10 +41,9 @@ using namespace musik::core::sdk;
 extern IEnvironment* environment;
 
 bool GmeDataStream::Open(const char *uri, unsigned int options) {
-    std::string fn;
-    if (parseExternalId(uri, fn, this->trackNumber)) {
+    if (parseExternalId(uri, this->filename, this->trackNumber)) {
         if (environment) {
-            this->stream = environment->GetDataStream(fn.c_str());
+            this->stream = environment->GetDataStream(this->filename.c_str());
             if (this->stream) {
                 return true;
             }

@@ -39,6 +39,9 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <dirent.h>
+#include <string.h>
+#include <unistd.h>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
@@ -83,4 +86,24 @@ static inline bool parseExternalId(const std::string& externalId, std::string& f
 
 static inline std::string createExternalId(const std::string& fn, int track) {
     return "gme://" + std::to_string(track) + "/" + fn;
+}
+
+static std::string getM3uFor(const std::string& fn) {
+    size_t lastDot = fn.find_last_of(".");
+    if (lastDot != std::string::npos) {
+        std::string m3u = fn.substr(0, lastDot) + ".m3u";
+        if (access(m3u.c_str(), R_OK) != -1) {
+            return m3u;
+        }
+    }
+    return "";
+}
+
+static bool exists(const std::string& externalId) {
+    std::string fn;
+    int trackNum;
+    if (!parseExternalId(externalId, fn, trackNum)) {
+        return false;
+    }
+    return access(fn.c_str(), R_OK) != -1;
 }

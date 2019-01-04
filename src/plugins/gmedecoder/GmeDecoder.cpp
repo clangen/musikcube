@@ -39,8 +39,9 @@
 static const int BUFFER_SAMPLE_COUNT = 2048;
 static const int CHANNELS = 2;
 static const int SAMPLE_RATE = 44100;
-static const int SAMPLES_PER_MS = SAMPLE_RATE / 1000;
-static const int FADE_LENGTH_MS = 2000;
+static const int SAMPLES_PER_MS = (SAMPLE_RATE * CHANNELS) / 1000;
+static const int FADE_LENGTH_MS = 2500;
+static const int MAXIMUM_DURATION_MS = 150000; /* 2.5 mins */
 static const float F_SHRT_MAX = (float) SHRT_MAX;
 
 GmeDecoder::GmeDecoder() {
@@ -64,6 +65,11 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
         if (!gme_open_data(data, length, &this->gme, SAMPLE_RATE)) {
             int trackNum = this->stream->GetTrackNumber();
 
+            std::string m3u = getM3uFor(this->stream->GetFilename());
+            if (m3u.size()) {
+                gme_load_m3u(this->gme, m3u.c_str());
+            }
+
             bool error =
                 !!gme_track_info(this->gme, &this->info, trackNum) ||
                 !!gme_start_track(this->gme, trackNum);
@@ -75,7 +81,7 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 this->info = nullptr;
             }
             else {
-                gme_set_fade(this->gme, this->info->play_length - FADE_LENGTH_MS, FADE_LENGTH_MS);
+                gme_set_fade(this->gme, MAXIMUM_DURATION_MS - FADE_LENGTH_MS, FADE_LENGTH_MS);
             }
         }
     }

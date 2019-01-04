@@ -38,6 +38,7 @@
 #include <core/sdk/IIndexerSource.h>
 #include <functional>
 #include <set>
+#include <map>
 
 class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
     public:
