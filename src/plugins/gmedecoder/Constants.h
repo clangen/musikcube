@@ -38,6 +38,7 @@
 #include <set>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
@@ -54,7 +55,9 @@ static const std::set<std::string> FORMATS = {
 
 static inline bool canHandle(const std::string& fn) {
     for (auto& ext : FORMATS) {
-        if (fn.rfind(ext) == fn.size() - ext.size()) {
+        std::string lowerFn;
+        std::transform(fn.begin(), fn.end(), lowerFn.begin(), ::tolower);
+        if (lowerFn.rfind(ext) == lowerFn.size() - ext.size()) {
             return true;
         }
     }

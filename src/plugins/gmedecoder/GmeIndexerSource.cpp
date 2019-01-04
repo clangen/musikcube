@@ -41,6 +41,7 @@
 #include <gme.h>
 #include <unistd.h>
 #include <string.h>
+#include <dirent.h>
 
 using namespace musik::core::sdk;
 
@@ -124,8 +125,31 @@ static void updateMetadata(IIndexerSource* source, const std::string& fn, IIndex
     gme_delete(data);
 }
 
-static void scanDirectory(const std::string& path, IIndexerWriter* indexer) {
+static void scanDirectory(const std::string& path, IIndexerSource* source, IIndexerWriter* indexer) {
+    DIR *dir = nullptr;
+    struct dirent *entry = nullptr;
 
+    if (!(dir = opendir(path.c_str()))) {
+        return;
+    }
+
+    while ((entry = readdir(dir)) != nullptr) {
+        if (entry->d_type == DT_DIR) {
+            std::string name = entry->d_name;
+            if (name == "." || name == "..") {
+                continue;
+            }
+            scanDirectory(path + "/" + name, source, indexer);
+        }
+        else {
+            std::string fn = entry->d_name;
+            if (canHandle(fn)) {
+                updateMetadata(source, fn, indexer);
+            }
+        }
+    }
+
+    closedir(dir);
 }
 
 GmeIndexerSource::GmeIndexerSource() {
@@ -150,10 +174,8 @@ ScanResult GmeIndexerSource::Scan(
     unsigned indexerPathsCount)
 {
     for (size_t i = 0; i < indexerPathsCount; i++) {
-        scanDirectory(std::string(indexerPaths[i]), indexer);
+        scanDirectory(std::string(indexerPaths[i]), this, indexer);
     }
-
-    updateMetadata(this, "/tmp/mario.nsf", indexer);
 
     return ScanCommit;
 }

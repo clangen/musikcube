@@ -87,7 +87,7 @@ class GmeDataStreamFactory: public IDataStreamFactory{
             return str.find("gme://") == 0 && canHandle(str);
         }
 
-        virtual IDataStream* Open(const char *uri, unsigned int options = 0) {
+        virtual IDataStream* Open(const char *uri, unsigned int options = 0) override {
             auto result = new GmeDataStream();
             if (result->Open(uri, options)) {
                 return result;
@@ -96,7 +96,7 @@ class GmeDataStreamFactory: public IDataStreamFactory{
             return nullptr;
         }
 
-        virtual void Release() {
+        virtual void Release() override {
             delete this;
         }
 };
