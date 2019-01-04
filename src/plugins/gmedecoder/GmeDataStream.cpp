@@ -30,39 +30,75 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-//
-////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "Constants.h"
+#include "GmeDataStream.h"
+#include <core/sdk/IEnvironment.h>
 
-#include <core/sdk/IIndexerSource.h>
-#include <functional>
-#include <set>
+using namespace musik::core::sdk;
 
-class GmeIndexerSource:
-    public musik::core::sdk::IIndexerSource {
-    public:
-        GmeIndexerSource();
-        ~GmeIndexerSource();
+extern IEnvironment* environment;
 
-        /* IIndexerSource */
-        virtual void Release();
-        virtual void OnBeforeScan();
-        virtual void OnAfterScan();
-        virtual int SourceId();
+bool GmeDataStream::Open(const char *uri, unsigned int options) {
+    std::string fn;
+    if (parseExternalId(uri, fn, this->trackNumber)) {
+        this->stream = environment->GetDataStream(fn.c_str());
+        if (this->stream) {
+            return true;
+        }
+    }
+    return false;
+}
 
-        virtual musik::core::sdk::ScanResult Scan(
-            musik::core::sdk::IIndexerWriter* indexer,
-            const char** indexerPaths,
-            unsigned indexerPathsCount);
+bool GmeDataStream::Close() {
+    return this->stream->Close();
+}
 
-        virtual void ScanTrack(
-            musik::core::sdk::IIndexerWriter* indexer,
-            musik::core::sdk::ITagStore* tagStore,
-            const char* externalId);
+void GmeDataStream::Interrupt() {
+    this->stream->Interrupt();
+}
 
-        virtual void Interrupt();
-        virtual bool HasStableIds() { return true; }
+void GmeDataStream::Release() {
+    if (stream) {
+        stream->Release();
+        stream = nullptr;
+    }
+    delete this;
+}
 
-    private:
-};
+PositionType GmeDataStream::Read(void *buffer, PositionType readBytes) {
+    return this->stream->Read(buffer, readBytes);
+}
+
+bool GmeDataStream::SetPosition(PositionType position) {
+    return this->stream->SetPosition(position);
+}
+
+PositionType GmeDataStream::Position() {
+    return this->stream->Position();
+}
+
+bool GmeDataStream::Seekable() {
+    return this->stream->Seekable();
+}
+
+bool GmeDataStream::Eof() {
+    return this->stream->Eof();
+}
+
+long GmeDataStream::Length() {
+    return this->stream->Length();
+}
+
+const char* GmeDataStream::Type() {
+    return this->stream->Type();
+}
+
+const char* GmeDataStream::Uri() {
+    return this->stream->Uri();
+}
+
+bool GmeDataStream::CanPrefetch() {
+    return this->stream->CanPrefetch();
+}

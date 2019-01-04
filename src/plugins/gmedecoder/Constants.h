@@ -48,6 +48,37 @@
 static const std::string PLUGIN_NAME = "GME IDecoder";
 
 static const std::set<std::string> FORMATS = {
-    "vgm", "gym", "spc", "sap", "nsfe",
-    "nsf", "ay", "gbs", "hes", "kss"
+    ".vgm", ".gym", ".spc", ".sap", ".nsfe",
+    ".nsf", ".ay", ".gbs", ".hes", ".kss"
 };
+
+static inline bool canHandle(const std::string& fn) {
+    for (auto& ext : FORMATS) {
+        if (fn.rfind(ext) == fn.size() - ext.size()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static inline bool parseExternalId(const std::string& externalId, std::string& fn, int& track) {
+    if (externalId.find("gme://") == 0) {
+        std::string trimmed = externalId.substr(6);
+        auto slash = trimmed.find("/");
+        if (slash != std::string::npos) {
+            try {
+                track = std::stoi(trimmed.substr(0, slash));
+                fn = trimmed.substr(slash + 1);
+                return true;
+            }
+            catch (...) {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+static inline std::string createExternalId(const std::string& fn, int track) {
+    return "gme://" + std::to_string(track) + "/" + fn;
+}

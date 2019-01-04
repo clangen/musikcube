@@ -34,6 +34,7 @@
 
 #include "Constants.h"
 #include "GmeDecoder.h"
+#include <cassert>
 
 GmeDecoder::GmeDecoder() {
 }
@@ -41,8 +42,10 @@ GmeDecoder::GmeDecoder() {
 GmeDecoder::~GmeDecoder() {
 }
 
-bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream){
-    return false;
+bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
+    this->stream = dynamic_cast<GmeDataStream*>(stream);
+    assert(this->stream);
+    return true;
 }
 
 void GmeDecoder::Release() {

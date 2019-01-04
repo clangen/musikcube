@@ -303,25 +303,12 @@ static int64_t writeToTracksTable(
     see if we can find the corresponding ID. this can happen when
     IInputSource plugins are reading/writing track data. */
     if (id == 0) {
-        if (sourceId == 0) {
-            db::Statement stmt("SELECT id FROM tracks WHERE source_id=? AND external_id=?", dbConnection);
-            stmt.BindInt32(0, sourceId);
-            stmt.BindText(1, externalId);
-            if (stmt.Step() == db::Row) {
-                track.SetId(stmt.ColumnInt64(0));
-            }
-        }
-        else {
-            std::string fn = track.GetString("filename");
-            if (fn.size()) {
-                db::Statement stmt("SELECT id, external_id FROM tracks WHERE filename=?", dbConnection);
-                stmt.BindText(0, track.GetString("filename"));
-                if (stmt.Step() == db::Row) {
-                    id = stmt.ColumnInt64(0);
-                    track.SetId(id);
-                    track.SetValue("external_id", stmt.ColumnText(1));
-                }
-            }
+        db::Statement stmt("SELECT id FROM tracks WHERE source_id=? AND external_id=?", dbConnection);
+        stmt.BindInt32(0, sourceId);
+        stmt.BindText(1, externalId);
+        if (stmt.Step() == db::Row) {
+            id = stmt.ColumnInt64(0);
+            track.SetId(id);
         }
     }
 

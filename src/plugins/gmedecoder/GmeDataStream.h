@@ -30,39 +30,34 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-//
-////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <core/sdk/IIndexerSource.h>
-#include <functional>
-#include <set>
+#include <core/sdk/IDataStream.h>
+#include <string>
 
-class GmeIndexerSource:
-    public musik::core::sdk::IIndexerSource {
+class GmeDataStream: public musik::core::sdk::IDataStream {
     public:
-        GmeIndexerSource();
-        ~GmeIndexerSource();
+        using PositionType = musik::core::sdk::PositionType;
 
-        /* IIndexerSource */
-        virtual void Release();
-        virtual void OnBeforeScan();
-        virtual void OnAfterScan();
-        virtual int SourceId();
+        virtual bool Open(const char *uri, unsigned int options = 0) override;
+        virtual bool Close() override;
+        virtual void Interrupt() override;
+        virtual void Release() override;
+        virtual PositionType Read(void *buffer, PositionType readBytes) override;
+        virtual bool SetPosition(PositionType position) override;
+        virtual PositionType Position() override;
+        virtual bool Seekable() override;
+        virtual bool Eof() override;
+        virtual long Length() override;
+        virtual const char* Type() override;
+        virtual const char* Uri() override;
+        virtual bool CanPrefetch() override;
 
-        virtual musik::core::sdk::ScanResult Scan(
-            musik::core::sdk::IIndexerWriter* indexer,
-            const char** indexerPaths,
-            unsigned indexerPathsCount);
-
-        virtual void ScanTrack(
-            musik::core::sdk::IIndexerWriter* indexer,
-            musik::core::sdk::ITagStore* tagStore,
-            const char* externalId);
-
-        virtual void Interrupt();
-        virtual bool HasStableIds() { return true; }
+        int GetTrackNumber() { return this->trackNumber; }
 
     private:
+        int trackNumber { 0 };
+        musik::core::sdk::IDataStream* stream { nullptr };
 };

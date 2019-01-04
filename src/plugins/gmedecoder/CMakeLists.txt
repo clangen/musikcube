@@ -1,5 +1,6 @@
 set (gmedecoder_SOURCES
   plugin.cpp
+  GmeDataStream.cpp
   GmeDecoder.cpp
   GmeIndexerSource.cpp
   gme/c140.c

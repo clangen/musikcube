@@ -36,25 +36,23 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IDecoderFactory.h>
+#include <core/sdk/IDataStreamFactory.h>
+#include <core/sdk/IEnvironment.h>
 #include "GmeDecoder.h"
 #include "GmeIndexerSource.h"
+#include "GmeDataStream.h"
 
 #ifdef WIN32
-    BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-        return true;
-    }
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+    return true;
+}
 #endif
 
-static inline bool supported(const std::string& s) {
-    for (auto& ext : FORMATS) {
-        if (s.rfind(ext) == s.size() - ext.size()) {
-            return true;
-        }
-    }
-    return false;
-}
+using namespace musik::core::sdk;
 
-class GmePlugin : public musik::core::sdk::IPlugin {
+IEnvironment* environment = nullptr;
+
+class GmePlugin: public IPlugin {
     public:
         virtual void Release() { delete this; };
         virtual const char* Name() { return PLUGIN_NAME.c_str(); }
@@ -67,15 +65,9 @@ class GmePlugin : public musik::core::sdk::IPlugin {
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
-class GmeDecoderFactory : public musik::core::sdk::IDecoderFactory {
+class GmeDecoderFactory: public IDecoderFactory {
     public:
-        GmeDecoderFactory() {
-        }
-
-        ~GmeDecoderFactory() {
-        }
-
-        virtual musik::core::sdk::IDecoder* CreateDecoder() override {
+        virtual IDecoder* CreateDecoder() override {
             return new GmeDecoder();
         }
 
@@ -84,18 +76,47 @@ class GmeDecoderFactory : public musik::core::sdk::IDecoderFactory {
         }
 
         virtual bool CanHandle(const char* type) const override {
-            return supported(std::string(type));
+            return canHandle(std::string(type));
         }
 };
 
-extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
+class GmeDataStreamFactory: public IDataStreamFactory{
+    public:
+        virtual bool CanRead(const char *uri) override {
+            std::string str = uri;
+            return str.find("gme://") == 0 && canHandle(str);
+        }
+
+        virtual IDataStream* Open(const char *uri, unsigned int options = 0) {
+            auto result = new GmeDataStream();
+            if (result->Open(uri, options)) {
+                return result;
+            }
+            result->Release();
+            return nullptr;
+        }
+
+        virtual void Release() {
+            delete this;
+        }
+};
+
+extern "C" DLLEXPORT IPlugin* GetPlugin() {
     return new GmePlugin();
 }
 
-extern "C" DLLEXPORT musik::core::sdk::IDecoderFactory* GetDecoderFactory() {
+extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
     return new GmeDecoderFactory();
+}
+
+extern "C" DLLEXPORT IDataStreamFactory* GetDataStreamFactory() {
+    return new GmeDataStreamFactory();
 }
 
 extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
     return new GmeIndexerSource();
+}
+
+extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
+    ::environment = environment;
 }

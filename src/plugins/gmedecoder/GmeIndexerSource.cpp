@@ -39,44 +39,89 @@
 #include <set>
 #include <map>
 #include <gme.h>
+#include <unistd.h>
+#include <string.h>
 
 using namespace musik::core::sdk;
 
-static std::vector<std::string> tokenize(const std::string& str, char delim = '/') {
-    std::vector<std::string> result;
-    std::istringstream iss(str);
-    std::string token;
-
-    while (std::getline(iss, token, delim)) {
-        result.push_back(token);
+static std::string getM3uFor(const std::string& fn) {
+    size_t lastDot = fn.find_last_of(".");
+    if (lastDot != std::string::npos) {
+        std::string m3u = fn.substr(0, lastDot) + ".m3u";
+        if (access(m3u.c_str(), R_OK) != -1) {
+            return m3u;
+        }
     }
-
-    return result;
-}
-
-static std::string createExternalId(const std::string& fn, int track) {
-    return "gme/" + std::to_string(track) + "/" + fn;
+    return "";
 }
 
 static bool exists(const std::string& externalId) {
-    return false;
+    std::string fn;
+    int trackNum;
+    if (!parseExternalId(externalId, fn, trackNum)) {
+        return false;
+    }
+    return access(fn.c_str(), R_OK) != -1;
 }
 
-static void updateMetadata(const std::string& fn, IIndexerWriter* indexer) {
-    // gme_t* data = nullptr;
-    // gme_err_t err = gme_open_file("/tmp/mario.nsf", &data, 44100);
-    // if (err) {
-    //     std::cerr << "error: " << err << "\n";
-    // }
-    // else {
-    //     gme_info_t* info = nullptr;
-    //     err = gme_track_info(data, &info, 0);
-    //     if (err) {
-    //         std::cerr << "error: " << err << "\n";
-    //     }
-    //     gme_free_info(info);
-    // }
-    // gme_delete(data);
+static void updateMetadata(IIndexerSource* source, const std::string& fn, IIndexerWriter* indexer) {
+    gme_t* data = nullptr;
+    gme_err_t err = gme_open_file(fn.c_str(), &data, 44100);
+    if (err) {
+        std::cerr << "error opening file: " << err << "\n";
+    }
+    else {
+        std::string m3u = getM3uFor(fn);
+        if (m3u.size()) {
+            err = gme_load_m3u(data, m3u.c_str());
+            if (err) {
+                std::cerr << "m3u found, but load failed: " << err << "\n";
+            }
+        }
+
+        for (int i = 0; i < gme_track_count(data); i++) {
+            gme_info_t* info = nullptr;
+            err = gme_track_info(data, &info, i);
+            if (err) {
+                std::cerr << "error getting track: " << err << "\n";
+            }
+            else if (info) {
+                auto track = indexer->CreateWriter();
+
+                const std::string trackNum = std::to_string(i + 1).c_str();
+                const std::string defaultTitle = "Track " + std::to_string(1 + i);
+                const std::string duration = std::to_string((float) info->play_length / 1000.0f);
+                const std::string externalId = createExternalId(fn, i);
+
+                track->SetValue("album", info->game);
+                track->SetValue("album_artist", info->system);
+                track->SetValue("genre", info->system);
+                track->SetValue("track", trackNum.c_str());
+                track->SetValue("duration", duration.c_str());
+                track->SetValue("filename", externalId.c_str());
+
+                if (strlen(info->author)) {
+                    track->SetValue("artist", info->author);
+                }
+                else {
+                    track->SetValue("artist", info->system);
+                }
+
+                if (strlen(info->song)) {
+                    track->SetValue("title", info->song);
+                }
+                else {
+                    track->SetValue("title", defaultTitle.c_str());
+                }
+
+                indexer->Save(source, track, externalId.c_str());
+
+                track->Release();
+            }
+            gme_free_info(info);
+        }
+    }
+    gme_delete(data);
 }
 
 static void scanDirectory(const std::string& path, IIndexerWriter* indexer) {
@@ -107,6 +152,9 @@ ScanResult GmeIndexerSource::Scan(
     for (size_t i = 0; i < indexerPathsCount; i++) {
         scanDirectory(std::string(indexerPaths[i]), indexer);
     }
+
+    updateMetadata(this, "/tmp/mario.nsf", indexer);
+
     return ScanCommit;
 }
 
@@ -119,9 +167,9 @@ void GmeIndexerSource::ScanTrack(
     ITagStore* tagStore,
     const char* externalId)
 {
-    // if (!exists(this->discIds, this->model, externalId)) {
-    //     indexer->RemoveByExternalId(this, externalId);
-    // }
+    if (!exists(externalId)) {
+        indexer->RemoveByExternalId(this, externalId);
+    }
 }
 
 int GmeIndexerSource::SourceId() {
