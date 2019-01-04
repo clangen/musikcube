@@ -76,13 +76,13 @@ static void updateMetadata(
         std::cerr << "error opening file: " << err << "\n";
     }
     else {
-        std::string m3u = getM3uFor(fn);
-        if (m3u.size()) {
-            err = gme_load_m3u(data, m3u.c_str());
-            if (err) {
-                std::cerr << "m3u found, but load failed: " << err << "\n";
-            }
-        }
+        // std::string m3u = getM3uFor(fn);
+        // if (m3u.size()) {
+        //     err = gme_load_m3u(data, m3u.c_str());
+        //     if (err) {
+        //         std::cerr << "m3u found, but load failed: " << err << "\n";
+        //     }
+        // }
 
         for (int i = 0; i < gme_track_count(data); i++) {
             gme_info_t* info = nullptr;

@@ -40,6 +40,7 @@ static const int BUFFER_SAMPLE_COUNT = 2048;
 static const int CHANNELS = 2;
 static const int SAMPLE_RATE = 44100;
 static const int SAMPLES_PER_MS = SAMPLE_RATE / 1000;
+static const int FADE_LENGTH_MS = 2000;
 static const float F_SHRT_MAX = (float) SHRT_MAX;
 
 GmeDecoder::GmeDecoder() {
@@ -73,6 +74,9 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 this->gme = nullptr;
                 this->info = nullptr;
             }
+            else {
+                gme_set_fade(this->gme, this->info->play_length - FADE_LENGTH_MS, FADE_LENGTH_MS);
+            }
         }
     }
     delete[] data;
@@ -97,15 +101,14 @@ double GmeDecoder::GetDuration() {
 
 bool GmeDecoder::GetBuffer(IBuffer *target) {
     if (this->gme) {
-        int remainMs = this->info->play_length - gme_tell(this->gme);
-        int remainSamples = SAMPLES_PER_MS * remainMs;
-        int samplesToDecode = BUFFER_SAMPLE_COUNT < remainSamples ? BUFFER_SAMPLE_COUNT : remainSamples;
-        if (!gme_play(this->gme, samplesToDecode, this->buffer)) {
+        if (!gme_track_ended(this->gme) &&
+            !gme_play(this->gme, BUFFER_SAMPLE_COUNT, this->buffer))
+        {
             target->SetChannels(CHANNELS);
             target->SetSampleRate(SAMPLE_RATE);
-            target->SetSamples(samplesToDecode);
+            target->SetSamples(BUFFER_SAMPLE_COUNT);
             float* dst = target->BufferPointer();
-            for (size_t i = 0; i < samplesToDecode; i++) {
+            for (size_t i = 0; i < BUFFER_SAMPLE_COUNT; i++) {
                 dst[i] = (float) this->buffer[i] / F_SHRT_MAX;
             }
             return true;
