@@ -36,16 +36,47 @@
 #include "GmeDecoder.h"
 #include <cassert>
 
+static const int BUFFER_SAMPLE_COUNT = 2048;
+static const int CHANNELS = 2;
+static const int SAMPLE_RATE = 44100;
+static const int SAMPLES_PER_MS = SAMPLE_RATE / 1000;
+static const float F_SHRT_MAX = (float) SHRT_MAX;
+
 GmeDecoder::GmeDecoder() {
+    this->buffer = new short[BUFFER_SAMPLE_COUNT];
 }
 
 GmeDecoder::~GmeDecoder() {
+    gme_delete(this->gme);
+    gme_free_info(this->info);
+    this->gme = nullptr;
+    this->info = nullptr;
+    delete[] buffer;
 }
 
 bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
     this->stream = dynamic_cast<GmeDataStream*>(stream);
     assert(this->stream);
-    return true;
+    auto length = stream->Length();
+    const char* data = new char[length];
+    if (stream->Read((void*) data, length) == length) {
+        if (!gme_open_data(data, length, &this->gme, SAMPLE_RATE)) {
+            int trackNum = this->stream->GetTrackNumber();
+
+            bool error =
+                !!gme_track_info(this->gme, &this->info, trackNum) ||
+                !!gme_start_track(this->gme, trackNum);
+
+            if (error) {
+                gme_delete(this->gme);
+                gme_free_info(this->info);
+                this->gme = nullptr;
+                this->info = nullptr;
+            }
+        }
+    }
+    delete[] data;
+    return this->gme != nullptr;
 }
 
 void GmeDecoder::Release() {
@@ -53,17 +84,39 @@ void GmeDecoder::Release() {
 }
 
 double GmeDecoder::SetPosition(double seconds) {
-    return -1;
+    if (this->gme) {
+        gme_seek(this->gme, (int)(seconds * 1000.0));
+        return (double) gme_tell(this->gme) / 1000.0;
+    }
+    return 0.0;
 }
 
 double GmeDecoder::GetDuration() {
-    return 0;
+    return this->info ? (double) this->info->play_length / 1000.0 : 0.0;
 }
 
-bool GmeDecoder::GetBuffer(IBuffer *buffer) {
+bool GmeDecoder::GetBuffer(IBuffer *target) {
+    if (this->gme) {
+        int remainMs = this->info->play_length - gme_tell(this->gme);
+        int remainSamples = SAMPLES_PER_MS * remainMs;
+        int samplesToDecode = BUFFER_SAMPLE_COUNT < remainSamples ? BUFFER_SAMPLE_COUNT : remainSamples;
+        if (!gme_play(this->gme, samplesToDecode, this->buffer)) {
+            target->SetChannels(CHANNELS);
+            target->SetSampleRate(SAMPLE_RATE);
+            target->SetSamples(samplesToDecode);
+            float* dst = target->BufferPointer();
+            for (size_t i = 0; i < samplesToDecode; i++) {
+                dst[i] = (float) this->buffer[i] / F_SHRT_MAX;
+            }
+            return true;
+        }
+    }
     return false;
 }
 
 bool GmeDecoder::Exhausted() {
-    return false;
+    if (this->gme) {
+        return gme_track_ended(this->gme);
+    }
+    return true;
 }

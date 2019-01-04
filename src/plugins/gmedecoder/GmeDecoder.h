@@ -39,6 +39,7 @@
 #include <core/sdk/IDataStream.h>
 #include "GmeDataStream.h"
 #include <stddef.h>
+#include <gme.h>
 
 using namespace musik::core::sdk;
 
@@ -56,6 +57,7 @@ class GmeDecoder: public musik::core::sdk::IDecoder {
 
     private:
         GmeDataStream* stream { nullptr };
-
-
+        gme_t* gme { nullptr };
+        gme_info_t* info { nullptr };
+        short* buffer;
 };
