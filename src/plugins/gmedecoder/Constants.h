@@ -39,14 +39,17 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <dirent.h>
 #include <string.h>
-#include <unistd.h>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
+#include <Windows.h>
+#include <io.h>
+#define R_OK 0
 #else
 #define DLLEXPORT
+#include <dirent.h>
+#include <unistd.h>
 #endif
 
 static const std::string PLUGIN_NAME = "GME IDecoder";
@@ -55,6 +58,29 @@ static const std::set<std::string> FORMATS = {
     ".vgm", ".gym", ".spc", ".sap", ".nsfe",
     ".nsf", ".ay", ".gbs", ".hes", ".kss"
 };
+
+#ifdef WIN32
+static inline std::string u16to8(const wchar_t* utf16) {
+    if (!utf16) return "";
+    int size = WideCharToMultiByte(CP_UTF8, 0, utf16, -1, 0, 0, 0, 0);
+    if (size <= 0) return "";
+    char* buffer = new char[size];
+    WideCharToMultiByte(CP_UTF8, 0, utf16, -1, buffer, size, 0, 0);
+    std::string utf8str(buffer);
+    delete[] buffer;
+    return utf8str;
+}
+
+static inline std::wstring u8to16(const char* utf8) {
+    int size = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, 0, 0);
+    if (size <= 0) return L"";
+    wchar_t* buffer = new wchar_t[size];
+    MultiByteToWideChar(CP_UTF8, 0, utf8, -1, buffer, size);
+    std::wstring utf16fn(buffer);
+    delete[] buffer;
+    return utf16fn;
+}
+#endif
 
 static inline bool canHandle(std::string fn) {
     std::transform(fn.begin(), fn.end(), fn.begin(), ::tolower);
@@ -92,9 +118,16 @@ static std::string getM3uFor(const std::string& fn) {
     size_t lastDot = fn.find_last_of(".");
     if (lastDot != std::string::npos) {
         std::string m3u = fn.substr(0, lastDot) + ".m3u";
+#ifdef WIN32
+        auto m3u16 = u8to16(fn.c_str());
+        if (_waccess(m3u16.c_str(), R_OK) != -1) {
+            return m3u;
+        }
+#else
         if (access(m3u.c_str(), R_OK) != -1) {
             return m3u;
         }
+#endif
     }
     return "";
 }
@@ -105,5 +138,10 @@ static bool exists(const std::string& externalId) {
     if (!parseExternalId(externalId, fn, trackNum)) {
         return false;
     }
+#ifdef WIN32
+    auto fn16 = u8to16(fn.c_str());
+    return _waccess(fn16.c_str(), R_OK) != -1;
+#else
     return access(fn.c_str(), R_OK) != -1;
+#endif
 }

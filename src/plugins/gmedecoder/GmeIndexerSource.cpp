@@ -107,6 +107,35 @@ static void updateMetadata(
 }
 
 static void scanDirectory(const std::string& path, IIndexerSource* source, IIndexerWriter* indexer) {
+#ifdef WIN32
+    auto path16 = u8to16(path.c_str()) + L"*";
+    WIN32_FIND_DATA findData;
+    HANDLE handle = FindFirstFile(path16.c_str(), &findData);
+
+    if (handle == INVALID_HANDLE_VALUE) {
+        return;
+    }
+
+    while (FindNextFile(handle, &findData)) {
+        if (!findData.cFileName) {
+            continue;
+        }
+        std::string relPath8 = u16to8(findData.cFileName);
+        std::string fullPath8 = path + "\\" + relPath8;
+        if (findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
+            if (relPath8 != "." && relPath8 != "..") {
+                scanDirectory(fullPath8 + "\\", source, indexer);
+            }
+        }
+        else {
+            if (canHandle(fullPath8)) {
+                updateMetadata(fullPath8, source, indexer);
+            }
+        }
+    }
+
+    FindClose(handle);
+#else
     DIR *dir = nullptr;
     struct dirent *entry = nullptr;
 
@@ -132,6 +161,7 @@ static void scanDirectory(const std::string& path, IIndexerSource* source, IInde
     }
 
     closedir(dir);
+#endif
 }
 
 GmeIndexerSource::GmeIndexerSource() {

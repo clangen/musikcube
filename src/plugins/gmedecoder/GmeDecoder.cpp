@@ -81,7 +81,12 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 this->info = nullptr;
             }
             else {
-                gme_set_fade(this->gme, MAXIMUM_DURATION_MS - FADE_LENGTH_MS, FADE_LENGTH_MS);
+                /* if the playback length couldn't be resolved, let it play for
+                two and a half minutes (the default duration defined by the SDK),
+                and fade out the last couple seconds */
+                if (this->info->length == -1) {
+                    gme_set_fade(this->gme, MAXIMUM_DURATION_MS - FADE_LENGTH_MS, FADE_LENGTH_MS);
+                }
             }
         }
     }
