@@ -43,9 +43,11 @@ extern IEnvironment* environment;
 bool GmeDataStream::Open(const char *uri, unsigned int options) {
     std::string fn;
     if (parseExternalId(uri, fn, this->trackNumber)) {
-        this->stream = environment->GetDataStream(fn.c_str());
-        if (this->stream) {
-            return true;
+        if (environment) {
+            this->stream = environment->GetDataStream(fn.c_str());
+            if (this->stream) {
+                return true;
+            }
         }
     }
     return false;
