@@ -218,7 +218,7 @@ void GmeIndexerSource::ScanDirectory(
                     this->UpdateMetadata(fullPath8, source, indexer);
                 }
                 catch (...) {
-                    std::string error = strfmt("error reading metadata for %s", fullFn.c_str());
+                    std::string error = strfmt("error reading metadata for %s", fullPath8.c_str());
                     debug->Error(PLUGIN_NAME, error.c_str());
                 }
             }

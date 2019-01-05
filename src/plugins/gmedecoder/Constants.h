@@ -182,12 +182,16 @@ static inline bool externalIdExists(const std::string& externalId) {
 static int getLastModifiedTime(const std::string& fn) {
 #ifdef WIN32
     /* todo */
+    struct _stat result = { 0 };
+    std::wstring fn16 = u8to16(fn.c_str());
+    if (_wstat(fn16.c_str(), &result) == 0) {
+        return (int) result.st_mtime;
+    }
 #else
     struct stat result = { 0 };
     if (stat(fn.c_str(), &result) == 0) {
         return result.st_mtime;
     }
 #endif
-
     return -1;
 }
