@@ -233,13 +233,13 @@ void GmeIndexerSource::ScanDirectory(
             if (name == "." || name == "..") {
                 continue;
             }
-            scanDirectory(path + "/" + name, source, indexer);
+            this->ScanDirectory(path + "/" + name, source, indexer);
         }
         else {
             std::string fn = entry->d_name;
             if (canHandle(fn)) {
                 std::string fullFn = path + "/" + fn;
-                updateMetadata(fullFn, source, indexer);
+                this->UpdateMetadata(fullFn, source, indexer);
             }
         }
     }
