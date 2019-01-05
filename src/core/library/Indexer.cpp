@@ -221,6 +221,8 @@ void Indexer::RemovePath(const std::string& path) {
 }
 
 void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* io) {
+    LocalLibrary::CreateIndexes(this->dbConnection);
+
     IndexerTrack::OnIndexerStarted(this->dbConnection);
 
     this->ProcessAddRemoveQueue();
@@ -229,9 +231,6 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     auto type = context.type;
     auto sourceId = context.sourceId;
-
-    LocalLibrary::DropIndexes(this->dbConnection);
-
     if (type == SyncType::Rebuild) {
         LocalLibrary::InvalidateTrackMetadata(this->dbConnection);
         type = SyncType::All;
@@ -999,13 +998,30 @@ int Indexer::RemoveAll(IIndexerSource* source) {
     return 0;
 }
 
-void Indexer::CommitProgress(IIndexerSource* source) {
+void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
     if (this->currentSource &&
         this->currentSource->SourceId() == source->SourceId() &&
         trackTransaction)
     {
         trackTransaction->CommitAndRestart();
     }
+
+    if (updatedTracks) {
+        std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
+        this->Progress((int) updatedTracks);
+    }
+}
+
+int Indexer::GetLastModifiedTime(IIndexerSource* source, const char* externalId) {
+    db::Statement stmt("SELECT filetime FROM tracks t where source_id=? AND external_id=?", dbConnection);
+
+    stmt.BindInt32(0, source->SourceId());
+    stmt.BindText(1, externalId);
+    if (stmt.Step() == db::Row) {
+        return stmt.ColumnInt32(0);
+    }
+
+    return -1;
 }
 
 void Indexer::ScheduleRescan(IIndexerSource* source) {

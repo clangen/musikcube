@@ -94,37 +94,17 @@ void Statement::BindFloat(int position, float bindFloat) {
     sqlite3_bind_double(this->stmt, position + 1, bindFloat);
 }
 
-void Statement::BindText(int position, const char* bindText) {
-    sqlite3_bind_text(
-        this->stmt,
-        position + 1,
-        bindText,
-        -1,
-        SQLITE_STATIC);
-}
+void Statement::BindText(int position, const std::string& bindText) {
+    std::string sanitized;
+    utf8::replace_invalid(
+        bindText.begin(),
+        bindText.end(),
+        std::back_inserter(sanitized),
+        (uint32_t) '?');
 
-void Statement::BindText(int position, const std::string &bindText) {
     sqlite3_bind_text(
         this->stmt, position + 1,
-        bindText.c_str(),
-        -1,
-        SQLITE_TRANSIENT);
-}
-
-void Statement::BindTextW(int position, const wchar_t* bindText) {
-    sqlite3_bind_text16(
-        this->stmt,
-        position + 1,
-        bindText,
-        -1,
-        SQLITE_STATIC);
-}
-
-void Statement::BindTextW(int position, const std::wstring &bindText) {
-    sqlite3_bind_text16(
-        this->stmt,
-        position + 1,
-        bindText.c_str(),
+        sanitized.c_str(),
         -1,
         SQLITE_TRANSIENT);
 }

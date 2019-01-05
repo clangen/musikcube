@@ -58,10 +58,12 @@ void GmeIndexerSource::Release() {
 }
 
 void GmeIndexerSource::OnBeforeScan() {
+    this->filesIndexed = 0;
+    this->interrupt = false;
 }
 
 void GmeIndexerSource::OnAfterScan() {
-    trackCache.clear();
+    invalidFiles.clear();
 }
 
 ScanResult GmeIndexerSource::Scan(
@@ -73,11 +75,13 @@ ScanResult GmeIndexerSource::Scan(
         this->ScanDirectory(std::string(indexerPaths[i]), this, indexer);
     }
 
+    indexer->CommitProgress(this, this->filesIndexed);
+
     return ScanCommit;
 }
 
 void GmeIndexerSource::Interrupt() {
-
+    this->interrupt = true;
 }
 
 void GmeIndexerSource::ScanTrack(
@@ -88,15 +92,10 @@ void GmeIndexerSource::ScanTrack(
     std::string fn;
     int trackNum;
     if (parseExternalId(externalId, fn, trackNum)) {
-        auto fnIt = trackCache.find(fn);
-        if (fnIt != trackCache.end()) {
-            auto tnIt = fnIt->second.find(trackNum);
-            if (tnIt != fnIt->second.end()) {
-                return; /* track exists */
-            }
+        if (!fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
+            indexer->RemoveByExternalId(this, externalId);
         }
     }
-    indexer->RemoveByExternalId(this, externalId);
 }
 
 int GmeIndexerSource::SourceId() {
@@ -108,82 +107,81 @@ void GmeIndexerSource::UpdateMetadata(
     IIndexerSource* source,
     IIndexerWriter* indexer)
 {
-    gme_t* data = nullptr;
-    gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
-    if (err) {
-        debug->Error(PLUGIN_NAME, strfmt("error opening %s", fn.c_str()).c_str());
-    }
-    else {
-        if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
-            std::string m3u = getM3uFor(fn);
-            if (m3u.size()) {
-                err = gme_load_m3u(data, m3u.c_str());
-                if (err) {
-                    debug->Error(PLUGIN_NAME, strfmt("m3u found, but load failed '%s'", err).c_str());
-                }
-            }
+    /* only need to do this check once, and it's relatively expensive because
+    it requires a db read. cache we've already done it. */
+    int modifiedTime = getLastModifiedTime(fn);
+    const std::string firstExternalId = createExternalId(fn, 0);
+    int modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
+    if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
+        gme_t* data = nullptr;
+        gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
+        if (err) {
+            debug->Error(PLUGIN_NAME, strfmt("error opening %s", fn.c_str()).c_str());
+            invalidFiles.insert(fn);
         }
-
-        for (short i = 0; i < (short) gme_track_count(data); i++) {
-            gme_info_t* info = nullptr;
-            err = gme_track_info(data, &info, i);
-            if (err) {
-                debug->Error(PLUGIN_NAME, strfmt("error getting track %d: %s", i, err).c_str());
+        else {
+            if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
+                std::string m3u = getM3uFor(fn);
+                if (m3u.size()) {
+                    err = gme_load_m3u(data, m3u.c_str());
+                    if (err) {
+                        debug->Error(PLUGIN_NAME, strfmt("m3u found, but load failed '%s'", err).c_str());
+                    }
+                }
             }
-            else if (info) {
-                auto track = indexer->CreateWriter();
 
-                const std::string trackNum = std::to_string(i + 1).c_str();
-                const std::string defaultTitle = "Track " + std::to_string(1 + i);
+            const std::string defaultDuration =
+                std::to_string(prefs->GetDouble(
+                    KEY_DEFAULT_TRACK_LENGTH,
+                    DEFAULT_TRACK_LENGTH));
+
+            for (int i = 0; i < gme_track_count(data); i++) {
                 const std::string externalId = createExternalId(fn, i);
+                const std::string trackNum = std::to_string(i + 1);
+                const std::string defaultTitle = "Track " + std::to_string(1 + i);
+                const std::string modifiedTimeStr = std::to_string(modifiedTime);
 
-                std::string duration;
-                if (info->length == -1) {
-                    duration = std::to_string(prefs->GetDouble(
-                        KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH));
-                }
-                else {
-                    duration = std::to_string((float)info->play_length / 1000.0f);
-                }
-
-                track->SetValue("album", info->game);
-                track->SetValue("album_artist", info->system);
-                track->SetValue("genre", info->system);
-                track->SetValue("track", trackNum.c_str());
-                track->SetValue("duration", duration.c_str());
+                auto track = indexer->CreateWriter();
                 track->SetValue("filename", externalId.c_str());
+                track->SetValue("filetime", modifiedTimeStr.c_str());
+                track->SetValue("track", trackNum.c_str());
 
-                if (strlen(info->author)) {
-                    track->SetValue("artist", info->author);
-                }
-                else {
-                    track->SetValue("artist", info->system);
-                }
-
-                if (strlen(info->song)) {
-                    track->SetValue("title", info->song);
-                }
-                else {
+                gme_info_t* info = nullptr;
+                err = gme_track_info(data, &info, i);
+                if (err) {
+                    debug->Error(PLUGIN_NAME, strfmt("error getting track %d: %s", i, err).c_str());
+                    track->SetValue("duration", defaultDuration.c_str());
                     track->SetValue("title", defaultTitle.c_str());
+                }
+                else if (info) {
+                    std::string duration = (info->length == -1)
+                        ? defaultDuration
+                        : std::to_string((float) info->play_length / 1000.0f);
+
+                    track->SetValue("album", info->game);
+                    track->SetValue("album_artist", info->system);
+                    track->SetValue("genre", info->system);
+                    track->SetValue("duration", duration.c_str());
+                    track->SetValue("artist", strlen(info->author) ? info->author : info->system);
+                    track->SetValue("title", strlen(info->song) ? info->song : defaultTitle.c_str());
+
+                    gme_free_info(info);
                 }
 
                 indexer->Save(source, track, externalId.c_str());
-
                 track->Release();
-
-                /* we maintain a cache of all the tracks we index, so when the indexer
-                hits the removal phase we don't have to do any i/o. */
-                if (trackCache.find(fn) == trackCache.end()) {
-                    trackCache[fn] = { (short) i };
-                }
-                else {
-                    trackCache[fn].insert(i);
-                }
             }
-            gme_free_info(info);
         }
+
+        gme_delete(data);
     }
-    gme_delete(data);
+
+    /* we commit progress every so often */
+    if (++this->filesIndexed % 300 == 0) {
+        debug->Verbose(PLUGIN_NAME, strfmt("checkpoint %d files", this->filesIndexed).c_str());
+        indexer->CommitProgress(this, this->filesIndexed);
+        this->filesIndexed = 0;
+    }
 }
 
 void GmeIndexerSource::ScanDirectory(
@@ -206,14 +204,23 @@ void GmeIndexerSource::ScanDirectory(
         }
         std::string relPath8 = u16to8(findData.cFileName);
         std::string fullPath8 = path + "\\" + relPath8;
-        if (findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
+        if (this->interrupt) {
+            return;
+        }
+        else if (findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
             if (relPath8 != "." && relPath8 != "..") {
                 this->ScanDirectory(fullPath8 + "\\", source, indexer);
             }
         }
         else {
             if (canHandle(fullPath8)) {
-                this->UpdateMetadata(fullPath8, source, indexer);
+                try {
+                    this->UpdateMetadata(fullPath8, source, indexer);
+                }
+                catch (...) {
+                    std::string error = strfmt("error reading metadata for %s", fullFn.c_str());
+                    debug->Error(PLUGIN_NAME, error.c_str());
+                }
             }
         }
     }
@@ -228,7 +235,10 @@ void GmeIndexerSource::ScanDirectory(
     }
 
     while ((entry = readdir(dir)) != nullptr) {
-        if (entry->d_type == DT_DIR) {
+        if (this->interrupt) {
+            return;
+        }
+        else if (entry->d_type == DT_DIR) {
             std::string name = entry->d_name;
             if (name == "." || name == "..") {
                 continue;
@@ -239,7 +249,13 @@ void GmeIndexerSource::ScanDirectory(
             std::string fn = entry->d_name;
             if (canHandle(fn)) {
                 std::string fullFn = path + "/" + fn;
-                this->UpdateMetadata(fullFn, source, indexer);
+                try {
+                    this->UpdateMetadata(fullFn, source, indexer);
+                }
+                catch (...) {
+                    std::string error = strfmt("error reading metadata for %s", fullFn.c_str());
+                    debug->Error(PLUGIN_NAME, error.c_str());
+                }
             }
         }
     }

@@ -44,7 +44,6 @@
 #include <core/library/LocalLibrary.h>
 #include <core/io/DataStreamFactory.h>
 
-#include <boost/lexical_cast.hpp>
 #include <unordered_map>
 
 using namespace musik::core;
@@ -258,8 +257,8 @@ bool IndexerTrack::NeedsToBeIndexed(
         size_t fileSize = (size_t) boost::filesystem::file_size(file);
         size_t fileTime = (size_t) boost::filesystem::last_write_time(file);
 
-        this->SetValue("filesize", boost::lexical_cast<std::string>(fileSize).c_str());
-        this->SetValue("filetime", boost::lexical_cast<std::string>(fileTime).c_str());
+        this->SetValue("filesize", std::to_string(fileSize).c_str());
+        this->SetValue("filetime", std::to_string(fileTime).c_str());
 
         db::Statement stmt(
             "SELECT id, filename, filesize, filetime " \
@@ -443,7 +442,7 @@ int64_t IndexerTrack::SaveThumbnail(db::Connection& connection, const std::strin
                 std::string filename =
                     libraryDirectory +
                     "thumbs/" +
-                    boost::lexical_cast<std::string>(thumbnailId) +
+                    std::to_string(thumbnailId) +
                     ".jpg";
 
 #ifdef WIN32

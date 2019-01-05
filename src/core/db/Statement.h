@@ -53,10 +53,7 @@ namespace musik { namespace core { namespace db {
             void BindInt32(int position, int bindInt);
             void BindInt64(int position, int64_t bindInt);
             void BindFloat(int position, float bindFloat);
-            void BindText(int position, const char* bindText);
-            void BindText(int position, const std::string &bindText);
-            void BindTextW(int position, const wchar_t* bindText);
-            void BindTextW(int position, const std::wstring &bindText);
+            void BindText(int position, const std::string& bindText);
             void BindNull(int position);
 
             int ColumnInt32(int column);

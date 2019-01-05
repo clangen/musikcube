@@ -607,6 +607,10 @@ void LocalLibrary::DropIndexes(db::Connection &db) {
     db.Execute("DROP INDEX IF EXISTS metavalues_index1");
 
     db.Execute("DROP INDEX IF EXISTS tracks_external_id_index");
+    db.Execute("DROP INDEX IF EXISTS tracks_filename_id_index");
+    db.Execute("DROP INDEX IF EXISTS tracks_dirty_index");
+    db.Execute("DROP INDEX IF EXISTS tracks_external_id_filetime_index");
+    db.Execute("DROP INDEX IF EXISTS tracks_by_source_index");
 
     db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_1");
     db.Execute("DROP INDEX IF EXISTS playlist_tracks_index_2");
@@ -635,6 +639,10 @@ void LocalLibrary::CreateIndexes(db::Connection &db) {
     db.Execute("CREATE INDEX IF NOT EXISTS metavalues_index4 ON meta_values (id, content)");
 
     db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_index ON tracks (external_id)");
+    db.Execute("CREATE INDEX IF NOT EXISTS tracks_filename_index ON tracks (filename)");
+    db.Execute("CREATE INDEX IF NOT EXISTS tracks_dirty_index ON tracks (id, filename, filesize, filetime)");
+    db.Execute("CREATE INDEX IF NOT EXISTS tracks_external_id_filetime_index ON tracks (external_id, filetime)");
+    db.Execute("CREATE INDEX IF NOT EXISTS tracks_by_source_index ON tracks (id, external_id, filename, source_id)");
 
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_1 ON playlist_tracks (track_external_id,playlist_id,sort_order)");
     db.Execute("CREATE INDEX IF NOT EXISTS playlist_tracks_index_2 ON playlist_tracks (track_external_id,sort_order)");

@@ -78,5 +78,7 @@ class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
             musik::core::sdk::IIndexerSource* source,
             musik::core::sdk::IIndexerWriter* indexer);
 
-        std::map<std::string, std::set<short>> trackCache;
+        std::set<std::string> invalidFiles;
+        size_t filesIndexed;
+        volatile bool interrupt { false };
 };

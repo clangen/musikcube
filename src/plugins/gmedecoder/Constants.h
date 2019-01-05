@@ -41,6 +41,8 @@
 #include <vector>
 #include <algorithm>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
@@ -101,7 +103,9 @@ static inline musik::core::sdk::ISchema* CreateSchema() {
 static inline bool canHandle(std::string fn) {
     std::transform(fn.begin(), fn.end(), fn.begin(), ::tolower);
     for (auto& ext : FORMATS) {
-        if (fn.rfind(ext) == fn.size() - ext.size()) {
+        if (fn.size() >= ext.size() &&
+            fn.rfind(ext) == fn.size() - ext.size())
+        {
             return true;
         }
     }
@@ -157,16 +161,33 @@ static std::string getM3uFor(const std::string& fn) {
     return "";
 }
 
-static bool exists(const std::string& externalId) {
-    std::string fn;
-    int trackNum;
-    if (!parseExternalId(externalId, fn, trackNum)) {
-        return false;
-    }
+static inline bool fileExists(const std::string& fn) {
 #ifdef WIN32
     auto fn16 = u8to16(fn.c_str());
     return _waccess(fn16.c_str(), R_OK) != -1;
 #else
     return access(fn.c_str(), R_OK) != -1;
 #endif
+}
+
+static inline bool externalIdExists(const std::string& externalId) {
+    std::string fn;
+    int trackNum;
+    if (!parseExternalId(externalId, fn, trackNum)) {
+        return false;
+    }
+    return fileExists(fn);
+}
+
+static int getLastModifiedTime(const std::string& fn) {
+#ifdef WIN32
+    /* todo */
+#else
+    struct stat result = { 0 };
+    if (stat(fn.c_str(), &result) == 0) {
+        return result.st_mtime;
+    }
+#endif
+
+    return -1;
 }

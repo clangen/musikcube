@@ -152,7 +152,7 @@ static void thread_proc() {
                             backend->warning(entry->tag, entry->message);
                             break;
                         case debug_level::error:
-                            backend->verbose(entry->tag, entry->message);
+                            backend->error(entry->tag, entry->message);
                             break;
                     }
                 }
