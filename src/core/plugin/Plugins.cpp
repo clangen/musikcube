@@ -346,18 +346,16 @@ static class Environment: public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void InitDebug() {
+    void Init(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
+        /* preferences */
+        Preferences::LoadPluginPreferences();
+
         /* debug */
         PluginFactory::Instance().QueryFunction<SetDebug>(
             "SetDebug",
             [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
-                func(&debugger);
-            });
-    }
-
-    void InitPlayback(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
-        /* preferences */
-        Preferences::LoadPluginPreferences();
+            func(&debugger);
+        });
 
         /* data providers */
         delete dataProvider;

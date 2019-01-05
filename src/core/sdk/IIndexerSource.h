@@ -58,6 +58,8 @@ namespace musik { namespace core { namespace sdk {
                 ITagStore* store,
                 const char* externalId) = 0;
 
+            virtual bool NeedsTrackScan() = 0;
+
             virtual void Interrupt() = 0;
 
             virtual bool HasStableIds() = 0;

@@ -80,6 +80,7 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_NOTIFY_RESET 1008
 #define MESSAGE_SEEK 1009
 #define MESSAGE_RELOAD_OUTPUT 1010
+#define MESSAGE_LOAD_PLAYBACK_CONTEXT 1011
 
 class StreamMessage : public Message {
     public:
@@ -152,9 +153,7 @@ PlaybackService::PlaybackService(
     transport->VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
     transport->TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
     library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
-    loadPreferences(this->transport, *this, playbackPrefs);
-    playback::LoadPlaybackContext(appPrefs, library, *this);
-    this->InitRemotes();
+    messageQueue.Post(Message::Create(this, MESSAGE_LOAD_PLAYBACK_CONTEXT));
 }
 
 PlaybackService::PlaybackService(
@@ -293,7 +292,12 @@ void PlaybackService::ToggleShuffle() {
 
 void PlaybackService::ProcessMessage(IMessage &message) {
     int type = message.Type();
-    if (type == MESSAGE_STREAM_EVENT) {
+    if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
+        loadPreferences(this->transport, *this, playbackPrefs);
+        playback::LoadPlaybackContext(appPrefs, library, *this);
+        this->InitRemotes();
+    }
+    else if (type == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
 
         int64_t eventType = streamMessage->GetEventType();

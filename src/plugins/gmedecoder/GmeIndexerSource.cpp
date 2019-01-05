@@ -34,6 +34,8 @@
 
 #include "Constants.h"
 #include "GmeIndexerSource.h"
+#include <core/sdk/IDebug.h>
+#include <core/sdk/IPreferences.h>
 #include <string>
 #include <sstream>
 #include <set>
@@ -42,7 +44,66 @@
 
 using namespace musik::core::sdk;
 
-static void updateMetadata(
+extern IDebug* debug;
+extern IPreferences* prefs;
+
+GmeIndexerSource::GmeIndexerSource() {
+}
+
+GmeIndexerSource::~GmeIndexerSource() {
+}
+
+void GmeIndexerSource::Release() {
+    delete this;
+}
+
+void GmeIndexerSource::OnBeforeScan() {
+}
+
+void GmeIndexerSource::OnAfterScan() {
+    trackCache.clear();
+}
+
+ScanResult GmeIndexerSource::Scan(
+    IIndexerWriter* indexer,
+    const char** indexerPaths,
+    unsigned indexerPathsCount)
+{
+    for (size_t i = 0; i < indexerPathsCount; i++) {
+        this->ScanDirectory(std::string(indexerPaths[i]), this, indexer);
+    }
+
+    return ScanCommit;
+}
+
+void GmeIndexerSource::Interrupt() {
+
+}
+
+void GmeIndexerSource::ScanTrack(
+    IIndexerWriter* indexer,
+    ITagStore* tagStore,
+    const char* externalId)
+{
+    std::string fn;
+    int trackNum;
+    if (parseExternalId(externalId, fn, trackNum)) {
+        auto fnIt = trackCache.find(fn);
+        if (fnIt != trackCache.end()) {
+            auto tnIt = fnIt->second.find(trackNum);
+            if (tnIt != fnIt->second.end()) {
+                return; /* track exists */
+            }
+        }
+    }
+    indexer->RemoveByExternalId(this, externalId);
+}
+
+int GmeIndexerSource::SourceId() {
+    return std::hash<std::string>()(PLUGIN_NAME);
+}
+
+void GmeIndexerSource::UpdateMetadata(
     const std::string& fn,
     IIndexerSource* source,
     IIndexerWriter* indexer)
@@ -50,30 +111,40 @@ static void updateMetadata(
     gme_t* data = nullptr;
     gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
     if (err) {
-        std::cerr << "error opening file: " << err << "\n";
+        debug->Error(PLUGIN_NAME, strfmt("error opening %s", fn.c_str()).c_str());
     }
     else {
-        std::string m3u = getM3uFor(fn);
-        if (m3u.size()) {
-            err = gme_load_m3u(data, m3u.c_str());
-            if (err) {
-                std::cerr << "m3u found, but load failed: " << err << "\n";
+        if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
+            std::string m3u = getM3uFor(fn);
+            if (m3u.size()) {
+                err = gme_load_m3u(data, m3u.c_str());
+                if (err) {
+                    debug->Error(PLUGIN_NAME, strfmt("m3u found, but load failed '%s'", err).c_str());
+                }
             }
         }
 
-        for (int i = 0; i < gme_track_count(data); i++) {
+        for (short i = 0; i < (short) gme_track_count(data); i++) {
             gme_info_t* info = nullptr;
             err = gme_track_info(data, &info, i);
             if (err) {
-                std::cerr << "error getting track: " << err << "\n";
+                debug->Error(PLUGIN_NAME, strfmt("error getting track %d: %s", i, err).c_str());
             }
             else if (info) {
                 auto track = indexer->CreateWriter();
 
                 const std::string trackNum = std::to_string(i + 1).c_str();
                 const std::string defaultTitle = "Track " + std::to_string(1 + i);
-                const std::string duration = std::to_string((float) info->play_length / 1000.0f);
                 const std::string externalId = createExternalId(fn, i);
+
+                std::string duration;
+                if (info->length == -1) {
+                    duration = std::to_string(prefs->GetDouble(
+                        KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH));
+                }
+                else {
+                    duration = std::to_string((float)info->play_length / 1000.0f);
+                }
 
                 track->SetValue("album", info->game);
                 track->SetValue("album_artist", info->system);
@@ -99,6 +170,15 @@ static void updateMetadata(
                 indexer->Save(source, track, externalId.c_str());
 
                 track->Release();
+
+                /* we maintain a cache of all the tracks we index, so when the indexer
+                hits the removal phase we don't have to do any i/o. */
+                if (trackCache.find(fn) == trackCache.end()) {
+                    trackCache[fn] = { (short) i };
+                }
+                else {
+                    trackCache[fn].insert(i);
+                }
             }
             gme_free_info(info);
         }
@@ -106,7 +186,11 @@ static void updateMetadata(
     gme_delete(data);
 }
 
-static void scanDirectory(const std::string& path, IIndexerSource* source, IIndexerWriter* indexer) {
+void GmeIndexerSource::ScanDirectory(
+    const std::string& path,
+    IIndexerSource* source,
+    IIndexerWriter* indexer)
+{
 #ifdef WIN32
     auto path16 = u8to16(path.c_str()) + L"*";
     WIN32_FIND_DATA findData;
@@ -124,12 +208,12 @@ static void scanDirectory(const std::string& path, IIndexerSource* source, IInde
         std::string fullPath8 = path + "\\" + relPath8;
         if (findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
             if (relPath8 != "." && relPath8 != "..") {
-                scanDirectory(fullPath8 + "\\", source, indexer);
+                this->ScanDirectory(fullPath8 + "\\", source, indexer);
             }
         }
         else {
             if (canHandle(fullPath8)) {
-                updateMetadata(fullPath8, source, indexer);
+                this->UpdateMetadata(fullPath8, source, indexer);
             }
         }
     }
@@ -162,50 +246,4 @@ static void scanDirectory(const std::string& path, IIndexerSource* source, IInde
 
     closedir(dir);
 #endif
-}
-
-GmeIndexerSource::GmeIndexerSource() {
-}
-
-GmeIndexerSource::~GmeIndexerSource() {
-}
-
-void GmeIndexerSource::Release() {
-    delete this;
-}
-
-void GmeIndexerSource::OnBeforeScan() {
-}
-
-void GmeIndexerSource::OnAfterScan() {
-}
-
-ScanResult GmeIndexerSource::Scan(
-    IIndexerWriter* indexer,
-    const char** indexerPaths,
-    unsigned indexerPathsCount)
-{
-    for (size_t i = 0; i < indexerPathsCount; i++) {
-        scanDirectory(std::string(indexerPaths[i]), this, indexer);
-    }
-
-    return ScanCommit;
-}
-
-void GmeIndexerSource::Interrupt() {
-
-}
-
-void GmeIndexerSource::ScanTrack(
-    IIndexerWriter* indexer,
-    ITagStore* tagStore,
-    const char* externalId)
-{
-    if (!exists(externalId)) {
-        indexer->RemoveByExternalId(this, externalId);
-    }
-}
-
-int GmeIndexerSource::SourceId() {
-    return std::hash<std::string>()(PLUGIN_NAME);
 }

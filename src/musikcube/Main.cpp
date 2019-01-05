@@ -124,7 +124,6 @@ int main(int argc, char* argv[]) {
     auto fileLogger = new musik::debug::SimpleFileBackend();
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
     musik::debug::Start({ fileLogger, consoleLogger });
-    musik::core::plugin::InitDebug();
 
     ILibraryPtr library = LibraryFactory::Default();
     library->SetMessageQueue(Window::MessageQueue());
@@ -138,7 +137,7 @@ int main(int argc, char* argv[]) {
         GlobalHotkeys globalHotkeys(playback, library);
         Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
-        musik::core::plugin::InitPlayback(
+        musik::core::plugin::Init(
             &Window::MessageQueue(), &playback, library);
 
 #ifdef WIN32

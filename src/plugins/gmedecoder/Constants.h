@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <core/sdk/ISchema.h>
 #include <string>
 #include <set>
 #include <iostream>
@@ -52,7 +53,14 @@
 #include <unistd.h>
 #endif
 
-static const std::string PLUGIN_NAME = "GME IDecoder";
+static const char* PLUGIN_NAME = "GME IDecoder";
+
+static const char* KEY_DEFAULT_TRACK_LENGTH = "default_track_length_secs";
+static const double DEFAULT_TRACK_LENGTH = 60.0 * 3.0;
+static const char* KEY_TRACK_FADE_OUT_LENGTH = "track_fade_out_length_secs";
+static const double DEFAULT_FADE_OUT_LENGTH = 3.0;
+static const char* KEY_ENABLE_M3U = "enable_m3u_support";
+static const bool DEFAULT_ENABLE_M3U = false;
 
 static const std::set<std::string> FORMATS = {
     ".vgm", ".gym", ".spc", ".sap", ".nsfe",
@@ -81,6 +89,14 @@ static inline std::wstring u8to16(const char* utf8) {
     return utf16fn;
 }
 #endif
+
+static inline musik::core::sdk::ISchema* CreateSchema() {
+    auto schema = new musik::core::sdk::TSchema<>();
+    schema->AddDouble(KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH);
+    schema->AddDouble(KEY_TRACK_FADE_OUT_LENGTH, DEFAULT_FADE_OUT_LENGTH);
+    schema->AddBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U);
+    return schema;
+}
 
 static inline bool canHandle(std::string fn) {
     std::transform(fn.begin(), fn.end(), fn.begin(), ::tolower);
@@ -114,12 +130,21 @@ static inline std::string createExternalId(const std::string& fn, int track) {
     return "gme://" + std::to_string(track) + "/" + fn;
 }
 
+template<typename... Args>
+static std::string strfmt(const std::string& format, Args ... args) {
+    /* https://stackoverflow.com/a/26221725 */
+    size_t size = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; /* extra space for '\0' */
+    std::unique_ptr<char[]> buf(new char[size]);
+    std::snprintf(buf.get(), size, format.c_str(), args ...);
+    return std::string(buf.get(), buf.get() + size - 1); /* omit the '\0' */
+}
+
 static std::string getM3uFor(const std::string& fn) {
     size_t lastDot = fn.find_last_of(".");
     if (lastDot != std::string::npos) {
         std::string m3u = fn.substr(0, lastDot) + ".m3u";
 #ifdef WIN32
-        auto m3u16 = u8to16(fn.c_str());
+        auto m3u16 = u8to16(m3u.c_str());
         if (_waccess(m3u16.c_str(), R_OK) != -1) {
             return m3u;
         }

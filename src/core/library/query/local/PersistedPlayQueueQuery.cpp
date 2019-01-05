@@ -58,9 +58,9 @@ PersistedPlayQueueQuery::~PersistedPlayQueueQuery() {
 }
 
 bool PersistedPlayQueueQuery::OnRun(musik::core::db::Connection &db) {
-    ScopedTransaction transaction(db);
-
     if (this->type == Type::Save) {
+        ScopedTransaction transaction(db);
+
         TrackList tracks(this->library);
         this->playback.CopyTo(tracks);
 

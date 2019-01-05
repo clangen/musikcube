@@ -60,4 +60,5 @@ class GmeDecoder: public musik::core::sdk::IDecoder {
         gme_t* gme { nullptr };
         gme_info_t* info { nullptr };
         short* buffer;
+        double length = -1.0;
 };

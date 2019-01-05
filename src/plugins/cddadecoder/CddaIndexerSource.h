@@ -64,6 +64,7 @@ class CddaIndexerSource :
 
         virtual void Interrupt();
         virtual bool HasStableIds() { return true; }
+        virtual bool NeedsTrackScan() { return true; }
 
         /* CddaDataModel::EventListener */
         virtual void OnAudioDiscInsertedOrRemoved();

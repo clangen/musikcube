@@ -38,6 +38,9 @@
 #include <core/sdk/IDecoderFactory.h>
 #include <core/sdk/IDataStreamFactory.h>
 #include <core/sdk/IEnvironment.h>
+#include <core/sdk/IDebug.h>
+#include <core/sdk/ISchema.h>
+#include <core/sdk/IPreferences.h>
 #include "GmeDecoder.h"
 #include "GmeIndexerSource.h"
 #include "GmeDataStream.h"
@@ -51,11 +54,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 using namespace musik::core::sdk;
 
 IEnvironment* environment = nullptr;
+IDebug* debug = nullptr;
+IPreferences* prefs = nullptr;
 
 class GmePlugin: public IPlugin {
     public:
         virtual void Release() { delete this; };
-        virtual const char* Name() { return PLUGIN_NAME.c_str(); }
+        virtual const char* Name() { return PLUGIN_NAME; }
         virtual const char* Version() { return "0.1.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "2c4eee19-6585-4984-a631-b52ff7d6d564"; }
@@ -117,6 +122,18 @@ extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
     return new GmeIndexerSource();
 }
 
+extern "C" DLLEXPORT ISchema* GetSchema() {
+    return CreateSchema();
+}
+
 extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
     ::environment = environment;
+}
+
+extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
+    ::debug = debug;
+}
+
+extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
+    ::prefs = prefs;
 }

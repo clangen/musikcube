@@ -480,67 +480,73 @@ ScanResult Indexer::SyncSource(
     IIndexerSource* source,
     const std::vector<std::string>& paths)
 {
-    if (logFile) {
-        fprintf(logFile, "\n\nSYNCING SOURCE WITH ID: %d\n", source->SourceId());
-    }
+    debug::info(TAG, u8fmt("indexer source %d running...", source->SourceId()));
 
     if (source->SourceId() == 0) {
         return ScanRollback;
     }
 
-    source->OnBeforeScan();
-
-    /* first allow the source to update metadata for any tracks that it
-    previously indexed. */
-    {
-        db::Statement tracks(
-            "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
-            this->dbConnection);
-
-        tracks.BindInt32(0, source->SourceId());
-        while (tracks.Step() == db::Row) {
-            TrackPtr track(new IndexerTrack(tracks.ColumnInt64(0)));
-            track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
-
-            if (logFile) {
-                fprintf(logFile, "    - %s\n", track->GetString(constants::Track::FILENAME).c_str());
-            }
-
-            TagStore* store = new TagStore(track);
-            source->ScanTrack(this, store, tracks.ColumnText(2));
-            store->Release();
-            this->IncrementTracksScanned();
-        }
-    }
-
-    /* alloc/init fun interop; we pass all paths to the indexer source */
-    const char** pathsList = new const char*[paths.size()];
-    for (size_t i = 0; i < paths.size(); i++) {
-        auto& p = paths[i];
-        auto sz = p.size();
-        auto dst = new char[sz + 1];
-        strncpy(dst, p.c_str(), sz);
-        dst[sz] = '\0';
-        pathsList[i] = dst;
-    }
-
     /* only commit if explicitly succeeded */
     ScanResult result = ScanRollback;
 
-    /* now tell it to do a wide-open scan. it can use this opportunity to
-    remove old tracks, or add new ones. */
+    source->OnBeforeScan();
+
     try {
-        result = source->Scan(this, pathsList, paths.size());
+        /* alloc/init fun interop; we pass all paths to the indexer source */
+        const char** pathsList = new const char*[paths.size()];
+        for (size_t i = 0; i < paths.size(); i++) {
+            auto& p = paths[i];
+            auto sz = p.size();
+            auto dst = new char[sz + 1];
+            strncpy(dst, p.c_str(), sz);
+            dst[sz] = '\0';
+            pathsList[i] = dst;
+        }
+
+        /* now tell it to do a wide-open scan. it can use this opportunity to
+        remove old tracks, or add new ones. */
+        try {
+            result = source->Scan(this, pathsList, paths.size());
+        }
+        catch (...) {
+            debug::error("Indexer", "failed to index " + std::to_string(source->SourceId()));
+        }
+
+        /* free fun interop -- it's done with the paths now. */
+        for (size_t i = 0; i < paths.size(); i++) {
+            delete[] pathsList[i];
+        }
+        delete[] pathsList;
+
+        /* finally, allow the source to update metadata for any tracks that it
+        previously indexed, if it needs to. */
+        {
+            if (source->NeedsTrackScan()) {
+                db::Statement tracks(
+                    "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
+                    this->dbConnection);
+
+                tracks.BindInt32(0, source->SourceId());
+                while (tracks.Step() == db::Row) {
+                    TrackPtr track(new IndexerTrack(tracks.ColumnInt64(0)));
+                    track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
+
+                    if (logFile) {
+                        fprintf(logFile, "    - %s\n", track->GetString(constants::Track::FILENAME).c_str());
+                    }
+
+                    TagStore* store = new TagStore(track);
+                    source->ScanTrack(this, store, tracks.ColumnText(2));
+                    store->Release();
+                }
+            }
+        }
+
+        debug::info(TAG, u8fmt("indexer source %d finished", source->SourceId()));
     }
     catch (...) {
-        debug::error("Indexer", "failed to index " + std::to_string(source->SourceId()));
+        debug::error(TAG, u8fmt("indexer source %d crashed", source->SourceId()));
     }
-
-    /* free fun interop -- it's done with the paths now. */
-    for (size_t i = 0; i < paths.size(); i++) {
-        delete[] pathsList[i];
-    }
-    delete[] pathsList;
 
     source->OnAfterScan();
 
@@ -991,6 +997,15 @@ int Indexer::RemoveAll(IIndexerSource* source) {
     }
 
     return 0;
+}
+
+void Indexer::CommitProgress(IIndexerSource* source) {
+    if (this->currentSource &&
+        this->currentSource->SourceId() == source->SourceId() &&
+        trackTransaction)
+    {
+        trackTransaction->CommitAndRestart();
+    }
 }
 
 void Indexer::ScheduleRescan(IIndexerSource* source) {

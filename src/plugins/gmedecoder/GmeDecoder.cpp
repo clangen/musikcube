@@ -34,15 +34,16 @@
 
 #include "Constants.h"
 #include "GmeDecoder.h"
+#include <core/sdk/IPreferences.h>
 #include <cassert>
 
 static const int BUFFER_SAMPLE_COUNT = 2048;
 static const int CHANNELS = 2;
 static const int SAMPLE_RATE = 44100;
 static const int SAMPLES_PER_MS = (SAMPLE_RATE * CHANNELS) / 1000;
-static const int FADE_LENGTH_MS = 2500;
-static const int MAXIMUM_DURATION_MS = 150000; /* 2.5 mins */
 static const float F_SHRT_MAX = (float) SHRT_MAX;
+
+extern IPreferences* prefs;
 
 GmeDecoder::GmeDecoder() {
     this->buffer = new short[BUFFER_SAMPLE_COUNT];
@@ -65,9 +66,11 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
         if (!gme_open_data(data, length, &this->gme, SAMPLE_RATE)) {
             int trackNum = this->stream->GetTrackNumber();
 
-            std::string m3u = getM3uFor(this->stream->GetFilename());
-            if (m3u.size()) {
-                gme_load_m3u(this->gme, m3u.c_str());
+            if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
+                std::string m3u = getM3uFor(this->stream->GetFilename());
+                if (m3u.size()) {
+                    gme_load_m3u(this->gme, m3u.c_str());
+                }
             }
 
             bool error =
@@ -81,11 +84,20 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 this->info = nullptr;
             }
             else {
-                /* if the playback length couldn't be resolved, let it play for
-                two and a half minutes (the default duration defined by the SDK),
-                and fade out the last couple seconds */
                 if (this->info->length == -1) {
-                    gme_set_fade(this->gme, MAXIMUM_DURATION_MS - FADE_LENGTH_MS, FADE_LENGTH_MS);
+                    this->length = prefs->GetDouble(
+                        KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH);
+
+                    auto fadeLength = prefs->GetDouble(
+                        KEY_TRACK_FADE_OUT_LENGTH, DEFAULT_FADE_OUT_LENGTH);
+
+                    gme_set_fade(
+                        this->gme,
+                        (int)((this->length - fadeLength) * 1000.0),
+                        (int)(fadeLength * 1000.0));
+                }
+                else {
+                    this->length = (double) this->info->length / 1000.0;
                 }
             }
         }
@@ -107,7 +119,7 @@ double GmeDecoder::SetPosition(double seconds) {
 }
 
 double GmeDecoder::GetDuration() {
-    return this->info ? (double) this->info->play_length / 1000.0 : 0.0;
+    return this->length;
 }
 
 bool GmeDecoder::GetBuffer(IBuffer *target) {

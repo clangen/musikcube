@@ -62,7 +62,21 @@ class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
             const char* externalId);
 
         virtual void Interrupt();
+
+        virtual bool NeedsTrackScan() { return true; }
+
         virtual bool HasStableIds() { return true; }
 
     private:
+        void UpdateMetadata(
+            const std::string& fn,
+            musik::core::sdk::IIndexerSource* source,
+            musik::core::sdk::IIndexerWriter* indexer);
+
+        void ScanDirectory(
+            const std::string& path,
+            musik::core::sdk::IIndexerSource* source,
+            musik::core::sdk::IIndexerWriter* indexer);
+
+        std::map<std::string, std::set<short>> trackCache;
 };

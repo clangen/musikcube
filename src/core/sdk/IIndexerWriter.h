@@ -44,6 +44,7 @@ namespace musik { namespace core { namespace sdk {
         public:
             virtual ITagStore* CreateWriter() = 0;
             virtual bool Save(IIndexerSource* source, ITagStore* track, const char* externalId = "") = 0;
+            virtual void CommitProgress(IIndexerSource* source) = 0;
             virtual bool RemoveByUri(IIndexerSource* source, const char* uri) = 0;
             virtual bool RemoveByExternalId(IIndexerSource* source, const char* id) = 0;
             virtual int RemoveAll(IIndexerSource* source) = 0;

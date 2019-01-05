@@ -83,6 +83,7 @@ namespace musik { namespace core {
             virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
             virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
             virtual int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
+            virtual void CommitProgress(musik::core::sdk::IIndexerSource* source) override;
 
             virtual bool Save(
                 musik::core::sdk::IIndexerSource* source,
