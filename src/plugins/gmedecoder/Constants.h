@@ -198,7 +198,17 @@ static int getLastModifiedTime(const std::string& fn) {
 
 static inline std::string canonicalizePath(const std::string& path) {
 #ifdef WIN32
-    http://msdn.microsoft.com/en-us/library/aa364963%28v=VS.85%29.aspx
+    std::wstring path16 = u8to16(path.c_str());
+    std::string result8;
+    DWORD size = GetFullPathName(path16.c_str(), 0, 0, nullptr);
+    if (size) {
+        wchar_t* dest = new wchar_t[size];
+        if (GetFullPathName(path16.c_str(), size, dest, nullptr)) {
+            result8 = u16to8(dest);
+        }
+        delete[] dest;
+    }
+    return result8;
 #else
     char realname[_POSIX_PATH_MAX];
     if (realpath(path.c_str(), realname) == 0) {
