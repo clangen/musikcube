@@ -195,3 +195,15 @@ static int getLastModifiedTime(const std::string& fn) {
 #endif
     return -1;
 }
+
+static inline std::string canonicalizePath(const std::string& path) {
+#ifdef WIN32
+    http://msdn.microsoft.com/en-us/library/aa364963%28v=VS.85%29.aspx
+#else
+    char realname[_POSIX_PATH_MAX];
+    if (realpath(path.c_str(), realname) == 0) {
+        return "";
+    }
+    return std::string(realname);
+#endif
+}

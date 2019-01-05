@@ -58,8 +58,9 @@ void GmeIndexerSource::Release() {
 }
 
 void GmeIndexerSource::OnBeforeScan() {
-    this->filesIndexed = 0;
+    this->filesIndexed = this->tracksIndexed = 0;
     this->interrupt = false;
+    this->paths.clear();
 }
 
 void GmeIndexerSource::OnAfterScan() {
@@ -71,8 +72,13 @@ ScanResult GmeIndexerSource::Scan(
     const char** indexerPaths,
     unsigned indexerPathsCount)
 {
+    /* keep these for later, for the removal phase */
     for (size_t i = 0; i < indexerPathsCount; i++) {
-        this->ScanDirectory(std::string(indexerPaths[i]), this, indexer);
+        this->paths.insert(canonicalizePath(indexerPaths[i]));
+    }
+
+    for (auto& path : this->paths) {
+        this->ScanDirectory(std::string(path), this, indexer);
     }
 
     indexer->CommitProgress(this, this->filesIndexed);
@@ -92,9 +98,24 @@ void GmeIndexerSource::ScanTrack(
     std::string fn;
     int trackNum;
     if (parseExternalId(externalId, fn, trackNum)) {
+        fn = canonicalizePath(fn);
+
+        /* if the file doesn't exist anymore, or it was flagged as invalid,
+        we remove it */
         if (!fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
             indexer->RemoveByExternalId(this, externalId);
+            return;
         }
+
+        /* otherwise, we remove it if it doesn't exist in the list of paths
+        we're supposed to be indexing */
+        for (auto& path : this->paths) {
+            if (fn.find(path) == 0) {
+                return; /* found a match, we're good */
+            }
+        }
+
+        indexer->RemoveByExternalId(this, externalId);
     }
 }
 
@@ -103,7 +124,7 @@ int GmeIndexerSource::SourceId() {
 }
 
 void GmeIndexerSource::UpdateMetadata(
-    const std::string& fn,
+    std::string fn,
     IIndexerSource* source,
     IIndexerWriter* indexer)
 {
@@ -113,6 +134,8 @@ void GmeIndexerSource::UpdateMetadata(
     const std::string firstExternalId = createExternalId(fn, 0);
     int modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
     if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
+        fn = canonicalizePath(fn);
+
         gme_t* data = nullptr;
         gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
         if (err) {
@@ -170,6 +193,7 @@ void GmeIndexerSource::UpdateMetadata(
 
                 indexer->Save(source, track, externalId.c_str());
                 track->Release();
+                ++tracksIndexed;
             }
         }
 
@@ -178,9 +202,8 @@ void GmeIndexerSource::UpdateMetadata(
 
     /* we commit progress every so often */
     if (++this->filesIndexed % 300 == 0) {
-        debug->Verbose(PLUGIN_NAME, strfmt("checkpoint %d files", this->filesIndexed).c_str());
-        indexer->CommitProgress(this, this->filesIndexed);
-        this->filesIndexed = 0;
+        indexer->CommitProgress(this, this->filesIndexed + this->tracksIndexed);
+        this->filesIndexed = this->tracksIndexed = 0;
     }
 }
 

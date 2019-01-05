@@ -69,7 +69,7 @@ class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
 
     private:
         void UpdateMetadata(
-            const std::string& fn,
+            std::string fn,
             musik::core::sdk::IIndexerSource* source,
             musik::core::sdk::IIndexerWriter* indexer);
 
@@ -79,6 +79,7 @@ class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
             musik::core::sdk::IIndexerWriter* indexer);
 
         std::set<std::string> invalidFiles;
-        size_t filesIndexed;
+        std::set<std::string> paths;
+        size_t filesIndexed, tracksIndexed;
         volatile bool interrupt { false };
 };
