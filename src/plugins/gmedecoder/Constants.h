@@ -57,6 +57,8 @@
 
 static const char* PLUGIN_NAME = "GME IDecoder";
 
+static const char* KEY_ALWAYS_LOOP_FOREVER = "always_loop_forever";
+static const bool DEFAULT_ALWAYS_LOOP_FOREVER = false;
 static const char* KEY_DEFAULT_TRACK_LENGTH = "default_track_length_secs";
 static const double DEFAULT_TRACK_LENGTH = 60.0 * 3.0;
 static const char* KEY_TRACK_FADE_OUT_LENGTH = "track_fade_out_length_secs";
@@ -94,6 +96,7 @@ static inline std::wstring u8to16(const char* utf8) {
 
 static inline musik::core::sdk::ISchema* CreateSchema() {
     auto schema = new musik::core::sdk::TSchema<>();
+    schema->AddBool(KEY_ALWAYS_LOOP_FOREVER, DEFAULT_ALWAYS_LOOP_FOREVER);
     schema->AddDouble(KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH);
     schema->AddDouble(KEY_TRACK_FADE_OUT_LENGTH, DEFAULT_FADE_OUT_LENGTH);
     schema->AddBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U);

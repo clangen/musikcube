@@ -189,7 +189,16 @@ struct musik::cube::TransportDisplayCache {
         return stringToColumns[str];
     }
 
+    std::string CurrentTime(int secondsCurrent) {
+        if (secondsTotal != INT_MIN) {
+            secondsCurrent = std::min(secondsCurrent, secondsTotal);
+        }
+        return musik::core::duration::Duration(secondsCurrent);
+    }
+
     void Update(ITransport& transport, TrackPtr track) {
+        /* some params don't update regularly at all, so we can safely
+        cache them as long as the track hasn't actually changed. */
         if (this->track != track) {
             this->Reset();
 
@@ -207,20 +216,31 @@ struct musik::cube::TransportDisplayCache {
                 artist = this->track->GetString(constants::Track::ARTIST);
                 artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
                 artistCols = u8cols(artist);
-
-                secondsTotal = (int)transport.GetDuration();
-                if (secondsTotal <= 0) {
-                    std::string duration =
-                        this->track->GetString(constants::Track::DURATION);
-
-                    if (duration.size()) {
-                        secondsTotal = boost::lexical_cast<int>(duration);
-                    }
-                }
-
-                totalTime = musik::core::duration::Duration(secondsTotal);
-                totalTimeCols = u8cols(totalTime);
             }
+        }
+
+        /* we check duration even if the track is the same because
+        looping params may have changed. */
+        auto updatedTotal = (int)transport.GetDuration();
+        if (updatedTotal != secondsTotal) {
+            secondsTotal = updatedTotal;
+            if (secondsTotal <= 0 && secondsTotal != INT_MIN) {
+                std::string duration =
+                    this->track->GetString(constants::Track::DURATION);
+
+                if (duration.size()) {
+                    secondsTotal = boost::lexical_cast<int>(duration);
+                }
+            }
+
+            if (secondsTotal >= 0) {
+                totalTime = musik::core::duration::Duration(secondsTotal);
+            }
+            else {
+                totalTime = "∞";
+            }
+
+            totalTimeCols = u8cols(totalTime);
         }
     }
 };
@@ -657,8 +677,8 @@ void TransportWindow::Update(TimeMode timeMode) {
         secondsCurrent = (int) round(this->lastTime);
     }
 
-    const std::string currentTime = musik::core::duration::Duration(
-        std::min(secondsCurrent, displayCache->secondsTotal));
+    const std::string currentTime =
+        displayCache->CurrentTime(secondsCurrent);
 
     const std::string replayGain = replayGainEnabled  ? "rg" : "";
 

@@ -40,6 +40,7 @@
 #include "GmeDataStream.h"
 #include <stddef.h>
 #include <gme.h>
+#include <mutex>
 
 using namespace musik::core::sdk;
 
@@ -60,5 +61,9 @@ class GmeDecoder: public musik::core::sdk::IDecoder {
         gme_t* gme { nullptr };
         gme_info_t* info { nullptr };
         short* buffer;
-        double length = -1.0;
+        double length{ -1.0 };
+        int totalSamples { 0 };
+        int samplesPlayed { 0 };
+        bool exhausted { false };
+        std::mutex mutex;
 };
