@@ -157,15 +157,28 @@ IDataStream* Transcoder::TranscodeOnDemand(
         prefs::transcoder_cache_count.c_str(),
         defaults::transcoder_cache_count);
 
+    TranscodingDataStream* transcoder = nullptr;
+
     if (cacheCount > 0) {
         PruneTranscodeCache(context);
 
-        return new TranscodingDataStream(
+        transcoder = new TranscodingDataStream(
             context, uri, tempFilename, expectedFilename, bitrate, format);
+
+        /* if the stream has an indeterminite length, close it down and
+        re-open it without caching options; we don't want to fill up
+        the storage disk */
+        if (transcoder->Length() < 0) {
+            transcoder->Release();
+            delete transcoder;
+            transcoder = new TranscodingDataStream(context, uri, bitrate, format);
+        }
     }
     else {
-        return new TranscodingDataStream(context, uri, bitrate, format);
+        transcoder = new TranscodingDataStream(context, uri, bitrate, format);
     }
+
+    return transcoder;
 }
 
 IDataStream* Transcoder::TranscodeAndWait(
@@ -186,6 +199,14 @@ IDataStream* Transcoder::TranscodeAndWait(
 
     TranscodingDataStream* transcoder = new TranscodingDataStream(
         context, uri, tempFilename, expectedFilename, bitrate, format);
+
+    /* transcoders with a negative length have an indeterminate duration, so
+    we disallow waiting for them because they may never finish */
+    if (transcoder->Length() < 0) {
+        transcoder->Release();
+        delete transcoder;
+        return nullptr;
+    }
 
     char buffer[8192];
     while (!transcoder->Eof()) {
