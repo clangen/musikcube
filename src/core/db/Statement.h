@@ -36,8 +36,6 @@
 
 #include <core/config.h>
 #include <map>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 
 struct sqlite3_stmt;
 
@@ -45,9 +43,10 @@ namespace musik { namespace core { namespace db {
 
     class Connection;
 
-    class Statement : boost::noncopyable {
+    class Statement {
         public:
             Statement(const char* sql,Connection &connection);
+            Statement(const Statement&) = delete;
             virtual ~Statement();
 
             void BindInt32(int position, int bindInt);

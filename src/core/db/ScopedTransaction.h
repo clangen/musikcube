@@ -36,16 +36,16 @@
 
 #include <core/config.h>
 #include <map>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 
 namespace musik { namespace core { namespace db {
 
     class Connection;
 
-    class ScopedTransaction : boost::noncopyable {
+    class ScopedTransaction {
         public:
             ScopedTransaction(Connection &connection);
+            ScopedTransaction(const ScopedTransaction&) = delete;
+
             ~ScopedTransaction();
 
             void Cancel();

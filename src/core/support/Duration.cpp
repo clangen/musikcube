@@ -34,7 +34,7 @@
 
 #include "pch.hpp"
 #include "Duration.h"
-#include <boost/lexical_cast.hpp>
+#include <cmath>
 
 namespace musik { namespace core { namespace duration {
 
@@ -52,7 +52,7 @@ namespace musik { namespace core { namespace duration {
 
     std::string Duration(const std::string& str) {
         if (str.size()) {
-            int seconds = boost::lexical_cast<int>(str);
+            int seconds = std::stoi(str);
             return Duration(seconds);
         }
 

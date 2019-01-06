@@ -53,7 +53,6 @@
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 #include <memory>
@@ -229,7 +228,7 @@ struct musik::cube::TransportDisplayCache {
                     this->track->GetString(constants::Track::DURATION);
 
                 if (duration.size()) {
-                    secondsTotal = boost::lexical_cast<int>(duration);
+                    secondsTotal = std::stoi(duration);
                 }
             }
 

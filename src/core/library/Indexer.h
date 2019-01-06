@@ -60,13 +60,14 @@ namespace musik { namespace core {
     class Indexer :
         public musik::core::IIndexer,
         public musik::core::sdk::IIndexerWriter,
-        public musik::core::sdk::IIndexerNotifier,
-        private boost::noncopyable
+        public musik::core::sdk::IIndexerNotifier
     {
         public:
             Indexer(
                 const std::string& libraryPath,
                 const std::string& dbFilename);
+
+            Indexer(const Indexer&) = delete;
 
             virtual ~Indexer();
 

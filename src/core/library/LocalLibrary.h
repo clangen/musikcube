@@ -34,10 +34,6 @@
 
 #pragma once
 
-#include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/lexical_cast.hpp>
-
 #include <core/config.h>
 #include <core/db/Connection.h>
 
@@ -50,7 +46,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <boost/utility.hpp>
 #include <sigslot/sigslot.h>
 #include <string>
 
@@ -59,8 +54,7 @@ namespace musik { namespace core { namespace library {
     class LocalLibrary :
         public ILibrary,
         public musik::core::runtime::IMessageTarget,
-        public std::enable_shared_from_this<LocalLibrary>,
-        boost::noncopyable
+        public std::enable_shared_from_this<LocalLibrary>
     {
         public:
             using LocalQuery = musik::core::db::LocalQueryBase;
@@ -68,6 +62,7 @@ namespace musik { namespace core { namespace library {
 
             static ILibraryPtr Create(std::string name, int id);
 
+            LocalLibrary(const LocalLibrary&) = delete;
             virtual ~LocalLibrary();
 
             /* ILibrary */

@@ -35,7 +35,6 @@
 #pragma once
 
 #include <core/config.h>
-#include <boost/shared_ptr.hpp>
 #include <core/sdk/IBuffer.h>
 
 namespace musik { namespace core { namespace audio {

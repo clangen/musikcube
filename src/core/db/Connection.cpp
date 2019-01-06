@@ -35,7 +35,6 @@
 #include "pch.hpp"
 
 #include <core/db/Connection.h>
-#include <boost/lexical_cast.hpp>
 #include <sqlite/sqlite3.h>
 
 static std::mutex globalMutex;
@@ -130,7 +129,7 @@ void Connection::Initialize(unsigned int cache) {
         // Divide by 4 to since the page_size is 4096
         // Total cache is the same as page_size*cache_size
         cache = cache / 4;
-        std::string cacheSize("PRAGMA cache_size=" + boost::lexical_cast<std::string>(cache));
+        std::string cacheSize("PRAGMA cache_size=" + std::to_string(cache));
         sqlite3_exec(this->connection,cacheSize.c_str(), nullptr, nullptr, nullptr); // size * 1.5kb = 6Mb cache
     }
 

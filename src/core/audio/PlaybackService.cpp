@@ -47,8 +47,6 @@
 #include <core/support/Playback.h>
 #include <core/support/LastFm.h>
 
-#include <boost/lexical_cast.hpp>
-
 using namespace musik::core::library;
 using namespace musik::core;
 using namespace musik::core::prefs;
@@ -795,8 +793,7 @@ double PlaybackService::GetDuration() {
     }
 
     if (track) {
-        return boost::lexical_cast<double>(
-            track->GetString(constants::Track::DURATION));
+        std::stod(track->GetString(constants::Track::DURATION));
     }
 
     return 0.0f;

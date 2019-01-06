@@ -41,7 +41,6 @@
 #include <core/sdk/IDSP.h>
 #include <core/sdk/IDecoderFactory.h>
 
-#include <boost/shared_ptr.hpp>
 #include <list>
 
 namespace musik { namespace core { namespace audio {

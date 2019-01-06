@@ -82,7 +82,7 @@ LocalLibrary::LocalLibrary(std::string name,int id)
 , id(id)
 , exit(false)
 , messageQueue(nullptr) {
-    this->identifier = boost::lexical_cast<std::string>(id);
+    this->identifier = std::to_string(id);
 
     this->db.Open(this->GetDatabaseFilename().c_str());
     LocalLibrary::CreateDatabase(this->db);

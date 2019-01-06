@@ -54,7 +54,6 @@
 
 #include <algorithm>
 
-#include <boost/thread/xtime.hpp>
 #include <boost/bind.hpp>
 
 #include <atomic>
@@ -444,7 +443,7 @@ void Indexer::SyncDirectory(
         boost::filesystem::directory_iterator end;
         boost::filesystem::directory_iterator file(path);
 
-        std::string pathIdStr = boost::lexical_cast<std::string>(pathId);
+        std::string pathIdStr = std::to_string(pathId);
         std::vector<Thread> threads;
 
         for( ; file != end && !this->Bail(); file++) {

@@ -41,8 +41,6 @@
 #include <map>
 #include <mutex>
 
-#include <boost/utility.hpp>
-
 struct sqlite3;
 struct sqlite3_stmt;
 
@@ -55,9 +53,10 @@ namespace musik { namespace core { namespace db {
         Error = 1
     } ReturnCode;
 
-    class Connection : boost::noncopyable {
+    class Connection {
         public:
             Connection();
+            Connection(const Connection&) = delete;
             ~Connection();
 
             int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);

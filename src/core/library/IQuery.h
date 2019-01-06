@@ -38,7 +38,6 @@
 #include <vector>
 #include <sigslot/sigslot.h>
 
-#include <boost/shared_ptr.hpp>
 #include <core/library/IIndexer.h>
 #include <core/db/Connection.h>
 

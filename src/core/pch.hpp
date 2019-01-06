@@ -34,11 +34,7 @@
 
 #ifdef WIN32
     #include <core/config.h>
-
     #include <sigslot/sigslot.h>
-    #include <boost/shared_ptr.hpp>
-    #include <boost/iostreams/stream.hpp>
-
     #include <core/db/Connection.h>
     #include <core/db/Statement.h>
 #endif
