@@ -107,7 +107,11 @@ namespace musik {
                 if (prefs->GetBool(keys::SaveSessionOnExit, true)) {
                     if (playback.GetPlaybackState() != sdk::PlaybackStopped) {
                         prefs->SetInt(keys::LastPlayQueueIndex, (int)playback.GetIndex());
-                        prefs->SetDouble(keys::LastPlayQueueTime, playback.GetPosition());
+
+                        /* streams with a negative duration are of indeterminate length,
+                        and may be infinite, so don't cache the playback position */
+                        double offset = playback.GetDuration() > 0.0 ? playback.GetPosition() : 0.0;
+                        prefs->SetDouble(keys::LastPlayQueueTime, offset);
                     }
                     else {
                         prefs->SetInt(keys::LastPlayQueueIndex, -1);
