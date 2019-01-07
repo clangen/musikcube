@@ -232,6 +232,16 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
     auto sourceId = context.sourceId;
     if (type == SyncType::Rebuild) {
         LocalLibrary::InvalidateTrackMetadata(this->dbConnection);
+
+        /* for sources with stable ids: just nuke all of the records and allow
+        a rebuild from scratch; things like playlists will remain intact.
+        this ensures tracks that should be removed, are */
+        for (auto source: sources) {
+            if (source->HasStableIds()) {
+                this->RemoveAll(source.get());
+            }
+        }
+
         type = SyncType::All;
     }
 

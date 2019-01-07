@@ -65,6 +65,8 @@ static const char* KEY_TRACK_FADE_OUT_LENGTH = "track_fade_out_length_secs";
 static const double DEFAULT_FADE_OUT_LENGTH = 3.0;
 static const char* KEY_ENABLE_M3U = "enable_m3u_support";
 static const bool DEFAULT_ENABLE_M3U = false;
+static const char* KEY_MINIMUM_TRACK_LENGTH = "minimum_track_length_secs";
+static const double DEFAULT_MINIMUM_TRACK_LENGTH = 0.0;
 
 static const std::set<std::string> FORMATS = {
     ".vgm", ".gym", ".spc", ".sap", ".nsfe",
@@ -99,6 +101,7 @@ static inline musik::core::sdk::ISchema* CreateSchema() {
     schema->AddBool(KEY_ALWAYS_LOOP_FOREVER, DEFAULT_ALWAYS_LOOP_FOREVER);
     schema->AddDouble(KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH);
     schema->AddDouble(KEY_TRACK_FADE_OUT_LENGTH, DEFAULT_FADE_OUT_LENGTH);
+    schema->AddDouble(KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
     schema->AddBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U);
     return schema;
 }

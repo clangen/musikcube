@@ -143,6 +143,9 @@ void GmeIndexerSource::UpdateMetadata(
             invalidFiles.insert(fn);
         }
         else {
+            double minTrackLength = prefs->GetDouble(
+                KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
+
             if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
                 std::string m3u = getM3uFor(fn);
                 if (m3u.size()) {
@@ -177,6 +180,13 @@ void GmeIndexerSource::UpdateMetadata(
                     track->SetValue("title", defaultTitle.c_str());
                 }
                 else if (info) {
+                    /* don't index tracks that are shorter than the specified minimum length.
+                    this allows users to ignore things like sound effects */
+                    if (minTrackLength > 0.0 && info->length > 0 && info->length / 1000.0 < minTrackLength) {
+                        gme_free_info(info);
+                        continue;
+                    }
+
                     std::string duration = (info->length == -1)
                         ? defaultDuration
                         : std::to_string((float) info->play_length / 1000.0f);
@@ -187,10 +197,9 @@ void GmeIndexerSource::UpdateMetadata(
                     track->SetValue("duration", duration.c_str());
                     track->SetValue("artist", strlen(info->author) ? info->author : info->system);
                     track->SetValue("title", strlen(info->song) ? info->song : defaultTitle.c_str());
-
-                    gme_free_info(info);
                 }
 
+                gme_free_info(info);
                 indexer->Save(source, track, externalId.c_str());
                 track->Release();
                 ++tracksIndexed;
