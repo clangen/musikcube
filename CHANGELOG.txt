@@ -1,3 +1,30 @@
+0.61.0
+
+musikcube:
+* added chiptunes support via Game_Music_Emu! supported formats include: vgm,
+  gym, spc, sap, nsfe, nsf, ay, gbs, hes, and kss
+* fixed a bug in the `sndio` output plugin that may cause the first few
+  buffers of audio data to be discarded when manually changing tracks
+* added the ability to disable album artist -> artist metadata fallback.
+  set `DisableAlbumArtistFallback` to `false` in `~/.settings.json` (the-eater)
+* substantially improved metadata indexing performance for large collections
+
+musikcore:
+* added the concept of "infinite" streams
+
+sdk:
+* `IIndexerSource::Scan()` now receives a list of source paths
+* added `IIndexerSource::NeedsTrackScan()`. implementations may override this
+  and return false to provide a hint to the indexer engine that the plugin
+  does not need to receive a callback to update each individual track
+* added `IIndexerWriter::CommitProgress()`. by default the indexer creates and
+  commits a single transaction per source; plugins can manually commit progress
+  using this method.
+* added `IIndexerWriter::GetLastModifiedTime()` so plugins can query the last
+  modified date for a track by `externalId`.
+
+--------------------------------------------------------------------------------
+
 0.60.1
 
 musikcube:
