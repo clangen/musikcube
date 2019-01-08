@@ -87,10 +87,16 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 this->info = nullptr;
             }
             else {
-                if (prefs->GetBool(KEY_ALWAYS_LOOP_FOREVER, DEFAULT_ALWAYS_LOOP_FOREVER)) {
+                const bool loopForever = prefs->GetBool(
+                    KEY_ALWAYS_LOOP_FOREVER, DEFAULT_ALWAYS_LOOP_FOREVER);
+
+                const bool ignoreEmbeddedTrackLength = prefs->GetBool(
+                    KEY_IGNORE_EMBEDDED_TRACK_LENGTH, DEFAULT_IGNORE_EMBEDDED_TRACK_LENGTH);
+
+                if (loopForever) {
                     this->length = LENGTH_FOREVER;
                 }
-                else if (this->info->length == -1) {
+                else if (this->info->length == -1 || ignoreEmbeddedTrackLength) {
                     this->length = prefs->GetDouble(
                         KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH);
 
