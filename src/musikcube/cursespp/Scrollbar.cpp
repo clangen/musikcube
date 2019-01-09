@@ -39,44 +39,44 @@
 using namespace cursespp;
 
 void Scrollbar::Draw(ListWindow* list, Window* target) {
-    int height = list->GetHeight();
     auto *adapter = &list->GetScrollAdapter();
-    if (adapter && height > 2) {
-        auto& pos = list->GetScrollPosition();
+    if (adapter) {
+        target = (target == nullptr) ? list : target;
 
-        /* these are defaults for drawing to an external view, that
-        is, when target != list. */
-        int xOffset = 0;
-        int from = 0, to = height;
-        WINDOW* frame = nullptr;
-        float range = (float) height;
-        size_t minY = 0;
+        int trackHeight = target->GetHeight();
 
-        if (!target || target == list) {
-            /* if we're drawing on top of the ListWindow's frame,
-            we need to account for the padding it provides. */
-            frame = list->GetFrame();
-            xOffset = list->GetWidth() - 1;
-            ++from; --to;
-            range -= 2.0f;
-            minY = 1;
-        }
-        else {
-            frame = target->GetFrame();
+        if (target->IsFrameVisible()) {
+            trackHeight -= 2; /* account for border */
         }
 
-        float total = (float) std::max(minY, adapter->GetEntryCount());
+        if (trackHeight > 1) {
+            auto& pos = list->GetScrollPosition();
+            WINDOW* window = target->GetFrame();
+            size_t itemCount = adapter->GetEntryCount();
 
-        int yOffset;
-        if (range >= total) {
-            yOffset = -1;
-        }
-        else {
-            float percent = (float) pos.logicalIndex / total;
-            yOffset = (int) (range * percent) + minY;
-        }
+            /* track */
+            int trackX = target->GetWidth() - 1;
+            int trackMinY = target->IsFrameVisible() ? 1 : 0;
+            int trackMaxY = trackMinY + trackHeight;
 
-        mvwvline(frame, from, xOffset, 0, to - from);
-        mvwaddch(frame, yOffset, xOffset, ' ' | A_REVERSE);
+            /* thumb */
+            int thumbY = -1;
+            if (itemCount > trackHeight) {
+                float percent = (float) pos.logicalIndex / (float) itemCount;
+                thumbY = (int) ((float) trackHeight * percent) + trackMinY;
+            }
+
+            /* validate */
+            assert(trackMinY >= 0);
+            assert(trackMaxY <= target->GetHeight());
+            assert(trackMaxY > trackMinY);
+            assert(trackHeight <= target->GetHeight());
+
+            /* draw */
+            mvwvline(window, trackMinY, trackX, 0, trackHeight); /* track */
+            if (thumbY >= trackMinY && thumbY < trackMaxY) {
+                mvwaddch(window, thumbY, trackX, ' ' | A_REVERSE); /* handle */
+            }
+        }
     }
 }
