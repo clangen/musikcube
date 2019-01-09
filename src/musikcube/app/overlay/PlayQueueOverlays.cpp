@@ -203,7 +203,8 @@ static void createNewPlaylist(
             [&queue, tracks, library, callback](const std::string& name) {
                 if (name.size()) {
                     auto query = SavePlaylistQuery::Save(library, name, tracks);
-                    library->Enqueue(query, 0, [&queue, callback](auto query) {
+                    library->Enqueue(query, ILibrary::QuerySynchronous, [&queue, callback](auto query) {
+                        setLastPlaylistId(std::static_pointer_cast<SavePlaylistQuery>(query)->GetPlaylistId());
                         if (callback) {
                             callback(query);
                         }
@@ -229,7 +230,9 @@ static void createNewPlaylist(
             [&queue, library, categoryType, categoryId](const std::string& name) {
             if (name.size()) {
                 auto query = SavePlaylistQuery::Save(library, name, categoryType, categoryId);
-                library->Enqueue(query, 0);
+                library->Enqueue(query, ILibrary::QuerySynchronous, [](auto query) {
+                    setLastPlaylistId(std::static_pointer_cast<SavePlaylistQuery>(query)->GetPlaylistId());
+                });
             }
         });
 

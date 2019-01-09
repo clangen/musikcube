@@ -234,11 +234,15 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
             }
         }
 
+        if (context->callback) {
+            context->callback(context->query);
+        }
+
         if (VERBOSE_LOGGING) {
-            musik::debug::info(TAG, boost::str(boost::format(
-                "query '%1%' finished with status=%2%")
-                % query->Name()
-                % query->GetStatus()));
+            musik::debug::info(TAG, u8fmt(
+                "query '%s' finished with status=%d",
+                query->Name().c_str(),
+                query->GetStatus()));
         }
 
         query.reset();
