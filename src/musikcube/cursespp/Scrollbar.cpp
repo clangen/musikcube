@@ -39,6 +39,10 @@
 using namespace cursespp;
 
 void Scrollbar::Draw(ListWindow* list, Window* target) {
+    if (!list) {
+        return;
+    }
+
     auto *adapter = &list->GetScrollAdapter();
     if (adapter) {
         target = (target == nullptr) ? list : target;
@@ -50,32 +54,34 @@ void Scrollbar::Draw(ListWindow* list, Window* target) {
         }
 
         if (trackHeight > 1) {
-            auto& pos = list->GetScrollPosition();
             WINDOW* window = target->GetFrame();
-            size_t itemCount = adapter->GetEntryCount();
+            if (window) {
+                auto& pos = list->GetScrollPosition();
+                size_t itemCount = adapter->GetEntryCount();
 
-            /* track */
-            int trackX = target->GetWidth() - 1;
-            int trackMinY = target->IsFrameVisible() ? 1 : 0;
-            int trackMaxY = trackMinY + trackHeight;
+                /* track */
+                int trackX = target->GetWidth() - 1;
+                int trackMinY = target->IsFrameVisible() ? 1 : 0;
+                int trackMaxY = trackMinY + trackHeight;
 
-            /* thumb */
-            int thumbY = -1;
-            if (itemCount > trackHeight) {
-                float percent = (float) pos.logicalIndex / (float) itemCount;
-                thumbY = (int) ((float) trackHeight * percent) + trackMinY;
-            }
+                /* thumb */
+                int thumbY = -1;
+                if (itemCount > trackHeight) {
+                    float percent = (float) pos.logicalIndex / (float) itemCount;
+                    thumbY = (int) ((float) trackHeight * percent) + trackMinY;
+                }
 
-            /* validate */
-            assert(trackMinY >= 0);
-            assert(trackMaxY <= target->GetHeight());
-            assert(trackMaxY > trackMinY);
-            assert(trackHeight <= target->GetHeight());
+                /* validate */
+                assert(trackMinY >= 0);
+                assert(trackMaxY <= target->GetHeight());
+                assert(trackMaxY > trackMinY);
+                assert(trackHeight <= target->GetHeight());
 
-            /* draw */
-            mvwvline(window, trackMinY, trackX, 0, trackHeight); /* track */
-            if (thumbY >= trackMinY && thumbY < trackMaxY) {
-                mvwaddch(window, thumbY, trackX, ' ' | A_REVERSE); /* handle */
+                /* draw */
+                mvwvline(window, trackMinY, trackX, 0, trackHeight); /* track */
+                if (thumbY >= trackMinY && thumbY < trackMaxY) {
+                    mvwaddch(window, thumbY, trackX, ' ' | A_REVERSE); /* handle */
+                }
             }
         }
     }
