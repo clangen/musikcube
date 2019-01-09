@@ -72,15 +72,11 @@ void Scrollbar::Draw(ListWindow* list, Window* target) {
             yOffset = -1;
         }
         else {
-            float percent = (float)pos.logicalIndex / total;
-            yOffset = (int)(range * percent) + minY;
+            float percent = (float) pos.logicalIndex / total;
+            yOffset = (int) (range * percent) + minY;
         }
 
-        for (int i = from; i < to; i++) {
-            wmove(frame, i, xOffset);
-            if (i == yOffset) wattron(frame, A_REVERSE);
-            waddch(frame, (i == yOffset) ? ' ' : ACS_VLINE);
-            if (i == yOffset) wattroff(frame, A_REVERSE);
-        }
+        mvwvline(frame, from, xOffset, 0, to - from);
+        mvwaddch(frame, yOffset, xOffset, ' ' | A_REVERSE);
     }
 }
