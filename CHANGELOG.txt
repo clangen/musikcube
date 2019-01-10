@@ -1,3 +1,14 @@
+0.60.2
+
+FreeBSD only release.
+
+musikcube:
+* *finally* fixed the FreeBSD scrollbar crasher. yeesh.
+* fixed a bug in the `sndio` output plugin that may cause the first few buffers
+  of audio data to be discarded when manually changing tracks.
+
+--------------------------------------------------------------------------------
+
 0.60.1
 
 musikcube:
