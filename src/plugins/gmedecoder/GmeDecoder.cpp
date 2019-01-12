@@ -93,10 +93,19 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 const bool ignoreEmbeddedTrackLength = prefs->GetBool(
                     KEY_IGNORE_EMBEDDED_TRACK_LENGTH, DEFAULT_IGNORE_EMBEDDED_TRACK_LENGTH);
 
-                if (loopForever) {
+                const double minTrackLength = prefs->GetDouble(
+                    KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
+
+                double length = (double) this->info->play_length / 1000.0;
+
+                /* any track whose length is less than the specified minimum track
+                length is considered a sound effect, and won't be looped or extended */
+                const bool isSfx = (length > 0.0) && (length <= minTrackLength);
+
+                if (!isSfx && loopForever) {
                     this->length = LENGTH_FOREVER;
                 }
-                else if (this->info->length == -1 || ignoreEmbeddedTrackLength) {
+                else if (!isSfx && (this->info->length == -1 || ignoreEmbeddedTrackLength)) {
                     this->length = prefs->GetDouble(
                         KEY_DEFAULT_TRACK_LENGTH, DEFAULT_TRACK_LENGTH);
 
@@ -109,7 +118,7 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         (int)(fadeLength * 1000.0));
                 }
                 else {
-                    this->length = (double) this->info->play_length / 1000.0;
+                    this->length = length;
                 }
             }
 

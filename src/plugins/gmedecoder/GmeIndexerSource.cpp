@@ -146,6 +146,9 @@ void GmeIndexerSource::UpdateMetadata(
             double minTrackLength = prefs->GetDouble(
                 KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
 
+            bool ignoreSfx = prefs->GetBool(
+                KEY_EXCLUDE_SOUND_EFFECTS, DEFAULT_EXCLUDE_SOUND_EFFECTS);
+
             if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
                 std::string m3u = getM3uFor(fn);
                 if (m3u.size()) {
@@ -182,7 +185,11 @@ void GmeIndexerSource::UpdateMetadata(
                 else if (info) {
                     /* don't index tracks that are shorter than the specified minimum length.
                     this allows users to ignore things like sound effects */
-                    if (minTrackLength > 0.0 && info->length > 0 && info->length / 1000.0 < minTrackLength) {
+                    if (minTrackLength > 0.0 &&
+                        ignoreSfx &&
+                        info->length > 0 &&
+                        info->length / 1000.0 < minTrackLength)
+                    {
                         gme_free_info(info);
                         continue;
                     }
