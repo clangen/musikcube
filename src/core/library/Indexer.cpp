@@ -228,6 +228,11 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     this->tracksScanned = 0;
 
+    /* always remove tracks that no longer have a corresponding source */
+    for (int id : this->GetOrphanedSourceIds()) {
+        this->RemoveAllForSourceId(id);
+    }
+
     auto type = context.type;
     auto sourceId = context.sourceId;
     if (type == SyncType::Rebuild) {
@@ -762,6 +767,27 @@ void Indexer::GetPaths(std::vector<std::string>& paths) {
     std::copy(this->paths.begin(), this->paths.end(), std::back_inserter(paths));
 }
 
+std::set<int> Indexer::GetOrphanedSourceIds() {
+    /* build a list of source ids: `(x, y, z)` */
+    std::string group = "(0"; /* 0 is the built-in source, it's always valid */
+    for (size_t i = 0; i < this->sources.size(); i++) {
+        group += "," + std::to_string(this->sources.at(i)->SourceId());
+    }
+    group += ")";
+
+    std::string query =
+        "SELECT DISTINCT source_id "
+        "FROM tracks "
+        "WHERE source_id NOT IN " + group;
+
+    std::set<int> result;
+    db::Statement stmt(query.c_str(), this->dbConnection);
+    while (stmt.Step() == db::Row) {
+        result.insert(stmt.ColumnInt32(0));
+    }
+    return result;
+}
+
 static int optimize(
     musik::core::db::Connection &connection,
     std::string singular,
@@ -990,21 +1016,14 @@ bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
 }
 
 int Indexer::RemoveAll(IIndexerSource* source) {
-    if (source->SourceId() == 0) {
-        return 0;
-    }
+    auto id = source->SourceId();
+    return (id != 0) ? this->RemoveAllForSourceId(id) : 0;
+}
 
-    db::Statement stmt(
-        "DELETE FROM tracks WHERE source_id=?",
-        this->dbConnection);
-
-    stmt.BindInt32(0, source->SourceId());
-
-    if (stmt.Step() == db::Okay) {
-        return dbConnection.LastModifiedRowCount();
-    }
-
-    return 0;
+int Indexer::RemoveAllForSourceId(int sourceId) {
+    db::Statement stmt("DELETE FROM tracks WHERE source_id=?", this->dbConnection);
+    stmt.BindInt32(0, sourceId);
+    return (stmt.Step() == db::Okay) ? dbConnection.LastModifiedRowCount() : 0;
 }
 
 void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {

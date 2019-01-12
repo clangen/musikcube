@@ -53,6 +53,7 @@
 #include <deque>
 #include <vector>
 #include <atomic>
+#include <set>
 #include <map>
 
 namespace musik { namespace core {
@@ -133,9 +134,10 @@ namespace musik { namespace core {
             void ProcessAddRemoveQueue();
             void SyncOptimize();
             void RunAnalyzers();
+            std::set<int> GetOrphanedSourceIds();
+            int RemoveAllForSourceId(int sourceId);
 
             void Schedule(SyncType type, musik::core::sdk::IIndexerSource *source);
-
             void IncrementTracksScanned(size_t delta = 1);
 
             void SyncDirectory(
