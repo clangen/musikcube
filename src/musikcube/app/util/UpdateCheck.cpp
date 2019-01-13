@@ -41,6 +41,7 @@
 #include <cursespp/DialogOverlay.h>
 
 #include <core/runtime/Message.h>
+#include <core/support/Common.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
@@ -231,15 +232,21 @@ void UpdateCheck::ShowUpgradeAvailableOverlay(
             .SetTitle(_TSTR("update_check_dialog_title"))
             .SetMessage(message);
 
+        dialog->AddButton(
+            "o", "o", _TSTR("button_open_url"),
+            [url](std::string key) {
+                core::OpenFile(url);
+            });
+
         if (silent) {
             dialog->AddButton(
-                "KEY_ENTER", "ENTER", _TSTR("button_dont_remind_me"),
+                "x", "x", _TSTR("button_dont_remind_me"),
                 [prefs, prefKey, version](std::string key) {
                     prefs->SetString(prefKey.c_str(), version.c_str());
                     prefs->Save();
                 });
 
-            dialog->AddButton("^[", "ESC", _TSTR("button_remind_me_later"));
+            dialog->AddButton("l", "l", _TSTR("button_remind_me_later"));
         }
         else {
             dialog->AddButton("KEY_ENTER", "ENTER", _TSTR("ok"));
