@@ -3,6 +3,8 @@
 musikcube:
 * added chiptunes support via Game_Music_Emu! supported formats include: vgm,
   gym, spc, sap, nsfe, nsf, ay, gbs, hes, and kss
+* added `macmediakeys` plugin; macOS users can play/pause/resume/skip tracks
+  using the media keys on the keyboard.
 * substantially improved metadata indexing performance for large collections
 * ensure all utf8 strings are sanitized immediately before inserting them into
   the database. this wasn't being done properly before, and could lead to weird

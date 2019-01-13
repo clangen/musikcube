@@ -172,6 +172,8 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   add_subdirectory(src/plugins/coreaudioout)
   add_dependencies(musikcube coreaudioout)
+  add_subdirectory(src/plugins/macosmediakeys)
+  add_dependencies(musikcube macosmediakeys)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
