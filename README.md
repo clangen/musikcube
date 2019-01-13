@@ -6,7 +6,7 @@ musikcube compiles and runs easily on windows, macos and linux. it also runs wel
 
 check out the [installation guide](https://github.com/clangen/musikcube/wiki/installing) to get up and running.
 
-be sure to also read through a [the user guide](https://github.com/clangen/musikcube/wiki/user-guide), which includes a list of all the default keyboard shortcuts.
+be sure to also read through a [the user guide](https://github.com/clangen/musikcube/wiki/user-guide), which describes app's navigation paradigm and lists all the default keyboard shortcuts.
 
 # screenshots
 
