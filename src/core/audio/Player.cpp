@@ -350,7 +350,6 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
                 buffer = player->stream->GetNextProcessedOutputBuffer();
 
-                /* lock it down until it's processed */
                 if (buffer) {
                     /* apply replay gain, if specified */
                     if (gain != 1.0f) {
