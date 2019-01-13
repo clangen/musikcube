@@ -4,7 +4,9 @@ a cross-platform, terminal-based audio engine, library, player and server writte
 
 musikcube compiles and runs easily on windows, macos and linux. it also runs well on a raspberry pi with raspbian, and can be setup as a streaming audio server.
 
- [keyboard shortcuts are described in the user guide.](https://github.com/clangen/musikcube/wiki/user-guide)
+check out the [installation guide](https://github.com/clangen/musikcube/wiki/installing) to get up and running.
+
+be sure to also read through a [the user guide](https://github.com/clangen/musikcube/wiki/user-guide), which includes a list of all the default keyboard shortcuts.
 
 # screenshots
 
