@@ -36,6 +36,7 @@
 #include <string>
 #include <vector>
 #include <sigslot/sigslot.h>
+#include <functional>
 
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
