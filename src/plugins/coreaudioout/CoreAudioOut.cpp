@@ -38,7 +38,7 @@
 #include <iostream>
 #include <vector>
 
-#define BUFFER_COUNT 24 
+#define BUFFER_COUNT 24
 #define PREF_DEVICE_ID "device_id"
 
 using namespace musik::core::sdk;
@@ -392,7 +392,10 @@ IDeviceList* CoreAudioOut::GetDeviceList() {
 
                     CFStringRef deviceUid;
                     if (AudioObjectGetPropertyData(deviceId, &uidAddress, 0, NULL, &propsize, &deviceUid) == 0) {
-                        deviceIdStr = CFStringGetCStringPtr(deviceUid, kCFStringEncodingUTF8);
+                        const char* cstr = CFStringGetCStringPtr(deviceUid, kCFStringEncodingUTF8);
+                        if (cstr) {
+                            deviceIdStr = cstr;
+                        }
                     }
 
                     if (deviceNameStr.size() && deviceIdStr.size()) {
