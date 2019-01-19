@@ -35,11 +35,15 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IPlaybackRemote.h>
+#include <core/sdk/IDebug.h>
 #include <mutex>
 #include <iostream>
 #include "SPMediaKeyTap.h"
 
 using namespace musik::core::sdk;
+
+static const char* TAG = "macosmediakeys";
+static IDebug* debug = nullptr;
 
 struct IKeyProcessor {
     virtual void ProcessKeyCode(int keyCode) = 0;
@@ -49,6 +53,7 @@ struct IKeyProcessor {
     SPMediaKeyTap* keyTap;
     IKeyProcessor* processor;
 }
+- (BOOL) register;
 - (void) unregister;
 - (void) setKeyProcessor: (IKeyProcessor*) processor;
 @end
@@ -70,14 +75,28 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
     public:
         PlaybackRemote() {
             this->mediaKeys = [[MediaKeys alloc] init];
-            [this->mediaKeys setKeyProcessor: this];
+            if ([this->mediaKeys register]) {
+                [this->mediaKeys setKeyProcessor: this];
+                debug->Info(TAG, "listening to media keys");
+            }
+            else {
+                debug->Error(TAG, "failed to register media keys listener");
+                this->Unregister();
+            }
         }
 
         virtual void Release() override {
-            [this->mediaKeys unregister];
-            [this->mediaKeys release];
-            this->mediaKeys = nullptr;
+            this->Unregister();
             delete this;
+        }
+
+        void Unregister() {
+            if (this->mediaKeys) {
+                [this->mediaKeys unregister];
+                [this->mediaKeys release];
+                this->mediaKeys = nullptr;
+                debug->Info(TAG, "unregistered media keys");
+            }
         }
 
         virtual void SetPlaybackService(IPlaybackService* playback) override {
@@ -135,10 +154,6 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
         [SPMediaKeyTap defaultMediaKeyUserBundleIdentifiers], kMediaKeyUsingBundleIdentifiersDefaultsKey,
     nil]];
 
-    if ([SPMediaKeyTap usesGlobalMediaKeyTap]) {
-        [keyTap startWatchingMediaKeys];
-    }
-
     return self;
 }
 
@@ -158,7 +173,14 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
     }
 }
 
-- (void) unregister; {
+- (BOOL) register {
+    if ([SPMediaKeyTap usesGlobalMediaKeyTap]) {
+        return [keyTap startWatchingMediaKeys];
+    }
+    return NO;
+}
+
+- (void) unregister {
     if (keyTap) {
         [keyTap stopWatchingMediaKeys];
         [keyTap release];
@@ -172,4 +194,8 @@ extern "C" IPlugin* GetPlugin() {
 
 extern "C" IPlaybackRemote* GetPlaybackRemote() {
     return new PlaybackRemote();
+}
+
+extern "C" void SetDebug(IDebug* debug) {
+    ::debug = debug;
 }

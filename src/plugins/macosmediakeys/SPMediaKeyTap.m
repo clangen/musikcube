@@ -60,7 +60,7 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 	_app_switching_ref = NULL;
 }
 
--(void)startWatchingMediaKeys;{
+-(BOOL)startWatchingMediaKeys;{
     // Prevent having multiple mediaKeys threads
     [self stopWatchingMediaKeys];
 
@@ -73,13 +73,17 @@ static CGEventRef tapEventCallback(CGEventTapProxy proxy, CGEventType type, CGEv
 								  CGEventMaskBit(NX_SYSDEFINED),
 								  tapEventCallback,
 								  self);
-	assert(_eventPort != NULL);
 
-    _eventPortSource = CFMachPortCreateRunLoopSource(kCFAllocatorSystemDefault, _eventPort, 0);
-	assert(_eventPortSource != NULL);
+	if (_eventPort) {
+		_eventPortSource = CFMachPortCreateRunLoopSource(kCFAllocatorSystemDefault, _eventPort, 0);
+		if (_eventPortSource) {
+			// Let's do this in a separate thread so that a slow app doesn't lag the event tap
+			[NSThread detachNewThreadSelector:@selector(eventTapThread) toTarget:self withObject:nil];
+			return YES;
+		}
+	}
 
-	// Let's do this in a separate thread so that a slow app doesn't lag the event tap
-	[NSThread detachNewThreadSelector:@selector(eventTapThread) toTarget:self withObject:nil];
+	return NO;
 }
 -(void)stopWatchingMediaKeys;
 {
