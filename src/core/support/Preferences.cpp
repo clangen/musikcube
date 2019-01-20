@@ -47,7 +47,7 @@ static std::unordered_map<std::string, std::weak_ptr<Preferences> > componentCac
 static std::unordered_map<std::string, std::shared_ptr<Preferences> > pluginCache;
 static std::mutex cacheMutex;
 
-#define CACHE_KEY(name, mode) u8fmt("%s-%d", name, mode)
+#define CACHE_KEY(name, mode) u8fmt("%s-%d", name.c_str(), mode)
 
 #define FILENAME(x) musik::core::GetDataDirectory() + "/" + x + ".json"
 
