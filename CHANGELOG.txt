@@ -1,3 +1,12 @@
+0.62.0
+
+musikcube:
+* fixed a crash in `CoreAudioOut` when parsing unnamed output devices
+  (Porco-Rosso)
+* fixed a crash in `macosmediakeys` initialization (Porco-Rosso)
+
+--------------------------------------------------------------------------------
+
 0.61.0
 
 musikcube:
