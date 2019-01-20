@@ -81,6 +81,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <functional>
+#include <cctype>
 
 #ifdef WIN32
 #define FFMPEG_DECODER
