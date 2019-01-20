@@ -32,14 +32,17 @@ static const short EVENT_DISPATCH = 1;
 static const short EVENT_QUIT = 2;
 static const pid_t NOT_RUNNING = (pid_t) -1;
 static int pipeFd[2] = { 0 };
+static bool foreground = false;
 
 static void printHelp();
 static void handleCommandLine(int argc, char** argv);
 static void exitIfRunning();
 static pid_t getDaemonPid();
-static void startDaemon();
+static void initForeground();
+static void initDaemon();
 static void stopDaemon();
 static void initUtf8();
+static void run();
 
 class EvMessageQueue: public MessageQueue {
     public:
@@ -62,7 +65,7 @@ class EvMessageQueue: public MessageQueue {
             this->Dispatch();
         }
 
-        static void SignalCallback(ev::sig& signal, int revents) {
+        static void SignalQuit(ev::sig& signal, int revents) {
             write(pipeFd[1], &EVENT_QUIT, sizeof(EVENT_QUIT));
         }
 
@@ -85,15 +88,12 @@ class EvMessageQueue: public MessageQueue {
             io.start();
 
             sio.set(loop);
-            sio.set<&EvMessageQueue::SignalCallback>();
+            sio.set<&EvMessageQueue::SignalQuit>();
             sio.start(SIGTERM);
 
             write(pipeFd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
 
             loop.run(0);
-        }
-
-        void Quit() {
         }
 
     private:
@@ -105,6 +105,7 @@ class EvMessageQueue: public MessageQueue {
 static void printHelp() {
     std::cout << "\n  musikcubed:\n";
     std::cout << "    --start: start the daemon\n";
+    std::cout << "    --foreground: start the in the foreground\n";
     std::cout << "    --stop: shut down the daemon\n";
     std::cout << "    --running: check if the daemon is running\n";
     std::cout << "    --version: print the version\n";
@@ -115,6 +116,11 @@ static void handleCommandLine(int argc, char** argv) {
     if (argc >= 2) {
         const std::string command = std::string(argv[1]);
         if (command == "--start") {
+            return;
+        }
+        else if (command == "--foreground") {
+            std::cout << "\n  musikcubed starting in the foreground...\n\n";
+            ::foreground = true;
             return;
         }
         else if (command == "--stop") {
@@ -186,7 +192,7 @@ static void exitIfRunning() {
     std::cerr << "\n  musikcubed is starting...\n\n";
 }
 
-static void startDaemon() {
+static void initDaemon() {
     pid_t pid = fork();
 
     if (pid < 0) {
@@ -221,6 +227,27 @@ static void startDaemon() {
     if (lock.good()) {
         lock << std::to_string((int) getpid());
     }
+
+    debug::Start({
+        new debug::SimpleFileBackend()
+    });
+}
+
+static void initForeground() {
+    if (pipe(pipeFd) != 0) {
+        std::cerr << "\n  ERROR! couldn't create pipe\n\n";
+        exit(EXIT_FAILURE);
+    }
+
+    std::ofstream lock(LOCKFILE);
+    if (lock.good()) {
+        lock << std::to_string((int) getpid());
+    }
+
+    debug::Start({
+        new debug::ConsoleBackend(),
+        new debug::SimpleFileBackend()
+    });
 }
 
 static void initUtf8() {
@@ -230,14 +257,13 @@ static void initUtf8() {
 }
 
 int main(int argc, char** argv) {
+    initUtf8();
     handleCommandLine(argc, argv);
     exitIfRunning();
-    startDaemon();
-    initUtf8();
+
+    ::foreground ? initForeground() : initDaemon();
 
     srand((unsigned int) time(0));
-
-    debug::Start();
 
     EvMessageQueue messageQueue;
     auto library = LibraryFactory::Default();
