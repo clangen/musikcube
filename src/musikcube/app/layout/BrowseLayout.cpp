@@ -81,9 +81,9 @@ static std::map <std::string, std::string> FIELD_TO_TITLE{
 
 static inline std::string getModifiedText() {
     try {
-        return boost::str(
-            boost::format(_TSTR("browse_playlist_modified"))
-            % Hotkeys::Get(Hotkeys::PlayQueuePlaylistSave));
+        return u8fmt(
+            _TSTR("browse_playlist_modified"),
+            Hotkeys::Get(Hotkeys::PlayQueuePlaylistSave).c_str());
     }
     catch (...) {
         return _TSTR("browse_playlist_modified");

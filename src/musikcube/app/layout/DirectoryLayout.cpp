@@ -221,8 +221,9 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         if (this->GetFocus() == this->directoryList) {
             if (!this->adapter->HasSubDirectories(this->directoryList->GetSelectedIndex())) {
-                std::string message = _TSTR("browse_no_subdirectories_toast");
-                message = (boost::format(message) % Hotkeys::Get(Hotkeys::ContextMenu)).str();
+                std::string message = u8fmt(
+                    _TSTR("browse_no_subdirectories_toast"),
+                    Hotkeys::Get(Hotkeys::ContextMenu).c_str());
                 ToastOverlay::Show(message);
                 return true;
             }

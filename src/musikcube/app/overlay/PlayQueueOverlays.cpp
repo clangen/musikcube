@@ -116,13 +116,7 @@ static inline void setLastCategoryOverlayIndex(size_t i) {
 }
 
 static std::string stringWithFormat(const std::string& key, const std::string& value) {
-    std::string message = _TSTR(key);
-    try {
-        message = boost::str(boost::format(message) % value);
-    }
-    catch (...) {
-    }
-    return message;
+    return u8fmt(_TSTR(key), value.c_str());
 }
 
 static std::shared_ptr<CategoryListQuery> queryPlaylists(ILibraryPtr library) {

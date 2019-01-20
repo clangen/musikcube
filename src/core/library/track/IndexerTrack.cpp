@@ -358,7 +358,7 @@ static void removeRelation(
     const std::string& field,
     int64_t trackId)
 {
-    std::string query = boost::str(boost::format("DELETE FROM %1% WHERE track_id=?") % field);
+    std::string query = u8fmt("DELETE FROM %s WHERE track_id=?", field.c_str());
     db::Statement stmt(query.c_str(), connection);
     stmt.BindInt64(0, trackId);
     stmt.Step();
@@ -632,8 +632,8 @@ int64_t IndexerTrack::SaveSingleValueField(
 {
     int64_t id = 0;
 
-    std::string selectQuery = boost::str(boost::format(
-        "SELECT id FROM %1% WHERE name=?") % fieldTableName);
+    std::string selectQuery = u8fmt(
+        "SELECT id FROM %s WHERE name=?", fieldTableName.c_str());
 
     db::Statement stmt(selectQuery.c_str(), dbConnection);
     std::string value = this->GetString(trackMetadataKeyName.c_str());
@@ -647,8 +647,8 @@ int64_t IndexerTrack::SaveSingleValueField(
             id = stmt.ColumnInt64(0);
         }
         else {
-            std::string insertStatement = boost::str(boost::format(
-                "INSERT INTO %1% (name) VALUES (?)") % fieldTableName);
+            std::string insertStatement = u8fmt(
+                "INSERT INTO %s (name) VALUES (?)", fieldTableName.c_str());
 
             db::Statement insertValue(insertStatement.c_str(), dbConnection);
             insertValue.BindText(0, value);
@@ -866,7 +866,7 @@ int64_t IndexerTrack::SaveNormalizedFieldValue(
             fieldId = metadataIdCache[tableName + "-" + fieldValue];
         }
         else {
-            std::string query = boost::str(boost::format("SELECT id FROM %1% WHERE name=?") % tableName);
+            std::string query = u8fmt("SELECT id FROM %s WHERE name=?", tableName.c_str());
             db::Statement stmt(query.c_str(), dbConnection);
             stmt.BindText(0, fieldValue);
 
@@ -880,8 +880,8 @@ int64_t IndexerTrack::SaveNormalizedFieldValue(
     /* not found? insert. */
 
     if (fieldId == 0) {
-        std::string query = boost::str(boost::format(
-            "INSERT INTO %1% (name, aggregated) VALUES (?, ?)") % tableName);
+        std::string query = u8fmt(
+            "INSERT INTO %s (name, aggregated) VALUES (?, ?)", tableName.c_str());
 
         db::Statement stmt(query.c_str(), dbConnection);
         stmt.BindText(0, fieldValue);
@@ -896,9 +896,9 @@ int64_t IndexerTrack::SaveNormalizedFieldValue(
     junction table. see if we were asked to do this... */
 
     if (relationJunctionTableName.size() && relationJunctionTableColumn.size()) {
-        std::string query = boost::str(boost::format(
-            "INSERT INTO %1% (track_id, %2%) VALUES (?, ?)")
-            % relationJunctionTableName % relationJunctionTableColumn);
+        std::string query = u8fmt(
+            "INSERT INTO %s (track_id, %s) VALUES (?, ?)",
+            relationJunctionTableName.c_str(), relationJunctionTableColumn.c_str());
 
         db::Statement stmt(query.c_str(), dbConnection);
         stmt.BindInt64(0, this->trackId);

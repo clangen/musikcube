@@ -40,8 +40,6 @@
 #include <iostream>
 #include <fstream>
 
-#include <boost/format.hpp>
-
 #ifdef WIN32
     #include <shellapi.h>
 #elif __APPLE__
@@ -115,7 +113,7 @@ namespace musik { namespace core {
                 size_t bufsize = sizeof(pathbuf);
                 sysctl(mib, 4, pathbuf, &bufsize, nullptr, 0);
             #else
-                std::string pathToProc = boost::str(boost::format("/proc/%d/exe") % (int) getpid());
+                std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
                 readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
 	    #endif
 

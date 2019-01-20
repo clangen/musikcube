@@ -38,7 +38,6 @@
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
 #include <core/library/track/TrackList.h>
-#include <boost/format.hpp>
 
 namespace musik { namespace core { namespace db { namespace local {
 
@@ -70,8 +69,7 @@ namespace musik { namespace core { namespace db { namespace local {
         protected:
             std::string GetLimitAndOffset() {
                 if (this->limit > 0 && this->offset >= 0) {
-                    return boost::str(boost::format("LIMIT %d OFFSET %d")
-                        % this->limit % this->offset);
+                    return u8fmt("LIMIT %d OFFSET %d", this->limit, this->offset);
                 }
                 return "";
             }

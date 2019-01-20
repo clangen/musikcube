@@ -69,8 +69,9 @@ static void updateSyncingText(TextLabel* label, int updates) {
                 cursespp::text::AlignCenter);
         }
         else {
-            label->SetText(boost::str(boost::format(
-                _TSTR("main_syncing_banner")) % updates), cursespp::text::AlignCenter);
+            label->SetText(u8fmt(
+                _TSTR("main_syncing_banner"), updates),
+                cursespp::text::AlignCenter);
         }
     }
     catch (...) {

@@ -793,13 +793,14 @@ static int optimize(
     std::string singular,
     std::string plural)
 {
-    std::string outer = boost::str(
-        boost::format("SELECT id, lower(trim(name)) AS %1% FROM %2% ORDER BY %3%")
-        % singular % plural % singular);
+
+    std::string outer = u8fmt(
+        "SELECT id, lower(trim(name)) AS %s FROM %s ORDER BY %s",
+        singular.c_str(), plural.c_str(), singular.c_str());
 
     db::Statement outerStmt(outer.c_str(), connection);
 
-    std::string inner = boost::str(boost::format("UPDATE %1% SET sort_order=? WHERE id=?") % plural);
+    std::string inner = u8fmt("UPDATE %s SET sort_order=? WHERE id=?", plural.c_str());
     db::Statement innerStmt(inner.c_str(), connection);
 
     int count = 0;

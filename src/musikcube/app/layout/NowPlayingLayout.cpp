@@ -48,7 +48,6 @@
 #include "NowPlayingLayout.h"
 
 #include <set>
-#include <boost/format.hpp>
 
 using namespace musik::core::library::constants;
 
@@ -321,7 +320,11 @@ static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width) {
         text::AlignLeft,
         (int) titleWidth);
 
-    return boost::str(
-        boost::format("%s   %s   %s   %s   %s")
-        % trackNum % title % duration % album % artist);
+    return u8fmt(
+        "%s   %s   %s   %s   %s",
+        trackNum.c_str(),
+        title.c_str(),
+        duration.c_str(),
+        album.c_str(),
+        artist.c_str());
 }

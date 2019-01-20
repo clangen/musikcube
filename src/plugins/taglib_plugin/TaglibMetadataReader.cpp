@@ -80,8 +80,6 @@
 
 #include <vector>
 #include <string>
-#include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
 #include <iostream>
 
 #ifdef WIN32
@@ -89,6 +87,35 @@
 #endif
 
 using namespace musik::core::sdk;
+
+namespace str {
+    static std::string lower(std::string input) {
+        std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+        return input;
+    }
+
+    static inline std::string trim(const std::string& str) {
+        std::string s(str);
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))));
+        s.erase(std::find_if(s.rbegin(), s.rend(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+        return s;
+    }
+
+    static std::vector<std::string> split(
+        const std::string& in, const std::string& delim)
+    {
+        std::vector<std::string> result;
+        size_t last = 0, next = 0;
+        while ((next = in.find(delim, last)) != std::string::npos) {
+            result.push_back(std::move(trim(in.substr(last, next - last))));
+            last = next + 1;
+        }
+        result.push_back(std::move(trim(in.substr(last))));
+        return result;
+    }
+}
 
 #ifdef WIN32
 static inline std::wstring utf8to16(const char* utf8) {
@@ -108,7 +135,7 @@ static bool isValidYear(const std::string& year) {
 
 static float toReplayGainFloat(const std::string& input) {
     /* trim any trailing " db" or "db" noise... */
-    std::string lower = boost::algorithm::to_lower_copy(input);
+    std::string lower = str::lower(input);
     if (lower.find(" db") == lower.length() - 3) {
         lower = lower.substr(0, lower.length() - 3);
     }
@@ -148,8 +175,7 @@ void TaglibMetadataReader::Release() {
 
 bool TaglibMetadataReader::CanRead(const char *extension) {
     if (extension) {
-        std::string ext(extension);
-        boost::algorithm::to_lower(ext);
+        std::string ext(str::lower(extension));
         return
 #ifdef FFMPEG_DECODER
             ext.compare("opus") == 0 ||
@@ -186,9 +212,7 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
     }
 
     if (extension.size()) {
-        boost::algorithm::to_lower(extension);
-
-        if (extension == "mp3") {
+        if (str::lower(extension) == "mp3") {
             try {
                 this->ReadID3V2(uri, track);
             }
@@ -461,9 +485,8 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
         std::vector<std::string> splitTrack;
         if (!allTags["TRCK"].isEmpty()) {
             std::string tempTrack = allTags["TRCK"].front()->toString().toCString(true);
-            boost::algorithm::split(splitTrack, tempTrack, boost::algorithm::is_any_of("/"));
+            splitTrack = str::split(tempTrack, "/");
             this->SetTagValue("track", splitTrack[0].c_str(), track);
-
             if (splitTrack.size() > 1) {
                 this->SetTagValue("totaltracks", splitTrack[1].c_str(), track);
             }
@@ -617,8 +640,7 @@ void TaglibMetadataReader::SetTagValue(
 void TaglibMetadataReader::SetTagValue(
     const char* key, const int tagInt, ITagStore *target)
 {
-    std::string temp = boost::str(boost::format("%1%") % tagInt);
-    target->SetValue(key, temp.c_str());
+    target->SetValue(key, std::to_string(tagInt).c_str());
 }
 
 void TaglibMetadataReader::SetTagValues(
@@ -644,10 +666,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
 {
     if(!tagString.isEmpty()) {
         std::string value(tagString.to8Bit(true));
-        std::vector<std::string> splitValues;
-
-        boost::algorithm::split(splitValues, value, boost::algorithm::is_any_of("/"));
-
+        std::vector<std::string> splitValues = str::split(value, "/");
         std::vector<std::string>::iterator it = splitValues.begin();
         for( ; it != splitValues.end(); ++it) {
             track->SetValue(key, it->c_str());

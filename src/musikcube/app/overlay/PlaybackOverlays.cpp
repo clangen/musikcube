@@ -80,12 +80,9 @@ static void showNoOutputPluginsMessage() {
 static void showOutputCannotCrossfadeMessage(const std::string& outputName) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
-    std::string message = _TSTR("playback_overlay_invalid_transport");
-    try {
-        message = boost::str(boost::format(message) % outputName);
-    }
-    catch (...) {
-    }
+    std::string message = u8fmt(
+        _TSTR("playback_overlay_invalid_transport"),
+        outputName.c_str());
 
     (*dialog)
         .SetTitle(_TSTR("default_overlay_title"))

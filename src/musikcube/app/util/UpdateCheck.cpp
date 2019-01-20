@@ -76,13 +76,13 @@ static inline int64_t versionCode(short major, short minor, short patch) {
 }
 
 static inline std::string formattedVersion(short major, short minor, short patch) {
-    return boost::str(boost::format("%d.%d.%d") % major % minor % patch);
+    return u8fmt("%d.%d.%d", major, minor, patch);
 }
 
 static inline std::string getUserAgent() {
-    return boost::str(boost::format("musikcube %s (%s)")
-        % formattedVersion(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH)
-        % PLATFORM);
+    return u8fmt("musikcube %s (%s)",
+        formattedVersion(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH).c_str(),
+        PLATFORM.c_str());
 }
 
 size_t UpdateCheck::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
@@ -225,8 +225,9 @@ void UpdateCheck::ShowUpgradeAvailableOverlay(
     if (!silent || acknowledged != version) {
         std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
-        std::string message = boost::str(boost::format(
-            _TSTR("update_check_dialog_message")) % version % url);
+        std::string message = u8fmt(
+            _TSTR("update_check_dialog_message"),
+            version.c_str(), url.c_str());
 
         (*dialog)
             .SetTitle(_TSTR("update_check_dialog_title"))

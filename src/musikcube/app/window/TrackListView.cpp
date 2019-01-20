@@ -49,8 +49,6 @@
 #include <app/util/Playback.h>
 #include <app/overlay/PlayQueueOverlays.h>
 
-#include <boost/format.hpp>
-
 #define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
 
 using namespace musik::core;
@@ -400,9 +398,12 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t index, size_t width
         text::AlignLeft,
         (int) titleWidth);
 
-    return boost::str(
-        boost::format("%s   %s   %s   %s")
-        % trackNum % title % duration % artist);
+    return u8fmt(
+        "%s   %s   %s   %s",
+        trackNum.c_str(),
+        title.c_str(),
+        duration.c_str(),
+        artist.c_str());
 }
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t rawIndex) {

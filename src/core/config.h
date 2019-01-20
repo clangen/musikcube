@@ -39,7 +39,6 @@
 
 #include <memory>
 
-#include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 
 #ifdef WIN32

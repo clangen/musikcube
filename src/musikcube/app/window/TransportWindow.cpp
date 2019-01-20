@@ -51,8 +51,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
 
-#include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
+#include <limits.h>
 
 #include <algorithm>
 #include <memory>
@@ -612,9 +611,7 @@ void TransportWindow::Update(TimeMode timeMode) {
             volume += (i == thumbOffset) ? "■" : "─";
         }
 
-        volume += boost::str(boost::format(
-            " %d") % (int)std::round(this->transport.Volume() * 100));
-
+        volume += u8fmt(" %d", (int)std::round(this->transport.Volume() * 100));
         volume += replayGainEnabled ? "%% " : "%%  ";
     }
 

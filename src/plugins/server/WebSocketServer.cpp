@@ -39,8 +39,6 @@
 
 #include <core/sdk/constants.h>
 
-#include <boost/format.hpp>
-
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
@@ -52,8 +50,19 @@ static int nextId = 0;
 
 /* UTILITY METHODS */
 
+namespace str {
+    template<typename... Args>
+    static std::string format(const std::string& format, Args ... args) {
+        /* https://stackoverflow.com/a/26221725 */
+        size_t size = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; /* extra space for '\0' */
+        std::unique_ptr<char[]> buf(new char[size]);
+        std::snprintf(buf.get(), size, format.c_str(), args ...);
+        return std::string(buf.get(), buf.get() + size - 1); /* omit the '\0' */
+    }
+}
+
 static std::string nextMessageId() {
-    return boost::str(boost::format("musikcube-server-%d") % ++nextId);
+    return str::format("musikcube-server-%d", ++nextId);
 }
 
 static std::shared_ptr<char*> jsonToStringArray(const json& jsonArray) {

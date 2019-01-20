@@ -61,8 +61,6 @@
 #include <app/overlay/ServerOverlay.h>
 #include <app/overlay/PreampOverlay.h>
 
-#include <boost/format.hpp>
-
 #include "SettingsLayout.h"
 
 using namespace musik;
@@ -573,15 +571,10 @@ void SettingsLayout::CheckShowFirstRunDialog() {
         if (!this->firstRunDialog) {
             this->firstRunDialog.reset(new DialogOverlay());
 
-            std::string message = _TSTR("settings_first_run_dialog_body");
-            try {
-                message = boost::str(boost::format(message)
-                    % Hotkeys::Get(Hotkeys::NavigateLibrary)
-                    % Hotkeys::Get(Hotkeys::NavigateConsole));
-            }
-            catch (...) {
-            }
-
+            std::string message = u8fmt(
+                _TSTR("settings_first_run_dialog_body"),
+                Hotkeys::Get(Hotkeys::NavigateLibrary).c_str(),
+                Hotkeys::Get(Hotkeys::NavigateConsole).c_str());
             (*this->firstRunDialog)
                 .SetTitle(_TSTR("settings_first_run_dialog_title"))
                 .SetMessage(message)
