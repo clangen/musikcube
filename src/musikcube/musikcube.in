@@ -1,5 +1,6 @@
-#!/usr/bin/env bash
-pushd @musikcube_INSTALL_DIR@/share/musikcube/ > /dev/null
-{
-  ./musikcube "$@" && popd
-} || popd > /dev/null
+#!/bin/sh
+
+set -eu
+
+cd "@musikcube_INSTALL_DIR@"/share/musikcube/
+exec ./musikcube "$@"
