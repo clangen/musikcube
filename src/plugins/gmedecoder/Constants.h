@@ -221,17 +221,13 @@ static inline std::string canonicalizePath(const std::string& path) {
         delete[] dest;
     }
     return result8;
-#elif __gnu_linux__
-    char* realname = realpath(path.c_str(), NULL);
-    if (!realname) {
-	return "";
-    }
-    return std::string(realname);
 #else
-    char realname[_POSIX_PATH_MAX];
-    if (realpath(path.c_str(), realname) == 0) {
+    char* realname = realpath(path.c_str(), nullptr);
+    if (!realname) {
         return "";
     }
-    return std::string(realname);
+    std::string result = realname;
+    free(realname);
+    return result;
 #endif
 }
