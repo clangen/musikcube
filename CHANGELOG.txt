@@ -5,6 +5,7 @@ musikcube:
   (Porco-Rosso)
 * fixed a crash in `macosmediakeys` initialization (Porco-Rosso)
 * fixed a bug where long path names could crash on Linux systems (the-eater)
+* removed bash dependency from wrapper scripts (hectorm)
 
 musikcubed:
 * added `--foreground` command line argument that instructions the daemon to
