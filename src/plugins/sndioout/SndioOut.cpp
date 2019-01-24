@@ -39,6 +39,7 @@
 #include <math.h>
 #include <limits.h>
 #include <iostream>
+#include <functional>
 
 #define BUFFER_COUNT 16
 #define ERROR(str) std::cerr << "SndioOut Error: " << str << "\n";
