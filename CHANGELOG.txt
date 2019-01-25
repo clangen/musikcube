@@ -1,9 +1,10 @@
-0.62.1
+0.62.2
 
 macOS only release.
 
 musikcube:
-* added missing `gnutls` dependency to project (now required by libmicrohttpd)
+* added missing `gnutls` dependency to project for homebrew builds
+* compile `libmicrohttpd` from source for binary distributions on macOS
 
 --------------------------------------------------------------------------------
 
