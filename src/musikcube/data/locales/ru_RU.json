@@ -14,7 +14,7 @@
         "button_continue": "продолжить",
         "button_unregister": "отключить",
         "button_open_url": "открыть ссылку",
-        "button_dont_remind_me": "не напоминать снова",
+        "button_dont_remind_me": "не напоминать",
         "button_remind_me_later": "напомнить позже",
 
         "browse_title_artists": "исполнители",
@@ -35,9 +35,8 @@
         "browse_no_paths_overlay_error_message": "вы не настроили папки метаданных.\n\nвы должны добавить хотя бы одну папку на экране настроек перед тем, как начать обзор по папкам.",
         "browse_no_subdirectories_toast": "подпапок нет.\n\nнажмите '%s' для воспроизведения выбранного.",
 
-        "console_command_output_title": "вывод команды",
-        "console_debug_logs_title": "журналы отладки",
-        "console_command_title": "команда",
+        "console_list_title": "журналы отладки",
+        "console_version": "musikcube версия %s",
 
         "hotkeys_title": "привязки клавиш",
         "hotkeys_reset_defaults": "сбросить все",
@@ -101,6 +100,7 @@
         "settings_server_invalid_settings_title": "недопустимые настройки",
         "settings_server_invalid_settings_message": "недопустимые или пропущенные настройки. пожалуйста, проверьте их и попробуйте снова.",
         "settings_server_use_ipv6": "использовать ipv6",
+        "settings_enable_transparency": "включить поддержку прозрачности",
 
         "settings_preamp": "предусиление и нормализация",
         "settings_preamp_label": "коэффициент предусиления (dB):",
@@ -166,7 +166,7 @@
 
         "shortcuts_settings": "настройки",
         "shortcuts_library": "фонотека",
-        "shortcuts_console": "консоль",
+        "shortcuts_console": "журналы",
         "shortcuts_quit": "выход",
         "shortcuts_browse": "обзор",
         "shortcuts_filter": "фильтр",
