@@ -22,10 +22,15 @@ set (server_LINK_LIBS ${BOOST_LINK_LIBS})
 
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/include")
 
+set(EXTRA_LIBS "")
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  set(EXTRA_LIBS "gnutls")
+endif()
+
 if (${LINK_STATICALLY} MATCHES "true")
   # prefer static libraries on mac to make redist easier
   find_library(MICROHTTPDLIB NAMES libmicrohttpd.a microhttpd)
-  target_link_libraries(server ${server_LINK_LIBS} ${MICROHTTPDLIB} z)
+  target_link_libraries(server ${server_LINK_LIBS} ${MICROHTTPDLIB} z ${EXTRA_LIBS})
 else()
-  target_link_libraries(server ${server_LINK_LIBS} microhttpd z)
+  target_link_libraries(server ${server_LINK_LIBS} microhttpd z ${EXTRA_LIBS})
 endif()
