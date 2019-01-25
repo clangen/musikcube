@@ -26,8 +26,6 @@ if (${LINK_STATICALLY} MATCHES "true")
   # libmicrohttpd on macOS now depends on `gnutls`. when we build statically,
   # we also need to build libmicrohttpd ourselves and disable TLS to avoid this
   # homebrew-only dependency
-  set(EXTRA_OBJS "")
-  set(MICROHTTPDLIB "")
   if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     include (ExternalProject)
 
@@ -42,10 +40,11 @@ if (${LINK_STATICALLY} MATCHES "true")
     add_dependencies(server libmicrohttpd)
     include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/microhttpd/include")
     file(GLOB EXTRA_OBJS "${CMAKE_CURRENT_SOURCE_DIR}/libmicrohttpd-prefix/src/libmicrohttpd/src/microhttpd/.libs/*.o")
+    target_link_libraries(server ${server_LINK_LIBS} z crypto ${EXTRA_OBJS})
   else()
     find_library(MICROHTTPDLIB NAMES libmicrohttpd.a microhttpd)
+    target_link_libraries(server ${server_LINK_LIBS} ${MICROHTTPDLIB} z)
   endif()
-  target_link_libraries(server ${server_LINK_LIBS} ${MICROHTTPDLIB} z ${EXTRA_OBJS})
 else()
   set(EXTRA_LIBS "")
   if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
