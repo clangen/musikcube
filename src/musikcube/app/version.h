@@ -14,6 +14,8 @@ namespace musik {
             static const std::string PLATFORM = "win32";
 #elif defined __APPLE__
             static const std::string PLATFORM = "macos";
+#elif defined __FreeBSD__
+            static const std::string PLATFORM = "freebsd";
 #else
             static const std::string PLATFORM = "linux";
 #endif
