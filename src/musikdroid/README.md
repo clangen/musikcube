@@ -1,6 +1,6 @@
 # musikdroid
 
-`musikdroid` is an android app that is used to stream music from, or remote control, existing `musikbox` installations (windows, macos, or linux clients). it is written in `kotlin`.
+`musikdroid` is an android app that is used to stream music from, or remote control, existing `musikcube` installations (windows, macos, or linux clients). it is written in `kotlin`.
 
 # building
 
@@ -9,9 +9,9 @@ because `musikdroid` is not available in the Google Play store, it uses [fabric.
 1. remove `Fabric.with(this, Crashlytics())` from `Application.kt`
 2. remove `apply plugin: 'io.fabric'` from `app/build.gradle`
 
-this should allow you to build and test locally without special keys. TODO: simplify
+this should allow you to build and test locally without special keys.
 
-the project is currently built using `Android Studio 3.0.1`
+the project is currently built using `Android Studio 3`
 
 # attribution
 
