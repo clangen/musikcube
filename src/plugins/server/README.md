@@ -1,7 +1,10 @@
-# musikcube-websockets
-a playback remote for `musikcube` using web sockets. 
+# musikcube server plugin
 
-`musikcube` for windows, macOS, and linux are supported. `musikdroid` is a reference implementation for clients.
+a playback remote and streaming audio server for `musikcube` using web sockets and vanilla http.
+
+`musikcube` for windows, macOS, linux and freebsd are supported. 
+
+`musikdroid` is a reference implementation for clients written for android.
 
 [api documentation can be found here](https://github.com/clangen/musikcube/wiki/remote-api-documentation).
 
