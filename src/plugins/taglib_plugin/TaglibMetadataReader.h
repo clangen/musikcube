@@ -133,5 +133,6 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
 
         bool ReadGeneric(
             const char* uri,
+            const std::string& extension,
             musik::core::sdk::ITagStore *target);
 };

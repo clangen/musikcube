@@ -52,6 +52,7 @@
     #include <taglib/mp4/mp4file.h>
     #include <taglib/ogg/oggfile.h>
     #include <taglib/ogg/xiphcomment.h>
+    #include <taglib/ogg/opus/opusfile.h>
     #include <taglib/flac/flacfile.h>
     #include <taglib/toolkit/tpropertymap.h>
     #include <taglib/wavpack/wavpackfile.h>
@@ -71,6 +72,7 @@
     #include <taglib/commentsframe.h>
     #include <taglib/mp4file.h>
     #include <taglib/oggfile.h>
+    #include <taglib/opusfile.h>
     #include <taglib/flacfile.h>
     #include <taglib/wavpackfile.h>
     #include <taglib/xiphcomment.h>
@@ -83,6 +85,7 @@
 #include <iostream>
 #include <functional>
 #include <cctype>
+#include <algorithm>
 
 #ifdef WIN32
 #define FFMPEG_DECODER
@@ -130,6 +133,37 @@ static inline std::wstring utf8to16(const char* utf8) {
     return utf16fn;
 }
 #endif
+
+static TagLib::FileRef resolveOggType(const char* uri) {
+    try {
+    #ifdef WIN32
+        FILE* file = _wfopen(utf8to16(uri).c_str(), L"rb");
+    #else
+        FILE* file = fopen(uri, "rb");
+    #endif
+        if (file) {
+            static const char OGG_OPUS_HEADER[8] = {'O','p','u','s','H','e','a','d'};
+
+            char buffer[512];
+            size_t read = fread(buffer, 1, sizeof(buffer), file);
+            fclose(file);
+
+            if (read == sizeof(buffer)) {
+                auto it = std::search(
+                    std::begin(buffer), std::end(buffer),
+                    std::begin(OGG_OPUS_HEADER), std::end(OGG_OPUS_HEADER));
+
+                if (it != std::end(buffer)) {
+                    return TagLib::FileRef(new TagLib::Ogg::Opus::File(uri));
+                }
+            }
+        }
+    }
+    catch (...) {
+        /* ugh. yay. */
+    }
+    return TagLib::FileRef();
+}
 
 static bool isValidYear(const std::string& year) {
     return std::stoi(year) > 0;
@@ -206,13 +240,16 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
         extension = path.substr(lastDot + 1).c_str();
     }
 
+    /* first, process everything except ID3v2. this logic applies
+    to everything except ID3v2 (including ID3v1) */
     try {
-        this->ReadGeneric(uri, track);
+        this->ReadGeneric(uri, extension, track);
     }
     catch (...) {
         std::cerr << "generic tag read for " << uri << "failed!";
     }
 
+    /* ID3v2 is a trainwreck, so it requires special processing */
     if (extension.size()) {
         if (str::lower(extension) == "mp3") {
             try {
@@ -227,12 +264,21 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
     return true;
 }
 
-bool TaglibMetadataReader::ReadGeneric(const char* uri, ITagStore *target) {
+bool TaglibMetadataReader::ReadGeneric(
+    const char* uri, const std::string& extension, ITagStore *target)
+{
 #ifdef WIN32
     TagLib::FileRef file(utf8to16(uri).c_str());
 #else
     TagLib::FileRef file(uri);
 #endif
+
+    /* ogg is a container format, but taglib sees the extension and
+    assumes it's a vorbis file. in this case, we'll read the header
+    and try to guess the filetype */
+    if (file.isNull() && extension == "ogg") {
+        file = resolveOggType(uri);
+    }
 
     if (file.isNull()) {
         this->SetTagValue("title", uri, target);
