@@ -12,7 +12,7 @@ import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.Subject
 import java.util.concurrent.atomic.AtomicLong
 
-    abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCallbacks {
+abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCallbacks {
     val id: Long = nextId.incrementAndGet()
     private val publisher by lazy { createSubject() }
 
