@@ -136,11 +136,11 @@ static inline std::wstring utf8to16(const char* utf8) {
 
 static TagLib::FileRef resolveOggType(const char* uri) {
     try {
-    #ifdef WIN32
+#ifdef WIN32
         FILE* file = _wfopen(utf8to16(uri).c_str(), L"rb");
-    #else
+#else
         FILE* file = fopen(uri, "rb");
-    #endif
+#endif
         if (file) {
             static const char OGG_OPUS_HEADER[8] = {'O','p','u','s','H','e','a','d'};
 
@@ -154,9 +154,15 @@ static TagLib::FileRef resolveOggType(const char* uri) {
                     std::begin(OGG_OPUS_HEADER), std::end(OGG_OPUS_HEADER));
 
                 if (it != std::end(buffer)) {
+#ifdef WIN32
+                    const std::wstring uri16 = utf8to16(uri);
+                    return TagLib::FileRef(new TagLib::Ogg::Opus::File(uri16.c_str()));
+#else
                     return TagLib::FileRef(new TagLib::Ogg::Opus::File(uri));
+#endif
                 }
             }
+
         }
     }
     catch (...) {
@@ -277,6 +283,7 @@ bool TaglibMetadataReader::ReadGeneric(
     assumes it's a vorbis file. in this case, we'll read the header
     and try to guess the filetype */
     if (file.isNull() && extension == "ogg") {
+        file = TagLib::FileRef(); /* closes the file */
         file = resolveOggType(uri);
     }
 
