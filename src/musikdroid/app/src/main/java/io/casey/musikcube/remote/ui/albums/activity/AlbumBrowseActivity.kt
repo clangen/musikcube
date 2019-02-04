@@ -100,14 +100,15 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
     }
 
     private fun requery() {
-        data.provider.getAlbumsForCategory(categoryName, categoryId, lastFilter)
-            .subscribeBy(
+        disposables.add(
+            data.provider.getAlbumsForCategory(categoryName, categoryId, lastFilter)
+                .subscribeBy(
                 onNext = { albumList ->
                     adapter.setModel(albumList)
                     emptyView.update(data.provider.state, adapter.itemCount)
                 },
                 onError =  {
-                })
+                }))
     }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
@@ -129,8 +130,8 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
     }
 
     companion object {
-        private val EXTRA_CATEGORY_NAME = "extra_category_name"
-        private val EXTRA_CATEGORY_ID = "extra_category_id"
+        private const val EXTRA_CATEGORY_NAME = "extra_category_name"
+        private const val EXTRA_CATEGORY_ID = "extra_category_id"
 
         fun getStartIntent(context: Context): Intent =
             Intent(context, AlbumBrowseActivity::class.java)

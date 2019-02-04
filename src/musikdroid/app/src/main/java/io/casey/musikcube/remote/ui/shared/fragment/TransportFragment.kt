@@ -57,31 +57,33 @@ class TransportFragment: BaseFragment() {
 
         val titleBar = this.rootView.findViewById<View>(R.id.title_bar)
 
-        titleBar?.setOnClickListener { _: View ->
+        titleBar?.setOnClickListener {
             if (playback.service.state != PlaybackState.Stopped) {
-                activity?.let {
+                activity?.let { a ->
                     startActivity(PlayQueueActivity
-                        .getStartIntent(it, playback.service.queuePosition)
+                        .getStartIntent(a, playback.service.queuePosition)
                         .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
 
-                    it.overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+                    a.overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
                 }
             }
         }
 
-        titleBar?.setOnLongClickListener { _: View ->
-            activity?.let {
-                startActivity(MainActivity.getStartIntent(it))
+        titleBar?.setOnLongClickListener {
+            activity?.let { a ->
+                startActivity(MainActivity.getStartIntent(a))
                 return@setOnLongClickListener true
             }
             false
         }
 
-        this.rootView.findViewById<View>(R.id.button_prev)?.setOnClickListener { _: View -> playback.service.prev() }
+        this.rootView.findViewById<View>(R.id.button_prev)?.setOnClickListener {
+            playback.service.prev()
+        }
 
         this.playPause = this.rootView.findViewById(R.id.button_play_pause)
 
-        this.playPause.setOnClickListener { _: View ->
+        this.playPause.setOnClickListener {
             if (playback.service.state == PlaybackState.Stopped) {
                 playback.service.playAll()
             }
@@ -90,7 +92,9 @@ class TransportFragment: BaseFragment() {
             }
         }
 
-        this.rootView.findViewById<View>(R.id.button_next)?.setOnClickListener { _: View -> playback.service.next() }
+        this.rootView.findViewById<View>(R.id.button_next)?.setOnClickListener {
+            playback.service.next()
+        }
     }
 
     private fun rebindUi() {

@@ -41,12 +41,12 @@ class AllCategoriesActivity: BaseActivity() {
     }
 
     private fun requery() {
-        data.provider.listCategories().subscribeBy(
+        disposables.add(data.provider.listCategories().subscribeBy(
             onNext = {
                 adapter.setModel(it)
             },
             onError = {
-            })
+            }))
     }
 
     private fun initObservers() {
