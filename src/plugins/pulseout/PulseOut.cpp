@@ -365,6 +365,11 @@ int PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
             buffer->BufferPointer(),
             buffer->Samples() * sizeof(float),
             &error);
+
+        if (error > 0) {
+            this->CloseDevice();
+            return 1000; /* try again in a second */
+        }
     }
 
     provider->OnBufferProcessed(buffer);
