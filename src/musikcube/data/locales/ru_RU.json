@@ -36,7 +36,7 @@
         "browse_no_subdirectories_toast": "подпапок нет.\n\nнажмите '%s' для воспроизведения выбранного.",
 
         "console_list_title": "журналы отладки",
-        "console_version": "musikcube версия %s",
+        "console_version": "версия musikcube %s",
 
         "hotkeys_title": "привязки клавиш",
         "hotkeys_reset_defaults": "сбросить все",
@@ -85,7 +85,7 @@
         "settings_last_fm_dialog_title": "подключение last.fm",
         "settings_last_fm_dialog_message_unregistered": "нет подключённого аккаунта last.fm.\n\nнажмите ENTER для начала привязки.",
         "settings_last_fm_dialog_message_obtaining_token": "запрос ключа аккаунта для подключения last.fm...",
-        "settings_last_fm_dialog_message_waiting_for_user": "нажмите 'o' для открытия страницы привязки аккаунта в браузере, или вручную перейдите по ссылке:\n\n{{link}}\n\nпосле получения прав нажмите 'ENTER' для настройки.\n\n(замечание: вас могут попросить войти в аккаунт last.fm.)",
+        "settings_last_fm_dialog_message_waiting_for_user": "нажмите 'o' для открытия страницы привязки аккаунта в браузере или вручную перейдите по ссылке:\n\n{{link}}\n\nпосле получения прав нажмите 'ENTER' для настройки.\n\n(замечание: вас могут попросить войти в аккаунт last.fm)",
         "settings_last_fm_dialog_message_registering_session": "получение ключа сеанса, пожалуйста подождите...",
         "settings_last_fm_dialog_message_registered": "подключённый аккаунт: '{{username}}'\n\nтеперь вы можете слушать музыку!",
         "settings_last_fm_dialog_message_link_error": "не удалось получить ключ привязки аккаунта с last.fm.\n\nпожалуйста, попробуй позже.",
