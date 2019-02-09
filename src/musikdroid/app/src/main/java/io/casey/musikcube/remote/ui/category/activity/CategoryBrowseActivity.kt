@@ -12,8 +12,7 @@ import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
-import io.casey.musikcube.remote.ui.category.constant.NavigationType
-import io.casey.musikcube.remote.ui.category.constant.categoryToString
+import io.casey.musikcube.remote.ui.category.constant.*
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.extension.*
@@ -25,6 +24,7 @@ import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
+import java.lang.IllegalArgumentException
 import io.casey.musikcube.remote.service.websocket.WebSocketService.State as SocketState
 
 class CategoryBrowseActivity : BaseActivity(), Filterable {
@@ -47,10 +47,10 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
 
         super.onCreate(savedInstanceState)
 
-        category = intent.getStringExtra(EXTRA_CATEGORY)
-        predicateType = intent.getStringExtra(EXTRA_PREDICATE_TYPE) ?: ""
-        predicateId = intent.getLongExtra(EXTRA_PREDICATE_ID, -1)
-        navigationType = NavigationType.get(intent.getIntExtra(EXTRA_NAVIGATION_TYPE, NavigationType.Albums.ordinal))
+        category = intent.getStringExtra(Category.Extra.CATEGORY)
+        predicateType = intent.getStringExtra(Category.Extra.PREDICATE_TYPE) ?: ""
+        predicateId = intent.getLongExtra(Category.Extra.PREDICATE_ID, -1)
+        navigationType = NavigationType.get(intent.getIntExtra(Category.Extra.NAVIGATION_TYPE, NavigationType.Albums.ordinal))
         adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category, prefs)
 
         setContentView(R.layout.recycler_view_activity)
@@ -119,25 +119,28 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
 
     private val categoryTypeString: String
         get() {
-            CATEGORY_NAME_TO_EMPTY_TYPE[category]?.let {
+            Category.NAME_TO_EMPTY_TYPE[category]?.let {
                 return getString(it)
             }
-            return categoryToString(this, category)
+            return Category.toDisplayString(this, category)
         }
 
     private val categoryTitleString: String
         get() {
-            CATEGORY_NAME_TO_TITLE[category]?.let {
+            Category.NAME_TO_TITLE[category]?.let {
                 return getString(it)
             }
-            return categoryToString(this, category)
+            return Category.toDisplayString(this, category)
         }
 
     private fun requery() {
-        data.provider.getCategoryValues(category, predicateType, predicateId, lastFilter ?: "").subscribeBy(
-            onNext = { values -> adapter.setModel(values) },
-            onError = { },
-            onComplete = { emptyView.update(data.provider.state, adapter.itemCount)})
+        @Suppress("UNUSED")
+        data.provider
+            .getCategoryValues(category, predicateType, predicateId, lastFilter ?: "")
+            .subscribeBy(
+                onNext = { values -> adapter.setModel(values) },
+                onError = { },
+                onComplete = { emptyView.update(data.provider.state, adapter.itemCount)})
     }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
@@ -178,62 +181,45 @@ class CategoryBrowseActivity : BaseActivity(), Filterable {
         startActivity(TrackListActivity.getStartIntent(this, category, entry.id, entry.value))
 
     private fun navigateToSelect(id: Long, name: String) {
-        val intent = Intent()
-            .putExtra(EXTRA_CATEGORY, category)
-            .putExtra(EXTRA_ID, id)
-            .putExtra(EXTRA_NAME, name)
-        setResult(RESULT_OK, intent)
+        setResult(RESULT_OK, Intent()
+            .putExtra(Category.Extra.CATEGORY, category)
+            .putExtra(Category.Extra.ID, id)
+            .putExtra(Category.Extra.NAME, name))
         finish()
     }
 
     companion object {
-        const val EXTRA_CATEGORY = "extra_category"
-        const val EXTRA_ID = "extra_id"
-        const val EXTRA_NAME = "extra_name"
-        private const val EXTRA_PREDICATE_TYPE = "extra_predicate_type"
-        private const val EXTRA_PREDICATE_ID = "extra_predicate_id"
-        private const val EXTRA_NAVIGATION_TYPE = "extra_navigation_type"
-        private const val EXTRA_TITLE = "extra_title"
-
-        private val CATEGORY_NAME_TO_TITLE: Map<String, Int> = mapOf(
-            Messages.Category.ALBUM_ARTIST to R.string.artists_title,
-            Messages.Category.GENRE to R.string.genres_title,
-            Messages.Category.ARTIST to R.string.artists_title,
-            Messages.Category.ALBUM to R.string.albums_title,
-            Messages.Category.PLAYLISTS to R.string.playlists_title)
-
-        private val CATEGORY_NAME_TO_RELATED_TITLE: Map<String, Int> = mapOf(
-            Messages.Category.ALBUM_ARTIST to R.string.artists_from_category,
-            Messages.Category.GENRE to R.string.genres_from_category,
-            Messages.Category.ARTIST to R.string.artists_from_category,
-            Messages.Category.ALBUM to R.string.albums_by_title)
-
-        private val CATEGORY_NAME_TO_EMPTY_TYPE: Map<String, Int> = mapOf(
-            Messages.Category.ALBUM_ARTIST to R.string.browse_type_artists,
-            Messages.Category.GENRE to R.string.browse_type_genres,
-            Messages.Category.ARTIST to R.string.browse_type_artists,
-            Messages.Category.ALBUM to R.string.browse_type_albums,
-            Messages.Category.PLAYLISTS to R.string.browse_type_playlists)
-
-        fun getStartIntent(context: Context, category: String, predicateType: String = "", predicateId: Long = -1, predicateValue: String = ""): Intent {
+        fun getStartIntent(context: Context,
+                           category: String,
+                           predicateType: String = "",
+                           predicateId: Long = -1,
+                           predicateValue: String = ""): Intent
+        {
             val intent = Intent(context, CategoryBrowseActivity::class.java)
-                .putExtra(EXTRA_CATEGORY, category)
-                .putExtra(EXTRA_PREDICATE_TYPE, predicateType)
-                .putExtra(EXTRA_PREDICATE_ID, predicateId)
+                .putExtra(Category.Extra.CATEGORY, category)
+                .putExtra(Category.Extra.PREDICATE_TYPE, predicateType)
+                .putExtra(Category.Extra.PREDICATE_ID, predicateId)
 
-            if (predicateValue.isNotBlank() && CATEGORY_NAME_TO_RELATED_TITLE.containsKey(category)) {
-                val format = CATEGORY_NAME_TO_RELATED_TITLE[category]!!
-                intent.putExtra(EXTRA_ACTIVITY_TITLE, context.getString(format, predicateValue))
+            if (predicateValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(category)) {
+                val format = Category.NAME_TO_RELATED_TITLE[category]
+                when (format) {
+                    null -> throw IllegalArgumentException("unknown category $category")
+                    else -> intent.putExtra(EXTRA_ACTIVITY_TITLE, context.getString(format, predicateValue))
+                }
             }
 
             return intent
         }
 
-        fun getStartIntent(context: Context, category: String, navigationType: NavigationType, title: String = ""): Intent {
+        fun getStartIntent(context: Context,
+                           category: String,
+                           navigationType: NavigationType,
+                           title: String = ""): Intent
+        {
             return Intent(context, CategoryBrowseActivity::class.java)
-                .putExtra(EXTRA_CATEGORY, category)
-                .putExtra(EXTRA_NAVIGATION_TYPE, navigationType.ordinal)
-                .putExtra(EXTRA_TITLE, title)
+                .putExtra(Category.Extra.CATEGORY, category)
+                .putExtra(Category.Extra.NAVIGATION_TYPE, navigationType.ordinal)
+                .putExtra(Category.Extra.TITLE, title)
         }
     }
 }

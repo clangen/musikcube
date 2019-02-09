@@ -22,6 +22,7 @@ import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
+import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.shared.extension.hideKeyboard
 import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
@@ -80,8 +81,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     override fun onActivityResult(request: Int, result: Int, data: Intent?) {
         if (pendingCode == request) {
             if (result == Activity.RESULT_OK && data != null) {
-                val playlistId = data.getLongExtra(CategoryBrowseActivity.EXTRA_ID, -1L)
-                val playlistName = data.getStringExtra(CategoryBrowseActivity.EXTRA_NAME)
+                val playlistId = data.getLongExtra(Category.Extra.ID, -1L)
+                val playlistName = data.getStringExtra(Category.Extra.NAME)
                 if (playlistId != -1L) {
                     completion?.invoke(playlistId, playlistName)
                 }
