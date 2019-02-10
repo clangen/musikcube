@@ -123,7 +123,7 @@ class AlbumBrowseFragment: BaseFragment(), Filterable, TitleProvider {
 
     companion object {
         const val TAG = "AlbumBrowseFragment"
-        fun create(categoryName: String, categoryId: Long): AlbumBrowseFragment =
+        fun create(categoryName: String = "", categoryId: Long = -1L): AlbumBrowseFragment =
             AlbumBrowseFragment().apply {
                 arguments = Bundle().apply {
                     putString(Album.Extra.CATEGORY_NAME, categoryName)

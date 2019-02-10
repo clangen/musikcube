@@ -25,6 +25,7 @@ import io.casey.musikcube.remote.ui.shared.model.ITrackListSlidingWindow
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView.Capability
 import io.casey.musikcube.remote.ui.tracks.adapter.TrackListAdapter
+import io.casey.musikcube.remote.ui.tracks.constant.Track
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
@@ -52,10 +53,10 @@ class TrackListActivity : BaseActivity(), Filterable {
         super.onCreate(savedInstanceState)
 
         val intent = intent
-        categoryType = intent.getStringExtra(EXTRA_CATEGORY_TYPE) ?: ""
-        categoryId = intent.getLongExtra(EXTRA_SELECTED_ID, 0)
-        categoryValue = intent.getStringExtra(EXTRA_CATEGORY_VALUE) ?: ""
-        val titleId = intent.getIntExtra(EXTRA_TITLE_ID, R.string.songs_title)
+        categoryType = intent.getStringExtra(Track.Extra.CATEGORY_TYPE) ?: ""
+        categoryId = intent.getLongExtra(Track.Extra.SELECTED_ID, 0)
+        categoryValue = intent.getStringExtra(Track.Extra.CATEGORY_VALUE) ?: ""
+        val titleId = intent.getIntExtra(Track.Extra.TITLE_ID, R.string.songs_title)
 
         mixin(ItemContextMenuMixin(this, menuListener))
 
@@ -100,13 +101,13 @@ class TrackListActivity : BaseActivity(), Filterable {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_edit) {
             startActivityForResult(EditPlaylistActivity.getStartIntent(
-                this, categoryValue, categoryId), REQUEST_CODE_EDIT_PLAYLIST)
+                this, categoryValue, categoryId), Track.RequestCode.EDIT_PLAYLIST)
         }
         return super.onOptionsItemSelected(item)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == REQUEST_CODE_EDIT_PLAYLIST && resultCode == RESULT_OK && data != null) {
+        if (requestCode == Track.RequestCode.EDIT_PLAYLIST && resultCode == RESULT_OK && data != null) {
             val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
             val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
 
@@ -114,7 +115,7 @@ class TrackListActivity : BaseActivity(), Filterable {
                 showSnackbar(
                     getString(R.string.playlist_edit_save_success, playlistName),
                     buttonText = getString(R.string.button_view),
-                    buttonCb = { _ ->
+                    buttonCb = {
                         startActivity(TrackListActivity.getStartIntent(
                                 this@TrackListActivity, Messages.Category.PLAYLISTS, playlistId, playlistName))
                     })
@@ -259,34 +260,26 @@ class TrackListActivity : BaseActivity(), Filterable {
         }
 
     companion object {
-        private const val EXTRA_CATEGORY_TYPE = "extra_category_type"
-        private const val EXTRA_SELECTED_ID = "extra_selected_id"
-        private const val EXTRA_TITLE_ID = "extra_title_id"
-        private const val EXTRA_CATEGORY_VALUE = "extra_category_value"
-        private const val REQUEST_CODE_EDIT_PLAYLIST = 72
-
         fun getStartIntent(context: Context, type: String, id: Long): Intent =
             getStartIntent(context, type, id, "")
 
-        fun getOfflineStartIntent(context: Context): Intent {
-            return getStartIntent(context, Messages.Category.OFFLINE, 0)
-                .putExtra(EXTRA_TITLE_ID, R.string.offline_tracks_title)
-        }
-
-        fun getStartIntent(context: Context, type: String, id: Long, categoryValue: String): Intent {
-            val intent = Intent(context, TrackListActivity::class.java)
-                .putExtra(EXTRA_CATEGORY_TYPE, type)
-                .putExtra(EXTRA_SELECTED_ID, id)
-                .putExtra(EXTRA_CATEGORY_VALUE, categoryValue)
-
-            if (Strings.notEmpty(categoryValue)) {
-                intent.putExtra(
-                    EXTRA_ACTIVITY_TITLE,
-                    context.getString(R.string.songs_from_category, categoryValue))
+        fun getOfflineStartIntent(context: Context): Intent =
+            getStartIntent(context, Messages.Category.OFFLINE, 0).apply {
+                putExtra(Track.Extra.TITLE_ID, R.string.offline_tracks_title)
             }
 
-            return intent
-        }
+        fun getStartIntent(context: Context, type: String, id: Long, categoryValue: String): Intent =
+            Intent(context, TrackListActivity::class.java).apply {
+                putExtra(Track.Extra.CATEGORY_TYPE, type)
+                putExtra(Track.Extra.SELECTED_ID, id)
+                putExtra(Track.Extra.CATEGORY_VALUE, categoryValue)
+
+                if (Strings.notEmpty(categoryValue)) {
+                    putExtra(
+                        EXTRA_ACTIVITY_TITLE,
+                        context.getString(R.string.songs_from_category, categoryValue))
+                }
+            }
 
         fun getStartIntent(context: Context): Intent =
             Intent(context, TrackListActivity::class.java)
