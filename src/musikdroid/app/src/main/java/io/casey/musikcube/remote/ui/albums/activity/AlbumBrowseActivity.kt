@@ -11,25 +11,11 @@ import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
 import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
-import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
-import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.util.Strings
 
 class AlbumBrowseActivity : FragmentActivityWithTransport() {
-    private lateinit var playback: PlaybackMixin
-    private lateinit var data: DataProviderMixin
-
     private val albums
         get() = content as AlbumBrowseFragment
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        component.inject(this)
-        data = mixin(DataProviderMixin())
-        playback = mixin(PlaybackMixin())
-        mixin(ItemContextMenuMixin(this))
-        super.onCreate(savedInstanceState)
-    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean = albums.createOptionsMenu(menu)
     override fun setFilter(filter: String) = albums.setFilter(filter)

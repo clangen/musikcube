@@ -53,7 +53,7 @@ class AlbumBrowseFragment: BaseFragment(), Filterable, TitleProvider {
         adapter = AlbumBrowseAdapter(eventListener, playback, prefs)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         inflater.inflate(R.layout.recycler_view_fragment, container, false).apply {
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
             setupDefaultRecyclerView(recyclerView, adapter)
