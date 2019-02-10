@@ -45,7 +45,7 @@ class AlbumBrowseFragment: BaseFragment(), Filterable, TitleProvider {
 
         super.onCreate(savedInstanceState)
 
-        (arguments as Bundle).run {
+        extras.run {
             categoryName = getString(Album.Extra.CATEGORY_NAME) ?: ""
             categoryId = getLong(Album.Extra.CATEGORY_ID, categoryId)
         }

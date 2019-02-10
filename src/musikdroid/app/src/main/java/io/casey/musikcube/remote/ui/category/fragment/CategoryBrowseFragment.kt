@@ -60,7 +60,7 @@ class CategoryBrowseFragment: BaseFragment(), Filterable, TitleProvider {
         playback = mixin(PlaybackMixin())
         mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener))
 
-        (arguments as Bundle).run {
+        extras.run {
             category = getString(Category.Extra.CATEGORY, "")
             predicateType = getString(Category.Extra.PREDICATE_TYPE, "")
             predicateId = getLong(Category.Extra.PREDICATE_ID, -1)

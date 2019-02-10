@@ -87,6 +87,9 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
     protected fun <T: IMixin> mixin(mixin: T): T = mixins.add(mixin)
     protected fun <T: IMixin> mixin(cls: Class<out T>): T? = mixins.get(cls)
 
+    protected val extras: Bundle
+        get() = arguments ?: Bundle()
+
     val appCompatActivity: AppCompatActivity
         get() = activity as AppCompatActivity
 

@@ -58,7 +58,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
 
         mixin(ItemContextMenuMixin(appCompatActivity, menuListener))
 
-        (arguments as Bundle).apply {
+        extras.run {
             categoryType = getString(Track.Extra.CATEGORY_TYPE, "")
             categoryId = getLong(Track.Extra.SELECTED_ID, 0)
             categoryValue = getString(Track.Extra.CATEGORY_VALUE, "")
