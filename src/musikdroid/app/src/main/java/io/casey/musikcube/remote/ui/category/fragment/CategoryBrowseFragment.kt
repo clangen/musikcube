@@ -17,8 +17,9 @@ import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
-import io.casey.musikcube.remote.ui.shared.activity.TitleProvider
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
+import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
+import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
 import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.extension.setFabVisible
@@ -32,7 +33,7 @@ import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
-class CategoryBrowseFragment: BaseFragment(), Filterable, TitleProvider {
+class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver {
     private lateinit var adapter: CategoryBrowseAdapter
     private var navigationType: NavigationType = NavigationType.Tracks
     private var lastFilter: String? = null
@@ -111,7 +112,7 @@ class CategoryBrowseFragment: BaseFragment(), Filterable, TitleProvider {
         return true
     }
 
-    fun notifyTransportChanged() =
+    override fun onTransportChanged() =
         adapter.notifyDataSetChanged()
 
     private fun initObservers() =

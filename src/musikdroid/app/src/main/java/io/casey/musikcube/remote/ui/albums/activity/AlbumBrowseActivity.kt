@@ -19,7 +19,7 @@ class AlbumBrowseActivity : FragmentActivityWithTransport() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean = albums.createOptionsMenu(menu)
     override fun setFilter(filter: String) = albums.setFilter(filter)
-    override fun onTransportChanged() = albums.notifyTransportChanged()
+    override fun onTransportChanged() = albums.onTransportChanged()
     override val contentFragmentTag: String = AlbumBrowseFragment.TAG
 
     override fun createContentFragment(): BaseFragment =

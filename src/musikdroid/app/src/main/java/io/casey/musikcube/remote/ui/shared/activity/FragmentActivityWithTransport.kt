@@ -9,7 +9,7 @@ import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
-abstract class FragmentActivityWithTransport: BaseActivity(), Filterable {
+abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
     protected lateinit var transport: TransportFragment
         private set
 
@@ -37,18 +37,18 @@ abstract class FragmentActivityWithTransport: BaseActivity(), Filterable {
 
     override fun onResume() {
         super.onResume()
-        (content as? TitleProvider)?.run {
+        (content as? ITitleProvider)?.run {
             setTitleFromIntent(this.title)
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean =
-        (content as? MenuProvider)?.run {
+        (content as? IMenuProvider)?.run {
             return this.createOptionsMenu(menu)
         } ?: false
 
     override fun setFilter(filter: String) =
-        (content as? Filterable)?.run {
+        (content as? IFilterable)?.run {
             setFilter(filter)
         } ?: Unit
 

@@ -25,7 +25,7 @@ import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
@@ -111,7 +111,7 @@ fun BaseFragment.setFabVisible(visible: Boolean, fab: View, recyclerView: Recycl
     this.appCompatActivity.setFabVisible(visible, fab, recyclerView)
 }
 
-fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?): Boolean {
+fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean {
     this.menuInflater.inflate(R.menu.search_menu, menu)
 
     val searchMenuItem = menu.findItem(R.id.action_search)
@@ -144,7 +144,7 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?): Boole
     return true
 }
 
-fun Fragment.initSearchMenu(menu: Menu, filterable: Filterable?): Boolean =
+fun Fragment.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean =
     (activity as AppCompatActivity).initSearchMenu(menu, filterable)
 
 fun CheckBox.setCheckWithoutEvent(checked: Boolean,

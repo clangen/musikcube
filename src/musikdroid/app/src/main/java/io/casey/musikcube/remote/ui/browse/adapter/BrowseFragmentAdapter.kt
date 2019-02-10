@@ -9,9 +9,10 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
+import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 
 class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): FragmentPagerAdapter(fm) {
     private val fragments = mutableMapOf<Int, Fragment>()
@@ -20,8 +21,13 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
         set(value) {
             field = value
             fragments.forEach {
-                (it.value as? Filterable)?.setFilter(filter)
+                (it.value as? IFilterable)?.setFilter(filter)
             }
+        }
+
+    fun onTransportChanged() =
+        fragments.forEach {
+            (it.value as? ITransportObserver)?.onTransportChanged()
         }
 
     override fun getItem(index: Int): Fragment =
@@ -49,7 +55,7 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val result = super.instantiateItem(container, position)
         fragments[position] = result as Fragment
-        (result as? Filterable)?.setFilter(filter)
+        (result as? IFilterable)?.setFilter(filter)
         return result
     }
 }

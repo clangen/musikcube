@@ -25,7 +25,7 @@ class CategoryBrowseActivity: FragmentActivityWithTransport() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean = category.createOptionsMenu(menu)
     override fun setFilter(filter: String) = category.setFilter(filter)
-    override fun onTransportChanged() = category.notifyTransportChanged()
+    override fun onTransportChanged() = category.onTransportChanged()
     override val contentFragmentTag: String = CategoryBrowseFragment.TAG
 
     override fun createContentFragment(): BaseFragment =

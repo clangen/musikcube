@@ -1,5 +1,5 @@
 package io.casey.musikcube.remote.ui.shared.activity
 
-interface Filterable {
+interface IFilterable {
     fun setFilter(filter: String)
 }

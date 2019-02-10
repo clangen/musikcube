@@ -9,13 +9,13 @@ import android.view.Menu
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.browse.adapter.BrowseFragmentAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
 import io.casey.musikcube.remote.ui.shared.extension.findFragment
 import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
-class BrowseActivity: BaseActivity(), Filterable {
+class BrowseActivity: BaseActivity(), IFilterable {
     private lateinit var transport: TransportFragment
     private lateinit var pager: ViewPager
     private lateinit var tabs: TabLayout
@@ -37,9 +37,9 @@ class BrowseActivity: BaseActivity(), Filterable {
             else -> restoreFragments()
         }
 
-//        transport.modelChangedListener = {
-//            content.notifyTransportChanged()
-//        }
+        transport.modelChangedListener = {
+            adapter.onTransportChanged()
+        }
 
         enableUpNavigation()
     }

@@ -1,5 +1,5 @@
 package io.casey.musikcube.remote.ui.shared.activity
 
-interface TitleProvider {
+interface ITitleProvider {
     val title: String
 }

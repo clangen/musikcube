@@ -12,8 +12,9 @@ import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
-import io.casey.musikcube.remote.ui.shared.activity.TitleProvider
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
+import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
+import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
 import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
@@ -34,7 +35,7 @@ import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 
-class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
+class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver {
     private lateinit var tracks: DefaultSlidingWindow
     private lateinit var emptyView: EmptyListView
     private lateinit var adapter: TrackListAdapter
@@ -167,8 +168,9 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    fun notifyTransportChanged() =
+    override fun onTransportChanged() {
         adapter.notifyDataSetChanged()
+    }
 
     private val filterDebouncer = object : Debouncer<String>(350) {
         override fun onDebounced(last: String?) {

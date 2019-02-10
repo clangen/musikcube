@@ -6,13 +6,13 @@ import android.view.Menu
 import android.view.MenuItem
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.tracks.constant.Track
 import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 
-class TrackListActivity : FragmentActivityWithTransport(), Filterable {
+class TrackListActivity : FragmentActivityWithTransport(), IFilterable {
     private val tracks
         get() = content as TrackListFragment
 
@@ -32,7 +32,7 @@ class TrackListActivity : FragmentActivityWithTransport(), Filterable {
 
     override val contentFragmentTag: String = TrackListFragment.TAG
 
-    override fun onTransportChanged() = tracks.notifyTransportChanged()
+    override fun onTransportChanged() = tracks.onTransportChanged()
 
     companion object {
         fun getOfflineStartIntent(context: Context): Intent =

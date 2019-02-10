@@ -12,8 +12,9 @@ import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.adapter.AlbumBrowseAdapter
 import io.casey.musikcube.remote.ui.albums.constant.Album
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
-import io.casey.musikcube.remote.ui.shared.activity.TitleProvider
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
+import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
+import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
@@ -25,7 +26,7 @@ import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
-class AlbumBrowseFragment: BaseFragment(), Filterable, TitleProvider {
+class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver {
     private var categoryName: String = ""
     private var categoryId: Long = 0
     private var lastFilter = ""
@@ -77,7 +78,7 @@ class AlbumBrowseFragment: BaseFragment(), Filterable, TitleProvider {
     }
 
     fun createOptionsMenu(menu: Menu): Boolean = initSearchMenu(menu, this)
-    fun notifyTransportChanged() = adapter.notifyDataSetChanged()
+    override fun onTransportChanged() = adapter.notifyDataSetChanged()
 
     private fun initObservables() =
         disposables.add(data.provider.observeState().subscribeBy(
