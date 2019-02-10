@@ -10,6 +10,7 @@ import io.casey.musikcube.remote.injection.ServiceModule
 import io.casey.musikcube.remote.service.gapless.GaplessHeaderService
 import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineDb
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
+import io.casey.musikcube.remote.ui.shared.extension.getString
 import io.fabric.sdk.android.Fabric
 import java.util.*
 import javax.inject.Inject
@@ -24,7 +25,7 @@ class Application : android.app.Application() {
         super.onCreate()
 
         val prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        deviceId = prefs.getString(Prefs.Key.DEVICE_ID, "")
+        deviceId = prefs.getString(Prefs.Key.DEVICE_ID) ?: ""
         if (deviceId.isBlank()) {
             deviceId = UUID.randomUUID().toString()
             prefs.edit().putString(Prefs.Key.DEVICE_ID, deviceId).apply()

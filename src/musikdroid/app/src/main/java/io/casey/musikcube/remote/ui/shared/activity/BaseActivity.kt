@@ -129,6 +129,9 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
 
     protected open val transitionType = Transition.Horizontal
 
+    protected val extras: Bundle
+        get() = intent?.extras ?: Bundle()
+
     override fun <T: ViewModel<*>> createViewModel(): T? = null
     protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T
     protected fun <T: IMixin> mixin(mixin: T): T = mixins.add(mixin)

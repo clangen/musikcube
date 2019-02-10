@@ -237,10 +237,10 @@ fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int, buttonText: Strin
     showSnackbar(this.findViewById<View>(viewId), stringId, buttonText, buttonCb)
 
 fun fallback(input: String?, fallback: String): String =
-    if (input.isNullOrEmpty()) fallback else input!!
+    if (input.isNullOrEmpty()) fallback else input
 
 fun fallback(input: String?, fallback: Int): String =
-    if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input!!
+    if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input
 
 fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
 
@@ -276,6 +276,12 @@ fun titleEllipsizeMode(prefs: SharedPreferences): TextUtils.TruncateAt {
         else -> TextUtils.TruncateAt.END
     }
 }
+
+fun SharedPreferences.getString(key: String): String? =
+    when (!this.contains(key)) {
+        true -> null
+        else -> this.getString(key, "")
+    }
 
 inline fun <reified T> FragmentManager.find(tag: String): T {
     return findFragmentByTag(tag) as T

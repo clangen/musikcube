@@ -18,9 +18,9 @@ class Connection : Parcelable {
     constructor()
 
     constructor(source: Parcel) {
-        name = source.readString()
-        hostname = source.readString()
-        password = source.readString()
+        name = source.readString() ?: ""
+        hostname = source.readString() ?: ""
+        password = source.readString() ?: ""
         httpPort = source.readInt()
         wssPort = source.readInt()
         ssl = (source.readInt() == 1)
@@ -49,6 +49,7 @@ class Connection : Parcelable {
     }
 
     companion object {
+        @Suppress("unused")
         @JvmField
         val CREATOR: Parcelable.Creator<Connection> = object: Parcelable.Creator<Connection> {
             override fun createFromParcel(source: Parcel?): Connection {

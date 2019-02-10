@@ -17,8 +17,8 @@ import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.extension.titleEllipsizeMode
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import io.casey.musikcube.remote.ui.shared.model.albumart.Size
-import io.casey.musikcube.remote.ui.shared.model.albumart.getUrl
+import io.casey.musikcube.remote.ui.shared.util.Size
+import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl
 
 class AlbumBrowseAdapter(private val listener: EventListener,
                          private val playback: PlaybackMixin,

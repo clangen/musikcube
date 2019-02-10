@@ -39,12 +39,12 @@ import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
-import io.casey.musikcube.remote.ui.shared.model.albumart.Size
+import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.util.Strings
 import org.json.JSONArray
 import javax.inject.Inject
-import io.casey.musikcube.remote.ui.shared.model.albumart.getUrl as getAlbumArtUrl
+import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
 
 class MainMetadataView : FrameLayout {
     @Inject lateinit var wss: WebSocketService

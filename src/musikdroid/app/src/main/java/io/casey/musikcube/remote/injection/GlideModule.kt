@@ -12,8 +12,8 @@ import com.bumptech.glide.module.AppGlideModule
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import okhttp3.*
 import java.io.InputStream
-import io.casey.musikcube.remote.ui.shared.model.albumart.canIntercept as canInterceptArtwork
-import io.casey.musikcube.remote.ui.shared.model.albumart.intercept as interceptArtwork
+import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.canIntercept as canInterceptArtwork
+import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.intercept as interceptArtwork
 
 @GlideModule
 class GlideModule : AppGlideModule() {

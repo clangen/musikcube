@@ -85,6 +85,7 @@ class RemoteSettingsActivity: BaseActivity() {
     }
 
     override fun <T : ViewModel<*>> createViewModel(): T? {
+        @Suppress("unchecked_cast")
         return RemoteSettingsViewModel() as T
     }
 
@@ -208,6 +209,8 @@ class RemoteSettingsActivity: BaseActivity() {
                     }
                     ViewModelState.Saved -> {
                         finish()
+                    }
+                    else -> {
                     }
                 }
                 invalidateOptionsMenu()

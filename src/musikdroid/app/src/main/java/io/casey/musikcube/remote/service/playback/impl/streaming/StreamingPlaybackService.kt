@@ -184,7 +184,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             val context = QueryContext(Messages.Request.PlaySnapshotTracks)
             val type = PlayQueueType.Snapshot
 
-            service.queryContext?.let { _ ->
+            service.queryContext?.let {
                 dataProvider.snapshotPlayQueue().subscribeBy(
                 onNext = {
                     resetPlayContextAndQueryFactory()
@@ -347,7 +347,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override var state = PlaybackState.Stopped
         private set(value) {
             if (field !== value) {
-                Log.d(TAG, "state = " + state)
+                Log.d(TAG, "state=$state")
                 field = value
                 notifyEventListeners()
             }
@@ -366,10 +366,10 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     override fun toggleRepeatMode() {
-        when (repeatMode) {
-            RepeatMode.None -> repeatMode = RepeatMode.List
-            RepeatMode.List -> repeatMode = RepeatMode.Track
-            else -> repeatMode = RepeatMode.None
+        repeatMode = when (repeatMode) {
+            RepeatMode.None -> RepeatMode.List
+            RepeatMode.List -> RepeatMode.Track
+            else -> RepeatMode.None
         }
 
         this.prefs.edit().putString(REPEAT_MODE_PREF, repeatMode.toString()).apply()
@@ -585,13 +585,10 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         else if (!userInitiated && repeatMode === RepeatMode.Track) {
             return currentIndex
         }
-        else {
-            if (currentIndex + 1 >= count) {
-                return if (repeatMode === RepeatMode.List) 0 else -1
-            }
-            else {
-                return currentIndex + 1
-            }
+
+        return when (currentIndex + 1 >= count) {
+            true -> if (repeatMode === RepeatMode.List) 0 else -1
+            false -> currentIndex + 1
         }
     }
 
@@ -714,6 +711,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
         val countMessage = playlistQueryFactory.count() ?: return
 
+        @Suppress("unused")
         countMessage
             .concatMap { count ->
                 getCurrentAndNextTrackMessages(playContext, count)
@@ -763,6 +761,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         val query = playlistQueryFactory.page(start, count)
 
         if (query != null) {
+            @Suppress("unused")
             query.observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(

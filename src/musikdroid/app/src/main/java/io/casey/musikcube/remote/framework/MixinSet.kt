@@ -11,7 +11,7 @@ class MixinSet : MixinBase() {
     private var bundle = Bundle()
 
     fun <T> add(mixin: IMixin): T {
-        components.put(mixin.javaClass, mixin)
+        components[mixin.javaClass] = mixin
 
         when (state) {
             State.Created ->
@@ -33,10 +33,12 @@ class MixinSet : MixinBase() {
             }
         }
 
+        @Suppress("unchecked_cast")
         return mixin as T
     }
 
-    fun <T: IMixin> get(cls: Class<out T>): T? = components.get(cls) as T?
+    @Suppress("unchecked_cast")
+    fun <T: IMixin> get(cls: Class<out T>): T? = components[cls] as T?
 
     override fun onCreate(bundle: Bundle) {
         super.onCreate(bundle)

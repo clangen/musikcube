@@ -24,6 +24,7 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
+import java.lang.IllegalArgumentException
 import java.util.*
 import javax.inject.Inject
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults
@@ -107,7 +108,7 @@ class SettingsActivity : BaseActivity() {
 
     private fun rebindUi() {
         /* connection info */
-        addressText.setTextAndMoveCursorToEnd(prefs.getString(Keys.ADDRESS, Defaults.ADDRESS))
+        addressText.setTextAndMoveCursorToEnd(prefs.getString(Keys.ADDRESS) ?: Defaults.ADDRESS)
         
         portText.setTextAndMoveCursorToEnd(String.format(
             Locale.ENGLISH, "%d", prefs.getInt(Keys.MAIN_PORT, Defaults.MAIN_PORT)))
@@ -115,7 +116,7 @@ class SettingsActivity : BaseActivity() {
         httpPortText.setTextAndMoveCursorToEnd(String.format(
             Locale.ENGLISH, "%d", prefs.getInt(Keys.AUDIO_PORT, Defaults.AUDIO_PORT)))
 
-        passwordText.setTextAndMoveCursorToEnd(prefs.getString(Keys.PASSWORD, Defaults.PASSWORD))
+        passwordText.setTextAndMoveCursorToEnd(prefs.getString(Keys.PASSWORD) ?: Defaults.PASSWORD)
 
         /* bitrate */
         val bitrates = ArrayAdapter.createFromResource(
@@ -402,10 +403,15 @@ class SettingsActivity : BaseActivity() {
                 .setMessage(R.string.settings_confirm_overwrite_message)
                 .setNegativeButton(R.string.button_no, null)
                 .setPositiveButton(R.string.button_yes) { _, _ ->
-                    val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
-                    val db = (activity as SettingsActivity).connectionsDb
-                    val saveAs = SaveAsTask(db, connection, true)
-                    (activity as SettingsActivity).runner.run(SaveAsTask.nameFor(connection), saveAs)
+                    val connection = arguments?.getParcelable<Connection>(EXTRA_CONNECTION)
+                    when (connection) {
+                        null -> throw IllegalArgumentException("invalid connection")
+                        else -> {
+                            val db = (activity as SettingsActivity).connectionsDb
+                            val saveAs = SaveAsTask(db, connection, true)
+                            (activity as SettingsActivity).runner.run(SaveAsTask.nameFor(connection), saveAs)
+                        }
+                    }
                 }
                 .create()
 

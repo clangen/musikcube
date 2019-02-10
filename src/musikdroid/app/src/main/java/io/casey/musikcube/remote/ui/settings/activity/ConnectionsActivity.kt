@@ -22,6 +22,7 @@ import io.casey.musikcube.remote.ui.settings.model.Connection
 import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
+import java.lang.IllegalArgumentException
 import javax.inject.Inject
 
 private const val EXTRA_CONNECTION = "extra_connection"
@@ -197,19 +198,22 @@ private class RenameTask(val db: ConnectionsDb, val connection: Connection, val 
 class ConfirmDeleteDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
-        val message = getString(R.string.settings_confirm_delete_message, connection.name)
 
-        val dlg = AlertDialog.Builder(activity!!)
-            .setTitle(R.string.settings_confirm_delete_title)
-            .setMessage(message)
-            .setNegativeButton(R.string.button_no, null)
-            .setPositiveButton(R.string.button_yes) { _, _ ->
-                (activity as ConnectionsActivity).delete(connection)
+        return when (connection == null) {
+            true -> throw IllegalArgumentException("invalid connection")
+            else -> {
+                AlertDialog.Builder(activity!!)
+                    .setTitle(R.string.settings_confirm_delete_title)
+                    .setMessage(getString(R.string.settings_confirm_delete_message, connection.name))
+                    .setNegativeButton(R.string.button_no, null)
+                    .setPositiveButton(R.string.button_yes) { _, _ ->
+                        (activity as ConnectionsActivity).delete(connection)
+                    }
+                    .create().apply {
+                        setCancelable(false)
+                    }
             }
-            .create()
-
-        dlg.setCancelable(false)
-        return dlg
+        }
     }
 
     companion object {
@@ -228,26 +232,29 @@ class RenameDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val connection = arguments!!.getParcelable<Connection>(EXTRA_CONNECTION)
 
-        val inflater = LayoutInflater.from(context)
-        val view = inflater.inflate(R.layout.dialog_edit, null)
-        val edit = view.findViewById<EditText>(R.id.edit)
+        return when (connection == null) {
+            true -> throw IllegalArgumentException("invalid connection")
+            else -> {
+                val inflater = LayoutInflater.from(context)
+                val view = inflater.inflate(R.layout.dialog_edit, null)
+                val edit = view.findViewById<EditText>(R.id.edit)
 
-        edit.setText(connection.name)
-        edit.selectAll()
+                edit.setText(connection.name)
+                edit.selectAll()
 
-        val dlg = AlertDialog.Builder(activity!!)
-                .setTitle(R.string.settings_save_as_title)
-                .setNegativeButton(R.string.button_cancel, null)
-                .setPositiveButton(R.string.button_save) { _, _ ->
-                    val name = edit.text.toString()
-                    (activity as ConnectionsActivity).rename(connection, name)
-                }
-                .create()
-
-        dlg.setView(view)
-        dlg.setCancelable(false)
-
-        return dlg
+                AlertDialog.Builder(activity!!)
+                    .setTitle(R.string.settings_save_as_title)
+                    .setNegativeButton(R.string.button_cancel, null)
+                    .setPositiveButton(R.string.button_save) { _, _ ->
+                        val name = edit.text.toString()
+                        (activity as ConnectionsActivity).rename(connection, name)
+                    }
+                    .create().apply {
+                        setView(view)
+                        setCancelable(false)
+                    }
+            }
+        }
     }
 
     override fun onResume() {
