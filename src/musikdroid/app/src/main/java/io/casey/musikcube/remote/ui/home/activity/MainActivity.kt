@@ -21,6 +21,7 @@ import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
+import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
@@ -171,8 +172,7 @@ class MainActivity : BaseActivity() {
             }
 
             R.id.action_categories -> {
-//                startActivity(AllCategoriesActivity.getStartIntent(this))
-                startActivity(BrowseActivity.getStartIntent(this))
+                startActivity(AllCategoriesActivity.getStartIntent(this))
                 return true
             }
 
@@ -325,26 +325,20 @@ class MainActivity : BaseActivity() {
             }
         })
 
+        findViewById<View>(R.id.button_albums).setOnClickListener {
+            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM))
+        }
+
         findViewById<View>(R.id.button_artists).setOnClickListener {
-            startActivity(CategoryBrowseActivity
-                .getStartIntent(this, Metadata.Category.ALBUM_ARTIST))
+            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST))
         }
 
         findViewById<View>(R.id.button_tracks).setOnClickListener {
-            startActivity(TrackListActivity.getStartIntent(this@MainActivity))
-        }
-
-        findViewById<View>(R.id.button_albums).setOnClickListener {
-            startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity))
-        }
-
-        findViewById<View>(R.id.button_albums).setOnClickListener {
-            startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity))
+            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.TRACKS))
         }
 
         findViewById<View>(R.id.button_playlists).setOnClickListener {
-            startActivity(CategoryBrowseActivity.getStartIntent(
-                this, Metadata.Category.PLAYLISTS, NavigationType.Tracks))
+            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.PLAYLISTS))
         }
 
         findViewById<View>(R.id.button_play_queue).setOnClickListener {

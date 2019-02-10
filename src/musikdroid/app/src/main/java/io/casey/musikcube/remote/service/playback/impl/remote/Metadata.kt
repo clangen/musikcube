@@ -34,6 +34,7 @@ object Metadata {
         const val ARTIST = "artist"
         const val ALBUM_ARTIST = "album_artist"
         const val GENRE = "genre"
+        const val TRACKS = "track"
         const val PLAYLISTS = "playlists"
     }
 

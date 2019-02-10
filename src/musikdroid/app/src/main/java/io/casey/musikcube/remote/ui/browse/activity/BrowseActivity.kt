@@ -32,6 +32,8 @@ class BrowseActivity: BaseActivity(), IFilterable {
         tabs.setupWithViewPager(pager)
         pager.adapter = adapter
 
+        pager.currentItem = adapter.indexOf(extras.getString(EXTRA_INITIAL_CATEGORY_TYPE))
+
         when (savedInstanceState == null) {
             true -> createFragments()
             else -> restoreFragments()

@@ -30,11 +30,20 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
             (it.value as? ITransportObserver)?.onTransportChanged()
         }
 
+    fun indexOf(category: String?): Int =
+        when (category) {
+            Metadata.Category.ALBUM_ARTIST -> 0
+            Metadata.Category.ALBUM -> 1
+            Metadata.Category.TRACKS -> 2
+            Metadata.Category.PLAYLISTS -> 3
+            else -> 0
+        }
+
     override fun getItem(index: Int): Fragment =
         when (index) {
-            0 -> AlbumBrowseFragment.create()
-            1 -> CategoryBrowseFragment.create(
+            0 -> CategoryBrowseFragment.create(
                 CategoryBrowseFragment.arguments(context, Metadata.Category.ALBUM_ARTIST))
+            1 -> AlbumBrowseFragment.create()
             2 -> TrackListFragment.create()
             else -> CategoryBrowseFragment.create(
                 CategoryBrowseFragment.arguments(Metadata.Category.PLAYLISTS, NavigationType.Tracks))
@@ -42,8 +51,8 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
 
     override fun getPageTitle(position: Int): CharSequence? =
         context.getString(when (position) {
-            0 -> R.string.button_albums
-            1 -> R.string.button_artists
+            0 -> R.string.button_artists
+            1 -> R.string.button_albums
             2 -> R.string.button_tracks
             else -> R.string.button_playlists
         })
