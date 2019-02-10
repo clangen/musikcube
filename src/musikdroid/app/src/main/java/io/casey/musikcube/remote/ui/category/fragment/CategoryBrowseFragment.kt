@@ -18,6 +18,7 @@ import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.activity.TitleProvider
 import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
 import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.extension.setFabVisible
@@ -30,9 +31,8 @@ import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
-import java.lang.IllegalArgumentException
 
-class CategoryBrowseFragment: BaseFragment(), Filterable {
+class CategoryBrowseFragment: BaseFragment(), Filterable, TitleProvider {
     private lateinit var adapter: CategoryBrowseAdapter
     private var navigationType: NavigationType = NavigationType.Tracks
     private var lastFilter: String? = null
@@ -44,7 +44,7 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
     private lateinit var data: DataProviderMixin
     private lateinit var playback: PlaybackMixin
 
-    val title: String
+    override val title: String
         get() {
             Category.NAME_TO_TITLE[category]?.let {
                 return getString(it)
@@ -53,18 +53,20 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
         component.inject(this)
         data = mixin(DataProviderMixin())
         playback = mixin(PlaybackMixin())
         mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener))
 
-        super.onCreate(savedInstanceState)
+        (arguments as Bundle).run {
+            category = getString(Category.Extra.CATEGORY, "")
+            predicateType = getString(Category.Extra.PREDICATE_TYPE, "")
+            predicateId = getLong(Category.Extra.PREDICATE_ID, -1)
+            navigationType = NavigationType.get(getInt(Category.Extra.NAVIGATION_TYPE, NavigationType.Albums.ordinal))
+        }
 
-        val args = arguments as Bundle
-        category = args.getString(Category.Extra.CATEGORY, "")
-        predicateType = args.getString(Category.Extra.PREDICATE_TYPE, "")
-        predicateId = args.getLong(Category.Extra.PREDICATE_ID, -1)
-        navigationType = NavigationType.get(args.getInt(Category.Extra.NAVIGATION_TYPE, NavigationType.Albums.ordinal))
         adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category, prefs)
     }
 
@@ -112,7 +114,7 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
     fun notifyTransportChanged() =
         adapter.notifyDataSetChanged()
 
-    private fun initObservers() {
+    private fun initObservers() =
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
                 when (states.first) {
@@ -128,7 +130,6 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
             },
             onError = {
             }))
-    }
 
     private val categoryTypeString: String
         get() {

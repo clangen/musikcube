@@ -8,48 +8,30 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
-import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
-import io.casey.musikcube.remote.ui.shared.extension.findFragment
-import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
+import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
+import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
+import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.service.websocket.WebSocketService.State as SocketState
 
-class CategoryBrowseActivity : BaseActivity(), Filterable {
-    private lateinit var content: CategoryBrowseFragment
-    private lateinit var transport: TransportFragment
+class CategoryBrowseActivity: FragmentActivityWithTransport() {
+    private val category
+        get() = content as CategoryBrowseFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.fragment_with_transport_activity)
+        enableUpNavigation()
+    }
 
-        when (savedInstanceState == null) {
-            true -> createFragments()
-            else -> restoreFragments()
+    override fun onCreateOptionsMenu(menu: Menu): Boolean = category.createOptionsMenu(menu)
+    override fun setFilter(filter: String) = category.setFilter(filter)
+    override fun onTransportChanged() = category.notifyTransportChanged()
+    override val contentFragmentTag: String = CategoryBrowseFragment.TAG
+
+    override fun createContentFragment(): BaseFragment =
+        (intent.extras ?: Bundle()).run {
+            CategoryBrowseFragment.create(intent)
         }
-
-        transport.modelChangedListener = {
-            content.notifyTransportChanged()
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean = content.createOptionsMenu(menu)
-    override fun setFilter(filter: String) = content.setFilter(filter)
-
-    private fun createFragments() {
-        content = CategoryBrowseFragment.create(intent)
-        transport = TransportFragment.create()
-        supportFragmentManager
-            .beginTransaction()
-            .add(R.id.content_container, content, CategoryBrowseFragment.TAG)
-            .add(R.id.transport_container, transport, TransportFragment.TAG)
-            .commit()
-    }
-
-    private fun restoreFragments() {
-        transport = findFragment(TransportFragment.TAG)
-        content = findFragment(CategoryBrowseFragment.TAG)
-    }
 
     companion object {
         fun getStartIntent(context: Context,

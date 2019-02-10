@@ -112,7 +112,7 @@ fun BaseFragment.setFabVisible(visible: Boolean, fab: View, recyclerView: Recycl
     this.appCompatActivity.setFabVisible(visible, fab, recyclerView)
 }
 
-fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
+fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?): Boolean {
     this.menuInflater.inflate(R.menu.search_menu, menu)
 
     val searchMenuItem = menu.findItem(R.id.action_search)
@@ -141,11 +141,12 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
 
     searchView.setSearchableInfo(searchableInfo)
     searchView.setIconifiedByDefault(true)
+
+    return true
 }
 
-fun Fragment.initSearchMenu(menu: Menu, filterable: Filterable?) {
+fun Fragment.initSearchMenu(menu: Menu, filterable: Filterable?): Boolean =
     (activity as AppCompatActivity).initSearchMenu(menu, filterable)
-}
 
 fun CheckBox.setCheckWithoutEvent(checked: Boolean,
                                   listener: (CompoundButton, Boolean) -> Unit) {

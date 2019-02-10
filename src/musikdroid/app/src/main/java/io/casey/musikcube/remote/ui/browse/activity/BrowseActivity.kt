@@ -8,6 +8,7 @@ import android.support.v4.view.ViewPager
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.browse.adapter.BrowseFragmentAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
 import io.casey.musikcube.remote.ui.shared.extension.findFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
@@ -36,6 +37,8 @@ class BrowseActivity: BaseActivity() {
         transport.modelChangedListener = {
 //            content.notifyTransportChanged()
         }
+
+        enableUpNavigation()
     }
 
 //    override fun onCreateOptionsMenu(menu: Menu): Boolean = content.createOptionsMenu(menu)

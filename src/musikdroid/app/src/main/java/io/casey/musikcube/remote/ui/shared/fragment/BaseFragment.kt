@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.ComposePathEffect
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import io.casey.musikcube.remote.Application
@@ -19,6 +20,7 @@ import io.reactivex.disposables.CompositeDisposable
 
 open class BaseFragment: Fragment(), ViewModel.Provider {
     private val mixins = MixinSet()
+    private val handler = Handler()
     protected lateinit var prefs: SharedPreferences
     protected val component: ViewComponent =
         DaggerViewComponent.builder()
@@ -35,6 +37,11 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
         super.onCreate(savedInstanceState)
         mixins.onCreate(savedInstanceState ?: Bundle())
         prefs = Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+        handler.post { onPostCreate(savedInstanceState) }
+    }
+
+    open fun onPostCreate(savedInstanceState: Bundle?) {
+
     }
 
     override fun onStart() {
