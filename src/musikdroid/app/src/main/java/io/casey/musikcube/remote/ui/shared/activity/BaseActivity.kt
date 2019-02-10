@@ -30,9 +30,11 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
 
     protected var disposables = CompositeDisposable()
         private set
-    
+
+    protected var paused = false
+        private set
+
     protected lateinit var prefs: SharedPreferences
-    private var paused = false
     private val mixins = MixinSet()
 
     protected val component: ViewComponent =
@@ -126,8 +128,6 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
     }
 
     protected open val transitionType = Transition.Horizontal
-
-    protected fun isPaused(): Boolean = paused
 
     override fun <T: ViewModel<*>> createViewModel(): T? = null
     protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T

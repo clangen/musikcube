@@ -32,6 +32,10 @@
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity android:name=".ui.browse.activity.BrowseActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity android:name=".ui.category.activity.CategoryBrowseActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
@@ -71,7 +75,7 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name="io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity"
+            android:name=".ui.category.activity.AllCategoriesActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 

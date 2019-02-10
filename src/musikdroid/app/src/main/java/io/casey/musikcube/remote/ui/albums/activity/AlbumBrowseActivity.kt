@@ -83,7 +83,7 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
         }
     }
 
-    private fun initObservables() {
+    private fun initObservables() =
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { state ->
                 if (state.first == IDataProvider.State.Connected) {
@@ -95,23 +95,21 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
             },
             onError = {
             }))
-    }
 
-    private fun requery() {
-        disposables.add(
-            data.provider.getAlbumsForCategory(categoryName, categoryId, lastFilter)
-                .subscribeBy(
-                onNext = { albumList ->
-                    adapter.setModel(albumList)
-                    emptyView.update(data.provider.state, adapter.itemCount)
-                },
-                onError =  {
-                }))
-    }
+    private fun requery() =
+        @Suppress("unused")
+        data.provider.getAlbumsForCategory(categoryName, categoryId, lastFilter)
+            .subscribeBy(
+            onNext = { albumList ->
+                adapter.setModel(albumList)
+                emptyView.update(data.provider.state, adapter.itemCount)
+            },
+            onError =  {
+            })
 
     private val filterDebouncer = object : Debouncer<String>(350) {
         override fun onDebounced(last: String?) {
-            if (!isPaused()) {
+            if (!paused) {
                 requery()
             }
         }

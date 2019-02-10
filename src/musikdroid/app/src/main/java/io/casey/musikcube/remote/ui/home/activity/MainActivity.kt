@@ -20,6 +20,7 @@ import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
@@ -171,7 +172,8 @@ class MainActivity : BaseActivity() {
             }
 
             R.id.action_categories -> {
-                startActivity(AllCategoriesActivity.getStartIntent(this))
+//                startActivity(AllCategoriesActivity.getStartIntent(this))
+                startActivity(BrowseActivity.getStartIntent(this))
                 return true
             }
 
@@ -520,7 +522,7 @@ class MainActivity : BaseActivity() {
     private fun runUpdateCheck() {
         if (!UpdateAvailableDialog.displayed) {
             updateCheck.run { required, version, url ->
-                if (!isPaused() && required) {
+                if (!paused && required) {
                     val suppressed = prefs.getString(Prefs.Key.UPDATE_DIALOG_SUPPRESSED_VERSION, "")
                     if (!UpdateAvailableDialog.displayed && suppressed != version) {
                         val tag = UpdateAvailableDialog.TAG
