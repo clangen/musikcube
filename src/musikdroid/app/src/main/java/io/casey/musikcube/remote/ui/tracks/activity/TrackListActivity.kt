@@ -82,10 +82,9 @@ class TrackListActivity : BaseActivity(), Filterable {
 
         tracks.setOnMetadataLoadedListener(slidingWindowListener)
 
-        transport = addTransportFragment(object: TransportFragment.OnModelChangedListener {
-            override fun onChanged(fragment: TransportFragment) =
-                adapter.notifyDataSetChanged()
-        })!!
+        transport = addTransportFragment {
+            adapter.notifyDataSetChanged()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

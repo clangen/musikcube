@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.casey.musikcube.remote" >
+    xmlns:tools="http://schemas.android.com/tools"
+    package="io.casey.musikcube.remote">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -10,23 +11,28 @@
     <permission android:name="android.permission.MEDIA_CONTENT_CONTROL" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:name=".Application"
         android:usesCleartextTraffic="true"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+        tools:replace="android:allowBackup">
 
         <activity android:name=".ui.home.activity.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
+                <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <activity android:name=".ui.albums.activity.AlbumBrowseActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity android:name=".ui.category.activity.CategoryBrowseActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
@@ -65,11 +71,6 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name="io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity"
-            android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
             android:name="io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
@@ -79,7 +80,9 @@
             android:label="@string/connections_title"
             android:windowSoftInputMode="adjustResize" />
 
-        <service android:name="io.casey.musikcube.remote.service.system.SystemService">
+        <service
+            android:name="io.casey.musikcube.remote.service.system.SystemService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="io.casey.musikcube.remote.WAKE_UP" />
                 <action android:name="io.casey.musikcube.remote.SHUT_DOWN" />

@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentManager
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.MenuItemCompat
 import android.support.v7.app.AppCompatActivity
@@ -28,6 +29,7 @@ import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
+import java.lang.IllegalArgumentException
 
 const val EXTRA_ACTIVITY_TITLE = "extra_title"
 
@@ -65,25 +67,24 @@ fun AppCompatActivity.enableUpNavigation() {
 }
 
 fun AppCompatActivity.addTransportFragment(
-        listener: TransportFragment.OnModelChangedListener? = null): TransportFragment?
+        listener: ((TransportFragment) -> Unit)? = null): TransportFragment
 {
     val root = findViewById<View>(android.R.id.content)
     if (root != null) {
         if (root.findViewById<View>(R.id.transport_container) != null) {
-            val fragment = TransportFragment.newInstance()
+            val fragment = TransportFragment.create()
 
             this.supportFragmentManager
-                    .beginTransaction()
-                    .add(R.id.transport_container, fragment, TransportFragment.TAG)
-                    .commit()
+                .beginTransaction()
+                .add(R.id.transport_container, fragment, TransportFragment.TAG)
+                .commit()
 
             fragment.modelChangedListener = listener
             return fragment
         }
     }
-    return null
+    throw IllegalArgumentException("could not find content view")
 }
-
 
 fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
     this.setTitleFromIntent(getString(defaultId))
@@ -274,4 +275,12 @@ fun titleEllipsizeMode(prefs: SharedPreferences): TextUtils.TruncateAt {
         1 -> TextUtils.TruncateAt.MIDDLE
         else -> TextUtils.TruncateAt.END
     }
+}
+
+inline fun <reified T> FragmentManager.find(tag: String): T {
+    return findFragmentByTag(tag) as T
+}
+
+inline fun <reified T> AppCompatActivity.findFragment(tag: String): T {
+    return this.supportFragmentManager.find(tag)
 }

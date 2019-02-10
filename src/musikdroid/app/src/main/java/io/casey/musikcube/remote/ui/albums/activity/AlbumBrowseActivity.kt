@@ -61,11 +61,9 @@ class AlbumBrowseActivity : BaseActivity(), Filterable {
         emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
         emptyView.alternateView = recyclerView
 
-        transport = addTransportFragment(object: TransportFragment.OnModelChangedListener {
-            override fun onChanged(fragment: TransportFragment) {
-                adapter.notifyDataSetChanged()
-            }
-        })!!
+        transport = addTransportFragment {
+            adapter.notifyDataSetChanged()
+        }
     }
 
     override fun onResume() {

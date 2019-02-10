@@ -68,10 +68,10 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
         adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category, prefs)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        rootView = inflater.inflate(R.layout.recycler_view_activity, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
+        inflater.inflate(R.layout.recycler_view_fragment, container, false).apply {
+            this@CategoryBrowseFragment.rootView = this
 
-        rootView.apply {
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
             val fab = findViewById<View>(R.id.fab)
             val fabVisible = (category == Messages.Category.PLAYLISTS)
@@ -91,9 +91,6 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
             setFabVisible(fabVisible, fab, recyclerView)
         }
 
-        return rootView
-    }
-
     override fun onResume() {
         super.onResume()
         initObservers()
@@ -111,6 +108,9 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
         }
         return true
     }
+
+    fun notifyTransportChanged() =
+        adapter.notifyDataSetChanged()
 
     private fun initObservers() {
         disposables.add(data.provider.observeState().subscribeBy(
@@ -196,24 +196,45 @@ class CategoryBrowseFragment: BaseFragment(), Filterable {
         }
 
     companion object {
-        fun create(context: Context,
-                   category: String,
-                   predicateType: String = "",
-                   predicateId: Long = -1,
-                   predicateValue: String = ""): CategoryBrowseFragment =
+        const val TAG = "CategoryBrowseFragment"
+
+        fun create(intent: Intent?): CategoryBrowseFragment {
+            if (intent == null) {
+                throw IllegalArgumentException("invalid intent")
+            }
+            return create(intent.getBundleExtra(Category.Extra.FRAGMENT_ARGUMENTS))
+        }
+
+        fun create(arguments: Bundle): CategoryBrowseFragment =
             CategoryBrowseFragment().apply {
-                this.arguments = Bundle().apply {
-                    putString(Category.Extra.CATEGORY, category)
-                    putString(Category.Extra.PREDICATE_TYPE, predicateType)
-                    putLong(Category.Extra.PREDICATE_ID, predicateId)
-                    if (predicateValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(category)) {
-                        val format = Category.NAME_TO_RELATED_TITLE[category]
-                        when (format) {
-                            null -> throw IllegalArgumentException("unknown category $category")
-                            else -> putString(EXTRA_ACTIVITY_TITLE, context.getString(format, predicateValue))
-                        }
+                this.arguments = arguments
+            }
+
+        fun arguments(context: Context,
+                      category: String,
+                      predicateType: String = "",
+                      predicateId: Long = -1,
+                      predicateValue: String = ""): Bundle =
+            Bundle().apply {
+                putString(Category.Extra.CATEGORY, category)
+                putString(Category.Extra.PREDICATE_TYPE, predicateType)
+                putLong(Category.Extra.PREDICATE_ID, predicateId)
+                if (predicateValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(category)) {
+                    val format = Category.NAME_TO_RELATED_TITLE[category]
+                    when (format) {
+                        null -> throw IllegalArgumentException("unknown category $category")
+                        else -> putString(EXTRA_ACTIVITY_TITLE, context.getString(format, predicateValue))
                     }
                 }
+            }
+
+        fun arguments(category: String,
+                      navigationType: NavigationType,
+                      title: String = ""): Bundle =
+            Bundle().apply {
+                putString(Category.Extra.CATEGORY, category)
+                putInt(Category.Extra.NAVIGATION_TYPE, navigationType.ordinal)
+                putString(Category.Extra.TITLE, title)
             }
     }
 }

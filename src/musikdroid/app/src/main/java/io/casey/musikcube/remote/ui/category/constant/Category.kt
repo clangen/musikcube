@@ -53,6 +53,7 @@ object Category {
         const val PREDICATE_ID = "extra_predicate_id"
         const val NAVIGATION_TYPE = "extra_navigation_type"
         const val TITLE = "extra_title"
+        const val FRAGMENT_ARGUMENTS = "fragment_arguments"
     }
 }
 

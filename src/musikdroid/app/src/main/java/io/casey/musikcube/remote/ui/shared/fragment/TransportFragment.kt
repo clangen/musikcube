@@ -23,9 +23,7 @@ class TransportFragment: BaseFragment() {
     lateinit var playback: PlaybackMixin
         private set
 
-    interface OnModelChangedListener {
-        fun onChanged(fragment: TransportFragment)
-    }
+    var modelChangedListener: ((TransportFragment) -> Unit)? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
@@ -45,8 +43,6 @@ class TransportFragment: BaseFragment() {
         super.onResume()
         rebindUi()
     }
-
-    var modelChangedListener: OnModelChangedListener? = null
 
     private fun bindEventHandlers() {
         this.title = this.rootView.findViewById(R.id.track_title)
@@ -119,11 +115,11 @@ class TransportFragment: BaseFragment() {
 
     private val playbackListener: () -> Unit = {
         rebindUi()
-        modelChangedListener?.onChanged(this@TransportFragment)
+        modelChangedListener?.invoke(this@TransportFragment)
     }
 
     companion object {
         const val TAG = "TransportFragment"
-        fun newInstance(): TransportFragment = TransportFragment()
+        fun create(): TransportFragment = TransportFragment()
     }
 }
