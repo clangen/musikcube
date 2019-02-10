@@ -25,6 +25,7 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
 
@@ -38,6 +39,12 @@ fun AppCompatActivity.setupDefaultRecyclerView(
     recyclerView.layoutManager = LinearLayoutManager(this)
     recyclerView.adapter = adapter
     recyclerView.addItemDecoration(dividerItemDecoration)
+}
+
+fun BaseFragment.setupDefaultRecyclerView(
+    recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
+{
+    this.appCompatActivity.setupDefaultRecyclerView(recyclerView, adapter)
 }
 
 fun RecyclerView.ViewHolder.getColorCompat(resourceId: Int): Int =
@@ -100,6 +107,10 @@ fun AppCompatActivity.setFabVisible(visible: Boolean, fab: View, recycler: Recyc
     }
 }
 
+fun BaseFragment.setFabVisible(visible: Boolean, fab: View, recyclerView: RecyclerView) {
+    this.appCompatActivity.setFabVisible(visible, fab, recyclerView)
+}
+
 fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
     this.menuInflater.inflate(R.menu.search_menu, menu)
 
@@ -129,6 +140,10 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
 
     searchView.setSearchableInfo(searchableInfo)
     searchView.setIconifiedByDefault(true)
+}
+
+fun Fragment.initSearchMenu(menu: Menu, filterable: Filterable?) {
+    (activity as AppCompatActivity).initSearchMenu(menu, filterable)
 }
 
 fun CheckBox.setCheckWithoutEvent(checked: Boolean,

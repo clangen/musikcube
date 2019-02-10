@@ -4,6 +4,7 @@ import dagger.Component
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
+import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
@@ -12,6 +13,7 @@ import io.casey.musikcube.remote.ui.settings.activity.RemoteEqActivity
 import io.casey.musikcube.remote.ui.settings.activity.RemoteSettingsActivity
 import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
@@ -31,6 +33,9 @@ interface ViewComponent {
     fun inject(activity: RemoteSettingsActivity)
     fun inject(activity: SettingsActivity)
     fun inject(activity: TrackListActivity)
+
+    fun inject(fragment: BaseFragment)
+    fun inject(fragment: CategoryBrowseFragment)
 
     fun inject(view: EmptyListView)
     fun inject(view: MainMetadataView)
