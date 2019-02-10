@@ -29,7 +29,6 @@ import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
-import java.lang.IllegalArgumentException
 
 const val EXTRA_ACTIVITY_TITLE = "extra_title"
 

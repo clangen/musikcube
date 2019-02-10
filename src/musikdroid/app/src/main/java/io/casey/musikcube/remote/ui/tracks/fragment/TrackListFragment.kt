@@ -33,7 +33,6 @@ import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
-import java.lang.IllegalArgumentException
 
 class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
     private lateinit var tracks: DefaultSlidingWindow

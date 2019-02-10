@@ -21,7 +21,6 @@ import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
-import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
