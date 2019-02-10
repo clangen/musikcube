@@ -5,14 +5,17 @@ import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.TabLayout
 import android.support.v4.view.ViewPager
+import android.view.Menu
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.browse.adapter.BrowseFragmentAdapter
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
+import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
 import io.casey.musikcube.remote.ui.shared.extension.findFragment
+import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
-class BrowseActivity: BaseActivity() {
+class BrowseActivity: BaseActivity(), Filterable {
     private lateinit var transport: TransportFragment
     private lateinit var pager: ViewPager
     private lateinit var tabs: TabLayout
@@ -34,29 +37,31 @@ class BrowseActivity: BaseActivity() {
             else -> restoreFragments()
         }
 
-        transport.modelChangedListener = {
+//        transport.modelChangedListener = {
 //            content.notifyTransportChanged()
-        }
+//        }
 
         enableUpNavigation()
     }
 
-//    override fun onCreateOptionsMenu(menu: Menu): Boolean = content.createOptionsMenu(menu)
-//    override fun setFilter(filter: String) = content.setFilter(filter)
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        return initSearchMenu(menu, this)
+    }
+
+    override fun setFilter(filter: String) {
+        adapter.filter = filter
+    }
 
     private fun createFragments() {
-//        content = CategoryBrowseFragment.create(intent)
         transport = TransportFragment.create()
         supportFragmentManager
             .beginTransaction()
-//          .add(R.id.content_container, content, CategoryBrowseFragment.TAG)
             .add(R.id.transport_container, transport, TransportFragment.TAG)
             .commit()
     }
 
     private fun restoreFragments() {
         transport = findFragment(TransportFragment.TAG)
-//        content = findFragment(CategoryBrowseFragment.TAG)
     }
 
     companion object {
