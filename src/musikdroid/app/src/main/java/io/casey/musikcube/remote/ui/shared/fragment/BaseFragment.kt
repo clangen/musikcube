@@ -26,8 +26,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
             .appComponent(Application.appComponent)
             .build()
 
-    protected var paused = true
-        private set
+    protected var paused = true /* `private set` confuses proguard. sigh */
 
     protected var disposables = CompositeDisposable()
         private set

@@ -31,8 +31,7 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
     protected var disposables = CompositeDisposable()
         private set
 
-    protected var paused = false
-        private set
+    protected var paused = true /* `private set` confuses proguard. sigh */
 
     protected lateinit var prefs: SharedPreferences
     private val mixins = MixinSet()

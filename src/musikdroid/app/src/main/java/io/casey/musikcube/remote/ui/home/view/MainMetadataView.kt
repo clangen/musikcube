@@ -50,7 +50,7 @@ class MainMetadataView : FrameLayout {
     @Inject lateinit var wss: WebSocketService
     private lateinit var prefs: SharedPreferences
 
-    private var isPaused = true
+    private var paused = true
     private lateinit var title: TextView
     private lateinit var artist: TextView
     private lateinit var album: TextView
@@ -84,16 +84,16 @@ class MainMetadataView : FrameLayout {
 
     fun onResume() {
         this.wss.addClient(wssClient)
-        isPaused = false
+        paused = false
     }
 
     fun onPause() {
         this.wss.removeClient(wssClient)
-        isPaused = true
+        paused = true
     }
 
     fun clear() {
-        if (!isPaused) {
+        if (!paused) {
             loadedAlbumArtUrl = null
             updateAlbumArt()
         }
@@ -104,7 +104,7 @@ class MainMetadataView : FrameLayout {
     }
 
     fun refresh() {
-        if (!isPaused) {
+        if (!paused) {
             visibility = View.VISIBLE
 
             val playback = playbackService
@@ -246,7 +246,7 @@ class MainMetadataView : FrameLayout {
                 .apply(BITMAP_OPTIONS)
                     .listener(object : RequestListener<Drawable> {
                         override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-                            if (!isPaused) {
+                            if (!paused) {
                                 preloadNextImage()
                             }
 
