@@ -7,7 +7,7 @@ import android.support.v7.app.AppCompatActivity
 import android.view.*
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
@@ -127,7 +127,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
     }
 
     fun createOptionsMenu(menu: Menu): Boolean {
-        when (Messages.Category.PLAYLISTS == categoryType) {
+        when (Metadata.Category.PLAYLISTS == categoryType) {
             true -> appCompatActivity.menuInflater.inflate(R.menu.view_playlist_menu, menu)
             false -> initSearchMenu(menu, this)
         }
@@ -153,14 +153,14 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
             val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
             val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
 
-            if (categoryType != Messages.Category.PLAYLISTS || playlistId != this.categoryId) {
+            if (categoryType != Metadata.Category.PLAYLISTS || playlistId != this.categoryId) {
                 showSnackbar(
                     appCompatActivity.findViewById(android.R.id.content),
                     getString(R.string.playlist_edit_save_success, playlistName),
                     buttonText = getString(R.string.button_view),
                     buttonCb = {
                         startActivity(TrackListActivity.getStartIntent(
-                            appCompatActivity, Messages.Category.PLAYLISTS, playlistId, playlistName))
+                            appCompatActivity, Metadata.Category.PLAYLISTS, playlistId, playlistName))
                     })
             }
         }
@@ -188,7 +188,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
         }
 
     private val isOfflineTracks: Boolean
-        get() = Messages.Category.OFFLINE == categoryType
+        get() = Metadata.Category.OFFLINE == categoryType
 
     private fun requeryIfViewingOfflineCache() {
         if (isOfflineTracks) {
@@ -207,7 +207,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
                     data.provider.getTracksByCategory(categoryType ?: "", categoryId, limit, offset, lastFilter)
 
                 override fun offline(): Boolean =
-                    Messages.Category.OFFLINE == categoryType
+                    Metadata.Category.OFFLINE == categoryType
             }
         }
         else {
@@ -220,7 +220,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
                     data.provider.getTracks(limit, offset, lastFilter)
 
                 override fun offline(): Boolean =
-                    Messages.Category.OFFLINE == categoryType
+                    Metadata.Category.OFFLINE == categoryType
             }
         }
     }
@@ -234,7 +234,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
 
     private val menuListener: ItemContextMenuMixin.EventListener?
         get() {
-            if (categoryType == Messages.Category.PLAYLISTS) {
+            if (categoryType == Metadata.Category.PLAYLISTS) {
                 return object: ItemContextMenuMixin.EventListener () {
                     override fun onPlaylistUpdated(id: Long, name: String) {
                         tracks.requery()
@@ -260,7 +260,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
 
         override fun onActionItemClick(view: View, track: ITrack, position: Int) {
             val mixin = mixin(ItemContextMenuMixin::class.java)!!
-            if (categoryType == Messages.Category.PLAYLISTS) {
+            if (categoryType == Metadata.Category.PLAYLISTS) {
                 mixin.showForPlaylistTrack(track, position, categoryId, categoryValue, view)
             }
             else {

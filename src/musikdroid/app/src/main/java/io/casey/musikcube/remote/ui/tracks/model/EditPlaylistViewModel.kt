@@ -1,7 +1,7 @@
 package io.casey.musikcube.remote.ui.tracks.model
 
 import io.casey.musikcube.remote.framework.ViewModel
-import io.casey.musikcube.remote.service.websocket.Messages.Category.Companion.PLAYLISTS
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata.Category.PLAYLISTS
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
@@ -38,7 +38,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
         this.dataProvider = null
     }
 
-    var status: Status = Status.NotLoaded
+    private var status: Status = Status.NotLoaded
         private set(value) {
             field = value
             publish(value)
@@ -125,7 +125,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
                     .flatMapIterable { list: Map<String, ITrack> -> list.asIterable() }
                     .subscribeBy(
                         onNext = { entry: Map.Entry<String, ITrack> ->
-                            cache.put(entry.key, CacheEntry(entry.value))
+                            cache[entry.key] = CacheEntry(entry.value)
                         },
                         onError = {
                             status = Status.Error
@@ -141,7 +141,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
 
     companion object {
         private val DEFAULT_TRACK = RemoteTrack(JSONObject())
-        private val PAGE_SIZE = 40
-        private val MAX_SIZE = 150
+        private const val PAGE_SIZE = 40
+        private const val MAX_SIZE = 150
     }
 }

@@ -13,6 +13,7 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.service.playback.*
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.system.SystemService
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
@@ -813,7 +814,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
 
         override fun offline(): Boolean {
-            return queryContext?.category == Messages.Category.OFFLINE
+            return queryContext?.category == Metadata.Category.OFFLINE
         }
     }
 

@@ -5,7 +5,7 @@ import android.content.Intent
 import android.view.Menu
 import android.view.MenuItem
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.ui.shared.activity.Filterable
 import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
@@ -36,7 +36,7 @@ class TrackListActivity : FragmentActivityWithTransport(), Filterable {
 
     companion object {
         fun getOfflineStartIntent(context: Context): Intent =
-            getStartIntent(context, Messages.Category.OFFLINE, 0).apply {
+            getStartIntent(context, Metadata.Category.OFFLINE, 0).apply {
                 putExtra(Track.Extra.TITLE_ID, R.string.offline_tracks_title)
             }
 

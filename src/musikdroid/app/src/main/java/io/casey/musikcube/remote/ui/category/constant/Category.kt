@@ -2,7 +2,7 @@ package io.casey.musikcube.remote.ui.category.constant
 
 import android.content.Context
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 
 private val categoryToStringIdMap = mapOf(
     "album" to R.string.category_artist,
@@ -19,24 +19,24 @@ private val categoryToStringIdMap = mapOf(
 
 object Category {
     val NAME_TO_TITLE: Map<String, Int> = mapOf(
-        Messages.Category.ALBUM_ARTIST to R.string.artists_title,
-        Messages.Category.GENRE to R.string.genres_title,
-        Messages.Category.ARTIST to R.string.artists_title,
-        Messages.Category.ALBUM to R.string.albums_title,
-        Messages.Category.PLAYLISTS to R.string.playlists_title)
+        Metadata.Category.ALBUM_ARTIST to R.string.artists_title,
+        Metadata.Category.GENRE to R.string.genres_title,
+        Metadata.Category.ARTIST to R.string.artists_title,
+        Metadata.Category.ALBUM to R.string.albums_title,
+        Metadata.Category.PLAYLISTS to R.string.playlists_title)
 
     val NAME_TO_RELATED_TITLE: Map<String, Int> = mapOf(
-        Messages.Category.ALBUM_ARTIST to R.string.artists_from_category,
-        Messages.Category.GENRE to R.string.genres_from_category,
-        Messages.Category.ARTIST to R.string.artists_from_category,
-        Messages.Category.ALBUM to R.string.albums_by_title)
+        Metadata.Category.ALBUM_ARTIST to R.string.artists_from_category,
+        Metadata.Category.GENRE to R.string.genres_from_category,
+        Metadata.Category.ARTIST to R.string.artists_from_category,
+        Metadata.Category.ALBUM to R.string.albums_by_title)
 
     val NAME_TO_EMPTY_TYPE: Map<String, Int> = mapOf(
-        Messages.Category.ALBUM_ARTIST to R.string.browse_type_artists,
-        Messages.Category.GENRE to R.string.browse_type_genres,
-        Messages.Category.ARTIST to R.string.browse_type_artists,
-        Messages.Category.ALBUM to R.string.browse_type_albums,
-        Messages.Category.PLAYLISTS to R.string.browse_type_playlists)
+        Metadata.Category.ALBUM_ARTIST to R.string.browse_type_artists,
+        Metadata.Category.GENRE to R.string.browse_type_genres,
+        Metadata.Category.ARTIST to R.string.browse_type_artists,
+        Metadata.Category.ALBUM to R.string.browse_type_albums,
+        Metadata.Category.PLAYLISTS to R.string.browse_type_playlists)
 
     fun toDisplayString(context: Context, category: String): String {
         categoryToStringIdMap[category]?.let {

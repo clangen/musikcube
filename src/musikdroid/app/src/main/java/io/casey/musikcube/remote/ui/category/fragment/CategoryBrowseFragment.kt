@@ -10,7 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
@@ -76,7 +76,7 @@ class CategoryBrowseFragment: BaseFragment(), Filterable, TitleProvider {
 
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
             val fab = findViewById<View>(R.id.fab)
-            val fabVisible = (category == Messages.Category.PLAYLISTS)
+            val fabVisible = (category == Metadata.Category.PLAYLISTS)
 
             emptyView = findViewById(R.id.empty_list_view)
             emptyView.capability = EmptyListView.Capability.OnlineOnly
@@ -84,7 +84,7 @@ class CategoryBrowseFragment: BaseFragment(), Filterable, TitleProvider {
             emptyView.alternateView = recyclerView
 
             findViewById<View>(R.id.fab).setOnClickListener {
-                if (category == Messages.Category.PLAYLISTS) {
+                if (category == Metadata.Category.PLAYLISTS) {
                     mixin(ItemContextMenuMixin::class.java)?.createPlaylist()
                 }
             }
@@ -104,7 +104,7 @@ class CategoryBrowseFragment: BaseFragment(), Filterable, TitleProvider {
     }
 
     fun createOptionsMenu(menu: Menu): Boolean {
-        when (Messages.Category.PLAYLISTS == category) {
+        when (Metadata.Category.PLAYLISTS == category) {
             true -> menu.clear()
             else -> initSearchMenu(menu, this)
         }

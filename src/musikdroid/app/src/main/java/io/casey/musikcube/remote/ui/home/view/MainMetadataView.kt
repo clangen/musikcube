@@ -165,20 +165,21 @@ class MainMetadataView : FrameLayout {
 
     private fun setMetadataDisplayMode(mode: DisplayMode) {
         lastDisplayMode = mode
-
-        if (mode == DisplayMode.Stopped) {
-            albumArtImageView.setImageDrawable(null)
-            mainTrackMetadataWithAlbumArt.visibility = View.GONE
-            mainTrackMetadataNoAlbumArt.visibility = View.GONE
-        }
-        else if (mode == DisplayMode.Artwork) {
-            mainTrackMetadataWithAlbumArt.visibility = View.VISIBLE
-            mainTrackMetadataNoAlbumArt.visibility = View.GONE
-        }
-        else {
-            albumArtImageView.setImageDrawable(null)
-            mainTrackMetadataWithAlbumArt.visibility = View.GONE
-            mainTrackMetadataNoAlbumArt.visibility = View.VISIBLE
+        when (mode) {
+            DisplayMode.Stopped -> {
+                albumArtImageView.setImageDrawable(null)
+                mainTrackMetadataWithAlbumArt.visibility = View.GONE
+                mainTrackMetadataNoAlbumArt.visibility = View.GONE
+            }
+            DisplayMode.Artwork -> {
+                mainTrackMetadataWithAlbumArt.visibility = View.VISIBLE
+                mainTrackMetadataNoAlbumArt.visibility = View.GONE
+            }
+            else -> {
+                albumArtImageView.setImageDrawable(null)
+                mainTrackMetadataWithAlbumArt.visibility = View.GONE
+                mainTrackMetadataNoAlbumArt.visibility = View.VISIBLE
+            }
         }
     }
 
@@ -313,8 +314,8 @@ class MainMetadataView : FrameLayout {
         this.mainTrackMetadataNoAlbumArt = findViewById(R.id.main_track_metadata_without_art)
         this.albumArtImageView = findViewById(R.id.album_art)
 
-        this.album.setOnClickListener { _ -> navigateToCurrentAlbum() }
-        this.artist.setOnClickListener { _ -> navigateToCurrentArtist() }
+        this.album.setOnClickListener { navigateToCurrentAlbum() }
+        this.artist.setOnClickListener { navigateToCurrentArtist() }
     }
 
     private fun navigateToCurrentArtist() {
@@ -325,7 +326,7 @@ class MainMetadataView : FrameLayout {
         if (artistId != -1L) {
             val artistName = fallback(playing.artist, "")
             context.startActivity(AlbumBrowseActivity.getStartIntent(
-                context, Messages.Category.ARTIST, artistId, artistName))
+                context, Metadata.Category.ARTIST, artistId, artistName))
         }
     }
 
@@ -337,7 +338,7 @@ class MainMetadataView : FrameLayout {
         if (albumId != -1L) {
             val albumName = fallback(playing.album, "")
             context.startActivity(TrackListActivity.getStartIntent(
-                context, Messages.Category.ALBUM, albumId, albumName))
+                context, Metadata.Category.ALBUM, albumId, albumName))
         }
     }
 

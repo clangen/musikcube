@@ -15,7 +15,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.MixinBase
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
-import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
@@ -108,6 +108,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         EnterPlaylistNameDialog.showForCreate(activity, this)
 
     fun createPlaylist(playlistName: String) {
+        @Suppress("ununsed")
         provider.createPlaylist(playlistName).subscribeBy(
             onNext = { id ->
                 if (id > 0L) {
@@ -124,6 +125,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     fun renamePlaylist(newName: String, id: Long) {
+        @Suppress("unused")
         provider.renamePlaylist(id, newName).subscribeBy(
             onNext = { success ->
                 if (success) {
@@ -156,12 +158,13 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
     private fun viewPlaylist(playlistId: Long, playlistName: String): ((View) -> Unit) = { _ ->
         activity.startActivity(TrackListActivity.getStartIntent(
-            activity, Messages.Category.PLAYLISTS, playlistId, playlistName))
+            activity, Metadata.Category.PLAYLISTS, playlistId, playlistName))
     }
 
     private fun addWithErrorHandler(playlistId: Long, playlistName: String, observable: Observable<Boolean>) {
         val error = R.string.playlist_edit_add_error
 
+        @Suppress("unused")
         observable.subscribeBy(
             onNext = { success ->
                 if (success) {
@@ -185,7 +188,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
         val intent = CategoryBrowseActivity.getStartIntent(
             activity,
-            Messages.Category.PLAYLISTS,
+            Metadata.Category.PLAYLISTS,
             NavigationType.Select,
             activity.getString(R.string.playlist_edit_pick_playlist))
 
@@ -221,11 +224,11 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 }
                 R.id.menu_show_artist_albums -> {
                     AlbumBrowseActivity.getStartIntent(
-                        activity, Messages.Category.ARTIST, track.artistId, track.artist)
+                        activity, Metadata.Category.ARTIST, track.artistId, track.artist)
                 }
                 R.id.menu_show_artist_tracks -> {
                     TrackListActivity.getStartIntent(
-                        activity, Messages.Category.ARTIST, track.artistId, track.artist)
+                        activity, Metadata.Category.ARTIST, track.artistId, track.artist)
                 }
                 else -> null
             }
@@ -258,7 +261,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 }
                 R.id.menu_playlist_play -> {
                     val playback = PlaybackServiceFactory.instance(Application.instance)
-                    playback.play(Messages.Category.PLAYLISTS, playlistId)
+                    playback.play(Metadata.Category.PLAYLISTS, playlistId)
                 }
             }
             true
@@ -268,15 +271,15 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     fun showForCategory(value: ICategoryValue, anchorView: View) {
-        if (value.type == Messages.Category.PLAYLISTS) {
+        if (value.type == Metadata.Category.PLAYLISTS) {
             showForPlaylist(value.value, value.id, anchorView)
         }
         else {
             val menuId = when (value.type) {
-                Messages.Category.ARTIST -> R.menu.artist_item_context_menu
-                Messages.Category.ALBUM_ARTIST -> R.menu.artist_item_context_menu
-                Messages.Category.ALBUM -> R.menu.album_item_context_menu
-                Messages.Category.GENRE -> R.menu.genre_item_context_menu
+                Metadata.Category.ARTIST -> R.menu.artist_item_context_menu
+                Metadata.Category.ALBUM_ARTIST -> R.menu.artist_item_context_menu
+                Metadata.Category.ALBUM -> R.menu.album_item_context_menu
+                Metadata.Category.GENRE -> R.menu.genre_item_context_menu
                 else -> -1
             }
 
@@ -295,7 +298,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                             if (value is IAlbum) {
                                 AlbumBrowseActivity.getStartIntent(
                                     activity,
-                                    Messages.Category.ALBUM_ARTIST,
+                                    Metadata.Category.ALBUM_ARTIST,
                                     value.albumArtistId,
                                     value.albumArtist)
                             }
@@ -309,7 +312,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                             if (value is IAlbum) {
                                 TrackListActivity.getStartIntent(
                                     activity,
-                                    Messages.Category.ALBUM_ARTIST,
+                                    Metadata.Category.ALBUM_ARTIST,
                                     value.albumArtistId,
                                     value.albumArtist)
                             }
@@ -320,11 +323,11 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                         }
                         R.id.menu_show_artist_genres -> {
                             CategoryBrowseActivity.getStartIntent(
-                                activity, Messages.Category.GENRE, value.type, value.id, value.value)
+                                activity, Metadata.Category.GENRE, value.type, value.id, value.value)
                         }
                         R.id.menu_show_genre_artists -> {
                             CategoryBrowseActivity.getStartIntent(
-                                activity, Messages.Category.ARTIST, value.type, value.id, value.value)
+                                activity, Metadata.Category.ARTIST, value.type, value.id, value.value)
                         }
                         else -> null
                     }
@@ -342,6 +345,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     private fun deletePlaylistConfirmed(playlistId: Long, playlistName: String) {
+        @Suppress("unused")
         if (playlistId != -1L) {
             provider.deletePlaylist(playlistId).subscribeBy(
                 onNext = { success ->
@@ -360,14 +364,16 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     private fun removeFromPlaylistConfirmed(playlistId: Long, playlistName: String, externalId: String, position: Int) {
-        provider.removeTracksFromPlaylist(playlistId, listOf(externalId), listOf(position)).subscribeBy(
-            onNext = { _ ->
-                listener?.onPlaylistUpdated(playlistId, playlistName)
-            },
-            onError = {
+        @Suppress("unused")
+        provider
+            .removeTracksFromPlaylist(playlistId, listOf(externalId), listOf(position))
+            .subscribeBy(
+                onNext = {
+                    listener?.onPlaylistUpdated(playlistId, playlistName)
+                },
+                onError = {
 
-            }
-        )
+                })
     }
 
     private fun showSuccess(message: String, button: String? = null, cb: ((View) -> Unit)? = null) =
@@ -390,17 +396,17 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             val trackExternalId = args.getString(EXTRA_TRACK_EXTERNAL_ID, "")
             val trackPosition = args.getInt(EXTRA_TRACK_POSITION, -1)
 
-            val dlg = AlertDialog.Builder(activity!!)
+            return AlertDialog.Builder(activity!!)
                 .setTitle(R.string.playlist_confirm_delete_title)
                 .setMessage(getString(R.string.playlist_confirm_delete_message, trackTitle))
                 .setNegativeButton(R.string.button_no, null)
-                .setPositiveButton(R.string.button_yes, { _: DialogInterface, _: Int ->
+                .setPositiveButton(R.string.button_yes) { _: DialogInterface, _: Int ->
                     mixin.removeFromPlaylistConfirmed(playlistId, playlistName, trackExternalId, trackPosition)
-                })
+                }
                 .create()
-
-            dlg.setCancelable(false)
-            return dlg
+                .apply {
+                    setCancelable(false)
+                }
         }
 
         companion object {
@@ -442,10 +448,10 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 .setTitle(R.string.playlist_confirm_delete_title)
                 .setMessage(getString(R.string.playlist_confirm_delete_message, playlistName))
                 .setNegativeButton(R.string.button_no, null)
-                .setPositiveButton(R.string.button_yes, { _: DialogInterface, _: Int ->
+                .setPositiveButton(R.string.button_yes) { _: DialogInterface, _: Int ->
                     val playlistId = args.getLong(EXTRA_PLAYLIST_ID, -1)
                     mixin.deletePlaylistConfirmed(playlistId, playlistName)
-                })
+                }
                 .create()
 
             dlg.setCancelable(false)
@@ -500,7 +506,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.playlist_name_title)
                     .setNegativeButton(R.string.button_cancel, null)
-                    .setPositiveButton(buttonId, { _: DialogInterface, _: Int ->
+                    .setPositiveButton(buttonId) { _: DialogInterface, _: Int ->
                     val playlistName = editText.text.toString()
                     if (playlistName.isNotBlank()) {
                         when (action) {
@@ -511,7 +517,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     else {
                         mixin.showError(R.string.playlist_name_error_empty)
                     }
-                })
+                }
                 .create()
 
             val paddingX = activity.resources.getDimensionPixelSize(R.dimen.edit_text_dialog_padding_x)
@@ -569,7 +575,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     companion object {
-        private val REQUEST_ADD_TO_PLAYLIST = 32
-        private val REQUEST_EDIT_PLAYLIST = 33
+        private const val REQUEST_ADD_TO_PLAYLIST = 32
+        private const val REQUEST_EDIT_PLAYLIST = 33
     }
 }

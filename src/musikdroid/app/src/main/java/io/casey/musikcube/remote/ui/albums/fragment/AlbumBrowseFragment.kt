@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.adapter.AlbumBrowseAdapter
@@ -114,7 +114,7 @@ class AlbumBrowseFragment: BaseFragment(), Filterable, TitleProvider {
     private val eventListener = object: AlbumBrowseAdapter.EventListener {
         override fun onItemClicked(album: IAlbum) =
             startActivity(TrackListActivity.getStartIntent(
-                appCompatActivity, Messages.Category.ALBUM, album.id, album.value))
+                appCompatActivity, Metadata.Category.ALBUM, album.id, album.value))
 
         override fun onActionClicked(view: View, album: IAlbum) {
             mixin(ItemContextMenuMixin::class.java)?.showForCategory(album, view)

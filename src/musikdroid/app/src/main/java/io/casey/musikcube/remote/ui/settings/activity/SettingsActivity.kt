@@ -24,7 +24,6 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import java.lang.IllegalArgumentException
 import java.util.*
 import javax.inject.Inject
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults

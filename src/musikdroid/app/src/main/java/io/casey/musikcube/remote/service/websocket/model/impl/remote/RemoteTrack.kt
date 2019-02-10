@@ -1,7 +1,6 @@
 package io.casey.musikcube.remote.service.websocket.model.impl.remote
 
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
-import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import org.json.JSONObject
 
@@ -47,10 +46,10 @@ class RemoteTrack(val json: JSONObject) : ITrack {
 
     companion object {
         private val CATEGORY_NAME_TO_ID: Map<String, String> = mapOf(
-            Messages.Category.ALBUM_ARTIST to Metadata.Track.ALBUM_ARTIST_ID,
-            Messages.Category.GENRE to Metadata.Track.GENRE_ID,
-            Messages.Category.ARTIST to Metadata.Track.ARTIST_ID,
-            Messages.Category.ALBUM to Metadata.Track.ALBUM_ID,
-            Messages.Category.PLAYLISTS to Metadata.Track.ALBUM_ID)
+            Metadata.Category.ALBUM_ARTIST to Metadata.Track.ALBUM_ARTIST_ID,
+            Metadata.Category.GENRE to Metadata.Track.GENRE_ID,
+            Metadata.Category.ARTIST to Metadata.Track.ARTIST_ID,
+            Metadata.Category.ALBUM to Metadata.Track.ALBUM_ID,
+            Metadata.Category.PLAYLISTS to Metadata.Track.ALBUM_ID)
     }
 }

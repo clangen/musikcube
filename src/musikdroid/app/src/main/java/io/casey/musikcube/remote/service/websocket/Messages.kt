@@ -127,15 +127,4 @@ class Messages {
             const val REBUILD = "rebuild"
         }
     }
-
-    interface Category {
-        companion object {
-            const val OFFLINE = "offline"
-            const val ALBUM = "album"
-            const val ARTIST = "artist"
-            const val ALBUM_ARTIST = "album_artist"
-            const val GENRE = "genre"
-            const val PLAYLISTS = "playlists"
-        }
-    }
 }
