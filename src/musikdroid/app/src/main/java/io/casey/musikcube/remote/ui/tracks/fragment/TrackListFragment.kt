@@ -134,13 +134,19 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
         return true
     }
 
-    fun optionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_edit) {
-            startActivityForResult(EditPlaylistActivity.getStartIntent(
-                    appCompatActivity, categoryValue, categoryId), Track.RequestCode.EDIT_PLAYLIST)
+    fun optionsItemSelected(item: MenuItem): Boolean =
+        when (item.itemId == R.id.action_edit) {
+            true -> {
+                appCompatActivity.startActivityForResult(
+                    EditPlaylistActivity.getStartIntent(
+                        appCompatActivity,
+                        categoryValue,
+                        categoryId),
+                    Track.RequestCode.EDIT_PLAYLIST)
+                true
+            }
+            else -> false
         }
-        return super.onOptionsItemSelected(item)
-    }
 
     fun activityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == Track.RequestCode.EDIT_PLAYLIST && resultCode == AppCompatActivity.RESULT_OK && data != null) {
@@ -154,7 +160,7 @@ class TrackListFragment: BaseFragment(), Filterable, TitleProvider {
                     buttonText = getString(R.string.button_view),
                     buttonCb = {
                         startActivity(TrackListActivity.getStartIntent(
-                                appCompatActivity, Messages.Category.PLAYLISTS, playlistId, playlistName))
+                            appCompatActivity, Messages.Category.PLAYLISTS, playlistId, playlistName))
                     })
             }
         }

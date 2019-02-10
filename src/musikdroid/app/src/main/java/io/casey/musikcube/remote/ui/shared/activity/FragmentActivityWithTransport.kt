@@ -11,7 +11,10 @@ import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
 abstract class FragmentActivityWithTransport: BaseActivity(), Filterable {
     protected lateinit var transport: TransportFragment
+        private set
+
     protected lateinit var content: BaseFragment
+        private set
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -20,7 +20,10 @@ class TrackListActivity : FragmentActivityWithTransport(), Filterable {
         tracks.createOptionsMenu(menu)
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean =
-        tracks.optionsItemSelected(item)
+        when (tracks.optionsItemSelected(item)) {
+            true -> true
+            false -> super.onOptionsItemSelected(item)
+        }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) =
         tracks.activityResult(requestCode, resultCode, data)

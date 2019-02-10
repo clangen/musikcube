@@ -17,7 +17,7 @@ import javax.inject.Inject
 
 class Application : android.app.Application() {
     @Inject lateinit var gaplessService: GaplessHeaderService
-    @Inject lateinit var offlineDb: OfflineDb
+    @Inject @Suppress("unused") lateinit var offlineDb: OfflineDb
 
     override fun onCreate() {
         instance = this
