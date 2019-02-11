@@ -79,6 +79,7 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
             .add(R.id.content_container, content, contentFragmentTag)
             .add(R.id.transport_container, transport, TransportFragment.TAG)
             .commit()
+        supportFragmentManager.executePendingTransactions()
     }
 
     private fun restoreFragments() {

@@ -39,6 +39,7 @@ class SettingsActivity : BaseActivity() {
     private lateinit var passwordText: EditText
     private lateinit var albumArtCheckbox: CheckBox
     private lateinit var messageCompressionCheckbox: CheckBox
+    private lateinit var disableTabs: CheckBox
     private lateinit var softwareVolume: CheckBox
     private lateinit var sslCheckbox: CheckBox
     private lateinit var certCheckbox: CheckBox
@@ -156,14 +157,20 @@ class SettingsActivity : BaseActivity() {
         
         messageCompressionCheckbox.isChecked = prefs.getBoolean(
             Keys.MESSAGE_COMPRESSION_ENABLED, Defaults.MESSAGE_COMPRESSION_ENABLED)
-        
-        softwareVolume.isChecked = prefs.getBoolean(Keys.SOFTWARE_VOLUME, Defaults.SOFTWARE_VOLUME)
+
+        disableTabs.isChecked = prefs.getBoolean(
+            Keys.DISABLE_TABBED_BROWSING, Defaults.DISABLE_TABBED_BROWSING)
+
+        softwareVolume.isChecked = prefs.getBoolean(
+            Keys.SOFTWARE_VOLUME, Defaults.SOFTWARE_VOLUME)
 
         sslCheckbox.setCheckWithoutEvent(
             this.prefs.getBoolean(Keys.SSL_ENABLED,Defaults.SSL_ENABLED), sslCheckChanged)
 
         certCheckbox.setCheckWithoutEvent(
-            this.prefs.getBoolean(Keys.CERT_VALIDATION_DISABLED, Defaults.CERT_VALIDATION_DISABLED),
+            this.prefs.getBoolean(
+                Keys.CERT_VALIDATION_DISABLED,
+                Defaults.CERT_VALIDATION_DISABLED),
             certValidationChanged)
 
         enableUpNavigation()
@@ -209,14 +216,15 @@ class SettingsActivity : BaseActivity() {
         this.sslCheckbox = findViewById(R.id.ssl_checkbox)
         this.certCheckbox = findViewById(R.id.cert_validation)
         this.transferCheckbox = findViewById(R.id.transfer_on_disconnect_checkbox)
+        this.disableTabs = findViewById(R.id.disable_tabbed_browsing)
     }
 
     private fun bindListeners() {
-        findViewById<View>(R.id.button_save_as).setOnClickListener{_ ->
+        findViewById<View>(R.id.button_save_as).setOnClickListener{
             showSaveAsDialog()
         }
 
-        findViewById<View>(R.id.button_load).setOnClickListener{_ ->
+        findViewById<View>(R.id.button_load).setOnClickListener{
             startActivityForResult(
                 ConnectionsActivity.getStartIntent(this),
                 CONNECTIONS_REQUEST_CODE)
@@ -279,6 +287,7 @@ class SettingsActivity : BaseActivity() {
                 .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
                 .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
                 .putInt(Keys.TITLE_ELLIPSIS_MODE_INDEX, titleEllipsisSpinner.selectedItemPosition)
+                .putBoolean(Keys.DISABLE_TABBED_BROWSING, disableTabs.isChecked)
                 .apply()
 
             if (!softwareVolume.isChecked) {

@@ -36,10 +36,10 @@ import io.reactivex.rxkotlin.subscribeBy
 
 class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver, IFabConsumer {
     private lateinit var adapter: CategoryBrowseAdapter
-    private var navigationType: NavigationType = NavigationType.Tracks
+    private var navigationType: NavigationType = NavigationType.Albums
     private var lastFilter: String? = null
-    private lateinit var category: String
-    private lateinit var predicateType: String
+    private var category: String = ""
+    private var predicateType: String = ""
     private var predicateId: Long = -1
     private lateinit var rootView: View
     private lateinit var emptyView: EmptyListView
@@ -63,10 +63,10 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
         mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener))
 
         extras.run {
-            category = getString(Category.Extra.CATEGORY, "")
-            predicateType = getString(Category.Extra.PREDICATE_TYPE, "")
-            predicateId = getLong(Category.Extra.PREDICATE_ID, -1)
-            navigationType = NavigationType.get(getInt(Category.Extra.NAVIGATION_TYPE, NavigationType.Albums.ordinal))
+            category = getString(Category.Extra.CATEGORY, category)
+            predicateType = getString(Category.Extra.PREDICATE_TYPE, predicateType)
+            predicateId = getLong(Category.Extra.PREDICATE_ID, predicateId)
+            navigationType = NavigationType.get(getInt(Category.Extra.NAVIGATION_TYPE, navigationType.ordinal))
         }
 
         adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category, prefs)

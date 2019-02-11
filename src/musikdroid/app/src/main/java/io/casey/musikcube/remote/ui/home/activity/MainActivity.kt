@@ -269,6 +269,11 @@ class MainActivity : BaseActivity() {
         repeatCb.setOnCheckedChangeListener(null)
     }
 
+    private val disableTabs
+        get() = prefs.getBoolean(
+            Prefs.Key.DISABLE_TABBED_BROWSING,
+            Prefs.Default.DISABLE_TABBED_BROWSING)
+
     private fun bindEventListeners() {
         mainLayout = findViewById(R.id.activity_main)
         metadataView = findViewById(R.id.main_metadata_view)
@@ -326,19 +331,32 @@ class MainActivity : BaseActivity() {
         })
 
         findViewById<View>(R.id.button_albums).setOnClickListener {
-            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM))
+            startActivity(when (disableTabs) {
+                true -> AlbumBrowseActivity.getStartIntent(this)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM)
+            })
         }
 
         findViewById<View>(R.id.button_artists).setOnClickListener {
-            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST))
+            startActivity(when (disableTabs) {
+                true -> CategoryBrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST)
+            })
         }
 
         findViewById<View>(R.id.button_tracks).setOnClickListener {
-            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.TRACKS))
+            startActivity(when (disableTabs) {
+                true -> TrackListActivity.getStartIntent(this)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.TRACKS)
+            })
         }
 
         findViewById<View>(R.id.button_playlists).setOnClickListener {
-            startActivity(BrowseActivity.getStartIntent(this, Metadata.Category.PLAYLISTS))
+            startActivity(when (disableTabs) {
+                true -> CategoryBrowseActivity.getStartIntent(
+                    this, Metadata.Category.PLAYLISTS, NavigationType.Tracks)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.PLAYLISTS)
+            })
         }
 
         findViewById<View>(R.id.button_play_queue).setOnClickListener {
