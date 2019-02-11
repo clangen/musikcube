@@ -29,6 +29,7 @@ import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
 import io.casey.musikcube.remote.ui.shared.extension.showKeyboard
 import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
 import io.casey.musikcube.remote.ui.shared.fragment.BaseDialogFragment
+import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.tracks.activity.EditPlaylistActivity
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.reactivex.Observable
@@ -36,7 +37,8 @@ import io.reactivex.rxkotlin.subscribeBy
 import javax.inject.Inject
 
 class ItemContextMenuMixin(private val activity: AppCompatActivity,
-                           internal val listener: EventListener? = null): MixinBase() {
+                           internal val listener: EventListener? = null,
+                           internal val fragment: BaseFragment? = null): MixinBase() {
     private enum class TrackType { Normal, Playlist }
 
     @Inject lateinit var provider: IDataProvider
@@ -192,7 +194,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             NavigationType.Select,
             activity.getString(R.string.playlist_edit_pick_playlist))
 
-        activity.startActivityForResult(intent, pendingCode)
+        startActivityForResult(intent, pendingCode)
     }
 
     fun showForTrack(track: ITrack, anchorView: View) {
@@ -253,7 +255,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     ConfirmDeletePlaylistDialog.show(activity, this, playlistName, playlistId)
                 }
                 R.id.menu_playlist_edit -> {
-                    activity.startActivityForResult(EditPlaylistActivity.getStartIntent(
+                    startActivityForResult(EditPlaylistActivity.getStartIntent(
                         activity, playlistName, playlistId), REQUEST_EDIT_PLAYLIST)
                 }
                 R.id.menu_playlist_rename -> {
@@ -384,6 +386,13 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
     private fun showError(message: String) =
         showErrorSnackbar(activity.findViewById(android.R.id.content), message)
+
+    private fun startActivityForResult(intent: Intent, requestCode: Int) {
+        when (fragment != null) {
+            true -> fragment.startActivityForResult(intent, requestCode)
+            false -> activity.startActivityForResult(intent, requestCode)
+        }
+    }
 
     class ConfirmRemoveFromPlaylistDialog : BaseDialogFragment() {
         private lateinit var mixin: ItemContextMenuMixin

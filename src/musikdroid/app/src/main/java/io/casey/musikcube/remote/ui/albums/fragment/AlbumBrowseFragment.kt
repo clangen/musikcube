@@ -42,7 +42,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
         component.inject(this)
         data = mixin(DataProviderMixin())
         playback = mixin(PlaybackMixin())
-        mixin(ItemContextMenuMixin(appCompatActivity))
+        mixin(ItemContextMenuMixin(appCompatActivity, fragment = this))
 
         super.onCreate(savedInstanceState)
 

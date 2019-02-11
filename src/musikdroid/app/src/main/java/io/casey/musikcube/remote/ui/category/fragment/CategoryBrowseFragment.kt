@@ -60,7 +60,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
         component.inject(this)
         data = mixin(DataProviderMixin())
         playback = mixin(PlaybackMixin())
-        mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener))
+        mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener, this))
 
         extras.run {
             category = getString(Category.Extra.CATEGORY, category)

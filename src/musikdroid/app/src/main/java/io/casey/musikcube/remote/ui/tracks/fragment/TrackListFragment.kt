@@ -57,7 +57,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
 
         super.onCreate(savedInstanceState)
 
-        mixin(ItemContextMenuMixin(appCompatActivity, menuListener))
+        mixin(ItemContextMenuMixin(appCompatActivity, menuListener, this))
 
         extras.run {
             categoryType = getString(Track.Extra.CATEGORY_TYPE, "")
