@@ -1,6 +1,7 @@
 package io.casey.musikcube.remote.ui.shared.activity
 
 import android.os.Bundle
+import android.support.design.widget.FloatingActionButton
 import android.view.Menu
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
@@ -32,6 +33,17 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
 
         transport.modelChangedListener = {
             onTransportChanged()
+        }
+
+        val fab = findViewById<FloatingActionButton>(R.id.fab)
+        (content as? IFabConsumer)?.let { fabConsumer ->
+            fab.setOnClickListener { fabConsumer.onFabPress(fab) }
+            when (fabConsumer.fabVisible) {
+                true -> fab.show()
+                false -> fab.hide()
+            }
+        } ?: this.run {
+            fab.hide()
         }
     }
 

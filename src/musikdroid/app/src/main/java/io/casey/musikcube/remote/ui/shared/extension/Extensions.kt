@@ -10,10 +10,7 @@ import android.support.v4.app.FragmentManager
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.MenuItemCompat
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.DividerItemDecoration
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.SearchView
+import android.support.v7.widget.*
 import android.text.TextUtils
 import android.view.Menu
 import android.view.View
@@ -60,6 +57,9 @@ fun Fragment.getColorCompat(resourceId: Int): Int =
 fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
     ContextCompat.getColor(this, resourceId)
 
+val AppCompatActivity.toolbar: Toolbar?
+    get() = findViewById(R.id.toolbar)
+
 fun AppCompatActivity.enableUpNavigation() {
     val ab = this.supportActionBar
     ab?.setDisplayHomeAsUpEnabled(true)
@@ -91,24 +91,6 @@ fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     val title = this.intent.getStringExtra(EXTRA_ACTIVITY_TITLE)
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
-}
-
-fun AppCompatActivity.setFabVisible(visible: Boolean, fab: View, recycler: RecyclerView) {
-    if (visible) {
-        val bottom = this.resources.getDimensionPixelSize(R.dimen.fab_plus_padding)
-        fab.visibility = View.VISIBLE
-        recycler.clipToPadding = false
-        recycler.setPadding(0, 0, 0, bottom)
-    }
-    else {
-        fab.visibility = View.GONE
-        recycler.clipToPadding = true
-        recycler.setPadding(0, 0, 0, 0)
-    }
-}
-
-fun BaseFragment.setFabVisible(visible: Boolean, fab: View, recyclerView: RecyclerView) {
-    this.appCompatActivity.setFabVisible(visible, fab, recyclerView)
 }
 
 fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean {

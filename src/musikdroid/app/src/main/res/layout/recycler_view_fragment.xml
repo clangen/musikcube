@@ -19,18 +19,4 @@
         android:layout_height="match_parent"
         android:visibility="gone"/>
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_gravity="bottom|right"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/fab_padding"
-        android:src="@drawable/ic_fab_add"
-        android:scaleType="center"
-        android:elevation="6dp"
-        android:visibility="gone"
-        app:backgroundTint="@color/color_primary"
-        app:fabSize="mini"
-        app:rippleColor="?colorAccent"/>
-
 </FrameLayout>

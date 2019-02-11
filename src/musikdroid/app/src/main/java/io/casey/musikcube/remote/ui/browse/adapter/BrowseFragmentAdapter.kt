@@ -30,6 +30,8 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
             (it.value as? ITransportObserver)?.onTransportChanged()
         }
 
+    fun fragmentAt(pos: Int): Fragment? = fragments[pos]
+
     fun indexOf(category: String?): Int =
         when (category) {
             Metadata.Category.ALBUM_ARTIST -> 0

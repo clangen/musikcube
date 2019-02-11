@@ -34,7 +34,8 @@
 
         <activity android:name=".ui.browse.activity.BrowseActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar"/>
 
         <activity android:name=".ui.category.activity.CategoryBrowseActivity"
             android:screenOrientation="portrait"

@@ -8,6 +8,8 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.KeyEvent
 import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import com.uacf.taskrunner.Runner
 import com.uacf.taskrunner.Task
 import io.casey.musikcube.remote.Application
@@ -124,6 +126,25 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
             Transition.Horizontal -> slideThisRight()
             Transition.Vertical -> slideThisDown()
         }
+    }
+
+    override fun setContentView(layoutId: Int) {
+        super.setContentView(layoutId)
+        setupToolbar()
+    }
+
+    override fun setContentView(view: View?) {
+        super.setContentView(view)
+        setupToolbar()
+    }
+
+    override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
+        super.setContentView(view, params)
+        setupToolbar()
+    }
+
+    private fun setupToolbar() {
+        toolbar?.let { setSupportActionBar(it) }
     }
 
     protected open val transitionType = Transition.Horizontal

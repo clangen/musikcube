@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.support.design.widget.FloatingActionButton
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
@@ -17,12 +18,12 @@ import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
+import io.casey.musikcube.remote.ui.shared.activity.IFabConsumer
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
 import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.setFabVisible
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -33,7 +34,7 @@ import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
-class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver {
+class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver, IFabConsumer {
     private lateinit var adapter: CategoryBrowseAdapter
     private var navigationType: NavigationType = NavigationType.Tracks
     private var lastFilter: String? = null
@@ -76,23 +77,21 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
             this@CategoryBrowseFragment.rootView = this
 
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
-            val fab = findViewById<View>(R.id.fab)
-            val fabVisible = (category == Metadata.Category.PLAYLISTS)
 
             emptyView = findViewById(R.id.empty_list_view)
             emptyView.capability = EmptyListView.Capability.OnlineOnly
             emptyView.emptyMessage = getString(R.string.empty_no_items_format, categoryTypeString)
             emptyView.alternateView = recyclerView
 
-            findViewById<View>(R.id.fab).setOnClickListener {
-                if (category == Metadata.Category.PLAYLISTS) {
-                    mixin(ItemContextMenuMixin::class.java)?.createPlaylist()
-                }
-            }
-
             setupDefaultRecyclerView(recyclerView, adapter)
-            setFabVisible(fabVisible, fab, recyclerView)
         }
+
+    override fun onFabPress(fab: FloatingActionButton) {
+        mixin(ItemContextMenuMixin::class.java)?.createPlaylist()
+    }
+
+    override val fabVisible: Boolean
+        get() = (category == Metadata.Category.PLAYLISTS)
 
     override fun onResume() {
         super.onResume()
