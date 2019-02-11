@@ -16,6 +16,7 @@
             android:layout_height="match_parent"
             app:fastScrollAutoHide="true"
             app:fastScrollAutoHideDelay="1500"
+            app:fastScrollThumbInactiveColor="@color/color_primary_dark"
             app:fastScrollThumbColor="@color/color_accent" />
 
         <io.casey.musikcube.remote.ui.shared.view.EmptyListView

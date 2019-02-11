@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.ui.category.constant.categoryToString
+import io.casey.musikcube.remote.ui.category.constant.Category.toDisplayString
 
 class AllCategoriesAdapter(private val listener: EventListener)
     : RecyclerView.Adapter<AllCategoriesAdapter.Holder>()
@@ -26,7 +26,7 @@ class AllCategoriesAdapter(private val listener: EventListener)
         }
 
         internal fun bindView(category: String) {
-            title.text = categoryToString(itemView.context, category)
+            title.text = toDisplayString(itemView.context, category)
             itemView.tag = category
         }
     }

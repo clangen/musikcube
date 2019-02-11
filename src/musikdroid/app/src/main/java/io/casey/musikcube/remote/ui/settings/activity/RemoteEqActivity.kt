@@ -52,6 +52,7 @@ class RemoteEqActivity: BaseActivity() {
     }
 
     override fun <T : ViewModel<*>> createViewModel(): T? {
+        @Suppress("unchecked_cast")
         return RemoteEqViewModel() as T
     }
 

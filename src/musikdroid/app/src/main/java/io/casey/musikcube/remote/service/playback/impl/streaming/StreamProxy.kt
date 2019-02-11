@@ -13,7 +13,6 @@ import io.casey.musikcube.remote.service.gapless.db.GaplessDb
 import io.casey.musikcube.remote.service.gapless.db.GaplessTrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
-import io.casey.musikcube.remote.util.Strings
 import java.io.File
 import java.util.*
 import javax.inject.Inject
@@ -78,11 +77,11 @@ class StreamProxy(private val context: Context) {
         proxy = HttpProxyCacheServer.Builder(context.applicationContext)
             .cacheDirectory(cachePath)
             .maxCacheSize(CACHE_SETTING_TO_BYTES[diskCacheIndex] ?: MINIMUM_CACHE_SIZE_BYTES)
-            .headerInjector { _ ->
+            .headerInjector {
                 val headers = HashMap<String, String>()
                 val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
                 val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
-                headers.put("Authorization", "Basic " + encoded)
+                headers["Authorization"] = "Basic $encoded"
                 headers
             }
             .headerReceiver { url: String, headers: Map<String, List<String>> ->
@@ -105,10 +104,10 @@ class StreamProxy(private val context: Context) {
     }
 
     companion object {
-        private val BYTES_PER_MEGABYTE = 1048576L
-        private val BYTES_PER_GIGABYTE = 1073741824L
-        private val ESTIMATED_LENGTH = "X-musikcube-Estimated-Content-Length"
-        val MINIMUM_CACHE_SIZE_BYTES = BYTES_PER_MEGABYTE * 128
+        private const val BYTES_PER_MEGABYTE = 1048576L
+        private const val BYTES_PER_GIGABYTE = 1073741824L
+        private const val ESTIMATED_LENGTH = "X-musikcube-Estimated-Content-Length"
+        const val MINIMUM_CACHE_SIZE_BYTES = BYTES_PER_MEGABYTE * 128
 
         val CACHE_SETTING_TO_BYTES: MutableMap<Int, Long> = mutableMapOf(
             0 to MINIMUM_CACHE_SIZE_BYTES,
@@ -127,15 +126,14 @@ class StreamProxy(private val context: Context) {
                 val segments = uri.pathSegments
                 if (segments.size == 3 && "external_id" == segments[1]) {
                     /* url params, hyphen separated */
-                    var params = uri.query
-                    if (Strings.notEmpty(params)) {
-                        params = "-" + params
-                            .replace("?", "-")
-                            .replace("&", "-")
-                            .replace("=", "-")
-                    }
-                    else {
-                        params = ""
+                    val params = when (uri?.query.isNullOrBlank()) {
+                        true -> ""
+                        false ->
+                            "-" + uri!!.query!!
+                                .replace("?", "-")
+                                .replace("&", "-")
+                                .replace("=", "-")
+
                     }
 
                     return@gen "${segments[2]}$params"

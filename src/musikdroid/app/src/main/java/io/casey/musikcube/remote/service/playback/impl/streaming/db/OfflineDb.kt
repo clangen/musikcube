@@ -4,6 +4,7 @@ import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerDataComponent
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
@@ -27,17 +28,17 @@ abstract class OfflineDb : RoomDatabase() {
             .appComponent(Application.appComponent)
             .build().inject(this)
 
-        wss.addInterceptor({ message, responder ->
+        wss.addInterceptor{ message, responder ->
             var result = false
             if (Messages.Request.QueryTracksByCategory.matches(message.name)) {
                 val category = message.getStringOption(Messages.Key.CATEGORY)
-                if (Messages.Category.OFFLINE == category) {
+                if (Metadata.Category.OFFLINE == category) {
                     queryTracks(message, responder)
                     result = true
                 }
             }
             result
-        })
+        }
 
         prune()
     }
@@ -45,6 +46,7 @@ abstract class OfflineDb : RoomDatabase() {
     abstract fun trackDao(): OfflineTrackDao
 
     fun prune() {
+        @Suppress("unused")
         Single.fromCallable {
             val uris = trackDao().queryUris()
             val toDelete = ArrayList<String>()
@@ -63,7 +65,7 @@ abstract class OfflineDb : RoomDatabase() {
         }
         .subscribeOn(Schedulers.io())
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe({ _ -> }, { })
+        .subscribe({ }, { })
     }
 
     private fun queryTracks(message: SocketMessage, responder: WebSocketService.Responder) {

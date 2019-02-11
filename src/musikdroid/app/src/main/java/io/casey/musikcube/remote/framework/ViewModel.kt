@@ -73,6 +73,7 @@ abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCa
         private val idToInstance = mutableMapOf<Long, ViewModel<*>>()
 
         fun <T: ViewModel<*>> restore(id: Long): T?  {
+            @Suppress("unchecked_cast")
             val instance: T? = idToInstance[id] as T?
             if (instance != null) {
                 handler.removeCallbacks(instance.cleanup)

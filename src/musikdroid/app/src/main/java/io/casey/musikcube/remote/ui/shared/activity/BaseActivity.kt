@@ -8,6 +8,8 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.KeyEvent
 import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import com.uacf.taskrunner.Runner
 import com.uacf.taskrunner.Task
 import io.casey.musikcube.remote.Application
@@ -29,8 +31,11 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
     }
 
     protected var disposables = CompositeDisposable()
+        private set
+
+    protected var paused = true /* `private set` confuses proguard. sigh */
+
     protected lateinit var prefs: SharedPreferences
-    private var paused = false
     private val mixins = MixinSet()
 
     protected val component: ViewComponent =
@@ -123,9 +128,29 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         }
     }
 
+    override fun setContentView(layoutId: Int) {
+        super.setContentView(layoutId)
+        setupToolbar()
+    }
+
+    override fun setContentView(view: View?) {
+        super.setContentView(view)
+        setupToolbar()
+    }
+
+    override fun setContentView(view: View?, params: ViewGroup.LayoutParams?) {
+        super.setContentView(view, params)
+        setupToolbar()
+    }
+
+    private fun setupToolbar() {
+        toolbar?.let { setSupportActionBar(it) }
+    }
+
     protected open val transitionType = Transition.Horizontal
 
-    protected fun isPaused(): Boolean = paused
+    protected val extras: Bundle
+        get() = intent?.extras ?: Bundle()
 
     override fun <T: ViewModel<*>> createViewModel(): T? = null
     protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T

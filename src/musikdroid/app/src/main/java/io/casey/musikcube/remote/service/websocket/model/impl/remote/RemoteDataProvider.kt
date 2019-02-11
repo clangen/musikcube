@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.service.websocket.model.impl.remote
 
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
@@ -94,7 +95,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .flatMap<Map<String, ITrack>> { socketMessage ->
                 val tracks = HashMap<String, ITrack>()
                 val json = socketMessage.getJsonObjectOption(Messages.Key.DATA, JSONObject())!!
-                json.keys().forEach { tracks.put(it, RemoteTrack(json.getJSONObject(it))) }
+                json.keys().forEach { tracks[it] = RemoteTrack(json.getJSONObject(it)) }
                 Observable.just(tracks)
             }
             .observeOn(AndroidSchedulers.mainThread())
@@ -213,6 +214,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .request(Messages.Request.InvalidatePlayQueueSnapshot)
             .build()
 
+        @Suppress("unused")
         service.observe(message, client)
             .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
@@ -239,13 +241,13 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
     override fun getPlaylists(): Observable<List<IPlaylist>> {
         val message = SocketMessage.Builder
             .request(Messages.Request.QueryCategory)
-            .addOption(Messages.Key.CATEGORY, Messages.Category.PLAYLISTS)
+            .addOption(Messages.Key.CATEGORY, Metadata.Category.PLAYLISTS)
             .build()
 
         return service.observe(message, client)
             .observeOn(Schedulers.computation())
             .flatMap<List<ICategoryValue>> { socketMessage ->
-                toCategoryList(socketMessage, Messages.Category.PLAYLISTS)
+                toCategoryList(socketMessage, Metadata.Category.PLAYLISTS)
             }
             .flatMap { values ->
                 Observable.just(values.filterIsInstance<IPlaylist>())
@@ -634,8 +636,8 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
 
         private fun toCategoryList(socketMessage: SocketMessage, type: String): Observable<List<ICategoryValue>> {
             val converter: (JSONObject, String) -> ICategoryValue = when (type) {
-                Messages.Category.ALBUM_ARTIST -> toAlbumArtist
-                Messages.Category.PLAYLISTS -> toPlaylist
+                Metadata.Category.ALBUM_ARTIST -> toAlbumArtist
+                Metadata.Category.PLAYLISTS -> toPlaylist
                 else -> toCategoryValue
             }
             val values = ArrayList<ICategoryValue>()

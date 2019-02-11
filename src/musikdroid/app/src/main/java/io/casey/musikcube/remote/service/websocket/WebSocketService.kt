@@ -10,6 +10,7 @@ import android.util.Log
 import com.neovisionaries.ws.client.*
 import io.casey.musikcube.remote.BuildConfig
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
+import io.casey.musikcube.remote.ui.shared.extension.getString
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Observable
@@ -137,7 +138,7 @@ class WebSocketService constructor(private val context: Context) {
         private set(newState) {
             Preconditions.throwIfNotOnMainThread()
 
-            Log.d(TAG, "state = " + newState)
+            Log.d(TAG, "state=$newState")
 
             if (state == State.Disconnected) {
                 serverVersion = -1
@@ -158,6 +159,7 @@ class WebSocketService constructor(private val context: Context) {
         interceptors.add(interceptor)
     }
 
+    @Suppress("unused")
     fun removeInterceptor(interceptor: (SocketMessage, Responder) -> Boolean) {
         Preconditions.throwIfNotOnMainThread()
         interceptors.remove(interceptor)
@@ -230,7 +232,7 @@ class WebSocketService constructor(private val context: Context) {
 
             val ping = SocketMessage.Builder.request(Messages.Request.Ping).build()
 
-            send(ping, INTERNAL_CLIENT) { _: SocketMessage ->
+            send(ping, INTERNAL_CLIENT) {
                 handler.removeMessages(MESSAGE_PING_TIMEOUT)
                 handler.sendEmptyMessageDelayed(MESSAGE_SCHEDULE_PING, PING_INTERVAL_MILLIS)
             }
@@ -239,7 +241,9 @@ class WebSocketService constructor(private val context: Context) {
 
     fun cancelMessages(client: Client) {
         Preconditions.throwIfNotOnMainThread()
-        removeCallbacks({ mrd: MessageResultDescriptor -> mrd.client === client })
+        removeCallbacks { mrd: MessageResultDescriptor ->
+            mrd.client === client
+        }
     }
 
     fun send(message: SocketMessage,
@@ -282,14 +286,12 @@ class WebSocketService constructor(private val context: Context) {
             mrd.callback = callback
             mrd.type = Type.Callback
             mrd.intercepted = intercepted
-            messageCallbacks.put(message.id, mrd)
+            messageCallbacks[message.id] = mrd
         }
 
-        if (!intercepted) {
-            socket?.sendText(message.toString())
-        }
-        else {
-            Log.d(TAG, "send: message intercepted with id " + id.toString())
+        when (intercepted) {
+            true -> Log.d(TAG, "send: message intercepted with id=$id")
+            false -> socket?.sendText(message.toString())
         }
 
         return id
@@ -346,21 +348,22 @@ class WebSocketService constructor(private val context: Context) {
             subject.onError(ex)
         }
 
+        @Suppress("unused")
         subject.doOnDispose { cancelMessage(mrd.id) }
 
         if (!intercepted) {
             socket?.sendText(message.toString())
         }
 
-        messageCallbacks.put(message.id, mrd)
+        messageCallbacks[message.id] = mrd
 
         return subject
     }
 
     fun hasValidConnection(): Boolean {
-        val addr = prefs.getString(Prefs.Key.ADDRESS, "")
+        val address = prefs.getString(Prefs.Key.ADDRESS) ?: ""
         val port = prefs.getInt(Prefs.Key.MAIN_PORT, -1)
-        return addr.isNotEmpty() && port >= 0
+        return address.isNotEmpty() && port >= 0
     }
 
     private fun disconnect(autoReconnect: Boolean) {
@@ -390,25 +393,27 @@ class WebSocketService constructor(private val context: Context) {
         }
     }
 
-    private fun removeNonInterceptedCallbacks() {
-        removeCallbacks({ mrd -> !mrd.intercepted })
-    }
+    private fun removeNonInterceptedCallbacks() =
+        removeCallbacks {
+            mrd -> !mrd.intercepted
+        }
 
-    private fun removeInternalCallbacks() {
-        removeCallbacks({ mrd: MessageResultDescriptor -> mrd.client === INTERNAL_CLIENT })
-    }
+    private fun removeInternalCallbacks() =
+        removeCallbacks {
+            mrd: MessageResultDescriptor -> mrd.client === INTERNAL_CLIENT
+        }
 
     private fun removeExpiredCallbacks() {
         val now = System.currentTimeMillis()
-
-        removeCallbacks({ mrd: MessageResultDescriptor -> now - mrd.enqueueTime > CALLBACK_TIMEOUT_MILLIS })
+        removeCallbacks {
+            mrd: MessageResultDescriptor -> now - mrd.enqueueTime > CALLBACK_TIMEOUT_MILLIS
+        }
     }
 
-    private fun removeCallbacksForClient(client: Client) {
-        removeCallbacks({ mrd: MessageResultDescriptor ->
+    private fun removeCallbacksForClient(client: Client) =
+        removeCallbacks { mrd: MessageResultDescriptor ->
             mrd.client === client
-        })
-    }
+        }
 
     private fun removeCallbacks(predicate: (MessageResultDescriptor) -> Boolean) {
         val it = messageCallbacks.entries.iterator()
@@ -595,25 +600,25 @@ class WebSocketService constructor(private val context: Context) {
     }
 
     companion object {
-        private val TAG = "WebSocketService"
+        private const val TAG = "WebSocketService"
 
-        private val AUTO_RECONNECT_INTERVAL_MILLIS = 2000L
-        private val CALLBACK_TIMEOUT_MILLIS = 30000L
-        private val CONNECTION_TIMEOUT_MILLIS = 5000
-        private val PING_INTERVAL_MILLIS = 3500L
-        private val AUTO_CONNECT_FAILSAFE_DELAY_MILLIS = 2000L
-        private val AUTO_DISCONNECT_DELAY_MILLIS = 10000L
-        private val FLAG_AUTHENTICATION_FAILED = 0xbeef
-        private val WEBSOCKET_FLAG_POLICY_VIOLATION = 1008
-        private val MINIMUM_SUPPORTED_API_VERSION = 15
+        private const val AUTO_RECONNECT_INTERVAL_MILLIS = 2000L
+        private const val CALLBACK_TIMEOUT_MILLIS = 30000L
+        private const val CONNECTION_TIMEOUT_MILLIS = 5000
+        private const val PING_INTERVAL_MILLIS = 3500L
+        private const val AUTO_CONNECT_FAILSAFE_DELAY_MILLIS = 2000L
+        private const val AUTO_DISCONNECT_DELAY_MILLIS = 10000L
+        private const val FLAG_AUTHENTICATION_FAILED = 0xbeef
+        private const val WEBSOCKET_FLAG_POLICY_VIOLATION = 1008
+        private const val MINIMUM_SUPPORTED_API_VERSION = 15
 
-        private val MESSAGE_BASE = 0xcafedead.toInt()
-        private val MESSAGE_CONNECT_THREAD_FINISHED = MESSAGE_BASE + 0
-        private val MESSAGE_RECEIVED = MESSAGE_BASE + 1
-        private val MESSAGE_REMOVE_OLD_CALLBACKS = MESSAGE_BASE + 2
-        private val MESSAGE_AUTO_RECONNECT = MESSAGE_BASE + 3
-        private val MESSAGE_SCHEDULE_PING = MESSAGE_BASE + 4
-        private val MESSAGE_PING_TIMEOUT = MESSAGE_BASE + 5
+        private const val MESSAGE_BASE = 0xcafedead.toInt()
+        private const val MESSAGE_CONNECT_THREAD_FINISHED = MESSAGE_BASE + 0
+        private const val MESSAGE_RECEIVED = MESSAGE_BASE + 1
+        private const val MESSAGE_REMOVE_OLD_CALLBACKS = MESSAGE_BASE + 2
+        private const val MESSAGE_AUTO_RECONNECT = MESSAGE_BASE + 3
+        private const val MESSAGE_SCHEDULE_PING = MESSAGE_BASE + 4
+        private const val MESSAGE_PING_TIMEOUT = MESSAGE_BASE + 5
 
         private val DISCONNECT_ON_PING_TIMEOUT = !BuildConfig.DEBUG
 

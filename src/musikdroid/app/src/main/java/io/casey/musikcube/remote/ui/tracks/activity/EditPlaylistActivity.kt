@@ -33,7 +33,7 @@ class EditPlaylistActivity: BaseActivity() {
         mixin(ViewModelMixin(this))
         data = mixin(DataProviderMixin())
         super.onCreate(savedInstanceState)
-        playlistName = intent.extras.getString(EXTRA_PLAYLIST_NAME, "-")
+        playlistName = extras.getString(EXTRA_PLAYLIST_NAME, "-")
         title = getString(R.string.playlist_edit_activity, playlistName)
         setContentView(R.layout.recycler_view_activity)
         viewModel = getViewModel()!!
@@ -80,7 +80,8 @@ class EditPlaylistActivity: BaseActivity() {
     }
 
     override fun <T: ViewModel<*>> createViewModel(): T? {
-        return EditPlaylistViewModel(intent.extras.getLong(EXTRA_PLAYLIST_ID, -1L)) as T
+        @Suppress("unchecked_cast")
+        return EditPlaylistViewModel(extras.getLong(EXTRA_PLAYLIST_ID, -1L)) as T
     }
 
     private fun saveAndFinish() {

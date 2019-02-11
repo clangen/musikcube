@@ -33,11 +33,11 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.fallback
-import io.casey.musikcube.remote.ui.shared.model.albumart.Size
+import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
 import android.support.v4.app.NotificationCompat.Action as NotifAction
-import io.casey.musikcube.remote.ui.shared.model.albumart.getUrl as getAlbumArtUrl
+import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,

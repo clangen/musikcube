@@ -99,7 +99,7 @@
     <string name="settings_cache_size">streaming disk cache size:</string>
     <string name="settings_advanced">advanced:</string>
     <string name="settings_use_ssl">use ssl for server connections</string>
-    <string name="settings_enable_album_art">uses last.fm for missing album art</string>
+    <string name="settings_enable_album_art">use last.fm for missing album art</string>
     <string name="settings_enable_message_compression">enable message compression</string>
     <string name="settings_enable_streaming_playback">enable streaming playback</string>
     <string name="settings_enable_software_volume">use software volume while streaming</string>
@@ -123,6 +123,7 @@
     <string name="settings_playback_engine_exo_gapless">ExoPlayer Gapless (default)</string>
     <string name="settings_playback_engine_mp">MediaPlayer (legacy)</string>
     <string name="settings_transfer_to_server_on_disconnect">transfer playback to server on headset disconnect</string>
+    <string name="settings_disabled_tabbed_browsing">disable tabbed browsing</string>
     <string name="remote_settings_title">remote management</string>
     <string name="remote_settings_output_driver">output driver</string>
     <string name="remote_settings_output_device">output device</string>

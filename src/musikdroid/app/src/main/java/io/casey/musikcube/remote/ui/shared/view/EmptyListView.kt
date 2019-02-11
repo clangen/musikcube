@@ -31,16 +31,16 @@ class EmptyListView : FrameLayout {
     private var viewOfflineButton: View? = null
     private var reconnectButton: View? = null
 
-    constructor(context: Context?)
+    constructor(context: Context)
     : super(context) {
         initialize()
     }
 
-    constructor(context: Context?, attrs: AttributeSet?)
+    constructor(context: Context, attrs: AttributeSet?)
     : super(context, attrs) {
         initialize()
     }
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int)
     : super(context, attrs, defStyleAttr) {
         initialize()
     }
@@ -115,11 +115,11 @@ class EmptyListView : FrameLayout {
 
         addView(mainView)
 
-        reconnectButton?.setOnClickListener { _ ->
+        reconnectButton?.setOnClickListener {
             wss.reconnect()
         }
 
-        viewOfflineButton?.setOnClickListener { _ ->
+        viewOfflineButton?.setOnClickListener {
             val activity = context as Activity
             activity.startActivity(TrackListActivity.getOfflineStartIntent(activity))
             activity.finish()

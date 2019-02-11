@@ -42,7 +42,7 @@ abstract class BaseSlidingWindow(
         disposables.add(dataProvider.observePlayQueue()
             .subscribe({ requery() }, { /* error */ }))
 
-        recyclerView.setStateChangeListener(fastScrollStateChangeListener)
+        recyclerView.setOnFastScrollStateChangeListener(fastScrollStateChangeListener)
         recyclerView.addOnScrollListener(recyclerViewScrollListener)
         connected = true
         fastScrollerActive = false

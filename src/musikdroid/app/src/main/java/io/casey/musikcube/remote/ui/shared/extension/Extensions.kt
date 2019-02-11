@@ -6,13 +6,11 @@ import android.content.SharedPreferences
 import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentManager
 import android.support.v4.content.ContextCompat
 import android.support.v4.view.MenuItemCompat
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.DividerItemDecoration
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.SearchView
+import android.support.v7.widget.*
 import android.text.TextUtils
 import android.view.Menu
 import android.view.View
@@ -24,7 +22,8 @@ import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.ui.shared.activity.Filterable
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
+import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
 
@@ -40,6 +39,12 @@ fun AppCompatActivity.setupDefaultRecyclerView(
     recyclerView.addItemDecoration(dividerItemDecoration)
 }
 
+fun BaseFragment.setupDefaultRecyclerView(
+    recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
+{
+    this.appCompatActivity.setupDefaultRecyclerView(recyclerView, adapter)
+}
+
 fun RecyclerView.ViewHolder.getColorCompat(resourceId: Int): Int =
     ContextCompat.getColor(itemView.context, resourceId)
 
@@ -52,31 +57,33 @@ fun Fragment.getColorCompat(resourceId: Int): Int =
 fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
     ContextCompat.getColor(this, resourceId)
 
+val AppCompatActivity.toolbar: Toolbar?
+    get() = findViewById(R.id.toolbar)
+
 fun AppCompatActivity.enableUpNavigation() {
     val ab = this.supportActionBar
     ab?.setDisplayHomeAsUpEnabled(true)
 }
 
 fun AppCompatActivity.addTransportFragment(
-        listener: TransportFragment.OnModelChangedListener? = null): TransportFragment?
+        listener: ((TransportFragment) -> Unit)? = null): TransportFragment
 {
     val root = findViewById<View>(android.R.id.content)
     if (root != null) {
         if (root.findViewById<View>(R.id.transport_container) != null) {
-            val fragment = TransportFragment.newInstance()
+            val fragment = TransportFragment.create()
 
             this.supportFragmentManager
-                    .beginTransaction()
-                    .add(R.id.transport_container, fragment, TransportFragment.TAG)
-                    .commit()
+                .beginTransaction()
+                .add(R.id.transport_container, fragment, TransportFragment.TAG)
+                .commit()
 
             fragment.modelChangedListener = listener
             return fragment
         }
     }
-    return null
+    throw IllegalArgumentException("could not find content view")
 }
-
 
 fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
     this.setTitleFromIntent(getString(defaultId))
@@ -86,21 +93,7 @@ fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
 }
 
-fun AppCompatActivity.setFabVisible(visible: Boolean, fab: View, recycler: RecyclerView) {
-    if (visible) {
-        val bottom = this.resources.getDimensionPixelSize(R.dimen.fab_plus_padding)
-        fab.visibility = View.VISIBLE
-        recycler.clipToPadding = false
-        recycler.setPadding(0, 0, 0, bottom)
-    }
-    else {
-        fab.visibility = View.GONE
-        recycler.clipToPadding = true
-        recycler.setPadding(0, 0, 0, 0)
-    }
-}
-
-fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
+fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean {
     this.menuInflater.inflate(R.menu.search_menu, menu)
 
     val searchMenuItem = menu.findItem(R.id.action_search)
@@ -129,7 +122,12 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: Filterable?) {
 
     searchView.setSearchableInfo(searchableInfo)
     searchView.setIconifiedByDefault(true)
+
+    return true
 }
+
+fun Fragment.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean =
+    (activity as AppCompatActivity).initSearchMenu(menu, filterable)
 
 fun CheckBox.setCheckWithoutEvent(checked: Boolean,
                                   listener: (CompoundButton, Boolean) -> Unit) {
@@ -221,10 +219,10 @@ fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int, buttonText: Strin
     showSnackbar(this.findViewById<View>(viewId), stringId, buttonText, buttonCb)
 
 fun fallback(input: String?, fallback: String): String =
-    if (input.isNullOrEmpty()) fallback else input!!
+    if (input.isNullOrEmpty()) fallback else input
 
 fun fallback(input: String?, fallback: Int): String =
-    if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input!!
+    if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input
 
 fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
 
@@ -259,4 +257,18 @@ fun titleEllipsizeMode(prefs: SharedPreferences): TextUtils.TruncateAt {
         1 -> TextUtils.TruncateAt.MIDDLE
         else -> TextUtils.TruncateAt.END
     }
+}
+
+fun SharedPreferences.getString(key: String): String? =
+    when (!this.contains(key)) {
+        true -> null
+        else -> this.getString(key, "")
+    }
+
+inline fun <reified T> FragmentManager.find(tag: String): T {
+    return findFragmentByTag(tag) as T
+}
+
+inline fun <reified T> AppCompatActivity.findFragment(tag: String): T {
+    return this.supportFragmentManager.find(tag)
 }

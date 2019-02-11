@@ -11,6 +11,7 @@ class ViewModelMixin(private val provider: ViewModel.Provider): MixinBase() {
         if (viewModel == null) {
             viewModel = provider.createViewModel()
         }
+        @Suppress("unchecked_cast")
         return viewModel as T?
     }
 

@@ -16,10 +16,11 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.Playback
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
-import io.casey.musikcube.remote.service.websocket.Messages
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
@@ -141,7 +142,7 @@ class MainActivity : BaseActivity() {
 
         popup.inflate(menuId)
 
-        popup.setOnMenuItemClickListener { it ->
+        popup.setOnMenuItemClickListener {
             when(it.itemId) {
                 R.id.menu_switch_seamless -> togglePlaybackService(Playback.SwitchMode.Transfer)
                 R.id.menu_switch_copy -> togglePlaybackService(Playback.SwitchMode.Copy)
@@ -268,6 +269,11 @@ class MainActivity : BaseActivity() {
         repeatCb.setOnCheckedChangeListener(null)
     }
 
+    private val disableTabs
+        get() = prefs.getBoolean(
+            Prefs.Key.DISABLE_TABBED_BROWSING,
+            Prefs.Default.DISABLE_TABBED_BROWSING)
+
     private fun bindEventListeners() {
         mainLayout = findViewById(R.id.activity_main)
         metadataView = findViewById(R.id.main_metadata_view)
@@ -284,9 +290,11 @@ class MainActivity : BaseActivity() {
         totalTime = findViewById(R.id.total_time)
         seekbar = findViewById(R.id.seekbar)
 
-        findViewById<View>(R.id.button_prev).setOnClickListener { _: View -> playback.service.prev() }
+        findViewById<View>(R.id.button_prev).setOnClickListener {
+            playback.service.prev()
+        }
 
-        findViewById<View>(R.id.button_play_pause).setOnClickListener { _: View ->
+        findViewById<View>(R.id.button_play_pause).setOnClickListener {
             if (playback.service.state === PlaybackState.Stopped) {
                 playback.service.playAll()
             }
@@ -295,9 +303,13 @@ class MainActivity : BaseActivity() {
             }
         }
 
-        findViewById<View>(R.id.button_next).setOnClickListener { _: View -> playback.service.next() }
+        findViewById<View>(R.id.button_next).setOnClickListener {
+            playback.service.next()
+        }
 
-        disconnectedButton.setOnClickListener { _ -> data.wss.reconnect() }
+        disconnectedButton.setOnClickListener {
+            data.wss.reconnect()
+        }
 
         seekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -318,41 +330,52 @@ class MainActivity : BaseActivity() {
             }
         })
 
-        findViewById<View>(R.id.button_artists).setOnClickListener { _: View ->
-            startActivity(CategoryBrowseActivity
-                .getStartIntent(this, Messages.Category.ALBUM_ARTIST))
+        findViewById<View>(R.id.button_albums).setOnClickListener {
+            startActivity(when (disableTabs) {
+                true -> AlbumBrowseActivity.getStartIntent(this)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM)
+            })
         }
 
-        findViewById<View>(R.id.button_tracks).setOnClickListener { _: View ->
-            startActivity(TrackListActivity.getStartIntent(this@MainActivity))
+        findViewById<View>(R.id.button_artists).setOnClickListener {
+            startActivity(when (disableTabs) {
+                true -> CategoryBrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST)
+            })
         }
 
-        findViewById<View>(R.id.button_albums).setOnClickListener { _: View ->
-            startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity))
-        }
-
-        findViewById<View>(R.id.button_albums).setOnClickListener { _: View ->
-            startActivity(AlbumBrowseActivity.getStartIntent(this@MainActivity))
+        findViewById<View>(R.id.button_tracks).setOnClickListener {
+            startActivity(when (disableTabs) {
+                true -> TrackListActivity.getStartIntent(this)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.TRACKS)
+            })
         }
 
         findViewById<View>(R.id.button_playlists).setOnClickListener {
-            startActivity(CategoryBrowseActivity.getStartIntent(
-                this, Messages.Category.PLAYLISTS, NavigationType.Tracks))
+            startActivity(when (disableTabs) {
+                true -> CategoryBrowseActivity.getStartIntent(
+                    this, Metadata.Category.PLAYLISTS, NavigationType.Tracks)
+                false -> BrowseActivity.getStartIntent(this, Metadata.Category.PLAYLISTS)
+            })
         }
 
-        findViewById<View>(R.id.button_play_queue).setOnClickListener { _ -> navigateToPlayQueue() }
+        findViewById<View>(R.id.button_play_queue).setOnClickListener {
+            navigateToPlayQueue()
+        }
 
-        findViewById<View>(R.id.metadata_container).setOnClickListener { _ ->
+        findViewById<View>(R.id.metadata_container).setOnClickListener {
             if (playback.service.queueCount > 0) {
                 navigateToPlayQueue()
             }
         }
 
-        disconnectedOverlay.setOnClickListener { _ ->
+        disconnectedOverlay.setOnClickListener {
             /* swallow input so user can't click on things while disconnected */
         }
 
-        showOfflineButton.setOnClickListener { _ -> onOfflineTracksSelected() }
+        showOfflineButton.setOnClickListener {
+            onOfflineTracksSelected()
+        }
     }
 
     private fun rebindUi() {
@@ -520,7 +543,7 @@ class MainActivity : BaseActivity() {
     private fun runUpdateCheck() {
         if (!UpdateAvailableDialog.displayed) {
             updateCheck.run { required, version, url ->
-                if (!isPaused() && required) {
+                if (!paused && required) {
                     val suppressed = prefs.getString(Prefs.Key.UPDATE_DIALOG_SUPPRESSED_VERSION, "")
                     if (!UpdateAvailableDialog.displayed && suppressed != version) {
                         val tag = UpdateAvailableDialog.TAG
