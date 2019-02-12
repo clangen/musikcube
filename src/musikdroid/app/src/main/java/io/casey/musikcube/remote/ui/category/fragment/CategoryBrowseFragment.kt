@@ -139,10 +139,17 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
             return Category.toDisplayString(app, category)
         }
 
+    private val resolvedFilter: String
+        get() =
+            when (category) {
+                Metadata.Category.PLAYLISTS -> ""
+                else -> lastFilter ?: ""
+            }
+
     private fun requery() {
         @Suppress("UNUSED")
         data.provider
-            .getCategoryValues(category, predicateType, predicateId, lastFilter ?: "")
+            .getCategoryValues(category, predicateType, predicateId, resolvedFilter)
             .subscribeBy(
                 onNext = { values -> adapter.setModel(values) },
                 onError = { },
