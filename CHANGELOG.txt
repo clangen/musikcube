@@ -1,3 +1,24 @@
+0.63.0
+
+musikcube:
+* fixed a bug in `pulseout` where we were unable to recover from restarting the
+  `pulseaudio` daemon without restarting the app (or switching output plugins)
+* fixed bug where `opus` files with an `ogg` extension weren't being detected
+  propertly. added scaffolding for fixing this for other formats in the future.
+* fixed a Win32 file permission bug in `gmedecoder`
+* fixed FreeBSD user agent when performing update check
+* updated ru_RU translation (adem4ik)
+* fixed a missing sndio #include (Kistelini)
+
+musikdroid:
+* changed general music browse experience to be tab-based with with modern
+  scrolling behaviors. this results in fewer clicks to find music and more
+  screen real estate.
+* massive cleanup and refactor to old code, making it more modular and easier
+  to compose.
+
+--------------------------------------------------------------------------------
+
 0.62.2
 
 macOS only release.
