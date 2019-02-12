@@ -35,7 +35,7 @@ class EditPlaylistActivity: BaseActivity() {
         super.onCreate(savedInstanceState)
         playlistName = extras.getString(EXTRA_PLAYLIST_NAME, "-")
         title = getString(R.string.playlist_edit_activity, playlistName)
-        setContentView(R.layout.recycler_view_activity)
+        setContentView(R.layout.edit_playlist_activity)
         viewModel = getViewModel()!!
         viewModel.attach(data.provider)
         val recycler = findViewById<RecyclerView>(R.id.recycler_view)
@@ -126,19 +126,18 @@ class EditPlaylistActivity: BaseActivity() {
     }
 
     class ConfirmDiscardChangesDialog : BaseDialogFragment() {
-        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-            val editActivity = activity as EditPlaylistActivity
-
-            return AlertDialog.Builder(editActivity)
-                .setTitle(R.string.playlist_edit_save_changes_title)
-                .setMessage(R.string.playlist_edit_save_changes_message)
-                .setNegativeButton(R.string.button_discard) { _, _ -> editActivity.finish() }
-                .setPositiveButton(R.string.button_save) { _, _ -> editActivity.saveAndFinish() }
-                .create()
-        }
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
+            (activity as EditPlaylistActivity).run {
+                return AlertDialog.Builder(this)
+                    .setTitle(R.string.playlist_edit_save_changes_title)
+                    .setMessage(R.string.playlist_edit_save_changes_message)
+                    .setNegativeButton(R.string.button_discard) { _, _ -> this.finish() }
+                    .setPositiveButton(R.string.button_save) { _, _ -> this.saveAndFinish() }
+                    .create()
+            }
 
         companion object {
-            val TAG = "confirm_discard_playlist_changes"
+            const val TAG = "confirm_discard_playlist_changes"
 
             fun show(activity: AppCompatActivity) {
                 dismiss(activity, TAG)

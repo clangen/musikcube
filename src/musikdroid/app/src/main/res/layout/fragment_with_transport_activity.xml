@@ -5,15 +5,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <FrameLayout
+    <android.support.design.widget.CoordinatorLayout
         android:layout_weight="1"
         android:layout_width="match_parent"
         android:layout_height="0dp">
 
+        <include layout="@layout/toolbar" />
+
         <FrameLayout
             android:id="@+id/content_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/fab"
@@ -25,12 +28,13 @@
             android:scaleType="center"
             android:elevation="6dp"
             android:visibility="gone"
+            app:layout_anchor="@id/content_container"
             app:layout_anchorGravity="bottom|right"
             app:backgroundTint="@color/color_primary"
             app:fabSize="mini"
             app:rippleColor="?colorAccent"/>
 
-    </FrameLayout>
+    </android.support.design.widget.CoordinatorLayout>
 
     <FrameLayout
         android:id="@+id/transport_container"

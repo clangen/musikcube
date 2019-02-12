@@ -32,7 +32,7 @@ class RemoteEqActivity: BaseActivity() {
         title = getString(R.string.remote_settings_eq_title)
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_remote_eq)
+        setContentView(R.layout.remote_eq_activity)
         this.loadingOverlay = findViewById(R.id.loading_overlay)
         this.table = findViewById(R.id.eq_table)
         this.revertButton = findViewById(R.id.button_revert)

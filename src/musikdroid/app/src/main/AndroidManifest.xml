@@ -30,7 +30,8 @@
 
         <activity android:name=".ui.albums.activity.AlbumBrowseActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar" />
 
         <activity android:name=".ui.browse.activity.BrowseActivity"
             android:screenOrientation="portrait"
@@ -39,7 +40,8 @@
 
         <activity android:name=".ui.category.activity.CategoryBrowseActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar" />
 
         <activity android:name=".ui.settings.activity.SettingsActivity"
             android:screenOrientation="portrait"
@@ -47,11 +49,13 @@
 
         <activity android:name=".ui.playqueue.activity.PlayQueueActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar" />
 
         <activity android:name=".ui.tracks.activity.TrackListActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar" >
 
             <intent-filter>
                 <action android:name="android.intent.action.SEARCH" />
@@ -65,7 +69,8 @@
 
         <activity android:name=".ui.tracks.activity.EditPlaylistActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar" />
 
         <activity android:name=".ui.settings.activity.RemoteSettingsActivity"
             android:screenOrientation="portrait"
@@ -78,12 +83,14 @@
         <activity
             android:name=".ui.category.activity.AllCategoriesActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar" />
 
         <activity
             android:name=".ui.settings.activity.ConnectionsActivity"
             android:label="@string/connections_title"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/AppThemeNoActionBar" />
 
         <service
             android:name="io.casey.musikcube.remote.service.system.SystemService"

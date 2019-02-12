@@ -56,7 +56,7 @@ class SettingsActivity : BaseActivity() {
         component.inject(this)
         super.onCreate(savedInstanceState)
         prefs = this.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
-        setContentView(R.layout.activity_settings)
+        setContentView(R.layout.settings_activity)
         setTitle(R.string.settings_title)
         cacheViews()
         bindListeners()

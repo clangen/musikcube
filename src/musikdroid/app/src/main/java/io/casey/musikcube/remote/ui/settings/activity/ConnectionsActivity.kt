@@ -38,7 +38,7 @@ class ConnectionsActivity : BaseActivity() {
 
         super.onCreate(savedInstanceState)
         setResult(Activity.RESULT_CANCELED)
-        setContentView(R.layout.activity_connections)
+        setContentView(R.layout.connections_activity)
 
         enableUpNavigation()
 

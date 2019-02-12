@@ -43,7 +43,7 @@ class RemoteSettingsActivity: BaseActivity() {
 
         title = getString(R.string.remote_settings_title)
 
-        setContentView(R.layout.activity_remote_settings)
+        setContentView(R.layout.remote_settings_activity)
         loadingOverlay = findViewById(R.id.loading_overlay)
         driverSpinner = findViewById(R.id.output_driver_spinner)
         deviceSpinner = findViewById(R.id.output_device_spinner)

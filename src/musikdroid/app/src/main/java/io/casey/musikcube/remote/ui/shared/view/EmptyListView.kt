@@ -63,7 +63,7 @@ class EmptyListView : FrameLayout {
 
     fun update(state: WebSocketState, count: Int) { /* TODO REMOVE ME! */
         if (count > 0) {
-            visibility = View.GONE
+            visibility = View.INVISIBLE
         }
         else {
             visibility = View.VISIBLE
@@ -82,7 +82,7 @@ class EmptyListView : FrameLayout {
 
     fun update(state: IDataProvider.State, count: Int) {
         if (count > 0) {
-            visibility = View.GONE
+            visibility = View.INVISIBLE
         }
         else {
             visibility = View.VISIBLE
@@ -96,7 +96,7 @@ class EmptyListView : FrameLayout {
             emptyContainer?.setVisible(!showOfflineContainer)
         }
 
-        alternateView?.visibility = if (visibility == View.GONE) View.VISIBLE else View.GONE
+        alternateView?.visibility = if (visibility == View.INVISIBLE) View.VISIBLE else View.INVISIBLE
     }
 
     private fun initialize() {
