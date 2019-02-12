@@ -25,9 +25,6 @@ class TrackListActivity : FragmentActivityWithTransport(), IFilterable {
             false -> super.onOptionsItemSelected(item)
         }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) =
-        tracks.activityResult(requestCode, resultCode, data)
-
     override fun createContentFragment(): BaseFragment = TrackListFragment.create(intent)
 
     override val contentFragmentTag: String = TrackListFragment.TAG
