@@ -15,10 +15,7 @@ import io.casey.musikcube.remote.ui.albums.constant.Album
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
-import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.initToolbarIfNecessary
-import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
@@ -38,7 +35,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     private lateinit var emptyView: EmptyListView
 
     override val title: String
-        get() = app.getString(R.string.albums_title)
+        get() = getTitleOverride(app.getString(R.string.albums_title))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
@@ -66,7 +63,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
             emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
             emptyView.alternateView = recyclerView
 
-            initToolbarIfNecessary(this)
+            initToolbarIfNecessary(appCompatActivity, this)
         }
 
     override fun onResume() {

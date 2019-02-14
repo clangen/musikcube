@@ -28,7 +28,7 @@ class TransportFragment: BaseFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
     {
-        this.rootView = inflater.inflate(R.layout.fragment_transport, container, false)
+        this.rootView = inflater.inflate(R.layout.transport_fragment, container, false)
         bindEventHandlers()
         rebindUi()
         return this.rootView

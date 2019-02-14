@@ -5,9 +5,7 @@ import android.support.design.widget.FloatingActionButton
 import android.view.Menu
 import android.view.MenuItem
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
-import io.casey.musikcube.remote.ui.shared.extension.findFragment
-import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
@@ -91,6 +89,8 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
 
     private fun createFragments() {
         content = createContentFragment()
+            .withToolbar()
+            .withTitleOverride(this)
         transport = TransportFragment.create()
         supportFragmentManager
             .beginTransaction()

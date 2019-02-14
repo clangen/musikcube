@@ -105,7 +105,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             adapter = TrackListAdapter(tracks, eventListener, playback, prefs)
 
             setupDefaultRecyclerView(recyclerView, adapter)
-            initToolbarIfNecessary(this)
+            initToolbarIfNecessary(appCompatActivity, this, searchMenu = false)
 
             emptyView = findViewById(R.id.empty_list_view)
 
@@ -118,8 +118,27 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             tracks.setOnMetadataLoadedListener(slidingWindowListener)
         }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == Track.RequestCode.EDIT_PLAYLIST && resultCode == AppCompatActivity.RESULT_OK && data != null) {
+            val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
+            val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
+
+            if (categoryType != Metadata.Category.PLAYLISTS || playlistId != this.categoryId) {
+                showSnackbar(
+                    appCompatActivity.findViewById(android.R.id.content),
+                    getString(R.string.playlist_edit_save_success, playlistName),
+                    buttonText = getString(R.string.button_view),
+                    buttonCb = {
+                        startActivity(TrackListActivity.getStartIntent(
+                            appCompatActivity, Metadata.Category.PLAYLISTS, playlistId, playlistName))
+                    })
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
     override val title: String
-        get() = getString(titleId)
+        get() = getTitleOverride(getString(titleId))
 
     override fun setFilter(filter: String) {
         lastFilter = filter
@@ -147,25 +166,6 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             }
             else -> false
         }
-
-    fun activityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == Track.RequestCode.EDIT_PLAYLIST && resultCode == AppCompatActivity.RESULT_OK && data != null) {
-            val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
-            val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
-
-            if (categoryType != Metadata.Category.PLAYLISTS || playlistId != this.categoryId) {
-                showSnackbar(
-                    appCompatActivity.findViewById(android.R.id.content),
-                    getString(R.string.playlist_edit_save_success, playlistName),
-                    buttonText = getString(R.string.button_view),
-                    buttonCb = {
-                        startActivity(TrackListActivity.getStartIntent(
-                            appCompatActivity, Metadata.Category.PLAYLISTS, playlistId, playlistName))
-                    })
-            }
-        }
-        super.onActivityResult(requestCode, resultCode, data)
-    }
 
     override fun onTransportChanged() {
         adapter.notifyDataSetChanged()
@@ -282,7 +282,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             putString(Track.Extra.CATEGORY_VALUE, categoryValue)
             if (Strings.notEmpty(categoryValue)) {
                 putString(
-                    EXTRA_ACTIVITY_TITLE,
+                    EXTRA_TITLE_OVERRIDE,
                     context.getString(R.string.songs_from_category, categoryValue))
             }
         }

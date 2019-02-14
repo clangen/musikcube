@@ -30,20 +30,9 @@
             android:visibility="invisible"/>
 
         <android.support.design.widget.FloatingActionButton
+            style="@style/FAB"
             android:id="@+id/fab"
-            android:layout_gravity="bottom|right"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/fab_padding"
-            android:src="@drawable/ic_fab_add"
-            android:scaleType="center"
-            android:elevation="6dp"
-            android:visibility="gone"
-            app:layout_anchor="@id/recycler_view"
-            app:layout_anchorGravity="bottom|right"
-            app:backgroundTint="@color/color_primary"
-            app:fabSize="mini"
-            app:rippleColor="?colorAccent"/>
+            app:layout_anchor="@id/recycler_view" />
 
     </android.support.design.widget.CoordinatorLayout>
 

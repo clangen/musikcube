@@ -87,4 +87,26 @@
         <item name="android:shadowRadius">3</item>
     </style>
 
+    <style name="FAB">
+        <item name="android:layout_gravity">bottom|right</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_margin">@dimen/fab_padding</item>
+        <item name="android:src">@drawable/ic_fab_add</item>
+        <item name="android:scaleType">center</item>
+        <item name="android:elevation">6dp</item>
+        <item name="android:visibility">gone</item>
+        <item name="layout_anchorGravity">bottom|right</item>
+        <item name="backgroundTint">@color/color_primary</item>
+        <item name="fabSize">mini</item>
+        <item name="rippleColor">?colorAccent</item>
+    </style>
+
+    <style name="RecyclerView">
+        <item name="fastScrollAutoHide">true</item>
+        <item name="fastScrollAutoHideDelay">1500</item>
+        <item name="fastScrollThumbInactiveColor">@color/color_primary_dark</item>
+        <item name="fastScrollThumbColor">@color/color_accent</item>
+    </style>
+
 </resources>

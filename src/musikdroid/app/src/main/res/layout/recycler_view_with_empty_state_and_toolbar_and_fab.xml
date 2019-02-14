@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_weight="1"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent">
+
+    <include layout="@layout/toolbar" />
+
+    <FrameLayout
+        android:id="@+id/content_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
+            style="@style/RecyclerView"
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <io.casey.musikcube.remote.ui.shared.view.EmptyListView
+            android:id="@+id/empty_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="invisible" />
+
+    </FrameLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        style="@style/FAB"
+        android:id="@+id/fab"
+        app:layout_anchor="@id/content_container" />
+
+</android.support.design.widget.CoordinatorLayout>

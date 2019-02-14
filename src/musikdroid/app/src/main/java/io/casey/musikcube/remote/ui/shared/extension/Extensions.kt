@@ -30,7 +30,7 @@ import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
 
-const val EXTRA_ACTIVITY_TITLE = "extra_title"
+const val EXTRA_TITLE_OVERRIDE = "extra_title_override"
 const val EXTRA_WITH_TOOLBAR = "extra_with_toolbar"
 const val EXTRA_WITH_FRAGMENT_TOOLBAR = "extra_with_fragment_toolbar"
 
@@ -94,8 +94,16 @@ fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
     this.setTitleFromIntent(getString(defaultId))
 
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
-    val title = this.intent.getStringExtra(EXTRA_ACTIVITY_TITLE)
+    val title = this.intent.getStringExtra(EXTRA_TITLE_OVERRIDE)
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
+}
+
+fun BaseFragment.getTitleOverride(defaultId: Int): String =
+    this.getTitleOverride(getString(defaultId))
+
+fun BaseFragment.getTitleOverride(defaultTitle: String): String {
+    val title = this.extras.getString(EXTRA_TITLE_OVERRIDE) ?: ""
+    return if (Strings.notEmpty(title)) title else defaultTitle
 }
 
 fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean {
@@ -134,12 +142,12 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Bool
 fun Fragment.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean =
     (activity as AppCompatActivity).initSearchMenu(menu, filterable)
 
-fun Toolbar.initSearchMenu(filterable: IFilterable?): Boolean =
-    (context as AppCompatActivity).initSearchMenu(this.menu, filterable)
+fun Toolbar.initSearchMenu(activity: AppCompatActivity, filterable: IFilterable?): Boolean =
+    activity.initSearchMenu(this.menu, filterable)
 
 fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
-    val title = extras.getString(EXTRA_ACTIVITY_TITLE)
+    val title = extras.getString(EXTRA_TITLE_OVERRIDE)
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
 }
 
@@ -295,11 +303,26 @@ inline fun <reified T: BaseFragment> T.withToolbar(): T {
     return this
 }
 
-fun BaseFragment.initToolbarIfNecessary(view: View) {
+inline fun <reified T: BaseFragment> T.withTitleOverride(activity: AppCompatActivity): T {
+    activity.intent?.getStringExtra(EXTRA_TITLE_OVERRIDE)?.let {
+        if (it.isNotEmpty()) {
+            if (this.arguments == null) {
+                this.arguments = Bundle()
+            }
+            this.extras.putString(EXTRA_TITLE_OVERRIDE, it)
+        }
+    }
+    return this
+}
+
+
+fun BaseFragment.initToolbarIfNecessary(activity: AppCompatActivity, view: View, searchMenu: Boolean = true) {
     view.findViewById<Toolbar>(R.id.toolbar)?.let {
         it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
         it.setNavigationOnClickListener { appCompatActivity.finish() }
-        it.initSearchMenu(this as? IFilterable)
+        if (searchMenu) {
+            it.initSearchMenu(activity, this as? IFilterable)
+        }
         if (this is IMenuProvider) {
             this.createOptionsMenu(it.menu)
             it.setOnMenuItemClickListener {
@@ -311,8 +334,8 @@ fun BaseFragment.initToolbarIfNecessary(view: View) {
 
 fun BaseFragment.getLayoutId(): Int =
     when (this.extras.getBoolean(EXTRA_WITH_TOOLBAR)) {
-        true -> R.layout.recycler_view_activity
-        else -> R.layout.recycler_view_fragment
+        true -> R.layout.recycler_view_with_empty_state_and_toolbar_and_fab
+        else -> R.layout.recycler_view_with_empty_state
     }
 
 fun Intent.withFragmentToolbar(): Intent {

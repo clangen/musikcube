@@ -47,9 +47,9 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     override val title: String
         get() {
             Category.NAME_TO_TITLE[category]?.let {
-                return getString(it)
+                return getTitleOverride(getString(it))
             }
-            return Category.toDisplayString(app, category)
+            return getTitleOverride(Category.toDisplayString(app, category))
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,7 +82,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
             emptyView.alternateView = recyclerView
 
             setupDefaultRecyclerView(recyclerView, adapter)
-            initToolbarIfNecessary(this)
+            initToolbarIfNecessary(appCompatActivity, this)
         }
 
     override fun onFabPress(fab: FloatingActionButton) {
@@ -187,10 +187,10 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     }
 
     private fun navigateToAlbums(entry: ICategoryValue) =
-            startActivity(AlbumBrowseActivity.getStartIntent(appCompatActivity, category, entry))
+        startActivity(AlbumBrowseActivity.getStartIntent(appCompatActivity, category, entry))
 
     private fun navigateToTracks(entry: ICategoryValue) =
-            startActivity(TrackListActivity.getStartIntent(appCompatActivity, category, entry.id, entry.value))
+        startActivity(TrackListActivity.getStartIntent(appCompatActivity, category, entry.id, entry.value))
 
     private fun navigateToSelect(id: Long, name: String) =
         appCompatActivity.run {
@@ -230,7 +230,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                     val format = Category.NAME_TO_RELATED_TITLE[category]
                     when (format) {
                         null -> throw IllegalArgumentException("unknown category $category")
-                        else -> putString(EXTRA_ACTIVITY_TITLE, context.getString(format, predicateValue))
+                        else -> putString(EXTRA_TITLE_OVERRIDE, context.getString(format, predicateValue))
                     }
                 }
             }
