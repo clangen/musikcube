@@ -17,6 +17,7 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
+import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -285,7 +286,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             putString(Track.Extra.CATEGORY_VALUE, categoryValue)
             if (Strings.notEmpty(categoryValue)) {
                 putString(
-                    EXTRA_TITLE_OVERRIDE,
+                    Shared.Extra.TITLE_OVERRIDE,
                     context.getString(R.string.songs_from_category, categoryValue))
             }
         }

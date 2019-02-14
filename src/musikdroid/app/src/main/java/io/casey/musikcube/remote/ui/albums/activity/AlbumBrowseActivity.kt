@@ -9,7 +9,7 @@ import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.ui.albums.constant.Album
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
-import io.casey.musikcube.remote.ui.shared.extension.EXTRA_TITLE_OVERRIDE
+import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.util.Strings
 
@@ -42,7 +42,7 @@ class AlbumBrowseActivity: FragmentActivityWithTransport() {
         fun getStartIntent(context: Context, categoryName: String, categoryId: Long, categoryValue: String): Intent =
             getStartIntent(context, categoryName, categoryId).apply {
                 if (Strings.notEmpty(categoryValue)) {
-                    putExtra(EXTRA_TITLE_OVERRIDE, context.getString(R.string.albums_by_title, categoryValue))
+                    putExtra(Shared.Extra.TITLE_OVERRIDE, context.getString(R.string.albums_by_title, categoryValue))
                 }
             }
 

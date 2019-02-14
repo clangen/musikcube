@@ -24,6 +24,7 @@ import io.casey.musikcube.remote.ui.shared.activity.IFabConsumer
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
+import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -255,7 +256,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                     val format = Category.NAME_TO_RELATED_TITLE[category]
                     when (format) {
                         null -> throw IllegalArgumentException("unknown category $category")
-                        else -> putString(EXTRA_TITLE_OVERRIDE, context.getString(format, predicateValue))
+                        else -> putString(Shared.Extra.TITLE_OVERRIDE, context.getString(format, predicateValue))
                     }
                 }
             }

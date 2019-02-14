@@ -2,7 +2,6 @@ package io.casey.musikcube.remote.ui.shared.extension
 
 import android.app.SearchManager
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -23,21 +22,49 @@ import android.widget.EditText
 import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
+import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
 
-const val EXTRA_TITLE_OVERRIDE = "extra_title_override"
-const val EXTRA_WITH_TOOLBAR = "extra_with_toolbar"
-const val EXTRA_PUSH_CONTAINER_ID = "extra_push_container_id"
-const val EXTRA_ELEVATION = "extra_elevation"
+/*
+ *
+ * SharedPreferences
+ *
+ */
+
+fun SharedPreferences.getString(key: String): String? =
+    when (!this.contains(key)) {
+        true -> null
+        else -> this.getString(key, "")
+    }
+
+/*
+ *
+ * Toolbar
+ *
+ */
+
+fun Toolbar.initSearchMenu(activity: AppCompatActivity, filterable: IFilterable?): Boolean =
+        activity.initSearchMenu(this.menu, filterable)
+
+fun Toolbar.setTitleFromIntent(defaultTitle: String) {
+    val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
+    val title = extras.getString(Shared.Extra.TITLE_OVERRIDE)
+    this.title = if (Strings.notEmpty(title)) title else defaultTitle
+}
+
+/*
+ *
+ * AppCompatActivity
+ *
+ */
 
 fun AppCompatActivity.setupDefaultRecyclerView(
-    recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
+        recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
 {
     val layoutManager = LinearLayoutManager(this)
     val dividerItemDecoration = DividerItemDecoration(this, layoutManager.orientation)
@@ -46,23 +73,6 @@ fun AppCompatActivity.setupDefaultRecyclerView(
     recyclerView.addItemDecoration(dividerItemDecoration)
 }
 
-fun BaseFragment.setupDefaultRecyclerView(
-    recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
-{
-    this.appCompatActivity.setupDefaultRecyclerView(recyclerView, adapter)
-}
-
-fun RecyclerView.ViewHolder.getColorCompat(resourceId: Int): Int =
-    ContextCompat.getColor(itemView.context, resourceId)
-
-fun View.getColorCompat(resourceId: Int): Int =
-    ContextCompat.getColor(context, resourceId)
-
-fun Fragment.getColorCompat(resourceId: Int): Int =
-    ContextCompat.getColor(activity!!, resourceId)
-
-fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
-    ContextCompat.getColor(this, resourceId)
 
 val AppCompatActivity.toolbar: Toolbar?
     get() = findViewById(R.id.toolbar)
@@ -81,9 +91,9 @@ fun AppCompatActivity.addTransportFragment(
             val fragment = TransportFragment.create()
 
             this.supportFragmentManager
-                .beginTransaction()
-                .add(R.id.transport_container, fragment, TransportFragment.TAG)
-                .commit()
+                    .beginTransaction()
+                    .add(R.id.transport_container, fragment, TransportFragment.TAG)
+                    .commit()
 
             fragment.modelChangedListener = listener
             return fragment
@@ -93,19 +103,11 @@ fun AppCompatActivity.addTransportFragment(
 }
 
 fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
-    this.setTitleFromIntent(getString(defaultId))
+        this.setTitleFromIntent(getString(defaultId))
 
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
-    val title = this.intent.getStringExtra(EXTRA_TITLE_OVERRIDE)
+    val title = this.intent.getStringExtra(Shared.Extra.TITLE_OVERRIDE)
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
-}
-
-fun BaseFragment.getTitleOverride(defaultId: Int): String =
-    this.getTitleOverride(getString(defaultId))
-
-fun BaseFragment.getTitleOverride(defaultTitle: String): String {
-    val title = this.extras.getString(EXTRA_TITLE_OVERRIDE) ?: ""
-    return if (Strings.notEmpty(title)) title else defaultTitle
 }
 
 fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean {
@@ -141,64 +143,136 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Bool
     return true
 }
 
-fun Fragment.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean =
-    (activity as AppCompatActivity).initSearchMenu(menu, filterable)
-
-fun Toolbar.initSearchMenu(activity: AppCompatActivity, filterable: IFilterable?): Boolean =
-    activity.initSearchMenu(this.menu, filterable)
-
-fun Toolbar.setTitleFromIntent(defaultTitle: String) {
-    val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
-    val title = extras.getString(EXTRA_TITLE_OVERRIDE)
-    this.title = if (Strings.notEmpty(title)) title else defaultTitle
-}
-
-fun CheckBox.setCheckWithoutEvent(checked: Boolean,
-                                  listener: (CompoundButton, Boolean) -> Unit) {
-    this.setOnCheckedChangeListener(null)
-    this.isChecked = checked
-    this.setOnCheckedChangeListener(listener)
-}
-
-fun EditText.setTextAndMoveCursorToEnd(text: String) {
-    this.setText(text)
-    this.setSelection(this.text.length)
-}
-
-fun View.setVisible(visible: Boolean) {
-    this.visibility = if (visible) View.VISIBLE else View.GONE
-}
-
 fun AppCompatActivity.dpToPx(dp: Float): Float = dp * this.resources.displayMetrics.density
 
-fun showKeyboard(context: Context) {
-    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
-}
-
-fun hideKeyboard(context: Context, view: View) {
-    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    imm.hideSoftInputFromWindow(view.windowToken, 0)
-}
-
-fun AppCompatActivity.showKeyboard() = showKeyboard(this)
-
-fun AppCompatActivity.hideKeyboard(view: View? = null) {
-    val v = view ?: this.findViewById(android.R.id.content)
-    hideKeyboard(this, v)
-}
-
-fun DialogFragment.showKeyboard() = showKeyboard(activity!!)
-
-fun DialogFragment.hideKeyboard() =
-    hideKeyboard(activity!!, activity!!.findViewById(android.R.id.content))
 
 fun AppCompatActivity.dialogVisible(tag: String): Boolean =
-    this.supportFragmentManager.findFragmentByTag(tag) != null
+        this.supportFragmentManager.findFragmentByTag(tag) != null
 
 fun AppCompatActivity.showDialog(dialog: DialogFragment, tag: String) {
     dialog.show(this.supportFragmentManager, tag)
 }
+
+fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+
+fun AppCompatActivity.slideThisDown() = overridePendingTransition(R.anim.stay_put, R.anim.slide_down)
+
+fun AppCompatActivity.slideNextLeft() = overridePendingTransition(R.anim.slide_left, R.anim.slide_left_bg)
+
+fun AppCompatActivity.slideThisRight() = overridePendingTransition(R.anim.slide_right_bg, R.anim.slide_right)
+
+inline fun <reified T> AppCompatActivity.findFragment(tag: String): T {
+    return this.supportFragmentManager.find(tag)
+}
+
+/*
+ *
+ * Bundle
+ *
+ */
+
+fun Bundle.withElevation(fm: FragmentManager): Bundle {
+    this.putFloat(Shared.Extra.ELEVATION, (fm.backStackEntryCount + 1) * 16.0f)
+    return this
+}
+
+val Bundle.elevation: Float
+    get() = this.getFloat(Shared.Extra.ELEVATION, 0.0f)
+
+/*
+ *
+ * BaseFragment
+ *
+ */
+
+val BaseFragment.pushContainerId: Int
+    get() = this.extras.getInt(Shared.Extra.PUSH_CONTAINER_ID, -1)
+
+inline fun <reified T: BaseFragment> T.pushTo(containerId: Int): T {
+    this.extras.putInt(Shared.Extra.PUSH_CONTAINER_ID, containerId)
+    return this
+}
+
+fun BaseFragment.pushWithToolbar(containerId: Int, backstackId: String, fragment: BaseFragment) {
+    appCompatActivity.supportFragmentManager
+        .beginTransaction()
+        .setCustomAnimations(
+            R.anim.slide_left, R.anim.slide_left_bg,
+            R.anim.slide_right_bg, R.anim.slide_right)
+        .replace(
+            containerId,
+            fragment
+                .withToolbar()
+                .addElevation(appCompatActivity.supportFragmentManager))
+        .addToBackStack(backstackId)
+        .commit()
+}
+
+inline fun <reified T: BaseFragment> T.withToolbar(): T {
+    this.arguments?.putBoolean(Shared.Extra.WITH_TOOLBAR, true)
+    return this
+}
+
+inline fun <reified T: BaseFragment> T.withTitleOverride(activity: AppCompatActivity): T {
+    activity.intent?.getStringExtra(Shared.Extra.TITLE_OVERRIDE)?.let {
+        if (it.isNotEmpty()) {
+            this.extras.putString(Shared.Extra.TITLE_OVERRIDE, it)
+        }
+    }
+    return this
+}
+
+fun BaseFragment.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean =
+    (activity as AppCompatActivity).initSearchMenu(menu, filterable)
+
+fun BaseFragment.initToolbarIfNecessary(activity: AppCompatActivity, view: View, searchMenu: Boolean = true) {
+    view.findViewById<Toolbar>(R.id.toolbar)?.let {
+        it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
+        it.setNavigationOnClickListener {
+            appCompatActivity.onBackPressed()
+        }
+        if (searchMenu) {
+            it.initSearchMenu(activity, this as? IFilterable)
+        }
+        if (this is IMenuProvider) {
+            this.createOptionsMenu(it.menu)
+            it.setOnMenuItemClickListener {
+                menuItem -> this.optionsItemSelected(menuItem)
+            }
+        }
+    }
+}
+
+fun BaseFragment.getLayoutId(): Int =
+    when (this.extras.getBoolean(Shared.Extra.WITH_TOOLBAR)) {
+        true -> R.layout.recycler_view_with_empty_state_and_toolbar_and_fab
+        else -> R.layout.recycler_view_with_empty_state
+    }
+
+inline fun <reified T: BaseFragment> T.addElevation(fm: FragmentManager): T {
+    this.extras.withElevation(fm)
+    return this
+}
+
+fun BaseFragment.setupDefaultRecyclerView(
+        recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
+{
+    this.appCompatActivity.setupDefaultRecyclerView(recyclerView, adapter)
+}
+
+fun BaseFragment.getTitleOverride(defaultId: Int): String =
+        this.getTitleOverride(getString(defaultId))
+
+fun BaseFragment.getTitleOverride(defaultTitle: String): String {
+    val title = this.extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
+    return if (Strings.notEmpty(title)) title else defaultTitle
+}
+
+/*
+ *
+ * Snackbar
+ *
+ */
 
 fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) {
     val sb = Snackbar.make(view, text, Snackbar.LENGTH_LONG)
@@ -237,24 +311,89 @@ fun AppCompatActivity.showSnackbar(stringId: Int, buttonText: String? = null, bu
     showSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
 
 fun AppCompatActivity.showSnackbar(stringId: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-        showSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
+    showSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
 
 fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
     showSnackbar(this.findViewById<View>(viewId), stringId, buttonText, buttonCb)
 
-fun fallback(input: String?, fallback: String): String =
-    if (input.isNullOrEmpty()) fallback else input
+/*
+ *
+ * View 1-offs
+ *
+ */
 
-fun fallback(input: String?, fallback: Int): String =
-    if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input
+fun CheckBox.setCheckWithoutEvent(checked: Boolean,
+                                  listener: (CompoundButton, Boolean) -> Unit) {
+    this.setOnCheckedChangeListener(null)
+    this.isChecked = checked
+    this.setOnCheckedChangeListener(listener)
+}
 
-fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+fun EditText.setTextAndMoveCursorToEnd(text: String) {
+    this.setText(text)
+    this.setSelection(this.text.length)
+}
 
-fun AppCompatActivity.slideThisDown() = overridePendingTransition(R.anim.stay_put, R.anim.slide_down)
+fun View.setVisible(visible: Boolean) {
+    this.visibility = if (visible) View.VISIBLE else View.GONE
+}
 
-fun AppCompatActivity.slideNextLeft() = overridePendingTransition(R.anim.slide_left, R.anim.slide_left_bg)
+inline fun <reified T> FragmentManager.find(tag: String): T {
+    return findFragmentByTag(tag) as T
+}
 
-fun AppCompatActivity.slideThisRight() = overridePendingTransition(R.anim.slide_right_bg, R.anim.slide_right)
+/*
+ *
+ * Colors
+ *
+ */
+
+fun RecyclerView.ViewHolder.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(itemView.context, resourceId)
+
+fun View.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(context, resourceId)
+
+fun Fragment.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(activity!!, resourceId)
+
+fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
+    ContextCompat.getColor(this, resourceId)
+
+/*
+ *
+ * Keyboard
+ *
+ */
+
+fun showKeyboard(context: Context) {
+    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+}
+
+fun hideKeyboard(context: Context, view: View) {
+    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.hideSoftInputFromWindow(view.windowToken, 0)
+}
+
+fun AppCompatActivity.showKeyboard() = showKeyboard(this)
+
+fun AppCompatActivity.hideKeyboard(view: View? = null) {
+    val v = view ?: this.findViewById(android.R.id.content)
+    hideKeyboard(this, v)
+}
+
+fun DialogFragment.showKeyboard() =
+    showKeyboard(activity!!)
+
+fun DialogFragment.hideKeyboard() =
+    hideKeyboard(activity!!, activity!!.findViewById(android.R.id.content))
+
+/*
+ *
+ * misc
+ *
+ */
 
 fun <T1: Any, T2: Any, R: Any> letMany(p1: T1?, p2: T2?, block: (T1, T2) -> R?): R? {
     return if (p1 != null && p2 != null) block(p1, p2) else null
@@ -273,8 +412,8 @@ fun <T1: Any, T2: Any, T3: Any, T4: Any, T5: Any, R: Any> letMany(p1: T1?, p2: T
 
 fun titleEllipsizeMode(prefs: SharedPreferences): TextUtils.TruncateAt {
     val modeIndex = prefs.getInt(
-            Prefs.Key.TITLE_ELLIPSIS_MODE_INDEX,
-            Prefs.Default.TITLE_ELLIPSIS_SIZE_INDEX)
+        Prefs.Key.TITLE_ELLIPSIS_MODE_INDEX,
+        Prefs.Default.TITLE_ELLIPSIS_SIZE_INDEX)
 
     return when(modeIndex) {
         0 -> TextUtils.TruncateAt.START
@@ -283,103 +422,8 @@ fun titleEllipsizeMode(prefs: SharedPreferences): TextUtils.TruncateAt {
     }
 }
 
-fun SharedPreferences.getString(key: String): String? =
-    when (!this.contains(key)) {
-        true -> null
-        else -> this.getString(key, "")
-    }
+fun fallback(input: String?, fallback: String): String =
+    if (input.isNullOrEmpty()) fallback else input
 
-inline fun <reified T> FragmentManager.find(tag: String): T {
-    return findFragmentByTag(tag) as T
-}
-
-inline fun <reified T> AppCompatActivity.findFragment(tag: String): T {
-    return this.supportFragmentManager.find(tag)
-}
-
-inline fun <reified T: BaseFragment> T.withToolbar(): T {
-    if (this.arguments == null) {
-        this.arguments = Bundle()
-    }
-    this.arguments?.putBoolean(EXTRA_WITH_TOOLBAR, true)
-    return this
-}
-
-inline fun <reified T: BaseFragment> T.withTitleOverride(activity: AppCompatActivity): T {
-    activity.intent?.getStringExtra(EXTRA_TITLE_OVERRIDE)?.let {
-        if (it.isNotEmpty()) {
-            if (this.arguments == null) {
-                this.arguments = Bundle()
-            }
-            this.extras.putString(EXTRA_TITLE_OVERRIDE, it)
-        }
-    }
-    return this
-}
-
-
-fun BaseFragment.initToolbarIfNecessary(activity: AppCompatActivity, view: View, searchMenu: Boolean = true) {
-    view.findViewById<Toolbar>(R.id.toolbar)?.let {
-        it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
-        it.setNavigationOnClickListener {
-            appCompatActivity.onBackPressed()
-        }
-        if (searchMenu) {
-            it.initSearchMenu(activity, this as? IFilterable)
-        }
-        if (this is IMenuProvider) {
-            this.createOptionsMenu(it.menu)
-            it.setOnMenuItemClickListener {
-                menuItem -> this.optionsItemSelected(menuItem)
-            }
-        }
-    }
-}
-
-fun BaseFragment.getLayoutId(): Int =
-    when (this.extras.getBoolean(EXTRA_WITH_TOOLBAR)) {
-        true -> R.layout.recycler_view_with_empty_state_and_toolbar_and_fab
-        else -> R.layout.recycler_view_with_empty_state
-    }
-
-inline fun <reified T: BaseFragment> T.addElevation(fm: FragmentManager): T {
-    if (this.arguments == null) {
-        this.arguments = Bundle()
-    }
-    this.extras.withElevation(fm)
-    return this
-}
-
-inline fun <reified T: BaseFragment> T.pushTo(containerId: Int): T {
-    if (this.arguments == null) {
-        this.arguments = Bundle()
-    }
-    this.extras.putInt(EXTRA_PUSH_CONTAINER_ID, containerId)
-    return this
-}
-
-fun Bundle.withElevation(fm: FragmentManager): Bundle {
-    this.putFloat(EXTRA_ELEVATION, (fm.backStackEntryCount + 1) * 16.0f)
-    return this
-}
-
-val Bundle.elevation: Float
-    get() = this.getFloat(EXTRA_ELEVATION, 0.0f)
-
-val BaseFragment.pushContainerId: Int
-    get() = this.extras.getInt(EXTRA_PUSH_CONTAINER_ID, -1)
-
-fun BaseFragment.pushWithToolbar(containerId: Int, backstackId: String, fragment: BaseFragment) {
-    appCompatActivity.supportFragmentManager
-        .beginTransaction()
-        .setCustomAnimations(
-            R.anim.slide_left, R.anim.slide_left_bg,
-            R.anim.slide_right_bg, R.anim.slide_right)
-        .replace(
-            containerId,
-            fragment
-                .withToolbar()
-                .addElevation(appCompatActivity.supportFragmentManager))
-        .addToBackStack(backstackId)
-        .commit()
-}
+fun fallback(input: String?, fallback: Int): String =
+    if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input

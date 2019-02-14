@@ -125,7 +125,12 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
         get() = this.view?.findViewById(R.id.toolbar)
 
     val extras: Bundle
-        get() = arguments ?: Bundle()
+        get() {
+            if (arguments == null) {
+                arguments = Bundle()
+            }
+            return arguments!!
+        }
 
     val appCompatActivity: AppCompatActivity
         get() = activity as AppCompatActivity
