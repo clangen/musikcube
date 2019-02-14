@@ -22,9 +22,7 @@ import io.casey.musikcube.remote.ui.shared.activity.IFabConsumer
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
-import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
@@ -73,7 +71,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.recycler_view_fragment, container, false).apply {
+        inflater.inflate(this.getLayoutId(), container, false).apply {
             this@CategoryBrowseFragment.rootView = this
 
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
@@ -84,6 +82,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
             emptyView.alternateView = recyclerView
 
             setupDefaultRecyclerView(recyclerView, adapter)
+            initToolbarIfNecessary(this)
         }
 
     override fun onFabPress(fab: FloatingActionButton) {

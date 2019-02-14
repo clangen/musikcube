@@ -13,12 +13,10 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
+import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
-import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
-import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
@@ -35,7 +33,7 @@ import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 
-class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver {
+class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver, IMenuProvider {
     private lateinit var tracks: DefaultSlidingWindow
     private lateinit var emptyView: EmptyListView
     private lateinit var adapter: TrackListAdapter
@@ -100,13 +98,14 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             }))
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.recycler_view_fragment, container, false).apply {
+        inflater.inflate(this.getLayoutId(), container, false).apply {
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
 
             tracks = DefaultSlidingWindow(recyclerView, data.provider, queryFactory)
             adapter = TrackListAdapter(tracks, eventListener, playback, prefs)
 
             setupDefaultRecyclerView(recyclerView, adapter)
+            initToolbarIfNecessary(this)
 
             emptyView = findViewById(R.id.empty_list_view)
 
@@ -127,7 +126,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         filterDebouncer.call()
     }
 
-    fun createOptionsMenu(menu: Menu): Boolean {
+    override fun createOptionsMenu(menu: Menu): Boolean {
         when (Metadata.Category.PLAYLISTS == categoryType) {
             true -> appCompatActivity.menuInflater.inflate(R.menu.view_playlist_menu, menu)
             false -> initSearchMenu(menu, this)
@@ -135,8 +134,8 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         return true
     }
 
-    fun optionsItemSelected(item: MenuItem): Boolean =
-        when (item.itemId == R.id.action_edit) {
+    override fun optionsItemSelected(menuItem: MenuItem): Boolean =
+        when (menuItem.itemId == R.id.action_edit) {
             true -> {
                 appCompatActivity.startActivityForResult(
                     EditPlaylistActivity.getStartIntent(

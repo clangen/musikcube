@@ -7,13 +7,17 @@ import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.Toolbar
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.IMixin
 import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.ViewComponent
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
+import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
+import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
 
@@ -51,6 +55,9 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
         super.onResume()
         paused = false
         mixins.onResume()
+        if (this is ITitleProvider) {
+            toolbar?.setTitleFromIntent(title)
+        }
     }
 
     override fun onPause() {
@@ -86,7 +93,13 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
     protected fun <T: IMixin> mixin(mixin: T): T = mixins.add(mixin)
     protected fun <T: IMixin> mixin(cls: Class<out T>): T? = mixins.get(cls)
 
-    protected val extras: Bundle
+    val hasToolbar: Boolean
+        get() = this.toolbar != null
+
+    val toolbar: Toolbar?
+        get() = this.view?.findViewById(R.id.toolbar)
+
+    val extras: Bundle
         get() = arguments ?: Bundle()
 
     val appCompatActivity: AppCompatActivity

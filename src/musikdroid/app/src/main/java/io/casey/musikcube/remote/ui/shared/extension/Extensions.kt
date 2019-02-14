@@ -2,7 +2,9 @@ package io.casey.musikcube.remote.ui.shared.extension
 
 import android.app.SearchManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
 import android.support.v4.app.Fragment
@@ -23,11 +25,14 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
+import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.util.Strings
 
 const val EXTRA_ACTIVITY_TITLE = "extra_title"
+const val EXTRA_WITH_TOOLBAR = "extra_with_toolbar"
+const val EXTRA_WITH_FRAGMENT_TOOLBAR = "extra_with_fragment_toolbar"
 
 fun AppCompatActivity.setupDefaultRecyclerView(
     recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
@@ -128,6 +133,15 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Bool
 
 fun Fragment.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean =
     (activity as AppCompatActivity).initSearchMenu(menu, filterable)
+
+fun Toolbar.initSearchMenu(filterable: IFilterable?): Boolean =
+    (context as AppCompatActivity).initSearchMenu(this.menu, filterable)
+
+fun Toolbar.setTitleFromIntent(defaultTitle: String) {
+    val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
+    val title = extras.getString(EXTRA_ACTIVITY_TITLE)
+    this.title = if (Strings.notEmpty(title)) title else defaultTitle
+}
 
 fun CheckBox.setCheckWithoutEvent(checked: Boolean,
                                   listener: (CompoundButton, Boolean) -> Unit) {
@@ -271,4 +285,41 @@ inline fun <reified T> FragmentManager.find(tag: String): T {
 
 inline fun <reified T> AppCompatActivity.findFragment(tag: String): T {
     return this.supportFragmentManager.find(tag)
+}
+
+inline fun <reified T: BaseFragment> T.withToolbar(): T {
+    if (this.arguments == null) {
+        this.arguments = Bundle()
+    }
+    this.arguments?.putBoolean(EXTRA_WITH_TOOLBAR, true)
+    return this
+}
+
+fun BaseFragment.initToolbarIfNecessary(view: View) {
+    view.findViewById<Toolbar>(R.id.toolbar)?.let {
+        it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
+        it.setNavigationOnClickListener { appCompatActivity.finish() }
+        it.initSearchMenu(this as? IFilterable)
+        if (this is IMenuProvider) {
+            this.createOptionsMenu(it.menu)
+            it.setOnMenuItemClickListener {
+                menuItem -> this.optionsItemSelected(menuItem)
+            }
+        }
+    }
+}
+
+fun BaseFragment.getLayoutId(): Int =
+    when (this.extras.getBoolean(EXTRA_WITH_TOOLBAR)) {
+        true -> R.layout.recycler_view_activity
+        else -> R.layout.recycler_view_fragment
+    }
+
+fun Intent.withFragmentToolbar(): Intent {
+    this.putExtra(EXTRA_WITH_FRAGMENT_TOOLBAR, true)
+    return this
+}
+
+fun Intent?.hasFragmentToolbar(): Boolean {
+    return this?.getBooleanExtra(EXTRA_WITH_FRAGMENT_TOOLBAR, false) ?: false
 }

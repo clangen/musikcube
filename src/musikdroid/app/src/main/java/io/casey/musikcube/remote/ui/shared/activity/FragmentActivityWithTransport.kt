@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.ui.shared.activity
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.view.Menu
+import android.view.MenuItem
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
 import io.casey.musikcube.remote.ui.shared.extension.findFragment
@@ -49,15 +50,32 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
 
     override fun onResume() {
         super.onResume()
-        (content as? ITitleProvider)?.run {
-            setTitleFromIntent(this.title)
+        if (!content.hasToolbar) {
+            (content as? ITitleProvider)?.run {
+                setTitleFromIntent(this.title)
+            }
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean =
-        (content as? IMenuProvider)?.run {
-            return this.createOptionsMenu(menu)
-        } ?: false
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        if (!content.hasToolbar) {
+            (content as? IMenuProvider)?.run {
+                return this.createOptionsMenu(menu)
+            }
+        }
+        return false
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (!content.hasToolbar) {
+            (content as? IMenuProvider)?.run {
+                if (this.optionsItemSelected(item)) {
+                    return true
+                }
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
 
     override fun setFilter(filter: String) =
         (content as? IFilterable)?.run {
