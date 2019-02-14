@@ -8,8 +8,8 @@ import android.os.Handler
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
+import android.view.animation.Animation
 import io.casey.musikcube.remote.Application
-import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.IMixin
 import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
@@ -20,6 +20,11 @@ import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
+import android.view.animation.AlphaAnimation
+import android.view.animation.AnimationUtils
+import io.casey.musikcube.remote.R
+import java.lang.Exception
+
 
 open class BaseFragment: Fragment(), ViewModel.Provider {
     private val mixins = MixinSet()
@@ -88,6 +93,26 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
         mixins.onDestroy()
     }
 
+    /* https://stackoverflow.com/a/23276145 */
+    override fun onCreateAnimation(transit: Int, enter: Boolean, nextAnim: Int): Animation? {
+        val parent = parentFragment
+
+        /* only apply for childFragmentManager transitions */
+        return when (!enter && parent != null && parent.isRemoving) {
+            true -> {
+                /* this is a workaround for the bug where child fragments disappear when
+                the parent is removed (as all children are first removed from the parent)
+                See https://code.google.com/p/android/issues/detail?id=55228 */
+                val doNothingAnim = AlphaAnimation(1f, 1f)
+                doNothingAnim.duration = getNextAnimationDuration(parent, DEFAULT_CHILD_ANIMATION_DURATION)
+                doNothingAnim
+            }
+            false -> {
+                super.onCreateAnimation(transit, enter, nextAnim)
+            }
+        }
+    }
+
     override fun <T: ViewModel<*>> createViewModel(): T? = null
     protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T
     protected fun <T: IMixin> mixin(mixin: T): T = mixins.add(mixin)
@@ -107,4 +132,25 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
 
     val app: Application
         get() = Application.instance
+
+    companion object {
+        private const val DEFAULT_CHILD_ANIMATION_DURATION = 250L
+
+        private fun getNextAnimationDuration(fragment: Fragment, defValue: Long): Long =
+            try {
+                /* attempt to get the resource ID of the next animation that
+                will be applied to the given fragment. */
+                val nextAnimField = Fragment::class.java.getDeclaredField("mNextAnim")
+                nextAnimField.isAccessible = true
+                val nextAnimResource = nextAnimField.getInt(fragment)
+                val nextAnim = AnimationUtils.loadAnimation(fragment.activity, nextAnimResource)
+                when (nextAnim == null) {
+                    true -> defValue
+                    false -> nextAnim.duration
+                }
+            }
+            catch (ex: Exception) {
+                defValue
+            }
+    }
 }

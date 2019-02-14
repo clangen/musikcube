@@ -23,6 +23,7 @@ import android.widget.EditText
 import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
@@ -32,7 +33,8 @@ import io.casey.musikcube.remote.util.Strings
 
 const val EXTRA_TITLE_OVERRIDE = "extra_title_override"
 const val EXTRA_WITH_TOOLBAR = "extra_with_toolbar"
-const val EXTRA_WITH_FRAGMENT_TOOLBAR = "extra_with_fragment_toolbar"
+const val EXTRA_PUSH_CONTAINER_ID = "extra_push_container_id"
+const val EXTRA_ELEVATION = "extra_elevation"
 
 fun AppCompatActivity.setupDefaultRecyclerView(
     recyclerView: RecyclerView, adapter: RecyclerView.Adapter<*>)
@@ -319,7 +321,9 @@ inline fun <reified T: BaseFragment> T.withTitleOverride(activity: AppCompatActi
 fun BaseFragment.initToolbarIfNecessary(activity: AppCompatActivity, view: View, searchMenu: Boolean = true) {
     view.findViewById<Toolbar>(R.id.toolbar)?.let {
         it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
-        it.setNavigationOnClickListener { appCompatActivity.finish() }
+        it.setNavigationOnClickListener {
+            appCompatActivity.onBackPressed()
+        }
         if (searchMenu) {
             it.initSearchMenu(activity, this as? IFilterable)
         }
@@ -338,11 +342,44 @@ fun BaseFragment.getLayoutId(): Int =
         else -> R.layout.recycler_view_with_empty_state
     }
 
-fun Intent.withFragmentToolbar(): Intent {
-    this.putExtra(EXTRA_WITH_FRAGMENT_TOOLBAR, true)
+inline fun <reified T: BaseFragment> T.addElevation(fm: FragmentManager): T {
+    if (this.arguments == null) {
+        this.arguments = Bundle()
+    }
+    this.extras.withElevation(fm)
     return this
 }
 
-fun Intent?.hasFragmentToolbar(): Boolean {
-    return this?.getBooleanExtra(EXTRA_WITH_FRAGMENT_TOOLBAR, false) ?: false
+inline fun <reified T: BaseFragment> T.pushTo(containerId: Int): T {
+    if (this.arguments == null) {
+        this.arguments = Bundle()
+    }
+    this.extras.putInt(EXTRA_PUSH_CONTAINER_ID, containerId)
+    return this
+}
+
+fun Bundle.withElevation(fm: FragmentManager): Bundle {
+    this.putFloat(EXTRA_ELEVATION, (fm.backStackEntryCount + 1) * 16.0f)
+    return this
+}
+
+val Bundle.elevation: Float
+    get() = this.getFloat(EXTRA_ELEVATION, 0.0f)
+
+val BaseFragment.pushContainerId: Int
+    get() = this.extras.getInt(EXTRA_PUSH_CONTAINER_ID, -1)
+
+fun BaseFragment.pushWithToolbar(containerId: Int, backstackId: String, fragment: BaseFragment) {
+    appCompatActivity.supportFragmentManager
+        .beginTransaction()
+        .setCustomAnimations(
+            R.anim.slide_left, R.anim.slide_left_bg,
+            R.anim.slide_right_bg, R.anim.slide_right)
+        .replace(
+            containerId,
+            fragment
+                .withToolbar()
+                .addElevation(appCompatActivity.supportFragmentManager))
+        .addToBackStack(backstackId)
+        .commit()
 }

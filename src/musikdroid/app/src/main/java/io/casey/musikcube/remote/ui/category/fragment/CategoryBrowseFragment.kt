@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
+import android.support.v4.view.ViewCompat
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
@@ -15,6 +16,7 @@ import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
@@ -29,6 +31,7 @@ import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -72,6 +75,8 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(this.getLayoutId(), container, false).apply {
+            ViewCompat.setElevation(this, extras.elevation)
+
             this@CategoryBrowseFragment.rootView = this
 
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
@@ -187,10 +192,30 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     }
 
     private fun navigateToAlbums(entry: ICategoryValue) =
-        startActivity(AlbumBrowseActivity.getStartIntent(appCompatActivity, category, entry))
+        when (this.pushContainerId > 0) {
+            true ->
+                this.pushWithToolbar(
+                    this.pushContainerId,
+                    "AlbumsBy($entry.value)",
+                    AlbumBrowseFragment.create(entry.type, entry.id))
+            false ->
+                startActivity(AlbumBrowseActivity
+                    .getStartIntent(appCompatActivity, category, entry))
+
+        }
 
     private fun navigateToTracks(entry: ICategoryValue) =
-        startActivity(TrackListActivity.getStartIntent(appCompatActivity, category, entry.id, entry.value))
+        when (this.pushContainerId > 0) {
+            true ->
+                this.pushWithToolbar(
+                    this.pushContainerId,
+                    "TracksBy($entry.value)",
+                    TrackListFragment.create(TrackListFragment
+                        .arguments(appCompatActivity, entry.type, entry.id)))
+            false ->
+                startActivity(TrackListActivity.getStartIntent(
+                    appCompatActivity, category, entry.id, entry.value))
+       }
 
     private fun navigateToSelect(id: Long, name: String) =
         appCompatActivity.run {

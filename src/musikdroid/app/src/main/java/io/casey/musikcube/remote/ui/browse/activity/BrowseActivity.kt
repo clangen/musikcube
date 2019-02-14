@@ -33,6 +33,17 @@ class BrowseActivity: BaseActivity() {
         enableUpNavigation()
     }
 
+    override fun onBackPressed() {
+        when {
+            supportFragmentManager.backStackEntryCount > 0 -> {
+                supportFragmentManager.popBackStack()
+            }
+            else -> {
+                super.onBackPressed()
+            }
+        }
+    }
+
     private fun createFragments() {
         supportFragmentManager
             .beginTransaction()

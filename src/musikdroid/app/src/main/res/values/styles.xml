@@ -109,4 +109,8 @@
         <item name="fastScrollThumbColor">@color/color_accent</item>
     </style>
 
+    <style name="EmptyView">
+        <item name="android:background">@color/theme_background</item>
+    </style>
+
 </resources>
