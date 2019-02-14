@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.ui.albums.fragment
 
+import android.content.Context
 import android.os.Bundle
 import android.support.v4.view.ViewCompat
 import android.view.LayoutInflater
@@ -16,6 +17,7 @@ import io.casey.musikcube.remote.ui.albums.constant.Album
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
+import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -129,7 +131,8 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
                                 appCompatActivity,
                                 Metadata.Category.ALBUM,
                                 album.id,
-                                album.value)))
+                                album.value))
+                            .pushTo(pushContainerId))
                 false ->
                     startActivity(
                         TrackListActivity.getStartIntent(
@@ -147,11 +150,19 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
 
     companion object {
         const val TAG = "AlbumBrowseFragment"
-        fun create(categoryName: String = "", categoryId: Long = -1L): AlbumBrowseFragment =
+        fun create(context: Context,
+                   categoryName: String = "",
+                   categoryId: Long = -1L,
+                   categoryValue: String = ""): AlbumBrowseFragment =
             AlbumBrowseFragment().apply {
                 arguments = Bundle().apply {
                     putString(Album.Extra.CATEGORY_NAME, categoryName)
                     putLong(Album.Extra.CATEGORY_ID, categoryId)
+                    if (categoryValue.isNotBlank()) {
+                        putString(
+                            Shared.Extra.TITLE_OVERRIDE,
+                            context.getString(R.string.albums_by_title, categoryValue))
+                    }
                 }
             }
     }

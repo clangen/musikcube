@@ -189,7 +189,14 @@ val BaseFragment.pushContainerId: Int
     get() = this.extras.getInt(Shared.Extra.PUSH_CONTAINER_ID, -1)
 
 inline fun <reified T: BaseFragment> T.pushTo(containerId: Int): T {
-    this.extras.putInt(Shared.Extra.PUSH_CONTAINER_ID, containerId)
+    if (containerId > 0) {
+        this.extras.putInt(Shared.Extra.PUSH_CONTAINER_ID, containerId)
+    }
+    return this
+}
+
+inline fun <reified T: BaseFragment> T.pushTo(other: BaseFragment): T {
+    this.pushTo(other.pushContainerId)
     return this
 }
 

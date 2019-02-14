@@ -25,6 +25,7 @@ class AlbumBrowseActivity: FragmentActivityWithTransport() {
     override fun createContentFragment(): BaseFragment =
         (intent.extras ?: Bundle()).run {
             AlbumBrowseFragment.create(
+                applicationContext,
                 getString(Album.Extra.CATEGORY_NAME, ""),
                 getLong(Album.Extra.CATEGORY_ID, -1))
         }

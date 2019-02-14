@@ -26,7 +26,7 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(R.layout.browse_fragment, container, false).apply {
-            adapter = BrowseFragmentAdapter(appCompatActivity, childFragmentManager)
+            adapter = BrowseFragmentAdapter(appCompatActivity, childFragmentManager, R.id.content_container)
 
             val pager = findViewById<ViewPager>(R.id.view_pager)
             pager.adapter = adapter

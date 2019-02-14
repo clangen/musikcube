@@ -193,12 +193,14 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     }
 
     private fun navigateToAlbums(entry: ICategoryValue) =
-        when (this.pushContainerId > 0) {
+        when (pushContainerId > 0) {
             true ->
                 this.pushWithToolbar(
-                    this.pushContainerId,
+                    pushContainerId,
                     "AlbumsBy($entry.value)",
-                    AlbumBrowseFragment.create(entry.type, entry.id))
+                    AlbumBrowseFragment
+                        .create(app, entry.type, entry.id, entry.value)
+                        .pushTo(pushContainerId))
             false ->
                 startActivity(AlbumBrowseActivity
                     .getStartIntent(appCompatActivity, category, entry))
@@ -212,7 +214,8 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                     this.pushContainerId,
                     "TracksBy($entry.value)",
                     TrackListFragment.create(TrackListFragment
-                        .arguments(appCompatActivity, entry.type, entry.id)))
+                        .arguments(appCompatActivity, entry.type, entry.id))
+                    .pushTo(pushContainerId))
             false ->
                 startActivity(TrackListActivity.getStartIntent(
                     appCompatActivity, category, entry.id, entry.value))
