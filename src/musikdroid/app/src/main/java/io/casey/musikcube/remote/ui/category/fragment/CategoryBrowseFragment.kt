@@ -38,15 +38,24 @@ import io.reactivex.rxkotlin.subscribeBy
 
 class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver, IFabConsumer {
     private lateinit var adapter: CategoryBrowseAdapter
-    private var navigationType: NavigationType = NavigationType.Albums
     private var lastFilter: String? = null
-    private var category: String = ""
-    private var predicateType: String = ""
-    private var predicateId: Long = -1
     private lateinit var rootView: View
     private lateinit var emptyView: EmptyListView
     private lateinit var data: DataProviderMixin
     private lateinit var playback: PlaybackMixin
+
+    private val navigationType: NavigationType
+        get() = NavigationType.get(extras.getInt(
+            Category.Extra.NAVIGATION_TYPE, NavigationType.Albums.ordinal))
+
+    private val category
+        get() = extras.getString(Category.Extra.CATEGORY, "")
+
+    private val predicateType: String
+        get() = extras.getString(Category.Extra.PREDICATE_TYPE, "")
+
+    private val predicateId: Long
+        get() = extras.getLong(Category.Extra.PREDICATE_ID, -1L)
 
     override val title: String
         get() {
@@ -63,13 +72,6 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
         data = mixin(DataProviderMixin())
         playback = mixin(PlaybackMixin())
         mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener, this))
-
-        extras.run {
-            category = getString(Category.Extra.CATEGORY, category)
-            predicateType = getString(Category.Extra.PREDICATE_TYPE, predicateType)
-            predicateId = getLong(Category.Extra.PREDICATE_ID, predicateId)
-            navigationType = NavigationType.get(getInt(Category.Extra.NAVIGATION_TYPE, navigationType.ordinal))
-        }
 
         adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category, prefs)
     }

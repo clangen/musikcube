@@ -29,6 +29,8 @@ class BrowseFragmentAdapter(private val context: Context,
             }
         }
 
+    var onFragmentInstantiated: ((Int) -> Unit?)? = null
+
     fun onTransportChanged() =
         fragments.forEach {
             (it.value as? ITransportObserver)?.onTransportChanged()
@@ -73,6 +75,7 @@ class BrowseFragmentAdapter(private val context: Context,
         val result = super.instantiateItem(container, position)
         fragments[position] = result as Fragment
         (result as? IFilterable)?.setFilter(filter)
+        onFragmentInstantiated?.invoke(position)
         return result
     }
 }

@@ -26,19 +26,40 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(R.layout.browse_fragment, container, false).apply {
-            adapter = BrowseFragmentAdapter(appCompatActivity, childFragmentManager, R.id.content_container)
-
-            val pager = findViewById<ViewPager>(R.id.view_pager)
-            pager.adapter = adapter
-            pager.currentItem = adapter.indexOf(extras.getString(Browse.Extras.INITIAL_CATEGORY_TYPE))
-
-            val tabs = findViewById<TabLayout>(R.id.tab_layout)
-            tabs.setupWithViewPager(pager)
-
             val fab = findViewById<FloatingActionButton>(R.id.fab)
+            val pager = findViewById<ViewPager>(R.id.view_pager)
+            val tabs = findViewById<TabLayout>(R.id.tab_layout)
+
+            val showFabIfNecessary = { pos: Int ->
+                adapter.fragmentAt(pos)?.let {
+                    when (it is IFabConsumer) {
+                        true -> {
+                            when (it.fabVisible) {
+                                true -> fab.show()
+                                false -> fab.hide()
+                            }
+                        }
+                        false -> fab.hide()
+                    }
+                }
+            }
+
             fab.setOnClickListener {
                 (adapter.fragmentAt(pager.currentItem) as? IFabConsumer)?.onFabPress(fab)
             }
+
+            adapter = BrowseFragmentAdapter(appCompatActivity, childFragmentManager, R.id.content_container)
+
+            adapter.onFragmentInstantiated = { pos ->
+                if (pos == pager.currentItem) {
+                    showFabIfNecessary(pos)
+                }
+            }
+
+            pager.adapter = adapter
+            pager.currentItem = adapter.indexOf(extras.getString(Browse.Extras.INITIAL_CATEGORY_TYPE))
+
+            tabs.setupWithViewPager(pager)
 
             pager.addOnPageChangeListener(object: ViewPager.OnPageChangeListener {
                 override fun onPageScrollStateChanged(state: Int) {
@@ -48,21 +69,13 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
                 }
 
                 override fun onPageSelected(pos: Int) {
-                    adapter.fragmentAt(pos)?.let {
-                        when (it is IFabConsumer) {
-                            true -> {
-                                when (it.fabVisible) {
-                                    true -> fab.show()
-                                    false -> fab.hide()
-                                }
-                            }
-                            false -> fab.hide()
-                        }
-                    }
+                    showFabIfNecessary(pos)
                 }
             })
 
             initToolbarIfNecessary(appCompatActivity, this)
+
+            showFabIfNecessary(pager.currentItem)
         }
 
     override fun onTransportChanged() =
