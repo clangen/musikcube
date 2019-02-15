@@ -13,8 +13,12 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
+import io.casey.musikcube.remote.ui.shared.extension.pushTo
+import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 
-class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): FragmentPagerAdapter(fm) {
+class BrowseFragmentAdapter(private val context: Context,
+                            fm: FragmentManager,
+                            private val containerId: Int = -1): FragmentPagerAdapter(fm) {
     private val fragments = mutableMapOf<Int, Fragment>()
 
     var filter = ""
@@ -24,6 +28,8 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
                 (it.value as? IFilterable)?.setFilter(filter)
             }
         }
+
+    var onFragmentInstantiated: ((Int) -> Unit?)? = null
 
     fun onTransportChanged() =
         fragments.forEach {
@@ -41,15 +47,17 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
             else -> 0
         }
 
-    override fun getItem(index: Int): Fragment =
-        when (index) {
+    override fun getItem(index: Int): Fragment {
+        val fragment: BaseFragment = when (index) {
             0 -> CategoryBrowseFragment.create(
                 CategoryBrowseFragment.arguments(context, Metadata.Category.ALBUM_ARTIST))
-            1 -> AlbumBrowseFragment.create()
+            1 -> AlbumBrowseFragment.create(context)
             2 -> TrackListFragment.create()
             else -> CategoryBrowseFragment.create(
                 CategoryBrowseFragment.arguments(Metadata.Category.PLAYLISTS, NavigationType.Tracks))
         }
+        return fragment.pushTo(this.containerId)
+    }
 
     override fun getPageTitle(position: Int): CharSequence? =
         context.getString(when (position) {
@@ -67,6 +75,7 @@ class BrowseFragmentAdapter(private val context: Context, fm: FragmentManager): 
         val result = super.instantiateItem(container, position)
         fragments[position] = result as Fragment
         (result as? IFilterable)?.setFilter(filter)
+        onFragmentInstantiated?.invoke(position)
         return result
     }
 }

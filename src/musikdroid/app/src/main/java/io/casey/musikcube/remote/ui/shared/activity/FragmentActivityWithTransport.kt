@@ -3,10 +3,9 @@ package io.casey.musikcube.remote.ui.shared.activity
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.view.Menu
+import android.view.MenuItem
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
-import io.casey.musikcube.remote.ui.shared.extension.findFragment
-import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
@@ -49,15 +48,32 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
 
     override fun onResume() {
         super.onResume()
-        (content as? ITitleProvider)?.run {
-            setTitleFromIntent(this.title)
+        if (!content.hasToolbar) {
+            (content as? ITitleProvider)?.run {
+                setTitleFromIntent(this.title)
+            }
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean =
-        (content as? IMenuProvider)?.run {
-            return this.createOptionsMenu(menu)
-        } ?: false
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        if (!content.hasToolbar) {
+            (content as? IMenuProvider)?.run {
+                return this.createOptionsMenu(menu)
+            }
+        }
+        return false
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (!content.hasToolbar) {
+            (content as? IMenuProvider)?.run {
+                if (this.optionsItemSelected(item)) {
+                    return true
+                }
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
 
     override fun setFilter(filter: String) =
         (content as? IFilterable)?.run {
@@ -73,6 +89,8 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
 
     private fun createFragments() {
         content = createContentFragment()
+            .withToolbar()
+            .withTitleOverride(this)
         transport = TransportFragment.create()
         supportFragmentManager
             .beginTransaction()

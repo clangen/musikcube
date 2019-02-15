@@ -46,7 +46,6 @@
 
     </LinearLayout>
 
-
     <android.support.v4.widget.Space
         android:layout_width="0dp"
         android:layout_height="2dp"/>
@@ -87,6 +86,5 @@
         </LinearLayout>
 
     </FrameLayout>
-
 
 </LinearLayout>

@@ -3,6 +3,7 @@ package io.casey.musikcube.remote.ui.tracks.fragment
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.support.v4.view.ViewCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.*
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
@@ -13,12 +14,11 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
+import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
-import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
-import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
+import io.casey.musikcube.remote.ui.shared.constant.Shared
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
@@ -35,7 +35,7 @@ import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 
-class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver {
+class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver, IMenuProvider {
     private lateinit var tracks: DefaultSlidingWindow
     private lateinit var emptyView: EmptyListView
     private lateinit var adapter: TrackListAdapter
@@ -100,13 +100,16 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             }))
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.recycler_view_fragment, container, false).apply {
+        inflater.inflate(this.getLayoutId(), container, false).apply {
+            ViewCompat.setElevation(this, extras.elevation)
+
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
 
             tracks = DefaultSlidingWindow(recyclerView, data.provider, queryFactory)
             adapter = TrackListAdapter(tracks, eventListener, playback, prefs)
 
             setupDefaultRecyclerView(recyclerView, adapter)
+            initToolbarIfNecessary(appCompatActivity, this, searchMenu = false)
 
             emptyView = findViewById(R.id.empty_list_view)
 
@@ -119,37 +122,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             tracks.setOnMetadataLoadedListener(slidingWindowListener)
         }
 
-    override val title: String
-        get() = getString(titleId)
-
-    override fun setFilter(filter: String) {
-        lastFilter = filter
-        filterDebouncer.call()
-    }
-
-    fun createOptionsMenu(menu: Menu): Boolean {
-        when (Metadata.Category.PLAYLISTS == categoryType) {
-            true -> appCompatActivity.menuInflater.inflate(R.menu.view_playlist_menu, menu)
-            false -> initSearchMenu(menu, this)
-        }
-        return true
-    }
-
-    fun optionsItemSelected(item: MenuItem): Boolean =
-        when (item.itemId == R.id.action_edit) {
-            true -> {
-                appCompatActivity.startActivityForResult(
-                    EditPlaylistActivity.getStartIntent(
-                        appCompatActivity,
-                        categoryValue,
-                        categoryId),
-                    Track.RequestCode.EDIT_PLAYLIST)
-                true
-            }
-            else -> false
-        }
-
-    fun activityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == Track.RequestCode.EDIT_PLAYLIST && resultCode == AppCompatActivity.RESULT_OK && data != null) {
             val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
             val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
@@ -167,6 +140,36 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
+
+    override val title: String
+        get() = getTitleOverride(getString(titleId))
+
+    override fun setFilter(filter: String) {
+        lastFilter = filter
+        filterDebouncer.call()
+    }
+
+    override fun createOptionsMenu(menu: Menu): Boolean {
+        when (Metadata.Category.PLAYLISTS == categoryType) {
+            true -> appCompatActivity.menuInflater.inflate(R.menu.view_playlist_menu, menu)
+            false -> initSearchMenu(menu, this)
+        }
+        return true
+    }
+
+    override fun optionsItemSelected(menuItem: MenuItem): Boolean =
+        when (menuItem.itemId == R.id.action_edit) {
+            true -> {
+                appCompatActivity.startActivityForResult(
+                    EditPlaylistActivity.getStartIntent(
+                        appCompatActivity,
+                        categoryValue,
+                        categoryId),
+                    Track.RequestCode.EDIT_PLAYLIST)
+                true
+            }
+            else -> false
+        }
 
     override fun onTransportChanged() {
         adapter.notifyDataSetChanged()
@@ -283,7 +286,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             putString(Track.Extra.CATEGORY_VALUE, categoryValue)
             if (Strings.notEmpty(categoryValue)) {
                 putString(
-                    EXTRA_ACTIVITY_TITLE,
+                    Shared.Extra.TITLE_OVERRIDE,
                     context.getString(R.string.songs_from_category, categoryValue))
             }
         }

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
+import android.support.v4.view.ViewCompat
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
@@ -15,6 +16,7 @@ import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
+import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
@@ -22,36 +24,45 @@ import io.casey.musikcube.remote.ui.shared.activity.IFabConsumer
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
-import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.shared.constant.Shared
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
 class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITransportObserver, IFabConsumer {
     private lateinit var adapter: CategoryBrowseAdapter
-    private var navigationType: NavigationType = NavigationType.Albums
     private var lastFilter: String? = null
-    private var category: String = ""
-    private var predicateType: String = ""
-    private var predicateId: Long = -1
     private lateinit var rootView: View
     private lateinit var emptyView: EmptyListView
     private lateinit var data: DataProviderMixin
     private lateinit var playback: PlaybackMixin
 
+    private val navigationType: NavigationType
+        get() = NavigationType.get(extras.getInt(
+            Category.Extra.NAVIGATION_TYPE, NavigationType.Albums.ordinal))
+
+    private val category
+        get() = extras.getString(Category.Extra.CATEGORY, "")
+
+    private val predicateType: String
+        get() = extras.getString(Category.Extra.PREDICATE_TYPE, "")
+
+    private val predicateId: Long
+        get() = extras.getLong(Category.Extra.PREDICATE_ID, -1L)
+
     override val title: String
         get() {
             Category.NAME_TO_TITLE[category]?.let {
-                return getString(it)
+                return getTitleOverride(getString(it))
             }
-            return Category.toDisplayString(app, category)
+            return getTitleOverride(Category.toDisplayString(app, category))
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,18 +73,13 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
         playback = mixin(PlaybackMixin())
         mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener, this))
 
-        extras.run {
-            category = getString(Category.Extra.CATEGORY, category)
-            predicateType = getString(Category.Extra.PREDICATE_TYPE, predicateType)
-            predicateId = getLong(Category.Extra.PREDICATE_ID, predicateId)
-            navigationType = NavigationType.get(getInt(Category.Extra.NAVIGATION_TYPE, navigationType.ordinal))
-        }
-
         adapter = CategoryBrowseAdapter(adapterListener, playback, navigationType, category, prefs)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
-        inflater.inflate(R.layout.recycler_view_fragment, container, false).apply {
+        inflater.inflate(this.getLayoutId(), container, false).apply {
+            ViewCompat.setElevation(this, extras.elevation)
+
             this@CategoryBrowseFragment.rootView = this
 
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
@@ -84,6 +90,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
             emptyView.alternateView = recyclerView
 
             setupDefaultRecyclerView(recyclerView, adapter)
+            initToolbarIfNecessary(appCompatActivity, this)
         }
 
     override fun onFabPress(fab: FloatingActionButton) {
@@ -188,10 +195,33 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     }
 
     private fun navigateToAlbums(entry: ICategoryValue) =
-            startActivity(AlbumBrowseActivity.getStartIntent(appCompatActivity, category, entry))
+        when (pushContainerId > 0) {
+            true ->
+                this.pushWithToolbar(
+                    pushContainerId,
+                    "AlbumsBy($entry.value)",
+                    AlbumBrowseFragment
+                        .create(app, entry.type, entry.id, entry.value)
+                        .pushTo(pushContainerId))
+            false ->
+                startActivity(AlbumBrowseActivity
+                    .getStartIntent(appCompatActivity, category, entry))
+
+        }
 
     private fun navigateToTracks(entry: ICategoryValue) =
-            startActivity(TrackListActivity.getStartIntent(appCompatActivity, category, entry.id, entry.value))
+        when (this.pushContainerId > 0) {
+            true ->
+                this.pushWithToolbar(
+                    this.pushContainerId,
+                    "TracksBy($entry.value)",
+                    TrackListFragment.create(TrackListFragment
+                        .arguments(appCompatActivity, entry.type, entry.id))
+                    .pushTo(pushContainerId))
+            false ->
+                startActivity(TrackListActivity.getStartIntent(
+                    appCompatActivity, category, entry.id, entry.value))
+       }
 
     private fun navigateToSelect(id: Long, name: String) =
         appCompatActivity.run {
@@ -231,7 +261,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                     val format = Category.NAME_TO_RELATED_TITLE[category]
                     when (format) {
                         null -> throw IllegalArgumentException("unknown category $category")
-                        else -> putString(EXTRA_ACTIVITY_TITLE, context.getString(format, predicateValue))
+                        else -> putString(Shared.Extra.TITLE_OVERRIDE, context.getString(format, predicateValue))
                     }
                 }
             }

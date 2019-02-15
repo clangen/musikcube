@@ -1,6 +1,8 @@
 package io.casey.musikcube.remote.ui.albums.fragment
 
+import android.content.Context
 import android.os.Bundle
+import android.support.v4.view.ViewCompat
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
@@ -15,14 +17,15 @@ import io.casey.musikcube.remote.ui.albums.constant.Album
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
-import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
+import io.casey.musikcube.remote.ui.shared.constant.Shared
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
+import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -36,7 +39,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     private lateinit var emptyView: EmptyListView
 
     override val title: String
-        get() = app.getString(R.string.albums_title)
+        get() = getTitleOverride(app.getString(R.string.albums_title))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
@@ -55,7 +58,9 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
-        inflater.inflate(R.layout.recycler_view_fragment, container, false).apply {
+        inflater.inflate(this.getLayoutId(), container, false).apply {
+            ViewCompat.setElevation(this, extras.elevation)
+
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
             setupDefaultRecyclerView(recyclerView, adapter)
 
@@ -63,6 +68,8 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
             emptyView.capability = EmptyListView.Capability.OnlineOnly
             emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
             emptyView.alternateView = recyclerView
+
+            initToolbarIfNecessary(appCompatActivity, this)
         }
 
     override fun onResume() {
@@ -113,9 +120,28 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     }
 
     private val eventListener = object: AlbumBrowseAdapter.EventListener {
-        override fun onItemClicked(album: IAlbum) =
-            startActivity(TrackListActivity.getStartIntent(
-                appCompatActivity, Metadata.Category.ALBUM, album.id, album.value))
+        override fun onItemClicked(album: IAlbum) {
+            when (pushContainerId > 0) {
+                true ->
+                    pushWithToolbar(
+                        pushContainerId,
+                        "TracksForAlbum($album.id)",
+                        TrackListFragment.create(
+                            TrackListFragment.arguments(
+                                appCompatActivity,
+                                Metadata.Category.ALBUM,
+                                album.id,
+                                album.value))
+                            .pushTo(pushContainerId))
+                false ->
+                    startActivity(
+                        TrackListActivity.getStartIntent(
+                            appCompatActivity,
+                            Metadata.Category.ALBUM,
+                            album.id,
+                            album.value))
+            }
+        }
 
         override fun onActionClicked(view: View, album: IAlbum) {
             mixin(ItemContextMenuMixin::class.java)?.showForCategory(album, view)
@@ -124,11 +150,19 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
 
     companion object {
         const val TAG = "AlbumBrowseFragment"
-        fun create(categoryName: String = "", categoryId: Long = -1L): AlbumBrowseFragment =
+        fun create(context: Context,
+                   categoryName: String = "",
+                   categoryId: Long = -1L,
+                   categoryValue: String = ""): AlbumBrowseFragment =
             AlbumBrowseFragment().apply {
                 arguments = Bundle().apply {
                     putString(Album.Extra.CATEGORY_NAME, categoryName)
                     putLong(Album.Extra.CATEGORY_ID, categoryId)
+                    if (categoryValue.isNotBlank()) {
+                        putString(
+                            Shared.Extra.TITLE_OVERRIDE,
+                            context.getString(R.string.albums_by_title, categoryValue))
+                    }
                 }
             }
     }

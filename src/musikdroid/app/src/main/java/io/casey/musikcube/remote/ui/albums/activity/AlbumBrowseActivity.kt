@@ -9,11 +9,11 @@ import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.ui.albums.constant.Album
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
-import io.casey.musikcube.remote.ui.shared.extension.EXTRA_ACTIVITY_TITLE
+import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.util.Strings
 
-class AlbumBrowseActivity : FragmentActivityWithTransport() {
+class AlbumBrowseActivity: FragmentActivityWithTransport() {
     private val albums
         get() = content as AlbumBrowseFragment
 
@@ -25,6 +25,7 @@ class AlbumBrowseActivity : FragmentActivityWithTransport() {
     override fun createContentFragment(): BaseFragment =
         (intent.extras ?: Bundle()).run {
             AlbumBrowseFragment.create(
+                applicationContext,
                 getString(Album.Extra.CATEGORY_NAME, ""),
                 getLong(Album.Extra.CATEGORY_ID, -1))
         }
@@ -42,7 +43,7 @@ class AlbumBrowseActivity : FragmentActivityWithTransport() {
         fun getStartIntent(context: Context, categoryName: String, categoryId: Long, categoryValue: String): Intent =
             getStartIntent(context, categoryName, categoryId).apply {
                 if (Strings.notEmpty(categoryValue)) {
-                    putExtra(EXTRA_ACTIVITY_TITLE, context.getString(R.string.albums_by_title, categoryValue))
+                    putExtra(Shared.Extra.TITLE_OVERRIDE, context.getString(R.string.albums_by_title, categoryValue))
                 }
             }
 

@@ -138,7 +138,7 @@ void CategoryTrackListQuery::RegularQuery(musik::core::db::Connection &db) {
     std::string limitAndOffset = this->GetLimitAndOffset();
 
     if (this->filter.size()) {
-        trackFilter = " AND " + category::CATEGORY_TRACKLIST_FILTER;
+        trackFilter = category::CATEGORY_TRACKLIST_FILTER;
         args.push_back(category::StringArgument(this->filter));
         args.push_back(category::StringArgument(this->filter));
         args.push_back(category::StringArgument(this->filter));
