@@ -8,6 +8,7 @@ import android.os.Handler
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
+import android.view.View
 import android.view.animation.Animation
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.framework.IMixin
@@ -103,12 +104,31 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
                 /* this is a workaround for the bug where child fragments disappear when
                 the parent is removed (as all children are first removed from the parent)
                 See https://code.google.com/p/android/issues/detail?id=55228 */
-                val doNothingAnim = AlphaAnimation(1f, 1f)
-                doNothingAnim.duration = getNextAnimationDuration(parent, DEFAULT_CHILD_ANIMATION_DURATION)
-                doNothingAnim
+                AlphaAnimation(1f, 1f).apply {
+                    duration = getNextAnimationDuration(parent)
+                }
             }
             false -> {
-                super.onCreateAnimation(transit, enter, nextAnim)
+                if (nextAnim == 0) {
+                    super.onCreateAnimation(transit, enter, nextAnim)
+                }
+                else {
+                    AnimationUtils.loadAnimation(activity, nextAnim)?.apply {
+                        view?.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+                        setAnimationListener(object : Animation.AnimationListener {
+                            override fun onAnimationRepeat(animation: Animation?) {
+                            }
+
+                            override fun onAnimationEnd(animation: Animation?) {
+                                view?.setLayerType(View.LAYER_TYPE_NONE, null)
+                            }
+
+                            override fun onAnimationStart(animation: Animation?) {
+                            }
+                        })
+                    }
+                }
             }
         }
     }
@@ -141,21 +161,21 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
     companion object {
         private const val DEFAULT_CHILD_ANIMATION_DURATION = 250L
 
-        private fun getNextAnimationDuration(fragment: Fragment, defValue: Long): Long =
+        private fun getNextAnimationDuration(fragment: Fragment): Long =
             try {
                 /* attempt to get the resource ID of the next animation that
                 will be applied to the given fragment. */
-                val nextAnimField = Fragment::class.java.getDeclaredField("mNextAnim")
+                val nextAnimField = Fragment::class.java.getDeclaredMethod("getNextAnim")
                 nextAnimField.isAccessible = true
-                val nextAnimResource = nextAnimField.getInt(fragment)
+                val nextAnimResource = nextAnimField.invoke(fragment) as Int
                 val nextAnim = AnimationUtils.loadAnimation(fragment.activity, nextAnimResource)
                 when (nextAnim == null) {
-                    true -> defValue
+                    true -> DEFAULT_CHILD_ANIMATION_DURATION
                     false -> nextAnim.duration
                 }
             }
             catch (ex: Exception) {
-                defValue
+                DEFAULT_CHILD_ANIMATION_DURATION
             }
     }
 }

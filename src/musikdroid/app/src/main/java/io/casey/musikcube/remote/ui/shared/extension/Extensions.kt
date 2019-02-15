@@ -172,7 +172,7 @@ inline fun <reified T> AppCompatActivity.findFragment(tag: String): T {
  */
 
 fun Bundle.withElevation(fm: FragmentManager): Bundle {
-    this.putFloat(Shared.Extra.ELEVATION, (fm.backStackEntryCount + 1) * 16.0f)
+    this.putFloat(Shared.Extra.ELEVATION, (fm.backStackEntryCount + 1) * 128.0f)
     return this
 }
 

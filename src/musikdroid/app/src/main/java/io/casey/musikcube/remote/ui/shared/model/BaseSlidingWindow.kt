@@ -5,6 +5,7 @@ import com.simplecityapps.recyclerview_fastscroll.interfaces.OnFastScrollStateCh
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
+import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.disposables.CompositeDisposable
 
 abstract class BaseSlidingWindow(
@@ -56,7 +57,7 @@ abstract class BaseSlidingWindow(
     protected abstract fun getPageAround(index: Int)
 
     protected fun notifyAdapterChanged() =
-        recyclerView.adapter?.notifyDataSetChanged()
+        adapterChangedDebouncer.call()
 
     protected fun notifyMetadataLoaded(offset: Int, count: Int) =
         loadedListener?.onMetadataLoaded(offset, count)
@@ -81,6 +82,12 @@ abstract class BaseSlidingWindow(
 
         override fun onFastScrollStart() {
             fastScrollerActive = true
+        }
+    }
+
+    private val adapterChangedDebouncer = object : Debouncer<String>(200) {
+        override fun onDebounced(last: String?) {
+            recyclerView.adapter?.notifyDataSetChanged()
         }
     }
 }
