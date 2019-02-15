@@ -29,7 +29,7 @@ import java.lang.Exception
 
 open class BaseFragment: Fragment(), ViewModel.Provider {
     private val mixins = MixinSet()
-    private val handler = Handler()
+    protected val handler = Handler()
     protected lateinit var prefs: SharedPreferences
     protected val component: ViewComponent =
         DaggerViewComponent.builder()
@@ -38,8 +38,26 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
 
     protected var paused = true /* `private set` confuses proguard. sigh */
 
+    protected var animating = false
+        private set(value) {
+            field = value
+            when (field) {
+                true -> destroyObservables()
+                false -> initObservables()
+            }
+        }
+
     protected var disposables = CompositeDisposable()
         private set
+
+    private fun destroyObservables() {
+        disposables.dispose()
+        disposables = CompositeDisposable()
+    }
+
+    protected open fun initObservables() {
+        /* for subclass use */
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +81,9 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
         mixins.onResume()
         if (this is ITitleProvider) {
             toolbar?.setTitleFromIntent(title)
+        }
+        if (!animating) {
+            initObservables()
         }
     }
 
@@ -115,6 +136,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
                 else {
                     AnimationUtils.loadAnimation(activity, nextAnim)?.apply {
                         view?.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                        animating = true
 
                         setAnimationListener(object : Animation.AnimationListener {
                             override fun onAnimationRepeat(animation: Animation?) {
@@ -122,6 +144,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
 
                             override fun onAnimationEnd(animation: Animation?) {
                                 view?.setLayerType(View.LAYER_TYPE_NONE, null)
+                                animating = false
                             }
 
                             override fun onAnimationStart(animation: Animation?) {

@@ -77,16 +77,15 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
     override fun onResume() {
         tracks.resume() /* needs to happen first */
         super.onResume()
-        initObservers()
         requeryIfViewingOfflineCache()
     }
 
-    private fun initObservers() =
+    override fun initObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
                 val shouldRequery =
                     states.first === IDataProvider.State.Connected ||
-                        (states.first === IDataProvider.State.Disconnected && isOfflineTracks)
+                    (states.first === IDataProvider.State.Disconnected && isOfflineTracks)
 
                 if (shouldRequery) {
                     filterDebouncer.cancel()
@@ -98,6 +97,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             },
             onError = {
             }))
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         inflater.inflate(this.getLayoutId(), container, false).apply {

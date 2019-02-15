@@ -85,7 +85,7 @@ abstract class BaseSlidingWindow(
         }
     }
 
-    private val adapterChangedDebouncer = object : Debouncer<String>(200) {
+    private val adapterChangedDebouncer = object : Debouncer<String>(50) {
         override fun onDebounced(last: String?) {
             recyclerView.adapter?.notifyDataSetChanged()
         }

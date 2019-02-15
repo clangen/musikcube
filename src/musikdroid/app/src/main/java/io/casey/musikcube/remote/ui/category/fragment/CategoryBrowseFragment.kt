@@ -100,11 +100,6 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     override val fabVisible: Boolean
         get() = (category == Metadata.Category.PLAYLISTS)
 
-    override fun onResume() {
-        super.onResume()
-        initObservers()
-    }
-
     override fun setFilter(filter: String) {
         this.lastFilter = filter
         this.filterDebouncer.call()
@@ -121,7 +116,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     override fun onTransportChanged() =
         adapter.notifyDataSetChanged()
 
-    private fun initObservers() =
+    override fun initObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
                 when (states.first) {
@@ -132,11 +127,13 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                     IDataProvider.State.Disconnected -> {
                         emptyView.update(states.first, adapter.itemCount)
                     }
-                    else -> { }
+                    else -> {
+                    }
                 }
             },
             onError = {
             }))
+    }
 
     private val categoryTypeString: String
         get() {

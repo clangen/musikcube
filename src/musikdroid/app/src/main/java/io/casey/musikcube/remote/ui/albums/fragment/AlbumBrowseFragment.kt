@@ -72,11 +72,6 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
             initToolbarIfNecessary(appCompatActivity, this)
         }
 
-    override fun onResume() {
-        super.onResume()
-        initObservables()
-    }
-
     override fun setFilter(filter: String) {
         if (filter != lastFilter) {
             lastFilter = filter
@@ -84,21 +79,24 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
         }
     }
 
-    fun createOptionsMenu(menu: Menu): Boolean = initSearchMenu(menu, this)
-    override fun onTransportChanged() = adapter.notifyDataSetChanged()
+    fun createOptionsMenu(menu: Menu): Boolean =
+        initSearchMenu(menu, this)
 
-    private fun initObservables() =
+    override fun onTransportChanged() =
+        adapter.notifyDataSetChanged()
+
+    override fun initObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { state ->
                 if (state.first == IDataProvider.State.Connected) {
                     requery()
-                }
-                else {
+                } else {
                     emptyView.update(state.first, adapter.itemCount)
                 }
             },
             onError = {
             }))
+    }
 
     private fun requery() =
         @Suppress("unused")
