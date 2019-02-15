@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.ui.browse.fragment
 import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.design.widget.TabLayout
-import android.support.v4.view.ViewCompat
 import android.support.v4.view.ViewPager
 import android.view.LayoutInflater
 import android.view.View

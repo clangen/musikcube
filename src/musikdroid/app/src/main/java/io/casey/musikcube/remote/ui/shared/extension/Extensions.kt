@@ -57,6 +57,20 @@ fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
 }
 
+fun Toolbar.collapseActionViewIfExpanded(): Boolean {
+    (menu.findItem(R.id.action_search)?.actionView as? SearchView)?.let {
+        if (!it.isIconified) {
+            it.isIconified = true
+            return true
+        }
+    }
+    if (this.hasExpandedActionView()) {
+        this.collapseActionView()
+        return true
+    }
+    return false
+}
+
 /*
  *
  * AppCompatActivity
@@ -210,7 +224,8 @@ fun BaseFragment.pushWithToolbar(containerId: Int, backstackId: String, fragment
             containerId,
             fragment
                 .withToolbar()
-                .addElevation(appCompatActivity.supportFragmentManager))
+                .addElevation(appCompatActivity.supportFragmentManager),
+            backstackId)
         .addToBackStack(backstackId)
         .commit()
 }

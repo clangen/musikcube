@@ -24,10 +24,12 @@ import io.reactivex.disposables.CompositeDisposable
 import android.view.animation.AlphaAnimation
 import android.view.animation.AnimationUtils
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.ui.shared.activity.IBackHandler
+import io.casey.musikcube.remote.ui.shared.extension.collapseActionViewIfExpanded
 import java.lang.Exception
 
 
-open class BaseFragment: Fragment(), ViewModel.Provider {
+open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
     private val mixins = MixinSet()
     protected val handler = Handler()
     protected lateinit var prefs: SharedPreferences
@@ -155,6 +157,9 @@ open class BaseFragment: Fragment(), ViewModel.Provider {
             }
         }
     }
+
+    override fun onBackPressed(): Boolean =
+        toolbar?.collapseActionViewIfExpanded() ?: false
 
     override fun <T: ViewModel<*>> createViewModel(): T? = null
     protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T
