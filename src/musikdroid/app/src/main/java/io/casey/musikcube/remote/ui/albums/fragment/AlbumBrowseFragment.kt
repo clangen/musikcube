@@ -9,11 +9,11 @@ import android.view.View
 import android.view.ViewGroup
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.adapter.AlbumBrowseAdapter
 import io.casey.musikcube.remote.ui.albums.constant.Album
+import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
@@ -24,8 +24,6 @@ import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
-import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -119,26 +117,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
 
     private val eventListener = object: AlbumBrowseAdapter.EventListener {
         override fun onItemClicked(album: IAlbum) {
-            when (pushContainerId > 0) {
-                true ->
-                    pushWithToolbar(
-                        pushContainerId,
-                        "TracksForAlbum($album.id)",
-                        TrackListFragment.create(
-                            TrackListFragment.arguments(
-                                appCompatActivity,
-                                Metadata.Category.ALBUM,
-                                album.id,
-                                album.value))
-                            .pushTo(pushContainerId))
-                false ->
-                    startActivity(
-                        TrackListActivity.getStartIntent(
-                            appCompatActivity,
-                            Metadata.Category.ALBUM,
-                            album.id,
-                            album.value))
-            }
+            Navigate.toAlbum(album, appCompatActivity, this@AlbumBrowseFragment)
         }
 
         override fun onActionClicked(view: View, album: IAlbum) {

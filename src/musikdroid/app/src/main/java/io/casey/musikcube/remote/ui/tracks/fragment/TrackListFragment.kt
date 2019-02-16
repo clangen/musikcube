@@ -291,15 +291,13 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             }
         }
 
-        fun create(intent: Intent?): TrackListFragment {
-            return create(intent?.extras?.getBundle(Track.Extra.FRAGMENT_ARGUMENTS) ?: Bundle())
-        }
+        fun create(intent: Intent?): TrackListFragment =
+            create(intent?.extras?.getBundle(Track.Extra.FRAGMENT_ARGUMENTS) ?: Bundle())
 
-        fun create(arguments: Bundle = Bundle()): TrackListFragment {
-            return TrackListFragment().apply {
+        fun create(arguments: Bundle = Bundle()): TrackListFragment =
+            TrackListFragment().apply {
                 this.arguments = arguments
             }
-        }
 
         private fun isValidCategory(categoryType: String?, categoryId: Long): Boolean =
             categoryType != null && categoryType.isNotEmpty() && categoryId != -1L

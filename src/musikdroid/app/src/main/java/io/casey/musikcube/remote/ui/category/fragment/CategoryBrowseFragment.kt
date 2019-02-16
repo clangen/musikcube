@@ -15,8 +15,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
+import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
@@ -31,8 +30,6 @@ import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
-import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -192,33 +189,10 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     }
 
     private fun navigateToAlbums(entry: ICategoryValue) =
-        when (pushContainerId > 0) {
-            true ->
-                this.pushWithToolbar(
-                    pushContainerId,
-                    "AlbumsBy($entry.value)",
-                    AlbumBrowseFragment
-                        .create(app, entry.type, entry.id, entry.value)
-                        .pushTo(pushContainerId))
-            false ->
-                startActivity(AlbumBrowseActivity
-                    .getStartIntent(appCompatActivity, category, entry))
-
-        }
+        Navigate.toAlbums(category, entry, appCompatActivity, this)
 
     private fun navigateToTracks(entry: ICategoryValue) =
-        when (this.pushContainerId > 0) {
-            true ->
-                this.pushWithToolbar(
-                    this.pushContainerId,
-                    "TracksBy($entry.value)",
-                    TrackListFragment.create(TrackListFragment
-                        .arguments(appCompatActivity, entry.type, entry.id))
-                    .pushTo(pushContainerId))
-            false ->
-                startActivity(TrackListActivity.getStartIntent(
-                    appCompatActivity, category, entry.id, entry.value))
-       }
+        Navigate.toTracks(category, entry, appCompatActivity, this)
 
     private fun navigateToSelect(id: Long, name: String) =
         appCompatActivity.run {
