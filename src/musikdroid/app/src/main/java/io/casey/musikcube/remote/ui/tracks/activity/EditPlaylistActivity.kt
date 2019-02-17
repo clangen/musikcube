@@ -12,6 +12,7 @@ import android.view.Menu
 import android.view.MenuItem
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.ViewModel
+import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
@@ -83,6 +84,9 @@ class EditPlaylistActivity: BaseActivity() {
         @Suppress("unchecked_cast")
         return EditPlaylistViewModel(extras.getLong(EXTRA_PLAYLIST_ID, -1L)) as T
     }
+
+    override val transitionType: Transition
+        get() = Transition.Vertical
 
     private fun saveAndFinish() {
         if (viewModel.modified) {

@@ -12,8 +12,8 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.activity.IBackHandler
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
-import io.casey.musikcube.remote.ui.shared.extension.find
 import io.casey.musikcube.remote.ui.shared.extension.findFragment
+import io.casey.musikcube.remote.ui.shared.extension.pushTo
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
 class BrowseActivity: BaseActivity() {
@@ -59,7 +59,9 @@ class BrowseActivity: BaseActivity() {
                 BrowseFragment.TAG)
             .add(
                 R.id.transport_container,
-                TransportFragment.create(),
+                TransportFragment
+                    .create()
+                    .pushTo(R.id.content_container),
                 TransportFragment.TAG)
             .commit()
 

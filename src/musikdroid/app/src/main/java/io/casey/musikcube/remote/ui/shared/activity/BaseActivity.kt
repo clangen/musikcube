@@ -18,6 +18,7 @@ import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.ViewComponent
+import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
@@ -26,10 +27,6 @@ import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
 
 abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.TaskCallbacks {
-    protected enum class Transition {
-        Horizontal, Vertical
-    }
-
     protected var disposables = CompositeDisposable()
         private set
 

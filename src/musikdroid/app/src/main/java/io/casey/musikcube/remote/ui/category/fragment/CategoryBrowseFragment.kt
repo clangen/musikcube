@@ -15,11 +15,10 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
+import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.shared.activity.IFabConsumer
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
@@ -31,8 +30,6 @@ import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
-import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -192,33 +189,10 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     }
 
     private fun navigateToAlbums(entry: ICategoryValue) =
-        when (pushContainerId > 0) {
-            true ->
-                this.pushWithToolbar(
-                    pushContainerId,
-                    "AlbumsBy($entry.value)",
-                    AlbumBrowseFragment
-                        .create(app, entry.type, entry.id, entry.value)
-                        .pushTo(pushContainerId))
-            false ->
-                startActivity(AlbumBrowseActivity
-                    .getStartIntent(appCompatActivity, category, entry))
-
-        }
+        Navigate.toAlbums(category, entry, appCompatActivity, this)
 
     private fun navigateToTracks(entry: ICategoryValue) =
-        when (this.pushContainerId > 0) {
-            true ->
-                this.pushWithToolbar(
-                    this.pushContainerId,
-                    "TracksBy($entry.value)",
-                    TrackListFragment.create(TrackListFragment
-                        .arguments(appCompatActivity, entry.type, entry.id))
-                    .pushTo(pushContainerId))
-            false ->
-                startActivity(TrackListActivity.getStartIntent(
-                    appCompatActivity, category, entry.id, entry.value))
-       }
+        Navigate.toTracks(category, entry, appCompatActivity, this)
 
     private fun navigateToSelect(id: Long, name: String) =
         appCompatActivity.run {
@@ -245,20 +219,27 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                 this.arguments = arguments
             }
 
+        fun create(context: Context,
+                   targetType: String,
+                   predicateType: String = "",
+                   predicateId: Long = -1,
+                   predicateValue: String = ""): CategoryBrowseFragment =
+            create(arguments(context, targetType, predicateType, predicateId, predicateValue))
+
         fun arguments(context: Context,
-                      category: String,
-                      predicateType: String = "",
-                      predicateId: Long = -1,
-                      predicateValue: String = ""): Bundle =
+                      targetType: String,
+                      sourceType: String = "",
+                      sourceId: Long = -1,
+                      sourceValue: String = ""): Bundle =
             Bundle().apply {
-                putString(Category.Extra.CATEGORY, category)
-                putString(Category.Extra.PREDICATE_TYPE, predicateType)
-                putLong(Category.Extra.PREDICATE_ID, predicateId)
-                if (predicateValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(category)) {
-                    val format = Category.NAME_TO_RELATED_TITLE[category]
+                putString(Category.Extra.CATEGORY, targetType)
+                putString(Category.Extra.PREDICATE_TYPE, sourceType)
+                putLong(Category.Extra.PREDICATE_ID, sourceId)
+                if (sourceValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(targetType)) {
+                    val format = Category.NAME_TO_RELATED_TITLE[targetType]
                     when (format) {
-                        null -> throw IllegalArgumentException("unknown category $category")
-                        else -> putString(Shared.Extra.TITLE_OVERRIDE, context.getString(format, predicateValue))
+                        null -> throw IllegalArgumentException("unknown category $targetType")
+                        else -> putString(Shared.Extra.TITLE_OVERRIDE, context.getString(format, sourceValue))
                     }
                 }
             }

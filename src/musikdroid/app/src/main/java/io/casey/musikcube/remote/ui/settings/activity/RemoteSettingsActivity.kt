@@ -11,6 +11,7 @@ import io.casey.musikcube.remote.service.websocket.model.IDevice
 import io.casey.musikcube.remote.service.websocket.model.IOutput
 import io.casey.musikcube.remote.service.websocket.model.ReplayGainMode
 import io.casey.musikcube.remote.service.websocket.model.TransportType
+import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin

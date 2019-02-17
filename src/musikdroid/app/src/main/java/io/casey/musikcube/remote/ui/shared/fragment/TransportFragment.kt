@@ -1,6 +1,5 @@
 package io.casey.musikcube.remote.ui.shared.fragment
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,9 +8,11 @@ import android.widget.TextView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
-import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
+import io.casey.musikcube.remote.ui.navigation.Navigate
+import io.casey.musikcube.remote.ui.playqueue.fragment.PlayQueueFragment
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
+import io.casey.musikcube.remote.ui.shared.extension.topOfStack
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 
 class TransportFragment: BaseFragment() {
@@ -55,12 +56,8 @@ class TransportFragment: BaseFragment() {
 
         titleBar?.setOnClickListener {
             if (playback.service.state != PlaybackState.Stopped) {
-                activity?.let { a ->
-                    startActivity(PlayQueueActivity
-                        .getStartIntent(a, playback.service.queuePosition)
-                        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
-
-                    a.overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+                if (appCompatActivity.supportFragmentManager.topOfStack != PlayQueueFragment.TAG) {
+                    Navigate.toPlayQueue(playback.service.queuePosition, appCompatActivity, this)
                 }
             }
         }

@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.ui.shared.extension
 
 import android.app.SearchManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -22,6 +23,7 @@ import android.widget.EditText
 import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
@@ -55,6 +57,10 @@ fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
     val title = extras.getString(Shared.Extra.TITLE_OVERRIDE)
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
+}
+
+fun Toolbar.setTitleFromIntent(stringId: Int) {
+    this.setTitleFromIntent(context.getString(stringId))
 }
 
 fun Toolbar.collapseActionViewIfExpanded(): Boolean {
@@ -167,9 +173,9 @@ fun AppCompatActivity.showDialog(dialog: DialogFragment, tag: String) {
     dialog.show(this.supportFragmentManager, tag)
 }
 
-fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put)
+fun AppCompatActivity.slideNextUp() = overridePendingTransition(R.anim.slide_up, R.anim.stay_put_350)
 
-fun AppCompatActivity.slideThisDown() = overridePendingTransition(R.anim.stay_put, R.anim.slide_down)
+fun AppCompatActivity.slideThisDown() = overridePendingTransition(R.anim.stay_put_350, R.anim.slide_down)
 
 fun AppCompatActivity.slideNextLeft() = overridePendingTransition(R.anim.slide_left, R.anim.slide_left_bg)
 
@@ -177,6 +183,23 @@ fun AppCompatActivity.slideThisRight() = overridePendingTransition(R.anim.slide_
 
 inline fun <reified T> AppCompatActivity.findFragment(tag: String): T {
     return this.supportFragmentManager.find(tag)
+}
+
+/*
+ *
+ * FragmentManager
+ *
+ */
+val FragmentManager.topOfStack: String?
+    get() {
+        if (this.backStackEntryCount > 0) {
+            return this.getBackStackEntryAt(this.backStackEntryCount - 1).name
+        }
+        return null
+    }
+
+inline fun <reified T> FragmentManager.find(tag: String): T {
+    return findFragmentByTag(tag) as T
 }
 
 /*
@@ -192,6 +215,25 @@ fun Bundle.withElevation(fm: FragmentManager): Bundle {
 
 val Bundle.elevation: Float
     get() = this.getFloat(Shared.Extra.ELEVATION, 0.0f)
+
+/*
+ *
+ * Intent
+ *
+ */
+
+fun Intent.withoutTransport() =
+    this.apply {
+        putExtra(Shared.Extra.WITHOUT_TRANSPORT, true)
+    }
+
+fun Intent.withTransitionType(type: Transition) =
+    this.apply {
+        putExtra(Shared.Extra.TRANSITION_TYPE, type.name)
+    }
+
+val Bundle.transitionType
+    get() = Transition.from(getString(Shared.Extra.TRANSITION_TYPE, ""))
 
 /*
  *
@@ -214,20 +256,33 @@ inline fun <reified T: BaseFragment> T.pushTo(other: BaseFragment): T {
     return this
 }
 
-fun BaseFragment.pushWithToolbar(containerId: Int, backstackId: String, fragment: BaseFragment) {
+fun BaseFragment.pushWithToolbar(
+        containerId: Int,
+        backstackId: String,
+        fragment: BaseFragment,
+        transition: Transition = Transition.Horizontal) {
+    fragment.pushTo(containerId)
     appCompatActivity.supportFragmentManager
-        .beginTransaction()
-        .setCustomAnimations(
-            R.anim.slide_left, R.anim.slide_left_bg,
-            R.anim.slide_right_bg, R.anim.slide_right)
-        .replace(
-            containerId,
-            fragment
-                .withToolbar()
-                .addElevation(appCompatActivity.supportFragmentManager),
-            backstackId)
-        .addToBackStack(backstackId)
-        .commit()
+        .beginTransaction().apply {
+            if (transition == Transition.Horizontal) {
+                setCustomAnimations(
+                    R.anim.slide_left, R.anim.slide_left_bg,
+                    R.anim.slide_right_bg, R.anim.slide_right)
+            }
+            else {
+                setCustomAnimations(
+                    R.anim.slide_up, R.anim.stay_put_350,
+                    R.anim.stay_put_350, R.anim.slide_down)
+            }
+            replace(
+                containerId,
+                fragment
+                    .withToolbar()
+                    .addElevation(appCompatActivity.supportFragmentManager),
+                backstackId)
+            addToBackStack(backstackId)
+            commit()
+        }
 }
 
 inline fun <reified T: BaseFragment> T.withToolbar(): T {
@@ -360,10 +415,6 @@ fun View.setVisible(visible: Boolean) {
     this.visibility = if (visible) View.VISIBLE else View.GONE
 }
 
-inline fun <reified T> FragmentManager.find(tag: String): T {
-    return findFragmentByTag(tag) as T
-}
-
 /*
  *
  * Colors
@@ -449,3 +500,16 @@ fun fallback(input: String?, fallback: String): String =
 
 fun fallback(input: String?, fallback: Int): String =
     if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input
+
+fun startActivityForResult(intent: Intent,
+                           requestCode: Int,
+                           activity: AppCompatActivity?,
+                           fragment: BaseFragment? = null) =
+    when {
+        fragment != null ->
+            fragment.startActivityForResult(intent, requestCode)
+        activity != null ->
+            activity.startActivityForResult(intent, requestCode)
+        else ->
+            throw IllegalArgumentException("")
+    }

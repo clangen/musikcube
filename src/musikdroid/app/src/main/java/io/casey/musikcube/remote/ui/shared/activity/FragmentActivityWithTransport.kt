@@ -5,13 +5,14 @@ import android.support.design.widget.FloatingActionButton
 import android.view.Menu
 import android.view.MenuItem
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.ui.navigation.Transition
+import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
 abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
-    protected lateinit var transport: TransportFragment
-        private set
+    private var transport: TransportFragment? = null
 
     protected lateinit var content: BaseFragment
         private set
@@ -30,7 +31,7 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
             else -> restoreFragments()
         }
 
-        transport.modelChangedListener = {
+        transport?.modelChangedListener = {
             onTransportChanged()
         }
 
@@ -80,6 +81,9 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
             setFilter(filter)
         } ?: Unit
 
+    override val transitionType: Transition
+        get() = extras.transitionType
+
     protected abstract fun createContentFragment(): BaseFragment
     protected abstract val contentFragmentTag: String
 
@@ -89,14 +93,16 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
 
     private fun createFragments() {
         content = createContentFragment()
-            .withToolbar()
-            .withTitleOverride(this)
-        transport = TransportFragment.create()
-        supportFragmentManager
-            .beginTransaction()
-            .add(R.id.content_container, content, contentFragmentTag)
-            .add(R.id.transport_container, transport, TransportFragment.TAG)
-            .commit()
+            .withToolbar().withTitleOverride(this)
+        supportFragmentManager.beginTransaction().apply {
+            add(R.id.content_container, content, contentFragmentTag)
+            if (!withoutTransport) {
+                transport = TransportFragment.create().apply {
+                    add(R.id.transport_container, this, TransportFragment.TAG)
+                }
+            }
+            commit()
+        }
         supportFragmentManager.executePendingTransactions()
     }
 
@@ -104,4 +110,7 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
         transport = findFragment(TransportFragment.TAG)
         content = findFragment(contentFragmentTag)
     }
+
+    private val withoutTransport
+        get() = extras.getBoolean(Shared.Extra.WITHOUT_TRANSPORT, false)
 }

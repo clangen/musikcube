@@ -6,15 +6,15 @@ import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.view.ViewGroup
 import io.casey.musikcube.remote.R
+import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
-import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
-import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.extension.pushTo
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
+import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 
 class BrowseFragmentAdapter(private val context: Context,
                             fm: FragmentManager,

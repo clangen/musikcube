@@ -17,6 +17,7 @@ import com.uacf.taskrunner.Tasks
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
+import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.settings.model.Connection
 import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb

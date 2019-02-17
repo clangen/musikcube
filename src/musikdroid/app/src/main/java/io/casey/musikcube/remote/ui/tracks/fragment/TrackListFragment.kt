@@ -12,7 +12,6 @@ import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
-import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
@@ -258,9 +257,6 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             else {
                 playback.service.playAll(position, lastFilter)
             }
-
-            startActivity(MainActivity.getStartIntent(appCompatActivity))
-            appCompatActivity.finish() /* TODO: hmmm? */
         }
 
         override fun onActionItemClick(view: View, track: ITrack, position: Int) {
@@ -278,11 +274,11 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         const val TAG = "TrackListFragment"
 
         fun arguments(context: Context,
-                      type: String = "",
-                      id: Long = 0,
+                      categoryType: String = "",
+                      categoryId: Long = 0,
                       categoryValue: String = ""): Bundle = Bundle().apply {
-            putString(Track.Extra.CATEGORY_TYPE, type)
-            putLong(Track.Extra.SELECTED_ID, id)
+            putLong(Track.Extra.SELECTED_ID, categoryId)
+            putString(Track.Extra.CATEGORY_TYPE, categoryType)
             putString(Track.Extra.CATEGORY_VALUE, categoryValue)
             if (Strings.notEmpty(categoryValue)) {
                 putString(
@@ -291,15 +287,13 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             }
         }
 
-        fun create(intent: Intent?): TrackListFragment {
-            return create(intent?.extras?.getBundle(Track.Extra.FRAGMENT_ARGUMENTS) ?: Bundle())
-        }
+        fun create(intent: Intent?): TrackListFragment =
+            create(intent?.extras?.getBundle(Track.Extra.FRAGMENT_ARGUMENTS) ?: Bundle())
 
-        fun create(arguments: Bundle = Bundle()): TrackListFragment {
-            return TrackListFragment().apply {
+        fun create(arguments: Bundle = Bundle()): TrackListFragment =
+            TrackListFragment().apply {
                 this.arguments = arguments
             }
-        }
 
         private fun isValidCategory(categoryType: String?, categoryId: Long): Boolean =
             categoryType != null && categoryType.isNotEmpty() && categoryId != -1L

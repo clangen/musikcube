@@ -37,13 +37,13 @@ class TrackListActivity: FragmentActivityWithTransport() {
             }
 
         fun getStartIntent(context: Context,
-                           type: String = "",
-                           id: Long = 0,
+                           categoryType: String = "",
+                           categoryId: Long = 0,
                            categoryValue: String = ""): Intent =
             Intent(context, TrackListActivity::class.java).apply {
                 putExtra(
                     Track.Extra.FRAGMENT_ARGUMENTS,
-                    TrackListFragment.arguments(context, type, id, categoryValue))
+                    TrackListFragment.arguments(context, categoryType, categoryId, categoryValue))
             }
     }
 }
