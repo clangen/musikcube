@@ -56,14 +56,16 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
 
         super.onCreate(savedInstanceState)
 
-        mixin(ItemContextMenuMixin(appCompatActivity, menuListener, this))
-
         extras.run {
             categoryType = getString(Track.Extra.CATEGORY_TYPE, "")
             categoryId = getLong(Track.Extra.SELECTED_ID, 0)
             categoryValue = getString(Track.Extra.CATEGORY_VALUE, "")
             titleId = getInt(Track.Extra.TITLE_ID, titleId)
         }
+
+        /* needs to come after we extract categoryType -- otherwise menuListener
+        may get resolved to `null` */
+        mixin(ItemContextMenuMixin(appCompatActivity, menuListener, this))
 
         queryFactory = createCategoryQueryFactory(categoryType, categoryId)
     }
