@@ -14,7 +14,6 @@ import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.upstream.DataSource
-import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
@@ -45,6 +44,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             userAgent, null, TIMEOUT, TIMEOUT, true)
 
         this.sourceFactory = DefaultDataSourceFactory(context, null, httpFactory)
+
         this.transcoding = prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
@@ -61,7 +61,10 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
             addCacheListener()
 
-            this.source = ExtractorMediaSource(Uri.parse(proxyUri), sourceFactory, extractorsFactory, null, null)
+            this.source = ExtractorMediaSource
+                .Factory(sourceFactory)
+                .setExtractorsFactory(extractorsFactory)
+                .createMediaSource(Uri.parse(proxyUri))
 
             addPlayer(this, this.source!!)
 
@@ -79,7 +82,11 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             this.originalUri = uri
             this.proxyUri = streamProxy.getProxyUrl(uri)
             this.prefetch = true
-            this.source = ExtractorMediaSource(Uri.parse(proxyUri), sourceFactory, extractorsFactory, null, null)
+
+            this.source = ExtractorMediaSource
+                .Factory(sourceFactory)
+                .setExtractorsFactory(extractorsFactory)
+                .createMediaSource(Uri.parse(proxyUri))
 
             addCacheListener()
             addPlayer(this, source!!)
@@ -302,7 +309,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         const val TIMEOUT = 1000 * 60 * 2 /* 2 minutes; makes seeking an incomplete transcode work most of the time */
         private val prefs: SharedPreferences by lazy { Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
         private val context: Context by lazy { Application.instance }
-        private val trackSelector = DefaultTrackSelector(AdaptiveTrackSelection.Factory(DefaultBandwidthMeter()))
+        private val trackSelector = DefaultTrackSelector(AdaptiveTrackSelection.Factory())
         private var all = mutableListOf<GaplessExoPlayerWrapper>()
         private lateinit var dcms: ConcatenatingMediaSource
         private var gaplessPlayer: SimpleExoPlayer? = null
@@ -332,7 +339,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
         private fun removePending() {
             if (all.size > 0) {
-                (1 until dcms.size).forEach {
+                (1 until dcms.size).forEach { _ ->
                     dcms.removeMediaSource(1)
                 }
 
