@@ -2,18 +2,20 @@ package io.casey.musikcube.remote.ui.navigation
 
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
+import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
+import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
 import io.casey.musikcube.remote.ui.playqueue.fragment.PlayQueueFragment
-import io.casey.musikcube.remote.ui.shared.extension.pushContainerId
-import io.casey.musikcube.remote.ui.shared.extension.pushWithToolbar
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
+import io.casey.musikcube.remote.ui.tracks.activity.EditPlaylistActivity
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 
@@ -107,6 +109,35 @@ object Navigate {
             false ->
                 activity.startActivity(CategoryBrowseActivity
                     .getStartIntent(activity, targetType, sourceType, sourceId, sourceValue))
+        }
+
+    /*
+     *
+     * playlist-related
+     *
+     */
+
+    fun toPlaylistChooser(requestCode: Int,
+                          activity: AppCompatActivity,
+                          fragment: BaseFragment? = null) =
+        CategoryBrowseActivity.getStartIntent(
+                activity,
+                Metadata.Category.PLAYLISTS,
+                NavigationType.Select,
+                activity.getString(R.string.playlist_edit_pick_playlist))
+            .withoutTransport()
+            .withTransitionType(Transition.Vertical)
+            .apply {
+                startActivityForResult(this, requestCode, activity, fragment)
+            }
+
+    fun toPlaylistEditor(requestCode: Int,
+                         playlistName: String,
+                         playlistId: Long,
+                         activity: AppCompatActivity,
+                         fragment: BaseFragment? = null) =
+        EditPlaylistActivity.getStartIntent(activity, playlistName, playlistId).apply {
+            startActivityForResult(this, requestCode, activity, fragment)
         }
 
     /*

@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.ui.shared.extension
 
 import android.app.SearchManager
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -197,6 +198,10 @@ val FragmentManager.topOfStack: String?
         return null
     }
 
+inline fun <reified T> FragmentManager.find(tag: String): T {
+    return findFragmentByTag(tag) as T
+}
+
 /*
  *
  * Bundle
@@ -210,6 +215,25 @@ fun Bundle.withElevation(fm: FragmentManager): Bundle {
 
 val Bundle.elevation: Float
     get() = this.getFloat(Shared.Extra.ELEVATION, 0.0f)
+
+/*
+ *
+ * Intent
+ *
+ */
+
+fun Intent.withoutTransport() =
+    this.apply {
+        putExtra(Shared.Extra.WITHOUT_TRANSPORT, true)
+    }
+
+fun Intent.withTransitionType(type: Transition) =
+    this.apply {
+        putExtra(Shared.Extra.TRANSITION_TYPE, type.name)
+    }
+
+val Intent.transitionType
+    get() = Transition.from(getStringExtra(Shared.Extra.TRANSITION_TYPE))
 
 /*
  *
@@ -391,10 +415,6 @@ fun View.setVisible(visible: Boolean) {
     this.visibility = if (visible) View.VISIBLE else View.GONE
 }
 
-inline fun <reified T> FragmentManager.find(tag: String): T {
-    return findFragmentByTag(tag) as T
-}
-
 /*
  *
  * Colors
@@ -480,3 +500,16 @@ fun fallback(input: String?, fallback: String): String =
 
 fun fallback(input: String?, fallback: Int): String =
     if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input
+
+fun startActivityForResult(intent: Intent,
+                           requestCode: Int,
+                           activity: AppCompatActivity?,
+                           fragment: BaseFragment? = null) =
+    when {
+        fragment != null ->
+            fragment.startActivityForResult(intent, requestCode)
+        activity != null ->
+            activity.startActivityForResult(intent, requestCode)
+        else ->
+            throw IllegalArgumentException("")
+    }

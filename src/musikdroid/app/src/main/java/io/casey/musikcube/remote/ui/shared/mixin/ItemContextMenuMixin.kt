@@ -20,9 +20,7 @@ import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.Category
-import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.shared.extension.hideKeyboard
 import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
@@ -185,14 +183,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     private fun showPlaylistChooser(callback: (Long, String) -> Unit) {
         completion = callback
         pendingCode = REQUEST_ADD_TO_PLAYLIST
-
-        val intent = CategoryBrowseActivity.getStartIntent(
-            activity,
-            Metadata.Category.PLAYLISTS,
-            NavigationType.Select,
-            activity.getString(R.string.playlist_edit_pick_playlist))
-
-        startActivityForResult(intent, pendingCode)
+        Navigate.toPlaylistChooser(pendingCode, activity, fragment)
     }
 
     fun showForTrack(track: ITrack, anchorView: View) {
@@ -253,8 +244,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                     ConfirmDeletePlaylistDialog.show(activity, this, playlistName, playlistId)
                 }
                 R.id.menu_playlist_edit -> {
-                    startActivityForResult(EditPlaylistActivity.getStartIntent(
-                        activity, playlistName, playlistId), REQUEST_EDIT_PLAYLIST)
+                    Navigate.toPlaylistEditor(REQUEST_EDIT_PLAYLIST, playlistName, playlistId, activity, fragment)
                 }
                 R.id.menu_playlist_rename -> {
                     EnterPlaylistNameDialog.showForRename(activity, this, playlistName, playlistId)
@@ -387,13 +377,6 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
     private fun showError(message: String) =
         showErrorSnackbar(activity.findViewById(android.R.id.content), message)
-
-    private fun startActivityForResult(intent: Intent, requestCode: Int) {
-        when (fragment != null) {
-            true -> fragment.startActivityForResult(intent, requestCode)
-            false -> activity.startActivityForResult(intent, requestCode)
-        }
-    }
 
     class ConfirmRemoveFromPlaylistDialog : BaseDialogFragment() {
         private lateinit var mixin: ItemContextMenuMixin
