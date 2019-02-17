@@ -12,8 +12,7 @@ import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
 abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
-    protected var transport: TransportFragment? = null
-        private set
+    private var transport: TransportFragment? = null
 
     protected lateinit var content: BaseFragment
         private set
@@ -83,7 +82,7 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
         } ?: Unit
 
     override val transitionType: Transition
-        get() = intent.transitionType
+        get() = extras.transitionType
 
     protected abstract fun createContentFragment(): BaseFragment
     protected abstract val contentFragmentTag: String

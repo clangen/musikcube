@@ -232,8 +232,8 @@ fun Intent.withTransitionType(type: Transition) =
         putExtra(Shared.Extra.TRANSITION_TYPE, type.name)
     }
 
-val Intent.transitionType
-    get() = Transition.from(getStringExtra(Shared.Extra.TRANSITION_TYPE))
+val Bundle.transitionType
+    get() = Transition.from(getString(Shared.Extra.TRANSITION_TYPE, ""))
 
 /*
  *
