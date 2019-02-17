@@ -244,22 +244,29 @@ class MainMetadataView : FrameLayout {
             GlideApp.with(context)
                 .load(albumArtUrl)
                 .apply(BITMAP_OPTIONS)
-                    .listener(object : RequestListener<Drawable> {
-                        override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-                            if (!paused) {
-                                preloadNextImage()
-                            }
-
-                            setMetadataDisplayMode(DisplayMode.Artwork)
-                            return false
+                .listener(object: RequestListener<Drawable> {
+                    override fun onResourceReady(resource: Drawable?,
+                                                 model: Any?,
+                                                 target: Target<Drawable>?,
+                                                 dataSource: DataSource?,
+                                                 isFirstResource: Boolean): Boolean {
+                        if (!paused) {
+                            preloadNextImage()
                         }
 
-                        override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                            setMetadataDisplayMode(DisplayMode.NoArtwork)
-                            loadedAlbumArtUrl = null
-                            return false
-                        }
-                    })
+                        setMetadataDisplayMode(DisplayMode.Artwork)
+                        return false
+                    }
+
+                    override fun onLoadFailed(e: GlideException?,
+                                              model: Any?,
+                                              target: Target<Drawable>?,
+                                              isFirstResource: Boolean): Boolean {
+                        setMetadataDisplayMode(DisplayMode.NoArtwork)
+                        loadedAlbumArtUrl = null
+                        return false
+                    }
+                })
                 .into(albumArtImageView)
         }
         else {

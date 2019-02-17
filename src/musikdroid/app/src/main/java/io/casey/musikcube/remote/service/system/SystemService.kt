@@ -66,8 +66,8 @@ class SystemService : Service() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                    NOTIFICATION_CHANNEL,
-                    NOTIFICATION_CHANNEL,
+                NOTIFICATION_CHANNEL,
+                NOTIFICATION_CHANNEL,
                 NotificationManager.IMPORTANCE_LOW)
 
             channel.enableVibration(false)
@@ -122,7 +122,7 @@ class SystemService : Service() {
 
         if (wakeLock == null) {
             wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK, "StreamingPlaybackService:")
+                PowerManager.PARTIAL_WAKE_LOCK, "$SESSION_TAG:")
 
             wakeLock?.let {
                 it.setReferenceCounted(false)
@@ -159,19 +159,24 @@ class SystemService : Service() {
     }
 
     private fun checkInitMediaSession() {
-        val receiver = ComponentName(packageName, MediaButtonReceiver::class.java.name)
+        if (mediaSession == null || mediaSession?.isActive != true) {
+            deinitMediaSession()
 
-        mediaSession = MediaSessionCompat(this, "musikdroid.SystemService", receiver, null)
+            val receiver = ComponentName(
+                packageName, MediaButtonReceiver::class.java.name)
 
-        mediaSession?.setFlags(
-            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-            MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+            mediaSession = MediaSessionCompat(
+                this, SESSION_TAG, receiver, null)
+                .apply {
+                    this.setFlags(
+                        MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
+                    this.setCallback(mediaSessionCallback)
+                    this.isActive = true
+                }
 
-        mediaSession?.setCallback(mediaSessionCallback)
-
-        updateMediaSessionPlaybackState()
-
-        mediaSession?.isActive = true
+            updateMediaSessionPlaybackState()
+        }
     }
 
     private fun deinitMediaSession() {
@@ -184,14 +189,13 @@ class SystemService : Service() {
         registerReceiver(headsetUnpluggedReceiver, filter)
     }
 
-    private fun unregisterReceivers() {
+    private fun unregisterReceivers() =
         try {
             unregisterReceiver(headsetUnpluggedReceiver)
         }
         catch (ex: Exception) {
             Log.e(TAG, "unable to unregister headset (un)plugged BroadcastReceiver")
         }
-    }
 
     private fun updateMediaSessionPlaybackState() {
         var mediaSessionState = PlaybackStateCompat.STATE_STOPPED
@@ -199,31 +203,33 @@ class SystemService : Service() {
         var duration = 0
         var playing: ITrack? = null
 
-        if (playback != null) {
-            when (playback?.state) {
+        playback?.let {
+            when (it.state) {
                 PlaybackState.Playing -> mediaSessionState = PlaybackStateCompat.STATE_PLAYING
                 PlaybackState.Buffering -> mediaSessionState = PlaybackStateCompat.STATE_BUFFERING
                 PlaybackState.Paused -> mediaSessionState = PlaybackStateCompat.STATE_PAUSED
                 else -> { }
             }
 
-            playing = playback!!.playingTrack
-            duration = ((playback?.duration ?: 0.0) * 1000).toInt()
+            playing = it.playingTrack
+            duration = (it.duration * 1000).toInt()
         }
 
-        updateMediaSession(playing, duration)
-        updateNotification(playing, mediaSessionState)
+        mediaSession?.let {
+            updateMediaSession(playing, duration)
+            updateNotification(playing, mediaSessionState)
 
-        mediaSession?.setPlaybackState(PlaybackStateCompat.Builder()
-            .setState(mediaSessionState, 0, 0f)
-            .setActions(MEDIA_SESSION_ACTIONS)
-            .build())
+            it.setPlaybackState(PlaybackStateCompat.Builder()
+                .setState(mediaSessionState, 0, 0f)
+                .setActions(MEDIA_SESSION_ACTIONS)
+                .build())
+        }
     }
 
     private fun downloadAlbumArtIfNecessary(track: ITrack, duration: Int) {
         if (!albumArt.same(track) || (albumArt.request == null && albumArt.bitmap == null)) {
             if (track.artist.isNotBlank() && track.album.isNotBlank()) {
-                Log.d(TAG, "download")
+                Log.d(TAG, "downloading album art")
 
                 val url = getAlbumArtUrl(track, Size.Mega)
 
@@ -321,13 +327,11 @@ class SystemService : Service() {
             if (state == PlaybackStateCompat.STATE_PAUSED) {
                 notification.addAction(action(
                     android.R.drawable.ic_media_play,
-                    getString(R.string.button_play),
-                        ACTION_NOTIFICATION_PLAY))
+                    getString(R.string.button_play), ACTION_NOTIFICATION_PLAY))
 
                 notification.addAction(action(
                     android.R.drawable.ic_menu_close_clear_cancel,
-                    getString(R.string.button_close),
-                        ACTION_NOTIFICATION_STOP))
+                    getString(R.string.button_close), ACTION_NOTIFICATION_STOP))
 
                 notification.setStyle(MediaStyle()
                     .setShowActionsInCompactView(0, 1)
@@ -336,18 +340,15 @@ class SystemService : Service() {
             else {
                 notification.addAction(action(
                     android.R.drawable.ic_media_previous,
-                    getString(R.string.button_prev),
-                        ACTION_NOTIFICATION_PREV))
+                    getString(R.string.button_prev), ACTION_NOTIFICATION_PREV))
 
                 notification.addAction(action(
                     android.R.drawable.ic_media_pause,
-                    getString(R.string.button_pause),
-                        ACTION_NOTIFICATION_PAUSE))
+                    getString(R.string.button_pause), ACTION_NOTIFICATION_PAUSE))
 
                 notification.addAction(action(
                     android.R.drawable.ic_media_next,
-                    getString(R.string.button_next),
-                        ACTION_NOTIFICATION_NEXT))
+                    getString(R.string.button_next), ACTION_NOTIFICATION_NEXT))
 
                 notification.setStyle(MediaStyle()
                     .setShowActionsInCompactView(0, 1, 2)
@@ -366,44 +367,49 @@ class SystemService : Service() {
     }
 
     private fun handlePlaybackAction(action: String?): Boolean {
-        if (this.playback != null && Strings.notEmpty(action)) {
-            when (action) {
-                ACTION_NOTIFICATION_NEXT -> {
-                    this.playback?.next()
-                    return true
-                }
+        this.playback?.let {
+            if (Strings.notEmpty(action)) {
+                when (action) {
+                    ACTION_NOTIFICATION_NEXT -> {
+                        it.next()
+                        return true
+                    }
 
-                ACTION_NOTIFICATION_PAUSE -> {
-                    this.playback?.pause()
-                    return true
-                }
+                    ACTION_NOTIFICATION_PAUSE -> {
+                        it.pause()
+                        return true
+                    }
 
-                ACTION_NOTIFICATION_PLAY -> {
-                    this.playback?.resume()
-                    return true
-                }
+                    ACTION_NOTIFICATION_PLAY -> {
+                        it.resume()
+                        return true
+                    }
 
-                ACTION_NOTIFICATION_PREV -> {
-                    this.playback?.prev()
-                    return true
-                }
+                    ACTION_NOTIFICATION_PREV -> {
+                        it.prev()
+                        return true
+                    }
 
-                ACTION_NOTIFICATION_STOP -> {
-                    this.playback?.stop()
-                    shutdown()
-                    return true
+                    ACTION_NOTIFICATION_STOP -> {
+                        it.stop()
+                        shutdown()
+                        return true
+                    }
                 }
             }
         }
+
         return false
     }
 
     private val headsetHookDebouncer = object : Debouncer<Void>(HEADSET_HOOK_DEBOUNCE_MS) {
         override fun onDebounced(last: Void?) {
-            when (headsetHookPressCount) {
-                1 -> playback?.pauseOrResume()
-                2 -> playback?.next()
-                3 -> playback?.prev()
+            playback?.let {
+                when (headsetHookPressCount) {
+                    1 -> it.pauseOrResume()
+                    2 -> it.next()
+                    3 -> it.prev()
+                }
             }
             headsetHookPressCount = 0
         }
@@ -455,11 +461,11 @@ class SystemService : Service() {
         }
 
         override fun onPlay() {
-            if (playback?.queueCount == 0) {
-                playback?.playAll()
-            }
-            else {
-                playback?.resume()
+            playback?.let {
+                when (it.queueCount == 0) {
+                    true -> it.playAll()
+                    false -> it.resume()
+                }
             }
         }
 
@@ -547,6 +553,7 @@ class SystemService : Service() {
 
     companion object {
         private const val TAG = "SystemService"
+        private const val SESSION_TAG = "musikdroid.SystemService"
         private const val NOTIFICATION_ID = 0xdeadbeef.toInt()
         private const val NOTIFICATION_CHANNEL = "musikdroid"
         private const val HEADSET_HOOK_DEBOUNCE_MS = 500L

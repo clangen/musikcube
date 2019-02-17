@@ -99,12 +99,12 @@ private fun dejunk(album: String): String {
 object AlbumArtLookup {
     fun getUrl(album: IAlbum, size: Size = Size.Small): String? {
         return getThumbnailUrl(album.thumbnailId)
-                ?: getUrl(album.albumArtist, album.name, size)
+            ?: getUrl(album.albumArtist, album.name, size)
     }
 
     fun getUrl(track: ITrack, size: Size = Size.Small): String? {
         return getThumbnailUrl(track.thumbnailId)
-                ?: getUrl(track.artist, track.album, size)
+            ?: getUrl(track.artist, track.album, size)
     }
 
     fun getUrl(artist: String = "", album: String = "", size: Size = Size.Small): String? {
@@ -121,7 +121,7 @@ object AlbumArtLookup {
 
     fun canIntercept(request: Request): Boolean {
         return request.url().host() == "ws.audioscrobbler.com" &&
-                request.url().queryParameter("method") == "album.getinfo"
+            request.url().queryParameter("method") == "album.getinfo"
     }
 
     fun intercept(req: Request): Request? {
