@@ -9,24 +9,23 @@ import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
 import android.view.View
+import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
+import android.view.animation.AnimationUtils
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.framework.IMixin
 import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.ViewComponent
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
+import io.casey.musikcube.remote.ui.shared.activity.IBackHandler
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
+import io.casey.musikcube.remote.ui.shared.extension.collapseActionViewIfExpanded
 import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
-import android.view.animation.AlphaAnimation
-import android.view.animation.AnimationUtils
-import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.ui.shared.activity.IBackHandler
-import io.casey.musikcube.remote.ui.shared.extension.collapseActionViewIfExpanded
-import java.lang.Exception
 
 
 open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {

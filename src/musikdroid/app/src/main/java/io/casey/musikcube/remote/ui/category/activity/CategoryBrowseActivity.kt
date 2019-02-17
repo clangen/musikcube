@@ -4,24 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
-import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
 import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
-import io.casey.musikcube.remote.ui.shared.extension.enableUpNavigation
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.service.websocket.WebSocketService.State as SocketState
 
 class CategoryBrowseActivity: FragmentActivityWithTransport() {
     private val category
         get() = content as CategoryBrowseFragment
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.fragment_with_transport_activity)
-        enableUpNavigation()
-    }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean = category.createOptionsMenu(menu)
     override fun setFilter(filter: String) = category.setFilter(filter)

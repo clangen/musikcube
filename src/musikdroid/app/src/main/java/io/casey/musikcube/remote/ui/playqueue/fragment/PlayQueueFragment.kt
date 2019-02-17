@@ -2,7 +2,6 @@ package io.casey.musikcube.remote.ui.playqueue.fragment
 
 import android.os.Bundle
 import android.support.v4.view.ViewCompat
-import android.support.v7.widget.Toolbar
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +12,10 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.playqueue.adapter.PlayQueueAdapter
 import io.casey.musikcube.remote.ui.playqueue.constant.PlayQueue
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
-import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.extension.elevation
+import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
+import io.casey.musikcube.remote.ui.shared.extension.initToolbarIfNecessary
+import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
