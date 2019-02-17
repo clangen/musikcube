@@ -5,10 +5,10 @@ buildscript {
         google()
         jcenter()
     }
-
     dependencies {
         classpath 'com.android.tools.build:gradle:3.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.2.0'
     }
 }
 

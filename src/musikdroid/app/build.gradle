@@ -2,16 +2,11 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven { url 'https://maven.fabric.io/public' }
-    }
-
-    dependencies {
-        classpath 'io.fabric.tools:gradle:1.25.4'
     }
 }
 
 apply plugin: 'com.android.application'
-apply plugin: 'io.fabric'
+apply plugin: 'com.google.gms.google-services'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 
@@ -51,11 +46,6 @@ repositories {
     maven { url "https://jitpack.io" }
     maven { url 'https://maven.google.com' }
     mavenCentral()
-    maven { url 'https://maven.fabric.io/public' }
-}
-
-kapt {
-    generateStubs = true /* required for Dagger 2 code gen to work with Kotlin */
 }
 
 dependencies {
@@ -64,6 +54,8 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+
+    implementation 'com.google.firebase:firebase-core:16.0.7'
 
     implementation(name:'android-taskrunner-0.5', ext:'aar')
     implementation(name:'exoplayer-extension-flac-release-v2', ext:'aar')
