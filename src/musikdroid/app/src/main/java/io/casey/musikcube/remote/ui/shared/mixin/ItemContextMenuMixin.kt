@@ -20,10 +20,10 @@ import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
-import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
+import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.shared.extension.hideKeyboard
 import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
 import io.casey.musikcube.remote.ui.shared.extension.showKeyboard
@@ -214,31 +214,31 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
 
         popup.setOnMenuItemClickListener { item ->
-            val intent: Intent? = when (item.itemId) {
+            when (item.itemId) {
                 R.id.menu_add_to_playlist -> {
                     addToPlaylist(track)
-                    null
                 }
                 R.id.menu_remove_from_playlist -> {
                     ConfirmRemoveFromPlaylistDialog.show(
                         activity, this, categoryId, categoryValue, position, track)
-                    null
                 }
                 R.id.menu_show_artist_albums -> {
-                    AlbumBrowseActivity.getStartIntent(
-                        activity, Metadata.Category.ARTIST, track.artistId, track.artist)
+                    Navigate.toAlbums(
+                        Metadata.Category.ARTIST,
+                        track.artistId,
+                        track.artist,
+                        activity,
+                        fragment)
                 }
                 R.id.menu_show_artist_tracks -> {
-                    TrackListActivity.getStartIntent(
-                        activity, Metadata.Category.ARTIST, track.artistId, track.artist)
+                    Navigate.toTracks(
+                        Metadata.Category.ARTIST,
+                        track.artistId,
+                        track.artist,
+                        activity,
+                        fragment)
                 }
-                else -> null
             }
-
-            if (intent != null) {
-                activity.startActivity(intent)
-            }
-
             true
         }
 
@@ -290,54 +290,57 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 popup.inflate(menuId)
 
                 popup.setOnMenuItemClickListener { item ->
-                    val intent: Intent? = when (item.itemId) {
+                    when (item.itemId) {
                         R.id.menu_add_to_playlist -> {
                             addToPlaylist(value)
-                            null
                         }
                         R.id.menu_show_artist_albums,
                         R.id.menu_show_genre_albums -> {
                             if (value is IAlbum) {
-                                AlbumBrowseActivity.getStartIntent(
-                                    activity,
+                                Navigate.toAlbums(
                                     Metadata.Category.ALBUM_ARTIST,
                                     value.albumArtistId,
-                                    value.albumArtist)
+                                    value.albumArtist,
+                                    activity,
+                                    fragment)
                             }
                             else {
-                                AlbumBrowseActivity.getStartIntent(
-                                    activity, value.type, value.id, value.value)
+                                Navigate.toAlbums(value, activity, fragment)
                             }
                         }
                         R.id.menu_show_artist_tracks,
                         R.id.menu_show_genre_tracks -> {
                             if (value is IAlbum) {
-                                TrackListActivity.getStartIntent(
-                                    activity,
+                                Navigate.toTracks(
                                     Metadata.Category.ALBUM_ARTIST,
                                     value.albumArtistId,
-                                    value.albumArtist)
+                                    value.albumArtist,
+                                    activity,
+                                    fragment)
                             }
                             else {
-                                TrackListActivity.getStartIntent(
-                                    activity, value.type, value.id, value.value)
+                                Navigate.toTracks(value, activity, fragment)
                             }
                         }
                         R.id.menu_show_artist_genres -> {
-                            CategoryBrowseActivity.getStartIntent(
-                                activity, Metadata.Category.GENRE, value.type, value.id, value.value)
+                            Navigate.toCategoryList(
+                                Metadata.Category.GENRE,
+                                value.type,
+                                value.id,
+                                value.value,
+                                activity,
+                                fragment)
                         }
                         R.id.menu_show_genre_artists -> {
-                            CategoryBrowseActivity.getStartIntent(
-                                activity, Metadata.Category.ARTIST, value.type, value.id, value.value)
+                            Navigate.toCategoryList(
+                                Metadata.Category.ARTIST,
+                                value.type,
+                                value.id,
+                                value.value,
+                                activity,
+                                fragment)
                         }
-                        else -> null
                     }
-
-                    if (intent != null) {
-                        activity.startActivity(intent)
-                    }
-
                     true
                 }
 

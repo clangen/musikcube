@@ -278,11 +278,11 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         const val TAG = "TrackListFragment"
 
         fun arguments(context: Context,
-                      type: String = "",
-                      id: Long = 0,
+                      categoryType: String = "",
+                      categoryId: Long = 0,
                       categoryValue: String = ""): Bundle = Bundle().apply {
-            putString(Track.Extra.CATEGORY_TYPE, type)
-            putLong(Track.Extra.SELECTED_ID, id)
+            putLong(Track.Extra.SELECTED_ID, categoryId)
+            putString(Track.Extra.CATEGORY_TYPE, categoryType)
             putString(Track.Extra.CATEGORY_VALUE, categoryValue)
             if (Strings.notEmpty(categoryValue)) {
                 putString(

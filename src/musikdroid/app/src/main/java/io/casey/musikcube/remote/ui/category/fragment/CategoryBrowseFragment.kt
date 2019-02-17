@@ -219,20 +219,27 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                 this.arguments = arguments
             }
 
+        fun create(context: Context,
+                   targetType: String,
+                   predicateType: String = "",
+                   predicateId: Long = -1,
+                   predicateValue: String = ""): CategoryBrowseFragment =
+            create(arguments(context, targetType, predicateType, predicateId, predicateValue))
+
         fun arguments(context: Context,
-                      category: String,
-                      predicateType: String = "",
-                      predicateId: Long = -1,
-                      predicateValue: String = ""): Bundle =
+                      targetType: String,
+                      sourceType: String = "",
+                      sourceId: Long = -1,
+                      sourceValue: String = ""): Bundle =
             Bundle().apply {
-                putString(Category.Extra.CATEGORY, category)
-                putString(Category.Extra.PREDICATE_TYPE, predicateType)
-                putLong(Category.Extra.PREDICATE_ID, predicateId)
-                if (predicateValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(category)) {
-                    val format = Category.NAME_TO_RELATED_TITLE[category]
+                putString(Category.Extra.CATEGORY, targetType)
+                putString(Category.Extra.PREDICATE_TYPE, sourceType)
+                putLong(Category.Extra.PREDICATE_ID, sourceId)
+                if (sourceValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(targetType)) {
+                    val format = Category.NAME_TO_RELATED_TITLE[targetType]
                     when (format) {
-                        null -> throw IllegalArgumentException("unknown category $category")
-                        else -> putString(Shared.Extra.TITLE_OVERRIDE, context.getString(format, predicateValue))
+                        null -> throw IllegalArgumentException("unknown category $targetType")
+                        else -> putString(Shared.Extra.TITLE_OVERRIDE, context.getString(format, sourceValue))
                     }
                 }
             }
