@@ -218,7 +218,7 @@ class SystemService : Service() {
             }
 
             updateMediaSession(playing, duration)
-            updateNotification(playing, mediaSessionState)
+            updateNotification(playing, playback?.state ?: PlaybackState.Stopped)
 
             session.setPlaybackState(PlaybackStateCompat.Builder()
                 .setState(mediaSessionState, 0, 0f)
@@ -297,7 +297,7 @@ class SystemService : Service() {
         }
     }
 
-    private fun updateNotification(track: ITrack?, state: Int) {
+    private fun updateNotification(track: ITrack?, state: PlaybackState) {
         val contentIntent = PendingIntent.getActivity(
             applicationContext, 1, MainActivity.getStartIntent(this), 0)
 
@@ -314,31 +314,17 @@ class SystemService : Service() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
 
-        if (state == PlaybackStateCompat.STATE_STOPPED) {
+        if (state == PlaybackState.Stopped) {
             notification.addAction(action(
                 android.R.drawable.ic_media_play,
-                getString(R.string.button_play),
-                    ACTION_NOTIFICATION_PLAY))
+                getString(R.string.button_play), ACTION_NOTIFICATION_PLAY))
 
             notification.setStyle(MediaStyle()
                 .setShowActionsInCompactView(0)
                 .setMediaSession(mediaSession?.sessionToken))
         }
         else {
-            if (state == PlaybackStateCompat.STATE_PAUSED) {
-                notification.addAction(action(
-                    android.R.drawable.ic_media_play,
-                    getString(R.string.button_play), ACTION_NOTIFICATION_PLAY))
-
-                notification.addAction(action(
-                    android.R.drawable.ic_menu_close_clear_cancel,
-                    getString(R.string.button_close), ACTION_NOTIFICATION_STOP))
-
-                notification.setStyle(MediaStyle()
-                    .setShowActionsInCompactView(0, 1)
-                    .setMediaSession(mediaSession?.sessionToken))
-            }
-            else {
+            if (state == PlaybackState.Playing) {
                 notification.addAction(action(
                     android.R.drawable.ic_media_previous,
                     getString(R.string.button_prev), ACTION_NOTIFICATION_PREV))
@@ -353,6 +339,19 @@ class SystemService : Service() {
 
                 notification.setStyle(MediaStyle()
                     .setShowActionsInCompactView(0, 1, 2)
+                    .setMediaSession(mediaSession?.sessionToken))
+            }
+            else {
+                notification.addAction(action(
+                    android.R.drawable.ic_media_play,
+                    getString(R.string.button_play), ACTION_NOTIFICATION_PLAY))
+
+                notification.addAction(action(
+                    android.R.drawable.ic_menu_close_clear_cancel,
+                    getString(R.string.button_close), ACTION_NOTIFICATION_STOP))
+
+                notification.setStyle(MediaStyle()
+                    .setShowActionsInCompactView(0, 1)
                     .setMediaSession(mediaSession?.sessionToken))
             }
         }
