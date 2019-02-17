@@ -225,8 +225,8 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             killAudioFocus()
 
             if (playContext.currentPlayer != null) {
-                playContext.currentPlayer?.pause()
                 state = PlaybackState.Paused
+                playContext.currentPlayer?.pause()
             }
         }
     }
@@ -754,6 +754,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     private fun schedulePausedSleep() {
+        handler.removeCallbacks(pauseServiceSleepRunnable)
         handler.postDelayed(pauseServiceSleepRunnable, PAUSED_SERVICE_SLEEP_DELAY_MS.toLong())
     }
 

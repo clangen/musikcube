@@ -135,6 +135,7 @@ class SystemService : Service() {
         }
 
         checkInitMediaSession()
+        updateMediaSessionPlaybackState()
     }
 
     private fun shutdownNow() {
@@ -174,8 +175,6 @@ class SystemService : Service() {
                     this.setCallback(mediaSessionCallback)
                     this.isActive = true
                 }
-
-            updateMediaSessionPlaybackState()
         }
     }
 
@@ -198,28 +197,30 @@ class SystemService : Service() {
         }
 
     private fun updateMediaSessionPlaybackState() {
-        var mediaSessionState = PlaybackStateCompat.STATE_STOPPED
+        mediaSession?.let { session ->
+            var mediaSessionState = PlaybackStateCompat.STATE_STOPPED
+            var duration = 0
+            var playing: ITrack? = null
 
-        var duration = 0
-        var playing: ITrack? = null
-
-        playback?.let {
-            when (it.state) {
-                PlaybackState.Playing -> mediaSessionState = PlaybackStateCompat.STATE_PLAYING
-                PlaybackState.Buffering -> mediaSessionState = PlaybackStateCompat.STATE_BUFFERING
-                PlaybackState.Paused -> mediaSessionState = PlaybackStateCompat.STATE_PAUSED
-                else -> { }
+            playback?.let { pb ->
+                mediaSessionState = when (pb.state) {
+                    PlaybackState.Playing -> PlaybackStateCompat.STATE_PLAYING
+                    PlaybackState.Buffering -> PlaybackStateCompat.STATE_BUFFERING
+                    /* HACK: if we return STATE_PAUSED, the playback controls will disappear
+                    from the lock screen! wtf? we don't want that, so we return
+                    STATE_BUFFERING instead, which seems to keep the play controls visible,
+                    and also display the "PLAY" button like the user expects. sigh */
+                    PlaybackState.Paused -> PlaybackStateCompat.STATE_BUFFERING
+                    PlaybackState.Stopped -> PlaybackStateCompat.STATE_STOPPED
+                }
+                playing = pb.playingTrack
+                duration = (pb.duration * 1000).toInt()
             }
 
-            playing = it.playingTrack
-            duration = (it.duration * 1000).toInt()
-        }
-
-        mediaSession?.let {
             updateMediaSession(playing, duration)
             updateNotification(playing, mediaSessionState)
 
-            it.setPlaybackState(PlaybackStateCompat.Builder()
+            session.setPlaybackState(PlaybackStateCompat.Builder()
                 .setState(mediaSessionState, 0, 0f)
                 .setActions(MEDIA_SESSION_ACTIONS)
                 .build())
