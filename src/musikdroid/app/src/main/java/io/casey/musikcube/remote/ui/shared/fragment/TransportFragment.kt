@@ -56,8 +56,15 @@ class TransportFragment: BaseFragment() {
 
         titleBar?.setOnClickListener {
             if (playback.service.state != PlaybackState.Stopped) {
-                if (appCompatActivity.supportFragmentManager.topOfStack != PlayQueueFragment.TAG) {
-                    Navigate.toPlayQueue(playback.service.queuePosition, appCompatActivity, this)
+                appCompatActivity.supportFragmentManager.run {
+                    when (topOfStack != PlayQueueFragment.TAG) {
+                        true -> Navigate.toPlayQueue(
+                            playback.service.queuePosition,
+                            appCompatActivity,
+                            this@TransportFragment)
+                        false ->
+                            this.popBackStack()
+                    }
                 }
             }
         }
