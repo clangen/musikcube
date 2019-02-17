@@ -31,7 +31,6 @@ import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
 import io.casey.musikcube.remote.ui.shared.fragment.BaseDialogFragment
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.tracks.activity.EditPlaylistActivity
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 import javax.inject.Inject
@@ -159,8 +158,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     }
 
     private fun viewPlaylist(playlistId: Long, playlistName: String): ((View) -> Unit) = { _ ->
-        activity.startActivity(TrackListActivity.getStartIntent(
-            activity, Metadata.Category.PLAYLISTS, playlistId, playlistName))
+        Navigate.toTracks(Metadata.Category.PLAYLISTS, playlistId, playlistName, activity, fragment)
     }
 
     private fun addWithErrorHandler(playlistId: Long, playlistName: String, observable: Observable<Boolean>) {

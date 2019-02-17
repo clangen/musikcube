@@ -5,6 +5,7 @@ object Shared {
         const val TITLE_OVERRIDE = "extra_title_override"
         const val WITH_TOOLBAR = "extra_with_toolbar"
         const val PUSH_CONTAINER_ID = "extra_push_container_id"
+        const val WITHOUT_TRANSPORT = "extra_without_transport"
         const val ELEVATION = "extra_elevation"
     }
 }
