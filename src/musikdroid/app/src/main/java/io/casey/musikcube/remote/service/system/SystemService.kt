@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
 import android.support.v4.app.NotificationCompat
@@ -17,8 +18,9 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.KeyEvent
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.FutureTarget
+import com.bumptech.glide.request.RequestFutureTarget
 import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
 import io.casey.musikcube.remote.Application
@@ -53,6 +55,7 @@ class SystemService : Service() {
     private lateinit var powerManager: PowerManager
     private lateinit var prefs: SharedPreferences
 
+    private val handler = Handler()
     private val albumArt = AlbumArt()
     private val sessionData = SessionMetadata()
 
@@ -129,15 +132,15 @@ class SystemService : Service() {
 
         if (sleeping) {
             playback?.connect(playbackListener)
-            initMediaSession()
         }
+
+        checkInitMediaSession()
     }
 
     private fun shutdownNow() {
         Log.d(TAG, "SystemService SHUT_DOWN")
 
-        mediaSession?.release()
-        mediaSession = null
+        deinitMediaSession()
 
         playback?.disconnect(playbackListener)
         playback = null
@@ -155,7 +158,7 @@ class SystemService : Service() {
         playback?.disconnect(playbackListener)
     }
 
-    private fun initMediaSession() {
+    private fun checkInitMediaSession() {
         val receiver = ComponentName(packageName, MediaButtonReceiver::class.java.name)
 
         mediaSession = MediaSessionCompat(this, "musikdroid.SystemService", receiver, null)
@@ -169,6 +172,11 @@ class SystemService : Service() {
         updateMediaSessionPlaybackState()
 
         mediaSession?.isActive = true
+    }
+
+    private fun deinitMediaSession() {
+        mediaSession?.release()
+        mediaSession = null
     }
 
     private fun registerReceivers() {
@@ -219,28 +227,31 @@ class SystemService : Service() {
 
                 val url = getAlbumArtUrl(track, Size.Mega)
 
-                val originalRequest = GlideApp.with(applicationContext)
-                        .asBitmap().load(url).apply(BITMAP_OPTIONS)
+                val request = GlideApp.with(applicationContext)
+                    .asBitmap()
+                    .load(url)
+                    .apply(BITMAP_OPTIONS)
 
                 albumArt.reset(track)
-                albumArt.request = originalRequest
-                albumArt.target = originalRequest.into(object : SimpleTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
-                    override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
-                        /* make sure the instance's current request is the same as this request. it's
-                        possible we had another download request come in before this one finished */
-                        if (albumArt.request == originalRequest) {
-                            albumArt.bitmap = bitmap
-                            albumArt.request = null
-                            updateMediaSession(track, duration)
+                albumArt.request = request
+                albumArt.target = request.into(
+                    object: RequestFutureTarget<Bitmap>(handler, Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
+                        override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
+                            /* make sure the instance's current request is the same as this request. it's
+                            possible we had another download request come in before this one finished */
+                            if (albumArt.request == request) {
+                                albumArt.bitmap = bitmap
+                                albumArt.request = null
+                                updateMediaSession(track, duration)
+                            }
                         }
-                    }
 
-                    override fun onLoadFailed(errorDrawable: Drawable?) {
-                        if (albumArt.request == originalRequest) {
-                            albumArt.request = null
+                        override fun onLoadFailed(errorDrawable: Drawable?) {
+                            if (albumArt.request == request) {
+                                albumArt.request = null
+                            }
                         }
-                    }
-                })
+                    })
             }
         }
         else {
@@ -500,7 +511,7 @@ class SystemService : Service() {
     }
 
     private class AlbumArt {
-        var target: SimpleTarget<Bitmap>? = null
+        var target: FutureTarget<Bitmap>? = null
         var request: GlideRequest<Bitmap>? = null
         var bitmap: Bitmap? = null
         var track: ITrack? = null
