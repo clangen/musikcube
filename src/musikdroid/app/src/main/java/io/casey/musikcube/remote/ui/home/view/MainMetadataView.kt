@@ -283,7 +283,7 @@ class MainMetadataView : FrameLayout {
 
                 val newUrl = getAlbumArtUrl(artist, album, Size.Mega)
                 if (loadedAlbumArtUrl != newUrl) {
-                    GlideApp.with(context).load(newUrl).apply(BITMAP_OPTIONS).downloadOnly(width, height)
+                    GlideApp.with(context).load(newUrl).apply(BITMAP_OPTIONS).submit(width, height)
                 }
             }
         }
