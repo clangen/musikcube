@@ -12,7 +12,6 @@ import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
-import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
@@ -258,9 +257,6 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             else {
                 playback.service.playAll(position, lastFilter)
             }
-
-            startActivity(MainActivity.getStartIntent(appCompatActivity))
-            appCompatActivity.finish() /* TODO: hmmm? */
         }
 
         override fun onActionItemClick(view: View, track: ITrack, position: Int) {
