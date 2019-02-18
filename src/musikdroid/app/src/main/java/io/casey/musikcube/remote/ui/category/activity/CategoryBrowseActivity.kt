@@ -16,7 +16,6 @@ class CategoryBrowseActivity: FragmentActivityWithTransport() {
         get() = content as CategoryBrowseFragment
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean = category.createOptionsMenu(menu)
-    override fun onTransportChanged() = category.onTransportChanged()
     override val contentFragmentTag: String = CategoryBrowseFragment.TAG
 
     override fun createContentFragment(): BaseFragment =

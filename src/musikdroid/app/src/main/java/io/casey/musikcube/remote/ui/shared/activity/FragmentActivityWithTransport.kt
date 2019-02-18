@@ -83,7 +83,11 @@ abstract class FragmentActivityWithTransport: BaseActivity() {
     protected abstract val contentFragmentTag: String
 
     protected open fun onTransportChanged() {
-
+        supportFragmentManager.fragments.forEach {
+            if (it is ITransportObserver) {
+                it.onTransportChanged()
+            }
+        }
     }
 
     private fun createFragments() {
