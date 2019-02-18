@@ -14,7 +14,6 @@ import io.casey.musikcube.remote.ui.shared.activity.IFabConsumer
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
-import io.casey.musikcube.remote.ui.shared.extension.initToolbarIfNecessary
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 
 class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitleProvider {
@@ -77,6 +76,9 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
 
     override fun onTransportChanged() =
         adapter.onTransportChanged()
+
+    override val addFilterToToolbar: Boolean
+        get() = true
 
     override fun setFilter(filter: String) {
         adapter.filter = filter

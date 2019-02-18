@@ -17,9 +17,9 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.constant.Shared
+import io.casey.musikcube.remote.ui.shared.extension.addFilterAction
 import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
 import io.casey.musikcube.remote.ui.shared.extension.getTitleOverride
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -68,6 +68,9 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
             emptyView.alternateView = recyclerView
         }
 
+    override val addFilterToToolbar: Boolean
+        get() = true
+
     override fun setFilter(filter: String) {
         if (filter != lastFilter) {
             lastFilter = filter
@@ -76,7 +79,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     }
 
     fun createOptionsMenu(menu: Menu): Boolean =
-        initSearchMenu(menu, this)
+        addFilterAction(menu, this)
 
     override fun onTransportChanged() =
         adapter.notifyDataSetChanged()

@@ -23,9 +23,9 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.constant.Shared
+import io.casey.musikcube.remote.ui.shared.extension.addFilterAction
 import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
 import io.casey.musikcube.remote.ui.shared.extension.getTitleOverride
-import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
@@ -95,6 +95,9 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     override val fabVisible: Boolean
         get() = (category == Metadata.Category.PLAYLISTS)
 
+    override val addFilterToToolbar: Boolean
+        get() = true
+
     override fun setFilter(filter: String) {
         this.lastFilter = filter
         this.filterDebouncer.call()
@@ -103,7 +106,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     fun createOptionsMenu(menu: Menu): Boolean {
         when (Metadata.Category.PLAYLISTS == category) {
             true -> menu.clear()
-            else -> initSearchMenu(menu, this)
+            else -> addFilterAction(menu, this)
         }
         return true
     }

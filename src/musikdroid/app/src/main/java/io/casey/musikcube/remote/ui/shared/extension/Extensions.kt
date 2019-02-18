@@ -50,9 +50,6 @@ fun SharedPreferences.getString(key: String): String? =
  *
  */
 
-fun Toolbar.initSearchMenu(activity: AppCompatActivity, filterable: IFilterable?): Boolean =
-        activity.initSearchMenu(this.menu, filterable)
-
 fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
     val title = extras.getString(Shared.Extra.TITLE_OVERRIDE)
@@ -130,8 +127,8 @@ fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     this.title = if (Strings.notEmpty(title)) title else defaultTitle
 }
 
-fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean {
-    this.menuInflater.inflate(R.menu.search_menu, menu)
+fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean {
+    appCompatActivity.menuInflater.inflate(R.menu.search_menu, menu)
 
     val searchMenuItem = menu.findItem(R.id.action_search)
     val searchView = MenuItemCompat.getActionView(searchMenuItem) as SearchView
@@ -154,8 +151,8 @@ fun AppCompatActivity.initSearchMenu(menu: Menu, filterable: IFilterable?): Bool
         }
     }
 
-    val searchManager = this.getSystemService(Context.SEARCH_SERVICE) as SearchManager
-    val searchableInfo = searchManager.getSearchableInfo(this.componentName)
+    val searchManager = appCompatActivity.getSystemService(Context.SEARCH_SERVICE) as SearchManager
+    val searchableInfo = searchManager.getSearchableInfo(appCompatActivity.componentName)
 
     searchView.setSearchableInfo(searchableInfo)
     searchView.setIconifiedByDefault(true)
@@ -299,17 +296,14 @@ inline fun <reified T: BaseFragment> T.withTitleOverride(activity: AppCompatActi
     return this
 }
 
-fun BaseFragment.initSearchMenu(menu: Menu, filterable: IFilterable?): Boolean =
-    (activity as AppCompatActivity).initSearchMenu(menu, filterable)
-
-fun BaseFragment.initToolbarIfNecessary(activity: AppCompatActivity, view: View, searchMenu: Boolean = true) {
+fun BaseFragment.initToolbarIfNecessary(view: View, showFilter: Boolean = true) {
     view.findViewById<Toolbar>(R.id.toolbar)?.let {
         it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
         it.setNavigationOnClickListener {
             appCompatActivity.onBackPressed()
         }
-        if (searchMenu) {
-            it.initSearchMenu(activity, this as? IFilterable)
+        if (showFilter) {
+            this.addFilterAction(it.menu, this as? IFilterable)
         }
         if (this is IMenuProvider) {
             this.createOptionsMenu(it.menu)

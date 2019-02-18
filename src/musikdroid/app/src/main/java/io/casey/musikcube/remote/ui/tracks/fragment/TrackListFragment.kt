@@ -141,6 +141,9 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
     override val title: String
         get() = getTitleOverride(getString(titleId))
 
+    override val addFilterToToolbar: Boolean
+        get() = false
+
     override fun setFilter(filter: String) {
         lastFilter = filter
         filterDebouncer.call()
@@ -149,7 +152,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
     override fun createOptionsMenu(menu: Menu): Boolean {
         when (Metadata.Category.PLAYLISTS == categoryType) {
             true -> appCompatActivity.menuInflater.inflate(R.menu.view_playlist_menu, menu)
-            false -> initSearchMenu(menu, this)
+            false -> addFilterAction(menu, this)
         }
         return true
     }

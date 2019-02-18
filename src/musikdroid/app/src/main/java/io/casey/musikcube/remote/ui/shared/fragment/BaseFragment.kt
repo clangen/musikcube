@@ -22,6 +22,7 @@ import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.ViewComponent
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.IBackHandler
+import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.extension.collapseActionViewIfExpanded
 import io.casey.musikcube.remote.ui.shared.extension.elevation
@@ -73,7 +74,8 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         ViewCompat.setElevation(view, extras.elevation)
-        initToolbarIfNecessary(appCompatActivity, view)
+        val enableFilter = (this is IFilterable) && this.addFilterToToolbar
+        initToolbarIfNecessary(view, enableFilter)
     }
 
     open fun onPostCreate(savedInstanceState: Bundle?) {
