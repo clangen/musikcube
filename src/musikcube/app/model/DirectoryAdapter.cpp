@@ -107,10 +107,15 @@ static void buildDirectoryList(
     catch (...) {
     }
 
-    std::sort(
-        target.begin(),
-        target.end(),
-        std::locale(setlocale(LC_ALL, nullptr)));
+    try {
+        std::sort(
+            target.begin(),
+            target.end(),
+            std::locale(setlocale(LC_ALL, nullptr)));
+    }
+    catch (...) {
+        std::sort(target.begin(), target.end());
+    }
 }
 
 static std::string normalizePath(boost::filesystem::path path) {
