@@ -6,6 +6,7 @@ import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
+import io.casey.musikcube.remote.ui.category.fragment.AllCategoriesFragment
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
@@ -40,6 +41,7 @@ interface ViewComponent {
     fun inject(activity: TrackListActivity)
 
     fun inject(fragment: AlbumBrowseFragment)
+    fun inject(fragment: AllCategoriesFragment)
     fun inject(fragment: BaseFragment)
     fun inject(fragment: CategoryBrowseFragment)
     fun inject(fragment: PlayQueueFragment)

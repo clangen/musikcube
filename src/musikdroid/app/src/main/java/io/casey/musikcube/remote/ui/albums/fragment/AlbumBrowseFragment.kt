@@ -2,7 +2,6 @@ package io.casey.musikcube.remote.ui.albums.fragment
 
 import android.content.Context
 import android.os.Bundle
-import android.support.v4.view.ViewCompat
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
@@ -18,7 +17,10 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.constant.Shared
-import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
+import io.casey.musikcube.remote.ui.shared.extension.getTitleOverride
+import io.casey.musikcube.remote.ui.shared.extension.initSearchMenu
+import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
@@ -57,8 +59,6 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         inflater.inflate(this.getLayoutId(), container, false).apply {
-            ViewCompat.setElevation(this, extras.elevation)
-
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
             setupDefaultRecyclerView(recyclerView, adapter)
 
@@ -66,8 +66,6 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
             emptyView.capability = EmptyListView.Capability.OnlineOnly
             emptyView.emptyMessage = getString(R.string.empty_no_items_format, getString(R.string.browse_type_albums))
             emptyView.alternateView = recyclerView
-
-            initToolbarIfNecessary(appCompatActivity, this)
         }
 
     override fun setFilter(filter: String) {
@@ -83,7 +81,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     override fun onTransportChanged() =
         adapter.notifyDataSetChanged()
 
-    override fun initObservables() {
+    override fun onInitObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { state ->
                 if (state.first == IDataProvider.State.Connected) {

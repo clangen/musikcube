@@ -7,19 +7,22 @@
     android:layout_width="match_parent"
     android:background="@color/theme_background" >
 
-    <include layout="@layout/toolbar" />
+    <include
+        layout="@layout/toolbar"
+        android:transitionName="toolbar_transition" />
 
     <FrameLayout
         android:id="@+id/content_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:transitionName="middle_content_transition"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
             style="@style/RecyclerView"
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"/>
 
         <io.casey.musikcube.remote.ui.shared.view.EmptyListView
             style="@style/EmptyView"

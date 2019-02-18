@@ -286,7 +286,7 @@ fun BaseFragment.pushWithToolbar(
 }
 
 inline fun <reified T: BaseFragment> T.withToolbar(): T {
-    this.arguments?.putBoolean(Shared.Extra.WITH_TOOLBAR, true)
+    this.extras.putBoolean(Shared.Extra.WITH_TOOLBAR, true)
     return this
 }
 
@@ -323,7 +323,7 @@ fun BaseFragment.initToolbarIfNecessary(activity: AppCompatActivity, view: View,
 fun BaseFragment.getLayoutId(): Int =
     when (this.extras.getBoolean(Shared.Extra.WITH_TOOLBAR)) {
         true -> R.layout.recycler_view_with_empty_state_and_toolbar_and_fab
-        else -> R.layout.recycler_view_with_empty_state
+        false -> R.layout.recycler_view_with_empty_state
     }
 
 inline fun <reified T: BaseFragment> T.addElevation(fm: FragmentManager): T {

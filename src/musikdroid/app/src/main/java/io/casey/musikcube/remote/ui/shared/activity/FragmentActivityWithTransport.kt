@@ -11,7 +11,7 @@ import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 
-abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
+abstract class FragmentActivityWithTransport: BaseActivity() {
     private var transport: TransportFragment? = null
 
     protected lateinit var content: BaseFragment
@@ -76,11 +76,6 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
         return super.onOptionsItemSelected(item)
     }
 
-    override fun setFilter(filter: String) =
-        (content as? IFilterable)?.run {
-            setFilter(filter)
-        } ?: Unit
-
     override val transitionType: Transition
         get() = extras.transitionType
 
@@ -93,13 +88,18 @@ abstract class FragmentActivityWithTransport: BaseActivity(), IFilterable {
 
     private fun createFragments() {
         content = createContentFragment()
-            .withToolbar().withTitleOverride(this)
+            .withToolbar()
+            .withTitleOverride(this)
+            .pushTo(R.id.content_container)
         supportFragmentManager.beginTransaction().apply {
             add(R.id.content_container, content, contentFragmentTag)
             if (!withoutTransport) {
-                transport = TransportFragment.create().apply {
-                    add(R.id.transport_container, this, TransportFragment.TAG)
-                }
+                transport = TransportFragment
+                    .create()
+                    .pushTo(R.id.content_container)
+                    .apply {
+                        add(R.id.transport_container, this, TransportFragment.TAG)
+                    }
             }
             commit()
         }

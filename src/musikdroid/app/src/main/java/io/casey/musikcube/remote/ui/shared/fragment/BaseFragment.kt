@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.Fragment
+import android.support.v4.view.ViewCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
 import android.view.View
@@ -23,6 +24,8 @@ import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.IBackHandler
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.extension.collapseActionViewIfExpanded
+import io.casey.musikcube.remote.ui.shared.extension.elevation
+import io.casey.musikcube.remote.ui.shared.extension.initToolbarIfNecessary
 import io.casey.musikcube.remote.ui.shared.extension.setTitleFromIntent
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
@@ -43,20 +46,20 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
         private set(value) {
             field = value
             when (field) {
-                true -> destroyObservables()
-                false -> initObservables()
+                true -> onDestroyObservables()
+                false -> onInitObservables()
             }
         }
 
     protected var disposables = CompositeDisposable()
         private set
 
-    private fun destroyObservables() {
+    private fun onDestroyObservables() {
         disposables.dispose()
         disposables = CompositeDisposable()
     }
 
-    protected open fun initObservables() {
+    protected open fun onInitObservables() {
         /* for subclass use */
     }
 
@@ -65,6 +68,12 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
         mixins.onCreate(savedInstanceState ?: Bundle())
         prefs = Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         handler.post { onPostCreate(savedInstanceState) }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        ViewCompat.setElevation(view, extras.elevation)
+        initToolbarIfNecessary(appCompatActivity, view)
     }
 
     open fun onPostCreate(savedInstanceState: Bundle?) {
@@ -84,7 +93,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
             toolbar?.setTitleFromIntent(title)
         }
         if (!animating) {
-            initObservables()
+            onInitObservables()
         }
     }
 

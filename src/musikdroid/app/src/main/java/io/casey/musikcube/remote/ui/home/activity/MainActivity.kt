@@ -20,13 +20,11 @@ import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.navigation.Navigate
-import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
 import io.casey.musikcube.remote.ui.settings.activity.RemoteSettingsActivity
 import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
@@ -177,7 +175,7 @@ class MainActivity : BaseActivity() {
             }
 
             R.id.action_categories -> {
-                startActivity(AllCategoriesActivity.getStartIntent(this))
+                Navigate.toAllCategories(this)
                 return true
             }
 
@@ -300,11 +298,9 @@ class MainActivity : BaseActivity() {
         }
 
         findViewById<View>(R.id.button_play_pause).setOnClickListener {
-            if (playback.service.state === PlaybackState.Stopped) {
-                playback.service.playAll()
-            }
-            else {
-                playback.service.pauseOrResume()
+            when (playback.service.state === PlaybackState.Stopped) {
+                true -> playback.service.playAll()
+                else -> playback.service.pauseOrResume()
             }
         }
 
@@ -370,8 +366,15 @@ class MainActivity : BaseActivity() {
         }
 
         findViewById<View>(R.id.metadata_container).setOnClickListener {
-            if (playback.service.queueCount > 0) {
-                navigateToPlayQueue()
+            when (playback.service.queueCount > 0) {
+                true -> navigateToPlayQueue()
+                else -> Navigate.toBrowse(this)
+            }
+        }
+
+        findViewById<View>(R.id.middle_container).setOnClickListener {
+            if (data.wss.state == WebSocketService.State.Connected) {
+                Navigate.toBrowse(this)
             }
         }
 
@@ -484,8 +487,7 @@ class MainActivity : BaseActivity() {
     }
 
     private fun navigateToPlayQueue() {
-        startActivity(PlayQueueActivity.getStartIntent(
-            this@MainActivity, playback.service.queuePosition))
+        Navigate.toPlayQueue(playback.service.queuePosition, this)
     }
 
     private fun scheduleUpdateTime(immediate: Boolean) {

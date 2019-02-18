@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.support.v4.app.ActivityOptionsCompat
 import android.support.v4.util.Pair
 import android.support.v7.app.AppCompatActivity
-import android.view.View
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
@@ -13,7 +12,7 @@ import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
-import io.casey.musikcube.remote.ui.browse.constant.Browse
+import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
@@ -37,14 +36,16 @@ object Navigate {
                  initialCategoryType: String = "") =
         activity.startActivity(
             BrowseActivity.getStartIntent(activity, initialCategoryType),
-            when (activity is MainActivity) {
-                true -> ActivityOptionsCompat.makeSceneTransitionAnimation(
-                    activity,
-                    Pair(activity.findViewById(R.id.PlayControls), "play_controls_transition"),
-//                    Pair(activity.findViewById(R.id.button_play_queue), "play_queue_transition"),
-                    Pair(activity.findViewById(R.id.toolbar), "toolbar_transition")).toBundle()
-                false -> Bundle()
-            })
+            createMainTransition(activity))
+
+    /*
+     *
+     * list of categories
+     *
+     */
+
+    fun toAllCategories(activity: AppCompatActivity) =
+        activity.startActivity(AllCategoriesActivity.getStartIntent(activity))
 
     /*
      *
@@ -137,6 +138,19 @@ object Navigate {
                     .getStartIntent(activity, targetType, sourceType, sourceId, sourceValue))
         }
 
+    fun toCategoryList(targetType: String,
+                       activity: AppCompatActivity,
+                       fragment: BaseFragment? = null) =
+            when (fragment != null && fragment.pushContainerId > 0) {
+                true ->
+                    fragment.pushWithToolbar(
+                        fragment.pushContainerId,
+                        "$targetType)",
+                        CategoryBrowseFragment.create(activity, targetType))
+                false ->
+                    activity.startActivity(CategoryBrowseActivity.getStartIntent(activity, targetType))
+            }
+
     /*
      *
      * playlist-related
@@ -216,4 +230,23 @@ object Navigate {
                     .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
         }
     }
+
+    /*
+     *
+     * transition stuff
+     *
+     */
+
+    private fun createMainTransition(activity: AppCompatActivity) =
+        when (activity is MainActivity) {
+            true ->
+                ActivityOptionsCompat.makeSceneTransitionAnimation(
+                    activity,
+                    Pair(activity.findViewById(R.id.PlayControls), "play_controls_transition"),
+//                    Pair(activity.findViewById(R.id.middle_container), "middle_content_transition"),
+//                    Pair(activity.findViewById(R.id.button_play_queue), "play_queue_transition"),
+                    Pair(activity.findViewById(R.id.toolbar), "toolbar_transition")).toBundle()
+            false ->
+                Bundle()
+        }
 }

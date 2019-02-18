@@ -72,8 +72,6 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
                 }
             })
 
-            initToolbarIfNecessary(appCompatActivity, this)
-
             showFabIfNecessary(pager.currentItem)
         }
 

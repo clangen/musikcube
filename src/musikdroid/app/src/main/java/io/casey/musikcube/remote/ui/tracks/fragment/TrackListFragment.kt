@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.ui.tracks.fragment
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v4.view.ViewCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.*
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
@@ -81,7 +80,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         requeryIfViewingOfflineCache()
     }
 
-    override fun initObservables() {
+    override fun onInitObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
                 val shouldRequery =
@@ -102,15 +101,12 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         inflater.inflate(this.getLayoutId(), container, false).apply {
-            ViewCompat.setElevation(this, extras.elevation)
-
             val recyclerView = findViewById<FastScrollRecyclerView>(R.id.recycler_view)
 
             tracks = DefaultSlidingWindow(recyclerView, data.provider, queryFactory)
             adapter = TrackListAdapter(tracks, eventListener, playback, prefs)
 
             setupDefaultRecyclerView(recyclerView, adapter)
-            initToolbarIfNecessary(appCompatActivity, this, searchMenu = false)
 
             emptyView = findViewById(R.id.empty_list_view)
 

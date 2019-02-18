@@ -25,9 +25,7 @@ class TrackListActivity: FragmentActivityWithTransport() {
         }
 
     override fun createContentFragment(): BaseFragment = TrackListFragment.create(intent)
-
     override val contentFragmentTag: String = TrackListFragment.TAG
-
     override fun onTransportChanged() = tracks.onTransportChanged()
 
     companion object {

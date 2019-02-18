@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.media.AudioManager
 import android.os.Bundle
+import android.support.v4.app.Fragment
+import android.support.v4.app.FragmentManager
 import android.support.v7.app.AppCompatActivity
 import android.view.KeyEvent
 import android.view.MenuItem
@@ -18,6 +20,7 @@ import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.injection.ViewComponent
+import io.casey.musikcube.remote.ui.browse.fragment.BrowseFragment
 import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.*
@@ -94,6 +97,20 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         mixins.onDestroy()
     }
 
+
+    override fun onBackPressed() {
+        (top as? IBackHandler)?.let {
+            if (it.onBackPressed()) {
+                return
+            }
+        }
+
+        when {
+            fm.backStackEntryCount > 1 -> fm.popBackStack()
+            else -> super.onBackPressed()
+        }
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (mixin(PlaybackMixin::class.java)?.onKeyDown(keyCode) == true) {
             return true
@@ -143,6 +160,20 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
     private fun setupToolbar() {
         toolbar?.let { setSupportActionBar(it) }
     }
+
+    protected val top: Fragment?
+        get() {
+            return when {
+                fm.backStackEntryCount == 0 ->
+                    fm.findFragmentByTag(BrowseFragment.TAG)
+                else -> fm.findFragmentByTag(
+                    fm.getBackStackEntryAt(fm.backStackEntryCount - 1).name)
+
+            }
+        }
+
+    protected val fm: FragmentManager
+        get() = supportFragmentManager
 
     protected open val transitionType = Transition.Horizontal
 

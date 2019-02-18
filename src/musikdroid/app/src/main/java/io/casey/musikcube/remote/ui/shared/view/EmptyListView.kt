@@ -50,7 +50,10 @@ class EmptyListView : FrameLayout {
     var alternateView: View? = null
         set(value) {
             field = value
-            alternateView?.visibility = if (visibility == View.GONE) View.VISIBLE else View.GONE
+            alternateView?.visibility = when (visibility == View.VISIBLE) {
+                true -> View.GONE
+                false -> View.VISIBLE
+            }
         }
 
     var emptyMessage: String
@@ -77,7 +80,10 @@ class EmptyListView : FrameLayout {
             emptyContainer?.setVisible(!showOfflineContainer)
         }
 
-        alternateView?.visibility = if (visibility == View.GONE) View.VISIBLE else View.GONE
+        alternateView?.visibility = when (visibility == View.VISIBLE) {
+            true -> View.GONE
+            false -> View.VISIBLE
+        }
     }
 
     fun update(state: IDataProvider.State, count: Int) {
@@ -96,7 +102,10 @@ class EmptyListView : FrameLayout {
             emptyContainer?.setVisible(!showOfflineContainer)
         }
 
-        alternateView?.visibility = if (visibility == View.INVISIBLE) View.VISIBLE else View.INVISIBLE
+        alternateView?.visibility = when (visibility == View.INVISIBLE) {
+            true -> View.VISIBLE
+            false -> View.INVISIBLE
+        }
     }
 
     private fun initialize() {

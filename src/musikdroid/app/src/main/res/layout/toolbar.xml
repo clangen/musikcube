@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_alignParentTop="true"
+    android:transitionName="toolbar_transition"
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
     <android.support.v7.widget.Toolbar

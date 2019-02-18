@@ -46,8 +46,6 @@ class PlayQueueFragment: BaseFragment(), ITitleProvider {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
         inflater.inflate(this.getLayoutId(), container, false).apply {
-            ViewCompat.setElevation(this, extras.elevation)
-
             val queryFactory = playback.service.playlistQueryFactory
             offlineQueue = playback.service.playlistQueryFactory.offline()
 
@@ -58,7 +56,6 @@ class PlayQueueFragment: BaseFragment(), ITitleProvider {
             adapter = PlayQueueAdapter(tracks, playback, prefs, adapterListener)
 
             setupDefaultRecyclerView(recyclerView, adapter)
-            initToolbarIfNecessary(appCompatActivity, this, searchMenu = false)
 
             emptyView = findViewById(R.id.empty_list_view)
             emptyView.capability = EmptyListView.Capability.OfflineOk
@@ -79,7 +76,7 @@ class PlayQueueFragment: BaseFragment(), ITitleProvider {
         }
     }
 
-    override fun initObservables() {
+    override fun onInitObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
                 if (states.first == IDataProvider.State.Connected) {
