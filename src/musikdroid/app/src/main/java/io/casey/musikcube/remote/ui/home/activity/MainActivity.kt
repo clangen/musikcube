@@ -20,12 +20,12 @@ import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
 import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
+import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
 import io.casey.musikcube.remote.ui.settings.activity.RemoteSettingsActivity
 import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
@@ -100,6 +100,11 @@ class MainActivity : BaseActivity() {
         runUpdateCheck()
         initObservers()
         registerLayoutListener()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        rebindUi()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -331,32 +336,33 @@ class MainActivity : BaseActivity() {
         })
 
         findViewById<View>(R.id.button_albums).setOnClickListener {
-            startActivity(when (disableTabs) {
-                true -> AlbumBrowseActivity.getStartIntent(this)
-                false -> BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM)
-            })
+            when (disableTabs) {
+                true -> startActivity(AlbumBrowseActivity.getStartIntent(this))
+                false -> Navigate.toBrowse(this, Metadata.Category.ALBUM)
+            }
         }
 
         findViewById<View>(R.id.button_artists).setOnClickListener {
-            startActivity(when (disableTabs) {
-                true -> CategoryBrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST)
-                false -> BrowseActivity.getStartIntent(this, Metadata.Category.ALBUM_ARTIST)
-            })
+            when (disableTabs) {
+                true -> startActivity(CategoryBrowseActivity.getStartIntent(
+                    this, Metadata.Category.ALBUM_ARTIST))
+                false -> Navigate.toBrowse(this, Metadata.Category.ALBUM_ARTIST)
+            }
         }
 
         findViewById<View>(R.id.button_tracks).setOnClickListener {
-            startActivity(when (disableTabs) {
-                true -> TrackListActivity.getStartIntent(this)
-                false -> BrowseActivity.getStartIntent(this, Metadata.Category.TRACKS)
-            })
+            when (disableTabs) {
+                true -> startActivity(TrackListActivity.getStartIntent(this))
+                false -> Navigate.toBrowse(this, Metadata.Category.TRACKS)
+            }
         }
 
         findViewById<View>(R.id.button_playlists).setOnClickListener {
-            startActivity(when (disableTabs) {
-                true -> CategoryBrowseActivity.getStartIntent(
-                    this, Metadata.Category.PLAYLISTS, NavigationType.Tracks)
-                false -> BrowseActivity.getStartIntent(this, Metadata.Category.PLAYLISTS)
-            })
+            when (disableTabs) {
+                true -> startActivity(CategoryBrowseActivity.getStartIntent(
+                    this, Metadata.Category.PLAYLISTS, NavigationType.Tracks))
+                false -> Navigate.toBrowse(this, Metadata.Category.PLAYLISTS)
+            }
         }
 
         findViewById<View>(R.id.button_play_queue).setOnClickListener {

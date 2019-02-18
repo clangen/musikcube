@@ -10,7 +10,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="2dp"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:transitionName="play_controls_transition">
 
         <TextView
             android:id="@+id/button_prev"
@@ -56,7 +57,8 @@
         android:layout_height="wrap_content"
         android:background="@drawable/category_button"
         android:paddingLeft="4dp"
-        android:paddingRight="4dp">
+        android:paddingRight="4dp"
+        android:transitionName="play_queue_transition">
 
         <LinearLayout
             android:layout_width="wrap_content"

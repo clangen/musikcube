@@ -9,6 +9,11 @@
     android:clipToPadding="false"
     tools:context="io.casey.musikcube.remote.ui.home.activity.MainActivity">
 
+    <include
+        layout="@layout/toolbar"
+        android:id="@+id/appbar"
+        android:transitionName="toolbar_transition"/>
+
     <FrameLayout
         android:background="@color/theme_background"
         android:id="@+id/play_controls"
@@ -33,7 +38,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="@string/button_play_queue"/>
+                android:text="@string/button_play_queue"
+                android:transitionName="play_queue_transition"/>
 
             <android.support.v4.widget.Space
                 android:layout_width="0dp"
@@ -96,11 +102,13 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/PlayControls"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="2dp"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:transitionName="play_controls_transition">
 
                 <TextView
                     style="@style/PlaybackButton"
@@ -226,9 +234,12 @@
     </FrameLayout>
 
     <FrameLayout
+        android:id="@+id/middle_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/play_controls">
+        android:layout_above="@+id/play_controls"
+        android:layout_below="@+id/appbar"
+        android:transitionName="middle_content_transition">
 
         <LinearLayout
             android:id="@+id/connected_not_playing"

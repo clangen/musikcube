@@ -8,7 +8,8 @@
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark">
+        android:theme="@style/ThemeOverlay.AppCompat.Dark"
+        android:transitionName="toolbar_transition">
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
@@ -28,6 +29,7 @@
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:transitionName="middle_content_transition"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <android.support.design.widget.FloatingActionButton

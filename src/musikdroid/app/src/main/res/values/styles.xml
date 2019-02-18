@@ -5,6 +5,9 @@
         <item name="colorPrimaryDark">@color/color_primary_dark</item>
         <item name="colorAccent">@color/color_accent</item>
         <item name="android:windowBackground">@color/theme_background</item>
+        <item name="android:windowContentTransitions">true</item>
+        <item name="android:windowSharedElementEnterTransition">@transition/transition_enter</item>
+        <item name="android:windowSharedElementExitTransition">@transition/transition_exit</item>
     </style>
 
     <style name="AppThemeNoActionBar" parent="@style/Theme.AppCompat.NoActionBar">
@@ -12,6 +15,9 @@
         <item name="colorPrimaryDark">@color/color_primary_dark</item>
         <item name="colorAccent">@color/color_accent</item>
         <item name="android:windowBackground">@color/theme_background</item>
+        <item name="android:windowContentTransitions">true</item>
+        <item name="android:windowSharedElementEnterTransition">@transition/transition_enter</item>
+        <item name="android:windowSharedElementExitTransition">@transition/transition_exit</item>
     </style>
 
     <style name="BrowseButton">

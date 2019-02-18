@@ -1,16 +1,23 @@
 package io.casey.musikcube.remote.ui.navigation
 
 import android.content.Intent
+import android.os.Bundle
+import android.support.v4.app.ActivityOptionsCompat
+import android.support.v4.util.Pair
 import android.support.v7.app.AppCompatActivity
+import android.view.View
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
+import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
+import io.casey.musikcube.remote.ui.browse.constant.Browse
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
+import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
 import io.casey.musikcube.remote.ui.playqueue.fragment.PlayQueueFragment
 import io.casey.musikcube.remote.ui.shared.extension.*
@@ -20,6 +27,25 @@ import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 
 object Navigate {
+    /*
+     *
+     * browse root
+     *
+     */
+
+    fun toBrowse(activity: AppCompatActivity,
+                 initialCategoryType: String = "") =
+        activity.startActivity(
+            BrowseActivity.getStartIntent(activity, initialCategoryType),
+            when (activity is MainActivity) {
+                true -> ActivityOptionsCompat.makeSceneTransitionAnimation(
+                    activity,
+                    Pair(activity.findViewById(R.id.PlayControls), "play_controls_transition"),
+//                    Pair(activity.findViewById(R.id.button_play_queue), "play_queue_transition"),
+                    Pair(activity.findViewById(R.id.toolbar), "toolbar_transition")).toBundle()
+                false -> Bundle()
+            })
+
     /*
      *
      * list of albums
