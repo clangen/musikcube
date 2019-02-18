@@ -14,6 +14,8 @@ musikdroid:
 * changed general music browse experience to be tab-based with with modern
   scrolling behaviors. this results in fewer clicks to find music and more
   screen real estate.
+* fixed elusive bug that would cause lock screen controls to stop functioning
+  sometimes, on some devices.
 * massive cleanup and refactor to old code, making it more modular and easier
   to compose.
 

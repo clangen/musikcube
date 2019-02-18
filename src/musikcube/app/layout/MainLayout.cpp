@@ -36,6 +36,7 @@
 
 #include <cursespp/Screen.h>
 #include <cursespp/Colors.h>
+#include <cursespp/ToastOverlay.h>
 
 #include <core/runtime/Message.h>
 
@@ -47,6 +48,7 @@
 #include <app/layout/SettingsLayout.h>
 #include <app/layout/HotkeysLayout.h>
 #include <app/util/Hotkeys.h>
+#include <app/version.h>
 
 #include <map>
 
@@ -152,6 +154,10 @@ bool MainLayout::KeyPress(const std::string& key) {
     }
     else if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
         this->SetLayout(settingsLayout);
+        return true;
+    }
+    else if (key == "M-`") {
+        ToastOverlay::Show(u8fmt(_TSTR("console_version"), VERSION), -1);
         return true;
     }
 
