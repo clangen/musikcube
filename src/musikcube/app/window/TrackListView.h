@@ -47,6 +47,8 @@
 #include <core/runtime/IMessage.h>
 #include <core/library/ILibrary.h>
 
+#include <app/util/EntryPool.h>
+
 namespace musik {
     namespace cube {
         class TrackListView:
@@ -108,18 +110,34 @@ namespace musik {
                 /* our special type of list entry */
                 class TrackListEntry : public cursespp::SingleLineEntry {
                     public:
-                        TrackListEntry(const std::string& str, int index, RowType type)
-                            : cursespp::SingleLineEntry(str), index(index), type(type) { }
+                        TrackListEntry()
+                        : cursespp::SingleLineEntry() {
+                        }
 
                         virtual ~TrackListEntry() { }
+
+                        void Set(const std::string& str, int index, RowType type) {
+                            this->SetText(str);
+                            this->index = index;
+                            this->type = type;
+                        }
 
                         RowType GetType() { return type; }
                         int GetIndex() { return index; }
 
+                        static std::shared_ptr<TrackListEntry> Pooled(
+                            const std::string& str, int index, RowType type)
+                        {
+                            static auto entryPool = std::make_shared<cursespp::EntryPool<TrackListEntry>>();
+                            auto entry = entryPool->Get();
+                            entry->Set(str, index, type);
+                            return entry;
+                        }
+
                     private:
                         RowType type;
                         int index;
-                };
+               };
 
                 /* our adapter */
                 class Adapter : public cursespp::ScrollAdapterBase {

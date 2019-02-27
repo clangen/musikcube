@@ -40,9 +40,10 @@
 namespace cursespp {
     class SingleLineEntry : public IScrollAdapter::IEntry {
         public:
-            SingleLineEntry(const std::string& value);
+            SingleLineEntry(const std::string& value = "");
             virtual ~SingleLineEntry() { }
 
+            virtual void SetText(const std::string& value);
             virtual void SetWidth(size_t width);
             virtual Color GetAttrs(size_t line);
             virtual size_t GetLineCount();

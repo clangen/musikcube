@@ -32,37 +32,53 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <stdafx.h>
-#include <cursespp/SingleLineEntry.h>
-#include <cursespp/Text.h>
+#pragma once
 
-using namespace cursespp;
+#include <list>
+#include <functional>
+#include <memory>
 
-SingleLineEntry::SingleLineEntry(const std::string& value) {
-    this->value = value;
-    this->attrs = Color::Default;
-}
+namespace cursespp {
+    template <typename T>
+    class EntryPool: public std::enable_shared_from_this<EntryPool<T>> {
+        public:
+            EntryPool() {
 
-void SingleLineEntry::SetText(const std::string& text) {
-    this->value = text;
-}
+            }
 
-void SingleLineEntry::SetWidth(size_t width) {
-    this->width = width;
-}
+            ~EntryPool() {
+                for (auto e : this->pool) {
+                    delete e;
+                }
+            }
 
-Color SingleLineEntry::GetAttrs(size_t line) {
-    return this->attrs;
-}
+            std::shared_ptr<T> Get() {
+                if (!deleter) {
+                    std::weak_ptr<EntryPool<T>> weak = this->shared_from_this();
+                    deleter = [weak](T* entry) {
+                        if (!weak.expired()) {
+                            weak.lock()->pool.push_front(entry);
+                        }
+                        else {
+                            delete entry;
+                        }
+                    };
+                }
 
-void SingleLineEntry::SetAttrs(Color attrs) {
-    this->attrs = attrs;
-}
+                T* entry;
+                if (pool.size()) {
+                    entry = pool.front();
+                    pool.pop_front();
+                }
+                else {
+                    entry = new T();
+                }
 
-size_t SingleLineEntry::GetLineCount() {
-    return 1;
-}
+                return std::shared_ptr<T>(entry, deleter);
+            }
 
-std::string SingleLineEntry::GetLine(size_t line) {
-    return text::Ellipsize(this->value, this->width);
+        private:
+            std::list<T*> pool;
+            std::function<void(T*)> deleter;
+    };
 }

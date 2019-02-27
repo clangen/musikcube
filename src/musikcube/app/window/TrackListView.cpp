@@ -424,8 +424,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
             album = text::Ellipsize(album, this->GetWidth());
 
-            std::shared_ptr<TrackListEntry> entry(new
-                TrackListEntry(album, trackIndex, RowType::Separator));
+            auto entry = TrackListEntry::Pooled(album, trackIndex, RowType::Separator);
 
             entry->SetAttrs(selected
                 ? Color::ListItemHeaderHighlighted
@@ -470,8 +469,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         ? parent.formatter(track, rawIndex, this->GetWidth())
         : formatWithoutAlbum(track, rawIndex, this->GetWidth(), parent.trackNumType);
 
-    std::shared_ptr<TrackListEntry> entry(
-        new TrackListEntry(text, trackIndex, RowType::Track));
+    auto entry = TrackListEntry::Pooled(text, trackIndex, RowType::Track);
 
     entry->SetAttrs(attrs);
 
