@@ -101,9 +101,13 @@ void TextInput::OnRedraw() {
         trimmed = buffer;
     }
 
-    if (!this->IsFocused() && !columns && hintText.size()) {
+    if (!columns && hintText.size()) {
         /* draw the hint if we have one and there's no string yet */
-        checked_waddstr(c, u8substr(hintText, 0, columns).c_str());
+        int64_t color = Color(Color::TextDisabled);
+        wattron(c, color);
+        wmove(c, 0, 0);
+        checked_waddstr(c, u8substr(hintText, 0, contentWidth).c_str());
+        wattroff(c, color);
     }
     else {
         /* mask the string if we're in password mode */

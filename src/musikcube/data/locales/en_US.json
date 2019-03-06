@@ -35,6 +35,8 @@
         "browse_no_paths_overlay_error_message": "you have not configured any metadata paths.\n\nyou must add at least one path in the settings screen before you can browse by directory.",
         "browse_no_subdirectories_toast": "there are no more sub-directories.\n\npress '%s' to play the selection.",
 
+        "search_filter_hint": "filter",
+
         "console_list_title": "debug logs",
         "console_version": "musikcube version %s",
 

@@ -97,6 +97,7 @@ void CategorySearchLayout::OnLayout() {
     size_t inputWidth = cx / 2;
     size_t inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, 0, cx / 2, SEARCH_HEIGHT);
+    this->input->SetHint(_TSTR("search_filter_hint"));
 
     size_t labelY = SEARCH_HEIGHT;
     size_t categoryWidth = cx / 3;

@@ -95,6 +95,7 @@ void TrackSearchLayout::OnLayout() {
     size_t inputWidth = cx / 2;
     size_t inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, y, cx / 2, SEARCH_HEIGHT);
+    this->input->SetHint(_TSTR("search_filter_hint"));
 
     this->trackList->MoveAndResize(
         x,
