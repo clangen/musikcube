@@ -306,7 +306,6 @@ IWindowPtr LibraryLayout::FocusNext() {
             return this->transportView;
         }
 
-        this->transportView->Blur();
         return this->visibleLayout->FocusFirst();
     }
 
@@ -319,7 +318,6 @@ IWindowPtr LibraryLayout::FocusPrev() {
             return this->transportView;
         }
 
-        this->transportView->Blur();
         return this->visibleLayout->FocusLast();
     }
 
@@ -452,12 +450,10 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (this->GetFocus() == this->transportView && Hotkeys::Is(Hotkeys::Up, key)) {
-        this->transportView->Blur();
         this->visibleLayout->FocusLast();
         return true;
     }
     else if (this->GetFocus() == this->transportView && Hotkeys::Is(Hotkeys::Down, key)) {
-        this->transportView->Blur();
         this->visibleLayout->FocusFirst();
         return true;
     }

@@ -542,7 +542,6 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->FocusFirst();
         this->RefreshAddedPaths();
         this->LoadPreferences();
         this->CheckShowFirstRunDialog();

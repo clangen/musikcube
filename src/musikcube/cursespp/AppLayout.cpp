@@ -146,13 +146,8 @@ IWindowPtr AppLayout::FocusPrev() {
 void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
     if (layout != this->layout) {
         if (this->layout) {
-            if (this->lastFocus) {
-                this->layout->SetFocus(this->lastFocus);
-            }
-
             this->RemoveWindow(this->layout);
             last(this->layout.get(), this->layout->GetFocusIndex());
-            this->layout->SetFocusIndex(-1);
             this->layout->Hide();
         }
 
@@ -173,7 +168,12 @@ void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 
             this->AddWindow(this->layout);
             this->layout->SetFocusOrder(0);
-            this->layout->SetFocusIndex(last(this->layout.get()));
+
+            if (!this->shortcuts->IsFocused()) {
+                auto lastFocusIndex = last(this->layout.get());
+                this->layout->SetFocusIndex(lastFocusIndex);
+            }
+
             this->Layout();
         }
     }
@@ -191,7 +191,7 @@ cursespp::IWindowPtr AppLayout::BlurShortcuts() {
         }
 
         if (!refocused) {
-            this->layout->FocusNext();
+            this->layout->FocusFirst();
         }
     }
 
@@ -203,11 +203,6 @@ void AppLayout::FocusShortcuts() {
 
     if (this->layout) {
         this->lastFocus = this->layout->GetFocus();
-
-        if (this->lastFocus) {
-            this->lastFocus->Blur();
-        }
-
         this->layout->SetFocus(IWindowPtr());
     }
 

@@ -278,9 +278,7 @@ bool ListOverlay::KeyPress(const std::string& key) {
 
 void ListOverlay::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
-
     if (visible) {
-        this->LayoutBase::SetFocus(this->listWindow);
         this->UpdateContents();
     }
 }

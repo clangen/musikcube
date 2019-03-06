@@ -40,7 +40,6 @@
 
 using namespace cursespp;
 
-static const int AUTO_FOCUS = -1;
 static const int NO_FOCUS = -2;
 
 template <typename T> static int find(std::vector<T>& haystack, T& needle) {
@@ -67,10 +66,6 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
 }
 
 static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
-    if (oldFocus) {
-        oldFocus->Blur();
-    }
-
     if (newFocus) {
         newFocus->Focus();
     }
@@ -81,7 +76,6 @@ static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
 LayoutBase::LayoutBase(IWindow* parent)
 : Window(parent)
 , focusMode(FocusModeCircular) {
-    this->focused = AUTO_FOCUS;
     this->SetFrameVisible(false);
 }
 
@@ -241,11 +235,6 @@ void LayoutBase::SortFocusables() {
     if (focusedWindow) {
         this->focused = find(this->focusable, focusedWindow);
     }
-
-    if (focused == AUTO_FOCUS && this->focusable.size() > 0) {
-        this->focused = 0;
-        adjustFocus(IWindowPtr(), this->focusable[this->focused]);
-    }
 }
 
 void LayoutBase::RemoveFocusable(IWindowPtr window) {
@@ -269,7 +258,6 @@ IWindowPtr LayoutBase::GetWindowAt(size_t position) {
 bool LayoutBase::SetFocus(IWindowPtr focus) {
     if (!focus) {
         adjustFocus(GetFocus(), focus);
-        this->focused = AUTO_FOCUS;
         return true;
     }
     else {
@@ -292,7 +280,7 @@ IWindowPtr LayoutBase::FocusNext() {
         /* nothing. we're already terminated. */
         notify = &FocusTerminated;
     }
-    else if (this->focused + 1 >= AUTO_FOCUS) {
+    else {
         ++this->focused;
         if (this->focused >= (int) this->focusable.size()) {
             if (this->focusMode == FocusModeCircular) {

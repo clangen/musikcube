@@ -148,7 +148,6 @@ void CategorySearchLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->SetFocus(this->input);
         this->Requery();
     }
     else {

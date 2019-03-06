@@ -55,6 +55,8 @@ namespace cursespp {
             };
 
             virtual ~ILayout() { }
+            virtual IWindowPtr FocusFirst() = 0;
+            virtual IWindowPtr FocusLast() = 0;
             virtual IWindowPtr FocusNext() = 0;
             virtual IWindowPtr FocusPrev() = 0;
 

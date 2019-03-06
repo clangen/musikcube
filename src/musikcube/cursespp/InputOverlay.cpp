@@ -174,7 +174,6 @@ InputOverlay& InputOverlay::SetInputAcceptedCallback(InputAcceptedCallback cb) {
 
 void InputOverlay::OnVisibilityChanged(bool visible) {
     if (visible) {
-        this->SetFocus(this->textInput);
         this->Redraw();
     }
 }
