@@ -67,14 +67,9 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
 }
 
 static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
-    if (oldFocus) {
-        oldFocus->Blur();
-    }
-
     if (newFocus) {
         newFocus->Focus();
     }
-
     return newFocus;
 }
 

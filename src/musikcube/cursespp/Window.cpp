@@ -52,6 +52,7 @@ static int NEXT_ID = 0;
 static bool drawPending = false;
 static bool freeze = false;
 static Window* top = nullptr;
+static Window* focused = nullptr;
 
 static MessageQueue messageQueue;
 static std::shared_ptr<INavigationKeys> keys;
@@ -147,6 +148,12 @@ Window::Window(IWindow *parent) {
 
 Window::~Window() {
     messageQueue.Remove(this);
+    if (::top == this) {
+        ::top = nullptr;
+    }
+    if (::focused == this) {
+        ::focused = nullptr;
+    }
     this->Destroy();
 }
 
@@ -807,6 +814,10 @@ bool Window::IsParentVisible() {
 
 void Window::Focus() {
     if (!this->isFocused) {
+        if (::focused && ::focused != this) {
+            ::focused->Blur();
+        }
+        ::focused = this;
         this->isFocused = true;
         this->isDirty = true;
         this->OnFocusChanged(true);
@@ -817,6 +828,9 @@ void Window::Focus() {
 
 void Window::Blur() {
     if (this->isFocused) {
+        if (::focused == this) {
+            ::focused = nullptr;
+        }
         this->isFocused = false;
         this->isDirty = true;
         this->OnFocusChanged(false);

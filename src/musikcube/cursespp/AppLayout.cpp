@@ -203,11 +203,6 @@ void AppLayout::FocusShortcuts() {
 
     if (this->layout) {
         this->lastFocus = this->layout->GetFocus();
-
-        if (this->lastFocus) {
-            this->lastFocus->Blur();
-        }
-
         this->layout->SetFocus(IWindowPtr());
     }
 
