@@ -360,6 +360,7 @@ void TransportWindow::SetFocus(FocusTarget target) {
 
         if (this->focus == FocusNone) {
             this->lastFocus = last;
+            this->Blur();
         }
         else {
             this->Focus();
