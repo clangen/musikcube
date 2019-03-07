@@ -65,14 +65,6 @@ bool sortByFocusOrder(IWindowPtr a, IWindowPtr b) {
     return orderA < orderB;
 }
 
-static inline IWindowPtr adjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
-    if (newFocus) {
-        newFocus->Focus();
-    }
-
-    return newFocus;
-}
-
 LayoutBase::LayoutBase(IWindow* parent)
 : Window(parent)
 , focusMode(FocusModeCircular) {
@@ -83,6 +75,13 @@ LayoutBase::~LayoutBase() {
     for (IWindowPtr window : this->children) {
         window->SetParent(nullptr);
     }
+}
+
+IWindowPtr LayoutBase::AdjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus) {
+    if (this->IsVisible() && newFocus) {
+        newFocus->Focus();
+    }
+    return newFocus;
 }
 
 void LayoutBase::OnVisibilityChanged(bool visible) {
@@ -257,13 +256,13 @@ IWindowPtr LayoutBase::GetWindowAt(size_t position) {
 
 bool LayoutBase::SetFocus(IWindowPtr focus) {
     if (!focus) {
-        adjustFocus(GetFocus(), focus);
+        this->AdjustFocus(GetFocus(), focus);
         return true;
     }
     else {
         for (size_t i = 0; i < this->focusable.size(); i++) {
             if (this->focusable[i] == focus) {
-                adjustFocus(GetFocus(), focus);
+                this->AdjustFocus(GetFocus(), focus);
                 this->focused = i;
                 return true;
             }
@@ -295,7 +294,7 @@ IWindowPtr LayoutBase::FocusNext() {
     }
 
     IWindowPtr newFocus = GetFocus();
-    adjustFocus(oldFocus, newFocus);
+    this->AdjustFocus(oldFocus, newFocus);
 
     if (notify) {
         (*notify)(FocusForward);
@@ -321,7 +320,7 @@ IWindowPtr LayoutBase::FocusPrev() {
     }
 
     IWindowPtr newFocus = GetFocus();
-    adjustFocus(oldFocus, newFocus);
+    this->AdjustFocus(oldFocus, newFocus);
 
     if (notify) {
         (*notify)(FocusBackward);
@@ -333,13 +332,13 @@ IWindowPtr LayoutBase::FocusPrev() {
 IWindowPtr LayoutBase::FocusFirst() {
     IWindowPtr oldFocus = GetFocus();
     this->focused = 0;
-    return adjustFocus(oldFocus, GetFocus());
+    return this->AdjustFocus(oldFocus, GetFocus());
 }
 
 IWindowPtr LayoutBase::FocusLast() {
     IWindowPtr oldFocus = GetFocus();
     this->focused = (int) this->focusable.size() - 1;
-    return adjustFocus(oldFocus, GetFocus());
+    return this->AdjustFocus(oldFocus, GetFocus());
 }
 
 IWindowPtr LayoutBase::GetFocus() {
@@ -361,7 +360,7 @@ void LayoutBase::SetFocusIndex(int index) {
     if (this->focused != index) {
         IWindowPtr oldFocus = GetFocus();
         this->focused = index;
-        adjustFocus(oldFocus, GetFocus());
+        this->AdjustFocus(oldFocus, GetFocus());
     }
 }
 

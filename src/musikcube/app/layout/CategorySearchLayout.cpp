@@ -156,6 +156,7 @@ void CategorySearchLayout::OnVisibilityChanged(bool visible) {
         this->albums->Reset();
         this->artists->Reset();
         this->genres->Reset();
+        this->SetFocusIndex(0);
     }
 }
 

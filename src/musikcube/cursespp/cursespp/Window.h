@@ -169,7 +169,7 @@ namespace cursespp {
             WINDOW* content;
             bool badBounds;
             bool drawFrame;
-            bool isVisibleInParent, isFocused, isDirty;
+            bool isVisibleInParent, isDirty;
             int focusOrder;
             int id;
             Color contentColor, frameColor;

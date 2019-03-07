@@ -139,7 +139,6 @@ Window::Window(IWindow *parent) {
     this->focusedFrameColor = Color(Color::FrameColorFocused);
     this->drawFrame = true;
     this->isVisibleInParent = false;
-    this->isFocused = false;
     this->isDirty = true;
     this->focusOrder = -1;
     this->id = NEXT_ID++;
@@ -166,7 +165,7 @@ bool Window::IsVisible() {
 }
 
 bool Window::IsFocused() {
-    return this->isFocused;
+    return ::focused == this;
 }
 
 void Window::BringToTop() {
@@ -772,8 +771,8 @@ void Window::Clear() {
     wmove(this->content, 0, 0);
 
     bool focused = this->IsFocused();
-    int64_t contentColor = isFocused ? this->focusedContentColor : this->contentColor;
-    int64_t frameColor = isFocused ? this->focusedFrameColor : this->frameColor;
+    int64_t contentColor = focused ? this->focusedContentColor : this->contentColor;
+    int64_t frameColor = focused ? this->focusedFrameColor : this->frameColor;
 
     if (this->content == this->frame) {
         wbkgd(this->frame, contentColor);
@@ -809,12 +808,9 @@ bool Window::IsParentVisible() {
 }
 
 void Window::Focus() {
-    if (!this->isFocused) {
-        if (::focused && ::focused != this) {
-            ::focused->Blur();
-        }
+    if (::focused != this) {
+        if (::focused) { ::focused->Blur(); }
         ::focused = this;
-        this->isFocused = true;
         this->isDirty = true;
         this->OnFocusChanged(true);
         this->RepaintBackground();
@@ -823,11 +819,8 @@ void Window::Focus() {
 }
 
 void Window::Blur() {
-    if (this->isFocused) {
-        if (::focused == this) {
-            ::focused = nullptr;
-        }
-        this->isFocused = false;
+    if (::focused = this) {
+        ::focused = nullptr;
         this->isDirty = true;
         this->OnFocusChanged(false);
         this->RepaintBackground();
