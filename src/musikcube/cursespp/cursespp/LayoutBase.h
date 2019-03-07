@@ -105,7 +105,7 @@ namespace cursespp {
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnLayout();
 
-            IWindowPtr AdjustFocus(IWindowPtr oldFocus, IWindowPtr newFocus);
+            IWindowPtr EnsureValidFocus();
 
         private:
             void AddFocusable(IWindowPtr window);

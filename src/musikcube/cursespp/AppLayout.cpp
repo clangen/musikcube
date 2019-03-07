@@ -168,13 +168,12 @@ void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 
             this->AddWindow(this->layout);
             this->layout->SetFocusOrder(0);
+            this->Layout();
 
             if (!this->shortcuts->IsFocused()) {
                 auto lastFocusIndex = last(this->layout.get());
                 this->layout->SetFocusIndex(lastFocusIndex);
             }
-
-            this->Layout();
         }
     }
 }
