@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <string>
+#include <memory>
 #include <cursespp/Colors.h>
 
 namespace cursespp {

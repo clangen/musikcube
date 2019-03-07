@@ -35,6 +35,7 @@
 #pragma once
 
 #include <cursespp/IScrollAdapter.h>
+#include <vector>
 
 namespace cursespp {
     class MultiLineEntry : public IScrollAdapter::IEntry {

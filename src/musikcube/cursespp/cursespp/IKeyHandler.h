@@ -34,6 +34,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace cursespp {
     class IKeyHandler {
         public:

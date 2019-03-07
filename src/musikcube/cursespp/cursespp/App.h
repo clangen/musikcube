@@ -35,6 +35,7 @@
 #pragma once
 
 #include <queue>
+#include <functional>
 #include <cursespp/ILayout.h>
 #include <cursespp/IInput.h>
 #include <cursespp/IKeyHandler.h>

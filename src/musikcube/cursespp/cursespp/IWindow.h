@@ -42,6 +42,7 @@
 
 #include <core/runtime/IMessage.h>
 #include <core/runtime/IMessageTarget.h>
+#include <string>
 
 namespace cursespp {
     class IWindow :
