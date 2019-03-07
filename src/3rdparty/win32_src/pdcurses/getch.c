@@ -131,7 +131,7 @@ static int _mouse_key(WINDOW *win)
 
     if (pdc_mouse_status.changes & PDC_MOUSE_MOVED)
     {
-        if (!(mbe & (BUTTON1_MOVED|BUTTON2_MOVED|BUTTON3_MOVED)))
+        if (!(mbe & (BUTTON1_MOVED|BUTTON2_MOVED|BUTTON3_MOVED | REPORT_MOUSE_POSITION)))
             pdc_mouse_status.changes ^= PDC_MOUSE_MOVED;
     }
 

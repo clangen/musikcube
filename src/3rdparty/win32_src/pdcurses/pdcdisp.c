@@ -14,11 +14,6 @@ for details. */
 
 #define USE_UNICODE_ACS_CHARS 1
 
-/* The default PDC implementation shifts colors towards white when
-the A_BOLD attr is set. Setting this flag disables that behavior. */
-
-#define DISABLE_BOLD_INTENSIFY 1
-
 #include "acs_defs.h"
 
 static const unsigned short starting_ascii_to_unicode[32] = {
@@ -229,11 +224,11 @@ static LONG scale_font_for_current_dpi( LONG size)
 int PDC_font_size = -1;
 TCHAR PDC_font_name[128];
 TCHAR PDC_preferred_fontface[128]; /* can be set by application */
-static TCHAR* PDC_default_font_name = _T("Consolas");
+static TCHAR* PDC_default_font_name = _T("Courier New");
 
 /* The calling application can override the default fontface with
 their preferred one. If that font fails to load, we will fallback
-to the global default (currently "Consolas") */
+to the global default (currently "Courier New") */
 int PDC_set_preferred_fontface( const TCHAR* fontface)
 {
     int len = fontface == 0 ? 0 : wcslen( fontface);
@@ -288,7 +283,7 @@ static LOGFONT PDC_get_logical_font( const int font_idx)
     lf.lfHeight = -PDC_font_size;
 #ifdef PDC_WIDE
     if( !*PDC_font_name)
-        wcscpy( PDC_font_name, _T("Consolas"));
+        wcscpy( PDC_font_name, _T("Courier New"));
     if( font_idx & 4)
         wcscpy( lf.lfFaceName, _T("Unifont"));
     else
@@ -296,7 +291,7 @@ static LOGFONT PDC_get_logical_font( const int font_idx)
 /*  wprintf( L"New font: %s\n", PDC_font_name); */
 #else
     if( !*PDC_font_name)
-        strcpy( PDC_font_name, "Consolas");
+        strcpy( PDC_font_name, "Courier New");
     if( font_idx & 4)
         strcpy( lf.lfFaceName, "Unifont");
     else
@@ -406,7 +401,7 @@ static COLORREF dimmed_color( COLORREF ival)
 
    /* PDC_get_rgb_values(), extract_packed_rgb(), intensified_component(), */
    /* intensified_color(),  and dimmed_color() each exist in x11/x11.c,    */
-   /* win32a/pdcdisp.c,  and sdl2/pdcdisp.c in forms slightly modified for */
+   /* wingui/pdcdisp.c,  and sdl2/pdcdisp.c in forms slightly modified for */
    /* each platform.  But they all look pretty much alike.  */
 
             /* PDCurses stores RGBs in fifteen bits,  five bits each */
@@ -466,10 +461,8 @@ void PDC_get_rgb_values( const chtype srcp,
         *background_rgb = temp;
     }
 
-#if (DISABLE_BOLD_INTENSIFY == 0)
     if( srcp & A_BOLD)
         *foreground_rgb = intensified_color( *foreground_rgb);
-#endif
     if( intensify_backgnd)
         *background_rgb = intensified_color( *background_rgb);
     if( srcp & A_DIM)

@@ -3,7 +3,7 @@ nonce.  For each character,  its code point in code page 437,
 Unicode,  and page 8859-1 are given.  The first is used for
 non-wide builds in Win32 console,  DOS,  SDL,  and OS/2.
 Unicode is used for all wide builds,  and for the non-wide
-build of Win32a.  Code page 8859-1 is used for non-wide X11.
+build of WinGUI.  Code page 8859-1 is used for non-wide X11.
 
    All of these characters exist in CP437 and Unicode.  Some
 don't exist in 8859-1,  in which case the last column is 'TBD'.
@@ -195,7 +195,7 @@ Only 32 are used in ncurses.  So caution is advised. */
       /* Even-numbered scan lines are unified with box      */
       /* drawing graphics."                                 */
       /*  The utility of these is questionable;  they'd     */
-      /* work Just Fine in win32a (_if_ the appropriate     */
+      /* work Just Fine in wingdi (_if_ the appropriate     */
       /* glyphs are available),  but not elsewhere.         */
 #define HORIZ_SCAN_LINE_1                 CHOOSE( 0x2d,  0x23ba,   16)
 #define HORIZ_SCAN_LINE_3                 CHOOSE( 0x2d,  0x23bb,   17)

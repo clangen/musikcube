@@ -42,10 +42,10 @@ void PDC_napms(int ms)     /* 'ms' = milli,  _not_ microseconds! */
 
 const char *PDC_sysname(void)
 {
-   return "Win32a";
+   return "WinGUI";
 }
 
-PDC_version_info PDC_version = { PDC_PORT_WIN32A,
+PDC_version_info PDC_version = { PDC_PORT_WINGUI,
           PDC_VER_MAJOR, PDC_VER_MINOR, PDC_VER_CHANGE,
           sizeof( chtype),
 #ifdef PDC_WIDE

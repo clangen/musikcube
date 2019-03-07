@@ -15,7 +15,7 @@ getyx
     void getmaxyx(WINDOW *win, int y, int x);
 
     void getsyx(int y, int x);
-    int setsyx(int y, int x);
+    void setsyx(int y, int x);
 
     int getbegy(WINDOW *win);
     int getbegx(WINDOW *win);
@@ -43,7 +43,7 @@ getyx
    values should only be used with setsyx().
 
    setsyx() sets the virtual screen cursor to the y, x coordinates.
-   If y, x are -1, -1, leaveok() is set TRUE.
+   If either y or x is -1, leaveok() is set TRUE, else it's set FALSE.
 
    getsyx() and setsyx() are meant to be used by a library routine
    that manipulates curses windows without altering the position of
@@ -128,18 +128,12 @@ int getmaxx(WINDOW *win)
     return win ? win->_maxx : ERR;
 }
 
-int setsyx(int y, int x)
+void setsyx(int y, int x)
 {
     PDC_LOG(("setsyx() - called\n"));
 
-    if(y == -1 && x == -1)
-    {
-        curscr->_leaveit = TRUE;
-        return OK;
-    }
-    else
-    {
-        curscr->_leaveit = FALSE;
-        return wmove(curscr, y, x);
-    }
+    curscr->_leaveit = y == -1 || x == -1;
+
+    if (!curscr->_leaveit)
+        wmove(curscr, y, x);
 }

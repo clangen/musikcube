@@ -13,7 +13,7 @@
   Description:
         PDC_get_input_fd() returns the file descriptor that PDCurses
         reads its input from. It can be used for select().  (For the
-        Win32a version,  it's meaningless and returns zero.)
+        WinGUI version,  it's meaningless and returns zero.)
 
   Portability                                X/Open    BSD    SYS V
         PDC_get_input_fd                        -       -       -

@@ -30,7 +30,7 @@ your software,  letting you know:  "Be careful;  in a Curses program,
 MOUSE_MOVED won't have the same meaning it does in a 'real' Windows
 program."
 
-   But in building Win32a itself,  we're expecting the Curses
+   But in building WinGUI itself,  we're expecting the Curses
 meaning for MOUSE_MOVED,  and the compiler warning would just be
 a nuisance.  So we'll #undefine MOUSE_MOVED before getting to the
 Curses definition :                 */
@@ -43,13 +43,13 @@ extern int PDC_get_buffer_rows(void);
 /* The following probably ought to go into 'curses.h' at some point. */
 /* Or at least,  not be here;  this is a temporary place for them.   */
 
-/* Win32a has some drastically extended cursor possibilities.  The
+/* WinGUI has some drastically extended cursor possibilities.  The
 following #defines can be used with curs_set().  For all other flavors
 of PDCurses,  only the invisible,  "normal",  and "intense" cursor
 states will be recognized.  In Win32,  caret,  half-block,  central
 block,  cross,  and outlined block cursors are available.
 
-   By default,  all such cursors will blink.  However,  in Win32a,
+   By default,  all such cursors will blink.  However,  in WinGUI,
 the input value to curs_set() is treated as a two-byte value,  with
 the cursor blinking between those two states.  For example,
 curs_set( 0x0102) would blink between a "normal" (underline) cursor and
@@ -119,7 +119,7 @@ PDC_set_function_key( FUNCTION_KEY_PASTE, 0);
 
    to shut off that function.  (It would still be accessible from the menu.)
 
-   Thus far,  this is a Win32a-flavor specific function.  But it could,  and
+   Thus far,  this is a WinGUI-flavor specific function.  But it could,  and
 in my opinion should,  be made available in the SDL and XCurses flavors too.
 
    The return value is the key previously used for that function.

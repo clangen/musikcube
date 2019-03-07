@@ -141,7 +141,7 @@ void PDC_scr_close(void)
 /* rely on the memory getting freed when the program terminates.  */
 /* It seems conceivable to me that we could get into some trouble */
 /* here,  if SP is freed and NULLed,  but then accessed again,    */
-/* possibly within the Win32a window thread.                      */
+/* possibly within the WinGUI window thread.                      */
 
 void PDC_scr_free(void)
 {
@@ -1018,7 +1018,7 @@ static void my_splitpath( const char *path, char *drive,
 specified path to the executable and arguments;  and strips out just the
 name of the app,  with the arguments optionally appended.  Hence,
 
-C:\PDCURSES\WIN32A\TESTCURS.EXE arg1 arg2
+C:\PDCURSES\WINGUI\TESTCURS.EXE arg1 arg2
 
     would be reduced to 'Testcurs' (if include_args == 0) or
 'Testcurs arg1 arg2' (if include_args == 1).  The former case is used to
@@ -1034,7 +1034,7 @@ then used in an app compiled with MS Visual C, __argv isn't set either,
 and we drop back to looking at GetCommandLine( ).  Which leads to a real
 oddity:  GetCommandLine( ) may return something such as,  say,
 
-"C:\PDCurses\Win32a\testcurs.exe" -lRussian
+"C:\PDCurses\WinGUI\testcurs.exe" -lRussian
 
    ...which,  after being run through _splitpath or _wsplitpath,  becomes
 
@@ -1077,9 +1077,10 @@ PDC_argv,  and will be used instead of GetCommandLine.
 #endif /* UNICODE */
 
 
-static void get_app_name( TCHAR *buff, const bool include_args)
+static void get_app_name( TCHAR *buff, const size_t buff_size, const bool include_args)
 {
     int i;
+    size_t buff_space;
 #ifdef GOT_ARGV_ARGC
     int argc = (PDC_argc ? PDC_argc : __argc);
     char **argv = (PDC_argc ? PDC_argv : __argv);
@@ -1089,30 +1090,53 @@ static void get_app_name( TCHAR *buff, const bool include_args)
 #endif
 
 #ifdef PDC_WIDE
+    wchar_t **wargv = __wargv;
 #ifdef GOT_ARGV_ARGC
-    if( __wargv)
+    /* in case we can not access the array directly try to get it otherwise */
+    if( !wargv) {
+        wchar_t *cmd_linew = GetCommandLine( );
+        if (cmd_linew) {
+            wargv = CommandLineToArgvW (cmd_linew, &argc);
+        }
+    }
+    if( wargv)
     {
-        my_wsplitpath( __wargv[0], NULL, NULL, buff, NULL);
-        if( include_args)
-            for( i = 1; i < __argc; i++)
+        my_wsplitpath( wargv[0], NULL, NULL, buff, NULL);
+        if ( include_args)
+        {
+            buff_space = buff_size - my_tcslen( buff) - 1;
+            for ( i = 1; i < argc; i++)
             {
+                size_t arg_len = my_tcslen( wargv[i]) + 1;
+                if ( buff_space < arg_len) {
+                    break;
+                }
+                buff_space -= arg_len;
                 wcscat( buff, L" ");
-                wcscat( buff, __wargv[i]);
+                wcscat( buff, wargv[i]);
             }
+        }
     }
     else
 #endif      /* #ifdef GOT_ARGV_ARGC */
        if( argv)
     {
         char tbuff[MAX_PATH];
-
         my_splitpath( argv[0], NULL, NULL, tbuff, NULL);
-        if( include_args)
-            for( i = 1; i < argc; i++)
+        if ( include_args)
+        {
+            buff_space = buff_size - strlen( tbuff) - 1;
+            for ( i = 1; i < argc; i++)
             {
+                size_t arg_len = strlen( argv[i]) + 1;
+                if ( buff_space < arg_len) {
+                    break;
+                }
+                buff_space -= arg_len;
                 strcat( tbuff, " ");
                 strcat( tbuff, argv[i]);
             }
+        }
         mbstowcs( buff, tbuff, strlen( tbuff) + 1);
     }
     else         /* no __argv or PDC_argv pointer available */
@@ -1135,12 +1159,20 @@ static void get_app_name( TCHAR *buff, const bool include_args)
     {
         my_splitpath( argv[0], NULL, NULL, buff, NULL);
         debug_printf( "Path: %s;  exe: %s\n", argv[0], buff);
-        if( include_args)
-            for( i = 1; i < argc; i++)
+        if ( include_args)
+        {
+            buff_space = buff_size - my_tcslen( buff) - 1;
+            for ( i = 1; i < argc; i++)
             {
+                size_t arg_len = my_tcslen( argv[i]) + 1;
+                if ( buff_space < arg_len) {
+                    break;
+                }
+                buff_space -= arg_len;
                 strcat( buff, " ");
                 strcat( buff, argv[i]);
             }
+        }
     }
     else         /* no __argv pointer available */
     {
@@ -1215,7 +1247,7 @@ INLINE int set_default_sizes_from_registry( const int n_cols, const int n_rows,
                   min_cols, max_cols);
         my_tcscat( buff, PDC_font_name);
 
-        get_app_name( key_name, FALSE);
+        get_app_name( key_name, MAX_PATH, FALSE);
         rval = RegSetValueEx( hNewKey, key_name, 0, REG_SZ,
                        (BYTE *)buff, (DWORD)( my_tcslen( buff) * sizeof( TCHAR)));
         RegCloseKey( hNewKey);
@@ -1361,7 +1393,7 @@ Resize limits
 
 ### Description
 
-   For platforms supporting resizable windows (SDLx, Win32a, X11).  Some
+   For platforms supporting resizable windows (SDLx, WinGUI, X11).  Some
    programs may be unprepared for a resize event;  for these,  calling
    this function with the max and min limits equal ensures that no
    user resizing can be done.  Other programs may require at least a
@@ -1444,7 +1476,7 @@ INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
     {
         TCHAR key_name[MAX_PATH];
 
-        get_app_name( key_name, FALSE);
+        get_app_name( key_name, MAX_PATH, FALSE);
         rval = RegQueryValueEx( hKey, key_name,
                         NULL, NULL, (BYTE *)data, &size_out);
         if( rval == ERROR_SUCCESS)
@@ -1519,7 +1551,7 @@ though I've not tried it yet;  I'm still on Wine 1.6,  the stable branch.)
 You can therefore end up in a loop where the code keeps trying to resize a
 window that isn't actually resizing.  So,  _when running in Wine only_,
 we want that code not to be executed... which means having to figure out:
-are we running under Wine?  Which means that when PDCurses/Win32a is
+are we running under Wine?  Which means that when PDCurses/WinGUI is
 initialized,  we set the following 'wine_version' pointer.  One could
 actually call wine_version(),  if not NULL,  to get the current Wine
 version.      */
@@ -1959,7 +1991,6 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
 {
     int button_down = -1, button_up = -1;
     static int mouse_buttons_pressed = 0;
-    static int mouse_click_type = -1;
     static LPARAM mouse_lParam;
     static uint64_t last_click_time[PDC_MAX_MOUSE_BUTTONS];
                                /* in millisec since 1970 */
@@ -2047,7 +2078,7 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         break;
 
 #if( PDC_MAX_MOUSE_BUTTONS >= 5)
-             /* Win32a can support five mouse buttons.  But some may wish */
+             /* WinGUI can support five mouse buttons.  But some may wish */
              /* to leave PDC_MAX_MOUSE_BUTTONS=3,  for compatibility      */
              /* with older PDCurses libraries.  Hence the above #if.      */
     case WM_XBUTTONDOWN:
@@ -2129,15 +2160,9 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
                       BUTTON4_PRESSED, BUTTON5_PRESSED };
 
             modified_key_to_return = 0;
-            if (SP && (SP->_trap_mbe & remap_table[wParam]))
-            {
-                if ( mouse_click_type != -1)
-                {
-                    set_mouse( (const int)wParam, mouse_click_type, mouse_lParam);
-                }
-            }
+            if( SP && (SP->_trap_mbe & remap_table[wParam]))
+                set_mouse( (const int) wParam, BUTTON_PRESSED, mouse_lParam);
             KillTimer( PDC_hWnd, (int)wParam);
-            mouse_click_type = -1;
             mouse_buttons_pressed ^= (1 << wParam);
         }
         else if( SP && curscr && curscr->_y)
@@ -2202,35 +2227,27 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     if( button_down >= 0)
     {
         modified_key_to_return = 0;
+        SetTimer( hwnd, button_down, SP->mouse_wait, NULL);
         mouse_buttons_pressed |= (1 << button_down);
         mouse_lParam = lParam;
     }
     if( button_up >= 0)
     {
-        static const int single_remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                    { BUTTON1_CLICKED, BUTTON2_CLICKED, BUTTON3_CLICKED,
-                    BUTTON4_CLICKED, BUTTON5_CLICKED };
-
-        static const int double_remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                    { BUTTON1_DOUBLE_CLICKED, BUTTON2_DOUBLE_CLICKED,
-                    BUTTON3_DOUBLE_CLICKED, BUTTON4_DOUBLE_CLICKED,
-                    BUTTON5_DOUBLE_CLICKED };
-
-        static const int triple_remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                    { BUTTON1_TRIPLE_CLICKED, BUTTON2_TRIPLE_CLICKED,
-                    BUTTON3_TRIPLE_CLICKED, BUTTON4_TRIPLE_CLICKED,
-                    BUTTON5_TRIPLE_CLICKED };
-
-        static const int released_remap_table[PDC_MAX_MOUSE_BUTTONS] =
-                    { BUTTON1_RELEASED, BUTTON2_RELEASED, BUTTON3_RELEASED,
-                    BUTTON4_RELEASED, BUTTON5_RELEASED };
+        int message_to_send = -1;
 
         modified_key_to_return = 0;
         if( (mouse_buttons_pressed >> button_up) & 1)
         {
             const uint64_t curr_click_time =
                              milliseconds_since_1970( );
-
+            static const int double_remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                      { BUTTON1_DOUBLE_CLICKED, BUTTON2_DOUBLE_CLICKED,
+                        BUTTON3_DOUBLE_CLICKED, BUTTON4_DOUBLE_CLICKED,
+                        BUTTON5_DOUBLE_CLICKED };
+            static const int triple_remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                      { BUTTON1_TRIPLE_CLICKED, BUTTON2_TRIPLE_CLICKED,
+                        BUTTON3_TRIPLE_CLICKED, BUTTON4_TRIPLE_CLICKED,
+                        BUTTON5_TRIPLE_CLICKED };
             static int n_previous_clicks;
 
             if( curr_click_time <
@@ -2239,27 +2256,36 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
             else                         /* zero for a "normal" click, 1  */
                n_previous_clicks = 0;   /* for a dblclick, 2 for a triple */
 
-            if (n_previous_clicks >= 2 &&
-                (SP->_trap_mbe & triple_remap_table[button_up]))
-                mouse_click_type = BUTTON_TRIPLE_CLICKED;
-            else if (n_previous_clicks >= 1 &&
-                (SP->_trap_mbe & double_remap_table[button_up]))
-                mouse_click_type = BUTTON_DOUBLE_CLICKED;
-            else if (SP->_trap_mbe & single_remap_table[button_up])
-                /* either it's not a doubleclick, or we aren't */
-                /* checking for double clicks */
-                mouse_click_type = BUTTON_CLICKED;
-            else
-                mouse_click_type = -1;
+            if( n_previous_clicks >= 2 &&
+                            (SP->_trap_mbe & triple_remap_table[button_up]))
+                message_to_send = BUTTON_TRIPLE_CLICKED;
+            else if( n_previous_clicks >= 1 &&
+                            (SP->_trap_mbe & double_remap_table[button_up]))
+                message_to_send = BUTTON_DOUBLE_CLICKED;
+            else         /* either it's not a doubleclick, or we aren't */
+            {            /* checking for double clicks */
+                static const int remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                          { BUTTON1_CLICKED, BUTTON2_CLICKED, BUTTON3_CLICKED,
+                            BUTTON4_CLICKED, BUTTON5_CLICKED };
 
+                if( SP->_trap_mbe & remap_table[button_up])
+                    message_to_send = BUTTON_CLICKED;
+            }
             KillTimer( hwnd, button_up);
-            SetTimer( hwnd, button_up, SP->mouse_wait, NULL);
             mouse_buttons_pressed ^= (1 << button_up);
             last_click_time[button_up] = curr_click_time;
         }
+        if( message_to_send == -1)   /* might just send as a 'released' msg */
+        {
+            static const int remap_table[PDC_MAX_MOUSE_BUTTONS] =
+                     { BUTTON1_RELEASED, BUTTON2_RELEASED, BUTTON3_RELEASED,
+                       BUTTON4_RELEASED, BUTTON5_RELEASED };
 
-        if( SP->_trap_mbe & released_remap_table[button_up])
-            set_mouse(button_up, BUTTON_RELEASED, lParam);
+            if( SP->_trap_mbe & remap_table[button_up])
+                message_to_send = BUTTON_RELEASED;
+        }
+        if( message_to_send != -1)
+            set_mouse( button_up, message_to_send, lParam);
     }
 
     return DefWindowProc( hwnd, message, wParam, lParam) ;
@@ -2359,7 +2385,7 @@ static void clip_or_center_window_to_monitor( HWND hwnd)
 /* By default,  the user cannot resize the window.  This is because
 many apps don't handle KEY_RESIZE,  and one can get odd behavior
 in such cases.  There are two ways around this.  If you call
-PDC_set_resize_limits( ) before initwin( ),  telling Win32a exactly how
+PDC_set_resize_limits( ) before initwin( ),  telling WinGUI exactly how
 large/small the window can be,  the window will be user-resizable.  Or
 you can set ttytype[0...3] to contain the resize limits.   A call such as
 
@@ -2426,15 +2452,14 @@ INLINE int set_up_window( void)
         wndclass_has_been_registered = TRUE;
     }
 
-    get_app_name( WindowTitle, TRUE);
+    get_app_name( WindowTitle, MAX_PATH, TRUE);
 #ifdef PDC_WIDE
     debug_printf( "WindowTitle = '%ls'\n", WindowTitle);
 #endif
 
-    BOOL error = get_default_sizes_from_registry(
-        &n_default_columns, &n_default_rows, &xloc, &yloc, &menu_shown);
-
-    if( error && PDC_n_rows > 2 && PDC_n_cols > 2)
+    get_default_sizes_from_registry( &n_default_columns, &n_default_rows, &xloc, &yloc,
+                     &menu_shown);
+    if( PDC_n_rows > 2 && PDC_n_cols > 2)
     {
         n_default_columns = PDC_n_cols;
         n_default_rows    = PDC_n_rows;

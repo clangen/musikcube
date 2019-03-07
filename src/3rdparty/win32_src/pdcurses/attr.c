@@ -66,6 +66,13 @@ attr
    standout() is the same as attron(A_STANDOUT). standend() is the
    same as attrset(A_NORMAL); that is, it turns off all attributes.
 
+   wchgat() sets the attributes of the n symbols starts from current
+   position of the given window.
+
+   mvwchgat() moves the cursor to the specified position and sets
+   the attributes of the n symbols starts from current position of
+   the given window.
+
 ### Return Value
 
    All functions return OK on success and ERR on error.

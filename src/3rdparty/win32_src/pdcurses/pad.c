@@ -11,11 +11,11 @@ pad
 
     WINDOW *newpad(int nlines, int ncols);
     WINDOW *subpad(WINDOW *orig, int nlines, int ncols,
-    int begy, int begx);
+                   int begy, int begx);
     int prefresh(WINDOW *win, int py, int px, int sy1, int sx1,
-    int sy2, int sx2);
+                 int sy2, int sx2);
     int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1,
-    int sy2, int sx2);
+                     int sy2, int sx2);
     int pechochar(WINDOW *pad, chtype ch);
     int pecho_wchar(WINDOW *pad, const cchar_t *wch);
 
@@ -90,7 +90,7 @@ WINDOW *newpad(int nlines, int ncols)
 
     win->_flags = _PAD;
 
-    /* save default values in case pechochar() is the first call to 
+    /* save default values in case pechochar() is the first call to
        prefresh(). */
 
     save_pminrow = 0;
@@ -107,8 +107,6 @@ WINDOW *subpad(WINDOW *orig, int nlines, int ncols, int begy, int begx)
 {
     WINDOW *win;
     int i;
-    int j = begy;
-    int k = begx;
 
     PDC_LOG(("subpad() - called: lines=%d cols=%d begy=%d begx=%d\n",
              nlines, ncols, begy, begx));
@@ -118,16 +116,16 @@ WINDOW *subpad(WINDOW *orig, int nlines, int ncols, int begy, int begx)
 
     /* make sure window fits inside the original one */
 
-    if ((begy < orig->_begy) || (begx < orig->_begx) ||
-        (begy + nlines) > (orig->_begy + orig->_maxy) ||
-        (begx + ncols)  > (orig->_begx + orig->_maxx))
+    if (begy < 0 || begx < 0 ||
+        (begy + nlines) > orig->_maxy ||
+        (begx + ncols)  > orig->_maxx)
         return (WINDOW *)NULL;
 
-    if (!nlines) 
-        nlines = orig->_maxy - 1 - j;
+    if (!nlines)
+        nlines = orig->_maxy - begy;
 
-    if (!ncols) 
-        ncols = orig->_maxx - 1 - k;
+    if (!ncols)
+        ncols = orig->_maxx - begx;
 
     if ( !(win = PDC_makenew(nlines, ncols, begy, begx)) )
         return (WINDOW *)NULL;
@@ -142,7 +140,7 @@ WINDOW *subpad(WINDOW *orig, int nlines, int ncols, int begy, int begx)
     win->_parent = orig;
 
     for (i = 0; i < nlines; i++)
-        win->_y[i] = (orig->_y[j++]) + k;
+        win->_y[i] = orig->_y[begy + i] + begx;
 
     win->_flags = _SUBPAD;
 
@@ -202,7 +200,7 @@ int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
             memcpy(curscr->_y[sline] + sx1, w->_y[pline] + px,
                    num_cols * sizeof(chtype));
 
-            if ((curscr->_firstch[sline] == _NO_CHANGE) 
+            if ((curscr->_firstch[sline] == _NO_CHANGE)
                 || (curscr->_firstch[sline] > sx1))
                 curscr->_firstch[sline] = sx1;
 
@@ -223,8 +221,8 @@ int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
         curscr->_clear = TRUE;
     }
 
-    /* position the cursor to the pad's current position if possible -- 
-       is the pad current position going to end up displayed? if not, 
+    /* position the cursor to the pad's current position if possible --
+       is the pad current position going to end up displayed? if not,
        then don't move the cursor; if so, move it to the correct place */
 
     if (!w->_leaveit && w->_cury >= py && w->_curx >= px &&
@@ -244,7 +242,7 @@ int pechochar(WINDOW *pad, chtype ch)
     if (waddch(pad, ch) == ERR)
         return ERR;
 
-    return prefresh(pad, save_pminrow, save_pmincol, save_sminrow, 
+    return prefresh(pad, save_pminrow, save_pmincol, save_sminrow,
                     save_smincol, save_smaxrow, save_smaxcol);
 }
 
@@ -256,7 +254,7 @@ int pecho_wchar(WINDOW *pad, const cchar_t *wch)
     if (!wch || (waddch(pad, *wch) == ERR))
         return ERR;
 
-    return prefresh(pad, save_pminrow, save_pmincol, save_sminrow, 
+    return prefresh(pad, save_pminrow, save_pmincol, save_sminrow,
                     save_smincol, save_smaxrow, save_smaxcol);
 }
 #endif
