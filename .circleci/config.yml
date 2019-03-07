@@ -10,9 +10,7 @@ jobs:
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=artful -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
-      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/artful /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_bionic:
@@ -25,9 +23,7 @@ jobs:
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=bionic -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
-      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/bionic /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_cosmic:
@@ -40,9 +36,7 @@ jobs:
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=cosmic -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
-      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/cosmic /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_zesty:
@@ -57,9 +51,7 @@ jobs:
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=zesty -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
-      - run: apt-get install -y ruby ruby-all-dev && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: package_cloud push --skip-errors clangen/musikcube/ubuntu/zesty /root/debs/*.deb
       - store_artifacts:
           path: /root/debs/
   build_fedora_26:
@@ -71,9 +63,7 @@ jobs:
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
-      - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: package_cloud push --skip-errors clangen/musikcube/fedora/26 /root/rpms/*.rpm
       - store_artifacts:
           path: /root/rpms/
   build_fedora_27:
@@ -85,9 +75,7 @@ jobs:
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
-      - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: package_cloud push --skip-errors clangen/musikcube/fedora/27 /root/rpms/*.rpm
       - store_artifacts:
           path: /root/rpms/
   build_fedora_28:
@@ -99,9 +87,7 @@ jobs:
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
-      - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: package_cloud push --skip-errors clangen/musikcube/fedora/28 /root/rpms/*.rpm
       - store_artifacts:
           path: /root/rpms/
   build_fedora_29:
@@ -113,9 +99,7 @@ jobs:
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
-      - run: dnf install -y ruby ruby-devel && gem install package_cloud -v 0.2.44
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: package_cloud push --skip-errors clangen/musikcube/fedora/29 /root/rpms/*.rpm
       - store_artifacts:
           path: /root/rpms/
 workflow_filters: &workflow_filters
