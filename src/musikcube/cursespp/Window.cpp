@@ -819,7 +819,7 @@ void Window::Focus() {
 }
 
 void Window::Blur() {
-    if (::focused = this) {
+    if (::focused == this) {
         ::focused = nullptr;
         this->isDirty = true;
         this->OnFocusChanged(false);
