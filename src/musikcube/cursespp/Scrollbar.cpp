@@ -66,7 +66,7 @@ void Scrollbar::Draw(ListWindow* list, Window* target) {
 
                 /* thumb */
                 int thumbY = -1;
-                if (itemCount > trackHeight) {
+                if ((int) itemCount > trackHeight) {
                     float percent = (float) pos.logicalIndex / (float) itemCount;
                     thumbY = (int) ((float) trackHeight * percent) + trackMinY;
                 }
