@@ -104,20 +104,14 @@ int main(int argc, char* argv[]) {
 #ifdef WIN32
     musik::core::RemoveOldDlls();
     AddDllDirectory(u8to16(musik::core::GetPluginDirectory()).c_str());
-#endif
-
-#ifndef WIN32
-    #if 1 /*DEBUG*/
-        freopen("/tmp/musikcube_error.log", "w", stderr);
-    #else
-        freopen("/dev/null", "w", stderr);
-    #endif
-#endif
-
 #ifdef __PDCURSES__
     PDC_set_resize_limits(MIN_HEIGHT, 1000, MIN_WIDTH, 1000);
     resize_term(26, 100); /* must be before app init */
 #endif
+#endif
+
+    std::string errorFn = musik::core::GetDataDirectory() + "stderr.txt";
+    freopen(errorFn.c_str(), "w", stderr);
 
     musik::core::MigrateOldDataDirectory();
 
