@@ -56,7 +56,7 @@
     #include <sys/sysctl.h>
 #endif
 
-static std::string getDataDirectoryRoot() {
+static std::string GetHomeDirectory() {
     std::string directory;
 
 #ifdef WIN32
@@ -70,6 +70,14 @@ static std::string getDataDirectoryRoot() {
 #endif
 
     return directory;
+}
+
+static std::string getDataDirectoryRoot() {
+#ifdef WIN32
+    return GetHomeDirectory();
+#else
+    return GetHomeDirectory() + "/.config";
+#endif
 }
 
 static inline void silentDelete(const std::string fn) {
@@ -142,18 +150,17 @@ namespace musik { namespace core {
     }
 
     std::string GetDataDirectory(bool create) {
-        std::string directory =
-
-    #ifdef WIN32
-        getDataDirectoryRoot() + std::string("/musikcube/");
-    #else
-        getDataDirectoryRoot() + std::string("/.musikcube/");
-    #endif
+        std::string directory = getDataDirectoryRoot() + std::string("/musikcube/");
 
         if (create) {
-            boost::filesystem::path path(directory);
-            if (!boost::filesystem::exists(path)) {
-                boost::filesystem::create_directories(path);
+            try {
+                boost::filesystem::path path(directory);
+                if (!boost::filesystem::exists(path)) {
+                    boost::filesystem::create_directories(path);
+                }
+            }
+            catch (...) {
+                /* ugh, fixme */
             }
         }
 
@@ -171,13 +178,9 @@ namespace musik { namespace core {
     }
 
     void MigrateOldDataDirectory() {
+    #ifndef WIN32
         std::string oldDirectory =
-
-    #ifdef WIN32
-            getDataDirectoryRoot() + std::string("/mC2/");
-    #else
-            getDataDirectoryRoot() + std::string("/.mC2/");
-    #endif
+            GetHomeDirectory() + std::string("/.musikcube/");
 
         std::string newDirectory = GetDataDirectory(false);
 
@@ -189,6 +192,7 @@ namespace musik { namespace core {
         {
             boost::filesystem::rename(oldPath, newPath);
         }
+    #endif
     }
 
     std::string GetPath(const std::string &sFile) {

@@ -98,6 +98,10 @@ int main(int argc, char* argv[]) {
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
 
+    /* needs to come immediately after configuring the fs, before loading
+    any other subsystems */
+    musik::core::MigrateOldDataDirectory();
+
     /* ensure we have the correct locale loaded */
     musik::core::i18n::Locale::Instance().Initialize(musik::core::GetApplicationDirectory() + "/locales/");
 
@@ -112,8 +116,6 @@ int main(int argc, char* argv[]) {
 
     std::string errorFn = musik::core::GetDataDirectory() + "stderr.txt";
     freopen(errorFn.c_str(), "w", stderr);
-
-    musik::core::MigrateOldDataDirectory();
 
     auto fileLogger = new musik::debug::SimpleFileBackend();
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
