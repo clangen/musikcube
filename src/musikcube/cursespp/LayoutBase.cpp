@@ -263,8 +263,8 @@ bool LayoutBase::SetFocus(IWindowPtr focus) {
     else {
         for (size_t i = 0; i < this->focusable.size(); i++) {
             if (this->focusable[i] == focus) {
-                this->EnsureValidFocus();
                 this->focused = i;
+                this->EnsureValidFocus();
                 return true;
             }
         }
