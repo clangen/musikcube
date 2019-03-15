@@ -1,3 +1,16 @@
+0.64.0
+
+musikcube:
+* migrated *nix data directory from $HOME/.musikcube to $HOME/.config/musikcube
+* added a search "hint" in filter and category library views
+* fixed some super old bugs related to global focus tracking in win32cpp
+* fixed win32cpp::TextInput::SetHint()
+* redirect stderr output to ~/.config/musikcube/stderr.txt instead of /dev/null.
+  bonus: works on win32 now, too.
+* merged upstream PDCurses into our own custom fork (win32 only)
+
+--------------------------------------------------------------------------------
+
 0.63.0
 
 musikcube:
