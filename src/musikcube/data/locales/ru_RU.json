@@ -34,6 +34,8 @@
         "browse_no_paths_overlay_error_title": "нет настроенных папок",
         "browse_no_paths_overlay_error_message": "вы не настроили папки метаданных.\n\nвы должны добавить хотя бы одну папку на экране настроек перед тем, как начать обзор по папкам.",
         "browse_no_subdirectories_toast": "подпапок нет.\n\nнажмите '%s' для воспроизведения выбранного.",
+		
+        "search_filter_hint": "поиск",
 
         "console_list_title": "журналы отладки",
         "console_version": "версия musikcube %s",
