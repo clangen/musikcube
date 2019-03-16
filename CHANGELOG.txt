@@ -8,6 +8,10 @@ musikcube:
 * redirect stderr output to ~/.config/musikcube/stderr.txt instead of /dev/null.
   bonus: works on win32 now, too.
 * merged upstream PDCurses into our own custom fork (win32 only)
+* updated ru_RU translation (adem4ik)
+
+musikdroid:
+* fixed a crash when trying to randomize a play queue of exactly 2 tracks.
 
 --------------------------------------------------------------------------------
 
