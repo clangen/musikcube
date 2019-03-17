@@ -133,8 +133,6 @@ void App::InitCurses() {
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
     PDC_set_default_menu_visibility(0);
     PDC_set_title(this->appTitle.c_str());
-    win32::InterceptWndProc();
-    win32::SetAppTitle(this->appTitle);
 #endif
 
     initscr();
@@ -145,8 +143,15 @@ void App::InitCurses() {
     refresh();
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
+
 #ifndef WIN32
     set_escdelay(20);
+#endif
+
+#ifdef WIN32
+    /* needs to happen after initscr() */
+    win32::InterceptWndProc();
+    win32::SetAppTitle(this->appTitle);
 #endif
 
     Colors::Init(this->colorMode, this->bgType);
