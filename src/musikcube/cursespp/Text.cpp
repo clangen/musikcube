@@ -345,6 +345,16 @@ namespace cursespp {
 
             kn = Normalize(kn);
 
+#ifdef WIN32
+            /* seems like on Windows using PDCurses, if a non-English keyboard
+            is selected (like Russian) we receive a UTF16 character, not an
+            encoded UTF8 character. in this case, let's convert it to a UTF8
+            string and return that. */
+            if (kn == "UNKNOWN KEY" && ch > 244) {
+                kn = u16to8(std::wstring(1, (wchar_t)ch));
+            }
+#endif
+
             // std::cerr << "keyname: " << kn << std::endl;
             // std::cerr << "ch: " << ch << std::endl;
 
