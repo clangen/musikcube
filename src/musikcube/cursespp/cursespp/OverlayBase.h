@@ -74,6 +74,15 @@ namespace cursespp {
                 return false;
             }
 
+            virtual IWindowPtr FocusFirst() override {
+                auto focus = LayoutBase::FocusFirst();
+                if (!focus) {
+                    focus = shared_from_this();
+                    this->Focus();
+                }
+                return focus;
+            }
+
         protected:
             static void style(TextLabel& label) {
                 label.SetContentColor(Color::OverlayContent);

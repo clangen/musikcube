@@ -56,7 +56,9 @@ ToastOverlay::ToastOverlay(const std::string& text, long durationMs) {
     this->ticking = false;
     this->SetFrameVisible(true);
     this->SetFrameColor(Color::OverlayFrame);
+    this->SetFocusedFrameColor(Color::OverlayFrame);
     this->SetContentColor(Color::OverlayContent);
+    this->SetFocusedContentColor(Color::OverlayContent);
 }
 
 ToastOverlay::~ToastOverlay() {

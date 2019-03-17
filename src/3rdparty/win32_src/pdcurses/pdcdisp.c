@@ -356,8 +356,17 @@ int PDC_choose_a_new_font( void)
     /*    This should lead to proper handling of bold text in legacy    */
     /* apps,  where "bold" means "high intensity".                      */
 
+static bool enable_color_intensification = TRUE;
+void PDC_set_color_intensify_enabled(bool enabled) {
+    enable_color_intensification = enabled;
+}
+
 static COLORREF intensified_color( COLORREF ival)
 {
+    if ( !enable_color_intensification) {
+        return ival;
+    }
+
     int rgb, i;
     COLORREF oval = 0;
 
