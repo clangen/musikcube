@@ -62,13 +62,10 @@ InputOverlay::InputOverlay() {
 
     this->textInput.reset(new TextInput());
     this->textInput->SetFocusOrder(0);
-    this->textInput->SetFrameColor(Color::OverlayFrame);
-    this->textInput->SetContentColor(Color::OverlayContent);
-    this->textInput->SetFocusedFrameColor(Color::OverlayTextInputFrame);
-    this->textInput->SetFocusedContentColor(Color::OverlayContent);
     this->textInput->EnterPressed.connect(this, &InputOverlay::OnInputEnterPressed);
     this->textInput->TextChanged.connect(this, &InputOverlay::OnInputKeyPress);
     this->AddWindow(this->textInput);
+    style(*this->textInput);
 }
 
 InputOverlay::~InputOverlay() {
