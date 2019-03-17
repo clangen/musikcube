@@ -2,6 +2,8 @@
 
 musikcube:
 * migrated *nix data directory from $HOME/.musikcube to $HOME/.config/musikcube
+* fixed a bug in the Windows build where non-Latin character input was not
+  working properly in all cases.
 * added a search "hint" in filter and category library views
 * fixed some super old bugs related to global focus tracking in win32cpp
 * fixed win32cpp::TextInput::SetHint()
@@ -9,6 +11,7 @@ musikcube:
   bonus: works on win32 now, too.
 * merged upstream PDCurses into our own custom fork (win32 only)
 * updated ru_RU translation (adem4ik)
+* fixed the `gruvbox_dark` theme's focused text input color
 
 musikdroid:
 * fixed a crash when trying to randomize a play queue of exactly 2 tracks.
