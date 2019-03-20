@@ -4,8 +4,8 @@
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 64
-#define VERSION_PATCH 0
-#define VERSION "0.64.0"
+#define VERSION_PATCH 1
+#define VERSION "0.64.1"
 
 namespace musik {
     namespace cube {

@@ -153,6 +153,9 @@ void App::InitCurses() {
     /* needs to happen after initscr() */
     win32::InterceptWndProc();
     win32::SetAppTitle(this->appTitle);
+    if (this->iconId) {
+        this->SetIcon(this->iconId);
+    }
 #endif
 
     Colors::Init(this->colorMode, this->bgType);
