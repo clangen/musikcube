@@ -1,9 +1,14 @@
 0.64.1
 
-win32 only release
+win32 and android only release
 
 musikcube:
 * fixed a bug where notification tray icon wasn't getting set properly.
+
+musikdroid:
+* work around android platform bug where, on some devices, pressing pause
+  on a headset, followed by resume within a couple seconds, will not work
+  properly.
 
 --------------------------------------------------------------------------------
 
@@ -14,8 +19,8 @@ musikcube:
 * fixed a bug in the Windows build where non-Latin character input was not
   working properly in all cases.
 * added a search "hint" in filter and category library views
-* fixed some super old bugs related to global focus tracking in win32cpp
-* fixed win32cpp::TextInput::SetHint()
+* fixed some super old bugs related to global focus tracking in cursespp
+* fixed cursespp::TextInput::SetHint()
 * redirect stderr output to ~/.config/musikcube/stderr.txt instead of /dev/null.
   bonus: works on win32 now, too.
 * merged upstream PDCurses into our own custom fork (win32 only)
