@@ -52,6 +52,13 @@ class SystemService : Service() {
     private var mediaSession: MediaSessionCompat? = null
     private var headsetHookPressCount = 0
 
+    /* if we pause via headset on some devices, and unpause immediately after,
+    the runtime will erroneously issue a second KEYCODE_MEDIA_PAUSE command,
+    instead of KEYCODE_MEDIA_RESUME. to work around this, if we pause from a
+    headset, we flip this bit for a couple seconds, which will be used as a
+    hint that we should resume if we get another KEYCODE_MEDIA_PAUSE. */
+    private var headsetDoublePauseHack = false
+
     private lateinit var powerManager: PowerManager
     private lateinit var prefs: SharedPreferences
 
@@ -402,7 +409,8 @@ class SystemService : Service() {
         return false
     }
 
-    private val headsetHookDebouncer = object : Debouncer<Void>(HEADSET_HOOK_DEBOUNCE_MS) {
+    private val headsetHookDebouncer =
+            object: Debouncer<Void>(HEADSET_HOOK_DEBOUNCE_MS) {
         override fun onDebounced(last: Void?) {
             playback?.let {
                 when (headsetHookPressCount) {
@@ -412,6 +420,13 @@ class SystemService : Service() {
                 }
             }
             headsetHookPressCount = 0
+        }
+    }
+
+    private val headsetDoublePauseHackDebouncer =
+            object: Debouncer<Void>(HEADSET_DOUBLE_PAUSE_HACK_DEBOUNCE_MS) {
+        override fun onDebounced(last: Void?) {
+            headsetDoublePauseHack = false
         }
     }
 
@@ -447,7 +462,15 @@ class SystemService : Service() {
                             return true
                         }
                         KeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                            playback?.pause()
+                            if (headsetDoublePauseHack) {
+                                playback?.resume()
+                                headsetDoublePauseHack = false
+                            }
+                            else {
+                                playback?.pause()
+                                headsetDoublePauseHack = true
+                                headsetDoublePauseHackDebouncer.call()
+                            }
                             return true
                         }
                         KeyEvent.KEYCODE_MEDIA_PLAY -> {
@@ -491,6 +514,10 @@ class SystemService : Service() {
     }
 
     private val playbackListener = {
+        /* freaking sigh... */
+        if (playback?.state == PlaybackState.Playing) {
+            headsetDoublePauseHack = false
+        }
         updateMediaSessionPlaybackState()
     }
 
@@ -557,6 +584,7 @@ class SystemService : Service() {
         private const val NOTIFICATION_ID = 0xdeadbeef.toInt()
         private const val NOTIFICATION_CHANNEL = "musikdroid"
         private const val HEADSET_HOOK_DEBOUNCE_MS = 500L
+        private const val HEADSET_DOUBLE_PAUSE_HACK_DEBOUNCE_MS = 3500L
         private const val ACTION_NOTIFICATION_PLAY = "io.casey.musikcube.remote.NOTIFICATION_PLAY"
         private const val ACTION_NOTIFICATION_PAUSE = "io.casey.musikcube.remote.NOTIFICATION_PAUSE"
         private const val ACTION_NOTIFICATION_NEXT = "io.casey.musikcube.remote.NOTIFICATION_NEXT"
