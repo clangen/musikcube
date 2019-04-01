@@ -56,24 +56,32 @@
         android:id="@+id/title_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="32dp"
         android:background="@drawable/category_button"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp"
         android:transitionName="play_queue_transition">
 
-        <!--<me.zhanghai.android.materialprogressbar.MaterialProgressBar-->
-            <!--style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="32dp"-->
-            <!--android:secondaryProgress="50"-->
-            <!--android:progress="25"-->
-            <!--android:indeterminate="false"-->
-            <!--app:mpb_useIntrinsicPadding="false"/>-->
+        <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+            style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal"
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.25"
+            android:secondaryProgress="50"
+            android:progress="25"
+            android:max="100"
+            android:padding="0dp"
+            android:layout_margin="0dp"
+            android:indeterminate="false"
+            app:mpb_progressBackgroundTint="@color/theme_background"
+            app:mpb_progressStyle="horizontal"
+            app:mpb_useIntrinsicPadding="false"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_gravity="center"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
             android:orientation="horizontal">
 
             <ProgressBar
