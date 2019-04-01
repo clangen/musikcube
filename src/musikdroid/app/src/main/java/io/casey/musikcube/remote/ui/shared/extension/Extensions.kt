@@ -4,6 +4,7 @@ import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.res.Resources
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.Menu
@@ -163,9 +164,6 @@ fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean 
 
     return true
 }
-
-fun AppCompatActivity.dpToPx(dp: Float): Float = dp * this.resources.displayMetrics.density
-
 
 fun AppCompatActivity.dialogVisible(tag: String): Boolean =
         this.supportFragmentManager.findFragmentByTag(tag) != null
@@ -465,6 +463,11 @@ fun DialogFragment.hideKeyboard() =
  * misc
  *
  */
+
+fun dpToPx(dp: Float): Float = dp * Resources.getSystem().displayMetrics.density
+
+fun dpToPx(dp: Int): Float = dpToPx(dp.toFloat())
+
 
 fun <T1: Any, T2: Any, R: Any> letMany(p1: T1?, p2: T2?, block: (T1, T2) -> R?): R? {
     return if (p1 != null && p2 != null) block(p1, p2) else null

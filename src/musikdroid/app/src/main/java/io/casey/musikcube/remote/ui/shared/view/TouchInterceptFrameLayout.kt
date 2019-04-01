@@ -10,7 +10,7 @@ class InterceptTouchFrameLayout : FrameLayout {
     private var interceptor: OnInterceptTouchEventListener = DEFAULT_INTERCEPTOR
 
     interface OnInterceptTouchEventListener {
-        fun onInterceptTouchEvent(view: InterceptTouchFrameLayout, ev: MotionEvent, disallowIntercept: Boolean): Boolean
+        fun onInterceptTouchEvent(view: InterceptTouchFrameLayout, event: MotionEvent, disallowIntercept: Boolean): Boolean
         fun onTouchEvent(view: InterceptTouchFrameLayout, event: MotionEvent): Boolean
     }
 
@@ -30,8 +30,8 @@ class InterceptTouchFrameLayout : FrameLayout {
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        val stealTouchEvent = interceptor.onInterceptTouchEvent(this, ev, disallowIntercept)
-        return stealTouchEvent && !disallowIntercept || super.onInterceptTouchEvent(ev)
+        val eatTouchEvent = interceptor.onInterceptTouchEvent(this, ev, disallowIntercept)
+        return eatTouchEvent && !disallowIntercept || super.onInterceptTouchEvent(ev)
     }
 
     override fun onTouchEvent(ev: MotionEvent): Boolean {
@@ -44,7 +44,7 @@ class InterceptTouchFrameLayout : FrameLayout {
 
     companion object {
         private val DEFAULT_INTERCEPTOR = object: OnInterceptTouchEventListener {
-            override fun onInterceptTouchEvent(view: InterceptTouchFrameLayout, ev: MotionEvent, disallowIntercept: Boolean): Boolean = false
+            override fun onInterceptTouchEvent(view: InterceptTouchFrameLayout, event: MotionEvent, disallowIntercept: Boolean): Boolean = false
             override fun onTouchEvent(view: InterceptTouchFrameLayout, event: MotionEvent): Boolean = false
         }
     }

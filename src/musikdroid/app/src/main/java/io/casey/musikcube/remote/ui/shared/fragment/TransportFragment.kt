@@ -11,6 +11,7 @@ import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.playqueue.fragment.PlayQueueFragment
+import io.casey.musikcube.remote.ui.shared.extension.dpToPx
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.extension.topOfStack
@@ -93,8 +94,8 @@ class TransportFragment: BaseFragment() {
         }
 
         titleBar?.setOnInterceptTouchEventListener(object: InterceptTouchFrameLayout.OnInterceptTouchEventListener {
-            override fun onInterceptTouchEvent(view: InterceptTouchFrameLayout, ev: MotionEvent, disallowIntercept: Boolean): Boolean {
-                return when (ev.action) {
+            override fun onInterceptTouchEvent(view: InterceptTouchFrameLayout, event: MotionEvent, disallowIntercept: Boolean): Boolean {
+                return when (event.action) {
                     MotionEvent.ACTION_DOWN,
                     MotionEvent.ACTION_MOVE,
                     MotionEvent.ACTION_CANCEL,
@@ -103,10 +104,10 @@ class TransportFragment: BaseFragment() {
                 }
             }
 
-            override fun onTouchEvent(view: InterceptTouchFrameLayout, ev: MotionEvent): Boolean {
-                seekTracker.update(ev)
+            override fun onTouchEvent(view: InterceptTouchFrameLayout, event: MotionEvent): Boolean {
+                seekTracker.update(event)
                 if (seekTracker.processed) {
-                    when (ev.action) {
+                    when (event.action) {
                         MotionEvent.ACTION_MOVE -> {
                             seekOverride = (
                                 seekTracker.lastX.toFloat() /
@@ -122,7 +123,7 @@ class TransportFragment: BaseFragment() {
                         }
                     }
                 }
-                view.defaultOnTouchEvent(ev)
+                view.defaultOnTouchEvent(event)
                 return true
             }
         })
@@ -157,7 +158,7 @@ class TransportFragment: BaseFragment() {
             val buffered = playback.service.bufferedTime.toInt()
             val total = playback.service.duration.toInt()
             progress.max = total
-            progress.secondaryProgress = if (buffered >= 100) 0 else buffered
+            progress.secondaryProgress = if (buffered >= total) 0 else buffered
 
             progress.progress = if (seekTracker.down && seekOverride >= 0) {
                 seekOverride
@@ -175,7 +176,7 @@ class TransportFragment: BaseFragment() {
         val playing = state == PlaybackState.Playing
         val buffering = state == PlaybackState.Buffering
 
-        this.playPause.setText(if (playing) R.string.button_pause else R.string.button_play)
+        this.playPause.setText(if (playing || buffering) R.string.button_pause else R.string.button_play)
         this.buffering.visibility = if (buffering) View.VISIBLE else View.GONE
 
         if (state == PlaybackState.Stopped) {
@@ -253,11 +254,12 @@ class TransportFragment: BaseFragment() {
         }
 
         val processed: Boolean
-            get() { return totalDx >= 24 }
+            get() { return dpToPx(SEEK_SLOP_PX) >= 24 }
     }
 
     companion object {
         const val TAG = "TransportFragment"
+        private const val SEEK_SLOP_PX = 24
         fun create(): TransportFragment = TransportFragment()
     }
 }
