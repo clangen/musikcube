@@ -254,12 +254,12 @@ class TransportFragment: BaseFragment() {
         }
 
         val processed: Boolean
-            get() { return dpToPx(SEEK_SLOP_PX) >= 24 }
+            get() { return totalDx >= dpToPx(SEEK_SLOP_PX) }
     }
 
     companion object {
         const val TAG = "TransportFragment"
-        private const val SEEK_SLOP_PX = 24
+        private const val SEEK_SLOP_PX = 16
         fun create(): TransportFragment = TransportFragment()
     }
 }
