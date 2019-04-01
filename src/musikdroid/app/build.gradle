@@ -100,11 +100,4 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-
-//    configurations.all {
-//        resolutionStrategy {
-//            force 'com.android.support:animated-vector-drawable:28.0.0'
-//            force 'com.android.support:support-v4:28.0.0'
-//        }
-//    }
 }
