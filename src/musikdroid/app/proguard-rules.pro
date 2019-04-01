@@ -27,7 +27,7 @@
     public *;
 }
 
--keep class android.support.v7.widget.SearchView { *; }
+-keep class androidx.appcompat.widget.SearchView { *; }
 
 -dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement
 -dontwarn android.arch.util.paging.CountedDataSource

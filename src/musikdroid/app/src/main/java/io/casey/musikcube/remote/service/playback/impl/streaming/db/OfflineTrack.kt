@@ -1,7 +1,7 @@
 package io.casey.musikcube.remote.service.playback.impl.streaming.db
 
-import android.arch.persistence.room.Entity
-import android.arch.persistence.room.PrimaryKey
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.util.Strings
 import org.json.JSONException

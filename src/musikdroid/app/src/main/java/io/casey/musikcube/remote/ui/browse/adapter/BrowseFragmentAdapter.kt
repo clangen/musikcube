@@ -1,10 +1,10 @@
 package io.casey.musikcube.remote.ui.browse.adapter
 
 import android.content.Context
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentManager
-import android.support.v4.app.FragmentPagerAdapter
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentPagerAdapter
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment

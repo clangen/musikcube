@@ -3,8 +3,8 @@ package io.casey.musikcube.remote.ui.tracks.fragment
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
 import android.view.*
+import androidx.appcompat.app.AppCompatActivity
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata

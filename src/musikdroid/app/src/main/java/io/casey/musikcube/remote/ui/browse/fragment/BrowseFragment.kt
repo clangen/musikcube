@@ -1,12 +1,12 @@
 package io.casey.musikcube.remote.ui.browse.fragment
 
 import android.os.Bundle
-import android.support.design.widget.FloatingActionButton
-import android.support.design.widget.TabLayout
-import android.support.v4.view.ViewPager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.viewpager.widget.ViewPager
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.tabs.TabLayout
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.browse.adapter.BrowseFragmentAdapter
 import io.casey.musikcube.remote.ui.browse.constant.Browse

@@ -2,8 +2,8 @@ package io.casey.musikcube.remote.ui.shared.fragment
 
 import android.content.Intent
 import android.os.Bundle
-import android.support.v4.app.DialogFragment
-import android.support.v7.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.DialogFragment
 import io.casey.musikcube.remote.framework.IMixin
 import io.casey.musikcube.remote.framework.MixinSet
 import io.casey.musikcube.remote.framework.ViewModel

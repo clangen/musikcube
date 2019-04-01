@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.AppBarLayout
+<com.google.android.material.appbar.AppBarLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/appbar"
@@ -9,10 +9,10 @@
     android:transitionName="toolbar_transition"
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
-    <android.support.v7.widget.Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:layout_scrollFlags="scroll|enterAlways|snap" />
 
-</android.support.design.widget.AppBarLayout>
+</com.google.android.material.appbar.AppBarLayout>

@@ -1,9 +1,9 @@
 package io.casey.musikcube.remote.ui.shared.activity
 
 import android.os.Bundle
-import android.support.design.widget.FloatingActionButton
 import android.view.Menu
 import android.view.MenuItem
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.shared.constant.Shared

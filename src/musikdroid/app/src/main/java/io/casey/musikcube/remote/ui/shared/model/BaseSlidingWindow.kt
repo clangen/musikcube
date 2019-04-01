@@ -1,6 +1,6 @@
 package io.casey.musikcube.remote.ui.shared.model
 
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import com.simplecityapps.recyclerview_fastscroll.interfaces.OnFastScrollStateChangeListener
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider

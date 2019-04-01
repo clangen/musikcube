@@ -9,12 +9,11 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
-import android.support.v4.app.NotificationCompat
-import android.support.v4.content.ContextCompat
 import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.app.NotificationCompat.MediaStyle
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import android.util.Log
 import android.view.KeyEvent
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -38,7 +37,7 @@ import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
 import io.casey.musikcube.remote.util.Strings
-import android.support.v4.app.NotificationCompat.Action as NotifAction
+import androidx.core.app.NotificationCompat.Action as NotifAction
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
 
 /**
@@ -62,7 +61,6 @@ class SystemService : Service() {
     private lateinit var powerManager: PowerManager
     private lateinit var prefs: SharedPreferences
 
-    private val handler = Handler()
     private val albumArt = AlbumArt()
     private val sessionData = SessionMetadata()
 
@@ -249,7 +247,7 @@ class SystemService : Service() {
                 albumArt.reset(track)
                 albumArt.request = request
                 albumArt.target = request.into(
-                    object: RequestFutureTarget<Bitmap>(handler, Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
+                    object: RequestFutureTarget<Bitmap>(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL) {
                         override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
                             /* make sure the instance's current request is the same as this request. it's
                             possible we had another download request come in before this one finished */
@@ -326,7 +324,7 @@ class SystemService : Service() {
                 android.R.drawable.ic_media_play,
                 getString(R.string.button_play), ACTION_NOTIFICATION_PLAY))
 
-            notification.setStyle(MediaStyle()
+            notification.setStyle(androidx.media.app.NotificationCompat.MediaStyle()
                 .setShowActionsInCompactView(0)
                 .setMediaSession(mediaSession?.sessionToken))
         }
@@ -344,7 +342,7 @@ class SystemService : Service() {
                     android.R.drawable.ic_media_next,
                     getString(R.string.button_next), ACTION_NOTIFICATION_NEXT))
 
-                notification.setStyle(MediaStyle()
+                notification.setStyle(androidx.media.app.NotificationCompat.MediaStyle()
                     .setShowActionsInCompactView(0, 1, 2)
                     .setMediaSession(mediaSession?.sessionToken))
             }
@@ -357,7 +355,7 @@ class SystemService : Service() {
                     android.R.drawable.ic_menu_close_clear_cancel,
                     getString(R.string.button_close), ACTION_NOTIFICATION_STOP))
 
-                notification.setStyle(MediaStyle()
+                notification.setStyle(androidx.media.app.NotificationCompat.MediaStyle()
                     .setShowActionsInCompactView(0, 1)
                     .setMediaSession(mediaSession?.sessionToken))
             }

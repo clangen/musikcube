@@ -5,14 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.support.design.widget.Snackbar
-import android.support.v4.app.DialogFragment
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentManager
-import android.support.v4.content.ContextCompat
-import android.support.v4.view.MenuItemCompat
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.*
 import android.text.TextUtils
 import android.view.Menu
 import android.view.View
@@ -21,6 +13,18 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
+import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.view.MenuItemCompat
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.ui.navigation.Transition
@@ -355,7 +359,7 @@ fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int, buttonTex
     val sbView = sb.view
     val context = view.context
     sbView.setBackgroundColor(ContextCompat.getColor(context, bgColor))
-    val tv = sbView.findViewById<TextView>(android.support.design.R.id.snackbar_text)
+    val tv = sbView.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
     tv.setTextColor(ContextCompat.getColor(context, fgColor))
     sb.show()
 }

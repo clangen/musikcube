@@ -1,7 +1,7 @@
 package io.casey.musikcube.remote.service.playback.impl.streaming.db
 
-import android.arch.persistence.room.Database
-import android.arch.persistence.room.RoomDatabase
+import androidx.room.Database
+import androidx.room.RoomDatabase
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerDataComponent
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
@@ -18,7 +18,7 @@ import org.json.JSONObject
 import java.util.*
 import javax.inject.Inject
 
-@Database(entities = arrayOf(OfflineTrack::class), version = 1)
+@Database(entities = [OfflineTrack::class], version = 1)
 abstract class OfflineDb : RoomDatabase() {
     @Inject lateinit var wss: WebSocketService
     @Inject lateinit var streamProxy: StreamProxy

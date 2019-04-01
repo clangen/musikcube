@@ -7,10 +7,10 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.support.v4.app.DialogFragment
-import android.support.v7.app.AlertDialog
 import android.view.*
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.DialogFragment
 import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.Playback
@@ -444,31 +444,35 @@ class MainActivity : BaseActivity() {
     }
 
     private fun checkShowSpotlight() {
-        val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
-        if (!spotlightDisplayed && toolbarButton != null) {
-            SpotlightView.Builder(this@MainActivity)
-                .introAnimationDuration(400)
-                .enableRevealAnimation(true)
-                .performClick(true)
-                .fadeinTextDuration(400)
-                .headingTvColor(getColorCompat(R.color.color_accent))
-                .headingTvSize(24)
-                .headingTvText(getString(R.string.spotlight_playback_mode_title))
-                .subHeadingTvColor(Color.parseColor("#ffffff"))
-                .subHeadingTvSize(14)
-                .subHeadingTvText(getString(R.string.spotlight_playback_mode_message))
-                .maskColor(Color.parseColor("#dc000000"))
-                .target(toolbarButton)
-                .lineAnimDuration(400)
-                .lineAndArcColor(getColorCompat(R.color.color_primary))
-                .dismissOnTouch(true)
-                .dismissOnBackPress(true)
-                .enableDismissAfterShown(true)
-                .usageId(SPOTLIGHT_STREAMING_ID)
-                .show()
+        /* sometimes the spotlight animation doesn't play properly; let's try to delay it
+        for a bit to make it more reliable */
+        handler.postDelayed({
+            val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
+            if (!paused && !spotlightDisplayed && toolbarButton != null) {
+                SpotlightView.Builder(this@MainActivity)
+                    .introAnimationDuration(400)
+                    .enableRevealAnimation(true)
+                    .performClick(true)
+                    .fadeinTextDuration(400)
+                    .headingTvColor(getColorCompat(R.color.color_accent))
+                    .headingTvSize(24)
+                    .headingTvText(getString(R.string.spotlight_playback_mode_title))
+                    .subHeadingTvColor(Color.parseColor("#ffffff"))
+                    .subHeadingTvSize(14)
+                    .subHeadingTvText(getString(R.string.spotlight_playback_mode_message))
+                    .maskColor(Color.parseColor("#dc000000"))
+                    .target(toolbarButton)
+                    .lineAnimDuration(400)
+                    .lineAndArcColor(getColorCompat(R.color.color_primary))
+                    .dismissOnTouch(true)
+                    .dismissOnBackPress(true)
+                    .enableDismissAfterShown(true)
+                    .usageId(SPOTLIGHT_STREAMING_ID)
+                    .show()
 
-            spotlightDisplayed = true
-        }
+                spotlightDisplayed = true
+            }
+        }, 1000)
     }
 
     private fun checkShowApiMismatch() {

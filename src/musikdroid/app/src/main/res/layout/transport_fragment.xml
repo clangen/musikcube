@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -21,7 +22,7 @@
             android:layout_weight="1.0"
             android:text="@string/button_prev"/>
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="2dp"
             android:layout_height="0dp"/>
 
@@ -33,7 +34,7 @@
             android:layout_weight="1.0"
             android:text="@string/button_play"/>
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="2dp"
             android:layout_height="0dp"/>
 
@@ -47,7 +48,7 @@
 
     </LinearLayout>
 
-    <android.support.v4.widget.Space
+    <androidx.legacy.widget.Space
         android:layout_width="0dp"
         android:layout_height="2dp"/>
 
@@ -59,6 +60,15 @@
         android:paddingLeft="4dp"
         android:paddingRight="4dp"
         android:transitionName="play_queue_transition">
+
+        <!--<me.zhanghai.android.materialprogressbar.MaterialProgressBar-->
+            <!--style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="32dp"-->
+            <!--android:secondaryProgress="50"-->
+            <!--android:progress="25"-->
+            <!--android:indeterminate="false"-->
+            <!--app:mpb_useIntrinsicPadding="false"/>-->
 
         <LinearLayout
             android:layout_width="wrap_content"

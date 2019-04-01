@@ -1,14 +1,14 @@
 package io.casey.musikcube.remote.ui.tracks.adapter
 
 import android.content.SharedPreferences
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.helper.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.ItemTouchHelper
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.shared.extension.fallback

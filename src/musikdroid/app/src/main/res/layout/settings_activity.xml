@@ -19,7 +19,7 @@
             android:textColor="@color/theme_foreground"
             android:text="@string/edit_connection_info"/>
 
-        <android.support.design.widget.TextInputLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
@@ -33,9 +33,9 @@
                 android:hint="@string/edit_connection_hostname"
                 android:inputType="textNoSuggestions" />
 
-        </android.support.design.widget.TextInputLayout>
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
@@ -49,9 +49,9 @@
                 android:hint="@string/edit_connection_port"
                 android:inputType="number" />
 
-        </android.support.design.widget.TextInputLayout>
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
@@ -65,9 +65,9 @@
                 android:hint="@string/edit_connection_http_port"
                 android:inputType="number" />
 
-        </android.support.design.widget.TextInputLayout>
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <android.support.design.widget.TextInputLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
@@ -81,7 +81,7 @@
                 android:hint="@string/edit_connection_password"
                 android:inputType="textPassword" />
 
-        </android.support.design.widget.TextInputLayout>
+        </com.google.android.material.textfield.TextInputLayout>
 
         <CheckBox
             android:id="@+id/ssl_checkbox"
@@ -100,7 +100,7 @@
             android:visibility="visible"
             android:text="@string/settings_disable_cert_validation"/>
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -130,7 +130,7 @@
 
         </LinearLayout>
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -147,7 +147,7 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="24dp"/>
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -164,7 +164,7 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="24dp"/>
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -181,7 +181,7 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="24dp"/>
 
-        <android.support.v4.widget.Space
+        <androidx.legacy.widget.Space
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 

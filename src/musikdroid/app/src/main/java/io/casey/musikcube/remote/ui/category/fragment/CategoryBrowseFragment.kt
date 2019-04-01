@@ -4,11 +4,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.support.design.widget.FloatingActionButton
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata

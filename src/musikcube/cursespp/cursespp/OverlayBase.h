@@ -34,13 +34,13 @@
 
 #pragma once
 
-#include <cursespp/Colors.h>
 #include <cursespp/IOverlay.h>
 #include <cursespp/LayoutBase.h>
 #include <cursespp/OverlayStack.h>
 #include <cursespp/TextLabel.h>
-#include <cursespp/Checkbox.h>
 #include <cursespp/TextInput.h>
+#include <cursespp/Checkbox.h>
+#include <cursespp/Colors.h>
 #include <cursespp/ListWindow.h>
 
 namespace cursespp {

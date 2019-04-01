@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/theme_background" >
 
-    <android.support.design.widget.CoordinatorLayout
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_weight="1"
         android:layout_height="0dp"
         android:layout_width="match_parent">
@@ -31,12 +31,12 @@
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
             android:visibility="invisible"/>
 
-        <android.support.design.widget.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
             style="@style/FAB"
             android:id="@+id/fab"
             app:layout_anchor="@id/recycler_view" />
 
-    </android.support.design.widget.CoordinatorLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <FrameLayout
         android:id="@+id/transport_container"
