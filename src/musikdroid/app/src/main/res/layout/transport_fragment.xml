@@ -52,11 +52,11 @@
         android:layout_width="0dp"
         android:layout_height="2dp"/>
 
-    <FrameLayout
+    <io.casey.musikcube.remote.ui.shared.view.InterceptTouchFrameLayout
         android:id="@+id/title_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="32dp"
+        android:minHeight="28dp"
         android:background="@drawable/category_button"
         android:transitionName="play_queue_transition">
 
@@ -105,6 +105,6 @@
 
         </LinearLayout>
 
-    </FrameLayout>
+    </io.casey.musikcube.remote.ui.shared.view.InterceptTouchFrameLayout>
 
 </LinearLayout>
