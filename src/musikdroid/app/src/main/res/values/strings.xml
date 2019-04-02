@@ -142,9 +142,9 @@
     <string name="remote_settings_eq_label_format">%d hz</string>
     <string name="remote_settings_eq_value_format">%d dB</string>
     <string name="diagnostics_title">diagnostics</string>
-    <string name="diagnostics_app_runtime">app runtime: </string>
-    <string name="diagnostics_wakelock_runtime">wakelock runtime: </string>
-    <string name="diagnostics_wakelock_acquired">wakelock acquired? </string>
+    <string name="diagnostics_app_runtime">app runtime: %s</string>
+    <string name="diagnostics_wakelock_runtime">wakelock runtime: %s</string>
+    <string name="diagnostics_wakelock_acquired">wakelock acquired? %s</string>
     <string name="transport_type_gapless">gapless</string>
     <string name="transport_type_crossfade">crossfade</string>
     <string name="replaygain_mode_disabled">disabled</string>

@@ -8,4 +8,16 @@ object Duration {
         val secs = seconds.toInt() - mins * 60
         return String.format(Locale.getDefault(), "%d:%02d", mins, secs)
     }
+
+    fun formatWithHours(seconds: Double): String {
+        val hours = seconds.toInt() / 3600
+        return when(hours) {
+            0 -> format(seconds)
+            else -> {
+                val mins = (seconds.toInt() % 3600) / 60
+                val secs = (seconds.toInt() % 60)
+                String.format(Locale.getDefault(), "%d:%02d:%02d", hours, mins, secs)
+            }
+        }
+    }
 }
