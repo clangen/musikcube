@@ -54,6 +54,7 @@
     <string name="button_zero">zero</string>
     <string name="button_learn_more">learn more</string>
     <string name="button_view">view</string>
+    <string name="button_diagnostics">diagnostics</string>
     <string name="invalid_password_dialog_title">invalid password</string>
     <string name="invalid_password_dialog_message">the server rejected your password.\n\nchange the password in the settings screen.</string>
     <string name="status_connecting">connecting</string>
@@ -140,6 +141,10 @@
     <string name="remote_settings_eq_enabled">enable equalizer</string>
     <string name="remote_settings_eq_label_format">%d hz</string>
     <string name="remote_settings_eq_value_format">%d dB</string>
+    <string name="diagnostics_title">diagnostics</string>
+    <string name="diagnostics_app_runtime">app runtime: </string>
+    <string name="diagnostics_wakelock_runtime">wakelock runtime: </string>
+    <string name="diagnostics_wakelock_acquired">wakelock acquired? </string>
     <string name="transport_type_gapless">gapless</string>
     <string name="transport_type_crossfade">crossfade</string>
     <string name="replaygain_mode_disabled">disabled</string>

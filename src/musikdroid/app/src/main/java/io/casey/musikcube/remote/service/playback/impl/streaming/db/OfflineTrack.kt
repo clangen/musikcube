@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.service.playback.impl.streaming.db
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
-import io.casey.musikcube.remote.util.Strings
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -25,12 +24,12 @@ class OfflineTrack {
     var trackNum: Int = 0
 
     fun fromJSONObject(uri: String, from: JSONObject): Boolean {
-        if (Strings.empty(uri)) {
+        if (uri.isEmpty()) {
             throw IllegalArgumentException("uri cannot be empty")
         }
 
         val externalId = from.optString(Metadata.Track.EXTERNAL_ID, "")
-        if (Strings.empty(externalId)) {
+        if (externalId.isEmpty()) {
             return false
         }
 

@@ -1,7 +1,6 @@
 package io.casey.musikcube.remote.ui.settings.viewmodel
 
 import io.casey.musikcube.remote.service.websocket.model.*
-import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.BiFunction
@@ -120,7 +119,7 @@ class RemoteSettingsViewModel: BaseRemoteViewModel() {
              outputDriver: String,
              outputDeviceId: String)
     {
-        if (Strings.empty(outputDriver)) {
+        if (outputDriver.isEmpty()) {
             save(replayGainMode, preampGain, transport)
         }
         else {

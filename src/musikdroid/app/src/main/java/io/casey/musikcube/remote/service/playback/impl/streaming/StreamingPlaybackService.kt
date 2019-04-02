@@ -22,7 +22,6 @@ import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.service.websocket.model.PlayQueueType
 import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.rxkotlin.subscribeBy
@@ -525,12 +524,12 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     private fun getUri(track: ITrack?): String? {
         if (track != null) {
             val existingUri = track.uri
-            if (Strings.notEmpty(existingUri)) {
+            if (existingUri.isNotEmpty()) {
                 return existingUri
             }
 
             val externalId = track.externalId
-            if (Strings.notEmpty(externalId)) {
+            if (externalId.isNotEmpty()) {
                 val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
                 val protocol = if (ssl) "https" else "http"
                 val port = prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT)

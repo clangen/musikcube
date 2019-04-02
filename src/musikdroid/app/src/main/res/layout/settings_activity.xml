@@ -234,6 +234,15 @@
             android:layout_marginLeft="24dp"
             android:text="@string/settings_enable_software_volume"/>
 
+        <TextView
+            android:id="@+id/button_diagnostics"
+            style="@style/ConnectionButton"
+            android:text="@string/button_diagnostics"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginLeft="24dp"/>
+
     </LinearLayout>
 
 </ScrollView>

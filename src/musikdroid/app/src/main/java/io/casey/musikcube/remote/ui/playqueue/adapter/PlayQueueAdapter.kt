@@ -1,11 +1,11 @@
 package io.casey.musikcube.remote.ui.playqueue.adapter
 
 import android.content.SharedPreferences
-import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.shared.extension.fallback

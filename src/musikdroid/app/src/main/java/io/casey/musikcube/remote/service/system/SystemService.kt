@@ -6,16 +6,15 @@ import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.os.Build
-import android.os.Handler
 import android.os.IBinder
 import android.os.PowerManager
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import android.util.Log
 import android.view.KeyEvent
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.FutureTarget
 import com.bumptech.glide.request.RequestFutureTarget
@@ -36,7 +35,6 @@ import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
-import io.casey.musikcube.remote.util.Strings
 import androidx.core.app.NotificationCompat.Action as NotifAction
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
 
@@ -94,6 +92,7 @@ class SystemService : Service() {
     override fun onDestroy() {
         RUNNING = false
         super.onDestroy()
+        releaseWakeLock()
         unregisterReceivers()
     }
 
@@ -125,15 +124,7 @@ class SystemService : Service() {
             playback = PlaybackServiceFactory.streaming(this)
         }
 
-        if (wakeLock == null) {
-            wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK, "$SESSION_TAG:")
-
-            wakeLock?.let {
-                it.setReferenceCounted(false)
-                it.acquire()
-            }
-        }
+        acquireWakeLock()
 
         if (sleeping) {
             playback?.connect(playbackListener)
@@ -151,17 +142,37 @@ class SystemService : Service() {
         playback?.disconnect(playbackListener)
         playback = null
 
-        wakeLock?.release()
-        wakeLock = null
+        releaseWakeLock()
 
         stopSelf()
     }
 
     private fun sleepNow() {
         Log.d(TAG, "SystemService SLEEP")
-        wakeLock?.release()
-        wakeLock = null
+        releaseWakeLock()
         playback?.disconnect(playbackListener)
+    }
+
+    private fun acquireWakeLock() {
+        if (wakeLock == null) {
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK, "$SESSION_TAG:")
+
+            wakeLock?.let {
+                it.setReferenceCounted(false)
+                it.acquire()
+                wakeLockAcquireTime = System.nanoTime()
+            }
+        }
+    }
+
+    private fun releaseWakeLock() {
+        if (wakeLock != null) {
+            wakeLock?.release()
+            wakeLock = null
+            totalWakeLockTime += (System.nanoTime() - wakeLockAcquireTime)
+            wakeLockAcquireTime = -1L
+        }
     }
 
     private fun checkInitMediaSession() {
@@ -373,33 +384,29 @@ class SystemService : Service() {
 
     private fun handlePlaybackAction(action: String?): Boolean {
         this.playback?.let {
-            if (Strings.notEmpty(action)) {
-                when (action) {
-                    ACTION_NOTIFICATION_NEXT -> {
-                        it.next()
-                        return true
-                    }
-
-                    ACTION_NOTIFICATION_PAUSE -> {
-                        it.pause()
-                        return true
-                    }
-
-                    ACTION_NOTIFICATION_PLAY -> {
-                        it.resume()
-                        return true
-                    }
-
-                    ACTION_NOTIFICATION_PREV -> {
-                        it.prev()
-                        return true
-                    }
-
-                    ACTION_NOTIFICATION_STOP -> {
-                        it.stop()
-                        shutdown()
-                        return true
-                    }
+            when (action) {
+                ACTION_NOTIFICATION_NEXT -> {
+                    it.next()
+                    return true
+                }
+                ACTION_NOTIFICATION_PAUSE -> {
+                    it.pause()
+                    return true
+                }
+                ACTION_NOTIFICATION_PLAY -> {
+                    it.resume()
+                    return true
+                }
+                ACTION_NOTIFICATION_PREV -> {
+                    it.prev()
+                    return true
+                }
+                ACTION_NOTIFICATION_STOP -> {
+                    it.stop()
+                    shutdown()
+                    return true
+                }
+                else -> {
                 }
             }
         }
@@ -593,6 +600,18 @@ class SystemService : Service() {
         var ACTION_SLEEP = "io.casey.musikcube.remote.SLEEP"
         var RUNNING = false
 
+        val isWakeLockActive: Boolean
+            get() { return wakeLockAcquireTime >= 0L }
+
+        val wakeLockTime: Double
+            get() {
+                val current = when (wakeLockAcquireTime > -1L) {
+                    true -> System.nanoTime() - wakeLockAcquireTime
+                    false -> 0L
+                }
+                return (totalWakeLockTime + current).toDouble() / 1_000_000_000.0
+            }
+
         private val BITMAP_OPTIONS = RequestOptions().diskCacheStrategy(DiskCacheStrategy.ALL)
 
         private const val MEDIA_SESSION_ACTIONS =
@@ -601,6 +620,9 @@ class SystemService : Service() {
             PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
             PlaybackStateCompat.ACTION_FAST_FORWARD or
             PlaybackStateCompat.ACTION_REWIND
+
+        private var wakeLockAcquireTime = -1L
+        private var totalWakeLockTime = 0L
 
         fun wakeup() {
             val c = Application.instance

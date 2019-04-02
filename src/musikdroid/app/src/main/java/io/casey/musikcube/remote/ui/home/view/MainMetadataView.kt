@@ -41,7 +41,6 @@ import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
-import io.casey.musikcube.remote.util.Strings
 import org.json.JSONArray
 import javax.inject.Inject
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
@@ -131,15 +130,15 @@ class MainMetadataView : FrameLayout {
                 this.volumeWithArt.text = volume
             }
 
-            this.title.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
-            this.artist.text = if (Strings.empty(artist)) getString(if (buffering) R.string.buffering else R.string.unknown_artist) else artist
-            this.album.text = if (Strings.empty(album)) getString(if (buffering) R.string.buffering else R.string.unknown_album) else album
+            this.title.text = if (title.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
+            this.artist.text = if (artist.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_artist) else artist
+            this.album.text = if (album.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_album) else album
 
             this.rebindAlbumArtistWithArtTextView(playback)
-            this.titleWithArt.text = if (Strings.empty(title)) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
+            this.titleWithArt.text = if (title.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
             this.buffering.visibility = if (buffering) View.VISIBLE else View.GONE
 
-            if (Strings.empty(artist) || Strings.empty(album)) {
+            if (artist.isEmpty() || album.isEmpty()) {
                 setMetadataDisplayMode(DisplayMode.NoArtwork)
                 loadedAlbumArtUrl = null
             }
@@ -234,7 +233,7 @@ class MainMetadataView : FrameLayout {
             setMetadataDisplayMode(DisplayMode.NoArtwork)
         }
 
-        if (Strings.empty(albumArtUrl)) {
+        if (albumArtUrl.isEmpty()) {
             loadedAlbumArtUrl = null
             setMetadataDisplayMode(DisplayMode.NoArtwork)
         }

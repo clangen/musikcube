@@ -1,9 +1,9 @@
 package io.casey.musikcube.remote.ui.settings.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
 @Entity
 class Connection : Parcelable {

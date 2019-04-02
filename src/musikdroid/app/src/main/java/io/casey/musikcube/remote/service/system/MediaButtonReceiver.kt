@@ -3,8 +3,8 @@ package io.casey.musikcube.remote.service.system
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.ContextCompat
 import android.view.KeyEvent
+import androidx.core.content.ContextCompat
 
 class MediaButtonReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

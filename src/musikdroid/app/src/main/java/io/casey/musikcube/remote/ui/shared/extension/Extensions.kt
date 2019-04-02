@@ -35,7 +35,6 @@ import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
-import io.casey.musikcube.remote.util.Strings
 
 /*
  *
@@ -57,8 +56,8 @@ fun SharedPreferences.getString(key: String): String? =
 
 fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
-    val title = extras.getString(Shared.Extra.TITLE_OVERRIDE)
-    this.title = if (Strings.notEmpty(title)) title else defaultTitle
+    val title = extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
+    this.title = if (title.isNotEmpty()) title else defaultTitle
 }
 
 fun Toolbar.setTitleFromIntent(stringId: Int) {
@@ -129,7 +128,7 @@ fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
 
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     val title = this.intent.getStringExtra(Shared.Extra.TITLE_OVERRIDE)
-    this.title = if (Strings.notEmpty(title)) title else defaultTitle
+    this.title = if (title.isNotEmpty()) title else defaultTitle
 }
 
 fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean {
@@ -338,7 +337,7 @@ fun BaseFragment.getTitleOverride(defaultId: Int): String =
 
 fun BaseFragment.getTitleOverride(defaultTitle: String): String {
     val title = this.extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
-    return if (Strings.notEmpty(title)) title else defaultTitle
+    return if (title.isNotEmpty()) title else defaultTitle
 }
 
 /*

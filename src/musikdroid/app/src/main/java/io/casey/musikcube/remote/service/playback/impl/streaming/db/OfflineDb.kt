@@ -9,7 +9,6 @@ import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -79,23 +78,22 @@ abstract class OfflineDb : RoomDatabase() {
             val options = JSONObject()
 
             if (countOnly) {
-                val count = if (Strings.empty(filter)) dao.countTracks() else dao.countTracks(filter)
+                val count = if (filter.isEmpty()) dao.countTracks() else dao.countTracks(filter)
                 options.put(Messages.Key.COUNT, count)
             }
             else {
                 val offset = message.getIntOption(Messages.Key.OFFSET, -1)
                 val limit = message.getIntOption(Messages.Key.LIMIT, -1)
 
-                val offlineTracks: List<OfflineTrack>
-
-                if (Strings.empty(filter)) {
-                    offlineTracks = if (offset == -1 || limit == -1)
-                        dao.queryTracks() else dao.queryTracks(limit, offset)
-                }
-                else {
-                    offlineTracks = if (offset == -1 || limit == -1)
-                        dao.queryTracks(filter) else dao.queryTracks(filter, limit, offset)
-                }
+                val offlineTracks: List<OfflineTrack> =
+                    if (filter.isEmpty()) {
+                        if (offset == -1 || limit == -1)
+                            dao.queryTracks() else dao.queryTracks(limit, offset)
+                    }
+                    else {
+                        if (offset == -1 || limit == -1)
+                            dao.queryTracks(filter) else dao.queryTracks(filter, limit, offset)
+                    }
 
                 for (track in offlineTracks) {
                     tracks.put(track.toJSONObject())

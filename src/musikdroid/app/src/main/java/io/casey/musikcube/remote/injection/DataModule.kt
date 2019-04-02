@@ -1,7 +1,7 @@
 package io.casey.musikcube.remote.injection
 
-import androidx.room.Room
 import android.content.Context
+import androidx.room.Room
 import dagger.Module
 import dagger.Provides
 import io.casey.musikcube.remote.service.gapless.db.GaplessDb

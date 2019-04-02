@@ -29,7 +29,6 @@ import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.tracks.adapter.TrackListAdapter
 import io.casey.musikcube.remote.ui.tracks.constant.Track
 import io.casey.musikcube.remote.util.Debouncer
-import io.casey.musikcube.remote.util.Strings
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -281,7 +280,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             putLong(Track.Extra.SELECTED_ID, categoryId)
             putString(Track.Extra.CATEGORY_TYPE, categoryType)
             putString(Track.Extra.CATEGORY_VALUE, categoryValue)
-            if (Strings.notEmpty(categoryValue)) {
+            if (categoryValue.isNotEmpty()) {
                 putString(
                     Shared.Extra.TITLE_OVERRIDE,
                     context.getString(R.string.songs_from_category, categoryValue))

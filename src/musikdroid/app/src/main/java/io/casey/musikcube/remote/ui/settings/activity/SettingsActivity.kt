@@ -230,6 +230,10 @@ class SettingsActivity : BaseActivity() {
                 ConnectionsActivity.getStartIntent(this),
                 CONNECTIONS_REQUEST_CODE)
         }
+
+        findViewById<View>(R.id.button_diagnostics).setOnClickListener {
+            startActivity(Intent(this, DiagnosticsActivity::class.java))
+        }
     }
 
     private fun showSaveAsDialog() {

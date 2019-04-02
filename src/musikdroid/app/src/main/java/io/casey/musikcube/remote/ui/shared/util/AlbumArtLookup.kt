@@ -6,7 +6,6 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.util.Strings
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -171,7 +170,7 @@ object AlbumArtLookup {
                         val imageJson = imagesJson.getJSONObject(i)
                         val size = Size.from(imageJson.optString("size", ""))
                         val resolvedUrl = imageJson.optString("#text", "")
-                        if (Strings.notEmpty(resolvedUrl)) {
+                        if (resolvedUrl.isNotEmpty()) {
                             images.add(Pair<Size, String>(size, resolvedUrl))
                         }
                     }

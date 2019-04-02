@@ -1,12 +1,12 @@
 package io.casey.musikcube.remote.ui.category.adapter
 
 import android.content.SharedPreferences
-import androidx.recyclerview.widget.RecyclerView
 import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
 import io.casey.musikcube.remote.ui.category.constant.NavigationType

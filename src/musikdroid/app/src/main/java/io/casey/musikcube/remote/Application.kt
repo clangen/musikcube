@@ -52,6 +52,8 @@ class Application : android.app.Application() {
         lateinit var appComponent: AppComponent
             private set
 
+        val startTimeNanos = System.nanoTime()
+
         var deviceId: String = ""
             private set
 
