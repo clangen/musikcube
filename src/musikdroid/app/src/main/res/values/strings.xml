@@ -145,6 +145,7 @@
     <string name="diagnostics_app_runtime">app runtime: %s</string>
     <string name="diagnostics_wakelock_runtime">wakelock runtime: %s</string>
     <string name="diagnostics_wakelock_acquired">wakelock acquired? %s</string>
+    <string name="diagnostics_system_service">system service: %s</string>
     <string name="transport_type_gapless">gapless</string>
     <string name="transport_type_crossfade">crossfade</string>
     <string name="replaygain_mode_disabled">disabled</string>

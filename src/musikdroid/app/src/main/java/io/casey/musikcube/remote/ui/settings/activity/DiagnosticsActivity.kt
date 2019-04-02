@@ -14,6 +14,7 @@ class DiagnosticsActivity: BaseActivity() {
     private lateinit var appRuntime: TextView
     private lateinit var wakeRuntime: TextView
     private lateinit var wakeAcquired: TextView
+    private lateinit var serviceState: TextView
     private val handler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +23,7 @@ class DiagnosticsActivity: BaseActivity() {
         appRuntime = findViewById(R.id.app_runtime)
         wakeRuntime = findViewById(R.id.wakelock_runtime)
         wakeAcquired = findViewById(R.id.wakelock_acquired)
+        serviceState = findViewById(R.id.service_state)
         rebind()
         setTitle(R.string.diagnostics_title)
         enableUpNavigation()
@@ -48,6 +50,9 @@ class DiagnosticsActivity: BaseActivity() {
         wakeAcquired.text = getString(
             R.string.diagnostics_wakelock_acquired,
             SystemService.isWakeLockActive.toString().toLowerCase())
+        serviceState.text = getString(
+            R.string.diagnostics_system_service,
+            SystemService.state.toString().toLowerCase())
     }
 
     private val refreshRunnable = object: Runnable {

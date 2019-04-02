@@ -1,33 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/app_runtime"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_marginBottom="8dp"
-        android:text="@string/diagnostics_app_runtime"/>
+        android:padding="16dp">
 
-    <TextView
-        android:id="@+id/wakelock_runtime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_marginBottom="8dp"
-        android:text="@string/diagnostics_wakelock_runtime"/>
+        <TextView
+            android:id="@+id/app_runtime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginBottom="8dp"
+            android:text="@string/diagnostics_app_runtime"/>
 
-    <TextView
-        android:id="@+id/wakelock_acquired"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:layout_marginBottom="8dp"
-        android:text="@string/diagnostics_wakelock_acquired"/>
+        <TextView
+            android:id="@+id/wakelock_runtime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginBottom="8dp"
+            android:text="@string/diagnostics_wakelock_runtime"/>
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/wakelock_acquired"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginBottom="8dp"
+            android:text="@string/diagnostics_wakelock_acquired"/>
+
+        <TextView
+            android:id="@+id/service_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginBottom="8dp"
+            android:text="@string/diagnostics_system_service"/>
+
+    </LinearLayout>
+
+</ScrollView>

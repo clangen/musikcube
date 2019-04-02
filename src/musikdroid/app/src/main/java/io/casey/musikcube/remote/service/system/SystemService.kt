@@ -44,6 +44,8 @@ import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbu
  * from completely falling asleep during streaming playback.
  */
 class SystemService : Service() {
+    enum class State { Dead, Active, Sleeping }
+
     private var playback: StreamingPlaybackService? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var mediaSession: MediaSessionCompat? = null
@@ -63,7 +65,7 @@ class SystemService : Service() {
     private val sessionData = SessionMetadata()
 
     override fun onCreate() {
-        RUNNING = true
+        state = State.Sleeping
 
         super.onCreate()
 
@@ -90,7 +92,7 @@ class SystemService : Service() {
     }
 
     override fun onDestroy() {
-        RUNNING = false
+        state = State.Dead
         super.onDestroy()
         releaseWakeLock()
         unregisterReceivers()
@@ -132,6 +134,8 @@ class SystemService : Service() {
 
         checkInitMediaSession()
         updateMediaSessionPlaybackState()
+
+        state = State.Active
     }
 
     private fun shutdownNow() {
@@ -151,6 +155,7 @@ class SystemService : Service() {
         Log.d(TAG, "SystemService SLEEP")
         releaseWakeLock()
         playback?.disconnect(playbackListener)
+        state = State.Sleeping
     }
 
     private fun acquireWakeLock() {
@@ -598,7 +603,9 @@ class SystemService : Service() {
         var ACTION_WAKE_UP = "io.casey.musikcube.remote.WAKE_UP"
         var ACTION_SHUT_DOWN = "io.casey.musikcube.remote.SHUT_DOWN"
         var ACTION_SLEEP = "io.casey.musikcube.remote.SLEEP"
-        var RUNNING = false
+
+        var state = State.Dead
+            private set
 
         val isWakeLockActive: Boolean
             get() { return wakeLockAcquireTime >= 0L }
@@ -631,7 +638,7 @@ class SystemService : Service() {
         }
 
         fun shutdown() {
-            if (RUNNING) {
+            if (state != State.Dead) {
                 val c = Application.instance
                 ContextCompat.startForegroundService(
                     c, Intent(c, SystemService::class.java).setAction(ACTION_SHUT_DOWN))
@@ -639,7 +646,7 @@ class SystemService : Service() {
         }
 
         fun sleep() {
-            if (RUNNING) {
+            if (state != State.Dead) {
                 val c = Application.instance
                 ContextCompat.startForegroundService(
                     c, Intent(c, SystemService::class.java).setAction(ACTION_SLEEP))
