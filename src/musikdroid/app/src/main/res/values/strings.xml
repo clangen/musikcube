@@ -22,6 +22,7 @@
     <string name="button_change_connection">change connection</string>
     <string name="button_tracks">songs</string>
     <string name="button_playlists">playlists</string>
+    <string name="button_offline">offline</string>
     <string name="button_albums">albums</string>
     <string name="button_artists">artists</string>
     <string name="button_play_queue">play queue</string>

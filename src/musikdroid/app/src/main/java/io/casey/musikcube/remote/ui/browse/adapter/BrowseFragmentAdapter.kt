@@ -44,6 +44,7 @@ class BrowseFragmentAdapter(private val context: Context,
             Metadata.Category.ALBUM -> 1
             Metadata.Category.TRACKS -> 2
             Metadata.Category.PLAYLISTS -> 3
+            Metadata.Category.OFFLINE -> 4
             else -> 0
         }
 
@@ -53,8 +54,10 @@ class BrowseFragmentAdapter(private val context: Context,
                 CategoryBrowseFragment.arguments(context, Metadata.Category.ALBUM_ARTIST))
             1 -> AlbumBrowseFragment.create(context)
             2 -> TrackListFragment.create()
-            else -> CategoryBrowseFragment.create(
+            3 -> CategoryBrowseFragment.create(
                 CategoryBrowseFragment.arguments(Metadata.Category.PLAYLISTS, NavigationType.Tracks))
+            else -> TrackListFragment.create(
+                TrackListFragment.arguments(context, Metadata.Category.OFFLINE))
         }
         return fragment.pushTo(this.containerId)
     }
@@ -64,12 +67,11 @@ class BrowseFragmentAdapter(private val context: Context,
             0 -> R.string.button_artists
             1 -> R.string.button_albums
             2 -> R.string.button_tracks
-            else -> R.string.button_playlists
+            3 -> R.string.button_playlists
+            else -> R.string.button_offline
         })
 
-    override fun getCount(): Int {
-        return 4
-    }
+    override fun getCount(): Int = 5
 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val result = super.instantiateItem(container, position)
