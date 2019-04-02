@@ -32,6 +32,7 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.extension.setCheckWithoutEvent
 import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
+import io.casey.musikcube.remote.ui.shared.extension.toolbar
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.util.Duration
@@ -111,11 +112,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        val connected = data.wss.state === WebSocketService.State.Connected
         val streaming = isStreamingSelected
-
-        menu.findItem(R.id.action_categories).isEnabled = connected
-        menu.findItem(R.id.action_remote_manage).isEnabled = connected
 
         val remoteToggle = menu.findItem(R.id.action_remote_toggle)
 
@@ -158,36 +155,14 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.action_remote_toggle -> {
-                if (playback.service.state != PlaybackState.Stopped) {
-                    showPlaybackTogglePopup()
-                }
-                else {
-                    togglePlaybackService()
-                }
-                return true
+        if (item.itemId == R.id.action_remote_toggle) {
+            if (playback.service.state != PlaybackState.Stopped) {
+                showPlaybackTogglePopup()
             }
-
-            R.id.action_settings -> {
-                startActivity(SettingsActivity.getStartIntent(this))
-                return true
+            else {
+                togglePlaybackService()
             }
-
-            R.id.action_categories -> {
-                Navigate.toAllCategories(this)
-                return true
-            }
-
-            R.id.action_offline_tracks -> {
-                onOfflineTracksSelected()
-                return true
-            }
-
-            R.id.action_remote_manage -> {
-                startActivity(RemoteSettingsActivity.getStartIntent(this))
-                return true
-            }
+            return true
         }
 
         return super.onOptionsItemSelected(item)
@@ -384,6 +359,37 @@ class MainActivity : BaseActivity() {
 
         showOfflineButton.setOnClickListener {
             onOfflineTracksSelected()
+        }
+
+        toolbar?.let { tb ->
+            tb.navigationIcon = getDrawable(R.drawable.ic_menu)
+            tb.setNavigationOnClickListener {
+                val popup = PopupMenu(this, tb)
+                popup.inflate(R.menu.left_menu)
+
+                val connected = data.wss.state === WebSocketService.State.Connected
+                popup.menu.findItem(R.id.action_categories).isEnabled = connected
+                popup.menu.findItem(R.id.action_remote_manage).isEnabled = connected
+
+                popup.setOnMenuItemClickListener {
+                    when(it.itemId) {
+                        R.id.action_settings -> {
+                            startActivity(SettingsActivity.getStartIntent(this))
+                        }
+                        R.id.action_categories -> {
+                            Navigate.toAllCategories(this)
+                        }
+                        R.id.action_offline_tracks -> {
+                            onOfflineTracksSelected()
+                        }
+                        R.id.action_remote_manage -> {
+                            startActivity(RemoteSettingsActivity.getStartIntent(this))
+                        }
+                    }
+                    true
+                }
+                popup.show()
+            }
         }
     }
 

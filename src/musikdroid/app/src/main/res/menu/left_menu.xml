@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_categories"
+        app:showAsAction="never"
+        android:title="@string/menu_categories"/>
+
+    <item
+        android:id="@+id/action_offline_tracks"
+        app:showAsAction="never"
+        android:title="@string/menu_offline_tracks"/>
+
+    <item
+        android:id="@+id/action_remote_manage"
+        app:showAsAction="never"
+        android:title="@string/menu_remote_manage"/>
+
+    <item
+        android:id="@+id/action_settings"
+        app:showAsAction="never"
+        android:title="@string/menu_settings"/>
+</menu>
