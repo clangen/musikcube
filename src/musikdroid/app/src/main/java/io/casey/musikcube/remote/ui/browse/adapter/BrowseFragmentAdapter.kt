@@ -14,9 +14,11 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.extension.pushTo
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 
 class BrowseFragmentAdapter(private val context: Context,
+                            private val playback: PlaybackMixin,
                             fm: FragmentManager,
                             private val containerId: Int = -1): FragmentPagerAdapter(fm) {
     private val fragments = mutableMapOf<Int, Fragment>()
@@ -71,7 +73,9 @@ class BrowseFragmentAdapter(private val context: Context,
             else -> R.string.button_offline
         })
 
-    override fun getCount(): Int = 5
+    override fun getCount(): Int {
+        return if (playback.streaming) 5 else 4 /* hide "offline" for remote playback */
+    }
 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val result = super.instantiateItem(container, position)

@@ -196,7 +196,7 @@ class MainActivity : BaseActivity() {
 
     private fun onOfflineTracksSelected() {
         if (isStreamingSelected) {
-            startActivity(TrackListActivity.getOfflineStartIntent(this))
+            Navigate.toBrowse(this, Metadata.Category.OFFLINE)
         }
         else {
             val tag = SwitchToOfflineTracksDialog.TAG

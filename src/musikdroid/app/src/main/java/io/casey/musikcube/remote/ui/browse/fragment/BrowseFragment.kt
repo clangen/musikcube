@@ -15,12 +15,19 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
+import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 
 class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitleProvider {
     private lateinit var adapter: BrowseFragmentAdapter
+    private lateinit var playback: PlaybackMixin
 
     override val title: String
         get() = getString(R.string.app_name)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        playback = mixin(PlaybackMixin())
+        super.onCreate(savedInstanceState)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
         inflater.inflate(R.layout.browse_fragment, container, false).apply {
@@ -46,7 +53,11 @@ class BrowseFragment: BaseFragment(), ITransportObserver, IFilterable, ITitlePro
                 (adapter.fragmentAt(pager.currentItem) as? IFabConsumer)?.onFabPress(fab)
             }
 
-            adapter = BrowseFragmentAdapter(appCompatActivity, childFragmentManager, R.id.content_container)
+            adapter = BrowseFragmentAdapter(
+                appCompatActivity,
+                playback,
+                childFragmentManager,
+                R.id.content_container)
 
             adapter.onFragmentInstantiated = { pos ->
                 if (pos == pager.currentItem) {

@@ -46,9 +46,6 @@ class PlaybackMixin(var listener: (() -> Unit)? = { }): MixinBase() {
     }
 
     fun onKeyDown(keyCode: Int): Boolean {
-        val streaming = prefs.getBoolean(
-            Prefs.Key.STREAMING_PLAYBACK, Prefs.Default.STREAMING_PLAYBACK)
-
         if (!streaming) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
                 service.volumeDown()
@@ -61,6 +58,13 @@ class PlaybackMixin(var listener: (() -> Unit)? = { }): MixinBase() {
         }
         return false
     }
+
+    val streaming: Boolean
+        get() {
+            return prefs.getBoolean(
+                Prefs.Key.STREAMING_PLAYBACK,
+                Prefs.Default.STREAMING_PLAYBACK)
+        }
 
     private fun connect() {
         service = PlaybackServiceFactory.instance(context)
