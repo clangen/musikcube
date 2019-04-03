@@ -210,23 +210,6 @@
             android:text="@string/settings_transfer_to_server_on_disconnect"/>
 
         <CheckBox
-            android:id="@+id/disable_tabbed_browsing"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/theme_foreground"
-            android:layout_marginLeft="24dp"
-            android:text="@string/settings_disabled_tabbed_browsing"/>
-
-        <CheckBox
-            android:id="@+id/message_compression"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/theme_foreground"
-            android:layout_marginLeft="24dp"
-            android:visibility="gone"
-            android:text="@string/settings_enable_message_compression"/>
-
-        <CheckBox
             android:id="@+id/software_volume"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

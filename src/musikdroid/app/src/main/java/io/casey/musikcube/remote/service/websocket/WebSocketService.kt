@@ -552,9 +552,7 @@ class WebSocketService constructor(private val context: Context) {
                 socket = factory.createSocket(host, CONNECTION_TIMEOUT_MILLIS)
                 socket?.addListener(webSocketAdapter)
 
-                if (prefs.getBoolean(Prefs.Key.MESSAGE_COMPRESSION_ENABLED, Prefs.Default.MESSAGE_COMPRESSION_ENABLED)) {
-                    socket.addExtension(WebSocketExtension.PERMESSAGE_DEFLATE)
-                }
+                socket.addExtension(WebSocketExtension.PERMESSAGE_DEFLATE)
 
                 socket.connect()
                 socket.pingInterval = PING_INTERVAL_MILLIS

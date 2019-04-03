@@ -20,9 +20,6 @@ import io.casey.musikcube.remote.service.playback.RepeatMode
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.WebSocketService
 import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
-import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
-import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.navigation.Navigate
@@ -30,12 +27,14 @@ import io.casey.musikcube.remote.ui.settings.activity.RemoteSettingsActivity
 import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.extension.*
+import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
+import io.casey.musikcube.remote.ui.shared.extension.setCheckWithoutEvent
+import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
+import io.casey.musikcube.remote.ui.shared.extension.toolbar
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.util.Duration
 import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
-import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 
 class MainActivity : BaseActivity() {
     private val handler = Handler()
@@ -250,11 +249,6 @@ class MainActivity : BaseActivity() {
         repeatCb.setOnCheckedChangeListener(null)
     }
 
-    private val disableTabs
-        get() = prefs.getBoolean(
-            Prefs.Key.DISABLE_TABBED_BROWSING,
-            Prefs.Default.DISABLE_TABBED_BROWSING)
-
     private fun bindEventListeners() {
         mainLayout = findViewById(R.id.activity_main)
         metadataView = findViewById(R.id.main_metadata_view)
@@ -310,33 +304,19 @@ class MainActivity : BaseActivity() {
         })
 
         findViewById<View>(R.id.button_albums).setOnClickListener {
-            when (disableTabs) {
-                true -> startActivity(AlbumBrowseActivity.getStartIntent(this))
-                false -> Navigate.toBrowse(this, Metadata.Category.ALBUM)
-            }
+            Navigate.toBrowse(this, Metadata.Category.ALBUM)
         }
 
         findViewById<View>(R.id.button_artists).setOnClickListener {
-            when (disableTabs) {
-                true -> startActivity(CategoryBrowseActivity.getStartIntent(
-                    this, Metadata.Category.ALBUM_ARTIST))
-                false -> Navigate.toBrowse(this, Metadata.Category.ALBUM_ARTIST)
-            }
+            Navigate.toBrowse(this, Metadata.Category.ALBUM_ARTIST)
         }
 
         findViewById<View>(R.id.button_tracks).setOnClickListener {
-            when (disableTabs) {
-                true -> startActivity(TrackListActivity.getStartIntent(this))
-                false -> Navigate.toBrowse(this, Metadata.Category.TRACKS)
-            }
+            Navigate.toBrowse(this, Metadata.Category.TRACKS)
         }
 
         findViewById<View>(R.id.button_playlists).setOnClickListener {
-            when (disableTabs) {
-                true -> startActivity(CategoryBrowseActivity.getStartIntent(
-                    this, Metadata.Category.PLAYLISTS, NavigationType.Tracks))
-                false -> Navigate.toBrowse(this, Metadata.Category.PLAYLISTS)
-            }
+            Navigate.toBrowse(this, Metadata.Category.PLAYLISTS)
         }
 
         findViewById<View>(R.id.button_play_queue).setOnClickListener {

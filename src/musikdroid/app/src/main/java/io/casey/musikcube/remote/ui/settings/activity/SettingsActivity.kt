@@ -155,12 +155,6 @@ class SettingsActivity : BaseActivity() {
 
         albumArtCheckbox.isChecked = prefs.getBoolean(
             Keys.LASTFM_ENABLED, Defaults.LASTFM_ENABLED)
-        
-        messageCompressionCheckbox.isChecked = prefs.getBoolean(
-            Keys.MESSAGE_COMPRESSION_ENABLED, Defaults.MESSAGE_COMPRESSION_ENABLED)
-
-        disableTabs.isChecked = prefs.getBoolean(
-            Keys.DISABLE_TABBED_BROWSING, Defaults.DISABLE_TABBED_BROWSING)
 
         softwareVolume.isChecked = prefs.getBoolean(
             Keys.SOFTWARE_VOLUME, Defaults.SOFTWARE_VOLUME)
@@ -209,7 +203,6 @@ class SettingsActivity : BaseActivity() {
         this.httpPortText = findViewById(R.id.http_port)
         this.passwordText = findViewById(R.id.password)
         this.albumArtCheckbox = findViewById(R.id.album_art_checkbox)
-        this.messageCompressionCheckbox = findViewById(R.id.message_compression)
         this.softwareVolume = findViewById(R.id.software_volume)
         this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner)
         this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner)
@@ -217,7 +210,6 @@ class SettingsActivity : BaseActivity() {
         this.sslCheckbox = findViewById(R.id.ssl_checkbox)
         this.certCheckbox = findViewById(R.id.cert_validation)
         this.transferCheckbox = findViewById(R.id.transfer_on_disconnect_checkbox)
-        this.disableTabs = findViewById(R.id.disable_tabbed_browsing)
     }
 
     private fun bindListeners() {
@@ -284,7 +276,6 @@ class SettingsActivity : BaseActivity() {
                 .putInt(Keys.AUDIO_PORT, if (httpPort.isNotEmpty()) httpPort.toInt() else 0)
                 .putString(Keys.PASSWORD, password)
                 .putBoolean(Keys.LASTFM_ENABLED, albumArtCheckbox.isChecked)
-                .putBoolean(Keys.MESSAGE_COMPRESSION_ENABLED, messageCompressionCheckbox.isChecked)
                 .putBoolean(Keys.SOFTWARE_VOLUME, softwareVolume.isChecked)
                 .putBoolean(Keys.SSL_ENABLED, sslCheckbox.isChecked)
                 .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
@@ -292,7 +283,6 @@ class SettingsActivity : BaseActivity() {
                 .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
                 .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
                 .putInt(Keys.TITLE_ELLIPSIS_MODE_INDEX, titleEllipsisSpinner.selectedItemPosition)
-                .putBoolean(Keys.DISABLE_TABBED_BROWSING, disableTabs.isChecked)
                 .apply()
 
             if (!softwareVolume.isChecked) {

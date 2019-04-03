@@ -7,7 +7,6 @@ class Prefs {
         const val AUDIO_PORT = "http_port"
         const val PASSWORD = "password"
         const val LASTFM_ENABLED = "lastfm_enabled"
-        const val MESSAGE_COMPRESSION_ENABLED = "message_compression_enabled"
         const val STREAMING_PLAYBACK = "streaming_playback"
         const val SOFTWARE_VOLUME = "software_volume"
         const val SSL_ENABLED = "ssl_enabled"
@@ -18,7 +17,6 @@ class Prefs {
         const val UPDATE_DIALOG_SUPPRESSED_VERSION = "update_dialog_suppressed_version"
         const val TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT = "transfer_to_server_on_headset_disconnect"
         const val DEVICE_ID = "device_id"
-        const val DISABLE_TABBED_BROWSING = "disable_tabbed_browsing"
     }
 
     object Default {
@@ -27,7 +25,6 @@ class Prefs {
         const val AUDIO_PORT = 7906
         const val PASSWORD = ""
         const val LASTFM_ENABLED = true
-        const val MESSAGE_COMPRESSION_ENABLED = true
         const val STREAMING_PLAYBACK = false
         const val SOFTWARE_VOLUME = false
         const val SSL_ENABLED = false
@@ -36,7 +33,6 @@ class Prefs {
         const val TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT = false
         const val DISK_CACHE_SIZE_INDEX = 2
         const val TITLE_ELLIPSIS_SIZE_INDEX = 1
-        const val DISABLE_TABBED_BROWSING = false
     }
 
     companion object {

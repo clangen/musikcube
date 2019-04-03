@@ -2,9 +2,13 @@
 
 musikdroid:
 
+* added a new "offline" tab to the browse screen
+* moved settings and other overflow options to the left side of the main
+  screen's toolbar.
 * added settings > advanced > diagnostics screen to show app runtime, wakelock
   acquisition time and status, and service status.
 * added the ability to seek playback on secondary screens
+* removed some old settings that are no longer useful
 * updated to AndroidX
 
 --------------------------------------------------------------------------------
