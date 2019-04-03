@@ -10,6 +10,7 @@ import android.os.Handler
 import android.view.*
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
@@ -29,10 +30,7 @@ import io.casey.musikcube.remote.ui.settings.activity.RemoteSettingsActivity
 import io.casey.musikcube.remote.ui.settings.activity.SettingsActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
-import io.casey.musikcube.remote.ui.shared.extension.setCheckWithoutEvent
-import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
-import io.casey.musikcube.remote.ui.shared.extension.toolbar
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.util.Duration
@@ -116,9 +114,14 @@ class MainActivity : BaseActivity() {
 
         val remoteToggle = menu.findItem(R.id.action_remote_toggle)
 
-        remoteToggle.actionView?.findViewById<ImageView>(R.id.icon)?.setImageResource(
+        val drawable = getDrawable(
             if (streaming) R.drawable.ic_toolbar_streaming
             else R.drawable.ic_toolbar_remote)
+
+
+        drawable?.setTint(ContextCompat.getColor(this, R.color.theme_foreground))
+
+        remoteToggle.actionView?.findViewById<ImageView>(R.id.icon)?.setImageDrawable(drawable)
 
         remoteToggle.actionView?.setOnClickListener {
             togglePlaybackService()
