@@ -82,6 +82,10 @@ void LyricsLayout::OnTrackChanged(size_t index, TrackPtr track) {
 }
 
 bool LyricsLayout::KeyPress(const std::string& kn) {
+    if (Hotkeys::Is(Hotkeys::LyricsRetry, kn)) {
+        this->LoadLyricsForCurrentTrack();
+        return true;
+    }
     return LayoutBase::KeyPress(kn);
 }
 
@@ -148,7 +152,9 @@ void LyricsLayout::SetState(State state) {
         case State::Failed: {
                 this->listView->Hide();
                 this->infoText->Show();
-                this->infoText->SetText(_TSTR("lyrics_lookup_failed"));
+                this->infoText->SetText(u8fmt(
+                    _TSTR("lyrics_lookup_failed"),
+                    Hotkeys::Get(Hotkeys::LyricsRetry).c_str()));
                 this->currentTrackId = -1LL;
             }
             break;

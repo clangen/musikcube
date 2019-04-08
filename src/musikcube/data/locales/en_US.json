@@ -207,7 +207,7 @@
         "lyrics_list_title": "lyrics for '%s'",
         "lyrics_not_playing": "nothing is currently playing!",
         "lyrics_loading": "looking up lyrics...",
-        "lyrics_lookup_failed": "lyrics lookup failed. press 'r' to retry.",
+        "lyrics_lookup_failed": "lyrics lookup failed. press '%s' to retry.",
 
         "update_check_dialog_title": "new version available!",
         "update_check_dialog_message": "musikcube version %s is now available for download. a changelog and binaries are available at:\n\n%s",

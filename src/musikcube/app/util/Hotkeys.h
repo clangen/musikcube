@@ -108,6 +108,9 @@ namespace musik {
                     BrowsePlaylistsRename,
                     BrowsePlaylistsDelete,
 
+                    /* lyrics */
+                    LyricsRetry,
+
                     /* indexer */
                     RescanMetadata,
 
