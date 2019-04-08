@@ -86,6 +86,10 @@ bool LyricsLayout::KeyPress(const std::string& kn) {
         this->LoadLyricsForCurrentTrack();
         return true;
     }
+    else if (kn == " ") { /* ugh... need to generalize this maybe */
+        playback.PauseOrResume();
+        return true;
+    }
     return LayoutBase::KeyPress(kn);
 }
 
