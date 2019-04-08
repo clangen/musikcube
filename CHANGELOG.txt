@@ -1,7 +1,10 @@
 0.65.0
 
-musikdroid:
+musikcube:
+* added lyrics support (powered by audd.io)! access lyrics for the currently
+  playing song by pressing ^L.
 
+musikdroid:
 * added a new "offline" tab to the browse screen
 * moved settings and other overflow options to the left side of the main
   screen's toolbar.
