@@ -89,6 +89,13 @@ bool LyricsLayout::KeyPress(const std::string& kn) {
     return LayoutBase::KeyPress(kn);
 }
 
+void LyricsLayout::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+    if (visible) {
+        this->FocusFirst();
+    }
+}
+
 void LyricsLayout::LoadLyricsForCurrentTrack() {
     auto track = playback.GetPlaying();
     if (track && track->GetId() != this->currentTrackId) {

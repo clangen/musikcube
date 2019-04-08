@@ -20,6 +20,7 @@ namespace musik { namespace cube {
             virtual void OnLayout() override;
             virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
             virtual bool KeyPress(const std::string& kn) override;
+            virtual void OnVisibilityChanged(bool visible) override;
 
         private:
             enum class State: int { NotPlaying, Loading, Loaded, Failed };
