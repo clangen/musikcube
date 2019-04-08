@@ -113,7 +113,8 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
                     this->listView->SetSelectedIndex(0);
                     this->listView->SetFrameTitle(u8fmt(
                         _TSTR("lyrics_list_title"),
-                        track->GetString("title").c_str()));
+                        track->GetString("title").c_str(),
+                        track->GetString("artist").c_str()));
                 }
                 else {
                     this->SetState(State::Failed);
