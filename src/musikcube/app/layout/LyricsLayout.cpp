@@ -98,6 +98,8 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
             if (this->currentTrackId == track->GetId()) {
                 if (lyrics.size()) {
                     this->UpdateAdapter(lyrics);
+                    this->listView->ScrollTo(0);
+                    this->listView->SetSelectedIndex(0);
                     this->listView->SetFrameTitle(u8fmt(
                         _TSTR("lyrics_list_title"),
                         track->GetString("title").c_str()));
