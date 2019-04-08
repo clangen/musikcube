@@ -66,9 +66,9 @@ static std::shared_ptr<LastFmClient> createClient() {
 
 static void validate(musik::core::lastfm::Session& session) {
     session.valid =
-        session.sessionId.size() &&
-        session.username.size() &&
-        session.token.size();
+    session.sessionId.size() &&
+    session.username.size() &&
+    session.token.size();
 }
 
 static std::string encode(std::string value) {

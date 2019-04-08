@@ -83,6 +83,7 @@ namespace musik {
                 std::shared_ptr<cursespp::LayoutBase> libraryLayout;
                 std::shared_ptr<cursespp::LayoutBase> settingsLayout;
                 std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
+                std::shared_ptr<cursespp::LayoutBase> lyricsLayout;
                 musik::core::ILibraryPtr library;
                 bool shortcutsFocused;
                 int syncUpdateCount;

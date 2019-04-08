@@ -1,0 +1,182 @@
+//////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2004-2019 musikcube team
+//
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+//    * Redistributions of source code must retain the above copyright notice,
+//      this list of conditions and the following disclaimer.
+//
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//
+//    * Neither the name of the author nor the names of other contributors may
+//      be used to endorse or promote products derived from this software
+//      without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+//////////////////////////////////////////////////////////////////////////////
+
+#include <stdafx.h>
+#include <app/layout/LyricsLayout.h>
+#include <core/i18n/Locale.h>
+#include <core/support/Auddio.h>
+#include <core/support/Common.h>
+#include <cursespp/App.h>
+#include <cursespp/Screen.h>
+#include <cursespp/ToastOverlay.h>
+#include <cursespp/SingleLineEntry.h>
+#include <app/util/Hotkeys.h>
+#include <app/util/Messages.h>
+
+using namespace musik::cube;
+using namespace musik::core;
+using namespace musik::core::runtime;
+using namespace musik::core::sdk;
+using namespace cursespp;
+
+LyricsLayout::LyricsLayout(musik::core::audio::PlaybackService& playback)
+: LayoutBase()
+, currentTrackId(-1LL)
+, playback(playback) {
+    this->playback.TrackChanged.connect(this, &LyricsLayout::OnTrackChanged);
+
+    this->adapter = std::make_shared<SimpleScrollAdapter>();
+    this->adapter->SetSelectable(true);
+
+    this->listView = std::make_shared<ListWindow>(this->adapter);
+    this->AddWindow(this->listView);
+    this->listView->SetFocusOrder(0);
+
+    this->infoText = std::make_shared<TextLabel>("", text::AlignCenter);
+    this->AddWindow(this->infoText);
+
+    this->LoadLyricsForCurrentTrack();
+}
+
+void LyricsLayout::OnLayout() {
+    LayoutBase::OnLayout();
+    int cx = this->GetContentWidth();
+    int cy = this->GetContentHeight();
+    this->listView->MoveAndResize(0, 0, cx, cy);
+    this->infoText->MoveAndResize(1, cy / 2, cx - 2, 1);
+}
+
+void LyricsLayout::OnTrackChanged(size_t index, TrackPtr track) {
+    this->LoadLyricsForCurrentTrack();
+}
+
+bool LyricsLayout::KeyPress(const std::string& kn) {
+    return LayoutBase::KeyPress(kn);
+}
+
+void LyricsLayout::LoadLyricsForCurrentTrack() {
+    auto track = playback.GetPlaying();
+    if (track && track->GetId() != this->currentTrackId) {
+        this->currentTrackId = track->GetId();
+        this->SetState(State::Loading);
+        auddio::FindLyrics(track, [this](TrackPtr track, std::string& lyrics) {
+            if (this->currentTrackId == track->GetId()) {
+                if (lyrics.size()) {
+                    this->UpdateAdapter(lyrics);
+                    this->listView->SetFrameTitle(u8fmt(
+                        _TSTR("lyrics_list_title"),
+                        track->GetString("title").c_str()));
+                }
+                else {
+                    this->SetState(State::Failed);
+                }
+            }
+        });
+    }
+    else if (!track) {
+        this->currentTrackId = -1LL;
+        this->SetState(State::NotPlaying);
+    }
+}
+
+void LyricsLayout::UpdateAdapter(const std::string& lyrics) {
+    std::string fixed = lyrics;
+    ReplaceAll(fixed, "\r\n", "\n");
+    ReplaceAll(fixed, "\r", "\n");
+    auto items = Split(fixed, "\n");
+    this->adapter->Clear();
+    for (auto& text : items) {
+        this->adapter->AddEntry(std::make_shared<SingleLineEntry>(text));
+    }
+    this->SetState(State::Loaded);
+}
+
+void LyricsLayout::SetState(State state) {
+    switch (state) {
+        case State::NotPlaying: {
+                this->listView->Hide();
+                this->infoText->Show();
+                this->infoText->SetText(_TSTR("lyrics_not_playing"));
+                this->currentTrackId = -1LL;
+            }
+            break;
+        case State::Loading: {
+                this->listView->Hide();
+                this->infoText->Show();
+                this->infoText->SetText(_TSTR("lyrics_loading"));
+            }
+            break;
+        case State::Loaded: {
+                this->infoText->Hide();
+                this->listView->Show();
+                if (this->IsVisible()) {
+                    this->listView->Focus();
+                }
+            }
+            break;
+        case State::Failed: {
+                this->listView->Hide();
+                this->infoText->Show();
+                this->infoText->SetText(_TSTR("lyrics_lookup_failed"));
+                this->currentTrackId = -1LL;
+            }
+            break;
+    }
+}
+
+void LyricsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
+    if (shortcuts) {
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLyrics), _TSTR("shortcuts_lyrics"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
+        shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
+
+        shortcuts->SetChangedCallback([this](std::string key) {
+            if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
+                this->Broadcast(message::JumpToSettings);
+            }
+            if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
+                this->Broadcast(message::JumpToLibrary);
+            }
+            else if (key == App::Instance().GetQuitKey()) {
+                App::Instance().Quit();
+            }
+            else {
+                this->KeyPress(key);
+            }
+        });
+
+        shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLyrics));
+    }
+}

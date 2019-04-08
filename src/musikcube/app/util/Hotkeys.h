@@ -66,10 +66,11 @@ namespace musik {
                     NavigateLibraryFilter,
                     NavigateLibraryTracks,
                     NavigateLibraryPlayQueue,
-                    NavigateSettings,
                     NavigateConsole,
+                    NavigateLyrics,
                     NavigateHotkeys,
                     NavigateJumpToPlaying,
+                    NavigateSettings,
 
                     /* views */
                     ViewRefresh,

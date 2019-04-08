@@ -44,6 +44,7 @@
 #include <app/util/PreferenceKeys.h>
 #include <app/util/UpdateCheck.h>
 #include <app/layout/ConsoleLayout.h>
+#include <app/layout/LyricsLayout.h>
 #include <app/layout/LibraryLayout.h>
 #include <app/layout/SettingsLayout.h>
 #include <app/layout/HotkeysLayout.h>
@@ -97,6 +98,7 @@ MainLayout::MainLayout(
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
 
     this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
+    this->lyricsLayout = std::make_shared<LyricsLayout>(playback);
     this->consoleLayout = std::make_shared<ConsoleLayout>(logger);
     this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();
@@ -144,6 +146,10 @@ bool MainLayout::KeyPress(const std::string& key) {
         this->SetLayout(consoleLayout);
         return true;
     }
+    else if (Hotkeys::Is(Hotkeys::NavigateLyrics, key)) {
+        this->Broadcast(message::JumpToLyrics);
+        return true;
+    }
     else if (Hotkeys::Is(Hotkeys::NavigateHotkeys, key)) {
         this->SetLayout(hotkeysLayout);
         return true;
@@ -180,6 +186,9 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
     else if (type == message::JumpToSettings) {
         this->SetLayout(settingsLayout);
+    }
+    else if (type == message::JumpToLyrics) {
+        this->SetLayout(lyricsLayout);
     }
     else if (type == message::JumpToHotkeys) {
         this->SetLayout(hotkeysLayout);

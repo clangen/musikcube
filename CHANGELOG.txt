@@ -205,7 +205,7 @@ musikdroid:
 * updated to compile against Android Studio 3.1.4
 
 server:
-* fixed a crash while querying play queue tracks that have been removed from
+* fixed a crash while querying play queue tracks that have b`een removed from
   the library.
 
 sdk:

@@ -80,6 +80,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "navigate_library_play_queue", Id::NavigateLibraryPlayQueue },
     { "navigate_settings", Id::NavigateSettings },
     { "navigate_console", Id::NavigateConsole },
+    { "navigate_lyrics", Id::NavigateLyrics },
     { "navigate_hotkeys", Id::NavigateHotkeys},
     { "navigate_jump_to_playing", Id::NavigateJumpToPlaying },
 
@@ -151,6 +152,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::NavigateLibraryPlayQueue, "n" },
     { Id::NavigateSettings, "s" },
     { Id::NavigateConsole, "`" },
+    { Id::NavigateLyrics, "^L" },
     { Id::NavigateHotkeys, "?" },
     { Id::NavigateJumpToPlaying, "x" },
 

@@ -60,10 +60,11 @@ namespace musik {
             static const int JumpToConsole          = First + 9;
             static const int JumpToLibrary          = First + 10;
             static const int JumpToSettings         = First + 11;
-            static const int JumpToHotkeys          = First + 12;
-            static const int SetLastFmState         = First + 13;
-            static const int UpdateEqualizer        = First + 14;
-            static const int DebugLog               = First + 15;
+            static const int JumpToLyrics           = First + 12;
+            static const int JumpToHotkeys          = First + 13;
+            static const int SetLastFmState         = First + 14;
+            static const int UpdateEqualizer        = First + 15;
+            static const int DebugLog               = First + 16;
         }
     }
 }

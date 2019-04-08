@@ -34,29 +34,11 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <core/config.h>
+#include <functional>
+#include <core/library/track/Track.h>
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace auddio {
+    using LyricsCallback = std::function<void(musik::core::TrackPtr track, std::string&)>;
 
-    std::string GetHomeDirectory();
-    std::string GetApplicationDirectory();
-    std::string GetDataDirectory(bool create = true);
-    std::string GetPath(const std::string &sFile);
-    std::string GetPluginDirectory();
-    std::string NormalizeDir(std::string path);
-    void OpenFile(const std::string& path);
-    bool CopyFile(const std::string& from, const std::string& to);
-    int64_t Checksum(char *data,unsigned int bytes);
-    size_t CopyString(const std::string& src, char* dst, size_t size);
-    void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
-    std::vector<std::string> Split(const std::string& in, const std::string& delim);
-    std::string Trim(const std::string& str);
-    bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
-
-    /* file-migration stuff. */
-    void MigrateOldDataDirectory(); /* renames ~/.mC2 -> ~/.musikcube */
-    void RemoveOldDlls();
-
-} }
+    void FindLyrics(musik::core::TrackPtr track, LyricsCallback callback);
+} } }

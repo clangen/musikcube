@@ -309,6 +309,28 @@ namespace musik { namespace core {
         }
     }
 
+    std::string Trim(const std::string& str) {
+        std::string s(str);
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))));
+        s.erase(std::find_if(s.rbegin(), s.rend(),
+            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+        return s;
+    }
+
+    std::vector<std::string> Split(
+        const std::string& in, const std::string& delim)
+    {
+        std::vector<std::string> result;
+        size_t last = 0, next = 0;
+        while ((next = in.find(delim, last)) != std::string::npos) {
+            result.push_back(std::move(Trim(in.substr(last, next - last))));
+            last = next + 1;
+        }
+        result.push_back(std::move(Trim(in.substr(last))));
+        return result;
+    }
+
     void OpenFile(const std::string& path) {
     #ifdef WIN32
         ShellExecuteA(nullptr, nullptr, path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);

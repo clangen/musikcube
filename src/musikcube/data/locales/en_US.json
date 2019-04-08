@@ -174,6 +174,7 @@
 
         "shortcuts_settings": "settings",
         "shortcuts_library": "library",
+        "shortcuts_lyrics": "lyrics",
         "shortcuts_console": "logs",
         "shortcuts_quit": "quit",
         "shortcuts_browse": "browse",
@@ -202,6 +203,11 @@
 
         "main_syncing_banner_start": "syncing metadata...",
         "main_syncing_banner": "syncing metadata (%d tracks processed)",
+
+        "lyrics_list_title": "lyrics for '%s'",
+        "lyrics_not_playing": "nothing is currently playing!",
+        "lyrics_loading": "looking up lyrics...",
+        "lyrics_lookup_failed": "lyrics lookup failed. press 'r' to retry.",
 
         "update_check_dialog_title": "new version available!",
         "update_check_dialog_message": "musikcube version %s is now available for download. a changelog and binaries are available at:\n\n%s",

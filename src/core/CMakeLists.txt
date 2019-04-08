@@ -46,6 +46,7 @@ set(CORE_SOURCES
   ./plugin/Plugins.cpp
   ./runtime/Message.cpp
   ./runtime/MessageQueue.cpp
+  ./support/Auddio.cpp
   ./support/Duration.cpp
   ./support/Common.cpp
   ./support/LastFm.cpp
