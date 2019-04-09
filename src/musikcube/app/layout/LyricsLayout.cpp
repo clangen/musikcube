@@ -78,7 +78,9 @@ void LyricsLayout::OnLayout() {
 }
 
 void LyricsLayout::OnTrackChanged(size_t index, TrackPtr track) {
-    this->LoadLyricsForCurrentTrack();
+    if (this->IsVisible()) {
+        this->LoadLyricsForCurrentTrack();
+    }
 }
 
 bool LyricsLayout::KeyPress(const std::string& kn) {
@@ -86,16 +88,26 @@ bool LyricsLayout::KeyPress(const std::string& kn) {
         this->LoadLyricsForCurrentTrack();
         return true;
     }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, kn)) {
+        this->Broadcast(message::JumpToPlayQueue);
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibrary, kn)) {
+        this->Broadcast(message::JumpToLibrary);
+        return true;
+    }
     else if (kn == " ") { /* ugh... need to generalize this maybe */
         playback.PauseOrResume();
         return true;
     }
+
     return LayoutBase::KeyPress(kn);
 }
 
 void LyricsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
     if (visible) {
+        this->LoadLyricsForCurrentTrack();
         this->FocusFirst();
     }
 }
@@ -179,17 +191,11 @@ void LyricsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
     if (shortcuts) {
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLyrics), _TSTR("shortcuts_lyrics"));
         shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
-        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue), _TSTR("shortcuts_play_queue"));
         shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
 
         shortcuts->SetChangedCallback([this](std::string key) {
-            if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
-                this->Broadcast(message::JumpToSettings);
-            }
-            if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
-                this->Broadcast(message::JumpToLibrary);
-            }
-            else if (key == App::Instance().GetQuitKey()) {
+            if (key == App::Instance().GetQuitKey()) {
                 App::Instance().Quit();
             }
             else {

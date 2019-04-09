@@ -196,7 +196,12 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     else if (type == message::JumpToLibrary) {
         this->SetLayout(libraryLayout);
     }
-    if (type == message::IndexerStarted) {
+    else if (type == message::JumpToPlayQueue) {
+        this->SetLayout(libraryLayout);
+        libraryLayout->KeyPress(Hotkeys::Get(
+            Hotkeys::NavigateLibraryPlayQueue));
+    }
+    else if (type == message::IndexerStarted) {
         this->syncUpdateCount = 0;
         this->Layout();
     }

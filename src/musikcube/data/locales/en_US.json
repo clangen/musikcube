@@ -205,7 +205,7 @@
         "main_syncing_banner": "syncing metadata (%d tracks processed)",
 
         "lyrics_list_title": "lyrics for '%s' by '%s'",
-        "lyrics_not_playing": "nothing is currently playing!",
+        "lyrics_not_playing": "can't show lyrics because nothing is playing!",
         "lyrics_loading": "looking up lyrics...",
         "lyrics_lookup_failed": "lyrics lookup failed. press '%s' to retry.",
 
