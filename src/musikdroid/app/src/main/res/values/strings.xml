@@ -90,6 +90,7 @@
     <string name="menu_edit_playlist">edit</string>
     <string name="menu_play_playlist">play now</string>
     <string name="menu_categories">categories</string>
+    <string name="menu_download_ringtone">download</string>
     <string name="unknown_value">&lt;unknown&gt;</string>
     <string name="snackbar_streaming_enabled">switched to streaming mode</string>
     <string name="snackbar_remote_enabled">switched to remote control mode</string>
@@ -213,6 +214,11 @@
     <string name="playback_transfer_copy_to_server">copy to server</string>
     <string name="playback_transfer_move_from_server">move from server</string>
     <string name="playback_transfer_copy_from_server">copy from server</string>
+    <string name="downloading_please_wait">downloading \'%s\', please wait&#8230;</string>
+    <string name="download_failed_title">download failed</string>
+    <string name="download_failed_message">the song failed to download. would you like to try again?</string>
+    <string name="download_cancel_title">confirm cancel</string>
+    <string name="download_cancel_message">are you sure you want to cancel the song download?</string>
     <string name="main_api_mismatch_title">server out of date</string>
     <string name="main_api_mismatch_message">this version of musikdroid may not be compatible with the version of musikcube on your server.\n\nif you experience bugs or crashes, please visit our releases page to upgrade.</string>
     <string name="main_api_mismatch_releases_page">show releases</string>

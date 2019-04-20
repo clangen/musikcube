@@ -237,13 +237,15 @@ class RenameDialog : DialogFragment() {
                 val inflater = LayoutInflater.from(context)
                 val view = inflater.inflate(R.layout.dialog_edit, null)
                 val edit = view.findViewById<EditText>(R.id.edit)
+                edit.requestFocus()
 
                 edit.setText(connection.name)
                 edit.selectAll()
 
                 AlertDialog.Builder(activity!!)
                     .setTitle(R.string.settings_save_as_title)
-                    .setNegativeButton(R.string.button_cancel, null)
+                    .setNegativeButton(R.string.button_cancel) { _, _ -> hideKeyboard() }
+                    .setOnCancelListener { hideKeyboard() }
                     .setPositiveButton(R.string.button_save) { _, _ ->
                         val name = edit.text.toString()
                         (activity as ConnectionsActivity).rename(connection, name)

@@ -1,12 +1,16 @@
 package io.casey.musikcube.remote.ui.shared.extension
 
+import android.app.Dialog
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Resources
 import android.os.Bundle
+import android.os.Handler
 import android.text.TextUtils
+import android.util.Base64
+import android.util.Log
 import android.util.TypedValue
 import android.view.Menu
 import android.view.View
@@ -36,6 +40,9 @@ import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
+import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
+import okhttp3.OkHttpClient
+import java.io.*
 
 /*
  *
@@ -166,7 +173,10 @@ fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean 
 }
 
 fun AppCompatActivity.dialogVisible(tag: String): Boolean =
-        this.supportFragmentManager.findFragmentByTag(tag) != null
+    this.supportFragmentManager.findFragmentByTag(tag) != null
+
+fun <T: DialogFragment> AppCompatActivity.findDialog(tag: String): T? =
+    this.supportFragmentManager.findFragmentByTag(tag) as? T
 
 fun AppCompatActivity.showDialog(dialog: DialogFragment, tag: String) {
     dialog.show(this.supportFragmentManager, tag)
@@ -455,8 +465,68 @@ fun AppCompatActivity.hideKeyboard(view: View? = null) {
 fun DialogFragment.showKeyboard() =
     showKeyboard(activity!!)
 
-fun DialogFragment.hideKeyboard() =
-    hideKeyboard(activity!!, activity!!.findViewById(android.R.id.content))
+fun DialogFragment.hideKeyboard() {
+    val fragmentActivity = activity!! /* keep it in the closure so it doesn't get gc'd */
+    Handler().postDelayed({
+        hideKeyboard(
+            fragmentActivity,
+            fragmentActivity.findViewById(android.R.id.content))
+    }, 350)
+}
+
+/*
+ *
+ * http client
+ *
+ */
+
+fun createHttpClient(context: Context): OkHttpClient {
+    val prefs = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
+
+    val builder = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            var request = chain.request()
+            val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
+            val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
+            request = request.newBuilder().addHeader("Authorization", "Basic $encoded").build()
+            chain.proceed(request)
+        }
+
+    if (prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
+        NetworkUtil.disableCertificateValidation(builder)
+    }
+
+    return builder.build()
+}
+
+/*
+ *
+ * input/output stream
+ *
+ */
+
+fun InputStream.toFile(path: String): Boolean {
+    try {
+        File(path).parentFile.mkdirs()
+        File(path).delete()
+        FileOutputStream(path, false).use { out ->
+            val reader = BufferedInputStream(this)
+            val buffer = ByteArray(4096)
+            var count: Int
+            do {
+                count = reader.read(buffer)
+                if (count > 0) {
+                    out.write(buffer)
+                }
+            } while (count > 0)
+        }
+    }
+    catch (exception: IOException) {
+        Log.e("InputStream.toFile", "failed to write to $path", exception)
+        return false
+    }
+    return true
+}
 
 /*
  *

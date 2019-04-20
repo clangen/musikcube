@@ -1,17 +1,14 @@
 package io.casey.musikcube.remote.service.gapless
 
-import android.content.Context
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
-import android.util.Base64
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.service.gapless.db.GaplessDb
 import io.casey.musikcube.remote.service.gapless.db.GaplessTrack
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
-import io.casey.musikcube.remote.ui.settings.constants.Prefs
-import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
+import io.casey.musikcube.remote.ui.shared.extension.createHttpClient
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -30,7 +27,6 @@ class GaplessHeaderService {
     @Inject lateinit var db: GaplessDb
     @Inject lateinit var streamProxy: StreamProxy
 
-    private val prefs = Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val thread: HandlerThread
     private val handler: Handler
     private val httpClient: OkHttpClient
@@ -40,20 +36,7 @@ class GaplessHeaderService {
             .appComponent(Application.appComponent)
             .build().inject(this)
 
-        val builder = OkHttpClient.Builder()
-            .addInterceptor { chain ->
-                var request = chain.request()
-                val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
-                val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
-                request = request.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
-                chain.proceed(request)
-            }
-
-        if (prefs.getBoolean(Prefs.Key.CERT_VALIDATION_DISABLED, Prefs.Default.CERT_VALIDATION_DISABLED)) {
-            NetworkUtil.disableCertificateValidation(builder)
-        }
-
-        httpClient = builder.build()
+        httpClient = createHttpClient(Application.instance)
 
         thread = HandlerThread("GaplessHeaderService")
         thread.start()

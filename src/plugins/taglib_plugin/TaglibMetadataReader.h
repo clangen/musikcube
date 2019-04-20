@@ -110,7 +110,8 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
 
         void SetTagValue(
             const char* key,
-            const int tagInt,musik::core::sdk::ITagStore *target);
+            const int tagInt,
+            musik::core::sdk::ITagStore *target);
 
         void SetTagValues(const char* key,
             const TagLib::ID3v2::FrameList &frame,

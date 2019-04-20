@@ -9,6 +9,7 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
+import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.albums.activity.AlbumBrowseActivity
 import io.casey.musikcube.remote.ui.albums.fragment.AlbumBrowseFragment
 import io.casey.musikcube.remote.ui.browse.activity.BrowseActivity
@@ -16,6 +17,7 @@ import io.casey.musikcube.remote.ui.category.activity.AllCategoriesActivity
 import io.casey.musikcube.remote.ui.category.activity.CategoryBrowseActivity
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
+import io.casey.musikcube.remote.ui.download.activity.RingtoneActivity
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.playqueue.activity.PlayQueueActivity
 import io.casey.musikcube.remote.ui.playqueue.fragment.PlayQueueFragment
@@ -230,6 +232,15 @@ object Navigate {
                     .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP))
         }
     }
+
+    /*
+     *
+     * download-related stuff
+     *
+     */
+
+    fun toDownloadRingtone(track: ITrack, activity: AppCompatActivity) =
+        activity.startActivity(RingtoneActivity.getStartIntent(activity, track))
 
     /*
      *

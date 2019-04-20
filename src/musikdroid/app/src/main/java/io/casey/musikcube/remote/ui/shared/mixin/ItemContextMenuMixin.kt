@@ -227,6 +227,9 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                         activity,
                         fragment)
                 }
+                R.id.menu_download_ringtone -> {
+                    Navigate.toDownloadRingtone(track, activity)
+                }
             }
             true
         }
@@ -494,11 +497,14 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 editText.selectAll()
             }
 
+            editText.requestFocus()
+
             val activity = this.activity!!
 
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.playlist_name_title)
-                    .setNegativeButton(R.string.button_cancel, null)
+                    .setNegativeButton(R.string.button_cancel) { _, _ -> hideKeyboard() }
+                    .setOnCancelListener { hideKeyboard() }
                     .setPositiveButton(buttonId) { _: DialogInterface, _: Int ->
                     val playlistName = editText.text.toString()
                     if (playlistName.isNotBlank()) {

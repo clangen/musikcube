@@ -15,4 +15,9 @@
     <item
         android:id="@+id/menu_show_artist_albums"
         android:title="@string/menu_show_albums"/>
+
+    <item
+        android:id="@+id/menu_download_ringtone"
+        android:title="@string/menu_download_ringtone"/>
+
 </menu>
