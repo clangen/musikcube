@@ -69,7 +69,8 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
 
     private:
         template <typename T> void ReadFromMap(
-            const T& map, musik::core::sdk::ITagStore *target);
+            const T& map,
+            musik::core::sdk::ITagStore *target);
 
         template <typename T> void ExtractValueForKey(
             const T& map,
@@ -83,7 +84,8 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
             const std::string& defaultValue);
 
         template <typename T> void ExtractReplayGain(
-            const T& map, musik::core::sdk::ITagStore *target);
+            const T& map,
+            musik::core::sdk::ITagStore *target);
 
         void ExtractValueForKey(
             const TagLib::MP4::ItemMap& map,
@@ -98,7 +100,8 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
 
         void SetTagValue(
             const char* key,
-            const char* string,musik::core::sdk::ITagStore *target);
+            const char* string,
+            musik::core::sdk::ITagStore *target);
 
         void SetTagValue(
             const char* key,
