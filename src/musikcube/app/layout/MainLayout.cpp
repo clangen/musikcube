@@ -39,6 +39,7 @@
 #include <cursespp/ToastOverlay.h>
 
 #include <core/runtime/Message.h>
+#include <core/support/Auddio.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
@@ -146,7 +147,7 @@ bool MainLayout::KeyPress(const std::string& key) {
         this->SetLayout(consoleLayout);
         return true;
     }
-    else if (Hotkeys::Is(Hotkeys::NavigateLyrics, key)) {
+    else if (auddio::Available() && Hotkeys::Is(Hotkeys::NavigateLyrics, key)) {
         this->Broadcast(message::JumpToLyrics);
         return true;
     }

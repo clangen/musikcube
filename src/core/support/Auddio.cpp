@@ -36,6 +36,8 @@
 #include "Auddio.h"
 #include "Common.h"
 #include <core/sdk/HttpClient.h>
+#include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 #include <curl/curl.h>
 #include <sstream>
 #include <json.hpp>
@@ -43,9 +45,9 @@
 /* https://api.audd.io/findLyrics/?q=the%20beatles%20sgt%20pepper%20reprise */
 
 using namespace musik::core;
+using namespace musik::core::prefs;
 
 using AuddioClient = musik::core::sdk::HttpClient<std::stringstream>;
-const std::string apiToken = "";
 
 static std::shared_ptr<AuddioClient> createClient() {
     return AuddioClient::Create(std::stringstream());
@@ -63,14 +65,29 @@ static std::string encode(std::string value) {
     return value;
 }
 
+static std::string getApiToken() {
+    auto prefs = Preferences::ForComponent(components::Settings);
+    return prefs->GetString(keys::AuddioApiToken);
+}
+
 namespace musik { namespace core { namespace auddio {
+    bool Available() {
+        return getApiToken().size() > 0;
+    }
+
     void FindLyrics(TrackPtr track, LyricsCallback callback) {
-       std::string artist = encode(track->GetString("artist"));
-       std::string title = encode(track->GetString("title"));
-       std::string url =
-        "https://api.audd.io/findLyrics/?q=" +
-        artist + "%20" + title +
-        "&api_token=" + apiToken;
+        std::string apiToken = getApiToken();
+
+        if (!apiToken.size()) {
+            callback(track, "apiToken");
+        }
+
+        std::string artist = encode(track->GetString("artist"));
+        std::string title = encode(track->GetString("title"));
+        std::string url =
+            "https://api.audd.io/findLyrics/?q=" +
+            artist + "%20" + title +
+            "&api_token=" + apiToken;
 
         auto client = createClient();
         client->Url(url)

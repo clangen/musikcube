@@ -66,6 +66,7 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string LastFmSessionId;
         extern const std::string LastFmUsername;
         extern const std::string DisableAlbumArtistFallback;
+        extern const std::string AuddioApiToken;
     }
 
 } } }

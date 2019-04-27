@@ -117,7 +117,7 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
     if (track && track->GetId() != this->currentTrackId) {
         this->currentTrackId = track->GetId();
         this->SetState(State::Loading);
-        auddio::FindLyrics(track, [this](TrackPtr track, std::string& lyrics) {
+        auddio::FindLyrics(track, [this](TrackPtr track, std::string lyrics) {
             if (this->currentTrackId == track->GetId()) {
                 if (lyrics.size()) {
                     this->UpdateAdapter(lyrics);

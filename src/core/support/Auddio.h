@@ -38,7 +38,7 @@
 #include <core/library/track/Track.h>
 
 namespace musik { namespace core { namespace auddio {
-    using LyricsCallback = std::function<void(musik::core::TrackPtr track, std::string&)>;
-
+    using LyricsCallback = std::function<void(musik::core::TrackPtr track, std::string)>;
+    bool Available();
     void FindLyrics(musik::core::TrackPtr track, LyricsCallback callback);
 } } }
