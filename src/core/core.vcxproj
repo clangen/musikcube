@@ -140,6 +140,7 @@
     <ClCompile Include="plugin\Plugins.cpp" />
     <ClCompile Include="runtime\Message.cpp" />
     <ClCompile Include="runtime\MessageQueue.cpp" />
+    <ClCompile Include="support\Auddio.cpp" />
     <ClCompile Include="support\Common.cpp" />
     <ClCompile Include="support\Duration.cpp" />
     <ClCompile Include="support\LastFm.cpp" />
@@ -247,6 +248,7 @@
     <ClInclude Include="sdk\ITrackListEditor.h" />
     <ClInclude Include="sdk\ITagStore.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
+    <ClInclude Include="support\Auddio.h" />
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\Duration.h" />
     <ClInclude Include="support\LastFm.h" />

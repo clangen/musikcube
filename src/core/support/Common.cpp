@@ -39,6 +39,11 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <functional>
+#include <vector>
+#include <string>
+#include <cctype>
+#include <algorithm>
 
 #ifdef WIN32
     #include <shellapi.h>

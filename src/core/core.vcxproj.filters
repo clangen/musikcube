@@ -226,6 +226,9 @@
     <ClCompile Include="support\LastFm.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
+    <ClCompile Include="support\Auddio.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -548,6 +551,9 @@
     </ClInclude>
     <ClInclude Include="sdk\ISchema.h">
       <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="support\Auddio.h">
+      <Filter>src\support</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

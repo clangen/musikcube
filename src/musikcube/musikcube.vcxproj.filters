@@ -177,6 +177,9 @@
     <ClCompile Include="app\util\ConsoleLogger.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\LyricsLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -405,6 +408,9 @@
     </ClInclude>
     <ClInclude Include="app\util\ConsoleLogger.h">
       <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\LyricsLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
