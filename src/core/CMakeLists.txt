@@ -56,6 +56,7 @@ set(CORE_SOURCES
   ../3rdparty/src/sqlite/sqlite3.c
   ../3rdparty/src/kiss_fft.c
   ../3rdparty/src/kiss_fftr.c
+  ../3rdparty/src/md5.c
 )
 
 include_directories(
