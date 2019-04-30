@@ -181,6 +181,9 @@
     <ClCompile Include="win32_src\pdcurses\termattr.c">
       <Filter>src\pdcurses</Filter>
     </ClCompile>
+    <ClCompile Include="src\md5.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\sqlite\sqlite3.h">
@@ -454,6 +457,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="win32_include\zlib.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="include\md5.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

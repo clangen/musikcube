@@ -179,7 +179,10 @@ namespace musik { namespace core {
         silentDelete(path + "crypto-41.dll");
         silentDelete(path + "ssl-43.dll");
         silentDelete(path + "tls-15.dll");
-    #endif
+        silentDelete(path + "crypto-43.dll");
+        silentDelete(path + "ssl-45.dll");
+        silentDelete(path + "tls-17.dll");
+#endif
     }
 
     void MigrateOldDataDirectory() {

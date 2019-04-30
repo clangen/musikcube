@@ -35,13 +35,16 @@
 #include "pch.hpp"
 #include "LastFm.h"
 #include <curl/curl.h>
-#include <openssl/md5.h>
 #include <core/support/Preferences.h>
 #include <core/sdk/HttpClient.h>
 #include <core/support/PreferenceKeys.h>
 #include <json.hpp>
 #include <sstream>
 #include <map>
+
+extern "C" {
+    #include <md5.h>
+}
 
 /* http://www.last.fm/group/Last.fm+Web+Services/forum/21604/_/522900 -- it's ok to
 put our key in the code */
@@ -103,8 +106,11 @@ static std::string gernateSignedUrlParams(
     toHash += API_SECRET;
 
     /* compute the sum */
-    unsigned char rawDigest[MD5_DIGEST_LENGTH];
-    MD5((const unsigned char*)toHash.c_str(), toHash.length(), rawDigest);
+    EX_MD5_CTX context = {};
+    unsigned char rawDigest[16];
+    Ex_MD5_Init(&context);
+    Ex_MD5_Update(&context, (const void*)toHash.c_str(), toHash.length());
+    Ex_MD5_Final(rawDigest, &context);
 
     /* convert to hex */
     char hexDigest[33];
