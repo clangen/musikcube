@@ -10,7 +10,8 @@
  *                                                                  *
  ********************************************************************
 
- function: Define a consistent set of types on each platform.
+ function: #ifdef jail to whip a few platforms into the UNIX ideal.
+ last mod: $Id$
 
  ********************************************************************/
 #ifndef _OS_TYPES_H
