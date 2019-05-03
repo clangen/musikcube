@@ -4,6 +4,8 @@ musikcube:
 * added lyrics support (powered by audd.io)! access lyrics for the currently
   playing song by pressing ^L.
 * removed vcredist runtime requirement on windows
+* added support for Ubuntu Disco
+* added support for Fedora 30
 
 musikdroid:
 * added a new "offline" tab to the browse screen
