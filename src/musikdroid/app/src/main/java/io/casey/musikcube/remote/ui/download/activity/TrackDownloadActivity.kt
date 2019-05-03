@@ -8,6 +8,9 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
+import android.util.Log
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +23,7 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
+import me.zhanghai.android.materialprogressbar.MaterialProgressBar
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Request
@@ -27,19 +31,24 @@ import okhttp3.Response
 import java.io.File
 import java.io.IOException
 
-class RingtoneActivity: BaseActivity() {
+class TrackDownloadActivity: BaseActivity() {
     private val httpClient = createHttpClient(Application.instance)
     private val mutex = Object()
     private var pendingCall: Call? = null
+    private lateinit var spinner: MaterialProgressBar
+    private lateinit var progress: MaterialProgressBar
+    private val handler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.download_ringtone_activity)
+        setContentView(R.layout.track_download_activity)
 
         findViewById<TextView>(R.id.title).text = getString(
             R.string.downloading_please_wait,
             intent.getStringExtra(EXTRA_TRACK_TITLE))
+        progress = findViewById(R.id.progress)
+        spinner = findViewById(R.id.spinner)
 
         if (savedInstanceState != null) {
             findDialog<RetryDialog>(RetryDialog.TAG)?.onRetry = this::download
@@ -99,6 +108,68 @@ class RingtoneActivity: BaseActivity() {
         }
     }
 
+    private fun updateProgress(percent: Int) {
+        handler.post {
+            if (percent > 0) {
+                spinner.visibility = View.GONE
+                progress.visibility = View.VISIBLE
+                progress.progress = percent
+            }
+            else {
+                spinner.visibility = View.VISIBLE
+                progress.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun processResponse(response: Response) {
+        var success = false
+
+        try {
+            response.body()?.let {
+                val total = it.contentLength()
+                var lastPercent = 0
+
+                updateProgress(0)
+
+                val onBytesReceived = { bytes: Long ->
+                    if (total > 0) {
+                        val updatedPercent = ((bytes * 100) / total).toInt()
+                        if (updatedPercent != lastPercent) {
+                            updateProgress(updatedPercent)
+                            lastPercent = updatedPercent
+                        }
+                    }
+                }
+
+                if (it.byteStream().toFile(outputFilename, onBytesReceived)) {
+                    MediaScannerConnection.scanFile(
+                            this@TrackDownloadActivity,
+                            arrayOf(outputFilename),
+                            null)
+                    { _, _ ->
+                        finish()
+                    }
+
+                    success = true
+                }
+            }
+        }
+        catch (ex: Exception) {
+            /* move on... */
+        }
+        finally {
+            synchronized (mutex) {
+                pendingCall = null
+            }
+            response.close()
+        }
+
+        if (!success) {
+            showRetryDialog()
+        }
+    }
+
     private fun download() {
         synchronized (mutex) {
             if (pendingCall == null) {
@@ -111,34 +182,7 @@ class RingtoneActivity: BaseActivity() {
                     }
 
                     override fun onResponse(call: Call, response: Response) {
-                        var success = false
-
-                        try {
-                            if (response.body()?.byteStream()?.toFile(outputFilename) == true) {
-                                MediaScannerConnection.scanFile(
-                                    this@RingtoneActivity,
-                                    arrayOf(outputFilename),
-                                    null)
-                                { _, _ ->
-                                    finish()
-                                }
-
-                                success = true
-                            }
-                        }
-                        catch (ex: Exception) {
-                            /* move on... */
-                        }
-                        finally {
-                            synchronized (mutex) {
-                                pendingCall = null
-                            }
-                            response.close()
-                        }
-
-                        if (!success) {
-                            showRetryDialog()
-                        }
+                        processResponse(response)
                     }
                 })
             }
@@ -154,7 +198,7 @@ class RingtoneActivity: BaseActivity() {
     private fun showRetryDialog() {
         if (!dialogVisible(RetryDialog.TAG)) {
             showDialog(RetryDialog.create().apply {
-                onRetry = this@RingtoneActivity::download
+                onRetry = this@TrackDownloadActivity::download
             }, RetryDialog.TAG)
         }
     }
@@ -233,7 +277,7 @@ class RingtoneActivity: BaseActivity() {
         private const val EXTRA_EXTENSION = "extra_extension"
 
         fun getStartIntent(activity: AppCompatActivity, track: ITrack): Intent {
-            return Intent(activity, RingtoneActivity::class.java).apply {
+            return Intent(activity, TrackDownloadActivity::class.java).apply {
                 putExtra(EXTRA_EXTERNAL_ID, track.externalId)
                 putExtra(EXTRA_EXTENSION, track.uri.split(".").lastOrNull())
                 putExtra(EXTRA_TRACK_TITLE, track.title)

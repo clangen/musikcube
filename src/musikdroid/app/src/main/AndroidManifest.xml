@@ -46,7 +46,7 @@
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/AppThemeNoActionBar" />
 
-        <activity android:name=".ui.download.activity.RingtoneActivity"
+        <activity android:name=".ui.download.activity.TrackDownloadActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/AppThemeNoActionBar" />

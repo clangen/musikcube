@@ -505,18 +505,26 @@ fun createHttpClient(context: Context): OkHttpClient {
  *
  */
 
-fun InputStream.toFile(path: String): Boolean {
+fun InputStream.toFile(path: String, progress: ((Long) -> Unit)? = null): Boolean {
     try {
         File(path).parentFile.mkdirs()
         File(path).delete()
         FileOutputStream(path, false).use { out ->
             val reader = BufferedInputStream(this)
             val buffer = ByteArray(4096)
+            var iterations = 0
             var count: Int
+            var total = 0L
             do {
                 count = reader.read(buffer)
+                total += count
                 if (count > 0) {
                     out.write(buffer)
+                }
+                ++iterations
+                /* post progress every ~(4096 * 25 = 102400) bytes */
+                if (iterations % 25 == 0) {
+                    progress?.invoke(total)
                 }
             } while (count > 0)
         }

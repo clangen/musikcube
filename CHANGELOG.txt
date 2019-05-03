@@ -3,6 +3,7 @@
 musikcube:
 * added lyrics support (powered by audd.io)! access lyrics for the currently
   playing song by pressing ^L.
+* removed vcredist runtime requirement on windows
 
 musikdroid:
 * added a new "offline" tab to the browse screen
@@ -10,6 +11,8 @@ musikdroid:
   screen's toolbar.
 * added settings > advanced > diagnostics screen to show app runtime, wakelock
   acquisition time and status, and service status.
+* added a "download" option for song rows -- this can be used to download songs
+  for ringtones, or for playback in offline players.
 * added the ability to seek playback on secondary screens
 * removed some old settings that are no longer useful
 * updated to AndroidX
