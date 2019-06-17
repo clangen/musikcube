@@ -168,8 +168,7 @@ protected:
             return socket::make_error_code(socket::error::invalid_state);
         }
 
-        m_socket = lib::make_shared<lib::asio::ip::tcp::socket>(
-            lib::ref(*service));
+        m_socket.reset(new lib::asio::ip::tcp::socket(*service));
 
         m_state = READY;
 
@@ -263,14 +262,14 @@ protected:
 
     /// Translate any security policy specific information about an error code
     /**
-     * Translate_ec takes an Asio error code and attempts to convert its value 
+     * Translate_ec takes an Asio error code and attempts to convert its value
      * to an appropriate websocketpp error code. In the case that the Asio and
      * Websocketpp error types are the same (such as using boost::asio and
      * boost::system_error or using standalone asio and std::system_error the
      * code will be passed through natively.
      *
      * In the case of a mismatch (boost::asio with std::system_error) a
-     * translated code will be returned. The plain socket policy does not have 
+     * translated code will be returned. The plain socket policy does not have
      * any additional information so all such errors will be reported as the
      * generic transport pass_through error.
      *
@@ -284,8 +283,8 @@ protected:
         // We don't know any more information about this error so pass through
         return make_error_code(transport::error::pass_through);
     }
-    
-    /// Overload of translate_ec to catch cases where lib::error_code is the 
+
+    /// Overload of translate_ec to catch cases where lib::error_code is the
     /// same type as lib::asio::error_code
     lib::error_code translate_ec(lib::error_code ec) {
         // We don't know any more information about this error, but the error is

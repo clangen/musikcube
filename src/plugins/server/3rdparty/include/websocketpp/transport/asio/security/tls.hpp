@@ -193,8 +193,7 @@ protected:
         if (!m_context) {
             return socket::make_error_code(socket::error::invalid_tls_context);
         }
-        m_socket = lib::make_shared<socket_type>(
-            _WEBSOCKETPP_REF(*service),lib::ref(*m_context));
+        m_socket.reset(new socket_type(*service, *m_context));
 
         m_io_service = service;
         m_strand = strand;
@@ -229,7 +228,7 @@ protected:
      * @param callback Handler to call back with completion information
      */
     void pre_init(init_handler callback) {
-        // TODO: is this the best way to check whether this function is 
+        // TODO: is this the best way to check whether this function is
         //       available in the version of OpenSSL being used?
         // TODO: consider case where host is an IP address
 #if OPENSSL_VERSION_NUMBER >= 0x90812f
@@ -368,11 +367,11 @@ protected:
             return make_error_code(transport::error::pass_through);
         }
     }
-    
+
     /// Overload of translate_ec to catch cases where lib::error_code is the
     /// same type as lib::asio::error_code
     lib::error_code translate_ec(lib::error_code ec) {
-        // Normalize the tls_short_read error as it is used by the library and 
+        // Normalize the tls_short_read error as it is used by the library and
         // needs a consistent value. All other errors pass through natively.
         // TODO: how to get the SSL category from std::error?
         /*if (ec.category() == lib::asio::error::get_ssl_category()) {

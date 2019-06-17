@@ -157,7 +157,7 @@ public:
             rhs.m_acceptor = NULL;
             rhs.m_listen_backlog = lib::asio::socket_base::max_connections;
             rhs.m_state = UNINITIALIZED;
-            
+
             // TODO: this needs to be updated
         }
         return *this;
@@ -191,8 +191,7 @@ public:
 
         m_io_service = ptr;
         m_external_io_service = true;
-        m_acceptor = lib::make_shared<lib::asio::ip::tcp::acceptor>(
-            lib::ref(*m_io_service));
+        m_acceptor.reset(new lib::asio::ip::tcp::acceptor(*m_io_service));
 
         m_state = READY;
         ec = lib::error_code();
@@ -222,7 +221,7 @@ public:
      * @param ec Set to indicate what error occurred, if any.
      */
     void init_asio(lib::error_code & ec) {
-        // Use a smart pointer until the call is successful and ownership has 
+        // Use a smart pointer until the call is successful and ownership has
         // successfully been taken. Use unique_ptr when available.
         // TODO: remove the use of auto_ptr when C++98/03 support is no longer
         //       necessary.
@@ -244,7 +243,7 @@ public:
      * @see init_asio(io_service_ptr ptr)
      */
     void init_asio() {
-        // Use a smart pointer until the call is successful and ownership has 
+        // Use a smart pointer until the call is successful and ownership has
         // successfully been taken. Use unique_ptr when available.
         // TODO: remove the use of auto_ptr when C++98/03 support is no longer
         //       necessary.
@@ -357,7 +356,7 @@ public:
     lib::asio::io_service & get_io_service() {
         return *m_io_service;
     }
-    
+
     /// Get local TCP endpoint
     /**
      * Extracts the local endpoint from the acceptor. This represents the
@@ -365,7 +364,7 @@ public:
      *
      * Sets a bad_descriptor error if the acceptor is not currently listening
      * or otherwise unavailable.
-     * 
+     *
      * @since 0.7.0
      *
      * @param ec Set to indicate what error occurred, if any.
@@ -660,9 +659,7 @@ public:
      * @since 0.3.0
      */
     void start_perpetual() {
-        m_work = lib::make_shared<lib::asio::io_service::work>(
-            lib::ref(*m_io_service)
-        );
+        m_work.reset(new lib::asio::io_service::work(*m_io_service));
     }
 
     /// Clears the endpoint's perpetual flag, allowing it to exit when empty
@@ -800,7 +797,7 @@ protected:
         m_elog = e;
     }
 
-    void handle_accept(accept_handler callback, lib::asio::error_code const & 
+    void handle_accept(accept_handler callback, lib::asio::error_code const &
         asio_ec)
     {
         lib::error_code ret_ec;
@@ -826,8 +823,7 @@ protected:
 
         // Create a resolver
         if (!m_resolver) {
-            m_resolver = lib::make_shared<lib::asio::ip::tcp::resolver>(
-                lib::ref(*m_io_service));
+            m_resolver.reset(new lib::asio::ip::tcp::resolver(*m_io_service));
         }
 
         tcon->set_uri(u);
