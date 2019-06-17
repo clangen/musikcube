@@ -34,7 +34,7 @@
         "browse_no_paths_overlay_error_title": "нет настроенных папок",
         "browse_no_paths_overlay_error_message": "вы не настроили папки метаданных.\n\nвы должны добавить хотя бы одну папку на экране настроек перед тем, как начать обзор по папкам.",
         "browse_no_subdirectories_toast": "подпапок нет.\n\nнажмите '%s' для воспроизведения выбранного.",
-		
+
         "search_filter_hint": "поиск",
 
         "console_list_title": "журналы отладки",
@@ -105,9 +105,9 @@
         "settings_enable_transparency": "включить поддержку прозрачности",
 
         "settings_preamp": "предусиление и нормализация",
-        "settings_preamp_label": "коэффициент предусиления (dB):",
+        "settings_preamp_label": "коэффициент предусиления (дБ):",
         "settings_preamp_invalid_gain_title": "недопустимый коэффициент",
-        "settings_preamp_invalid_gain_message": "коэффициент предусиления должен быть в диапазоне от -20.0 до 20.0 dB",
+        "settings_preamp_invalid_gain_message": "коэффициент предусиления должен быть в диапазоне от -20.0 до 20.0 дБ",
 
         "settings_replay_gain": "нормализация: ",
         "settings_replay_gain_title": "режим нормализации",
@@ -164,10 +164,17 @@
         "visualizer_overlay_title": "визуализации",
         "visualizer_overlay_no_visualizers_message": "визуализации не найдены!",
 
+        "equalizer_overlay_enabled": "включить эквалайзер",
+        "equalizer_overlay_frequencies": "частотные полосы",
+        "equalizer_button_load": "загрузить",
+        "equalizer_button_save": "сохранить",
+        "equalizer_button_zero": "сбросить",
+
         "plugin_overlay_title": "выбор плагинов",
 
         "shortcuts_settings": "настройки",
         "shortcuts_library": "фонотека",
+        "shortcuts_lyrics": "текст песни",
         "shortcuts_console": "журналы",
         "shortcuts_quit": "выход",
         "shortcuts_browse": "обзор",
@@ -197,6 +204,11 @@
         "main_syncing_banner_start": "синхронизация метаданных...",
         "main_syncing_banner": "синхронизация метаданных (%d треков обработано)",
 
+        "lyrics_list_title": "текст песни для '%s' от '%s'",
+        "lyrics_not_playing": "текст песни не отображается, так как сейчас ничего не играется!",
+        "lyrics_loading": "поиск текста песни...",
+        "lyrics_lookup_failed": "поиск текста песни не удался. нажмите '%s' для повтора.",
+
         "update_check_dialog_title": "доступна новая версия!",
         "update_check_dialog_message": "musikcube версии %s доступен для загрузки. список изменений и пакеты расположены на:\n\n%s",
         "update_check_no_updates_title": "проверка обновлений",
@@ -213,6 +225,7 @@
         "indexer_overlay_width": 28,
         "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
-        "preamp_overlay_width": 40
+        "preamp_overlay_width": 40,
+        "equalizer_overlay_width": 46
     }
 }
