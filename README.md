@@ -40,6 +40,10 @@ while macos binaries are provided, you can also install via homebrew as follows:
 - `brew install musikcube`
 - `musikcube`
 
+on freebsd musikcube can be installed as follows:
+
+- `pkg install musikcube`
+
 # raspberry pi
 
 musikcube runs well on a raspberry pi, connected to you home stereo. [see here for detailed setup instructions](https://github.com/clangen/musikcube/wiki/raspberry-pi).
