@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.ui.shared.activity.IFilterable
@@ -18,7 +18,7 @@ import io.casey.musikcube.remote.ui.shared.activity.ITransportObserver
 import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
@@ -38,7 +38,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
     private lateinit var adapter: TrackListAdapter
     private lateinit var queryFactory: ITrackListQueryFactory
 
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var playback: PlaybackMixin
 
     private var categoryType: String = ""
@@ -49,7 +49,7 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         playback = mixin(PlaybackMixin())
 
         super.onCreate(savedInstanceState)
@@ -83,8 +83,8 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
                 val shouldRequery =
-                    states.first === IDataProvider.State.Connected ||
-                    (states.first === IDataProvider.State.Disconnected && isOfflineTracks)
+                    states.first === IMetadataProxy.State.Connected ||
+                    (states.first === IMetadataProxy.State.Disconnected && isOfflineTracks)
 
                 if (shouldRequery) {
                     filterDebouncer.cancel()

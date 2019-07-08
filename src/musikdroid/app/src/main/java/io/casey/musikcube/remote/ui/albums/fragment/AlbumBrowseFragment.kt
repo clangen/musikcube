@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.ui.albums.adapter.AlbumBrowseAdapter
 import io.casey.musikcube.remote.ui.albums.constant.Album
 import io.casey.musikcube.remote.ui.navigation.Navigate
@@ -22,7 +22,7 @@ import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
 import io.casey.musikcube.remote.ui.shared.extension.getTitleOverride
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
@@ -35,7 +35,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     private var lastFilter = ""
     private lateinit var adapter: AlbumBrowseAdapter
     private lateinit var playback: PlaybackMixin
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var emptyView: EmptyListView
 
     override val title: String
@@ -43,7 +43,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         playback = mixin(PlaybackMixin())
         mixin(ItemContextMenuMixin(appCompatActivity, fragment = this))
 
@@ -87,7 +87,7 @@ class AlbumBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITranspo
     override fun onInitObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { state ->
-                if (state.first == IDataProvider.State.Connected) {
+                if (state.first == IMetadataProxy.State.Connected) {
                     requery()
                 } else {
                     emptyView.update(state.first, adapter.itemCount)

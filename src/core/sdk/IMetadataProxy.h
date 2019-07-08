@@ -41,7 +41,7 @@
 
 namespace musik { namespace core { namespace sdk {
 
-    class ISimpleDataProvider {
+    class IMetadataProxy {
         public:
             virtual ITrackList* QueryTracks(
                 const char* query = nullptr,

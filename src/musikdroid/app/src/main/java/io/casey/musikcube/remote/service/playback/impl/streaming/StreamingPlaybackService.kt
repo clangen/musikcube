@@ -16,7 +16,7 @@ import io.casey.musikcube.remote.service.playback.*
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.system.SystemService
 import io.casey.musikcube.remote.service.websocket.Messages
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.service.websocket.model.PlayQueueType
@@ -30,7 +30,7 @@ import java.util.*
 import javax.inject.Inject
 
 class StreamingPlaybackService(context: Context) : IPlaybackService {
-    @Inject lateinit var dataProvider: IDataProvider
+    @Inject lateinit var metadataProxy: IMetadataProxy
 
     private val prefs: SharedPreferences = context.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
     private val listeners = HashSet<() -> Unit>()
@@ -125,8 +125,8 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     @Synchronized override fun connect(listener: () -> Unit) {
         listeners.add(listener)
         if (listeners.size == 1) {
-            handler.removeCallbacks(dataProviderDisconnectRunnable)
-            dataProvider.attach()
+            handler.removeCallbacks(metadataProxyDisconnectRunnable)
+            metadataProxy.attach()
         }
     }
 
@@ -138,7 +138,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             conditions between Activity changes, so we make sure to give
             things a couple seconds to settle... */
             handler.postDelayed(
-                dataProviderDisconnectRunnable,
+                metadataProxyDisconnectRunnable,
                 DATA_PROVIDER_DISCONNECT_DELAY_MS.toLong())
         }
     }
@@ -150,7 +150,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override fun playAll(index: Int, filter: String) {
         if (requestAudioFocus()) {
             trackMetadataCache.clear()
-            dataProvider.invalidatePlayQueueSnapshot()
+            metadataProxy.invalidatePlayQueueSnapshot()
             resetPlayContextAndQueryFactory()
             val type = Messages.Request.QueryTracks
             loadQueueAndPlay(QueryContext(filter, type), index)
@@ -160,7 +160,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     override fun play(category: String, categoryId: Long, index: Int, filter: String) {
         if (requestAudioFocus()) {
             trackMetadataCache.clear()
-            dataProvider.invalidatePlayQueueSnapshot()
+            metadataProxy.invalidatePlayQueueSnapshot()
             resetPlayContextAndQueryFactory()
             val type = Messages.Request.QueryTracksByCategory
             loadQueueAndPlay(QueryContext(category, categoryId, filter, type), index)
@@ -185,16 +185,16 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             val type = PlayQueueType.Snapshot
 
             service.queryContext?.let {
-                dataProvider.snapshotPlayQueue().subscribeBy(
+                metadataProxy.snapshotPlayQueue().subscribeBy(
                 onNext = {
                     resetPlayContextAndQueryFactory()
 
                     snapshotQueryFactory = object: ITrackListQueryFactory {
                         override fun count(): Observable<Int>? =
-                            dataProvider.getPlayQueueTracksCount(type)
+                            metadataProxy.getPlayQueueTracksCount(type)
 
                         override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? =
-                            dataProvider.getPlayQueueTracks(limit, offset, type)
+                            metadataProxy.getPlayQueueTracks(limit, offset, type)
 
                         override fun offline(): Boolean = false
                     }
@@ -789,11 +789,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             val params = queryContext
             if (params != null) {
                 if (params.hasCategory()) {
-                    return dataProvider.getTrackCountByCategory(
+                    return metadataProxy.getTrackCountByCategory(
                         params.category ?: "", params.categoryId, params.filter)
                 }
                 else {
-                    return dataProvider.getTrackCount(params.filter)
+                    return metadataProxy.getTrackCount(params.filter)
                 }
             }
             return null
@@ -803,11 +803,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             val params = queryContext
             if (params != null) {
                 if (params.hasCategory()) {
-                    return dataProvider.getTracksByCategory(
+                    return metadataProxy.getTracksByCategory(
                         params.category ?: "", params.categoryId, limit, offset, params.filter)
                 }
                 else {
-                    return dataProvider.getTracks(limit, offset, params.filter)
+                    return metadataProxy.getTracks(limit, offset, params.filter)
                 }
             }
             return null
@@ -840,10 +840,10 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     private fun detachable() =
         listeners.size == 0 && state == PlaybackState.Stopped
 
-    private val dataProviderDisconnectRunnable = object: Runnable {
+    private val metadataProxyDisconnectRunnable = object: Runnable {
         override fun run() {
             if (detachable()) {
-                dataProvider.detach()
+                metadataProxy.detach()
             }
         }
     }

@@ -412,7 +412,7 @@ int HttpServer::HandleAudioTrackRequest(
 
     if (byExternalId) {
         std::string externalId = urlDecode(pathParts.at(2));
-        track = server->context.dataProvider->QueryTrackByExternalId(externalId.c_str());
+        track = server->context.metadataProxy->QueryTrackByExternalId(externalId.c_str());
 
 #ifdef ENABLE_DEBUG
         std::cerr << "externalId: " << externalId << "\n";
@@ -421,7 +421,7 @@ int HttpServer::HandleAudioTrackRequest(
     }
     else if (pathParts.at(1) == fragment::id) {
         uint64_t id = std::stoull(urlDecode(pathParts.at(2)));
-        track = server->context.dataProvider->QueryTrackById(id);
+        track = server->context.metadataProxy->QueryTrackById(id);
     }
 
     if (track) {

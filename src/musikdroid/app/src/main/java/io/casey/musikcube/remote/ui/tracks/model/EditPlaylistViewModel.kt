@@ -2,7 +2,7 @@ package io.casey.musikcube.remote.ui.tracks.model
 
 import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata.Category.PLAYLISTS
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
 import io.reactivex.Observable
@@ -17,7 +17,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
 
     private var metadataDisposable: Disposable? = null
     private var requestOffset = -1
-    private var dataProvider: IDataProvider? = null
+    private var metadataProxy: IMetadataProxy? = null
     private var externalIds: MutableList<String> = mutableListOf()
 
     private val cache = object : LinkedHashMap<String, CacheEntry>() {
@@ -29,13 +29,13 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
             field = value
         }
 
-    fun attach(dataProvider: IDataProvider) {
-        this.dataProvider = dataProvider
+    fun attach(metadataProxy: IMetadataProxy) {
+        this.metadataProxy = metadataProxy
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        this.dataProvider = null
+        this.metadataProxy = null
     }
 
     private var status: Status = Status.NotLoaded
@@ -67,7 +67,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
             return Observable.just(playlistId)
         }
 
-        return dataProvider?.overwritePlaylistWithExternalIds(
+        return metadataProxy?.overwritePlaylistWithExternalIds(
             playlistId, externalIds.toList()) ?: Observable.just(-1L)
     }
 
@@ -84,7 +84,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
 
     private fun refreshTrackIds() {
         status = Status.Loading
-        dataProvider?.let {
+        metadataProxy?.let {
             status = Status.Loading
 
             it.getTrackIdsByCategory(PLAYLISTS, playlistId).subscribeBy(
@@ -103,7 +103,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
             return /* in flight */
         }
 
-        dataProvider?.let {
+        metadataProxy?.let {
             metadataDisposable?.dispose()
             metadataDisposable = null
 

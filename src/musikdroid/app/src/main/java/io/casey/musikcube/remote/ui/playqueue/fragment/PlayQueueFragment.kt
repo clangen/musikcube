@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.playqueue.adapter.PlayQueueAdapter
 import io.casey.musikcube.remote.ui.playqueue.constant.PlayQueue
@@ -14,7 +14,7 @@ import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.model.DefaultSlidingWindow
@@ -24,7 +24,7 @@ import io.reactivex.rxkotlin.subscribeBy
 
 class PlayQueueFragment: BaseFragment(), ITitleProvider {
     private var offlineQueue: Boolean = false
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var playback: PlaybackMixin
     private lateinit var tracks: DefaultSlidingWindow
     private lateinit var adapter: PlayQueueAdapter
@@ -35,7 +35,7 @@ class PlayQueueFragment: BaseFragment(), ITitleProvider {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         playback = mixin(PlaybackMixin(playbackEvents))
         mixin(ItemContextMenuMixin(appCompatActivity, null, this))
         super.onCreate(savedInstanceState)
@@ -76,7 +76,7 @@ class PlayQueueFragment: BaseFragment(), ITitleProvider {
     override fun onInitObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
-                if (states.first == IDataProvider.State.Connected) {
+                if (states.first == IMetadataProxy.State.Connected) {
                     tracks.requery()
                 }
                 else {

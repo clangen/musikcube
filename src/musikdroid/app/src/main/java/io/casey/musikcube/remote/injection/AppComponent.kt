@@ -8,7 +8,7 @@ import io.casey.musikcube.remote.service.gapless.db.GaplessDb
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineDb
 import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 
 @ApplicationScope
@@ -22,6 +22,6 @@ interface AppComponent {
     fun offlineDb(): OfflineDb /* via DataModule */
     fun gaplessDb(): GaplessDb /* via DataModule */
     fun connectionsDb(): ConnectionsDb /* via DataModule */
-    fun dataProvider(): IDataProvider /* via DataModule */
+    fun metadataProxy(): IMetadataProxy /* via DataModule */
     fun context(): Context /* via AppModule */
 }

@@ -14,14 +14,14 @@ import io.casey.musikcube.remote.service.websocket.model.TransportType
 import io.casey.musikcube.remote.ui.navigation.Transition
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteSettingsViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.rxkotlin.subscribeBy
 import io.casey.musikcube.remote.ui.settings.viewmodel.BaseRemoteViewModel.State as ViewModelState
 
 class RemoteSettingsActivity: BaseActivity() {
     private var initialized = false
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var viewModel: RemoteSettingsViewModel
     private lateinit var loadingOverlay: View
     private lateinit var driverSpinner: Spinner
@@ -37,7 +37,7 @@ class RemoteSettingsActivity: BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
 
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         mixin(ViewModelMixin(this))
 
         super.onCreate(savedInstanceState)

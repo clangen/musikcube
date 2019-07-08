@@ -46,7 +46,7 @@
 #include <core/audio/Outputs.h>
 #include <core/support/Preferences.h>
 #include <core/support/PreferenceKeys.h>
-#include <core/library/LocalSimpleDataProvider.h>
+#include <core/library/LocalMetadataProxy.h>
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
 
@@ -63,7 +63,7 @@ using namespace musik::core::sdk;
 
 typedef void(*SetEnvironment)(IEnvironment*);
 typedef void(*SetDebug)(IDebug*);
-typedef void(*SetSimpleDataProvider)(ISimpleDataProvider*);
+typedef void(*SetMetadataProxy)(IMetadataProxy*);
 typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 
 static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
@@ -71,7 +71,7 @@ static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b64
 static IMessageQueue* messageQueue = nullptr;
 static ILibraryPtr library;
 static IPlaybackService* playback = nullptr;
-static LocalSimpleDataProvider* dataProvider = nullptr;
+static LocalMetadataProxy* metadataProxy = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
 
 static void saveEnvironment() {
@@ -357,18 +357,18 @@ namespace musik { namespace core { namespace plugin {
             func(&debugger);
         });
 
-        /* data providers */
-        delete dataProvider;
+        /* metadata proxies */
+        delete metadataProxy;
         ::messageQueue = messageQueue;
         ::library = library;
         ::playback = playback;
-        ::dataProvider = new LocalSimpleDataProvider(library);
+        ::metadataProxy = new LocalMetadataProxy(library);
         ::playbackPrefs = Preferences::ForComponent(prefs::components::Playback);
 
-        PluginFactory::Instance().QueryFunction<SetSimpleDataProvider>(
-            "SetSimpleDataProvider",
-            [](musik::core::sdk::IPlugin* plugin, SetSimpleDataProvider func) {
-                func(dataProvider);
+        PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
+            "SetMetadataProxy",
+            [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
+                func(metadataProxy);
             });
 
         /* indexer */
@@ -394,15 +394,15 @@ namespace musik { namespace core { namespace plugin {
         Preferences::SavePluginPreferences();
 
         /* data providers */
-        PluginFactory::Instance().QueryFunction<SetSimpleDataProvider>(
-            "SetSimpleDataProvider",
-            [](musik::core::sdk::IPlugin* plugin, SetSimpleDataProvider func) {
+        PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
+            "SetMetadataProxy",
+            [](musik::core::sdk::IPlugin* plugin, SetMetadataProxy func) {
                 func(nullptr);
             });
 
-        delete dataProvider;
+        delete metadataProxy;
         ::messageQueue = nullptr;
-        ::dataProvider = nullptr;
+        ::metadataProxy = nullptr;
         ::library.reset();
         ::playback = nullptr;
         ::playbackPrefs.reset();

@@ -10,7 +10,7 @@ import io.casey.musikcube.remote.service.playback.RepeatMode
 import io.casey.musikcube.remote.service.websocket.Messages
 import io.casey.musikcube.remote.service.websocket.SocketMessage
 import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
@@ -95,7 +95,7 @@ class RemotePlaybackService : IPlaybackService {
     }
 
     @Inject lateinit var wss: WebSocketService
-    @Inject lateinit var dataProvider: IDataProvider
+    @Inject lateinit var metadataProxy: IMetadataProxy
 
     private val handler = Handler()
     private val listeners = HashSet<() -> Unit>()
@@ -279,7 +279,7 @@ class RemotePlaybackService : IPlaybackService {
 
         if (listeners.size == 1) {
             wss.addClient(client)
-            dataProvider.attach()
+            metadataProxy.attach()
             scheduleTimeSyncMessage()
         }
     }
@@ -289,7 +289,7 @@ class RemotePlaybackService : IPlaybackService {
 
         if (listeners.size == 0) {
             wss.removeClient(client)
-            dataProvider.detach()
+            metadataProxy.detach()
             handler.removeCallbacks(syncTimeRunnable)
         }
     }
@@ -405,8 +405,8 @@ class RemotePlaybackService : IPlaybackService {
         get() = QueryContext(Messages.Request.QueryPlayQueueTracks)
 
     override val playlistQueryFactory: ITrackListQueryFactory = object : ITrackListQueryFactory {
-        override fun count(): Observable<Int> = dataProvider.getPlayQueueTracksCount()
-        override fun page(offset: Int, limit: Int): Observable<List<ITrack>> = dataProvider.getPlayQueueTracks(limit, offset)
+        override fun count(): Observable<Int> = metadataProxy.getPlayQueueTracksCount()
+        override fun page(offset: Int, limit: Int): Observable<List<ITrack>> = metadataProxy.getPlayQueueTracks(limit, offset)
         override fun offline(): Boolean  = false
     }
 

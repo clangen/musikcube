@@ -35,15 +35,15 @@
 #pragma once
 
 #include <core/library/ILibrary.h>
-#include <core/sdk/ISimpleDataProvider.h>
+#include <core/sdk/IMetadataProxy.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class LocalSimpleDataProvider : public musik::core::sdk::ISimpleDataProvider {
+    class LocalMetadataProxy : public musik::core::sdk::IMetadataProxy {
         public:
-            LocalSimpleDataProvider(musik::core::ILibraryPtr library);
+            LocalMetadataProxy(musik::core::ILibraryPtr library);
 
-            virtual ~LocalSimpleDataProvider();
+            virtual ~LocalMetadataProxy();
 
             virtual musik::core::sdk::ITrackList*
                 QueryTracks(

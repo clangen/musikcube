@@ -104,7 +104,7 @@
     <ClCompile Include="library\Indexer.cpp" />
     <ClCompile Include="library\LocalLibrary.cpp" />
     <ClCompile Include="library\LibraryFactory.cpp" />
-    <ClCompile Include="library\LocalSimpleDataProvider.cpp" />
+    <ClCompile Include="library\LocalMetadataProxy.cpp" />
     <ClCompile Include="library\metadata\MetadataMap.cpp" />
     <ClCompile Include="library\metadata\MetadataMapList.cpp" />
     <ClCompile Include="library\query\local\AlbumListQuery.cpp" />
@@ -171,7 +171,7 @@
     <ClInclude Include="library\LocalLibrary.h" />
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibraryConstants.h" />
-    <ClInclude Include="library\LocalSimpleDataProvider.h" />
+    <ClInclude Include="library\LocalMetadataProxy.h" />
     <ClInclude Include="library\metadata\MetadataMap.h" />
     <ClInclude Include="library\metadata\MetadataMapList.h" />
     <ClInclude Include="library\query\local\AlbumListQuery.h" />
@@ -241,7 +241,7 @@
     <ClInclude Include="audio\Player.h" />
     <ClInclude Include="audio\Stream.h" />
     <ClInclude Include="sdk\IPreferences.h" />
-    <ClInclude Include="sdk\ISimpleDataProvider.h" />
+    <ClInclude Include="sdk\IMetadataProxy.h" />
     <ClInclude Include="sdk\ISpectrumVisualizer.h" />
     <ClInclude Include="sdk\ITrack.h" />
     <ClInclude Include="sdk\ITrackList.h" />

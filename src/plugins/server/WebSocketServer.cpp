@@ -694,7 +694,7 @@ ITrackList* WebSocketServer::QueryTracks(json& request, int& limit, int& offset)
         json& options = request[message::options];
         std::string filter = options.value(key::filter, "");
         this->GetLimitAndOffset(options, limit, offset);
-        return context.dataProvider->QueryTracks(filter.c_str(), limit, offset);
+        return context.metadataProxy->QueryTracks(filter.c_str(), limit, offset);
     }
     return nullptr;
 }
@@ -718,7 +718,7 @@ void WebSocketServer::RespondWithQueryTracksByExternalIds(connection_hdl connect
         json& externalIds = options[key::external_ids];
         if (externalIds.is_array()) {
             auto externalIdArray = jsonToStringArray(externalIds);
-            ITrackList* trackList = context.dataProvider
+            ITrackList* trackList = context.metadataProxy
                 ->QueryTracksByExternalId(
                     (const char**) externalIdArray.get(),
                     externalIds.size());
@@ -856,7 +856,7 @@ void WebSocketServer::RespondWithQueryAlbums(connection_hdl connection, json& re
         std::string category = options.value(key::category, "");
         int64_t categoryId = options.value<int64_t>(key::category_id, -1);
 
-        IMapList* albumList = context.dataProvider
+        IMapList* albumList = context.metadataProxy
             ->QueryAlbums(category.c_str(), categoryId, filter.c_str());
 
         json result = json::array();
@@ -916,7 +916,7 @@ void WebSocketServer::RespondWithPlayTracks(connection_hdl connection, json& req
             if (externalIds.is_array()) {
                 auto externalIdArray = jsonToStringArray(externalIds);
 
-                ITrackList* trackList = context.dataProvider
+                ITrackList* trackList = context.metadataProxy
                     ->QueryTracksByExternalId(
                     (const char**)externalIdArray.get(),
                     externalIds.size());
@@ -970,11 +970,11 @@ ITrackList* WebSocketServer::QueryTracksByCategory(json& request, int& limit, in
         if (predicates.size()) {
             auto predicateList = jsonToPredicateList(predicates);
 
-            return context.dataProvider->QueryTracksByCategories(
+            return context.metadataProxy->QueryTracksByCategories(
                 predicateList.get(), predicates.size(), filter.c_str(), limit, offset);
         }
         else {
-            return context.dataProvider->QueryTracksByCategory(
+            return context.metadataProxy->QueryTracksByCategory(
                 category.c_str(), selectedId, filter.c_str(), limit, offset);
         }
     }
@@ -995,7 +995,7 @@ void WebSocketServer::RespondWithQueryTracksByCategory(connection_hdl connection
 }
 
 void WebSocketServer::RespondWithListCategories(connection_hdl connection, json& request) {
-    IValueList* result = context.dataProvider->ListCategories();
+    IValueList* result = context.metadataProxy->ListCategories();
 
     if (result != nullptr) {
         json list = json::array();
@@ -1031,7 +1031,7 @@ void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& 
 
             if (predicates.size()) {
                 auto predicateList = jsonToPredicateList(predicates);
-                result = context.dataProvider
+                result = context.metadataProxy
                     ->QueryCategoryWithPredicates(
                         category.c_str(),
                         predicateList.get(),
@@ -1039,7 +1039,7 @@ void WebSocketServer::RespondWithQueryCategory(connection_hdl connection, json& 
                         filter.c_str());
             }
             else {
-                result = context.dataProvider
+                result = context.metadataProxy
                     ->QueryCategoryWithPredicate(
                         category.c_str(),
                         predicate.c_str(),
@@ -1086,7 +1086,7 @@ void WebSocketServer::RespondWithPlayAllTracks(connection_hdl connection, json& 
         time = request[message::options].value(key::time, 0.0);
     }
 
-    ITrackList* tracks = context.dataProvider->QueryTracks(filter.c_str());
+    ITrackList* tracks = context.metadataProxy->QueryTracks(filter.c_str());
 
     if (tracks) {
         context.playback->Play(tracks, index);
@@ -1175,7 +1175,7 @@ void WebSocketServer::RespondWithSavePlaylist(connection_hdl connection, json& r
         if (externalIds.is_array()) {
             auto externalIdArray = jsonToStringArray(externalIds);
 
-            int64_t newPlaylistId = this->context.dataProvider
+            int64_t newPlaylistId = this->context.metadataProxy
                 ->SavePlaylistWithExternalIds(
                     (const char**) externalIdArray.get(),
                     externalIds.size(),
@@ -1209,7 +1209,7 @@ void WebSocketServer::RespondWithSavePlaylist(connection_hdl connection, json& r
             }
 
             if (tracks) {
-                int64_t newPlaylistId = this->context.dataProvider
+                int64_t newPlaylistId = this->context.metadataProxy
                     ->SavePlaylistWithTrackList(tracks, name.c_str(), id);
 
                 tracks->Release();
@@ -1236,7 +1236,7 @@ void WebSocketServer::RespondWithRenamePlaylist(connection_hdl connection, json&
     int64_t id = options[key::playlist_id];
     std::string name = options[key::playlist_name];
 
-    this->context.dataProvider->RenamePlaylist(id, name.c_str())
+    this->context.metadataProxy->RenamePlaylist(id, name.c_str())
         ? this->RespondWithSuccess(connection, request)
         : this->RespondWithFailure(connection, request);
 }
@@ -1245,7 +1245,7 @@ void WebSocketServer::RespondWithDeletePlaylist(connection_hdl connection, json&
     auto& options = request[message::options];
     int64_t id = options[key::playlist_id];
 
-    this->context.dataProvider->DeletePlaylist(id)
+    this->context.metadataProxy->DeletePlaylist(id)
         ? this->RespondWithSuccess(connection, request)
         : this->RespondWithFailure(connection, request);
 }
@@ -1265,7 +1265,7 @@ void WebSocketServer::RespondWithAppendToPlaylist(connection_hdl connection, jso
             if (externalIds.is_array()) {
                 auto externalIdArray = jsonToStringArray(externalIds);
 
-                bool result = this->context.dataProvider
+                bool result = this->context.metadataProxy
                     ->AppendToPlaylistWithExternalIds(
                         id,
                         (const char**) externalIdArray.get(),
@@ -1295,7 +1295,7 @@ void WebSocketServer::RespondWithAppendToPlaylist(connection_hdl connection, jso
                 }
 
                 if (tracks) {
-                    bool result = this->context.dataProvider
+                    bool result = this->context.metadataProxy
                         ->AppendToPlaylistWithTrackList(id, tracks, offset);
 
                     tracks->Release();
@@ -1527,7 +1527,7 @@ void WebSocketServer::RespondWithRemoveTracksFromPlaylist(connection_hdl connect
             auto ids = jsonToStringArray(*externalIdsIt);
             auto orders = jsonToIntArray<int>(*sortOrdersIt);
 
-            updated = this->context.dataProvider
+            updated = this->context.metadataProxy
                 ->RemoveTracksFromPlaylist(
                     id,
                     (const char**)ids.get(),

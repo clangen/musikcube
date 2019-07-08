@@ -2,16 +2,16 @@ package io.casey.musikcube.remote.ui.shared.model
 
 import android.util.Log
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.reactivex.rxkotlin.subscribeBy
 
 class DefaultSlidingWindow(
         private val recyclerView: FastScrollRecyclerView,
-        dataProvider: IDataProvider,
+        metadataProxy: IMetadataProxy,
         private val queryFactory: ITrackListQueryFactory)
-            : BaseSlidingWindow(recyclerView, dataProvider)
+            : BaseSlidingWindow(recyclerView, metadataProxy)
 {
     private var queryOffset = -1
     private var queryLimit = -1

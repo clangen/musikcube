@@ -13,7 +13,7 @@ import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.ui.category.adapter.CategoryBrowseAdapter
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.category.constant.NavigationType
@@ -28,7 +28,7 @@ import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
 import io.casey.musikcube.remote.ui.shared.extension.getTitleOverride
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
@@ -40,7 +40,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
     private var lastFilter: String? = null
     private lateinit var rootView: View
     private lateinit var emptyView: EmptyListView
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var playback: PlaybackMixin
 
     private val navigationType: NavigationType
@@ -68,7 +68,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
         super.onCreate(savedInstanceState)
 
         component.inject(this)
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         playback = mixin(PlaybackMixin())
         mixin(ItemContextMenuMixin(appCompatActivity, contextMenuListener, this))
 
@@ -118,11 +118,11 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
                 when (states.first) {
-                    IDataProvider.State.Connected -> {
+                    IMetadataProxy.State.Connected -> {
                         filterDebouncer.cancel()
                         requery()
                     }
-                    IDataProvider.State.Disconnected -> {
+                    IMetadataProxy.State.Disconnected -> {
                         emptyView.update(states.first, adapter.itemCount)
                     }
                     else -> {

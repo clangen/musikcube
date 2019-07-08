@@ -175,9 +175,6 @@
     <ClCompile Include="library\query\local\CategoryListQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
-    <ClCompile Include="library\LocalSimpleDataProvider.cpp">
-      <Filter>src\library</Filter>
-    </ClCompile>
     <ClCompile Include="plugin\Plugins.cpp">
       <Filter>src\plugin</Filter>
     </ClCompile>
@@ -228,6 +225,9 @@
     </ClCompile>
     <ClCompile Include="support\Auddio.cpp">
       <Filter>src\support</Filter>
+    </ClCompile>
+    <ClCompile Include="library\LocalMetadataProxy.cpp">
+      <Filter>src\library</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -390,9 +390,6 @@
     <ClInclude Include="Library\query\local\LocalQueryBase.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
-    <ClInclude Include="library\LocalSimpleDataProvider.h">
-      <Filter>src\library</Filter>
-    </ClInclude>
     <ClInclude Include="plugin\Plugins.h">
       <Filter>src\plugin</Filter>
     </ClInclude>
@@ -446,9 +443,6 @@
     </ClInclude>
     <ClInclude Include="sdk\ISpectrumVisualizer.h">
       <Filter>src\sdk\vis</Filter>
-    </ClInclude>
-    <ClInclude Include="sdk\ISimpleDataProvider.h">
-      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IPlaybackRemote.h">
       <Filter>src\sdk\audio</Filter>
@@ -554,6 +548,12 @@
     </ClInclude>
     <ClInclude Include="support\Auddio.h">
       <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IMetadataProxy.h">
+      <Filter>src\sdk\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="library\LocalMetadataProxy.h">
+      <Filter>src\library</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

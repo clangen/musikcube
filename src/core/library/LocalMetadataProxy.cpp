@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "LocalSimpleDataProvider.h"
+#include "LocalMetadataProxy.h"
 
 #include <core/debug.h>
 #include <core/db/ScopedTransaction.h>
@@ -56,7 +56,7 @@
 #include <vector>
 #include <map>
 
-#define TAG "LocalSimpleDataProvider"
+#define TAG "LocalMetadataProxy"
 
 using namespace musik::core;
 using namespace musik::core::db;
@@ -284,16 +284,16 @@ class RemoveFromPlaylistQuery : public LocalQueryBase {
 
 /* DATA PROVIDER */
 
-LocalSimpleDataProvider::LocalSimpleDataProvider(musik::core::ILibraryPtr library)
+LocalMetadataProxy::LocalMetadataProxy(musik::core::ILibraryPtr library)
 : library(library) {
 
 }
 
-LocalSimpleDataProvider::~LocalSimpleDataProvider() {
+LocalMetadataProxy::~LocalMetadataProxy() {
 
 }
 
-ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, int offset) {
+ITrackList* LocalMetadataProxy::QueryTracks(const char* query, int limit, int offset) {
     try {
         std::shared_ptr<SearchTrackListQuery> search(
             new SearchTrackListQuery(this->library, std::string(query ? query : "")));
@@ -315,7 +315,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracks(const char* query, int limit, i
     return nullptr;
 }
 
-ITrack* LocalSimpleDataProvider::QueryTrackById(int64_t trackId) {
+ITrack* LocalMetadataProxy::QueryTrackById(int64_t trackId) {
     try {
         TrackPtr target(new LibraryTrack(trackId, this->library));
 
@@ -335,7 +335,7 @@ ITrack* LocalSimpleDataProvider::QueryTrackById(int64_t trackId) {
     return nullptr;
 }
 
-ITrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* externalId) {
+ITrack* LocalMetadataProxy::QueryTrackByExternalId(const char* externalId) {
     if (strlen(externalId)) {
         try {
             TrackPtr target(new LibraryTrack(0, this->library));
@@ -358,7 +358,7 @@ ITrack* LocalSimpleDataProvider::QueryTrackByExternalId(const char* externalId) 
     return nullptr;
 }
 
-ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
+ITrackList* LocalMetadataProxy::QueryTracksByCategory(
     const char* categoryType, int64_t selectedId, const char* filter, int limit, int offset)
 {
     try {
@@ -394,7 +394,7 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategory(
     return nullptr;
 }
 
-ITrackList* LocalSimpleDataProvider::QueryTracksByCategories(
+ITrackList* LocalMetadataProxy::QueryTracksByCategories(
     IValue** categories, size_t categoryCount, const char* filter, int limit, int offset)
 {
     try {
@@ -419,11 +419,11 @@ ITrackList* LocalSimpleDataProvider::QueryTracksByCategories(
     return nullptr;
 }
 
-IValueList* LocalSimpleDataProvider::QueryCategory(const char* type, const char* filter) {
+IValueList* LocalMetadataProxy::QueryCategory(const char* type, const char* filter) {
     return QueryCategoryWithPredicate(type, "", -1LL, filter);
 }
 
-IValueList* LocalSimpleDataProvider::ListCategories() {
+IValueList* LocalMetadataProxy::ListCategories() {
     try {
         auto query = std::make_shared<AllCategoriesQuery>();
         this->library->Enqueue(query, ILibrary::QuerySynchronous);
@@ -440,7 +440,7 @@ IValueList* LocalSimpleDataProvider::ListCategories() {
 }
 
 
-IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicate(
+IValueList* LocalMetadataProxy::QueryCategoryWithPredicate(
     const char* type, const char* predicateType, int64_t predicateId, const char* filter)
 {
     try {
@@ -465,7 +465,7 @@ IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicate(
     return nullptr;
 }
 
-IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicates(
+IValueList* LocalMetadataProxy::QueryCategoryWithPredicates(
     const char* type, IValue** predicates, size_t predicateCount, const char* filter)
 {
     try {
@@ -487,7 +487,7 @@ IValueList* LocalSimpleDataProvider::QueryCategoryWithPredicates(
     return nullptr;
 }
 
-IMapList* LocalSimpleDataProvider::QueryAlbums(
+IMapList* LocalMetadataProxy::QueryAlbums(
     const char* categoryIdName, int64_t categoryIdValue, const char* filter)
 {
     try {
@@ -509,7 +509,7 @@ IMapList* LocalSimpleDataProvider::QueryAlbums(
     return nullptr;
 }
 
-IMapList* LocalSimpleDataProvider::QueryAlbums(const char* filter) {
+IMapList* LocalMetadataProxy::QueryAlbums(const char* filter) {
     return this->QueryAlbums(nullptr, -1, filter);
 }
 
@@ -561,7 +561,7 @@ static uint64_t savePlaylist(
     return 0;
 }
 
-int64_t LocalSimpleDataProvider::SavePlaylistWithIds(
+int64_t LocalMetadataProxy::SavePlaylistWithIds(
     int64_t* trackIds,
     size_t trackIdCount,
     const char* playlistName,
@@ -577,7 +577,7 @@ int64_t LocalSimpleDataProvider::SavePlaylistWithIds(
     return savePlaylist(this->library, trackList, playlistName, playlistId);
 }
 
-int64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
+int64_t LocalMetadataProxy::SavePlaylistWithExternalIds(
     const char** externalIds,
     size_t externalIdCount,
     const char* playlistName,
@@ -606,7 +606,7 @@ int64_t LocalSimpleDataProvider::SavePlaylistWithExternalIds(
     return 0;
 }
 
-int64_t LocalSimpleDataProvider::SavePlaylistWithTrackList(
+int64_t LocalMetadataProxy::SavePlaylistWithTrackList(
     ITrackList* trackList,
     const char* playlistName,
     const int64_t playlistId)
@@ -618,7 +618,7 @@ int64_t LocalSimpleDataProvider::SavePlaylistWithTrackList(
     return savePlaylist(this->library, trackList, playlistName, playlistId);
 }
 
-bool LocalSimpleDataProvider::RenamePlaylist(const int64_t playlistId, const char* name)
+bool LocalMetadataProxy::RenamePlaylist(const int64_t playlistId, const char* name)
 {
     if (strlen(name)) {
         try {
@@ -639,7 +639,7 @@ bool LocalSimpleDataProvider::RenamePlaylist(const int64_t playlistId, const cha
     return false;
 }
 
-bool LocalSimpleDataProvider::DeletePlaylist(const int64_t playlistId) {
+bool LocalMetadataProxy::DeletePlaylist(const int64_t playlistId) {
     try {
         std::shared_ptr<DeletePlaylistQuery> query =
             std::make_shared<DeletePlaylistQuery>(library, playlistId);
@@ -682,7 +682,7 @@ static bool appendToPlaylist(
     return false;
 }
 
-bool LocalSimpleDataProvider::AppendToPlaylistWithIds(
+bool LocalMetadataProxy::AppendToPlaylistWithIds(
     const int64_t playlistId,
     const int64_t* ids,
     size_t idCount,
@@ -694,7 +694,7 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithIds(
     return appendToPlaylist(this->library, playlistId, trackList, offset);
 }
 
-bool LocalSimpleDataProvider::AppendToPlaylistWithExternalIds(
+bool LocalMetadataProxy::AppendToPlaylistWithExternalIds(
     const int64_t playlistId,
     const char** externalIds,
     size_t externalIdCount,
@@ -720,7 +720,7 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithExternalIds(
 
 }
 
-bool LocalSimpleDataProvider::AppendToPlaylistWithTrackList(
+bool LocalMetadataProxy::AppendToPlaylistWithTrackList(
     const int64_t playlistId, ITrackList* trackList, int offset)
 {
     static auto deleter = [](musik::core::sdk::ITrackList* trackList) {};
@@ -731,7 +731,7 @@ bool LocalSimpleDataProvider::AppendToPlaylistWithTrackList(
     return result;
 }
 
-size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
+size_t LocalMetadataProxy::RemoveTracksFromPlaylist(
     const int64_t playlistId,
     const char** externalIds,
     const int* sortOrders,
@@ -754,7 +754,7 @@ size_t LocalSimpleDataProvider::RemoveTracksFromPlaylist(
     return 0;
 }
 
-ITrackList* LocalSimpleDataProvider::QueryTracksByExternalId(
+ITrackList* LocalMetadataProxy::QueryTracksByExternalId(
     const char** externalIds, size_t externalIdCount)
 {
     try {

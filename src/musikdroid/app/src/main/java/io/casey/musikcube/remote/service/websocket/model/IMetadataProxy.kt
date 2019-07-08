@@ -2,7 +2,7 @@ package io.casey.musikcube.remote.service.websocket.model
 
 import io.reactivex.Observable
 
-interface IDataProvider {
+interface IMetadataProxy {
     enum class State { Disconnected, Connecting, Connected }
 
     fun attach()

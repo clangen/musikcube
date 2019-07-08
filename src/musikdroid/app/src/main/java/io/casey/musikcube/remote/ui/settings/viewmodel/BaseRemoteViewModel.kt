@@ -1,22 +1,22 @@
 package io.casey.musikcube.remote.ui.settings.viewmodel
 
 import io.casey.musikcube.remote.framework.ViewModel
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.subscribeBy
 
 abstract class BaseRemoteViewModel: ViewModel<BaseRemoteViewModel.State>() {
-    protected var provider: IDataProvider? = null
+    protected var provider: IMetadataProxy? = null
     protected var disposables = CompositeDisposable()
 
     enum class State { Disconnected, Saving, Saved, Loading, Ready, Error }
 
-    fun attach(provider: IDataProvider) {
+    fun attach(provider: IMetadataProxy) {
         this.provider = provider
         this.provider?.let {
             this.disposables.add(it.observeState().subscribeBy(
                 onNext = {
-                    if (it.first == IDataProvider.State.Connected) {
+                    if (it.first == IMetadataProxy.State.Connected) {
                         onConnected()
                     }
                 },

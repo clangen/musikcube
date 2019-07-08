@@ -20,7 +20,7 @@ set(CORE_SOURCES
   ./library/Indexer.cpp
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
-  ./library/LocalSimpleDataProvider.cpp
+  ./library/LocalMetadataProxy.cpp
   ./library/query/local/AlbumListQuery.cpp
   ./library/query/local/AllCategoriesQuery.cpp
   ./library/query/local/AppendPlaylistQuery.cpp

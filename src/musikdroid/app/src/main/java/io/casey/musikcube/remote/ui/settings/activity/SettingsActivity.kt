@@ -23,7 +23,7 @@ import io.casey.musikcube.remote.ui.settings.model.Connection
 import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import java.util.*
 import javax.inject.Inject
@@ -49,10 +49,10 @@ class SettingsActivity : BaseActivity() {
     private lateinit var cacheSpinner: Spinner
     private lateinit var titleEllipsisSpinner: Spinner
     private lateinit var playback: PlaybackMixin
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         playback = mixin(PlaybackMixin())
         component.inject(this)
         super.onCreate(savedInstanceState)

@@ -7,30 +7,27 @@ import dagger.Provides
 import io.casey.musikcube.remote.service.gapless.db.GaplessDb
 import io.casey.musikcube.remote.service.playback.impl.streaming.db.OfflineDb
 import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
-import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
+import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteMetadataProxy
 import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 
 @Module
 class DataModule {
     @Provides
-    fun providesDataProvider(wss: WebSocketService): IDataProvider = RemoteDataProvider(wss)
+    fun providesMetadataProxy(wss: WebSocketService): IMetadataProxy = RemoteMetadataProxy(wss)
 
     @ApplicationScope
     @Provides
-    fun providesOfflineDb(context: Context): OfflineDb {
-        return Room.databaseBuilder(context,  OfflineDb::class.java, "offline").build()
-    }
+    fun providesOfflineDb(context: Context): OfflineDb =
+        Room.databaseBuilder(context,  OfflineDb::class.java, "offline").build()
 
     @ApplicationScope
     @Provides
-    fun providesConnectionsDb(context: Context): ConnectionsDb {
-        return Room.databaseBuilder(context, ConnectionsDb::class.java, "connections").build()
-    }
+    fun providesConnectionsDb(context: Context): ConnectionsDb =
+        Room.databaseBuilder(context, ConnectionsDb::class.java, "connections").build()
 
     @ApplicationScope
     @Provides
-    fun providesGaplessDb(context: Context): GaplessDb {
-        return Room.databaseBuilder(context, GaplessDb::class.java, "gapless").build()
-    }
+    fun providesGaplessDb(context: Context): GaplessDb =
+        Room.databaseBuilder(context, GaplessDb::class.java, "gapless").build()
 }

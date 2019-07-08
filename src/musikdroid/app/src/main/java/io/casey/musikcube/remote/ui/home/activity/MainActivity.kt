@@ -19,7 +19,7 @@ import io.casey.musikcube.remote.service.playback.PlaybackState
 import io.casey.musikcube.remote.service.playback.RepeatMode
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.ui.home.fragment.InvalidPasswordDialogFragment
 import io.casey.musikcube.remote.ui.home.view.MainMetadataView
 import io.casey.musikcube.remote.ui.navigation.Navigate
@@ -31,7 +31,7 @@ import io.casey.musikcube.remote.ui.shared.extension.getColorCompat
 import io.casey.musikcube.remote.ui.shared.extension.setCheckWithoutEvent
 import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
 import io.casey.musikcube.remote.ui.shared.extension.toolbar
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.util.Duration
 import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
@@ -42,7 +42,7 @@ class MainActivity : BaseActivity() {
     private var seekbarValue = -1
     private var blink = 0
 
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var playback: PlaybackMixin
 
     /* views */
@@ -64,7 +64,7 @@ class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         playback = mixin(PlaybackMixin { rebindUi() })
 
         super.onCreate(savedInstanceState)
@@ -174,12 +174,12 @@ class MainActivity : BaseActivity() {
         disposables.add(data.provider.observeState().subscribe(
             { states ->
                 when (states.first) {
-                    IDataProvider.State.Connected -> {
+                    IMetadataProxy.State.Connected -> {
                         rebindUi()
                         checkShowSpotlight()
                         checkShowApiMismatch()
                     }
-                    IDataProvider.State.Disconnected -> {
+                    IMetadataProxy.State.Disconnected -> {
                         clearUi()
                     }
                     else -> {
@@ -424,7 +424,7 @@ class MainActivity : BaseActivity() {
             object : ViewTreeObserver.OnGlobalLayoutListener {
                 override fun onGlobalLayout() {
                     val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
-                    if (toolbarButton != null && data.provider.state == IDataProvider.State.Connected) {
+                    if (toolbarButton != null && data.provider.state == IMetadataProxy.State.Connected) {
                         checkShowSpotlight()
                         window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(this)
                     }

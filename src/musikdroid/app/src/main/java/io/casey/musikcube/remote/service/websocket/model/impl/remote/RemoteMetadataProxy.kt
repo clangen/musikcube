@@ -15,12 +15,12 @@ import io.reactivex.subjects.ReplaySubject
 import org.json.JSONArray
 import org.json.JSONObject
 
-class RemoteDataProvider(private val service: WebSocketService) : IDataProvider {
+class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProxy {
     private var disposables = CompositeDisposable()
     private var currentState = mapState(service.state)
 
     private val connectionStatePublisher: ReplaySubject<
-        Pair<IDataProvider.State, IDataProvider.State>> = ReplaySubject.createWithSize(1)
+        Pair<IMetadataProxy.State, IMetadataProxy.State>> = ReplaySubject.createWithSize(1)
 
     private val playQueueStatePublisher: PublishSubject<Unit> = PublishSubject.create()
 
@@ -32,7 +32,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         }, { /*error */ }))
     }
 
-    override val state: IDataProvider.State
+    override val state: IMetadataProxy.State
         get() = currentState
 
     override fun getAlbums(filter: String): Observable<List<IAlbum>> =
@@ -550,7 +550,7 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
             .observeOn(AndroidSchedulers.mainThread())
     }
 
-    override fun observeState(): Observable<Pair<IDataProvider.State, IDataProvider.State>> =
+    override fun observeState(): Observable<Pair<IMetadataProxy.State, IMetadataProxy.State>> =
         connectionStatePublisher.observeOn(AndroidSchedulers.mainThread())
 
     override fun observePlayQueue(): Observable<Unit> =
@@ -602,11 +602,11 @@ class RemoteDataProvider(private val service: WebSocketService) : IDataProvider 
         }
     }
 
-    private fun mapState(state: WebSocketService.State): IDataProvider.State =
+    private fun mapState(state: WebSocketService.State): IMetadataProxy.State =
         when (state) {
-            WebSocketService.State.Disconnected -> IDataProvider.State.Disconnected
-            WebSocketService.State.Connecting -> IDataProvider.State.Connecting
-            WebSocketService.State.Connected -> IDataProvider.State.Connected
+            WebSocketService.State.Disconnected -> IMetadataProxy.State.Disconnected
+            WebSocketService.State.Connecting -> IMetadataProxy.State.Connecting
+            WebSocketService.State.Connected -> IMetadataProxy.State.Connected
         }
 
     companion object {

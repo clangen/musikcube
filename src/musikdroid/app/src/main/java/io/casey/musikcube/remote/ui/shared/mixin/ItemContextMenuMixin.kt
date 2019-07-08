@@ -18,7 +18,7 @@ import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.impl.remote.Metadata
 import io.casey.musikcube.remote.service.websocket.model.IAlbum
 import io.casey.musikcube.remote.service.websocket.model.ICategoryValue
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.navigation.Navigate
@@ -38,7 +38,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                            internal val fragment: BaseFragment? = null): MixinBase() {
     private enum class TrackType { Normal, Playlist }
 
-    @Inject lateinit var provider: IDataProvider
+    @Inject lateinit var provider: IMetadataProxy
 
     open class EventListener {
         open fun onPlaylistDeleted(id: Long, name: String) { }

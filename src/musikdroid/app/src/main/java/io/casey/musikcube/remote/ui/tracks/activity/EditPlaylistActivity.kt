@@ -17,7 +17,7 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
 import io.casey.musikcube.remote.ui.shared.fragment.BaseDialogFragment
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.casey.musikcube.remote.ui.tracks.adapter.EditPlaylistAdapter
 import io.casey.musikcube.remote.ui.tracks.model.EditPlaylistViewModel
@@ -26,13 +26,13 @@ import io.reactivex.rxkotlin.subscribeBy
 
 class EditPlaylistActivity: BaseActivity() {
     private lateinit var viewModel: EditPlaylistViewModel
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var adapter: EditPlaylistAdapter
     private var playlistName = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         mixin(ViewModelMixin(this))
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         super.onCreate(savedInstanceState)
         playlistName = extras.getString(EXTRA_PLAYLIST_NAME, "-")
         title = getString(R.string.playlist_edit_activity, playlistName)

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/ISimpleDataProvider.h>
+#include <core/sdk/IMetadataProxy.h>
 #include <core/sdk/IPreferences.h>
 #include <core/sdk/IPlaybackService.h>
 #include <core/sdk/IEnvironment.h>
@@ -64,12 +64,12 @@ class ReadWriteLock {
 
 struct Context {
     Context() {
-        this->dataProvider = nullptr;
+        this->metadataProxy = nullptr;
         this->prefs = nullptr;
         this->playback = nullptr;
     }
 
-    musik::core::sdk::ISimpleDataProvider* dataProvider;
+    musik::core::sdk::IMetadataProxy* metadataProxy;
     musik::core::sdk::IPreferences* prefs;
     musik::core::sdk::IPlaybackService* playback;
     musik::core::sdk::IEnvironment* environment;

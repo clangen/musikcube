@@ -98,28 +98,3 @@ DataStreamPtr DataStreamFactory::OpenSharedDataStream(const char *uri) {
     auto stream = OpenDataStream(uri);
     return stream ? DataStreamPtr(stream, StreamDeleter()) : DataStreamPtr();
 }
-
-bool DataStreamFactory::IsLocalFileStream(const char *uri) {
-    if (uri) {
-        /* see if a plugin can handle this. if it can, then it's not
-        considered to be a local file stream */
-        DataStreamFactoryVector::iterator it =
-            DataStreamFactory::Instance()->dataStreamFactories.begin();
-
-        for( ; it != DataStreamFactory::Instance()->dataStreamFactories.end(); ++it) {
-            if ((*it)->CanRead(uri)) {
-                return false;
-            }
-        }
-
-        /* now test local filesystem */
-        boost::filesystem::path filename(uri);
-        try {
-            return boost::filesystem::exists(filename);
-        }
-        catch(...) {
-        }
-    }
-
-    return false;
-}

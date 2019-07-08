@@ -5,12 +5,12 @@ import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.framework.MixinBase
 import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import javax.inject.Inject
 
-class DataProviderMixin : MixinBase() {
+class MetadataProxyMixin : MixinBase() {
     @Inject lateinit var wss: WebSocketService
-    @Inject lateinit var provider: IDataProvider
+    @Inject lateinit var provider: IMetadataProxy
 
     override fun onCreate(bundle: Bundle) {
         super.onCreate(bundle)

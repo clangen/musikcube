@@ -11,12 +11,12 @@ import io.casey.musikcube.remote.framework.ViewModel
 import io.casey.musikcube.remote.ui.settings.viewmodel.BaseRemoteViewModel
 import io.casey.musikcube.remote.ui.settings.viewmodel.RemoteEqViewModel
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.rxkotlin.subscribeBy
 
 class RemoteEqActivity: BaseActivity() {
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var viewModel: RemoteEqViewModel
     private lateinit var loadingOverlay: View
     private lateinit var table: TableLayout
@@ -26,7 +26,7 @@ class RemoteEqActivity: BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
         mixin(ViewModelMixin(this))
 
         title = getString(R.string.remote_settings_eq_title)

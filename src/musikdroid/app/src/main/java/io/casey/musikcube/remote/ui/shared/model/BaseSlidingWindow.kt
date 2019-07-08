@@ -3,14 +3,14 @@ package io.casey.musikcube.remote.ui.shared.model
 import androidx.recyclerview.widget.RecyclerView
 import com.simplecityapps.recyclerview_fastscroll.interfaces.OnFastScrollStateChangeListener
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.util.Debouncer
 import io.reactivex.disposables.CompositeDisposable
 
 abstract class BaseSlidingWindow(
         private val recyclerView: FastScrollRecyclerView,
-        private val dataProvider: IDataProvider) : ITrackListSlidingWindow
+        private val metadataProxy: IMetadataProxy) : ITrackListSlidingWindow
 {
     private var scrollState = RecyclerView.SCROLL_STATE_IDLE
     private var fastScrollerActive = false
@@ -40,7 +40,7 @@ abstract class BaseSlidingWindow(
     }
 
     override fun resume() {
-        disposables.add(dataProvider.observePlayQueue()
+        disposables.add(metadataProxy.observePlayQueue()
             .subscribe({ requery() }, { /* error */ }))
 
         recyclerView.setOnFastScrollStateChangeListener(fastScrollStateChangeListener)

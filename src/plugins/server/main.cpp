@@ -84,10 +84,10 @@ static class PlaybackRemote : public IPlaybackRemote {
         }
 
         void CheckRunningStatus() {
-            if (!thread && context.environment && context.playback && context.prefs && context.dataProvider) {
+            if (!thread && context.environment && context.playback && context.prefs && context.metadataProxy) {
                 thread.reset(new std::thread(std::bind(&PlaybackRemote::ThreadProc, this)));
             }
-            else if (thread && (!context.environment || !context.playback || !context.prefs || !context.dataProvider)) {
+            else if (thread && (!context.environment || !context.playback || !context.prefs || !context.metadataProxy)) {
                 this->Stop();
             }
         }
@@ -202,8 +202,8 @@ extern "C" DLL_EXPORT void SetPreferences(musik::core::sdk::IPreferences* prefs)
     remote.CheckRunningStatus();
 }
 
-extern "C" DLL_EXPORT void SetSimpleDataProvider(musik::core::sdk::ISimpleDataProvider* dataProvider) {
+extern "C" DLL_EXPORT void SetMetadataProxy(musik::core::sdk::IMetadataProxy* metadataProxy) {
     auto wl = context.lock.Write();
-    context.dataProvider = dataProvider;
+    context.metadataProxy = metadataProxy;
     remote.CheckRunningStatus();
 }

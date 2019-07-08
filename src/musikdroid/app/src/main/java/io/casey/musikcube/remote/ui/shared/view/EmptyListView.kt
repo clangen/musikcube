@@ -13,7 +13,7 @@ import io.casey.musikcube.remote.injection.DaggerViewComponent
 import io.casey.musikcube.remote.service.playback.PlaybackServiceFactory
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
 import io.casey.musikcube.remote.service.websocket.WebSocketService
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.ui.shared.extension.setVisible
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import javax.inject.Inject
@@ -86,7 +86,7 @@ class EmptyListView : FrameLayout {
         }
     }
 
-    fun update(state: IDataProvider.State, count: Int) {
+    fun update(state: IMetadataProxy.State, count: Int) {
         if (count > 0) {
             visibility = View.INVISIBLE
         }
@@ -96,7 +96,7 @@ class EmptyListView : FrameLayout {
             val showOfflineContainer =
                 capability == Capability.OnlineOnly &&
                     PlaybackServiceFactory.instance(context) is StreamingPlaybackService &&
-                    state != IDataProvider.State.Connected
+                    state != IMetadataProxy.State.Connected
 
             offlineContainer?.setVisible(showOfflineContainer)
             emptyContainer?.setVisible(!showOfflineContainer)

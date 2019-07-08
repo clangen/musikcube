@@ -2,7 +2,7 @@ package io.casey.musikcube.remote.service.websocket.model.impl.remote
 
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerDataComponent
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.reactivex.Observable
@@ -10,14 +10,14 @@ import org.json.JSONObject
 import javax.inject.Inject
 
 class IdListTrackListQueryFactory(private val idList: List<String>): ITrackListQueryFactory {
-    @Inject protected lateinit var dataProvider: IDataProvider
+    @Inject protected lateinit var metadataProxy: IMetadataProxy
 
     init {
         DaggerDataComponent.builder()
             .appComponent(Application.appComponent)
             .build().inject(this)
 
-        dataProvider.attach()
+        metadataProxy.attach()
     }
 
     override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? {
@@ -29,7 +29,7 @@ class IdListTrackListQueryFactory(private val idList: List<String>): ITrackListQ
         }
 
         val missing = RemoteTrack(JSONObject())
-        return dataProvider.getTracks(window)
+        return metadataProxy.getTracks(window)
             .flatMap{ it ->
                 val result = mutableListOf<ITrack>()
                 for (i in 0 until max) {
@@ -43,6 +43,6 @@ class IdListTrackListQueryFactory(private val idList: List<String>): ITrackListQ
     override fun offline(): Boolean = false
 
     fun destroy() {
-        dataProvider.destroy()
+        metadataProxy.destroy()
     }
 }

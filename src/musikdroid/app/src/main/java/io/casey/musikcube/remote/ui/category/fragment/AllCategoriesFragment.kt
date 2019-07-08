@@ -6,18 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
 import io.casey.musikcube.remote.R
-import io.casey.musikcube.remote.service.websocket.model.IDataProvider
+import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.ui.category.adapter.AllCategoriesAdapter
 import io.casey.musikcube.remote.ui.navigation.Navigate
 import io.casey.musikcube.remote.ui.shared.activity.ITitleProvider
 import io.casey.musikcube.remote.ui.shared.extension.getLayoutId
 import io.casey.musikcube.remote.ui.shared.extension.setupDefaultRecyclerView
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.mixin.DataProviderMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.reactivex.rxkotlin.subscribeBy
 
 class AllCategoriesFragment: BaseFragment(), ITitleProvider {
-    private lateinit var data: DataProviderMixin
+    private lateinit var data: MetadataProxyMixin
     private lateinit var adapter: AllCategoriesAdapter
 
     override val title: String
@@ -25,7 +25,7 @@ class AllCategoriesFragment: BaseFragment(), ITitleProvider {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
-        data = mixin(DataProviderMixin())
+        data = mixin(MetadataProxyMixin())
 
         super.onCreate(savedInstanceState)
 
@@ -41,7 +41,7 @@ class AllCategoriesFragment: BaseFragment(), ITitleProvider {
     override fun onInitObservables() {
         disposables.add(data.provider.observeState().subscribeBy(
             onNext = { states ->
-                if (states.first == IDataProvider.State.Connected) {
+                if (states.first == IMetadataProxy.State.Connected) {
                     requery()
                 }
             },
