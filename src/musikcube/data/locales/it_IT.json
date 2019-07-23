@@ -52,7 +52,7 @@
         "settings_transport_type_gapless": "gapless",
         "settings_transport_type_crossfade": "crossfade",
         "settings_first_run_dialog_title": "Benvenuti su musikcube!",
-        "settings_first_run_dialog_body": "aggiungere alcune directory che contengono file musicali, quindi premere '%s' per mostrare le librerie e inzia ad ascolatere!\n\nfor troubleshooting, press '%s' to enter the console view.\n\nother keyboard shorcuts are displayed in the command bar at the bottom of the screen. toggle command mode by pressing 'ESC'.\n\nselect 'ok' to get started.",
+        "settings_first_run_dialog_body": "aggiungere alcune directory che contengono file musicali, quindi premere '%s' per mostrare le librerie e inzia ad ascolatere!\n\nfor troubleshooting, press '%s' to enter the console view.\n\nother keyboard shortcuts are displayed in the command bar at the bottom of the screen. toggle command mode by pressing 'ESC'.\n\nselect 'ok' to get started.",
         "settings_needs_restart": "Hai bisogno di riavviare Musikcube per rendere effettive le modifiche",
         "settings_selected_locale": "locale: ",
         "settings_seek_not_scrub": "seek playback (don't scrub)",
