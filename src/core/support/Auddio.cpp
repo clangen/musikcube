@@ -80,6 +80,7 @@ namespace musik { namespace core { namespace auddio {
 
         if (!apiToken.size()) {
             callback(track, "");
+            return;
         }
 
         std::string artist = encode(track->GetString("artist"));
