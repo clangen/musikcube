@@ -1,11 +1,11 @@
 package io.casey.musikcube.remote.service.playback.impl.streaming.db;
 
-import java.util.List;
-
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+
+import java.util.List;
 
 @Dao
 public interface OfflineTrackDao {

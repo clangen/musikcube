@@ -9,7 +9,6 @@ import io.casey.musikcube.remote.ui.category.constant.NavigationType
 import io.casey.musikcube.remote.ui.category.fragment.CategoryBrowseFragment
 import io.casey.musikcube.remote.ui.shared.activity.FragmentActivityWithTransport
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.service.websocket.WebSocketService.State as SocketState
 
 class CategoryBrowseActivity: FragmentActivityWithTransport() {
     private val category

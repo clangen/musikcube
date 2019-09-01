@@ -1,6 +1,5 @@
 package io.casey.musikcube.remote.ui.shared.extension
 
-import android.app.Dialog
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
@@ -11,7 +10,6 @@ import android.os.Handler
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
-import android.util.TypedValue
 import android.view.Menu
 import android.view.View
 import android.view.inputmethod.InputMethodManager

@@ -100,7 +100,7 @@
             android:visibility="visible"
             android:text="@string/settings_disable_cert_validation"/>
 
-        <androidx.legacy.widget.Space
+        <View
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -130,7 +130,7 @@
 
         </LinearLayout>
 
-        <androidx.legacy.widget.Space
+        <View
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -147,7 +147,7 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="24dp"/>
 
-        <androidx.legacy.widget.Space
+        <View
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -164,7 +164,7 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="24dp"/>
 
-        <androidx.legacy.widget.Space
+        <View
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 
@@ -181,7 +181,7 @@
             android:layout_height="match_parent"
             android:layout_marginLeft="24dp"/>
 
-        <androidx.legacy.widget.Space
+        <View
             android:layout_width="0dp"
             android:layout_height="16dp"/>
 

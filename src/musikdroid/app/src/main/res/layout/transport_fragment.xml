@@ -22,7 +22,7 @@
             android:layout_weight="1.0"
             android:text="@string/button_prev"/>
 
-        <androidx.legacy.widget.Space
+        <View
             android:layout_width="2dp"
             android:layout_height="0dp"/>
 
@@ -34,7 +34,7 @@
             android:layout_weight="1.0"
             android:text="@string/button_play"/>
 
-        <androidx.legacy.widget.Space
+        <View
             android:layout_width="2dp"
             android:layout_height="0dp"/>
 
@@ -48,7 +48,7 @@
 
     </LinearLayout>
 
-    <androidx.legacy.widget.Space
+    <View
         android:layout_width="0dp"
         android:layout_height="2dp"/>
 

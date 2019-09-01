@@ -16,8 +16,8 @@ import io.casey.musikcube.remote.ui.playqueue.fragment.PlayQueueFragment
 import io.casey.musikcube.remote.ui.settings.activity.*
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ItemContextMenuMixin
+import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.view.EmptyListView
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
