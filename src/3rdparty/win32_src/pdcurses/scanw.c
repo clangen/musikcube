@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -133,17 +133,17 @@ int vw_scanw(WINDOW *win, const char *fmt, va_list varglist)
 
 #ifndef HAVE_VSSCANF
 
-/* _pdc_vsscanf() - Internal routine to parse and format an input 
-   buffer. It scans a series of input fields; each field is formatted 
-   according to a supplied format string and the formatted input is 
-   stored in the variable number of addresses passed. Returns the number 
+/* _pdc_vsscanf() - Internal routine to parse and format an input
+   buffer. It scans a series of input fields; each field is formatted
+   according to a supplied format string and the formatted input is
+   stored in the variable number of addresses passed. Returns the number
    of input fields or EOF on error.
 
-   Don't compile this unless required. Some compilers (at least Borland 
+   Don't compile this unless required. Some compilers (at least Borland
    C++ 3.0) have to link with math libraries due to the use of floats.
 
-   Based on vsscanf.c and input.c from emx 0.8f library source, 
-   Copyright (c) 1990-1992 by Eberhard Mattes, who has kindly agreed to 
+   Based on vsscanf.c and input.c from emx 0.8f library source,
+   Copyright (c) 1990-1992 by Eberhard Mattes, who has kindly agreed to
    its inclusion in PDCurses. */
 
 #define WHITE(x) ((x) == ' ' || (x) == '\t' || (x) == '\n')

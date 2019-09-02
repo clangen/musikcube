@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -362,7 +362,7 @@ int PDC_expand_combined_characters( const cchar_t c, cchar_t *added)
         combos = NULL;
         return( 0);
     }
-    assert( c >= COMBINED_CHAR_START && c < COMBINED_CHAR_START + n_combos);
+    assert( (int)c >= COMBINED_CHAR_START && (int)c < COMBINED_CHAR_START + n_combos);
     *added = combos[c - COMBINED_CHAR_START].added;
     return( combos[c - COMBINED_CHAR_START].root);
 }
@@ -435,6 +435,8 @@ int waddch( WINDOW *win, const chtype ch)
             if (!SP->raw_out)
                 x = 0;
 
+               /* Had this commented out.  I think it matters in */
+               /* wide,  non-UTF8 mode on some platforms. */
             wclrtoeol(win);
 
             if (++y > win->_bmarg)

@@ -1,9 +1,9 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
-/* Deprecated functions. These should not be used, and will eventually 
-   be removed. They're here solely for the benefit of applications that 
+/* Deprecated functions. These should not be used, and will eventually
+   be removed. They're here solely for the benefit of applications that
    linked to them in older versions of PDCurses. */
 
 bool PDC_check_bios_key(void)

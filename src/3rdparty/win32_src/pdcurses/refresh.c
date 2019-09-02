@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -82,7 +82,7 @@ int wnoutrefresh(WINDOW *win)
             int first = win->_firstch[i]; /* first changed */
             int last = win->_lastch[i];   /* last changed */
 
-            /* ignore areas on the outside that are marked as changed, 
+            /* ignore areas on the outside that are marked as changed,
                but really aren't */
 
             while (first <= last && src[first] == dest[first])
@@ -98,7 +98,7 @@ int wnoutrefresh(WINDOW *win)
                 memcpy(dest + first, src + first,
                        (last - first + 1) * sizeof(chtype));
 
-                first += begx; 
+                first += begx;
                 last += begx;
 
                 if (first < curscr->_firstch[j] ||

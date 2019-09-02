@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -100,7 +100,7 @@ int waddchnstr(WINDOW *win, const chtype *ch, int n)
 
             PDC_LOG(("y %d x %d minx %d maxx %d *ptr %x *ch"
                      " %x firstch: %d lastch: %d\n",
-                     y, x, minx, maxx, *ptr, *ch, 
+                     y, x, minx, maxx, *ptr, *ch,
                      win->_firstch[y], win->_lastch[y]));
 
             *ptr = *ch;
