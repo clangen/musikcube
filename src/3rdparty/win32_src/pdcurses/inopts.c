@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -277,7 +277,7 @@ void wtimeout(WINDOW *win, int delay)
 
     if (delay < 0)
     {
-        /* This causes a blocking read on the window, so turn on delay 
+        /* This causes a blocking read on the window, so turn on delay
            mode */
 
         win->_nodelay = FALSE;
@@ -285,7 +285,7 @@ void wtimeout(WINDOW *win, int delay)
     }
     else if (!delay)
     {
-        /* This causes a non-blocking read on the window, so turn off 
+        /* This causes a non-blocking read on the window, so turn off
            delay mode */
 
         win->_nodelay = TRUE;
@@ -293,8 +293,8 @@ void wtimeout(WINDOW *win, int delay)
     }
     else
     {
-        /* This causes the read on the window to delay for the number of 
-           milliseconds. Also forces the window into non-blocking read 
+        /* This causes the read on the window to delay for the number of
+           milliseconds. Also forces the window into non-blocking read
            mode */
 
         /*win->_nodelay = TRUE;*/

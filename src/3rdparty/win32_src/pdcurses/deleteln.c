@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -79,7 +79,7 @@ int wdeleteln(WINDOW *win)
     for (ptr = temp; (ptr - temp < win->_maxx); ptr++)
         *ptr = blank;           /* make a blank line */
 
-    if (win->_cury <= win->_bmarg) 
+    if (win->_cury <= win->_bmarg)
     {
         win->_firstch[win->_bmarg] = 0;
         win->_lastch[win->_bmarg] = win->_maxx - 1;

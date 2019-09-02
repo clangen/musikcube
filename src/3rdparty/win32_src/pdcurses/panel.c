@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -620,7 +620,7 @@ void update_panels(void)
 
     if (is_wintouched(stdscr))
         Wnoutrefresh(&_stdscr_pseudo_panel);
-    
+
     pan = _bottom_panel;
 
     while (pan)
