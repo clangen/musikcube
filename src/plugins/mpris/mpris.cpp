@@ -73,7 +73,7 @@ static class MPRISRemote : public IPlaybackRemote {
     private:
         IPlaybackService* playback;
         sd_bus* bus;
-        std::mutex mutex;
+        std::mutex sd_mutex;
         std::shared_ptr<std::thread> thread;
         bool mpris_initialized;
         bool stop_processing;
