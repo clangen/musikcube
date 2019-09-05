@@ -518,7 +518,7 @@ static int sd_response_id(sd_bus* bus, const char* path, const char* iface,
                           sd_bus_error* err)
 {
   const char* identity = "musikcube";
-  return sd_bus_message_append_basic(reply, 's', &identity);
+  return sd_bus_message_append_basic(reply, 's', identity);
 }
 
 static int sd_response_urischemes(sd_bus* bus, const char* path, const char* iface,
