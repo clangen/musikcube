@@ -122,32 +122,42 @@ static class MPRISRemote : public IPlaybackRemote {
         }
 
         virtual void SetPlaybackService(IPlaybackService* playback) {
-          std::unique_lock<decltype(mutex)> lock(mutex);
-          playback = playback;
+          std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
+          this->playback = playback;
           mpris_initialized = MPRISInit();
         }
 
         virtual void OnTrackChanged(ITrack* track) {
-          MPRISEmitChange(MPRISProperty::Metadata);
-          MPRISEmitSeek(playback->GetPosition());
+          if (playback) {
+            MPRISEmitChange(MPRISProperty::Metadata);
+            MPRISEmitSeek(playback->GetPosition());
+          }
         }
 
         virtual void OnPlaybackStateChanged(PlaybackState state) {
-          MPRISEmitChange(MPRISProperty::PlaybackStatus);
+          if (playback) {
+            MPRISEmitChange(MPRISProperty::PlaybackStatus);
+          }
         }
 
         virtual void OnVolumeChanged(double volume) {
-          MPRISEmitChange(MPRISProperty::Volume);
+          if (playback) {
+            MPRISEmitChange(MPRISProperty::Volume);
+          }
         }
 
         virtual void OnPlaybackTimeChanged(double time) {
-          MPRISEmitChange(MPRISProperty::Metadata);
-          MPRISEmitSeek(time);
+          if (playback) {
+            MPRISEmitChange(MPRISProperty::Metadata);
+            MPRISEmitSeek(time);
+          }
         }
 
         virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled) {
-          MPRISEmitChange(MPRISProperty::LoopStatus);
-          MPRISEmitChange(MPRISProperty::Shuffle);
+          if (playback) {
+            MPRISEmitChange(MPRISProperty::LoopStatus);
+            MPRISEmitChange(MPRISProperty::Shuffle);
+          }
         }
 
         virtual void OnPlayQueueChanged() {
