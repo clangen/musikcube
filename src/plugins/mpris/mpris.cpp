@@ -431,7 +431,7 @@ static int set_shuffle_status(sd_bus* bus, const char* path, const char *iface,
 static int get_volume(sd_bus* bus, const char* path, const char *iface,
                       const char* prop, sd_bus_message* reply,
                       void* data, sd_bus_error* err)  {
-  double vol = remote.MPRISGetVolume() / 100.0;
+  double vol = remote.MPRISGetVolume();
   return sd_bus_message_append_basic(reply, 'd', &vol);
 
 }
@@ -449,7 +449,7 @@ static int set_volume(sd_bus* bus, const char* path, const char *iface,
   } else if (_value > 1.0) {
     _value = 1.0;
   }
-  remote.MPRISSetVolume(_value*100.0);
+  remote.MPRISSetVolume(_value);
   return sd_bus_reply_method_return(value, "");
 }
 
