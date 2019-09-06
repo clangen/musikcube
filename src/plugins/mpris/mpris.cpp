@@ -2,6 +2,7 @@
 #include "mpris.h"
 #include "dbus.h"
 #include <map>
+#include <vector>
 #include <chrono>
 #include <functional>
 
@@ -12,12 +13,7 @@ extern "C" {
 thread_local char localBuffer[4096];
 static MPRISRemote remote;
 
-struct sd_null_term_str {
-  const char* string;
-  const char* terminator;
-};
-
-static const std::map<MPRISProperty, struct sd_null_term_str> MPRISPropertyNames =
+static const std::map<MPRISProperty, std::vector<const char*>> MPRISPropertyNames =
   {{MPRISProperty::Volume, {"Volume", NULL}},
    {MPRISProperty::PlaybackStatus, {"PlaybackStatus", NULL}},
    {MPRISProperty::LoopStatus, {"LoopStatus", NULL}},
