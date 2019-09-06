@@ -4,6 +4,7 @@
 #include <mutex>
 #include <map>
 #include <thread>
+#include <chrono>
 #include <functional>
 
 extern "C" {
@@ -102,8 +103,10 @@ static class MPRISRemote : public IPlaybackRemote {
       void MPRISLoop() {
         while (!stop_processing) {
           if (bus) {
+            std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
             while(sd_bus_process(bus, NULL) > 0);
           }
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
       }
 
