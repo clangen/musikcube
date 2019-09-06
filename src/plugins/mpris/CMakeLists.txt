@@ -1,5 +1,6 @@
 set (mpris_SOURCES
-  mpris.cpp)
+  mpris.cpp
+  dbus.cpp)
 
 find_package(PkgConfig)
 pkg_check_modules (SYSTEMD REQUIRED libsystemd)
