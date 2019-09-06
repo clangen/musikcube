@@ -79,12 +79,7 @@ class MPRISRemote : public IPlaybackRemote {
         virtual void Release() {
         }
 
-        virtual void SetPlaybackService(IPlaybackService* playback) {
-          std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
-          this->playback = playback;
-          mpris_initialized = MPRISInit();
-        }
-
+        virtual void SetPlaybackService(IPlaybackService* playback);
         virtual void OnTrackChanged(ITrack* track);
         virtual void OnPlaybackStateChanged(PlaybackState state);
         virtual void OnVolumeChanged(double volume);
@@ -92,138 +87,20 @@ class MPRISRemote : public IPlaybackRemote {
         virtual void OnModeChanged(RepeatMode repeatMode, bool shuffled);
         virtual void OnPlayQueueChanged() { }
 
-        void MPRISNext() {
-          if (playback) {
-            playback->Next();
-          }
-        }
-
-        void MPRISPrev() {
-          if (playback) {
-            playback->Previous();
-          }
-        }
-
-        void MPRISPause() {
-          if (playback) {
-            auto state = playback->GetPlaybackState();
-            if (state == PlaybackState::PlaybackPlaying) {
-              playback->PauseOrResume();
-            }
-          }
-        }
-
-        void MPRISPlayPause() {
-          if (playback) {
-            playback->PauseOrResume();
-          }
-        }
-
-        void MPRISStop() {
-          if (playback) {
-            playback->Stop();
-          }
-        }
-
-        void MPRISPlay() {
-          if (playback) {
-            auto state = playback->GetPlaybackState();
-            if (state != PlaybackState::PlaybackPlaying) {
-              playback->PauseOrResume();
-            }
-          }
-        }
-
-        void MPRISSeek(uint64_t position, bool relative=false) {
-          double _pos = ((double)position)/(1000*1000);
-          if (playback) {
-          }
-        }
-
-       const char* MPRISGetPlaybackStatus() {
-         if (playback) {
-           auto state = playback->GetPlaybackState();
-           switch (state) {
-             case PlaybackState::PlaybackPlaying:
-               return "Playing";
-             case PlaybackState::PlaybackPaused:
-               return "Paused";
-             case PlaybackState::PlaybackPrepared:
-             case PlaybackState::PlaybackStopped:
-             default:
-               break;
-           }
-         }
-         return "Stopped";
-       }
-
-      const char* MPRISGetLoopStatus() {
-        if (playback) {
-          auto state = playback->GetRepeatMode();
-          switch (state) {
-            case RepeatMode::RepeatTrack:
-              return "Track";
-            case RepeatMode::RepeatList:
-              return "Playlist";
-            case RepeatMode::RepeatNone:
-            default:
-              break;
-          }
-        }
-        return "None";
-      }
-
-      void MPRISSetLoopStatus(const char* state) {
-        if (playback) {
-          if (!strcmp(state, "None")) {
-            playback->SetRepeatMode(RepeatMode::RepeatNone);
-          }
-          else if (!strcmp(state, "Playlist")) {
-            playback->SetRepeatMode(RepeatMode::RepeatList);
-          }
-          else if (!strcmp(state, "Track")) {
-            playback->SetRepeatMode(RepeatMode::RepeatTrack);
-          }
-        }
-      }
-
-     uint64_t MPRISGetPosition() {
-       if (playback) {
-         return (uint64_t)(playback->GetPosition()*1000*1000);
-       }
-       return 0;
-     }
-
-     unsigned int MPRISGetShuffleStatus() {
-       if (playback) {
-         return playback->IsShuffled() ? 1: 0;
-       }
-       return 0;
-     }
-
-     void MPRISSetShuffleStatus(unsigned int state) {
-       if (playback)
-         {
-           unsigned int isShuffled = playback->IsShuffled() ? 1: 0;
-           if ((state & 0x1) ^ isShuffled) {
-             playback->ToggleShuffle();
-           }
-         }
-     }
-
-     double MPRISGetVolume() {
-       if (playback) {
-         return playback->GetVolume();
-       }
-       return 0.0;
-     }
-
-     void MPRISSetVolume(double vol) {
-       if (playback) {
-         playback->SetVolume(vol);
-       }
-     }
-
-     struct MPRISMetadataValues MPRISGetMetadata();
-
+        void MPRISNext();
+        void MPRISPrev();
+        void MPRISPause();
+        void MPRISPlayPause();
+        void MPRISStop();
+        void MPRISPlay();
+        void MPRISSeek(uint64_t position, bool relative=false);
+        const char* MPRISGetPlaybackStatus();
+        const char* MPRISGetLoopStatus();
+        void MPRISSetLoopStatus(const char* state);
+        uint64_t MPRISGetPosition();
+        unsigned int MPRISGetShuffleStatus();
+        void MPRISSetShuffleStatus(unsigned int state);
+        double MPRISGetVolume();
+        void MPRISSetVolume(double vol);
+        struct MPRISMetadataValues MPRISGetMetadata();
 };

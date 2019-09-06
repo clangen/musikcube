@@ -186,3 +186,141 @@ struct MPRISMetadataValues MPRISRemote::MPRISGetMetadata() {
   }
   return metadata;
 }
+
+void MPRISRemote::SetPlaybackService(IPlaybackService* playback) {
+  std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
+  this->playback = playback;
+  mpris_initialized = MPRISInit();
+}
+
+void MPRISRemote::MPRISNext() {
+  if (playback) {
+    playback->Next();
+  }
+}
+
+void MPRISRemote::MPRISPrev() {
+  if (playback) {
+    playback->Previous();
+  }
+}
+
+void MPRISRemote::MPRISPause() {
+  if (playback) {
+    auto state = playback->GetPlaybackState();
+    if (state == PlaybackState::PlaybackPlaying) {
+      playback->PauseOrResume();
+    }
+  }
+}
+
+void MPRISRemote::MPRISPlayPause() {
+  if (playback) {
+    playback->PauseOrResume();
+  }
+}
+
+void MPRISRemote::MPRISStop() {
+  if (playback) {
+    playback->Stop();
+  }
+}
+
+void MPRISRemote::MPRISPlay() {
+  if (playback) {
+    auto state = playback->GetPlaybackState();
+    if (state != PlaybackState::PlaybackPlaying) {
+      playback->PauseOrResume();
+    }
+  }
+}
+
+void MPRISRemote::MPRISSeek(uint64_t position, bool relative) {
+  double _pos = ((double)position)/(1000*1000);
+  if (playback) {
+  }
+}
+
+const char* MPRISRemote::MPRISGetPlaybackStatus() {
+  if (playback) {
+    auto state = playback->GetPlaybackState();
+    switch (state) {
+      case PlaybackState::PlaybackPlaying:
+        return "Playing";
+      case PlaybackState::PlaybackPaused:
+        return "Paused";
+      case PlaybackState::PlaybackPrepared:
+      case PlaybackState::PlaybackStopped:
+      default:
+        break;
+    }
+  }
+  return "Stopped";
+}
+
+const char* MPRISRemote::MPRISGetLoopStatus() {
+  if (playback) {
+    auto state = playback->GetRepeatMode();
+    switch (state) {
+      case RepeatMode::RepeatTrack:
+        return "Track";
+      case RepeatMode::RepeatList:
+        return "Playlist";
+      case RepeatMode::RepeatNone:
+      default:
+        break;
+    }
+  }
+  return "None";
+}
+
+void MPRISRemote::MPRISSetLoopStatus(const char* state) {
+  if (playback) {
+    if (!strcmp(state, "None")) {
+      playback->SetRepeatMode(RepeatMode::RepeatNone);
+    }
+    else if (!strcmp(state, "Playlist")) {
+      playback->SetRepeatMode(RepeatMode::RepeatList);
+    }
+    else if (!strcmp(state, "Track")) {
+      playback->SetRepeatMode(RepeatMode::RepeatTrack);
+    }
+  }
+}
+
+uint64_t MPRISRemote::MPRISGetPosition() {
+  if (playback) {
+    return (uint64_t)(playback->GetPosition()*1000*1000);
+  }
+  return 0;
+}
+
+unsigned int MPRISRemote::MPRISGetShuffleStatus() {
+  if (playback) {
+    return playback->IsShuffled() ? 1: 0;
+  }
+  return 0;
+}
+
+void MPRISRemote::MPRISSetShuffleStatus(unsigned int state) {
+  if (playback)
+    {
+      unsigned int isShuffled = playback->IsShuffled() ? 1: 0;
+      if ((state & 0x1) ^ isShuffled) {
+        playback->ToggleShuffle();
+      }
+    }
+}
+
+double MPRISRemote::MPRISGetVolume() {
+  if (playback) {
+    return playback->GetVolume();
+  }
+  return 0.0;
+}
+
+void MPRISRemote::MPRISSetVolume(double vol) {
+  if (playback) {
+    playback->SetVolume(vol);
+  }
+}
