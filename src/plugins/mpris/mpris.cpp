@@ -308,7 +308,7 @@ static class MPRISRemote : public IPlaybackRemote {
            metadata.album = GetMetadataString(curTrack, track::Album);
            metadata.discNumber = curTrack->GetInt32(track::DiscNum);
            metadata.trackNumber = curTrack->GetInt32(track::TrackNum);
-           metadata.length = curTrack->GetInt64(track::Duration);
+           metadata.length = curTrack->GetInt64(track::Duration)*1000*1000;
            metadata.available = true;
          }
        }
