@@ -466,6 +466,27 @@ static int set_volume(sd_bus* bus, const char* path, const char *iface,
   return sd_bus_reply_method_return(value, "");
 }
 
+static void sd_msg_append_dict(sd_bus_message* msg, const char* key, const void* value, char type) {
+  const char type_str[] = {type, 0};
+  sd_bus_message_open_container(msg, 'e', "sv");
+  sd_bus_message_append_basic(msg, 's', key);
+  sd_bus_message_open_container(msg, 'v', type_str);
+  sd_bus_message_append_basic(msg, type, value);
+  sd_bus_message_close_container(msg);
+  sd_bus_message_close_container(msg);
+}
+
+static void sd_msg_append_strlist_dict(sd_bus_message* msg, const char* key, const void* value) {
+  sd_bus_message_open_container(msg, 'e', "sv");
+  sd_bus_message_append_basic(msg, 's', key);
+  sd_bus_message_open_container(msg, 'v', "as");
+  sd_bus_message_open_container(msg, 'a', "s");
+  sd_bus_message_append_basic(msg, 's', value);
+  sd_bus_message_close_container(msg);
+  sd_bus_message_close_container(msg);
+  sd_bus_message_close_container(msg);
+}
+
 static int get_metadata(sd_bus* bus, const char* path, const char *iface,
                         const char* prop, sd_bus_message* reply,
                         void* data, sd_bus_error* err)  {
@@ -478,6 +499,19 @@ static int get_metadata(sd_bus* bus, const char* path, const char *iface,
   }
 
   if (metadata.available) {
+
+    // append fields
+    sd_msg_append_dict(reply, "mpris:trackid", metadata.trackid.c_str(), 'o');
+    sd_msg_append_dict(reply, "mpris:length", &metadata.length, 'x');
+    sd_msg_append_strlist_dict(reply, "xesam:artist", metadata.artist.c_str());
+    sd_msg_append_dict(reply, "xesam:title", metadata.title.c_str(), 's');
+    sd_msg_append_dict(reply, "xesam:album", metadata.album.c_str(), 's');
+    sd_msg_append_strlist_dict(reply, "xesam:albumArtist", metadata.albumArtist.c_str());
+    sd_msg_append_strlist_dict(reply, "xesam:genre", metadata.genre.c_str());
+    sd_msg_append_dict(reply, "xesam:trackNumber", &metadata.trackNumber, 'i');
+    sd_msg_append_dict(reply, "xesam:discNumber", &metadata.discNumber, 'i');
+    sd_msg_append_strlist_dict(reply, "xesam:comment", metadata.comment.c_str());
+
 
   }
   ret = sd_bus_message_close_container(reply);
