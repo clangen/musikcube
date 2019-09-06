@@ -10,16 +10,15 @@ extern "C" {
   #include <unistd.h>
 }
 
-thread_local char localBuffer[4096];
+thread_local char localBuffer[1024];
 static MPRISRemote remote;
 
-static const std::map<MPRISProperty, std::vector<const char*>> MPRISPropertyNames =
+static const std::map<MPRISProperty, const std::vector<const char*>> MPRISPropertyNames =
   {{MPRISProperty::Volume, {"Volume", NULL}},
    {MPRISProperty::PlaybackStatus, {"PlaybackStatus", NULL}},
    {MPRISProperty::LoopStatus, {"LoopStatus", NULL}},
    {MPRISProperty::Shuffle, {"Shuffle", NULL}},
    {MPRISProperty::Metadata, {"Metadata", NULL}}};
-
 
 static std::string GetMetadataString(ITrack* track, const char* key)
 {
@@ -27,21 +26,18 @@ static std::string GetMetadataString(ITrack* track, const char* key)
   return std::string(localBuffer);
 }
 
-
 static class MPRISPlugin : public IPlugin {
-public:
-  MPRISPlugin() {
-  }
-
-   void Release() { }
-   const char* Name() { return "MPRIS interface"; }
-   const char* Version() { return "0.1.0"; }
-   const char* Author() { return "brunosmmm"; }
-   const char* Guid() { return "457df67f-f489-415f-975e-282f470b1c10"; }
-   bool Configurable() { return false; }
-   void Configure() { }
-   void Reload() {  }
-   int SdkVersion() { return musik::core::sdk::SdkVersion; }
+    public:
+        MPRISPlugin() { }
+        void Release() { }
+        const char* Name() { return "MPRIS interface"; }
+        const char* Version() { return "0.1.0"; }
+        const char* Author() { return "brunosmmm"; }
+        const char* Guid() { return "457df67f-f489-415f-975e-282f470b1c10"; }
+        bool Configurable() { return false; }
+        void Configure() { }
+        void Reload() { }
+        int SdkVersion() { return musik::core::sdk::SdkVersion; }
 } plugin;
 
 extern "C" IPlugin* GetPlugin() {
@@ -327,7 +323,6 @@ void MPRISRemote::MPRISSetVolume(double vol) {
     playback->SetVolume(vol);
   }
 }
-
 
 MPRISMetadataValues::MPRISMetadataValues() {
   trackid = "";
