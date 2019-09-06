@@ -631,7 +631,6 @@ static const sd_bus_vtable musikcube_mpp_table[] = {
   SD_BUS_WRITABLE_PROPERTY("Rate", "d", sd_response_rate, sd_write_nop, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_METHOD("SetPosition", "ox", "", sd_method_nop, 0), // unimplemented
 	SD_BUS_METHOD("OpenUri", "s", "", sd_method_nop, 0), // unimplemented
-
 	SD_BUS_SIGNAL("Seeked", "x", 0),
   SD_BUS_VTABLE_END
 };
