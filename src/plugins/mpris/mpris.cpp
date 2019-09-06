@@ -84,6 +84,7 @@ static class MPRISRemote : public IPlaybackRemote {
         void MPRISEmitChange(MPRISProperty prop) {
           if (bus) {
             char** strv = (char**)(&MPRISPropertyNames.at(prop));
+            std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
             sd_bus_emit_properties_changed_strv(bus, "/org/mpris/MediaPlayer2",
                                                 "org.mpris.MediaPlayer2.Player",
                                                 strv);
@@ -94,6 +95,7 @@ static class MPRISRemote : public IPlaybackRemote {
        void MPRISEmitSeek(double curpos) {
          if (bus) {
            int64_t position = (int64_t)(curpos*1000*1000);
+           std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
            sd_bus_emit_signal(bus, "/org/mpris/MediaPlayer2",
                               "org.mpris.MediaPlayer2.Player",
                               "Seeked", "x", position);
