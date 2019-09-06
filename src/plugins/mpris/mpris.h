@@ -34,20 +34,7 @@ struct MPRISMetadataValues {
   uint32_t trackNumber;
   uint32_t discNumber;
   bool available;
-
-  MPRISMetadataValues() {
-    trackid = "";
-    length = 0;
-    artist = "";
-    title = "";
-    album = "";
-    albumArtist = "";
-    genre = "";
-    comment = "";
-    trackNumber = 0;
-    discNumber = 0;
-    available = false;
-  }
+  MPRISMetadataValues();
 };
 
 class MPRISRemote : public IPlaybackRemote {

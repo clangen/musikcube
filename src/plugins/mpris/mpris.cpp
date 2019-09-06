@@ -324,3 +324,18 @@ void MPRISRemote::MPRISSetVolume(double vol) {
     playback->SetVolume(vol);
   }
 }
+
+
+MPRISMetadataValues::MPRISMetadataValues() {
+  trackid = "";
+  length = 0;
+  artist = "";
+  title = "";
+  album = "";
+  albumArtist = "";
+  genre = "";
+  comment = "";
+  trackNumber = 0;
+  discNumber = 0;
+  available = false;
+}
