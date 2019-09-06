@@ -5,8 +5,6 @@
 #include <core/sdk/IPlugin.h>
 #include <mutex>
 #include <thread>
-#include <chrono>
-#include <functional>
 
 extern "C" {
   #include <systemd/sd-bus.h>

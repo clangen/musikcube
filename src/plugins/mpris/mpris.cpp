@@ -2,7 +2,8 @@
 #include "mpris.h"
 #include "dbus.h"
 #include <map>
-
+#include <chrono>
+#include <functional>
 
 thread_local char localBuffer[4096];
 static MPRISRemote remote;
