@@ -5,6 +5,10 @@
 #include <chrono>
 #include <functional>
 
+extern "C" {
+  #include <unistd.h>
+}
+
 thread_local char localBuffer[4096];
 static MPRISRemote remote;
 
@@ -54,6 +58,7 @@ extern "C" IPlaybackRemote* GetPlaybackRemote() {
 
 bool MPRISRemote::MPRISInit() {
   int ret = 0;
+  std::string requested_name;
 
   if (this->mpris_initialized) {
     return true;
@@ -79,7 +84,8 @@ bool MPRISRemote::MPRISInit() {
     return false;
   }
 
-  ret = sd_bus_request_name(this->bus, "org.mpris.MediaPlayer2.musikcube", 0);
+  requested_name = std::string("org.mpris.MediaPlayer2.musikcube.instance") + std::to_string(getpid());
+  ret = sd_bus_request_name(this->bus, requested_name.c_str(), 0);
   if (ret < 0) {
     MPRISDeinit();
     return false;
