@@ -44,6 +44,12 @@ on freebsd musikcube can be installed as follows:
 
 - `pkg install musikcube`
 
+on windows, you can install via chocolatey:
+
+- `choco install musikcube`
+
+then run using shell, Win+R dialog or by typing in Start Menu `musikcube` or `mcube`.
+
 # raspberry pi
 
 musikcube runs well on a raspberry pi, connected to you home stereo. [see here for detailed setup instructions](https://github.com/clangen/musikcube/wiki/raspberry-pi).
