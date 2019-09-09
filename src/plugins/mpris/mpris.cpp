@@ -234,9 +234,16 @@ void MPRISRemote::MPRISPlay() {
     }
 }
 
-void MPRISRemote::MPRISSeek(uint64_t position, bool relative) {
+void MPRISRemote::MPRISSeek(int64_t position, bool relative) {
     double _pos = ((double)position)/(1000*1000);
     if (playback) {
+      if (!relative) {
+        playback->SetPosition(_pos);
+      }
+      else {
+        double curPos = playback->GetPosition();
+        playback->SetPosition(curPos+_pos);
+      }
     }
 }
 

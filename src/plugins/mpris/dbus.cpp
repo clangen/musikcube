@@ -50,6 +50,18 @@ static int seek_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
     return sd_bus_reply_method_return(m, "");
 }
 
+static int set_position_wrapper(sd_bus_message* m, void* data, sd_bus_error* err) {
+  MPRISRemote* remote = (MPRISRemote*)data;
+  const char buf[512] = "";
+  int64_t pos = 0;
+  int ret = sd_bus_message_read(m, "ox", &buf, &pos);
+  if (ret < 0) {
+    return ret;
+  }
+  remote->MPRISSeek(pos, false);
+  return sd_bus_reply_method_return(m, "");
+}
+
 static int get_playback_status(sd_bus* bus, const char* path, const char *iface,
                                const char* prop, sd_bus_message* reply,
                                void* data, sd_bus_error* err) {
@@ -295,7 +307,7 @@ const sd_bus_vtable musikcube_mpp_table[] = {
     SD_BUS_PROPERTY("MinimumRate", "d", sd_response_rate, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
     SD_BUS_PROPERTY("MaximumRate", "d", sd_response_rate, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
     SD_BUS_WRITABLE_PROPERTY("Rate", "d", sd_response_rate, sd_write_nop, 0, SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-    SD_BUS_METHOD("SetPosition", "ox", "", sd_method_nop, 0), // TODO implement
+    SD_BUS_METHOD("SetPosition", "ox", "", set_position_wrapper, 0),
     SD_BUS_METHOD("OpenUri", "s", "", sd_method_nop, 0),
     SD_BUS_SIGNAL("Seeked", "x", 0),
     SD_BUS_VTABLE_END

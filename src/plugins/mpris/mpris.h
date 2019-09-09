@@ -76,7 +76,7 @@ class MPRISRemote : public IPlaybackRemote {
         void MPRISPlayPause();
         void MPRISStop();
         void MPRISPlay();
-        void MPRISSeek(uint64_t position, bool relative=false);
+        void MPRISSeek(int64_t position, bool relative=false);
         const char* MPRISGetPlaybackStatus();
         const char* MPRISGetLoopStatus();
         void MPRISSetLoopStatus(const char* state);
