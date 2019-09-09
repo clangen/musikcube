@@ -12,13 +12,12 @@ extern "C" {
 
 using namespace musik::core::sdk;
 
-enum MPRISProperty
-    {
-     Volume = 1,
-     PlaybackStatus = 2,
-     LoopStatus = 3,
-     Shuffle = 4,
-     Metadata = 5,
+enum MPRISProperty {
+    Volume = 1,
+    PlaybackStatus = 2,
+    LoopStatus = 3,
+    Shuffle = 4,
+    Metadata = 5,
 };
 
 struct MPRISMetadataValues {
