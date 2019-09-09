@@ -3,7 +3,6 @@
 #include "dbus.h"
 #include <map>
 #include <vector>
-#include <chrono>
 #include <functional>
 
 extern "C" {
@@ -125,10 +124,11 @@ void MPRISRemote::MPRISEmitSeek(double curpos) {
 void MPRISRemote::MPRISLoop() {
     while (!stop_processing) {
         if (bus) {
-            std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
-            while(sd_bus_process(bus, NULL) > 0);
+            if (sd_bus_process(bus, NULL) > 0) {
+              continue;
+            }
+            sd_bus_wait(bus, (uint64_t)-1);
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
