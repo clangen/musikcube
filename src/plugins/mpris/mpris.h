@@ -7,32 +7,33 @@
 #include <thread>
 
 extern "C" {
-  #include <systemd/sd-bus.h>
+    #include <systemd/sd-bus.h>
 }
 
 using namespace musik::core::sdk;
 
-enum MPRISProperty {
-    Volume = 1,
-    PlaybackStatus = 2,
-    LoopStatus = 3,
-    Shuffle = 4,
-    Metadata = 5,
+enum MPRISProperty
+    {
+     Volume = 1,
+     PlaybackStatus = 2,
+     LoopStatus = 3,
+     Shuffle = 4,
+     Metadata = 5,
 };
 
 struct MPRISMetadataValues {
-  std::string trackid;
-  uint64_t length;
-  std::string artist;
-  std::string title;
-  std::string album;
-  std::string albumArtist;
-  std::string genre;
-  std::string comment;
-  uint32_t trackNumber;
-  uint32_t discNumber;
-  bool available;
-  MPRISMetadataValues();
+    std::string trackid;
+    uint64_t length;
+    std::string artist;
+    std::string title;
+    std::string album;
+    std::string albumArtist;
+    std::string genre;
+    std::string comment;
+    uint32_t trackNumber;
+    uint32_t discNumber;
+    bool available;
+    MPRISMetadataValues();
 };
 
 class MPRISRemote : public IPlaybackRemote {
@@ -52,18 +53,16 @@ class MPRISRemote : public IPlaybackRemote {
 
     public:
         MPRISRemote()
-          : playback(NULL),
-            bus(NULL),
-            stop_processing(false),
-            mpris_initialized(false) {}
+            : playback(NULL),
+              bus(NULL),
+              stop_processing(false),
+              mpris_initialized(false) {}
 
         ~MPRISRemote() {
-          MPRISDeinit();
+            MPRISDeinit();
         }
 
-        virtual void Release() {
-        }
-
+        virtual void Release() { }
         virtual void SetPlaybackService(IPlaybackService* playback);
         virtual void OnTrackChanged(ITrack* track);
         virtual void OnPlaybackStateChanged(PlaybackState state);
