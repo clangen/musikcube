@@ -89,10 +89,9 @@ bool MPRISRemote::MPRISInit() {
 }
 
 void MPRISRemote::MPRISDeinit() {
-    if (this->bus) {
-        sd_bus_unref(this->bus);
-        bus = NULL;
-    }
+
+    sd_bus_close_unref(this->bus);
+    bus = NULL;
     stop_processing = true;
     if (thread) {
         thread->join();
@@ -125,9 +124,11 @@ void MPRISRemote::MPRISLoop() {
     while (!stop_processing) {
         if (bus) {
             if (sd_bus_process(bus, NULL) > 0) {
-              continue;
+                continue;
             }
-            sd_bus_wait(bus, (uint64_t)-1);
+            if (sd_bus_wait(bus, 500*1000) < 0) {
+                break;
+            }
         }
     }
 }
