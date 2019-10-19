@@ -257,6 +257,7 @@ IWindowPtr LayoutBase::GetWindowAt(size_t position) {
 
 bool LayoutBase::SetFocus(IWindowPtr focus) {
     if (!focus) {
+        this->focused = NO_FOCUS;
         this->EnsureValidFocus();
         return true;
     }
