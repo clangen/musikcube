@@ -44,10 +44,14 @@ set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 
 link_directories ("${musikcube_SOURCE_DIR}/bin/plugins")
 
+set(COMMON_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
+
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
+  set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS})
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS} dl)
 else()
-  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} dl curl pthread crypto atomic)
+  set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS} dl atomic)
 endif()
 
 include_directories (
