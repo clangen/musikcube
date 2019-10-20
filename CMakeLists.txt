@@ -47,7 +47,7 @@ link_directories ("${musikcube_SOURCE_DIR}/bin/plugins")
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
 else()
-  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} dl curl pthread crypto)
+  set (musikcube_LINK_LIBS ${BOOST_LINK_LIBS} dl curl pthread crypto atomic)
 endif()
 
 include_directories (
