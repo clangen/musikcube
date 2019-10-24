@@ -68,8 +68,8 @@
     <_ProjectFileVersion>14.0.25123.0</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)/bin32/$(Configuration)/plugins\</OutDir>
-    <IntDir>./obj32/$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)/bin32/$(Configuration)/plugins/</OutDir>
+    <IntDir>./obj32/$(Configuration)/</IntDir>
     <LinkIncremental>true</LinkIncremental>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
@@ -84,8 +84,8 @@
     <IntDir>./obj64/$(Configuration)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)/bin32/$(Configuration)/plugins\</OutDir>
-    <IntDir>./obj32/$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)/bin32/$(Configuration)/plugins/</OutDir>
+    <IntDir>./obj32/$(Configuration)/</IntDir>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules />
     <CodeAnalysisRuleAssemblies />

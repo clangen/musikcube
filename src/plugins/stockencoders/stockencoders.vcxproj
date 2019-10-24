@@ -69,14 +69,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)\bin32\$(Configuration)\plugins\</OutDir>
-    <IntDir>.\obj32\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)/bin32/$(Configuration)/plugins/</OutDir>
+    <IntDir>./obj32/$(Configuration)/</IntDir>
     <LinkIncremental>
     </LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)\bin32\$(Configuration)\plugins\</OutDir>
-    <IntDir>.\obj32\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)/bin32/$(Configuration)/plugins/</OutDir>
+    <IntDir>./obj32/$(Configuration)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)/bin64/$(Configuration)/plugins/</OutDir>
