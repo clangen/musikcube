@@ -1,3 +1,4 @@
+/*	$OpenBSD: curve25519.h,v 1.3 2019/05/11 15:55:52 tb Exp $ */
 /*
  * Copyright (c) 2015, Google Inc.
  *

@@ -1,4 +1,4 @@
-/* $OpenBSD: ecdsa.h,v 1.5 2018/03/17 15:24:44 tb Exp $ */
+/* $OpenBSD: ecdsa.h,v 1.8 2019/01/19 01:17:41 tb Exp $ */
 /**
  * \file   crypto/ecdsa/ecdsa.h Include file for the OpenSSL ECDSA functions
  * \author Written by Nils Larsch for the OpenSSL project
@@ -267,6 +267,37 @@ int ECDSA_get_ex_new_index(long argl, void *argp, CRYPTO_EX_new *new_func,
     CRYPTO_EX_dup *dup_func, CRYPTO_EX_free *free_func);
 int ECDSA_set_ex_data(EC_KEY *d, int idx, void *arg);
 void *ECDSA_get_ex_data(EC_KEY *d, int idx);
+
+
+/* XXX should be in ec.h, but needs ECDSA_SIG */
+void EC_KEY_METHOD_set_sign(EC_KEY_METHOD *meth,
+    int (*sign)(int type, const unsigned char *dgst,
+	int dlen, unsigned char *sig, unsigned int *siglen,
+	const BIGNUM *kinv, const BIGNUM *r, EC_KEY *eckey),
+    int (*sign_setup)(EC_KEY *eckey, BN_CTX *ctx_in,
+	BIGNUM **kinvp, BIGNUM **rp),
+    ECDSA_SIG *(*sign_sig)(const unsigned char *dgst,
+	int dgst_len, const BIGNUM *in_kinv, const BIGNUM *in_r,
+	EC_KEY *eckey));
+void EC_KEY_METHOD_set_verify(EC_KEY_METHOD *meth,
+    int (*verify)(int type, const unsigned char *dgst, int dgst_len,
+	const unsigned char *sigbuf, int sig_len, EC_KEY *eckey),
+    int (*verify_sig)(const unsigned char *dgst, int dgst_len,
+	const ECDSA_SIG *sig, EC_KEY *eckey));
+void EC_KEY_METHOD_get_sign(const EC_KEY_METHOD *meth,
+    int (**psign)(int type, const unsigned char *dgst,
+	int dlen, unsigned char *sig, unsigned int *siglen,
+	const BIGNUM *kinv, const BIGNUM *r, EC_KEY *eckey),
+    int (**psign_setup)(EC_KEY *eckey, BN_CTX *ctx_in,
+	BIGNUM **kinvp, BIGNUM **rp),
+    ECDSA_SIG *(**psign_sig)(const unsigned char *dgst,
+	int dgst_len, const BIGNUM *in_kinv, const BIGNUM *in_r,
+	EC_KEY *eckey));
+void EC_KEY_METHOD_get_verify(const EC_KEY_METHOD *meth,
+    int (**pverify)(int type, const unsigned char *dgst, int dgst_len,
+	const unsigned char *sigbuf, int sig_len, EC_KEY *eckey),
+    int (**pverify_sig)(const unsigned char *dgst, int dgst_len,
+	const ECDSA_SIG *sig, EC_KEY *eckey));
 
 
 /* BEGIN ERROR CODES */

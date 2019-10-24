@@ -19,7 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-/* $Id: lame.h,v 1.189.2.1 2012/01/08 23:49:58 robert Exp $ */
+/* $Id: lame.h,v 1.192 2017/08/31 14:14:46 robert Exp $ */
 
 #ifndef LAME_LAME_H
 #define LAME_LAME_H
@@ -622,8 +622,9 @@ int CDECL lame_get_noclipGainChange(const lame_global_flags *);
    not clip or the value cannot be determined */
 float CDECL lame_get_noclipScale(const lame_global_flags *);
 
-
-
+/* returns the limit of PCM samples, which one can pass in an encode call
+   under the constrain of a provided buffer of size buffer_size */
+int CDECL lame_get_maximum_number_of_samples(lame_t gfp, size_t buffer_size);
 
 
 
@@ -837,7 +838,25 @@ int CDECL lame_encode_buffer_int(
         const int           mp3buf_size ); /* number of valid octets in this
                                               stream                        */
 
-
+/*
+ * as above, but for interleaved data.
+ * !! NOTE: !! data must still be scaled to be in the same range as
+ * type 'int32_t'.   Data should be in the range:  +/- 2^(8*size(int32_t)-1)
+ * NOTE:
+ * num_samples = number of samples in the L (or R)
+ * channel, not the total number of samples in pcm[]
+ */
+int
+lame_encode_buffer_interleaved_int(
+        lame_t          gfp,
+        const int       pcm [],            /* PCM data for left and right
+                                              channel, interleaved          */
+        const int       nsamples,          /* number of samples per channel,
+                                              _not_ number of samples in
+                                              pcm[]                         */
+        unsigned char*  mp3buf,            /* pointer to encoded MP3 stream */
+        const int       mp3buf_size );     /* number of valid octets in this
+                                              stream                        */
 
 
 

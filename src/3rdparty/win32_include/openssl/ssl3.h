@@ -1,4 +1,4 @@
-/* $OpenBSD: ssl3.h,v 1.46 2017/08/28 17:36:58 jsing Exp $ */
+/* $OpenBSD: ssl3.h,v 1.49 2018/11/08 22:28:52 jsing Exp $ */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -348,13 +348,9 @@ typedef struct ssl3_buffer_st {
  */
 #define SSL3_CT_NUMBER			11
 
-
 #define SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS	0x0001
-#define SSL3_FLAGS_DELAY_CLIENT_FINISHED	0x0002
-#define SSL3_FLAGS_POP_BUFFER			0x0004
-#define TLS1_FLAGS_TLS_PADDING_BUG		0x0
 #define TLS1_FLAGS_SKIP_CERT_VERIFY		0x0010
-#define TLS1_FLAGS_KEEP_HANDSHAKE		0x0020
+#define TLS1_FLAGS_FREEZE_TRANSCRIPT		0x0020
 #define SSL3_FLAGS_CCS_OK			0x0080
 
 #ifndef OPENSSL_NO_SSL_INTERN
@@ -366,18 +362,6 @@ typedef struct ssl3_state_st {
 
 	unsigned char server_random[SSL3_RANDOM_SIZE];
 	unsigned char client_random[SSL3_RANDOM_SIZE];
-
-	SSL3_BUFFER rbuf;	/* read IO goes into here */
-	SSL3_BUFFER wbuf;	/* write IO goes into here */
-
-	/* we allow one fatal and one warning alert to be outstanding,
-	 * send close alert via the warning alert */
-	int alert_dispatch;
-	unsigned char send_alert[2];
-
-	struct {
-		int new_mac_secret_size;
-	} tmp;
 
 	struct ssl3_state_internal_st *internal;
 } SSL3_STATE;

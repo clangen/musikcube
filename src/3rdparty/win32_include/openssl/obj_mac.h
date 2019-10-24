@@ -3895,6 +3895,16 @@
 #define NID_id_GostR3410_2001_ParamSet_cc		854
 #define OBJ_id_GostR3410_2001_ParamSet_cc		OBJ_cryptocom,1L,8L,1L
 
+#define SN_sm3		"SM3"
+#define LN_sm3		"sm3"
+#define NID_sm3		968
+#define OBJ_sm3		1L,2L,156L,10197L,1L,401L
+
+#define SN_sm3WithRSAEncryption		"RSA-SM3"
+#define LN_sm3WithRSAEncryption		"sm3WithRSAEncryption"
+#define NID_sm3WithRSAEncryption		969
+#define OBJ_sm3WithRSAEncryption		1L,2L,156L,10197L,1L,504L
+
 #define SN_camellia_128_cbc		"CAMELLIA-128-CBC"
 #define LN_camellia_128_cbc		"camellia-128-cbc"
 #define NID_camellia_128_cbc		751
@@ -4020,6 +4030,54 @@
 #define NID_seed_ofb128		778
 #define OBJ_seed_ofb128		OBJ_kisa,1L,6L
 
+#define SN_ISO_CN		"ISO-CN"
+#define LN_ISO_CN		"ISO CN Member Body"
+#define NID_ISO_CN		970
+#define OBJ_ISO_CN		OBJ_member_body,156L
+
+#define SN_oscca		"oscca"
+#define NID_oscca		971
+#define OBJ_oscca		OBJ_ISO_CN,10197L
+
+#define SN_sm_scheme		"sm-scheme"
+#define NID_sm_scheme		972
+#define OBJ_sm_scheme		OBJ_oscca,1L
+
+#define SN_sm4_ecb		"SM4-ECB"
+#define LN_sm4_ecb		"sm4-ecb"
+#define NID_sm4_ecb		973
+#define OBJ_sm4_ecb		OBJ_sm_scheme,104L,1L
+
+#define SN_sm4_cbc		"SM4-CBC"
+#define LN_sm4_cbc		"sm4-cbc"
+#define NID_sm4_cbc		974
+#define OBJ_sm4_cbc		OBJ_sm_scheme,104L,2L
+
+#define SN_sm4_ofb128		"SM4-OFB"
+#define LN_sm4_ofb128		"sm4-ofb"
+#define NID_sm4_ofb128		975
+#define OBJ_sm4_ofb128		OBJ_sm_scheme,104L,3L
+
+#define SN_sm4_cfb128		"SM4-CFB"
+#define LN_sm4_cfb128		"sm4-cfb"
+#define NID_sm4_cfb128		976
+#define OBJ_sm4_cfb128		OBJ_sm_scheme,104L,4L
+
+#define SN_sm4_cfb1		"SM4-CFB1"
+#define LN_sm4_cfb1		"sm4-cfb1"
+#define NID_sm4_cfb1		977
+#define OBJ_sm4_cfb1		OBJ_sm_scheme,104L,5L
+
+#define SN_sm4_cfb8		"SM4-CFB8"
+#define LN_sm4_cfb8		"sm4-cfb8"
+#define NID_sm4_cfb8		978
+#define OBJ_sm4_cfb8		OBJ_sm_scheme,104L,6L
+
+#define SN_sm4_ctr		"SM4-CTR"
+#define LN_sm4_ctr		"sm4-ctr"
+#define NID_sm4_ctr		979
+#define OBJ_sm4_ctr		OBJ_sm_scheme,104L,7L
+
 #define SN_hmac		"HMAC"
 #define LN_hmac		"hmac"
 #define NID_hmac		855
@@ -4043,6 +4101,56 @@
 #define SN_aes_256_cbc_hmac_sha1		"AES-256-CBC-HMAC-SHA1"
 #define LN_aes_256_cbc_hmac_sha1		"aes-256-cbc-hmac-sha1"
 #define NID_aes_256_cbc_hmac_sha1		918
+
+#define OBJ_x9_63_scheme		1L,3L,133L,16L,840L,63L,0L
+
+#define OBJ_secg_scheme		OBJ_certicom_arc,1L
+
+#define SN_dhSinglePass_stdDH_sha1kdf_scheme		"dhSinglePass-stdDH-sha1kdf-scheme"
+#define NID_dhSinglePass_stdDH_sha1kdf_scheme		980
+#define OBJ_dhSinglePass_stdDH_sha1kdf_scheme		OBJ_x9_63_scheme,2L
+
+#define SN_dhSinglePass_stdDH_sha224kdf_scheme		"dhSinglePass-stdDH-sha224kdf-scheme"
+#define NID_dhSinglePass_stdDH_sha224kdf_scheme		981
+#define OBJ_dhSinglePass_stdDH_sha224kdf_scheme		OBJ_secg_scheme,11L,0L
+
+#define SN_dhSinglePass_stdDH_sha256kdf_scheme		"dhSinglePass-stdDH-sha256kdf-scheme"
+#define NID_dhSinglePass_stdDH_sha256kdf_scheme		982
+#define OBJ_dhSinglePass_stdDH_sha256kdf_scheme		OBJ_secg_scheme,11L,1L
+
+#define SN_dhSinglePass_stdDH_sha384kdf_scheme		"dhSinglePass-stdDH-sha384kdf-scheme"
+#define NID_dhSinglePass_stdDH_sha384kdf_scheme		983
+#define OBJ_dhSinglePass_stdDH_sha384kdf_scheme		OBJ_secg_scheme,11L,2L
+
+#define SN_dhSinglePass_stdDH_sha512kdf_scheme		"dhSinglePass-stdDH-sha512kdf-scheme"
+#define NID_dhSinglePass_stdDH_sha512kdf_scheme		984
+#define OBJ_dhSinglePass_stdDH_sha512kdf_scheme		OBJ_secg_scheme,11L,3L
+
+#define SN_dhSinglePass_cofactorDH_sha1kdf_scheme		"dhSinglePass-cofactorDH-sha1kdf-scheme"
+#define NID_dhSinglePass_cofactorDH_sha1kdf_scheme		985
+#define OBJ_dhSinglePass_cofactorDH_sha1kdf_scheme		OBJ_x9_63_scheme,3L
+
+#define SN_dhSinglePass_cofactorDH_sha224kdf_scheme		"dhSinglePass-cofactorDH-sha224kdf-scheme"
+#define NID_dhSinglePass_cofactorDH_sha224kdf_scheme		986
+#define OBJ_dhSinglePass_cofactorDH_sha224kdf_scheme		OBJ_secg_scheme,14L,0L
+
+#define SN_dhSinglePass_cofactorDH_sha256kdf_scheme		"dhSinglePass-cofactorDH-sha256kdf-scheme"
+#define NID_dhSinglePass_cofactorDH_sha256kdf_scheme		987
+#define OBJ_dhSinglePass_cofactorDH_sha256kdf_scheme		OBJ_secg_scheme,14L,1L
+
+#define SN_dhSinglePass_cofactorDH_sha384kdf_scheme		"dhSinglePass-cofactorDH-sha384kdf-scheme"
+#define NID_dhSinglePass_cofactorDH_sha384kdf_scheme		988
+#define OBJ_dhSinglePass_cofactorDH_sha384kdf_scheme		OBJ_secg_scheme,14L,2L
+
+#define SN_dhSinglePass_cofactorDH_sha512kdf_scheme		"dhSinglePass-cofactorDH-sha512kdf-scheme"
+#define NID_dhSinglePass_cofactorDH_sha512kdf_scheme		989
+#define OBJ_dhSinglePass_cofactorDH_sha512kdf_scheme		OBJ_secg_scheme,14L,3L
+
+#define SN_dh_std_kdf		"dh-std-kdf"
+#define NID_dh_std_kdf		990
+
+#define SN_dh_cofactor_kdf		"dh-cofactor-kdf"
+#define NID_dh_cofactor_kdf		991
 
 #define SN_teletrust		"teletrust"
 #define NID_teletrust		920

@@ -1,4 +1,4 @@
-/* $OpenBSD: safestack.h,v 1.15 2016/12/27 16:02:40 jsing Exp $ */
+/* $OpenBSD: safestack.h,v 1.18 2019/08/11 14:14:14 jsing Exp $ */
 /* ====================================================================
  * Copyright (c) 1999 The OpenSSL Project.  All rights reserved.
  *
@@ -179,35 +179,6 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define SKM_sk_is_sorted(type, st) \
 	sk_is_sorted(CHECKED_STACK_OF(type, st))
 
-#ifndef LIBRESSL_INTERNAL
-#define	SKM_ASN1_SET_OF_d2i(type, st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-  (STACK_OF(type) *)d2i_ASN1_SET( \
-				(STACK_OF(OPENSSL_BLOCK) **)CHECKED_PTR_OF(STACK_OF(type)*, st), \
-				pp, length, \
-				CHECKED_D2I_OF(type, d2i_func), \
-				CHECKED_SK_FREE_FUNC(type, free_func), \
-				ex_tag, ex_class)
-
-#define	SKM_ASN1_SET_OF_i2d(type, st, pp, i2d_func, ex_tag, ex_class, is_set) \
-  i2d_ASN1_SET((STACK_OF(OPENSSL_BLOCK) *)CHECKED_STACK_OF(type, st), pp, \
-				CHECKED_I2D_OF(type, i2d_func), \
-				ex_tag, ex_class, is_set)
-
-#define	SKM_ASN1_seq_pack(type, st, i2d_func, buf, len) \
-	ASN1_seq_pack(CHECKED_PTR_OF(STACK_OF(type), st), \
-			CHECKED_I2D_OF(type, i2d_func), buf, len)
-
-#define	SKM_ASN1_seq_unpack(type, buf, len, d2i_func, free_func) \
-	(STACK_OF(type) *)ASN1_seq_unpack(buf, len, CHECKED_D2I_OF(type, d2i_func), CHECKED_SK_FREE_FUNC(type, free_func))
-
-#define SKM_PKCS12_decrypt_d2i(type, algor, d2i_func, free_func, pass, passlen, oct, seq) \
-	(STACK_OF(type) *)PKCS12_decrypt_d2i(algor, \
-				CHECKED_D2I_OF(type, d2i_func), \
-				CHECKED_SK_FREE_FUNC(type, free_func), \
-				pass, passlen, oct, seq)
-#endif
-
-/* This block of defines is updated by util/mkstack.pl, please do not touch! */
 #define sk_ACCESS_DESCRIPTION_new(cmp) SKM_sk_new(ACCESS_DESCRIPTION, (cmp))
 #define sk_ACCESS_DESCRIPTION_new_null() SKM_sk_new_null(ACCESS_DESCRIPTION)
 #define sk_ACCESS_DESCRIPTION_free(st) SKM_sk_free(ACCESS_DESCRIPTION, (st))
@@ -493,6 +464,28 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define sk_CMS_CertificateChoices_pop(st) SKM_sk_pop(CMS_CertificateChoices, (st))
 #define sk_CMS_CertificateChoices_sort(st) SKM_sk_sort(CMS_CertificateChoices, (st))
 #define sk_CMS_CertificateChoices_is_sorted(st) SKM_sk_is_sorted(CMS_CertificateChoices, (st))
+
+#define sk_CMS_RecipientEncryptedKey_new(cmp) SKM_sk_new(CMS_RecipientEncryptedKey, (cmp))
+#define sk_CMS_RecipientEncryptedKey_new_null() SKM_sk_new_null(CMS_RecipientEncryptedKey)
+#define sk_CMS_RecipientEncryptedKey_free(st) SKM_sk_free(CMS_RecipientEncryptedKey, (st))
+#define sk_CMS_RecipientEncryptedKey_num(st) SKM_sk_num(CMS_RecipientEncryptedKey, (st))
+#define sk_CMS_RecipientEncryptedKey_value(st, i) SKM_sk_value(CMS_RecipientEncryptedKey, (st), (i))
+#define sk_CMS_RecipientEncryptedKey_set(st, i, val) SKM_sk_set(CMS_RecipientEncryptedKey, (st), (i), (val))
+#define sk_CMS_RecipientEncryptedKey_zero(st) SKM_sk_zero(CMS_RecipientEncryptedKey, (st))
+#define sk_CMS_RecipientEncryptedKey_push(st, val) SKM_sk_push(CMS_RecipientEncryptedKey, (st), (val))
+#define sk_CMS_RecipientEncryptedKey_unshift(st, val) SKM_sk_unshift(CMS_RecipientEncryptedKey, (st), (val))
+#define sk_CMS_RecipientEncryptedKey_find(st, val) SKM_sk_find(CMS_RecipientEncryptedKey, (st), (val))
+#define sk_CMS_RecipientEncryptedKey_find_ex(st, val) SKM_sk_find_ex(CMS_RecipientEncryptedKey, (st), (val))
+#define sk_CMS_RecipientEncryptedKey_delete(st, i) SKM_sk_delete(CMS_RecipientEncryptedKey, (st), (i))
+#define sk_CMS_RecipientEncryptedKey_delete_ptr(st, ptr) SKM_sk_delete_ptr(CMS_RecipientEncryptedKey, (st), (ptr))
+#define sk_CMS_RecipientEncryptedKey_insert(st, val, i) SKM_sk_insert(CMS_RecipientEncryptedKey, (st), (val), (i))
+#define sk_CMS_RecipientEncryptedKey_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(CMS_RecipientEncryptedKey, (st), (cmp))
+#define sk_CMS_RecipientEncryptedKey_dup(st) SKM_sk_dup(CMS_RecipientEncryptedKey, st)
+#define sk_CMS_RecipientEncryptedKey_pop_free(st, free_func) SKM_sk_pop_free(CMS_RecipientEncryptedKey, (st), (free_func))
+#define sk_CMS_RecipientEncryptedKey_shift(st) SKM_sk_shift(CMS_RecipientEncryptedKey, (st))
+#define sk_CMS_RecipientEncryptedKey_pop(st) SKM_sk_pop(CMS_RecipientEncryptedKey, (st))
+#define sk_CMS_RecipientEncryptedKey_sort(st) SKM_sk_sort(CMS_RecipientEncryptedKey, (st))
+#define sk_CMS_RecipientEncryptedKey_is_sorted(st) SKM_sk_is_sorted(CMS_RecipientEncryptedKey, (st))
 
 #define sk_CMS_RecipientInfo_new(cmp) SKM_sk_new(CMS_RecipientInfo, (cmp))
 #define sk_CMS_RecipientInfo_new_null() SKM_sk_new_null(CMS_RecipientInfo)
@@ -956,182 +949,6 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define sk_IPAddressOrRange_sort(st) SKM_sk_sort(IPAddressOrRange, (st))
 #define sk_IPAddressOrRange_is_sorted(st) SKM_sk_is_sorted(IPAddressOrRange, (st))
 
-#define sk_KRB5_APREQBODY_new(cmp) SKM_sk_new(KRB5_APREQBODY, (cmp))
-#define sk_KRB5_APREQBODY_new_null() SKM_sk_new_null(KRB5_APREQBODY)
-#define sk_KRB5_APREQBODY_free(st) SKM_sk_free(KRB5_APREQBODY, (st))
-#define sk_KRB5_APREQBODY_num(st) SKM_sk_num(KRB5_APREQBODY, (st))
-#define sk_KRB5_APREQBODY_value(st, i) SKM_sk_value(KRB5_APREQBODY, (st), (i))
-#define sk_KRB5_APREQBODY_set(st, i, val) SKM_sk_set(KRB5_APREQBODY, (st), (i), (val))
-#define sk_KRB5_APREQBODY_zero(st) SKM_sk_zero(KRB5_APREQBODY, (st))
-#define sk_KRB5_APREQBODY_push(st, val) SKM_sk_push(KRB5_APREQBODY, (st), (val))
-#define sk_KRB5_APREQBODY_unshift(st, val) SKM_sk_unshift(KRB5_APREQBODY, (st), (val))
-#define sk_KRB5_APREQBODY_find(st, val) SKM_sk_find(KRB5_APREQBODY, (st), (val))
-#define sk_KRB5_APREQBODY_find_ex(st, val) SKM_sk_find_ex(KRB5_APREQBODY, (st), (val))
-#define sk_KRB5_APREQBODY_delete(st, i) SKM_sk_delete(KRB5_APREQBODY, (st), (i))
-#define sk_KRB5_APREQBODY_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_APREQBODY, (st), (ptr))
-#define sk_KRB5_APREQBODY_insert(st, val, i) SKM_sk_insert(KRB5_APREQBODY, (st), (val), (i))
-#define sk_KRB5_APREQBODY_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_APREQBODY, (st), (cmp))
-#define sk_KRB5_APREQBODY_dup(st) SKM_sk_dup(KRB5_APREQBODY, st)
-#define sk_KRB5_APREQBODY_pop_free(st, free_func) SKM_sk_pop_free(KRB5_APREQBODY, (st), (free_func))
-#define sk_KRB5_APREQBODY_shift(st) SKM_sk_shift(KRB5_APREQBODY, (st))
-#define sk_KRB5_APREQBODY_pop(st) SKM_sk_pop(KRB5_APREQBODY, (st))
-#define sk_KRB5_APREQBODY_sort(st) SKM_sk_sort(KRB5_APREQBODY, (st))
-#define sk_KRB5_APREQBODY_is_sorted(st) SKM_sk_is_sorted(KRB5_APREQBODY, (st))
-
-#define sk_KRB5_AUTHDATA_new(cmp) SKM_sk_new(KRB5_AUTHDATA, (cmp))
-#define sk_KRB5_AUTHDATA_new_null() SKM_sk_new_null(KRB5_AUTHDATA)
-#define sk_KRB5_AUTHDATA_free(st) SKM_sk_free(KRB5_AUTHDATA, (st))
-#define sk_KRB5_AUTHDATA_num(st) SKM_sk_num(KRB5_AUTHDATA, (st))
-#define sk_KRB5_AUTHDATA_value(st, i) SKM_sk_value(KRB5_AUTHDATA, (st), (i))
-#define sk_KRB5_AUTHDATA_set(st, i, val) SKM_sk_set(KRB5_AUTHDATA, (st), (i), (val))
-#define sk_KRB5_AUTHDATA_zero(st) SKM_sk_zero(KRB5_AUTHDATA, (st))
-#define sk_KRB5_AUTHDATA_push(st, val) SKM_sk_push(KRB5_AUTHDATA, (st), (val))
-#define sk_KRB5_AUTHDATA_unshift(st, val) SKM_sk_unshift(KRB5_AUTHDATA, (st), (val))
-#define sk_KRB5_AUTHDATA_find(st, val) SKM_sk_find(KRB5_AUTHDATA, (st), (val))
-#define sk_KRB5_AUTHDATA_find_ex(st, val) SKM_sk_find_ex(KRB5_AUTHDATA, (st), (val))
-#define sk_KRB5_AUTHDATA_delete(st, i) SKM_sk_delete(KRB5_AUTHDATA, (st), (i))
-#define sk_KRB5_AUTHDATA_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_AUTHDATA, (st), (ptr))
-#define sk_KRB5_AUTHDATA_insert(st, val, i) SKM_sk_insert(KRB5_AUTHDATA, (st), (val), (i))
-#define sk_KRB5_AUTHDATA_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_AUTHDATA, (st), (cmp))
-#define sk_KRB5_AUTHDATA_dup(st) SKM_sk_dup(KRB5_AUTHDATA, st)
-#define sk_KRB5_AUTHDATA_pop_free(st, free_func) SKM_sk_pop_free(KRB5_AUTHDATA, (st), (free_func))
-#define sk_KRB5_AUTHDATA_shift(st) SKM_sk_shift(KRB5_AUTHDATA, (st))
-#define sk_KRB5_AUTHDATA_pop(st) SKM_sk_pop(KRB5_AUTHDATA, (st))
-#define sk_KRB5_AUTHDATA_sort(st) SKM_sk_sort(KRB5_AUTHDATA, (st))
-#define sk_KRB5_AUTHDATA_is_sorted(st) SKM_sk_is_sorted(KRB5_AUTHDATA, (st))
-
-#define sk_KRB5_AUTHENTBODY_new(cmp) SKM_sk_new(KRB5_AUTHENTBODY, (cmp))
-#define sk_KRB5_AUTHENTBODY_new_null() SKM_sk_new_null(KRB5_AUTHENTBODY)
-#define sk_KRB5_AUTHENTBODY_free(st) SKM_sk_free(KRB5_AUTHENTBODY, (st))
-#define sk_KRB5_AUTHENTBODY_num(st) SKM_sk_num(KRB5_AUTHENTBODY, (st))
-#define sk_KRB5_AUTHENTBODY_value(st, i) SKM_sk_value(KRB5_AUTHENTBODY, (st), (i))
-#define sk_KRB5_AUTHENTBODY_set(st, i, val) SKM_sk_set(KRB5_AUTHENTBODY, (st), (i), (val))
-#define sk_KRB5_AUTHENTBODY_zero(st) SKM_sk_zero(KRB5_AUTHENTBODY, (st))
-#define sk_KRB5_AUTHENTBODY_push(st, val) SKM_sk_push(KRB5_AUTHENTBODY, (st), (val))
-#define sk_KRB5_AUTHENTBODY_unshift(st, val) SKM_sk_unshift(KRB5_AUTHENTBODY, (st), (val))
-#define sk_KRB5_AUTHENTBODY_find(st, val) SKM_sk_find(KRB5_AUTHENTBODY, (st), (val))
-#define sk_KRB5_AUTHENTBODY_find_ex(st, val) SKM_sk_find_ex(KRB5_AUTHENTBODY, (st), (val))
-#define sk_KRB5_AUTHENTBODY_delete(st, i) SKM_sk_delete(KRB5_AUTHENTBODY, (st), (i))
-#define sk_KRB5_AUTHENTBODY_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_AUTHENTBODY, (st), (ptr))
-#define sk_KRB5_AUTHENTBODY_insert(st, val, i) SKM_sk_insert(KRB5_AUTHENTBODY, (st), (val), (i))
-#define sk_KRB5_AUTHENTBODY_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_AUTHENTBODY, (st), (cmp))
-#define sk_KRB5_AUTHENTBODY_dup(st) SKM_sk_dup(KRB5_AUTHENTBODY, st)
-#define sk_KRB5_AUTHENTBODY_pop_free(st, free_func) SKM_sk_pop_free(KRB5_AUTHENTBODY, (st), (free_func))
-#define sk_KRB5_AUTHENTBODY_shift(st) SKM_sk_shift(KRB5_AUTHENTBODY, (st))
-#define sk_KRB5_AUTHENTBODY_pop(st) SKM_sk_pop(KRB5_AUTHENTBODY, (st))
-#define sk_KRB5_AUTHENTBODY_sort(st) SKM_sk_sort(KRB5_AUTHENTBODY, (st))
-#define sk_KRB5_AUTHENTBODY_is_sorted(st) SKM_sk_is_sorted(KRB5_AUTHENTBODY, (st))
-
-#define sk_KRB5_CHECKSUM_new(cmp) SKM_sk_new(KRB5_CHECKSUM, (cmp))
-#define sk_KRB5_CHECKSUM_new_null() SKM_sk_new_null(KRB5_CHECKSUM)
-#define sk_KRB5_CHECKSUM_free(st) SKM_sk_free(KRB5_CHECKSUM, (st))
-#define sk_KRB5_CHECKSUM_num(st) SKM_sk_num(KRB5_CHECKSUM, (st))
-#define sk_KRB5_CHECKSUM_value(st, i) SKM_sk_value(KRB5_CHECKSUM, (st), (i))
-#define sk_KRB5_CHECKSUM_set(st, i, val) SKM_sk_set(KRB5_CHECKSUM, (st), (i), (val))
-#define sk_KRB5_CHECKSUM_zero(st) SKM_sk_zero(KRB5_CHECKSUM, (st))
-#define sk_KRB5_CHECKSUM_push(st, val) SKM_sk_push(KRB5_CHECKSUM, (st), (val))
-#define sk_KRB5_CHECKSUM_unshift(st, val) SKM_sk_unshift(KRB5_CHECKSUM, (st), (val))
-#define sk_KRB5_CHECKSUM_find(st, val) SKM_sk_find(KRB5_CHECKSUM, (st), (val))
-#define sk_KRB5_CHECKSUM_find_ex(st, val) SKM_sk_find_ex(KRB5_CHECKSUM, (st), (val))
-#define sk_KRB5_CHECKSUM_delete(st, i) SKM_sk_delete(KRB5_CHECKSUM, (st), (i))
-#define sk_KRB5_CHECKSUM_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_CHECKSUM, (st), (ptr))
-#define sk_KRB5_CHECKSUM_insert(st, val, i) SKM_sk_insert(KRB5_CHECKSUM, (st), (val), (i))
-#define sk_KRB5_CHECKSUM_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_CHECKSUM, (st), (cmp))
-#define sk_KRB5_CHECKSUM_dup(st) SKM_sk_dup(KRB5_CHECKSUM, st)
-#define sk_KRB5_CHECKSUM_pop_free(st, free_func) SKM_sk_pop_free(KRB5_CHECKSUM, (st), (free_func))
-#define sk_KRB5_CHECKSUM_shift(st) SKM_sk_shift(KRB5_CHECKSUM, (st))
-#define sk_KRB5_CHECKSUM_pop(st) SKM_sk_pop(KRB5_CHECKSUM, (st))
-#define sk_KRB5_CHECKSUM_sort(st) SKM_sk_sort(KRB5_CHECKSUM, (st))
-#define sk_KRB5_CHECKSUM_is_sorted(st) SKM_sk_is_sorted(KRB5_CHECKSUM, (st))
-
-#define sk_KRB5_ENCDATA_new(cmp) SKM_sk_new(KRB5_ENCDATA, (cmp))
-#define sk_KRB5_ENCDATA_new_null() SKM_sk_new_null(KRB5_ENCDATA)
-#define sk_KRB5_ENCDATA_free(st) SKM_sk_free(KRB5_ENCDATA, (st))
-#define sk_KRB5_ENCDATA_num(st) SKM_sk_num(KRB5_ENCDATA, (st))
-#define sk_KRB5_ENCDATA_value(st, i) SKM_sk_value(KRB5_ENCDATA, (st), (i))
-#define sk_KRB5_ENCDATA_set(st, i, val) SKM_sk_set(KRB5_ENCDATA, (st), (i), (val))
-#define sk_KRB5_ENCDATA_zero(st) SKM_sk_zero(KRB5_ENCDATA, (st))
-#define sk_KRB5_ENCDATA_push(st, val) SKM_sk_push(KRB5_ENCDATA, (st), (val))
-#define sk_KRB5_ENCDATA_unshift(st, val) SKM_sk_unshift(KRB5_ENCDATA, (st), (val))
-#define sk_KRB5_ENCDATA_find(st, val) SKM_sk_find(KRB5_ENCDATA, (st), (val))
-#define sk_KRB5_ENCDATA_find_ex(st, val) SKM_sk_find_ex(KRB5_ENCDATA, (st), (val))
-#define sk_KRB5_ENCDATA_delete(st, i) SKM_sk_delete(KRB5_ENCDATA, (st), (i))
-#define sk_KRB5_ENCDATA_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_ENCDATA, (st), (ptr))
-#define sk_KRB5_ENCDATA_insert(st, val, i) SKM_sk_insert(KRB5_ENCDATA, (st), (val), (i))
-#define sk_KRB5_ENCDATA_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_ENCDATA, (st), (cmp))
-#define sk_KRB5_ENCDATA_dup(st) SKM_sk_dup(KRB5_ENCDATA, st)
-#define sk_KRB5_ENCDATA_pop_free(st, free_func) SKM_sk_pop_free(KRB5_ENCDATA, (st), (free_func))
-#define sk_KRB5_ENCDATA_shift(st) SKM_sk_shift(KRB5_ENCDATA, (st))
-#define sk_KRB5_ENCDATA_pop(st) SKM_sk_pop(KRB5_ENCDATA, (st))
-#define sk_KRB5_ENCDATA_sort(st) SKM_sk_sort(KRB5_ENCDATA, (st))
-#define sk_KRB5_ENCDATA_is_sorted(st) SKM_sk_is_sorted(KRB5_ENCDATA, (st))
-
-#define sk_KRB5_ENCKEY_new(cmp) SKM_sk_new(KRB5_ENCKEY, (cmp))
-#define sk_KRB5_ENCKEY_new_null() SKM_sk_new_null(KRB5_ENCKEY)
-#define sk_KRB5_ENCKEY_free(st) SKM_sk_free(KRB5_ENCKEY, (st))
-#define sk_KRB5_ENCKEY_num(st) SKM_sk_num(KRB5_ENCKEY, (st))
-#define sk_KRB5_ENCKEY_value(st, i) SKM_sk_value(KRB5_ENCKEY, (st), (i))
-#define sk_KRB5_ENCKEY_set(st, i, val) SKM_sk_set(KRB5_ENCKEY, (st), (i), (val))
-#define sk_KRB5_ENCKEY_zero(st) SKM_sk_zero(KRB5_ENCKEY, (st))
-#define sk_KRB5_ENCKEY_push(st, val) SKM_sk_push(KRB5_ENCKEY, (st), (val))
-#define sk_KRB5_ENCKEY_unshift(st, val) SKM_sk_unshift(KRB5_ENCKEY, (st), (val))
-#define sk_KRB5_ENCKEY_find(st, val) SKM_sk_find(KRB5_ENCKEY, (st), (val))
-#define sk_KRB5_ENCKEY_find_ex(st, val) SKM_sk_find_ex(KRB5_ENCKEY, (st), (val))
-#define sk_KRB5_ENCKEY_delete(st, i) SKM_sk_delete(KRB5_ENCKEY, (st), (i))
-#define sk_KRB5_ENCKEY_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_ENCKEY, (st), (ptr))
-#define sk_KRB5_ENCKEY_insert(st, val, i) SKM_sk_insert(KRB5_ENCKEY, (st), (val), (i))
-#define sk_KRB5_ENCKEY_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_ENCKEY, (st), (cmp))
-#define sk_KRB5_ENCKEY_dup(st) SKM_sk_dup(KRB5_ENCKEY, st)
-#define sk_KRB5_ENCKEY_pop_free(st, free_func) SKM_sk_pop_free(KRB5_ENCKEY, (st), (free_func))
-#define sk_KRB5_ENCKEY_shift(st) SKM_sk_shift(KRB5_ENCKEY, (st))
-#define sk_KRB5_ENCKEY_pop(st) SKM_sk_pop(KRB5_ENCKEY, (st))
-#define sk_KRB5_ENCKEY_sort(st) SKM_sk_sort(KRB5_ENCKEY, (st))
-#define sk_KRB5_ENCKEY_is_sorted(st) SKM_sk_is_sorted(KRB5_ENCKEY, (st))
-
-#define sk_KRB5_PRINCNAME_new(cmp) SKM_sk_new(KRB5_PRINCNAME, (cmp))
-#define sk_KRB5_PRINCNAME_new_null() SKM_sk_new_null(KRB5_PRINCNAME)
-#define sk_KRB5_PRINCNAME_free(st) SKM_sk_free(KRB5_PRINCNAME, (st))
-#define sk_KRB5_PRINCNAME_num(st) SKM_sk_num(KRB5_PRINCNAME, (st))
-#define sk_KRB5_PRINCNAME_value(st, i) SKM_sk_value(KRB5_PRINCNAME, (st), (i))
-#define sk_KRB5_PRINCNAME_set(st, i, val) SKM_sk_set(KRB5_PRINCNAME, (st), (i), (val))
-#define sk_KRB5_PRINCNAME_zero(st) SKM_sk_zero(KRB5_PRINCNAME, (st))
-#define sk_KRB5_PRINCNAME_push(st, val) SKM_sk_push(KRB5_PRINCNAME, (st), (val))
-#define sk_KRB5_PRINCNAME_unshift(st, val) SKM_sk_unshift(KRB5_PRINCNAME, (st), (val))
-#define sk_KRB5_PRINCNAME_find(st, val) SKM_sk_find(KRB5_PRINCNAME, (st), (val))
-#define sk_KRB5_PRINCNAME_find_ex(st, val) SKM_sk_find_ex(KRB5_PRINCNAME, (st), (val))
-#define sk_KRB5_PRINCNAME_delete(st, i) SKM_sk_delete(KRB5_PRINCNAME, (st), (i))
-#define sk_KRB5_PRINCNAME_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_PRINCNAME, (st), (ptr))
-#define sk_KRB5_PRINCNAME_insert(st, val, i) SKM_sk_insert(KRB5_PRINCNAME, (st), (val), (i))
-#define sk_KRB5_PRINCNAME_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_PRINCNAME, (st), (cmp))
-#define sk_KRB5_PRINCNAME_dup(st) SKM_sk_dup(KRB5_PRINCNAME, st)
-#define sk_KRB5_PRINCNAME_pop_free(st, free_func) SKM_sk_pop_free(KRB5_PRINCNAME, (st), (free_func))
-#define sk_KRB5_PRINCNAME_shift(st) SKM_sk_shift(KRB5_PRINCNAME, (st))
-#define sk_KRB5_PRINCNAME_pop(st) SKM_sk_pop(KRB5_PRINCNAME, (st))
-#define sk_KRB5_PRINCNAME_sort(st) SKM_sk_sort(KRB5_PRINCNAME, (st))
-#define sk_KRB5_PRINCNAME_is_sorted(st) SKM_sk_is_sorted(KRB5_PRINCNAME, (st))
-
-#define sk_KRB5_TKTBODY_new(cmp) SKM_sk_new(KRB5_TKTBODY, (cmp))
-#define sk_KRB5_TKTBODY_new_null() SKM_sk_new_null(KRB5_TKTBODY)
-#define sk_KRB5_TKTBODY_free(st) SKM_sk_free(KRB5_TKTBODY, (st))
-#define sk_KRB5_TKTBODY_num(st) SKM_sk_num(KRB5_TKTBODY, (st))
-#define sk_KRB5_TKTBODY_value(st, i) SKM_sk_value(KRB5_TKTBODY, (st), (i))
-#define sk_KRB5_TKTBODY_set(st, i, val) SKM_sk_set(KRB5_TKTBODY, (st), (i), (val))
-#define sk_KRB5_TKTBODY_zero(st) SKM_sk_zero(KRB5_TKTBODY, (st))
-#define sk_KRB5_TKTBODY_push(st, val) SKM_sk_push(KRB5_TKTBODY, (st), (val))
-#define sk_KRB5_TKTBODY_unshift(st, val) SKM_sk_unshift(KRB5_TKTBODY, (st), (val))
-#define sk_KRB5_TKTBODY_find(st, val) SKM_sk_find(KRB5_TKTBODY, (st), (val))
-#define sk_KRB5_TKTBODY_find_ex(st, val) SKM_sk_find_ex(KRB5_TKTBODY, (st), (val))
-#define sk_KRB5_TKTBODY_delete(st, i) SKM_sk_delete(KRB5_TKTBODY, (st), (i))
-#define sk_KRB5_TKTBODY_delete_ptr(st, ptr) SKM_sk_delete_ptr(KRB5_TKTBODY, (st), (ptr))
-#define sk_KRB5_TKTBODY_insert(st, val, i) SKM_sk_insert(KRB5_TKTBODY, (st), (val), (i))
-#define sk_KRB5_TKTBODY_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(KRB5_TKTBODY, (st), (cmp))
-#define sk_KRB5_TKTBODY_dup(st) SKM_sk_dup(KRB5_TKTBODY, st)
-#define sk_KRB5_TKTBODY_pop_free(st, free_func) SKM_sk_pop_free(KRB5_TKTBODY, (st), (free_func))
-#define sk_KRB5_TKTBODY_shift(st) SKM_sk_shift(KRB5_TKTBODY, (st))
-#define sk_KRB5_TKTBODY_pop(st) SKM_sk_pop(KRB5_TKTBODY, (st))
-#define sk_KRB5_TKTBODY_sort(st) SKM_sk_sort(KRB5_TKTBODY, (st))
-#define sk_KRB5_TKTBODY_is_sorted(st) SKM_sk_is_sorted(KRB5_TKTBODY, (st))
-
 #define sk_MEM_OBJECT_DATA_new(cmp) SKM_sk_new(MEM_OBJECT_DATA, (cmp))
 #define sk_MEM_OBJECT_DATA_new_null() SKM_sk_new_null(MEM_OBJECT_DATA)
 #define sk_MEM_OBJECT_DATA_free(st) SKM_sk_free(MEM_OBJECT_DATA, (st))
@@ -1461,72 +1278,6 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define sk_POLICY_MAPPING_pop(st) SKM_sk_pop(POLICY_MAPPING, (st))
 #define sk_POLICY_MAPPING_sort(st) SKM_sk_sort(POLICY_MAPPING, (st))
 #define sk_POLICY_MAPPING_is_sorted(st) SKM_sk_is_sorted(POLICY_MAPPING, (st))
-
-#define sk_SRP_gN_new(cmp) SKM_sk_new(SRP_gN, (cmp))
-#define sk_SRP_gN_new_null() SKM_sk_new_null(SRP_gN)
-#define sk_SRP_gN_free(st) SKM_sk_free(SRP_gN, (st))
-#define sk_SRP_gN_num(st) SKM_sk_num(SRP_gN, (st))
-#define sk_SRP_gN_value(st, i) SKM_sk_value(SRP_gN, (st), (i))
-#define sk_SRP_gN_set(st, i, val) SKM_sk_set(SRP_gN, (st), (i), (val))
-#define sk_SRP_gN_zero(st) SKM_sk_zero(SRP_gN, (st))
-#define sk_SRP_gN_push(st, val) SKM_sk_push(SRP_gN, (st), (val))
-#define sk_SRP_gN_unshift(st, val) SKM_sk_unshift(SRP_gN, (st), (val))
-#define sk_SRP_gN_find(st, val) SKM_sk_find(SRP_gN, (st), (val))
-#define sk_SRP_gN_find_ex(st, val) SKM_sk_find_ex(SRP_gN, (st), (val))
-#define sk_SRP_gN_delete(st, i) SKM_sk_delete(SRP_gN, (st), (i))
-#define sk_SRP_gN_delete_ptr(st, ptr) SKM_sk_delete_ptr(SRP_gN, (st), (ptr))
-#define sk_SRP_gN_insert(st, val, i) SKM_sk_insert(SRP_gN, (st), (val), (i))
-#define sk_SRP_gN_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(SRP_gN, (st), (cmp))
-#define sk_SRP_gN_dup(st) SKM_sk_dup(SRP_gN, st)
-#define sk_SRP_gN_pop_free(st, free_func) SKM_sk_pop_free(SRP_gN, (st), (free_func))
-#define sk_SRP_gN_shift(st) SKM_sk_shift(SRP_gN, (st))
-#define sk_SRP_gN_pop(st) SKM_sk_pop(SRP_gN, (st))
-#define sk_SRP_gN_sort(st) SKM_sk_sort(SRP_gN, (st))
-#define sk_SRP_gN_is_sorted(st) SKM_sk_is_sorted(SRP_gN, (st))
-
-#define sk_SRP_gN_cache_new(cmp) SKM_sk_new(SRP_gN_cache, (cmp))
-#define sk_SRP_gN_cache_new_null() SKM_sk_new_null(SRP_gN_cache)
-#define sk_SRP_gN_cache_free(st) SKM_sk_free(SRP_gN_cache, (st))
-#define sk_SRP_gN_cache_num(st) SKM_sk_num(SRP_gN_cache, (st))
-#define sk_SRP_gN_cache_value(st, i) SKM_sk_value(SRP_gN_cache, (st), (i))
-#define sk_SRP_gN_cache_set(st, i, val) SKM_sk_set(SRP_gN_cache, (st), (i), (val))
-#define sk_SRP_gN_cache_zero(st) SKM_sk_zero(SRP_gN_cache, (st))
-#define sk_SRP_gN_cache_push(st, val) SKM_sk_push(SRP_gN_cache, (st), (val))
-#define sk_SRP_gN_cache_unshift(st, val) SKM_sk_unshift(SRP_gN_cache, (st), (val))
-#define sk_SRP_gN_cache_find(st, val) SKM_sk_find(SRP_gN_cache, (st), (val))
-#define sk_SRP_gN_cache_find_ex(st, val) SKM_sk_find_ex(SRP_gN_cache, (st), (val))
-#define sk_SRP_gN_cache_delete(st, i) SKM_sk_delete(SRP_gN_cache, (st), (i))
-#define sk_SRP_gN_cache_delete_ptr(st, ptr) SKM_sk_delete_ptr(SRP_gN_cache, (st), (ptr))
-#define sk_SRP_gN_cache_insert(st, val, i) SKM_sk_insert(SRP_gN_cache, (st), (val), (i))
-#define sk_SRP_gN_cache_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(SRP_gN_cache, (st), (cmp))
-#define sk_SRP_gN_cache_dup(st) SKM_sk_dup(SRP_gN_cache, st)
-#define sk_SRP_gN_cache_pop_free(st, free_func) SKM_sk_pop_free(SRP_gN_cache, (st), (free_func))
-#define sk_SRP_gN_cache_shift(st) SKM_sk_shift(SRP_gN_cache, (st))
-#define sk_SRP_gN_cache_pop(st) SKM_sk_pop(SRP_gN_cache, (st))
-#define sk_SRP_gN_cache_sort(st) SKM_sk_sort(SRP_gN_cache, (st))
-#define sk_SRP_gN_cache_is_sorted(st) SKM_sk_is_sorted(SRP_gN_cache, (st))
-
-#define sk_SRP_user_pwd_new(cmp) SKM_sk_new(SRP_user_pwd, (cmp))
-#define sk_SRP_user_pwd_new_null() SKM_sk_new_null(SRP_user_pwd)
-#define sk_SRP_user_pwd_free(st) SKM_sk_free(SRP_user_pwd, (st))
-#define sk_SRP_user_pwd_num(st) SKM_sk_num(SRP_user_pwd, (st))
-#define sk_SRP_user_pwd_value(st, i) SKM_sk_value(SRP_user_pwd, (st), (i))
-#define sk_SRP_user_pwd_set(st, i, val) SKM_sk_set(SRP_user_pwd, (st), (i), (val))
-#define sk_SRP_user_pwd_zero(st) SKM_sk_zero(SRP_user_pwd, (st))
-#define sk_SRP_user_pwd_push(st, val) SKM_sk_push(SRP_user_pwd, (st), (val))
-#define sk_SRP_user_pwd_unshift(st, val) SKM_sk_unshift(SRP_user_pwd, (st), (val))
-#define sk_SRP_user_pwd_find(st, val) SKM_sk_find(SRP_user_pwd, (st), (val))
-#define sk_SRP_user_pwd_find_ex(st, val) SKM_sk_find_ex(SRP_user_pwd, (st), (val))
-#define sk_SRP_user_pwd_delete(st, i) SKM_sk_delete(SRP_user_pwd, (st), (i))
-#define sk_SRP_user_pwd_delete_ptr(st, ptr) SKM_sk_delete_ptr(SRP_user_pwd, (st), (ptr))
-#define sk_SRP_user_pwd_insert(st, val, i) SKM_sk_insert(SRP_user_pwd, (st), (val), (i))
-#define sk_SRP_user_pwd_set_cmp_func(st, cmp) SKM_sk_set_cmp_func(SRP_user_pwd, (st), (cmp))
-#define sk_SRP_user_pwd_dup(st) SKM_sk_dup(SRP_user_pwd, st)
-#define sk_SRP_user_pwd_pop_free(st, free_func) SKM_sk_pop_free(SRP_user_pwd, (st), (free_func))
-#define sk_SRP_user_pwd_shift(st) SKM_sk_shift(SRP_user_pwd, (st))
-#define sk_SRP_user_pwd_pop(st) SKM_sk_pop(SRP_user_pwd, (st))
-#define sk_SRP_user_pwd_sort(st) SKM_sk_sort(SRP_user_pwd, (st))
-#define sk_SRP_user_pwd_is_sorted(st) SKM_sk_is_sorted(SRP_user_pwd, (st))
 
 #define sk_SRTP_PROTECTION_PROFILE_new(cmp) SKM_sk_new(SRTP_PROTECTION_PROFILE, (cmp))
 #define sk_SRTP_PROTECTION_PROFILE_new_null() SKM_sk_new_null(SRTP_PROTECTION_PROFILE)
@@ -2146,7 +1897,6 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define sk_OPENSSL_STRING_sort(st) SKM_sk_sort(OPENSSL_STRING, (st))
 #define sk_OPENSSL_STRING_is_sorted(st) SKM_sk_is_sorted(OPENSSL_STRING, (st))
 
-
 #define sk_OPENSSL_BLOCK_new(cmp) ((STACK_OF(OPENSSL_BLOCK) *)sk_new(CHECKED_SK_CMP_FUNC(void, cmp)))
 #define sk_OPENSSL_BLOCK_new_null() ((STACK_OF(OPENSSL_BLOCK) *)sk_new_null())
 #define sk_OPENSSL_BLOCK_push(st, val) sk_push(CHECKED_STACK_OF(OPENSSL_BLOCK, st), CHECKED_PTR_OF(void, val))
@@ -2171,7 +1921,6 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define sk_OPENSSL_BLOCK_sort(st) SKM_sk_sort(OPENSSL_BLOCK, (st))
 #define sk_OPENSSL_BLOCK_is_sorted(st) SKM_sk_is_sorted(OPENSSL_BLOCK, (st))
 
-
 #define sk_OPENSSL_PSTRING_new(cmp) ((STACK_OF(OPENSSL_PSTRING) *)sk_new(CHECKED_SK_CMP_FUNC(OPENSSL_STRING, cmp)))
 #define sk_OPENSSL_PSTRING_new_null() ((STACK_OF(OPENSSL_PSTRING) *)sk_new_null())
 #define sk_OPENSSL_PSTRING_push(st, val) sk_push(CHECKED_STACK_OF(OPENSSL_PSTRING, st), CHECKED_PTR_OF(OPENSSL_STRING, val))
@@ -2195,239 +1944,6 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define sk_OPENSSL_PSTRING_pop(st) (OPENSSL_STRING *)sk_pop(CHECKED_STACK_OF(OPENSSL_PSTRING, st))
 #define sk_OPENSSL_PSTRING_sort(st) SKM_sk_sort(OPENSSL_PSTRING, (st))
 #define sk_OPENSSL_PSTRING_is_sorted(st) SKM_sk_is_sorted(OPENSSL_PSTRING, (st))
-
-#ifndef LIBRESSL_INTERNAL
-#define d2i_ASN1_SET_OF_ACCESS_DESCRIPTION(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(ACCESS_DESCRIPTION, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_ACCESS_DESCRIPTION(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(ACCESS_DESCRIPTION, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_ACCESS_DESCRIPTION(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(ACCESS_DESCRIPTION, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_ACCESS_DESCRIPTION(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(ACCESS_DESCRIPTION, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_ASN1_INTEGER(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(ASN1_INTEGER, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_ASN1_INTEGER(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(ASN1_INTEGER, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_ASN1_INTEGER(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(ASN1_INTEGER, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_ASN1_INTEGER(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(ASN1_INTEGER, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_ASN1_OBJECT(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(ASN1_OBJECT, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_ASN1_OBJECT(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(ASN1_OBJECT, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_ASN1_OBJECT(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(ASN1_OBJECT, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_ASN1_OBJECT(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(ASN1_OBJECT, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_ASN1_TYPE(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(ASN1_TYPE, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_ASN1_TYPE(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(ASN1_TYPE, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_ASN1_TYPE(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(ASN1_TYPE, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_ASN1_TYPE(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(ASN1_TYPE, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_ASN1_UTF8STRING(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(ASN1_UTF8STRING, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_ASN1_UTF8STRING(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(ASN1_UTF8STRING, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_ASN1_UTF8STRING(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(ASN1_UTF8STRING, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_ASN1_UTF8STRING(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(ASN1_UTF8STRING, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_DIST_POINT(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(DIST_POINT, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_DIST_POINT(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(DIST_POINT, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_DIST_POINT(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(DIST_POINT, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_DIST_POINT(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(DIST_POINT, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_ESS_CERT_ID(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(ESS_CERT_ID, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_ESS_CERT_ID(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(ESS_CERT_ID, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_ESS_CERT_ID(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(ESS_CERT_ID, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_ESS_CERT_ID(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(ESS_CERT_ID, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_EVP_MD(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(EVP_MD, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_EVP_MD(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(EVP_MD, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_EVP_MD(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(EVP_MD, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_EVP_MD(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(EVP_MD, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_GENERAL_NAME(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(GENERAL_NAME, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_GENERAL_NAME(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(GENERAL_NAME, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_GENERAL_NAME(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(GENERAL_NAME, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_GENERAL_NAME(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(GENERAL_NAME, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_OCSP_ONEREQ(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(OCSP_ONEREQ, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_OCSP_ONEREQ(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(OCSP_ONEREQ, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_OCSP_ONEREQ(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(OCSP_ONEREQ, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_OCSP_ONEREQ(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(OCSP_ONEREQ, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_OCSP_SINGLERESP(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(OCSP_SINGLERESP, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_OCSP_SINGLERESP(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(OCSP_SINGLERESP, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_OCSP_SINGLERESP(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(OCSP_SINGLERESP, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_OCSP_SINGLERESP(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(OCSP_SINGLERESP, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_PKCS12_SAFEBAG(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(PKCS12_SAFEBAG, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_PKCS12_SAFEBAG(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(PKCS12_SAFEBAG, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_PKCS12_SAFEBAG(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(PKCS12_SAFEBAG, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_PKCS12_SAFEBAG(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(PKCS12_SAFEBAG, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_PKCS7(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(PKCS7, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_PKCS7(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(PKCS7, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_PKCS7(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(PKCS7, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_PKCS7(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(PKCS7, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_PKCS7_RECIP_INFO(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(PKCS7_RECIP_INFO, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_PKCS7_RECIP_INFO(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(PKCS7_RECIP_INFO, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_PKCS7_RECIP_INFO(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(PKCS7_RECIP_INFO, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_PKCS7_RECIP_INFO(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(PKCS7_RECIP_INFO, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_PKCS7_SIGNER_INFO(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(PKCS7_SIGNER_INFO, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_PKCS7_SIGNER_INFO(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(PKCS7_SIGNER_INFO, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_PKCS7_SIGNER_INFO(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(PKCS7_SIGNER_INFO, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_PKCS7_SIGNER_INFO(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(PKCS7_SIGNER_INFO, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_POLICYINFO(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(POLICYINFO, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_POLICYINFO(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(POLICYINFO, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_POLICYINFO(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(POLICYINFO, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_POLICYINFO(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(POLICYINFO, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_POLICYQUALINFO(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(POLICYQUALINFO, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_POLICYQUALINFO(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(POLICYQUALINFO, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_POLICYQUALINFO(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(POLICYQUALINFO, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_POLICYQUALINFO(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(POLICYQUALINFO, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_SXNETID(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(SXNETID, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_SXNETID(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(SXNETID, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_SXNETID(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(SXNETID, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_SXNETID(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(SXNETID, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_X509(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(X509, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_X509(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(X509, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_X509(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(X509, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_X509(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(X509, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_X509_ALGOR(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(X509_ALGOR, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_X509_ALGOR(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(X509_ALGOR, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_X509_ALGOR(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(X509_ALGOR, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_X509_ALGOR(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(X509_ALGOR, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_X509_ATTRIBUTE(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(X509_ATTRIBUTE, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_X509_ATTRIBUTE(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(X509_ATTRIBUTE, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_X509_ATTRIBUTE(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(X509_ATTRIBUTE, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_X509_ATTRIBUTE(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(X509_ATTRIBUTE, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_X509_CRL(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(X509_CRL, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_X509_CRL(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(X509_CRL, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_X509_CRL(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(X509_CRL, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_X509_CRL(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(X509_CRL, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_X509_EXTENSION(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(X509_EXTENSION, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_X509_EXTENSION(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(X509_EXTENSION, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_X509_EXTENSION(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(X509_EXTENSION, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_X509_EXTENSION(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(X509_EXTENSION, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_X509_NAME_ENTRY(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(X509_NAME_ENTRY, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_X509_NAME_ENTRY(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(X509_NAME_ENTRY, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_X509_NAME_ENTRY(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(X509_NAME_ENTRY, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_X509_NAME_ENTRY(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(X509_NAME_ENTRY, (buf), (len), (d2i_func), (free_func))
-
-#define d2i_ASN1_SET_OF_X509_REVOKED(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-	SKM_ASN1_SET_OF_d2i(X509_REVOKED, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class)) 
-#define i2d_ASN1_SET_OF_X509_REVOKED(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-	SKM_ASN1_SET_OF_i2d(X509_REVOKED, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_X509_REVOKED(st, i2d_func, buf, len) \
-	SKM_ASN1_seq_pack(X509_REVOKED, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_X509_REVOKED(buf, len, d2i_func, free_func) \
-	SKM_ASN1_seq_unpack(X509_REVOKED, (buf), (len), (d2i_func), (free_func))
-
-#define PKCS12_decrypt_d2i_PKCS12_SAFEBAG(algor, d2i_func, free_func, pass, passlen, oct, seq) \
-	SKM_PKCS12_decrypt_d2i(PKCS12_SAFEBAG, (algor), (d2i_func), (free_func), (pass), (passlen), (oct), (seq))
-
-#define PKCS12_decrypt_d2i_PKCS7(algor, d2i_func, free_func, pass, passlen, oct, seq) \
-	SKM_PKCS12_decrypt_d2i(PKCS7, (algor), (d2i_func), (free_func), (pass), (passlen), (oct), (seq))
-#endif /* !LIBRESSL_INTERNAL */
 
 #define lh_ADDED_OBJ_new() LHM_lh_new(ADDED_OBJ,added_obj)
 #define lh_ADDED_OBJ_insert(lh,inst) LHM_lh_insert(ADDED_OBJ,lh,inst)
@@ -2662,6 +2178,5 @@ DECLARE_SPECIAL_STACK_OF(OPENSSL_BLOCK, void)
 #define lh_SSL_SESSION_stats_bio(lh,out) \
   LHM_lh_stats_bio(SSL_SESSION,lh,out)
 #define lh_SSL_SESSION_free(lh) LHM_lh_free(SSL_SESSION,lh)
-/* End of util/mkstack.pl block, you may now edit :-) */
 
 #endif /* !defined HEADER_SAFESTACK_H */

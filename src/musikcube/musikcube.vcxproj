@@ -5,9 +5,17 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -24,7 +32,21 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <UseOfAtl>false</UseOfAtl>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <UseOfAtl>false</UseOfAtl>
@@ -38,24 +60,46 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\bin\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\obj\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)/bin32/$(Configuration)/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./obj32/$(Configuration)/</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\bin\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\obj\$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)/bin32/$(Configuration)/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">./obj32/$(Configuration)/</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)/bin64/$(Configuration)/</OutDir>
+    <IntDir>./obj64/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)/bin64/$(Configuration)/</OutDir>
+    <IntDir>./obj64/$(Configuration)/</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,11 +133,50 @@
 xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>./;../;./cursespp;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_71_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;CURL_STATICLIB;_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../../../boost_1_71_0/lib64-msvc-14.1;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <ImportLibrary>
+      </ImportLibrary>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
+if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
+xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\ffmpeg\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\lame\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\libcurl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\vorbis\*" "$(TargetDir)" /Y /e
+if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
+xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -126,7 +209,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
       <ImportLibrary>
       </ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;crypto-43.lib;ssl-45.lib;tls-17.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
@@ -134,11 +217,57 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
 xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
 if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
 xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
+xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>./;../;./cursespp;../3rdparty/include;../3rdparty/win32_include;../../../boost_1_71_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;CURL_STATICLIB;NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>Full</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../../../boost_1_71_0/lib64-msvc-14.1;../3rdparty/bin/win64/lib;../3rdparty/bin/win64/lib/release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <ImportLibrary>
+      </ImportLibrary>
+      <AdditionalDependencies>pdh.lib;psapi.lib;Ws2_32.lib;wldap32.lib;Comctl32.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(TargetDir)themes" mkdir "$(TargetDir)themes"
+xcopy "$(ProjectDir)data\themes\*" "$(TargetDir)themes\" /Y /e
+if not exist "$(TargetDir)locales" mkdir "$(TargetDir)locales"
+xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\ffmpeg\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\lame\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\libcurl\*" "$(TargetDir)" /Y /e
+xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\vorbis\*" "$(TargetDir)" /Y /e
+if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
+xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -204,7 +333,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

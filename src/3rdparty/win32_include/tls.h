@@ -1,4 +1,4 @@
-/* $OpenBSD: tls.h,v 1.53 2018/02/10 04:58:08 jsing Exp $ */
+/* $OpenBSD: tls.h,v 1.55 2018/11/29 14:24:23 tedu Exp $ */
 /*
  * Copyright (c) 2014 Joel Sing <jsing@openbsd.org>
  *
@@ -91,6 +91,8 @@ const char *tls_error(struct tls *_ctx);
 
 struct tls_config *tls_config_new(void);
 void tls_config_free(struct tls_config *_config);
+
+const char *tls_default_ca_cert_file(void);
 
 int tls_config_add_keypair_file(struct tls_config *_config,
     const char *_cert_file, const char *_key_file);

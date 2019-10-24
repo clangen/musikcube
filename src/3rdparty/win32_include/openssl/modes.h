@@ -1,4 +1,4 @@
-/* $OpenBSD: modes.h,v 1.2 2014/06/12 15:49:30 deraadt Exp $ */
+/* $OpenBSD: modes.h,v 1.3 2018/07/24 10:47:19 bcook Exp $ */
 /* ====================================================================
  * Copyright (c) 2008 The OpenSSL Project. All rights reserved.
  *
@@ -7,6 +7,10 @@
  */
 
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef void (*block128_f)(const unsigned char in[16],
 			unsigned char out[16],
@@ -134,3 +138,7 @@ typedef struct xts128_context XTS128_CONTEXT;
 
 int CRYPTO_xts128_encrypt(const XTS128_CONTEXT *ctx, const unsigned char iv[16],
 	const unsigned char *inp, unsigned char *out, size_t len, int enc);
+
+#ifdef __cplusplus
+}
+#endif

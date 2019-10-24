@@ -1,4 +1,4 @@
-/* $OpenBSD: ts.h,v 1.8 2016/12/27 16:05:57 jsing Exp $ */
+/* $OpenBSD: ts.h,v 1.10 2018/05/13 15:35:46 tb Exp $ */
 /* Written by Zoltan Glozik (zglozik@opentsa.org) for the OpenSSL
  * project 2002, 2003, 2004.
  */
@@ -365,7 +365,7 @@ X509_ALGOR *TS_MSG_IMPRINT_get_algo(TS_MSG_IMPRINT *a);
 int TS_MSG_IMPRINT_set_msg(TS_MSG_IMPRINT *a, unsigned char *d, int len);
 ASN1_OCTET_STRING *TS_MSG_IMPRINT_get_msg(TS_MSG_IMPRINT *a);
 
-int TS_REQ_set_policy_id(TS_REQ *a, ASN1_OBJECT *policy);
+int TS_REQ_set_policy_id(TS_REQ *a, const ASN1_OBJECT *policy);
 ASN1_OBJECT *TS_REQ_get_policy_id(TS_REQ *a);
 
 int TS_REQ_set_nonce(TS_REQ *a, const ASN1_INTEGER *nonce);
@@ -378,7 +378,7 @@ STACK_OF(X509_EXTENSION) *TS_REQ_get_exts(TS_REQ *a);
 void TS_REQ_ext_free(TS_REQ *a);
 int TS_REQ_get_ext_count(TS_REQ *a);
 int TS_REQ_get_ext_by_NID(TS_REQ *a, int nid, int lastpos);
-int TS_REQ_get_ext_by_OBJ(TS_REQ *a, ASN1_OBJECT *obj, int lastpos);
+int TS_REQ_get_ext_by_OBJ(TS_REQ *a, const ASN1_OBJECT *obj, int lastpos);
 int TS_REQ_get_ext_by_critical(TS_REQ *a, int crit, int lastpos);
 X509_EXTENSION *TS_REQ_get_ext(TS_REQ *a, int loc);
 X509_EXTENSION *TS_REQ_delete_ext(TS_REQ *a, int loc);
@@ -439,7 +439,8 @@ STACK_OF(X509_EXTENSION) *TS_TST_INFO_get_exts(TS_TST_INFO *a);
 void TS_TST_INFO_ext_free(TS_TST_INFO *a);
 int TS_TST_INFO_get_ext_count(TS_TST_INFO *a);
 int TS_TST_INFO_get_ext_by_NID(TS_TST_INFO *a, int nid, int lastpos);
-int TS_TST_INFO_get_ext_by_OBJ(TS_TST_INFO *a, ASN1_OBJECT *obj, int lastpos);
+int TS_TST_INFO_get_ext_by_OBJ(TS_TST_INFO *a, const ASN1_OBJECT *obj,
+    int lastpos);
 int TS_TST_INFO_get_ext_by_critical(TS_TST_INFO *a, int crit, int lastpos);
 X509_EXTENSION *TS_TST_INFO_get_ext(TS_TST_INFO *a, int loc);
 X509_EXTENSION *TS_TST_INFO_delete_ext(TS_TST_INFO *a, int loc);
@@ -524,14 +525,14 @@ int TS_RESP_CTX_set_signer_cert(TS_RESP_CTX *ctx, X509 *signer);
 int TS_RESP_CTX_set_signer_key(TS_RESP_CTX *ctx, EVP_PKEY *key);
 
 /* This parameter must be set. */
-int TS_RESP_CTX_set_def_policy(TS_RESP_CTX *ctx, ASN1_OBJECT *def_policy);
+int TS_RESP_CTX_set_def_policy(TS_RESP_CTX *ctx, const ASN1_OBJECT *def_policy);
 
 /* No additional certs are included in the response by default. */
 int TS_RESP_CTX_set_certs(TS_RESP_CTX *ctx, STACK_OF(X509) *certs);
 
 /* Adds a new acceptable policy, only the default policy
    is accepted by default. */
-int TS_RESP_CTX_add_policy(TS_RESP_CTX *ctx, ASN1_OBJECT *policy);
+int TS_RESP_CTX_add_policy(TS_RESP_CTX *ctx, const ASN1_OBJECT *policy);
 
 /* Adds a new acceptable message digest. Note that no message digests
    are accepted by default. The md argument is shared with the caller. */

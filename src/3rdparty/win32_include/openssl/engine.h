@@ -1,4 +1,4 @@
-/* $OpenBSD: engine.h,v 1.31 2015/07/19 22:34:27 doug Exp $ */
+/* $OpenBSD: engine.h,v 1.33 2019/01/19 01:07:00 tb Exp $ */
 /* Written by Geoff Thorpe (geoff@geoffthorpe.net) for the OpenSSL
  * project 2000.
  */
@@ -87,6 +87,9 @@
 #ifndef OPENSSL_NO_ECDSA
 #include <openssl/ecdsa.h>
 #endif
+#ifndef OPENSSL_NO_EC
+#include <openssl/ec.h>
+#endif
 #include <openssl/ui.h>
 #include <openssl/err.h>
 #endif
@@ -112,6 +115,7 @@ extern "C" {
 #define ENGINE_METHOD_STORE		(unsigned int)0x0100
 #define ENGINE_METHOD_PKEY_METHS	(unsigned int)0x0200
 #define ENGINE_METHOD_PKEY_ASN1_METHS	(unsigned int)0x0400
+#define ENGINE_METHOD_EC		(unsigned int)0x0800
 /* Obvious all-or-nothing cases. */
 #define ENGINE_METHOD_ALL		(unsigned int)0xFFFF
 #define ENGINE_METHOD_NONE		(unsigned int)0x0000
@@ -353,6 +357,10 @@ int ENGINE_register_ECDSA(ENGINE *e);
 void ENGINE_unregister_ECDSA(ENGINE *e);
 void ENGINE_register_all_ECDSA(void);
 
+int ENGINE_register_EC(ENGINE *e);
+void ENGINE_unregister_EC(ENGINE *e);
+void ENGINE_register_all_EC(void);
+
 int ENGINE_register_DH(ENGINE *e);
 void ENGINE_unregister_DH(ENGINE *e);
 void ENGINE_register_all_DH(void);
@@ -447,6 +455,7 @@ int ENGINE_set_RSA(ENGINE *e, const RSA_METHOD *rsa_meth);
 int ENGINE_set_DSA(ENGINE *e, const DSA_METHOD *dsa_meth);
 int ENGINE_set_ECDH(ENGINE *e, const ECDH_METHOD *ecdh_meth);
 int ENGINE_set_ECDSA(ENGINE *e, const ECDSA_METHOD *ecdsa_meth);
+int ENGINE_set_EC(ENGINE *e, const EC_KEY_METHOD *ec_meth);
 int ENGINE_set_DH(ENGINE *e, const DH_METHOD *dh_meth);
 int ENGINE_set_RAND(ENGINE *e, const RAND_METHOD *rand_meth);
 int ENGINE_set_STORE(ENGINE *e, const STORE_METHOD *store_meth);
@@ -486,6 +495,7 @@ const RSA_METHOD *ENGINE_get_RSA(const ENGINE *e);
 const DSA_METHOD *ENGINE_get_DSA(const ENGINE *e);
 const ECDH_METHOD *ENGINE_get_ECDH(const ENGINE *e);
 const ECDSA_METHOD *ENGINE_get_ECDSA(const ENGINE *e);
+const EC_KEY_METHOD *ENGINE_get_EC(const ENGINE *e);
 const DH_METHOD *ENGINE_get_DH(const ENGINE *e);
 const RAND_METHOD *ENGINE_get_RAND(const ENGINE *e);
 const STORE_METHOD *ENGINE_get_STORE(const ENGINE *e);
@@ -553,6 +563,7 @@ ENGINE *ENGINE_get_default_RSA(void);
 ENGINE *ENGINE_get_default_DSA(void);
 ENGINE *ENGINE_get_default_ECDH(void);
 ENGINE *ENGINE_get_default_ECDSA(void);
+ENGINE *ENGINE_get_default_EC(void);
 ENGINE *ENGINE_get_default_DH(void);
 ENGINE *ENGINE_get_default_RAND(void);
 /* These functions can be used to get a functional reference to perform
@@ -572,6 +583,7 @@ int ENGINE_set_default_string(ENGINE *e, const char *def_list);
 int ENGINE_set_default_DSA(ENGINE *e);
 int ENGINE_set_default_ECDH(ENGINE *e);
 int ENGINE_set_default_ECDSA(ENGINE *e);
+int ENGINE_set_default_EC(ENGINE *e);
 int ENGINE_set_default_DH(ENGINE *e);
 int ENGINE_set_default_RAND(ENGINE *e);
 int ENGINE_set_default_ciphers(ENGINE *e);
@@ -686,11 +698,6 @@ typedef int (*dynamic_bind_engine)(ENGINE *e, const char *id,
 		if(!CRYPTO_set_mem_functions(fns->mem_fns.malloc_cb, \
 			fns->mem_fns.realloc_cb, fns->mem_fns.free_cb)) \
 			return 0; \
-		CRYPTO_set_locking_callback(fns->lock_fns.lock_locking_cb); \
-		CRYPTO_set_add_lock_callback(fns->lock_fns.lock_add_lock_cb); \
-		CRYPTO_set_dynlock_create_callback(fns->lock_fns.dynlock_create_cb); \
-		CRYPTO_set_dynlock_lock_callback(fns->lock_fns.dynlock_lock_cb); \
-		CRYPTO_set_dynlock_destroy_callback(fns->lock_fns.dynlock_destroy_cb); \
 		if(!CRYPTO_set_ex_data_implementation(fns->ex_data_fns)) \
 			return 0; \
 		if(!ERR_set_implementation(fns->err_fns)) return 0; \

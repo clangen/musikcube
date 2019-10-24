@@ -1,4 +1,4 @@
-/* $OpenBSD: crypto.h,v 1.45 2018/03/19 03:35:38 beck Exp $ */
+/* $OpenBSD: crypto.h,v 1.50 2019/01/19 01:07:00 tb Exp $ */
 /* ====================================================================
  * Copyright (c) 1998-2006 The OpenSSL Project.  All rights reserved.
  *
@@ -203,7 +203,6 @@ typedef struct openssl_item_st {
 #define CRYPTO_READ		4
 #define CRYPTO_WRITE		8
 
-#ifndef OPENSSL_NO_LOCKING
 #ifndef CRYPTO_w_lock
 #define CRYPTO_w_lock(type)	\
 	CRYPTO_lock(CRYPTO_LOCK|CRYPTO_WRITE,type,__FILE__,__LINE__)
@@ -215,13 +214,6 @@ typedef struct openssl_item_st {
 	CRYPTO_lock(CRYPTO_UNLOCK|CRYPTO_READ,type,__FILE__,__LINE__)
 #define CRYPTO_add(addr,amount,type)	\
 	CRYPTO_add_lock(addr,amount,type,__FILE__,__LINE__)
-#endif
-#else
-#define CRYPTO_w_lock(a)
-#define CRYPTO_w_unlock(a)
-#define CRYPTO_r_lock(a)
-#define CRYPTO_r_unlock(a)
-#define CRYPTO_add(a,b,c)	((*(a))+=(b))
 #endif
 
 /* Some applications as well as some parts of OpenSSL need to allocate
@@ -294,11 +286,13 @@ DECLARE_STACK_OF(CRYPTO_EX_DATA_FUNCS)
 #define CRYPTO_EX_INDEX_ECDH		13
 #define CRYPTO_EX_INDEX_COMP		14
 #define CRYPTO_EX_INDEX_STORE		15
+#define CRYPTO_EX_INDEX_EC_KEY		16
 
 /* Dynamically assigned indexes start from this value (don't use directly, use
  * via CRYPTO_ex_data_new_class). */
 #define CRYPTO_EX_INDEX_USER		100
 
+#ifndef LIBRESSL_INTERNAL
 #define CRYPTO_malloc_init()		(0)
 #define CRYPTO_malloc_debug_init()	(0)
 
@@ -329,6 +323,7 @@ int CRYPTO_is_mem_check_on(void);
 #define OPENSSL_malloc_locked(num) \
 	CRYPTO_malloc_locked((int)num,__FILE__,__LINE__)
 #define OPENSSL_free_locked(addr) CRYPTO_free_locked(addr)
+#endif
 
 const char *OpenSSL_version(int type);
 #define OPENSSL_VERSION		0
@@ -368,10 +363,30 @@ void *CRYPTO_get_ex_data(const CRYPTO_EX_DATA *ad, int idx);
  * potential race-conditions. */
 void CRYPTO_cleanup_all_ex_data(void);
 
-int CRYPTO_get_new_lockid(char *name);
-
-int CRYPTO_num_locks(void); /* return CRYPTO_NUM_LOCKS (shared libs!) */
 void CRYPTO_lock(int mode, int type, const char *file, int line);
+int CRYPTO_add_lock(int *pointer, int amount, int type, const char *file,
+    int line);
+
+/* Don't use this structure directly. */
+typedef struct crypto_threadid_st {
+	void *ptr;
+	unsigned long val;
+} CRYPTO_THREADID;
+void CRYPTO_THREADID_current(CRYPTO_THREADID *id);
+int CRYPTO_THREADID_cmp(const CRYPTO_THREADID *a, const CRYPTO_THREADID *b);
+void CRYPTO_THREADID_cpy(CRYPTO_THREADID *dest, const CRYPTO_THREADID *src);
+unsigned long CRYPTO_THREADID_hash(const CRYPTO_THREADID *id);
+
+#ifndef LIBRESSL_INTERNAL
+/* These functions are deprecated no-op stubs */
+void CRYPTO_set_id_callback(unsigned long (*func)(void));
+unsigned long (*CRYPTO_get_id_callback(void))(void);
+unsigned long CRYPTO_thread_id(void);
+
+int CRYPTO_get_new_lockid(char *name);
+const char *CRYPTO_get_lock_name(int type);
+
+int CRYPTO_num_locks(void);
 void CRYPTO_set_locking_callback(void (*func)(int mode, int type,
     const char *file, int line));
 void (*CRYPTO_get_locking_callback(void))(int mode, int type,
@@ -381,29 +396,10 @@ void CRYPTO_set_add_lock_callback(int (*func)(int *num, int mount, int type,
 int (*CRYPTO_get_add_lock_callback(void))(int *num, int mount, int type,
     const char *file, int line);
 
-/* Don't use this structure directly. */
-typedef struct crypto_threadid_st {
-	void *ptr;
-	unsigned long val;
-} CRYPTO_THREADID;
-/* Only use CRYPTO_THREADID_set_[numeric|pointer]() within callbacks */
 void CRYPTO_THREADID_set_numeric(CRYPTO_THREADID *id, unsigned long val);
 void CRYPTO_THREADID_set_pointer(CRYPTO_THREADID *id, void *ptr);
 int CRYPTO_THREADID_set_callback(void (*threadid_func)(CRYPTO_THREADID *));
 void (*CRYPTO_THREADID_get_callback(void))(CRYPTO_THREADID *);
-void CRYPTO_THREADID_current(CRYPTO_THREADID *id);
-int CRYPTO_THREADID_cmp(const CRYPTO_THREADID *a, const CRYPTO_THREADID *b);
-void CRYPTO_THREADID_cpy(CRYPTO_THREADID *dest, const CRYPTO_THREADID *src);
-unsigned long CRYPTO_THREADID_hash(const CRYPTO_THREADID *id);
-#ifndef OPENSSL_NO_DEPRECATED
-void CRYPTO_set_id_callback(unsigned long (*func)(void));
-unsigned long (*CRYPTO_get_id_callback(void))(void);
-unsigned long CRYPTO_thread_id(void);
-#endif
-
-const char *CRYPTO_get_lock_name(int type);
-int CRYPTO_add_lock(int *pointer, int amount, int type, const char *file,
-    int line);
 
 int CRYPTO_get_new_dynlockid(void);
 void CRYPTO_destroy_dynlockid(int i);
@@ -414,6 +410,7 @@ void CRYPTO_set_dynlock_destroy_callback(void (*dyn_destroy_function)(struct CRY
 struct CRYPTO_dynlock_value *(*CRYPTO_get_dynlock_create_callback(void))(const char *file, int line);
 void (*CRYPTO_get_dynlock_lock_callback(void))(int mode, struct CRYPTO_dynlock_value *l, const char *file, int line);
 void (*CRYPTO_get_dynlock_destroy_callback(void))(struct CRYPTO_dynlock_value *l, const char *file, int line);
+#endif
 
 /* CRYPTO_set_mem_functions includes CRYPTO_set_locked_mem_functions --
  * call the latter last if you need different functions */
@@ -493,11 +490,11 @@ long CRYPTO_dbg_get_options(void)
 	__attribute__ ((deprecated));
 
 
-void CRYPTO_mem_leaks_fp(FILE *);
-void CRYPTO_mem_leaks(struct bio_st *bio);
+int CRYPTO_mem_leaks_fp(FILE *);
+int CRYPTO_mem_leaks(struct bio_st *bio);
 /* unsigned long order, char *file, int line, int num_bytes, char *addr */
-typedef void *CRYPTO_MEM_LEAK_CB(unsigned long, const char *, int, int, void *);
-void CRYPTO_mem_leaks_cb(CRYPTO_MEM_LEAK_CB *cb);
+typedef int *CRYPTO_MEM_LEAK_CB(unsigned long, const char *, int, int, void *);
+int CRYPTO_mem_leaks_cb(CRYPTO_MEM_LEAK_CB *cb);
 
 /* die if we have to */
 void OpenSSLDie(const char *file, int line, const char *assertion);
