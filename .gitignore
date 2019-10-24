@@ -12,10 +12,12 @@
 **/*.deb
 **/*.aps
 **/.DS_Store
+**/obj32
+**/obj64
 .vs
 .vscode
-bin
-obj
+bin32
+bin64
 ipch
 build
 CPack*

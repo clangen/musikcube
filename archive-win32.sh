@@ -1,4 +1,4 @@
-#!/bin32/sh
+#!/bin/sh
 
 VERSION=$1
 
