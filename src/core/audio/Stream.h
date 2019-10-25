@@ -41,6 +41,7 @@
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>
 
+#include <deque>
 #include <list>
 
 namespace musik { namespace core { namespace audio {
