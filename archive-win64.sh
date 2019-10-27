@@ -7,7 +7,7 @@ if [ -z "$VERSION" ]; then
   exit
 fi
 
-VANILLA="bin64/dist/musikcube_win64_$VERSION"
+VANILLA="dist/musikcube_win64_$VERSION"
 
 rm -rf "$VANILLA"
 

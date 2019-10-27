@@ -7,8 +7,8 @@ if [ -z "$VERSION" ]; then
   exit
 fi
 
-VANILLA="bin32/dist/musikcube_win32_$VERSION"
-MILKDROP="bin32/dist/musikcube_win32_with_milkdrop2_$VERSION"
+VANILLA="dist/musikcube_win32_$VERSION"
+MILKDROP="dist/musikcube_win32_with_milkdrop2_$VERSION"
 
 rm -rf "$VANILLA"
 rm -rf "$MILKDROP"
