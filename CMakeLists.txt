@@ -328,3 +328,9 @@ endif()
 # they don't yet exist!
 add_custom_target(postbuild ALL DEPENDS musikcube musikcubed)
 add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)
+
+# strip binaries in release mode
+if (CMAKE_BUILD_TYPE MATCHES Release)
+  message(STATUS "stripping binaries...")
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND ./strip-nix.sh)
+endif()
