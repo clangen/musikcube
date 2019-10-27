@@ -1,3 +1,23 @@
+0.70.1
+
+musikcube:
+* new MPRIS plugin for controlling playback on Linux (brunosmmm)
+* 64-bit binaries for Windows (note: Milkdrop only supports 32-bit)
+* ru_RU update (adem4ik)
+* it_IT update (alexpovel)
+* chocolately install instructions (majkinetor)
+* FreeBSD install instructions (0mp)
+* Raspberry Pi 4 support
+* Debian Buster support
+* Dependency upgrades on Windows (libcurl, PDCurses, libogg, LAME, ffmpeg)
+* A couple small tweaks / fixes to widget focus behavior
+
+musikdroid:
+* Code cleanup and refactors with clearer names for major subsystems
+* Dependency upgrades and migration to AndroidX
+
+--------------------------------------------------------------------------------
+
 0.65.2
 
 musikcube:
