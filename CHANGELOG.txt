@@ -7,10 +7,11 @@ musikcube:
 * it_IT update (alexpovel)
 * chocolately install instructions (majkinetor)
 * FreeBSD install instructions (0mp)
-* Raspberry Pi 4 support
-* Debian Buster support
 * Dependency upgrades on Windows (libcurl, PDCurses, libogg, LAME, ffmpeg)
 * A couple small tweaks / fixes to widget focus behavior
+* Raspberry Pi 4 support
+* Debian Buster support
+* Ubuntu Eoan support
 
 musikdroid:
 * Code cleanup and refactors with clearer names for major subsystems

@@ -52,6 +52,19 @@ jobs:
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
+  build_ubuntu_eoan:
+    docker:
+      - image: ubuntu:eoan
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.67-dev libboost-system1.67-dev libboost-filesystem1.67-dev libboost-date-time1.67-dev libboost-atomic1.67-dev libboost-chrono1.67-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev
+      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2
+      - run: make package
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - store_artifacts:
+          path: /root/debs/
   build_ubuntu_zesty:
     docker:
       - image: ubuntu:zesty
@@ -141,6 +154,7 @@ workflows:
       - build_ubuntu_bionic: *workflow_filters
       - build_ubuntu_cosmic: *workflow_filters
       - build_ubuntu_disco: *workflow_filters
+      - build_ubuntu_eoan: *workflow_filters
       - build_ubuntu_zesty: *workflow_filters
       - build_fedora_26: *workflow_filters
       - build_fedora_27: *workflow_filters
