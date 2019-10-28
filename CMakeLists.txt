@@ -11,7 +11,9 @@ set (musikcube_VERSION_MINOR 70)
 set (musikcube_VERSION_PATCH 0)
 set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/.cmake)
 include(CMakeToolsHelpers OPTIONAL)
+include(CheckAtomic)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-unused-result -Wno-deprecated-declarations")
 
@@ -48,11 +50,18 @@ set(COMMON_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
 
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS})
-elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS} dl)
 else()
-  set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS} dl atomic)
+  set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS} dl)
 endif()
+
+if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
+  if(NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
+    message(STATUS "[build] libatomic required, adding to library list")
+    set (musikcube_LINK_LIBS ${musikcube_LINK_LIBS} atomic)
+  endif()
+endif()
+
+message(STATUS "[build] link libraries are: ${musikcube_LINK_LIBS}")
 
 include_directories (
   "${musikcube_SOURCE_DIR}/src"
