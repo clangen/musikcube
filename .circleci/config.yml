@@ -1,18 +1,5 @@
 version: 2.0
 jobs:
-  build_ubuntu_artful:
-    docker:
-      - image: ubuntu:artful
-    steps:
-      - checkout
-      - run: apt-get update
-      - run: apt-get install -y build-essential clang cmake libboost-thread1.63-dev libboost-system1.63-dev libboost-filesystem1.63-dev libboost-date-time1.63-dev libboost-atomic1.63-dev libboost-chrono1.63-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
-      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=artful -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make -j2
-      - run: make package
-      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - store_artifacts:
-          path: /root/debs/
   build_ubuntu_bionic:
     docker:
       - image: ubuntu:bionic
@@ -135,7 +122,6 @@ workflows:
   version: 2
   build_and_package:
     jobs:
-      - build_ubuntu_artful: *workflow_filters
       - build_ubuntu_bionic: *workflow_filters
       - build_ubuntu_cosmic: *workflow_filters
       - build_ubuntu_disco: *workflow_filters
