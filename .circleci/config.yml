@@ -65,21 +65,6 @@ jobs:
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
-  build_ubuntu_zesty:
-    docker:
-      - image: ubuntu:zesty
-    steps:
-      - checkout
-      - run: apt-get install sed
-      - run: sed -i -e 's/archive.ubuntu.com\|security.ubuntu.com/old-releases.ubuntu.com/g' /etc/apt/sources.list
-      - run: apt-get update
-      - run: apt-get install -y build-essential clang cmake libboost-thread1.61-dev libboost-system1.61-dev libboost-filesystem1.61-dev libboost-date-time1.61-dev libboost-atomic1.61-dev libboost-chrono1.61-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
-      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_DISTRO=zesty -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make -j2
-      - run: make package
-      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - store_artifacts:
-          path: /root/debs/
   build_fedora_26:
     docker:
       - image: fedora:26
@@ -155,7 +140,6 @@ workflows:
       - build_ubuntu_cosmic: *workflow_filters
       - build_ubuntu_disco: *workflow_filters
       - build_ubuntu_eoan: *workflow_filters
-      - build_ubuntu_zesty: *workflow_filters
       - build_fedora_26: *workflow_filters
       - build_fedora_27: *workflow_filters
       - build_fedora_28: *workflow_filters
