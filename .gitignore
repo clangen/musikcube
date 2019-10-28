@@ -16,6 +16,7 @@
 **/obj64
 .vs
 .vscode
+dist
 bin
 bin32
 bin64
