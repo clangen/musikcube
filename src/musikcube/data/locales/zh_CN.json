@@ -115,7 +115,7 @@
         "settings_replay_gain_mode_track": "单曲",
         "settings_replay_gain_mode_album": "专辑",
 
-        "settings_configure_plugin_title": "配置 {{name}} ",
+        "settings_configure_plugin_title": "配置 {{name}}",
         "settings_no_plugin_config_title": "无配置",
         "settings_no_plugin_config_message": "插件 {{name}} 没有可用配置。",
 
@@ -182,7 +182,7 @@
         "shortcuts_tracks": "曲目",
         "shortcuts_play_queue": "播放队列",
 
-        "transport_playing_format": "正在播放：$title；艺术家：$artist；专辑：$album",
+        "transport_playing_format": "正在播放: $title 艺术家: $artist 专辑: $album",
         "transport_stopped": "回放停止",
         "transport_empty_song": "[未知歌曲]",
         "transport_empty_album": "[未知专辑]",
