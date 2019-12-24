@@ -184,7 +184,7 @@ void DirectoryLayout::UpdateTitle() {
     if (selected != ListWindow::NO_SELECTION) {
         std::string fullPath = this->adapter->GetFullPathAt(selected);
         if (fullPath.size()) {
-            title = _TSTR("browse_title_directory_tracks") + fullPath;
+            title = u8fmt(_TSTR("browse_title_directory_tracks"), fullPath.c_str());
         }
     }
 
