@@ -27,7 +27,7 @@
         "browse_title_directory": "папка",
         "browse_playlist_modified": "плейлист изменён. нажмите '%s' для сохранения.",
         "browse_categories_title": "выбрать категорию",
-        "browse_title_directory_tracks": "треки в ",
+        "browse_title_directory_tracks": "треки в %s",
 
         "browse_pick_path_overlay_title": "выбрать корневую папку",
         "browse_pick_path_last_directory": "последняя папка",
