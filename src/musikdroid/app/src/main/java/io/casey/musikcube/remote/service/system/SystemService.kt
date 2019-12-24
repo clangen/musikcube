@@ -79,7 +79,7 @@ class SystemService : Service() {
             channel.setSound(null, null)
             channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
-            val nm = getSystemService(Service.NOTIFICATION_SERVICE) as NotificationManager
+            val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             nm.deleteNotificationChannel(NOTIFICATION_CHANNEL)
             nm.createNotificationChannel(channel)
         }
