@@ -456,6 +456,16 @@ void TaglibMetadataReader::ExtractReplayGain(const T& map, ITagStore *target)
     }
 }
 
+void TaglibMetadataReader::SetTagValueWithPossibleTotal(
+    const std::string& value, const std::string& valueKey, const std::string& totalKey, ITagStore* track)
+{
+    std::vector<std::string> parts = str::split(value, "/");
+    this->SetTagValue(valueKey.c_str(), parts[0].c_str(), track);
+    if (parts.size() > 1) {
+        this->SetTagValue(totalKey.c_str(), parts[1].c_str(), track);
+    }
+}
+
 bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
     TagLib::ID3v2::FrameFactory::instance()->setDefaultTextEncoding(TagLib::String::UTF8);
 
@@ -536,15 +546,19 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
         }
 
         /* TRCK is the track number (or "trackNum/totalTracks") */
-
-        std::vector<std::string> splitTrack;
         if (!allTags["TRCK"].isEmpty()) {
-            std::string tempTrack = allTags["TRCK"].front()->toString().toCString(true);
-            splitTrack = str::split(tempTrack, "/");
-            this->SetTagValue("track", splitTrack[0].c_str(), track);
-            if (splitTrack.size() > 1) {
-                this->SetTagValue("totaltracks", splitTrack[1].c_str(), track);
-            }
+            std::string trackNumber = allTags["TRCK"].front()->toString().toCString(true);
+            this->SetTagValueWithPossibleTotal(trackNumber, "track", "totaltracks", track);
+        }
+
+        /* TPOS is the disc number (or "discNum/totalDiscs") */
+        if (!allTags["TPOS"].isEmpty()) {
+            std::string discNumber = allTags["TPOS"].front()->toString().toCString(true);
+            this->SetTagValueWithPossibleTotal(discNumber, "disc", "totaldiscs", track);
+        }
+        else {
+            this->SetTagValue("disc", "1", track);
+            this->SetTagValue("totaldiscs", "1", track);
         }
 
         this->SetTagValues("bpm", allTags["TBPM"], track);
@@ -557,7 +571,6 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
         this->SetTagValues("mood", allTags["TMOO"], track);
         this->SetSlashSeparatedValues("org.artist", allTags["TOPE"], track);
         this->SetTagValues("language", allTags["TLAN"], track);
-        this->SetTagValues("disc", allTags["TPOS"], track);
         this->SetTagValues("lyrics", allTags["USLT"], track);
         this->SetTagValues("disc", allTags["TPOS"], track);
 
@@ -710,7 +723,7 @@ void TaglibMetadataReader::SetTagValues(
             TagLib::String tagString = (*value)->toString();
             if(!tagString.isEmpty()) {
                 std::string value(tagString.to8Bit(true));
-                target->SetValue(key,value.c_str());
+                target->SetValue(key, value.c_str());
             }
         }
     }

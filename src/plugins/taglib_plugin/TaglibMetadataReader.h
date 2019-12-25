@@ -98,6 +98,13 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
             const std::string& inputKey,
             const std::string& defaultValue);
 
+        void SetTagValueWithPossibleTotal(
+            const std::string& value,
+            const std::string& valueKey,
+            const std::string& totalKey,
+            musik::core::sdk::ITagStore* track
+        );
+
         void SetTagValue(
             const char* key,
             const char* string,
