@@ -27,7 +27,7 @@
         "browse_title_directory": "目录",
         "browse_playlist_modified": "播放列表已更改，按 %s 保存。",
         "browse_categories_title": "选择分类",
-        "browse_title_directory_tracks": "tracks in ",
+        "browse_title_directory_tracks": "%s 中的曲目",
 
         "browse_pick_path_overlay_title": "选择根目录",
         "browse_pick_path_last_directory": "上一个目录",
@@ -76,7 +76,7 @@
         "settings_first_run_dialog_body": "添加一些包含音乐文件的目录，然后按 %s 打开音乐库并开始聆听！\n\n如需调试错误，按 %s 打开控制台。\n\n其它快捷键已在屏幕底部的命令栏列出。按 ESC 开关命令模式。\n\n选择“OK”开始使用。",
         "settings_needs_restart": "您需要重启 musikcube 以使更改生效。",
         "settings_selected_locale": "语言：",
-        "settings_seek_not_scrub": "seek playback (don't scrub)",
+        "settings_seek_not_scrub": "快进时立即跳转到新位置",
         "settings_minimize_to_tray": "最小化至托盘",
         "settings_start_minimized": "以最小化模式启动",
         "settings_server_setup": "服务器设置",
