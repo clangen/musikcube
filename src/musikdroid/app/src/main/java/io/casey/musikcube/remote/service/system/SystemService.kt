@@ -190,9 +190,6 @@ class SystemService : Service() {
             mediaSession = MediaSessionCompat(
                 this, SESSION_TAG, receiver, null)
                 .apply {
-                    this.setFlags(
-                        MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
                     this.setCallback(mediaSessionCallback)
                     this.isActive = true
                 }
