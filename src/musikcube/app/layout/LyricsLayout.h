@@ -6,6 +6,7 @@
 #include <cursespp/ITopLevelLayout.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <core/audio/PlaybackService.h>
+#include <core/library/ILibrary.h>
 
 namespace musik { namespace cube {
 
@@ -15,7 +16,9 @@ namespace musik { namespace cube {
         public sigslot::has_slots<>
     {
         public:
-            LyricsLayout(musik::core::audio::PlaybackService& playback);
+            LyricsLayout(
+                musik::core::audio::PlaybackService& playback,
+                musik::core::ILibraryPtr library);
 
             virtual void OnLayout() override;
             virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
@@ -29,12 +32,14 @@ namespace musik { namespace cube {
             void OnSelectionChanged(cursespp::ListWindow* window, size_t index, size_t prev);
             void OnPlaybackEvent(int playbackEvent);
             void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+            void OnLyricsLoaded(musik::core::TrackPtr track, const std::string& lyrics);
 
             void SetState(State state);
             void LoadLyricsForCurrentTrack();
             void UpdateAdapter(const std::string& lyrics);
 
             State state { State::NotPlaying };
+            musik::core::ILibraryPtr library;
             musik::core::audio::PlaybackService& playback;
             std::shared_ptr<cursespp::SimpleScrollAdapter> adapter;
             std::shared_ptr<cursespp::ListWindow> listView;
