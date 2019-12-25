@@ -213,19 +213,5 @@
         "update_check_dialog_message": "musikcube %s 版已经发布。在这里获取更新日志和程序：\n\n%s",
         "update_check_no_updates_title": "更新检查",
         "update_check_no_updates_message": "未发现更新。"
-    },
-
-    "dimensions": {
-        "output_device_overlay_width": 35,
-        "playqueue_album_header_overlay_width": 35,
-        "playqueue_playlist_add_to_queue_overlay_width": 35,
-        "playqueue_playlist_list_overlay_width": 35,
-        "playqueue_playlist_name_overlay_width": 35,
-        "browse_categories_overlay_width": 35,
-        "indexer_overlay_width": 28,
-        "reassign_hotkey_overlay_width": 35,
-        "server_overlay_width": 45,
-        "preamp_overlay_width": 40,
-        "equalizer_overlay_width": 46
     }
 }
