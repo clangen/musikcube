@@ -229,6 +229,9 @@
     <ClCompile Include="library\LocalMetadataProxy.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\LyricsQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -554,6 +557,9 @@
     </ClInclude>
     <ClInclude Include="library\LocalMetadataProxy.h">
       <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\LyricsQuery.h">
+      <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
