@@ -433,7 +433,6 @@ class RemotePlaybackService : IPlaybackService {
         }
 
         override fun onInvalidPassword() {
-
         }
     }
 

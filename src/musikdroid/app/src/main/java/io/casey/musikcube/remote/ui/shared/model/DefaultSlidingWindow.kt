@@ -30,7 +30,7 @@ class DefaultSlidingWindow(
             val countObservable = queryFactory.count()
 
             if (countObservable != null) {
-                countObservable.subscribeBy(
+                @Suppress countObservable.subscribeBy(
                     onNext = { newCount ->
                         count = newCount
 
@@ -103,7 +103,7 @@ class DefaultSlidingWindow(
             queryOffset = offset
             queryLimit = limit
 
-            pageRequest.subscribeBy(
+            @Suppress pageRequest.subscribeBy(
                 onNext = { response ->
                     queryLimit = -1
                     queryOffset = queryLimit

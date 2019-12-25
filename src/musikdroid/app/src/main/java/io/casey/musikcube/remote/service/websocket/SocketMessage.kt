@@ -15,18 +15,13 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
         Broadcast("broadcast");
 
         companion object {
-            fun fromString(str: String): Type {
-                if (Request.rawType == str) {
-                    return Request
+            fun fromString(str: String): Type =
+                when (str) {
+                    Request.rawType -> Request
+                    Response.rawType -> Response
+                    Broadcast.rawType -> Broadcast
+                    else -> throw IllegalArgumentException("str")
                 }
-                else if (Response.rawType == str) {
-                    return Response
-                }
-                else if (Broadcast.rawType == str) {
-                    return Broadcast
-                }
-                throw IllegalArgumentException("str")
-            }
         }
     }
 
@@ -39,7 +34,7 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
         this.options = options ?: JSONObject()
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "unused")
     fun <T> getOption(key: String): T? {
         if (options.has(key)) {
             try {
@@ -155,13 +150,14 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
         }
     }
 
+    @Suppress("unused")
     fun buildUpon(): Builder {
         try {
             val builder = Builder()
-            builder._name = name
-            builder._type = type
-            builder._id = id
-            builder._options = JSONObject(options.toString())
+            builder.internalName = name
+            builder.internalType = type
+            builder.internalId = id
+            builder.internalOptions = JSONObject(options.toString())
             return builder
         }
         catch (ex: JSONException) {
@@ -170,19 +166,19 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
     }
 
     class Builder internal constructor() {
-        internal var _name: String? = null
-        internal var _type: Type? = null
-        internal var _id: String? = null
-        internal var _options = JSONObject()
+        internal var internalName: String? = null
+        internal var internalType: Type? = null
+        internal var internalId: String? = null
+        internal var internalOptions = JSONObject()
 
         fun withOptions(options: JSONObject?): Builder {
-            _options = options ?: JSONObject()
+            internalOptions = options ?: JSONObject()
             return this
         }
 
         fun addOption(key: String, value: Any?): Builder {
             try {
-                _options.put(key, value)
+                internalOptions.put(key, value)
             }
             catch (ex: JSONException) {
                 throw RuntimeException("addOption failed??")
@@ -190,13 +186,14 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
             return this
         }
 
+        @Suppress("unused")
         fun removeOption(key: String): Builder {
-            _options.remove(key)
+            internalOptions.remove(key)
             return this
         }
 
         fun build(): SocketMessage {
-            return SocketMessage(_name!!, _id!!, _type!!, _options)
+            return SocketMessage(internalName!!, internalId!!, internalType!!, internalOptions)
         }
 
         companion object {
@@ -206,35 +203,36 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
                 return String.format(Locale.ENGLISH, "musikcube-android-client-%d", nextId.incrementAndGet())
             }
 
+            @Suppress("unused")
             fun broadcast(name: String): Builder {
                 val builder = Builder()
-                builder._name = name
-                builder._id = newId()
-                builder._type = Type.Response
+                builder.internalName = name
+                builder.internalId = newId()
+                builder.internalType = Type.Response
                 return builder
             }
 
             fun respondTo(message: SocketMessage): Builder {
                 val builder = Builder()
-                builder._name = message.name
-                builder._id = message.id
-                builder._type = Type.Response
+                builder.internalName = message.name
+                builder.internalId = message.id
+                builder.internalType = Type.Response
                 return builder
             }
 
             fun request(name: String): Builder {
                 val builder = Builder()
-                builder._name = name
-                builder._id = newId()
-                builder._type = Type.Request
+                builder.internalName = name
+                builder.internalId = newId()
+                builder.internalType = Type.Request
                 return builder
             }
 
             fun request(name: Messages.Request): Builder {
                 val builder = Builder()
-                builder._name = name.toString()
-                builder._id = newId()
-                builder._type = Type.Request
+                builder.internalName = name.toString()
+                builder.internalId = newId()
+                builder.internalType = Type.Request
                 return builder
             }
         }
@@ -243,19 +241,18 @@ class SocketMessage private constructor(val name: String, val id: String, val ty
     companion object {
         private val TAG = SocketMessage::class.java.canonicalName
 
-        fun create(string: String): SocketMessage? {
+        fun create(string: String): SocketMessage? =
             try {
                 val `object` = JSONObject(string)
                 val name = `object`.getString("name")
                 val type = Type.fromString(`object`.getString("type"))
                 val id = `object`.getString("id")
                 val options = `object`.optJSONObject("options")
-                return SocketMessage(name, id, type, options)
+                SocketMessage(name, id, type, options)
             }
             catch (ex: Exception) {
                 Log.e(TAG, ex.toString())
-                return null
+                null
             }
-        }
     }
 }

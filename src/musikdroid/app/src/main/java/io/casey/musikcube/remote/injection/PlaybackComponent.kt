@@ -4,7 +4,7 @@ import dagger.Component
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
 
 @PlaybackScope
-@Component(dependencies = arrayOf(AppComponent::class))
+@Component(dependencies = [AppComponent::class])
 interface PlaybackComponent {
     fun inject(playerWrapper: PlayerWrapper)
 }

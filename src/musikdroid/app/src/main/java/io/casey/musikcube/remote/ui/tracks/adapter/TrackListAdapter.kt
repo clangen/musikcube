@@ -30,7 +30,7 @@ class TrackListAdapter(private val tracks: DefaultSlidingWindow,
 
     private data class Tag(var position: Int?, var track: ITrack?)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrackListAdapter.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val view = inflater.inflate(R.layout.simple_list_item, parent, false)
         view.tag = Tag(null, null)

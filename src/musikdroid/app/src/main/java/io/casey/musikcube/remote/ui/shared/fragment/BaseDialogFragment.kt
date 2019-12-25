@@ -53,7 +53,7 @@ open class BaseDialogFragment: DialogFragment(), ViewModel.Provider {
     }
 
     override fun <T: ViewModel<*>> createViewModel(): T? = null
-    protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T
+    @Suppress("unused") protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T
     protected fun <T: IMixin> mixin(mixin: T): T = mixins.add(mixin)
     protected fun <T: IMixin> mixin(cls: Class<out T>): T? = mixins.get(cls)
 

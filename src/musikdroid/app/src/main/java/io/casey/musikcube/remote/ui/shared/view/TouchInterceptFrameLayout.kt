@@ -39,7 +39,6 @@ class InterceptTouchFrameLayout : FrameLayout {
         return handled || super.onTouchEvent(ev)
     }
 
-    fun defaultOnInterceptTouchEvent(ev: MotionEvent): Boolean = super.onInterceptTouchEvent(ev)
     fun defaultOnTouchEvent(ev: MotionEvent): Boolean = super.onTouchEvent(ev)
 
     companion object {

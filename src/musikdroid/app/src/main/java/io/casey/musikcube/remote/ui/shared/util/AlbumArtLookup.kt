@@ -15,12 +15,13 @@ import java.io.IOException
 import java.net.URLEncoder
 import java.util.concurrent.CountDownLatch
 import java.util.regex.Pattern
+import kotlin.math.abs
 
 enum class Size constructor(internal val key: String, internal val order: Int) {
     Small("small", 0),
     Medium("medium", 1),
     Large("large", 2),
-    ExtraLarge("extralarge", 3),
+    @Suppress("unused") ExtraLarge("extralarge", 3),
     Mega("mega", 4);
 
     companion object {
@@ -189,7 +190,7 @@ object AlbumArtLookup {
                             break
                         }
                         else {
-                            val delta = Math.abs(desiredSize.order - check.first.order)
+                            val delta = abs(desiredSize.order - check.first.order)
                             if (lastDelta > delta) {
                                 closest = check
                                 lastDelta = delta

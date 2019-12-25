@@ -102,8 +102,8 @@ class RemoteSettingsActivity: BaseActivity() {
             driverSpinner.onItemSelectedListener = driverChangeListener
             deviceSpinner.adapter = DevicesAdapter(viewModel.devicesAt(viewModel.selectedDriverIndex))
             deviceSpinner.setSelection(viewModel.selectedDeviceIndex)
-            transportSpinner.setSelection(TRANSPORT_TYPE_TO_INDEX[viewModel.transportType]!!)
-            replayGainSpinner.setSelection(REPLAYGAIN_MODE_TO_INDEX[viewModel.replayGainMode]!!)
+            transportSpinner.setSelection(TRANSPORT_TYPE_TO_INDEX.getValue(viewModel.transportType))
+            replayGainSpinner.setSelection(REPLAYGAIN_MODE_TO_INDEX.getValue(viewModel.replayGainMode))
             initialized = true
         }
 

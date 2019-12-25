@@ -50,7 +50,7 @@ class Messages {
 
         companion object {
             fun from(rawValue: String): Request? {
-                Request.values().forEach {
+                values().forEach {
                     if (it.toString() == rawValue) {
                         return it
                     }
@@ -69,7 +69,7 @@ class Messages {
 
         companion object {
             fun from(rawValue: String): Broadcast? {
-                Broadcast.values().forEach {
+                values().forEach {
                     if (it.toString() == rawValue) {
                         return it
                     }

@@ -70,9 +70,10 @@ class RemoteEqViewModel: BaseRemoteViewModel() {
 
     private val saveDebouncer = object: Debouncer<Void>(500) {
         override fun onDebounced(last: Void?) {
-            provider?.let {
-                val freqs = sortedBands.map { internalBands[it] ?: 0.0 }.toTypedArray()
-                it.updateEqualizerSettings(enabled, freqs)
+            provider?.let { proxy ->
+                proxy.updateEqualizerSettings(enabled, sortedBands.map {
+                    band -> internalBands[band] ?: 0.0
+                }.toTypedArray())
             }
         }
     }

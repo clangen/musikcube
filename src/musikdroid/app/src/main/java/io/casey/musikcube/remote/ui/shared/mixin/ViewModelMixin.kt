@@ -49,6 +49,6 @@ class ViewModelMixin(private val provider: ViewModel.Provider): MixinBase() {
     }
 
     companion object {
-        val EXTRA_VIEW_MODEL_ID = "extra_view_model_id"
+        const val EXTRA_VIEW_MODEL_ID = "extra_view_model_id"
     }
 }

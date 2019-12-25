@@ -20,7 +20,9 @@ import io.casey.musikcube.remote.ui.tracks.fragment.TrackListFragment
 class BrowseFragmentAdapter(private val context: Context,
                             private val playback: PlaybackMixin,
                             fm: FragmentManager,
-                            private val containerId: Int = -1): FragmentPagerAdapter(fm) {
+                            private val containerId: Int = -1)
+    : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT)
+{
     private val fragments = mutableMapOf<Int, Fragment>()
 
     var filter = ""
