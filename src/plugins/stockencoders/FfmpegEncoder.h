@@ -32,14 +32,36 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <core/sdk/IEncoder.h>
+#include <core/sdk/DataBuffer.h>
 
-#include <core/sdk/IEnvironment.h>
+extern "C" {
+    #include <libavcodec/avcodec.h>
+    #include <libswresample/swresample.h>
+}
 
-#ifdef WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
+class FfmpegEncoder : public musik::core::sdk::IEncoder {
+    using IBuffer = musik::core::sdk::IBuffer;
 
-extern musik::core::sdk::IEnvironment* env();
+    public:
+        virtual void Release() override;
+        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
+        virtual int Encode(const IBuffer* pcm, char** data) override;
+        virtual int Flush(char** data) override;
+        virtual void Finalize(const char* uri) override;
+        virtual musik::core::sdk::IPreferences* GetPreferences() override;
+
+    private:
+        bool Encode(AVFrame* frame);
+
+        DataBuffer<char> encodedData;
+        DataBuffer<char> decodedData;
+        musik::core::sdk::IPreferences* prefs;
+        size_t bitrate;
+        int readBufferSize;
+        bool isValid{ false };
+        AVCodec* codec;
+        AVCodecContext* context;
+        AVFrame* frame;
+        SwrContext* resampler;
+};

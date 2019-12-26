@@ -39,6 +39,7 @@
 #include "shared.h"
 #include "LameEncoder.h"
 #include "OggEncoder.h"
+#include "FfmpegEncoder.h"
 
 #include <string>
 #include <algorithm>
@@ -80,7 +81,8 @@ static class EncoderFactory: public IEncoderFactory {
                 return new LameEncoder();
             }
             else if (isOgg(lowerType)) {
-                return new OggEncoder();
+                return new FfmpegEncoder();
+                //return new OggEncoder();
             }
             return nullptr;
         }

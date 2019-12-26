@@ -2,6 +2,7 @@ set (stockencoders_SOURCES
   main.cpp
   LameEncoder.cpp
   OggEncoder.cpp
+  FfmpegEncoder.cpp
 )
 
 add_library(stockencoders SHARED ${stockencoders_SOURCES})
@@ -17,3 +18,10 @@ if (${LINK_STATICALLY} MATCHES "true")
 else()
   target_link_libraries(stockencoders ${musikcube_LINK_LIBS} ogg vorbis vorbisenc vorbisfile mp3lame)
 endif()
+
+# fedora (and probably other RPM-based distros) put ffmpeg includes here...
+include_directories("/usr/include/ffmpeg")
+include_directories("/usr/local/include/ffmpeg")
+
+# note: static linking is a no-go (too many dependencies). sorry macOS.
+target_link_libraries(stockencoders avcodec avutil avformat swresample)

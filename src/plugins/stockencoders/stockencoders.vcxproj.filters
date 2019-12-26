@@ -16,6 +16,9 @@
     <ClCompile Include="OggEncoder.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="FfmpegEncoder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LameEncoder.h">
@@ -25,6 +28,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="shared.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="FfmpegEncoder.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
