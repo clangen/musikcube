@@ -47,22 +47,16 @@ BlockingTranscoder::BlockingTranscoder(
     IDataStreamEncoder* encoder,
     const std::string& uri,
     const std::string& tempFilename,
-    const std::string& finalFilename)
+    const std::string& finalFilename,
+    int bitrate)
 : context(context) {
-    this->input = nullptr;
     this->interrupted = false;
-    this->encoder = nullptr;
-    this->outFile = nullptr;
-    this->input = context.environment->GetDataStream(uri.c_str());
+    this->bitrate = bitrate;
+    this->encoder = encoder;
     this->tempFilename = tempFilename;
     this->finalFilename = finalFilename;
-    if (tempFilename.size() && finalFilename.size()) {
-#ifdef WIN32
-        this->outFile = _wfopen(utf8to16(tempFilename.c_str()).c_str(), L"wb");
-#else
-        this->outFile = fopen(tempFilename.c_str(), "wb");
-#endif
-    }
+    this->output = context.environment->GetDataStream(tempFilename.c_str(), OpenFlag::Write);
+    this->input = context.environment->GetDataStream(uri.c_str(), OpenFlag::Read);
 }
 
 BlockingTranscoder::~BlockingTranscoder() {
@@ -74,17 +68,15 @@ BlockingTranscoder::~BlockingTranscoder() {
         this->encoder->Release();
         this->encoder = nullptr;
     }
-    if (this->outFile) {
-        fclose(this->outFile);
-        this->outFile = nullptr;
-        boost::system::error_code ec;
-        boost::filesystem::remove(this->tempFilename, ec);
+    if (this->output) {
+        this->output->Release();
+        this->output = nullptr;
     }
     delete this;
 }
 
 bool BlockingTranscoder::Transcode() {
-    if (!this->input || !this->encoder) {
+    if (!this->input || !this->output || !this->encoder) {
         return false;
     }
 
@@ -96,7 +88,16 @@ bool BlockingTranscoder::Transcode() {
 
     IBuffer* pcmBuffer = this->context.environment->GetBuffer(SAMPLES_PER_BUFFER);
 
-    while (decoder->GetBuffer(pcmBuffer)) {
+    if (decoder->GetBuffer(pcmBuffer)) {
+        encoder->Initialize(
+            this->output,
+            pcmBuffer->SampleRate(),
+            pcmBuffer->Channels(),
+            this->bitrate);
+        this->encoder->Encode(pcmBuffer);
+    }
+
+    while (!interrupted && decoder->GetBuffer(pcmBuffer)) {
         this->encoder->Encode(pcmBuffer);
         std::this_thread::yield();
     }
@@ -105,8 +106,8 @@ bool BlockingTranscoder::Transcode() {
 
     if (decoder->Exhausted()) {
         this->encoder->Finalize();
-        fclose(this->outFile);
-        this->outFile = nullptr;
+        this->output->Release();
+        this->output = nullptr;
         boost::system::error_code ec;
         boost::filesystem::rename(this->tempFilename, this->finalFilename, ec);
         if (ec) {

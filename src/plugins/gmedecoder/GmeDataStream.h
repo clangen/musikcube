@@ -40,8 +40,9 @@
 class GmeDataStream: public musik::core::sdk::IDataStream {
     public:
         using PositionType = musik::core::sdk::PositionType;
+        using OpenFlag = musik::core::sdk::OpenFlag;
 
-        virtual bool Open(const char *uri, unsigned int options = 0) override;
+        virtual bool Open(const char *uri, OpenFlag flags) override;
         virtual bool Close() override;
         virtual void Interrupt() override;
         virtual void Release() override;

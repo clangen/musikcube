@@ -65,7 +65,7 @@ bool LocalFileStream::Seekable() {
     return true;
 }
 
-bool LocalFileStream::Open(const char *filename, unsigned int options) {
+bool LocalFileStream::Open(const char *filename, OpenFlag flags) {
     try {
         this->uri = filename;
         debug::info(TAG, "opening file: " + std::string(filename));
@@ -82,13 +82,29 @@ bool LocalFileStream::Open(const char *filename, unsigned int options) {
             return false;
         }
 
+        /* convert the OpenFlag bitmask to an fopen compatible string */
+        std::string openFlags = "";
+        if (flags & OpenFlag::Read) {
+            openFlags += "rb";
+        }
+
+        if (flags & OpenFlag::Write) {
+            if (openFlags.size() == 2) {
+                openFlags += "+";
+            }
+            else {
+                openFlags = "wb";
+            }
+        }
+
         this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
 #ifdef WIN32
         std::wstring u16fn = u8to16(this->uri);
-        this->file = _wfopen(u16fn.c_str(), L"rb");
+        std::wstring u16flags = u8to16(openFlags);
+        this->file = _wfopen(u16fn.c_str(), u16flags.c_str());
 #else
-        this->file = fopen(filename, "rb");
+        this->file = fopen(filename, openFlags.c_str());
 #endif
 
         if (this->file.load()) {

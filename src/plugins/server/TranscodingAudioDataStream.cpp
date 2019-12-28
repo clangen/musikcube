@@ -64,7 +64,7 @@ TranscodingAudioDataStream::TranscodingAudioDataStream(
     this->detachTolerance = 0;
     this->format = format;
 
-    this->input = context.environment->GetDataStream(uri.c_str());
+    this->input = context.environment->GetDataStream(uri.c_str(), OpenFlag::Read);
     if (this->input) {
         this->decoder = context.environment->GetDecoder(this->input);
         if (this->decoder) {
@@ -109,7 +109,7 @@ TranscodingAudioDataStream::TranscodingAudioDataStream(
 TranscodingAudioDataStream::~TranscodingAudioDataStream() {
 }
 
-bool TranscodingAudioDataStream::Open(const char *uri, unsigned int options) {
+bool TranscodingAudioDataStream::Open(const char *uri, OpenFlag flags) {
     return true;
 }
 

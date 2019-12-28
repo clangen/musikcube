@@ -37,6 +37,8 @@
 
 extern "C" {
     #include <libavcodec/avcodec.h>
+    #include <libavformat/avio.h>
+    #include <libavformat/avformat.h>
     #include <libswresample/swresample.h>
 }
 
@@ -52,18 +54,25 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
         virtual void Finalize() override;
         virtual IPreferences* GetPreferences() override;
 
+        IDataStream* Stream() { return this->out; }
+
     private:
+        void Cleanup();
         bool Encode(AVFrame* frame);
+        bool OpenOutputCodec(size_t rate, size_t channels, size_t bitrate);
+        bool OpenOutputContext();
 
         DataBuffer<char> encodedData;
         DataBuffer<char> decodedData;
         IDataStream* out;
         IPreferences* prefs;
-        size_t bitrate;
         int readBufferSize;
         bool isValid{ false };
-        AVCodec* codec;
-        AVCodecContext* context;
+        AVCodec* outputCodec;
+        AVCodecContext* outputContext;
+        AVFormatContext* outputFormatContext;
+        AVIOContext* ioContext;
+        void* ioContextOutputBuffer;
         AVFrame* rawFrame;
         AVFrame* resampledFrame;
         SwrContext* resampler;

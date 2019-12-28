@@ -43,11 +43,12 @@ namespace musik { namespace core { namespace io {
     class LocalFileStream : public musik::core::sdk::IDataStream {
         public:
             using PositionType = musik::core::sdk::PositionType;
+            using OpenFlag = musik::core::sdk::OpenFlag;
 
             LocalFileStream();
             virtual ~LocalFileStream();
 
-            virtual bool Open(const char *filename, unsigned int options = 0);
+            virtual bool Open(const char *filename, OpenFlag flags);
             virtual bool Close();
             virtual void Interrupt();
             virtual void Release();

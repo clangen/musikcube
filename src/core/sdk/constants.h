@@ -116,6 +116,11 @@ namespace musik {
                 Crossfade = 1
             };
 
+            enum OpenFlag {
+                Read = 1,
+                Write = 2
+            };
+
             static const size_t EqualizerBandCount = 18;
 
             static const size_t EqualizerBands[] = {

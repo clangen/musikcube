@@ -44,6 +44,7 @@
 
 using namespace musik::core::sdk;
 
+static const int IO_CONTEXT_BUFFER_SIZE = 4096 + AV_INPUT_BUFFER_PADDING_SIZE;
 static const int DEFAULT_SAMPLE_RATE = 44100;
 static const char* TAG = "FfmpegEncoder";
 
@@ -67,6 +68,11 @@ static void logAvError(const std::string& method, int errnum) {
     }
 }
 
+static void logError(const std::string& message) {
+    if (::debug) {
+        ::debug->Warning(TAG, message.c_str());
+    }
+}
 
 static AVSampleFormat resolveSampleFormat(AVCodec *codec) {
     const enum AVSampleFormat *p = codec->sample_fmts;
@@ -108,94 +114,259 @@ static int resolveChannelLayout(size_t channelCount) {
     }
 }
 
+static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
+    FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
+    if (encoder && encoder->Stream()) {
+        auto count = encoder->Stream()->Read(buffer, (PositionType) bufferSize);
+        return (count > 1) ? count : AVERROR_EOF;
+    }
+    return 0;
+}
+
+static int writeCallback(void* opaque, uint8_t* buffer, int bufferSize) {
+    FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
+    if (encoder && encoder->Stream()) {
+        auto count = encoder->Stream()->Write(buffer, (PositionType) bufferSize);
+        return (count > 1) ? count : AVERROR_EOF;
+    }
+    return 0;
+}
+
+static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
+    FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
+    if (encoder && encoder->Stream()) {
+        IDataStream* stream = encoder->Stream();
+        switch (whence) {
+            case AVSEEK_SIZE:
+                return stream->Length();
+                break;
+            case SEEK_SET:
+                stream->SetPosition((PositionType) offset);
+                break;
+            case SEEK_CUR:
+                stream->SetPosition(stream->Position() + (PositionType) offset);
+                break;
+            case SEEK_END:
+                stream->SetPosition(stream->Length() - 1);
+                break;
+            default:
+                debug->Error(TAG, "unknown seek type!");
+                break;
+        }
+        if (stream->Position() >= stream->Length()) {
+            return -1;
+        }
+        return stream->Position();
+    }
+    return 0;
+}
+
+bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate) {
+    if (!this->ioContext) {
+        logError("ioContext not initialized, cannot open output stream");
+        return false;
+    }
+
+    this->outputFormatContext = avformat_alloc_context();
+    if (!this->outputFormatContext) {
+        logError("could not allocate outputFormatContext");
+        return false;
+    }
+
+    const std::string fn = "test.opus";
+    this->outputFormatContext->oformat = av_guess_format(nullptr, fn.c_str(), nullptr);
+    if (!this->outputFormatContext->oformat) {
+        logError("av_guess_format failed to resolve output codec");
+        return false;
+    }
+
+    this->outputFormatContext->pb = this->ioContext;
+
+    this->outputCodec = avcodec_find_encoder(AV_CODEC_ID_OPUS);
+    if (!this->outputCodec) {
+        logError("avcodec_find_encoder failed");
+        return false;
+    }
+
+    /* CAL TODO: examples don't show freeing this stream -- should we? when? */
+    AVStream* stream = avformat_new_stream(this->outputFormatContext, nullptr);
+    if (!stream) {
+        logError("avformat_new_stream failed");
+        return false;
+    }
+
+    this->outputContext = avcodec_alloc_context3(this->outputCodec);
+    if (!this->outputContext) {
+        logError("failed to allocate output context");
+        return false;
+    }
+
+    this->outputContext->channels = (int) channels;
+    this->outputContext->channel_layout = resolveChannelLayout(channels);
+    this->outputContext->sample_rate = (int) rate;
+    this->outputContext->sample_fmt = this->outputCodec->sample_fmts[0];
+    this->outputContext->bit_rate = (int64_t) bitrate * 1000;
+    this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+
+    /* don't quite understand this bit; apparently it sets the sample rate
+    for the container */
+    stream->time_base.den = (int) rate;
+    stream->time_base.num = 1;
+
+    /* also not clear about this, but it's taken from an ffmpeg example. TODO:
+    research what global headers are */
+    if (this->outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
+        this->outputContext->flags | AV_CODEC_FLAG_GLOBAL_HEADER;
+    }
+
+    int error = avcodec_open2(this->outputContext, this->outputCodec, nullptr);
+    if (error < 0) {
+        logAvError("avcodec_open2", error);
+        return false;
+    }
+
+    error = avcodec_parameters_from_context(stream->codecpar, this->outputContext);
+    if (error < 0) {
+        logAvError("avcodec_parameters_from_context", error);
+    }
+
+    return true;
+
+    // if (!this->context())
+
+    // this->codec = avcodec_find_encoder(AV_CODEC_ID_OPUS);
+    // if (this->codec) {
+    //     this->context = avcodec_alloc_context3(this->codec);
+    //     this->context->bit_rate = (int64_t) this->bitrate;
+    //     this->context->sample_fmt = resolveSampleFormat(this->codec);
+    //     this->context->sample_rate = resolveSampleRate(this->codec, (int) rate);
+    //     this->context->channel_layout = resolveChannelLayout(channels);
+    //     this->context->channels = av_get_channel_layout_nb_channels(this->context->channel_layout);
+
+    //     AVDictionary *openOptions = nullptr;
+    //     av_dict_set(&openOptions, "strict", "experimental", 0);
+
+    //     int result = avcodec_open2(this->context, this->codec, &openOptions);
+    //     if (result != 0) {
+    //         logAvError("avcodec_open2", result);
+    //     }
+    //     else {
+    //         this->readBufferSize = av_samples_get_buffer_size(
+    //             nullptr,
+    //             context->channels,
+    //             context->frame_size,
+    //             context->sample_fmt,
+    //             0);
+
+    //         if (this->readBufferSize > 0) {
+    //             this->decodedData.reset((size_t) this->readBufferSize);
+
+    //             this->rawFrame = av_frame_alloc();
+    //             this->rawFrame->nb_samples = this->context->frame_size;
+    //             this->rawFrame->format = AV_SAMPLE_FMT_FLT;
+    //             this->rawFrame->channel_layout = this->context->channel_layout;
+
+    //             this->resampledFrame = av_frame_alloc();
+    //             this->resampledFrame->nb_samples = this->context->frame_size;
+    //             this->resampledFrame->format = this->context->sample_fmt;
+    //             this->resampledFrame->channel_layout = this->context->channel_layout;
+
+    //             result = avcodec_fill_audio_frame(
+    //                 this->rawFrame,
+    //                 this->context->channels,
+    //                 this->context->sample_fmt,
+    //                 (uint8_t*)this->decodedData.data,
+    //                 (int)this->decodedData.length,
+    //                 0);
+
+    //             if (result >= 0) {
+    //                 this->resampler = swr_alloc();
+
+    //                 swr_alloc_set_opts(
+    //                     this->resampler,
+    //                     this->context->channel_layout,
+    //                     this->context->sample_fmt,
+    //                     (int)rate,
+    //                     this->context->channel_layout,
+    //                     AV_SAMPLE_FMT_FLT,
+    //                     (int)rate,
+    //                     0,
+    //                     nullptr);
+
+    //                 if (swr_init(this->resampler) == 0) {
+    //                     return true;
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     av_dict_free(&openOptions);
+    // }
+
+    return false;
+}
+
+bool FfmpegEncoder::OpenOutputContext() {
+    this->ioContextOutputBuffer = av_malloc(IO_CONTEXT_BUFFER_SIZE);
+
+    this->ioContext = avio_alloc_context(
+        reinterpret_cast<unsigned char*>(this->ioContextOutputBuffer),
+        IO_CONTEXT_BUFFER_SIZE,
+        1,
+        this,
+        readCallback,
+        writeCallback,
+        seekCallback);
+
+    return this->ioContext != nullptr;
+}
+
 void FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
     avcodec_register_all();
 
     this->isValid = false;
     this->out = out;
     this->resampler = nullptr;
-    this->bitrate = bitrate * 1000;
     this->prefs = env()->GetPreferences("FfmpegEncoder");
-    this->context = nullptr;
+    this->outputContext = nullptr;
+    this->outputCodec = nullptr;
     this->rawFrame = nullptr;
     this->resampledFrame = nullptr;
-    this->codec = avcodec_find_encoder(AV_CODEC_ID_OPUS);
-    if (this->codec) {
-        this->context = avcodec_alloc_context3(this->codec);
-        this->context->bit_rate = (int64_t) this->bitrate;
-        this->context->sample_fmt = resolveSampleFormat(this->codec);
-        this->context->sample_rate = resolveSampleRate(this->codec, (int) rate);
-        this->context->channel_layout = resolveChannelLayout(channels);
-        this->context->channels = av_get_channel_layout_nb_channels(this->context->channel_layout);
+    this->ioContext = nullptr;
+    this->ioContextOutputBuffer = nullptr;
+    this->outputFormatContext = nullptr;
 
-        AVDictionary *openOptions = nullptr;
-        av_dict_set(&openOptions, "strict", "experimental", 0);
-
-        int result = avcodec_open2(this->context, this->codec, &openOptions);
-        if (result != 0) {
-            logAvError("avcodec_open2", result);
+    if (this->OpenOutputContext()) {
+        if (this->OpenOutputCodec(rate, channels, bitrate)) {
+            this->isValid = true;
         }
-        else {
-            this->readBufferSize = av_samples_get_buffer_size(
-                nullptr,
-                context->channels,
-                context->frame_size,
-                context->sample_fmt,
-                0);
+    }
 
-            if (this->readBufferSize > 0) {
-                this->decodedData.reset((size_t) this->readBufferSize);
-
-                this->rawFrame = av_frame_alloc();
-                this->rawFrame->nb_samples = this->context->frame_size;
-                this->rawFrame->format = AV_SAMPLE_FMT_FLT;
-                this->rawFrame->channel_layout = this->context->channel_layout;
-
-                this->resampledFrame = av_frame_alloc();
-                this->resampledFrame->nb_samples = this->context->frame_size;
-                this->resampledFrame->format = this->context->sample_fmt;
-                this->resampledFrame->channel_layout = this->context->channel_layout;
-
-                result = avcodec_fill_audio_frame(
-                    this->rawFrame,
-                    this->context->channels,
-                    this->context->sample_fmt,
-                    (uint8_t*)this->decodedData.data,
-                    (int)this->decodedData.length,
-                    0);
-
-                if (result >= 0) {
-                    this->resampler = swr_alloc();
-
-                    swr_alloc_set_opts(
-                        this->resampler,
-                        this->context->channel_layout,
-                        this->context->sample_fmt,
-                        (int)rate,
-                        this->context->channel_layout,
-                        AV_SAMPLE_FMT_FLT,
-                        (int)rate,
-                        0,
-                        nullptr);
-
-                    if (swr_init(this->resampler) == 0) {
-                        this->isValid = true;
-                    }
-                }
-            }
-        }
-
-        av_dict_free(&openOptions);
+    if (!this->isValid) {
+        this->Cleanup();
     }
 }
 
-void FfmpegEncoder::Release() {
-    this->prefs->Release();
-    if (this->context) {
-        avcodec_close(this->context);
-        av_free(this->context);
-        this->context = nullptr;
-        this->codec = nullptr;
+void FfmpegEncoder::Cleanup() {
+    this->isValid = false;
+    if (this->ioContext) {
+        av_free(this->ioContext);
+        this->ioContext = nullptr;
+    }
+    if (this->outputContext) {
+        avcodec_flush_buffers(this->outputContext);
+        avcodec_close(this->outputContext);
+        av_free(this->outputContext);
+        this->outputContext = nullptr;
+        this->outputCodec = nullptr;
+    }
+    if (this->outputFormatContext) {
+        avformat_free_context(this->outputFormatContext);
+        this->outputFormatContext = nullptr;
+    }
+    if (this->ioContextOutputBuffer) {
+        av_free(this->ioContextOutputBuffer);
+        this->ioContextOutputBuffer = nullptr;
     }
     if (this->rawFrame) {
         av_frame_free(&this->rawFrame);
@@ -209,6 +380,11 @@ void FfmpegEncoder::Release() {
         swr_free(&this->resampler);
         this->resampler = nullptr;
     }
+}
+
+void FfmpegEncoder::Release() {
+    this->prefs->Release();
+    this->Cleanup();
     delete this;
 }
 
@@ -224,7 +400,7 @@ bool FfmpegEncoder::Encode(AVFrame* frame) {
         int didReadPacket = 0;
         int result = 0;
 
-        result = avcodec_send_frame(this->context, this->rawFrame);
+        result = avcodec_send_frame(this->outputContext, this->rawFrame);
 
         if (result < 0) {
             logAvError("avcodec_send_frame", result);
@@ -232,7 +408,7 @@ bool FfmpegEncoder::Encode(AVFrame* frame) {
         }
 
         while (result >= 0) {
-            result = avcodec_receive_packet(this->context, &packet);
+            result = avcodec_receive_packet(this->outputContext, &packet);
             if (result >= 0) {
                 if (packet.size) {
                     this->encodedData.append((char*)packet.data, packet.size);

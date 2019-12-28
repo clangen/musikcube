@@ -51,7 +51,8 @@ class BlockingTranscoder {
             musik::core::sdk::IDataStreamEncoder* encoder,
             const std::string& uri,
             const std::string& tempFilename,
-            const std::string& finalFilename);
+            const std::string& finalFilename,
+            int bitrate);
 
         virtual ~BlockingTranscoder();
 
@@ -64,7 +65,8 @@ class BlockingTranscoder {
         Context& context;
         musik::core::sdk::IDataStream* input;
         musik::core::sdk::IDataStreamEncoder* encoder;
-        FILE* outFile;
+        musik::core::sdk::IDataStream* output;
         std::string tempFilename, finalFilename;
+        int bitrate;
         bool interrupted;
 };

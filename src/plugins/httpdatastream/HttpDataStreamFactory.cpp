@@ -51,10 +51,10 @@ bool HttpDataStreamFactory::CanRead(const char *uri) {
     return str.find("http://") == 0 || str.find("https://") == 0;
 }
 
-IDataStream* HttpDataStreamFactory::Open(const char *uri, unsigned int options) {
+IDataStream* HttpDataStreamFactory::Open(const char *uri, OpenFlag flags) {
     HttpDataStream* stream = new HttpDataStream();
 
-    if (stream->Open(uri, options)) {
+    if (stream->Open(uri, flags)) {
         return stream;
     }
 
