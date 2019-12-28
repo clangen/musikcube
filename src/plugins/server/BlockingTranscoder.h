@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/sdk/IDataStream.h>
-#include <core/sdk/IEncoder.h>
+#include <core/sdk/IDataStreamEncoder.h>
 #include <core/sdk/DataBuffer.h>
 #include "Context.h"
 #include <thread>
@@ -42,57 +42,29 @@
 #include <string>
 #include <stdio.h>
 
-class TranscodingDataStream : public musik::core::sdk::IDataStream {
+class BlockingTranscoder {
     public:
         using PositionType = musik::core::sdk::PositionType;
 
-        TranscodingDataStream(
+        BlockingTranscoder(
             Context& context,
-            const std::string& uri,
-            size_t bitrate,
-            const std::string& format);
-
-        TranscodingDataStream(
-            Context& context,
+            musik::core::sdk::IDataStreamEncoder* encoder,
             const std::string& uri,
             const std::string& tempFilename,
-            const std::string& finalFilename,
-            size_t bitrate,
-            const std::string& format);
+            const std::string& finalFilename);
 
-        virtual ~TranscodingDataStream();
+        virtual ~BlockingTranscoder();
 
-        virtual bool Open(const char *uri, unsigned int options = 0) override;
-        virtual bool Close() override;
-        virtual void Interrupt() override;
-        virtual void Release() override;
-        virtual PositionType Read(void *buffer, PositionType readBytes) override;
-        virtual bool SetPosition(PositionType position) override;
-        virtual PositionType Position() override;
-        virtual bool Seekable() override;
-        virtual bool Eof() override;
-        virtual long Length() override;
-        virtual const char* Type() override;
-        virtual const char* Uri() override;
-        virtual bool CanPrefetch() override;
+        bool Transcode();
+        void Interrupt();
 
     private:
-        musik::core::sdk::IDataStream* input;
-        musik::core::sdk::IDecoder* decoder;
-        musik::core::sdk::IBuffer* pcmBuffer;
-
         void Dispose();
 
         Context& context;
-        musik::core::sdk::IEncoder* encoder;
-        DataBuffer<char> spillover;
-        size_t bitrate;
-        bool eof;
-        std::mutex mutex;
-        PositionType length, position;
+        musik::core::sdk::IDataStream* input;
+        musik::core::sdk::IDataStreamEncoder* encoder;
         FILE* outFile;
         std::string tempFilename, finalFilename;
-        std::string format;
         bool interrupted;
-        long detachTolerance;
 };

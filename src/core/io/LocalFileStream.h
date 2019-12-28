@@ -51,7 +51,10 @@ namespace musik { namespace core { namespace io {
             virtual bool Close();
             virtual void Interrupt();
             virtual void Release();
+            virtual bool Readable() { return true; }
+            virtual bool Writable() { return false; }
             virtual PositionType Read(void* buffer, PositionType readBytes);
+            virtual PositionType Write(void* buffer, PositionType writeBytes) { return 0; }
             virtual bool SetPosition(PositionType position);
             virtual PositionType Position();
             virtual bool Eof();

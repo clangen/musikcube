@@ -38,11 +38,14 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IDataStream.h>
 #include <core/sdk/IDecoder.h>
+#include <core/sdk/IAudioStreamEncoder.h>
 #include <string>
 
 class Transcoder {
     public:
         using IDataStream = musik::core::sdk::IDataStream;
+        using IEncoder = musik::core::sdk::IEncoder;
+        using IAudioStreamEncoder = musik::core::sdk::IAudioStreamEncoder;
 
         static void RemoveTempTranscodeFiles(Context& context);
 
@@ -56,12 +59,14 @@ class Transcoder {
 
         static IDataStream* TranscodeAndWait(
             Context& context,
+            IEncoder* encoder,
             const std::string& uri,
             size_t bitrate,
             const std::string& format);
 
         static IDataStream* TranscodeOnDemand(
             Context& context,
+            IAudioStreamEncoder* encoder,
             const std::string& uri,
             size_t bitrate,
             const std::string& format);

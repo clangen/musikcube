@@ -43,10 +43,6 @@ namespace musik { namespace core { namespace sdk {
     class IEncoder {
         public:
             virtual void Release() = 0;
-            virtual void Initialize(size_t rate, size_t channels, size_t bitrate) = 0;
-            virtual int Encode(const IBuffer* pcm, char** data) = 0;
-            virtual int Flush(char** data) = 0;
-            virtual void Finalize(const char* uri) = 0;
             virtual IPreferences* GetPreferences() = 0;
      };
 

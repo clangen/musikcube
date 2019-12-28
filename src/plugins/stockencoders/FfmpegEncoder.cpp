@@ -108,16 +108,18 @@ static int resolveChannelLayout(size_t channelCount) {
     }
 }
 
-void FfmpegEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
+void FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
     avcodec_register_all();
 
     this->isValid = false;
+    this->out = out;
     this->resampler = nullptr;
     this->bitrate = bitrate * 1000;
     this->prefs = env()->GetPreferences("FfmpegEncoder");
     this->context = nullptr;
-    this->frame = nullptr;
-    this->codec = avcodec_find_encoder(AV_CODEC_ID_FLAC);
+    this->rawFrame = nullptr;
+    this->resampledFrame = nullptr;
+    this->codec = avcodec_find_encoder(AV_CODEC_ID_OPUS);
     if (this->codec) {
         this->context = avcodec_alloc_context3(this->codec);
         this->context->bit_rate = (int64_t) this->bitrate;
@@ -144,13 +146,18 @@ void FfmpegEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
             if (this->readBufferSize > 0) {
                 this->decodedData.reset((size_t) this->readBufferSize);
 
-                this->frame = av_frame_alloc();
-                this->frame->nb_samples = this->context->frame_size;
-                this->frame->format = this->context->sample_fmt;
-                this->frame->channel_layout = this->context->channel_layout;
+                this->rawFrame = av_frame_alloc();
+                this->rawFrame->nb_samples = this->context->frame_size;
+                this->rawFrame->format = AV_SAMPLE_FMT_FLT;
+                this->rawFrame->channel_layout = this->context->channel_layout;
+
+                this->resampledFrame = av_frame_alloc();
+                this->resampledFrame->nb_samples = this->context->frame_size;
+                this->resampledFrame->format = this->context->sample_fmt;
+                this->resampledFrame->channel_layout = this->context->channel_layout;
 
                 result = avcodec_fill_audio_frame(
-                    this->frame,
+                    this->rawFrame,
                     this->context->channels,
                     this->context->sample_fmt,
                     (uint8_t*)this->decodedData.data,
@@ -190,9 +197,13 @@ void FfmpegEncoder::Release() {
         this->context = nullptr;
         this->codec = nullptr;
     }
-    if (this->frame) {
-        av_frame_free(&this->frame);
-        this->frame = nullptr;
+    if (this->rawFrame) {
+        av_frame_free(&this->rawFrame);
+        this->rawFrame = nullptr;
+    }
+    if (this->resampledFrame) {
+        av_frame_free(&this->resampledFrame);
+        this->resampledFrame = nullptr;
     }
     if (this->resampler) {
         swr_free(&this->resampler);
@@ -213,7 +224,7 @@ bool FfmpegEncoder::Encode(AVFrame* frame) {
         int didReadPacket = 0;
         int result = 0;
 
-        result = avcodec_send_frame(this->context, this->frame);
+        result = avcodec_send_frame(this->context, this->rawFrame);
 
         if (result < 0) {
             logAvError("avcodec_send_frame", result);
@@ -244,36 +255,34 @@ bool FfmpegEncoder::Encode(AVFrame* frame) {
     return false;
 }
 
-int FfmpegEncoder::Encode(const IBuffer* pcm, char** data) {
-    if (!this->isValid) {
-        return 0;
-    }
+bool FfmpegEncoder::Encode(const IBuffer* pcm) {
+    // if (!this->isValid) {
+    //     return 0;
+    // }
 
-    this->encodedData.reset();
+    // this->encodedData.reset();
 
-    int total = pcm->Bytes();
-    if (total > 0) {
-        int count = (total / this->readBufferSize) + 1;
-        for (int i = 0; i < count; i++) {
-            int offset = i * this->readBufferSize;
-            char* data = ((char*)pcm->BufferPointer()) + offset;
-            int size = (i == count - 1) ? (pcm->Bytes() - offset) : this->readBufferSize;
-            this->decodedData.from(data, size);
-            this->Encode(this->frame);
-        }
-    }
+    // int total = pcm->Bytes();
+    // if (total > 0) {
+    //     int count = (total / this->readBufferSize) + 1;
+    //     for (int i = 0; i < count; i++) {
+    //         int offset = i * this->readBufferSize;
+    //         char* data = ((char*)pcm->BufferPointer()) + offset;
+    //         int size = (i == count - 1) ? (pcm->Bytes() - offset) : this->readBufferSize;
+    //         this->decodedData.from(data, size);
+    //         this->Encode(this->rawFrame);
+    //     }
+    // }
 
-    *data = this->encodedData.data;
-    return this->encodedData.length;
+    // *data = this->encodedData.data;
+    // return this->encodedData.length;
+
+    return 0;
 }
 
-int FfmpegEncoder::Flush(char** data) {
-    this->encodedData.reset();
-    while (this->Encode(nullptr)) { }
-    *data = this->encodedData.data;
-    return this->encodedData.length;
-}
-
-void FfmpegEncoder::Finalize(const char* uri) {
-    /* shouldn't need to do anything... */
+void FfmpegEncoder::Finalize() {
+    // this->encodedData.reset();
+    // while (this->Encode(nullptr)) { }
+    // *data = this->encodedData.data;
+    // return this->encodedData.length;
 }

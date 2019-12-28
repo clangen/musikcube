@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IEncoder.h>
+#include <core/sdk/IDataStreamEncoder.h>
 #include <core/sdk/DataBuffer.h>
 
 extern "C" {
@@ -40,28 +40,31 @@ extern "C" {
     #include <libswresample/swresample.h>
 }
 
-class FfmpegEncoder : public musik::core::sdk::IEncoder {
+class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
     using IBuffer = musik::core::sdk::IBuffer;
+    using IDataStream = musik::core::sdk::IDataStream;
+    using IPreferences = musik::core::sdk::IPreferences;
 
     public:
         virtual void Release() override;
-        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
-        virtual int Encode(const IBuffer* pcm, char** data) override;
-        virtual int Flush(char** data) override;
-        virtual void Finalize(const char* uri) override;
-        virtual musik::core::sdk::IPreferences* GetPreferences() override;
+        virtual void Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) override;
+        virtual bool Encode(const IBuffer* pcm) override;
+        virtual void Finalize() override;
+        virtual IPreferences* GetPreferences() override;
 
     private:
         bool Encode(AVFrame* frame);
 
         DataBuffer<char> encodedData;
         DataBuffer<char> decodedData;
-        musik::core::sdk::IPreferences* prefs;
+        IDataStream* out;
+        IPreferences* prefs;
         size_t bitrate;
         int readBufferSize;
         bool isValid{ false };
         AVCodec* codec;
         AVCodecContext* context;
-        AVFrame* frame;
+        AVFrame* rawFrame;
+        AVFrame* resampledFrame;
         SwrContext* resampler;
 };

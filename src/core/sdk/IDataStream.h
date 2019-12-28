@@ -44,7 +44,10 @@ namespace musik { namespace core { namespace sdk {
             virtual bool Close() = 0;
             virtual void Interrupt() = 0;
             virtual void Release() = 0;
+            virtual bool Readable() = 0;
+            virtual bool Writable() = 0;
             virtual PositionType Read(void *buffer, PositionType readBytes) = 0;
+            virtual PositionType Write(void *buffer, PositionType writeBytes) = 0;
             virtual bool SetPosition(PositionType position) = 0;
             virtual PositionType Position() = 0;
             virtual bool Seekable() = 0;

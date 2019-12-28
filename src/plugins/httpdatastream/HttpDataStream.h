@@ -53,7 +53,10 @@ class HttpDataStream : public IDataStream {
         virtual void Release();
         virtual bool Open(const char *uri, unsigned int options = 0);
         virtual bool Close();
+        virtual bool Readable() { return true; }
+        virtual bool Writable() { return false; }
         virtual PositionType Read(void* buffer, PositionType readBytes);
+        virtual PositionType Write(void* buffer, PositionType writeBytes) { return 0; }
         virtual bool SetPosition(PositionType position);
         virtual PositionType Position();
         virtual bool Eof();

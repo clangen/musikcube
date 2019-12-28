@@ -32,26 +32,21 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IAudioStreamEncoder.h>
-#include <core/sdk/DataBuffer.h>
-#include <lame/lame.h>
+#pragma once
 
-class LameEncoder: public musik::core::sdk::IAudioStreamEncoder {
-    using IBuffer = musik::core::sdk::IBuffer;
+#include "IEncoder.h"
+#include "IBuffer.h"
+#include "IPreferences.h"
+#include "IDataStream.h"
+#include <stddef.h>
 
-    public:
-        LameEncoder();
+namespace musik { namespace core { namespace sdk {
 
-        virtual void Release() override;
-        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
-        virtual int Encode(const IBuffer* pcm, char** data) override;
-        virtual int Flush(char** data) override;
-        virtual void Finalize(const char* uri) override;
-        virtual musik::core::sdk::IPreferences* GetPreferences() override;
+    class IDataStreamEncoder: public IEncoder {
+        public:
+            virtual void Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) = 0;
+            virtual bool Encode(const IBuffer* pcm) = 0;
+            virtual void Finalize() = 0;
+     };
 
-    private:
-        DataBuffer<unsigned char> encodedBytes;
-        DataBuffer<float> downmix;
-        musik::core::sdk::IPreferences* prefs;
-        lame_t lame;
-};
+} } }

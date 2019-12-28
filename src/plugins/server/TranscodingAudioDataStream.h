@@ -32,21 +32,44 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
 #include <core/sdk/IDataStream.h>
+#include <core/sdk/IAudioStreamEncoder.h>
+#include <core/sdk/DataBuffer.h>
+#include "Context.h"
+#include <thread>
+#include <condition_variable>
+#include <mutex>
 #include <string>
+#include <stdio.h>
 
-class GmeDataStream: public musik::core::sdk::IDataStream {
+class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
     public:
         using PositionType = musik::core::sdk::PositionType;
+
+        TranscodingAudioDataStream(
+            Context& context,
+            musik::core::sdk::IAudioStreamEncoder* encoder,
+            const std::string& uri,
+            size_t bitrate,
+            const std::string& format);
+
+        TranscodingAudioDataStream(
+            Context& context,
+            musik::core::sdk::IAudioStreamEncoder* encoder,
+            const std::string& uri,
+            const std::string& tempFilename,
+            const std::string& finalFilename,
+            size_t bitrate,
+            const std::string& format);
+
+        virtual ~TranscodingAudioDataStream();
 
         virtual bool Open(const char *uri, unsigned int options = 0) override;
         virtual bool Close() override;
         virtual void Interrupt() override;
         virtual void Release() override;
         virtual bool Readable() { return true; }
-        virtual bool Writable() { return false; }
+        virtual bool Writable() { return false; };
         virtual PositionType Read(void *buffer, PositionType readBytes) override;
         virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
         virtual bool SetPosition(PositionType position) override;
@@ -58,11 +81,22 @@ class GmeDataStream: public musik::core::sdk::IDataStream {
         virtual const char* Uri() override;
         virtual bool CanPrefetch() override;
 
-        int GetTrackNumber() { return this->trackNumber; }
-        std::string GetFilename() { return this->filename; }
-
     private:
-        int trackNumber { 0 };
-        std::string filename;
-        musik::core::sdk::IDataStream* stream { nullptr };
+        void Dispose();
+
+        Context& context;
+        musik::core::sdk::IDataStream* input;
+        musik::core::sdk::IDecoder* decoder;
+        musik::core::sdk::IBuffer* pcmBuffer;
+        musik::core::sdk::IAudioStreamEncoder* encoder;
+        DataBuffer<char> spillover;
+        size_t bitrate;
+        bool eof;
+        std::mutex mutex;
+        PositionType length, position;
+        FILE* outFile;
+        std::string tempFilename, finalFilename;
+        std::string format;
+        bool interrupted;
+        long detachTolerance;
 };
