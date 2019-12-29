@@ -88,13 +88,16 @@
     <ClCompile Include="3rdparty\win32_src\microhttpd\sysfdsetsize.c">
       <Filter>microhttpd\src</Filter>
     </ClCompile>
-    <ClCompile Include="TranscodingDataStream.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="Transcoder.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="Snapshots.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockingTranscoder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="TranscodingAudioDataStream.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -462,13 +465,16 @@
     <ClInclude Include="3rdparty\win32_src\microhttpd\sysfdsetsize.h">
       <Filter>microhttpd\src</Filter>
     </ClInclude>
-    <ClInclude Include="TranscodingDataStream.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="Transcoder.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="Snapshots.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="TranscodingAudioDataStream.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockingTranscoder.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

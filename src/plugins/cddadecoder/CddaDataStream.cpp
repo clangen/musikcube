@@ -75,7 +75,7 @@ static int getTrackNumber(const char* uri) {
     return 1;
 }
 
-bool CddaDataStream::Open(const char *uri, unsigned int options) {
+bool CddaDataStream::Open(const char *uri, OpenFlag flags) {
     int trackIndex;
 
     char driveLetter = 'A' + PathGetDriveNumberA(uri);
