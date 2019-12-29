@@ -72,7 +72,6 @@ BlockingTranscoder::~BlockingTranscoder() {
         this->output->Release();
         this->output = nullptr;
     }
-    delete this;
 }
 
 bool BlockingTranscoder::Transcode() {

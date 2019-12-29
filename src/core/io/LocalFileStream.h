@@ -52,10 +52,10 @@ namespace musik { namespace core { namespace io {
             virtual bool Close();
             virtual void Interrupt();
             virtual void Release();
-            virtual bool Readable() { return true; }
-            virtual bool Writable() { return false; }
+            virtual bool Readable() { return flags & OpenFlag::Read != 0; }
+            virtual bool Writable() { return flags & OpenFlag::Write != 0; }
             virtual PositionType Read(void* buffer, PositionType readBytes);
-            virtual PositionType Write(void* buffer, PositionType writeBytes) { return 0; }
+            virtual PositionType Write(void* buffer, PositionType writeBytes);
             virtual bool SetPosition(PositionType position);
             virtual PositionType Position();
             virtual bool Eof();
@@ -66,6 +66,7 @@ namespace musik { namespace core { namespace io {
             virtual bool CanPrefetch() { return true; }
 
         private:
+            OpenFlag flags { OpenFlag::None };
             std::string extension;
             std::string uri;
             std::atomic<FILE*> file;

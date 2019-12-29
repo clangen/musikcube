@@ -159,7 +159,7 @@ IDataStream* Transcoder::Transcode(
         return TranscodeOnDemand(context, audioStreamEncoder, uri, bitrate, format);
     }
 
-    return nullptr;
+    return TranscodeAndWait(context, nullptr, uri, bitrate, format);
 }
 
 IDataStream* Transcoder::TranscodeOnDemand(

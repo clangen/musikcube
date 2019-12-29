@@ -71,15 +71,23 @@ bool LocalFileStream::Open(const char *filename, OpenFlag flags) {
         debug::info(TAG, "opening file: " + std::string(filename));
 
         boost::filesystem::path file(filename);
+        bool exists = boost::filesystem::exists(file);
 
-        if (!boost::filesystem::exists(file)) {
-            debug::error(TAG, "open failed " + this->uri);
+        if (flags & OpenFlag::Read && !exists) {
+            debug::error(TAG, "open with OpenFlag::Read failed because file doesn't exist. " + this->uri);
             return false;
         }
 
-        if (!boost::filesystem::is_regular(file)) {
+        if (exists && !boost::filesystem::is_regular(file)) {
             debug::error(TAG, "not a regular file" + this->uri);
             return false;
+        }
+
+        boost::system::error_code ec;
+        this->filesize = (long) boost::filesystem::file_size(file, ec);
+
+        if (ec && flags & OpenFlag::Write) {
+            this->filesize = 0;
         }
 
         /* convert the OpenFlag bitmask to an fopen compatible string */
@@ -93,11 +101,11 @@ bool LocalFileStream::Open(const char *filename, OpenFlag flags) {
                 openFlags += "+";
             }
             else {
+                this->filesize = 0;
                 openFlags = "wb";
             }
         }
 
-        this->filesize = (long)boost::filesystem::file_size(file);
         this->extension = file.extension().string();
 #ifdef WIN32
         std::wstring u16fn = u8to16(this->uri);
@@ -108,6 +116,7 @@ bool LocalFileStream::Open(const char *filename, OpenFlag flags) {
 #endif
 
         if (this->file.load()) {
+            this->flags = flags;
             return true;
         }
     }
@@ -144,6 +153,21 @@ PositionType LocalFileStream::Read(void* buffer, PositionType readBytes) {
 
     return (PositionType) fread(buffer, 1, readBytes, this->file);
 }
+
+PositionType LocalFileStream::Write(void* buffer, PositionType writeBytes) {
+    if (!this->file.load()) {
+        return 0;
+    }
+
+    long position = ftell(this->file);
+    size_t written = fwrite(buffer, 1, writeBytes, this->file);
+    if (written + position > this->filesize) {
+        this->filesize = written + position;
+    }
+
+    return (PositionType) written;
+}
+
 
 bool LocalFileStream::SetPosition(PositionType position) {
     if (!this->file.load()) {

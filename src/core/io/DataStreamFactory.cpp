@@ -83,7 +83,7 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlag flags) 
 
         /* no plugins accepted it? try to open as a local file */
         IDataStream* regularFile = new LocalFileStream();
-        if (regularFile->Open(uri, OpenFlag::Read)) {
+        if (regularFile->Open(uri, flags)) {
             return regularFile;
         }
         else {

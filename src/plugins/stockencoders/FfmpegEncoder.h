@@ -39,6 +39,7 @@ extern "C" {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avio.h>
     #include <libavformat/avformat.h>
+    #include <libavutil/audio_fifo.h>
     #include <libswresample/swresample.h>
 }
 
@@ -58,22 +59,22 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
 
     private:
         void Cleanup();
-        bool Encode(AVFrame* frame);
         bool OpenOutputCodec(size_t rate, size_t channels, size_t bitrate);
         bool OpenOutputContext();
+        bool WriteOutputHeader();
 
-        DataBuffer<char> encodedData;
-        DataBuffer<char> decodedData;
+        DataBuffer<char> resampledData;
         IDataStream* out;
         IPreferences* prefs;
         int readBufferSize;
         bool isValid{ false };
+        AVAudioFifo* outputFifo;
         AVCodec* outputCodec;
         AVCodecContext* outputContext;
         AVFormatContext* outputFormatContext;
         AVIOContext* ioContext;
         void* ioContextOutputBuffer;
-        AVFrame* rawFrame;
-        AVFrame* resampledFrame;
+        AVFrame* outputFrame;
         SwrContext* resampler;
+        int64_t globalTimestamp;
 };

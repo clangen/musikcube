@@ -44,7 +44,7 @@
 
 using namespace musik::core::sdk;
 
-static const int IO_CONTEXT_BUFFER_SIZE = 4096 + AV_INPUT_BUFFER_PADDING_SIZE;
+static const int IO_CONTEXT_BUFFER_SIZE = (4096 * 16) + AV_INPUT_BUFFER_PADDING_SIZE;
 static const int DEFAULT_SAMPLE_RATE = 44100;
 static const char* TAG = "FfmpegEncoder";
 
@@ -169,46 +169,46 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     this->outputFormatContext = avformat_alloc_context();
     if (!this->outputFormatContext) {
-        logError("could not allocate outputFormatContext");
+        logError("avformat_alloc_context");
         return false;
     }
 
-    const std::string fn = "test.opus";
+    const std::string fn = "test.ogg";
     this->outputFormatContext->oformat = av_guess_format(nullptr, fn.c_str(), nullptr);
     if (!this->outputFormatContext->oformat) {
-        logError("av_guess_format failed to resolve output codec");
+        logError("av_guess_format");
         return false;
     }
 
     this->outputFormatContext->pb = this->ioContext;
 
-    this->outputCodec = avcodec_find_encoder(AV_CODEC_ID_OPUS);
+    this->outputCodec = avcodec_find_encoder(AV_CODEC_ID_VORBIS);
     if (!this->outputCodec) {
-        logError("avcodec_find_encoder failed");
+        logError("avcodec_find_encoder");
         return false;
     }
 
-    /* CAL TODO: examples don't show freeing this stream -- should we? when? */
+    // /* CAL TODO: examples don't show freeing this stream -- should we? when? */
     AVStream* stream = avformat_new_stream(this->outputFormatContext, nullptr);
     if (!stream) {
-        logError("avformat_new_stream failed");
+        logError("avformat_new_stream");
         return false;
     }
 
     this->outputContext = avcodec_alloc_context3(this->outputCodec);
     if (!this->outputContext) {
-        logError("failed to allocate output context");
+        logError("avcodec_alloc_context3");
         return false;
     }
 
     this->outputContext->channels = (int) channels;
     this->outputContext->channel_layout = resolveChannelLayout(channels);
-    this->outputContext->sample_rate = (int) rate;
+    this->outputContext->sample_rate = resolveSampleRate(this->outputCodec, rate);
     this->outputContext->sample_fmt = this->outputCodec->sample_fmts[0];
     this->outputContext->bit_rate = (int64_t) bitrate * 1000;
     this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
-    /* don't quite understand this bit; apparently it sets the sample rate
+    /* CAL TODO: don't quite understand this bit; apparently it sets the sample rate
     for the container */
     stream->time_base.den = (int) rate;
     stream->time_base.num = 1;
@@ -219,91 +219,59 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         this->outputContext->flags | AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
-    int error = avcodec_open2(this->outputContext, this->outputCodec, nullptr);
+    int error = avcodec_open2(
+        this->outputContext,
+        this->outputCodec,
+        nullptr);
+
     if (error < 0) {
         logAvError("avcodec_open2", error);
         return false;
     }
 
+    /* CAL: totally don't understand this, but if we don't do it, then the output
+    header cannot be written, and the call returns -22. ugh. */
     error = avcodec_parameters_from_context(stream->codecpar, this->outputContext);
     if (error < 0) {
         logAvError("avcodec_parameters_from_context", error);
+        return false;
+    }
+
+    /* resampler context that will be used to convert the input audio
+    sample format to the one recommended by the encoder */
+
+    this->resampler = swr_alloc();
+
+    swr_alloc_set_opts(
+        this->resampler,
+        this->outputContext->channel_layout,
+        this->outputContext->sample_fmt,
+        this->outputContext->sample_rate,
+        this->outputContext->channel_layout,
+        AV_SAMPLE_FMT_FLT,
+        (int) rate,
+        0,
+        nullptr);
+
+    error = swr_init(this->resampler);
+    if (error < 0) {
+        logAvError("swr_init", error);
+        return false;
+    }
+
+    /* fifo buffer that will be used by the encoder */
+
+    this->outputFifo = av_audio_fifo_alloc(
+        this->outputContext->sample_fmt,
+        this->outputContext->channels,
+        1);
+
+    if (!this->outputFifo) {
+        logError("av_audio_fifo_alloc");
+        return false;
     }
 
     return true;
-
-    // if (!this->context())
-
-    // this->codec = avcodec_find_encoder(AV_CODEC_ID_OPUS);
-    // if (this->codec) {
-    //     this->context = avcodec_alloc_context3(this->codec);
-    //     this->context->bit_rate = (int64_t) this->bitrate;
-    //     this->context->sample_fmt = resolveSampleFormat(this->codec);
-    //     this->context->sample_rate = resolveSampleRate(this->codec, (int) rate);
-    //     this->context->channel_layout = resolveChannelLayout(channels);
-    //     this->context->channels = av_get_channel_layout_nb_channels(this->context->channel_layout);
-
-    //     AVDictionary *openOptions = nullptr;
-    //     av_dict_set(&openOptions, "strict", "experimental", 0);
-
-    //     int result = avcodec_open2(this->context, this->codec, &openOptions);
-    //     if (result != 0) {
-    //         logAvError("avcodec_open2", result);
-    //     }
-    //     else {
-    //         this->readBufferSize = av_samples_get_buffer_size(
-    //             nullptr,
-    //             context->channels,
-    //             context->frame_size,
-    //             context->sample_fmt,
-    //             0);
-
-    //         if (this->readBufferSize > 0) {
-    //             this->decodedData.reset((size_t) this->readBufferSize);
-
-    //             this->rawFrame = av_frame_alloc();
-    //             this->rawFrame->nb_samples = this->context->frame_size;
-    //             this->rawFrame->format = AV_SAMPLE_FMT_FLT;
-    //             this->rawFrame->channel_layout = this->context->channel_layout;
-
-    //             this->resampledFrame = av_frame_alloc();
-    //             this->resampledFrame->nb_samples = this->context->frame_size;
-    //             this->resampledFrame->format = this->context->sample_fmt;
-    //             this->resampledFrame->channel_layout = this->context->channel_layout;
-
-    //             result = avcodec_fill_audio_frame(
-    //                 this->rawFrame,
-    //                 this->context->channels,
-    //                 this->context->sample_fmt,
-    //                 (uint8_t*)this->decodedData.data,
-    //                 (int)this->decodedData.length,
-    //                 0);
-
-    //             if (result >= 0) {
-    //                 this->resampler = swr_alloc();
-
-    //                 swr_alloc_set_opts(
-    //                     this->resampler,
-    //                     this->context->channel_layout,
-    //                     this->context->sample_fmt,
-    //                     (int)rate,
-    //                     this->context->channel_layout,
-    //                     AV_SAMPLE_FMT_FLT,
-    //                     (int)rate,
-    //                     0,
-    //                     nullptr);
-
-    //                 if (swr_init(this->resampler) == 0) {
-    //                     return true;
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     av_dict_free(&openOptions);
-    // }
-
-    return false;
 }
 
 bool FfmpegEncoder::OpenOutputContext() {
@@ -330,15 +298,18 @@ void FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, s
     this->prefs = env()->GetPreferences("FfmpegEncoder");
     this->outputContext = nullptr;
     this->outputCodec = nullptr;
-    this->rawFrame = nullptr;
-    this->resampledFrame = nullptr;
+    this->outputFrame = nullptr;
     this->ioContext = nullptr;
     this->ioContextOutputBuffer = nullptr;
     this->outputFormatContext = nullptr;
+    this->outputFifo = nullptr;
+    this->globalTimestamp = 0LL;
 
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {
-            this->isValid = true;
+            if (this->WriteOutputHeader()) {
+                this->isValid = true;
+            }
         }
     }
 
@@ -368,22 +339,25 @@ void FfmpegEncoder::Cleanup() {
         av_free(this->ioContextOutputBuffer);
         this->ioContextOutputBuffer = nullptr;
     }
-    if (this->rawFrame) {
-        av_frame_free(&this->rawFrame);
-        this->rawFrame = nullptr;
-    }
-    if (this->resampledFrame) {
-        av_frame_free(&this->resampledFrame);
-        this->resampledFrame = nullptr;
+    if (this->outputFrame) {
+        av_frame_free(&this->outputFrame);
+        this->outputFrame = nullptr;
     }
     if (this->resampler) {
         swr_free(&this->resampler);
         this->resampler = nullptr;
     }
+    if (this->outputFifo) {
+        av_audio_fifo_free(this->outputFifo);
+        this->outputFifo = nullptr;
+    }
 }
 
 void FfmpegEncoder::Release() {
-    this->prefs->Release();
+    if (this->prefs) {
+        this->prefs->Release();
+        this->prefs = nullptr;
+    }
     this->Cleanup();
     delete this;
 }
@@ -392,68 +366,115 @@ IPreferences* FfmpegEncoder::GetPreferences() {
     return this->prefs;
 }
 
-bool FfmpegEncoder::Encode(AVFrame* frame) {
-    if (this->isValid) {
-        AVPacket packet = { 0 };
-        av_init_packet(&packet);
+bool FfmpegEncoder::WriteOutputHeader() {
+    int error = avformat_write_header(this->outputFormatContext, nullptr);
+    if (error < 0) {
+        logAvError("avformat_write_header", error);
+        return false;
+    }
+    return true;
+}
 
-        int didReadPacket = 0;
-        int result = 0;
+bool FfmpegEncoder::Encode(const IBuffer* pcm) {
+    if (!this->isValid || pcm->Samples() == 0) {
+        return false;
+    }
 
-        result = avcodec_send_frame(this->outputContext, this->rawFrame);
+    const int totalSamples = pcm->Samples();
+    const int samplesPerChannel = totalSamples / pcm->Channels();
+    const int outputBytesPerSample = av_get_bytes_per_sample(this->outputContext->sample_fmt);
+    const int outputSamplesPerChannel = swr_get_out_samples(this->resampler, samplesPerChannel);
+    this->resampledData.reset(outputBytesPerSample * outputSamplesPerChannel * pcm->Channels());
+    uint8_t* outData = (uint8_t*) this->resampledData.data;
+    const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
-        if (result < 0) {
-            logAvError("avcodec_send_frame", result);
-            this->isValid = false;
-        }
+    int convertedSamplesPerChannel = swr_convert(
+        this->resampler, &outData, samplesPerChannel, &inData, samplesPerChannel);
 
-        while (result >= 0) {
-            result = avcodec_receive_packet(this->outputContext, &packet);
-            if (result >= 0) {
-                if (packet.size) {
-                    this->encodedData.append((char*)packet.data, packet.size);
-                }
+    if (convertedSamplesPerChannel != samplesPerChannel) {
+        return false;
+    }
+
+    int currentFifoSize = av_audio_fifo_size(this->outputFifo);
+    int error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + pcm->Samples());
+
+    if (error < 0) {
+        logAvError("av_audio_fifo_realloc", error);
+        isValid = false;
+        return false;
+    }
+
+    void* resampledDataPtr = (void*) this->resampledData.data;
+    if (av_audio_fifo_write(this->outputFifo, &resampledDataPtr, totalSamples) != totalSamples) {
+        logError("av_audio_fifo_write wrote incorrect number of samples");
+        return false;
+    }
+
+    int outputFrameSize = this->outputContext->frame_size;
+
+    while (av_audio_fifo_size(this->outputFifo) >= outputFrameSize) {
+        const int fifoSize = av_audio_fifo_size(this->outputFifo);
+        const int frameSize = FFMIN(fifoSize, outputFrameSize);
+
+        if (!this->outputFrame || this->outputFrame->nb_samples != frameSize) {
+            if (this->outputFrame) {
+                av_frame_free(&this->outputFrame);
             }
-            else {
-                av_free_packet(&packet);
-                if (result == AVERROR(EAGAIN) || result == AVERROR_EOF) {
-                    return true;
-                }
-                logAvError("avcodec_receive_packet", result);
+            this->outputFrame = av_frame_alloc();
+            this->outputFrame->nb_samples = frameSize;
+            this->outputFrame->channel_layout = this->outputContext->channel_layout;
+            this->outputFrame->format = this->outputContext->sample_fmt;
+            this->outputFrame->sample_rate = this->outputContext->sample_rate;
+            error = av_frame_get_buffer(this->outputFrame, 0);
+            if (error < 0) {
+                logAvError("av_frame_get_buffer", error);
+                isValid = false;
                 return false;
             }
         }
 
-        av_free_packet(&packet);
-        return true;
+        if (av_audio_fifo_read(this->outputFifo, (void **) outputFrame->data, frameSize) < frameSize) {
+            logError("av_audio_fifo_read read the incorrect number of samples");
+            isValid = false;
+            return false;
+        }
+
+        AVPacket outputPacket;
+        av_init_packet(&outputPacket);
+        outputPacket.data = nullptr;
+        outputPacket.size = 0;
+
+        this->outputFrame->pts = this->globalTimestamp;
+        this->globalTimestamp += this->outputFrame->nb_samples;
+
+        error = avcodec_send_frame(this->outputContext, this->outputFrame);
+        if (error < 0) {
+            logAvError("av_codec_send_frame", error);
+            isValid = false;
+            return false;
+        }
+
+        error = avcodec_receive_packet(this->outputContext, &outputPacket);
+        while (error >= 0) {
+            error = av_write_frame(this->outputFormatContext, &outputPacket);
+            if (error < 0) {
+                logAvError("av_write_frame", error);
+                isValid = false;
+                return false;
+            }
+            error = avcodec_receive_packet(this->outputContext, &outputPacket);
+        }
+        if (error == AVERROR(EAGAIN)) {
+            return true;
+        }
+        else if (error < 0) {
+            logAvError("avcodec_receive_packet", error);
+            isValid = false;
+            return false;
+        }
     }
 
-    return false;
-}
-
-bool FfmpegEncoder::Encode(const IBuffer* pcm) {
-    // if (!this->isValid) {
-    //     return 0;
-    // }
-
-    // this->encodedData.reset();
-
-    // int total = pcm->Bytes();
-    // if (total > 0) {
-    //     int count = (total / this->readBufferSize) + 1;
-    //     for (int i = 0; i < count; i++) {
-    //         int offset = i * this->readBufferSize;
-    //         char* data = ((char*)pcm->BufferPointer()) + offset;
-    //         int size = (i == count - 1) ? (pcm->Bytes() - offset) : this->readBufferSize;
-    //         this->decodedData.from(data, size);
-    //         this->Encode(this->rawFrame);
-    //     }
-    // }
-
-    // *data = this->encodedData.data;
-    // return this->encodedData.length;
-
-    return 0;
+    return true;
 }
 
 void FfmpegEncoder::Finalize() {
