@@ -433,16 +433,14 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
             }
         }
 
-        if (av_audio_fifo_read(this->outputFifo, (void **) outputFrame->data, frameSize) < frameSize) {
+        int framesRead = av_audio_fifo_read(
+            this->outputFifo, (void **) outputFrame->data, frameSize);
+
+        if (framesRead < frameSize) {
             logError("av_audio_fifo_read read the incorrect number of samples");
             isValid = false;
             return false;
         }
-
-        AVPacket outputPacket;
-        av_init_packet(&outputPacket);
-        outputPacket.data = nullptr;
-        outputPacket.size = 0;
 
         this->outputFrame->pts = this->globalTimestamp;
         this->globalTimestamp += this->outputFrame->nb_samples;
@@ -454,21 +452,28 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
             return false;
         }
 
-        error = avcodec_receive_packet(this->outputContext, &outputPacket);
+        error = 0;
         while (error >= 0) {
-            error = av_write_frame(this->outputFormatContext, &outputPacket);
-            if (error < 0) {
-                logAvError("av_write_frame", error);
-                isValid = false;
-                return false;
-            }
+            AVPacket outputPacket;
+            av_init_packet(&outputPacket);
+            outputPacket.data = nullptr;
+            outputPacket.size = 0;
             error = avcodec_receive_packet(this->outputContext, &outputPacket);
+            if (error >= 0) {
+                error = av_write_frame(this->outputFormatContext, &outputPacket);
+                if (error < 0) {
+                    logAvError("av_write_frame", error);
+                }
+            }
+            else if (error < 0 && error != AVERROR(EAGAIN)) {
+                logAvError("avcodec_receive_packet", error);
+            }
+            av_free_packet(&outputPacket);
         }
         if (error == AVERROR(EAGAIN)) {
-            return true;
+            continue;
         }
         else if (error < 0) {
-            logAvError("avcodec_receive_packet", error);
             isValid = false;
             return false;
         }
