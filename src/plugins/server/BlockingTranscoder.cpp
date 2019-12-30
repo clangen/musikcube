@@ -44,7 +44,7 @@ using namespace musik::core::sdk;
 
 BlockingTranscoder::BlockingTranscoder(
     Context& context,
-    IDataStreamEncoder* encoder,
+    IBlockingEncoder* encoder,
     const std::string& uri,
     const std::string& tempFilename,
     const std::string& finalFilename,

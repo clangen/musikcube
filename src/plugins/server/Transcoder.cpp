@@ -37,7 +37,7 @@
 #include "TranscodingAudioDataStream.h"
 #include "Constants.h"
 #include "Util.h"
-#include <core/sdk/IDataStreamEncoder.h>
+#include <core/sdk/IBlockingEncoder.h>
 #include <boost/filesystem.hpp>
 
 using namespace musik::core::sdk;
@@ -153,8 +153,8 @@ IDataStream* Transcoder::Transcode(
     }
 
     /* on-demand is the default. however, on-demand transcoding is only available
-    for `IAudioStreamEncoder` types.  */
-    IAudioStreamEncoder* audioStreamEncoder = getTypedEncoder<IAudioStreamEncoder>(context, format);
+    for `IStreamingEncoder` types.  */
+    IStreamingEncoder* audioStreamEncoder = getTypedEncoder<IStreamingEncoder>(context, format);
     if (audioStreamEncoder) {
         return TranscodeOnDemand(context, audioStreamEncoder, uri, bitrate, format);
     }
@@ -164,7 +164,7 @@ IDataStream* Transcoder::Transcode(
 
 IDataStream* Transcoder::TranscodeOnDemand(
     Context& context,
-    IAudioStreamEncoder* encoder,
+    IStreamingEncoder* encoder,
     const std::string& uri,
     size_t bitrate,
     const std::string& format)
@@ -172,7 +172,7 @@ IDataStream* Transcoder::TranscodeOnDemand(
     /* the caller can specify an encoder; if it is not specified, go ahead and
     create one here */
     if (!encoder) {
-        encoder = getTypedEncoder<IAudioStreamEncoder>(context, format);
+        encoder = getTypedEncoder<IStreamingEncoder>(context, format);
         if (!encoder) {
             return nullptr;
         }
@@ -243,7 +243,7 @@ IDataStream* Transcoder::TranscodeAndWait(
         return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlag::Read);
     }
 
-    IAudioStreamEncoder* audioStreamEncoder = dynamic_cast<IAudioStreamEncoder*>(encoder);
+    IStreamingEncoder* audioStreamEncoder = dynamic_cast<IStreamingEncoder*>(encoder);
     if (audioStreamEncoder) {
         TranscodingAudioDataStream* transcoderStream = new TranscodingAudioDataStream(
             context, audioStreamEncoder, uri, tempFilename, expectedFilename, bitrate, format);
@@ -267,7 +267,7 @@ IDataStream* Transcoder::TranscodeAndWait(
         return context.environment->GetDataStream(uri.c_str(), OpenFlag::Read);
     }
     else {
-        IDataStreamEncoder* dataStreamEncoder = dynamic_cast<IDataStreamEncoder*>(encoder);
+        IBlockingEncoder* dataStreamEncoder = dynamic_cast<IBlockingEncoder*>(encoder);
         if (dataStreamEncoder) {
             BlockingTranscoder blockingTranscoder(
                 context, dataStreamEncoder, uri, tempFilename, expectedFilename, bitrate);

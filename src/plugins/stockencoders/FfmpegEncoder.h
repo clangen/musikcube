@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStreamEncoder.h>
+#include <core/sdk/IBlockingEncoder.h>
 #include <core/sdk/DataBuffer.h>
 #include <string>
 
@@ -44,7 +44,7 @@ extern "C" {
     #include <libswresample/swresample.h>
 }
 
-class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
+class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
     using IBuffer = musik::core::sdk::IBuffer;
     using IDataStream = musik::core::sdk::IDataStream;
     using IPreferences = musik::core::sdk::IPreferences;

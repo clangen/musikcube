@@ -32,11 +32,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IAudioStreamEncoder.h>
+#include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/DataBuffer.h>
 #include <lame/lame.h>
 
-class LameEncoder: public musik::core::sdk::IAudioStreamEncoder {
+class LameEncoder: public musik::core::sdk::IStreamingEncoder {
     using IBuffer = musik::core::sdk::IBuffer;
 
     public:

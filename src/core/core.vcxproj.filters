@@ -555,10 +555,10 @@
     <ClInclude Include="library\LocalMetadataProxy.h">
       <Filter>src\library</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IDataStreamEncoder.h">
+    <ClInclude Include="sdk\IBlockingEncoder.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
-    <ClInclude Include="sdk\IAudioStreamEncoder.h">
+    <ClInclude Include="sdk\IStreamingEncoder.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
   </ItemGroup>

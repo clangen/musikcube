@@ -32,14 +32,14 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IAudioStreamEncoder.h>
+#include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/DataBuffer.h>
 #include <vorbis/vorbisenc.h>
 
 /* fre:ac/BoCA has an excellent example of vorbis encoder usage, a lot of code
 was adapted (stolen) from here: https://github.com/enzo1982/BoCA/blob/master/components/encoder/vorbis/vorbis.cpp */
 
-class OggEncoder : public musik::core::sdk::IAudioStreamEncoder {
+class OggEncoder : public musik::core::sdk::IStreamingEncoder {
     using IBuffer = musik::core::sdk::IBuffer;
 
     public:

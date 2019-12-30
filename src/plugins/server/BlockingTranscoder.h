@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/sdk/IDataStream.h>
-#include <core/sdk/IDataStreamEncoder.h>
+#include <core/sdk/IBlockingEncoder.h>
 #include <core/sdk/DataBuffer.h>
 #include "Context.h"
 #include <thread>
@@ -48,7 +48,7 @@ class BlockingTranscoder {
 
         BlockingTranscoder(
             Context& context,
-            musik::core::sdk::IDataStreamEncoder* encoder,
+            musik::core::sdk::IBlockingEncoder* encoder,
             const std::string& uri,
             const std::string& tempFilename,
             const std::string& finalFilename,
@@ -64,7 +64,7 @@ class BlockingTranscoder {
 
         Context& context;
         musik::core::sdk::IDataStream* input;
-        musik::core::sdk::IDataStreamEncoder* encoder;
+        musik::core::sdk::IBlockingEncoder* encoder;
         musik::core::sdk::IDataStream* output;
         std::string tempFilename, finalFilename;
         int bitrate;

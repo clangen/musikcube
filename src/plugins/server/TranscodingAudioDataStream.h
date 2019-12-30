@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <core/sdk/IDataStream.h>
-#include <core/sdk/IAudioStreamEncoder.h>
+#include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/DataBuffer.h>
 #include "Context.h"
 #include <thread>
@@ -49,14 +49,14 @@ class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
 
         TranscodingAudioDataStream(
             Context& context,
-            musik::core::sdk::IAudioStreamEncoder* encoder,
+            musik::core::sdk::IStreamingEncoder* encoder,
             const std::string& uri,
             size_t bitrate,
             const std::string& format);
 
         TranscodingAudioDataStream(
             Context& context,
-            musik::core::sdk::IAudioStreamEncoder* encoder,
+            musik::core::sdk::IStreamingEncoder* encoder,
             const std::string& uri,
             const std::string& tempFilename,
             const std::string& finalFilename,
@@ -89,7 +89,7 @@ class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
         musik::core::sdk::IDataStream* input;
         musik::core::sdk::IDecoder* decoder;
         musik::core::sdk::IBuffer* pcmBuffer;
-        musik::core::sdk::IAudioStreamEncoder* encoder;
+        musik::core::sdk::IStreamingEncoder* encoder;
         DataBuffer<char> spillover;
         size_t bitrate;
         bool eof;

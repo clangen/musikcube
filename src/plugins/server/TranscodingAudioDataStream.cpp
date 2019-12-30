@@ -44,7 +44,7 @@ using PositionType = TranscodingAudioDataStream::PositionType;
 
 TranscodingAudioDataStream::TranscodingAudioDataStream(
     Context& context,
-    musik::core::sdk::IAudioStreamEncoder* encoder,
+    musik::core::sdk::IStreamingEncoder* encoder,
     const std::string& uri,
     size_t bitrate,
     const std::string& format)
@@ -85,7 +85,7 @@ TranscodingAudioDataStream::TranscodingAudioDataStream(
 
 TranscodingAudioDataStream::TranscodingAudioDataStream(
     Context& context,
-    musik::core::sdk::IAudioStreamEncoder* encoder,
+    musik::core::sdk::IStreamingEncoder* encoder,
     const std::string& uri,
     const std::string& tempFilename,
     const std::string& finalFilename,

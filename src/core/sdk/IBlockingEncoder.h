@@ -42,7 +42,7 @@
 
 namespace musik { namespace core { namespace sdk {
 
-    class IDataStreamEncoder: public IEncoder {
+    class IBlockingEncoder: public IEncoder {
         public:
             virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) = 0;
             virtual bool Encode(const IBuffer* pcm) = 0;
