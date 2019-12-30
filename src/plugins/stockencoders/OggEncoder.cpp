@@ -41,7 +41,7 @@ was adapted (stolen) from here: https://github.com/enzo1982/BoCA/blob/master/com
 
 using namespace musik::core::sdk;
 
-void OggEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
+bool OggEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     ogg_stream_state os = { 0 };
     ogg_page og = { 0 };
     ogg_packet op = { 0 };
@@ -52,6 +52,7 @@ void OggEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     this->bitrate = bitrate * 1000;
     this->headerWritten = false;
     this->prefs = env()->GetPreferences("OggEncoder");
+    return true;
 }
 
 void OggEncoder::Release() {

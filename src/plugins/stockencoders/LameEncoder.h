@@ -43,7 +43,7 @@ class LameEncoder: public musik::core::sdk::IAudioStreamEncoder {
         LameEncoder();
 
         virtual void Release() override;
-        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
+        virtual bool Initialize(size_t rate, size_t channels, size_t bitrate) override;
         virtual int Encode(const IBuffer* pcm, char** data) override;
         virtual int Flush(char** data) override;
         virtual void Finalize(const char* uri) override;

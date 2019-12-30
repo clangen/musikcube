@@ -50,7 +50,7 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
 
     public:
         virtual void Release() override;
-        virtual void Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) override;
+        virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) override;
         virtual bool Encode(const IBuffer* pcm) override;
         virtual void Finalize() override;
         virtual IPreferences* GetPreferences() override;

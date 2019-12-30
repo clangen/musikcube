@@ -50,6 +50,14 @@
 #define DLL_EXPORT
 #endif
 
+#ifdef WIN32
+#include <Windows.h>
+#include <Objbase.h>
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+    return true;
+}
+#endif
+
 using namespace musik::core::sdk;
 
 static IEnvironment* environment = nullptr;
@@ -72,6 +80,12 @@ static class Plugin : public IPlugin {
 
 static class EncoderFactory: public IEncoderFactory {
     public:
+        EncoderFactory() {
+#ifdef WIN32
+            CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif
+        }
+
         virtual void Release() override {
         }
 

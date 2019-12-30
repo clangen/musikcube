@@ -60,7 +60,7 @@ class BlockingTranscoder {
         void Interrupt();
 
     private:
-        void Dispose();
+        void Cleanup();
 
         Context& context;
         musik::core::sdk::IDataStream* input;

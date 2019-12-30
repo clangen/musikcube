@@ -36,22 +36,16 @@
 #include "shared.h"
 #include <random>
 
-#ifdef WIN32
-#pragma warning(disable: 4996) /* ignore ffmpeg deprecations; hopefully
-    at some point they update their docs and examples so we can use
-    the more modern APIs. */
-#endif
-
 using namespace musik::core::sdk;
 
-// static const std::string TEST_FILENAME = "test.aac";
-// static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_AAC;
+//static const std::string TEST_FILENAME = "test.aac";
+//static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_AAC;
 
-static const std::string TEST_FILENAME = "test.opus";
-static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_OPUS;
+//static const std::string TEST_FILENAME = "test.opus";
+//static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_OPUS;
 
-// static const std::string TEST_FILENAME = "test.ogg";
-// static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_VORBIS;
+static const std::string TEST_FILENAME = "test.ogg";
+static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_VORBIS;
 
 static const int IO_CONTEXT_BUFFER_SIZE = (4096 * 16) + AV_INPUT_BUFFER_PADDING_SIZE;
 static const int DEFAULT_SAMPLE_RATE = 44100;
@@ -213,7 +207,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     this->outputContext->channels = (int) channels;
     this->outputContext->channel_layout = resolveChannelLayout(channels);
-    this->outputContext->sample_rate = resolveSampleRate(this->outputCodec, rate);
+    this->outputContext->sample_rate = resolveSampleRate(this->outputCodec, (int) rate);
     this->outputContext->sample_fmt = resolveSampleFormat(this->outputCodec);
     this->outputContext->bit_rate = (int64_t) bitrate * 1000;
     this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
@@ -299,9 +293,7 @@ bool FfmpegEncoder::OpenOutputContext() {
     return this->ioContext != nullptr;
 }
 
-void FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
-    avcodec_register_all();
-
+bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
     this->isValid = false;
     this->out = out;
     this->resampler = nullptr;
@@ -326,6 +318,8 @@ void FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, s
     if (!this->isValid) {
         this->Cleanup();
     }
+
+    return this->isValid;
 }
 
 void FfmpegEncoder::Cleanup() {
@@ -523,7 +517,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
             else if (error < 0 && error != AVERROR(EAGAIN)) {
                 logAvError("avcodec_receive_packet", error);
             }
-            av_free_packet(&outputPacket);
+            av_packet_unref(&outputPacket);
         }
         if (error == AVERROR(EAGAIN)) {
             continue;

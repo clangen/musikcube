@@ -56,7 +56,7 @@ LameEncoder::LameEncoder() {
     this->prefs = env()->GetPreferences("LameEncoder");
 }
 
-void LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
+bool LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     lame = lame_init();
     lame_set_in_samplerate(lame, rate);
     lame_set_VBR(lame, vbr_off);
@@ -66,6 +66,7 @@ void LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     lame_set_out_samplerate(lame, rate);
     lame_set_bWriteVbrTag(lame, 1);
     lame_init_params(lame);
+    return true;
 }
 
 void LameEncoder::Release() {

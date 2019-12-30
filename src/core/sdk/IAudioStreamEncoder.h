@@ -43,7 +43,7 @@ namespace musik { namespace core { namespace sdk {
 
     class IAudioStreamEncoder: public IEncoder {
         public:
-            virtual void Initialize(size_t rate, size_t channels, size_t bitrate) = 0;
+            virtual bool Initialize(size_t rate, size_t channels, size_t bitrate) = 0;
             virtual int Encode(const IBuffer* pcm, char** data) = 0;
             virtual int Flush(char** data) = 0;
             virtual void Finalize(const char* uri) = 0;

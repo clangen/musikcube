@@ -60,6 +60,10 @@ BlockingTranscoder::BlockingTranscoder(
 }
 
 BlockingTranscoder::~BlockingTranscoder() {
+    this->Cleanup();
+}
+
+void BlockingTranscoder::Cleanup() {
     if (this->input) {
         this->input->Release();
         this->input = nullptr;
@@ -87,38 +91,47 @@ bool BlockingTranscoder::Transcode() {
 
     IBuffer* pcmBuffer = this->context.environment->GetBuffer(SAMPLES_PER_BUFFER);
 
+    bool result = false;
+
     if (decoder->GetBuffer(pcmBuffer)) {
-        encoder->Initialize(
+        bool initialized = encoder->Initialize(
             this->output,
             pcmBuffer->SampleRate(),
             pcmBuffer->Channels(),
             this->bitrate);
-        this->encoder->Encode(pcmBuffer);
-    }
 
-    while (!interrupted && decoder->GetBuffer(pcmBuffer)) {
-        this->encoder->Encode(pcmBuffer);
-        std::this_thread::yield();
-    }
+        if (initialized) {
+            this->encoder->Encode(pcmBuffer);
+            while (!interrupted && decoder->GetBuffer(pcmBuffer)) {
+                this->encoder->Encode(pcmBuffer);
+                std::this_thread::yield();
+            }
 
-    bool result = false;
-
-    if (decoder->Exhausted()) {
-        this->encoder->Finalize();
-        this->output->Release();
-        this->output = nullptr;
-        boost::system::error_code ec;
-        boost::filesystem::rename(this->tempFilename, this->finalFilename, ec);
-        if (ec) {
-            boost::filesystem::remove(this->tempFilename, ec);
-        }
-        else {
-            result = true;
+            if (decoder->Exhausted()) {
+                this->encoder->Finalize();
+                this->output->Release();
+                this->output = nullptr;
+                boost::system::error_code ec;
+                boost::filesystem::rename(this->tempFilename, this->finalFilename, ec);
+                if (ec) {
+                    boost::filesystem::remove(this->tempFilename, ec);
+                }
+                else {
+                    result = true;
+                }
+            }
         }
     }
 
     decoder->Release();
     pcmBuffer->Release();
+
+    this->Cleanup();
+
+    if (!result) {
+        boost::system::error_code ec;
+        boost::filesystem::remove(this->tempFilename, ec);
+    }
 
     return result;
 }
