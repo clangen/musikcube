@@ -63,7 +63,9 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         bool OpenOutputCodec(size_t rate, size_t channels, size_t bitrate);
         bool OpenOutputContext();
         bool WriteOutputHeader();
-        bool WriteFifoToOutput(bool drain);
+        bool WriteOutputTrailer();
+        bool ResampleAndWriteToFifo(const IBuffer* pcm);
+        bool ReadFromFifoAndWriteToOutput(bool drain);
 
         bool isValid;
         DataBuffer<uint8_t> resampledData;

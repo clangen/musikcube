@@ -416,6 +416,36 @@ void FfmpegEncoder::Release() {
     delete this;
 }
 
+bool FfmpegEncoder::Encode(const IBuffer* pcm) {
+    if (!this->isValid || pcm->Samples() == 0) {
+        return false;
+    }
+
+    if (this->ResampleAndWriteToFifo(pcm)) {
+        if (!this->ReadFromFifoAndWriteToOutput(false)) {
+            return true;
+        }
+    }
+
+    this->isValid = false;
+    return false;
+}
+
+void FfmpegEncoder::Finalize() {
+    if (this->ReadFromFifoAndWriteToOutput(true)) {
+        this->WriteOutputTrailer();
+    }
+}
+
+bool FfmpegEncoder::WriteOutputTrailer() {
+    int error = av_write_trailer(this->outputFormatContext);
+    if (error < 0) {
+        logAvError("av_write_trailer", error);
+        return false;
+    }
+    return true;
+}
+
 bool FfmpegEncoder::WriteOutputHeader() {
     int error = avformat_write_header(this->outputFormatContext, nullptr);
     if (error < 0) {
@@ -425,11 +455,7 @@ bool FfmpegEncoder::WriteOutputHeader() {
     return true;
 }
 
-bool FfmpegEncoder::Encode(const IBuffer* pcm) {
-    if (!this->isValid || pcm->Samples() == 0) {
-        return false;
-    }
-
+bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
     const int totalSamples = pcm->Samples();
     const int samplesPerChannel = totalSamples / pcm->Channels();
     const int outputBytesPerSample = av_get_bytes_per_sample(this->outputContext->sample_fmt);
@@ -475,6 +501,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     // std::cerr << "after: " << outDataChannels[0][0] << " " << outDataChannels[1][0] << "\n";
 
     if (convertedSamplesPerChannel != samplesPerChannel) {
+        logError("resampled output has a different number of samples than the input");
         return false;
     }
 
@@ -483,7 +510,6 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
 
     if (error < 0) {
         logAvError("av_audio_fifo_realloc", error);
-        isValid = false;
         return false;
     }
 
@@ -497,24 +523,10 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
         return false;
     }
 
-    if (!this->WriteFifoToOutput(false)) {
-        this->isValid = false;
-        return false;
-    }
-
     return true;
 }
 
-void FfmpegEncoder::Finalize() {
-    if (this->WriteFifoToOutput(true)) {
-        int error = av_write_trailer(this->outputFormatContext);
-        if (error < 0) {
-            logAvError("av_write_trailer", error);
-        }
-    }
-}
-
-bool FfmpegEncoder::WriteFifoToOutput(bool drain) {
+bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
     int outputFrameSize = this->outputContext->frame_size;
     int error = 0;
     while (
