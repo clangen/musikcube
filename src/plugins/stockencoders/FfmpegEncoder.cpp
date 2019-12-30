@@ -445,7 +445,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     const int outputSamplesPerChannel = swr_get_out_samples(this->resampler, samplesPerChannel);
     const int outputSizeBytes = outputBytesPerSample * outputSamplesPerChannel * pcm->Channels();
     this->resampledData.reset(outputSizeBytes);
-    uint8_t* outData = (uint8_t*) this->resampledData.data;
+    uint8_t* outData = this->resampledData.data;
     const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
     uint8_t** outDataPtr = nullptr;
