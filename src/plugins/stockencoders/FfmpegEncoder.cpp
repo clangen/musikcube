@@ -394,16 +394,46 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     const int samplesPerChannel = totalSamples / pcm->Channels();
     const int outputBytesPerSample = av_get_bytes_per_sample(this->outputContext->sample_fmt);
     const int outputSamplesPerChannel = swr_get_out_samples(this->resampler, samplesPerChannel);
-    this->resampledData.reset(outputBytesPerSample * outputSamplesPerChannel * pcm->Channels());
+    const int outputSizeBytes = outputBytesPerSample * outputSamplesPerChannel * pcm->Channels();
+    const bool isPlanar = av_sample_fmt_is_planar (this->outputContext->sample_fmt);
+    this->resampledData.reset(outputSizeBytes);
     uint8_t* outData = (uint8_t*) this->resampledData.data;
     const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
+    uint8_t** outDataPtr = nullptr;
+    if (isPlanar) {
+        /* planar formats contain non-interleaved channel data. we can still store this in
+        a contiguous block of memory as handled by DataBuffer, but we need to create an
+        array of pointers to the relevant chunks of memory */
+        outDataPtr = new uint8_t*[pcm->Channels()];
+        int stride = outputSizeBytes / pcm->Channels();
+        for (int i = 0; i < pcm->Channels(); i++) {
+            outDataPtr[i] = &this->resampledData.data[i * stride];
+        }
+    }
+    else {
+        /* non-planar formats just interleave data in the same buffer */
+        outDataPtr = &outData;
+    }
+
+    // std::cerr << "totalSamples: " << totalSamples << " samplesPerChannel: " << samplesPerChannel << " outputBytesPerSample: " <<
+    //     outputBytesPerSample << " outputSamplesPerChannel: " << outputSamplesPerChannel << " totalBytes: " <<
+    //     (outputBytesPerSample * outputSamplesPerChannel * pcm->Channels()) << " resampler: " << this->resampler <<
+    //     " outData: " << (int64_t) outData << " inData: " << (int64_t) inData << " resampledData.length: " <<
+    //     resampledData.length << "\n";
+
+    // uint8_t* outDataChannels[2] = { &outData[0], &outData[this->resampledData.length / 2] };
+
+    // std::cerr << "before: " << outDataChannels[0][0] << " " << outDataChannels[1][0] << "\n";
+
     int convertedSamplesPerChannel = swr_convert(
         this->resampler,
-        &outData,
+        outDataPtr,
         samplesPerChannel,
         &inData,
         samplesPerChannel);
+
+    // std::cerr << "after: " << outDataChannels[0][0] << " " << outDataChannels[1][0] << "\n";
 
     if (convertedSamplesPerChannel != samplesPerChannel) {
         return false;
@@ -418,10 +448,21 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
         return false;
     }
 
-    void* resampledDataPtr = (void*) this->resampledData.data;
-    if (av_audio_fifo_write(this->outputFifo, &resampledDataPtr, samplesPerChannel) != samplesPerChannel) {
+    int samplesWritten = error = av_audio_fifo_write(
+        this->outputFifo,
+        (void**) outDataPtr,
+        samplesPerChannel);
+
+    if (samplesWritten != samplesPerChannel) {
         logError("av_audio_fifo_write wrote incorrect number of samples");
+        if (isPlanar) {
+            delete[] outDataPtr;
+        }
         return false;
+    }
+
+    if (isPlanar) {
+        delete[] outDataPtr;
     }
 
     int outputFrameSize = this->outputContext->frame_size;
