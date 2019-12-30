@@ -180,7 +180,6 @@ static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
 
 FfmpegEncoder::FfmpegEncoder(const std::string& format)
 : format(format) {
-    this->prefs = nullptr;
     this->isValid = false;
     this->resampler = nullptr;
     this->outputContext = nullptr;
@@ -355,7 +354,7 @@ bool FfmpegEncoder::OpenOutputContext() {
 
 bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
     this->out = out;
-    this->prefs = env()->GetPreferences("FfmpegEncoder");
+
 
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {
@@ -413,16 +412,8 @@ void FfmpegEncoder::Cleanup() {
 }
 
 void FfmpegEncoder::Release() {
-    if (this->prefs) {
-        this->prefs->Release();
-        this->prefs = nullptr;
-    }
     this->Cleanup();
     delete this;
-}
-
-IPreferences* FfmpegEncoder::GetPreferences() {
-    return this->prefs;
 }
 
 bool FfmpegEncoder::WriteOutputHeader() {

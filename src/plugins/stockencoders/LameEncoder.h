@@ -47,11 +47,9 @@ class LameEncoder: public musik::core::sdk::IStreamingEncoder {
         virtual int Encode(const IBuffer* pcm, char** data) override;
         virtual int Flush(char** data) override;
         virtual void Finalize(const char* uri) override;
-        virtual musik::core::sdk::IPreferences* GetPreferences() override;
 
     private:
         DataBuffer<unsigned char> encodedBytes;
         DataBuffer<float> downmix;
-        musik::core::sdk::IPreferences* prefs;
         lame_t lame;
 };

@@ -36,7 +36,6 @@
 
 #include "IEncoder.h"
 #include "IBuffer.h"
-#include "IPreferences.h"
 #include "IDataStream.h"
 #include <stddef.h>
 

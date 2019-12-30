@@ -48,13 +48,11 @@ class OggEncoder : public musik::core::sdk::IStreamingEncoder {
         virtual int Encode(const IBuffer* pcm, char** data) override;
         virtual int Flush(char** data) override;
         virtual void Finalize(const char* uri) override;
-        virtual musik::core::sdk::IPreferences* GetPreferences() override;
 
     private:
         int WritePackets(bool flush);
 
         DataBuffer<char> encodedData;
-        musik::core::sdk::IPreferences* prefs;
         long bitrate;
         bool headerWritten;
         ogg_stream_state os;

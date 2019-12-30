@@ -51,7 +51,6 @@ bool OggEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
     vorbis_block vb = { 0 };
     this->bitrate = bitrate * 1000;
     this->headerWritten = false;
-    this->prefs = env()->GetPreferences("OggEncoder");
     return true;
 }
 
@@ -61,12 +60,7 @@ void OggEncoder::Release() {
     vorbis_dsp_clear(&vd);
     vorbis_comment_clear(&vc);
     vorbis_info_clear(&vi);
-    this->prefs->Release();
     delete this;
-}
-
-IPreferences* OggEncoder::GetPreferences() {
-    return this->prefs;
 }
 
 int OggEncoder::Encode(const IBuffer* pcm, char** data) {

@@ -35,7 +35,6 @@
 #pragma once
 
 #include "IBuffer.h"
-#include "IPreferences.h"
 #include <stddef.h>
 
 namespace musik { namespace core { namespace sdk {
@@ -43,7 +42,6 @@ namespace musik { namespace core { namespace sdk {
     class IEncoder {
         public:
             virtual void Release() = 0;
-            virtual IPreferences* GetPreferences() = 0;
      };
 
 } } }

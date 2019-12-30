@@ -53,7 +53,6 @@ static inline std::wstring utf8to16(const char* utf8) {
 
 LameEncoder::LameEncoder() {
     this->lame = nullptr;
-    this->prefs = env()->GetPreferences("LameEncoder");
 }
 
 bool LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
@@ -72,12 +71,7 @@ bool LameEncoder::Initialize(size_t rate, size_t channels, size_t bitrate) {
 void LameEncoder::Release() {
     lame_close(lame);
     lame = nullptr;
-    this->prefs->Release();
     delete this;
-}
-
-IPreferences* LameEncoder::GetPreferences() {
-    return this->prefs;
 }
 
 int LameEncoder::Encode(const IBuffer* pcm, char** data) {

@@ -47,7 +47,6 @@ extern "C" {
 class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
     using IBuffer = musik::core::sdk::IBuffer;
     using IDataStream = musik::core::sdk::IDataStream;
-    using IPreferences = musik::core::sdk::IPreferences;
 
     public:
         FfmpegEncoder(const std::string& format);
@@ -56,7 +55,6 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) override;
         virtual bool Encode(const IBuffer* pcm) override;
         virtual void Finalize() override;
-        virtual IPreferences* GetPreferences() override;
 
         IDataStream* Stream() { return this->out; }
 
@@ -71,7 +69,6 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         DataBuffer<uint8_t> resampledData;
         uint8_t** planarDataPtr;
         IDataStream* out;
-        IPreferences* prefs;
         int readBufferSize;
         AVAudioFifo* outputFifo;
         AVCodec* outputCodec;
