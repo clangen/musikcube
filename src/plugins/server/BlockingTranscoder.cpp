@@ -119,7 +119,7 @@ bool BlockingTranscoder::Transcode() {
 
     decoder->Release();
     pcmBuffer->Release();
-1
+
     return result;
 }
 
