@@ -226,7 +226,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     /* also not clear about this, but it's taken from an ffmpeg example. TODO:
     research what global headers are */
     if (this->outputFormatContext->oformat->flags & AVFMT_GLOBALHEADER) {
-        this->outputContext->flags | AV_CODEC_FLAG_GLOBAL_HEADER;
+        this->outputContext->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
     int error = avcodec_open2(
