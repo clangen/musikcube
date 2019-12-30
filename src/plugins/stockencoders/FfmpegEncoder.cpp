@@ -502,9 +502,30 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
         return false;
     }
 
-    int outputFrameSize = this->outputContext->frame_size;
+    if (!this->WriteQueueToOutput(false)) {
+        this->isValid = false;
+        return false;
+    }
 
-    while (av_audio_fifo_size(this->outputFifo) >= outputFrameSize) {
+    return true;
+}
+
+void FfmpegEncoder::Finalize() {
+    if (this->WriteQueueToOutput(true)) {
+        int error = av_write_trailer(this->outputFormatContext);
+        if (error < 0) {
+            logAvError("av_write_trailer", error);
+        }
+    }
+}
+
+bool FfmpegEncoder::WriteQueueToOutput(bool drain) {
+    int outputFrameSize = this->outputContext->frame_size;
+    int error = 0;
+    while (
+        av_audio_fifo_size(this->outputFifo) >= outputFrameSize ||
+        (drain && av_audio_fifo_size(this->outputFifo) > 0)
+    ) {
         const int fifoSize = av_audio_fifo_size(this->outputFifo);
         const int frameSize = FFMIN(fifoSize, outputFrameSize);
 
@@ -572,11 +593,4 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     }
 
     return true;
-}
-
-void FfmpegEncoder::Finalize() {
-    // this->encodedData.reset();
-    // while (this->Encode(nullptr)) { }
-    // *data = this->encodedData.data;
-    // return this->encodedData.length;
 }

@@ -65,6 +65,7 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
         bool OpenOutputCodec(size_t rate, size_t channels, size_t bitrate);
         bool OpenOutputContext();
         bool WriteOutputHeader();
+        bool WriteQueueToOutput(bool drain);
 
         bool isValid;
         DataBuffer<uint8_t> resampledData;
