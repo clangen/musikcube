@@ -68,8 +68,9 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         bool ReadFromFifoAndWriteToOutput(bool drain);
 
         bool isValid;
-        DataBuffer<uint8_t> resampledData;
-        uint8_t** planarDataPtr;
+        uint8_t** planarDataBuffer;
+        int planarDataBufferFrameSize;
+        int channelCount;
         IDataStream* out;
         int readBufferSize;
         AVAudioFifo* outputFifo;

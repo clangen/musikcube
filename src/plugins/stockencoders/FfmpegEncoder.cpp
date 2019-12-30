@@ -190,7 +190,9 @@ FfmpegEncoder::FfmpegEncoder(const std::string& format)
     this->outputFormatContext = nullptr;
     this->outputFifo = nullptr;
     this->globalTimestamp = 0LL;
-    this->planarDataPtr = nullptr;
+    this->planarDataBuffer = nullptr;
+    this->planarDataBufferFrameSize = 0;
+    this->channelCount = 0;
 
     std::transform(
         this->format.begin(),
@@ -303,16 +305,14 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     /* resampler context that will be used to convert the input audio
     sample format to the one recommended by the encoder */
-    this->resampler = swr_alloc();
-
-    swr_alloc_set_opts(
-        this->resampler,
+    this->resampler = swr_alloc_set_opts(
+        nullptr,
         this->outputContext->channel_layout,
         this->outputContext->sample_fmt,
         this->outputContext->sample_rate,
         this->outputContext->channel_layout,
         AV_SAMPLE_FMT_FLT,
-        (int) rate,
+        (int)rate,
         0,
         nullptr);
 
@@ -359,9 +359,7 @@ bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, s
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {
             if (this->WriteOutputHeader()) {
-                if (av_sample_fmt_is_planar(this->outputContext->sample_fmt)) {
-                    this->planarDataPtr = new uint8_t*[channels];
-                }
+                this->channelCount = channels;
                 this->isValid = true;
             }
         }
@@ -407,8 +405,11 @@ void FfmpegEncoder::Cleanup() {
         av_audio_fifo_free(this->outputFifo);
         this->outputFifo = nullptr;
     }
-    delete[] this->planarDataPtr;
-    this->planarDataPtr = nullptr;
+    if (this->planarDataBuffer) {
+        av_freep(&this->planarDataBuffer[0]);
+        this->planarDataBuffer = nullptr;
+        this->planarDataBufferFrameSize = 0;
+    }
 }
 
 void FfmpegEncoder::Release() {
@@ -422,7 +423,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     }
 
     if (this->ResampleAndWriteToFifo(pcm)) {
-        if (!this->ReadFromFifoAndWriteToOutput(false)) {
+        if (this->ReadFromFifoAndWriteToOutput(false)) {
             return true;
         }
     }
@@ -456,30 +457,36 @@ bool FfmpegEncoder::WriteOutputHeader() {
 }
 
 bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
+    int error = 0;
+    int linesize = 0;
     const int totalSamples = pcm->Samples();
     const int samplesPerChannel = totalSamples / pcm->Channels();
     const int outputBytesPerSample = av_get_bytes_per_sample(this->outputContext->sample_fmt);
     const int outputSamplesPerChannel = swr_get_out_samples(this->resampler, samplesPerChannel);
     const int outputSizeBytes = outputBytesPerSample * outputSamplesPerChannel * pcm->Channels();
-    this->resampledData.reset(outputSizeBytes);
-    uint8_t* outData = this->resampledData.data;
-    const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
-    uint8_t** outDataPtr = nullptr;
-    if (planarDataPtr) {
-        /* planar formats contain non-interleaved channel data. we can still store this in
-        a contiguous block of memory as handled by DataBuffer, but we need to create an
-        array of pointers to the relevant chunks of memory */
-        int stride = outputSizeBytes / pcm->Channels();
-        for (int i = 0; i < pcm->Channels(); i++) {
-            planarDataPtr[i] = this->resampledData.data + (i * stride);
+    /* we store resampled data into `this->planarDataBuffer`, and try to re-use it
+    if possible. however, if the number of samples in the buffer changes, we just
+    reallocate it */
+    if (!this->planarDataBuffer || samplesPerChannel != this->planarDataBufferFrameSize) {
+        if (this->planarDataBuffer) {
+            av_freep(&this->planarDataBuffer[0]);
         }
-        outDataPtr = this->planarDataPtr;
+        error = av_samples_alloc_array_and_samples(
+            &this->planarDataBuffer, 
+            &linesize,
+            this->channelCount, 
+            samplesPerChannel, 
+            this->outputContext->sample_fmt, 
+            0);
+        if (error < 0) {
+            logAvError("av_samples_alloc_array_and_samples", error);
+            return false;
+        }
+        this->planarDataBufferFrameSize = samplesPerChannel;
     }
-    else {
-        /* non-planar formats just interleave data in the same buffer */
-        outDataPtr = &outData;
-    }
+
+    const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
     // std::cerr << "totalSamples: " << totalSamples << " samplesPerChannel: " << samplesPerChannel << " outputBytesPerSample: " <<
     //     outputBytesPerSample << " outputSamplesPerChannel: " << outputSamplesPerChannel << " totalBytes: " <<
@@ -487,18 +494,12 @@ bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
     //     " outData: " << (int64_t) outData << " inData: " << (int64_t) inData << " resampledData.length: " <<
     //     resampledData.length << "\n";
 
-    // uint8_t* outDataChannels[2] = { &outData[0], &outData[this->resampledData.length / 2] };
-
-    // std::cerr << "before: " << outDataChannels[0][0] << " " << outDataChannels[1][0] << "\n";
-
     int convertedSamplesPerChannel = swr_convert(
         this->resampler,
-        outDataPtr,
+        this->planarDataBuffer,
         samplesPerChannel,
         &inData,
         samplesPerChannel);
-
-    // std::cerr << "after: " << outDataChannels[0][0] << " " << outDataChannels[1][0] << "\n";
 
     if (convertedSamplesPerChannel != samplesPerChannel) {
         logError("resampled output has a different number of samples than the input");
@@ -506,7 +507,7 @@ bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
     }
 
     int currentFifoSize = av_audio_fifo_size(this->outputFifo);
-    int error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + samplesPerChannel);
+    error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + samplesPerChannel);
 
     if (error < 0) {
         logAvError("av_audio_fifo_realloc", error);
@@ -515,7 +516,7 @@ bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
 
     int samplesWritten = error = av_audio_fifo_write(
         this->outputFifo,
-        (void**) outDataPtr,
+        (void**) this->planarDataBuffer,
         samplesPerChannel);
 
     if (samplesWritten != samplesPerChannel) {
