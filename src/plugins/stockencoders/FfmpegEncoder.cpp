@@ -45,8 +45,6 @@ static const int DEFAULT_SAMPLE_RATE = 44100;
 static const char* TAG = "FfmpegEncoder";
 
 static std::map<std::string, AVCodecID> formatToCodec = {
-    { ".mp3", AV_CODEC_ID_MP3 },
-    { "audio/mpeg", AV_CODEC_ID_MP3 },
     { ".ogg", AV_CODEC_ID_VORBIS },
     { "audio/ogg", AV_CODEC_ID_VORBIS },
     { ".opus", AV_CODEC_ID_OPUS },
