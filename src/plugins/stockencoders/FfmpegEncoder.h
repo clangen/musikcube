@@ -34,6 +34,7 @@
 
 #include <core/sdk/IDataStreamEncoder.h>
 #include <core/sdk/DataBuffer.h>
+#include <string>
 
 extern "C" {
     #include <libavcodec/avcodec.h>
@@ -49,6 +50,8 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
     using IPreferences = musik::core::sdk::IPreferences;
 
     public:
+        FfmpegEncoder(const std::string& format);
+
         virtual void Release() override;
         virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) override;
         virtual bool Encode(const IBuffer* pcm) override;
@@ -63,12 +66,12 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
         bool OpenOutputContext();
         bool WriteOutputHeader();
 
+        bool isValid;
         DataBuffer<uint8_t> resampledData;
         uint8_t** planarDataPtr;
         IDataStream* out;
         IPreferences* prefs;
         int readBufferSize;
-        bool isValid{ false };
         AVAudioFifo* outputFifo;
         AVCodec* outputCodec;
         AVCodecContext* outputContext;
@@ -78,4 +81,5 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
         AVFrame* outputFrame;
         SwrContext* resampler;
         int64_t globalTimestamp;
+        std::string format;
 };

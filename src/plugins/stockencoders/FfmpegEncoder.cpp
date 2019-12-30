@@ -34,22 +34,35 @@
 
 #include "FfmpegEncoder.h"
 #include "shared.h"
+#include <algorithm>
 #include <random>
+#include <map>
 
 using namespace musik::core::sdk;
 
-//static const std::string TEST_FILENAME = "test.aac";
-//static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_AAC;
-
-//static const std::string TEST_FILENAME = "test.opus";
-//static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_OPUS;
-
-static const std::string TEST_FILENAME = "test.ogg";
-static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_VORBIS;
-
-static const int IO_CONTEXT_BUFFER_SIZE = (4096 * 16) + AV_INPUT_BUFFER_PADDING_SIZE;
+static const int IO_CONTEXT_BUFFER_SIZE = (4096 * 8) + AV_INPUT_BUFFER_PADDING_SIZE;
 static const int DEFAULT_SAMPLE_RATE = 44100;
 static const char* TAG = "FfmpegEncoder";
+
+static std::map<std::string, AVCodecID> formatToCodec = {
+    { ".mp3", AV_CODEC_ID_MP3 },
+    { "audio/mpeg", AV_CODEC_ID_MP3 },
+    { ".ogg", AV_CODEC_ID_VORBIS },
+    { "audio/ogg", AV_CODEC_ID_VORBIS },
+    { ".opus", AV_CODEC_ID_OPUS },
+    { ".flac", AV_CODEC_ID_FLAC },
+    { "audio/flac", AV_CODEC_ID_FLAC },
+    { ".alac", AV_CODEC_ID_ALAC },
+    { ".aac", AV_CODEC_ID_AAC },
+    { "audio/aac", AV_CODEC_ID_AAC },
+    { ".mp4", AV_CODEC_ID_MPEG4 },
+    { "audio/mp4", AV_CODEC_ID_MPEG4 },
+    { ".aac", AV_CODEC_ID_AAC },
+    { ".m4a", AV_CODEC_ID_AAC },
+    { ".wma", AV_CODEC_ID_WMAV2 },
+    { "audio/x-ms-wma", AV_CODEC_ID_WMAV2 },
+    { ".wv", AV_CODEC_ID_WAVPACK },
+};
 
 static IDebug* debug = nullptr;
 
@@ -166,6 +179,28 @@ static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
     return 0;
 }
 
+FfmpegEncoder::FfmpegEncoder(const std::string& format)
+: format(format) {
+    this->prefs = nullptr;
+    this->isValid = false;
+    this->resampler = nullptr;
+    this->outputContext = nullptr;
+    this->outputCodec = nullptr;
+    this->outputFrame = nullptr;
+    this->ioContext = nullptr;
+    this->ioContextOutputBuffer = nullptr;
+    this->outputFormatContext = nullptr;
+    this->outputFifo = nullptr;
+    this->globalTimestamp = 0LL;
+    this->planarDataPtr = nullptr;
+
+    std::transform(
+        this->format.begin(),
+        this->format.end(),
+        this->format.begin(),
+        ::tolower);
+}
+
 bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate) {
     if (!this->ioContext) {
         logError("ioContext not initialized, cannot open output stream");
@@ -179,8 +214,19 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         return false;
     }
 
-    this->outputFormatContext->oformat =
-        av_guess_format(nullptr, TEST_FILENAME.c_str(), nullptr);
+    if (!this->format.size()) {
+        logError("invalid format specified: " + this->format);
+        return false;
+    }
+
+    if (this->format[0] == '.') {
+        const std::string tempFilename = "test" + this->format;
+        this->outputFormatContext->oformat = av_guess_format(nullptr, tempFilename.c_str(), nullptr);
+    }
+
+    if (!this->outputFormatContext->oformat) {
+        this->outputFormatContext->oformat = av_guess_format(nullptr, nullptr, this->format.c_str());
+    }
 
     if (!this->outputFormatContext->oformat) {
         logError("av_guess_format");
@@ -189,7 +235,13 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     this->outputFormatContext->pb = this->ioContext;
 
-    this->outputCodec = avcodec_find_encoder(TEST_CODEC_ID);
+    auto it = formatToCodec.find(this->format);
+    if (it == formatToCodec.end()) {
+        logError("no codec for specified input format: " + this->format);
+        return false;
+    }
+
+    this->outputCodec = avcodec_find_encoder(it->second);
     if (!this->outputCodec) {
         logError("avcodec_find_encoder");
         return false;
@@ -298,18 +350,8 @@ bool FfmpegEncoder::OpenOutputContext() {
 }
 
 bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
-    this->isValid = false;
     this->out = out;
-    this->resampler = nullptr;
     this->prefs = env()->GetPreferences("FfmpegEncoder");
-    this->outputContext = nullptr;
-    this->outputCodec = nullptr;
-    this->outputFrame = nullptr;
-    this->ioContext = nullptr;
-    this->ioContextOutputBuffer = nullptr;
-    this->outputFormatContext = nullptr;
-    this->outputFifo = nullptr;
-    this->globalTimestamp = 0LL;
 
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {
