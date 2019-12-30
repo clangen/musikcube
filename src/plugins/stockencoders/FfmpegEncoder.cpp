@@ -135,7 +135,7 @@ static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
     if (encoder && encoder->Stream()) {
         auto count = encoder->Stream()->Read(buffer, (PositionType) bufferSize);
-        return (count > 1) ? count : AVERROR_EOF;
+        return (count == bufferSize) ? count : AVERROR_EOF;
     }
     return 0;
 }
@@ -144,7 +144,7 @@ static int writeCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     FfmpegEncoder* encoder = static_cast<FfmpegEncoder*>(opaque);
     if (encoder && encoder->Stream()) {
         auto count = encoder->Stream()->Write(buffer, (PositionType) bufferSize);
-        return (count > 1) ? count : AVERROR_EOF;
+        return (count == bufferSize) ? count : AVERROR_EOF;
     }
     return 0;
 }
