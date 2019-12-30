@@ -545,7 +545,6 @@ bool FfmpegEncoder::WriteQueueToOutput(bool drain) {
             error = av_frame_get_buffer(this->outputFrame, 0);
             if (error < 0) {
                 logAvError("av_frame_get_buffer", error);
-                isValid = false;
                 return false;
             }
         }
@@ -555,7 +554,6 @@ bool FfmpegEncoder::WriteQueueToOutput(bool drain) {
 
         if (framesRead < frameSize) {
             logError("av_audio_fifo_read read the incorrect number of samples");
-            isValid = false;
             return false;
         }
 
@@ -565,7 +563,6 @@ bool FfmpegEncoder::WriteQueueToOutput(bool drain) {
         error = avcodec_send_frame(this->outputContext, this->outputFrame);
         if (error < 0) {
             logAvError("av_codec_send_frame", error);
-            isValid = false;
             return false;
         }
 
@@ -591,7 +588,6 @@ bool FfmpegEncoder::WriteQueueToOutput(bool drain) {
             continue;
         }
         else if (error < 0) {
-            isValid = false;
             return false;
         }
     }
