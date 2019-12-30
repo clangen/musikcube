@@ -52,8 +52,8 @@ namespace musik { namespace core { namespace io {
             virtual bool Close();
             virtual void Interrupt();
             virtual void Release();
-            virtual bool Readable() { return flags & OpenFlag::Read != 0; }
-            virtual bool Writable() { return flags & OpenFlag::Write != 0; }
+            virtual bool Readable() { return (flags & OpenFlag::Read) != 0; }
+            virtual bool Writable() { return (flags & OpenFlag::Write) != 0; }
             virtual PositionType Read(void* buffer, PositionType readBytes);
             virtual PositionType Write(void* buffer, PositionType writeBytes);
             virtual bool SetPosition(PositionType position);

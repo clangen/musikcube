@@ -46,8 +46,8 @@ class GmeDataStream: public musik::core::sdk::IDataStream {
         virtual bool Close() override;
         virtual void Interrupt() override;
         virtual void Release() override;
-        virtual bool Readable() { return true; }
-        virtual bool Writable() { return false; }
+        virtual bool Readable() override { return true; }
+        virtual bool Writable() override { return false; }
         virtual PositionType Read(void *buffer, PositionType readBytes) override;
         virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
         virtual bool SetPosition(PositionType position) override;
