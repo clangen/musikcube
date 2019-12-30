@@ -497,7 +497,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
         return false;
     }
 
-    if (!this->WriteQueueToOutput(false)) {
+    if (!this->WriteFifoToOutput(false)) {
         this->isValid = false;
         return false;
     }
@@ -506,7 +506,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
 }
 
 void FfmpegEncoder::Finalize() {
-    if (this->WriteQueueToOutput(true)) {
+    if (this->WriteFifoToOutput(true)) {
         int error = av_write_trailer(this->outputFormatContext);
         if (error < 0) {
             logAvError("av_write_trailer", error);
@@ -514,7 +514,7 @@ void FfmpegEncoder::Finalize() {
     }
 }
 
-bool FfmpegEncoder::WriteQueueToOutput(bool drain) {
+bool FfmpegEncoder::WriteFifoToOutput(bool drain) {
     int outputFrameSize = this->outputContext->frame_size;
     int error = 0;
     while (
