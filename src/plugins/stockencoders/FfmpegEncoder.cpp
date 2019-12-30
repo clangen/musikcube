@@ -173,12 +173,15 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     }
 
     this->outputFormatContext = avformat_alloc_context();
+
     if (!this->outputFormatContext) {
         logError("avformat_alloc_context");
         return false;
     }
 
-    this->outputFormatContext->oformat = av_guess_format(nullptr, TEST_FILENAME.c_str(), nullptr);
+    this->outputFormatContext->oformat =
+        av_guess_format(nullptr, TEST_FILENAME.c_str(), nullptr);
+
     if (!this->outputFormatContext->oformat) {
         logError("av_guess_format");
         return false;
@@ -192,8 +195,11 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         return false;
     }
 
-    // /* CAL TODO: examples don't show freeing this stream -- should we? when? */
+    /* note the docs and examples suggest we don't have to free this manually;
+    instead, we just need to make sure we release the codec and output context
+    correctly. */
     AVStream* stream = avformat_new_stream(this->outputFormatContext, nullptr);
+
     if (!stream) {
         logError("avformat_new_stream");
         return false;
@@ -212,8 +218,8 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     this->outputContext->bit_rate = (int64_t) bitrate * 1000;
     this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
-    /* CAL TODO: don't quite understand this bit; apparently it sets the sample rate
-    for the container */
+    /* don't quite understand this bit; apparently it sets the sample rate
+    for the container(?) */
     stream->time_base.den = (int) rate;
     stream->time_base.num = 1;
 
@@ -224,9 +230,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     }
 
     int error = avcodec_open2(
-        this->outputContext,
-        this->outputCodec,
-        nullptr);
+        this->outputContext, this->outputCodec, nullptr);
 
     if (error < 0) {
         logAvError("avcodec_open2", error);
@@ -236,6 +240,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     /* CAL: totally don't understand this, but if we don't do it, then the output
     header cannot be written, and the call returns -22. ugh. */
     error = avcodec_parameters_from_context(stream->codecpar, this->outputContext);
+
     if (error < 0) {
         logAvError("avcodec_parameters_from_context", error);
         return false;
@@ -243,7 +248,6 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     /* resampler context that will be used to convert the input audio
     sample format to the one recommended by the encoder */
-
     this->resampler = swr_alloc();
 
     swr_alloc_set_opts(
@@ -258,13 +262,13 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         nullptr);
 
     error = swr_init(this->resampler);
+
     if (error < 0) {
         logAvError("swr_init", error);
         return false;
     }
 
     /* fifo buffer that will be used by the encoder */
-
     this->outputFifo = av_audio_fifo_alloc(
         this->outputContext->sample_fmt,
         this->outputContext->channels,
@@ -310,6 +314,9 @@ bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, s
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {
             if (this->WriteOutputHeader()) {
+                if (av_sample_fmt_is_planar(this->outputContext->sample_fmt)) {
+                    this->planarDataPtr = new uint8_t*[channels];
+                }
                 this->isValid = true;
             }
         }
@@ -355,6 +362,8 @@ void FfmpegEncoder::Cleanup() {
         av_audio_fifo_free(this->outputFifo);
         this->outputFifo = nullptr;
     }
+    delete[] this->planarDataPtr;
+    this->planarDataPtr = nullptr;
 }
 
 void FfmpegEncoder::Release() {
@@ -389,21 +398,20 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     const int outputBytesPerSample = av_get_bytes_per_sample(this->outputContext->sample_fmt);
     const int outputSamplesPerChannel = swr_get_out_samples(this->resampler, samplesPerChannel);
     const int outputSizeBytes = outputBytesPerSample * outputSamplesPerChannel * pcm->Channels();
-    const bool isPlanar = av_sample_fmt_is_planar (this->outputContext->sample_fmt);
     this->resampledData.reset(outputSizeBytes);
     uint8_t* outData = (uint8_t*) this->resampledData.data;
     const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
     uint8_t** outDataPtr = nullptr;
-    if (isPlanar) {
+    if (planarDataPtr) {
         /* planar formats contain non-interleaved channel data. we can still store this in
         a contiguous block of memory as handled by DataBuffer, but we need to create an
         array of pointers to the relevant chunks of memory */
-        outDataPtr = new uint8_t*[pcm->Channels()];
         int stride = outputSizeBytes / pcm->Channels();
         for (int i = 0; i < pcm->Channels(); i++) {
-            outDataPtr[i] = &this->resampledData.data[i * stride];
+            planarDataPtr[i] = this->resampledData.data + (i * stride);
         }
+        outDataPtr = this->planarDataPtr;
     }
     else {
         /* non-planar formats just interleave data in the same buffer */
@@ -434,7 +442,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     }
 
     int currentFifoSize = av_audio_fifo_size(this->outputFifo);
-    int error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + pcm->Samples());
+    int error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + samplesPerChannel);
 
     if (error < 0) {
         logAvError("av_audio_fifo_realloc", error);
@@ -449,14 +457,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
 
     if (samplesWritten != samplesPerChannel) {
         logError("av_audio_fifo_write wrote incorrect number of samples");
-        if (isPlanar) {
-            delete[] outDataPtr;
-        }
         return false;
-    }
-
-    if (isPlanar) {
-        delete[] outDataPtr;
     }
 
     int outputFrameSize = this->outputContext->frame_size;

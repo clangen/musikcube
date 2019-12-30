@@ -64,6 +64,7 @@ class FfmpegEncoder : public musik::core::sdk::IDataStreamEncoder {
         bool WriteOutputHeader();
 
         DataBuffer<uint8_t> resampledData;
+        uint8_t** planarDataPtr;
         IDataStream* out;
         IPreferences* prefs;
         int readBufferSize;
