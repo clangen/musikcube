@@ -53,8 +53,6 @@ static std::map<std::string, AVCodecID> formatToCodec = {
     { ".alac", AV_CODEC_ID_ALAC },
     { ".aac", AV_CODEC_ID_AAC },
     { "audio/aac", AV_CODEC_ID_AAC },
-    { ".mp4", AV_CODEC_ID_MPEG4 },
-    { "audio/mp4", AV_CODEC_ID_MPEG4 },
     { ".aac", AV_CODEC_ID_AAC },
     { ".m4a", AV_CODEC_ID_AAC },
     { ".wma", AV_CODEC_ID_WMAV2 },
@@ -89,6 +87,9 @@ static void logError(const std::string& message) {
 }
 
 static AVSampleFormat resolveSampleFormat(AVCodec *codec) {
+    if (!codec->sample_fmts) {
+        return AV_SAMPLE_FMT_NONE;
+    }
     const enum AVSampleFormat *p = codec->sample_fmts;
     while (*p != AV_SAMPLE_FMT_NONE) {
         /* input samples are always AV_SAMPLE_FMT_FLT, so we prefer
@@ -267,6 +268,11 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     this->outputContext->sample_fmt = resolveSampleFormat(this->outputCodec);
     this->outputContext->bit_rate = (int64_t) bitrate * 1000;
     this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+
+    if (this->outputContext->sample_fmt == AV_SAMPLE_FMT_NONE) {
+        logError("invalid sample format resolved.");
+        return false;
+    }
 
     /* don't quite understand this bit; apparently it sets the sample rate
     for the container(?) */

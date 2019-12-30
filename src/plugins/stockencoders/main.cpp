@@ -75,8 +75,6 @@ static std::set<std::string> supportedFormats = {
     ".alac",
     ".aac",
     "audio/aac",
-    ".mp4",
-    "audio/mp4",
     ".aac",
     ".m4a",
     "audio/x-musepack"
