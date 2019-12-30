@@ -44,6 +44,15 @@
 
 using namespace musik::core::sdk;
 
+// static const std::string TEST_FILENAME = "test.aac";
+// static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_AAC;
+
+static const std::string TEST_FILENAME = "test.opus";
+static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_OPUS;
+
+// static const std::string TEST_FILENAME = "test.ogg";
+// static const AVCodecID TEST_CODEC_ID = AV_CODEC_ID_VORBIS;
+
 static const int IO_CONTEXT_BUFFER_SIZE = (4096 * 16) + AV_INPUT_BUFFER_PADDING_SIZE;
 static const int DEFAULT_SAMPLE_RATE = 44100;
 static const char* TAG = "FfmpegEncoder";
@@ -77,12 +86,14 @@ static void logError(const std::string& message) {
 static AVSampleFormat resolveSampleFormat(AVCodec *codec) {
     const enum AVSampleFormat *p = codec->sample_fmts;
     while (*p != AV_SAMPLE_FMT_NONE) {
-        if (*p == AV_SAMPLE_FMT_FLT || *p == AV_SAMPLE_FMT_FLTP) {
+        /* input samples are always AV_SAMPLE_FMT_FLT, so we prefer
+        this sample format to minimize resampling */
+        if (*p == AV_SAMPLE_FMT_FLT) {
             return *p;
         }
         p++;
     }
-    return AV_SAMPLE_FMT_NONE;
+    return codec->sample_fmts[0];
 }
 
 static int resolveSampleRate(AVCodec* codec, int preferredSampleRate) {
@@ -93,7 +104,7 @@ static int resolveSampleRate(AVCodec* codec, int preferredSampleRate) {
     }
     p = codec->supported_samplerates;
     while (*p) {
-        if (p && *p == preferredSampleRate) {
+        if (*p == preferredSampleRate) {
             return preferredSampleRate;
         }
         highestRate = FFMAX(*p, highestRate);
@@ -173,8 +184,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
         return false;
     }
 
-    const std::string fn = "test.ogg";
-    this->outputFormatContext->oformat = av_guess_format(nullptr, fn.c_str(), nullptr);
+    this->outputFormatContext->oformat = av_guess_format(nullptr, TEST_FILENAME.c_str(), nullptr);
     if (!this->outputFormatContext->oformat) {
         logError("av_guess_format");
         return false;
@@ -182,7 +192,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
 
     this->outputFormatContext->pb = this->ioContext;
 
-    this->outputCodec = avcodec_find_encoder(AV_CODEC_ID_VORBIS);
+    this->outputCodec = avcodec_find_encoder(TEST_CODEC_ID);
     if (!this->outputCodec) {
         logError("avcodec_find_encoder");
         return false;
@@ -204,7 +214,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     this->outputContext->channels = (int) channels;
     this->outputContext->channel_layout = resolveChannelLayout(channels);
     this->outputContext->sample_rate = resolveSampleRate(this->outputCodec, rate);
-    this->outputContext->sample_fmt = this->outputCodec->sample_fmts[0];
+    this->outputContext->sample_fmt = resolveSampleFormat(this->outputCodec);
     this->outputContext->bit_rate = (int64_t) bitrate * 1000;
     this->outputContext->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
@@ -389,7 +399,11 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
     int convertedSamplesPerChannel = swr_convert(
-        this->resampler, &outData, samplesPerChannel, &inData, samplesPerChannel);
+        this->resampler,
+        &outData,
+        samplesPerChannel,
+        &inData,
+        samplesPerChannel);
 
     if (convertedSamplesPerChannel != samplesPerChannel) {
         return false;
@@ -405,7 +419,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
     }
 
     void* resampledDataPtr = (void*) this->resampledData.data;
-    if (av_audio_fifo_write(this->outputFifo, &resampledDataPtr, totalSamples) != totalSamples) {
+    if (av_audio_fifo_write(this->outputFifo, &resampledDataPtr, samplesPerChannel) != samplesPerChannel) {
         logError("av_audio_fifo_write wrote incorrect number of samples");
         return false;
     }
