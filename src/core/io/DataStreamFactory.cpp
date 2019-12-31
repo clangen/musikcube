@@ -63,7 +63,7 @@ DataStreamFactory* DataStreamFactory::Instance() {
     return instance;
 }
 
-IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlag flags) {
+IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlags flags) {
     typedef musik::core::PluginFactory::ReleaseDeleter<IDataStream> StreamDeleter;
 
     if (uri) {
@@ -94,7 +94,7 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlag flags) 
     return nullptr;
 }
 
-DataStreamPtr DataStreamFactory::OpenSharedDataStream(const char *uri, OpenFlag flags) {
+DataStreamPtr DataStreamFactory::OpenSharedDataStream(const char *uri, OpenFlags flags) {
     auto stream = OpenDataStream(uri, flags);
     return stream ? DataStreamPtr(stream, StreamDeleter()) : DataStreamPtr();
 }

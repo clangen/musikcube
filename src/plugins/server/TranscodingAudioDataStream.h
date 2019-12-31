@@ -45,7 +45,7 @@
 class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
     public:
         using PositionType = musik::core::sdk::PositionType;
-        using OpenFlag = musik::core::sdk::OpenFlag;
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
         TranscodingAudioDataStream(
             Context& context,
@@ -65,7 +65,7 @@ class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
 
         virtual ~TranscodingAudioDataStream();
 
-        virtual bool Open(const char *uri, OpenFlag flags) override;
+        virtual bool Open(const char *uri, OpenFlags flags) override;
         virtual bool Close() override;
         virtual void Interrupt() override;
         virtual void Release() override;

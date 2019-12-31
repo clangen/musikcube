@@ -185,7 +185,7 @@ IDataStream* Transcoder::TranscodeOnDemand(
     if (exists(expectedFilename)) {
         boost::system::error_code ec;
         last_write_time(expectedFilename, time(nullptr), ec);
-        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlag::Read);
+        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 
     /* if it doesn't exist, check to see if the cache is enabled. */
@@ -240,7 +240,7 @@ IDataStream* Transcoder::TranscodeAndWait(
     if (exists(expectedFilename)) {
         boost::system::error_code ec;
         last_write_time(expectedFilename, time(nullptr), ec);
-        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlag::Read);
+        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 
     IStreamingEncoder* audioStreamEncoder = dynamic_cast<IStreamingEncoder*>(encoder);
@@ -264,7 +264,7 @@ IDataStream* Transcoder::TranscodeAndWait(
 
         transcoderStream->Release();
         PruneTranscodeCache(context);
-        return context.environment->GetDataStream(uri.c_str(), OpenFlag::Read);
+        return context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
     }
     else {
         IBlockingEncoder* dataStreamEncoder = dynamic_cast<IBlockingEncoder*>(encoder);
@@ -278,6 +278,6 @@ IDataStream* Transcoder::TranscodeAndWait(
         }
 
         PruneTranscodeCache(context);
-        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlag::Read);
+        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 }

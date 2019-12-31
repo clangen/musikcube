@@ -87,14 +87,14 @@ class GmeDecoderFactory: public IDecoderFactory {
 
 class GmeDataStreamFactory: public IDataStreamFactory{
     public:
-        using OpenFlag = musik::core::sdk::OpenFlag;
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
         virtual bool CanRead(const char *uri) override {
             std::string str = uri;
             return str.find("gme://") == 0 && canHandle(str);
         }
 
-        virtual IDataStream* Open(const char *uri, OpenFlag flags) override {
+        virtual IDataStream* Open(const char *uri, OpenFlags flags) override {
             auto result = new GmeDataStream();
             if (result->Open(uri, flags)) {
                 return result;

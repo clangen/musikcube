@@ -140,7 +140,7 @@ static class Environment: public IEnvironment {
             return CopyString(path, dst, size);
         }
 
-        virtual IDataStream* GetDataStream(const char* uri, OpenFlag flags) override {
+        virtual IDataStream* GetDataStream(const char* uri, OpenFlags flags) override {
             return DataStreamFactory::OpenDataStream(uri, flags);
         }
 

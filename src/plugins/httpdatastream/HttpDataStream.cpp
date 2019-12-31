@@ -228,8 +228,8 @@ bool HttpDataStream::CanPrefetch() {
     return true;
 }
 
-bool HttpDataStream::Open(const char *uri, OpenFlag flags) {
-    if ((flags & OpenFlag::Write) != 0) {
+bool HttpDataStream::Open(const char *uri, OpenFlags flags) {
+    if ((flags & OpenFlags::Write) != 0) {
         return false;
     }
 

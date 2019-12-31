@@ -116,7 +116,7 @@ namespace musik {
                 Crossfade = 1
             };
 
-            enum OpenFlag {
+            enum OpenFlags {
                 None = 0,
                 Read = 1,
                 Write = 2

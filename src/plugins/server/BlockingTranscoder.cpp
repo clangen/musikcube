@@ -55,8 +55,8 @@ BlockingTranscoder::BlockingTranscoder(
     this->encoder = encoder;
     this->tempFilename = tempFilename;
     this->finalFilename = finalFilename;
-    this->output = context.environment->GetDataStream(tempFilename.c_str(), OpenFlag::Write);
-    this->input = context.environment->GetDataStream(uri.c_str(), OpenFlag::Read);
+    this->output = context.environment->GetDataStream(tempFilename.c_str(), OpenFlags::Write);
+    this->input = context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
 }
 
 BlockingTranscoder::~BlockingTranscoder() {

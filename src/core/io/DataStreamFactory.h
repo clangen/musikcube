@@ -43,10 +43,10 @@ namespace musik { namespace core { namespace io {
     class DataStreamFactory {
         public:
             using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>;
-            using OpenFlag = musik::core::sdk::OpenFlag;
+            using OpenFlags = musik::core::sdk::OpenFlags;
 
-            static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlag flags);
-            static musik::core::sdk::IDataStream* OpenDataStream(const char* uri, OpenFlag flags);
+            static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlags flags);
+            static musik::core::sdk::IDataStream* OpenDataStream(const char* uri, OpenFlags flags);
 
         private:
             typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;

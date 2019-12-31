@@ -65,7 +65,7 @@ bool LocalFileStream::Seekable() {
     return true;
 }
 
-bool LocalFileStream::Open(const char *filename, OpenFlag flags) {
+bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
     try {
         this->uri = filename;
         debug::info(TAG, "opening file: " + std::string(filename));
@@ -73,8 +73,8 @@ bool LocalFileStream::Open(const char *filename, OpenFlag flags) {
         boost::filesystem::path file(filename);
         bool exists = boost::filesystem::exists(file);
 
-        if (flags & OpenFlag::Read && !exists) {
-            debug::error(TAG, "open with OpenFlag::Read failed because file doesn't exist. " + this->uri);
+        if (flags & OpenFlags::Read && !exists) {
+            debug::error(TAG, "open with OpenFlags::Read failed because file doesn't exist. " + this->uri);
             return false;
         }
 
@@ -86,17 +86,17 @@ bool LocalFileStream::Open(const char *filename, OpenFlag flags) {
         boost::system::error_code ec;
         this->filesize = (long) boost::filesystem::file_size(file, ec);
 
-        if (ec && flags & OpenFlag::Write) {
+        if (ec && flags & OpenFlags::Write) {
             this->filesize = 0;
         }
 
-        /* convert the OpenFlag bitmask to an fopen compatible string */
+        /* convert the OpenFlags bitmask to an fopen compatible string */
         std::string openFlags = "";
-        if (flags & OpenFlag::Read) {
+        if (flags & OpenFlags::Read) {
             openFlags += "rb";
         }
 
-        if (flags & OpenFlag::Write) {
+        if (flags & OpenFlags::Write) {
             if (openFlags.size() == 2) {
                 openFlags += "+";
             }

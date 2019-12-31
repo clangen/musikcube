@@ -43,17 +43,17 @@ namespace musik { namespace core { namespace io {
     class LocalFileStream : public musik::core::sdk::IDataStream {
         public:
             using PositionType = musik::core::sdk::PositionType;
-            using OpenFlag = musik::core::sdk::OpenFlag;
+            using OpenFlags = musik::core::sdk::OpenFlags;
 
             LocalFileStream();
             virtual ~LocalFileStream();
 
-            virtual bool Open(const char *filename, OpenFlag flags);
+            virtual bool Open(const char *filename, OpenFlags flags);
             virtual bool Close();
             virtual void Interrupt();
             virtual void Release();
-            virtual bool Readable() { return (flags & OpenFlag::Read) != 0; }
-            virtual bool Writable() { return (flags & OpenFlag::Write) != 0; }
+            virtual bool Readable() { return (flags & OpenFlags::Read) != 0; }
+            virtual bool Writable() { return (flags & OpenFlags::Write) != 0; }
             virtual PositionType Read(void* buffer, PositionType readBytes);
             virtual PositionType Write(void* buffer, PositionType writeBytes);
             virtual bool SetPosition(PositionType position);
@@ -66,7 +66,7 @@ namespace musik { namespace core { namespace io {
             virtual bool CanPrefetch() { return true; }
 
         private:
-            OpenFlag flags { OpenFlag::None };
+            OpenFlags flags { OpenFlags::None };
             std::string extension;
             std::string uri;
             std::atomic<FILE*> file;

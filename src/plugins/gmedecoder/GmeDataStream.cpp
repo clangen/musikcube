@@ -40,7 +40,7 @@ using namespace musik::core::sdk;
 
 extern IEnvironment* environment;
 
-bool GmeDataStream::Open(const char *uri, OpenFlag flags) {
+bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
     if (parseExternalId(uri, this->filename, this->trackNumber)) {
         if (environment) {
             this->stream = environment->GetDataStream(this->filename.c_str(), flags);

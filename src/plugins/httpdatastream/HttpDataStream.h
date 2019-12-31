@@ -47,13 +47,13 @@ class FileReadStream;
 
 class HttpDataStream : public IDataStream {
     public:
-        using OpenFlag = musik::core::sdk::OpenFlag;
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
         HttpDataStream();
         ~HttpDataStream();
 
         virtual void Release();
-        virtual bool Open(const char *uri, OpenFlag flags = OpenFlag::Read);
+        virtual bool Open(const char *uri, OpenFlags flags = OpenFlags::Read);
         virtual bool Close();
         virtual bool Readable() { return true; }
         virtual bool Writable() { return false; }
