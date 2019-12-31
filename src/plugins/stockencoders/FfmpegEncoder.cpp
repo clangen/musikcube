@@ -501,8 +501,7 @@ bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
         samplesPerChannel);
 
     if (convertedSamplesPerChannel != samplesPerChannel) {
-        logError("resampled output has a different number of samples than the input");
-        return false;
+        logError("warning: resampled output has a different number of samples than the input");
     }
 
     int currentFifoSize = av_audio_fifo_size(this->outputFifo);
@@ -560,15 +559,34 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
             return false;
         }
 
-        this->outputFrame->pts = this->globalTimestamp;
-        this->globalTimestamp += this->outputFrame->nb_samples;
-
-        error = avcodec_send_frame(this->outputContext, this->outputFrame);
-        if (error < 0) {
-            logAvError("av_codec_send_frame", error);
+        error = this->SendReceiveAndWriteFrame(this->outputFrame);
+        if (error == AVERROR(EAGAIN)) {
+            continue;
+        }
+        else if (error < 0) {
             return false;
         }
+    }
 
+    if (drain) {
+        this->SendReceiveAndWriteFrame(nullptr);
+    }
+
+    return true;
+}
+
+int FfmpegEncoder::SendReceiveAndWriteFrame(AVFrame* frame) {
+    if (frame) {
+        frame->pts = this->globalTimestamp;
+        this->globalTimestamp += frame->nb_samples;
+    }
+
+    int error = avcodec_send_frame(this->outputContext, frame);
+
+    if (error < 0) {
+        logAvError("av_codec_send_frame", error);
+    }
+    else {
         error = 0;
         while (error >= 0) {
             AVPacket outputPacket;
@@ -587,13 +605,7 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
             }
             av_packet_unref(&outputPacket);
         }
-        if (error == AVERROR(EAGAIN)) {
-            continue;
-        }
-        else if (error < 0) {
-            return false;
-        }
     }
 
-    return true;
+    return error;
 }

@@ -55,9 +55,6 @@
 #ifdef WIN32
 #include <Windows.h>
 #include <Objbase.h>
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
 #endif
 
 using namespace musik::core::sdk;

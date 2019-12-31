@@ -66,6 +66,7 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         bool WriteOutputTrailer();
         bool ResampleAndWriteToFifo(const IBuffer* pcm);
         bool ReadFromFifoAndWriteToOutput(bool drain);
+        int SendReceiveAndWriteFrame(AVFrame* frame);
 
         bool isValid;
         uint8_t** planarDataBuffer;
