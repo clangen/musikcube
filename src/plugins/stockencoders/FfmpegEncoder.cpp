@@ -616,7 +616,7 @@ AVFrame* FfmpegEncoder::ReallocFrame(
         int error = av_frame_get_buffer(original, 0);
         if (error < 0) {
             logAvError("av_frame_get_buffer", error);
-            return false;
+            return nullptr;
         }
     }
     return original;
