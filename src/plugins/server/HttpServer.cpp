@@ -237,7 +237,7 @@ static std::string getStringUrlParam(
 }
 
 static bool isAuthenticated(MHD_Connection *connection, Context& context) {
-    char* disableAuth = std::getenv(ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH);
+    const char* disableAuth = std::getenv(ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH);
     if (disableAuth && std::string(disableAuth) == "1") {
         return true;
     }
