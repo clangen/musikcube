@@ -136,7 +136,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
@@ -174,7 +173,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
@@ -220,7 +218,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
@@ -265,7 +262,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>

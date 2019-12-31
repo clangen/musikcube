@@ -40,7 +40,6 @@
 
 #include "shared.h"
 #include "LameEncoder.h"
-#include "OggEncoder.h"
 #include "FfmpegEncoder.h"
 
 #include <string>
