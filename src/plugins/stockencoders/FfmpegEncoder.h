@@ -66,12 +66,11 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         bool WriteOutputTrailer();
         bool ResampleAndWriteToFifo(const IBuffer* pcm);
         bool ReadFromFifoAndWriteToOutput(bool drain);
+        void FlushResampler();
+        AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
         int SendReceiveAndWriteFrame(AVFrame* frame);
 
         bool isValid;
-        uint8_t** planarDataBuffer;
-        int planarDataBufferFrameSize;
-        int channelCount;
         IDataStream* out;
         int readBufferSize;
         AVAudioFifo* outputFifo;
@@ -81,7 +80,10 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         AVIOContext* ioContext;
         void* ioContextOutputBuffer;
         AVFrame* outputFrame;
+        AVFrame* resampledFrame;
         SwrContext* resampler;
         int64_t globalTimestamp;
         std::string format;
+        int inputChannelCount;
+        int inputSampleRate;
 };

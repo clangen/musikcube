@@ -40,7 +40,7 @@
 
 using namespace musik::core::sdk;
 
-static const int IO_CONTEXT_BUFFER_SIZE = (4096 * 8) + AV_INPUT_BUFFER_PADDING_SIZE;
+static const int IO_CONTEXT_BUFFER_SIZE = 4096;
 static const int DEFAULT_SAMPLE_RATE = 44100;
 static const char* TAG = "FfmpegEncoder";
 
@@ -185,14 +185,14 @@ FfmpegEncoder::FfmpegEncoder(const std::string& format)
     this->outputContext = nullptr;
     this->outputCodec = nullptr;
     this->outputFrame = nullptr;
+    this->resampledFrame = nullptr;
     this->ioContext = nullptr;
     this->ioContextOutputBuffer = nullptr;
     this->outputFormatContext = nullptr;
     this->outputFifo = nullptr;
     this->globalTimestamp = 0LL;
-    this->planarDataBuffer = nullptr;
-    this->planarDataBufferFrameSize = 0;
-    this->channelCount = 0;
+    this->inputChannelCount = 0;
+    this->inputSampleRate = 0;
 
     std::transform(
         this->format.begin(),
@@ -324,10 +324,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     }
 
     /* fifo buffer that will be used by the encoder */
-    this->outputFifo = av_audio_fifo_alloc(
-        this->outputContext->sample_fmt,
-        this->outputContext->channels,
-        1);
+    this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, channels, 1);
 
     if (!this->outputFifo) {
         logError("av_audio_fifo_alloc");
@@ -358,7 +355,8 @@ bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, s
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {
             if (this->WriteOutputHeader()) {
-                this->channelCount = channels;
+                this->inputChannelCount = channels;
+                this->inputSampleRate = rate;
                 this->isValid = true;
             }
         }
@@ -396,6 +394,10 @@ void FfmpegEncoder::Cleanup() {
         av_frame_free(&this->outputFrame);
         this->outputFrame = nullptr;
     }
+    if (this->resampledFrame) {
+        av_frame_free(&this->resampledFrame);
+        this->resampledFrame = nullptr;
+    }
     if (this->resampler) {
         swr_free(&this->resampler);
         this->resampler = nullptr;
@@ -403,11 +405,6 @@ void FfmpegEncoder::Cleanup() {
     if (this->outputFifo) {
         av_audio_fifo_free(this->outputFifo);
         this->outputFifo = nullptr;
-    }
-    if (this->planarDataBuffer) {
-        av_freep(&this->planarDataBuffer[0]);
-        this->planarDataBuffer = nullptr;
-        this->planarDataBufferFrameSize = 0;
     }
 }
 
@@ -456,56 +453,12 @@ bool FfmpegEncoder::WriteOutputHeader() {
 }
 
 bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
-    int error = 0;
-    int linesize = 0;
     const int totalSamples = pcm->Samples();
     const int samplesPerChannel = totalSamples / pcm->Channels();
-    const int outputBytesPerSample = av_get_bytes_per_sample(this->outputContext->sample_fmt);
-    const int outputSamplesPerChannel = swr_get_out_samples(this->resampler, samplesPerChannel);
-    const int outputSizeBytes = outputBytesPerSample * outputSamplesPerChannel * pcm->Channels();
-
-    /* we store resampled data into `this->planarDataBuffer`, and try to re-use it
-    if possible. however, if the number of samples in the buffer changes, we just
-    reallocate it */
-    if (!this->planarDataBuffer || samplesPerChannel != this->planarDataBufferFrameSize) {
-        if (this->planarDataBuffer) {
-            av_freep(&this->planarDataBuffer[0]);
-        }
-        error = av_samples_alloc_array_and_samples(
-            &this->planarDataBuffer, 
-            &linesize,
-            this->channelCount, 
-            samplesPerChannel, 
-            this->outputContext->sample_fmt, 
-            0);
-        if (error < 0) {
-            logAvError("av_samples_alloc_array_and_samples", error);
-            return false;
-        }
-        this->planarDataBufferFrameSize = samplesPerChannel;
-    }
-
     const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();
 
-    // std::cerr << "totalSamples: " << totalSamples << " samplesPerChannel: " << samplesPerChannel << " outputBytesPerSample: " <<
-    //     outputBytesPerSample << " outputSamplesPerChannel: " << outputSamplesPerChannel << " totalBytes: " <<
-    //     (outputBytesPerSample * outputSamplesPerChannel * pcm->Channels()) << " resampler: " << this->resampler <<
-    //     " outData: " << (int64_t) outData << " inData: " << (int64_t) inData << " resampledData.length: " <<
-    //     resampledData.length << "\n";
-
-    int convertedSamplesPerChannel = swr_convert(
-        this->resampler,
-        this->planarDataBuffer,
-        samplesPerChannel,
-        &inData,
-        samplesPerChannel);
-
-    if (convertedSamplesPerChannel != samplesPerChannel) {
-        logError("warning: resampled output has a different number of samples than the input");
-    }
-
     int currentFifoSize = av_audio_fifo_size(this->outputFifo);
-    error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + samplesPerChannel);
+    int error = av_audio_fifo_realloc(this->outputFifo, currentFifoSize + samplesPerChannel);
 
     if (error < 0) {
         logAvError("av_audio_fifo_realloc", error);
@@ -514,7 +467,7 @@ bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
 
     int samplesWritten = error = av_audio_fifo_write(
         this->outputFifo,
-        (void**) this->planarDataBuffer,
+        (void**) &inData,
         samplesPerChannel);
 
     if (samplesWritten != samplesPerChannel) {
@@ -535,27 +488,33 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
         const int fifoSize = av_audio_fifo_size(this->outputFifo);
         const int frameSize = FFMIN(fifoSize, outputFrameSize);
 
-        if (!this->outputFrame || this->outputFrame->nb_samples != frameSize) {
-            if (this->outputFrame) {
-                av_frame_free(&this->outputFrame);
-            }
-            this->outputFrame = av_frame_alloc();
-            this->outputFrame->nb_samples = frameSize;
-            this->outputFrame->channel_layout = this->outputContext->channel_layout;
-            this->outputFrame->format = this->outputContext->sample_fmt;
-            this->outputFrame->sample_rate = this->outputContext->sample_rate;
-            error = av_frame_get_buffer(this->outputFrame, 0);
-            if (error < 0) {
-                logAvError("av_frame_get_buffer", error);
-                return false;
-            }
-        }
+        this->outputFrame = this->ReallocFrame(
+            this->outputFrame,
+            AV_SAMPLE_FMT_FLT,
+            frameSize,
+            this->inputSampleRate);
 
         int framesRead = av_audio_fifo_read(
             this->outputFifo, (void **) outputFrame->data, frameSize);
 
         if (framesRead < frameSize) {
             logError("av_audio_fifo_read read the incorrect number of samples");
+            return false;
+        }
+
+        this->resampledFrame = this->ReallocFrame(
+            this->resampledFrame,
+            this->outputContext->sample_fmt,
+            frameSize,
+            this->outputContext->sample_rate);
+
+        error = swr_convert_frame(
+            this->resampler,
+            this->resampledFrame,
+            this->outputFrame);
+
+        if (error < 0) {
+            logAvError("swr_convert_frame", error);
             return false;
         }
 
@@ -569,6 +528,7 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
     }
 
     if (drain) {
+        this->FlushResampler();
         this->SendReceiveAndWriteFrame(nullptr);
     }
 
@@ -608,4 +568,56 @@ int FfmpegEncoder::SendReceiveAndWriteFrame(AVFrame* frame) {
     }
 
     return error;
+}
+
+void FfmpegEncoder::FlushResampler() {
+    int64_t bufferedFrames = swr_get_delay(
+        this->resampler, this->outputContext->sample_rate);
+
+    while (bufferedFrames > 0) {
+        this->ReallocFrame(
+            this->resampledFrame,
+            this->outputContext->sample_fmt,
+            FFMIN(bufferedFrames, this->outputContext->frame_size),
+            this->outputContext->sample_rate);
+
+        int converted = swr_convert(
+            this->resampler,
+            this->resampledFrame->extended_data,
+            this->resampledFrame->nb_samples,
+            nullptr,
+            0);
+
+        if (converted > 0) {
+            this->SendReceiveAndWriteFrame(this->resampledFrame);
+            bufferedFrames -= converted;
+        }
+        else {
+            break;
+        }
+    }
+}
+
+AVFrame* FfmpegEncoder::ReallocFrame(
+    AVFrame* original,
+    AVSampleFormat format,
+    int samplesPerChannel,
+    int sampleRate)
+{
+    if (!original || original->nb_samples != samplesPerChannel) {
+        if (original) {
+            av_frame_free(&original);
+        }
+        original = av_frame_alloc();
+        original->nb_samples = samplesPerChannel;
+        original->channel_layout = this->outputContext->channel_layout;
+        original->format = format;
+        original->sample_rate = sampleRate;
+        int error = av_frame_get_buffer(original, 0);
+        if (error < 0) {
+            logAvError("av_frame_get_buffer", error);
+            return false;
+        }
+    }
+    return original;
 }
