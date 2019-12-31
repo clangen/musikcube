@@ -48,6 +48,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <string>
+#include <cstdlib>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -59,6 +60,8 @@
 #include <vector>
 
 #define HTTP_416_DISABLED true
+
+static const char* ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH = "MUSIKCUBE_DISABLE_HTTP_SERVER_AUTH";
 
 using namespace musik::core::sdk;
 
@@ -234,29 +237,33 @@ static std::string getStringUrlParam(
 }
 
 static bool isAuthenticated(MHD_Connection *connection, Context& context) {
-    return true;
-    // const char* authPtr = MHD_lookup_connection_value(
-    //     connection, MHD_HEADER_KIND, "Authorization");
+    char* disableAuth = std::getenv(ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH);
+    if (disableAuth && std::string(disableAuth) == "1") {
+        return true;
+    }
 
-    // if (authPtr && strlen(authPtr)) {
-    //     std::string auth(authPtr);
-    //     if (auth.find("Basic ") == 0) {
-    //         std::string encoded = auth.substr(6);
-    //         if (encoded.size()) {
-    //             std::string decoded = websocketpp::base64_decode(encoded);
+   const char* authPtr = MHD_lookup_connection_value(
+        connection, MHD_HEADER_KIND, "Authorization");
 
-    //             std::vector<std::string> userPass;
-    //             boost::split(userPass, decoded, boost::is_any_of(":"));
+    if (authPtr && strlen(authPtr)) {
+        std::string auth(authPtr);
+        if (auth.find("Basic ") == 0) {
+            std::string encoded = auth.substr(6);
+            if (encoded.size()) {
+                std::string decoded = websocketpp::base64_decode(encoded);
 
-    //             if (userPass.size() == 2) {
-    //                 std::string password = GetPreferenceString(context.prefs, key::password, defaults::password);
-    //                 return userPass[0] == "default" && userPass[1] == password;
-    //             }
-    //         }
-    //     }
-    // }
+                std::vector<std::string> userPass;
+                boost::split(userPass, decoded, boost::is_any_of(":"));
 
-    // return false;
+                if (userPass.size() == 2) {
+                    std::string password = GetPreferenceString(context.prefs, key::password, defaults::password);
+                    return userPass[0] == "default" && userPass[1] == password;
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 HttpServer::HttpServer(Context& context)
