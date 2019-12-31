@@ -98,6 +98,7 @@
     <Link>
       <AdditionalLibraryDirectories>../../3rdparty/bin/win32/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmp3lameD.lib;avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -140,6 +141,7 @@
       <AdditionalDependencies>libmp3lame.lib;avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
       <Command>
