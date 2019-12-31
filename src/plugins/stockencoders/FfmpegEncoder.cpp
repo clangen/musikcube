@@ -371,6 +371,14 @@ bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, s
 
 void FfmpegEncoder::Cleanup() {
     this->isValid = false;
+    if (this->outputFrame) {
+        av_frame_free(&this->outputFrame);
+        this->outputFrame = nullptr;
+    }
+    if (this->resampledFrame) {
+        av_frame_free(&this->resampledFrame);
+        this->resampledFrame = nullptr;
+    }
     if (this->ioContext) {
         av_free(this->ioContext);
         this->ioContext = nullptr;
@@ -389,14 +397,6 @@ void FfmpegEncoder::Cleanup() {
     if (this->ioContextOutputBuffer) {
         av_free(this->ioContextOutputBuffer);
         this->ioContextOutputBuffer = nullptr;
-    }
-    if (this->outputFrame) {
-        av_frame_free(&this->outputFrame);
-        this->outputFrame = nullptr;
-    }
-    if (this->resampledFrame) {
-        av_frame_free(&this->resampledFrame);
-        this->resampledFrame = nullptr;
     }
     if (this->resampler) {
         swr_free(&this->resampler);
@@ -575,7 +575,7 @@ void FfmpegEncoder::FlushResampler() {
         this->resampler, this->outputContext->sample_rate);
 
     while (bufferedFrames > 0) {
-        this->ReallocFrame(
+        this->resampledFrame = this->ReallocFrame(
             this->resampledFrame,
             this->outputContext->sample_fmt,
             FFMIN(bufferedFrames, this->outputContext->frame_size),
