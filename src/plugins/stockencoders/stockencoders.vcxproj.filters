@@ -13,7 +13,7 @@
     <ClCompile Include="LameEncoder.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="OggEncoder.cpp">
+    <ClCompile Include="FfmpegEncoder.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -21,10 +21,10 @@
     <ClInclude Include="LameEncoder.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="OggEncoder.h">
+    <ClInclude Include="shared.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="shared.h">
+    <ClInclude Include="FfmpegEncoder.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

@@ -288,7 +288,9 @@
     <ClInclude Include="sdk\constants.h" />
     <ClInclude Include="sdk\HttpClient.h" />
     <ClInclude Include="sdk\IAnalyzer.h" />
+    <ClInclude Include="sdk\IStreamingEncoder.h" />
     <ClInclude Include="sdk\IBuffer.h" />
+    <ClInclude Include="sdk\IBlockingEncoder.h" />
     <ClInclude Include="sdk\IDecoder.h" />
     <ClInclude Include="sdk\IDecoderFactory.h" />
     <ClInclude Include="sdk\IDevice.h" />

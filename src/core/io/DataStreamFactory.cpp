@@ -63,7 +63,7 @@ DataStreamFactory* DataStreamFactory::Instance() {
     return instance;
 }
 
-IDataStream* DataStreamFactory::OpenDataStream(const char* uri) {
+IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlags flags) {
     typedef musik::core::PluginFactory::ReleaseDeleter<IDataStream> StreamDeleter;
 
     if (uri) {
@@ -73,7 +73,7 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri) {
         /* plugins get the first crack at the uri */
         for (; it != DataStreamFactory::Instance()->dataStreamFactories.end(); it++) {
             if ((*it)->CanRead(uri)) {
-                IDataStream* dataStream = (*it)->Open(uri);
+                IDataStream* dataStream = (*it)->Open(uri, flags);
 
                 if (dataStream) {
                     return dataStream;
@@ -83,7 +83,7 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri) {
 
         /* no plugins accepted it? try to open as a local file */
         IDataStream* regularFile = new LocalFileStream();
-        if (regularFile->Open(uri)) {
+        if (regularFile->Open(uri, flags)) {
             return regularFile;
         }
         else {
@@ -94,7 +94,7 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri) {
     return nullptr;
 }
 
-DataStreamPtr DataStreamFactory::OpenSharedDataStream(const char *uri) {
-    auto stream = OpenDataStream(uri);
+DataStreamPtr DataStreamFactory::OpenSharedDataStream(const char *uri, OpenFlags flags) {
+    auto stream = OpenDataStream(uri, flags);
     return stream ? DataStreamPtr(stream, StreamDeleter()) : DataStreamPtr();
 }

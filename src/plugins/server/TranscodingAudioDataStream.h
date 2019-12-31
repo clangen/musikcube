@@ -32,46 +32,72 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include "Context.h"
-#include <core/sdk/constants.h>
 #include <core/sdk/IDataStream.h>
-#include <core/sdk/IDecoder.h>
 #include <core/sdk/IStreamingEncoder.h>
+#include <core/sdk/DataBuffer.h>
+#include "Context.h"
+#include <thread>
+#include <condition_variable>
+#include <mutex>
 #include <string>
+#include <stdio.h>
 
-class Transcoder {
+class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
     public:
-        using IDataStream = musik::core::sdk::IDataStream;
-        using IEncoder = musik::core::sdk::IEncoder;
-        using IStreamingEncoder = musik::core::sdk::IStreamingEncoder;
+        using PositionType = musik::core::sdk::PositionType;
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
-        static void RemoveTempTranscodeFiles(Context& context);
-
-        static void PruneTranscodeCache(Context& context);
-
-        static IDataStream* Transcode(
+        TranscodingAudioDataStream(
             Context& context,
+            musik::core::sdk::IStreamingEncoder* encoder,
             const std::string& uri,
             size_t bitrate,
             const std::string& format);
 
-        static IDataStream* TranscodeAndWait(
+        TranscodingAudioDataStream(
             Context& context,
-            IEncoder* encoder,
+            musik::core::sdk::IStreamingEncoder* encoder,
             const std::string& uri,
+            const std::string& tempFilename,
+            const std::string& finalFilename,
             size_t bitrate,
             const std::string& format);
 
-        static IDataStream* TranscodeOnDemand(
-            Context& context,
-            IStreamingEncoder* encoder,
-            const std::string& uri,
-            size_t bitrate,
-            const std::string& format);
+        virtual ~TranscodingAudioDataStream();
+
+        virtual bool Open(const char *uri, OpenFlags flags) override;
+        virtual bool Close() override;
+        virtual void Interrupt() override;
+        virtual void Release() override;
+        virtual bool Readable() override { return true; }
+        virtual bool Writable() override { return false; };
+        virtual PositionType Read(void *buffer, PositionType readBytes) override;
+        virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
+        virtual bool SetPosition(PositionType position) override;
+        virtual PositionType Position() override;
+        virtual bool Seekable() override;
+        virtual bool Eof() override;
+        virtual long Length() override;
+        virtual const char* Type() override;
+        virtual const char* Uri() override;
+        virtual bool CanPrefetch() override;
 
     private:
-        Transcoder() { }
-        ~Transcoder() { }
+        void Dispose();
+
+        Context& context;
+        musik::core::sdk::IDataStream* input;
+        musik::core::sdk::IDecoder* decoder;
+        musik::core::sdk::IBuffer* pcmBuffer;
+        musik::core::sdk::IStreamingEncoder* encoder;
+        DataBuffer<char> spillover;
+        size_t bitrate;
+        bool eof;
+        std::mutex mutex;
+        PositionType length, position;
+        FILE* outFile;
+        std::string tempFilename, finalFilename;
+        std::string format;
+        bool interrupted;
+        long detachTolerance;
 };

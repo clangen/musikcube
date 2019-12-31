@@ -187,11 +187,12 @@
     <ClCompile Include="3rdparty\win32_src\microhttpd\response.c" />
     <ClCompile Include="3rdparty\win32_src\microhttpd\sysfdsetsize.c" />
     <ClCompile Include="3rdparty\win32_src\microhttpd\tsearch.c" />
+    <ClCompile Include="BlockingTranscoder.cpp" />
     <ClCompile Include="HttpServer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Snapshots.cpp" />
     <ClCompile Include="Transcoder.cpp" />
-    <ClCompile Include="TranscodingDataStream.cpp" />
+    <ClCompile Include="TranscodingAudioDataStream.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="WebSocketServer.cpp" />
   </ItemGroup>
@@ -312,12 +313,13 @@
     <ClInclude Include="3rdparty\win32_src\microhttpd\response.h" />
     <ClInclude Include="3rdparty\win32_src\microhttpd\sysfdsetsize.h" />
     <ClInclude Include="3rdparty\win32_src\microhttpd\tsearch.h" />
+    <ClInclude Include="BlockingTranscoder.h" />
     <ClInclude Include="Constants.h" />
     <ClInclude Include="Context.h" />
     <ClInclude Include="HttpServer.h" />
     <ClInclude Include="Snapshots.h" />
     <ClInclude Include="Transcoder.h" />
-    <ClInclude Include="TranscodingDataStream.h" />
+    <ClInclude Include="TranscodingAudioDataStream.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="WebSocketServer.h" />
   </ItemGroup>

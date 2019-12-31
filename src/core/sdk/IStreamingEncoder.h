@@ -32,53 +32,19 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStream.h>
+#pragma once
 
-#include "ntddcdrm.h"
-#include "devioctl.h"
-#include <string>
-#include <mutex>
+#include "IEncoder.h"
+#include "IBuffer.h"
 
-using namespace musik::core::sdk;
+namespace musik { namespace core { namespace sdk {
 
-class CddaDataStream : public IDataStream {
-    public:
-        using OpenFlags = musik::core::sdk::OpenFlags;
+    class IStreamingEncoder: public IEncoder {
+        public:
+            virtual bool Initialize(size_t rate, size_t channels, size_t bitrate) = 0;
+            virtual int Encode(const IBuffer* pcm, char** data) = 0;
+            virtual int Flush(char** data) = 0;
+            virtual void Finalize(const char* uri) = 0;
+     };
 
-        enum class ReadError : int {
-            DeviceBusy = -128
-        };
-
-        CddaDataStream();
-        ~CddaDataStream();
-
-        virtual void Release();
-        virtual bool Open(const char *filename, OpenFlags flags);
-        virtual bool Close();
-        virtual void Interrupt();
-        virtual bool Readable() { return true; }
-        virtual bool Writable() { return false; }
-        virtual PositionType Read(void* buffer, PositionType readBytes);
-        virtual PositionType Write(void* buffer, PositionType writeBytes) { return false;  }
-        virtual bool SetPosition(PositionType position);
-        virtual PositionType Position();
-        virtual bool Eof();
-        virtual long Length();
-        virtual bool Seekable();
-        virtual const char* Type();
-        virtual const char* Uri();
-        virtual bool CanPrefetch() { return false; }
-
-        int GetChannelCount();
-
-    private:
-        HRESULT Read(PBYTE pbBuffer, DWORD dwBytesToRead, BOOL bAlign, LPDWORD pdwBytesRead);
-
-        std::string uri;
-        LONGLONG position, length;
-        HANDLE drive;
-        CDROM_TOC toc;
-        UINT firstSector, startSector, stopSector;
-        unsigned long channels;
-        volatile bool closed;
-};
+} } }

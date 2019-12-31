@@ -53,7 +53,8 @@ struct DataBuffer {
             delete[] data;
             data = new T[newLength];
         }
-        rawLength = length = newLength;
+        rawLength = (newLength > rawLength) ? newLength : rawLength;
+        length = newLength;
         offset = 0;
     }
 
@@ -91,7 +92,7 @@ struct DataBuffer {
         realloc(size);
         memcpy(data + length, source, size * sizeof(T));
         length += size;
-        return size;
+        return (int) size;
     }
 
     int pad(char value, size_t size) {

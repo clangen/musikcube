@@ -35,10 +35,12 @@
 #include <core/sdk/IPlaybackRemote.h>
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IEncoderFactory.h>
+#include <set>
+#include <algorithm>
 
 #include "shared.h"
 #include "LameEncoder.h"
-#include "OggEncoder.h"
+#include "FfmpegEncoder.h"
 
 #include <string>
 #include <algorithm>
@@ -49,9 +51,32 @@
 #define DLL_EXPORT
 #endif
 
+#ifdef WIN32
+#include <Windows.h>
+#include <Objbase.h>
+#endif
+
 using namespace musik::core::sdk;
 
 static IEnvironment* environment = nullptr;
+
+static std::set<std::string> supportedFormats = {
+    ".mp3",
+    "audio/mpeg",
+    ".ogg",
+    "audio/ogg",
+    ".opus",
+    ".flac",
+    "audio/flac",
+    ".alac",
+    ".aac",
+    "audio/aac",
+    ".aac",
+    ".m4a",
+    ".wma",
+    "audio/x-ms-wma",
+    ".wv"
+};
 
 static class Plugin : public IPlugin {
     public:
@@ -71,6 +96,12 @@ static class Plugin : public IPlugin {
 
 static class EncoderFactory: public IEncoderFactory {
     public:
+        EncoderFactory() {
+#ifdef WIN32
+            CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif
+        }
+
         virtual void Release() override {
         }
 
@@ -79,15 +110,14 @@ static class EncoderFactory: public IEncoderFactory {
             if (isMp3(lowerType)) {
                 return new LameEncoder();
             }
-            else if (isOgg(lowerType)) {
-                return new OggEncoder();
+            else if (supportedFormats.find(lowerType) != supportedFormats.end()) {
+                return new FfmpegEncoder(lowerType);
             }
             return nullptr;
         }
 
         virtual bool CanHandle(const char* type) const override {
-            auto lowerType = toLower(type);
-            return isMp3(lowerType) || isOgg(lowerType);
+            return supportedFormats.find(toLower(type)) != supportedFormats.end();
         }
 
     private:

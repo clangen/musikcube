@@ -36,7 +36,7 @@
 #include "Constants.h"
 #include "Util.h"
 #include "Transcoder.h"
-#include "TranscodingDataStream.h"
+#include "TranscodingAudioDataStream.h"
 
 #include <core/sdk/ITrack.h>
 
@@ -48,6 +48,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <string>
+#include <cstdlib>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -59,6 +60,8 @@
 #include <vector>
 
 #define HTTP_416_DISABLED true
+
+static const char* ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH = "MUSIKCUBE_DISABLE_HTTP_SERVER_AUTH";
 
 using namespace musik::core::sdk;
 
@@ -234,6 +237,11 @@ static std::string getStringUrlParam(
 }
 
 static bool isAuthenticated(MHD_Connection *connection, Context& context) {
+    const char* disableAuth = std::getenv(ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH);
+    if (disableAuth && std::string(disableAuth) == "1") {
+        return true;
+    }
+
     const char* authPtr = MHD_lookup_connection_value(
         connection, MHD_HEADER_KIND, "Authorization");
 
@@ -438,7 +446,7 @@ int HttpServer::HandleAudioTrackRequest(
         }
 
         IDataStream* file = (bitrate == 0)
-            ? server->context.environment->GetDataStream(filename.c_str())
+            ? server->context.environment->GetDataStream(filename.c_str(), OpenFlags::Read)
             : Transcoder::Transcode(server->context, filename, bitrate, format);
 
         const char* rangeVal = MHD_lookup_connection_value(
@@ -457,7 +465,7 @@ int HttpServer::HandleAudioTrackRequest(
 #endif
 
         /* ehh... */
-        bool isOnDemandTranscoder = !!dynamic_cast<TranscodingDataStream*>(file);
+        bool isOnDemandTranscoder = !!dynamic_cast<TranscodingAudioDataStream*>(file);
 
 #ifdef ENABLE_DEBUG
         std::cerr << "on demand? " << isOnDemandTranscoder << std::endl;
@@ -495,7 +503,7 @@ int HttpServer::HandleAudioTrackRequest(
                     {
                         /* if we're allowed, fall back to synchronous transcoding. we'll block
                         here until the entire file has been converted and cached */
-                        file = Transcoder::TranscodeAndWait(server->context, filename, bitrate, format);
+                        file = Transcoder::TranscodeAndWait(server->context, nullptr, filename, bitrate, format);
                         range = parseRange(file, rangeVal);
                     }
                     else {
@@ -585,7 +593,7 @@ int HttpServer::HandleThumbnailRequest(
 
     if (strlen(pathBuffer)) {
         std::string path = std::string(pathBuffer) + "thumbs/" + pathParts.at(1) + ".jpg";
-        IDataStream* file = server->context.environment->GetDataStream(path.c_str());
+        IDataStream* file = server->context.environment->GetDataStream(path.c_str(), OpenFlags::Read);
 
         if (file) {
             long length = file->Length();

@@ -34,17 +34,22 @@
 
 #pragma once
 
+#include "constants.h"
+
 namespace musik { namespace core { namespace sdk {
 
     typedef long PositionType;
 
     class IDataStream {
         public:
-            virtual bool Open(const char *uri, unsigned int options = 0) = 0;
+            virtual bool Open(const char *uri, OpenFlags flags) = 0;
             virtual bool Close() = 0;
             virtual void Interrupt() = 0;
             virtual void Release() = 0;
+            virtual bool Readable() = 0;
+            virtual bool Writable() = 0;
             virtual PositionType Read(void *buffer, PositionType readBytes) = 0;
+            virtual PositionType Write(void *buffer, PositionType writeBytes) = 0;
             virtual bool SetPosition(PositionType position) = 0;
             virtual PositionType Position() = 0;
             virtual bool Seekable() = 0;

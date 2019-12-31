@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "TranscodingDataStream.h"
+#include "TranscodingAudioDataStream.h"
 #include "Util.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
@@ -40,15 +40,17 @@
 #define BUFFER_SIZE 8192
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
 
-using PositionType = TranscodingDataStream::PositionType;
+using PositionType = TranscodingAudioDataStream::PositionType;
 
-TranscodingDataStream::TranscodingDataStream(
+TranscodingAudioDataStream::TranscodingAudioDataStream(
     Context& context,
+    musik::core::sdk::IStreamingEncoder* encoder,
     const std::string& uri,
     size_t bitrate,
     const std::string& format)
 : context(context)
 {
+    this->encoder = encoder;
     this->input = nullptr;
     this->decoder = nullptr;
     this->pcmBuffer = nullptr;
@@ -62,7 +64,7 @@ TranscodingDataStream::TranscodingDataStream(
     this->detachTolerance = 0;
     this->format = format;
 
-    this->input = context.environment->GetDataStream(uri.c_str());
+    this->input = context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
     if (this->input) {
         this->decoder = context.environment->GetDecoder(this->input);
         if (this->decoder) {
@@ -81,15 +83,17 @@ TranscodingDataStream::TranscodingDataStream(
     }
 }
 
-TranscodingDataStream::TranscodingDataStream(
+TranscodingAudioDataStream::TranscodingAudioDataStream(
     Context& context,
+    musik::core::sdk::IStreamingEncoder* encoder,
     const std::string& uri,
     const std::string& tempFilename,
     const std::string& finalFilename,
     size_t bitrate,
     const std::string& format)
-: TranscodingDataStream(context, uri, bitrate, format)
+: TranscodingAudioDataStream(context, encoder, uri, bitrate, format)
 {
+    this->encoder = encoder;
     this->tempFilename = tempFilename;
     this->finalFilename = finalFilename;
 
@@ -102,14 +106,14 @@ TranscodingDataStream::TranscodingDataStream(
     }
 }
 
-TranscodingDataStream::~TranscodingDataStream() {
+TranscodingAudioDataStream::~TranscodingAudioDataStream() {
 }
 
-bool TranscodingDataStream::Open(const char *uri, unsigned int options) {
+bool TranscodingAudioDataStream::Open(const char *uri, OpenFlags flags) {
     return true;
 }
 
-bool TranscodingDataStream::Close() {
+bool TranscodingAudioDataStream::Close() {
     if (this->eof) {
         this->Dispose();
     }
@@ -138,7 +142,7 @@ bool TranscodingDataStream::Close() {
     return true;
 }
 
-void TranscodingDataStream::Dispose() {
+void TranscodingAudioDataStream::Dispose() {
     if (this->pcmBuffer) {
         this->pcmBuffer->Release();
         this->pcmBuffer = nullptr;
@@ -169,16 +173,21 @@ void TranscodingDataStream::Dispose() {
     delete this;
 }
 
-void TranscodingDataStream::Interrupt() {
+void TranscodingAudioDataStream::Interrupt() {
     this->interrupted = true;
 }
 
-void TranscodingDataStream::Release() {
+void TranscodingAudioDataStream::Release() {
     this->Dispose();
 }
 
-PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead) {
+PositionType TranscodingAudioDataStream::Read(void *buffer, PositionType bytesToRead) {
     if (this->eof || !this->pcmBuffer) {
+        return 0;
+    }
+
+    if (!this->encoder) {
+        this->eof = true;
         return 0;
     }
 
@@ -190,14 +199,6 @@ PositionType TranscodingDataStream::Read(void *buffer, PositionType bytesToRead)
     if (this->decoder && !this->encoder) {
         hasBuffer = this->decoder->GetBuffer(this->pcmBuffer);
         if (hasBuffer) {
-            std::string extension = "." + this->format;
-            this->encoder = this->context.environment->GetEncoder(extension.c_str());
-
-            if (!this->encoder) {
-                this->eof = true;
-                return 0;
-            }
-
             this->encoder->Initialize(
                 this->pcmBuffer->SampleRate(),
                 this->pcmBuffer->Channels(),
@@ -313,37 +314,37 @@ internal_error:
     return 0;
 }
 
-bool TranscodingDataStream::SetPosition(PositionType position) {
+bool TranscodingAudioDataStream::SetPosition(PositionType position) {
     return false;
 }
 
-PositionType TranscodingDataStream::Position() {
+PositionType TranscodingAudioDataStream::Position() {
     return this->position;
 }
 
-bool TranscodingDataStream::Seekable() {
+bool TranscodingAudioDataStream::Seekable() {
     return false;
 }
 
-bool TranscodingDataStream::Eof() {
+bool TranscodingAudioDataStream::Eof() {
     return this->eof;
 }
 
-long TranscodingDataStream::Length() {
+long TranscodingAudioDataStream::Length() {
     return this->length;
 }
 
-const char* TranscodingDataStream::Type() {
+const char* TranscodingAudioDataStream::Type() {
     return "audio/mpeg";
 }
 
-const char* TranscodingDataStream::Uri() {
+const char* TranscodingAudioDataStream::Uri() {
     if (this->input) {
         return this->input->Uri();
     }
     return "";
 }
 
-bool TranscodingDataStream::CanPrefetch() {
+bool TranscodingAudioDataStream::CanPrefetch() {
     return true;
 }

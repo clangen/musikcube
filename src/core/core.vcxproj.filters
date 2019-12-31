@@ -558,6 +558,12 @@
     <ClInclude Include="library\LocalMetadataProxy.h">
       <Filter>src\library</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\IBlockingEncoder.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IStreamingEncoder.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude> 
     <ClInclude Include="library\query\local\LyricsQuery.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>

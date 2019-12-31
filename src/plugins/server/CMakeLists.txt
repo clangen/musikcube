@@ -1,9 +1,10 @@
 set (server_SOURCES
+  BlockingTranscoder.cpp
   HttpServer.cpp
   main.cpp
   Snapshots.cpp
   Transcoder.cpp
-  TranscodingDataStream.cpp
+  TranscodingAudioDataStream.cpp
   Util.cpp
   WebSocketServer.cpp)
 

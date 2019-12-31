@@ -36,4 +36,10 @@
 
 #include <core/sdk/IEnvironment.h>
 
+#ifdef WIN32
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT
+#endif
+
 extern musik::core::sdk::IEnvironment* env();

@@ -32,36 +32,58 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IEncoder.h>
+#include <core/sdk/IBlockingEncoder.h>
 #include <core/sdk/DataBuffer.h>
-#include <vorbis/vorbisenc.h>
+#include <string>
 
-/* fre:ac/BoCA has an excellent example of vorbis encoder usage, a lot of code
-was adapted (stolen) from here: https://github.com/enzo1982/BoCA/blob/master/components/encoder/vorbis/vorbis.cpp */
+extern "C" {
+    #include <libavcodec/avcodec.h>
+    #include <libavformat/avio.h>
+    #include <libavformat/avformat.h>
+    #include <libavutil/audio_fifo.h>
+    #include <libswresample/swresample.h>
+}
 
-class OggEncoder : public musik::core::sdk::IEncoder {
+class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
     using IBuffer = musik::core::sdk::IBuffer;
+    using IDataStream = musik::core::sdk::IDataStream;
 
     public:
+        FfmpegEncoder(const std::string& format);
+
         virtual void Release() override;
-        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
-        virtual int Encode(const IBuffer* pcm, char** data) override;
-        virtual int Flush(char** data) override;
-        virtual void Finalize(const char* uri) override;
-        virtual musik::core::sdk::IPreferences* GetPreferences() override;
+        virtual bool Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) override;
+        virtual bool Encode(const IBuffer* pcm) override;
+        virtual void Finalize() override;
+
+        IDataStream* Stream() { return this->out; }
 
     private:
-        int WritePackets(bool flush);
+        void Cleanup();
+        bool OpenOutputCodec(size_t rate, size_t channels, size_t bitrate);
+        bool OpenOutputContext();
+        bool WriteOutputHeader();
+        bool WriteOutputTrailer();
+        bool ResampleAndWriteToFifo(const IBuffer* pcm);
+        bool ReadFromFifoAndWriteToOutput(bool drain);
+        void FlushResampler();
+        AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
+        int SendReceiveAndWriteFrame(AVFrame* frame);
 
-        DataBuffer<char> encodedData;
-        musik::core::sdk::IPreferences* prefs;
-        long bitrate;
-        bool headerWritten;
-        ogg_stream_state os;
-        ogg_page og;
-        ogg_packet op;
-        vorbis_info vi;
-        vorbis_comment vc;
-        vorbis_dsp_state vd;
-        vorbis_block vb;
+        bool isValid;
+        IDataStream* out;
+        int readBufferSize;
+        AVAudioFifo* outputFifo;
+        AVCodec* outputCodec;
+        AVCodecContext* outputContext;
+        AVFormatContext* outputFormatContext;
+        AVIOContext* ioContext;
+        void* ioContextOutputBuffer;
+        AVFrame* outputFrame;
+        AVFrame* resampledFrame;
+        SwrContext* resampler;
+        int64_t globalTimestamp;
+        std::string format;
+        int inputChannelCount;
+        int inputSampleRate;
 };
