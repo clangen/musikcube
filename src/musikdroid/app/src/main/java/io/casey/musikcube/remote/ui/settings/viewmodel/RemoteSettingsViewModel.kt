@@ -6,40 +6,26 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.BiFunction
 import io.reactivex.functions.Function3
 import io.reactivex.rxkotlin.subscribeBy
+import kotlin.math.max
 
 class RemoteSettingsViewModel: BaseRemoteViewModel() {
     private var gain: IGainSettings? = null
     private var outputs: IOutputs? = null
 
     var transportType: TransportType = TransportType.Gapless
-        private set(value) {
-            field = value
-        }
-
-    val driverName: String
-        get() {
-            outputs?.let {
-                return it.selectedDriverName
-            }
-            return ""
-        }
+        private set
 
     val selectedDriverIndex: Int
         get() {
             var index = 0
             outputs?.let {
-                index = it.outputs.indexOfFirst { it.name == driverName }
+                index = it.outputs.indexOfFirst { output ->
+                    output.name == driverName
+                }
             }
-            return Math.max(0, index)
+            return max(0, index)
         }
 
-    val deviceId: String
-        get() {
-            outputs?.let {
-                return it.selectedDeviceId
-            }
-            return ""
-        }
 
     val selectedDeviceIndex: Int
         get() {
@@ -48,13 +34,13 @@ class RemoteSettingsViewModel: BaseRemoteViewModel() {
             if (driverIndex >= 0) {
                 outputs?.let {
                     if (it.outputs.size > driverIndex) {
-                        deviceIndex = it.outputs[driverIndex].devices.indexOfFirst {
-                            it.id == deviceId
+                        deviceIndex = it.outputs[driverIndex].devices.indexOfFirst { device ->
+                            device.id == deviceId
                         }
                     }
                 }
             }
-            return Math.max(0, deviceIndex)
+            return max(0, deviceIndex)
         }
 
     val replayGainMode: ReplayGainMode
@@ -94,19 +80,19 @@ class RemoteSettingsViewModel: BaseRemoteViewModel() {
                      preampGain: Float,
                      transport: TransportType)
     {
-        provider?.let {
+        provider?.let { proxy ->
             val oldState = state
             state = State.Saving
-            val gainQuery = it.updateGainSettings(replayGainMode, preampGain)
-            val transportQuery = it.setTransportType(transport)
+            val gainQuery = proxy.updateGainSettings(replayGainMode, preampGain)
+            val transportQuery = proxy.setTransportType(transport)
             Observable.zip<Boolean, Boolean, Boolean>(
                     gainQuery,
                     transportQuery,
                     BiFunction { b1, b2 -> b1 && b2 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
-                    onNext = {
-                        if (it) { state = State.Saved }
+                    onNext = { success ->
+                        if (success) { state = State.Saved }
                         state = oldState
                     },
                     onError = { state = oldState })
@@ -123,12 +109,12 @@ class RemoteSettingsViewModel: BaseRemoteViewModel() {
             save(replayGainMode, preampGain, transport)
         }
         else {
-            provider?.let {
+            provider?.let { proxy ->
                 val oldState = state
                 state = State.Saving
-                val gainQuery = it.updateGainSettings(replayGainMode, preampGain)
-                val outputQuery = it.setDefaultOutputDriver(outputDriver, outputDeviceId)
-                val transportQuery = it.setTransportType(transport)
+                val gainQuery = proxy.updateGainSettings(replayGainMode, preampGain)
+                val outputQuery = proxy.setDefaultOutputDriver(outputDriver, outputDeviceId)
+                val transportQuery = proxy.setTransportType(transport)
                 Observable.zip<Boolean, Boolean, Boolean, Boolean>(
                     gainQuery,
                     outputQuery,
@@ -136,8 +122,8 @@ class RemoteSettingsViewModel: BaseRemoteViewModel() {
                     Function3 { b1, b2, b3 -> b1 && b2 && b3 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
-                    onNext = {
-                        if (it) { state = State.Saved }
+                    onNext = { success ->
+                        if (success) { state = State.Saved }
                         state = oldState
                     },
                     onError = { state = oldState })
@@ -172,4 +158,20 @@ class RemoteSettingsViewModel: BaseRemoteViewModel() {
                     onError = { state = State.Disconnected })
         }
     }
+
+    private val driverName: String
+        get() {
+            outputs?.let {
+                return it.selectedDriverName
+            }
+            return ""
+        }
+
+    private val deviceId: String
+        get() {
+            outputs?.let {
+                return it.selectedDeviceId
+            }
+            return ""
+        }
 }

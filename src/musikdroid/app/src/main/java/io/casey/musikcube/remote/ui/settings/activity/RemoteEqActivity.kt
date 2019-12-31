@@ -128,9 +128,7 @@ class RemoteEqActivity: BaseActivity() {
         ))
 
         disposables.add(viewModel.bandUpdates.subscribeBy(
-            onNext = { _ ->
-                rebuildSeekbars()
-            }
+            onNext = { rebuildSeekbars() }
         ))
     }
 }

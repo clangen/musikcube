@@ -5,15 +5,13 @@ import android.content.SharedPreferences
 import android.net.Uri
 import com.danikula.videocache.CacheListener
 import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource
-import com.google.android.exoplayer2.source.ExtractorMediaSource
 import com.google.android.exoplayer2.source.MediaSource
+import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.TrackGroupArray
-import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.upstream.DataSource
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.util.Util
@@ -23,10 +21,11 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.util.Preconditions
 import java.io.File
+import kotlin.math.max
+import kotlin.math.min
 
 class GaplessExoPlayerWrapper : PlayerWrapper() {
     private var sourceFactory: DataSource.Factory
-    private val extractorsFactory = DefaultExtractorsFactory()
     private var source: MediaSource? = null
     private var metadata: ITrack? = null
     private var prefetch: Boolean = false
@@ -61,9 +60,8 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
             addCacheListener()
 
-            this.source = ExtractorMediaSource
+            this.source = ProgressiveMediaSource
                 .Factory(sourceFactory)
-                .setExtractorsFactory(extractorsFactory)
                 .createMediaSource(Uri.parse(proxyUri))
 
             addPlayer(this, this.source!!)
@@ -83,9 +81,8 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             this.proxyUri = streamProxy.getProxyUrl(uri)
             this.prefetch = true
 
-            this.source = ExtractorMediaSource
+            this.source = ProgressiveMediaSource
                 .Factory(sourceFactory)
-                .setExtractorsFactory(extractorsFactory)
                 .createMediaSource(Uri.parse(proxyUri))
 
             addCacheListener()
@@ -117,8 +114,12 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             }
             State.Error -> {
                 gaplessPlayer?.playWhenReady = lastPosition == -1L
-                gaplessPlayer?.prepare(source)
-                state = State.Preparing
+                source?.let {
+                    gaplessPlayer?.prepare(it)
+                    state = State.Preparing
+                } ?: run {
+                    state = State.Error
+                }
             }
             else -> { }
         }
@@ -146,10 +147,10 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
                     to here, we want to wait until we are able to pickup where we left off. */
                     if (!isInitialSeek && transcoding && percentAvailable != 100) {
                         /* give ourselves 2% wiggle room! */
-                        val percent = Math.max(0, percentAvailable - 2).toFloat() / 100.0f
+                        val percent = max(0, percentAvailable - 2).toFloat() / 100.0f
                         val totalMs = gaplessPlayer?.duration
                         val available = (totalMs!!.toFloat() * percent).toLong()
-                        offset = Math.min(millis.toLong(), available)
+                        offset = min(millis.toLong(), available)
                     }
 
                     initialOffsetMs = 0
@@ -309,7 +310,6 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         const val TIMEOUT = 1000 * 60 * 2 /* 2 minutes; makes seeking an incomplete transcode work most of the time */
         private val prefs: SharedPreferences by lazy { Application.instance.getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE) }
         private val context: Context by lazy { Application.instance }
-        private val trackSelector = DefaultTrackSelector(AdaptiveTrackSelection.Factory())
         private var all = mutableListOf<GaplessExoPlayerWrapper>()
         private lateinit var dcms: ConcatenatingMediaSource
         private var gaplessPlayer: SimpleExoPlayer? = null
@@ -333,7 +333,9 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             all.clear()
             gaplessPlayer?.stop()
             gaplessPlayer?.release()
-            gaplessPlayer = ExoPlayerFactory.newSimpleInstance(context, trackSelector)
+            gaplessPlayer = SimpleExoPlayer.Builder(context)
+                .setBandwidthMeter(DefaultBandwidthMeter.Builder(context).build())
+                .build()
             dcms = ConcatenatingMediaSource()
         }
 

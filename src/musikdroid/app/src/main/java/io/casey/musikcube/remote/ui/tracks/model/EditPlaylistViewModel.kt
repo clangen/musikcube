@@ -9,9 +9,11 @@ import io.reactivex.Observable
 import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.subscribeBy
 import org.json.JSONObject
+import kotlin.math.max
+import kotlin.math.min
 
 class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylistViewModel.Status>() {
-    enum class Status { NotLoaded, Error, Loading, Saving, Updated }
+    enum class Status { NotLoaded, Error, Loading, Updated }
 
     private data class CacheEntry(var track: ITrack, var dirty: Boolean = false)
 
@@ -25,9 +27,7 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
     }
 
     var modified: Boolean = false
-        private set(value) {
-            field = value
-        }
+        private set
 
     fun attach(metadataProxy: IMetadataProxy) {
         this.metadataProxy = metadataProxy
@@ -107,8 +107,8 @@ class EditPlaylistViewModel(private val playlistId: Long): ViewModel<EditPlaylis
             metadataDisposable?.dispose()
             metadataDisposable = null
 
-            requestOffset = Math.max(0, offset - PAGE_SIZE / 4)
-            val end = Math.min(externalIds.size, requestOffset + PAGE_SIZE)
+            requestOffset = max(0, offset - PAGE_SIZE / 4)
+            val end = min(externalIds.size, requestOffset + PAGE_SIZE)
             val ids = mutableSetOf<String>()
             for (i in requestOffset until end) {
                 val id = externalIds[i]

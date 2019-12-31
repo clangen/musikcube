@@ -16,6 +16,7 @@ import java.io.File
 import java.io.RandomAccessFile
 import java.net.SocketTimeoutException
 import javax.inject.Inject
+import kotlin.math.min
 
 /**
  * When MP3 files are transcoded on-demand, the required metadata for gapless playback isn't
@@ -85,7 +86,7 @@ class GaplessHeaderService {
                     if (bytes?.isNotEmpty() == true) {
                         RandomAccessFile(fn, "rw").use {
                             it.seek(0)
-                            it.write(bytes, 0, Math.min(bytes.size, HEADER_SIZE_BYTES))
+                            it.write(bytes, 0, min(bytes.size, HEADER_SIZE_BYTES))
                         }
                         newState = GaplessTrack.UPDATED
                     }

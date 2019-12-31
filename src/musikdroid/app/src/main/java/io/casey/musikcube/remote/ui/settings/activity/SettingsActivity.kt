@@ -39,8 +39,6 @@ class SettingsActivity : BaseActivity() {
     private lateinit var httpPortText: EditText
     private lateinit var passwordText: EditText
     private lateinit var albumArtCheckbox: CheckBox
-    private lateinit var messageCompressionCheckbox: CheckBox
-    private lateinit var disableTabs: CheckBox
     private lateinit var softwareVolume: CheckBox
     private lateinit var sslCheckbox: CheckBox
     private lateinit var certCheckbox: CheckBox

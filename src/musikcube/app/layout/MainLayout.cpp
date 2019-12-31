@@ -99,7 +99,7 @@ MainLayout::MainLayout(
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
 
     this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
-    this->lyricsLayout = std::make_shared<LyricsLayout>(playback);
+    this->lyricsLayout = std::make_shared<LyricsLayout>(playback, library);
     this->consoleLayout = std::make_shared<ConsoleLayout>(logger);
     this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();

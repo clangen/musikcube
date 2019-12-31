@@ -237,8 +237,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
                 putString(Category.Extra.PREDICATE_TYPE, sourceType)
                 putLong(Category.Extra.PREDICATE_ID, sourceId)
                 if (sourceValue.isNotBlank() && Category.NAME_TO_RELATED_TITLE.containsKey(targetType)) {
-                    val format = Category.NAME_TO_RELATED_TITLE[targetType]
-                    when (format) {
+                    when (val format = Category.NAME_TO_RELATED_TITLE[targetType]) {
                         null -> throw IllegalArgumentException("unknown category $targetType")
                         else -> putString(Shared.Extra.TITLE_OVERRIDE, context.getString(format, sourceValue))
                     }

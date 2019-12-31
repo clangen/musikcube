@@ -65,6 +65,8 @@ class SystemService : Service() {
     private val sessionData = SessionMetadata()
 
     override fun onCreate() {
+        Log.d(TAG, "onCreate")
+
         state = State.Sleeping
 
         super.onCreate()
@@ -79,9 +81,8 @@ class SystemService : Service() {
             channel.setSound(null, null)
             channel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
 
-            val nm = getSystemService(Service.NOTIFICATION_SERVICE) as NotificationManager
-            nm.deleteNotificationChannel(NOTIFICATION_CHANNEL)
-            nm.createNotificationChannel(channel)
+            notificationManager.deleteNotificationChannel(NOTIFICATION_CHANNEL)
+            notificationManager.createNotificationChannel(channel)
         }
 
         prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
@@ -92,13 +93,20 @@ class SystemService : Service() {
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy")
+
         state = State.Dead
         super.onDestroy()
         releaseWakeLock()
         unregisterReceivers()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.deleteNotificationChannel(NOTIFICATION_CHANNEL)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(TAG, "onStartCommand")
+
         if (intent != null && intent.action != null) {
             when (intent.action) {
                 ACTION_WAKE_UP -> wakeupNow()
@@ -190,9 +198,6 @@ class SystemService : Service() {
             mediaSession = MediaSessionCompat(
                 this, SESSION_TAG, receiver, null)
                 .apply {
-                    this.setFlags(
-                        MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS)
                     this.setCallback(mediaSessionCallback)
                     this.isActive = true
                 }
@@ -432,6 +437,9 @@ class SystemService : Service() {
             headsetHookPressCount = 0
         }
     }
+
+    private val notificationManager: NotificationManager
+        get() = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
     private val headsetDoublePauseHackDebouncer =
             object: Debouncer<Void>(HEADSET_DOUBLE_PAUSE_HACK_DEBOUNCE_MS) {
