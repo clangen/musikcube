@@ -518,7 +518,7 @@ bool FfmpegEncoder::ReadFromFifoAndWriteToOutput(bool drain) {
             return false;
         }
 
-        error = this->SendReceiveAndWriteFrame(this->outputFrame);
+        error = this->SendReceiveAndWriteFrame(this->resampledFrame);
         if (error == AVERROR(EAGAIN)) {
             continue;
         }
