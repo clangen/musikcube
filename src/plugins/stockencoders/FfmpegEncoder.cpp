@@ -55,8 +55,8 @@ static std::map<std::string, AVCodecID> formatToCodec = {
     { "audio/aac", AV_CODEC_ID_AAC },
     { ".aac", AV_CODEC_ID_AAC },
     { ".m4a", AV_CODEC_ID_AAC },
-    { ".wma", AV_CODEC_ID_WMAV2 },
-    { "audio/x-ms-wma", AV_CODEC_ID_WMAV2 },
+    { ".wma", AV_CODEC_ID_WMAV1 },
+    { "audio/x-ms-wma", AV_CODEC_ID_WMAV1 },
     { ".wv", AV_CODEC_ID_WAVPACK },
 };
 
@@ -354,7 +354,6 @@ bool FfmpegEncoder::OpenOutputContext() {
 
 bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
     this->out = out;
-
 
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {

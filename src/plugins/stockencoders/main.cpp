@@ -77,7 +77,6 @@ static std::set<std::string> supportedFormats = {
     "audio/aac",
     ".aac",
     ".m4a",
-    "audio/x-musepack"
     ".wma",
     "audio/x-ms-wma",
     ".wv"
