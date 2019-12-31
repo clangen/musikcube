@@ -242,7 +242,7 @@ static bool isAuthenticated(MHD_Connection *connection, Context& context) {
         return true;
     }
 
-   const char* authPtr = MHD_lookup_connection_value(
+    const char* authPtr = MHD_lookup_connection_value(
         connection, MHD_HEADER_KIND, "Authorization");
 
     if (authPtr && strlen(authPtr)) {
