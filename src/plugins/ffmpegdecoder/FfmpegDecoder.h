@@ -69,6 +69,7 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         void Reset();
         AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
         bool ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain);
+        bool InitializeResampler(IBuffer* buffer);
 
         musik::core::sdk::IDataStream* stream;
         AVIOContext* ioContext;
@@ -76,6 +77,7 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         AVFormatContext* formatContext;
         AVCodecContext* codecContext;
         AVFrame* decodedFrame;
+        AVFrame* resampledFrame;
         SwrContext* resampler;
         unsigned char* buffer;
         size_t bufferSize;
