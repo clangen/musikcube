@@ -526,6 +526,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
             val externalId = track.externalId
             if (externalId.isNotEmpty()) {
+                val getUrlParam: (Int, String, Int) -> String = { arrayId, prefKey, defaultIndex ->
+                    val index = prefs.getInt(prefKey, defaultIndex)
+                    Application.instance.resources.getStringArray(arrayId)[index]
+                }
+
                 val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
                 val protocol = if (ssl) "https" else "http"
                 val port = prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT)
@@ -549,7 +554,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     remoteUri.appendQueryParameter("bitrate", bitrate)
                 }
 
-                remoteUri.appendQueryParameter("format", "mp3")
+                remoteUri.appendQueryParameter("format", getUrlParam(
+                    R.array.transcode_format_array,
+                    Prefs.Key.TRANSCODER_FORMAT_INDEX,
+                    Prefs.Default.TRANSCODER_FORMAT_INDEX))
+
                 return remoteUri.build().toString()
             }
         }

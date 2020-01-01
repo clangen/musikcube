@@ -98,7 +98,8 @@
     <string name="main_switch_to_streaming_title">switch to streaming mode?</string>
     <string name="main_switch_to_streaming_message">playing offline tracks requires you to switch from remote mode to streaming mode.\n\ndo you want to switch now?</string>
     <string name="settings_playback_mode">playback mode:</string>
-    <string name="settings_transcoder_bitrate">streaming downsampler bitrate:</string>
+    <string name="settings_transcoder_bitrate">streaming transcoder bitrate:</string>
+    <string name="settings_transcoder_format">streaming transcoder format:</string>
     <string name="settings_cache_size">streaming disk cache size:</string>
     <string name="settings_advanced">advanced:</string>
     <string name="settings_use_ssl">use ssl for server connections</string>

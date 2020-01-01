@@ -44,6 +44,7 @@ class SettingsActivity : BaseActivity() {
     private lateinit var certCheckbox: CheckBox
     private lateinit var transferCheckbox: CheckBox
     private lateinit var bitrateSpinner: Spinner
+    private lateinit var formatSpinner: Spinner
     private lateinit var cacheSpinner: Spinner
     private lateinit var titleEllipsisSpinner: Spinner
     private lateinit var playback: PlaybackMixin
@@ -105,6 +106,13 @@ class SettingsActivity : BaseActivity() {
     override val transitionType: Transition
         get() = Transition.Vertical
 
+    private fun rebindSpinner(spinner: Spinner, arrayResourceId: Int, key: String, defaultIndex: Int) {
+        val items = ArrayAdapter.createFromResource(this, arrayResourceId, android.R.layout.simple_spinner_item)
+        items.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = items
+        spinner.setSelection(prefs.getInt(key, defaultIndex))
+    }
+
     private fun rebindUi() {
         /* connection info */
         addressText.setTextAndMoveCursorToEnd(prefs.getString(Keys.ADDRESS) ?: Defaults.ADDRESS)
@@ -118,33 +126,32 @@ class SettingsActivity : BaseActivity() {
         passwordText.setTextAndMoveCursorToEnd(prefs.getString(Keys.PASSWORD) ?: Defaults.PASSWORD)
 
         /* bitrate */
-        val bitrates = ArrayAdapter.createFromResource(
-            this, R.array.transcode_bitrate_array, android.R.layout.simple_spinner_item)
+        rebindSpinner(
+            bitrateSpinner, 
+            R.array.transcode_bitrate_array,
+            Keys.TRANSCODER_BITRATE_INDEX,
+            Defaults.TRANSCODER_BITRATE_INDEX)
 
-        bitrates.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        bitrateSpinner.adapter = bitrates
-        bitrateSpinner.setSelection(prefs.getInt(
-            Keys.TRANSCODER_BITRATE_INDEX, Defaults.TRANSCODER_BITRATE_INDEX))
+        /* format */
+        rebindSpinner(
+            formatSpinner,
+            R.array.transcode_format_array,
+            Keys.TRANSCODER_FORMAT_INDEX,
+            Defaults.TRANSCODER_FORMAT_INDEX)
 
         /* disk cache */
-        val cacheSizes = ArrayAdapter.createFromResource(
-            this, R.array.disk_cache_array, android.R.layout.simple_spinner_item)
-
-        cacheSizes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        
-        cacheSpinner.adapter = cacheSizes
-        cacheSpinner.setSelection(prefs.getInt(
-            Keys.DISK_CACHE_SIZE_INDEX, Defaults.DISK_CACHE_SIZE_INDEX))
+        rebindSpinner(
+            cacheSpinner,
+            R.array.disk_cache_array,
+            Keys.DISK_CACHE_SIZE_INDEX,
+            Defaults.DISK_CACHE_SIZE_INDEX)
 
         /* title ellipsis mode */
-        val ellipsisModes = ArrayAdapter.createFromResource(
-            this, R.array.title_ellipsis_mode_array, android.R.layout.simple_spinner_item)
-
-        ellipsisModes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-
-        titleEllipsisSpinner.adapter = ellipsisModes
-        titleEllipsisSpinner.setSelection(prefs.getInt(
-            Keys.TITLE_ELLIPSIS_MODE_INDEX, Defaults.TITLE_ELLIPSIS_SIZE_INDEX))
+        rebindSpinner(
+            titleEllipsisSpinner,
+            R.array.title_ellipsis_mode_array,
+            Keys.TITLE_ELLIPSIS_MODE_INDEX,
+            Defaults.TITLE_ELLIPSIS_SIZE_INDEX)
 
         /* advanced */
         transferCheckbox.isChecked = prefs.getBoolean(
@@ -203,6 +210,7 @@ class SettingsActivity : BaseActivity() {
         this.albumArtCheckbox = findViewById(R.id.album_art_checkbox)
         this.softwareVolume = findViewById(R.id.software_volume)
         this.bitrateSpinner = findViewById(R.id.transcoder_bitrate_spinner)
+        this.formatSpinner = findViewById(R.id.transcoder_format_spinner)
         this.cacheSpinner = findViewById(R.id.streaming_disk_cache_spinner)
         this.titleEllipsisSpinner = findViewById(R.id.title_ellipsis_mode_spinner)
         this.sslCheckbox = findViewById(R.id.ssl_checkbox)
@@ -279,6 +287,7 @@ class SettingsActivity : BaseActivity() {
                 .putBoolean(Keys.CERT_VALIDATION_DISABLED, certCheckbox.isChecked)
                 .putBoolean(Keys.TRANSFER_TO_SERVER_ON_HEADSET_DISCONNECT, transferCheckbox.isChecked)
                 .putInt(Keys.TRANSCODER_BITRATE_INDEX, bitrateSpinner.selectedItemPosition)
+                .putInt(Keys.TRANSCODER_FORMAT_INDEX, formatSpinner.selectedItemPosition)
                 .putInt(Keys.DISK_CACHE_SIZE_INDEX, cacheSpinner.selectedItemPosition)
                 .putInt(Keys.TITLE_ELLIPSIS_MODE_INDEX, titleEllipsisSpinner.selectedItemPosition)
                 .apply()
