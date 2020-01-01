@@ -418,7 +418,7 @@ bool FfmpegEncoder::Encode(const IBuffer* pcm) {
         return false;
     }
 
-    if (this->ResampleAndWriteToFifo(pcm)) {
+    if (this->WriteSamplesToFifo(pcm)) {
         if (this->ReadFromFifoAndWriteToOutput(false)) {
             return true;
         }
@@ -452,7 +452,7 @@ bool FfmpegEncoder::WriteOutputHeader() {
     return true;
 }
 
-bool FfmpegEncoder::ResampleAndWriteToFifo(const IBuffer* pcm) {
+bool FfmpegEncoder::WriteSamplesToFifo(const IBuffer* pcm) {
     const int totalSamples = pcm->Samples();
     const int samplesPerChannel = totalSamples / pcm->Channels();
     const uint8_t* inData = (const uint8_t*) pcm->BufferPointer();

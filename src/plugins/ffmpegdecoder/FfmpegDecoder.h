@@ -43,6 +43,7 @@ extern "C" {
     #include <libavformat/avformat.h>
     #include <libavcodec/avcodec.h>
     #include <libavutil/samplefmt.h>
+    #include <libavutil/audio_fifo.h>
     #include <libswresample/swresample.h>
 }
 
@@ -66,13 +67,14 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
 
     private:
         void Reset();
+        AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
+        bool ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain);
 
-    private:
         musik::core::sdk::IDataStream* stream;
         AVIOContext* ioContext;
+        AVAudioFifo* outputFifo;
         AVFormatContext* formatContext;
         AVCodecContext* codecContext;
-        AVPacket packet;
         AVFrame* decodedFrame;
         SwrContext* resampler;
         unsigned char* buffer;

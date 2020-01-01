@@ -64,7 +64,7 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         bool OpenOutputContext();
         bool WriteOutputHeader();
         bool WriteOutputTrailer();
-        bool ResampleAndWriteToFifo(const IBuffer* pcm);
+        bool WriteSamplesToFifo(const IBuffer* pcm);
         bool ReadFromFifoAndWriteToOutput(bool drain);
         void FlushResampler();
         AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
