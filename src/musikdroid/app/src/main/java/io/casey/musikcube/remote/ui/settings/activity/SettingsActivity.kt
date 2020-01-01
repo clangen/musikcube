@@ -404,8 +404,7 @@ class SettingsActivity : BaseActivity() {
                 .setMessage(R.string.settings_confirm_overwrite_message)
                 .setNegativeButton(R.string.button_no, null)
                 .setPositiveButton(R.string.button_yes) { _, _ ->
-                    val connection = arguments?.getParcelable<Connection>(EXTRA_CONNECTION)
-                    when (connection) {
+                    when (val connection = arguments?.getParcelable<Connection>(EXTRA_CONNECTION)) {
                         null -> throw IllegalArgumentException("invalid connection")
                         else -> {
                             val db = (activity as SettingsActivity).connectionsDb
