@@ -391,6 +391,9 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket& packet) {
             }
         }
     }
+    else {
+        logAvError("av_codec_send_packet", error);
+    }
     return decodedAtLeastOneFrame;
 }
 
@@ -443,7 +446,8 @@ bool FfmpegDecoder::DrainResamplerToFifoQueue() {
 bool FfmpegDecoder::RefillFifoQueue() {
     bool sentAtLeastOnePacket = false;
     bool readFailed = false;
-    while (!readFailed && av_audio_fifo_size(this->outputFifo) < this->preferredFrameSize) {
+    int fifoSize = av_audio_fifo_size(this->outputFifo);
+    while (!readFailed && fifoSize < this->preferredFrameSize) {
         AVPacket packet;
         av_init_packet(&packet);
         packet.data = nullptr;
@@ -457,6 +461,7 @@ bool FfmpegDecoder::RefillFifoQueue() {
             readFailed = true;
         }
         av_free_packet(&packet);
+        fifoSize = av_audio_fifo_size(this->outputFifo);
     }
     return sentAtLeastOnePacket;
 }
