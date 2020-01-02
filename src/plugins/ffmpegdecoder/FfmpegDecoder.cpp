@@ -463,35 +463,23 @@ bool FfmpegDecoder::RefillFifoQueue() {
 
 bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain) {
     int error = 0;
-    int outputFrameSize = this->preferredFrameSize;
     int fifoSize = av_audio_fifo_size(this->outputFifo);
     if (
-        fifoSize >= outputFrameSize ||
+        fifoSize >= this->preferredFrameSize ||
         (drain && av_audio_fifo_size(this->outputFifo) > 0)
     ) {
-        const int frameSize = FFMIN(fifoSize, outputFrameSize);
+        const int expectedFrameSize = FFMIN(fifoSize, this->preferredFrameSize);
+        buffer->SetSamples(expectedFrameSize * this->channels);
+        void* outData = (void*)buffer->BufferPointer();
+        int actualFrameSize = av_audio_fifo_read(this->outputFifo, &outData, expectedFrameSize);
 
-        this->resampledFrame = this->ReallocFrame(
-            this->resampledFrame,
-            this->codecContext->sample_fmt,
-            frameSize,
-            this->codecContext->sample_rate);
-
-        int framesRead = av_audio_fifo_read(
-            this->outputFifo, (void **) this->resampledFrame->data, frameSize);
-
-        if (framesRead < frameSize) {
+        if (actualFrameSize > expectedFrameSize) {
             logError("av_audio_fifo_read read the incorrect number of samples");
             return false;
         }
-
-        const int totalSamples = this->resampledFrame->nb_samples * this->channels;
-        buffer->SetSamples(totalSamples);
-
-        memcpy(
-            (void*) buffer->BufferPointer(),
-            (void*) this->resampledFrame->data,
-            totalSamples * sizeof(float));
+        else if (actualFrameSize != expectedFrameSize) {
+            buffer->SetSamples(actualFrameSize * this->channels);
+        }
 
         return true;
     }
