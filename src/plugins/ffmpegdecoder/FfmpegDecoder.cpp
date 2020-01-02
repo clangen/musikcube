@@ -43,6 +43,7 @@
 #define DLLEXPORT
 #endif
 
+#define DEFAULT_FRAME_SIZE 4096
 #define BUFFER_SIZE 4096
 #define PROBE_SIZE 32768
 
@@ -182,62 +183,15 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
             return false;
         }
 
-        /* avoid packet and frame init if we can... */
-        if (av_audio_fifo_size(this->outputFifo) >= this->codecContext->frame_size) {
-            return this->ReadFromFifoAndWriteToBuffer(buffer, false);
-        }
-
-        AVPacket packet;
-        av_init_packet(&packet); /* TODO fix this extra init that keeps logic easier to follow? */
-
-        /* read from the input and write to the fifo until we have at least
-        one frame worth of data available */
-        bool failed = false;
-        while (av_audio_fifo_size(this->outputFifo) < this->codecContext->frame_size) {
-            av_free_packet(&packet);
-            av_init_packet(&packet);
-            packet.data = nullptr;
-            packet.size = 0;
-            int error = av_read_frame(this->formatContext, &packet);
-            if (error >= 0) {
-                error = avcodec_send_packet(this->codecContext, &packet);
-                if (error >= 0) {
-                    this->decodedFrame = this->ReallocFrame(
-                        this->decodedFrame,
-                        this->codecContext->sample_fmt,
-                        this->codecContext->frame_size,
-                        this->codecContext->sample_rate);
-
-                    error = avcodec_receive_frame(this->codecContext, this->decodedFrame);
-                    if (error >= 0) {
-                        error = av_audio_fifo_write(
-                            this->outputFifo,
-                            (void**) this->decodedFrame->extended_data,
-                            this->decodedFrame->nb_samples);
-                        if (error < 0) {
-                            logAvError("av_audio_fifo_write", error);
-                            failed = true;
-                            break;
-                        }
-                    }
-                    else {
-                        logAvError("avcodec_receive_frame", error);
-                        failed = true;
-                        break;
-                    }
-                }
-            }
-            else {
-                logAvError("av_read_frame", error);
+        if (!this->eof && av_audio_fifo_size(this->outputFifo) < this->preferredFrameSize) {
+            if (!this->RefillFifoQueue()) {
+                this->eof = true;
             }
         }
 
-        av_free_packet(&packet);
-
-        if (!failed) {
-            if (this->ReadFromFifoAndWriteToBuffer(buffer, false)) {
-                return true;
-            }
+        bool drain = this->eof;
+        if (this->ReadFromFifoAndWriteToBuffer(buffer, drain)) {
+             return true;
         }
     }
 
@@ -369,6 +323,8 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         this->channels = stream->codec->channels;
                         this->duration = (double) this->formatContext->duration / (double) AV_TIME_BASE;
 
+                        this->preferredFrameSize = this->codecContext->frame_size ? this->codecContext->frame_size : DEFAULT_FRAME_SIZE;
+
                         this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, channels, 1);
 
                         if (!this->outputFifo) {
@@ -396,71 +352,136 @@ bool FfmpegDecoder::Exhausted() {
     return this->exhausted;
 }
 
-// void FfmpegDecoder::FlushResampler() {
-//     int64_t bufferedFrames = swr_get_delay(
-//         this->resampler, this->outputContext->sample_rate);
-
-//     while (bufferedFrames > 0) {
-//         this->resampledFrame = this->ReallocFrame(
-//             this->resampledFrame,
-//             this->outputContext->sample_fmt,
-//             FFMIN(bufferedFrames, this->outputContext->frame_size),
-//             this->outputContext->sample_rate);
-
-//         int converted = swr_convert(
-//             this->resampler,
-//             this->resampledFrame->extended_data,
-//             this->resampledFrame->nb_samples,
-//             nullptr,
-//             0);
-
-//         if (converted > 0) {
-//             this->SendReceiveAndWriteFrame(this->resampledFrame);
-//             bufferedFrames -= converted;
-//         }
-//         else {
-//             break;
-//         }
-//     }
-// }
-
-bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain) {
-    int outputFrameSize = this->codecContext->frame_size;
-    int error = 0;
-    if (
-        av_audio_fifo_size(this->outputFifo) >= outputFrameSize ||
-        (drain && av_audio_fifo_size(this->outputFifo) > 0)
-    ) {
-        const int fifoSize = av_audio_fifo_size(this->outputFifo);
-        const int frameSize = FFMIN(fifoSize, outputFrameSize);
-
+bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket& packet) {
+    bool decodedAtLeastOneFrame = false;
+    int error = avcodec_send_packet(this->codecContext, &packet);
+    if (error >= 0) {
         this->decodedFrame = this->ReallocFrame(
             this->decodedFrame,
+            this->codecContext->sample_fmt,
+            this->preferredFrameSize,
+            this->codecContext->sample_rate);
+
+        error = avcodec_receive_frame(this->codecContext, this->decodedFrame);
+        if (error >= 0) {
+            this->resampledFrame = this->ReallocFrame(
+                this->resampledFrame,
+                AV_SAMPLE_FMT_FLT,
+                this->decodedFrame->nb_samples,
+                this->rate);
+
+            error = swr_convert_frame(
+                this->resampler,
+                this->resampledFrame,
+                this->decodedFrame);
+
+            if (error < 0) {
+                logAvError("swr_convert_frame", error);
+            }
+            else {
+                error = av_audio_fifo_write(
+                    this->outputFifo,
+                    (void**) this->resampledFrame->extended_data,
+                    this->resampledFrame->nb_samples);
+                if (error < 0) {
+                    logAvError("av_audio_fifo_write", error);
+                    return false;
+                }
+                decodedAtLeastOneFrame = true;
+            }
+        }
+    }
+    return decodedAtLeastOneFrame;
+}
+
+bool FfmpegDecoder::DrainResamplerToFifoQueue() {
+    if (!this->resampler) {
+        return false;
+    }
+
+    int64_t bufferedFrames = swr_get_delay(
+        this->resampler, this->codecContext->sample_rate);
+
+    while (bufferedFrames > 0) {
+        this->resampledFrame = this->ReallocFrame(
+            this->resampledFrame,
+            this->codecContext->sample_fmt,
+            FFMIN(bufferedFrames, this->preferredFrameSize),
+            this->codecContext->sample_rate);
+
+        int converted = swr_convert(
+            this->resampler,
+            this->resampledFrame->extended_data,
+            this->resampledFrame->nb_samples,
+            nullptr,
+            0);
+
+        if (converted > 0) {
+            int error = av_audio_fifo_write(
+                this->outputFifo,
+                (void**) this->resampledFrame->extended_data,
+                converted);
+
+            if (error < 0) {
+                logAvError("av_audio_fifo_write", error);
+                return false;
+            }
+
+            bufferedFrames -= converted;
+        }
+        else {
+            break;
+        }
+    }
+
+    swr_free(&this->resampler);
+    this->resampler = nullptr;
+
+    return true;
+}
+
+bool FfmpegDecoder::RefillFifoQueue() {
+    bool sentAtLeastOnePacket = false;
+    bool readFailed = false;
+    while (!readFailed && av_audio_fifo_size(this->outputFifo) < this->preferredFrameSize) {
+        AVPacket packet;
+        av_init_packet(&packet);
+        packet.data = nullptr;
+        packet.size = 0;
+        int error = av_read_frame(this->formatContext, &packet);
+        if (error >= 0) {
+            sentAtLeastOnePacket = this->ReadSendAndReceivePacket(packet);
+        }
+        else {
+            logAvError("av_read_frame", error);
+            readFailed = true;
+        }
+        av_free_packet(&packet);
+    }
+    return sentAtLeastOnePacket;
+}
+
+bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain) {
+    int error = 0;
+    int outputFrameSize = this->preferredFrameSize;
+    int fifoSize = av_audio_fifo_size(this->outputFifo);
+    if (
+        fifoSize >= outputFrameSize ||
+        (drain && av_audio_fifo_size(this->outputFifo) > 0)
+    ) {
+        const int frameSize = FFMIN(fifoSize, outputFrameSize);
+
+        this->resampledFrame = this->ReallocFrame(
+            this->resampledFrame,
             this->codecContext->sample_fmt,
             frameSize,
             this->codecContext->sample_rate);
 
         int framesRead = av_audio_fifo_read(
-            this->outputFifo, (void **) this->decodedFrame->data, frameSize);
+            this->outputFifo, (void **) this->resampledFrame->data, frameSize);
 
         if (framesRead < frameSize) {
             logError("av_audio_fifo_read read the incorrect number of samples");
-            return false;
-        }
-
-        this->resampledFrame = this->ReallocFrame(
-            this->resampledFrame,
-            AV_SAMPLE_FMT_FLT,
-            frameSize,
-            this->rate);
-
-        error = swr_convert_frame(
-            this->resampler,
-            this->resampledFrame,
-            this->decodedFrame);
-
-        if (error < 0) {
-            logAvError("swr_convert_frame", error);
             return false;
         }
 
@@ -475,12 +496,22 @@ bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain) {
         return true;
     }
 
-    // if (drain) {
-    //     // this->FlushResampler();
-    //     // this->SendReceiveAndWriteFrame(nullptr);
-    // }
+    if (drain && this->DrainResamplerToFifoQueue()) {
+        this->FlushAndFinalizeDecoder();
+    }
 
-    return false;
+    return true;
+}
+
+void FfmpegDecoder::FlushAndFinalizeDecoder() {
+    /* reading from a packet with a null `data` pointer is a "flush" operation,
+    and the decoder will stop accepting new data */
+    AVPacket packet;
+    av_init_packet(&packet);
+    packet.size = 0;
+    packet.data = nullptr;
+    this->ReadSendAndReceivePacket(packet);
+    av_packet_unref(&packet);
 }
 
 AVFrame* FfmpegDecoder::ReallocFrame(

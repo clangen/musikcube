@@ -68,8 +68,12 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
     private:
         void Reset();
         AVFrame* ReallocFrame(AVFrame* original, AVSampleFormat format, int samplesPerChannel, int sampleRate);
+        bool RefillFifoQueue();
+        bool DrainResamplerToFifoQueue();
         bool ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain);
         bool InitializeResampler(IBuffer* buffer);
+        bool ReadSendAndReceivePacket(AVPacket& packet);
+        void FlushAndFinalizeDecoder();
 
         musik::core::sdk::IDataStream* stream;
         AVIOContext* ioContext;
@@ -83,6 +87,8 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         size_t bufferSize;
         size_t rate, channels;
         int streamId;
+        int preferredFrameSize;
         double duration;
         bool exhausted{false};
+        bool eof{false};
 };
