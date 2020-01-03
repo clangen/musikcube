@@ -306,8 +306,8 @@ static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width) {
         ARTIST_COL_WIDTH);
 
     int titleWidth =
-        width -
-        trackColWidth -
+        (int) width -
+        (int) trackColWidth -
         DURATION_COL_WIDTH -
         ALBUM_COL_WIDTH -
         ARTIST_COL_WIDTH -

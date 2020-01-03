@@ -385,8 +385,8 @@ static std::string formatWithoutAlbum(TrackPtr track, size_t index, size_t width
         ARTIST_COL_WIDTH);
 
     int titleWidth =
-        width -
-        trackColWidth -
+        (int) width -
+        (int) trackColWidth -
         DURATION_COL_WIDTH -
         ARTIST_COL_WIDTH -
         (3 * 3); /* 3 = spacing */

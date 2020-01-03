@@ -361,7 +361,7 @@ void LayoutBase::SetFocusIndex(int index) {
 }
 
 int LayoutBase::GetFocusableCount() {
-    return this->focusable.size();
+    return (int) this->focusable.size();
 }
 
 IWindowPtr LayoutBase::GetFocusableAt(int index) {

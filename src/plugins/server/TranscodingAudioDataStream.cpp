@@ -220,8 +220,8 @@ PositionType TranscodingAudioDataStream::Read(void *buffer, PositionType bytesTo
     }
 
     if (bytesWritten == bytesToRead) {
-        this->position += bytesWritten;
-        return bytesWritten; /* filled from the spillover... */
+        this->position += (PositionType) bytesWritten;
+        return (PositionType) bytesWritten; /* filled from the spillover... */
     }
 
     if (!hasBuffer) {
@@ -260,8 +260,8 @@ PositionType TranscodingAudioDataStream::Read(void *buffer, PositionType bytesTo
             so it can be finalized the next time through. */
             if (encodedLength > toWrite) {
                 spillover.from(encodedData + toWrite, encodedLength - toWrite);
-                this->position += bytesWritten;
-                return bytesWritten;
+                this->position += (PositionType) bytesWritten;
+                return (PositionType) bytesWritten;
             }
         }
 
@@ -302,8 +302,8 @@ PositionType TranscodingAudioDataStream::Read(void *buffer, PositionType bytesTo
         }
     }
 
-    this->position += bytesWritten;
-    return bytesWritten;
+    this->position += (PositionType) bytesWritten;
+    return (PositionType) bytesWritten;
 
 internal_error:
     this->eof = true;

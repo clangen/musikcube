@@ -104,10 +104,10 @@ void ListWindow::ScrollUp(int delta) {
 
         size_t first = spos.firstVisibleEntryIndex;
         size_t last = first + spos.visibleEntryCount;
-        int drawIndex = first;
+        int drawIndex = (int) first;
 
         int minIndex = 0;
-        int newIndex = this->selectedIndex - delta;
+        int newIndex = (int) this->selectedIndex - delta;
         newIndex = std::max(newIndex, minIndex);
 
         if (newIndex < (int)first + 1) {
