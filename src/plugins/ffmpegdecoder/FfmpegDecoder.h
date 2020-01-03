@@ -67,7 +67,7 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
 
     private:
         void Reset();
-        AVFrame* AllocFrame(AVFrame* original, AVSampleFormat format, int sampleRate);
+        AVFrame* AllocFrame(AVFrame* original, AVSampleFormat format, int sampleRate, int frameSize = -1);
         bool RefillFifoQueue();
         bool DrainResamplerToFifoQueue();
         bool ReadFromFifoAndWriteToBuffer(IBuffer* buffer);

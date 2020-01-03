@@ -368,7 +368,8 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
             this->resampledFrame = this->AllocFrame(
                 this->resampledFrame,
                 AV_SAMPLE_FMT_FLT,
-                this->rate);
+                this->rate,
+                this->decodedFrame->nb_samples);
 
             error = swr_convert_frame(
                 this->resampler,
@@ -499,12 +500,20 @@ void FfmpegDecoder::FlushAndFinalizeDecoder() {
     this->ReadSendAndReceivePacket(nullptr);
 }
 
-AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int sampleRate) {
-    if (!original) {
+AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int sampleRate, int frameSize) {
+    bool frameSizeChanged = original && frameSize > 0 && frameSize != original->nb_samples;
+    if (!original || frameSizeChanged) {
+        if (original || frameSizeChanged) {
+            av_frame_free(&original);
+        }
         original = av_frame_alloc();
         original->channel_layout = this->codecContext->channel_layout;
         original->format = format;
         original->sample_rate = sampleRate;
+        if (frameSizeChanged) {
+            original->nb_samples = frameSize;
+            av_frame_get_buffer(original, 0);
+        }
     }
     return original;
 }
