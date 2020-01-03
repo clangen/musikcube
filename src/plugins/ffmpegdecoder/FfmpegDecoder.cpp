@@ -289,25 +289,31 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
             if (this->formatContext->iformat) {
                 if (avformat_open_input(&this->formatContext, "", nullptr, nullptr) == 0) {
+                    AVCodec* codec = nullptr;
                     if (avformat_find_stream_info(this->formatContext, nullptr) >= 0) {
-                        for (unsigned i = 0; i < this->formatContext->nb_streams; i++) {
-                            if (this->formatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-                                this->streamId = (int)i;
-                                break;
-                            }
-                        }
+                        this->streamId = av_find_best_stream(
+                            this->formatContext,
+                            AVMEDIA_TYPE_AUDIO,
+                            -1,
+                            -1,
+                            &codec,
+                            0);
                     }
 
-                    if (this->streamId != -1) {
+                    if (this->streamId != -1 && codec != nullptr) {
                         ::debug->Info(TAG, "found audio stream!");
-                        this->codecContext = this->formatContext->streams[this->streamId]->codec;
+                        this->codecContext = avcodec_alloc_context3(codec);
                         if (codecContext) {
                             this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
-                            AVCodec* codec = avcodec_find_decoder(codecContext->codec_id);
                             if (codec) {
                                 if (avcodec_open2(codecContext, codec, nullptr) < 0) {
                                     goto reset_and_fail;
                                 }
+
+                                avcodec_parameters_to_context(
+                                    this->codecContext,
+                                    formatContext->streams[this->streamId]->codecpar);
+
                                 std::string codecName =
                                     std::string("resolved codec: ") +
                                     std::string(codec->long_name);
