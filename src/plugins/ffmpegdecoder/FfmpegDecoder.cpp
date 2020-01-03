@@ -177,20 +177,22 @@ bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
         buffer->SetChannels((long) this->channels);
         buffer->SetSamples(0);
 
-        if (!this->resampler && !this->InitializeResampler(buffer)) {
-            this->exhausted = true;
-            logError("unable to initialize resampler. marking as done.");
-            return false;
-        }
+        if (!this->eof) {
+            if (!this->resampler && !this->InitializeResampler(buffer)) {
+                this->exhausted = true;
+                logError("unable to initialize resampler. marking as done.");
+                return false;
+            }
 
-        if (!this->eof && av_audio_fifo_size(this->outputFifo) < this->preferredFrameSize) {
-            if (!this->RefillFifoQueue()) {
-                this->eof = true;
+            if (av_audio_fifo_size(this->outputFifo) < this->preferredFrameSize) {
+                if (!this->RefillFifoQueue()) {
+                    this->FlushAndFinalizeDecoder();
+                    this->DrainResamplerToFifoQueue();
+                    this->eof = true;
+                }
             }
         }
-
-        bool drain = this->eof;
-        if (this->ReadFromFifoAndWriteToBuffer(buffer, drain)) {
+        if (this->ReadFromFifoAndWriteToBuffer(buffer)) {
              return true;
         }
     }
@@ -236,7 +238,7 @@ bool FfmpegDecoder::InitializeResampler(IBuffer* buffer) {
         this->resampler,
         this->codecContext->channel_layout,
         AV_SAMPLE_FMT_FLT,
-        this->rate,
+        (int) this->rate,
         this->codecContext->channel_layout,
         this->codecContext->sample_fmt,
         this->codecContext->sample_rate,
@@ -260,7 +262,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
         this->ioContext = avio_alloc_context(
             this->buffer,
-            this->bufferSize,
+            (int) this->bufferSize,
             0,
             this,
             readCallback,
@@ -275,7 +277,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
             unsigned char probe[PROBE_SIZE];
             memset(probe, 0, PROBE_SIZE);
-            size_t count = stream->Read(probe, PROBE_SIZE - AVPROBE_PADDING_SIZE);
+            int count = stream->Read(probe, PROBE_SIZE - AVPROBE_PADDING_SIZE);
             stream->SetPosition(0);
 
             AVProbeData probeData = { 0 };
@@ -290,7 +292,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                     if (avformat_find_stream_info(this->formatContext, nullptr) >= 0) {
                         for (unsigned i = 0; i < this->formatContext->nb_streams; i++) {
                             if (this->formatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
-                                this->streamId = (int) i;
+                                this->streamId = (int)i;
                                 break;
                             }
                         }
@@ -352,22 +354,20 @@ bool FfmpegDecoder::Exhausted() {
     return this->exhausted;
 }
 
-bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket& packet) {
+bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
     bool decodedAtLeastOneFrame = false;
-    int error = avcodec_send_packet(this->codecContext, &packet);
-    if (error >= 0) {
-        this->decodedFrame = this->ReallocFrame(
+    int error = avcodec_send_packet(this->codecContext, packet);
+    while (error >= 0) {
+        this->decodedFrame = this->AllocFrame(
             this->decodedFrame,
             this->codecContext->sample_fmt,
-            this->preferredFrameSize,
             this->codecContext->sample_rate);
 
         error = avcodec_receive_frame(this->codecContext, this->decodedFrame);
         if (error >= 0) {
-            this->resampledFrame = this->ReallocFrame(
+            this->resampledFrame = this->AllocFrame(
                 this->resampledFrame,
                 AV_SAMPLE_FMT_FLT,
-                this->decodedFrame->nb_samples,
                 this->rate);
 
             error = swr_convert_frame(
@@ -383,16 +383,15 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket& packet) {
                     this->outputFifo,
                     (void**) this->resampledFrame->extended_data,
                     this->resampledFrame->nb_samples);
+
                 if (error < 0) {
                     logAvError("av_audio_fifo_write", error);
                     return false;
                 }
+
                 decodedAtLeastOneFrame = true;
             }
         }
-    }
-    else {
-        logAvError("av_codec_send_packet", error);
     }
     return decodedAtLeastOneFrame;
 }
@@ -406,10 +405,9 @@ bool FfmpegDecoder::DrainResamplerToFifoQueue() {
         this->resampler, this->codecContext->sample_rate);
 
     while (bufferedFrames > 0) {
-        this->resampledFrame = this->ReallocFrame(
+        this->resampledFrame = this->AllocFrame(
             this->resampledFrame,
             this->codecContext->sample_fmt,
-            FFMIN(bufferedFrames, this->preferredFrameSize),
             this->codecContext->sample_rate);
 
         int converted = swr_convert(
@@ -454,24 +452,29 @@ bool FfmpegDecoder::RefillFifoQueue() {
         packet.size = 0;
         int error = av_read_frame(this->formatContext, &packet);
         if (error >= 0) {
-            sentAtLeastOnePacket = this->ReadSendAndReceivePacket(packet);
+            sentAtLeastOnePacket = this->ReadSendAndReceivePacket(&packet);
         }
         else {
             logAvError("av_read_frame", error);
             readFailed = true;
         }
-        av_free_packet(&packet);
+        av_packet_unref(&packet);
         fifoSize = av_audio_fifo_size(this->outputFifo);
     }
     return sentAtLeastOnePacket;
 }
 
-bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain) {
+bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer) {
     int error = 0;
     int fifoSize = av_audio_fifo_size(this->outputFifo);
+
+    if (this->eof && fifoSize == 0) {
+        return false;
+    }
+
     if (
         fifoSize >= this->preferredFrameSize ||
-        (drain && av_audio_fifo_size(this->outputFifo) > 0)
+        (this->eof && fifoSize > 0)
     ) {
         const int expectedFrameSize = FFMIN(fifoSize, this->preferredFrameSize);
         buffer->SetSamples(expectedFrameSize * this->channels);
@@ -485,12 +488,6 @@ bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain) {
         else if (actualFrameSize != expectedFrameSize) {
             buffer->SetSamples(actualFrameSize * this->channels);
         }
-
-        return true;
-    }
-
-    if (drain && this->DrainResamplerToFifoQueue()) {
-        this->FlushAndFinalizeDecoder();
     }
 
     return true;
@@ -499,34 +496,15 @@ bool FfmpegDecoder::ReadFromFifoAndWriteToBuffer(IBuffer* buffer, bool drain) {
 void FfmpegDecoder::FlushAndFinalizeDecoder() {
     /* reading from a packet with a null `data` pointer is a "flush" operation,
     and the decoder will stop accepting new data */
-    AVPacket packet;
-    av_init_packet(&packet);
-    packet.size = 0;
-    packet.data = nullptr;
-    this->ReadSendAndReceivePacket(packet);
-    av_packet_unref(&packet);
+    this->ReadSendAndReceivePacket(nullptr);
 }
 
-AVFrame* FfmpegDecoder::ReallocFrame(
-    AVFrame* original,
-    AVSampleFormat format,
-    int samplesPerChannel,
-    int sampleRate)
-{
-    if (!original || original->nb_samples != samplesPerChannel) {
-        if (original) {
-            av_frame_free(&original);
-        }
+AVFrame* FfmpegDecoder::AllocFrame(AVFrame* original, AVSampleFormat format, int sampleRate) {
+    if (!original) {
         original = av_frame_alloc();
-        original->nb_samples = samplesPerChannel;
         original->channel_layout = this->codecContext->channel_layout;
         original->format = format;
         original->sample_rate = sampleRate;
-        int error = av_frame_get_buffer(original, 0);
-        if (error < 0) {
-            logAvError("av_frame_get_buffer", error);
-            return nullptr;
-        }
     }
     return original;
 }
