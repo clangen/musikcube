@@ -324,7 +324,7 @@ bool FfmpegEncoder::OpenOutputCodec(size_t rate, size_t channels, size_t bitrate
     }
 
     /* fifo buffer that will be used by the encoder */
-    this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, channels, 1);
+    this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, (int) channels, 1);
 
     if (!this->outputFifo) {
         logError("av_audio_fifo_alloc");
@@ -355,8 +355,8 @@ bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, s
     if (this->OpenOutputContext()) {
         if (this->OpenOutputCodec(rate, channels, bitrate)) {
             if (this->WriteOutputHeader()) {
-                this->inputChannelCount = channels;
-                this->inputSampleRate = rate;
+                this->inputChannelCount = (int) channels;
+                this->inputSampleRate = (int) rate;
                 this->isValid = true;
             }
         }
@@ -578,7 +578,7 @@ void FfmpegEncoder::FlushResampler() {
         this->resampledFrame = this->ReallocFrame(
             this->resampledFrame,
             this->outputContext->sample_fmt,
-            FFMIN(bufferedFrames, this->outputContext->frame_size),
+            FFMIN((int) bufferedFrames, this->outputContext->frame_size),
             this->outputContext->sample_rate);
 
         int converted = swr_convert(

@@ -291,7 +291,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 if (avformat_open_input(&this->formatContext, "", nullptr, nullptr) == 0) {
                     if (avformat_find_stream_info(this->formatContext, nullptr) >= 0) {
                         for (unsigned i = 0; i < this->formatContext->nb_streams; i++) {
-                            if (this->formatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+                            if (this->formatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
                                 this->streamId = (int)i;
                                 break;
                             }
@@ -321,8 +321,8 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         }
 
                         auto stream = this->formatContext->streams[this->streamId];
-                        this->rate = stream->codec->sample_rate;
-                        this->channels = stream->codec->channels;
+                        this->rate = stream->codecpar->sample_rate;
+                        this->channels = stream->codecpar->channels;
                         this->duration = (double) this->formatContext->duration / (double) AV_TIME_BASE;
 
                         this->preferredFrameSize = this->codecContext->frame_size ? this->codecContext->frame_size : DEFAULT_FRAME_SIZE;
