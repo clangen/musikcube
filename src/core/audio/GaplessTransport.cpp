@@ -338,7 +338,10 @@ void GaplessTransport::OnPlayerFinished(Player* player) {
     }
 
     if (stopped) {
-        this->Stop();
+        /* note we call through to StopInternal() because we don't
+        want to stop the output immediately, it may still have some
+        trailing samples queued up */
+        this->StopInternal(false, false);
     }
 }
 

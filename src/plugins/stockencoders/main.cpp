@@ -85,7 +85,7 @@ static class Plugin : public IPlugin {
 
         virtual void Release() { }
         virtual const char* Name() { return "Stock Encoders (MP3, OGG)"; }
-        virtual const char* Version() { return "0.6.0"; }
+        virtual const char* Version() { return "0.7.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "d4d13803-a285-4481-ad1e-106131e0d523"; }
         virtual bool Configurable() { return false; }
