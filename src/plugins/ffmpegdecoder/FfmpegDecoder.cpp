@@ -331,7 +331,9 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         this->channels = stream->codecpar->channels;
                         this->duration = (double) this->formatContext->duration / (double) AV_TIME_BASE;
 
-                        this->preferredFrameSize = this->codecContext->frame_size ? this->codecContext->frame_size : DEFAULT_FRAME_SIZE;
+                        this->preferredFrameSize = this->codecContext->frame_size
+                            ? this->codecContext->frame_size
+                            : DEFAULT_FRAME_SIZE;
 
                         this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, channels, 1);
 
