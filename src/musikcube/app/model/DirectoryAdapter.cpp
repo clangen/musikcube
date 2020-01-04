@@ -58,6 +58,14 @@ static void buildDriveList(std::vector<std::string>& target) {
         }
     }
 }
+
+static bool shouldBuildDriveList(const boost::filesystem::path& dir) {
+    std::string pathstr = dir.string();
+    return
+        (pathstr.size() == 2 && pathstr[1] == ':') ||
+        (pathstr.size() == 3 && pathstr[2] == ':') ||
+        (pathstr.size() == 0);
+}
 #endif
 
 static bool hasSubdirectories(
@@ -81,7 +89,6 @@ static bool hasSubdirectories(
 
     return false;
 }
-
 
 static void buildDirectoryList(
     const path& p,
@@ -155,10 +162,7 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
     }
 
 #ifdef WIN32
-    std::string pathstr = this->dir.string();
-    if ((pathstr.size() == 2 && pathstr[1] == ':') ||
-        (pathstr.size() == 3 && pathstr[2] == ':'))
-    {
+    if (shouldBuildDriveList(this->dir)) {
         dir = path();
         buildDriveList(subdirs);
         return selectedIndex;
@@ -219,6 +223,12 @@ size_t DirectoryAdapter::GetEntryCount() {
 void DirectoryAdapter::SetDotfilesVisible(bool visible) {
     if (showDotfiles != visible) {
         showDotfiles = visible;
+#ifdef WIN32
+        if (shouldBuildDriveList(this->dir)) {
+            buildDriveList(subdirs);
+            return;
+        }
+#endif
         buildDirectoryList(dir, subdirs, showDotfiles);
     }
 }
