@@ -185,6 +185,7 @@ namespace musik { namespace core { namespace audio {
             void PrepareNextTrack();
             void InitRemotes();
             void ResetRemotes();
+            void MarkTrackAsPlayed(int64_t trackId);
 
             void PlayAt(size_t index, ITransport::StartMode mode);
 
