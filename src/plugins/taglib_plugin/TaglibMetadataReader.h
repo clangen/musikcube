@@ -87,6 +87,11 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
             const T& map,
             musik::core::sdk::ITagStore *target);
 
+        template<typename T> void ReadBasicData(
+            const T* tag,
+            const char* uri,
+            musik::core::sdk::ITagStore *target);
+
         void ExtractValueForKey(
             const TagLib::MP4::ItemMap& map,
             const std::string& inputKey,
@@ -140,6 +145,10 @@ class TaglibMetadataReader : public musik::core::sdk::ITagReader {
 
         bool ReadID3V2(
             const char* uri,
+            musik::core::sdk::ITagStore *target);
+
+        bool ReadID3V2(
+            TagLib::ID3v2::Tag *tag,
             musik::core::sdk::ITagStore *target);
 
         bool ReadGeneric(

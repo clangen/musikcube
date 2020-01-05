@@ -109,6 +109,10 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
                 { ".wv", AV_CODEC_ID_WAVPACK },
             };
 
+            supportedTypesWithoutCodec = {
+                ".wav", ".wave", ".aif", ".aiff"
+            };
+
             const AVCodec* codec = nullptr;
             void *i = 0;
             while ((codec = av_codec_iterate(&i))) {
@@ -142,11 +146,16 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
                 }
             }
 
+            if (supportedTypesWithoutCodec.find(type) != supportedTypesWithoutCodec.end()) {
+                return true;
+            }
+
             return false;
         }
 
     private:
         std::map<std::string, AVCodecID> typeToCodecId;
+        std::set<std::string> supportedTypesWithoutCodec;
         std::set<AVCodecID> supported;
 } factory;
 

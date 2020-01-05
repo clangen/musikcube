@@ -56,6 +56,8 @@
     #include <taglib/flac/flacfile.h>
     #include <taglib/toolkit/tpropertymap.h>
     #include <taglib/wavpack/wavpackfile.h>
+    #include <taglib/riff/aiff/aifffile.h>
+    #include <taglib/riff/wav/wavfile.h>
 #else
     #include <taglib/tlist.h>
     #include <taglib/tfile.h>
@@ -77,7 +79,9 @@
     #include <taglib/wavpackfile.h>
     #include <taglib/xiphcomment.h>
     #include <taglib/tpropertymap.h>
-#include <taglib/textidentificationframe.h>
+    #include <taglib/aiff/aifffile.h>
+    #include <taglib/wav/wavfile.h>
+    #include <taglib/textidentificationframe.h>
 #endif
 
 #include <vector>
@@ -227,6 +231,10 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
             ext.compare("mpc") == 0 ||
             ext.compare("aac") == 0 ||
             ext.compare("alac") == 0 ||
+            ext.compare("wav") == 0 ||
+            ext.compare("wave") == 0 ||
+            ext.compare("aif") == 0 ||
+            ext.compare("aiff") == 0 ||
 #endif
             ext.compare("mp3") == 0 ||
             ext.compare("ogg") == 0 ||
@@ -258,12 +266,7 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
     /* ID3v2 is a trainwreck, so it requires special processing */
     if (extension.size()) {
         if (str::lower(extension) == "mp3") {
-            try {
-                this->ReadID3V2(uri, track);
-            }
-            catch (...) {
-                std::cerr << "id3v2 tag read for " << uri << "failed!";
-            }
+            this->ReadID3V2(uri, track);
         }
     }
 
@@ -292,30 +295,29 @@ bool TaglibMetadataReader::ReadGeneric(
     }
     else {
         TagLib::Tag *tag = file.tag();
-
         if (tag) {
-            if (!tag->title().isEmpty()) {
-                this->SetTagValue("title", tag->title(), target);
-            }
-            else {
-                this->SetTagValue("title", uri, target);
-            }
+            this->ReadBasicData(file.tag(), uri, target);
 
-            this->SetTagValue("album", tag->album(),target);
-            this->SetSlashSeparatedValues("artist", tag->artist(), target);
-            this->SetTagValue("genre", tag->genre(), target);
-            this->SetTagValue("comment", tag->comment(), target);
-
-            if (tag->track()) {
-                this->SetTagValue("track", tag->track(), target);
+            /* wav files can have metadata in the RIFF header, or, in some cases,
+            with an embedded id3v2 tag */
+            auto wavFile = dynamic_cast<TagLib::RIFF::WAV::File*>(file.file());
+            if (wavFile) {
+                if (wavFile->hasInfoTag()) {
+                    this->ReadBasicData(wavFile->InfoTag(), uri, target);
+                }
+                if (wavFile->hasID3v2Tag()) {
+                    this->ReadID3V2(wavFile->ID3v2Tag(), target);
+                }
             }
 
-            if (tag->year()) {
-                this->SetTagValue("year", tag->year(), target);
+            /* aif files are similar to wav files, but for some reason taglib
+            doesn't seem to expose non-id3v2 tags */
+            auto aifFile = dynamic_cast<TagLib::RIFF::AIFF::File*>(file.file());
+            if (aifFile) {
+                if (aifFile->hasID3v2Tag()) {
+                    this->ReadID3V2(aifFile->tag(), target);
+                }
             }
-
-            /* read some generic key/value pairs that don't have direct accessors */
-            this->ReadFromMap(tag->properties(), target);
 
             /* taglib hides certain properties (like album artist) in the XiphComment's
             field list. if we're dealing with a straight-up Xiph tag, process it now */
@@ -421,6 +423,34 @@ void TaglibMetadataReader::ReadFromMap(const T& map, ITagStore *target) {
     ExtractValueForKey(map, "ALBUMARTIST", "album_artist", target);
 }
 
+template<typename T>
+void TaglibMetadataReader::ReadBasicData(const T* tag, const char* uri, ITagStore *target) {
+    if (tag) {
+        if (!tag->title().isEmpty()) {
+            this->SetTagValue("title", tag->title(), target);
+        }
+        else {
+            this->SetTagValue("title", uri, target);
+        }
+
+        this->SetTagValue("album", tag->album(), target);
+        this->SetSlashSeparatedValues("artist", tag->artist(), target);
+        this->SetTagValue("genre", tag->genre(), target);
+        this->SetTagValue("comment", tag->comment(), target);
+
+        if (tag->track()) {
+            this->SetTagValue("track", tag->track(), target);
+        }
+
+        if (tag->year()) {
+            this->SetTagValue("year", tag->year(), target);
+        }
+
+        /* read some generic key/value pairs that don't have direct accessors */
+        this->ReadFromMap(tag->properties(), target);
+    }
+}
+
 template <typename T>
 std::string TaglibMetadataReader::ExtractValueForKey(
     const T& map,
@@ -475,215 +505,225 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
     TagLib::MPEG::File file(uri);
 #endif
 
-    TagLib::ID3v2::Tag *id3v2 = file.ID3v2Tag();
-
+    auto id3v2 = file.ID3v2Tag();
     if (id3v2) {
-        TagLib::AudioProperties *audio = file.audioProperties();
-        TagLib::ID3v2::FrameListMap allTags = id3v2->frameListMap();
+        return this->ReadID3V2(id3v2, track);
+    }
 
-        if (!id3v2->title().isEmpty()) {
-            this->SetTagValue("title", id3v2->title(), track);
-        }
+    /* audio properties include things like bitrate, channels, and duration */
+    TagLib::AudioProperties *audio = file.audioProperties();
+    if (audio) {
+        this->SetAudioProperties(audio, track);
+    }
+}
 
-        this->SetTagValue("album", id3v2->album(), track);
+bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track) {
+    try {
+        if (id3v2) {
+            TagLib::ID3v2::FrameListMap allTags = id3v2->frameListMap();
 
-        /* year */
-
-        if (!track->Contains("year") && !allTags["TYER"].isEmpty()) { /* ID3v2.3*/
-            auto year = allTags["TYER"].front()->toString().substr(0, 4);
-            if (isValidYear(year.to8Bit())) {
-                this->SetTagValue("year", year, track);
+            if (!id3v2->title().isEmpty()) {
+                this->SetTagValue("title", id3v2->title(), track);
             }
-        }
 
-        if (!track->Contains("year") && !allTags["TDRC"].isEmpty()) { /* ID3v2.4*/
-            auto year = allTags["TDRC"].front()->toString().substr(0, 4);
-            if (isValidYear(year.to8Bit())) {
-                this->SetTagValue("year", year, track);
-            }
-        }
+            this->SetTagValue("album", id3v2->album(), track);
 
-        if (!track->Contains("year") && !allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
-            auto year = allTags["TCOP"].front()->toString().substr(0, 4);
-            if (isValidYear(year.to8Bit())) {
-                this->SetTagValue("year", year, track);
-            }
-        }
+            /* year */
 
-        /* replay gain */
-
-        auto txxx = allTags["TXXX"];
-        if (!txxx.isEmpty()) {
-            ReplayGain replayGain;
-            initReplayGain(replayGain);
-
-            for (auto current : txxx) {
-                using UTIF = TagLib::ID3v2::UserTextIdentificationFrame;
-                UTIF* utif = dynamic_cast<UTIF*>(current);
-                if (utif) {
-                    auto name = utif->description().upper();
-                    auto values = utif->fieldList();
-                    if (values.size() > 0) {
-                        if (name == "REPLAYGAIN_TRACK_GAIN") {
-                            replayGain.trackGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
-                        }
-                        else if (name == "REPLAYGAIN_TRACK_PEAK") {
-                            replayGain.trackPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
-                        }
-                        else if (name == "REPLAYGAIN_ALBUM_GAIN") {
-                            replayGain.albumGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
-                        }
-                        else if (name == "REPLAYGAIN_ALBUM_PEAK") {
-                            replayGain.albumPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
-                        }
-                    }
+            if (!track->Contains("year") && !allTags["TYER"].isEmpty()) { /* ID3v2.3*/
+                auto year = allTags["TYER"].front()->toString().substr(0, 4);
+                if (isValidYear(year.to8Bit())) {
+                    this->SetTagValue("year", year, track);
                 }
             }
 
-            if (replayGainValid(replayGain)) {
-                track->SetReplayGain(replayGain);
+            if (!track->Contains("year") && !allTags["TDRC"].isEmpty()) { /* ID3v2.4*/
+                auto year = allTags["TDRC"].front()->toString().substr(0, 4);
+                if (isValidYear(year.to8Bit())) {
+                    this->SetTagValue("year", year, track);
+                }
             }
-        }
 
-        /* TRCK is the track number (or "trackNum/totalTracks") */
-        if (!allTags["TRCK"].isEmpty()) {
-            std::string trackNumber = allTags["TRCK"].front()->toString().toCString(true);
-            this->SetTagValueWithPossibleTotal(trackNumber, "track", "totaltracks", track);
-        }
+            if (!track->Contains("year") && !allTags["TCOP"].isEmpty()) { /* ID3v2.3*/
+                auto year = allTags["TCOP"].front()->toString().substr(0, 4);
+                if (isValidYear(year.to8Bit())) {
+                    this->SetTagValue("year", year, track);
+                }
+            }
 
-        /* TPOS is the disc number (or "discNum/totalDiscs") */
-        if (!allTags["TPOS"].isEmpty()) {
-            std::string discNumber = allTags["TPOS"].front()->toString().toCString(true);
-            this->SetTagValueWithPossibleTotal(discNumber, "disc", "totaldiscs", track);
-        }
-        else {
-            this->SetTagValue("disc", "1", track);
-            this->SetTagValue("totaldiscs", "1", track);
-        }
+            /* replay gain */
 
-        this->SetTagValues("bpm", allTags["TBPM"], track);
-        this->SetSlashSeparatedValues("composer", allTags["TCOM"], track);
-        this->SetTagValues("copyright", allTags["TCOP"], track);
-        this->SetTagValues("encoder", allTags["TENC"], track);
-        this->SetTagValues("writer", allTags["TEXT"], track);
-        this->SetTagValues("org.writer", allTags["TOLY"], track);
-        this->SetSlashSeparatedValues("publisher", allTags["TPUB"], track);
-        this->SetTagValues("mood", allTags["TMOO"], track);
-        this->SetSlashSeparatedValues("org.artist", allTags["TOPE"], track);
-        this->SetTagValues("language", allTags["TLAN"], track);
-        this->SetTagValues("lyrics", allTags["USLT"], track);
-        this->SetTagValues("disc", allTags["TPOS"], track);
+            auto txxx = allTags["TXXX"];
+            if (!txxx.isEmpty()) {
+                ReplayGain replayGain;
+                initReplayGain(replayGain);
 
-        /* genre. note that multiple genres may be present */
-
-        if (!allTags["TCON"].isEmpty()) {
-            TagLib::ID3v2::FrameList genres = allTags["TCON"];
-
-            TagLib::ID3v2::FrameList::ConstIterator it = genres.begin();
-
-            for (; it != genres.end(); ++it) {
-                TagLib::String genreString = (*it)->toString();
-
-                if (!genreString.isEmpty()) {
-                    /* note1: apparently genres will already be de-duped */
-                    int numberLength = 0;
-                    bool isNumber = true;
-
-                    TagLib::String::ConstIterator charIt = genreString.begin();
-                    for (; isNumber && charIt != genreString.end(); ++charIt) {
-                        isNumber = (*charIt >= '0' && *charIt <= '9');
-
-                        if (isNumber) {
-                            ++numberLength;
+                for (auto current : txxx) {
+                    using UTIF = TagLib::ID3v2::UserTextIdentificationFrame;
+                    UTIF* utif = dynamic_cast<UTIF*>(current);
+                    if (utif) {
+                        auto name = utif->description().upper();
+                        auto values = utif->fieldList();
+                        if (values.size() > 0) {
+                            if (name == "REPLAYGAIN_TRACK_GAIN") {
+                                replayGain.trackGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            }
+                            else if (name == "REPLAYGAIN_TRACK_PEAK") {
+                                replayGain.trackPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            }
+                            else if (name == "REPLAYGAIN_ALBUM_GAIN") {
+                                replayGain.albumGain = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            }
+                            else if (name == "REPLAYGAIN_ALBUM_PEAK") {
+                                replayGain.albumPeak = toReplayGainFloat(utif->fieldList().back().to8Bit());
+                            }
                         }
                     }
+                }
 
-                    if (isNumber) { /* old ID3v1 tags had numbers for genres. */
-                        int genreNumber = genreString.toInt();
-                        if (genreNumber >= 0 && genreNumber <= 255) {
-                            genreString = TagLib::ID3v1::genre(genreNumber);
-                        }
-                    }
-                    else {
-                        if (numberLength > 0) { /* genre may start with a number. */
-                            if (genreString.substr(numberLength, 1) == " ") {
-                                int genreNumber = genreString.substr(0, numberLength).toInt();
-                                if (genreNumber >= 0 && genreNumber <= 255) {
-                                    this->SetTagValue("genre", TagLib::ID3v1::genre(genreNumber), track);
-                                }
+                if (replayGainValid(replayGain)) {
+                    track->SetReplayGain(replayGain);
+                }
+            }
 
-                                /* strip the number */
-                                genreString = genreString.substr(numberLength + 1);
+            /* TRCK is the track number (or "trackNum/totalTracks") */
+            if (!allTags["TRCK"].isEmpty()) {
+                std::string trackNumber = allTags["TRCK"].front()->toString().toCString(true);
+                this->SetTagValueWithPossibleTotal(trackNumber, "track", "totaltracks", track);
+            }
+
+            /* TPOS is the disc number (or "discNum/totalDiscs") */
+            if (!allTags["TPOS"].isEmpty()) {
+                std::string discNumber = allTags["TPOS"].front()->toString().toCString(true);
+                this->SetTagValueWithPossibleTotal(discNumber, "disc", "totaldiscs", track);
+            }
+            else {
+                this->SetTagValue("disc", "1", track);
+                this->SetTagValue("totaldiscs", "1", track);
+            }
+
+            this->SetTagValues("bpm", allTags["TBPM"], track);
+            this->SetSlashSeparatedValues("composer", allTags["TCOM"], track);
+            this->SetTagValues("copyright", allTags["TCOP"], track);
+            this->SetTagValues("encoder", allTags["TENC"], track);
+            this->SetTagValues("writer", allTags["TEXT"], track);
+            this->SetTagValues("org.writer", allTags["TOLY"], track);
+            this->SetSlashSeparatedValues("publisher", allTags["TPUB"], track);
+            this->SetTagValues("mood", allTags["TMOO"], track);
+            this->SetSlashSeparatedValues("org.artist", allTags["TOPE"], track);
+            this->SetTagValues("language", allTags["TLAN"], track);
+            this->SetTagValues("lyrics", allTags["USLT"], track);
+            this->SetTagValues("disc", allTags["TPOS"], track);
+
+            /* genre. note that multiple genres may be present */
+
+            if (!allTags["TCON"].isEmpty()) {
+                TagLib::ID3v2::FrameList genres = allTags["TCON"];
+
+                TagLib::ID3v2::FrameList::ConstIterator it = genres.begin();
+
+                for (; it != genres.end(); ++it) {
+                    TagLib::String genreString = (*it)->toString();
+
+                    if (!genreString.isEmpty()) {
+                        /* note1: apparently genres will already be de-duped */
+                        int numberLength = 0;
+                        bool isNumber = true;
+
+                        TagLib::String::ConstIterator charIt = genreString.begin();
+                        for (; isNumber && charIt != genreString.end(); ++charIt) {
+                            isNumber = (*charIt >= '0' && *charIt <= '9');
+
+                            if (isNumber) {
+                                ++numberLength;
                             }
                         }
 
-                        if (!genreString.isEmpty()) {
-                            this->SetTagValue("genre", genreString, track);
+                        if (isNumber) { /* old ID3v1 tags had numbers for genres. */
+                            int genreNumber = genreString.toInt();
+                            if (genreNumber >= 0 && genreNumber <= 255) {
+                                genreString = TagLib::ID3v1::genre(genreNumber);
+                            }
+                        }
+                        else {
+                            if (numberLength > 0) { /* genre may start with a number. */
+                                if (genreString.substr(numberLength, 1) == " ") {
+                                    int genreNumber = genreString.substr(0, numberLength).toInt();
+                                    if (genreNumber >= 0 && genreNumber <= 255) {
+                                        this->SetTagValue("genre", TagLib::ID3v1::genre(genreNumber), track);
+                                    }
+
+                                    /* strip the number */
+                                    genreString = genreString.substr(numberLength + 1);
+                                }
+                            }
+
+                            if (!genreString.isEmpty()) {
+                                this->SetTagValue("genre", genreString, track);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        /* artists */
+            /* artists */
 
-        this->SetSlashSeparatedValues("artist" ,allTags["TPE1"], track);
-        this->SetSlashSeparatedValues("album_artist", allTags["TPE2"], track);
-        this->SetSlashSeparatedValues("conductor", allTags["TPE3"], track);
-        this->SetSlashSeparatedValues("interpreted", allTags["TPE4"], track);
+            this->SetSlashSeparatedValues("artist", allTags["TPE1"], track);
+            this->SetSlashSeparatedValues("album_artist", allTags["TPE2"], track);
+            this->SetSlashSeparatedValues("conductor", allTags["TPE3"], track);
+            this->SetSlashSeparatedValues("interpreted", allTags["TPE4"], track);
 
-        /* audio properties include things like bitrate, channels, and duration */
+            /* comments, mood, and rating */
 
-        this->SetAudioProperties(audio, track);
+            TagLib::ID3v2::FrameList comments = allTags["COMM"];
 
-        /* comments, mood, and rating */
+            TagLib::ID3v2::FrameList::Iterator it = comments.begin();
+            for (; it != comments.end(); ++it) {
+                TagLib::ID3v2::CommentsFrame *comment
+                    = dynamic_cast<TagLib::ID3v2::CommentsFrame*> (*it);
 
-        TagLib::ID3v2::FrameList comments = allTags["COMM"];
+                TagLib::String temp = comment->description();
+                std::string description(temp.begin(), temp.end());
 
-        TagLib::ID3v2::FrameList::Iterator it = comments.begin();
-        for ( ; it != comments.end(); ++it) {
-            TagLib::ID3v2::CommentsFrame *comment
-                = dynamic_cast<TagLib::ID3v2::CommentsFrame*> (*it);
-
-            TagLib::String temp    = comment->description();
-            std::string description(temp.begin(), temp.end());
-
-            if (description.empty()) {
-                this->SetTagValue("comment", comment->toString(), track);
-            }
-            else if (description.compare("MusicMatch_Mood") == 0) {
-                this->SetTagValue("mood", comment->toString(), track);
-            }
-            else if (description.compare("MusicMatch_Preference") == 0) {
-                this->SetTagValue("textrating", comment->toString(), track);
-            }
-        }
-
-        /* thumbnail -- should come last, otherwise ::ContainsThumbnail() may
-        not be reliable; the thumbnails are computed and stored at the album level
-        so the album and album artist names need to have already been parsed. */
-
-        if (!track->ContainsThumbnail()) {
-            TagLib::ID3v2::FrameList pictures = allTags["APIC"];
-            if (!pictures.isEmpty()) {
-                /* there can be multiple pictures, apparently. let's just use
-                the first one. */
-
-                TagLib::ID3v2::AttachedPictureFrame *picture =
-                    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
-
-                TagLib::ByteVector pictureData = picture->picture();
-                long long size = pictureData.size();
-
-                if(size > 32) {    /* noticed that some id3tags have like a 4-8 byte size with no thumbnail */
-                    track->SetThumbnail(pictureData.data(), size);
+                if (description.empty()) {
+                    this->SetTagValue("comment", comment->toString(), track);
+                }
+                else if (description.compare("MusicMatch_Mood") == 0) {
+                    this->SetTagValue("mood", comment->toString(), track);
+                }
+                else if (description.compare("MusicMatch_Preference") == 0) {
+                    this->SetTagValue("textrating", comment->toString(), track);
                 }
             }
+
+            /* thumbnail -- should come last, otherwise ::ContainsThumbnail() may
+            not be reliable; the thumbnails are computed and stored at the album level
+            so the album and album artist names need to have already been parsed. */
+
+            if (!track->ContainsThumbnail()) {
+                TagLib::ID3v2::FrameList pictures = allTags["APIC"];
+                if (!pictures.isEmpty()) {
+                    /* there can be multiple pictures, apparently. let's just use
+                    the first one. */
+
+                    TagLib::ID3v2::AttachedPictureFrame *picture =
+                        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
+
+                    TagLib::ByteVector pictureData = picture->picture();
+                    long long size = pictureData.size();
+
+                    if (size > 32) {    /* noticed that some id3tags have like a 4-8 byte size with no thumbnail */
+                        track->SetThumbnail(pictureData.data(), size);
+                    }
+                }
+            }
+
+            return true;
         }
-
-        return true;
     }
-
+    catch (...) {
+        /* not much we can do... */
+    }
     return false;
 }
 
