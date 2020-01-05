@@ -505,16 +505,18 @@ bool TaglibMetadataReader::ReadID3V2(const char* uri, ITagStore *track) {
     TagLib::MPEG::File file(uri);
 #endif
 
-    auto id3v2 = file.ID3v2Tag();
-    if (id3v2) {
-        return this->ReadID3V2(id3v2, track);
-    }
-
     /* audio properties include things like bitrate, channels, and duration */
     TagLib::AudioProperties *audio = file.audioProperties();
     if (audio) {
         this->SetAudioProperties(audio, track);
     }
+
+    auto id3v2 = file.ID3v2Tag();
+    if (id3v2) {
+        return this->ReadID3V2(id3v2, track);
+    }
+
+    return false;
 }
 
 bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track) {
