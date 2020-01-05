@@ -79,8 +79,8 @@
     #include <taglib/wavpackfile.h>
     #include <taglib/xiphcomment.h>
     #include <taglib/tpropertymap.h>
-    #include <taglib/aiff/aifffile.h>
-    #include <taglib/wav/wavfile.h>
+    #include <taglib/aifffile.h>
+    #include <taglib/wavfile.h>
     #include <taglib/textidentificationframe.h>
 #endif
 
