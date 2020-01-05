@@ -34,6 +34,8 @@
 
 #include <stdafx.h>
 
+#include <math.h>
+
 #include "TrackRowRenderers.h"
 
 #include <cursespp/Colors.h>
@@ -50,42 +52,42 @@ using namespace cursespp;
 
 #define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
 
-static const int DURATION_COL_WIDTH = 5; /* 00:00 */
+static const int kDurationColWidth = 5; /* 00:00 */
 
 namespace AlbumSort {
-    static const int TRACK_COL_WIDTH = 3;
-    static const int ARTIST_COL_WIDTH = 17;
+    static const int kTrackColWidth = 3;
+    static const int kArtistColWidth = 17;
 
     static Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
         std::string trackNum;
 
-        int trackColWidth = TRACK_COL_WIDTH;
+        int trackColWidth = kTrackColWidth;
         if (type == TrackNumType::Metadata) {
             trackNum = text::Align(
                 track->GetString(constants::Track::TRACK_NUM),
                 text::AlignRight,
-                TRACK_COL_WIDTH);
+                kTrackColWidth);
         }
         else {
-            trackColWidth = std::max(TRACK_COL_WIDTH, DIGITS(index + 1));
+            trackColWidth = std::max(kTrackColWidth, DIGITS(index + 1));
             trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
         }
 
         std::string duration = text::Align(
             musik::core::duration::Duration(track->GetString(constants::Track::DURATION)),
             text::AlignRight,
-            DURATION_COL_WIDTH);
+            kDurationColWidth);
 
         std::string artist = text::Align(
             track->GetString(constants::Track::ARTIST),
             text::AlignLeft,
-            ARTIST_COL_WIDTH);
+            kArtistColWidth);
 
         int titleWidth =
             (int) width -
             (int) trackColWidth -
-            DURATION_COL_WIDTH -
-            ARTIST_COL_WIDTH -
+            kDurationColWidth -
+            kArtistColWidth -
             (3 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
@@ -105,35 +107,35 @@ namespace AlbumSort {
 }
 
 namespace NowPlaying {
-    static const int TRACK_COL_WIDTH = 3;
-    static const int ARTIST_COL_WIDTH = 14;
-    static const int ALBUM_COL_WIDTH = 14;
+    static const int kTrackColWidth = 3;
+    static const int kArtistColWidth = 14;
+    static const int kAlbumColWidth = 14;
 
     static Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
-        size_t trackColWidth = std::max(TRACK_COL_WIDTH, DIGITS(index + 1));
+        size_t trackColWidth = std::max(kTrackColWidth, DIGITS(index + 1));
         std::string trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
 
         std::string duration = text::Align(
             duration::Duration(track->GetString(constants::Track::DURATION)),
             text::AlignRight,
-            DURATION_COL_WIDTH);
+            kDurationColWidth);
 
         std::string album = text::Align(
             track->GetString(constants::Track::ALBUM),
             text::AlignLeft,
-            ALBUM_COL_WIDTH);
+            kAlbumColWidth);
 
         std::string artist = text::Align(
             track->GetString(constants::Track::ARTIST),
             text::AlignLeft,
-            ARTIST_COL_WIDTH);
+            kArtistColWidth);
 
         int titleWidth =
             (int) width -
             (int) trackColWidth -
-            DURATION_COL_WIDTH -
-            ALBUM_COL_WIDTH -
-            ARTIST_COL_WIDTH -
+            kDurationColWidth -
+            kAlbumColWidth -
+            kArtistColWidth -
             (4 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
