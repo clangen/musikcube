@@ -355,6 +355,8 @@ static void upgradeV8ToV9(db::Connection& db) {
     db.Execute("ALTER TABLE tracks ADD COLUMN rating INTEGER DEFAULT 0");
     db.Execute("ALTER TABLE tracks ADD COLUMN last_played REAL DEFAULT null");
     db.Execute("ALTER TABLE tracks ADD COLUMN play_count INTEGER DEFAULT 0");
+    db.Execute("ALTER TABLE tracks ADD COLUMN date_added REAL DEFAULT null");
+    db.Execute("ALTER TABLE tracks ADD COLUMN date_updated REAL DEFAULT null");
 }
 
 static void setVersion(db::Connection& db, int version) {
@@ -390,6 +392,8 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "rating INTEGER DEFAULT 0,"
             "last_played REAL DEFAULT null,"
             "play_count INTEGER DEFAULT 0,"
+            "date_added REAL DEFAULT null,"
+            "date_updated REAL DEFAULT null,"
         ")");
 
     /* genres tables */
@@ -535,9 +539,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
         "CREATE VIEW tracks_view AS "
         "SELECT DISTINCT "
             " t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, "
-            " t.thumbnail_id, t.external_id, t.rating, t.last_played, t.play_count, al.name AS album, "
-            " alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, "
-            " t.visual_artist_id, t.album_artist_id, t.album_id "
+            " t.thumbnail_id, t.external_id, t.rating, t.last_played, t.play_count, t.date_added, "
+            " t.date_updated, al.name AS album, alar.name AS album_artist, gn.name AS genre, "
+            " ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, "
+            " t.album_id "
         "FROM "
             " tracks t, albums al, artists alar, artists ar, genres gn "
         "WHERE "

@@ -60,6 +60,8 @@ namespace musik { namespace core { namespace library { namespace constants {
         static const char* RATING = "rating";
         static const char* LAST_PLAYED = "last_played";
         static const char* PLAY_COUNT = "play_count";
+        static const char* DATE_ADDED = "date_added";
+        static const char* DATE_UPDATED = "date_updated";
 
         /* used in Track instances where foreign key IDs have been
         replaced with actual values... */
