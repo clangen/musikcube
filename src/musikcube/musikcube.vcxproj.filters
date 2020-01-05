@@ -180,6 +180,9 @@
     <ClCompile Include="app\layout\LyricsLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\TrackRowRenderers.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -411,6 +414,9 @@
     </ClInclude>
     <ClInclude Include="app\layout\LyricsLayout.h">
       <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\TrackRowRenderers.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

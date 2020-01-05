@@ -192,6 +192,7 @@
     <ClCompile Include="library\query\local\DirectoryTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\GetPlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\LyricsQuery.cpp" />
+    <ClCompile Include="library\query\local\MarkTrackPlayedQuery.cpp" />
     <ClCompile Include="library\query\local\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\PersistedPlayQueueQuery.cpp" />
     <ClCompile Include="library\query\local\ReplayGainQuery.cpp" />
@@ -262,6 +263,7 @@
     <ClInclude Include="library\query\local\DirectoryTrackListQuery.h" />
     <ClInclude Include="library\query\local\GetPlaylistQuery.h" />
     <ClInclude Include="library\query\local\LyricsQuery.h" />
+    <ClInclude Include="library\query\local\MarkTrackPlayedQuery.h" />
     <ClInclude Include="library\query\local\NowPlayingTrackListQuery.h" />
     <ClInclude Include="library\query\local\PersistedPlayQueueQuery.h" />
     <ClInclude Include="library\query\local\ReplayGainQuery.h" />
