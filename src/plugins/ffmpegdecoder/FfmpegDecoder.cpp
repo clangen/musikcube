@@ -95,22 +95,26 @@ static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
             case AVSEEK_SIZE:
                 return stream->Length();
                 break;
-            case SEEK_SET:
+            case SEEK_SET: {
+                if (offset >= stream->Length()) {
+                    return AVERROR(EINVAL);
+                }
                 stream->SetPosition((PositionType) offset);
                 break;
-            case SEEK_CUR:
+            }
+            case SEEK_CUR: {
+                if (stream->Position() + offset >= stream->Length()) {
+                    return AVERROR(EINVAL);
+                }
                 stream->SetPosition(stream->Position() + (PositionType) offset);
                 break;
+            }
             case SEEK_END:
                 stream->SetPosition(stream->Length() - 1);
                 break;
             default:
                 debug->Error(TAG, "unknown seek type!");
                 break;
-        }
-
-        if (stream->Position() >= stream->Length()) {
-            return -1;
         }
 
         return stream->Position();
