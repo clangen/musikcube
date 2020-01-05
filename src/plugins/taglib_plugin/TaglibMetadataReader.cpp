@@ -227,6 +227,8 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
             ext.compare("mpc") == 0 ||
             ext.compare("aac") == 0 ||
             ext.compare("alac") == 0 ||
+            ext.compare("wav") == 0 ||
+            ext.compare("aif") == 0 ||
 #endif
             ext.compare("mp3") == 0 ||
             ext.compare("ogg") == 0 ||
