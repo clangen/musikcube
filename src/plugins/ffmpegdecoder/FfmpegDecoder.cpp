@@ -212,8 +212,7 @@ void FfmpegDecoder::Reset() {
         this->ioContext = nullptr;
     }
     if (this->codecContext) {
-        avcodec_flush_buffers(this->codecContext);
-
+        // avcodec_flush_buffers(this->codecContext);
         auto stream = this->formatContext->streams[this->streamId];
         if (stream != nullptr) {
             avcodec_close(this->codecContext);
@@ -306,23 +305,33 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         if (codecContext) {
                             this->codecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
                             if (codec) {
-                                if (avcodec_open2(codecContext, codec, nullptr) < 0) {
+                                int error = avcodec_parameters_to_context(
+                                    this->codecContext,
+                                    formatContext->streams[this->streamId]->codecpar);
+                                if (error < 0) {
+                                    logAvError("avcodec_parameters_to_context", error);
                                     goto reset_and_fail;
                                 }
 
-                                avcodec_parameters_to_context(
-                                    this->codecContext,
-                                    formatContext->streams[this->streamId]->codecpar);
+                                error = avcodec_open2(codecContext, codec, nullptr);
+                                if (error < 0) {
+                                    logAvError("avcodec_open2", error);
+                                    goto reset_and_fail;
+                                }
 
                                 std::string codecName =
                                     std::string("resolved codec: ") +
                                     std::string(codec->long_name);
-
                                 ::debug->Info(TAG, codecName.c_str());
                             }
                             else {
                                 ::debug->Error(TAG, "couldn't find a codec.");
                                 goto reset_and_fail;
+                            }
+
+                            if (this->codecContext->channel_layout == 0) {
+                                this->codecContext->channel_layout =
+                                    av_get_default_channel_layout(this->codecContext->channels);
                             }
                         }
 
