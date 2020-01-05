@@ -74,7 +74,6 @@ static inline milliseconds now() {
 TrackListView::TrackListView(
     PlaybackService& playback,
     ILibraryPtr library,
-    RowFormatter formatter,
     RowDecorator decorator)
 : ListWindow(nullptr)
 , playback(playback) {
@@ -84,9 +83,9 @@ TrackListView::TrackListView(
     this->adapter = new Adapter(*this);
     this->lastQueryHash = 0;
     this->lastChanged = now();
-    this->formatter = formatter;
     this->decorator = decorator;
-    this->trackNumType = TrackNumType::Metadata;
+    this->trackNumType = TrackRowRenderers::TrackNumType::Metadata;
+    this->renderer = TrackRowRenderers::Get(TrackRowRenderers::Type::AlbumSort);
 }
 
 TrackListView::~TrackListView() {
@@ -103,11 +102,18 @@ void TrackListView::SelectFirstTrack() {
     this->SetSelectedIndex(this->headers.HeaderAt(0) ? 1 : 0);
 }
 
-void TrackListView::SetTrackNumType(TrackNumType type) {
+void TrackListView::SetTrackNumType(TrackRowRenderers::TrackNumType type) {
     if (this->trackNumType != type) {
         this->trackNumType = type;
         this->OnAdapterChanged();
     }
+}
+
+void TrackListView::SetRowRenderer(TrackRowRenderers::Renderer renderer) {
+    if (!renderer) {
+        throw std::runtime_error("invalid Renderer supplied to TrackListView::SetRowRenderer");
+    }
+    this->renderer = renderer;
 }
 
 void TrackListView::OnQueryCompleted(IQuery* query) {
@@ -352,60 +358,6 @@ size_t TrackListView::Adapter::GetEntryCount() {
     return parent.tracks ? parent.tracks->Count() + parent.headers.Count() : 0;
 }
 
-#define TRACK_COL_WIDTH 3
-#define ARTIST_COL_WIDTH 17
-#define DURATION_COL_WIDTH 5 /* 00:00 */
-#define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
-
-using TrackNumType = TrackListView::TrackNumType;
-
-static std::string formatWithoutAlbum(TrackPtr track, size_t index, size_t width, TrackNumType type) {
-    std::string trackNum;
-
-    int trackColWidth = TRACK_COL_WIDTH;
-    if (type == TrackNumType::Metadata) {
-        trackNum = text::Align(
-            track->GetString(constants::Track::TRACK_NUM),
-            text::AlignRight,
-            TRACK_COL_WIDTH);
-    }
-    else {
-        trackColWidth = std::max(TRACK_COL_WIDTH, DIGITS(index + 1));
-        trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
-    }
-
-    std::string duration = text::Align(
-        musik::core::duration::Duration(track->GetString(constants::Track::DURATION)),
-        text::AlignRight,
-        DURATION_COL_WIDTH);
-
-    std::string artist = text::Align(
-        track->GetString(constants::Track::ARTIST),
-        text::AlignLeft,
-        ARTIST_COL_WIDTH);
-
-    int titleWidth =
-        (int) width -
-        (int) trackColWidth -
-        DURATION_COL_WIDTH -
-        ARTIST_COL_WIDTH -
-        (3 * 3); /* 3 = spacing */
-
-    titleWidth = std::max(0, titleWidth);
-
-    std::string title = text::Align(
-        track->GetString(constants::Track::TITLE),
-        text::AlignLeft,
-        (int) titleWidth);
-
-    return u8fmt(
-        "%s   %s   %s   %s",
-        trackNum.c_str(),
-        title.c_str(),
-        duration.c_str(),
-        artist.c_str());
-}
-
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t rawIndex) {
     bool selected = (rawIndex == parent.GetSelectedIndex());
 
@@ -466,9 +418,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         }
     }
 
-    std::string text = parent.formatter
-        ? parent.formatter(track, rawIndex, this->GetWidth())
-        : formatWithoutAlbum(track, rawIndex, this->GetWidth(), parent.trackNumType);
+    std::string text = parent.renderer(
+        track, rawIndex, this->GetWidth(), parent.trackNumType);
 
     std::shared_ptr<TrackListEntry> entry(
         new TrackListEntry(text, trackIndex, RowType::Track));

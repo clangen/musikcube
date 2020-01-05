@@ -270,7 +270,8 @@ void BrowseLayout::SwitchCategory(const std::string& fieldName) {
     this->categoryList->SetFrameTitle(getTitleForCategory(fieldName));
 
     this->trackList->SetTrackNumType(fieldName == constants::Playlists::TABLE_NAME
-        ? TrackListView::TrackNumType::Sequential : TrackListView::TrackNumType::Metadata);
+        ? TrackRowRenderers::TrackNumType::Sequential
+        : TrackRowRenderers::TrackNumType::Metadata);
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {

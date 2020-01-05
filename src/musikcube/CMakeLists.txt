@@ -31,6 +31,7 @@ set (CUBE_SRCS
 	./app/util/Hotkeys.cpp
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
+	./app/util/TrackRowRenderers.cpp
 	./app/util/UpdateCheck.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/TrackListView.cpp

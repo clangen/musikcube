@@ -78,6 +78,9 @@ NowPlayingLayout::NowPlayingLayout(
 
     this->playback.QueueEdited.connect(this, &NowPlayingLayout::RequeryTrackList);
 
+    this->trackListView->SetRowRenderer(
+        TrackRowRenderers::Get(TrackRowRenderers::Type::NowPlaying));
+
     EDIT_KEYS = {
         Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
         Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
@@ -127,7 +130,6 @@ void NowPlayingLayout::InitializeWindows() {
     this->trackListView.reset(new TrackListView(
         this->playback,
         this->library,
-        std::bind(formatWithAlbum, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
         std::bind(&NowPlayingLayout::RowDecorator, this, std::placeholders::_1, std::placeholders::_2)));
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
@@ -278,53 +280,4 @@ bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
     }
 
     return false;
-}
-
-#define TRACK_COL_WIDTH 3
-#define ARTIST_COL_WIDTH 14
-#define ALBUM_COL_WIDTH 14
-#define DURATION_COL_WIDTH 5 /* 00:00 */
-#define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
-
-static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width) {
-    size_t trackColWidth = std::max(TRACK_COL_WIDTH, DIGITS(index + 1));
-    std::string trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
-
-    std::string duration = text::Align(
-        duration::Duration(track->GetString(constants::Track::DURATION)),
-        text::AlignRight,
-        DURATION_COL_WIDTH);
-
-    std::string album = text::Align(
-        track->GetString(constants::Track::ALBUM),
-        text::AlignLeft,
-        ALBUM_COL_WIDTH);
-
-    std::string artist = text::Align(
-        track->GetString(constants::Track::ARTIST),
-        text::AlignLeft,
-        ARTIST_COL_WIDTH);
-
-    int titleWidth =
-        (int) width -
-        (int) trackColWidth -
-        DURATION_COL_WIDTH -
-        ALBUM_COL_WIDTH -
-        ARTIST_COL_WIDTH -
-        (4 * 3); /* 3 = spacing */
-
-    titleWidth = std::max(0, titleWidth);
-
-    std::string title = text::Align(
-        track->GetString(constants::Track::TITLE),
-        text::AlignLeft,
-        (int) titleWidth);
-
-    return u8fmt(
-        "%s   %s   %s   %s   %s",
-        trackNum.c_str(),
-        title.c_str(),
-        duration.c_str(),
-        album.c_str(),
-        artist.c_str());
 }
