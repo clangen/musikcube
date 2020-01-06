@@ -275,8 +275,9 @@ bool TrackListView::KeyPress(const std::string& key) {
                 track,
                 this->library,
                 [this](bool success) {
-                    if (success) {
-                        // this->Requery();
+                    if (success && this->tracks) {
+                        this->tracks->ClearCache();
+                        this->OnAdapterChanged();
                     }
                 });
         }
