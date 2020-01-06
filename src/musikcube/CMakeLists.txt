@@ -25,12 +25,14 @@ set (CUBE_SRCS
 	./app/overlay/PreampOverlay.cpp
 	./app/overlay/ReassignHotkeyOverlay.cpp
 	./app/overlay/ServerOverlay.cpp
+	./app/overlay/TrackOverlays.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/ConsoleLogger.cpp
 	./app/util/GlobalHotkeys.cpp
 	./app/util/Hotkeys.cpp
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
+	./app/util/TrackRowRenderers.cpp
 	./app/util/UpdateCheck.cpp
 	./app/window/CategoryListView.cpp
 	./app/window/TrackListView.cpp

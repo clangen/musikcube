@@ -35,6 +35,7 @@
 #pragma once
 
 #include "TrackListQueryBase.h"
+#include <core/library/query/local/util/TrackSort.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
@@ -42,11 +43,14 @@ namespace musik { namespace core { namespace db { namespace local {
         public:
             SearchTrackListQuery(
                 musik::core::ILibraryPtr library,
-                const std::string& filter);
+                const std::string& filter,
+                TrackSortType sort);
 
             virtual ~SearchTrackListQuery();
 
             virtual std::string Name() { return "SearchTrackListQuery"; }
+
+            std::string GetSortDisplayString();
 
             virtual Result GetResult();
             virtual Headers GetHeaders();
@@ -60,6 +64,9 @@ namespace musik { namespace core { namespace db { namespace local {
             Result result;
             Headers headers;
             std::string filter;
+            std::string orderBy;
+            std::string additionalPredicate;
+            std::string displayString;
             size_t hash;
     };
 

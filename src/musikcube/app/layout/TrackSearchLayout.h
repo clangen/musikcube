@@ -73,6 +73,8 @@ namespace musik {
                 void InitializeWindows();
                 void Requery();
 
+                void OnRequeried(musik::core::db::local::TrackListQueryBase* query);
+
                 void OnInputChanged(
                     cursespp::TextInput* sender,
                     std::string value);

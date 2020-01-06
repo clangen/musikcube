@@ -34,29 +34,29 @@
 
 #pragma once
 
-#include <string>
+#include <core/library/track/Track.h>
 
-namespace musik { namespace cube { namespace prefs {
+namespace musik {
+    namespace cube {
+        namespace TrackRowRenderers {
+            enum class Type {
+                AlbumSort,
+                NowPlaying,
+            };
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string AppQuitKey;
+            enum class TrackNumType {
+                Metadata,
+                Sequential,
+            };
+
+            using Renderer = std::function<std::string(
+                musik::core::TrackPtr /*metadata*/,
+                size_t /*index*/,
+                size_t /*width*/,
+                TrackNumType /*type*/
+            )>;
+
+            extern const Renderer Get(Type type);
+        }
     }
-
-} } }
-
+}

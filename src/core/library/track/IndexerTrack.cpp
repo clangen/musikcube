@@ -317,14 +317,16 @@ static int64_t writeToTracksTable(
         query =
             "UPDATE tracks "
             "SET track=?, disc=?, bpm=?, duration=?, filesize=?, "
-            "    title=?, filename=?, filetime=?, path_id=?, external_id=? "
+            "    title=?, filename=?, filetime=?, path_id=?, "
+            "    date_updated=julianday('now'), external_id=? "
             "WHERE id=?";
     }
     else {
         query =
             "INSERT INTO tracks "
-            "(track, disc, bpm, duration, filesize, title, filename, filetime, path_id, external_id) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "(track, disc, bpm, duration, filesize, title, filename, "
+            " filetime, path_id, external_id, date_added, date_updated) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, julianday('now'), julianday('now'))";
     }
 
     db::Statement stmt(query.c_str(), dbConnection);

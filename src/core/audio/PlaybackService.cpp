@@ -39,6 +39,7 @@
 #include <core/audio/MasterTransport.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
+#include <core/library/query/local/MarkTrackPlayedQuery.h>
 #include <core/library/query/local/ReplayGainQuery.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/runtime/MessageQueue.h>
@@ -79,8 +80,9 @@ using Editor = PlaybackService::Editor;
 #define MESSAGE_SEEK 1009
 #define MESSAGE_RELOAD_OUTPUT 1010
 #define MESSAGE_LOAD_PLAYBACK_CONTEXT 1011
+#define MESSAGE_MARK_TRACK_PLAYED 1012
 
-class StreamMessage : public Message {
+class StreamMessage: public Message {
     public:
         StreamMessage(IMessageTarget* target, int eventType, const std::string& uri)
         : Message(target, MESSAGE_STREAM_EVENT, eventType, 0) {
@@ -100,6 +102,10 @@ class StreamMessage : public Message {
 #define POST(instance, type, user1, user2) \
     this->messageQueue.Post( \
         musik::core::runtime::Message::Create(instance, type, user1, user2));
+
+#define POST_DELAYED(instance, type, user1, user2, afterMs) \
+    this->messageQueue.Post( \
+        musik::core::runtime::Message::Create(instance, type, user1, user2), afterMs);
 
 #define POST_STREAM_MESSAGE(instance, eventType, uri) \
     this->messageQueue.Post( \
@@ -295,6 +301,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         playback::LoadPlaybackContext(appPrefs, library, *this);
         this->InitRemotes();
     }
+    else if (type == MESSAGE_MARK_TRACK_PLAYED) {
+        this->MarkTrackAsPlayed(message.UserData1()); /* UserData1 is a trackId */
+    }
     else if (type == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
 
@@ -461,14 +470,32 @@ void PlaybackService::NotifyRemotesModeChanged() {
 void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
     this->playingTrack = track;
     this->TrackChanged(this->index, track);
+    this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYED);
 
     if (track && this->GetPlaybackState() == PlaybackPlaying) {
+        /* TODO: maybe consider folding Scrobble() the `MarkTrackAsPlayed` logic?
+        needs a bit more thought */
         lastfm::Scrobble(track);
+
+        /* we consider a track to be played if (1) it enters the playing state and
+        it's less than 10 seconds long, or (2) it enters the playing state, and
+        remains playing for > 10 seconds */
+        double duration = this->transport->GetDuration();
+        if (duration > 0 && duration < 10.0) {
+            this->MarkTrackAsPlayed(track->GetId());
+        }
+        else {
+            POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYED, track->GetId(), 0, 10000LL);
+        }
     }
 
     for (auto it = remotes.begin(); it != remotes.end(); it++) {
         (*it)->OnTrackChanged(track.get());
     }
+}
+
+void PlaybackService::MarkTrackAsPlayed(int64_t trackId) {
+    this->library->Enqueue(std::make_shared<MarkTrackPlayedQuery>(trackId));
 }
 
 bool PlaybackService::Next() {

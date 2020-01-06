@@ -32,31 +32,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "SetTrackRatingQuery.h"
 
-#include <string>
+using namespace musik::core::db;
+using namespace musik::core::db::local;
+using namespace musik::core::sdk;
 
-namespace musik { namespace cube { namespace prefs {
+SetTrackRatingQuery::SetTrackRatingQuery(int64_t trackId, int rating) {
+    this->trackId = trackId;
+    this->rating = std::max(0, std::min(5, rating));
+}
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string AppQuitKey;
+SetTrackRatingQuery::~SetTrackRatingQuery() {
+}
+
+bool SetTrackRatingQuery::OnRun(musik::core::db::Connection &db) {
+    Statement stmt("UPDATE tracks SET rating=? WHERE id=?", db);
+    stmt.BindInt32(0, this->rating);
+    stmt.BindInt64(1, this->trackId);
+    if (stmt.Step() == db::Done) {
+        return true;
     }
-
-} } }
-
+    return false;
+}

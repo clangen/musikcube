@@ -47,6 +47,8 @@
 #include <core/runtime/IMessage.h>
 #include <core/library/ILibrary.h>
 
+#include <app/util/TrackRowRenderers.h>
+
 namespace musik {
     namespace cube {
         class TrackListView:
@@ -54,8 +56,6 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                enum class TrackNumType: int { Metadata = 0, Sequential = 1 };
-
                 typedef musik::core::TrackPtr TrackPtr;
                 typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
 
@@ -63,7 +63,6 @@ namespace musik {
                 sigslot::signal1<musik::core::db::local::TrackListQueryBase*> Requeried;
 
                 /* types */
-                typedef std::function<std::string(TrackPtr, size_t, size_t)> RowFormatter;
                 typedef std::function<cursespp::Color(TrackPtr, size_t)> RowDecorator;
                 typedef std::shared_ptr<std::set<size_t> > Headers;
 
@@ -71,7 +70,6 @@ namespace musik {
                 TrackListView(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
-                    RowFormatter formatter = RowFormatter(),
                     RowDecorator decorator = RowDecorator());
 
                 virtual ~TrackListView();
@@ -89,7 +87,9 @@ namespace musik {
                 void Clear();
                 size_t TrackCount();
                 size_t EntryCount();
-                void SetTrackNumType(TrackNumType type);
+
+                void SetTrackNumType(TrackRowRenderers::TrackNumType type);
+                void SetRowRenderer(TrackRowRenderers::Renderer renderer);
 
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
 
@@ -166,10 +166,10 @@ namespace musik {
                 musik::core::TrackPtr playing;
                 musik::core::ILibraryPtr library;
                 size_t lastQueryHash;
-                RowFormatter formatter;
                 RowDecorator decorator;
+                TrackRowRenderers::Renderer renderer;
                 std::chrono::milliseconds lastChanged;
-                TrackNumType trackNumType;
+                TrackRowRenderers::TrackNumType trackNumType;
         };
     }
 }

@@ -50,7 +50,7 @@ using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 
-#define DATABASE_VERSION 8
+#define DATABASE_VERSION 9
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -351,9 +351,16 @@ static void upgradeV7ToV8(db::Connection& db) {
     scheduleSyncDueToDbUpgrade = true;
 }
 
+static void upgradeV8ToV9(db::Connection& db) {
+    db.Execute("ALTER TABLE tracks ADD COLUMN rating INTEGER DEFAULT 0");
+    db.Execute("ALTER TABLE tracks ADD COLUMN last_played REAL DEFAULT null");
+    db.Execute("ALTER TABLE tracks ADD COLUMN play_count INTEGER DEFAULT 0");
+    db.Execute("ALTER TABLE tracks ADD COLUMN date_added REAL DEFAULT null");
+    db.Execute("ALTER TABLE tracks ADD COLUMN date_updated REAL DEFAULT null");
+}
+
 static void setVersion(db::Connection& db, int version) {
     db.Execute("DELETE FROM version");
-
     db::Statement stmt("INSERT INTO version VALUES(?)", db);
     stmt.BindInt32(0, version);
     stmt.Step();
@@ -381,8 +388,13 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "thumbnail_id INTEGER DEFAULT 0,"
             "source_id INTEGER DEFAULT 0,"
             "visible INTEGER DEFAULT 1,"
-            "external_id TEXT DEFAULT null"
-            ")");
+            "external_id TEXT DEFAULT null,"
+            "rating INTEGER DEFAULT 0,"
+            "last_played REAL DEFAULT null,"
+            "play_count INTEGER DEFAULT 0,"
+            "date_added REAL DEFAULT null,"
+            "date_updated REAL DEFAULT null,"
+        ")");
 
     /* genres tables */
     db.Execute(
@@ -527,8 +539,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
         "CREATE VIEW tracks_view AS "
         "SELECT DISTINCT "
             " t.id, t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, "
-            " t.thumbnail_id, t.external_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, "
-            " ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id "
+            " t.thumbnail_id, t.external_id, t.rating, t.last_played, t.play_count, t.date_added, "
+            " t.date_updated, al.name AS album, alar.name AS album_artist, gn.name AS genre, "
+            " ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, "
+            " t.album_id "
         "FROM "
             " tracks t, albums al, artists alar, artists ar, genres gn "
         "WHERE "
@@ -585,6 +599,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     if (lastVersion >= 1 && lastVersion < 8) {
         upgradeV7ToV8(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 9) {
+        upgradeV8ToV9(db);
     }
 
     /* ensure our version is set correctly */

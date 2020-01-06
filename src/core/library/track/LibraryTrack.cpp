@@ -223,7 +223,7 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         "ORDER BY tm.id", db);
 
     db::Statement trackQuery(
-        "SELECT t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id " \
+        "SELECT t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.rating " \
         "FROM tracks t, paths p, albums al " \
         "WHERE t.id=? AND t.album_id=al.id", db);
 
@@ -243,6 +243,7 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         target->SetValue("visual_artist_id", trackQuery.ColumnText(11));
         target->SetValue("album_artist_id", trackQuery.ColumnText(12));
         target->SetValue("album_id", trackQuery.ColumnText(13));
+        target->SetValue("rating", trackQuery.ColumnText(14));
 
         genresQuery.BindInt64(0, (int64_t) target->GetId());
         while (genresQuery.Step() == db::Row) {

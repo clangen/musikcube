@@ -34,29 +34,21 @@
 
 #pragma once
 
-#include <string>
+#include <core/library/query/local/LocalQueryBase.h>
 
-namespace musik { namespace cube { namespace prefs {
+namespace musik { namespace core { namespace db { namespace local {
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string AppQuitKey;
-    }
+    class SetTrackRatingQuery: public musik::core::db::LocalQueryBase {
+        public:
+            SetTrackRatingQuery(int64_t trackId, int rating);
+            virtual ~SetTrackRatingQuery();
+            std::string Name() { return "SetTrackRatingQuery"; }
 
-} } }
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
 
+            int64_t trackId;
+            int rating;
+    };
+
+} } } }

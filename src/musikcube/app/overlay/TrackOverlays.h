@@ -34,29 +34,26 @@
 
 #pragma once
 
-#include <string>
+#include <core/library/query/local/util/TrackSort.h>
+#include <core/library/ILibrary.h>
+#include <core/library/track/Track.h>
 
-namespace musik { namespace cube { namespace prefs {
+#include <functional>
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string AppQuitKey;
+namespace musik {
+    namespace cube {
+        class TrackOverlays {
+            public:
+                using TrackSortType = musik::core::db::local::TrackSortType;
+
+                static void ShowTrackSearchSortOverlay(
+                    TrackSortType currentSortType,
+                    std::function<void(TrackSortType)> callback);
+
+                static void ShowRateTrackOverlay(
+                    musik::core::TrackPtr track,
+                    musik::core::ILibraryPtr library,
+                    std::function<void(bool)> callback);
+        };
     }
-
-} } }
-
+}

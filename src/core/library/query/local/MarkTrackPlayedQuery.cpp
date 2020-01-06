@@ -32,31 +32,32 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "MarkTrackPlayedQuery.h"
 
-#include <string>
+using namespace musik::core::db;
+using namespace musik::core::db::local;
+using namespace musik::core::sdk;
 
-namespace musik { namespace cube { namespace prefs {
+MarkTrackPlayedQuery::MarkTrackPlayedQuery(const int64_t trackId) {
+    this->trackId = trackId;
+}
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string AppQuitKey;
+MarkTrackPlayedQuery::~MarkTrackPlayedQuery() {
+}
+
+bool MarkTrackPlayedQuery::OnRun(musik::core::db::Connection &db) {
+    Statement stmt(
+        "UPDATE tracks "
+        "SET play_count=(play_count+1), last_played=julianday('now') "
+        "WHERE id=?",
+        db);
+
+    stmt.BindInt64(0, this->trackId);
+
+    if (stmt.Step() == db::Done) {
+        return true;
     }
 
-} } }
-
+    return false;
+}

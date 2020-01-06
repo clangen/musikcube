@@ -35,28 +35,24 @@
 #pragma once
 
 #include <string>
+#include <map>
 
-namespace musik { namespace cube { namespace prefs {
+namespace musik {
+    namespace core {
+        namespace db {
+            namespace local {
+                const std::string kFilledStar = "\xE2\x98\x85";
+                const std::string kEmptyStar = "\xC2\xB7";
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string AppQuitKey;
+                static std::map<int, std::string> kRatingToSymbols = {
+                    { 0, kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar },
+                    { 1, kFilledStar + kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar },
+                    { 2, kFilledStar + kFilledStar + kEmptyStar + kEmptyStar + kEmptyStar },
+                    { 3, kFilledStar + kFilledStar + kFilledStar + kEmptyStar + kEmptyStar },
+                    { 4, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kEmptyStar },
+                    { 5, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kFilledStar },
+                };
+            }
+        }
     }
-
-} } }
-
+}

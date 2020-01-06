@@ -102,11 +102,17 @@ namespace musik {
                     PlayQueuePlaylistDelete,
                     PlayQueueHotSwap,
 
-                    /* browse ->playlists */
+                    /* browse -> playlists */
                     BrowsePlaylistsNew,
                     BrowsePlaylistsSave,
                     BrowsePlaylistsRename,
                     BrowsePlaylistsDelete,
+
+                    /* track search */
+                    TrackSearchChangeSortOrder,
+
+                    /* tracklist items */
+                    TrackListRateTrack,
 
                     /* lyrics */
                     LyricsRetry,
