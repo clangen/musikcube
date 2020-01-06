@@ -37,6 +37,7 @@
 #include "TrackOverlays.h"
 #include <core/library/query/local/util/TrackSort.h>
 #include <core/library/query/local/util/Rating.h>
+#include <core/library/query/local/SetTrackRatingQuery.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
@@ -81,8 +82,13 @@ void TrackOverlays::ShowTrackSearchSortOverlay(
 }
 
 void TrackOverlays::ShowRateTrackOverlay(
-    int currentRating, std::function<void(int)> callback)
+    musik::core::TrackPtr track,
+    musik::core::ILibraryPtr library,
+    std::function<void(bool)> callback)
 {
+    int64_t trackId = track->GetId();
+    int currentRating = track->GetInt32("rating", 0);
+
     currentRating = std::max(0, std::min(5, currentRating));
     auto adapter = std::make_shared<SimpleScrollAdapter>();
     adapter->SetSelectable(true);
@@ -96,8 +102,11 @@ void TrackOverlays::ShowRateTrackOverlay(
         .SetWidth(_DIMEN("track_list_rate_track_width", kDefaultRatingOverlayWidth))
         .SetSelectedIndex((int) currentRating)
         .SetItemSelectedCallback(
-            [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                 callback((int) index);
+            [track, library, callback]
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                auto query = std::make_shared<SetTrackRatingQuery>(track->GetId(), (int) index);
+                library->Enqueue(query, ILibrary::QuerySynchronous);
+                callback(true);
             });
 
     cursespp::App::Overlays().Push(dialog);

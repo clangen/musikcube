@@ -35,6 +35,9 @@
 #pragma once
 
 #include <core/library/query/local/util/TrackSort.h>
+#include <core/library/ILibrary.h>
+#include <core/library/track/Track.h>
+
 #include <functional>
 
 namespace musik {
@@ -48,8 +51,9 @@ namespace musik {
                     std::function<void(TrackSortType)> callback);
 
                 static void ShowRateTrackOverlay(
-                    int currentRating,
-                    std::function<void(int)> callback);
+                    musik::core::TrackPtr track,
+                    musik::core::ILibraryPtr library,
+                    std::function<void(bool)> callback);
         };
     }
 }

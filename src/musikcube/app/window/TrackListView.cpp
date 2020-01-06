@@ -269,9 +269,17 @@ bool TrackListView::KeyPress(const std::string& key) {
         handled = true;
     }
     else if (Hotkeys::Is(Hotkeys::TrackListRateTrack, key)) {
-        TrackOverlays::ShowRateTrackOverlay(0, [](int updatedRating) {
-
-        });
+        TrackPtr track = this->GetSelectedTrack();
+        if (track && !headers.HeaderAt(this->GetSelectedIndex())) {
+            TrackOverlays::ShowRateTrackOverlay(
+                track,
+                this->library,
+                [this](bool success) {
+                    if (success) {
+                        // this->Requery();
+                    }
+                });
+        }
         handled = true;
     }
 
