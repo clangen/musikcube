@@ -43,6 +43,8 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <iostream>
+
 using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
@@ -54,13 +56,66 @@ using namespace musik::core::library::constants;
 using namespace musik::core::db::local;
 using namespace boost::algorithm;
 
-SearchTrackListQuery::SearchTrackListQuery(ILibraryPtr library, const std::string& filter) {
+using SortType = SearchTrackListQuery::SortType;
+
+static const std::map<SortType, std::string> kAdditionalPredicate {
+    { SortType::LastPlayedAsc, "t.last_played IS NOT NULL" },
+    { SortType::LastPlayedDesc, "t.last_played IS NOT NULL" },
+    { SortType::RatingAsc, "t.rating IS NOT NULL AND t.rating > 0" },
+    { SortType::RatingDesc, "t.rating IS NOT NULL AND t.rating > 0" },
+    { SortType::PlayCountAsc, "t.play_count IS NOT NULL AND t.play_count > 0" },
+    { SortType::PlayCountDesc, "t.play_count IS NOT NULL AND t.play_count > 0" },
+};
+
+static const std::map<SortType, std::string> kOrderBy = {
+    { SortType::Title, "track, ar.name, al.name" },
+    { SortType::Album, "al.name, disc, track, ar.name" },
+    { SortType::Artist, "ar.name, al.name, disc, track" },
+    { SortType::DateAddedAsc, "date(t.date_added) ASC, al.name, disc, track, ar.name" },
+    { SortType::DateAddedDesc, "date(t.date_added) DESC, al.name, disc, track, ar.name" },
+    { SortType::DateUpdatedAsc, "date(t.date_updated) ASC, al.name, disc, track, ar.name" },
+    { SortType::DateUpdatedDesc, "date(t.date_updated) DESC, al.name, disc, track, ar.name" },
+    { SortType::LastPlayedAsc, "datetime(t.last_played) ASC" },
+    { SortType::LastPlayedDesc, "datetime(t.last_played) DESC" },
+    { SortType::RatingAsc, "t.rating ASC" },
+    { SortType::RatingDesc, "t.rating DESC" },
+    { SortType::PlayCountAsc, "t.play_count ASC" },
+    { SortType::PlayCountDesc, "t.play_count DESC" },
+    { SortType::Genre, "gn.name, al.name, disc, track, ar.name" },
+};
+
+static const std::map<SortType, std::string> kDisplayKey = {
+    { SortType::Title, "track_list_sort_title" },
+    { SortType::Album, "track_list_sort_album" },
+    { SortType::Artist, "track_list_sort_artist" },
+    { SortType::DateAddedAsc, "track_list_sort_date_added_asc" },
+    { SortType::DateAddedDesc, "track_list_sort_date_added_desc" },
+    { SortType::DateUpdatedAsc, "track_list_sort_date_updated_asc" },
+    { SortType::DateUpdatedDesc, "track_list_sort_date_updated_desc" },
+    { SortType::LastPlayedAsc, "track_list_sort_last_played_asc" },
+    { SortType::LastPlayedDesc, "track_list_sort_last_played_desc" },
+    { SortType::RatingAsc, "track_list_sort_rating_asc" },
+    { SortType::RatingDesc, "track_list_sort_rating_desc" },
+    { SortType::PlayCountAsc, "track_list_sort_play_count_asc" },
+    { SortType::PlayCountDesc, "track_list_sort_play_count_desc" },
+    { SortType::Genre, "track_list_sort_genre" },
+};
+
+SearchTrackListQuery::SearchTrackListQuery(
+    ILibraryPtr library, const std::string& filter, SortType sort)
+{
     this->library = library;
 
     if (filter.size()) {
         this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
     }
 
+    if (kAdditionalPredicate.find(sort) != kAdditionalPredicate.end()) {
+        this->additionalPredicate = kAdditionalPredicate.find(sort)->second + " AND ";
+    }
+
+    this->displayString = _TSTR(kDisplayKey.find(sort)->second);
+    this->orderBy = kOrderBy.find(sort)->second;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
@@ -82,6 +137,10 @@ size_t SearchTrackListQuery::GetQueryHash() {
     return this->hash;
 }
 
+std::string SearchTrackListQuery::GetSortDisplayString() {
+    return this->displayString;
+}
+
 bool SearchTrackListQuery::OnRun(Connection& db) {
     if (result) {
         result.reset(new musik::core::TrackList(this->library));
@@ -101,19 +160,25 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
             "FROM tracks t, albums al, artists ar, genres gn "
             "WHERE "
                 " t.visible=1 AND "
+                + this->additionalPredicate +
                 "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
                 " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name ";
+            "ORDER BY " + this->orderBy + " ";
     }
     else {
         query =
             "SELECT DISTINCT t.id, al.name "
             "FROM tracks t, albums al, artists ar, genres gn "
-            "WHERE t.visible=1 AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name ";
+            "WHERE "
+                " t.visible=1 AND "
+                + this->additionalPredicate +
+                " t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+            "ORDER BY " + this->orderBy + " ";
     }
 
     query += this->GetLimitAndOffset();
+
+    std::cerr << query << "\n";
 
     Statement trackQuery(query.c_str(), db);
 

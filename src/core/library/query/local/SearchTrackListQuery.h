@@ -40,13 +40,33 @@ namespace musik { namespace core { namespace db { namespace local {
 
     class SearchTrackListQuery : public TrackListQueryBase {
         public:
+            enum class SortType: int {
+                Album = 0,
+                Title = 1,
+                Artist = 2,
+                DateAddedAsc = 3,
+                DateAddedDesc = 4,
+                DateUpdatedAsc = 5,
+                DateUpdatedDesc = 6,
+                LastPlayedAsc = 7,
+                LastPlayedDesc = 8,
+                RatingAsc = 9,
+                RatingDesc = 10,
+                PlayCountAsc = 11,
+                PlayCountDesc = 12,
+                Genre = 13,
+            };
+
             SearchTrackListQuery(
                 musik::core::ILibraryPtr library,
-                const std::string& filter);
+                const std::string& filter,
+                SortType sort = SortType::Album);
 
             virtual ~SearchTrackListQuery();
 
             virtual std::string Name() { return "SearchTrackListQuery"; }
+
+            std::string GetSortDisplayString();
 
             virtual Result GetResult();
             virtual Headers GetHeaders();
@@ -60,6 +80,9 @@ namespace musik { namespace core { namespace db { namespace local {
             Result result;
             Headers headers;
             std::string filter;
+            std::string orderBy;
+            std::string additionalPredicate;
+            std::string displayString;
             size_t hash;
     };
 

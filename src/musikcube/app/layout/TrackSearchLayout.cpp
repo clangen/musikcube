@@ -102,8 +102,6 @@ void TrackSearchLayout::OnLayout() {
         y + SEARCH_HEIGHT,
         this->GetWidth(),
         this->GetHeight() - SEARCH_HEIGHT);
-
-    this->trackList->SetFrameTitle(_TSTR("track_filter_title"));
 }
 
 void TrackSearchLayout::InitializeWindows() {
@@ -116,6 +114,7 @@ void TrackSearchLayout::InitializeWindows() {
     this->trackList.reset(new TrackListView(this->playback, this->library));
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
+    this->trackList->Requeried.connect(this, &TrackSearchLayout::OnRequeried);
     this->AddWindow(this->trackList);
 }
 
@@ -148,6 +147,15 @@ void TrackSearchLayout::ProcessMessage(IMessage &message) {
 
     if (type == message::RequeryTrackList) {
         this->Requery();
+    }
+}
+
+void TrackSearchLayout::OnRequeried(TrackListQueryBase* query) {
+    auto searchQuery = dynamic_cast<SearchTrackListQuery*>(query);
+    if (searchQuery) {
+        this->trackList->SetFrameTitle(u8fmt(
+            _TSTR("track_filter_title"),
+            searchQuery->GetSortDisplayString().c_str()));
     }
 }
 
