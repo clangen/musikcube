@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include <core/library/ILibrary.h>
 #include <core/library/query/local/util/TrackSort.h>
 #include <functional>
 
@@ -45,12 +44,12 @@ namespace musik {
                 using TrackSortType = musik::core::db::local::TrackSortType;
 
                 static void ShowTrackSearchSortOverlay(
-                    TrackSortType sortType,
+                    TrackSortType currentSortType,
                     std::function<void(TrackSortType)> callback);
 
                 static void ShowRateTrackOverlay(
-                    musik::core::ILibraryPtr library,
-                    std::function<void(bool)> callback);
+                    int currentRating,
+                    std::function<void(int)> callback);
         };
     }
 }

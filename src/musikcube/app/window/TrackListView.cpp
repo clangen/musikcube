@@ -48,6 +48,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
 #include <app/overlay/PlayQueueOverlays.h>
+#include <app/overlay/TrackOverlays.h>
 
 #define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
 
@@ -265,6 +266,12 @@ bool TrackListView::KeyPress(const std::string& key) {
                 ToastOverlay::Show(_TSTR("tracklist_hot_swap_success_toast"), 2000);
             }
         }
+        handled = true;
+    }
+    else if (Hotkeys::Is(Hotkeys::TrackListRateTrack, key)) {
+        TrackOverlays::ShowRateTrackOverlay(0, [](int updatedRating) {
+
+        });
         handled = true;
     }
 

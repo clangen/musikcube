@@ -111,6 +111,9 @@ namespace musik {
                     /* track search */
                     TrackSearchChangeSortOrder,
 
+                    /* tracklist items */
+                    TrackListRateTrack,
+
                     /* lyrics */
                     LyricsRetry,
 
