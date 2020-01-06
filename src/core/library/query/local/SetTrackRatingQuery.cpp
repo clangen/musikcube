@@ -32,50 +32,27 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
+#include "SetTrackRatingQuery.h"
 
-#include <core/config.h>
-#include <map>
+using namespace musik::core::db;
+using namespace musik::core::db::local;
+using namespace musik::core::sdk;
 
-struct sqlite3_stmt;
+SetTrackRatingQuery::SetTrackRatingQuery(int64_t trackId, int rating) {
+    this->trackId = trackId;
+    this->rating = std::max(0, std::min(5, rating));
+}
 
-namespace musik { namespace core { namespace db {
+SetTrackRatingQuery::~SetTrackRatingQuery() {
+}
 
-    class Connection;
-
-    class Statement {
-        public:
-            Statement(const char* sql, Connection &connection);
-            Statement(const Statement&) = delete;
-            virtual ~Statement();
-
-            void BindInt32(int position, int bindInt);
-            void BindInt64(int position, int64_t bindInt);
-            void BindFloat(int position, float bindFloat);
-            void BindText(int position, const std::string& bindText);
-            void BindNull(int position);
-
-            int ColumnInt32(int column);
-            int64_t ColumnInt64(int column);
-            float ColumnFloat(int column);
-            const char* ColumnText(int column);
-            const wchar_t* ColumnTextW(int column);
-
-            int Step();
-
-            void Reset();
-            void Unbind();
-            void ResetAndUnbind();
-
-        private:
-            friend class Connection;
-
-            Statement(Connection &connection);
-
-            sqlite3_stmt *stmt;
-            Connection *connection;
-            int modifiedRows;
-    };
-
-} } }
-
+bool SetTrackRatingQuery::OnRun(musik::core::db::Connection &db) {
+    Statement stmt("UPDATE tracks SET rating=? WHERE id=?", db);
+    stmt.BindInt32(0, this->rating);
+    stmt.BindInt64(1, this->trackId);
+    if (stmt.Step() == db::Done) {
+        return true;
+    }
+    return false;
+}

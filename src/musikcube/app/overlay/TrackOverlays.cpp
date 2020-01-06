@@ -35,8 +35,8 @@
 #include <stdafx.h>
 
 #include "TrackOverlays.h"
-//#include <core/library/query/local/AllCategoriesQuery.h>
 #include <core/library/query/local/util/TrackSort.h>
+#include <core/library/query/local/util/Rating.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
@@ -51,18 +51,6 @@ using namespace musik::core::db::local;
 
 static const int kDefaultSortOverlayWidth = 32;
 static const int kDefaultRatingOverlayWidth = 24;
-
-const std::string filled = "\xE2\x98\x85";
-const std::string empty = "\xE2\x98\x86";
-
-static std::map<int, std::string> kRatingToSymbols = {
-    { 0, empty + empty + empty + empty + empty },
-    { 1, filled + empty + empty + empty + empty },
-    { 2, filled + filled + empty + empty + empty },
-    { 3, filled + filled + filled + empty + empty },
-    { 4, filled + filled + filled + filled + empty },
-    { 5, filled + filled + filled + filled + filled },
-};
 
 void TrackOverlays::ShowTrackSearchSortOverlay(
     TrackSortType sortType, std::function<void(TrackSortType)> callback)

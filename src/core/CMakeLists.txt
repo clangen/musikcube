@@ -36,6 +36,7 @@ set(CORE_SOURCES
   ./library/query/local/ReplayGainQuery.cpp
   ./library/query/local/SavePlaylistQuery.cpp
   ./library/query/local/SearchTrackListQuery.cpp
+  ./library/query/local/SetTrackRatingQuery.cpp
   ./library/query/local/TrackMetadataQuery.cpp
   ./library/query/local/util/CategoryQueryUtil.cpp
   ./library/metadata/MetadataMap.cpp

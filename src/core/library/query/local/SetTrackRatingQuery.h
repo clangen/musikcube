@@ -34,48 +34,21 @@
 
 #pragma once
 
-#include <core/config.h>
-#include <map>
+#include <core/library/query/local/LocalQueryBase.h>
 
-struct sqlite3_stmt;
+namespace musik { namespace core { namespace db { namespace local {
 
-namespace musik { namespace core { namespace db {
-
-    class Connection;
-
-    class Statement {
+    class SetTrackRatingQuery: public musik::core::db::LocalQueryBase {
         public:
-            Statement(const char* sql, Connection &connection);
-            Statement(const Statement&) = delete;
-            virtual ~Statement();
+            SetTrackRatingQuery(int64_t trackId, int rating);
+            virtual ~SetTrackRatingQuery();
+            std::string Name() { return "SetTrackRatingQuery"; }
 
-            void BindInt32(int position, int bindInt);
-            void BindInt64(int position, int64_t bindInt);
-            void BindFloat(int position, float bindFloat);
-            void BindText(int position, const std::string& bindText);
-            void BindNull(int position);
+        protected:
+            virtual bool OnRun(musik::core::db::Connection &db);
 
-            int ColumnInt32(int column);
-            int64_t ColumnInt64(int column);
-            float ColumnFloat(int column);
-            const char* ColumnText(int column);
-            const wchar_t* ColumnTextW(int column);
-
-            int Step();
-
-            void Reset();
-            void Unbind();
-            void ResetAndUnbind();
-
-        private:
-            friend class Connection;
-
-            Statement(Connection &connection);
-
-            sqlite3_stmt *stmt;
-            Connection *connection;
-            int modifiedRows;
+            int64_t trackId;
+            int rating;
     };
 
-} } }
-
+} } } }

@@ -34,48 +34,25 @@
 
 #pragma once
 
-#include <core/config.h>
+#include <string>
 #include <map>
 
-struct sqlite3_stmt;
+namespace musik {
+    namespace core {
+        namespace db {
+            namespace local {
+                const std::string kFilledStar = "\xE2\x98\x85";
+                const std::string kEmptyStar = "\xE2\x98\x86";
 
-namespace musik { namespace core { namespace db {
-
-    class Connection;
-
-    class Statement {
-        public:
-            Statement(const char* sql, Connection &connection);
-            Statement(const Statement&) = delete;
-            virtual ~Statement();
-
-            void BindInt32(int position, int bindInt);
-            void BindInt64(int position, int64_t bindInt);
-            void BindFloat(int position, float bindFloat);
-            void BindText(int position, const std::string& bindText);
-            void BindNull(int position);
-
-            int ColumnInt32(int column);
-            int64_t ColumnInt64(int column);
-            float ColumnFloat(int column);
-            const char* ColumnText(int column);
-            const wchar_t* ColumnTextW(int column);
-
-            int Step();
-
-            void Reset();
-            void Unbind();
-            void ResetAndUnbind();
-
-        private:
-            friend class Connection;
-
-            Statement(Connection &connection);
-
-            sqlite3_stmt *stmt;
-            Connection *connection;
-            int modifiedRows;
-    };
-
-} } }
-
+                static std::map<int, std::string> kRatingToSymbols = {
+                    { 0, kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar },
+                    { 1, kFilledStar + kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar },
+                    { 2, kFilledStar + kFilledStar + kEmptyStar + kEmptyStar + kEmptyStar },
+                    { 3, kFilledStar + kFilledStar + kFilledStar + kEmptyStar + kEmptyStar },
+                    { 4, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kEmptyStar },
+                    { 5, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kFilledStar },
+                };
+            }
+        }
+    }
+}
