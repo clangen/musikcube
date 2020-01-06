@@ -36,6 +36,7 @@
 
 #include "TrackOverlays.h"
 //#include <core/library/query/local/AllCategoriesQuery.h>
+#include <core/library/query/local/util/TrackSort.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
@@ -46,12 +47,36 @@ using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
 using namespace musik::core::db;
-//using namespace musik::core::db::local;
+using namespace musik::core::db::local;
+
+static const int kDefaultOverlayWidth = 32;
 
 void TrackOverlays::ShowTrackSearchSortOverlay(
     TrackSortType sortType, std::function<void(TrackSortType)> callback)
 {
+    size_t i = 0;
+    size_t selectedIndex = 0;
+    auto adapter = std::make_shared<SimpleScrollAdapter>();
+    adapter->SetSelectable(true);
+    for (auto it : kTrackSortTypeToDisplayKey) {
+        adapter->AddEntry(_TSTR(it.second));
+        if (it.first == sortType) {
+            selectedIndex = i;
+        }
+        ++i;
+    }
 
+    auto dialog = std::make_shared<ListOverlay>();
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("track_list_sort_overlay_title"))
+        .SetWidth(_DIMEN("track_search_sort_order_width", kDefaultOverlayWidth))
+        .SetSelectedIndex(selectedIndex)
+        .SetItemSelectedCallback(
+            [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                callback((TrackSortType) index);
+            });
+
+    cursespp::App::Overlays().Push(dialog);
 }
 
 void TrackOverlays::ShowRateTrackOverlay(

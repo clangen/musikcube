@@ -214,6 +214,8 @@
         "update_check_no_updates_title": "update check",
         "update_check_no_updates_message": "no updates found at this time.",
 
+        "track_list_sort_overlay_title": "select sort order",
+
         "track_list_sort_title": "track title",
         "track_list_sort_album": "album",
         "track_list_sort_artist": "artist",
@@ -241,6 +243,7 @@
         "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
         "preamp_overlay_width": 40,
-        "equalizer_overlay_width": 46
+        "equalizer_overlay_width": 46,
+        "track_search_sort_order_width": 32
     }
 }
