@@ -235,6 +235,9 @@
     <ClCompile Include="library\query\local\MarkTrackPlayedQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\SetTrackRatingQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -575,6 +578,12 @@
     </ClInclude>
     <ClInclude Include="library\query\local\util\TrackSort.h">
       <Filter>src\library\query\local\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\util\Rating.h">
+      <Filter>src\library\query\local\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\SetTrackRatingQuery.h">
+      <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
