@@ -32,31 +32,29 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <stdafx.h>
 
-#include <string>
+#include "TrackOverlays.h"
+//#include <core/library/query/local/AllCategoriesQuery.h>
+#include <cursespp/SimpleScrollAdapter.h>
+#include <cursespp/ListOverlay.h>
+#include <cursespp/DialogOverlay.h>
+#include <cursespp/App.h>
+#include <set>
 
-namespace musik { namespace cube { namespace prefs {
+using namespace cursespp;
+using namespace musik::cube;
+using namespace musik::core;
+using namespace musik::core::db;
+//using namespace musik::core::db::local;
 
-    namespace keys {
-        extern const std::string DisableCustomColors;
-        extern const std::string UsePaletteColors;
-        extern const std::string FirstRunSettingsDisplayed;
-        extern const std::string ColorTheme;
-        extern const std::string InheritBackgroundColor;
-        extern const std::string MinimizeToTray;
-        extern const std::string StartMinimized;
-        extern const std::string AutoUpdateCheck;
-        extern const std::string LastAcknowledgedUpdateVersion;
-        extern const std::string LastLibraryView;
-        extern const std::string LastBrowseCategoryType;
-        extern const std::string LastBrowseCategoryId;
-        extern const std::string LastBrowseDirectoryRoot;
-        extern const std::string LastCategoryFilter;
-        extern const std::string LastTrackFilter;
-        extern const std::string TrackSearchSortOrder;
-        extern const std::string AppQuitKey;
-    }
+void TrackOverlays::ShowTrackSearchSortOverlay(
+    TrackSortType sortType, std::function<void(TrackSortType)> callback)
+{
 
-} } }
+}
 
+void TrackOverlays::ShowRateTrackOverlay(
+    ILibraryPtr library, std::function<void(bool)> callback) {
+
+}

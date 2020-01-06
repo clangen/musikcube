@@ -123,7 +123,7 @@
         "validator_dialog_number_parse_bounded_error": "please enter a number between {{minimum}} and {{maximum}} to continue.",
         "validator_dialog_number_parse_error": "please enter a number to continue.",
 
-        "track_filter_title": "track filter results (sorted by %s)",
+        "track_filter_title": "tracks (sorted by %s)",
 
         "locale_overlay_select_title": "select locale",
 
@@ -214,7 +214,7 @@
         "update_check_no_updates_title": "update check",
         "update_check_no_updates_message": "no updates found at this time.",
 
-        "track_list_sort_title": "song title",
+        "track_list_sort_title": "track title",
         "track_list_sort_album": "album",
         "track_list_sort_artist": "artist",
         "track_list_sort_date_added_asc": "date added [asc]",

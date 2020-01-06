@@ -573,5 +573,8 @@
     <ClInclude Include="library\query\local\MarkTrackPlayedQuery.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
+    <ClInclude Include="library\query\local\util\TrackSort.h">
+      <Filter>src\library\query\local\util</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

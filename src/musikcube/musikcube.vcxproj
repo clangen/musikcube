@@ -291,6 +291,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClCompile Include="app\overlay\PreampOverlay.cpp" />
     <ClCompile Include="app\overlay\ReassignHotkeyOverlay.cpp" />
     <ClCompile Include="app\overlay\ServerOverlay.cpp" />
+    <ClCompile Include="app\overlay\TrackOverlays.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\util\ConsoleLogger.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
@@ -361,6 +362,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="app\overlay\PreampOverlay.h" />
     <ClInclude Include="app\overlay\ReassignHotkeyOverlay.h" />
     <ClInclude Include="app\overlay\ServerOverlay.h" />
+    <ClInclude Include="app\overlay\TrackOverlays.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\util\ConsoleLogger.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />

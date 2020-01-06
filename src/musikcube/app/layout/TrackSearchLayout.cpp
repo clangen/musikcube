@@ -46,6 +46,7 @@
 #include <app/util/Playback.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
+#include <app/overlay/TrackOverlays.h>
 
 #include "TrackSearchLayout.h"
 
@@ -63,6 +64,11 @@ namespace components = musik::core::prefs::components;
 
 #define SEARCH_HEIGHT 3
 #define REQUERY_INTERVAL_MS 300
+
+static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
+    return (TrackSortType) prefs->GetInt(
+        keys::TrackSearchSortOrder, (int)TrackSortType::Album);
+}
 
 TrackSearchLayout::TrackSearchLayout(
     musik::core::audio::PlaybackService& playback,
@@ -138,8 +144,9 @@ void TrackSearchLayout::FocusInput() {
 
 void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
+    const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-        new SearchTrackListQuery(this->library, filter)));
+        new SearchTrackListQuery(this->library, filter, sortOrder)));
 }
 
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
@@ -185,6 +192,14 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
             return true;
         }
     }
-
+    else if (Hotkeys::Is(Hotkeys::TrackSearchChangeSortOrder, key)) {
+        TrackOverlays::ShowTrackSearchSortOverlay(
+            getDefaultTrackSort(this->prefs),
+            [this](TrackSortType type) {
+                this->prefs->SetInt(keys::TrackSearchSortOrder, (int)type);
+                this->Requery();
+            });
+        return true;
+    }
     return LayoutBase::KeyPress(key);
 }

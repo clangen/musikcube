@@ -25,6 +25,7 @@ set (CUBE_SRCS
 	./app/overlay/PreampOverlay.cpp
 	./app/overlay/ReassignHotkeyOverlay.cpp
 	./app/overlay/ServerOverlay.cpp
+	./app/overlay/TrackOverlays.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/ConsoleLogger.cpp
 	./app/util/GlobalHotkeys.cpp
