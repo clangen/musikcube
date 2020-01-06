@@ -43,23 +43,37 @@
 #include <cursespp/Text.h>
 
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/query/local/util/Rating.h>
+
 #include <core/support/Duration.h>
 
 using namespace musik::core;
 using namespace musik::core::library;
+using namespace musik::core::db::local;
 using namespace musik::cube::TrackRowRenderers;
 using namespace cursespp;
 
 #define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
 
 static const int kDurationColWidth = 5; /* 00:00 */
+static const int kRatingBreakpointWidth = 90;
+
+static inline std::string getRatingForTrack(TrackPtr track, size_t width) {
+    return (width > kRatingBreakpointWidth)
+        ? "   " + kRatingToSymbols.find(
+            std::max(0, std::min(5, track->GetInt32("rating", 0))))->second
+        : "";
+}
 
 namespace AlbumSort {
     static const int kTrackColWidth = 3;
     static const int kArtistColWidth = 17;
+    static const int kRatingColumnWidth = 5;
 
     static Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
         std::string trackNum;
+
+        std::string rating = getRatingForTrack(track, width);
 
         int trackColWidth = kTrackColWidth;
         if (type == TrackNumType::Metadata) {
@@ -83,11 +97,14 @@ namespace AlbumSort {
             text::AlignLeft,
             kArtistColWidth);
 
-        int titleWidth =
+        int titleWidth = 0;
+
+        titleWidth =
             (int) width -
             (int) trackColWidth -
             kDurationColWidth -
             kArtistColWidth -
+            u8len(rating) -
             (3 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
@@ -98,9 +115,10 @@ namespace AlbumSort {
             (int) titleWidth);
 
         return u8fmt(
-            "%s   %s   %s   %s",
+            "%s   %s%s   %s   %s",
             trackNum.c_str(),
             title.c_str(),
+            rating.c_str(),
             duration.c_str(),
             artist.c_str());
     };
@@ -114,6 +132,7 @@ namespace NowPlaying {
     static Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
         size_t trackColWidth = std::max(kTrackColWidth, DIGITS(index + 1));
         std::string trackNum = text::Align(std::to_string(index + 1), text::AlignRight, trackColWidth);
+        std::string rating = getRatingForTrack(track, width);
 
         std::string duration = text::Align(
             duration::Duration(track->GetString(constants::Track::DURATION)),
@@ -136,6 +155,7 @@ namespace NowPlaying {
             kDurationColWidth -
             kAlbumColWidth -
             kArtistColWidth -
+            u8cols(rating) -
             (4 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
@@ -146,9 +166,10 @@ namespace NowPlaying {
             (int) titleWidth);
 
         return u8fmt(
-            "%s   %s   %s   %s   %s",
+            "%s   %s%s   %s   %s   %s",
             trackNum.c_str(),
             title.c_str(),
+            rating.c_str(),
             duration.c_str(),
             album.c_str(),
             artist.c_str());

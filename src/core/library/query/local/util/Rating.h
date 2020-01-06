@@ -42,7 +42,7 @@ namespace musik {
         namespace db {
             namespace local {
                 const std::string kFilledStar = "\xE2\x98\x85";
-                const std::string kEmptyStar = "\xE2\x98\x86";
+                const std::string kEmptyStar = "\xC2\xB7";
 
                 static std::map<int, std::string> kRatingToSymbols = {
                     { 0, kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar },
