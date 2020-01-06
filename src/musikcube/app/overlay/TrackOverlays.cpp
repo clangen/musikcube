@@ -95,6 +95,7 @@ void TrackOverlays::ShowTrackSearchSortOverlay(
 void TrackOverlays::ShowRateTrackOverlay(
     int currentRating, std::function<void(int)> callback)
 {
+    currentRating = std::max(0, std::min(5, currentRating));
     auto adapter = std::make_shared<SimpleScrollAdapter>();
     adapter->SetSelectable(true);
     for (auto it : kRatingToSymbols) {
