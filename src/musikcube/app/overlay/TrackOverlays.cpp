@@ -54,13 +54,17 @@ static const int kDefaultSortOverlayWidth = 32;
 static const int kDefaultRatingOverlayWidth = 24;
 
 void TrackOverlays::ShowTrackSearchSortOverlay(
-    TrackSortType sortType, std::function<void(TrackSortType)> callback)
+    TrackSortType sortType,
+    const std::map<TrackSortType, std::string>& availableSortTypes,
+    std::function<void(TrackSortType)> callback)
 {
     size_t i = 0;
     size_t selectedIndex = 0;
+    std::vector<TrackSortType> allKeys;
     auto adapter = std::make_shared<SimpleScrollAdapter>();
     adapter->SetSelectable(true);
-    for (auto it : kTrackSortTypeToDisplayKey) {
+    for (auto it : availableSortTypes) {
+        allKeys.push_back(it.first);
         adapter->AddEntry(_TSTR(it.second));
         if (it.first == sortType) {
             selectedIndex = i;
@@ -74,8 +78,8 @@ void TrackOverlays::ShowTrackSearchSortOverlay(
         .SetWidth(_DIMEN("track_search_sort_order_width", kDefaultSortOverlayWidth))
         .SetSelectedIndex(selectedIndex)
         .SetItemSelectedCallback(
-            [callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                callback((TrackSortType) index);
+            [callback, allKeys](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                callback(allKeys[index]);
             });
 
     cursespp::App::Overlays().Push(dialog);

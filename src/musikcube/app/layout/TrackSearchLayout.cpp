@@ -195,6 +195,7 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
     else if (Hotkeys::Is(Hotkeys::TrackSearchChangeSortOrder, key)) {
         TrackOverlays::ShowTrackSearchSortOverlay(
             getDefaultTrackSort(this->prefs),
+            kTrackSearchOrderByToDisplayKey,
             [this](TrackSortType type) {
                 this->prefs->SetInt(keys::TrackSearchSortOrder, (int)type);
                 this->Requery();

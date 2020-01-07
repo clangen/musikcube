@@ -57,7 +57,9 @@ namespace musik {
                     Genre = 13,
                 };
 
-                static const std::map<TrackSortType, std::string> kTrackSortTypeToDisplayKey = {
+                /* track sorting in the track filter view */
+
+                static const std::map<TrackSortType, std::string> kTrackSearchOrderByToDisplayKey = {
                     { TrackSortType::Title, "track_list_sort_title" },
                     { TrackSortType::Album, "track_list_sort_album" },
                     { TrackSortType::Artist, "track_list_sort_artist" },
@@ -73,6 +75,36 @@ namespace musik {
                     { TrackSortType::PlayCountDesc, "track_list_sort_play_count_desc" },
                     { TrackSortType::Genre, "track_list_sort_genre" },
                 };
+
+                static const std::map<TrackSortType, std::string> kTrackSearchSortOrderBy = {
+                    { TrackSortType::Title, "track, ar.name, al.name" },
+                    { TrackSortType::Album, "al.name, disc, track, ar.name" },
+                    { TrackSortType::Artist, "ar.name, al.name, disc, track" },
+                    { TrackSortType::DateAddedAsc, "date(t.date_added) ASC, al.name, disc, track, ar.name" },
+                    { TrackSortType::DateAddedDesc, "date(t.date_added) DESC, al.name, disc, track, ar.name" },
+                    { TrackSortType::DateUpdatedAsc, "date(t.date_updated) ASC, al.name, disc, track, ar.name" },
+                    { TrackSortType::DateUpdatedDesc, "date(t.date_updated) DESC, al.name, disc, track, ar.name" },
+                    { TrackSortType::LastPlayedAsc, "datetime(t.last_played) ASC" },
+                    { TrackSortType::LastPlayedDesc, "datetime(t.last_played) DESC" },
+                    { TrackSortType::RatingAsc, "t.rating ASC" },
+                    { TrackSortType::RatingDesc, "t.rating DESC" },
+                    { TrackSortType::PlayCountAsc, "t.play_count ASC" },
+                    { TrackSortType::PlayCountDesc, "t.play_count DESC" },
+                    { TrackSortType::Genre, "gn.name, al.name, disc, track, ar.name" },
+                };
+
+                static const std::map<TrackSortType, std::string> kTrackSearchSortOrderByPredicate {
+                    { TrackSortType::LastPlayedAsc, "t.last_played IS NOT NULL" },
+                    { TrackSortType::LastPlayedDesc, "t.last_played IS NOT NULL" },
+                    { TrackSortType::RatingAsc, "t.rating IS NOT NULL AND t.rating > 0" },
+                    { TrackSortType::RatingDesc, "t.rating IS NOT NULL AND t.rating > 0" },
+                    { TrackSortType::PlayCountAsc, "t.play_count IS NOT NULL AND t.play_count > 0" },
+                    { TrackSortType::PlayCountDesc, "t.play_count IS NOT NULL AND t.play_count > 0" },
+                };
+
+                /* track sorting in a category tracklist view */
+
+
             }
         }
     }

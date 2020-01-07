@@ -48,6 +48,7 @@ namespace musik {
 
                 static void ShowTrackSearchSortOverlay(
                     TrackSortType currentSortType,
+                    const std::map<TrackSortType, std::string>& availableSortTypes,
                     std::function<void(TrackSortType)> callback);
 
                 static void ShowRateTrackOverlay(

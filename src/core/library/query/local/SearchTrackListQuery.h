@@ -65,7 +65,7 @@ namespace musik { namespace core { namespace db { namespace local {
             Headers headers;
             std::string filter;
             std::string orderBy;
-            std::string additionalPredicate;
+            std::string orderByPredicate;
             std::string displayString;
             size_t hash;
     };
