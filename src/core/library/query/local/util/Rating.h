@@ -45,11 +45,11 @@ namespace musik {
                 const std::string kEmptyStar = "\xC2\xB7";
 
                 static std::map<int, std::string> kRatingToSymbols = {
-                    { 0, kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar },
-                    { 1, kFilledStar + kEmptyStar + kEmptyStar + kEmptyStar + kEmptyStar },
-                    { 2, kFilledStar + kFilledStar + kEmptyStar + kEmptyStar + kEmptyStar },
-                    { 3, kFilledStar + kFilledStar + kFilledStar + kEmptyStar + kEmptyStar },
-                    { 4, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kEmptyStar },
+                    { 0, kEmptyStar  + kEmptyStar  + kEmptyStar  + kEmptyStar  + kEmptyStar  },
+                    { 1, kFilledStar + kEmptyStar  + kEmptyStar  + kEmptyStar  + kEmptyStar  },
+                    { 2, kFilledStar + kFilledStar + kEmptyStar  + kEmptyStar  + kEmptyStar  },
+                    { 3, kFilledStar + kFilledStar + kFilledStar + kEmptyStar  + kEmptyStar  },
+                    { 4, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kEmptyStar  },
                     { 5, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kFilledStar },
                 };
             }
