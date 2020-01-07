@@ -173,7 +173,7 @@ namespace musik { namespace core { namespace db { namespace local {
             " AND (tracks.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
 
         static const std::string CATEGORY_TRACKLIST_QUERY =
-            "SELECT DISTINCT tracks.id, al.name "
+            "SELECT DISTINCT tracks.id, tracks.date_added, tracks.date_updated, tracks.last_played, tracks.play_count, tracks.rating, al.name "
             "FROM tracks, albums al, artists ar, genres gn "
             "{{extended_predicates}} "
             "WHERE "
@@ -183,7 +183,7 @@ namespace musik { namespace core { namespace db { namespace local {
             "  tracks.visual_artist_id=ar.id "
             "  {{regular_predicates}} "
             "  {{tracklist_filter}} "
-            "ORDER BY al.name, disc, track, ar.name "
+            "{{order_by}} "
             "{{limit_and_offset}} ";
 
         /* ALBUM_LIST_QUERY is like a specialized REGULAR_PROPERTY_QUERY used by

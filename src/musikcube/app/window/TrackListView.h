@@ -87,6 +87,7 @@ namespace musik {
                 void Clear();
                 size_t TrackCount();
                 size_t EntryCount();
+                void InvalidateData();
 
                 void SetTrackNumType(TrackRowRenderers::TrackNumType type);
                 void SetRowRenderer(TrackRowRenderers::Renderer renderer);

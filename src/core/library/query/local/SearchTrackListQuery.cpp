@@ -69,8 +69,8 @@ SearchTrackListQuery::SearchTrackListQuery(
         this->orderByPredicate = kTrackSearchSortOrderByPredicate.find(sort)->second + " AND ";
     }
 
-    this->displayString = _TSTR(kTrackSearchOrderByToDisplayKey.find(sort)->second);
-    this->orderBy = kTrackSearchSortOrderBy.find(sort)->second;
+    this->displayString = _TSTR(kTrackListOrderByToDisplayKey.find(sort)->second);
+    this->orderBy = kTrackListSortOrderBy.find(sort)->second;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
@@ -111,23 +111,23 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
 
     if (hasFilter) {
         query =
-            "SELECT DISTINCT t.id, al.name "
-            "FROM tracks t, albums al, artists ar, genres gn "
+            "SELECT DISTINCT tracks.id, al.name "
+            "FROM tracks, albums al, artists ar, genres gn "
             "WHERE "
-                " t.visible=1 AND "
+                " tracks.visible=1 AND "
                 + this->orderByPredicate +
-                "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
-                " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+                "(tracks.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
+                " AND tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
             "ORDER BY " + this->orderBy + " ";
     }
     else {
         query =
-            "SELECT DISTINCT t.id, al.name "
-            "FROM tracks t, albums al, artists ar, genres gn "
+            "SELECT DISTINCT tracks.id, al.name "
+            "FROM tracks, albums al, artists ar, genres gn "
             "WHERE "
-                " t.visible=1 AND "
+                " tracks.visible=1 AND "
                 + this->orderByPredicate +
-                " t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
+                " tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
             "ORDER BY " + this->orderBy + " ";
     }
 

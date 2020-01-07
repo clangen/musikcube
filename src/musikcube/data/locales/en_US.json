@@ -22,7 +22,7 @@
         "browse_title_genres": "genres",
         "browse_title_album_artists": "album artists",
         "browse_title_category": "category",
-        "browse_title_tracks": "tracks",
+        "browse_title_tracks": "tracks (sorted by %s)",
         "browse_title_playlists": "playlists",
         "browse_title_directory": "directory",
         "browse_playlist_modified": "playlist modified. press '%s' to save.",

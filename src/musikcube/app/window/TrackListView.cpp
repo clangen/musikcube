@@ -167,6 +167,11 @@ void TrackListView::Clear() {
     this->OnAdapterChanged();
 }
 
+void TrackListView::InvalidateData() {
+    this->tracks->ClearCache();
+    this->OnAdapterChanged();
+}
+
 TrackPtr TrackListView::GetSelectedTrack() {
     auto i = this->GetSelectedTrackIndex();
     return (i == ListWindow::NO_SELECTION) ? TrackPtr() : this->tracks->Get(i);
@@ -276,8 +281,7 @@ bool TrackListView::KeyPress(const std::string& key) {
                 this->library,
                 [this](bool success) {
                     if (success && this->tracks) {
-                        this->tracks->ClearCache();
-                        this->OnAdapterChanged();
+                        this->InvalidateData();
                     }
                 });
         }

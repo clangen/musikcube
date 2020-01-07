@@ -108,11 +108,9 @@ namespace musik {
                     BrowsePlaylistsRename,
                     BrowsePlaylistsDelete,
 
-                    /* track search */
-                    TrackSearchChangeSortOrder,
-
                     /* tracklist items */
                     TrackListRateTrack,
+                    TrackListChangeSortOrder,
 
                     /* lyrics */
                     LyricsRetry,

@@ -84,6 +84,8 @@ namespace musik {
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
 
+                void OnRequeried(musik::core::db::local::TrackListQueryBase* query);
+
                 bool IsPlaylist();
                 bool ProcessEditOperation(const std::string& key);
                 bool ProcessPlaylistOperation(const std::string& key);

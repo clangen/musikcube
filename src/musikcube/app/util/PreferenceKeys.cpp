@@ -53,6 +53,7 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::LastCategoryFilter = "LastCategoryFilter";
     const std::string keys::LastTrackFilter = "LastTrackFilter";
     const std::string keys::TrackSearchSortOrder = "TrackSearchSortOrder";
+    const std::string keys::CategoryTrackListSortOrder = "CategoryTrackListSortOrder";
     const std::string keys::AppQuitKey = "AppQuitKey";
 
 } } }

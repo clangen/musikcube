@@ -98,7 +98,7 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "browse_playlists_rename", Id::BrowsePlaylistsRename },
     { "browse_playlists_delete", Id::BrowsePlaylistsDelete },
 
-    { "track_search_change_sort_order", Id::TrackSearchChangeSortOrder },
+    { "track_list_change_sort_order", Id::TrackListChangeSortOrder },
 
     { "track_list_rate_track", Id::TrackListRateTrack },
 
@@ -188,9 +188,9 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::BrowsePlaylistsDelete, "KEY_DC" },
 #endif
 
-    { Id::TrackSearchChangeSortOrder, "^S" },
+    { Id::TrackListChangeSortOrder, "^S" },
 
-    { Id::TrackListRateTrack, "M-r" },
+    { Id::TrackListRateTrack, "r" },
 
     { Id::LyricsRetry, "r" },
 

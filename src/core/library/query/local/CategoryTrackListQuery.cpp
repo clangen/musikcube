@@ -56,8 +56,9 @@ using namespace boost::algorithm;
 
 CategoryTrackListQuery::CategoryTrackListQuery(
     musik::core::ILibraryPtr library,
-    const std::string& filter)
-: CategoryTrackListQuery(library, category::PredicateList(), filter)
+    const std::string& filter,
+    TrackSortType sortType)
+: CategoryTrackListQuery(library, category::PredicateList(), filter, sortType)
 {
 }
 
@@ -65,23 +66,26 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     musik::core::ILibraryPtr library,
     const std::string& column,
     int64_t id,
-    const std::string& filter)
-: CategoryTrackListQuery(library, { column, id }, filter)
+    const std::string& filter,
+    TrackSortType sortType)
+: CategoryTrackListQuery(library, { column, id }, filter, sortType)
 {
 }
 
 CategoryTrackListQuery::CategoryTrackListQuery(
     ILibraryPtr library,
     const category::Predicate predicate,
-    const std::string& filter)
-: CategoryTrackListQuery(library, category::PredicateList { predicate }, filter)
+    const std::string& filter,
+    TrackSortType sortType)
+: CategoryTrackListQuery(library, category::PredicateList { predicate }, filter, sortType)
 {
 }
 
 CategoryTrackListQuery::CategoryTrackListQuery(
     ILibraryPtr library,
     const category::PredicateList predicates,
-    const std::string& filter)
+    const std::string& filter,
+    TrackSortType sortType)
 {
     this->library = library;
     this->result.reset(new musik::core::TrackList(library));
@@ -100,6 +104,8 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     else {
         this->type = Regular;
     }
+
+    this->orderBy = "ORDER BY " + kTrackListSortOrderBy.find(sortType)->second;
 }
 
 CategoryTrackListQuery::~CategoryTrackListQuery() {
@@ -148,6 +154,7 @@ void CategoryTrackListQuery::RegularQuery(musik::core::db::Connection &db) {
     category::ReplaceAll(query, "{{extended_predicates}}", extended);
     category::ReplaceAll(query, "{{regular_predicates}}", regular);
     category::ReplaceAll(query, "{{tracklist_filter}}", trackFilter);
+    category::ReplaceAll(query, "{{order_by}}", this->orderBy);
     category::ReplaceAll(query, "{{limit_and_offset}}", limitAndOffset);
 
     Statement stmt(query.c_str(), db);
