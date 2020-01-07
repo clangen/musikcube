@@ -172,8 +172,10 @@ namespace musik { namespace core { namespace db { namespace local {
         static const std::string CATEGORY_TRACKLIST_FILTER =
             " AND (tracks.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) ";
 
+        /* note: al.name needs to be the second column selected to ensure proper grouping by
+        album in the UI layer! */
         static const std::string CATEGORY_TRACKLIST_QUERY =
-            "SELECT DISTINCT tracks.id, tracks.date_added, tracks.date_updated, tracks.last_played, tracks.play_count, tracks.rating, al.name "
+            "SELECT DISTINCT tracks.id, al.name, tracks.date_added, tracks.date_updated, tracks.last_played, tracks.play_count, tracks.rating "
             "FROM tracks, albums al, artists ar, genres gn "
             "{{extended_predicates}} "
             "WHERE "
