@@ -315,6 +315,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClCompile Include="cursespp\ListWindow.cpp" />
     <ClCompile Include="cursespp\MultiLineEntry.cpp" />
     <ClCompile Include="cursespp\OverlayStack.cpp" />
+    <ClCompile Include="cursespp\SchemaOverlay.cpp" />
     <ClCompile Include="cursespp\Screen.cpp" />
     <ClCompile Include="cursespp\ScrollableWindow.cpp" />
     <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
@@ -399,8 +400,10 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="cursespp\cursespp\ListOverlay.h" />
     <ClInclude Include="cursespp\cursespp\ListWindow.h" />
     <ClInclude Include="cursespp\cursespp\MultiLineEntry.h" />
+    <ClInclude Include="cursespp\cursespp\NumberValidator.h" />
     <ClInclude Include="cursespp\cursespp\OverlayBase.h" />
     <ClInclude Include="cursespp\cursespp\OverlayStack.h" />
+    <ClInclude Include="cursespp\cursespp\SchemaOverlay.h" />
     <ClInclude Include="cursespp\cursespp\Screen.h" />
     <ClInclude Include="cursespp\cursespp\ScrollableWindow.h" />
     <ClInclude Include="cursespp\cursespp\ScrollAdapterBase.h" />

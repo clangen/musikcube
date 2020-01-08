@@ -186,6 +186,9 @@
     <ClCompile Include="app\overlay\TrackOverlays.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="cursespp\SchemaOverlay.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -423,6 +426,12 @@
     </ClInclude>
     <ClInclude Include="app\overlay\TrackOverlays.h">
       <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\NumberValidator.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\SchemaOverlay.h">
+      <Filter>cursespp\include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
