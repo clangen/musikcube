@@ -41,6 +41,7 @@
 #include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/SavePlaylistQuery.h>
 #include <core/library/query/local/util/TrackSort.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
 
@@ -73,7 +74,7 @@ static int MIN_LIST_TITLE_HEIGHT = 26;
 
 static std::set<std::string> EDIT_KEYS;
 
-static std::map <std::string, std::string> FIELD_TO_TITLE{
+static std::map <std::string, std::string> FIELD_TO_TITLE {
     std::make_pair(constants::Track::ARTIST, "browse_title_artists"),
     std::make_pair(constants::Track::ALBUM, "browse_title_albums"),
     std::make_pair(constants::Track::GENRE, "browse_title_genres"),

@@ -45,6 +45,7 @@
 #include <core/library/query/local/GetPlaylistQuery.h>
 #include <core/library/query/local/PersistedPlayQueueQuery.h>
 #include <core/support/Duration.h>
+#include <core/support/PreferenceKeys.h>
 #include "NowPlayingLayout.h"
 
 #include <set>

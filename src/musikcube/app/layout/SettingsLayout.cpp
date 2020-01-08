@@ -177,7 +177,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     else if (cb == seekScrubCheckbox.get()) {
         TimeChangeMode mode = cb->IsChecked() ? TimeChangeSeek : TimeChangeScrub;
         this->prefs->SetInt(core::prefs::keys::TimeChangeMode, (int)mode);
-        this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode) == (int)TimeChangeSeek);
+        this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode) == (int) TimeChangeSeek);
         this->playback.SetTimeChangeMode(mode);
     }
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
@@ -185,8 +185,8 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         ColorThemeOverlay::Show256ColorsInfo(
             checked,
             [this]() {
-            this->LoadPreferences();
-        });
+                this->LoadPreferences();
+            });
     }
     else if (cb == enableTransparencyCheckbox.get()) {
         auto bgType = checked ? Colors::Inherit : Colors::Theme;
@@ -270,8 +270,8 @@ void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
 void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
     SchemaOverlay::Show(
         _TSTR("settings_advanced_settings"),
-        this->prefs, 
-        AdvancedSettingsSchema(), 
+        this->prefs,
+        AdvancedSettingsSchema(),
         [this](bool) {
             auto prefs = this->prefs;
             namespace keys = cube::prefs::keys;
@@ -477,8 +477,6 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->SetFocusOrder(order++);
     }
 
-    this->advancedDropdown->SetFocusOrder(order++);
-
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->SetFocusOrder(order++);
     this->enableTransparencyCheckbox->SetFocusOrder(order++);
@@ -488,6 +486,7 @@ void SettingsLayout::InitializeWindows() {
     this->removeCheckbox->SetFocusOrder(order++);
     this->seekScrubCheckbox->SetFocusOrder(order++);
     this->saveSessionCheckbox->SetFocusOrder(order++);
+    this->advancedDropdown->SetFocusOrder(order++);
     this->updateDropdown->SetFocusOrder(order++);
 
     this->AddWindow(this->browseList);
@@ -504,8 +503,6 @@ void SettingsLayout::InitializeWindows() {
         this->AddWindow(this->serverDropdown);
     }
 
-    this->AddWindow(this->advancedDropdown);
-
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->AddWindow(this->paletteCheckbox);
     this->AddWindow(this->enableTransparencyCheckbox);
@@ -518,6 +515,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->removeCheckbox);
     this->AddWindow(this->seekScrubCheckbox);
     this->AddWindow(this->saveSessionCheckbox);
+    this->AddWindow(this->advancedDropdown);
     this->AddWindow(updateDropdown);
 }
 

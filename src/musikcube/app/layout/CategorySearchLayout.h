@@ -40,7 +40,6 @@
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
-#include <app/window/TransportWindow.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/library/ILibrary.h>
