@@ -101,16 +101,32 @@ void TrackOverlays::ShowRateTrackOverlay(
     }
 
     auto dialog = std::make_shared<ListOverlay>();
+
+    auto updateRatingInLibrary = [track, library, callback, dialog](int index) {
+        auto query = std::make_shared<SetTrackRatingQuery>(track->GetId(), (int) index);
+        library->Enqueue(query, ILibrary::QuerySynchronous);
+        dialog->Dismiss();
+        callback(true);
+    };
+
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("track_list_rate_track_overlay_title"))
         .SetWidth(_DIMEN("track_list_rate_track_width", kDefaultRatingOverlayWidth))
         .SetSelectedIndex((int) currentRating)
+        .SetKeyInterceptorCallback(
+            [updateRatingInLibrary](ListOverlay* overlay, std::string key) -> bool {
+                if (key == "0") { updateRatingInLibrary(0); return true; }
+                if (key == "1") { updateRatingInLibrary(1); return true; }
+                if (key == "2") { updateRatingInLibrary(2); return true; }
+                if (key == "3") { updateRatingInLibrary(3); return true; }
+                if (key == "4") { updateRatingInLibrary(4); return true; }
+                if (key == "5") { updateRatingInLibrary(5); return true; }
+                return false;
+            })
         .SetItemSelectedCallback(
-            [track, library, callback]
+            [updateRatingInLibrary]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                auto query = std::make_shared<SetTrackRatingQuery>(track->GetId(), (int) index);
-                library->Enqueue(query, ILibrary::QuerySynchronous);
-                callback(true);
+                updateRatingInLibrary((int) index);
             });
 
     cursespp::App::Overlays().Push(dialog);
