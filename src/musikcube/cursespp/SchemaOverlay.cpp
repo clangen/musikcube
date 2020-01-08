@@ -76,7 +76,7 @@ static std::string stringValueForDouble(const double value, const int precision 
     return out.str();
 }
 
-static std::function<std::string(int)> INT_FORMATTER =
+static std::function<std::string(int)> intFormatter =
 [](int value) -> std::string {
     return std::to_string(value);
 };
@@ -294,10 +294,10 @@ void SchemaOverlay::ShowIntOverlay(
     std::string name(entry->entry.name);
 
     auto title = numberInputTitle(
-        name, entry->minValue, entry->maxValue, INT_FORMATTER);
+        name, entry->minValue, entry->maxValue, intFormatter);
 
     auto validator = std::make_shared<NumberValidator<int>>(
-        entry->minValue,  entry->maxValue, INT_FORMATTER);
+        entry->minValue,  entry->maxValue, intFormatter);
 
     auto handler = [prefs, name, callback](std::string value) {
         prefs->SetInt(name, (int) std::stod(value));
