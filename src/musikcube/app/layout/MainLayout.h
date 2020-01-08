@@ -73,6 +73,7 @@ namespace musik {
                 void OnIndexerStarted();
                 void OnIndexerProgress(int count);
                 void OnIndexerFinished(int count);
+                void OnTrackChanged(size_t index, musik::core::TrackPtr track);
 
                 void Initialize();
                 void RunUpdateCheck();

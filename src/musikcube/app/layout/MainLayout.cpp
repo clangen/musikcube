@@ -97,6 +97,7 @@ MainLayout::MainLayout(
     library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
     library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
+    playback.TrackChanged.connect(this, &MainLayout::OnTrackChanged);
 
     this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
     this->lyricsLayout = std::make_shared<LyricsLayout>(playback, library);
@@ -230,6 +231,18 @@ void MainLayout::OnIndexerProgress(int count) {
 
 void MainLayout::OnIndexerFinished(int count) {
     this->Post(message::IndexerFinished);
+}
+
+void MainLayout::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
+    if (!track) {
+        App::Instance().SetTitle("musikcube");
+    }
+    else {
+        App::Instance().SetTitle(u8fmt(
+            "musikcube [%s - %s]",
+            track->GetString("artist").c_str(),
+            track->GetString("title").c_str()));
+    }
 }
 
 void MainLayout::RunUpdateCheck() {
