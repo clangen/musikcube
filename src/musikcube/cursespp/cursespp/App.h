@@ -81,6 +81,7 @@ namespace cursespp {
 
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
+            ILayoutPtr GetLayout();
             void InjectKeyPress(const std::string& key);
             void Quit();
 

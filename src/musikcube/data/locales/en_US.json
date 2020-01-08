@@ -83,6 +83,7 @@
         "settings_auto_update_check": "check for updates on startup",
         "settings_save_session_on_exit": "save session on exit",
         "settings_check_for_updates": "check for updates now",
+        "settings_advanced_settings": "advanced settings",
         "settings_last_fm": "last.fm",
         "settings_last_fm_dialog_title": "last.fm registration",
         "settings_last_fm_dialog_message_unregistered": "no last.fm account registered.\n\npress ENTER to begin the linking process.",

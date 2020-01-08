@@ -61,6 +61,9 @@ namespace cursespp {
 
             void SetLayout(std::shared_ptr<cursespp::LayoutBase> layout);
 
+            void SetAutoHideCommandBar(bool autoHide);
+            bool GetAutoHideCommandBar();
+
         protected:
             virtual void SetPadding(size_t t, size_t l, size_t b, size_t r);
 
@@ -79,5 +82,6 @@ namespace cursespp {
             ITopLevelLayout* topLevelLayout;
             size_t paddingT{0}, paddingL{0}, paddingB{0}, paddingR{0};
             bool shortcutsFocused;
+            bool autoHideCommandBar{ false };
     };
 }

@@ -114,6 +114,7 @@ MainLayout::MainLayout(
     std::vector<std::string> paths;
     library->Indexer()->GetPaths(paths);
     this->SetLayout(paths.size() > 0 ? libraryLayout : settingsLayout);
+    this->SetAutoHideCommandBar(this->prefs->GetBool(prefs::keys::AutoHideCommandBar, false));
 
     this->RunUpdateCheck();
 }

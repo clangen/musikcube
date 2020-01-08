@@ -79,19 +79,30 @@ void AppLayout::OnLayout() {
     --cy;
 #endif
 
+    bool sf = this->shortcutsFocused;
+    int mainCyOffset = this->autoHideCommandBar ? 0 : 1;
+
     if (this->layout) {
-        this->layout->MoveAndResize(paddingL, paddingT, cx, cy - 1);
+        this->layout->MoveAndResize(paddingL, paddingT, cx, cy - mainCyOffset);
         this->layout->Show();
         this->layout->BringToTop();
-
-        if (this->shortcutsFocused) {
-            this->layout->SetFocus(IWindowPtr());
-        }
     }
 
     this->shortcuts->MoveAndResize(
-        0, Screen::GetHeight() - 1,
-        Screen::GetWidth(), 1);
+        0, Screen::GetHeight() - 1, Screen::GetWidth(), 1);
+
+    if (this->autoHideCommandBar) {
+        if (sf) {
+            this->shortcuts->Show();
+            this->shortcuts->BringToTop();
+        }
+        else {
+            this->shortcuts->Hide();
+        }
+    }
+    else {
+        this->shortcuts->Show();
+    }
 }
 
 void AppLayout::Initialize() {
@@ -179,8 +190,9 @@ void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 }
 
 cursespp::IWindowPtr AppLayout::BlurShortcuts() {
-    this->shortcuts->Blur();
     this->shortcutsFocused = false;
+    this->shortcuts->Hide();
+    this->shortcuts->Blur();
 
     if (this->layout) {
         bool refocused = false;
@@ -194,10 +206,13 @@ cursespp::IWindowPtr AppLayout::BlurShortcuts() {
         }
     }
 
+    this->Layout();
     return this->layout ? this->layout->GetFocus() : IWindowPtr();
 }
 
 void AppLayout::FocusShortcuts() {
+    this->shortcuts->Show();
+    this->Layout();
     this->shortcuts->Focus();
 
     if (this->layout) {
@@ -237,6 +252,17 @@ bool AppLayout::KeyPress(const std::string& key) {
 
     /* otherwise, pass along to our child layout */
     return this->layout ? this->layout->KeyPress(key) : false;
+}
+
+void AppLayout::SetAutoHideCommandBar(bool autoHide) {
+    if (autoHide != this->autoHideCommandBar) {
+        this->autoHideCommandBar = autoHide;
+        this->Layout();
+    }
+}
+
+bool AppLayout::GetAutoHideCommandBar() {
+    return this->autoHideCommandBar;
 }
 
 void AppLayout::EnableDemoModeIfNecessary() {

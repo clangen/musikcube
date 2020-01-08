@@ -107,6 +107,7 @@ namespace musik {
                 void OnServerDropdownActivate(cursespp::TextLabel* label);
                 void OnUpdateDropdownActivate(cursespp::TextLabel* label);
                 void OnLastFmDropdownActivate(cursespp::TextLabel* label);
+                void OnAdvancedSettingsActivate(cursespp::TextLabel* label);
 
                 cursespp::Color ListItemDecorator(
                     cursespp::ScrollableWindow* w,
@@ -133,6 +134,7 @@ namespace musik {
                 Text serverDropdown;
                 Text updateDropdown;
                 Text themeDropdown;
+                Text advancedDropdown;
 
                 using Check = std::shared_ptr<cursespp::Checkbox>;
                 Check paletteCheckbox;
@@ -141,10 +143,7 @@ namespace musik {
                 Check syncOnStartupCheckbox;
                 Check removeCheckbox;
                 Check seekScrubCheckbox;
-                Check minimizeToTrayCheckbox;
-                Check startMinimizedCheckbox;
                 Check saveSessionCheckbox;
-                Check autoUpdateCheckbox;
 
                 std::shared_ptr<cursespp::ListWindow> browseList;
                 std::shared_ptr<cursespp::ListWindow> addedPathsList;

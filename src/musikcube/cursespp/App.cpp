@@ -506,6 +506,10 @@ void App::CheckShowOverlay() {
     }
 }
 
+ILayoutPtr App::GetLayout() {
+    return this->state.layout;
+}
+
 void App::ChangeLayout(ILayoutPtr newLayout) {
     if (this->state.layout == newLayout) {
         return;

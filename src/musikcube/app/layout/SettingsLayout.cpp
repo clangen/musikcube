@@ -40,12 +40,15 @@
 #include <cursespp/InputOverlay.h>
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
+#include <cursespp/SchemaOverlay.h>
+#include <cursespp/AppLayout.h>
 
 #include <core/library/Indexer.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/audio/Outputs.h>
 #include <core/support/Messages.h>
+#include <core/sdk/ISchema.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -98,6 +101,17 @@ static const std::string arrow = "> ";
 static bool showDotfiles = false;
 
 static UpdateCheck updateCheck;
+
+static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
+    std::shared_ptr<TSchema<>> schema(new musik::core::sdk::TSchema<>());
+    schema->AddBool(cube::prefs::keys::AutoUpdateCheck, false);
+    schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
+#ifdef ENABLE_MINIMIZE_TO_TRAY
+    schema->AddBool(cube::prefs::keys::MinimizeToTray, false);
+    schema->AddBool(cube::prefs::keys::StartMinimized, false);
+#endif
+    return schema;
+}
 
 static std::string getOutputDeviceName() {
     std::string deviceName = _TSTR("settings_output_device_default");
@@ -180,20 +194,8 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         app.SetColorBackgroundType(bgType);
     }
 #endif
-#ifdef ENABLE_MINIMIZE_TO_TRAY
-    else if (cb == minimizeToTrayCheckbox.get()) {
-        app.SetMinimizeToTray(checked);
-        this->prefs->SetBool(cube::prefs::keys::MinimizeToTray, checked);
-    }
-    else if (cb == startMinimizedCheckbox.get()) {
-        this->prefs->SetBool(cube::prefs::keys::StartMinimized, checked);
-    }
-#endif
     else if (cb == saveSessionCheckbox.get()) {
         this->prefs->SetBool(core::prefs::keys::SaveSessionOnExit, checked);
-    }
-    else if (cb == autoUpdateCheckbox.get()) {
-        this->prefs->SetBool(cube::prefs::keys::AutoUpdateCheck, checked);
     }
 }
 
@@ -265,6 +267,20 @@ void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
     ServerOverlay::Show([this]() { /* nothing, for now */ });
 }
 
+void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
+    SchemaOverlay::Show(
+        _TSTR("settings_advanced_settings"),
+        this->prefs, 
+        AdvancedSettingsSchema(), 
+        [this](bool) {
+            auto prefs = this->prefs;
+            namespace keys = cube::prefs::keys;
+            this->app.SetMinimizeToTray(prefs->GetBool(keys::MinimizeToTray, false));
+            bool autoHideCommandBar = prefs->GetBool(keys::AutoHideCommandBar, false);
+            ((AppLayout*) this->app.GetLayout().get())->SetAutoHideCommandBar(autoHideCommandBar);
+        });
+}
+
 void SettingsLayout::OnUpdateDropdownActivate(cursespp::TextLabel* label) {
     updateCheck.Run([this](bool updateRequired, std::string version, std::string url) {
         if (updateRequired) {
@@ -326,14 +342,12 @@ void SettingsLayout::OnLayout() {
     this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->seekScrubCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-#ifdef ENABLE_MINIMIZE_TO_TRAY
-    this->minimizeToTrayCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->startMinimizedCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-#endif
     this->saveSessionCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->autoUpdateCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 
-    y++;
+    ++y;
+    this->advancedDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+
+    ++y;
     this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
@@ -431,6 +445,10 @@ void SettingsLayout::InitializeWindows() {
     this->updateDropdown->SetText(arrow + _TSTR("settings_check_for_updates"));
     this->updateDropdown->Activated.connect(this, &SettingsLayout::OnUpdateDropdownActivate);
 
+    this->advancedDropdown.reset(new TextLabel());
+    this->advancedDropdown->SetText(arrow + _TSTR("settings_advanced_settings"));
+    this->advancedDropdown->Activated.connect(this, &SettingsLayout::OnAdvancedSettingsActivate);
+
     CREATE_CHECKBOX(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
@@ -440,12 +458,7 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
     CREATE_CHECKBOX(this->enableTransparencyCheckbox, _TSTR("settings_enable_transparency"));
 #endif
-#ifdef ENABLE_MINIMIZE_TO_TRAY
-    CREATE_CHECKBOX(this->minimizeToTrayCheckbox, _TSTR("settings_minimize_to_tray"));
-    CREATE_CHECKBOX(this->startMinimizedCheckbox, _TSTR("settings_start_minimized"));
-#endif
     CREATE_CHECKBOX(this->saveSessionCheckbox, _TSTR("settings_save_session_on_exit"));
-    CREATE_CHECKBOX(this->autoUpdateCheckbox, _TSTR("settings_auto_update_check"));
 
     int order = 0;
     this->browseList->SetFocusOrder(order++);
@@ -464,6 +477,8 @@ void SettingsLayout::InitializeWindows() {
         this->serverDropdown->SetFocusOrder(order++);
     }
 
+    this->advancedDropdown->SetFocusOrder(order++);
+
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->SetFocusOrder(order++);
     this->enableTransparencyCheckbox->SetFocusOrder(order++);
@@ -472,12 +487,7 @@ void SettingsLayout::InitializeWindows() {
     this->syncOnStartupCheckbox->SetFocusOrder(order++);
     this->removeCheckbox->SetFocusOrder(order++);
     this->seekScrubCheckbox->SetFocusOrder(order++);
-#ifdef ENABLE_MINIMIZE_TO_TRAY
-    this->minimizeToTrayCheckbox->SetFocusOrder(order++);
-    this->startMinimizedCheckbox->SetFocusOrder(order++);
-#endif
     this->saveSessionCheckbox->SetFocusOrder(order++);
-    this->autoUpdateCheckbox->SetFocusOrder(order++);
     this->updateDropdown->SetFocusOrder(order++);
 
     this->AddWindow(this->browseList);
@@ -494,6 +504,8 @@ void SettingsLayout::InitializeWindows() {
         this->AddWindow(this->serverDropdown);
     }
 
+    this->AddWindow(this->advancedDropdown);
+
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->AddWindow(this->paletteCheckbox);
     this->AddWindow(this->enableTransparencyCheckbox);
@@ -505,12 +517,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->syncOnStartupCheckbox);
     this->AddWindow(this->removeCheckbox);
     this->AddWindow(this->seekScrubCheckbox);
-#ifdef ENABLE_MINIMIZE_TO_TRAY
-    this->AddWindow(this->minimizeToTrayCheckbox);
-    this->AddWindow(this->startMinimizedCheckbox);
-#endif
     this->AddWindow(this->saveSessionCheckbox);
-    this->AddWindow(this->autoUpdateCheckbox);
     this->AddWindow(updateDropdown);
 }
 
@@ -619,12 +626,7 @@ void SettingsLayout::LoadPreferences() {
     this->enableTransparencyCheckbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 #endif
 
-#ifdef ENABLE_MINIMIZE_TO_TRAY
-    this->minimizeToTrayCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::MinimizeToTray, false));
-    this->startMinimizedCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::StartMinimized, false));
-#endif
     this->saveSessionCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SaveSessionOnExit, true));
-    this->autoUpdateCheckbox->SetChecked(this->prefs->GetBool(cube::prefs::keys::AutoUpdateCheck, true));
 
     /* output driver */
     std::shared_ptr<IOutput> output = outputs::SelectedOutput();

@@ -172,7 +172,7 @@ void Window::BringToTop() {
     if (this->framePanel) {
         top_panel(this->framePanel);
 
-        if (this->contentPanel != this->framePanel) {
+        if (this->contentPanel && this->contentPanel != this->framePanel) {
             top_panel(this->contentPanel);
         }
 
@@ -500,7 +500,7 @@ void Window::Show() {
             if (!this->isVisibleInParent) {
                 show_panel(this->framePanel);
 
-                if (this->framePanel != this->contentPanel) {
+                if (this->contentPanel && this->framePanel != this->contentPanel) {
                     show_panel(this->contentPanel);
                 }
 
@@ -716,17 +716,17 @@ void Window::Hide() {
             this->Destroy();
             this->isVisibleInParent = false;
             this->OnVisibilityChanged(false);
-            notifyParent = (this->parent != nullptr);
+            notifyParent = true;
         }
     }
     else {
         if (this->isVisibleInParent) {
-            notifyParent = (this->parent != nullptr);
+            notifyParent = true;
             this->isVisibleInParent = false;
         }
     }
 
-    if (notifyParent) {
+    if (notifyParent && this->parent) {
         this->parent->OnChildVisibilityChanged(false, this);
     }
 }
