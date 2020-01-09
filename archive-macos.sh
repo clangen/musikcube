@@ -10,7 +10,7 @@ fi
 rm -rf bin/
 
 ./clean-nix.sh
-cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true -DFFMPEG_DECODER=false .
+cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true -DFFMPEG_ENABLED=false .
 make -j4
 
 DIRNAME="musikcube_macos_$VERSION"
@@ -33,7 +33,7 @@ strip bin/musikcubed
 strip bin/libmusikcore.dylib
 strip bin/plugins/*.dylib
 
-pushd bin/dist 
+pushd bin/dist
 tar cvf musikcube_macos_$VERSION.tar $DIRNAME
 bzip2 musikcube_macos_$VERSION.tar
 popd

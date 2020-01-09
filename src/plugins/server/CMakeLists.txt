@@ -40,7 +40,7 @@ if (${LINK_STATICALLY} MATCHES "true")
 
     add_dependencies(server libmicrohttpd)
     include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/microhttpd/include")
-    file(GLOB EXTRA_OBJS "${CMAKE_CURRENT_SOURCE_DIR}/libmicrohttpd-prefix/src/libmicrohttpd/src/microhttpd/.libs/*.o")
+    file(GLOB EXTRA_OBJS "${CMAKE_CURRENT_SOURCE_DIR}/libmicrohttpd-prefix/src/libmicrohttpd/src/microhttpd/*.o")
     target_link_libraries(server ${server_LINK_LIBS} z crypto ${EXTRA_OBJS})
   else()
     find_library(MICROHTTPDLIB NAMES libmicrohttpd.a microhttpd)

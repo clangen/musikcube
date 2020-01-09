@@ -62,6 +62,7 @@ static IEnvironment* environment = nullptr;
 
 static std::set<std::string> supportedFormats = {
     ".mp3",
+#ifdef FFMPEG_ENABLED
     "audio/mpeg",
     ".ogg",
     "audio/ogg",
@@ -76,6 +77,7 @@ static std::set<std::string> supportedFormats = {
     ".wma",
     "audio/x-ms-wma",
     ".wv"
+#endif
 };
 
 static class Plugin : public IPlugin {
@@ -110,9 +112,11 @@ static class EncoderFactory: public IEncoderFactory {
             if (isMp3(lowerType)) {
                 return new LameEncoder();
             }
+#ifdef FFMPEG_ENABLED
             else if (supportedFormats.find(lowerType) != supportedFormats.end()) {
                 return new FfmpegEncoder(lowerType);
             }
+#endif
             return nullptr;
         }
 

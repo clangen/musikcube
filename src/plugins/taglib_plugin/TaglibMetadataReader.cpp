@@ -92,7 +92,7 @@
 #include <algorithm>
 
 #ifdef WIN32
-#define FFMPEG_DECODER
+#define FFMPEG_ENABLED
 #endif
 
 using namespace musik::core::sdk;
@@ -223,7 +223,7 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
     if (extension) {
         std::string ext(str::lower(extension));
         return
-#ifdef FFMPEG_DECODER
+#ifdef FFMPEG_ENABLED
             ext.compare("opus") == 0 ||
             ext.compare("wv") == 0 ||
             ext.compare("wma") == 0 ||

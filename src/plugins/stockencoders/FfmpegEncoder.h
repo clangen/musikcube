@@ -32,6 +32,14 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+#ifdef WIN32
+#define FFMPEG_ENABLED
+#endif
+
+#ifdef FFMPEG_ENABLED
+
 #include <core/sdk/IBlockingEncoder.h>
 #include <core/sdk/DataBuffer.h>
 #include <string>
@@ -87,3 +95,5 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         int inputChannelCount;
         int inputSampleRate;
 };
+
+#endif // FFMPEG_ENABLED
