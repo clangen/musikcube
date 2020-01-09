@@ -75,7 +75,7 @@ namespace musik {
                 };
 
                 static const std::map<TrackSortType, std::string> kTrackListSortOrderBy = {
-                    { TrackSortType::Title, "track, ar.name, al.name" },
+                    { TrackSortType::Title, "tracks.title, ar.name, al.name" },
                     { TrackSortType::Album, "al.name, disc, track, ar.name" },
                     { TrackSortType::Artist, "ar.name, al.name, disc, track" },
                     { TrackSortType::DateAddedAsc, "date(tracks.date_added) ASC, al.name, disc, track, ar.name" },
@@ -100,6 +100,15 @@ namespace musik {
                     { TrackSortType::PlayCountDesc, "tracks.play_count IS NOT NULL AND tracks.play_count > 0" },
                 };
 
+                static const std::set<TrackSortType> kTrackSortTypeWithAlbumGrouping = {
+                    TrackSortType::Album,
+                    TrackSortType::Artist,
+                    TrackSortType::DateAddedAsc,
+                    TrackSortType::DateAddedDesc,
+                    TrackSortType::DateUpdatedAsc,
+                    TrackSortType::DateUpdatedDesc,
+                    TrackSortType::Genre,
+                };
             }
         }
     }

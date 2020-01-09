@@ -106,6 +106,7 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     }
 
     this->orderBy = "ORDER BY " + kTrackListSortOrderBy.find(sortType)->second;
+    this->parseHeaders = kTrackSortTypeWithAlbumGrouping.find(sortType) != kTrackSortTypeWithAlbumGrouping.end();
 }
 
 CategoryTrackListQuery::~CategoryTrackListQuery() {
@@ -170,7 +171,7 @@ void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuer
         int64_t id = trackQuery.ColumnInt64(0);
         std::string album = trackQuery.ColumnText(1);
 
-        if (album != lastAlbum) {
+        if (this->parseHeaders && album != lastAlbum) {
             headers->insert(index);
             lastAlbum = album;
         }

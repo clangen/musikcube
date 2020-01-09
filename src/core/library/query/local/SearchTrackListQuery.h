@@ -63,6 +63,7 @@ namespace musik { namespace core { namespace db { namespace local {
             musik::core::ILibraryPtr library;
             Result result;
             Headers headers;
+            bool parseHeaders;
             std::string filter;
             std::string orderBy;
             std::string orderByPredicate;

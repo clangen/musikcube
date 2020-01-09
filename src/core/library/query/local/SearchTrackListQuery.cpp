@@ -69,6 +69,7 @@ SearchTrackListQuery::SearchTrackListQuery(
         this->orderByPredicate = kTrackSearchSortOrderByPredicate.find(sort)->second + " AND ";
     }
 
+    this->parseHeaders = kTrackSortTypeWithAlbumGrouping.find(sort) != kTrackSortTypeWithAlbumGrouping.end();
     this->displayString = _TSTR(kTrackListOrderByToDisplayKey.find(sort)->second);
     this->orderBy = kTrackListSortOrderBy.find(sort)->second;
     this->result.reset(new musik::core::TrackList(library));
@@ -152,7 +153,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
             album = _TSTR("tracklist_unknown_album");
         }
 
-        if (album != lastAlbum) {
+        if (this->parseHeaders && album != lastAlbum) {
             headers->insert(index);
             lastAlbum = album;
         }

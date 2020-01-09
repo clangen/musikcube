@@ -90,6 +90,7 @@ namespace musik { namespace core { namespace db { namespace local {
             void ProcessResult(musik::core::db::Statement& stmt);
 
             musik::core::ILibraryPtr library;
+            bool parseHeaders;
             Result result;
             Headers headers;
             Type type;
