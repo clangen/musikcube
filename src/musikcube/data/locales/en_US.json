@@ -231,7 +231,9 @@
         "track_list_sort_rating_desc": "rating [desc]",
         "track_list_sort_play_count_asc": "play count [asc]",
         "track_list_sort_play_count_desc": "play count [desc]",
-        "track_list_sort_genre": "genre"
+        "track_list_sort_genre": "genre",
+
+        "unknown_category_value": "[unknown #%d]"
     },
 
     "dimensions": {
