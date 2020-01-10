@@ -253,6 +253,7 @@ void App::SetTitle(const std::string& title) {
             std::cout << "\033]0;" << this->appTitle.c_str() << "\007";
         }
     }
+    Window::InvalidateScreen();
 #endif
 }
 

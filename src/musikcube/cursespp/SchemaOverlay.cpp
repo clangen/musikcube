@@ -186,7 +186,7 @@ class SchemaAdapter: public ScrollAdapterBase {
             int avail = std::max(0, width - int(u8cols(name)) - 1 - 1);
             auto display = " " + name + " " + text::Align(value + " ", text::AlignRight, avail);
 
-            SinglePtr result = SinglePtr(new SingleLineEntry(text::Ellipsize(display, width)));
+            auto result = std::make_shared<SingleLineEntry>(text::Ellipsize(display, width));
 
             result->SetAttrs(Color(Color::Default));
             if (index == window->GetScrollPosition().logicalIndex) {
