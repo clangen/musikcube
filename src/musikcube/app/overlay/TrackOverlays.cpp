@@ -36,12 +36,12 @@
 
 #include "TrackOverlays.h"
 #include <core/library/query/local/util/TrackSort.h>
-#include <core/library/query/local/util/Rating.h>
 #include <core/library/query/local/SetTrackRatingQuery.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/App.h>
+#include <app/util/Rating.h>
 #include <set>
 
 using namespace cursespp;
@@ -96,8 +96,8 @@ void TrackOverlays::ShowRateTrackOverlay(
     currentRating = std::max(0, std::min(5, currentRating));
     auto adapter = std::make_shared<SimpleScrollAdapter>();
     adapter->SetSelectable(true);
-    for (auto it : kRatingToSymbols) {
-        adapter->AddEntry(_TSTR(it.second));
+    for (int i = 0; i <= 5; i++) {
+        adapter->AddEntry(getRatingString(i));
     }
 
     auto dialog = std::make_shared<ListOverlay>();

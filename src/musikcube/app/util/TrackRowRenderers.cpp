@@ -43,13 +43,13 @@
 #include <cursespp/Text.h>
 
 #include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/util/Rating.h>
+#include <app/util/Rating.h>
 
 #include <core/support/Duration.h>
 
 using namespace musik::core;
 using namespace musik::core::library;
-using namespace musik::core::db::local;
+using namespace musik::cube;
 using namespace musik::cube::TrackRowRenderers;
 using namespace cursespp;
 
@@ -59,10 +59,8 @@ static const int kDurationColWidth = 5; /* 00:00 */
 static const int kRatingBreakpointWidth = 90;
 
 static inline std::string getRatingForTrack(TrackPtr track, size_t width) {
-    return (width > kRatingBreakpointWidth)
-        ? "   " + kRatingToSymbols.find(
-            std::max(0, std::min(5, track->GetInt32("rating", 0))))->second
-        : "";
+    int rating = std::max(0, std::min(5, track->GetInt32("rating", 0)));
+    return (width > kRatingBreakpointWidth) ? "   " + getRatingString(rating) : "";
 }
 
 namespace AlbumSort {

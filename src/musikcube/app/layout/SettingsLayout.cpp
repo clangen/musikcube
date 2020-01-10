@@ -61,6 +61,7 @@
 #include <app/overlay/PluginOverlay.h>
 #include <app/overlay/ServerOverlay.h>
 #include <app/overlay/PreampOverlay.h>
+#include <app/util/Rating.h>
 
 #include "SettingsLayout.h"
 
@@ -106,6 +107,8 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     std::shared_ptr<TSchema<>> schema(new musik::core::sdk::TSchema<>());
     schema->AddBool(cube::prefs::keys::AutoUpdateCheck, false);
     schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
+    schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
+    schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
 #ifdef ENABLE_MINIMIZE_TO_TRAY
     schema->AddBool(cube::prefs::keys::MinimizeToTray, false);
     schema->AddBool(cube::prefs::keys::StartMinimized, false);
@@ -278,6 +281,7 @@ void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
             this->app.SetMinimizeToTray(prefs->GetBool(keys::MinimizeToTray, false));
             bool autoHideCommandBar = prefs->GetBool(keys::AutoHideCommandBar, false);
             ((AppLayout*) this->app.GetLayout().get())->SetAutoHideCommandBar(autoHideCommandBar);
+            updateDefaultRatingSymbols();
         });
 }
 

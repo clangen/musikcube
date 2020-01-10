@@ -37,22 +37,12 @@
 #include <string>
 #include <map>
 
-namespace musik {
-    namespace core {
-        namespace db {
-            namespace local {
-                const std::string kFilledStar = "\xE2\x98\x85";
-                const std::string kEmptyStar = "\xC2\xB7";
+namespace musik { namespace cube {
 
-                static std::map<int, std::string> kRatingToSymbols = {
-                    { 0, kEmptyStar  + kEmptyStar  + kEmptyStar  + kEmptyStar  + kEmptyStar  },
-                    { 1, kFilledStar + kEmptyStar  + kEmptyStar  + kEmptyStar  + kEmptyStar  },
-                    { 2, kFilledStar + kFilledStar + kEmptyStar  + kEmptyStar  + kEmptyStar  },
-                    { 3, kFilledStar + kFilledStar + kFilledStar + kEmptyStar  + kEmptyStar  },
-                    { 4, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kEmptyStar  },
-                    { 5, kFilledStar + kFilledStar + kFilledStar + kFilledStar + kFilledStar },
-                };
-            }
-        }
-    }
-}
+    const std::string kFilledStar = "\xE2\x98\x85";
+    const std::string kEmptyStar = "\xC2\xB7";
+
+    extern const std::string getRatingString(int value);
+    extern void updateDefaultRatingSymbols();
+
+} }

@@ -119,8 +119,9 @@ static std::string stringValueFor(
             auto precision = doubleEntry->precision;
             return stringValueForDouble(prefs->GetDouble(name, defaultValue), precision);
         }
-        case ISchema::Type::String:
+        case ISchema::Type::String: {
             return prefs->GetString(name, DEFAULT(StringEntry));
+        }
         case ISchema::Type::Enum:
             return prefs->GetString(name, DEFAULT(EnumEntry));
     }
@@ -363,6 +364,7 @@ void SchemaOverlay::ShowStringOverlay(
     dialog->SetTitle(name)
         .SetText(stringValueFor(prefs, entry))
         .SetWidth(overlayWidth())
+        .SetAllowEmptyValue(entry->defaultValue && strlen(entry->defaultValue))
         .SetInputAcceptedCallback(handler);
 
     App::Overlays().Push(dialog);

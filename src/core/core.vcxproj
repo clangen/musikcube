@@ -275,7 +275,6 @@
     <ClInclude Include="Library\query\local\LocalQueryBase.h" />
     <ClInclude Include="library\query\local\TrackMetadataQuery.h" />
     <ClInclude Include="library\query\local\util\CategoryQueryUtil.h" />
-    <ClInclude Include="library\query\local\util\Rating.h" />
     <ClInclude Include="library\query\local\util\SdkWrappers.h" />
     <ClInclude Include="library\query\local\util\TrackSort.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
