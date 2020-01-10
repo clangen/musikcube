@@ -189,6 +189,9 @@
     <ClCompile Include="cursespp\SchemaOverlay.cpp">
       <Filter>cursespp</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\Rating.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -432,6 +435,9 @@
     </ClInclude>
     <ClInclude Include="cursespp\cursespp\SchemaOverlay.h">
       <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Rating.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

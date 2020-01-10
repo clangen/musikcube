@@ -106,13 +106,13 @@ static UpdateCheck updateCheck;
 static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     std::shared_ptr<TSchema<>> schema(new musik::core::sdk::TSchema<>());
     schema->AddBool(cube::prefs::keys::AutoUpdateCheck, false);
-    schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
-    schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
-    schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
 #ifdef ENABLE_MINIMIZE_TO_TRAY
     schema->AddBool(cube::prefs::keys::MinimizeToTray, false);
     schema->AddBool(cube::prefs::keys::StartMinimized, false);
 #endif
+    schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
+    schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
+    schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
     return schema;
 }
 

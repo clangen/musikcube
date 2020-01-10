@@ -298,6 +298,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
+    <ClCompile Include="app\util\Rating.cpp" />
     <ClCompile Include="app\util\TrackRowRenderers.cpp" />
     <ClCompile Include="app\util\UpdateCheck.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
@@ -371,6 +372,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="app\util\Messages.h" />
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\PreferenceKeys.h" />
+    <ClInclude Include="app\util\Rating.h" />
     <ClInclude Include="app\util\TrackRowRenderers.h" />
     <ClInclude Include="app\util\UpdateCheck.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
