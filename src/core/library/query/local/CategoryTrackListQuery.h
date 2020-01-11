@@ -38,6 +38,7 @@
 #include <core/library/track/Track.h>
 #include <core/library/query/local/LocalQueryBase.h>
 #include <core/library/query/local/util/CategoryQueryUtil.h>
+#include <core/library/query/local/util/TrackSort.h>
 #include <core/db/Statement.h>
 
 #include "TrackListQueryBase.h"
@@ -48,23 +49,27 @@ namespace musik { namespace core { namespace db { namespace local {
         public:
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
-                const std::string& filter = "");
+                const std::string& filter = "",
+                TrackSortType sortType = TrackSortType::Album);
 
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& column,
                 int64_t id,
-                const std::string& filter = "");
+                const std::string& filter = "",
+                TrackSortType sortType = TrackSortType::Album);
 
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const category::Predicate predicate,
-                const std::string& filter = "");
+                const std::string& filter = "",
+                TrackSortType sortType = TrackSortType::Album);
 
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const category::PredicateList predicates,
-                const std::string& filter = "");
+                const std::string& filter = "",
+                TrackSortType sortType = TrackSortType::Album);
 
             virtual ~CategoryTrackListQuery();
 
@@ -85,11 +90,13 @@ namespace musik { namespace core { namespace db { namespace local {
             void ProcessResult(musik::core::db::Statement& stmt);
 
             musik::core::ILibraryPtr library;
+            bool parseHeaders;
             Result result;
             Headers headers;
             Type type;
             category::PredicateList regular, extended;
             size_t hash;
+            std::string orderBy;
             std::string filter;
     };
 

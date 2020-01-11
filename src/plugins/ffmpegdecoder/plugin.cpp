@@ -67,7 +67,7 @@ class FfmpegPlugin : public musik::core::sdk::IPlugin {
         FfmpegPlugin() { }
         virtual void Release() { };
         virtual const char* Name() { return "ffmpeg IDecoder"; }
-        virtual const char* Version() { return "0.1.0"; }
+        virtual const char* Version() { return "0.7.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "f993ec34-ab43-4c6a-9a0a-6462b4ae1a1c"; }
         virtual bool Configurable() { return false; }
@@ -82,7 +82,6 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
 #ifdef WIN32
             CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 #endif
-            av_register_all();
 
             typeToCodecId = {
                 { ".mp3", AV_CODEC_ID_MP3 },
@@ -110,13 +109,19 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
                 { ".wv", AV_CODEC_ID_WAVPACK },
             };
 
-            AVCodec* codec = av_codec_next(nullptr);
-            while (codec != nullptr) {
-                const AVCodecDescriptor* descriptor = avcodec_descriptor_get(codec->id);
-                if (descriptor != nullptr && descriptor->type == AVMEDIA_TYPE_AUDIO) {
-                    supported.insert(descriptor->id);
+            supportedTypesWithoutCodec = {
+                ".wav", ".wave", ".aif", ".aiff"
+            };
+
+            const AVCodec* codec = nullptr;
+            void *i = 0;
+            while ((codec = av_codec_iterate(&i))) {
+                if (av_codec_is_decoder(codec)) {
+                    const AVCodecDescriptor* descriptor = avcodec_descriptor_get(codec->id);
+                    if (descriptor != nullptr && descriptor->type == AVMEDIA_TYPE_AUDIO) {
+                        supported.insert(descriptor->id);
+                    }
                 }
-                codec = av_codec_next(codec);
             }
         }
 
@@ -141,11 +146,16 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
                 }
             }
 
+            if (supportedTypesWithoutCodec.find(type) != supportedTypesWithoutCodec.end()) {
+                return true;
+            }
+
             return false;
         }
 
     private:
         std::map<std::string, AVCodecID> typeToCodecId;
+        std::set<std::string> supportedTypesWithoutCodec;
         std::set<AVCodecID> supported;
 } factory;
 

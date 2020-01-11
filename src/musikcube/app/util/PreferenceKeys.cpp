@@ -52,6 +52,11 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::LastBrowseDirectoryRoot = "LastBrowseDirectoryRoot";
     const std::string keys::LastCategoryFilter = "LastCategoryFilter";
     const std::string keys::LastTrackFilter = "LastTrackFilter";
+    const std::string keys::TrackSearchSortOrder = "TrackSearchSortOrder";
+    const std::string keys::CategoryTrackListSortOrder = "CategoryTrackListSortOrder";
+    const std::string keys::RatingPositiveChar = "RatingPositiveChar";
+    const std::string keys::RatingNegativeChar = "RatingNegativeChar";
+    const std::string keys::AutoHideCommandBar = "AutoHideCommandBar";
     const std::string keys::AppQuitKey = "AppQuitKey";
 
 } } }

@@ -72,6 +72,7 @@ abstract class PlayerWrapper {
     }
 
     protected fun storeOffline(uri: String, metadata: ITrack) {
+        @Suppress
         Single.fromCallable {
             val track = OfflineTrack()
             if (track.fromJSONObject(uri, metadata.toJson())) {
@@ -150,9 +151,8 @@ abstract class PlayerWrapper {
         fun setMute(muted: Boolean) {
             Preconditions.throwIfNotOnMainThread()
 
-            if (PlayerWrapper.globalMuted != muted) {
-                PlayerWrapper.globalMuted = muted
-
+            if (globalMuted != muted) {
+                globalMuted = muted
                 for (w in activePlayers) {
                     w.updateVolume()
                 }

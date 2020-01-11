@@ -32,36 +32,29 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IEncoder.h>
-#include <core/sdk/DataBuffer.h>
-#include <vorbis/vorbisenc.h>
+#pragma once
 
-/* fre:ac/BoCA has an excellent example of vorbis encoder usage, a lot of code
-was adapted (stolen) from here: https://github.com/enzo1982/BoCA/blob/master/components/encoder/vorbis/vorbis.cpp */
+#include <core/library/query/local/util/TrackSort.h>
+#include <core/library/ILibrary.h>
+#include <core/library/track/Track.h>
 
-class OggEncoder : public musik::core::sdk::IEncoder {
-    using IBuffer = musik::core::sdk::IBuffer;
+#include <functional>
 
-    public:
-        virtual void Release() override;
-        virtual void Initialize(size_t rate, size_t channels, size_t bitrate) override;
-        virtual int Encode(const IBuffer* pcm, char** data) override;
-        virtual int Flush(char** data) override;
-        virtual void Finalize(const char* uri) override;
-        virtual musik::core::sdk::IPreferences* GetPreferences() override;
+namespace musik {
+    namespace cube {
+        class TrackOverlays {
+            public:
+                using TrackSortType = musik::core::db::local::TrackSortType;
 
-    private:
-        int WritePackets(bool flush);
+                static void ShowTrackSearchSortOverlay(
+                    TrackSortType currentSortType,
+                    const std::map<TrackSortType, std::string>& availableSortTypes,
+                    std::function<void(TrackSortType)> callback);
 
-        DataBuffer<char> encodedData;
-        musik::core::sdk::IPreferences* prefs;
-        long bitrate;
-        bool headerWritten;
-        ogg_stream_state os;
-        ogg_page og;
-        ogg_packet op;
-        vorbis_info vi;
-        vorbis_comment vc;
-        vorbis_dsp_state vd;
-        vorbis_block vb;
-};
+                static void ShowRateTrackOverlay(
+                    musik::core::TrackPtr track,
+                    musik::core::ILibraryPtr library,
+                    std::function<void(bool)> callback);
+        };
+    }
+}

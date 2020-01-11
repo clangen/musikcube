@@ -229,6 +229,15 @@
     <ClCompile Include="library\LocalMetadataProxy.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\local\LyricsQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\local\MarkTrackPlayedQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\local\SetTrackRatingQuery.cpp">
+      <Filter>src\library\query\local</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -554,6 +563,24 @@
     </ClInclude>
     <ClInclude Include="library\LocalMetadataProxy.h">
       <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IBlockingEncoder.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\IStreamingEncoder.h">
+      <Filter>src\sdk\audio</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\LyricsQuery.h">
+      <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\MarkTrackPlayedQuery.h">
+      <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\util\TrackSort.h">
+      <Filter>src\library\query\local\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\local\SetTrackRatingQuery.h">
+      <Filter>src\library\query\local</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

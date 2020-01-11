@@ -296,7 +296,10 @@ LocalMetadataProxy::~LocalMetadataProxy() {
 ITrackList* LocalMetadataProxy::QueryTracks(const char* query, int limit, int offset) {
     try {
         std::shared_ptr<SearchTrackListQuery> search(
-            new SearchTrackListQuery(this->library, std::string(query ? query : "")));
+            new SearchTrackListQuery(
+                this->library, 
+                std::string(query ? query : ""),
+                TrackSortType::Album));
 
         if (limit >= 0) {
             search->SetLimitAndOffset(limit, offset);

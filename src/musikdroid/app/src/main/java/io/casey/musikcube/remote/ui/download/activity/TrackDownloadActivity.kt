@@ -143,9 +143,9 @@ class TrackDownloadActivity: BaseActivity() {
 
                 if (it.byteStream().toFile(outputFilename, onBytesReceived)) {
                     MediaScannerConnection.scanFile(
-                            this@TrackDownloadActivity,
-                            arrayOf(outputFilename),
-                            null)
+                        this@TrackDownloadActivity,
+                        arrayOf(outputFilename),
+                        null)
                     { _, _ ->
                         finish()
                     }

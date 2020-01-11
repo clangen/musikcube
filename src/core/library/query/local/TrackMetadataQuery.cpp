@@ -41,7 +41,7 @@ using namespace musik::core::db::local;
 using namespace musik::core;
 using namespace musik::core::library;
 
-static const std::string COLUMNS = "t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id";
+static const std::string COLUMNS = "t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id, t.rating ";
 static const std::string TABLES = "tracks t, albums al, artists alar, artists ar, genres gn";
 static const std::string PREDICATE = "t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id";
 
@@ -118,6 +118,7 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
             result->SetValue(constants::Track::ALBUM_ID, trackQuery.ColumnText(16));
             result->SetValue(constants::Track::SOURCE_ID, trackQuery.ColumnText(17));
             result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(18));
+            result->SetValue(constants::Track::RATING, trackQuery.ColumnText(19));
         }
         else {
             result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(0));

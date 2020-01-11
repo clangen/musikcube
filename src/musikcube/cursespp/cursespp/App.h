@@ -64,6 +64,7 @@ namespace cursespp {
             void SetMouseEnabled(bool enabled);
             bool IsOverlayVisible() { return this->state.overlay != nullptr; }
             void SetMinimizeToTray(bool minimizeToTray);
+            void SetTitle(const std::string& title);
             std::string GetQuitKey();
             void SetQuitKey(const std::string& kn);
             void Minimize();
@@ -81,6 +82,7 @@ namespace cursespp {
 
             void Run(ILayoutPtr layout);
             void ChangeLayout(ILayoutPtr layout);
+            ILayoutPtr GetLayout();
             void InjectKeyPress(const std::string& key);
             void Quit();
 
@@ -125,10 +127,11 @@ namespace cursespp {
             int minWidth, minHeight;
             bool mouseEnabled{true};
             bool quit{false}, initialized{false};
+            std::string appTitle;
 
 #ifdef WIN32
             int iconId;
-            std::string uniqueId, appTitle;
+            std::string uniqueId;
 #endif
     };
 }

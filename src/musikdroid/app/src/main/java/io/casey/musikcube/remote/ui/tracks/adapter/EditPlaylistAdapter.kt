@@ -45,12 +45,7 @@ class EditPlaylistAdapter(
         holder.bind(viewModel[position])
     }
 
-    private val emptyClickListener = object: View.OnClickListener {
-        override fun onClick(view: View?) {
-            /* we do this so we get a ripple effect when the user touches the view,
-            so there's an indication something is happening before the drag starts */
-        }
-    }
+    private val emptyClickListener = { _: View -> }
 
     private val dragTouchHandler = object: View.OnTouchListener {
         override fun onTouch(view: View, event: MotionEvent?): Boolean {

@@ -55,8 +55,6 @@
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 
-#define TRANSPORT_HEIGHT 3
-
 #define SHOULD_REFOCUS(target) \
     (this->visibleLayout == target) && \
     (this->shortcuts && !this->shortcuts->IsFocused())
@@ -96,17 +94,16 @@ LibraryLayout::~LibraryLayout() {
 }
 
 void LibraryLayout::OnLayout() {
+    bool autoHideCommandBar = this->prefs->GetBool(keys::AutoHideCommandBar, false);
     int x = 0, y = 0;
     int cx = this->GetWidth(), cy = this->GetHeight();
-
-    int mainHeight = cy - TRANSPORT_HEIGHT;
-
-    this->transportView->MoveAndResize(
-        1,
-        mainHeight,
-        cx - 2,
-        TRANSPORT_HEIGHT);
-
+#ifdef WIN32
+    int transportCy = 3;
+#else
+    int transportCy = (autoHideCommandBar ? 2 : 3);
+#endif
+    int mainHeight = cy - transportCy;
+    this->transportView->MoveAndResize(1, mainHeight, cx - 2, transportCy);
     if (this->visibleLayout) {
         this->visibleLayout->MoveAndResize(x, y, cx, mainHeight);
         this->visibleLayout->Show();

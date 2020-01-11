@@ -43,6 +43,8 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <iostream>
+
 using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
@@ -54,13 +56,22 @@ using namespace musik::core::library::constants;
 using namespace musik::core::db::local;
 using namespace boost::algorithm;
 
-SearchTrackListQuery::SearchTrackListQuery(ILibraryPtr library, const std::string& filter) {
+SearchTrackListQuery::SearchTrackListQuery(
+    ILibraryPtr library, const std::string& filter, TrackSortType sort)
+{
     this->library = library;
 
     if (filter.size()) {
         this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
     }
 
+    if (kTrackSearchSortOrderByPredicate.find(sort) != kTrackSearchSortOrderByPredicate.end()) {
+        this->orderByPredicate = kTrackSearchSortOrderByPredicate.find(sort)->second + " AND ";
+    }
+
+    this->parseHeaders = kTrackSortTypeWithAlbumGrouping.find(sort) != kTrackSortTypeWithAlbumGrouping.end();
+    this->displayString = _TSTR(kTrackListOrderByToDisplayKey.find(sort)->second);
+    this->orderBy = kTrackListSortOrderBy.find(sort)->second;
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = 0;
@@ -82,6 +93,10 @@ size_t SearchTrackListQuery::GetQueryHash() {
     return this->hash;
 }
 
+std::string SearchTrackListQuery::GetSortDisplayString() {
+    return this->displayString;
+}
+
 bool SearchTrackListQuery::OnRun(Connection& db) {
     if (result) {
         result.reset(new musik::core::TrackList(this->library));
@@ -97,23 +112,29 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
 
     if (hasFilter) {
         query =
-            "SELECT DISTINCT t.id, al.name "
-            "FROM tracks t, albums al, artists ar, genres gn "
+            "SELECT DISTINCT tracks.id, al.name "
+            "FROM tracks, albums al, artists ar, genres gn "
             "WHERE "
-                " t.visible=1 AND "
-                "(t.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
-                " AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name ";
+                " tracks.visible=1 AND "
+                + this->orderByPredicate +
+                "(tracks.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
+                " AND tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
+            "ORDER BY " + this->orderBy + " ";
     }
     else {
         query =
-            "SELECT DISTINCT t.id, al.name "
-            "FROM tracks t, albums al, artists ar, genres gn "
-            "WHERE t.visible=1 AND t.album_id=al.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id "
-            "ORDER BY al.name, disc, track, ar.name ";
+            "SELECT DISTINCT tracks.id, al.name "
+            "FROM tracks, albums al, artists ar, genres gn "
+            "WHERE "
+                " tracks.visible=1 AND "
+                + this->orderByPredicate +
+                " tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
+            "ORDER BY " + this->orderBy + " ";
     }
 
     query += this->GetLimitAndOffset();
+
+    std::cerr << query << "\n";
 
     Statement trackQuery(query.c_str(), db);
 
@@ -132,7 +153,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
             album = _TSTR("tracklist_unknown_album");
         }
 
-        if (album != lastAlbum) {
+        if (this->parseHeaders && album != lastAlbum) {
             headers->insert(index);
             lastAlbum = album;
         }

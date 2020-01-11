@@ -36,6 +36,8 @@
 #include "CategoryListQuery.h"
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
+#include <core/i18n/Locale.h>
+#include <core/utfutil.h>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -189,13 +191,27 @@ void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
 }
 
 void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
+    SdkValueList unknowns;
     while (stmt.Step() == Row) {
-        auto row = std::make_shared<SdkValue>(
-            stmt.ColumnText(1),
-            stmt.ColumnInt64(0),
-            this->trackField);
+        int64_t id = stmt.ColumnInt64(0);
+        std::string displayValue = musik::core::Trim(stmt.ColumnText(1));
 
-        result->Add(row);
+        /* we track empty / blank values separately, then sort them to the bottom
+        of the returned list so they don't pollute the first results */
+        if (!displayValue.size()) {
+            unknowns.Add(std::make_shared<SdkValue>(
+                u8fmt(_TSTR("unknown_category_value"), unknowns.Count() + 1),
+                id,
+                this->trackField
+            ));
+        }
+        else {
+            result->Add(std::make_shared<SdkValue>(displayValue, id, this->trackField));
+        }
+    }
+
+    for (size_t i = 0; i < unknowns.Count(); i++) {
+        result->Add(unknowns.At(i));
     }
 }
 

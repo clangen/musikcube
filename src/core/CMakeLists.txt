@@ -29,11 +29,14 @@ set(CORE_SOURCES
   ./library/query/local/CategoryTrackListQuery.cpp
   ./library/query/local/DeletePlaylistQuery.cpp
   ./library/query/local/DirectoryTrackListQuery.cpp
+  ./library/query/local/LyricsQuery.cpp
+  ./library/query/local/MarkTrackPlayedQuery.cpp
   ./library/query/local/NowPlayingTrackListQuery.cpp
   ./library/query/local/PersistedPlayQueueQuery.cpp
   ./library/query/local/ReplayGainQuery.cpp
   ./library/query/local/SavePlaylistQuery.cpp
   ./library/query/local/SearchTrackListQuery.cpp
+  ./library/query/local/SetTrackRatingQuery.cpp
   ./library/query/local/TrackMetadataQuery.cpp
   ./library/query/local/util/CategoryQueryUtil.cpp
   ./library/metadata/MetadataMap.cpp

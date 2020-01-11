@@ -13,10 +13,10 @@ abstract class BaseRemoteViewModel: ViewModel<BaseRemoteViewModel.State>() {
 
     fun attach(provider: IMetadataProxy) {
         this.provider = provider
-        this.provider?.let {
-            this.disposables.add(it.observeState().subscribeBy(
-                onNext = {
-                    if (it.first == IMetadataProxy.State.Connected) {
+        this.provider?.let { p ->
+            this.disposables.add(p.observeState().subscribeBy(
+                onNext = { item ->
+                    if (item.first == IMetadataProxy.State.Connected) {
                         onConnected()
                     }
                 },

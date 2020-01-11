@@ -45,7 +45,7 @@ namespace musik { namespace core { namespace db {
 
     class Statement {
         public:
-            Statement(const char* sql,Connection &connection);
+            Statement(const char* sql, Connection &connection);
             Statement(const Statement&) = delete;
             virtual ~Statement();
 

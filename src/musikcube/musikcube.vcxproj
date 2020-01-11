@@ -136,7 +136,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
@@ -174,7 +173,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
@@ -220,7 +218,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
@@ -265,7 +262,6 @@ xcopy "$(ProjectDir)data\locales\*" "$(TargetDir)locales\" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\ffmpeg\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\lame\*" "$(TargetDir)" /Y /e
 xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\libcurl\*" "$(TargetDir)" /Y /e
-xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\vorbis\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
@@ -295,12 +291,15 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClCompile Include="app\overlay\PreampOverlay.cpp" />
     <ClCompile Include="app\overlay\ReassignHotkeyOverlay.cpp" />
     <ClCompile Include="app\overlay\ServerOverlay.cpp" />
+    <ClCompile Include="app\overlay\TrackOverlays.cpp" />
     <ClCompile Include="app\overlay\VisualizerOverlay.cpp" />
     <ClCompile Include="app\util\ConsoleLogger.cpp" />
     <ClCompile Include="app\util\GlobalHotkeys.cpp" />
     <ClCompile Include="app\util\Hotkeys.cpp" />
     <ClCompile Include="app\util\Playback.cpp" />
     <ClCompile Include="app\util\PreferenceKeys.cpp" />
+    <ClCompile Include="app\util\Rating.cpp" />
+    <ClCompile Include="app\util\TrackRowRenderers.cpp" />
     <ClCompile Include="app\util\UpdateCheck.cpp" />
     <ClCompile Include="app\window\CategoryListView.cpp" />
     <ClCompile Include="app\window\TrackListView.cpp" />
@@ -317,6 +316,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClCompile Include="cursespp\ListWindow.cpp" />
     <ClCompile Include="cursespp\MultiLineEntry.cpp" />
     <ClCompile Include="cursespp\OverlayStack.cpp" />
+    <ClCompile Include="cursespp\SchemaOverlay.cpp" />
     <ClCompile Include="cursespp\Screen.cpp" />
     <ClCompile Include="cursespp\ScrollableWindow.cpp" />
     <ClCompile Include="cursespp\ScrollAdapterBase.cpp" />
@@ -364,6 +364,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="app\overlay\PreampOverlay.h" />
     <ClInclude Include="app\overlay\ReassignHotkeyOverlay.h" />
     <ClInclude Include="app\overlay\ServerOverlay.h" />
+    <ClInclude Include="app\overlay\TrackOverlays.h" />
     <ClInclude Include="app\overlay\VisualizerOverlay.h" />
     <ClInclude Include="app\util\ConsoleLogger.h" />
     <ClInclude Include="app\util\GlobalHotkeys.h" />
@@ -371,6 +372,8 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="app\util\Messages.h" />
     <ClInclude Include="app\util\Playback.h" />
     <ClInclude Include="app\util\PreferenceKeys.h" />
+    <ClInclude Include="app\util\Rating.h" />
+    <ClInclude Include="app\util\TrackRowRenderers.h" />
     <ClInclude Include="app\util\UpdateCheck.h" />
     <ClInclude Include="app\window\CategoryListView.h" />
     <ClInclude Include="app\window\TrackListView.h" />
@@ -399,8 +402,10 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="cursespp\cursespp\ListOverlay.h" />
     <ClInclude Include="cursespp\cursespp\ListWindow.h" />
     <ClInclude Include="cursespp\cursespp\MultiLineEntry.h" />
+    <ClInclude Include="cursespp\cursespp\NumberValidator.h" />
     <ClInclude Include="cursespp\cursespp\OverlayBase.h" />
     <ClInclude Include="cursespp\cursespp\OverlayStack.h" />
+    <ClInclude Include="cursespp\cursespp\SchemaOverlay.h" />
     <ClInclude Include="cursespp\cursespp\Screen.h" />
     <ClInclude Include="cursespp\cursespp\ScrollableWindow.h" />
     <ClInclude Include="cursespp\cursespp\ScrollAdapterBase.h" />

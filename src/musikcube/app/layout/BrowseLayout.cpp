@@ -40,6 +40,8 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/local/CategoryTrackListQuery.h>
 #include <core/library/query/local/SavePlaylistQuery.h>
+#include <core/library/query/local/util/TrackSort.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
 
@@ -48,6 +50,7 @@
 #include <app/util/PreferenceKeys.h>
 #include <app/util/Messages.h>
 #include <app/overlay/PlayQueueOverlays.h>
+#include <app/overlay/TrackOverlays.h>
 
 #include "BrowseLayout.h"
 
@@ -71,7 +74,7 @@ static int MIN_LIST_TITLE_HEIGHT = 26;
 
 static std::set<std::string> EDIT_KEYS;
 
-static std::map <std::string, std::string> FIELD_TO_TITLE{
+static std::map <std::string, std::string> FIELD_TO_TITLE {
     std::make_pair(constants::Track::ARTIST, "browse_title_artists"),
     std::make_pair(constants::Track::ALBUM, "browse_title_albums"),
     std::make_pair(constants::Track::GENRE, "browse_title_genres"),
@@ -93,6 +96,11 @@ static inline std::string getModifiedText() {
 static inline std::string getTitleForCategory(const std::string& fieldName) {
     return FIELD_TO_TITLE.find(fieldName) == FIELD_TO_TITLE.end()
         ? _TSTR(fieldName) : _TSTR(FIELD_TO_TITLE[fieldName]);
+}
+
+static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
+    return (TrackSortType)prefs->GetInt(
+        keys::CategoryTrackListSortOrder, (int) TrackSortType::Album);
 }
 
 BrowseLayout::BrowseLayout(
@@ -147,7 +155,7 @@ void BrowseLayout::InitializeWindows() {
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
     this->trackList.reset(new TrackListView(this->playback, this->library));
-    this->trackList->SetFrameTitle(_TSTR("browse_title_tracks"));
+    this->trackList->Requeried.connect(this, &BrowseLayout::OnRequeried);
 
     this->modifiedLabel.reset(new TextLabel());
     this->modifiedLabel->SetText(getModifiedText(), text::AlignCenter);
@@ -231,13 +239,28 @@ void BrowseLayout::OnIndexerProgress(int count) {
     this->Post(message::IndexerProgress);
 }
 
+void BrowseLayout::OnRequeried(TrackListQueryBase* query) {
+    std::string sortByDisplayString = kTrackListOrderByToDisplayKey
+        .find(getDefaultTrackSort(this->prefs))->second;
+
+    this->trackList->SetFrameTitle(u8fmt(
+        _TSTR("browse_title_tracks"),
+        _TSTR(sortByDisplayString).c_str()));
+}
+
 void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
         int64_t selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
+            TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
             auto column = this->categoryList->GetFieldName();
             this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-                new CategoryTrackListQuery(this->library, column, selectedId)));
+                new CategoryTrackListQuery(
+                    this->library,
+                    column,
+                    selectedId,
+                    "",
+                    sortOrder)));
         }
         else {
             this->trackList->Clear();
@@ -270,7 +293,8 @@ void BrowseLayout::SwitchCategory(const std::string& fieldName) {
     this->categoryList->SetFrameTitle(getTitleForCategory(fieldName));
 
     this->trackList->SetTrackNumType(fieldName == constants::Playlists::TABLE_NAME
-        ? TrackListView::TrackNumType::Sequential : TrackListView::TrackNumType::Metadata);
+        ? TrackRowRenderers::TrackNumType::Sequential
+        : TrackRowRenderers::TrackNumType::Metadata);
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {
@@ -284,6 +308,16 @@ bool BrowseLayout::KeyPress(const std::string& key) {
                 return true;
             }
         }
+    }
+    else if (Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key)) {
+        TrackOverlays::ShowTrackSearchSortOverlay(
+            getDefaultTrackSort(this->prefs),
+            kTrackListOrderByToDisplayKey,
+            [this](TrackSortType type) {
+                this->prefs->SetInt(keys::CategoryTrackListSortOrder, (int)type);
+                this->RequeryTrackList(this->categoryList.get());
+            });
+        return true;
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
         this->categoryList->Requery();

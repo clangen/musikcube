@@ -79,3 +79,13 @@ static std::string u8fmt(const std::string& format, Args ... args) {
     std::snprintf(buf.get(), size, format.c_str(), args ...);
     return std::string(buf.get(), buf.get() + size - 1); /* omit the '\0' */
 }
+
+static inline void u8replace(
+    std::string& input, const std::string& find, const std::string& replace)
+{
+    size_t pos = input.find(find);
+    while (pos != std::string::npos) {
+        input.replace(pos, find.size(), replace);
+        pos = input.find(find, pos + replace.size());
+    }
+}

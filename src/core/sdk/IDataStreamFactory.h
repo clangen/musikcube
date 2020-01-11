@@ -39,8 +39,10 @@
 namespace musik { namespace core { namespace sdk {
     class IDataStreamFactory{
         public:
+            using OpenFlags = musik::core::sdk::OpenFlags;
+
             virtual bool CanRead(const char *uri) = 0;
-            virtual IDataStream* Open(const char *uri, unsigned int options = 0) = 0;
+            virtual IDataStream* Open(const char *uri, OpenFlags flags) = 0;
             virtual void Release() = 0;
     };
 

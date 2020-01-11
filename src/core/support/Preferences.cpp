@@ -215,7 +215,22 @@ double Preferences::GetDouble(const std::string& key, double defaultValue) {
 
 std::string Preferences::GetString(const std::string& key, const std::string& defaultValue) {
     std::unique_lock<std::mutex> lock(this->mutex);
-    RETURN_VALUE(defaultValue);
+    try {
+        auto it = json.find(key);
+        if (it == json.end()) {
+            json[key] = defaultValue;
+            return defaultValue;
+        }
+        std::string value = it.value();
+        if (!value.size() && defaultValue.size()) {
+            json[key] = defaultValue;
+            return defaultValue;
+        }
+        return value;
+    }
+    catch (...) {
+        return defaultValue;
+    }
 }
 
 void Preferences::SetBool(const std::string& key, bool value) {

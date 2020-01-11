@@ -54,6 +54,11 @@ namespace musik { namespace cube { namespace prefs {
         extern const std::string LastBrowseDirectoryRoot;
         extern const std::string LastCategoryFilter;
         extern const std::string LastTrackFilter;
+        extern const std::string TrackSearchSortOrder;
+        extern const std::string CategoryTrackListSortOrder;
+        extern const std::string RatingPositiveChar;
+        extern const std::string RatingNegativeChar;
+        extern const std::string AutoHideCommandBar;
         extern const std::string AppQuitKey;
     }
 

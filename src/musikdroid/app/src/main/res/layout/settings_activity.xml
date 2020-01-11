@@ -156,6 +156,23 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_marginRight="8dp"
+            android:text="@string/settings_transcoder_format"/>
+
+        <Spinner
+            android:id="@+id/transcoder_format_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="24dp"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginRight="8dp"
             android:text="@string/settings_cache_size"/>
 
         <Spinner

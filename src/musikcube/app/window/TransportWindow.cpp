@@ -583,7 +583,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     /* draw the "shuffle" label */
-    const int shuffleOffset = cx - shuffleWidth;
+    const int shuffleOffset = (int) (cx - shuffleWidth);
     wmove(c, 0, shuffleOffset);
     Color shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
@@ -593,7 +593,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* volume slider */
 
-    int volumePercent = (size_t) round(this->transport.Volume() * 100.0f);
+    int volumePercent = (int) round(this->transport.Volume() * 100.0f);
     int thumbOffset = std::min(10, (volumePercent * 10) / 100);
 
     std::string volume;

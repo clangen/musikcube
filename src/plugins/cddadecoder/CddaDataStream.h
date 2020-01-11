@@ -43,6 +43,8 @@ using namespace musik::core::sdk;
 
 class CddaDataStream : public IDataStream {
     public:
+        using OpenFlags = musik::core::sdk::OpenFlags;
+
         enum class ReadError : int {
             DeviceBusy = -128
         };
@@ -51,10 +53,13 @@ class CddaDataStream : public IDataStream {
         ~CddaDataStream();
 
         virtual void Release();
-        virtual bool Open(const char *filename, unsigned int options = 0);
+        virtual bool Open(const char *filename, OpenFlags flags);
         virtual bool Close();
         virtual void Interrupt();
+        virtual bool Readable() { return true; }
+        virtual bool Writable() { return false; }
         virtual PositionType Read(void* buffer, PositionType readBytes);
+        virtual PositionType Write(void* buffer, PositionType writeBytes) { return false;  }
         virtual bool SetPosition(PositionType position);
         virtual PositionType Position();
         virtual bool Eof();

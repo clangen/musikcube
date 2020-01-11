@@ -34,7 +34,10 @@
 
 #pragma once
 
-#include <microhttpd.h>
+extern "C" {
+    #include <microhttpd.h>
+}
+
 #include "Context.h"
 #include <condition_variable>
 #include <mutex>

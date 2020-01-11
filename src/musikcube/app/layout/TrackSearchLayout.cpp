@@ -46,6 +46,7 @@
 #include <app/util/Playback.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
+#include <app/overlay/TrackOverlays.h>
 
 #include "TrackSearchLayout.h"
 
@@ -63,6 +64,11 @@ namespace components = musik::core::prefs::components;
 
 #define SEARCH_HEIGHT 3
 #define REQUERY_INTERVAL_MS 300
+
+static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
+    return (TrackSortType) prefs->GetInt(
+        keys::TrackSearchSortOrder, (int)TrackSortType::Album);
+}
 
 TrackSearchLayout::TrackSearchLayout(
     musik::core::audio::PlaybackService& playback,
@@ -102,8 +108,6 @@ void TrackSearchLayout::OnLayout() {
         y + SEARCH_HEIGHT,
         this->GetWidth(),
         this->GetHeight() - SEARCH_HEIGHT);
-
-    this->trackList->SetFrameTitle(_TSTR("track_filter_title"));
 }
 
 void TrackSearchLayout::InitializeWindows() {
@@ -116,6 +120,7 @@ void TrackSearchLayout::InitializeWindows() {
     this->trackList.reset(new TrackListView(this->playback, this->library));
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
+    this->trackList->Requeried.connect(this, &TrackSearchLayout::OnRequeried);
     this->AddWindow(this->trackList);
 }
 
@@ -139,8 +144,9 @@ void TrackSearchLayout::FocusInput() {
 
 void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
+    const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-        new SearchTrackListQuery(this->library, filter)));
+        new SearchTrackListQuery(this->library, filter, sortOrder)));
 }
 
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
@@ -148,6 +154,15 @@ void TrackSearchLayout::ProcessMessage(IMessage &message) {
 
     if (type == message::RequeryTrackList) {
         this->Requery();
+    }
+}
+
+void TrackSearchLayout::OnRequeried(TrackListQueryBase* query) {
+    auto searchQuery = dynamic_cast<SearchTrackListQuery*>(query);
+    if (searchQuery) {
+        this->trackList->SetFrameTitle(u8fmt(
+            _TSTR("track_filter_title"),
+            searchQuery->GetSortDisplayString().c_str()));
     }
 }
 
@@ -177,6 +192,15 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
             return true;
         }
     }
-
+    else if (Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key)) {
+        TrackOverlays::ShowTrackSearchSortOverlay(
+            getDefaultTrackSort(this->prefs),
+            kTrackListOrderByToDisplayKey,
+            [this](TrackSortType type) {
+                this->prefs->SetInt(keys::TrackSearchSortOrder, (int)type);
+                this->Requery();
+            });
+        return true;
+    }
     return LayoutBase::KeyPress(key);
 }

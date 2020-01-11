@@ -228,7 +228,11 @@ bool HttpDataStream::CanPrefetch() {
     return true;
 }
 
-bool HttpDataStream::Open(const char *uri, unsigned int options) {
+bool HttpDataStream::Open(const char *uri, OpenFlags flags) {
+    if ((flags & OpenFlags::Write) != 0) {
+        return false;
+    }
+
     std::unique_lock<std::mutex> lock(this->stateMutex);
 
     diskCache.Init(cachePath, MAX_CACHE_FILES);

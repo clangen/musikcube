@@ -40,12 +40,16 @@
 class GmeDataStream: public musik::core::sdk::IDataStream {
     public:
         using PositionType = musik::core::sdk::PositionType;
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
-        virtual bool Open(const char *uri, unsigned int options = 0) override;
+        virtual bool Open(const char *uri, OpenFlags flags) override;
         virtual bool Close() override;
         virtual void Interrupt() override;
         virtual void Release() override;
+        virtual bool Readable() override { return true; }
+        virtual bool Writable() override { return false; }
         virtual PositionType Read(void *buffer, PositionType readBytes) override;
+        virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
         virtual bool SetPosition(PositionType position) override;
         virtual PositionType Position() override;
         virtual bool Seekable() override;

@@ -40,10 +40,12 @@ using namespace musik::core::sdk;
 
 class CddaDataStreamFactory : public IDataStreamFactory {
     public:
+        using OpenFlags = musik::core::sdk::OpenFlags;
+
         CddaDataStreamFactory();
         ~CddaDataStreamFactory();
 
         virtual bool CanRead(const char *uri);
-        virtual IDataStream* Open(const char *uri, unsigned int options = 0);
+        virtual IDataStream* Open(const char *uri, OpenFlags flags);
         virtual void Release();
 };

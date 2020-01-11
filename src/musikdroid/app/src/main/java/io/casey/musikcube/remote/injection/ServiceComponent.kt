@@ -7,7 +7,7 @@ import io.casey.musikcube.remote.service.playback.impl.streaming.StreamProxy
 import io.casey.musikcube.remote.service.playback.impl.streaming.StreamingPlaybackService
 
 @ServiceScope
-@Component(dependencies = arrayOf(AppComponent::class))
+@Component(dependencies = [AppComponent::class])
 interface ServiceComponent {
     fun inject(service: StreamingPlaybackService)
     fun inject(service: RemotePlaybackService)

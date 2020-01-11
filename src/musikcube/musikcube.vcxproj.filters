@@ -180,6 +180,18 @@
     <ClCompile Include="app\layout\LyricsLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\TrackRowRenderers.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
+    <ClCompile Include="app\overlay\TrackOverlays.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
+    <ClCompile Include="cursespp\SchemaOverlay.cpp">
+      <Filter>cursespp</Filter>
+    </ClCompile>
+    <ClCompile Include="app\util\Rating.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -411,6 +423,21 @@
     </ClInclude>
     <ClInclude Include="app\layout\LyricsLayout.h">
       <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\TrackRowRenderers.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\TrackOverlays.h">
+      <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\NumberValidator.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="cursespp\cursespp\SchemaOverlay.h">
+      <Filter>cursespp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\Rating.h">
+      <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

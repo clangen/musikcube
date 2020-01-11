@@ -21,7 +21,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
-import androidx.core.view.MenuItemCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -37,7 +36,6 @@ import io.casey.musikcube.remote.ui.shared.activity.IFilterable
 import io.casey.musikcube.remote.ui.shared.activity.IMenuProvider
 import io.casey.musikcube.remote.ui.shared.constant.Shared
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
-import io.casey.musikcube.remote.ui.shared.fragment.TransportFragment
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import okhttp3.OkHttpClient
 import java.io.*
@@ -64,10 +62,6 @@ fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
     val title = extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
     this.title = if (title.isNotEmpty()) title else defaultTitle
-}
-
-fun Toolbar.setTitleFromIntent(stringId: Int) {
-    this.setTitleFromIntent(context.getString(stringId))
 }
 
 fun Toolbar.collapseActionViewIfExpanded(): Boolean {
@@ -109,29 +103,6 @@ fun AppCompatActivity.enableUpNavigation() {
     ab?.setDisplayHomeAsUpEnabled(true)
 }
 
-fun AppCompatActivity.addTransportFragment(
-        listener: ((TransportFragment) -> Unit)? = null): TransportFragment
-{
-    val root = findViewById<View>(android.R.id.content)
-    if (root != null) {
-        if (root.findViewById<View>(R.id.transport_container) != null) {
-            val fragment = TransportFragment.create()
-
-            this.supportFragmentManager
-                    .beginTransaction()
-                    .add(R.id.transport_container, fragment, TransportFragment.TAG)
-                    .commit()
-
-            fragment.modelChangedListener = listener
-            return fragment
-        }
-    }
-    throw IllegalArgumentException("could not find content view")
-}
-
-fun AppCompatActivity.setTitleFromIntent(defaultId: Int) =
-        this.setTitleFromIntent(getString(defaultId))
-
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     val title = this.intent.getStringExtra(Shared.Extra.TITLE_OVERRIDE)
     this.title = if (title.isNotEmpty()) title else defaultTitle
@@ -141,7 +112,7 @@ fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean 
     appCompatActivity.menuInflater.inflate(R.menu.search_menu, menu)
 
     val searchMenuItem = menu.findItem(R.id.action_search)
-    val searchView = MenuItemCompat.getActionView(searchMenuItem) as SearchView
+    val searchView = searchMenuItem.actionView as SearchView
 
     searchView.maxWidth = Integer.MAX_VALUE
 
@@ -173,6 +144,7 @@ fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean 
 fun AppCompatActivity.dialogVisible(tag: String): Boolean =
     this.supportFragmentManager.findFragmentByTag(tag) != null
 
+@Suppress("unchecked_cast")
 fun <T: DialogFragment> AppCompatActivity.findDialog(tag: String): T? =
     this.supportFragmentManager.findFragmentByTag(tag) as? T
 
@@ -258,11 +230,6 @@ inline fun <reified T: BaseFragment> T.pushTo(containerId: Int): T {
     return this
 }
 
-inline fun <reified T: BaseFragment> T.pushTo(other: BaseFragment): T {
-    this.pushTo(other.pushContainerId)
-    return this
-}
-
 fun BaseFragment.pushWithToolbar(
         containerId: Int,
         backstackId: String,
@@ -341,9 +308,6 @@ fun BaseFragment.setupDefaultRecyclerView(
     this.appCompatActivity.setupDefaultRecyclerView(recyclerView, adapter)
 }
 
-fun BaseFragment.getTitleOverride(defaultId: Int): String =
-        this.getTitleOverride(getString(defaultId))
-
 fun BaseFragment.getTitleOverride(defaultTitle: String): String {
     val title = this.extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
     return if (title.isNotEmpty()) title else defaultTitle
@@ -370,9 +334,6 @@ fun showSnackbar(view: View, text: String, bgColor: Int, fgColor: Int, buttonTex
     sb.show()
 }
 
-fun showSnackbar(view: View, stringId: Int, bgColor: Int, fgColor: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showSnackbar(view, Application.instance.getString(stringId), bgColor, fgColor, buttonText, buttonCb)
-
 fun showSnackbar(view: View, text: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
     showSnackbar(view, text, R.color.color_primary, R.color.theme_foreground, buttonText, buttonCb)
 
@@ -387,15 +348,6 @@ fun showErrorSnackbar(view: View, stringId: Int, buttonText: String? = null, but
 
 fun AppCompatActivity.showErrorSnackbar(stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
     showErrorSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
-
-fun AppCompatActivity.showSnackbar(stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
-
-fun AppCompatActivity.showSnackbar(stringId: String, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
-
-fun AppCompatActivity.showSnackbar(viewId: Int, stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showSnackbar(this.findViewById<View>(viewId), stringId, buttonText, buttonCb)
 
 /*
  *
@@ -452,8 +404,6 @@ fun hideKeyboard(context: Context, view: View) {
     val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     imm.hideSoftInputFromWindow(view.windowToken, 0)
 }
-
-fun AppCompatActivity.showKeyboard() = showKeyboard(this)
 
 fun AppCompatActivity.hideKeyboard(view: View? = null) {
     val v = view ?: this.findViewById(android.R.id.content)
@@ -544,7 +494,7 @@ fun dpToPx(dp: Float): Float = dp * Resources.getSystem().displayMetrics.density
 
 fun dpToPx(dp: Int): Float = dpToPx(dp.toFloat())
 
-
+@Suppress("unused")
 fun <T1: Any, T2: Any, R: Any> letMany(p1: T1?, p2: T2?, block: (T1, T2) -> R?): R? {
     return if (p1 != null && p2 != null) block(p1, p2) else null
 }
@@ -553,9 +503,11 @@ fun <T1: Any, T2: Any, T3: Any, R: Any> letMany(p1: T1?, p2: T2?, p3: T3?, block
     return if (p1 != null && p2 != null && p3 != null) block(p1, p2, p3) else null
 }
 
+@Suppress("unused")
 fun <T1: Any, T2: Any, T3: Any, T4: Any, R: Any> letMany(p1: T1?, p2: T2?, p3: T3?, p4: T4?, block: (T1, T2, T3, T4) -> R?): R? {
     return if (p1 != null && p2 != null && p3 != null && p4 != null) block(p1, p2, p3, p4) else null
 }
+@Suppress("unused")
 fun <T1: Any, T2: Any, T3: Any, T4: Any, T5: Any, R: Any> letMany(p1: T1?, p2: T2?, p3: T3?, p4: T4?, p5: T5?, block: (T1, T2, T3, T4, T5) -> R?): R? {
     return if (p1 != null && p2 != null && p3 != null && p4 != null && p5 != null) block(p1, p2, p3, p4, p5) else null
 }

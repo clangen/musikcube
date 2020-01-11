@@ -39,7 +39,6 @@
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
-#include <app/window/TransportWindow.h>
 #include <core/audio/PlaybackService.h>
 #include <core/support/Preferences.h>
 #include <core/library/ILibrary.h>
@@ -83,6 +82,8 @@ namespace musik {
 
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
+
+                void OnRequeried(musik::core::db::local::TrackListQueryBase* query);
 
                 bool IsPlaylist();
                 bool ProcessEditOperation(const std::string& key);

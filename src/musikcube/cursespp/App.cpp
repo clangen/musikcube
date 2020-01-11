@@ -110,9 +110,10 @@ App::App(const std::string& title) {
     this->minWidth = this->minHeight = 0;
     this->mouseEnabled = true;
 
+    this->SetTitle(title);
+
 #ifdef WIN32
     this->iconId = 0;
-    this->appTitle = title;
     this->colorMode = Colors::RGB;
     win32::ConfigureDpiAwareness();
 #else
@@ -232,6 +233,29 @@ void App::SetDefaultMenuVisibility(bool visible) {
     PDC_set_default_menu_visibility(visible);
 }
 #endif
+
+void App::SetTitle(const std::string& title) {
+    this->appTitle = title;
+#ifdef WIN32
+    PDC_set_title(this->appTitle.c_str());
+    win32::SetAppTitle(this->appTitle);
+#else
+    /* stolen from https://github.com/cmus/cmus/blob/fead80b207b79ae6d10ab2b1601b11595d719908/ui_curses.c#L2349 */
+    const char* term = getenv("TERM");
+    if (term) {
+        if (!strcmp(term, "screen")) {
+            std::cout << "\033_" << this->appTitle.c_str() << "\033\\";
+        }
+        else if (!strncmp(term, "xterm", 5) ||
+                 !strncmp(term, "rxvt", 4) ||
+                 !strcmp(term, "Eterm"))
+        {
+            std::cout << "\033]0;" << this->appTitle.c_str() << "\007";
+        }
+    }
+    Window::InvalidateScreen();
+#endif
+}
 
 void App::SetMinimizeToTray(bool minimizeToTray) {
 #ifdef WIN32
@@ -504,6 +528,10 @@ void App::CheckShowOverlay() {
             newTopLayout->FocusFirst();
         }
     }
+}
+
+ILayoutPtr App::GetLayout() {
+    return this->state.layout;
 }
 
 void App::ChangeLayout(ILayoutPtr newLayout) {

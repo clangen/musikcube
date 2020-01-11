@@ -54,7 +54,7 @@ class UpdateCheck {
             callback(LAST_RESULT.required, LAST_RESULT.version, LAST_RESULT.url)
         }
         else {
-            Single.fromCallable {
+            @Suppress Single.fromCallable {
                 val request = Request.Builder().url(UPDATE_CHECK_URL).build()
                 val response = HTTP_CLIENT.newCall(request).execute()
                 val json = response.body()?.string() ?: ""

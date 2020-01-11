@@ -81,19 +81,6 @@ object Navigate {
                         .getStartIntent(activity, categoryType, categoryId, categoryValue))
             }
 
-    fun toAlbums(activity: AppCompatActivity,
-                 fragment: BaseFragment? = null) =
-        when (fragment != null && fragment.pushContainerId > 0) {
-            true ->
-                fragment.pushWithToolbar(
-                    fragment.pushContainerId,
-                    "AllAlbums",
-                    AlbumBrowseFragment.create(activity),
-                    Transition.Vertical)
-            false ->
-                activity.startActivity(AlbumBrowseActivity.getStartIntent(activity))
-        }
-
     /*
      *
      * single album

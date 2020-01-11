@@ -12,7 +12,7 @@ import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 
 @ApplicationScope
-@Component(modules = arrayOf(AppModule::class, DataModule::class, ServiceModule::class))
+@Component(modules = [AppModule::class, DataModule::class, ServiceModule::class])
 interface AppComponent {
     fun inject(app: Application)
 

@@ -97,9 +97,10 @@ MainLayout::MainLayout(
     library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
     library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
+    playback.TrackChanged.connect(this, &MainLayout::OnTrackChanged);
 
     this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
-    this->lyricsLayout = std::make_shared<LyricsLayout>(playback);
+    this->lyricsLayout = std::make_shared<LyricsLayout>(playback, library);
     this->consoleLayout = std::make_shared<ConsoleLayout>(logger);
     this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();
@@ -114,6 +115,7 @@ MainLayout::MainLayout(
     std::vector<std::string> paths;
     library->Indexer()->GetPaths(paths);
     this->SetLayout(paths.size() > 0 ? libraryLayout : settingsLayout);
+    this->SetAutoHideCommandBar(this->prefs->GetBool(prefs::keys::AutoHideCommandBar, false));
 
     this->RunUpdateCheck();
 }
@@ -229,6 +231,18 @@ void MainLayout::OnIndexerProgress(int count) {
 
 void MainLayout::OnIndexerFinished(int count) {
     this->Post(message::IndexerFinished);
+}
+
+void MainLayout::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
+    if (!track) {
+        App::Instance().SetTitle("musikcube");
+    }
+    else {
+        App::Instance().SetTitle(u8fmt(
+            "musikcube [%s - %s]",
+            track->GetString("artist").c_str(),
+            track->GetString("title").c_str()));
+    }
 }
 
 void MainLayout::RunUpdateCheck() {

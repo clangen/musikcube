@@ -116,6 +116,12 @@ namespace musik {
                 Crossfade = 1
             };
 
+            enum OpenFlags {
+                None = 0,
+                Read = 1,
+                Write = 2
+            };
+
             static const size_t EqualizerBandCount = 18;
 
             static const size_t EqualizerBands[] = {
@@ -155,5 +161,5 @@ namespace musik {
                 static const char* ExternalId = "external_id";
             }
 
-            static const int SdkVersion = 16;
+            static const int SdkVersion = 17;
 } } }

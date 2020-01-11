@@ -38,6 +38,7 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/support/PreferenceKeys.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 #include "CategorySearchLayout.h"

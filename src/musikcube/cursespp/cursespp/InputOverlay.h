@@ -59,6 +59,7 @@ namespace cursespp {
             InputOverlay& SetValidator(std::shared_ptr<IValidator> validator);
             InputOverlay& SetWidth(int width);
             InputOverlay& SetInputMode(IInput::InputMode mode);
+            InputOverlay& SetAllowEmptyValue(bool allowEmptyValue);
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
@@ -76,6 +77,7 @@ namespace cursespp {
             int x, y;
             int width, height;
             int setWidth;
+            bool allowEmptyValue;
             std::shared_ptr<TextInput> textInput;
             std::shared_ptr<IValidator> validator;
             InputAcceptedCallback inputAcceptedCallback;

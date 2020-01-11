@@ -22,19 +22,19 @@ class GlideModule : AppGlideModule() {
 
         /* intercept requests made against our server, and inject the auth token */
         val client = OkHttpClient.Builder().addInterceptor { chain ->
-            var req = chain.request()
-            val serverHost = prefs.getString(Prefs.Key.ADDRESS, "")
-            val requestHost = req.url().host()
-            if (serverHost == requestHost) {
-                val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
-                val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
-                req = req.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
+            var request: Request? = chain.request()
+            request?.let { req ->
+                val serverHost = prefs.getString(Prefs.Key.ADDRESS, "")
+                val requestHost = req.url().host()
+                if (serverHost == requestHost) {
+                    val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
+                    val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
+                    request = req.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
+                } else if (canInterceptArtwork(req)) {
+                    request = interceptArtwork(req)
+                }
             }
-            else if (canInterceptArtwork(req)) {
-                req = interceptArtwork(req)
-            }
-
-            if (req != null) chain.proceed(req) else error(chain)
+            if (request != null) chain.proceed(request!!) else error(chain)
         }.build()
 
         registry.replace(GlideUrl::class.java, InputStream::class.java, OkHttpUrlLoader.Factory(client))

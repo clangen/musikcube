@@ -33,13 +33,33 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "Transcoder.h"
-#include "TranscodingDataStream.h"
+#include "BlockingTranscoder.h"
+#include "TranscodingAudioDataStream.h"
 #include "Constants.h"
 #include "Util.h"
+#include <core/sdk/IBlockingEncoder.h>
 #include <boost/filesystem.hpp>
 
 using namespace musik::core::sdk;
 using namespace boost::filesystem;
+
+static IEncoder* getEncoder(Context& context, const std::string& format) {
+    std::string extension = "." + format;
+    return context.environment->GetEncoder(extension.c_str());
+}
+
+template <typename T>
+static T* getTypedEncoder(Context& context, const std::string& format) {
+    IEncoder* encoder = getEncoder(context, format);
+    if (encoder) {
+        T* typedEncoder = dynamic_cast<T*>(encoder);
+        if (typedEncoder) {
+            return typedEncoder;
+        }
+        encoder->Release();
+    }
+    return nullptr;
+}
 
 static std::string cachePath(Context& context) {
     char buf[4096];
@@ -129,19 +149,35 @@ IDataStream* Transcoder::Transcode(
         prefs::transcoder_synchronous.c_str(),
         defaults::transcoder_synchronous))
     {
-        return TranscodeAndWait(context, uri, bitrate, format);
+        return TranscodeAndWait(context, getEncoder(context, format), uri, bitrate, format);
     }
 
-    /* on-demand is the default. */
-    return TranscodeOnDemand(context, uri, bitrate, format);
+    /* on-demand is the default. however, on-demand transcoding is only available
+    for `IStreamingEncoder` types.  */
+    IStreamingEncoder* audioStreamEncoder = getTypedEncoder<IStreamingEncoder>(context, format);
+    if (audioStreamEncoder) {
+        return TranscodeOnDemand(context, audioStreamEncoder, uri, bitrate, format);
+    }
+
+    return TranscodeAndWait(context, nullptr, uri, bitrate, format);
 }
 
 IDataStream* Transcoder::TranscodeOnDemand(
     Context& context,
+    IStreamingEncoder* encoder,
     const std::string& uri,
     size_t bitrate,
     const std::string& format)
 {
+    /* the caller can specify an encoder; if it is not specified, go ahead and
+    create one here */
+    if (!encoder) {
+        encoder = getTypedEncoder<IStreamingEncoder>(context, format);
+        if (!encoder) {
+            return nullptr;
+        }
+    }
+
     /* see if it already exists in the cache. if it does, just return it. */
     std::string expectedFilename, tempFilename;
     getTempAndFinalFilename(context, uri, bitrate, format, tempFilename, expectedFilename);
@@ -149,7 +185,7 @@ IDataStream* Transcoder::TranscodeOnDemand(
     if (exists(expectedFilename)) {
         boost::system::error_code ec;
         last_write_time(expectedFilename, time(nullptr), ec);
-        return context.environment->GetDataStream(expectedFilename.c_str());
+        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 
     /* if it doesn't exist, check to see if the cache is enabled. */
@@ -157,36 +193,46 @@ IDataStream* Transcoder::TranscodeOnDemand(
         prefs::transcoder_cache_count.c_str(),
         defaults::transcoder_cache_count);
 
-    TranscodingDataStream* transcoder = nullptr;
+    TranscodingAudioDataStream* transcoderStream = nullptr;
 
     if (cacheCount > 0) {
         PruneTranscodeCache(context);
 
-        transcoder = new TranscodingDataStream(
-            context, uri, tempFilename, expectedFilename, bitrate, format);
+        transcoderStream = new TranscodingAudioDataStream(
+            context, encoder, uri, tempFilename, expectedFilename, bitrate, format);
 
         /* if the stream has an indeterminite length, close it down and
         re-open it without caching options; we don't want to fill up
         the storage disk */
-        if (transcoder->Length() < 0) {
-            transcoder->Release();
-            delete transcoder;
-            transcoder = new TranscodingDataStream(context, uri, bitrate, format);
+        if (transcoderStream->Length() < 0) {
+            transcoderStream->Release();
+            delete transcoderStream;
+            transcoderStream = new TranscodingAudioDataStream(context, encoder, uri, bitrate, format);
         }
     }
     else {
-        transcoder = new TranscodingDataStream(context, uri, bitrate, format);
+        transcoderStream = new TranscodingAudioDataStream(context, encoder, uri, bitrate, format);
     }
 
-    return transcoder;
+    return transcoderStream;
 }
 
 IDataStream* Transcoder::TranscodeAndWait(
     Context& context,
+    IEncoder* encoder,
     const std::string& uri,
     size_t bitrate,
     const std::string& format)
 {
+    /* the caller can specify an encoder; if it is not specified, go ahead and
+    create one here */
+    if (!encoder) {
+        encoder = getEncoder(context, format);
+        if (!encoder) {
+            return nullptr;
+        }
+    }
+
     std::string expectedFilename, tempFilename;
     getTempAndFinalFilename(context, uri, bitrate, format, tempFilename, expectedFilename);
 
@@ -194,28 +240,44 @@ IDataStream* Transcoder::TranscodeAndWait(
     if (exists(expectedFilename)) {
         boost::system::error_code ec;
         last_write_time(expectedFilename, time(nullptr), ec);
-        return context.environment->GetDataStream(expectedFilename.c_str());
+        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 
-    TranscodingDataStream* transcoder = new TranscodingDataStream(
-        context, uri, tempFilename, expectedFilename, bitrate, format);
+    IStreamingEncoder* audioStreamEncoder = dynamic_cast<IStreamingEncoder*>(encoder);
+    if (audioStreamEncoder) {
+        TranscodingAudioDataStream* transcoderStream = new TranscodingAudioDataStream(
+            context, audioStreamEncoder, uri, tempFilename, expectedFilename, bitrate, format);
 
-    /* transcoders with a negative length have an indeterminate duration, so
-    we disallow waiting for them because they may never finish */
-    if (transcoder->Length() < 0) {
-        transcoder->Release();
-        delete transcoder;
-        return nullptr;
+        /* transcoders with a negative length have an indeterminate duration, so
+        we disallow waiting for them because they may never finish */
+        if (transcoderStream->Length() < 0) {
+            transcoderStream->Release();
+            delete transcoderStream;
+            return nullptr;
+        }
+
+        char buffer[8192];
+        while (!transcoderStream->Eof()) {
+            transcoderStream->Read(buffer, sizeof(buffer));
+            std::this_thread::yield();
+        }
+
+        transcoderStream->Release();
+        PruneTranscodeCache(context);
+        return context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
     }
+    else {
+        IBlockingEncoder* dataStreamEncoder = dynamic_cast<IBlockingEncoder*>(encoder);
+        if (dataStreamEncoder) {
+            BlockingTranscoder blockingTranscoder(
+                context, dataStreamEncoder, uri, tempFilename, expectedFilename, bitrate);
 
-    char buffer[8192];
-    while (!transcoder->Eof()) {
-        transcoder->Read(buffer, sizeof(buffer));
-        std::this_thread::yield();
+            if (!blockingTranscoder.Transcode()) {
+                return nullptr;
+            }
+        }
+
+        PruneTranscodeCache(context);
+        return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
-
-    transcoder->Release();
-    PruneTranscodeCache(context);
-
-    return context.environment->GetDataStream(uri.c_str());
 }

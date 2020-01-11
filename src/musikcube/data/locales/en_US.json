@@ -22,7 +22,7 @@
         "browse_title_genres": "genres",
         "browse_title_album_artists": "album artists",
         "browse_title_category": "category",
-        "browse_title_tracks": "tracks",
+        "browse_title_tracks": "tracks (sorted by %s)",
         "browse_title_playlists": "playlists",
         "browse_title_directory": "directory",
         "browse_playlist_modified": "playlist modified. press '%s' to save.",
@@ -83,6 +83,7 @@
         "settings_auto_update_check": "check for updates on startup",
         "settings_save_session_on_exit": "save session on exit",
         "settings_check_for_updates": "check for updates now",
+        "settings_advanced_settings": "advanced settings",
         "settings_last_fm": "last.fm",
         "settings_last_fm_dialog_title": "last.fm registration",
         "settings_last_fm_dialog_message_unregistered": "no last.fm account registered.\n\npress ENTER to begin the linking process.",
@@ -123,7 +124,7 @@
         "validator_dialog_number_parse_bounded_error": "please enter a number between {{minimum}} and {{maximum}} to continue.",
         "validator_dialog_number_parse_error": "please enter a number to continue.",
 
-        "track_filter_title": "track filter results",
+        "track_filter_title": "tracks (sorted by %s)",
 
         "locale_overlay_select_title": "select locale",
 
@@ -212,7 +213,27 @@
         "update_check_dialog_title": "new version available!",
         "update_check_dialog_message": "musikcube version %s is now available for download. a changelog and binaries are available at:\n\n%s",
         "update_check_no_updates_title": "update check",
-        "update_check_no_updates_message": "no updates found at this time."
+        "update_check_no_updates_message": "no updates found at this time.",
+
+        "track_list_sort_overlay_title": "select sort order",
+        "track_list_rate_track_overlay_title": "rate track",
+
+        "track_list_sort_title": "track title",
+        "track_list_sort_album": "album",
+        "track_list_sort_artist": "artist",
+        "track_list_sort_date_added_asc": "date added [asc]",
+        "track_list_sort_date_added_desc": "date added [desc]",
+        "track_list_sort_date_updated_asc": "date updated [asc]",
+        "track_list_sort_date_updated_desc": "date updated [desc]",
+        "track_list_sort_last_played_asc": "last played [asc]",
+        "track_list_sort_last_played_desc": "last played [desc]",
+        "track_list_sort_rating_asc": "rating [asc]",
+        "track_list_sort_rating_desc": "rating [desc]",
+        "track_list_sort_play_count_asc": "play count [asc]",
+        "track_list_sort_play_count_desc": "play count [desc]",
+        "track_list_sort_genre": "genre",
+
+        "unknown_category_value": "[unknown #%d]"
     },
 
     "dimensions": {
@@ -226,6 +247,8 @@
         "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
         "preamp_overlay_width": 40,
-        "equalizer_overlay_width": 46
+        "equalizer_overlay_width": 46,
+        "track_search_sort_order_width": 32,
+        "track_list_rate_track_width": 24
     }
 }

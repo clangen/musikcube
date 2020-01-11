@@ -83,6 +83,13 @@ namespace cursespp {
                 return focus;
             }
 
+            void Dismiss() {
+                if (this->stack) {
+                    stack->Remove(this);
+                    this->OnDismissed();
+                }
+            }
+
         protected:
             static void style(TextLabel& label) {
                 label.SetContentColor(Color::OverlayContent);
@@ -117,13 +124,6 @@ namespace cursespp {
 
             OverlayStack* GetOverlayStack() {
                 return this->stack;
-            }
-
-            void Dismiss() {
-                if (this->stack) {
-                    stack->Remove(this);
-                    this->OnDismissed();
-                }
             }
 
             virtual void OnDismissed() {

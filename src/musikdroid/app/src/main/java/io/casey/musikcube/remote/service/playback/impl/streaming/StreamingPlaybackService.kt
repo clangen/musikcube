@@ -330,19 +330,13 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
 
     override var shuffled: Boolean = false
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var muted: Boolean = false
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var repeatMode = RepeatMode.None
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var state = PlaybackState.Stopped
         private set(value) {
@@ -448,10 +442,12 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         get() = audioManager?.getStreamMaxVolume(AudioManager.STREAM_MUSIC)?.toFloat() ?: 0.0f
 
     private fun killAudioFocus() {
+        @Suppress("deprecation")
         audioManager?.abandonAudioFocus(audioFocusChangeListener)
     }
 
     private fun requestAudioFocus(): Boolean {
+        @Suppress("deprecation")
         return audioManager?.requestAudioFocus(
             audioFocusChangeListener,
             AudioManager.STREAM_MUSIC,
@@ -530,6 +526,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
             val externalId = track.externalId
             if (externalId.isNotEmpty()) {
+                val getUrlParam: (Int, String, Int) -> String = { arrayId, prefKey, defaultIndex ->
+                    val index = prefs.getInt(prefKey, defaultIndex)
+                    Application.instance.resources.getStringArray(arrayId)[index]
+                }
+
                 val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
                 val protocol = if (ssl) "https" else "http"
                 val port = prefs.getInt(Prefs.Key.AUDIO_PORT, Prefs.Default.AUDIO_PORT)
@@ -553,7 +554,11 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     remoteUri.appendQueryParameter("bitrate", bitrate)
                 }
 
-                remoteUri.appendQueryParameter("format", "mp3");
+                remoteUri.appendQueryParameter("format", getUrlParam(
+                    R.array.transcode_format_array,
+                    Prefs.Key.TRANSCODER_FORMAT_INDEX,
+                    Prefs.Default.TRANSCODER_FORMAT_INDEX))
+
                 return remoteUri.build().toString()
             }
         }
@@ -672,24 +677,21 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                 val currentIndex = playContext.currentIndex
                 val query = getMetadataQuery(nextIndex)
 
-                if (query != null) {
-                    query
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                            { track ->
-                                if (originalParams === queryContext && playContext.currentIndex == currentIndex) {
-                                    if (playContext.nextMetadata == null) {
-                                        playContext.nextIndex = nextIndex
-                                        playContext.nextMetadata = track.firstOrNull()
-                                        prefetchNextTrackAudio()
-                                    }
+                query?.observeOn(AndroidSchedulers.mainThread())
+                    ?.subscribeOn(AndroidSchedulers.mainThread())
+                    ?.subscribe(
+                        { track ->
+                            if (originalParams === queryContext && playContext.currentIndex == currentIndex) {
+                                if (playContext.nextMetadata == null) {
+                                    playContext.nextIndex = nextIndex
+                                    playContext.nextMetadata = track.firstOrNull()
+                                    prefetchNextTrackAudio()
                                 }
-                            },
-                            { error ->
-                                Log.e(TAG, "failed to prefetch next track!", error)
-                            })
-                }
+                            }
+                        },
+                        { error ->
+                            Log.e(TAG, "failed to prefetch next track!", error)
+                        })
             }
         }
     }
@@ -780,7 +782,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     override var queryContext: QueryContext? = null
-        private set(value) { field = value }
+        private set
 
     var snapshotQueryFactory: ITrackListQueryFactory? = null
 
@@ -788,12 +790,12 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         override fun count(): Observable<Int>? {
             val params = queryContext
             if (params != null) {
-                if (params.hasCategory()) {
-                    return metadataProxy.getTrackCountByCategory(
+                return if (params.hasCategory()) {
+                    metadataProxy.getTrackCountByCategory(
                         params.category ?: "", params.categoryId, params.filter)
                 }
                 else {
-                    return metadataProxy.getTrackCount(params.filter)
+                    metadataProxy.getTrackCount(params.filter)
                 }
             }
             return null
@@ -802,12 +804,12 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? {
             val params = queryContext
             if (params != null) {
-                if (params.hasCategory()) {
-                    return metadataProxy.getTracksByCategory(
+                return if (params.hasCategory()) {
+                    metadataProxy.getTracksByCategory(
                         params.category ?: "", params.categoryId, limit, offset, params.filter)
                 }
                 else {
-                    return metadataProxy.getTracks(limit, offset, params.filter)
+                    metadataProxy.getTracks(limit, offset, params.filter)
                 }
             }
             return null
