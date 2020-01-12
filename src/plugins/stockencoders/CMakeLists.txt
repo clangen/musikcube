@@ -10,7 +10,7 @@ if (${FFMPEG_ENABLED} MATCHES "false")
   message(STATUS "[stockencoders] *not* defining FFMPEG_ENABLED")
 else()
   message(STATUS "[stockencoders] defining FFMPEG_ENABLED")
-  add_definitions(-FFMPEG_ENABLED)
+  add_definitions(-DFFMPEG_ENABLED)
   # fedora (and probably other RPM-based distros) put ffmpeg includes here...
   include_directories("/usr/include/ffmpeg")
   include_directories("/usr/local/include/ffmpeg")

@@ -8,7 +8,7 @@ if (${FFMPEG_ENABLED} MATCHES "false")
   message(STATUS "[taglibmetadatareader] *not* defining FFMPEG_ENABLED")
 else()
   message(STATUS "[taglibmetadatareader] defining FFMPEG_ENABLED")
-  add_definitions(-FFMPEG_ENABLED)
+  add_definitions(-DFFMPEG_ENABLED)
 endif()
 
 add_library(taglibreader SHARED ${taglibreader_SOURCES})

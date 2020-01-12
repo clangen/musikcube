@@ -86,7 +86,11 @@ static class Plugin : public IPlugin {
         }
 
         virtual void Release() { }
-        virtual const char* Name() { return "Stock Encoders (MP3, OGG)"; }
+#if defined(FFMPEG_ENABLED) || defined(WIN32)
+        virtual const char* Name() { return "Stock Encoders (MP3 + ffmpeg)"; }
+#else
+        virtual const char* Name() { return "Stock Encoders (MP3)"; }
+#endif
         virtual const char* Version() { return "0.7.0"; }
         virtual const char* Author() { return "clangen"; }
         virtual const char* Guid() { return "d4d13803-a285-4481-ad1e-106131e0d523"; }
