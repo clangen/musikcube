@@ -43,8 +43,6 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <iostream>
-
 using musik::core::db::Statement;
 using musik::core::db::Row;
 using musik::core::TrackPtr;
@@ -133,8 +131,6 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     }
 
     query += this->GetLimitAndOffset();
-
-    std::cerr << query << "\n";
 
     Statement trackQuery(query.c_str(), db);
 

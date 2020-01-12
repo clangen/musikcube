@@ -469,7 +469,7 @@ process:
         messages, ensure our overlay is on top, then do a redraw. */
         Window::MessageQueue().Dispatch();
 
-        if (this->state.overlayWindow && !this->state.overlayWindow->IsTop()) {
+        if (this->state.overlayWindow) {
             this->state.overlay->BringToTop(); /* active overlay is always on top... */
         }
 
