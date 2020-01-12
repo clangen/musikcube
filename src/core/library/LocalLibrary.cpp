@@ -393,8 +393,7 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
             "last_played REAL DEFAULT null,"
             "play_count INTEGER DEFAULT 0,"
             "date_added REAL DEFAULT null,"
-            "date_updated REAL DEFAULT null,"
-        ")");
+            "date_updated REAL DEFAULT null)");
 
     /* genres tables */
     db.Execute(
