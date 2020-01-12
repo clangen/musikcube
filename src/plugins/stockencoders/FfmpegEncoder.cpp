@@ -361,7 +361,9 @@ bool FfmpegEncoder::OpenOutputContext() {
 }
 
 bool FfmpegEncoder::Initialize(IDataStream* out, size_t rate, size_t channels, size_t bitrate) {
+#ifndef WIN32
     av_register_all();
+#endif
 
     this->out = out;
 
