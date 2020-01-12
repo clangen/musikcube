@@ -34,18 +34,16 @@
 
 #include <stdafx.h>
 
-#include <math.h>
-
 #include "TrackRowRenderers.h"
-
 #include <cursespp/Colors.h>
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
-
+#include <core/support/PreferenceKeys.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <app/util/Rating.h>
-
 #include <core/support/Duration.h>
+#include <app/util/Rating.h>
+#include <app/util/PreferenceKeys.h>
+#include <math.h>
 
 using namespace musik::core;
 using namespace musik::core::library;
@@ -58,7 +56,12 @@ using namespace cursespp;
 static const int kDurationColWidth = 5; /* 00:00 */
 static const int kRatingBreakpointWidth = 90;
 
+static auto preferences = Preferences::ForComponent(musik::core::prefs::components::Settings);
+
 static inline std::string getRatingForTrack(TrackPtr track, size_t width) {
+    if (preferences->GetBool(musik::cube::prefs::keys::DisableRatingColumn, false)) {
+        return "";
+    }
     int rating = std::max(0, std::min(5, track->GetInt32("rating", 0)));
     return (width > kRatingBreakpointWidth) ? "   " + getRatingString(rating) : "";
 }

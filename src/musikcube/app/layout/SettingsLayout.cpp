@@ -111,6 +111,7 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     schema->AddBool(cube::prefs::keys::StartMinimized, false);
 #endif
     schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
+    schema->AddBool(cube::prefs::keys::DisableRatingColumn, false);
     schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
     schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
     return schema;
