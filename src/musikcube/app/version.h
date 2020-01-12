@@ -3,9 +3,9 @@
 #include <string>
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 81
+#define VERSION_MINOR 82
 #define VERSION_PATCH 0
-#define VERSION "0.81.0"
+#define VERSION "0.82.0"
 
 namespace musik {
     namespace cube {
