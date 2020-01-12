@@ -22,12 +22,12 @@
         "browse_title_genres": "жанры",
         "browse_title_album_artists": "исполнители альбома",
         "browse_title_category": "категория",
-        "browse_title_tracks": "треки",
+        "browse_title_tracks": "треки (сортировка по %s)",
         "browse_title_playlists": "плейлисты",
         "browse_title_directory": "папка",
         "browse_playlist_modified": "плейлист изменён. нажмите '%s' для сохранения.",
         "browse_categories_title": "выбрать категорию",
-        "browse_title_directory_tracks": "треки в %s",
+        "browse_title_directory_tracks": "треки из %s",
 
         "browse_pick_path_overlay_title": "выбрать корневую папку",
         "browse_pick_path_last_directory": "последняя папка",
@@ -83,6 +83,7 @@
         "settings_auto_update_check": "проверять обновления при старте",
         "settings_save_session_on_exit": "сохранять сеанс при выходе",
         "settings_check_for_updates": "проверить обновления сейчас",
+        "settings_advanced_settings": "дополнительные настройки",
         "settings_last_fm": "last.fm",
         "settings_last_fm_dialog_title": "подключение last.fm",
         "settings_last_fm_dialog_message_unregistered": "нет подключённого аккаунта last.fm.\n\nнажмите ENTER для начала привязки.",
@@ -123,7 +124,7 @@
         "validator_dialog_number_parse_bounded_error": "пожалуйста, введите число между {{minimum}} и {{maximum}} для продолжения.",
         "validator_dialog_number_parse_error": "пожалуйста, введите число для продолжения.",
 
-        "track_filter_title": "результаты фильтра треков",
+        "track_filter_title": "треки (сортировка по %s)",
 
         "locale_overlay_select_title": "выберите язык",
 
@@ -212,7 +213,27 @@
         "update_check_dialog_title": "доступна новая версия!",
         "update_check_dialog_message": "musikcube версии %s доступен для загрузки. список изменений и пакеты расположены на:\n\n%s",
         "update_check_no_updates_title": "проверка обновлений",
-        "update_check_no_updates_message": "обновления не найдены."
+        "update_check_no_updates_message": "обновления не найдены.",
+
+        "track_list_sort_overlay_title": "выберите направление сортировки",
+        "track_list_rate_track_overlay_title": "оценить трек",
+
+        "track_list_sort_title": "названию трека",
+        "track_list_sort_album": "альбому",
+        "track_list_sort_artist": "исполнителю",
+        "track_list_sort_date_added_asc": "дате добавления [возр]",
+        "track_list_sort_date_added_desc": "дате добавления [убыв]",
+        "track_list_sort_date_updated_asc": "дате обновления [возр]",
+        "track_list_sort_date_updated_desc": "дате обновления [убыв]",
+        "track_list_sort_last_played_asc": "последнему проигрыванию [возр]",
+        "track_list_sort_last_played_desc": "последнему проигрыванию [убыв]",
+        "track_list_sort_rating_asc": "оценке [возр]",
+        "track_list_sort_rating_desc": "оценке [убыв]",
+        "track_list_sort_play_count_asc": "числу проигрываний [возр]",
+        "track_list_sort_play_count_desc": "числу проигрываний [убыв]",
+        "track_list_sort_genre": "жанру",
+
+        "unknown_category_value": "[неизвестно #%d]"
     },
 
     "dimensions": {
@@ -226,6 +247,8 @@
         "reassign_hotkey_overlay_width": 35,
         "server_overlay_width": 45,
         "preamp_overlay_width": 40,
-        "equalizer_overlay_width": 46
+        "equalizer_overlay_width": 46,
+        "track_search_sort_order_width": 32,
+        "track_list_rate_track_width": 24
     }
 }
