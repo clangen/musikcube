@@ -56,14 +56,18 @@ using namespace cursespp;
 static const int kDurationColWidth = 5; /* 00:00 */
 static const int kRatingBreakpointWidth = 90;
 
-static auto preferences = Preferences::ForComponent(musik::core::prefs::components::Settings);
-
+/* this method does a couple things slower than it probably should, but it
+shouldn't cause any issues. TODO: make this better? does it matter? */
 static inline std::string getRatingForTrack(TrackPtr track, size_t width) {
-    if (preferences->GetBool(musik::cube::prefs::keys::DisableRatingColumn, false)) {
+    if (width <= kRatingBreakpointWidth) {
+        return "";
+    }
+    auto p = Preferences::ForComponent(musik::core::prefs::components::Settings);
+    if (p->GetBool(musik::cube::prefs::keys::DisableRatingColumn, false)) {
         return "";
     }
     int rating = std::max(0, std::min(5, track->GetInt32("rating", 0)));
-    return (width > kRatingBreakpointWidth) ? "   " + getRatingString(rating) : "";
+    return "   " + getRatingString(rating);
 }
 
 namespace AlbumSort {
@@ -105,7 +109,7 @@ namespace AlbumSort {
             (int) trackColWidth -
             kDurationColWidth -
             kArtistColWidth -
-            u8len(rating) -
+            (int) u8len(rating) -
             (3 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
@@ -156,7 +160,7 @@ namespace NowPlaying {
             kDurationColWidth -
             kAlbumColWidth -
             kArtistColWidth -
-            u8cols(rating) -
+            (int) u8cols(rating) -
             (4 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
