@@ -83,6 +83,8 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
             CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 #endif
 
+            av_register_all();
+
             typeToCodecId = {
                 { ".mp3", AV_CODEC_ID_MP3 },
                 { "audio/mpeg", AV_CODEC_ID_MP3 },
