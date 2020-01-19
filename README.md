@@ -52,7 +52,7 @@ then run using shell, Win+R dialog or by typing in Start Menu `musikcube` or `mc
 
 # raspberry pi
 
-musikcube runs well on a raspberry pi, connected to you home stereo. [see here for detailed setup instructions](https://github.com/clangen/musikcube/wiki/raspberry-pi).
+musikcube runs well on a raspberry pi, connected to your home stereo. [see here for detailed setup instructions](https://github.com/clangen/musikcube/wiki/raspberry-pi).
 
 # compiling
 
