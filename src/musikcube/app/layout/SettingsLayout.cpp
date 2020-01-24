@@ -114,6 +114,7 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     schema->AddBool(cube::prefs::keys::DisableRatingColumn, false);
     schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
     schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
+    schema->AddString(core::prefs::keys::AuddioApiToken, "");
     return schema;
 }
 
