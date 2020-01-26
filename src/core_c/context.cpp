@@ -185,11 +185,11 @@ mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
     delete internal->playback;
     internal->playback = nullptr;
     internal->library->Indexer()->Stop();
-    internal->message_queue.SignalQuit();
-    internal->thread.join();
     internal->library.reset();
     internal->preferences.reset();
     delete internal->metadata;
+    internal->message_queue.SignalQuit();
+    internal->thread.join();
     delete internal;
     delete c;
     if (plugin_context == c) {

@@ -37,12 +37,17 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
-#ifdef WIN32
-#define mcsdk_export extern "C" __declspec(dllexport)
+#ifdef DEFINE_EXPORTS
+    #ifdef WIN32
+        #define mcsdk_export extern "C" __declspec(dllexport)
+    #else
+        #define mcsdk_export extern "C"
+    #endif
 #else
-#define mcsdk_export extern "C"
+    #define mcsdk_export extern
 #endif
 
 /*
@@ -59,14 +64,14 @@ static const int mcsdk_version = 18;
  *
  */
 
-enum mcsdk_playback_state {
+typedef enum mcsdk_playback_state {
     mcsdk_playback_stopped = 1,
     mcsdk_playback_paused = 2,
     mcsdk_playback_prepared = 3,
     mcsdk_playback_playing = 4,
-};
+} mcsdk_playback_state;
 
-enum mcsdk_stream_event {
+typedef enum mcsdk_stream_event {
     mcsdk_stream_scheduled = 1,
     mcsdk_stream_prepared = 2,
     mcsdk_stream_playing = 3,
@@ -74,64 +79,64 @@ enum mcsdk_stream_event {
     mcsdk_stream_finished = 5,
     mcsdk_stream_stopped = 6,
     mcsdk_stream_error = -1
-};
+} mcsdk_stream_event;
 
-enum mcsdk_repeat_mode {
+typedef enum mcsdk_repeat_mode {
     mcsdk_repeat_none = 0,
     mcsdk_repeat_track = 1,
     mcsdk_repeat_list = 2
-};
+} mcsdk_repeat_mode;
 
-enum mcsdk_output_code {
+typedef enum mcsdk_output_code {
     mcsdk_output_error_invalid_format = -4,
     mcsdk_output_error_invalid_state = -3,
     mcsdk_output_error_buffer_full = -2,
     mcsdk_output_error_buffer_written = -1
-};
+} mcsdk_output_code;
 
-enum mcsdk_time_change_mode {
+typedef enum mcsdk_time_change_mode {
     mcsdk_time_change_mode_seek = 0,
     mcsdk_time_change_mode_scrub = 1
-};
+} mcsdk_time_change_mode;
 
-enum mcsdk_path_type {
+typedef enum mcsdk_path_type {
     mcsdk_path_user_home = 0,
     mcsdk_path_data = 1,
     mcsdk_path_application = 2,
     mcsdk_path_plugins = 3,
     mcsdk_path_library = 4
-};
+} mcsdk_path_type;
 
-enum mcsdk_stream_capability {
+typedef enum mcsdk_stream_capability {
     mcsdk_stream_capability_prebuffer = 0x01
-};
+} mcsdk_stream_capability;
 
-enum mcsdk_indexer_scan_result {
+typedef enum mcsdk_indexer_scan_result {
     mcsdk_indexer_scan_result_commit = 1,
     mcsdk_indexer_scan_result_rollback = 2
-};
+} mcsdk_indexer_scan_result;
 
-enum class mcsdk_replay_gain_mode {
+typedef enum mcsdk_replay_gain_mode {
     mcsdk_replay_gain_mode_disabled = 0,
     mcsdk_replay_gain_mode_track = 1,
     mcsdk_replay_gain_mode_album = 2
-};
+} mcsdk_replay_gain_mode;
 
-enum class mcsdk_transport_type {
+typedef enum mcsdk_transport_type {
     mcsdk_transport_type_gapless = 0,
     mcsdk_transport_type_crossfade = 1
-};
+} mcsdk_transport_type;
 
-enum mcsdk_stream_open_flags {
+typedef enum mcsdk_stream_open_flags {
     mcsdk_stream_open_flags_none = 0,
     mcsdk_stream_open_flags_read = 1,
     mcsdk_stream_open_flags_write = 2
-};
+} mcsdk_stream_open_flags;
 
-enum mcsdk_resource_class {
+typedef enum mcsdk_resource_class {
     mcsdk_resource_type_value = 0,
     mcsdk_resource_type_map = 1
-};
+} mcsdk_resource_class;
 
 static const size_t mcsdk_equalizer_band_count = 18;
 
@@ -177,18 +182,18 @@ static const char* mcsdk_track_field_external_id = "external_id";
  *
  */
 
-mcsdk_export typedef void* mcsdk_handle;
-mcsdk_export typedef mcsdk_handle mcsdk_resource;
-mcsdk_export typedef mcsdk_handle mcsdk_value;
-mcsdk_export typedef mcsdk_handle mcsdk_value_list;
-mcsdk_export typedef mcsdk_handle mcsdk_map;
-mcsdk_export typedef mcsdk_handle mcsdk_track;
-mcsdk_export typedef mcsdk_handle mcsdk_map_list;
-mcsdk_export typedef mcsdk_handle mcsdk_track_list;
-mcsdk_export typedef mcsdk_handle mcsdk_track_list_editor;
-mcsdk_export typedef mcsdk_handle mcsdk_svc_metadata;
-mcsdk_export typedef mcsdk_handle mcsdk_svc_playback;
-mcsdk_export typedef mcsdk_handle mcsdk_preferences;
+typedef void* mcsdk_handle;
+typedef mcsdk_handle mcsdk_resource;
+typedef mcsdk_handle mcsdk_value;
+typedef mcsdk_handle mcsdk_value_list;
+typedef mcsdk_handle mcsdk_map;
+typedef mcsdk_handle mcsdk_track;
+typedef mcsdk_handle mcsdk_map_list;
+typedef mcsdk_handle mcsdk_track_list;
+typedef mcsdk_handle mcsdk_track_list_editor;
+typedef mcsdk_handle mcsdk_svc_metadata;
+typedef mcsdk_handle mcsdk_svc_playback;
+typedef mcsdk_handle mcsdk_preferences;
 
 /*
  *
@@ -196,12 +201,12 @@ mcsdk_export typedef mcsdk_handle mcsdk_preferences;
  *
  */
 
-struct mcsdk_context {
+typedef struct mcsdk_context {
     mcsdk_svc_metadata metadata;
     mcsdk_svc_playback playback;
     mcsdk_preferences preferences;
     mcsdk_handle internal;
-};
+} mcsdk_context;
 
 mcsdk_export void mcsdk_context_init(mcsdk_context** context);
 mcsdk_export void mcsdk_context_release(mcsdk_context** context);

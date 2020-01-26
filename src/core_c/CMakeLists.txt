@@ -8,6 +8,8 @@ include_directories(
   ..
 )
 
+add_definitions(-DDEFINE_EXPORTS)
+
 add_library(musikcore_c SHARED ${CORE_C_SOURCES})
 
 set_target_properties(musikcore_c PROPERTIES
