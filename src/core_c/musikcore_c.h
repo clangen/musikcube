@@ -175,7 +175,7 @@ typedef mcsdk_handle mcsdk_track;
 typedef mcsdk_handle mcsdk_map_list;
 typedef mcsdk_handle mcsdk_track_list;
 typedef mcsdk_handle mcsdk_track_list_editor;
-typedef mcsdk_handle mcsdk_metadata_proxy;
+typedef mcsdk_handle mcsdk_svc_metadata;
 
 /*
  *
@@ -231,7 +231,7 @@ extern void mcsdk_map_list_release(mcsdk_map_list t);
 
 /*
  *
- * mcsdk_track
+ * ITrack
  *
  */
 
@@ -241,7 +241,7 @@ extern void mcsdk_track_release(mcsdk_track t);
 
 /*
  *
- * mcsdk_track_list
+ * ITrackList
  *
  */
 
@@ -253,7 +253,7 @@ extern void mcsdk_track_list_release(mcsdk_map_list ml);
 
 /*
  *
- * mcsdk_track_listEditor
+ * ITrackListEditor
  *
  */
 
@@ -272,27 +272,27 @@ extern void mcsdk_track_list_editor_release(mcsdk_track_list_editor tle);
  *
  */
 
-extern mcsdk_track_list mcsdk_metadata_proxy_query_tracks(mcsdk_metadata_proxy mp, const char* keyword, int limit, int offset);
-extern mcsdk_track_list mcsdk_metadata_proxy_query_track_by_id(mcsdk_metadata_proxy mp, int64_t track_id);
-extern mcsdk_track_list mcsdk_metadata_proxy_query_track_by_external_id(mcsdk_metadata_proxy mp, const char* external_id);
-extern mcsdk_track_list mcsdk_metadata_proxy_query_tracks_by_category(mcsdk_metadata_proxy mp, const char* category_type, int64_t selected_id, const char* filter, int limit, int offset);
-extern mcsdk_track_list mcsdk_metadata_proxy_query_tracks_by_categories(mcsdk_metadata_proxy mp, mcsdk_value* categories, size_t category_count, const char* filter, int limit, int offset);
-extern mcsdk_track_list mcsdk_metadata_proxy_query_tracks_by_external_id(mcsdk_metadata_proxy mp, const char** external_ids, size_t external_id_count);
-extern mcsdk_value_list mcsdk_metadata_proxy_list_categories(mcsdk_metadata_proxy mp);
-extern mcsdk_value_list mcsdk_metadata_proxy_query_category(mcsdk_metadata_proxy mp, const char* type, const char* filter);
-extern mcsdk_value_list mcsdk_metadata_proxy_query_category_with_predicate(mcsdk_metadata_proxy mp, const char* type, const char* predicate_type, int64_t predicate_id, const char* filter);
-extern mcsdk_value_list mcsdk_metadata_proxy_query_category_with_predicates(mcsdk_metadata_proxy mp, const char* type, mcsdk_value* predicates, size_t predicate_count, const char* filter);
-extern mcsdk_map_list mcsdk_metadata_proxy_query_albums(mcsdk_metadata_proxy mp, const char* filter);
-extern mcsdk_map_list mcsdk_metadata_proxy_query_albums(mcsdk_metadata_proxy mp, const char* category_id_name, int64_t category_id_value, const char* filter);
-extern int64_t mcsdk_metadata_proxy_save_playlist_with_ids(mcsdk_metadata_proxy mp, int64_t* track_ids, size_t track_id_count, const char* playlist_name, const int64_t playlist_id);
-extern int64_t mcsdk_metadata_proxy_save_playlist_with_external_ids(mcsdk_metadata_proxy mp, const char** external_ids, size_t external_id_count, const char* playlist_name, const int64_t playlist_id);
-extern int64_t mcsdk_metadata_proxy_save_playlist_with_track_list(mcsdk_metadata_proxy mp, mcsdk_track_list track_list, const char* playlist_name, const int64_t playlist_id);
-extern bool mcsdk_metadata_proxy_rename_playlist(mcsdk_metadata_proxy mp, const int64_t playlist_id, const char* playlist_name);
-extern bool mcsdk_metadata_proxy_delete_playlist(mcsdk_metadata_proxy mp, const int64_t playlist_id);
-extern bool mcsdk_metadata_proxy_append_to_playlist_with_ids(mcsdk_metadata_proxy mp, const int64_t playlist_id, const int64_t* track_ids, size_t track_id_count, int offset);
-extern bool mcsdk_metadata_proxy_append_to_playlist_with_external_ids(mcsdk_metadata_proxy mp, const int64_t playlist_id, const char** external_track_ids, size_t external_track_id_count, int offset);
-extern bool mcsdk_metadata_proxy_append_to_playlist_with_track_list(mcsdk_metadata_proxy mp, const int64_t playlist_id, mcsdk_track_list track_list, int offset);
-extern size_t mcsdk_metadata_proxy_remove_tracks_from_playlist(mcsdk_metadata_proxy mp, const int64_t playlist_id, const char** external_ids, const int* sort_orders, int count);
-extern void mcsdk_metadata_proxy_release(mcsdk_metadata_proxy mp);
+extern mcsdk_track_list mcsdk_svc_metadata_query_tracks(mcsdk_svc_metadata mp, const char* keyword, int limit, int offset);
+extern mcsdk_track_list mcsdk_svc_metadata_query_track_by_id(mcsdk_svc_metadata mp, int64_t track_id);
+extern mcsdk_track_list mcsdk_svc_metadata_query_track_by_external_id(mcsdk_svc_metadata mp, const char* external_id);
+extern mcsdk_track_list mcsdk_svc_metadata_query_tracks_by_category(mcsdk_svc_metadata mp, const char* category_type, int64_t selected_id, const char* filter, int limit, int offset);
+extern mcsdk_track_list mcsdk_svc_metadata_query_tracks_by_categories(mcsdk_svc_metadata mp, mcsdk_value* categories, size_t category_count, const char* filter, int limit, int offset);
+extern mcsdk_track_list mcsdk_svc_metadata_query_tracks_by_external_id(mcsdk_svc_metadata mp, const char** external_ids, size_t external_id_count);
+extern mcsdk_value_list mcsdk_svc_metadata_list_categories(mcsdk_svc_metadata mp);
+extern mcsdk_value_list mcsdk_svc_metadata_query_category(mcsdk_svc_metadata mp, const char* type, const char* filter);
+extern mcsdk_value_list mcsdk_svc_metadata_query_category_with_predicate(mcsdk_svc_metadata mp, const char* type, const char* predicate_type, int64_t predicate_id, const char* filter);
+extern mcsdk_value_list mcsdk_svc_metadata_query_category_with_predicates(mcsdk_svc_metadata mp, const char* type, mcsdk_value* predicates, size_t predicate_count, const char* filter);
+extern mcsdk_map_list mcsdk_svc_metadata_query_albums(mcsdk_svc_metadata mp, const char* filter);
+extern mcsdk_map_list mcsdk_svc_metadata_query_albums(mcsdk_svc_metadata mp, const char* category_id_name, int64_t category_id_value, const char* filter);
+extern int64_t mcsdk_svc_metadata_save_playlist_with_ids(mcsdk_svc_metadata mp, int64_t* track_ids, size_t track_id_count, const char* playlist_name, const int64_t playlist_id);
+extern int64_t mcsdk_svc_metadata_save_playlist_with_external_ids(mcsdk_svc_metadata mp, const char** external_ids, size_t external_id_count, const char* playlist_name, const int64_t playlist_id);
+extern int64_t mcsdk_svc_metadata_save_playlist_with_track_list(mcsdk_svc_metadata mp, mcsdk_track_list track_list, const char* playlist_name, const int64_t playlist_id);
+extern bool mcsdk_svc_metadata_rename_playlist(mcsdk_svc_metadata mp, const int64_t playlist_id, const char* playlist_name);
+extern bool mcsdk_svc_metadata_delete_playlist(mcsdk_svc_metadata mp, const int64_t playlist_id);
+extern bool mcsdk_svc_metadata_append_to_playlist_with_ids(mcsdk_svc_metadata mp, const int64_t playlist_id, const int64_t* track_ids, size_t track_id_count, int offset);
+extern bool mcsdk_svc_metadata_append_to_playlist_with_external_ids(mcsdk_svc_metadata mp, const int64_t playlist_id, const char** external_track_ids, size_t external_track_id_count, int offset);
+extern bool mcsdk_svc_metadata_append_to_playlist_with_track_list(mcsdk_svc_metadata mp, const int64_t playlist_id, mcsdk_track_list track_list, int offset);
+extern size_t mcsdk_svc_metadata_remove_tracks_from_playlist(mcsdk_svc_metadata mp, const int64_t playlist_id, const char** external_ids, const int* sort_orders, int count);
+extern void mcsdk_svc_metadata_release(mcsdk_svc_metadata mp);
 
 #endif
