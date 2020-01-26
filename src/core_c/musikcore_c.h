@@ -157,4 +157,55 @@ static const char* mcsdk_track_field_album_id = "album_id";
 static const char* mcsdk_track_field_source_id = "source_id";
 static const char* mcsdk_track_field_external_id = "external_id";
 
+/*
+ *
+ * types
+ *
+ */
+
+typedef void* mcsdk_handle;
+typedef mcsdk_handle mcsdk_resource;
+typedef mcsdk_handle mcsdk_value;
+typedef mcsdk_handle mcsdk_map;
+typedef mcsdk_handle mcsdk_track;
+
+/*
+ *
+ * IResource
+ *
+ */
+
+extern int64_t mcsdk_resource_get_id(mcsdk_resource r);
+extern int mcsdk_resource_get_class(mcsdk_resource r );
+extern const char* mcsdk_resource_get_type(mcsdk_resource r);
+extern const char* mcsdk_resource_release(mcsdk_resource r);
+
+/*
+ *
+ * IValue
+ *
+ */
+
+extern size_t mcsdk_value_get_value(mcsdk_value v, char* dst, size_t size);
+
+/*
+ *
+ * IMap
+ *
+ */
+
+extern int mcsdk_map_get_string(mcsdk_map m, const char* key, char* dst, int size);
+extern int64_t mcsdk_map_get_int64(mcsdk_map m, const char* key, int64_t default_value = 0);
+extern int32_t mcsdk_map_get_int32(mcsdk_map m, const char* key, int32_t default_value = 0);
+extern double mcsdk_map_get_double(mcsdk_map m, const char* key, double default_value = 0.0f);
+
+/*
+ *
+ * ITrack
+ *
+ */
+
+extern void mcsdk_track_retain(mcsdk_track t);
+extern int mcsdk_track_get_uri(mcsdk_track t, char* dst, int size);
+
 #endif
