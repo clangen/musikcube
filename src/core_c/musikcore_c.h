@@ -129,7 +129,7 @@ static const size_t mcsdk_equalizer_bands[] = {
     2093, 2960, 4186, 5920, 8372, 11840, 16744, 22000
 };
 
-static const int mcsdk_no_offset = -1;
+static const int mcsdk_no_offset = 0;
 static const int mcsdk_no_limit = -1;
 
 static const char* mcsdk_category_type_album = "album";
@@ -272,7 +272,7 @@ extern void mcsdk_track_list_editor_release(mcsdk_track_list_editor tle);
  *
  */
 
-extern mcsdk_track_list mcsdk_metadata_proxy_query_tracks(mcsdk_metadata_proxy mp, const char* query = nullptr, int limit = -1, int offset = 0);
+extern mcsdk_track_list mcsdk_metadata_proxy_query_tracks(mcsdk_metadata_proxy mp, const char* keyword, int limit, int offset);
 extern mcsdk_track_list mcsdk_metadata_proxy_query_track_by_id(mcsdk_metadata_proxy mp, int64_t track_id);
 extern mcsdk_track_list mcsdk_metadata_proxy_query_track_by_external_id(mcsdk_metadata_proxy mp, const char* external_id);
 extern mcsdk_track_list mcsdk_metadata_proxy_query_tracks_by_category(mcsdk_metadata_proxy mp, const char* category_type, int64_t selected_id, const char* filter, int limit, int offset);
