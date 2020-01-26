@@ -139,6 +139,8 @@ namespace musik { namespace core { namespace sdk {
                 const char** externalIds,
                 const int* sortOrders,
                 int count) = 0;
+
+            virtual void Release() = 0;
     };
 
 } } }

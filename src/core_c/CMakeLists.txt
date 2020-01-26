@@ -1,5 +1,5 @@
 set(CORE_C_SOURCES
-  musikcore_c.cpp
+  interface_wrappers.cpp
 )
 
 include_directories(
