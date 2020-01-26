@@ -70,30 +70,17 @@ namespace musik {
                 OutputBufferWritten = -1
             };
 
-            enum ChannelOrder {
-                ChannelNone = 0,
-                ChannelFrontLeft = 1,
-                ChannelFrontRight = 2,
-                ChannelFrontCenter = 4,
-                ChannelLowFrequency = 8,
-                ChannelBackLeft = 16,
-                ChannelBackRight = 32,
-                ChannelBackCenter = 64,
-                ChannelSideLeft = 128,
-                ChannelSideRight = 256
-            };
-
             enum TimeChangeMode {
-                TimeChangeSeek,
-                TimeChangeScrub
+                TimeChangeSeek = 0,
+                TimeChangeScrub = 1
             };
 
             enum PathType {
-                PathUserHome,
-                PathData,
-                PathApplication,
-                PathPlugins,
-                PathLibrary
+                PathUserHome = 0,
+                PathData = 1,
+                PathApplication = 2,
+                PathPlugins = 3,
+                PathLibrary = 4
             };
 
             enum class Capability : int {
@@ -101,8 +88,8 @@ namespace musik {
             };
 
             enum ScanResult {
-                ScanCommit,
-                ScanRollback
+                ScanCommit = 1,
+                ScanRollback = 2
             };
 
             enum class ReplayGainMode : int {
@@ -161,5 +148,5 @@ namespace musik {
                 static const char* ExternalId = "external_id";
             }
 
-            static const int SdkVersion = 17;
+            static const int SdkVersion = 18;
 } } }
