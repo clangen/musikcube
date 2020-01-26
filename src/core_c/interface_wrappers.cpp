@@ -43,6 +43,7 @@
 #include <core/sdk/ITrackList.h>
 #include <core/sdk/ITrackListEditor.h>
 #include <core/sdk/IMetadataProxy.h>
+#include <core/sdk/IPlaybackService.h>
 
 using namespace musik::core::sdk;
 
@@ -55,6 +56,7 @@ using namespace musik::core::sdk;
 #define TRACKLIST(x) reinterpret_cast<ITrackList*>(x)
 #define TRACKLISTEDITOR(x) reinterpret_cast<ITrackListEditor*>(x)
 #define METADATA(x) reinterpret_cast<IMetadataProxy*>(x)
+#define PLAYBACK(x) reinterpret_cast<IPlaybackService*>(x)
 
 /*
  *
@@ -324,4 +326,126 @@ mcsdk_export size_t mcsdk_svc_metadata_remove_tracks_from_playlist(mcsdk_svc_met
 
 mcsdk_export void mcsdk_svc_metadata_release(mcsdk_svc_metadata mp) {
     METADATA(mp)->Release();
+}
+
+/*
+ *
+ * IPlaybackService
+ *
+ */
+
+mcsdk_export void mcsdk_svc_playback_play_at(mcsdk_svc_playback pb, size_t index) {
+    PLAYBACK(pb)->Play(index);
+}
+
+mcsdk_export bool mcsdk_svc_playback_next(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->Next();
+}
+
+mcsdk_export bool mcsdk_svc_playback_previous(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->Previous();
+}
+
+mcsdk_export void mcsdk_svc_playback_stop(mcsdk_svc_playback pb) {
+    PLAYBACK(pb)->Stop();
+}
+
+mcsdk_export mcsdk_repeat_mode mcsdk_svc_playback_get_repeat_mode(mcsdk_svc_playback pb) {
+    return (mcsdk_repeat_mode) PLAYBACK(pb)->GetRepeatMode();
+}
+
+mcsdk_export void mcsdk_svc_playback_set_repeat_mode(mcsdk_svc_playback pb, mcsdk_repeat_mode mode) {
+    PLAYBACK(pb)->SetRepeatMode((RepeatMode) mode);
+}
+
+mcsdk_export void mcsdk_svc_playback_toggle_repeat_mode(mcsdk_svc_playback pb) {
+    PLAYBACK(pb)->ToggleRepeatMode();
+}
+
+mcsdk_export mcsdk_playback_state mcsdk_svc_playback_get_playback_state(mcsdk_svc_playback pb) {
+    return (mcsdk_playback_state) PLAYBACK(pb)->GetPlaybackState();
+}
+
+mcsdk_export bool mcsdk_svc_playback_is_shuffled(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->IsShuffled();
+}
+
+mcsdk_export void mcsdk_svc_playback_toggle_shuffle(mcsdk_svc_playback pb) {
+    PLAYBACK(pb)->ToggleShuffle();
+}
+
+mcsdk_export void mcsdk_svc_playback_pause_or_resume(mcsdk_svc_playback pb) {
+    PLAYBACK(pb)->PauseOrResume();
+}
+
+mcsdk_export double mcsdk_svc_playback_get_volume(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->GetVolume();
+}
+
+mcsdk_export void mcsdk_svc_playback_set_volume(mcsdk_svc_playback pb, double volume) {
+    PLAYBACK(pb)->SetVolume(volume);
+}
+
+mcsdk_export double mcsdk_svc_playback_get_position(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->GetPosition();
+}
+
+mcsdk_export void mcsdk_svc_playback_set_position(mcsdk_svc_playback pb, double seconds) {
+    PLAYBACK(pb)->SetPosition(seconds);
+}
+
+mcsdk_export double mcsdk_svc_playback_get_duration(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->GetDuration();
+}
+
+mcsdk_export bool mcsdk_svc_playback_is_muted(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->IsMuted();
+}
+
+mcsdk_export void mcsdk_svc_playback_toggle_mute(mcsdk_svc_playback pb) {
+    PLAYBACK(pb)->ToggleMute();
+}
+
+mcsdk_export size_t mcsdk_svc_playback_get_index(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->GetIndex();
+}
+
+mcsdk_export size_t mcsdk_svc_playback_count(mcsdk_svc_playback pb) {
+    return PLAYBACK(pb)->Count();
+}
+
+mcsdk_export mcsdk_track mcsdk_svc_playback_get_track(mcsdk_svc_playback pb, size_t index) {
+    return (mcsdk_track) PLAYBACK(pb)->GetTrack(index);
+}
+
+mcsdk_export mcsdk_track mcsdk_svc_playback_get_playing_track(mcsdk_svc_playback pb) {
+    return (mcsdk_track) PLAYBACK(pb)->GetPlayingTrack();
+}
+
+mcsdk_export void mcsdk_svc_playback_copy_from(mcsdk_svc_playback pb, const mcsdk_track_list track_list) {
+    PLAYBACK(pb)->CopyFrom(TRACKLIST(track_list));
+}
+
+mcsdk_export void mcsdk_svc_playback_play(mcsdk_svc_playback pb, const mcsdk_track_list source, size_t index) {
+    PLAYBACK(pb)->Play(TRACKLIST(source), index);
+}
+
+mcsdk_export mcsdk_track_list_editor mcsdk_svc_playback_edit_playlist(mcsdk_svc_playback pb) {
+    return (mcsdk_track_list_editor) PLAYBACK(pb)->EditPlaylist();
+}
+
+mcsdk_export mcsdk_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb) {
+    return (mcsdk_time_change_mode) PLAYBACK(pb)->GetTimeChangeMode();
+}
+
+mcsdk_export void mcsdk_svc_playback_set_time_change_mode(mcsdk_svc_playback pb, mcsdk_time_change_mode mode) {
+    PLAYBACK(pb)->SetTimeChangeMode((TimeChangeMode) mode);
+}
+
+mcsdk_export void mcsdk_svc_playback_reload_output(mcsdk_svc_playback pb) {
+    PLAYBACK(pb)->ReloadOutput();
+}
+
+mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb) {
+    return (mcsdk_track_list) PLAYBACK(pb)->Clone();
 }

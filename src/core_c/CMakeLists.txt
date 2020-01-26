@@ -1,4 +1,5 @@
 set(CORE_C_SOURCES
+  context.cpp
   interface_wrappers.cpp
 )
 

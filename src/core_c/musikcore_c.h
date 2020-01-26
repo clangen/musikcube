@@ -187,6 +187,21 @@ mcsdk_export typedef mcsdk_handle mcsdk_map_list;
 mcsdk_export typedef mcsdk_handle mcsdk_track_list;
 mcsdk_export typedef mcsdk_handle mcsdk_track_list_editor;
 mcsdk_export typedef mcsdk_handle mcsdk_svc_metadata;
+mcsdk_export typedef mcsdk_handle mcsdk_svc_playback;
+
+/*
+ *
+ * instance context
+ *
+ */
+
+struct mcsdk_context {
+    mcsdk_svc_metadata metadata;
+    mcsdk_svc_playback playback;
+};
+
+mcsdk_export bool mcsdk_context_init(mcsdk_context* context);
+mcsdk_export bool mcsdk_context_release(mcsdk_context* context);
 
 /*
  *
@@ -304,5 +319,41 @@ mcsdk_export bool mcsdk_svc_metadata_append_to_playlist_with_external_ids(mcsdk_
 mcsdk_export bool mcsdk_svc_metadata_append_to_playlist_with_track_list(mcsdk_svc_metadata mp, const int64_t playlist_id, mcsdk_track_list track_list, int offset);
 mcsdk_export size_t mcsdk_svc_metadata_remove_tracks_from_playlist(mcsdk_svc_metadata mp, const int64_t playlist_id, const char** external_ids, const int* sort_orders, int count);
 mcsdk_export void mcsdk_svc_metadata_release(mcsdk_svc_metadata mp);
+
+/*
+ *
+ * IPlaybackService
+ *
+ */
+
+mcsdk_export void mcsdk_svc_playback_play_at(mcsdk_svc_playback pb, size_t index);
+mcsdk_export bool mcsdk_svc_playback_next(mcsdk_svc_playback pb);
+mcsdk_export bool mcsdk_svc_playback_previous(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_stop(mcsdk_svc_playback pb);
+mcsdk_export mcsdk_repeat_mode mcsdk_svc_playback_get_repeat_mode(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_set_repeat_mode(mcsdk_svc_playback pb, mcsdk_repeat_mode mode);
+mcsdk_export void mcsdk_svc_playback_toggle_repeat_mode(mcsdk_svc_playback pb);
+mcsdk_export mcsdk_playback_state mcsdk_svc_playback_get_playback_state(mcsdk_svc_playback pb);
+mcsdk_export bool mcsdk_svc_playback_is_shuffled(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_toggle_shuffle(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_pause_or_resume(mcsdk_svc_playback pb);
+mcsdk_export double mcsdk_svc_playback_get_volume(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_set_volume(mcsdk_svc_playback pb, double volume);
+mcsdk_export double mcsdk_svc_playback_get_position(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_set_position(mcsdk_svc_playback pb, double seconds);
+mcsdk_export double mcsdk_svc_playback_get_duration(mcsdk_svc_playback pb);
+mcsdk_export bool mcsdk_svc_playback_is_muted(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_toggle_mute(mcsdk_svc_playback pb);
+mcsdk_export size_t mcsdk_svc_playback_get_index(mcsdk_svc_playback pb);
+mcsdk_export size_t mcsdk_svc_playback_count(mcsdk_svc_playback pb);
+mcsdk_export mcsdk_track mcsdk_svc_playback_get_track(mcsdk_svc_playback pb, size_t index);
+mcsdk_export mcsdk_track mcsdk_svc_playback_get_playing_track(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_copy_from(mcsdk_svc_playback pb, const mcsdk_track_list track_list);
+mcsdk_export void mcsdk_svc_playback_play(mcsdk_svc_playback pb, const mcsdk_track_list source, size_t index);
+mcsdk_export mcsdk_track_list_editor mcsdk_svc_playback_edit_playlist(mcsdk_svc_playback pb);
+mcsdk_export mcsdk_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_set_time_change_mode(mcsdk_svc_playback pb, mcsdk_time_change_mode mode);
+mcsdk_export void mcsdk_svc_playback_reload_output(mcsdk_svc_playback pb);
+mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb);
 
 #endif
