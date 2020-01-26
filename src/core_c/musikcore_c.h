@@ -188,6 +188,7 @@ mcsdk_export typedef mcsdk_handle mcsdk_track_list;
 mcsdk_export typedef mcsdk_handle mcsdk_track_list_editor;
 mcsdk_export typedef mcsdk_handle mcsdk_svc_metadata;
 mcsdk_export typedef mcsdk_handle mcsdk_svc_playback;
+mcsdk_export typedef mcsdk_handle mcsdk_preferences;
 
 /*
  *
@@ -198,10 +199,14 @@ mcsdk_export typedef mcsdk_handle mcsdk_svc_playback;
 struct mcsdk_context {
     mcsdk_svc_metadata metadata;
     mcsdk_svc_playback playback;
+    mcsdk_preferences preferences;
+    mcsdk_handle internal;
 };
 
-mcsdk_export bool mcsdk_context_init(mcsdk_context* context);
-mcsdk_export bool mcsdk_context_release(mcsdk_context* context);
+mcsdk_export void mcsdk_context_init(mcsdk_context** context);
+mcsdk_export void mcsdk_context_release(mcsdk_context** context);
+mcsdk_export void mcsdk_set_plugin_context(mcsdk_context* context);
+mcsdk_export bool mcsdk_is_plugin_context(mcsdk_context* context);
 
 /*
  *
