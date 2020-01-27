@@ -8,7 +8,7 @@ include_directories(
   ..
 )
 
-add_definitions(-DDEFINE_EXPORTS)
+add_definitions(-DMCSDK_DEFINE_EXPORTS)
 
 add_library(musikcore_c SHARED ${CORE_C_SOURCES})
 

@@ -40,7 +40,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#ifdef DEFINE_EXPORTS
+#ifdef MCSDK_DEFINE_EXPORTS
     #ifdef WIN32
         #define mcsdk_export extern "C" __declspec(dllexport)
     #else
@@ -187,33 +187,37 @@ static const char* mcsdk_track_field_external_id = "external_id";
  *
  */
 
-#define DEFINE_HANDLE(x) \
+#define mcsdk_define_handle(x) \
     typedef struct x { \
         void* opaque; \
     } x;
 
-DEFINE_HANDLE(mcsdk_internal);
-DEFINE_HANDLE(mcsdk_resource);
-DEFINE_HANDLE(mcsdk_value);
-DEFINE_HANDLE(mcsdk_value_list);
-DEFINE_HANDLE(mcsdk_map);
-DEFINE_HANDLE(mcsdk_track);
-DEFINE_HANDLE(mcsdk_map_list);
-DEFINE_HANDLE(mcsdk_track_list);
-DEFINE_HANDLE(mcsdk_track_list_editor);
-DEFINE_HANDLE(mcsdk_svc_metadata);
-DEFINE_HANDLE(mcsdk_svc_playback);
-DEFINE_HANDLE(mcsdk_prefs);
-DEFINE_HANDLE(mcsdk_audio_buffer);
-DEFINE_HANDLE(mcsdk_audio_buffer_provider);
-DEFINE_HANDLE(mcsdk_data_stream);
-DEFINE_HANDLE(mcsdk_device);
-DEFINE_HANDLE(mcsdk_device_list);
-DEFINE_HANDLE(mcsdk_output);
-DEFINE_HANDLE(mcsdk_decoder);
-DEFINE_HANDLE(mcsdk_encoder);
-DEFINE_HANDLE(mcsdk_blocking_encoder);
-DEFINE_HANDLE(mcsdk_streaming_encoder);
+#define mcsdk_handle_ok(x) x.opaque != NULL
+
+#define mcsdk_cast_handle(x) { x.opaque }
+
+mcsdk_define_handle(mcsdk_internal);
+mcsdk_define_handle(mcsdk_resource);
+mcsdk_define_handle(mcsdk_value);
+mcsdk_define_handle(mcsdk_value_list);
+mcsdk_define_handle(mcsdk_map);
+mcsdk_define_handle(mcsdk_track);
+mcsdk_define_handle(mcsdk_map_list);
+mcsdk_define_handle(mcsdk_track_list);
+mcsdk_define_handle(mcsdk_track_list_editor);
+mcsdk_define_handle(mcsdk_svc_metadata);
+mcsdk_define_handle(mcsdk_svc_playback);
+mcsdk_define_handle(mcsdk_prefs);
+mcsdk_define_handle(mcsdk_audio_buffer);
+mcsdk_define_handle(mcsdk_audio_buffer_provider);
+mcsdk_define_handle(mcsdk_data_stream);
+mcsdk_define_handle(mcsdk_device);
+mcsdk_define_handle(mcsdk_device_list);
+mcsdk_define_handle(mcsdk_output);
+mcsdk_define_handle(mcsdk_decoder);
+mcsdk_define_handle(mcsdk_encoder);
+mcsdk_define_handle(mcsdk_blocking_encoder);
+mcsdk_define_handle(mcsdk_streaming_encoder);
 
 /*
  *
