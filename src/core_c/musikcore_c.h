@@ -200,7 +200,11 @@ typedef mcsdk_handle mcsdk_svc_metadata;
 typedef mcsdk_handle mcsdk_svc_playback;
 typedef mcsdk_handle mcsdk_prefs;
 typedef mcsdk_handle mcsdk_audio_buffer;
+typedef mcsdk_handle mcsdk_audio_buffer_provider;
 typedef mcsdk_handle mcsdk_data_stream;
+typedef mcsdk_handle mcsdk_device;
+typedef mcsdk_handle mcsdk_device_list;
+typedef mcsdk_handle mcsdk_output;
 typedef mcsdk_handle mcsdk_decoder;
 typedef mcsdk_handle mcsdk_encoder;
 typedef mcsdk_handle mcsdk_blocking_encoder;
@@ -418,7 +422,7 @@ mcsdk_export void mcsdk_data_stream_release(mcsdk_data_stream ds);
 
 /*
  *
- * IAudioBuffer
+ * IBuffer
  *
  */
 
@@ -431,6 +435,54 @@ mcsdk_export long mcsdk_audio_buffer_get_sample_count(mcsdk_audio_buffer ab);
 mcsdk_export void mcsdk_audio_buffer_set_sample_count(mcsdk_audio_buffer ab, long samples);
 mcsdk_export long mcsdk_audio_buffer_get_byte_count(mcsdk_audio_buffer ab);
 mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab);
+
+/*
+ *
+ * IBufferProvider
+ *
+ */
+
+mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffer_provider abp, mcsdk_audio_buffer ab);
+
+/*
+ *
+ * IDevice
+ *
+ */
+
+mcsdk_export const char* mcsdk_device_get_name(mcsdk_device d);
+mcsdk_export const char* mcsdk_device_get_id(mcsdk_device d);
+mcsdk_export void mcsdk_device_release(mcsdk_device d);
+
+/*
+ *
+ * IDeviceList
+ *
+ */
+
+mcsdk_export size_t mcsdk_device_list_get_count(mcsdk_device_list dl);
+mcsdk_export const mcsdk_device mcsdk_device_list_get_at(mcsdk_device_list dl, size_t index);
+mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl);
+
+/*
+ *
+ * IOutput
+ *
+ */
+
+mcsdk_export void mcsdk_output_pause(mcsdk_output o);
+mcsdk_export void mcsdk_output_resume(mcsdk_output o);
+mcsdk_export void mcsdk_output_set_volume(mcsdk_output o, double volume);
+mcsdk_export double mcsdk_output_get_volume(mcsdk_output o);
+mcsdk_export void mcsdk_output_stop(mcsdk_output o);
+mcsdk_export int mcsdk_output_play(mcsdk_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp);
+mcsdk_export void mcsdk_output_drain(mcsdk_output o);
+mcsdk_export double mcsdk_output_get_latency(mcsdk_output o);
+mcsdk_export const char* mcsdk_output_get_name(mcsdk_output o);
+mcsdk_export mcsdk_device_list mcsdk_output_get_device_list(mcsdk_output o);
+mcsdk_export bool mcsdk_output_set_default_device(mcsdk_output o, const char* device_id);
+mcsdk_export mcsdk_device mcsdk_output_get_default_device(mcsdk_output o);
+mcsdk_export void mcsdk_output_release(mcsdk_output o);
 
 /*
  *

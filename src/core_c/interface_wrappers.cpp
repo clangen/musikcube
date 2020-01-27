@@ -49,10 +49,13 @@
 #include <core/sdk/IPreferences.h>
 #include <core/sdk/IDataStream.h>
 #include <core/sdk/IBuffer.h>
+#include <core/sdk/IBufferProvider.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IEncoder.h>
 #include <core/sdk/IBlockingEncoder.h>
 #include <core/sdk/IStreamingEncoder.h>
+#include <core/sdk/IDevice.h>
+#include <core/sdk/IOutput.h>
 
 using namespace musik;
 using namespace musik::core::sdk;
@@ -70,10 +73,14 @@ using namespace musik::core::sdk;
 #define PREFS(x) reinterpret_cast<IPreferences*>(x)
 #define DATASTREAM(x) reinterpret_cast<IDataStream*>(x)
 #define BUFFER(x) reinterpret_cast<IBuffer*>(x)
+#define BUFFERPROVIDER(x) reinterpret_cast<IBufferProvider*>(x)
 #define DECODER(x) reinterpret_cast<IDecoder*>(x)
 #define ENCODER(x) reinterpret_cast<IEncoder*>(x)
 #define STREAMINGENCODER(x) reinterpret_cast<IStreamingEncoder*>(x)
 #define BLOCKINGENCODER(x) reinterpret_cast<IBlockingEncoder*>(x)
+#define DEVICE(x) reinterpret_cast<IDevice*>(x)
+#define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x)
+#define OUTPUT(x) reinterpret_cast<IOutput*>(x)
 
 /*
  *
@@ -581,7 +588,7 @@ mcsdk_export void mcsdk_data_stream_release(mcsdk_data_stream ds) {
 
 /*
  *
- * IAudioBuffer
+ * IBuffer
  *
  */
 
@@ -619,6 +626,112 @@ mcsdk_export long mcsdk_audio_buffer_get_byte_count(mcsdk_audio_buffer ab) {
 
 mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab) {
     BUFFER(ab)->Release();
+}
+
+/*
+ *
+ * IBufferProvider
+ *
+ */
+
+mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffer_provider abp, mcsdk_audio_buffer ab) {
+    BUFFERPROVIDER(abp)->OnBufferProcessed(BUFFER(ab));
+}
+
+/*
+ *
+ * IDevice
+ *
+ */
+
+mcsdk_export const char* mcsdk_device_get_name(mcsdk_device d) {
+    return DEVICE(d)->Name();
+}
+
+mcsdk_export const char* mcsdk_device_get_id(mcsdk_device d) {
+    return DEVICE(d)->Id();
+}
+
+mcsdk_export void mcsdk_device_release(mcsdk_device d) {
+    DEVICE(d)->Release();
+}
+
+
+/*
+ *
+ * IDeviceList
+ *
+ */
+
+mcsdk_export size_t mcsdk_device_list_get_count(mcsdk_device_list dl) {
+    return DEVICELIST(dl)->Count();
+}
+
+mcsdk_export const mcsdk_device mcsdk_device_list_get_at(mcsdk_device_list dl, size_t index) {
+    return (mcsdk_device) DEVICELIST(dl)->At(index);
+}
+
+mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl) {
+    DEVICELIST(dl)->Release();
+}
+
+
+/*
+ *
+ * IOutput
+ *
+ */
+
+mcsdk_export void mcsdk_output_pause(mcsdk_output o) {
+    OUTPUT(o)->Pause();
+}
+
+mcsdk_export void mcsdk_output_resume(mcsdk_output o) {
+    OUTPUT(o)->Resume();
+}
+
+mcsdk_export void mcsdk_output_set_volume(mcsdk_output o, double volume) {
+    OUTPUT(o)->SetVolume(volume);
+}
+
+mcsdk_export double mcsdk_output_get_volume(mcsdk_output o) {
+    return OUTPUT(o)->GetVolume();
+}
+
+mcsdk_export void mcsdk_output_stop(mcsdk_output o) {
+    OUTPUT(o)->Stop();
+}
+
+mcsdk_export int mcsdk_output_play(mcsdk_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp) {
+    return OUTPUT(o)->Play(BUFFER(ab), BUFFERPROVIDER(abp));
+}
+
+mcsdk_export void mcsdk_output_drain(mcsdk_output o) {
+    OUTPUT(o)->Drain();
+}
+
+mcsdk_export double mcsdk_output_get_latency(mcsdk_output o) {
+    return OUTPUT(o)->Latency();
+}
+
+mcsdk_export const char* mcsdk_output_get_name(mcsdk_output o) {
+    return OUTPUT(o)->Name();
+}
+
+mcsdk_export mcsdk_device_list mcsdk_output_get_device_list(mcsdk_output o) {
+    return (mcsdk_device_list) OUTPUT(o)->GetDeviceList();
+}
+
+mcsdk_export bool mcsdk_output_set_default_device(mcsdk_output o, const char* device_id) {
+    return OUTPUT(o)->SetDefaultDevice(device_id);
+}
+
+mcsdk_export mcsdk_device mcsdk_output_get_default_device(mcsdk_output o) {
+    return (mcsdk_device) OUTPUT(o)->GetDefaultDevice();
+}
+
+mcsdk_export void mcsdk_output_release(mcsdk_output o) {
+    OUTPUT(o)->Release();
 }
 
 /*
