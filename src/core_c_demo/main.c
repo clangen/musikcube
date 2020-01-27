@@ -24,8 +24,13 @@ int main(int argc, char** argv) {
         context->metadata, "a day in the life", mcsdk_no_limit, mcsdk_no_offset);
     mcsdk_svc_playback_play(context->playback, tl, 0);
     mcsdk_track_list_release(tl);
-    usleep(1000000 * 5);
+    printf("playing for 5 seconds...");
+    for (int i = 0; i < 5; i++) {
+        usleep(1000000);
+        printf("  %d\n", i + 1);
+    }
+    printf("done playing, shutting down...\n");
     mcsdk_context_release(&context);
-    printf("released\n");
+    printf("dead\n");
     return 0;
 }

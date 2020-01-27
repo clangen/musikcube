@@ -389,6 +389,10 @@ namespace musik { namespace core { namespace plugin {
             });
     }
 
+    IEnvironment& Environment() {
+        return environment;
+    }
+
     void Deinit() {
         /* preferences */
         Preferences::SavePluginPreferences();

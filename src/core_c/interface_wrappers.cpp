@@ -35,6 +35,7 @@
 #include "musikcore_c.h"
 
 #include <core/debug.h>
+#include <core/plugin/Plugins.h>
 
 #include <core/sdk/IResource.h>
 #include <core/sdk/IValue.h>
@@ -59,6 +60,8 @@
 
 using namespace musik;
 using namespace musik::core::sdk;
+
+#define ENV musik::core::plugin::Environment()
 
 #define RESOURCE(x) reinterpret_cast<IResource*>(x.opaque)
 #define VALUE(x) reinterpret_cast<IValue*>(x.opaque)
@@ -851,3 +854,98 @@ mcsdk_export void mcsdk_debug_warning(const char* tag, const char* message) {
 mcsdk_export void mcsdk_debug_error(const char* tag, const char* message) {
     debug::error(tag, message);
 }
+
+/*
+ *
+ * IEnvironment (TODO)
+ *
+ */
+
+mcsdk_export size_t mcsdk_env_get_path(mcsdk_path_type type, char* dst, int size) {
+    return ENV.GetPath((PathType) type, dst, size);
+}
+
+mcsdk_export mcsdk_data_stream mcsdk_env_open_data_stream(const char* uri, mcsdk_stream_open_flags flags) {
+    return mcsdk_data_stream { ENV.GetDataStream(uri, (OpenFlags) flags) };
+}
+
+mcsdk_export mcsdk_decoder mcsdk_env_open_decoder(mcsdk_data_stream stream) {
+    return mcsdk_decoder { ENV.GetDecoder(DATASTREAM(stream)) };
+}
+
+mcsdk_export mcsdk_encoder mcsdk_env_open_encoder(const char* type) {
+    return mcsdk_encoder { ENV.GetEncoder(type) };
+}
+
+mcsdk_export mcsdk_audio_buffer mcsdk_env_create_audio_buffer(size_t samples, size_t rate, size_t channels) {
+    return mcsdk_audio_buffer { ENV.GetBuffer(samples, rate, channels) };
+}
+
+mcsdk_export mcsdk_prefs mcsdk_env_open_preferences(const char* name) {
+    return mcsdk_prefs { ENV.GetPreferences(name) };
+}
+
+mcsdk_export size_t mcsdk_env_get_output_count() {
+    return ENV.GetOutputCount();
+}
+
+mcsdk_export mcsdk_output mcsdk_env_get_output_at_index(size_t index) {
+    return mcsdk_output { ENV.GetOutputAtIndex(index) };
+}
+
+mcsdk_export mcsdk_output mcsdk_env_get_output_with_name(const char* name) {
+    return mcsdk_output { ENV.GetOutputWithName(name) };
+}
+
+mcsdk_export mcsdk_replay_gain_mode mcsdk_env_get_replay_gain_mode() {
+    return (mcsdk_replay_gain_mode) ENV.GetReplayGainMode();
+}
+
+mcsdk_export void mcsdk_env_set_replay_gain_mode(mcsdk_replay_gain_mode mode) {
+    ENV.SetReplayGainMode((ReplayGainMode) mode);
+}
+
+mcsdk_export float mcsdk_env_get_preamp_gain() {
+    return ENV.GetPreampGain();
+}
+
+mcsdk_export void mcsdk_env_set_preamp_gain(float gain) {
+    ENV.SetPreampGain(gain);
+}
+
+mcsdk_export bool mcsdk_env_is_equalizer_enabled() {
+    return ENV.GetEqualizerEnabled();
+}
+
+mcsdk_export void mcsdk_env_set_equalizer_enabled(bool enabled) {
+    return ENV.SetEqualizerEnabled(enabled);
+}
+
+mcsdk_export bool mcsdk_env_get_equalizer_band_values(double target[], size_t count) {
+    return ENV.GetEqualizerBandValues(target, count);
+}
+
+mcsdk_export bool mcsdk_env_set_equalizer_band_values(double values[], size_t count) {
+    return ENV.SetEqualizerBandValues(values, count);
+}
+
+mcsdk_export void mcsdk_env_reload_playback_output() {
+    ENV.ReloadPlaybackOutput();
+}
+
+mcsdk_export void mcsdk_env_set_default_output(mcsdk_output output) {
+    ENV.SetDefaultOutput(OUTPUT(output));
+}
+
+mcsdk_export mcsdk_output mcsdk_env_get_default_output() {
+    return mcsdk_output { ENV.GetDefaultOutput() };
+}
+
+mcsdk_export mcsdk_transport_type mcsdk_env_get_transport_type() {
+    return (mcsdk_transport_type) ENV.GetTransportType();
+}
+
+mcsdk_export void mcsdk_env_set_transport_type(mcsdk_transport_type type) {
+    ENV.SetTransportType((TransportType) type);
+}
+

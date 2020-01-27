@@ -549,4 +549,33 @@ mcsdk_export void mcsdk_debug_info(const char* tag, const char* message);
 mcsdk_export void mcsdk_debug_warning(const char* tag, const char* message);
 mcsdk_export void mcsdk_debug_error(const char* tag, const char* message);
 
+/*
+ *
+ * IEnvironment
+ *
+ */
+
+mcsdk_export size_t mcsdk_env_get_path(mcsdk_path_type type, char* dst, int size);
+mcsdk_export mcsdk_data_stream mcsdk_env_open_data_stream(const char* uri, mcsdk_stream_open_flags flags);
+mcsdk_export mcsdk_decoder mcsdk_env_open_decoder(mcsdk_data_stream stream);
+mcsdk_export mcsdk_encoder mcsdk_env_open_encoder(const char* type) ;
+mcsdk_export mcsdk_audio_buffer mcsdk_env_create_data_buffer(size_t samples, size_t rate, size_t channels);
+mcsdk_export mcsdk_prefs mcsdk_env_open_preferences(const char* name);
+mcsdk_export size_t mcsdk_env_get_output_count();
+mcsdk_export mcsdk_output mcsdk_env_get_output_at_index(size_t index);
+mcsdk_export mcsdk_output mcsdk_env_get_output_with_name(const char* name);
+mcsdk_export mcsdk_replay_gain_mode mcsdk_env_get_replay_gain_mode();
+mcsdk_export void mcsdk_env_set_replay_gain_mode(mcsdk_replay_gain_mode mode);
+mcsdk_export float mcsdk_env_get_preamp_gain();
+mcsdk_export void mcsdk_env_set_preamp_gain(float gain);
+mcsdk_export bool mcsdk_env_is_equalizer_enabled();
+mcsdk_export void mcsdk_env_set_equalizer_enabled(bool enabled);
+mcsdk_export bool mcsdk_env_get_equalizer_band_values(double target[], size_t count);
+mcsdk_export bool mcsdk_env_set_equalizer_band_values(double values[], size_t count);
+mcsdk_export void mcsdk_env_reload_playback_output();
+mcsdk_export void mcsdk_env_set_default_output(mcsdk_output output);
+mcsdk_export mcsdk_output mcsdk_env_get_default_output();
+mcsdk_export mcsdk_transport_type mcsdk_env_get_transport_type();
+mcsdk_export void mcsdk_env_set_transport_type(mcsdk_transport_type type);
+
 #endif
