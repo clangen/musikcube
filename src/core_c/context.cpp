@@ -68,6 +68,7 @@ static const short EVENT_QUIT = 2;
 class ev_message_queue: public MessageQueue {
     public:
         ev_message_queue(): MessageQueue() {
+            this->quit = false;
             if (pipe(pipeFd) != 0) {
                 std::cerr << "\n  ERROR! couldn't create pipe\n\n";
                 exit(EXIT_FAILURE);
@@ -84,6 +85,11 @@ class ev_message_queue: public MessageQueue {
         }
 
         void Post(IMessagePtr message, int64_t delayMs) {
+            std::unique_lock<std::mutex> lock(this->mutex);
+            if (this->quit) {
+                return;
+            }
+
             MessageQueue::Post(message, delayMs);
 
             if (delayMs <= 0) {
@@ -99,10 +105,15 @@ class ev_message_queue: public MessageQueue {
         }
 
         void DelayedDispatch(int revents) {
-            this->Dispatch();
+            std::unique_lock<std::mutex> lock(this->mutex);
+            if (!this->quit) {
+                this->Dispatch();
+            }
         }
 
         void SignalQuit() {
+            std::unique_lock<std::mutex> lock(this->mutex);
+            this->quit = true;
             write(pipeFd[1], &EVENT_QUIT, sizeof(EVENT_QUIT));
         }
 
@@ -136,6 +147,8 @@ class ev_message_queue: public MessageQueue {
         ev::dynamic_loop loop;
         ev::io io;
         ev::sig sio;
+        bool quit;
+        std::mutex mutex;
 };
 
 /*
