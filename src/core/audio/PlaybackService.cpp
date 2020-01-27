@@ -169,6 +169,7 @@ PlaybackService::PlaybackService(
 
 PlaybackService::~PlaybackService() {
     playback::SavePlaybackContext(appPrefs, library, *this);
+    this->messageQueue.Remove(this);
     savePreferences(*this, playbackPrefs);
     this->Stop();
     this->ResetRemotes();
