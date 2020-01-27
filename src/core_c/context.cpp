@@ -182,7 +182,7 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
     internal->preferences = Preferences::ForComponent(prefs::components::Settings);
     c->internal = internal;
     c->metadata = (mcsdk_svc_metadata) internal->metadata;
-    c->preferences = (mcsdk_preferences) internal->preferences.get();
+    c->preferences = (mcsdk_prefs) internal->preferences.get();
     c->playback = (mcsdk_svc_playback) internal->playback;
     internal->thread = std::thread([internal] {
         internal->message_queue.Run();
