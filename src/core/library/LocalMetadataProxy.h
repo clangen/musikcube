@@ -151,7 +151,7 @@ namespace musik { namespace core { namespace db { namespace local {
                 const int* sortOrders,
                 int count) override;
 
-            virtual void Release();
+            virtual void Release() override;
 
         private:
             musik::core::ILibraryPtr library;

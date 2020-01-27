@@ -17,7 +17,7 @@ set_target_properties(musikcore_c PROPERTIES
 
 if (${LINK_STATICALLY} MATCHES "true")
   find_library(EVLIB NAMES libev.a ev)
-  target_link_libraries(musikcore_c ${musikcube_LINK_LIBS} ${EVLIB})
+  target_link_libraries(musikcore_c ${musikcube_LINK_LIBS} ${EVLIB} musikcore)
 else()
-  target_link_libraries(musikcore_c ${musikcube_LINK_LIBS} ev)
+  target_link_libraries(musikcore_c ${musikcube_LINK_LIBS} ev musikcore)
 endif()
