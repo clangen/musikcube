@@ -85,6 +85,8 @@ using namespace musik::core::sdk;
 #define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x.opaque)
 #define OUTPUT(x) reinterpret_cast<IOutput*>(x.opaque)
 
+#define RELEASE(x, type) if (mcsdk_handle_ok(x)) { type(x)->Release(); }
+
 /*
  *
  * IResource
@@ -100,7 +102,7 @@ mcsdk_export mcsdk_resource_class mcsdk_resource_get_class(mcsdk_resource r) {
 }
 
 mcsdk_export void mcsdk_resource_release(mcsdk_resource r) {
-    RESOURCE(r)->Release();
+    RELEASE(r, RESOURCE);
 }
 
 /*
@@ -114,7 +116,7 @@ mcsdk_export size_t mcsdk_value_get_value(mcsdk_value v, char* dst, size_t size)
 }
 
 mcsdk_export void mcsdk_value_release(mcsdk_value v) {
-    return VALUE(v)->Release();
+    RELEASE(v, VALUE);
 }
 
 /*
@@ -132,7 +134,7 @@ mcsdk_export mcsdk_value mcsdk_value_list_get_at(mcsdk_value_list vl, size_t ind
 }
 
 mcsdk_export void mcsdk_value_list_release(mcsdk_value_list vl) {
-    VALUELIST(vl)->Release();
+    RELEASE(vl, VALUELIST);
 }
 
 /*
@@ -158,7 +160,7 @@ mcsdk_export double mcsdk_map_get_double(mcsdk_map m, const char* key, double de
 }
 
 mcsdk_export void mcsdk_map_release(mcsdk_map m) {
-    MAP(m)->Release();
+    RELEASE(m, MAP);
 }
 
 /*
@@ -176,7 +178,7 @@ mcsdk_export mcsdk_map mcsdk_map_list_get_at(mcsdk_map_list ml, size_t index) {
 }
 
 mcsdk_export void mcsdk_map_list_release(mcsdk_map_list ml) {
-    MAPLIST(ml)->Release();
+    RELEASE(ml, MAPLIST);
 }
 
 /*
@@ -194,7 +196,7 @@ mcsdk_export int mcsdk_track_get_uri(mcsdk_track t, char* dst, int size) {
 }
 
 mcsdk_export void mcsdk_track_release(mcsdk_track t) {
-    TRACK(t)->Release();
+    RELEASE(t, TRACK);
 }
 
 /*
@@ -220,7 +222,7 @@ mcsdk_export mcsdk_track mcsdk_track_list_get_track_at(mcsdk_track_list tl, size
 }
 
 mcsdk_export void mcsdk_track_list_release(mcsdk_track_list tl) {
-    TRACKLIST(tl)->Release();
+    RELEASE(tl, TRACKLIST);
 }
 
 /*
@@ -258,7 +260,7 @@ mcsdk_export void mcsdk_track_list_editor_shuffle(mcsdk_track_list_editor tle) {
 }
 
 mcsdk_export void mcsdk_track_list_editor_release(mcsdk_track_list_editor tle) {
-    TRACKLISTEDITOR(tle)->Release();
+    RELEASE(tle, TRACKLISTEDITOR);
 }
 
 /*
@@ -352,7 +354,7 @@ mcsdk_export size_t mcsdk_svc_metadata_remove_tracks_from_playlist(mcsdk_svc_met
 }
 
 mcsdk_export void mcsdk_svc_metadata_release(mcsdk_svc_metadata mp) {
-    METADATA(mp)->Release();
+    RELEASE(mp, METADATA);
 }
 
 /*
@@ -516,7 +518,7 @@ mcsdk_export void mcsdk_prefs_save(mcsdk_prefs p) {
 }
 
 mcsdk_export void mcsdk_prefs_release(mcsdk_prefs p) {
-    PREFS(p)->Release();
+    RELEASE(p, PREFS);
 }
 
 /*
@@ -586,7 +588,7 @@ mcsdk_export bool mcsdk_data_stream_can_prefetch(mcsdk_data_stream ds) {
 }
 
 mcsdk_export void mcsdk_data_stream_release(mcsdk_data_stream ds) {
-    DATASTREAM(ds)->Release();
+    RELEASE(ds, DATASTREAM);
 }
 
 /*
@@ -628,7 +630,7 @@ mcsdk_export long mcsdk_audio_buffer_get_byte_count(mcsdk_audio_buffer ab) {
 }
 
 mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab) {
-    BUFFER(ab)->Release();
+    RELEASE(ab, BUFFER);
 }
 
 /*
@@ -656,9 +658,8 @@ mcsdk_export const char* mcsdk_device_get_id(mcsdk_device d) {
 }
 
 mcsdk_export void mcsdk_device_release(mcsdk_device d) {
-    DEVICE(d)->Release();
+    RELEASE(d, DEVICE);
 }
-
 
 /*
  *
@@ -675,7 +676,7 @@ mcsdk_export const mcsdk_device mcsdk_device_list_get_at(mcsdk_device_list dl, s
 }
 
 mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl) {
-    DEVICELIST(dl)->Release();
+    RELEASE(dl, DEVICELIST);
 }
 
 
@@ -734,7 +735,7 @@ mcsdk_export mcsdk_device mcsdk_output_get_default_device(mcsdk_output o) {
 }
 
 mcsdk_export void mcsdk_output_release(mcsdk_output o) {
-    OUTPUT(o)->Release();
+    RELEASE(o, OUTPUT);
 }
 
 /*
@@ -764,7 +765,7 @@ mcsdk_export bool mcsdk_decoder_is_eof(mcsdk_decoder d) {
 }
 
 mcsdk_export void mcsdk_decoder_release(mcsdk_decoder d) {
-    DECODER(d)->Release();
+    RELEASE(d, DECODER);
 }
 
 /*
@@ -774,7 +775,7 @@ mcsdk_export void mcsdk_decoder_release(mcsdk_decoder d) {
  */
 
 mcsdk_export void mcsdk_encoder_release(mcsdk_encoder e) {
-    ENCODER(e)->Release();
+    RELEASE(e, ENCODER);
 }
 
 mcsdk_export mcsdk_encoder_type mcsdk_encoder_get_type(mcsdk_encoder e) {
@@ -804,7 +805,7 @@ mcsdk_export void mcsdk_blocking_encoder_finalize(mcsdk_blocking_encoder be) {
 }
 
 mcsdk_export void mcsdk_blocking_encoder_release(mcsdk_blocking_encoder be, mcsdk_encoder e) {
-    BLOCKINGENCODER(be)->Release();
+    RELEASE(be, BLOCKINGENCODER);
 }
 
 /*
@@ -830,7 +831,7 @@ mcsdk_export void mcsdk_streaming_encoder_finalize(mcsdk_streaming_encoder se, c
 }
 
 mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mcsdk_encoder e) {
-    STREAMINGENCODER(se)->Release();
+    RELEASE(se, STREAMINGENCODER);
 }
 
 /*
