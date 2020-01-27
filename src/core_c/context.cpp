@@ -37,6 +37,7 @@
 #include <ev++.h>
 #include <thread>
 
+#include <core/debug.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
 #include <core/library/LibraryFactory.h>
@@ -166,12 +167,20 @@ struct mcsdk_context_internal {
     std::shared_ptr<Preferences> preferences;
 };
 
+static std::mutex global_mutex;
+static bool environment_initialized = false;
 static mcsdk_context* plugin_context = nullptr;
 
 mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
-    std::locale locale = std::locale();
-    std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
-    boost::filesystem::path::imbue(utf8Locale);
+    std::unique_lock<std::mutex> lock(global_mutex);
+
+    if (!environment_initialized) {
+        std::locale locale = std::locale();
+        std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
+        boost::filesystem::path::imbue(utf8Locale);
+        debug::Start();
+        environment_initialized = true;
+    }
     auto c = new mcsdk_context();
     memset(c, 0, sizeof(mcsdk_context));
     auto internal = new mcsdk_context_internal();
@@ -194,6 +203,8 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
 }
 
 mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
+    std::unique_lock<std::mutex> lock(global_mutex);
+
     auto c = *context;
     auto internal = static_cast<mcsdk_context_internal*>(c->internal);
     delete internal->playback;

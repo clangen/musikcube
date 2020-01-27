@@ -477,4 +477,15 @@ mcsdk_export int mcsdk_streaming_encoder_flush(mcsdk_streaming_encoder se, char*
 mcsdk_export void mcsdk_streaming_encoder_finalize(mcsdk_streaming_encoder se, const char* uri);
 mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mcsdk_encoder e);
 
+/*
+ *
+ * IDebug
+ *
+ */
+
+mcsdk_export void mcsdk_debug_verbose(const char* tag, const char* message);
+mcsdk_export void mcsdk_debug_info(const char* tag, const char* message);
+mcsdk_export void mcsdk_debug_warning(const char* tag, const char* message);
+mcsdk_export void mcsdk_debug_error(const char* tag, const char* message);
+
 #endif

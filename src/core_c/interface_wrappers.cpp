@@ -34,6 +34,8 @@
 
 #include "musikcore_c.h"
 
+#include <core/debug.h>
+
 #include <core/sdk/IResource.h>
 #include <core/sdk/IValue.h>
 #include <core/sdk/IValueList.h>
@@ -52,6 +54,7 @@
 #include <core/sdk/IBlockingEncoder.h>
 #include <core/sdk/IStreamingEncoder.h>
 
+using namespace musik;
 using namespace musik::core::sdk;
 
 #define RESOURCE(x) reinterpret_cast<IResource*>(x)
@@ -712,4 +715,26 @@ mcsdk_export void mcsdk_streaming_encoder_finalize(mcsdk_streaming_encoder se, c
 
 mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mcsdk_encoder e) {
     STREAMINGENCODER(se)->Release();
+}
+
+/*
+ *
+ * IDebug
+ *
+ */
+
+mcsdk_export void mcsdk_debug_verbose(const char* tag, const char* message) {
+    debug::verbose(tag, message);
+}
+
+mcsdk_export void mcsdk_debug_info(const char* tag, const char* message) {
+    debug::info(tag, message);
+}
+
+mcsdk_export void mcsdk_debug_warning(const char* tag, const char* message) {
+    debug::warning(tag, message);
+}
+
+mcsdk_export void mcsdk_debug_error(const char* tag, const char* message) {
+    debug::error(tag, message);
 }
