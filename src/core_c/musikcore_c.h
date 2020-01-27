@@ -379,11 +379,10 @@ mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb);
 
 /*
  *
- * IPreferences (TODO)
+ * IPreferences
  *
  */
 
-mcsdk_export void mcsdk_prefs_release(mcsdk_prefs p);
 mcsdk_export bool mcsdk_prefs_get_bool(mcsdk_prefs p, const char* key, bool defaultValue);
 mcsdk_export int mcsdk_prefs_get_int(mcsdk_prefs p, const char* key, int defaultValue);
 mcsdk_export double mcsdk_prefs_get_double(mcsdk_prefs p, const char* key, double defaultValue);
@@ -392,10 +391,11 @@ mcsdk_export void mcsdk_prefs_set_int(mcsdk_prefs p, const char* key, int value)
 mcsdk_export void mcsdk_prefs_set_double(mcsdk_prefs p, const char* key, double value);
 mcsdk_export void mcsdk_prefs_set_string(mcsdk_prefs p, const char* key, const char* value);
 mcsdk_export void mcsdk_prefs_save(mcsdk_prefs p);
+mcsdk_export void mcsdk_prefs_release(mcsdk_prefs p);
 
 /*
  *
- * IDataStream (TODO)
+ * IDataStream
  *
  */
 
@@ -418,7 +418,7 @@ mcsdk_export void mcsdk_data_stream_release(mcsdk_data_stream ds);
 
 /*
  *
- * IAudioBuffer (TODO)
+ * IAudioBuffer
  *
  */
 
@@ -427,14 +427,14 @@ mcsdk_export void mcsdk_audio_buffer_set_sample_rate(mcsdk_audio_buffer ab, long
 mcsdk_export int mcsdk_audio_buffer_get_channels(mcsdk_audio_buffer ab);
 mcsdk_export void mcsdk_audio_buffer_set_channels(mcsdk_audio_buffer ab, int channels);
 mcsdk_export float* mcsdk_audio_buffer_get_buffer_pointer(mcsdk_audio_buffer ab);
-mcsdk_export long mcsdk_audio_buffer_get_samples(mcsdk_audio_buffer ab);
-mcsdk_export void mcsdk_audio_buffer_set_samples(mcsdk_audio_buffer ab, long samples);
+mcsdk_export long mcsdk_audio_buffer_get_sample_count(mcsdk_audio_buffer ab);
+mcsdk_export void mcsdk_audio_buffer_set_sample_count(mcsdk_audio_buffer ab, long samples);
 mcsdk_export long mcsdk_audio_buffer_get_byte_count(mcsdk_audio_buffer ab);
 mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab);
 
 /*
  *
- * IDecoder (TODO)
+ * IDecoder
  *
  */
 
@@ -442,48 +442,39 @@ mcsdk_export double mcsdk_decoder_set_position(mcsdk_decoder d, double seconds);
 mcsdk_export bool mcsdk_decoder_get_buffer(mcsdk_decoder d, mcsdk_audio_buffer ab);
 mcsdk_export double mcsdk_decoder_get_duration(mcsdk_decoder d);
 mcsdk_export bool mcsdk_decoder_open(mcsdk_decoder d, mcsdk_data_stream ds);
-mcsdk_export bool mcsdk_decoder_exhausted(mcsdk_decoder d);
+mcsdk_export bool mcsdk_decoder_is_eof(mcsdk_decoder d);
 mcsdk_export void mcsdk_decoder_release(mcsdk_decoder d);
 
 /*
  *
- * IEncoder (TODO)
+ * IEncoder
  *
  */
 
-mcsdk_export bool mcsdk_encoder_release(mcsdk_encoder e);
 mcsdk_export mcsdk_encoder_type mcsdk_encoder_get_type(mcsdk_encoder e);
+mcsdk_export void mcsdk_encoder_release(mcsdk_encoder e);
 
 /*
  *
- * IBlockingEncoder (TODO)
+ * IBlockingEncoder
  *
  */
 
-mcsdk_export bool mcsdk_blocking_encoder_initialize(mcsdk_data_stream out, size_t rate, size_t channels, size_t bitrate);
-mcsdk_export bool mcsdk_blocking_encoder_encode(mcsdk_audio_buffer ab);
-mcsdk_export void mcsdk_blocking_encoder_finalize();
+mcsdk_export bool mcsdk_blocking_encoder_initialize(mcsdk_blocking_encoder be, mcsdk_data_stream out, size_t rate, size_t channels, size_t bitrate);
+mcsdk_export bool mcsdk_blocking_encoder_encode(mcsdk_blocking_encoder be, mcsdk_audio_buffer ab);
+mcsdk_export void mcsdk_blocking_encoder_finalize(mcsdk_blocking_encoder be);
+mcsdk_export void mcsdk_blocking_encoder_release(mcsdk_blocking_encoder be, mcsdk_encoder e);
 
 /*
  *
- * IStreamingEncoder (TODO)
+ * IStreamingEncoder
  *
  */
 
-mcsdk_export bool mcsdk_streaming_encoder_initialize(size_t rate, size_t channels, size_t bitrate);
-mcsdk_export int mcsdk_streaming_encoder_encode(mcsdk_audio_buffer ab, char** data);
-mcsdk_export int mcsdk_streaming_encoder_flush(char** data);
-mcsdk_export void mcsdk_streaming_encoder_finalize(const char* uri);
-
-/*
- *
- * IDebug (TODO)
- *
- */
-
-mcsdk_export void mcsdk_debug_verbose(const char* tag, const char* message);
-mcsdk_export void mcsdk_debug_info(const char* tag, const char* message);
-mcsdk_export void mcsdk_debug_warning(const char* tag, const char* message);
-mcsdk_export void mcsdk_debug_error(const char* tag, const char* message);
+mcsdk_export bool mcsdk_streaming_encoder_initialize(mcsdk_streaming_encoder se, size_t rate, size_t channels, size_t bitrate);
+mcsdk_export int mcsdk_streaming_encoder_encode(mcsdk_streaming_encoder se, mcsdk_audio_buffer ab, char** data);
+mcsdk_export int mcsdk_streaming_encoder_flush(mcsdk_streaming_encoder se, char** data);
+mcsdk_export void mcsdk_streaming_encoder_finalize(mcsdk_streaming_encoder se, const char* uri);
+mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mcsdk_encoder e);
 
 #endif
