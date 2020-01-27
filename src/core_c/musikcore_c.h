@@ -187,28 +187,33 @@ static const char* mcsdk_track_field_external_id = "external_id";
  *
  */
 
-typedef void* mcsdk_handle;
-typedef mcsdk_handle mcsdk_resource;
-typedef mcsdk_handle mcsdk_value;
-typedef mcsdk_handle mcsdk_value_list;
-typedef mcsdk_handle mcsdk_map;
-typedef mcsdk_handle mcsdk_track;
-typedef mcsdk_handle mcsdk_map_list;
-typedef mcsdk_handle mcsdk_track_list;
-typedef mcsdk_handle mcsdk_track_list_editor;
-typedef mcsdk_handle mcsdk_svc_metadata;
-typedef mcsdk_handle mcsdk_svc_playback;
-typedef mcsdk_handle mcsdk_prefs;
-typedef mcsdk_handle mcsdk_audio_buffer;
-typedef mcsdk_handle mcsdk_audio_buffer_provider;
-typedef mcsdk_handle mcsdk_data_stream;
-typedef mcsdk_handle mcsdk_device;
-typedef mcsdk_handle mcsdk_device_list;
-typedef mcsdk_handle mcsdk_output;
-typedef mcsdk_handle mcsdk_decoder;
-typedef mcsdk_handle mcsdk_encoder;
-typedef mcsdk_handle mcsdk_blocking_encoder;
-typedef mcsdk_handle mcsdk_streaming_encoder;
+#define DEFINE_HANDLE(x) \
+    typedef struct x { \
+        void* opaque; \
+    } x;
+
+DEFINE_HANDLE(mcsdk_internal);
+DEFINE_HANDLE(mcsdk_resource);
+DEFINE_HANDLE(mcsdk_value);
+DEFINE_HANDLE(mcsdk_value_list);
+DEFINE_HANDLE(mcsdk_map);
+DEFINE_HANDLE(mcsdk_track);
+DEFINE_HANDLE(mcsdk_map_list);
+DEFINE_HANDLE(mcsdk_track_list);
+DEFINE_HANDLE(mcsdk_track_list_editor);
+DEFINE_HANDLE(mcsdk_svc_metadata);
+DEFINE_HANDLE(mcsdk_svc_playback);
+DEFINE_HANDLE(mcsdk_prefs);
+DEFINE_HANDLE(mcsdk_audio_buffer);
+DEFINE_HANDLE(mcsdk_audio_buffer_provider);
+DEFINE_HANDLE(mcsdk_data_stream);
+DEFINE_HANDLE(mcsdk_device);
+DEFINE_HANDLE(mcsdk_device_list);
+DEFINE_HANDLE(mcsdk_output);
+DEFINE_HANDLE(mcsdk_decoder);
+DEFINE_HANDLE(mcsdk_encoder);
+DEFINE_HANDLE(mcsdk_blocking_encoder);
+DEFINE_HANDLE(mcsdk_streaming_encoder);
 
 /*
  *
@@ -220,7 +225,7 @@ typedef struct mcsdk_context {
     mcsdk_svc_metadata metadata;
     mcsdk_svc_playback playback;
     mcsdk_prefs preferences;
-    mcsdk_handle internal;
+    mcsdk_internal internal;
 } mcsdk_context;
 
 mcsdk_export void mcsdk_context_init(mcsdk_context** context);
@@ -276,7 +281,7 @@ mcsdk_export void mcsdk_map_release(mcsdk_map m);
  */
 
 mcsdk_export size_t mcsdk_map_list_get_count(mcsdk_map_list ml);
-mcsdk_export mcsdk_map_list mcsdk_map_list_get_at(mcsdk_map_list ml, size_t index);
+mcsdk_export mcsdk_map mcsdk_map_list_get_at(mcsdk_map_list ml, size_t index);
 mcsdk_export void mcsdk_map_list_release(mcsdk_map_list ml);
 
 /*

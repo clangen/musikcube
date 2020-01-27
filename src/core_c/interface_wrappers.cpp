@@ -60,27 +60,27 @@
 using namespace musik;
 using namespace musik::core::sdk;
 
-#define RESOURCE(x) reinterpret_cast<IResource*>(x)
-#define VALUE(x) reinterpret_cast<IValue*>(x)
-#define MAP(x) reinterpret_cast<IMap*>(x)
-#define VALUELIST(x) reinterpret_cast<IValueList*>(x)
-#define MAPLIST(x) reinterpret_cast<IMapList*>(x)
-#define TRACK(x) reinterpret_cast<ITrack*>(x)
-#define TRACKLIST(x) reinterpret_cast<ITrackList*>(x)
-#define TRACKLISTEDITOR(x) reinterpret_cast<ITrackListEditor*>(x)
-#define METADATA(x) reinterpret_cast<IMetadataProxy*>(x)
-#define PLAYBACK(x) reinterpret_cast<IPlaybackService*>(x)
-#define PREFS(x) reinterpret_cast<IPreferences*>(x)
-#define DATASTREAM(x) reinterpret_cast<IDataStream*>(x)
-#define BUFFER(x) reinterpret_cast<IBuffer*>(x)
-#define BUFFERPROVIDER(x) reinterpret_cast<IBufferProvider*>(x)
-#define DECODER(x) reinterpret_cast<IDecoder*>(x)
-#define ENCODER(x) reinterpret_cast<IEncoder*>(x)
-#define STREAMINGENCODER(x) reinterpret_cast<IStreamingEncoder*>(x)
-#define BLOCKINGENCODER(x) reinterpret_cast<IBlockingEncoder*>(x)
-#define DEVICE(x) reinterpret_cast<IDevice*>(x)
-#define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x)
-#define OUTPUT(x) reinterpret_cast<IOutput*>(x)
+#define RESOURCE(x) reinterpret_cast<IResource*>(x.opaque)
+#define VALUE(x) reinterpret_cast<IValue*>(x.opaque)
+#define MAP(x) reinterpret_cast<IMap*>(x.opaque)
+#define VALUELIST(x) reinterpret_cast<IValueList*>(x.opaque)
+#define MAPLIST(x) reinterpret_cast<IMapList*>(x.opaque)
+#define TRACK(x) reinterpret_cast<ITrack*>(x.opaque)
+#define TRACKLIST(x) reinterpret_cast<ITrackList*>(x.opaque)
+#define TRACKLISTEDITOR(x) reinterpret_cast<ITrackListEditor*>(x.opaque)
+#define METADATA(x) reinterpret_cast<IMetadataProxy*>(x.opaque)
+#define PLAYBACK(x) reinterpret_cast<IPlaybackService*>(x.opaque)
+#define PREFS(x) reinterpret_cast<IPreferences*>(x.opaque)
+#define DATASTREAM(x) reinterpret_cast<IDataStream*>(x.opaque)
+#define BUFFER(x) reinterpret_cast<IBuffer*>(x.opaque)
+#define BUFFERPROVIDER(x) reinterpret_cast<IBufferProvider*>(x.opaque)
+#define DECODER(x) reinterpret_cast<IDecoder*>(x.opaque)
+#define ENCODER(x) reinterpret_cast<IEncoder*>(x.opaque)
+#define STREAMINGENCODER(x) reinterpret_cast<IStreamingEncoder*>(x.opaque)
+#define BLOCKINGENCODER(x) reinterpret_cast<IBlockingEncoder*>(x.opaque)
+#define DEVICE(x) reinterpret_cast<IDevice*>(x.opaque)
+#define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x.opaque)
+#define OUTPUT(x) reinterpret_cast<IOutput*>(x.opaque)
 
 /*
  *
@@ -125,7 +125,7 @@ mcsdk_export size_t mcsdk_value_list_count(mcsdk_value_list vl) {
 }
 
 mcsdk_export mcsdk_value mcsdk_value_list_get_at(mcsdk_value_list vl, size_t index) {
-    return (mcsdk_value) VALUELIST(vl)->GetAt(index);
+    return mcsdk_value { VALUELIST(vl)->GetAt(index) };
 }
 
 mcsdk_export void mcsdk_value_list_release(mcsdk_value_list vl) {
@@ -168,8 +168,8 @@ mcsdk_export size_t mcsdk_map_list_get_count(mcsdk_map_list ml) {
     return MAPLIST(ml)->Count();
 }
 
-mcsdk_export mcsdk_map_list mcsdk_map_list_get_at(mcsdk_map_list ml, size_t index) {
-    return (mcsdk_map_list) MAPLIST(ml)->GetAt(index);
+mcsdk_export mcsdk_map mcsdk_map_list_get_at(mcsdk_map_list ml, size_t index) {
+    return mcsdk_map { MAPLIST(ml)->GetAt(index) };
 }
 
 mcsdk_export void mcsdk_map_list_release(mcsdk_map_list ml) {
@@ -213,7 +213,7 @@ mcsdk_export int64_t mcsdk_track_list_index_of(mcsdk_track_list tl, int64_t id) 
 }
 
 mcsdk_export mcsdk_track mcsdk_track_list_get_track_at(mcsdk_track_list tl, size_t index) {
-    return (mcsdk_track) TRACKLIST(tl)->GetTrack(index);
+    return mcsdk_track { TRACKLIST(tl)->GetTrack(index) };
 }
 
 mcsdk_export void mcsdk_track_list_release(mcsdk_track_list tl) {
@@ -265,51 +265,51 @@ mcsdk_export void mcsdk_track_list_editor_release(mcsdk_track_list_editor tle) {
  */
 
 mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_tracks(mcsdk_svc_metadata mp, const char* keyword, int limit, int offset) {
-    return (mcsdk_track_list) METADATA(mp)->QueryTracks(keyword, limit, offset);
+    return mcsdk_track_list { METADATA(mp)->QueryTracks(keyword, limit, offset) };
 }
 
-mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_track_by_id(mcsdk_svc_metadata mp, int64_t track_id) {
-    return (mcsdk_track) METADATA(mp)->QueryTrackById(track_id);
+mcsdk_export mcsdk_track mcsdk_svc_metadata_query_track_by_id(mcsdk_svc_metadata mp, int64_t track_id) {
+    return mcsdk_track { METADATA(mp)->QueryTrackById(track_id) };
 }
 
-mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_track_by_external_id(mcsdk_svc_metadata mp, const char* external_id) {
-    return (mcsdk_track) METADATA(mp)->QueryTrackByExternalId(external_id);
+mcsdk_export mcsdk_track mcsdk_svc_metadata_query_track_by_external_id(mcsdk_svc_metadata mp, const char* external_id) {
+    return mcsdk_track { METADATA(mp)->QueryTrackByExternalId(external_id) };
 }
 
 mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_tracks_by_category(mcsdk_svc_metadata mp, const char* category_type, int64_t selected_id, const char* filter, int limit, int offset) {
-    return (mcsdk_track_list) METADATA(mp)->QueryTracksByCategory(category_type, selected_id, filter, limit, offset);
+    return mcsdk_track_list { METADATA(mp)->QueryTracksByCategory(category_type, selected_id, filter, limit, offset) };
 }
 
 mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_tracks_by_categories(mcsdk_svc_metadata mp, mcsdk_value* categories, size_t category_count, const char* filter, int limit, int offset) {
-    return (mcsdk_track_list) METADATA(mp)->QueryTracksByCategories(reinterpret_cast<IValue**>(categories), category_count, filter, limit, offset);
+    return mcsdk_track_list { METADATA(mp)->QueryTracksByCategories(reinterpret_cast<IValue**>(categories), category_count, filter, limit, offset) };
 }
 
 mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_tracks_by_external_id(mcsdk_svc_metadata mp, const char** external_ids, size_t external_id_count) {
-    return (mcsdk_track_list) METADATA(mp)->QueryTracksByExternalId(external_ids, external_id_count);
+    return mcsdk_track_list { METADATA(mp)->QueryTracksByExternalId(external_ids, external_id_count) };
 }
 
 mcsdk_export mcsdk_value_list mcsdk_svc_metadata_list_categories(mcsdk_svc_metadata mp) {
-    return (mcsdk_value_list) METADATA(mp)->ListCategories();
+    return mcsdk_value_list { METADATA(mp)->ListCategories() };
 }
 
 mcsdk_export mcsdk_value_list mcsdk_svc_metadata_query_category(mcsdk_svc_metadata mp, const char* type, const char* filter) {
-    return (mcsdk_value_list) METADATA(mp)->QueryCategory(type, filter);
+    return mcsdk_value_list { METADATA(mp)->QueryCategory(type, filter) };
 }
 
 mcsdk_export mcsdk_value_list mcsdk_svc_metadata_query_category_with_predicate(mcsdk_svc_metadata mp, const char* type, const char* predicate_type, int64_t predicate_id, const char* filter) {
-    return (mcsdk_value_list) METADATA(mp)->QueryCategoryWithPredicate(type, predicate_type, predicate_id, filter);
+    return mcsdk_value_list { METADATA(mp)->QueryCategoryWithPredicate(type, predicate_type, predicate_id, filter) };
 }
 
 mcsdk_export mcsdk_value_list mcsdk_svc_metadata_query_category_with_predicates(mcsdk_svc_metadata mp, const char* type, mcsdk_value* predicates, size_t predicate_count, const char* filter) {
-    return (mcsdk_value_list) METADATA(mp)->QueryCategoryWithPredicates(type, reinterpret_cast<IValue**>(predicates), predicate_count, filter);
+    return mcsdk_value_list { METADATA(mp)->QueryCategoryWithPredicates(type, reinterpret_cast<IValue**>(predicates), predicate_count, filter) };
 }
 
 mcsdk_export mcsdk_map_list mcsdk_svc_metadata_query_albums(mcsdk_svc_metadata mp, const char* filter) {
-    return (mcsdk_map_list) METADATA(mp)->QueryAlbums(filter);
+    return mcsdk_map_list { METADATA(mp)->QueryAlbums(filter) };
 }
 
 mcsdk_export mcsdk_map_list mcsdk_svc_metadata_query_albums_by_category(mcsdk_svc_metadata mp, const char* category_id_name, int64_t category_id_value, const char* filter) {
-    return (mcsdk_map_list) METADATA(mp)->QueryAlbums(category_id_name, category_id_value, filter);
+    return mcsdk_map_list { METADATA(mp)->QueryAlbums(category_id_name, category_id_value, filter) };
 }
 
 mcsdk_export int64_t mcsdk_svc_metadata_save_playlist_with_ids(mcsdk_svc_metadata mp, int64_t* track_ids, size_t track_id_count, const char* playlist_name, const int64_t playlist_id) {
@@ -439,11 +439,11 @@ mcsdk_export size_t mcsdk_svc_playback_count(mcsdk_svc_playback pb) {
 }
 
 mcsdk_export mcsdk_track mcsdk_svc_playback_get_track(mcsdk_svc_playback pb, size_t index) {
-    return (mcsdk_track) PLAYBACK(pb)->GetTrack(index);
+    return mcsdk_track { PLAYBACK(pb)->GetTrack(index) };
 }
 
 mcsdk_export mcsdk_track mcsdk_svc_playback_get_playing_track(mcsdk_svc_playback pb) {
-    return (mcsdk_track) PLAYBACK(pb)->GetPlayingTrack();
+    return mcsdk_track { PLAYBACK(pb)->GetPlayingTrack() };
 }
 
 mcsdk_export void mcsdk_svc_playback_copy_from(mcsdk_svc_playback pb, const mcsdk_track_list track_list) {
@@ -455,7 +455,7 @@ mcsdk_export void mcsdk_svc_playback_play(mcsdk_svc_playback pb, const mcsdk_tra
 }
 
 mcsdk_export mcsdk_track_list_editor mcsdk_svc_playback_edit_playlist(mcsdk_svc_playback pb) {
-    return (mcsdk_track_list_editor) PLAYBACK(pb)->EditPlaylist();
+    return mcsdk_track_list_editor { PLAYBACK(pb)->EditPlaylist() };
 }
 
 mcsdk_export mcsdk_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb) {
@@ -471,7 +471,7 @@ mcsdk_export void mcsdk_svc_playback_reload_output(mcsdk_svc_playback pb) {
 }
 
 mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb) {
-    return (mcsdk_track_list) PLAYBACK(pb)->Clone();
+    return mcsdk_track_list { PLAYBACK(pb)->Clone() };
 }
 
 /*
@@ -668,7 +668,7 @@ mcsdk_export size_t mcsdk_device_list_get_count(mcsdk_device_list dl) {
 }
 
 mcsdk_export const mcsdk_device mcsdk_device_list_get_at(mcsdk_device_list dl, size_t index) {
-    return (mcsdk_device) DEVICELIST(dl)->At(index);
+    return mcsdk_device { (void*) DEVICELIST(dl)->At(index) };
 }
 
 mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl) {
@@ -719,7 +719,7 @@ mcsdk_export const char* mcsdk_output_get_name(mcsdk_output o) {
 }
 
 mcsdk_export mcsdk_device_list mcsdk_output_get_device_list(mcsdk_output o) {
-    return (mcsdk_device_list) OUTPUT(o)->GetDeviceList();
+    return mcsdk_device_list { OUTPUT(o)->GetDeviceList() };
 }
 
 mcsdk_export bool mcsdk_output_set_default_device(mcsdk_output o, const char* device_id) {
@@ -727,7 +727,7 @@ mcsdk_export bool mcsdk_output_set_default_device(mcsdk_output o, const char* de
 }
 
 mcsdk_export mcsdk_device mcsdk_output_get_default_device(mcsdk_output o) {
-    return (mcsdk_device) OUTPUT(o)->GetDefaultDevice();
+    return mcsdk_device { OUTPUT(o)->GetDefaultDevice() };
 }
 
 mcsdk_export void mcsdk_output_release(mcsdk_output o) {
@@ -775,7 +775,7 @@ mcsdk_export void mcsdk_encoder_release(mcsdk_encoder e) {
 }
 
 mcsdk_export mcsdk_encoder_type mcsdk_encoder_get_type(mcsdk_encoder e) {
-    IEncoder* encoder = reinterpret_cast<IEncoder*>(e);
+    IEncoder* encoder = reinterpret_cast<IEncoder*>(e.opaque);
     if (dynamic_cast<IBlockingEncoder*>(encoder) != nullptr) {
         return mcsdk_encoder_type_blocking;
     }

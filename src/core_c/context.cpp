@@ -189,10 +189,10 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
     internal->playback = new PlaybackService(internal->message_queue, internal->library);
     internal->metadata = new LocalMetadataProxy(internal->library);
     internal->preferences = Preferences::ForComponent(prefs::components::Settings);
-    c->internal = internal;
-    c->metadata = (mcsdk_svc_metadata) internal->metadata;
-    c->preferences = (mcsdk_prefs) internal->preferences.get();
-    c->playback = (mcsdk_svc_playback) internal->playback;
+    c->internal.opaque = internal;
+    c->metadata.opaque = internal->metadata;
+    c->preferences.opaque = internal->preferences.get();
+    c->playback.opaque = internal->playback;
     internal->thread = std::thread([internal] {
         internal->message_queue.Run();
     });
@@ -206,7 +206,7 @@ mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
     std::unique_lock<std::mutex> lock(global_mutex);
 
     auto c = *context;
-    auto internal = static_cast<mcsdk_context_internal*>(c->internal);
+    auto internal = static_cast<mcsdk_context_internal*>(c->internal.opaque);
     delete internal->playback;
     internal->playback = nullptr;
     internal->library->Indexer()->Stop();
@@ -229,7 +229,7 @@ mcsdk_export void mcsdk_set_plugin_context(mcsdk_context* context) {
     }
     plugin_context = context;
     if (plugin_context) {
-        auto internal = static_cast<mcsdk_context_internal*>(context->internal);
+        auto internal = static_cast<mcsdk_context_internal*>(context->internal.opaque);
         plugin::Init(&internal->message_queue, internal->playback, internal->library);
     }
 }
