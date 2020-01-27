@@ -118,9 +118,13 @@ bool AlbumListQuery::OnRun(Connection& db) {
     Apply(stmt, args);
 
     while (stmt.Step() == Row) {
-        std::shared_ptr<MetadataMap> row(new MetadataMap(
-            stmt.ColumnInt64(0), stmt.ColumnText(1), "album"));
+        int64_t albumId = stmt.ColumnInt64(0);
+        std::string albumName = stmt.ColumnText(1);
+        std::shared_ptr<MetadataMap> row(new MetadataMap(albumId, albumName, "album"));
 
+        row->SetValue(Track::ALBUM_ID, stmt.ColumnText(0));
+        row->SetValue(Track::ALBUM, albumName);
+        row->SetValue(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
         row->SetValue(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
         row->SetValue(Track::ALBUM_ARTIST, stmt.ColumnText(3));
         row->SetValue(Track::THUMBNAIL_ID, stmt.ColumnText(4));
