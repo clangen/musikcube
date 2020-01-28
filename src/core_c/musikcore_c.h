@@ -500,7 +500,7 @@ mcsdk_export void mcsdk_output_release(mcsdk_output o);
  */
 
 mcsdk_export double mcsdk_decoder_set_position(mcsdk_decoder d, double seconds);
-mcsdk_export bool mcsdk_decoder_get_buffer(mcsdk_decoder d, mcsdk_audio_buffer ab);
+mcsdk_export bool mcsdk_decoder_fill_buffer(mcsdk_decoder d, mcsdk_audio_buffer ab);
 mcsdk_export double mcsdk_decoder_get_duration(mcsdk_decoder d);
 mcsdk_export bool mcsdk_decoder_open(mcsdk_decoder d, mcsdk_data_stream ds);
 mcsdk_export bool mcsdk_decoder_is_eof(mcsdk_decoder d);
@@ -559,7 +559,7 @@ mcsdk_export size_t mcsdk_env_get_path(mcsdk_path_type type, char* dst, int size
 mcsdk_export mcsdk_data_stream mcsdk_env_open_data_stream(const char* uri, mcsdk_stream_open_flags flags);
 mcsdk_export mcsdk_decoder mcsdk_env_open_decoder(mcsdk_data_stream stream);
 mcsdk_export mcsdk_encoder mcsdk_env_open_encoder(const char* type) ;
-mcsdk_export mcsdk_audio_buffer mcsdk_env_create_data_buffer(size_t samples, size_t rate, size_t channels);
+mcsdk_export mcsdk_audio_buffer mcsdk_env_create_audio_buffer(size_t samples, size_t rate, size_t channels);
 mcsdk_export mcsdk_prefs mcsdk_env_open_preferences(const char* name);
 mcsdk_export size_t mcsdk_env_get_output_count();
 mcsdk_export mcsdk_output mcsdk_env_get_output_at_index(size_t index);

@@ -85,7 +85,7 @@ using namespace musik::core::sdk;
 #define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x.opaque)
 #define OUTPUT(x) reinterpret_cast<IOutput*>(x.opaque)
 
-#define RELEASE(x, type) if (mcsdk_handle_ok(x)) { type(x)->Release(); }
+#define RELEASE(x, type) if (mcsdk_handle_ok(x)) { type(x)->Release(); x.opaque = nullptr; }
 
 /*
  *
