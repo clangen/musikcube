@@ -93,7 +93,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 endif()
 
 add_subdirectory(src/core)
-add_subdirectory(src/core_c)
 add_subdirectory(src/core_c_demo)
 add_subdirectory(src/musikcube)
 add_subdirectory(src/musikcubed)

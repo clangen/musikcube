@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <core_c/musikcore_c.h>
+#include <core/musikcore_c.h>
 
 #define INPUT_FILE "/home/clangen/in.opus"
 #define OUTPUT_FILE "/home/clangen/out.flac"
