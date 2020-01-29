@@ -1,10 +1,28 @@
+#ifdef WIN32
+#include <Windows.h>
+#endif
 
 #include <stdio.h>
-#include <unistd.h>
 #include <core/musikcore_c.h>
 
-#define INPUT_FILE "/home/clangen/in.opus"
-#define OUTPUT_FILE "/home/clangen/out.flac"
+#ifdef WIN32
+    #define INPUT_FILE "c:\\clangen\\in.mp3"
+    #define OUTPUT_FILE "c:\\clangen\\out.opus"
+#elif defined __APPLE__
+    #define INPUT_FILE "/Users/clangen/in.mp3"
+    #define OUTPUT_FILE "/Users/clangen/out.opus"
+#else
+    #define INPUT_FILE "/home/clangen/in.mp3"
+    #define OUTPUT_FILE "/home/clangen/out.mp3"
+#endif
+
+static void internal_sleep(int seconds) {
+#ifdef WIN32
+    Sleep(seconds * 1000);
+#else
+    usleep(1000000);
+#endif
+}
 
 static void test_decode_encode() {
     mcsdk_data_stream in = mcsdk_env_open_data_stream(INPUT_FILE, mcsdk_stream_open_flags_read);
@@ -44,7 +62,7 @@ static void test_playback(mcsdk_context* context) {
     mcsdk_track_list_release(tl);
     printf("test_playback: playing for 5 seconds...\n");
     for (int i = 0; i < 5; i++) {
-        usleep(1000000);
+        internal_sleep(1);
         printf("  %d\n", i + 1);
     }
     printf("test_playback: done.\n");
