@@ -136,12 +136,12 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
     c->metadata.opaque = internal->metadata;
     c->preferences.opaque = internal->preferences.get();
     c->playback.opaque = internal->playback;
-    internal->thread = std::thread([internal] {
-        internal->message_queue.Run();
-    });
     if (!plugin_context) {
         mcsdk_set_plugin_context(c);
     }
+    internal->thread = std::thread([internal] { /* needs to be last */
+        internal->message_queue.Run();
+    });
     *context = c;
 }
 
