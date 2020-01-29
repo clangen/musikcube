@@ -34,7 +34,6 @@
 
 #include "musikcore_c.h"
 
-#include <ev++.h>
 #include <thread>
 
 #include <core/debug.h>
@@ -59,95 +58,38 @@ using namespace musik::core::runtime;
 
 /*
  *
- * ev_message_queue
+ * internal_message_queue
  *
  */
 
-static const short EVENT_DISPATCH = 1;
-static const short EVENT_QUIT = 2;
-
-class ev_message_queue: public MessageQueue {
+class internal_message_queue: public MessageQueue {
     public:
-        ev_message_queue(): MessageQueue() {
+        internal_message_queue(): MessageQueue() {
             this->quit = false;
-            if (pipe(pipeFd) != 0) {
-                std::cerr << "\n  ERROR! couldn't create pipe\n\n";
-                exit(EXIT_FAILURE);
-            }
         }
 
-        virtual ~ev_message_queue() {
-            if (pipeFd[0]) {
-                close(pipeFd[0]);
+        void Quit() {
+            {
+                LockT lock(this->mutex);
+                this->quit = true;
             }
-            if (pipeFd[1]) {
-                close(pipeFd[1]);
-            }
-        }
-
-        void Post(IMessagePtr message, int64_t delayMs) {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            if (this->quit) {
-                return;
-            }
-
-            MessageQueue::Post(message, delayMs);
-
-            if (delayMs <= 0) {
-                write(pipeFd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
-            }
-            else {
-                double delayTs = (double) delayMs / 1000.0;
-                loop.once<
-                    ev_message_queue,
-                    &ev_message_queue::DelayedDispatch
-                >(-1, ev::TIMER, (ev::tstamp) delayTs, this);
-            }
-        }
-
-        void DelayedDispatch(int revents) {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            if (!this->quit) {
-                this->Dispatch();
-            }
-        }
-
-        void SignalQuit() {
-            std::unique_lock<std::mutex> lock(this->mutex);
-            this->quit = true;
-            write(pipeFd[1], &EVENT_QUIT, sizeof(EVENT_QUIT));
-        }
-
-        void ReadCallback(ev::io& watcher, int revents) {
-            short type;
-            if (read(pipeFd[0], &type, sizeof(type)) == 0) {
-                std::cerr << "read() failed.\n";
-                exit(EXIT_FAILURE);
-            }
-            switch (type) {
-                case EVENT_DISPATCH: this->Dispatch(); break;
-                case EVENT_QUIT: loop.break_loop(ev::ALL); break;
-            }
+            this->Post(Message::Create(0, 0, 0, 0));
         }
 
         void Run() {
-            io.set(loop);
-            io.set(pipeFd[0], ev::READ);
-            io.set<ev_message_queue, &ev_message_queue::ReadCallback>(this);
-            io.start();
-
-            sio.set(loop);
-
-            write(pipeFd[1], &EVENT_DISPATCH, sizeof(EVENT_DISPATCH));
-
-            loop.run(0);
+            while (true) {
+                this->WaitAndDispatch();
+                {
+                    LockT lock(this->mutex);
+                    if (this->quit) {
+                        return;
+                    }
+                }
+            }
         }
 
     private:
-        int pipeFd[2];
-        ev::dynamic_loop loop;
-        ev::io io;
-        ev::sig sio;
+        using LockT = std::unique_lock<std::mutex>;
         bool quit;
         std::mutex mutex;
 };
@@ -159,7 +101,7 @@ class ev_message_queue: public MessageQueue {
  */
 
 struct mcsdk_context_internal {
-    ev_message_queue message_queue;
+    internal_message_queue message_queue;
     std::thread thread;
     ILibraryPtr library;
     LocalMetadataProxy* metadata;
@@ -213,7 +155,7 @@ mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
     internal->library.reset();
     internal->preferences.reset();
     delete internal->metadata;
-    internal->message_queue.SignalQuit();
+    internal->message_queue.Quit();
     internal->thread.join();
     delete internal;
     delete c;
