@@ -57,18 +57,11 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 
-/*
- *
- * internal_message_queue
- *
- */
-
 class internal_message_queue: public MessageQueue {
     public:
         internal_message_queue(): MessageQueue() {
             this->quit = false;
         }
-
         void Quit() {
             {
                 LockT lock(this->mutex);
@@ -76,7 +69,6 @@ class internal_message_queue: public MessageQueue {
             }
             this->Post(Message::Create(0, 0, 0, 0));
         }
-
         void Run() {
             while (true) {
                 this->WaitAndDispatch();
@@ -88,18 +80,11 @@ class internal_message_queue: public MessageQueue {
                 }
             }
         }
-
     private:
         using LockT = std::unique_lock<std::mutex>;
         bool quit;
         std::mutex mutex;
 };
-
-/*
- *
- * instance context
- *
- */
 
 struct mcsdk_context_internal {
     internal_message_queue message_queue;
