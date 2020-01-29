@@ -31,7 +31,7 @@ static void test_decode_encode() {
         printf("test_decode_encode: decoding from %s\n", INPUT_FILE);
         printf("test_decode_encode: encoding to %s\n", OUTPUT_FILE);
         mcsdk_decoder decoder = mcsdk_env_open_decoder(in);
-        mcsdk_encoder encoder = mcsdk_env_open_encoder(".ogg");
+        mcsdk_encoder encoder = mcsdk_env_open_encoder(".opus");
         if (mcsdk_handle_ok(decoder) && mcsdk_handle_ok(encoder)) {
             printf("test_decode_encode: encoder and decoder opened successfully. running...\n");
             if (mcsdk_encoder_get_type(encoder) == mcsdk_encoder_type_blocking) {
@@ -65,6 +65,7 @@ static void test_playback(mcsdk_context* context) {
         internal_sleep(1);
         printf("  %d\n", i + 1);
     }
+    mcsdk_svc_playback_stop(context->playback);
     printf("test_playback: done.\n");
 }
 
