@@ -173,6 +173,8 @@
     <ClCompile Include="audio\MasterTransport.cpp" />
     <ClCompile Include="audio\Streams.cpp" />
     <ClCompile Include="audio\Visualizer.cpp" />
+    <ClCompile Include="c_context.cpp" />
+    <ClCompile Include="c_interface_wrappers.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="i18n\Locale.cpp" />
     <ClCompile Include="io\DataStreamFactory.cpp" />
@@ -281,6 +283,7 @@
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\Track.h" />
     <ClInclude Include="library\track\TrackList.h" />
+    <ClInclude Include="musikcore_c.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="config.h" />
     <ClInclude Include="plugin\PluginFactory.h" />

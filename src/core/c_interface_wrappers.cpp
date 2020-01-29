@@ -32,11 +32,11 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "musikcore_c.h"
+#include <pch.hpp>
 
+#include <core/musikcore_c.h>
 #include <core/debug.h>
 #include <core/plugin/Plugins.h>
-
 #include <core/sdk/IResource.h>
 #include <core/sdk/IValue.h>
 #include <core/sdk/IValueList.h>

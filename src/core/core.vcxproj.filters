@@ -238,6 +238,12 @@
     <ClCompile Include="library\query\local\SetTrackRatingQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
+    <ClCompile Include="c_context.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="c_interface_wrappers.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -581,6 +587,9 @@
     </ClInclude>
     <ClInclude Include="library\query\local\SetTrackRatingQuery.h">
       <Filter>src\library\query\local</Filter>
+    </ClInclude>
+    <ClInclude Include="musikcore_c.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

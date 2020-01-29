@@ -32,10 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "musikcore_c.h"
+#include <pch.hpp>
 
-#include <thread>
-
+#include <core/musikcore_c.h>
 #include <core/debug.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
@@ -48,6 +47,8 @@
 #include <boost/locale.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 #include <boost/filesystem.hpp>
+
+#include <thread>
 
 using namespace musik;
 using namespace musik::core;
