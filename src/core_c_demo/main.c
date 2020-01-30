@@ -33,20 +33,38 @@ static void test_decode_encode() {
         printf("test_decode_encode: decoding from %s\n", INPUT_FILE);
         printf("test_decode_encode: encoding to %s\n", OUTPUT_FILE);
         mcsdk_decoder decoder = mcsdk_env_open_decoder(in);
-        mcsdk_encoder encoder = mcsdk_env_open_encoder(".opus");
+        mcsdk_encoder encoder = mcsdk_env_open_encoder(".mp3");
         if (mcsdk_handle_ok(decoder) && mcsdk_handle_ok(encoder)) {
             printf("test_decode_encode: encoder and decoder opened successfully. running...\n");
+            mcsdk_audio_buffer buffer = mcsdk_env_create_audio_buffer(4096, 44100, 2);
             if (mcsdk_encoder_get_type(encoder) == mcsdk_encoder_type_blocking) {
                 mcsdk_blocking_encoder be = mcsdk_cast_handle(encoder);
-                mcsdk_audio_buffer buffer = mcsdk_env_create_audio_buffer(4096, 44100, 2);
                 if (mcsdk_blocking_encoder_initialize(be, out, 44100, 2, 192)) {
                     while (mcsdk_decoder_fill_buffer(decoder, buffer)) {
                         mcsdk_blocking_encoder_encode(be, buffer);
                     }
                     mcsdk_blocking_encoder_finalize(be);
                 }
-                mcsdk_audio_buffer_release(buffer);
+            } else if (mcsdk_encoder_get_type(encoder) == mcsdk_encoder_type_streaming) {
+                mcsdk_streaming_encoder se = mcsdk_cast_handle(encoder);
+                if (mcsdk_streaming_encoder_initialize(se, 44100, 2, 192)) {
+                    char* bytes = NULL;
+                    int length = 0;
+                    while (mcsdk_decoder_fill_buffer(decoder, buffer)) {
+                        length = mcsdk_streaming_encoder_encode(se, buffer, &bytes);
+                        if (bytes && length) {
+                            mcsdk_data_stream_write(out, bytes, length);
+                        }
+                    }
+                    length = mcsdk_streaming_encoder_flush(se, &bytes);
+                    if (bytes && length) {
+                        mcsdk_data_stream_write(out, bytes, length);
+                    }
+                    mcsdk_data_stream_close(out);
+                    mcsdk_streaming_encoder_finalize(se, OUTPUT_FILE);
+                }
             }
+            mcsdk_audio_buffer_release(buffer);
         }
         mcsdk_decoder_release(decoder);
         mcsdk_encoder_release(encoder);

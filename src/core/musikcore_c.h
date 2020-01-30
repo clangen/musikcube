@@ -140,8 +140,9 @@ typedef enum mcsdk_resource_class {
 } mcsdk_resource_class;
 
 typedef enum mcsdk_encoder_type {
-    mcsdk_encoder_type_blocking = 0,
-    mcsdk_encoder_type_streaming = 1
+    mcsdk_encoder_type_none = 0,
+    mcsdk_encoder_type_blocking = 1,
+    mcsdk_encoder_type_streaming = 2
 } mcsdk_encoder_type;
 
 typedef enum mcsdk_audio_player_release_mode {
@@ -517,7 +518,7 @@ mcsdk_export bool mcsdk_streaming_encoder_initialize(mcsdk_streaming_encoder se,
 mcsdk_export int mcsdk_streaming_encoder_encode(mcsdk_streaming_encoder se, mcsdk_audio_buffer ab, char** data);
 mcsdk_export int mcsdk_streaming_encoder_flush(mcsdk_streaming_encoder se, char** data);
 mcsdk_export void mcsdk_streaming_encoder_finalize(mcsdk_streaming_encoder se, const char* uri);
-mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mcsdk_encoder e);
+mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se);
 
 /*
  * IDebug

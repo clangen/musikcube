@@ -752,7 +752,10 @@ mcsdk_export mcsdk_encoder_type mcsdk_encoder_get_type(mcsdk_encoder e) {
     if (dynamic_cast<IBlockingEncoder*>(encoder) != nullptr) {
         return mcsdk_encoder_type_blocking;
     }
-    return mcsdk_encoder_type_streaming;
+    if (dynamic_cast<IStreamingEncoder*>(encoder) != nullptr) {
+        return mcsdk_encoder_type_streaming;
+    }
+    return mcsdk_encoder_type_none;
 }
 
 /*
@@ -795,7 +798,7 @@ mcsdk_export void mcsdk_streaming_encoder_finalize(mcsdk_streaming_encoder se, c
     STREAMINGENCODER(se)->Finalize(uri);
 }
 
-mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mcsdk_encoder e) {
+mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se) {
     RELEASE(se, STREAMINGENCODER);
 }
 
