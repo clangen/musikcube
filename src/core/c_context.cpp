@@ -35,6 +35,7 @@
 #include <pch.hpp>
 
 #include <core/musikcore_c.h>
+#include <core/c_context.h>
 #include <core/debug.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
@@ -57,47 +58,48 @@ using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 
-class internal_message_queue: public MessageQueue {
-    public:
-        internal_message_queue(): MessageQueue() {
-            this->quit = false;
-        }
-        void Quit() {
-            {
-                LockT lock(this->mutex);
-                this->quit = true;
-            }
-            this->Post(Message::Create(0, 0, 0, 0));
-        }
-        void Run() {
-            while (true) {
-                this->WaitAndDispatch();
-                {
-                    LockT lock(this->mutex);
-                    if (this->quit) {
-                        return;
-                    }
-                }
-            }
-        }
-    private:
-        using LockT = std::unique_lock<std::mutex>;
-        bool quit;
-        std::mutex mutex;
-};
-
-struct mcsdk_context_internal {
-    internal_message_queue message_queue;
-    std::thread thread;
-    ILibraryPtr library;
-    LocalMetadataProxy* metadata;
-    PlaybackService* playback;
-    std::shared_ptr<Preferences> preferences;
-};
+/*
+ * globals
+ */
 
 static std::mutex global_mutex;
 static bool environment_initialized = false;
 static mcsdk_context* plugin_context = nullptr;
+
+/*
+ * mcsdk_context_message_queue
+ */
+
+mcsdk_context_message_queue::mcsdk_context_message_queue(): MessageQueue() {
+    this->quit = false;
+}
+
+mcsdk_context_message_queue::~mcsdk_context_message_queue() {
+}
+
+void mcsdk_context_message_queue::Quit() {
+    {
+        LockT lock(this->mutex);
+        this->quit = true;
+    }
+    this->Post(Message::Create(0, 0, 0, 0));
+}
+
+void mcsdk_context_message_queue::Run() {
+    while (true) {
+        this->WaitAndDispatch();
+        {
+            LockT lock(this->mutex);
+            if (this->quit) {
+                return;
+            }
+        }
+    }
+}
+
+/*
+ * mcsdk_context_*
+ */
 
 mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
     std::unique_lock<std::mutex> lock(global_mutex);

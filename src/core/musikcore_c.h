@@ -96,11 +96,11 @@ typedef enum mcsdk_time_change_mode {
 } mcsdk_time_change_mode;
 
 typedef enum mcsdk_path_type {
-    mcsdk_path_user_home = 0,
-    mcsdk_path_data = 1,
-    mcsdk_path_application = 2,
-    mcsdk_path_plugins = 3,
-    mcsdk_path_library = 4
+    mcsdk_path_type_user_home = 0,
+    mcsdk_path_type_data = 1,
+    mcsdk_path_type_application = 2,
+    mcsdk_path_type_plugins = 3,
+    mcsdk_path_type_library = 4
 } mcsdk_path_type;
 
 typedef enum mcsdk_stream_capability {
@@ -319,6 +319,14 @@ mcsdk_export int64_t mcsdk_track_list_get_id(mcsdk_track_list tl, size_t index);
 mcsdk_export int64_t mcsdk_track_list_index_of(mcsdk_track_list tl, int64_t id);
 mcsdk_export mcsdk_track mcsdk_track_list_get_track_at(mcsdk_track_list tl, size_t index);
 mcsdk_export void mcsdk_track_list_release(mcsdk_track_list tl);
+
+/*
+ * TrackList
+ */
+
+mcsdk_export mcsdk_track_list mcsdk_track_list_create(mcsdk_context* context);
+mcsdk_export bool mcsdk_track_list_can_edit(mcsdk_track_list tl);
+mcsdk_export mcsdk_track_list_editor mcsdk_track_list_edit(mcsdk_track_list tl);
 
 /*
  * ITrackListEditor

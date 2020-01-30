@@ -95,6 +95,10 @@ static void test_high_level_playback(mcsdk_context* context) {
     printf("test_playback: loading 'a day in the life' tracks\n");
     mcsdk_track_list tl = mcsdk_svc_metadata_query_tracks(
         context->metadata, "a day in the life", mcsdk_no_limit, mcsdk_no_offset);
+    // mcsdk_track_list tl = mcsdk_track_list_create(context);
+    // mcsdk_track_list_editor tle = mcsdk_track_list_edit(tl);
+    // mcsdk_track_list_editor_add(tle, 4132LL);
+    // mcsdk_track_list_editor_release(tle);
     mcsdk_svc_playback_play(context->playback, tl, 0);
     mcsdk_track_list_release(tl);
     printf("test_high_level_playback: playing for 5 seconds...\n");
@@ -122,7 +126,20 @@ static void test_metadata(mcsdk_context* context) {
     printf("test_metadata: done.\n");
 }
 
+static void configure_environment() {
+    const char* suffix = "stderr.log";
+    char* dest_path = NULL;
+    int length = mcsdk_env_get_path(mcsdk_path_type_data, NULL, 0) + strlen(suffix);
+    dest_path = malloc(length);
+    mcsdk_env_get_path(mcsdk_path_type_data, dest_path, length);
+    strncat(dest_path, suffix, length);
+    freopen(dest_path, "w", stderr);
+    printf("stderr will be written to %s", dest_path);
+    free(dest_path);
+}
+
 int main(int argc, char** argv) {
+    configure_environment();
     mcsdk_context* context = NULL;
     mcsdk_context_init(&context);
     if (context) {

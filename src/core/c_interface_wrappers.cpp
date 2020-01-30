@@ -35,6 +35,8 @@
 #include <pch.hpp>
 
 #include <core/musikcore_c.h>
+#include <core/c_context.h>
+
 #include <core/debug.h>
 #include <core/plugin/Plugins.h>
 #include <core/sdk/IResource.h>
@@ -57,6 +59,7 @@
 #include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/IDevice.h>
 #include <core/sdk/IOutput.h>
+#include <core/library/track/TrackList.h>
 #include <core/audio/Stream.h>
 #include <core/audio/Player.h>
 #include <core/support/Common.h>
@@ -193,6 +196,25 @@ mcsdk_export int mcsdk_track_get_uri(mcsdk_track t, char* dst, int size) {
 
 mcsdk_export void mcsdk_track_release(mcsdk_track t) {
     RELEASE(t, TRACK);
+}
+
+/*
+ * TrackList
+ */
+
+mcsdk_export mcsdk_track_list mcsdk_track_list_create(mcsdk_context* context) {
+    auto internal = (mcsdk_context_internal*) context->internal.opaque;
+    return mcsdk_track_list { new TrackList(internal->library) };
+}
+
+mcsdk_export bool mcsdk_track_list_can_edit(mcsdk_track_list tl) {
+    return dynamic_cast<TrackList*>(TRACKLIST(tl)) != nullptr;
+}
+
+mcsdk_export mcsdk_track_list_editor mcsdk_track_list_edit(mcsdk_track_list tl) {
+    auto trackList = reinterpret_cast<TrackList*>(tl.opaque);
+    auto trackListPtr = std::shared_ptr<TrackList>(trackList, [](TrackList*){});
+    return mcsdk_track_list_editor { new TrackListEditor(trackListPtr) };
 }
 
 /*
