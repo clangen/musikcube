@@ -315,7 +315,7 @@ double AlsaOut::Latency() {
             snd_pcm_get_params(this->pcmHandle, &bufferSize, &periodSize);
 
             if (bufferSize) {
-                this->latency = 
+                this->latency =
                 (double) bufferSize /
                 (double) (this->rate * this->channels * sizeof(float));
             }

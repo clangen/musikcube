@@ -895,14 +895,14 @@ void Indexer::RunAnalyzers() {
             }
 
             if (!runningAnalyzers.empty()) {
-                audio::IStreamPtr stream = audio::Stream::Create(audio::IStream::NoDSP);
+                audio::IStreamPtr stream = audio::Stream::Create(2048, 2.0, StreamFlags::NoDSP);
 
                 if (stream) {
                     if (stream->OpenStream(track.Uri())) {
 
                         /* decode the stream quickly, passing to all analyzers */
 
-                        audio::Buffer* buffer;
+                        IBuffer* buffer;
 
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             PluginVector::iterator plugin = runningAnalyzers.begin();

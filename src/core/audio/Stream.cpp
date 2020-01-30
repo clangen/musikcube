@@ -36,7 +36,6 @@
 
 #include "Stream.h"
 #include "Streams.h"
-#include <core/sdk/constants.h>
 #include <core/debug.h>
 
 using namespace musik::core::audio;
@@ -47,7 +46,7 @@ static std::string TAG = "Stream";
 
 #define MIN_BUFFER_COUNT 30
 
-Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int options)
+Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options)
 : options(options)
 , samplesPerChannel(samplesPerChannel)
 , bufferLengthSeconds(bufferLengthSeconds)
@@ -60,7 +59,7 @@ Stream::Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int o
 , done(false)
 , capabilities(0)
 , rawBuffer(nullptr) {
-    if ((this->options & NoDSP) == 0) {
+    if (((int) this->options & (int) StreamFlags::NoDSP) == 0) {
         dsps = streams::GetDspPlugins();
     }
 
@@ -81,8 +80,12 @@ Stream::~Stream() {
     }
 }
 
-IStreamPtr Stream::Create(int samplesPerChannel, double bufferLengthSeconds, unsigned int options) {
+IStreamPtr Stream::Create(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
     return IStreamPtr(new Stream(samplesPerChannel, bufferLengthSeconds, options));
+}
+
+IStream* Stream::CreateUnmanaged(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
+    return new Stream(samplesPerChannel, bufferLengthSeconds, options);
 }
 
 double Stream::SetPosition(double requestedSeconds) {
@@ -146,8 +149,8 @@ void Stream::Interrupt() {
     }
 }
 
-void Stream::OnBufferProcessedByPlayer(Buffer* buffer) {
-    this->recycledBuffers.push_back(buffer);
+void Stream::OnBufferProcessedByPlayer(IBuffer* buffer) {
+    this->recycledBuffers.push_back((Buffer*) buffer);
 }
 
 bool Stream::GetNextBufferFromDecoder() {
@@ -188,7 +191,7 @@ inline Buffer* Stream::GetEmptyBuffer() {
     return nullptr;
 }
 
-Buffer* Stream::GetNextProcessedOutputBuffer() {
+IBuffer* Stream::GetNextProcessedOutputBuffer() {
     this->RefillInternalBuffers();
 
     /* in the normal case we have buffers available in the filled queue. */

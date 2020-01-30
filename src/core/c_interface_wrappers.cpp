@@ -57,9 +57,16 @@
 #include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/IDevice.h>
 #include <core/sdk/IOutput.h>
+#include <core/audio/Stream.h>
+#include <core/audio/Player.h>
+#include <core/support/Common.h>
+
+#include <set>
 
 using namespace musik;
+using namespace musik::core;
 using namespace musik::core::sdk;
+using namespace musik::core::audio;
 
 #define ENV musik::core::plugin::Environment()
 
@@ -84,13 +91,12 @@ using namespace musik::core::sdk;
 #define DEVICE(x) reinterpret_cast<IDevice*>(x.opaque)
 #define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x.opaque)
 #define OUTPUT(x) reinterpret_cast<IOutput*>(x.opaque)
+#define AUDIOSTREAM(x) reinterpret_cast<IStream*>(x.opaque)
 
 #define RELEASE(x, type) if (mcsdk_handle_ok(x)) { type(x)->Release(); x.opaque = nullptr; }
 
 /*
- *
  * IResource
- *
  */
 
 mcsdk_export int64_t mcsdk_resource_get_id(mcsdk_resource r) {
@@ -106,9 +112,7 @@ mcsdk_export void mcsdk_resource_release(mcsdk_resource r) {
 }
 
 /*
- *
  * IValue
- *
  */
 
 mcsdk_export size_t mcsdk_value_get_value(mcsdk_value v, char* dst, size_t size) {
@@ -120,9 +124,7 @@ mcsdk_export void mcsdk_value_release(mcsdk_value v) {
 }
 
 /*
- *
  * IValueList
- *
  */
 
 mcsdk_export size_t mcsdk_value_list_count(mcsdk_value_list vl) {
@@ -138,9 +140,7 @@ mcsdk_export void mcsdk_value_list_release(mcsdk_value_list vl) {
 }
 
 /*
- *
  * IMap
- *
  */
 
 mcsdk_export int mcsdk_map_get_string(mcsdk_map m, const char* key, char* dst, int size) {
@@ -164,9 +164,7 @@ mcsdk_export void mcsdk_map_release(mcsdk_map m) {
 }
 
 /*
- *
  * IMapList
- *
  */
 
 mcsdk_export size_t mcsdk_map_list_get_count(mcsdk_map_list ml) {
@@ -182,9 +180,7 @@ mcsdk_export void mcsdk_map_list_release(mcsdk_map_list ml) {
 }
 
 /*
- *
  * ITrack
- *
  */
 
 mcsdk_export void mcsdk_track_retain(mcsdk_track t) {
@@ -200,9 +196,7 @@ mcsdk_export void mcsdk_track_release(mcsdk_track t) {
 }
 
 /*
- *
  * ITrackList
- *
  */
 
 mcsdk_export size_t mcsdk_track_list_get_count(mcsdk_track_list tl) {
@@ -226,9 +220,7 @@ mcsdk_export void mcsdk_track_list_release(mcsdk_track_list tl) {
 }
 
 /*
- *
  * ITrackListEditor
- *
  */
 
 mcsdk_export bool mcsdk_track_list_editor_insert(mcsdk_track_list_editor tle, int64_t id, size_t index) {
@@ -264,9 +256,7 @@ mcsdk_export void mcsdk_track_list_editor_release(mcsdk_track_list_editor tle) {
 }
 
 /*
- *
  * IMetadataProxy
- *
  */
 
 mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_tracks(mcsdk_svc_metadata mp, const char* keyword, int limit, int offset) {
@@ -358,9 +348,7 @@ mcsdk_export void mcsdk_svc_metadata_release(mcsdk_svc_metadata mp) {
 }
 
 /*
- *
  * IPlaybackService
- *
  */
 
 mcsdk_export void mcsdk_svc_playback_play_at(mcsdk_svc_playback pb, size_t index) {
@@ -480,9 +468,7 @@ mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb) {
 }
 
 /*
- *
  * IPreferences
- *
  */
 
 mcsdk_export bool mcsdk_prefs_get_bool(mcsdk_prefs p, const char* key, bool defaultValue) {
@@ -522,9 +508,7 @@ mcsdk_export void mcsdk_prefs_release(mcsdk_prefs p) {
 }
 
 /*
- *
  * IDataStream
- *
  */
 
 mcsdk_export bool mcsdk_data_stream_open(mcsdk_data_stream ds, const char *uri, mcsdk_stream_open_flags flags) {
@@ -592,9 +576,7 @@ mcsdk_export void mcsdk_data_stream_release(mcsdk_data_stream ds) {
 }
 
 /*
- *
  * IBuffer
- *
  */
 
 mcsdk_export long mcsdk_audio_buffer_get_sample_rate(mcsdk_audio_buffer ab) {
@@ -634,9 +616,7 @@ mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab) {
 }
 
 /*
- *
  * IBufferProvider
- *
  */
 
 mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffer_provider abp, mcsdk_audio_buffer ab) {
@@ -644,9 +624,7 @@ mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffe
 }
 
 /*
- *
  * IDevice
- *
  */
 
 mcsdk_export const char* mcsdk_device_get_name(mcsdk_device d) {
@@ -662,9 +640,7 @@ mcsdk_export void mcsdk_device_release(mcsdk_device d) {
 }
 
 /*
- *
  * IDeviceList
- *
  */
 
 mcsdk_export size_t mcsdk_device_list_get_count(mcsdk_device_list dl) {
@@ -679,69 +655,64 @@ mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl) {
     RELEASE(dl, DEVICELIST);
 }
 
-
 /*
- *
  * IOutput
- *
  */
 
-mcsdk_export void mcsdk_output_pause(mcsdk_output o) {
+mcsdk_export void mcsdk_audio_output_pause(mcsdk_audio_output o) {
     OUTPUT(o)->Pause();
 }
 
-mcsdk_export void mcsdk_output_resume(mcsdk_output o) {
+mcsdk_export void mcsdk_audio_output_resume(mcsdk_audio_output o) {
     OUTPUT(o)->Resume();
 }
 
-mcsdk_export void mcsdk_output_set_volume(mcsdk_output o, double volume) {
+mcsdk_export void mcsdk_audio_output_set_volume(mcsdk_audio_output o, double volume) {
     OUTPUT(o)->SetVolume(volume);
 }
 
-mcsdk_export double mcsdk_output_get_volume(mcsdk_output o) {
+mcsdk_export double mcsdk_audio_output_get_volume(mcsdk_audio_output o) {
     return OUTPUT(o)->GetVolume();
 }
 
-mcsdk_export void mcsdk_output_stop(mcsdk_output o) {
+mcsdk_export void mcsdk_audio_output_stop(mcsdk_audio_output o) {
     OUTPUT(o)->Stop();
 }
 
-mcsdk_export int mcsdk_output_play(mcsdk_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp) {
+mcsdk_export int mcsdk_audio_output_play(mcsdk_audio_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp) {
     return OUTPUT(o)->Play(BUFFER(ab), BUFFERPROVIDER(abp));
 }
 
-mcsdk_export void mcsdk_output_drain(mcsdk_output o) {
+mcsdk_export void mcsdk_audio_output_drain(mcsdk_audio_output o) {
     OUTPUT(o)->Drain();
 }
 
-mcsdk_export double mcsdk_output_get_latency(mcsdk_output o) {
+mcsdk_export double mcsdk_audio_output_get_latency(mcsdk_audio_output o) {
     return OUTPUT(o)->Latency();
 }
 
-mcsdk_export const char* mcsdk_output_get_name(mcsdk_output o) {
+mcsdk_export const char* mcsdk_audio_output_get_name(mcsdk_audio_output o) {
     return OUTPUT(o)->Name();
 }
 
-mcsdk_export mcsdk_device_list mcsdk_output_get_device_list(mcsdk_output o) {
+mcsdk_export mcsdk_device_list mcsdk_audio_output_get_device_list(mcsdk_audio_output o) {
     return mcsdk_device_list { OUTPUT(o)->GetDeviceList() };
 }
 
-mcsdk_export bool mcsdk_output_set_default_device(mcsdk_output o, const char* device_id) {
+mcsdk_export bool mcsdk_audio_output_set_default_device(mcsdk_audio_output o, const char* device_id) {
     return OUTPUT(o)->SetDefaultDevice(device_id);
 }
 
-mcsdk_export mcsdk_device mcsdk_output_get_default_device(mcsdk_output o) {
+mcsdk_export mcsdk_device mcsdk_audio_output_get_default_device(mcsdk_audio_output o) {
     return mcsdk_device { OUTPUT(o)->GetDefaultDevice() };
 }
 
-mcsdk_export void mcsdk_output_release(mcsdk_output o) {
+mcsdk_export void mcsdk_audio_output_release(mcsdk_audio_output o) {
     RELEASE(o, OUTPUT);
 }
 
 /*
- *
  * IDecoder
- *
  */
 
 mcsdk_export double mcsdk_decoder_set_position(mcsdk_decoder d, double seconds) {
@@ -769,9 +740,7 @@ mcsdk_export void mcsdk_decoder_release(mcsdk_decoder d) {
 }
 
 /*
- *
  * IEncoder
- *
  */
 
 mcsdk_export void mcsdk_encoder_release(mcsdk_encoder e) {
@@ -787,9 +756,7 @@ mcsdk_export mcsdk_encoder_type mcsdk_encoder_get_type(mcsdk_encoder e) {
 }
 
 /*
- *
  * IBlockingEncoder
- *
  */
 
 mcsdk_export bool mcsdk_blocking_encoder_initialize(mcsdk_blocking_encoder be, mcsdk_data_stream out, size_t rate, size_t channels, size_t bitrate) {
@@ -809,9 +776,7 @@ mcsdk_export void mcsdk_blocking_encoder_release(mcsdk_blocking_encoder be, mcsd
 }
 
 /*
- *
  * IStreamingEncoder
- *
  */
 
 mcsdk_export bool mcsdk_streaming_encoder_initialize(mcsdk_streaming_encoder se, size_t rate, size_t channels, size_t bitrate) {
@@ -835,9 +800,7 @@ mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mc
 }
 
 /*
- *
  * IDebug
- *
  */
 
 mcsdk_export void mcsdk_debug_verbose(const char* tag, const char* message) {
@@ -857,9 +820,7 @@ mcsdk_export void mcsdk_debug_error(const char* tag, const char* message) {
 }
 
 /*
- *
- * IEnvironment (TODO)
- *
+ * IEnvironment
  */
 
 mcsdk_export size_t mcsdk_env_get_path(mcsdk_path_type type, char* dst, int size) {
@@ -890,12 +851,12 @@ mcsdk_export size_t mcsdk_env_get_output_count() {
     return ENV.GetOutputCount();
 }
 
-mcsdk_export mcsdk_output mcsdk_env_get_output_at_index(size_t index) {
-    return mcsdk_output { ENV.GetOutputAtIndex(index) };
+mcsdk_export mcsdk_audio_output mcsdk_env_get_output_at_index(size_t index) {
+    return mcsdk_audio_output { ENV.GetOutputAtIndex(index) };
 }
 
-mcsdk_export mcsdk_output mcsdk_env_get_output_with_name(const char* name) {
-    return mcsdk_output { ENV.GetOutputWithName(name) };
+mcsdk_export mcsdk_audio_output mcsdk_env_get_output_with_name(const char* name) {
+    return mcsdk_audio_output { ENV.GetOutputWithName(name) };
 }
 
 mcsdk_export mcsdk_replay_gain_mode mcsdk_env_get_replay_gain_mode() {
@@ -934,12 +895,12 @@ mcsdk_export void mcsdk_env_reload_playback_output() {
     ENV.ReloadPlaybackOutput();
 }
 
-mcsdk_export void mcsdk_env_set_default_output(mcsdk_output output) {
+mcsdk_export void mcsdk_env_set_default_output(mcsdk_audio_output output) {
     ENV.SetDefaultOutput(OUTPUT(output));
 }
 
-mcsdk_export mcsdk_output mcsdk_env_get_default_output() {
-    return mcsdk_output { ENV.GetDefaultOutput() };
+mcsdk_export mcsdk_audio_output mcsdk_env_get_default_output() {
+    return mcsdk_audio_output { ENV.GetDefaultOutput() };
 }
 
 mcsdk_export mcsdk_transport_type mcsdk_env_get_transport_type() {
@@ -950,3 +911,258 @@ mcsdk_export void mcsdk_env_set_transport_type(mcsdk_transport_type type) {
     ENV.SetTransportType((TransportType) type);
 }
 
+/*
+ * IStream
+ */
+
+mcsdk_export mcsdk_audio_stream mcsdk_audio_stream_create(int samples_per_channel, double buffer_length_seconds, mcsdk_audio_stream_flags options) {
+    return mcsdk_audio_stream { Stream::CreateUnmanaged(samples_per_channel, buffer_length_seconds, (StreamFlags) options) };
+}
+
+mcsdk_export mcsdk_audio_buffer mcsdk_audio_stream_get_next_buffer(mcsdk_audio_stream as) {
+    return mcsdk_audio_buffer { AUDIOSTREAM(as)->GetNextProcessedOutputBuffer() };
+}
+
+mcsdk_export void mcsdk_audio_stream_recycle_buffer(mcsdk_audio_stream as, mcsdk_audio_buffer ab) {
+    AUDIOSTREAM(as)->OnBufferProcessedByPlayer(BUFFER(ab));
+}
+
+mcsdk_export double mcsdk_audio_stream_set_position(mcsdk_audio_stream as, double seconds) {
+    return AUDIOSTREAM(as)->SetPosition(seconds);
+}
+
+mcsdk_export double mcsdk_audio_stream_get_duration(mcsdk_audio_stream as) {
+    return AUDIOSTREAM(as)->GetDuration();
+}
+
+mcsdk_export bool mcsdk_audio_stream_open_uri(mcsdk_audio_stream as, const char* uri) {
+    return AUDIOSTREAM(as)->OpenStream(uri);
+}
+
+mcsdk_export void mcsdk_audio_stream_interrupt(mcsdk_audio_stream as) {
+    AUDIOSTREAM(as)->Interrupt();
+}
+mcsdk_export mcsdk_stream_capability mcsdk_audio_stream_get_capabilities(mcsdk_audio_stream as) {
+    return (mcsdk_stream_capability) AUDIOSTREAM(as)->GetCapabilities();
+}
+
+mcsdk_export bool mcsdk_audio_stream_is_eof(mcsdk_audio_stream as) {
+    return AUDIOSTREAM(as)->Eof();
+}
+
+mcsdk_export void mcsdk_audio_stream_release(mcsdk_audio_stream as) {
+    RELEASE(as, AUDIOSTREAM);
+}
+
+/*
+ * Player
+ */
+
+struct mcsdk_internal_player_context {
+    Player::EventListener* event_listener;
+    std::shared_ptr<IOutput> output;
+    std::mutex event_mutex;
+    std::condition_variable finished_condition;
+    Player* player;
+    bool player_finished;
+};
+
+class mcsdk_audio_player_callback_proxy: public Player::EventListener {
+    public:
+        std::set<mcsdk_audio_player_callbacks*> callbacks;
+        mcsdk_internal_player_context* context;
+        virtual void OnPlayerPrepared(Player *player) {
+            std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            for (auto c : callbacks) {
+                if (c->on_prepared) {
+                    c->on_prepared(mcsdk_audio_player { context });
+                }
+            }
+        }
+        virtual void OnPlayerStarted(Player *player) {
+            std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            for (auto c : callbacks) {
+                if (c->on_started) {
+                    c->on_started(mcsdk_audio_player { context });
+                }
+            }
+        }
+        virtual void OnPlayerAlmostEnded(Player *player) {
+            std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            for (auto c : callbacks) {
+                if (c->on_almost_ended) {
+                    c->on_almost_ended(mcsdk_audio_player { context });
+                }
+            }
+        }
+        virtual void OnPlayerFinished(Player *player) {
+            std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            for (auto c : callbacks) {
+                if (c->on_finished) {
+                    c->on_finished(mcsdk_audio_player { context });
+                }
+            }
+        }
+        virtual void OnPlayerError(Player *player) {
+            std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            for (auto c : callbacks) {
+                if (c->on_error) {
+                    c->on_error(mcsdk_audio_player { context });
+                }
+            }
+        }
+        virtual void OnPlayerDestroying(Player *player) {
+            std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            for (auto c : callbacks) {
+                if (c->on_destroying) {
+                    c->on_destroying(mcsdk_audio_player { context });
+                }
+            }
+            this->context->player_finished = true;
+            this->context->finished_condition.notify_all();
+        }
+        virtual void OnPlayerMixPoint(Player *player, int id, double time) {
+            std::unique_lock<std::mutex> lock(this->context->event_mutex);
+            for (auto c : callbacks) {
+                if (c->on_mixpoint) {
+                    c->on_mixpoint(mcsdk_audio_player { context }, id, time);
+                }
+            }
+        }
+};
+
+#define PLAYER(x) reinterpret_cast<mcsdk_internal_player_context*>(x.opaque)
+
+mcsdk_export mcsdk_audio_player mcsdk_audio_player_create(const char* url, mcsdk_audio_output output, mcsdk_audio_player_callbacks* callbacks, mcsdk_audio_player_gain gain) {
+    Player::Gain playerGain;
+    playerGain.gain = gain.gain;
+    playerGain.preamp = gain.preamp;
+    playerGain.peak = gain.peak;
+    playerGain.peakValid = gain.peakValid;
+
+    auto callbackProxy = new mcsdk_audio_player_callback_proxy();
+
+    mcsdk_internal_player_context* playerContext = new mcsdk_internal_player_context();
+    playerContext->event_listener = callbackProxy;
+    playerContext->player_finished = false;
+
+    playerContext->output = std::shared_ptr<IOutput>(OUTPUT(output), [](IOutput*){});
+
+    playerContext->player = Player::Create(
+        url,
+        playerContext->output,
+        Player::DestroyMode::Drain,
+        playerContext->event_listener,
+        playerGain);
+
+    callbackProxy->context = playerContext;
+
+    if (callbacks) {
+        callbackProxy->callbacks.insert(callbacks);
+    }
+
+    return mcsdk_audio_player { playerContext };;
+}
+
+mcsdk_export int mcsdk_audio_player_get_url(mcsdk_audio_player ap, char* dst, int size) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        return (int) CopyString(context->player->GetUrl(), dst, size);
+    }
+    return (int) CopyString("", dst, size);
+}
+
+mcsdk_export void mcsdk_audio_player_detach(mcsdk_audio_player ap, mcsdk_audio_player_callbacks* callbacks) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        auto proxy = reinterpret_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener);
+        auto it = proxy->callbacks.find(callbacks);
+        if (it != proxy->callbacks.end()) {
+            proxy->callbacks.erase(it);
+        }
+    }
+}
+
+mcsdk_export void mcsdk_audio_player_attach(mcsdk_audio_player ap, mcsdk_audio_player_callbacks* callbacks) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        reinterpret_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener)->callbacks.insert(callbacks);
+    }
+}
+
+mcsdk_export void mcsdk_audio_player_play(mcsdk_audio_player ap) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        context->player->Play();
+    }
+}
+
+mcsdk_export double mcsdk_audio_player_get_position(mcsdk_audio_player ap) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        return context->player->GetPosition();
+    }
+    return 0.0;
+}
+
+mcsdk_export void mcsdk_audio_player_set_position(mcsdk_audio_player ap, double seconds) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        context->player->SetPosition(seconds);
+    }
+}
+
+mcsdk_export double mcsdk_audio_player_get_duration(mcsdk_audio_player ap) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        return context->player->GetDuration();
+    }
+    return 0.0;
+}
+
+mcsdk_export void mcsdk_audio_player_add_mix_point(mcsdk_audio_player ap, int id, double time) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        context->player->AddMixPoint(id, time);
+    }
+}
+
+mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_stream_capability capability) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+    std::unique_lock<std::mutex> lock(context->event_mutex);
+    if (!context->player_finished) {
+        return PLAYER(ap)->player->HasCapability((Capability) capability);
+    }
+    return false;
+}
+
+mcsdk_export void mcsdk_audio_player_release(mcsdk_audio_player ap, mcsdk_audio_player_release_mode mode) {
+    mcsdk_internal_player_context* context = PLAYER(ap);
+
+    {
+        std::unique_lock<std::mutex> lock(context->event_mutex);
+        if (!context->player_finished) {
+            context->player->Destroy((Player::DestroyMode) mode);
+            while (!context->player_finished) {
+                context->finished_condition.wait(lock);
+            }
+        }
+    }
+
+    delete context->event_listener;
+    delete context;
+
+    ap.opaque = nullptr;
+}
+
+mcsdk_export mcsdk_audio_player_gain mcsdk_audio_player_get_default_gain() {
+    return mcsdk_audio_player_gain { 1.0, 1.0, 0.0, false };
+}

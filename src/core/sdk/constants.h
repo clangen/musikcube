@@ -109,6 +109,11 @@ namespace musik {
                 Write = 2
             };
 
+            enum class StreamFlags: int {
+                None = 0,
+                NoDSP = 1
+            };
+
             static const size_t EqualizerBandCount = 18;
 
             static const size_t EqualizerBands[] = {

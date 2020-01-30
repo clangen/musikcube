@@ -1,5 +1,7 @@
 #ifdef WIN32
 #include <Windows.h>
+#else
+#include <unistd.h>
 #endif
 
 #include <stdio.h>
@@ -20,7 +22,7 @@ static void internal_sleep(int seconds) {
 #ifdef WIN32
     Sleep(seconds * 1000);
 #else
-    usleep(1000000);
+    usleep(seconds * 1000000);
 #endif
 }
 
@@ -54,19 +56,36 @@ static void test_decode_encode() {
     printf("test_decode_encode: done.\n");
 }
 
-static void test_playback(mcsdk_context* context) {
+static void test_low_level_playback() {
+    mcsdk_audio_player_gain gain = mcsdk_audio_player_get_default_gain();
+    mcsdk_audio_output output = mcsdk_env_get_default_output();
+    mcsdk_audio_player player = mcsdk_audio_player_create(INPUT_FILE, output, NULL, gain);
+    mcsdk_audio_output_set_volume(output, 0.75);
+    mcsdk_audio_output_resume(output);
+    mcsdk_audio_player_play(player);
+    printf("test_low_level_playback: playing for 5 seconds...\n");
+    for (int i = 0; i < 5; i++) {
+        internal_sleep(1);
+        printf(" %d\n", i + 1);
+    }
+    mcsdk_audio_player_release(player, mcsdk_audio_player_release_mode_no_drain);
+    mcsdk_audio_output_release(output);
+    printf("test_low_level_playback: done.\n");
+}
+
+static void test_high_level_playback(mcsdk_context* context) {
     printf("test_playback: loading 'a day in the life' tracks\n");
     mcsdk_track_list tl = mcsdk_svc_metadata_query_tracks(
         context->metadata, "a day in the life", mcsdk_no_limit, mcsdk_no_offset);
     mcsdk_svc_playback_play(context->playback, tl, 0);
     mcsdk_track_list_release(tl);
-    printf("test_playback: playing for 5 seconds...\n");
+    printf("test_high_level_playback: playing for 5 seconds...\n");
     for (int i = 0; i < 5; i++) {
         internal_sleep(1);
-        printf("  %d\n", i + 1);
+        printf(" %d\n", i + 1);
     }
     mcsdk_svc_playback_stop(context->playback);
-    printf("test_playback: done.\n");
+    printf("test_high_level_playback: done.\n");
 }
 
 static void test_metadata(mcsdk_context* context) {
@@ -91,8 +110,9 @@ int main(int argc, char** argv) {
     if (context) {
         printf("main: context initialized\n");
         test_metadata(context);
-        test_playback(context);
-        test_decode_encode(context);
+        test_low_level_playback();
+        test_high_level_playback(context);
+        test_decode_encode();
         mcsdk_context_release(&context);
         printf("main: context released\n");
     }

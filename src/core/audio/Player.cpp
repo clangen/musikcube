@@ -124,6 +124,7 @@ Player::Player(
     EventListener *listener,
     Gain gain)
 : state(Player::Idle)
+, stream(Stream::Create())
 , url(url)
 , currentPosition(0)
 , output(output)
@@ -287,9 +288,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 #endif
 
-    player->stream = Stream::Create();
-
-    Buffer* buffer = nullptr;
+    IBuffer* buffer = nullptr;
 
     float gain = player->gain.preamp * player->gain.gain;
     if (gain > 1.0f && player->gain.peakValid) {

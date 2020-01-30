@@ -51,17 +51,13 @@
 #endif
 
 /*
- *
  * version
- *
  */
 
 static const int mcsdk_version = 18;
 
 /*
- *
  * constants
- *
  */
 
 typedef enum mcsdk_playback_state {
@@ -87,12 +83,12 @@ typedef enum mcsdk_repeat_mode {
     mcsdk_repeat_list = 2
 } mcsdk_repeat_mode;
 
-typedef enum mcsdk_output_code {
-    mcsdk_output_error_invalid_format = -4,
-    mcsdk_output_error_invalid_state = -3,
-    mcsdk_output_error_buffer_full = -2,
-    mcsdk_output_error_buffer_written = -1
-} mcsdk_output_code;
+typedef enum mcsdk_audio_output_code {
+    mcsdk_audio_output_error_invalid_format = -4,
+    mcsdk_audio_output_error_invalid_state = -3,
+    mcsdk_audio_output_error_buffer_full = -2,
+    mcsdk_audio_output_error_buffer_written = -1
+} mcsdk_audio_output_code;
 
 typedef enum mcsdk_time_change_mode {
     mcsdk_time_change_mode_seek = 0,
@@ -133,6 +129,11 @@ typedef enum mcsdk_stream_open_flags {
     mcsdk_stream_open_flags_write = 2
 } mcsdk_stream_open_flags;
 
+typedef enum mcsdk_audio_stream_flags {
+    mcsdk_audio_stream_flags_none = 0,
+    mcsdk_audio_stream_flags_no_dsp = 1
+} mcsdk_audio_stream_flags;
+
 typedef enum mcsdk_resource_class {
     mcsdk_resource_type_value = 0,
     mcsdk_resource_type_map = 1
@@ -142,6 +143,11 @@ typedef enum mcsdk_encoder_type {
     mcsdk_encoder_type_blocking = 0,
     mcsdk_encoder_type_streaming = 1
 } mcsdk_encoder_type;
+
+typedef enum mcsdk_audio_player_release_mode {
+    mcsdk_audio_player_release_mode_drain = 0,
+    mcsdk_audio_player_release_mode_no_drain = 1
+} mcsdk_audio_player_release_mode;
 
 static const size_t mcsdk_equalizer_band_count = 18;
 
@@ -182,9 +188,7 @@ static const char* mcsdk_track_field_source_id = "source_id";
 static const char* mcsdk_track_field_external_id = "external_id";
 
 /*
- *
  * types
- *
  */
 
 #define mcsdk_define_handle(x) \
@@ -195,6 +199,8 @@ static const char* mcsdk_track_field_external_id = "external_id";
 #define mcsdk_handle_ok(x) x.opaque != NULL
 
 #define mcsdk_cast_handle(x) { x.opaque }
+
+#define mcsdk_handle_equals(x, y) x.opaque == y.opaque
 
 mcsdk_define_handle(mcsdk_internal);
 mcsdk_define_handle(mcsdk_resource);
@@ -213,16 +219,33 @@ mcsdk_define_handle(mcsdk_audio_buffer_provider);
 mcsdk_define_handle(mcsdk_data_stream);
 mcsdk_define_handle(mcsdk_device);
 mcsdk_define_handle(mcsdk_device_list);
-mcsdk_define_handle(mcsdk_output);
+mcsdk_define_handle(mcsdk_audio_output);
 mcsdk_define_handle(mcsdk_decoder);
 mcsdk_define_handle(mcsdk_encoder);
 mcsdk_define_handle(mcsdk_blocking_encoder);
 mcsdk_define_handle(mcsdk_streaming_encoder);
+mcsdk_define_handle(mcsdk_audio_stream);
+mcsdk_define_handle(mcsdk_audio_player);
+
+typedef struct mcsdk_audio_player_callbacks {
+    void (*on_prepared)(mcsdk_audio_player p);
+    void (*on_started)(mcsdk_audio_player p);
+    void (*on_almost_ended)(mcsdk_audio_player p);
+    void (*on_finished)(mcsdk_audio_player p);
+    void (*on_error)(mcsdk_audio_player p);
+    void (*on_destroying)(mcsdk_audio_player p);
+    void (*on_mixpoint)(mcsdk_audio_player p, int id, double time);
+} mcsdk_audio_player_callbacks;
+
+typedef struct mcsdk_audio_player_gain {
+    float preamp;
+    float gain;
+    float peak;
+    float peakValid;
+} mcsdk_audio_player_gain;
 
 /*
- *
  * instance context
- *
  */
 
 typedef struct mcsdk_context {
@@ -238,9 +261,7 @@ mcsdk_export void mcsdk_set_plugin_context(mcsdk_context* context);
 mcsdk_export bool mcsdk_is_plugin_context(mcsdk_context* context);
 
 /*
- *
  * IResource
- *
  */
 
 mcsdk_export int64_t mcsdk_resource_get_id(mcsdk_resource r);
@@ -248,18 +269,14 @@ mcsdk_export mcsdk_resource_class mcsdk_resource_get_class(mcsdk_resource r);
 mcsdk_export void mcsdk_resource_release(mcsdk_resource r);
 
 /*
- *
  * IValue
- *
  */
 
 mcsdk_export size_t mcsdk_value_get_value(mcsdk_value v, char* dst, size_t size);
 mcsdk_export void mcsdk_value_release(mcsdk_value v);
 
 /*
- *
  * IValueList
- *
  */
 
 mcsdk_export size_t mcsdk_value_list_count(mcsdk_value_list vl);
@@ -267,9 +284,7 @@ mcsdk_export mcsdk_value mcsdk_value_list_get_at(mcsdk_value_list vl, size_t ind
 mcsdk_export void mcsdk_value_list_release(mcsdk_value_list vl);
 
 /*
- *
  * IMap
- *
  */
 
 mcsdk_export int mcsdk_map_get_string(mcsdk_map m, const char* key, char* dst, int size);
@@ -279,9 +294,7 @@ mcsdk_export double mcsdk_map_get_double(mcsdk_map m, const char* key, double de
 mcsdk_export void mcsdk_map_release(mcsdk_map m);
 
 /*
- *
  * IMapList
- *
  */
 
 mcsdk_export size_t mcsdk_map_list_get_count(mcsdk_map_list ml);
@@ -289,9 +302,7 @@ mcsdk_export mcsdk_map mcsdk_map_list_get_at(mcsdk_map_list ml, size_t index);
 mcsdk_export void mcsdk_map_list_release(mcsdk_map_list ml);
 
 /*
- *
  * ITrack
- *
  */
 
 mcsdk_export void mcsdk_track_retain(mcsdk_track t);
@@ -299,9 +310,7 @@ mcsdk_export int mcsdk_track_get_uri(mcsdk_track t, char* dst, int size);
 mcsdk_export void mcsdk_track_release(mcsdk_track t);
 
 /*
- *
  * ITrackList
- *
  */
 
 mcsdk_export size_t mcsdk_track_list_get_count(mcsdk_track_list tl);
@@ -311,9 +320,7 @@ mcsdk_export mcsdk_track mcsdk_track_list_get_track_at(mcsdk_track_list tl, size
 mcsdk_export void mcsdk_track_list_release(mcsdk_track_list tl);
 
 /*
- *
  * ITrackListEditor
- *
  */
 
 mcsdk_export bool mcsdk_track_list_editor_insert(mcsdk_track_list_editor tle, int64_t id, size_t index);
@@ -326,9 +333,7 @@ mcsdk_export void mcsdk_track_list_editor_shuffle(mcsdk_track_list_editor tle);
 mcsdk_export void mcsdk_track_list_editor_release(mcsdk_track_list_editor tle);
 
 /*
- *
  * IMetadataProxy
- *
  */
 
 mcsdk_export mcsdk_track_list mcsdk_svc_metadata_query_tracks(mcsdk_svc_metadata mp, const char* keyword, int limit, int offset);
@@ -355,9 +360,7 @@ mcsdk_export size_t mcsdk_svc_metadata_remove_tracks_from_playlist(mcsdk_svc_met
 mcsdk_export void mcsdk_svc_metadata_release(mcsdk_svc_metadata mp);
 
 /*
- *
  * IPlaybackService
- *
  */
 
 mcsdk_export void mcsdk_svc_playback_play_at(mcsdk_svc_playback pb, size_t index);
@@ -391,9 +394,7 @@ mcsdk_export void mcsdk_svc_playback_reload_output(mcsdk_svc_playback pb);
 mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb);
 
 /*
- *
  * IPreferences
- *
  */
 
 mcsdk_export bool mcsdk_prefs_get_bool(mcsdk_prefs p, const char* key, bool defaultValue);
@@ -407,9 +408,7 @@ mcsdk_export void mcsdk_prefs_save(mcsdk_prefs p);
 mcsdk_export void mcsdk_prefs_release(mcsdk_prefs p);
 
 /*
- *
  * IDataStream
- *
  */
 
 mcsdk_export bool mcsdk_data_stream_open(mcsdk_data_stream ds, const char *uri, mcsdk_stream_open_flags flags);
@@ -430,9 +429,7 @@ mcsdk_export bool mcsdk_data_stream_can_prefetch(mcsdk_data_stream ds);
 mcsdk_export void mcsdk_data_stream_release(mcsdk_data_stream ds);
 
 /*
- *
  * IBuffer
- *
  */
 
 mcsdk_export long mcsdk_audio_buffer_get_sample_rate(mcsdk_audio_buffer ab);
@@ -446,17 +443,13 @@ mcsdk_export long mcsdk_audio_buffer_get_byte_count(mcsdk_audio_buffer ab);
 mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab);
 
 /*
- *
  * IBufferProvider
- *
  */
 
 mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffer_provider abp, mcsdk_audio_buffer ab);
 
 /*
- *
  * IDevice
- *
  */
 
 mcsdk_export const char* mcsdk_device_get_name(mcsdk_device d);
@@ -464,9 +457,7 @@ mcsdk_export const char* mcsdk_device_get_id(mcsdk_device d);
 mcsdk_export void mcsdk_device_release(mcsdk_device d);
 
 /*
- *
  * IDeviceList
- *
  */
 
 mcsdk_export size_t mcsdk_device_list_get_count(mcsdk_device_list dl);
@@ -474,29 +465,25 @@ mcsdk_export const mcsdk_device mcsdk_device_list_get_at(mcsdk_device_list dl, s
 mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl);
 
 /*
- *
  * IOutput
- *
  */
 
-mcsdk_export void mcsdk_output_pause(mcsdk_output o);
-mcsdk_export void mcsdk_output_resume(mcsdk_output o);
-mcsdk_export void mcsdk_output_set_volume(mcsdk_output o, double volume);
-mcsdk_export double mcsdk_output_get_volume(mcsdk_output o);
-mcsdk_export void mcsdk_output_stop(mcsdk_output o);
-mcsdk_export int mcsdk_output_play(mcsdk_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp);
-mcsdk_export void mcsdk_output_drain(mcsdk_output o);
-mcsdk_export double mcsdk_output_get_latency(mcsdk_output o);
-mcsdk_export const char* mcsdk_output_get_name(mcsdk_output o);
-mcsdk_export mcsdk_device_list mcsdk_output_get_device_list(mcsdk_output o);
-mcsdk_export bool mcsdk_output_set_default_device(mcsdk_output o, const char* device_id);
-mcsdk_export mcsdk_device mcsdk_output_get_default_device(mcsdk_output o);
-mcsdk_export void mcsdk_output_release(mcsdk_output o);
+mcsdk_export void mcsdk_audio_output_pause(mcsdk_audio_output o);
+mcsdk_export void mcsdk_audio_output_resume(mcsdk_audio_output o);
+mcsdk_export void mcsdk_audio_output_set_volume(mcsdk_audio_output o, double volume);
+mcsdk_export double mcsdk_audio_output_get_volume(mcsdk_audio_output o);
+mcsdk_export void mcsdk_audio_output_stop(mcsdk_audio_output o);
+mcsdk_export int mcsdk_audio_output_play(mcsdk_audio_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp);
+mcsdk_export void mcsdk_audio_output_drain(mcsdk_audio_output o);
+mcsdk_export double mcsdk_audio_output_get_latency(mcsdk_audio_output o);
+mcsdk_export const char* mcsdk_audio_output_get_name(mcsdk_audio_output o);
+mcsdk_export mcsdk_device_list mcsdk_audio_output_get_device_list(mcsdk_audio_output o);
+mcsdk_export bool mcsdk_audio_output_set_default_device(mcsdk_audio_output o, const char* device_id);
+mcsdk_export mcsdk_device mcsdk_audio_output_get_default_device(mcsdk_audio_output o);
+mcsdk_export void mcsdk_audio_output_release(mcsdk_audio_output o);
 
 /*
- *
  * IDecoder
- *
  */
 
 mcsdk_export double mcsdk_decoder_set_position(mcsdk_decoder d, double seconds);
@@ -507,18 +494,14 @@ mcsdk_export bool mcsdk_decoder_is_eof(mcsdk_decoder d);
 mcsdk_export void mcsdk_decoder_release(mcsdk_decoder d);
 
 /*
- *
  * IEncoder
- *
  */
 
 mcsdk_export mcsdk_encoder_type mcsdk_encoder_get_type(mcsdk_encoder e);
 mcsdk_export void mcsdk_encoder_release(mcsdk_encoder e);
 
 /*
- *
  * IBlockingEncoder
- *
  */
 
 mcsdk_export bool mcsdk_blocking_encoder_initialize(mcsdk_blocking_encoder be, mcsdk_data_stream out, size_t rate, size_t channels, size_t bitrate);
@@ -527,9 +510,7 @@ mcsdk_export void mcsdk_blocking_encoder_finalize(mcsdk_blocking_encoder be);
 mcsdk_export void mcsdk_blocking_encoder_release(mcsdk_blocking_encoder be, mcsdk_encoder e);
 
 /*
- *
  * IStreamingEncoder
- *
  */
 
 mcsdk_export bool mcsdk_streaming_encoder_initialize(mcsdk_streaming_encoder se, size_t rate, size_t channels, size_t bitrate);
@@ -539,9 +520,7 @@ mcsdk_export void mcsdk_streaming_encoder_finalize(mcsdk_streaming_encoder se, c
 mcsdk_export void mcsdk_streaming_encoder_release(mcsdk_streaming_encoder se, mcsdk_encoder e);
 
 /*
- *
  * IDebug
- *
  */
 
 mcsdk_export void mcsdk_debug_verbose(const char* tag, const char* message);
@@ -550,9 +529,7 @@ mcsdk_export void mcsdk_debug_warning(const char* tag, const char* message);
 mcsdk_export void mcsdk_debug_error(const char* tag, const char* message);
 
 /*
- *
  * IEnvironment
- *
  */
 
 mcsdk_export size_t mcsdk_env_get_path(mcsdk_path_type type, char* dst, int size);
@@ -562,8 +539,8 @@ mcsdk_export mcsdk_encoder mcsdk_env_open_encoder(const char* type) ;
 mcsdk_export mcsdk_audio_buffer mcsdk_env_create_audio_buffer(size_t samples, size_t rate, size_t channels);
 mcsdk_export mcsdk_prefs mcsdk_env_open_preferences(const char* name);
 mcsdk_export size_t mcsdk_env_get_output_count();
-mcsdk_export mcsdk_output mcsdk_env_get_output_at_index(size_t index);
-mcsdk_export mcsdk_output mcsdk_env_get_output_with_name(const char* name);
+mcsdk_export mcsdk_audio_output mcsdk_env_get_output_at_index(size_t index);
+mcsdk_export mcsdk_audio_output mcsdk_env_get_output_with_name(const char* name);
 mcsdk_export mcsdk_replay_gain_mode mcsdk_env_get_replay_gain_mode();
 mcsdk_export void mcsdk_env_set_replay_gain_mode(mcsdk_replay_gain_mode mode);
 mcsdk_export float mcsdk_env_get_preamp_gain();
@@ -573,9 +550,41 @@ mcsdk_export void mcsdk_env_set_equalizer_enabled(bool enabled);
 mcsdk_export bool mcsdk_env_get_equalizer_band_values(double target[], size_t count);
 mcsdk_export bool mcsdk_env_set_equalizer_band_values(double values[], size_t count);
 mcsdk_export void mcsdk_env_reload_playback_output();
-mcsdk_export void mcsdk_env_set_default_output(mcsdk_output output);
-mcsdk_export mcsdk_output mcsdk_env_get_default_output();
+mcsdk_export void mcsdk_env_set_default_output(mcsdk_audio_output output);
+mcsdk_export mcsdk_audio_output mcsdk_env_get_default_output();
 mcsdk_export mcsdk_transport_type mcsdk_env_get_transport_type();
 mcsdk_export void mcsdk_env_set_transport_type(mcsdk_transport_type type);
+
+/*
+ * IStream
+ */
+
+mcsdk_export mcsdk_audio_stream mcsdk_audio_stream_create(int samples_per_channel, double buffer_length_seconds, mcsdk_audio_stream_flags options);
+mcsdk_export mcsdk_audio_buffer mcsdk_audio_stream_get_next_buffer(mcsdk_audio_stream as);
+mcsdk_export void mcsdk_audio_stream_recycle_buffer(mcsdk_audio_stream as, mcsdk_audio_buffer ab);
+mcsdk_export double mcsdk_audio_stream_set_position(mcsdk_audio_stream as, double seconds);
+mcsdk_export double mcsdk_audio_stream_get_duration(mcsdk_audio_stream as);
+mcsdk_export bool mcsdk_audio_stream_open_uri(mcsdk_audio_stream as, const char* uri);
+mcsdk_export void mcsdk_audio_stream_interrupt(mcsdk_audio_stream as);
+mcsdk_export mcsdk_stream_capability mcsdk_audio_stream_get_capabilities(mcsdk_audio_stream as);
+mcsdk_export bool mcsdk_audio_stream_is_eof(mcsdk_audio_stream as);
+mcsdk_export void mcsdk_audio_stream_release(mcsdk_audio_stream as);
+
+/*
+ * Player
+ */
+
+mcsdk_export mcsdk_audio_player mcsdk_audio_player_create(const char* url, mcsdk_audio_output output, mcsdk_audio_player_callbacks* callbacks, mcsdk_audio_player_gain gain);
+mcsdk_export int mcsdk_audio_player_get_url(mcsdk_audio_player ap, char* dst, int size);
+mcsdk_export void mcsdk_audio_player_detach(mcsdk_audio_player ap, mcsdk_audio_player_callbacks* callbacks);
+mcsdk_export void mcsdk_audio_player_attach(mcsdk_audio_player ap, mcsdk_audio_player_callbacks* callbacks);
+mcsdk_export void mcsdk_audio_player_play(mcsdk_audio_player ap);
+mcsdk_export double mcsdk_audio_player_get_position(mcsdk_audio_player ap);
+mcsdk_export void mcsdk_audio_player_set_position(mcsdk_audio_player ap, double seconds);
+mcsdk_export double mcsdk_audio_player_get_duration(mcsdk_audio_player ap);
+mcsdk_export void mcsdk_audio_player_add_mix_point(mcsdk_audio_player ap, int id, double time);
+mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_stream_capability capability);
+mcsdk_export mcsdk_audio_player_gain mcsdk_audio_player_get_default_gain();
+mcsdk_export void mcsdk_audio_player_release(mcsdk_audio_player ap, mcsdk_audio_player_release_mode mode);
 
 #endif

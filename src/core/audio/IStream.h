@@ -35,8 +35,7 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/io/DataStreamFactory.h>
-#include <core/audio/Buffer.h>
+#include <core/sdk/IBuffer.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>
 #include <core/sdk/IDecoderFactory.h>
@@ -47,18 +46,15 @@ namespace musik { namespace core { namespace audio {
 
     class IStream {
         public:
-            typedef enum {
-                NoDSP = 1
-            } Options;
-
-            virtual Buffer* GetNextProcessedOutputBuffer() = 0;
-            virtual void OnBufferProcessedByPlayer(Buffer* buffer) = 0;
+            virtual musik::core::sdk::IBuffer* GetNextProcessedOutputBuffer() = 0;
+            virtual void OnBufferProcessedByPlayer(musik::core::sdk::IBuffer* buffer) = 0;
             virtual double SetPosition(double seconds) = 0;
             virtual double GetDuration() = 0;
             virtual bool OpenStream(std::string uri) = 0;
             virtual void Interrupt() = 0;
             virtual int GetCapabilities() = 0;
             virtual bool Eof() = 0;
+            virtual void Release() = 0;
     };
 
     typedef std::shared_ptr<IStream> IStreamPtr;
