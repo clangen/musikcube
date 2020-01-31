@@ -107,10 +107,24 @@ typedef enum mcsdk_stream_capability {
     mcsdk_stream_capability_prebuffer = 0x01
 } mcsdk_stream_capability;
 
-typedef enum mcsdk_indexer_scan_result {
-    mcsdk_indexer_scan_result_commit = 1,
-    mcsdk_indexer_scan_result_rollback = 2
-} mcsdk_indexer_scan_result;
+typedef enum mcsdk_svc_indexer_scan_result {
+    mcsdk_svc_indexer_scan_result_commit = 1,
+    mcsdk_svc_indexer_scan_result_rollback = 2
+} mcsdk_svc_indexer_scan_result;
+
+typedef enum mcsdk_svc_indexer_state {
+    mcsdk_svc_indexer_state_idle = 0,
+    mcsdk_svc_indexer_state_indexing = 1,
+    mcsdk_svc_indexer_state_stopping = 2,
+    mcsdk_svc_indexer_state_stopped = 3
+} mcsdk_svc_indexer_state;
+
+typedef enum mcsdk_svc_indexer_sync_type {
+    mcsdk_svc_indexer_sync_type_all = 0,
+    mcsdk_svc_indexer_sync_type_local = 1,
+    mcsdk_svc_indexer_sync_type_rebuild = 2,
+    mcsdk_svc_indexer_sync_type_sources = 3
+} mcsdk_svc_indexer_sync_type;
 
 typedef enum mcsdk_replay_gain_mode {
     mcsdk_replay_gain_mode_disabled = 0,
@@ -214,6 +228,7 @@ mcsdk_define_handle(mcsdk_track_list);
 mcsdk_define_handle(mcsdk_track_list_editor);
 mcsdk_define_handle(mcsdk_svc_metadata);
 mcsdk_define_handle(mcsdk_svc_playback);
+mcsdk_define_handle(mcsdk_svc_indexer);
 mcsdk_define_handle(mcsdk_prefs);
 mcsdk_define_handle(mcsdk_audio_buffer);
 mcsdk_define_handle(mcsdk_audio_buffer_provider);
@@ -238,6 +253,12 @@ typedef struct mcsdk_audio_player_callbacks {
     void (*on_mixpoint)(mcsdk_audio_player p, int id, double time);
 } mcsdk_audio_player_callbacks;
 
+typedef struct mcsdk_svc_indexer_callbacks {
+    void (*on_started)(mcsdk_svc_indexer i);
+    void (*on_finished)(mcsdk_svc_indexer i, int tracks_processed);
+    void (*on_progress)(mcsdk_svc_indexer i, int tracks_processed);
+} mcsdk_svc_indexer_callbacks;
+
 typedef struct mcsdk_audio_player_gain {
     float preamp;
     float gain;
@@ -252,6 +273,7 @@ typedef struct mcsdk_audio_player_gain {
 typedef struct mcsdk_context {
     mcsdk_svc_metadata metadata;
     mcsdk_svc_playback playback;
+    mcsdk_svc_indexer indexer;
     mcsdk_prefs preferences;
     mcsdk_internal internal;
 } mcsdk_context;
@@ -595,5 +617,19 @@ mcsdk_export void mcsdk_audio_player_add_mix_point(mcsdk_audio_player ap, int id
 mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_stream_capability capability);
 mcsdk_export mcsdk_audio_player_gain mcsdk_audio_player_get_default_gain();
 mcsdk_export void mcsdk_audio_player_release(mcsdk_audio_player ap, mcsdk_audio_player_release_mode mode);
+
+/*
+ * IIndexer
+ */
+
+mcsdk_export void mcsdk_svc_indexer_add_path(mcsdk_svc_indexer in, const char* path);
+mcsdk_export void mcsdk_svc_indexer_remove_path(mcsdk_svc_indexer in, const char* path);
+mcsdk_export int mcsdk_svc_indexer_get_paths_count(mcsdk_svc_indexer in);
+mcsdk_export int mcsdk_svc_indexer_get_paths_at(mcsdk_svc_indexer in, int index, char* dst, int len);
+mcsdk_export void mcsdk_svc_indexer_schedule(mcsdk_svc_indexer in, mcsdk_svc_indexer_sync_type type);
+mcsdk_export void mcsdk_svc_indexer_stop(mcsdk_svc_indexer in);
+mcsdk_export mcsdk_svc_indexer_state mcsdk_svc_indexer_get_state(mcsdk_svc_indexer in);
+mcsdk_export void mcsdk_svc_indexer_add_callbacks(mcsdk_svc_indexer in, mcsdk_svc_indexer_callbacks* cb);
+mcsdk_export void mcsdk_svc_indexer_remove_callbacks(mcsdk_svc_indexer in, mcsdk_svc_indexer_callbacks* cb);
 
 #endif

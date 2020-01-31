@@ -59,12 +59,11 @@
 #include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/IDevice.h>
 #include <core/sdk/IOutput.h>
+#include <core/library/IIndexer.h>
 #include <core/library/track/TrackList.h>
 #include <core/audio/Stream.h>
 #include <core/audio/Player.h>
 #include <core/support/Common.h>
-
-#include <set>
 
 using namespace musik;
 using namespace musik::core;
@@ -95,6 +94,8 @@ using namespace musik::core::audio;
 #define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x.opaque)
 #define OUTPUT(x) reinterpret_cast<IOutput*>(x.opaque)
 #define AUDIOSTREAM(x) reinterpret_cast<IStream*>(x.opaque)
+#define PLAYER(x) reinterpret_cast<mcsdk_player_context_internal*>(x.opaque)
+#define INDEXER(x) reinterpret_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)->indexer
 
 #define RELEASE(x, type) if (mcsdk_handle_ok(x)) { type(x)->Release(); x.opaque = nullptr; }
 
@@ -983,19 +984,10 @@ mcsdk_export void mcsdk_audio_stream_release(mcsdk_audio_stream as) {
  * Player
  */
 
-struct mcsdk_internal_player_context {
-    Player::EventListener* event_listener;
-    std::shared_ptr<IOutput> output;
-    std::mutex event_mutex;
-    std::condition_variable finished_condition;
-    Player* player;
-    bool player_finished;
-};
-
 class mcsdk_audio_player_callback_proxy: public Player::EventListener {
     public:
         std::set<mcsdk_audio_player_callbacks*> callbacks;
-        mcsdk_internal_player_context* context;
+        mcsdk_player_context_internal* context;
         virtual void OnPlayerPrepared(Player *player) {
             std::unique_lock<std::mutex> lock(this->context->event_mutex);
             for (auto c : callbacks) {
@@ -1056,8 +1048,6 @@ class mcsdk_audio_player_callback_proxy: public Player::EventListener {
         }
 };
 
-#define PLAYER(x) reinterpret_cast<mcsdk_internal_player_context*>(x.opaque)
-
 mcsdk_export mcsdk_audio_player mcsdk_audio_player_create(const char* url, mcsdk_audio_output output, mcsdk_audio_player_callbacks* callbacks, mcsdk_audio_player_gain gain) {
     Player::Gain playerGain;
     playerGain.gain = gain.gain;
@@ -1067,7 +1057,7 @@ mcsdk_export mcsdk_audio_player mcsdk_audio_player_create(const char* url, mcsdk
 
     auto callbackProxy = new mcsdk_audio_player_callback_proxy();
 
-    mcsdk_internal_player_context* playerContext = new mcsdk_internal_player_context();
+    mcsdk_player_context_internal* playerContext = new mcsdk_player_context_internal();
     playerContext->event_listener = callbackProxy;
     playerContext->player_finished = false;
 
@@ -1090,7 +1080,7 @@ mcsdk_export mcsdk_audio_player mcsdk_audio_player_create(const char* url, mcsdk
 }
 
 mcsdk_export int mcsdk_audio_player_get_url(mcsdk_audio_player ap, char* dst, int size) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         return (int) CopyString(context->player->GetUrl(), dst, size);
@@ -1099,7 +1089,7 @@ mcsdk_export int mcsdk_audio_player_get_url(mcsdk_audio_player ap, char* dst, in
 }
 
 mcsdk_export void mcsdk_audio_player_detach(mcsdk_audio_player ap, mcsdk_audio_player_callbacks* callbacks) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         auto proxy = reinterpret_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener);
@@ -1111,7 +1101,7 @@ mcsdk_export void mcsdk_audio_player_detach(mcsdk_audio_player ap, mcsdk_audio_p
 }
 
 mcsdk_export void mcsdk_audio_player_attach(mcsdk_audio_player ap, mcsdk_audio_player_callbacks* callbacks) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         reinterpret_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener)->callbacks.insert(callbacks);
@@ -1119,7 +1109,7 @@ mcsdk_export void mcsdk_audio_player_attach(mcsdk_audio_player ap, mcsdk_audio_p
 }
 
 mcsdk_export void mcsdk_audio_player_play(mcsdk_audio_player ap) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         context->player->Play();
@@ -1127,7 +1117,7 @@ mcsdk_export void mcsdk_audio_player_play(mcsdk_audio_player ap) {
 }
 
 mcsdk_export double mcsdk_audio_player_get_position(mcsdk_audio_player ap) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         return context->player->GetPosition();
@@ -1136,7 +1126,7 @@ mcsdk_export double mcsdk_audio_player_get_position(mcsdk_audio_player ap) {
 }
 
 mcsdk_export void mcsdk_audio_player_set_position(mcsdk_audio_player ap, double seconds) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         context->player->SetPosition(seconds);
@@ -1144,7 +1134,7 @@ mcsdk_export void mcsdk_audio_player_set_position(mcsdk_audio_player ap, double 
 }
 
 mcsdk_export double mcsdk_audio_player_get_duration(mcsdk_audio_player ap) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         return context->player->GetDuration();
@@ -1153,7 +1143,7 @@ mcsdk_export double mcsdk_audio_player_get_duration(mcsdk_audio_player ap) {
 }
 
 mcsdk_export void mcsdk_audio_player_add_mix_point(mcsdk_audio_player ap, int id, double time) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         context->player->AddMixPoint(id, time);
@@ -1161,7 +1151,7 @@ mcsdk_export void mcsdk_audio_player_add_mix_point(mcsdk_audio_player ap, int id
 }
 
 mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_stream_capability capability) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
         return PLAYER(ap)->player->HasCapability((Capability) capability);
@@ -1170,7 +1160,7 @@ mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk
 }
 
 mcsdk_export void mcsdk_audio_player_release(mcsdk_audio_player ap, mcsdk_audio_player_release_mode mode) {
-    mcsdk_internal_player_context* context = PLAYER(ap);
+    mcsdk_player_context_internal* context = PLAYER(ap);
 
     {
         std::unique_lock<std::mutex> lock(context->event_mutex);
@@ -1190,4 +1180,53 @@ mcsdk_export void mcsdk_audio_player_release(mcsdk_audio_player ap, mcsdk_audio_
 
 mcsdk_export mcsdk_audio_player_gain mcsdk_audio_player_get_default_gain() {
     return mcsdk_audio_player_gain { 1.0, 1.0, 0.0, false };
+}
+/*
+ * IIndexer
+ */
+
+#define INDEXER_INTERNAL(x) reinterpret_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)
+
+mcsdk_export void mcsdk_svc_indexer_add_path(mcsdk_svc_indexer in, const char* path) {
+    INDEXER(in)->AddPath(path);
+}
+
+mcsdk_export void mcsdk_svc_indexer_remove_path(mcsdk_svc_indexer in, const char* path) {
+    INDEXER(in)->RemovePath(path);
+}
+
+mcsdk_export int mcsdk_svc_indexer_get_paths_count(mcsdk_svc_indexer in) {
+    std::vector<std::string> paths;
+    INDEXER(in)->GetPaths(paths);
+    return (int) paths.size();
+}
+
+mcsdk_export int mcsdk_svc_indexer_get_paths_at(mcsdk_svc_indexer in, int index, char* dst, int len) {
+    std::vector<std::string> paths;
+    INDEXER(in)->GetPaths(paths);
+    return CopyString(paths[index], dst, (int) len);
+}
+
+mcsdk_export void mcsdk_svc_indexer_schedule(mcsdk_svc_indexer in, mcsdk_svc_indexer_sync_type type) {
+    INDEXER(in)->Schedule((IIndexer::SyncType) type);
+}
+
+mcsdk_export void mcsdk_svc_indexer_stop(mcsdk_svc_indexer in) {
+    INDEXER(in)->Stop();
+}
+
+mcsdk_export mcsdk_svc_indexer_state mcsdk_svc_indexer_get_state(mcsdk_svc_indexer in) {
+    return (mcsdk_svc_indexer_state) INDEXER(in)->GetState();
+}
+
+mcsdk_export void mcsdk_svc_indexer_add_callbacks(mcsdk_svc_indexer in, mcsdk_svc_indexer_callbacks* cb) {
+    INDEXER_INTERNAL(in)->callbacks.insert(cb);
+}
+
+mcsdk_export void mcsdk_svc_indexer_remove_callbacks(mcsdk_svc_indexer in, mcsdk_svc_indexer_callbacks* cb) {
+    auto internal = INDEXER_INTERNAL(in);
+    auto it = internal->callbacks.find(cb);
+    if (it != internal->callbacks.end()) {
+        internal->callbacks.erase(it);
+    }
 }

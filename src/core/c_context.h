@@ -37,8 +37,11 @@
 #include <core/library/LibraryFactory.h>
 #include <core/audio/PlaybackService.h>
 #include <core/library/LocalMetadataProxy.h>
+#include <core/library/IIndexer.h>
 
+#include <string>
 #include <thread>
+#include <set>
 
 using namespace musik;
 using namespace musik::core;
@@ -66,4 +69,21 @@ struct mcsdk_context_internal {
     LocalMetadataProxy* metadata;
     PlaybackService* playback;
     std::shared_ptr<Preferences> preferences;
+};
+
+struct mcsdk_svc_indexer_callback_proxy;
+
+struct mcsdk_svc_indexer_context_internal {
+    IIndexer* indexer;
+    mcsdk_svc_indexer_callback_proxy* callback_proxy;
+    std::set<mcsdk_svc_indexer_callbacks*> callbacks;
+};
+
+struct mcsdk_player_context_internal {
+    Player::EventListener* event_listener;
+    std::shared_ptr<IOutput> output;
+    std::mutex event_mutex;
+    std::condition_variable finished_condition;
+    Player* player;
+    bool player_finished;
 };

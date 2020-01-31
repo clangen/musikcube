@@ -46,17 +46,17 @@ namespace musik { namespace core {
             sigslot::signal1<int> Progress;
 
             enum State {
-                StateIdle,
-                StateIndexing,
-                StateStopping,
-                StateStopped
+                StateIdle = 0,
+                StateIndexing = 1,
+                StateStopping = 2,
+                StateStopped = 3
             };
 
             enum class SyncType {
-                All,
-                Local,
-                Rebuild,
-                Sources
+                All = 0,
+                Local = 1,
+                Rebuild = 2,
+                Sources = 3
             };
 
             virtual ~IIndexer() { }

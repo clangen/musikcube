@@ -98,6 +98,42 @@ void mcsdk_context_message_queue::Run() {
 }
 
 /*
+ * mcsdk_svc_indexer_callback_proxy
+ */
+
+struct mcsdk_svc_indexer_callback_proxy {
+    mcsdk_svc_indexer_context_internal* context;
+
+    mcsdk_svc_indexer_callback_proxy(mcsdk_svc_indexer_context_internal* context) {
+        this->context = context;
+    }
+
+    void on_started() {
+        for (auto cb : context->callbacks) {
+            if (cb->on_started) {
+                cb->on_started(mcsdk_svc_indexer { context });
+            }
+        }
+    }
+
+    void on_finished(int tracks_processed) {
+        for (auto cb : context->callbacks) {
+            if (cb->on_finished) {
+                cb->on_finished(mcsdk_svc_indexer { context }, tracks_processed);
+            }
+        }
+    }
+
+    void on_progress(int tracks_processed) {
+        for (auto cb : context->callbacks) {
+            if (cb->on_progress) {
+                cb->on_progress(mcsdk_svc_indexer { context }, tracks_processed);
+            }
+        }
+    }
+};
+
+/*
  * mcsdk_context_*
  */
 
@@ -111,24 +147,36 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
         debug::Start();
         environment_initialized = true;
     }
+
     auto c = new mcsdk_context();
     memset(c, 0, sizeof(mcsdk_context));
+
     auto internal = new mcsdk_context_internal();
+
     internal->library = LibraryFactory::Default();
     internal->library->SetMessageQueue(internal->message_queue);
     internal->playback = new PlaybackService(internal->message_queue, internal->library);
     internal->metadata = new LocalMetadataProxy(internal->library);
     internal->preferences = Preferences::ForComponent(prefs::components::Settings);
+
     c->internal.opaque = internal;
     c->metadata.opaque = internal->metadata;
     c->preferences.opaque = internal->preferences.get();
     c->playback.opaque = internal->playback;
+
+    auto indexer_internal = new mcsdk_svc_indexer_context_internal();
+    indexer_internal->indexer = internal->library->Indexer();
+    indexer_internal->callback_proxy = new mcsdk_svc_indexer_callback_proxy(indexer_internal);
+    c->indexer.opaque = indexer_internal;
+
     if (!plugin_context) {
         mcsdk_set_plugin_context(c);
     }
+
     internal->thread = std::thread([internal] { /* needs to be last */
         internal->message_queue.Run();
     });
+
     *context = c;
 }
 
@@ -137,19 +185,31 @@ mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
 
     auto c = *context;
     auto internal = static_cast<mcsdk_context_internal*>(c->internal.opaque);
+
     delete internal->playback;
+
     internal->playback = nullptr;
     internal->library->Indexer()->Stop();
     internal->library.reset();
     internal->preferences.reset();
+
     delete internal->metadata;
+
     internal->message_queue.Quit();
     internal->thread.join();
+
+    auto indexer_internal = static_cast<mcsdk_svc_indexer_context_internal*>(c->indexer.opaque);
+    delete indexer_internal->callback_proxy;
+    delete indexer_internal;
+
     delete internal;
-    delete c;
+
     if (plugin_context == c) {
         mcsdk_set_plugin_context(nullptr);
     }
+
+    delete c;
+
     *context = 0;
 }
 
