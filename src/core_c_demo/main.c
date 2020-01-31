@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <core/musikcore_c.h>
 
+#define ENCODER_TYPE ".opus"
+
 #ifdef WIN32
     #define INPUT_FILE "c:\\clangen\\in.mp3"
     #define OUTPUT_FILE "c:\\clangen\\out.opus"
@@ -33,7 +35,7 @@ static void test_decode_encode() {
         printf("test_decode_encode: decoding from %s\n", INPUT_FILE);
         printf("test_decode_encode: encoding to %s\n", OUTPUT_FILE);
         mcsdk_decoder decoder = mcsdk_env_open_decoder(in);
-        mcsdk_encoder encoder = mcsdk_env_open_encoder(".mp3");
+        mcsdk_encoder encoder = mcsdk_env_open_encoder(ENCODER_TYPE);
         if (mcsdk_handle_ok(decoder) && mcsdk_handle_ok(encoder)) {
             printf("test_decode_encode: encoder and decoder opened successfully. running...\n");
             mcsdk_audio_buffer buffer = mcsdk_env_create_audio_buffer(4096, 44100, 2);
