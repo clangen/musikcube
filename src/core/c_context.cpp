@@ -101,7 +101,7 @@ void mcsdk_context_message_queue::Run() {
  * mcsdk_svc_indexer_callback_proxy
  */
 
-struct mcsdk_svc_indexer_callback_proxy {
+struct mcsdk_svc_indexer_callback_proxy: public sigslot::has_slots<> {
     mcsdk_svc_indexer_context_internal* context;
 
     mcsdk_svc_indexer_callback_proxy(mcsdk_svc_indexer_context_internal* context) {
@@ -164,9 +164,13 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
     c->preferences.opaque = internal->preferences.get();
     c->playback.opaque = internal->playback;
 
+    auto indexer = internal->library->Indexer();
     auto indexer_internal = new mcsdk_svc_indexer_context_internal();
-    indexer_internal->indexer = internal->library->Indexer();
+    indexer_internal->indexer = indexer;
     indexer_internal->callback_proxy = new mcsdk_svc_indexer_callback_proxy(indexer_internal);
+    indexer->Started.connect(indexer_internal->callback_proxy, &mcsdk_svc_indexer_callback_proxy::on_started);
+    indexer->Progress.connect(indexer_internal->callback_proxy, &mcsdk_svc_indexer_callback_proxy::on_progress);
+    indexer->Finished.connect(indexer_internal->callback_proxy, &mcsdk_svc_indexer_callback_proxy::on_finished);
     c->indexer.opaque = indexer_internal;
 
     if (!plugin_context) {
