@@ -107,6 +107,7 @@ static std::string normalizePath(const std::string& path) {
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
 , tracksScanned(0)
+, totalTracksScanned(0)
 , state(StateStopped)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
@@ -227,6 +228,7 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
     this->ProcessAddRemoveQueue();
 
     this->tracksScanned = 0;
+    this->totalTracksScanned = 0;
 
     /* always remove tracks that no longer have a corresponding source */
     for (int id : this->GetOrphanedSourceIds()) {
@@ -430,6 +432,7 @@ inline void Indexer::IncrementTracksScanned(size_t delta) {
     if (this->tracksScanned > TRANSACTION_INTERVAL) {
         this->trackTransaction->CommitAndRestart();
         this->Progress(this->tracksScanned);
+        this->totalTracksScanned += this->tracksScanned;
         this->tracksScanned = 0;
     }
 }
@@ -624,7 +627,7 @@ void Indexer::ThreadLoop() {
         this->dbConnection.Close();
 
         if (!this->Bail()) {
-            this->Finished(this->tracksScanned);
+            this->Finished(this->totalTracksScanned);
         }
 
         musik::debug::info(TAG, "done!");

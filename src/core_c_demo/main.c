@@ -48,8 +48,8 @@ static void indexer_progress_callback(mcsdk_svc_indexer in, int updated_count) {
     printf("[indexer_progress_callback] %d\n", total_indexer_updated_count);
 }
 
-static void indexer_finished_callback(mcsdk_svc_indexer in, int updated_count) {
-    printf("[indexer_finished_callback] %d\n", total_indexer_updated_count);
+static void indexer_finished_callback(mcsdk_svc_indexer in, int total_updated_count) {
+    printf("[indexer_finished_callback] %d\n", total_updated_count);
 }
 
 static void test_indexer(mcsdk_context* context) {
