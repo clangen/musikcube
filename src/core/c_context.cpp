@@ -163,6 +163,7 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
     c->metadata.opaque = internal->metadata;
     c->preferences.opaque = internal->preferences.get();
     c->playback.opaque = internal->playback;
+    c->library.opaque = internal->library.get();
 
     auto indexer = internal->library->Indexer();
     auto indexer_internal = new mcsdk_svc_indexer_context_internal();

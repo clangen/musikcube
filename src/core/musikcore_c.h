@@ -126,6 +126,11 @@ typedef enum mcsdk_svc_indexer_sync_type {
     mcsdk_svc_indexer_sync_type_sources = 3
 } mcsdk_svc_indexer_sync_type;
 
+typedef enum mcsdk_svc_library_query_flag {
+    mcsdk_svc_library_query_flag_none = 0,
+    mcsdk_svc_library_query_flag_synchronous = 1
+} mcsdk_svc_library_query_flag;
+
 typedef enum mcsdk_replay_gain_mode {
     mcsdk_replay_gain_mode_disabled = 0,
     mcsdk_replay_gain_mode_track = 1,
@@ -163,6 +168,12 @@ typedef enum mcsdk_audio_player_release_mode {
     mcsdk_audio_player_release_mode_drain = 0,
     mcsdk_audio_player_release_mode_no_drain = 1
 } mcsdk_audio_player_release_mode;
+
+typedef enum mcsdk_db_result {
+    mcsdk_db_result_okay = 0,
+    mcsdk_db_result_row = 100,
+    mcsdk_db_result_done = 101,
+} mcsdk_db_result;
 
 static const size_t mcsdk_equalizer_band_count = 18;
 
@@ -229,6 +240,7 @@ mcsdk_define_handle(mcsdk_track_list_editor);
 mcsdk_define_handle(mcsdk_svc_metadata);
 mcsdk_define_handle(mcsdk_svc_playback);
 mcsdk_define_handle(mcsdk_svc_indexer);
+mcsdk_define_handle(mcsdk_svc_library);
 mcsdk_define_handle(mcsdk_prefs);
 mcsdk_define_handle(mcsdk_audio_buffer);
 mcsdk_define_handle(mcsdk_audio_buffer_provider);
@@ -242,6 +254,9 @@ mcsdk_define_handle(mcsdk_blocking_encoder);
 mcsdk_define_handle(mcsdk_streaming_encoder);
 mcsdk_define_handle(mcsdk_audio_stream);
 mcsdk_define_handle(mcsdk_audio_player);
+mcsdk_define_handle(mcsdk_db_connection);
+mcsdk_define_handle(mcsdk_db_statement);
+mcsdk_define_handle(mcsdk_db_transaction);
 
 typedef struct mcsdk_audio_player_callbacks {
     void (*on_prepared)(mcsdk_audio_player p);
@@ -266,6 +281,8 @@ typedef struct mcsdk_audio_player_gain {
     float peakValid;
 } mcsdk_audio_player_gain;
 
+typedef bool (*mcsdk_svc_library_run_query_callback)(mcsdk_svc_library l, mcsdk_db_connection db);
+
 /*
  * instance context
  */
@@ -274,6 +291,7 @@ typedef struct mcsdk_context {
     mcsdk_svc_metadata metadata;
     mcsdk_svc_playback playback;
     mcsdk_svc_indexer indexer;
+    mcsdk_svc_library library;
     mcsdk_prefs preferences;
     mcsdk_internal internal;
 } mcsdk_context;
@@ -631,5 +649,42 @@ mcsdk_export void mcsdk_svc_indexer_stop(mcsdk_svc_indexer in);
 mcsdk_export mcsdk_svc_indexer_state mcsdk_svc_indexer_get_state(mcsdk_svc_indexer in);
 mcsdk_export void mcsdk_svc_indexer_add_callbacks(mcsdk_svc_indexer in, mcsdk_svc_indexer_callbacks* cb);
 mcsdk_export void mcsdk_svc_indexer_remove_callbacks(mcsdk_svc_indexer in, mcsdk_svc_indexer_callbacks* cb);
+
+/*
+ * ILibrary
+ */
+
+mcsdk_export void mcsdk_svc_library_run_query(mcsdk_svc_library l, const char* name, mcsdk_svc_library_run_query_callback cb, mcsdk_svc_library_query_flag flags);
+mcsdk_export int mcsdk_svc_library_get_id(mcsdk_svc_library l);
+mcsdk_export int mcsdk_svc_library_get_name(mcsdk_svc_library l, char* dst, int len);
+
+/*
+ * Statement
+ */
+
+mcsdk_export mcsdk_db_statement mcsdk_db_statement_create(mcsdk_db_connection db, const char* sql);
+mcsdk_export void mcsdk_db_statement_bind_int32(mcsdk_db_statement stmt, int position, int value);
+mcsdk_export void mcsdk_db_statement_bind_int64(mcsdk_db_statement stmt, int position, int64_t value);
+mcsdk_export void mcsdk_db_statement_bind_float(mcsdk_db_statement stmt, int position, float value);
+mcsdk_export void mcsdk_db_statement_bind_text(mcsdk_db_statement stmt, int position, const char* value);
+mcsdk_export void mcsdk_db_statement_bind_null(mcsdk_db_statement stmt, int position);
+mcsdk_export int mcsdk_db_statement_column_int32(mcsdk_db_statement stmt, int column);
+mcsdk_export int64_t mcsdk_db_statement_column_int64(mcsdk_db_statement stmt, int column);
+mcsdk_export float mcsdk_db_statement_column_float(mcsdk_db_statement stmt, int column);
+mcsdk_export int mcsdk_db_statement_column_text(mcsdk_db_statement stmt, int column, char* dst, int len);
+mcsdk_export mcsdk_db_result mcsdk_db_statement_step(mcsdk_db_statement stmt);
+mcsdk_export void mcsdk_db_statement_reset(mcsdk_db_statement stmt);
+mcsdk_export void mcsdk_db_statement_unbind(mcsdk_db_statement stmt);
+mcsdk_export void mcsdk_db_statement_reset_and_unbind(mcsdk_db_statement stmt);
+mcsdk_export void mcsdk_db_statement_release(mcsdk_db_statement stmt);
+
+/*
+ * ScopedTransaction
+ */
+
+mcsdk_export mcsdk_db_transaction mcsdk_db_transaction_create(mcsdk_db_connection db);
+mcsdk_export void mcsdk_db_transaction_cancel(mcsdk_db_transaction tx);
+mcsdk_export void mcsdk_db_transaction_commit_and_restart(mcsdk_db_transaction tx);
+mcsdk_export void mcsdk_db_transaction_release(mcsdk_db_transaction tx);
 
 #endif

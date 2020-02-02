@@ -59,14 +59,22 @@
 #include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/IDevice.h>
 #include <core/sdk/IOutput.h>
+#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/ILibrary.h>
 #include <core/library/IIndexer.h>
 #include <core/library/track/TrackList.h>
 #include <core/audio/Stream.h>
 #include <core/audio/Player.h>
+#include <core/db/ScopedTransaction.h>
+#include <core/db/Connection.h>
+#include <core/db/Statement.h>
 #include <core/support/Common.h>
+
+#include <string>
 
 using namespace musik;
 using namespace musik::core;
+using namespace musik::core::db;
 using namespace musik::core::sdk;
 using namespace musik::core::audio;
 
@@ -96,6 +104,10 @@ using namespace musik::core::audio;
 #define AUDIOSTREAM(x) reinterpret_cast<IStream*>(x.opaque)
 #define PLAYER(x) reinterpret_cast<mcsdk_player_context_internal*>(x.opaque)
 #define INDEXER(x) reinterpret_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)->indexer
+#define LIBRARY(x) reinterpret_cast<ILibrary*>(x.opaque)
+#define DBCONNECTION(x) reinterpret_cast<Connection*>(x.opaque)
+#define DBSTATEMENT(x) reinterpret_cast<Statement*>(x.opaque)
+#define DBTRANSACTION(x) reinterpret_cast<ScopedTransaction*>(x.opaque)
 
 #define RELEASE(x, type) if (mcsdk_handle_ok(x)) { type(x)->Release(); x.opaque = nullptr; }
 
@@ -1229,4 +1241,133 @@ mcsdk_export void mcsdk_svc_indexer_remove_callbacks(mcsdk_svc_indexer in, mcsdk
     if (it != internal->callbacks.end()) {
         internal->callbacks.erase(it);
     }
+}
+
+/*
+ * ILibrary
+ */
+
+class mcsdk_db_wrapped_query: public LocalQueryBase {
+    public:
+        mcsdk_db_wrapped_query(
+            mcsdk_svc_library library,
+            const std::string& name,
+            mcsdk_svc_library_run_query_callback cb)
+        {
+            this->library = library;
+            this->name = name;
+            this->cb = cb;
+        }
+
+    protected:
+        virtual bool OnRun(musik::core::db::Connection& db) {
+            return cb(this->library, { &db });
+        }
+
+        virtual std::string Name() {
+            return "";
+        }
+
+    private:
+        mcsdk_svc_library library;
+        std::string name;
+        mcsdk_svc_library_run_query_callback cb;
+};
+
+mcsdk_export void mcsdk_svc_library_run_query(mcsdk_svc_library l, const char* name, mcsdk_svc_library_run_query_callback cb, mcsdk_svc_library_query_flag flags) {
+    LIBRARY(l)->Enqueue(std::make_shared<mcsdk_db_wrapped_query>(l, name, cb));
+}
+
+mcsdk_export int mcsdk_svc_library_get_id(mcsdk_svc_library l) {
+    return LIBRARY(l)->Id();
+}
+
+mcsdk_export int mcsdk_svc_library_get_name(mcsdk_svc_library l, char* dst, int len) {
+    return CopyString(LIBRARY(l)->Name(), dst, len);
+}
+
+/*
+ * Statement
+ */
+
+mcsdk_export mcsdk_db_statement mcsdk_db_statement_create(mcsdk_db_connection db, const char* sql) {
+    return { new Statement(sql, *DBCONNECTION(db)) };
+}
+
+mcsdk_export void mcsdk_db_statement_bind_int32(mcsdk_db_statement stmt, int position, int value) {
+    DBSTATEMENT(stmt)->BindInt32(position, value);
+}
+
+mcsdk_export void mcsdk_db_statement_bind_int64(mcsdk_db_statement stmt, int position, int64_t value) {
+    DBSTATEMENT(stmt)->BindInt64(position, value);
+}
+
+mcsdk_export void mcsdk_db_statement_bind_float(mcsdk_db_statement stmt, int position, float value) {
+    DBSTATEMENT(stmt)->BindFloat(position, value);
+}
+
+mcsdk_export void mcsdk_db_statement_bind_text(mcsdk_db_statement stmt, int position, const char* value) {
+    DBSTATEMENT(stmt)->BindText(position, value);
+}
+
+mcsdk_export void mcsdk_db_statement_bind_null(mcsdk_db_statement stmt, int position) {
+    DBSTATEMENT(stmt)->BindNull(position);
+}
+
+mcsdk_export int mcsdk_db_statement_column_int32(mcsdk_db_statement stmt, int column) {
+    return DBSTATEMENT(stmt)->ColumnInt32(column);
+}
+
+mcsdk_export int64_t mcsdk_db_statement_column_int64(mcsdk_db_statement stmt, int column) {
+    return DBSTATEMENT(stmt)->ColumnInt64(column);
+}
+
+mcsdk_export float mcsdk_db_statement_column_float(mcsdk_db_statement stmt, int column) {
+    return DBSTATEMENT(stmt)->ColumnFloat(column);
+}
+
+mcsdk_export int mcsdk_db_statement_column_text(mcsdk_db_statement stmt, int column, char* dst, int len) {
+    return CopyString(DBSTATEMENT(stmt)->ColumnText(column), dst, len);
+}
+
+mcsdk_export mcsdk_db_result mcsdk_db_statement_step(mcsdk_db_statement stmt) {
+    return (mcsdk_db_result) DBSTATEMENT(stmt)->Step();
+}
+
+mcsdk_export void mcsdk_db_statement_reset(mcsdk_db_statement stmt) {
+    DBSTATEMENT(stmt)->Reset();
+}
+
+mcsdk_export void mcsdk_db_statement_unbind(mcsdk_db_statement stmt) {
+    DBSTATEMENT(stmt)->Unbind();
+}
+
+mcsdk_export void mcsdk_db_statement_reset_and_unbind(mcsdk_db_statement stmt) {
+    DBSTATEMENT(stmt)->ResetAndUnbind();
+}
+
+mcsdk_export void mcsdk_db_statement_release(mcsdk_db_statement stmt) {
+    delete DBSTATEMENT(stmt);
+    stmt.opaque = nullptr;
+}
+
+/*
+ * ScopedTransaction
+ */
+
+mcsdk_export mcsdk_db_transaction mcsdk_db_transaction_create(mcsdk_db_connection db) {
+    return { new ScopedTransaction(*DBCONNECTION(db)) };
+}
+
+mcsdk_export void mcsdk_db_transaction_cancel(mcsdk_db_transaction tx) {
+    DBTRANSACTION(tx)->Cancel();
+}
+
+mcsdk_export void mcsdk_db_transaction_commit_and_restart(mcsdk_db_transaction tx) {
+    DBTRANSACTION(tx)->CommitAndRestart();
+}
+
+mcsdk_export void mcsdk_db_transaction_release(mcsdk_db_transaction tx) {
+    delete DBCONNECTION(tx);
+    tx.opaque = nullptr;
 }
