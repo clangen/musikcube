@@ -281,7 +281,7 @@ typedef struct mcsdk_audio_player_gain {
     float peakValid;
 } mcsdk_audio_player_gain;
 
-typedef bool (*mcsdk_svc_library_run_query_callback)(mcsdk_svc_library l, mcsdk_db_connection db);
+typedef bool (*mcsdk_svc_library_run_query_callback)(mcsdk_svc_library l, mcsdk_db_connection db, void* user_context);
 
 /*
  * instance context
@@ -292,6 +292,7 @@ typedef struct mcsdk_context {
     mcsdk_svc_playback playback;
     mcsdk_svc_indexer indexer;
     mcsdk_svc_library library;
+    mcsdk_db_connection db;
     mcsdk_prefs preferences;
     mcsdk_internal internal;
 } mcsdk_context;
@@ -654,7 +655,7 @@ mcsdk_export void mcsdk_svc_indexer_remove_callbacks(mcsdk_svc_indexer in, mcsdk
  * ILibrary
  */
 
-mcsdk_export void mcsdk_svc_library_run_query(mcsdk_svc_library l, const char* name, mcsdk_svc_library_run_query_callback cb, mcsdk_svc_library_query_flag flags);
+mcsdk_export void mcsdk_svc_library_run_query(mcsdk_svc_library l, const char* name, void* user_context, mcsdk_svc_library_run_query_callback cb, mcsdk_svc_library_query_flag flags);
 mcsdk_export int mcsdk_svc_library_get_id(mcsdk_svc_library l);
 mcsdk_export int mcsdk_svc_library_get_name(mcsdk_svc_library l, char* dst, int len);
 

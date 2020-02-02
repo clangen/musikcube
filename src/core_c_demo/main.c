@@ -52,16 +52,16 @@ static void indexer_finished_callback(mcsdk_svc_indexer in, int total_updated_co
     printf("[indexer_finished_callback] %d\n", total_updated_count);
 }
 
-static bool run_test_query_callback(mcsdk_svc_library library, mcsdk_db_connection connection) {
+static bool run_test_query_callback(mcsdk_svc_library library, mcsdk_db_connection connection, void* user_context) {
     bool result = false;
     mcsdk_db_statement stmt = mcsdk_db_statement_create(connection, "SELECT COUNT(*) FROM tracks");
     if (mcsdk_db_statement_step(stmt) == mcsdk_db_result_row) {
         int total_tracks = mcsdk_db_statement_column_int64(stmt, 0);
-        printf("[run_test_query_callback] success! %d total tracks", total_tracks);
+        printf("[run_test_query_callback] success! %d total tracks\n", total_tracks);
         result = true;
     }
     else {
-        printf("[run_test_query_callback] failed");
+        printf("[run_test_query_callback] failed\n");
     }
     mcsdk_db_statement_release(stmt);
     return result;
@@ -181,6 +181,7 @@ static void test_library(mcsdk_context* context) {
     mcsdk_svc_library_run_query(
         context->library,
         "test query",
+        NULL,
         run_test_query_callback,
         mcsdk_svc_library_query_flag_synchronous);
 }
@@ -203,9 +204,9 @@ int main(int argc, char** argv) {
     mcsdk_context_init(&context);
     if (context) {
         printf("[main] context initialized\n");
+        test_library(context);
         test_indexer(context);
         test_metadata(context);
-        test_library(context);
         test_low_level_playback();
         test_high_level_playback(context);
         test_decode_encode();

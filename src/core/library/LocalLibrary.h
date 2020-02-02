@@ -82,6 +82,7 @@ namespace musik { namespace core { namespace library {
             virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* implementation specific */
+            db::Connection& GetConnection() { return this->db; }
             std::string GetLibraryDirectory();
             std::string GetDatabaseFilename();
             static void CreateDatabase(db::Connection &db);

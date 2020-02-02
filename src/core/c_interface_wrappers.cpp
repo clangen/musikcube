@@ -1252,16 +1252,18 @@ class mcsdk_db_wrapped_query: public LocalQueryBase {
         mcsdk_db_wrapped_query(
             mcsdk_svc_library library,
             const std::string& name,
+            void* user_context,
             mcsdk_svc_library_run_query_callback cb)
         {
             this->library = library;
             this->name = name;
+            this->user_context = user_context;
             this->cb = cb;
         }
 
     protected:
         virtual bool OnRun(musik::core::db::Connection& db) {
-            return cb(this->library, { &db });
+            return cb(this->library, { &db }, this->user_context);
         }
 
         virtual std::string Name() {
@@ -1271,11 +1273,12 @@ class mcsdk_db_wrapped_query: public LocalQueryBase {
     private:
         mcsdk_svc_library library;
         std::string name;
+        void* user_context;
         mcsdk_svc_library_run_query_callback cb;
 };
 
-mcsdk_export void mcsdk_svc_library_run_query(mcsdk_svc_library l, const char* name, mcsdk_svc_library_run_query_callback cb, mcsdk_svc_library_query_flag flags) {
-    LIBRARY(l)->Enqueue(std::make_shared<mcsdk_db_wrapped_query>(l, name, cb));
+mcsdk_export void mcsdk_svc_library_run_query(mcsdk_svc_library l, const char* name, void* user_context, mcsdk_svc_library_run_query_callback cb, mcsdk_svc_library_query_flag flags) {
+    LIBRARY(l)->Enqueue(std::make_shared<mcsdk_db_wrapped_query>(l, name, user_context, cb));
 }
 
 mcsdk_export int mcsdk_svc_library_get_id(mcsdk_svc_library l) {

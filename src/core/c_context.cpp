@@ -40,6 +40,7 @@
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
 #include <core/library/LibraryFactory.h>
+#include <core/library/LocalLibrary.h>
 #include <core/audio/PlaybackService.h>
 #include <core/plugin/Plugins.h>
 #include <core/library/LocalMetadataProxy.h>
@@ -53,6 +54,7 @@
 
 using namespace musik;
 using namespace musik::core;
+using namespace musik::core::library;;
 using namespace musik::core::db::local;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
@@ -164,6 +166,11 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
     c->preferences.opaque = internal->preferences.get();
     c->playback.opaque = internal->playback;
     c->library.opaque = internal->library.get();
+
+    auto localLibrary = dynamic_cast<LocalLibrary*>(internal->library.get());
+    if (localLibrary) {
+        c->db.opaque = localLibrary;
+    }
 
     auto indexer = internal->library->Indexer();
     auto indexer_internal = new mcsdk_svc_indexer_context_internal();
