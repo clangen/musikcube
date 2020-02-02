@@ -67,6 +67,10 @@ static bool run_test_query_callback(mcsdk_svc_library library, mcsdk_db_connecti
     return result;
 }
 
+static void player_mixpoint_hit(mcsdk_audio_player p, int id, double time) {
+    printf("[player_mixpoint_hit] id=%x time=%f\n", id, time);
+}
+
 static void test_indexer(mcsdk_context* context) {
     char buffer[4096];
     for (int i = 0; i < mcsdk_svc_indexer_get_paths_count(context->indexer); i++) {
@@ -132,9 +136,12 @@ static void test_decode_encode() {
 }
 
 static void test_low_level_playback() {
+    mcsdk_audio_player_callbacks cbs = { 0 };
+    cbs.on_mixpoint = player_mixpoint_hit;
     mcsdk_audio_player_gain gain = mcsdk_audio_player_get_default_gain();
     mcsdk_audio_output output = mcsdk_env_get_default_output();
-    mcsdk_audio_player player = mcsdk_audio_player_create(INPUT_FILE, output, NULL, gain);
+    mcsdk_audio_player player = mcsdk_audio_player_create(INPUT_FILE, output, &cbs, gain);
+    mcsdk_audio_player_add_mix_point(player, 0xdeadbeef, 1.25);
     mcsdk_audio_output_set_volume(output, 0.75);
     mcsdk_audio_output_resume(output);
     mcsdk_audio_player_play(player);
