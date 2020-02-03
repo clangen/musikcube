@@ -212,7 +212,7 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
         this->Layout();
     }
     else if (type == message::IndexerProgress) {
-        this->syncUpdateCount += (int)message.UserData1();
+        this->syncUpdateCount == (int) message.UserData1();
         updateSyncingText(this->syncing.get(), this->syncUpdateCount);
 
         if (!syncing->IsVisible()) {

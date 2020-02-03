@@ -36,16 +36,12 @@ static void sleep_for(const char* tag, int seconds) {
     }
 }
 
-static int total_indexer_updated_count = 0;
-
 static void indexer_started_callback(mcsdk_svc_indexer in) {
-    total_indexer_updated_count = 0;
     printf("[indexer_started_callback]\n");
 }
 
 static void indexer_progress_callback(mcsdk_svc_indexer in, int updated_count) {
-    total_indexer_updated_count += updated_count;
-    printf("[indexer_progress_callback] %d\n", total_indexer_updated_count);
+    printf("[indexer_progress_callback] %d\n", updated_count);
 }
 
 static void indexer_finished_callback(mcsdk_svc_indexer in, int total_updated_count) {

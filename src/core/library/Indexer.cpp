@@ -404,7 +404,6 @@ void Indexer::ReadMetadataFromFile(
                 INC(track, "album_artist", i);
                 INC(track, "album", i);
                 track.Save(this->dbConnection, this->libraryPath);
-                this->filesSaved++;
             }
 #endif
         }
@@ -429,7 +428,7 @@ inline void Indexer::IncrementTracksScanned(size_t delta) {
 
     if (this->incrementalUrisScanned > TRANSACTION_INTERVAL) {
         this->trackTransaction->CommitAndRestart();
-        this->Progress(this->incrementalUrisScanned);
+        this->Progress(this->totalUrisScanned);
         this->incrementalUrisScanned = 0;
     }
 }
@@ -623,9 +622,8 @@ void Indexer::ThreadLoop() {
 
         this->dbConnection.Close();
 
-        this->Progress(this->incrementalUrisScanned);
-
         if (!this->Bail()) {
+            this->Progress(this->totalUrisScanned);
             this->Finished(this->totalUrisScanned);
         }
 
@@ -1038,8 +1036,7 @@ void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
     }
 
     if (updatedTracks) {
-        std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
-        this->Progress((int) updatedTracks);
+        this->IncrementTracksScanned(updatedTracks);
     }
 }
 
