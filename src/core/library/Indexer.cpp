@@ -106,8 +106,8 @@ static std::string normalizePath(const std::string& path) {
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
-, tracksScanned(0)
-, totalTracksScanned(0)
+, incrementalUrisScanned(0)
+, totalUrisScanned(0)
 , state(StateStopped)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
@@ -227,8 +227,8 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     this->ProcessAddRemoveQueue();
 
-    this->tracksScanned = 0;
-    this->totalTracksScanned = 0;
+    this->incrementalUrisScanned = 0;
+    this->totalUrisScanned = 0;
 
     /* always remove tracks that no longer have a corresponding source */
     for (int id : this->GetOrphanedSourceIds()) {
@@ -341,9 +341,6 @@ void Indexer::FinalizeSync(const SyncContext& context) {
         this->SyncOptimize();
     }
 
-    /* notify observers */
-    this->Progress(this->tracksScanned);
-
     /* run analyzers. */
     this->RunAnalyzers();
 
@@ -427,13 +424,13 @@ void Indexer::ReadMetadataFromFile(
 inline void Indexer::IncrementTracksScanned(size_t delta) {
     std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
 
-    this->tracksScanned.fetch_add(delta);
+    this->incrementalUrisScanned.fetch_add(delta);
+    this->totalUrisScanned.fetch_add(delta);
 
-    if (this->tracksScanned > TRANSACTION_INTERVAL) {
+    if (this->incrementalUrisScanned > TRANSACTION_INTERVAL) {
         this->trackTransaction->CommitAndRestart();
-        this->Progress(this->tracksScanned);
-        this->totalTracksScanned += this->tracksScanned;
-        this->tracksScanned = 0;
+        this->Progress(this->incrementalUrisScanned);
+        this->incrementalUrisScanned = 0;
     }
 }
 
@@ -626,8 +623,10 @@ void Indexer::ThreadLoop() {
 
         this->dbConnection.Close();
 
+        this->Progress(this->incrementalUrisScanned);
+
         if (!this->Bail()) {
-            this->Finished(this->totalTracksScanned);
+            this->Finished(this->totalUrisScanned);
         }
 
         musik::debug::info(TAG, "done!");
