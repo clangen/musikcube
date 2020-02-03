@@ -284,6 +284,13 @@ typedef struct mcsdk_audio_player_gain {
 typedef bool (*mcsdk_svc_library_run_query_callback)(mcsdk_svc_library l, mcsdk_db_connection db, void* user_context);
 
 /*
+ * global setup
+ */
+
+mcsdk_export void mcsdk_env_init();
+mcsdk_export void mcsdk_env_release();
+
+/*
  * instance context
  */
 

@@ -193,7 +193,7 @@ static void test_library(mcsdk_context* context) {
         mcsdk_svc_library_query_flag_synchronous);
 }
 
-static void configure_environment() {
+static void configure_stderr() {
     const char* suffix = "stderr.log";
     char* dest_path = NULL;
     int length = mcsdk_env_get_path(mcsdk_path_type_data, NULL, 0) + strlen(suffix);
@@ -201,12 +201,13 @@ static void configure_environment() {
     mcsdk_env_get_path(mcsdk_path_type_data, dest_path, length);
     strncat(dest_path, suffix, length);
     freopen(dest_path, "w", stderr);
-    printf("[configure_environment] stderr will be written to %s\n", dest_path);
+    printf("[configure_stderr] stderr will be written to %s\n", dest_path);
     free(dest_path);
 }
 
 int main(int argc, char** argv) {
-    configure_environment();
+    configure_stderr();
+    mcsdk_env_init();
     mcsdk_context* context = NULL;
     mcsdk_context_init(&context);
     if (context) {
@@ -220,5 +221,6 @@ int main(int argc, char** argv) {
         mcsdk_context_release(&context);
         printf("[main] context released\n");
     }
+    mcsdk_env_release();
     return 0;
 }

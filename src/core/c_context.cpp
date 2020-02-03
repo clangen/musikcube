@@ -64,7 +64,7 @@ using namespace musik::core::runtime;
  * globals
  */
 
-static std::mutex global_mutex;
+static std::recursive_mutex global_mutex;
 static bool environment_initialized = false;
 static mcsdk_context* plugin_context = nullptr;
 
@@ -135,12 +135,8 @@ struct mcsdk_svc_indexer_callback_proxy: public sigslot::has_slots<> {
     }
 };
 
-/*
- * mcsdk_context_*
- */
-
-mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
-    std::unique_lock<std::mutex> lock(global_mutex);
+mcsdk_export void mcsdk_env_init() {
+    std::unique_lock<std::recursive_mutex> lock(global_mutex);
 
     if (!environment_initialized) {
         std::locale locale = std::locale();
@@ -148,6 +144,26 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
         boost::filesystem::path::imbue(utf8Locale);
         debug::Start();
         environment_initialized = true;
+    }
+}
+
+mcsdk_export void mcsdk_env_release() {
+    if (environment_initialized) {
+        LibraryFactory::Instance().Shutdown();
+        debug::Stop();
+        environment_initialized = false;
+    }
+}
+
+/*
+ * mcsdk_context_*
+ */
+
+mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
+    std::unique_lock<std::recursive_mutex> lock(global_mutex);
+
+    if (!environment_initialized) {
+        mcsdk_env_init();
     }
 
     auto c = new mcsdk_context();
@@ -193,7 +209,7 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
 }
 
 mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
-    std::unique_lock<std::mutex> lock(global_mutex);
+    std::unique_lock<std::recursive_mutex> lock(global_mutex);
 
     auto c = *context;
     auto internal = static_cast<mcsdk_context_internal*>(c->internal.opaque);
