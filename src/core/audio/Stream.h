@@ -40,6 +40,7 @@
 #include <core/audio/IStream.h>
 #include <core/sdk/IDecoder.h>
 #include <core/sdk/IDSP.h>
+#include <core/sdk/constants.h>
 
 #include <deque>
 #include <list>
@@ -49,27 +50,38 @@ namespace musik { namespace core { namespace audio {
     class Stream : public IStream {
         using IDSP = musik::core::sdk::IDSP;
         using IDecoder = musik::core::sdk::IDecoder;
+        using IBuffer = musik::core::sdk::IBuffer;
+        using StreamFlags = musik::core::sdk::StreamFlags;
 
         public:
             static IStreamPtr Create(
                 int samplesPerChannel = 2048,
                 double bufferLengthSeconds = 5,
-                unsigned int options = 0);
+                StreamFlags options = StreamFlags::None);
+
+            static IStream* CreateUnmanaged(
+                int samplesPerChannel = 2048,
+                double bufferLengthSeconds = 5,
+                StreamFlags options = StreamFlags::None);
 
         private:
-            Stream(int samplesPerChannel, double bufferLengthSeconds, unsigned int options);
+            Stream(
+                int samplesPerChannel,
+                double bufferLengthSeconds,
+                StreamFlags options);
 
         public:
             virtual ~Stream();
 
-            virtual Buffer* GetNextProcessedOutputBuffer() override;
-            virtual void OnBufferProcessedByPlayer(Buffer* buffer) override;
+            virtual IBuffer* GetNextProcessedOutputBuffer() override;
+            virtual void OnBufferProcessedByPlayer(IBuffer* buffer) override;
             virtual double SetPosition(double seconds) override;
             virtual double GetDuration() override;
             virtual bool OpenStream(std::string uri) override;
             virtual void Interrupt() override;
             virtual int GetCapabilities() override;
             virtual bool Eof() override { return this->done; }
+            virtual void Release() override { delete this; }
 
         private:
             bool GetNextBufferFromDecoder();
@@ -94,7 +106,7 @@ namespace musik { namespace core { namespace audio {
             long decoderSamplesRemain;
             uint64_t decoderPosition;
 
-            unsigned int options;
+            musik::core::sdk::StreamFlags options;
             int samplesPerChannel;
             long samplesPerBuffer;
             int bufferCount;

@@ -106,7 +106,8 @@ static std::string normalizePath(const std::string& path) {
 
 Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 : thread(nullptr)
-, tracksScanned(0)
+, incrementalUrisScanned(0)
+, totalUrisScanned(0)
 , state(StateStopped)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
 , readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
@@ -226,7 +227,8 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     this->ProcessAddRemoveQueue();
 
-    this->tracksScanned = 0;
+    this->incrementalUrisScanned = 0;
+    this->totalUrisScanned = 0;
 
     /* always remove tracks that no longer have a corresponding source */
     for (int id : this->GetOrphanedSourceIds()) {
@@ -339,9 +341,6 @@ void Indexer::FinalizeSync(const SyncContext& context) {
         this->SyncOptimize();
     }
 
-    /* notify observers */
-    this->Progress(this->tracksScanned);
-
     /* run analyzers. */
     this->RunAnalyzers();
 
@@ -405,7 +404,6 @@ void Indexer::ReadMetadataFromFile(
                 INC(track, "album_artist", i);
                 INC(track, "album", i);
                 track.Save(this->dbConnection, this->libraryPath);
-                this->filesSaved++;
             }
 #endif
         }
@@ -425,12 +423,13 @@ void Indexer::ReadMetadataFromFile(
 inline void Indexer::IncrementTracksScanned(size_t delta) {
     std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
 
-    this->tracksScanned.fetch_add(delta);
+    this->incrementalUrisScanned.fetch_add(delta);
+    this->totalUrisScanned.fetch_add(delta);
 
-    if (this->tracksScanned > TRANSACTION_INTERVAL) {
+    if (this->incrementalUrisScanned > TRANSACTION_INTERVAL) {
         this->trackTransaction->CommitAndRestart();
-        this->Progress(this->tracksScanned);
-        this->tracksScanned = 0;
+        this->Progress(this->totalUrisScanned);
+        this->incrementalUrisScanned = 0;
     }
 }
 
@@ -624,7 +623,8 @@ void Indexer::ThreadLoop() {
         this->dbConnection.Close();
 
         if (!this->Bail()) {
-            this->Finished(this->tracksScanned);
+            this->Progress(this->totalUrisScanned);
+            this->Finished(this->totalUrisScanned);
         }
 
         musik::debug::info(TAG, "done!");
@@ -895,14 +895,14 @@ void Indexer::RunAnalyzers() {
             }
 
             if (!runningAnalyzers.empty()) {
-                audio::IStreamPtr stream = audio::Stream::Create(audio::IStream::NoDSP);
+                audio::IStreamPtr stream = audio::Stream::Create(2048, 2.0, StreamFlags::NoDSP);
 
                 if (stream) {
                     if (stream->OpenStream(track.Uri())) {
 
                         /* decode the stream quickly, passing to all analyzers */
 
-                        audio::Buffer* buffer;
+                        IBuffer* buffer;
 
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             PluginVector::iterator plugin = runningAnalyzers.begin();
@@ -1036,8 +1036,7 @@ void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
     }
 
     if (updatedTracks) {
-        std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
-        this->Progress((int) updatedTracks);
+        this->IncrementTracksScanned(updatedTracks);
     }
 }
 

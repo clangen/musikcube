@@ -53,7 +53,7 @@ namespace musik { namespace core { namespace audio {
 
     class Player : public musik::core::sdk::IBufferProvider {
         public:
-            enum DestroyMode { Drain, NoDrain };
+            enum DestroyMode { Drain = 0, NoDrain = 1 };
 
             struct Gain {
                 Gain() {
@@ -168,6 +168,7 @@ namespace musik { namespace core { namespace audio {
             DestroyMode destroyMode;
             Gain gain;
             int pendingBufferCount;
+            bool threadFinished;
 
             FftContext* fftContext;
     };

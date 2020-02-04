@@ -293,11 +293,15 @@ LocalMetadataProxy::~LocalMetadataProxy() {
 
 }
 
+void LocalMetadataProxy::Release() {
+    delete this;
+}
+
 ITrackList* LocalMetadataProxy::QueryTracks(const char* query, int limit, int offset) {
     try {
         std::shared_ptr<SearchTrackListQuery> search(
             new SearchTrackListQuery(
-                this->library, 
+                this->library,
                 std::string(query ? query : ""),
                 TrackSortType::Album));
 

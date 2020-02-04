@@ -1,4 +1,6 @@
 set(CORE_SOURCES
+  ./c_context.cpp
+  ./c_interface_wrappers.cpp
   ./debug.cpp
   ./audio/Buffer.cpp
   ./audio/Crossfader.cpp
@@ -69,6 +71,8 @@ include_directories(
   ../3rdparty/include/md5
   ../3rdparty/include/sqlite
 )
+
+add_definitions(-DMCSDK_DEFINE_EXPORTS)
 
 add_library(musikcore SHARED ${CORE_SOURCES})
 

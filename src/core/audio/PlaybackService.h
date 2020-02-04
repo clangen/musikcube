@@ -76,7 +76,7 @@ namespace musik { namespace core { namespace audio {
                 musik::core::runtime::IMessageQueue& messageQueue,
                 musik::core::ILibraryPtr library);
 
-            ~PlaybackService();
+            virtual ~PlaybackService();
 
             /* IMessageTarget */
             virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;

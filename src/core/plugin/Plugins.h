@@ -35,6 +35,7 @@
 #pragma once
 
 #include <core/library/ILibrary.h>
+#include <core/sdk/IEnvironment.h>
 #include <core/sdk/IPlaybackService.h>
 #include <core/runtime/IMessage.h>
 
@@ -44,6 +45,8 @@ namespace musik { namespace core { namespace plugin {
         musik::core::runtime::IMessageQueue* messageQueue,
         musik::core::sdk::IPlaybackService* playback,
         musik::core::ILibraryPtr library);
+
+    musik::core::sdk::IEnvironment& Environment();
 
     void Deinit();
 

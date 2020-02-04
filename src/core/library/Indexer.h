@@ -159,7 +159,7 @@ namespace musik { namespace core {
             boost::mutex stateMutex;
             boost::condition waitCondition;
             boost::thread *thread;
-            std::atomic<size_t> tracksScanned;
+            std::atomic<size_t> incrementalUrisScanned, totalUrisScanned;
             std::deque<AddRemoveContext> addRemoveQueue;
             std::deque<SyncContext> syncQueue;
             TagReaderList tagReaders;

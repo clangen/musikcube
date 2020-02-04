@@ -85,6 +85,7 @@ static class PlaybackRemote : public IPlaybackRemote {
 
         void CheckRunningStatus() {
             if (!thread && context.environment && context.playback && context.prefs && context.metadataProxy) {
+                this->Start();
                 thread.reset(new std::thread(std::bind(&PlaybackRemote::ThreadProc, this)));
             }
             else if (thread && (!context.environment || !context.playback || !context.prefs || !context.metadataProxy)) {
@@ -124,22 +125,22 @@ static class PlaybackRemote : public IPlaybackRemote {
 
     private:
         void ThreadProc() {
+            httpServer.Wait();
+            webSocketServer.Wait();
+        }
+
+        void Start() {
             if (context.prefs->GetBool(prefs::http_server_enabled.c_str(), true)) {
                 httpServer.Start();
             }
-
             if (context.prefs->GetBool(prefs::websocket_server_enabled.c_str(), true)) {
                 webSocketServer.Start();
             }
-
-            httpServer.Wait();
-            webSocketServer.Wait();
         }
 
         void Stop() {
             httpServer.Stop();
             webSocketServer.Stop();
-
             if (this->thread) {
                 this->thread->join();
                 this->thread.reset();

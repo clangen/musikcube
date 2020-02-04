@@ -54,6 +54,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "supereqdsp", "src\plugins\s
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmedecoder", "src\plugins\gmedecoder\gmedecoder.vcxproj", "{89FD1021-21B5-44EB-BDBE-70381ADE8522}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core_c_demo", "src\core_c_demo\core_c_demo.vcxproj", "{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -198,6 +200,14 @@ Global
 		{89FD1021-21B5-44EB-BDBE-70381ADE8522}.Release|Win32.Build.0 = Release|Win32
 		{89FD1021-21B5-44EB-BDBE-70381ADE8522}.Release|x64.ActiveCfg = Release|x64
 		{89FD1021-21B5-44EB-BDBE-70381ADE8522}.Release|x64.Build.0 = Release|x64
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Debug|Win32.Build.0 = Debug|Win32
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Debug|x64.ActiveCfg = Debug|x64
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Debug|x64.Build.0 = Debug|x64
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Release|Win32.ActiveCfg = Release|Win32
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Release|Win32.Build.0 = Release|Win32
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Release|x64.ActiveCfg = Release|x64
+		{DC9DBE2C-1277-4B5A-853C-8FBDF595E8FC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

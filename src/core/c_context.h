@@ -32,31 +32,58 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <core/musikcore_c.h>
+#include <core/runtime/MessageQueue.h>
+#include <core/library/LibraryFactory.h>
+#include <core/audio/PlaybackService.h>
+#include <core/library/LocalMetadataProxy.h>
+#include <core/library/IIndexer.h>
 
-#include <core/config.h>
-#include <core/sdk/IBuffer.h>
-#include <core/sdk/IDecoder.h>
-#include <core/sdk/IDSP.h>
-#include <core/sdk/IDecoderFactory.h>
+#include <string>
+#include <thread>
+#include <set>
 
-#include <list>
+using namespace musik;
+using namespace musik::core;
+using namespace musik::core::db::local;
+using namespace musik::core::audio;
+using namespace musik::core::sdk;
+using namespace musik::core::runtime;
 
-namespace musik { namespace core { namespace audio {
+class mcsdk_context_message_queue: public MessageQueue {
+    public:
+        mcsdk_context_message_queue();
+        virtual ~mcsdk_context_message_queue();
+        void Quit();
+        void Run();
+    private:
+        using LockT = std::unique_lock<std::mutex>;
+        bool quit;
+        std::mutex mutex;
+};
 
-    class IStream {
-        public:
-            virtual musik::core::sdk::IBuffer* GetNextProcessedOutputBuffer() = 0;
-            virtual void OnBufferProcessedByPlayer(musik::core::sdk::IBuffer* buffer) = 0;
-            virtual double SetPosition(double seconds) = 0;
-            virtual double GetDuration() = 0;
-            virtual bool OpenStream(std::string uri) = 0;
-            virtual void Interrupt() = 0;
-            virtual int GetCapabilities() = 0;
-            virtual bool Eof() = 0;
-            virtual void Release() = 0;
-    };
+struct mcsdk_context_internal {
+    mcsdk_context_message_queue message_queue;
+    std::thread thread;
+    ILibraryPtr library;
+    LocalMetadataProxy* metadata;
+    PlaybackService* playback;
+    std::shared_ptr<Preferences> preferences;
+};
 
-    typedef std::shared_ptr<IStream> IStreamPtr;
+struct mcsdk_svc_indexer_callback_proxy;
 
-} } }
+struct mcsdk_svc_indexer_context_internal {
+    IIndexer* indexer;
+    mcsdk_svc_indexer_callback_proxy* callback_proxy;
+    std::set<mcsdk_svc_indexer_callbacks*> callbacks;
+};
+
+struct mcsdk_player_context_internal {
+    Player::EventListener* event_listener;
+    std::shared_ptr<IOutput> output;
+    std::mutex event_mutex;
+    std::condition_variable finished_condition;
+    Player* player;
+    bool player_finished;
+};

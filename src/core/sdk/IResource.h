@@ -42,8 +42,8 @@ namespace musik { namespace core { namespace sdk {
     class IResource {
         public:
             enum class Class {
-                Value,
-                Map
+                Value = 0,
+                Map = 1
             };
 
             virtual int64_t GetId() = 0;
