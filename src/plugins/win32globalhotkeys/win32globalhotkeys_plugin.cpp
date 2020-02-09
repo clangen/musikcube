@@ -124,9 +124,10 @@ LRESULT CALLBACK ShellProc(int code, WPARAM wParam, LPARAM lParam) {
 }
 
 void installHook() {
-    /* note: don't install the hook if we're debugging, otherwise inptuts
-    get SUPER laggy. */
-    if (!IsDebuggerPresent() && !::hook) {
+    /* note: don't install the hook if we're debugging or running as a true console
+    app, otherwise inputs get SUPER laggy. */
+    bool isConsoleApp = GetConsoleWindow() != nullptr;
+    if (!isConsoleApp && !IsDebuggerPresent() && !::hook) {
         hook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)ShellProc, module, 0L);
     }
 }

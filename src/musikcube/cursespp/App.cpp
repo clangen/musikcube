@@ -132,9 +132,11 @@ App::~App() {
 void App::InitCurses() {
 #ifdef WIN32
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
-    PDC_set_default_menu_visibility(0);
-    PDC_set_title(this->appTitle.c_str());
-    PDC_set_color_intensify_enabled(false);
+    #ifdef PDCURSES_WINGUI
+        PDC_set_default_menu_visibility(0);
+        PDC_set_title(this->appTitle.c_str());
+        PDC_set_color_intensify_enabled(false);
+    #endif
 #endif
 
     initscr();
@@ -150,7 +152,7 @@ void App::InitCurses() {
     set_escdelay(20);
 #endif
 
-#ifdef WIN32
+#ifdef PDCURSES_WINGUI
     /* needs to happen after initscr() */
     win32::InterceptWndProc();
     win32::SetAppTitle(this->appTitle);
@@ -181,8 +183,10 @@ void App::SetResizeHandler(ResizeHandler handler) {
 }
 
 void App::SetColorMode(Colors::Mode mode) {
+#if defined(PDCURSES_WINCON)
+    mode = Colors::Basic;
+#endif
     this->colorMode = mode;
-
     if (this->initialized) {
         Colors::Init(this->colorMode, this->bgType);
     }
@@ -222,15 +226,23 @@ void App::SetSingleInstanceId(const std::string& uniqueId) {
 }
 
 bool App::RegisterFont(const std::string& filename) {
+#if defined(PDCURSES_WINGUI)
     return win32::RegisterFont(filename) > 0;
+#else
+    return false;
+#endif
 }
 
 void App::SetDefaultFontface(const std::string& fontface) {
+#if defined(PDCURSES_WINGUI)
     PDC_set_preferred_fontface(u8to16(fontface).c_str());
+#endif
 }
 
 void App::SetDefaultMenuVisibility(bool visible) {
+#if defined(PDCURSES_WINGUI)
     PDC_set_default_menu_visibility(visible);
+#endif
 }
 #endif
 
@@ -258,19 +270,19 @@ void App::SetTitle(const std::string& title) {
 }
 
 void App::SetMinimizeToTray(bool minimizeToTray) {
-#ifdef WIN32
+#ifdef PDCURSES_WINGUI
     win32::SetMinimizeToTray(minimizeToTray);
 #endif
 }
 
 void App::Minimize() {
-#ifdef WIN32
+#ifdef PDCURSES_WINGUI
     win32::Minimize();
 #endif
 }
 
 void App::Restore() {
-#ifdef WIN32
+#ifdef PDCURSES_WINGUI
     win32::ShowMainWindow();
 #endif
 }
