@@ -50,16 +50,16 @@
     #define mcsdk_export extern
 #endif
 
-/*
- * version
+/**
+ * @brief musikcore API version.
+ *
  */
-
 static const int mcsdk_version = 18;
 
-/*
- * constants
+/**
+ * @brief The current playback state. Used by the playback service (mcsdk_svc_playback).
+ *
  */
-
 typedef enum mcsdk_playback_state {
     mcsdk_playback_stopped = 1,
     mcsdk_playback_paused = 2,
@@ -67,22 +67,35 @@ typedef enum mcsdk_playback_state {
     mcsdk_playback_playing = 4,
 } mcsdk_playback_state;
 
-typedef enum mcsdk_stream_event {
-    mcsdk_stream_scheduled = 1,
-    mcsdk_stream_prepared = 2,
-    mcsdk_stream_playing = 3,
-    mcsdk_stream_almost_done = 4,
-    mcsdk_stream_finished = 5,
-    mcsdk_stream_stopped = 6,
-    mcsdk_stream_error = -1
+/**
+ * @brief The current audio stream state. Used by audio streams (mcsdk_audio_stream)
+ *
+ */
+typedef enum mcsdk_audio_stream_event {
+    mcsdk_audio_stream_event_scheduled = 1,
+    mcsdk_audio_stream_event_prepared = 2,
+    mcsdk_audio_stream_event_playing = 3,
+    mcsdk_audio_stream_event_almost_done = 4,
+    mcsdk_audio_stream_event_finished = 5,
+    mcsdk_audio_stream_event_stopped = 6,
+    mcsdk_audio_stream_event_error = -1
 } mcsdk_stream_event;
 
-typedef enum mcsdk_repeat_mode {
-    mcsdk_repeat_none = 0,
-    mcsdk_repeat_track = 1,
-    mcsdk_repeat_list = 2
-} mcsdk_repeat_mode;
+/**
+ * @brief The current playback repeat mode. Used by the playback service (mcsdk_svc_playback)
+ *
+ */
+typedef enum mcsdk_playback_repeat_mode {
+    mcsdk_playback_repeat_mode_none = 0,
+    mcsdk_playback_repeat_mode_track = 1,
+    mcsdk_playback_repeat_mode_list = 2
+} mcsdk_playback_repeat_mode;
 
+/**
+ * @brief Returned by an output device (mcsdk_audio_output) when writing an audio buffer
+ * to the driver.
+ *
+ */
 typedef enum mcsdk_audio_output_code {
     mcsdk_audio_output_error_invalid_format = -4,
     mcsdk_audio_output_error_invalid_state = -3,
@@ -90,28 +103,51 @@ typedef enum mcsdk_audio_output_code {
     mcsdk_audio_output_error_buffer_written = -1
 } mcsdk_audio_output_code;
 
-typedef enum mcsdk_time_change_mode {
-    mcsdk_time_change_mode_seek = 0,
-    mcsdk_time_change_mode_scrub = 1
-} mcsdk_time_change_mode;
+/**
+ * @brief Used by the playback service (mcsdk_svc_playback) to configure the seek mode.
+ *
+ */
+typedef enum mcsdk_playback_time_change_mode {
+    mcsdk_playback_time_change_mode_seek = 0,
+    mcsdk_playback_time_change_mode_scrub = 1
+} mcsdk_playback_time_change_mode;
 
-typedef enum mcsdk_path_type {
-    mcsdk_path_type_user_home = 0,
-    mcsdk_path_type_data = 1,
-    mcsdk_path_type_application = 2,
-    mcsdk_path_type_plugins = 3,
-    mcsdk_path_type_library = 4
-} mcsdk_path_type;
+/**
+ * @brief Used by the environment to represent well-known paths used by various
+ * subsystems in the application.
+ *
+ */
+typedef enum mcsdk_env_path_type {
+    mcsdk_env_path_type_user_home = 0,
+    mcsdk_env_path_type_data = 1,
+    mcsdk_env_path_type_application = 2,
+    mcsdk_env_path_type_plugins = 3,
+    mcsdk_env_path_type_library = 4
+} mcsdk_env_path_type;
 
-typedef enum mcsdk_stream_capability {
-    mcsdk_stream_capability_prebuffer = 0x01
-} mcsdk_stream_capability;
+/**
+ * @brief A set of capabilities that can be configured on audio streams.
+ *
+ */
+typedef enum mcsdk_audio_stream_capability {
+    mcsdk_audio_stream_capability_prebuffer = 0x01
+} mcsdk_audio_stream_capability;
 
+/**
+ * @brief Used by the metadata indexer service (mcsdk_svc_metadata) plugins to
+ * communicate successful or unsuccessful parsing results.
+ *
+ */
 typedef enum mcsdk_svc_indexer_scan_result {
     mcsdk_svc_indexer_scan_result_commit = 1,
     mcsdk_svc_indexer_scan_result_rollback = 2
 } mcsdk_svc_indexer_scan_result;
 
+/**
+ * @brief Used by the metadata indexer service (mcsdk_svc_metadata) to communicate
+ * state changes.
+ *
+ */
 typedef enum mcsdk_svc_indexer_state {
     mcsdk_svc_indexer_state_idle = 0,
     mcsdk_svc_indexer_state_indexing = 1,
@@ -119,6 +155,11 @@ typedef enum mcsdk_svc_indexer_state {
     mcsdk_svc_indexer_state_stopped = 3
 } mcsdk_svc_indexer_state;
 
+/**
+ * @brief Used by callers to configure the level of granularity with which
+ * the metadata indexer service (mcsdk_svc_metadata) should scan for updates.
+ *
+ */
 typedef enum mcsdk_svc_indexer_sync_type {
     mcsdk_svc_indexer_sync_type_all = 0,
     mcsdk_svc_indexer_sync_type_local = 1,
@@ -126,63 +167,155 @@ typedef enum mcsdk_svc_indexer_sync_type {
     mcsdk_svc_indexer_sync_type_sources = 3
 } mcsdk_svc_indexer_sync_type;
 
+/**
+ * @brief Used by callers to configure how a low-level metadata library (mcsdk_svc_library)
+ * query should run.
+ */
 typedef enum mcsdk_svc_library_query_flag {
     mcsdk_svc_library_query_flag_none = 0,
     mcsdk_svc_library_query_flag_synchronous = 1
 } mcsdk_svc_library_query_flag;
 
-typedef enum mcsdk_replay_gain_mode {
-    mcsdk_replay_gain_mode_disabled = 0,
-    mcsdk_replay_gain_mode_track = 1,
-    mcsdk_replay_gain_mode_album = 2
-} mcsdk_replay_gain_mode;
+/**
+ * @brief Used by callers to configure how the playback service (mcsdk_svc_playback) will
+ * apply ReplayGain during playback.
+ *
+ */
+typedef enum mcsdk_playback_replay_gain_mode {
+    mcsdk_playback_replay_gain_mode_disabled = 0,
+    mcsdk_playback_replay_gain_mode_track = 1,
+    mcsdk_playback_replay_gain_mode_album = 2
+} mcsdk_playback_replay_gain_mode;
 
-typedef enum mcsdk_transport_type {
-    mcsdk_transport_type_gapless = 0,
-    mcsdk_transport_type_crossfade = 1
-} mcsdk_transport_type;
+/**
+ * @brief Used by callers to configure which type of underlying playback transport
+ * will be used by the playback service (mcsdk_svc_playback)
+ *
+ */
+typedef enum mcsdk_playback_transport_type {
+    mcsdk_playback_transport_type_gapless = 0,
+    mcsdk_playback_transport_type_crossfade = 1
+} mcsdk_playback_transport_type;
 
-typedef enum mcsdk_stream_open_flags {
-    mcsdk_stream_open_flags_none = 0,
-    mcsdk_stream_open_flags_read = 1,
-    mcsdk_stream_open_flags_write = 2
-} mcsdk_stream_open_flags;
+/**
+ * @brief Used by callers when opening data streams (mcsdk_data_stream) to represent
+ * in what mode the underlying resource should be used.
+ *
+ */
+typedef enum mcsdk_data_stream_open_flags {
+    mcsdk_data_stream_open_flags_none = 0,
+    mcsdk_data_stream_open_flags_read = 1,
+    mcsdk_data_stream_open_flags_write = 2
+} mcsdk_data_stream_open_flags;
 
+/**
+ * @brief Used to configure properties on audio streams (mcsdk_audio_stream) instances.
+ *
+ */
 typedef enum mcsdk_audio_stream_flags {
     mcsdk_audio_stream_flags_none = 0,
     mcsdk_audio_stream_flags_no_dsp = 1
 } mcsdk_audio_stream_flags;
 
+/**
+ * @brief Some resources in the SDK share a set of common properties, and can be passed
+ * around generically. Each resource is tagged with a type identifier that can be queried at,
+ * runtime so it can casted then used as a more specific type.
+ *
+ * We should probably try to get rid of this because it's gross.
+ *
+ */
 typedef enum mcsdk_resource_class {
     mcsdk_resource_type_value = 0,
     mcsdk_resource_type_map = 1
 } mcsdk_resource_class;
 
+/**
+ * @brief Encoders come in two flavors: blocking, and streaming. This distinction exists
+ * because we prefer streaming encoders, but not all underlying libraries support this
+ * use case.
+ *
+ */
 typedef enum mcsdk_encoder_type {
     mcsdk_encoder_type_none = 0,
+    /**
+     * @brief A blocking encoder writes directly to an output data stream (mcsdk_data_stream),
+     * and cannot return partial information, likely because it requires the ability to
+     * seek around the output stream and fill in missing information later. This is currently
+     * the most common type of encoder.
+     *
+     */
     mcsdk_encoder_type_blocking = 1,
+    /**
+     * @brief A streaming encoder is one that can be used for streaming audio before it's
+     * finished encoding. This is the preferred mode for the server, as it can return audio
+     * data to clients immediately without waiting for the entire track to be processed.
+     *
+     * A streaming encoder returns byte buffers, and the caller is responsible for all file
+     * output, if required.
+     *
+     * A streaming encoder can always be adapted to behave like a blocking encoder.
+     *
+     */
     mcsdk_encoder_type_streaming = 2
 } mcsdk_encoder_type;
 
+/**
+ * @brief Used to specify how buffered / pending audio samples should be treated when
+ * closing down an audio player (mcsdk_audio_player).
+ *
+ */
 typedef enum mcsdk_audio_player_release_mode {
+    /**
+     * @brief Wait for pending samples to be written to the output device before releasing
+     * resources.
+     *
+     */
     mcsdk_audio_player_release_mode_drain = 0,
+    /**
+     * @brief Stop the stream immediately and discard pending audio data.
+     *
+     */
     mcsdk_audio_player_release_mode_no_drain = 1
 } mcsdk_audio_player_release_mode;
 
+/**
+ * @brief Represents the result of a low-level metadata library (mcsdk_svc_library) query.
+ *
+ */
 typedef enum mcsdk_db_result {
     mcsdk_db_result_okay = 0,
     mcsdk_db_result_row = 100,
     mcsdk_db_result_done = 101,
 } mcsdk_db_result;
 
+/**
+ * @brief The number of equalizer bands.
+ *
+ */
 static const size_t mcsdk_equalizer_band_count = 18;
 
+/**
+ * @brief The frequency ranges for the equalizer bands.
+ *
+ */
 static const size_t mcsdk_equalizer_bands[] = {
     65, 92, 131, 185, 262, 370, 523, 740, 1047, 1480,
     2093, 2960, 4186, 5920, 8372, 11840, 16744, 22000
 };
 
+/**
+ * @brief Used when querying the metadata service (mcsdk_svc_metadata) to specify
+ * and offset in the resulting data start to begin reading at.
+ *
+ */
 static const int mcsdk_no_offset = 0;
+
+/**
+ * @brief Used when querying the metadata service (mcsdk_svc_metadata) to limit
+ * the number of resources returned.
+ *
+ */
 static const int mcsdk_no_limit = -1;
 
 static const char* mcsdk_category_type_album = "album";
@@ -222,42 +355,234 @@ static const char* mcsdk_track_field_external_id = "external_id";
         void* opaque; \
     } x;
 
+/**
+ * @brief Returns `true` if the underlying resource appears to be valid, `false` otherwise.
+ *
+ */
 #define mcsdk_handle_ok(x) x.opaque != NULL
 
+/**
+ * @brief Used to "cast" a resource from one type to another.
+ *
+ */
 #define mcsdk_cast_handle(x) { x.opaque }
 
+/**
+ * @brief Returns `true` if the two input handles reference the same underlying resource.
+ *
+ */
 #define mcsdk_handle_equals(x, y) x.opaque == y.opaque
 
-mcsdk_define_handle(mcsdk_internal);
+/**
+ * @brief An opaque resource identifier. If you have one of these you can use the
+ * `mcsdk_resource_get_class` function to resolve the type.
+ *
+ */
 mcsdk_define_handle(mcsdk_resource);
+
+/**
+ * @brief A `value` resource. A value simply a byte buffer; it's generally a string,
+ * but may be any type of data.
+ *
+ */
 mcsdk_define_handle(mcsdk_value);
-mcsdk_define_handle(mcsdk_value_list);
+
+/**
+ * @brief A `map` resource. Maps are just key/value stores. The key is always a string,
+ * and the value for a key may be an int32, int64, double or string.
+ *
+ */
 mcsdk_define_handle(mcsdk_map);
-mcsdk_define_handle(mcsdk_track);
+
+/**
+ * @brief A list of `value` resources.
+ *
+ */
+mcsdk_define_handle(mcsdk_value_list);
+
+/**
+ * @brief A list of `map` resources.
+ *
+ */
 mcsdk_define_handle(mcsdk_map_list);
+
+/**
+ * @brief A track is a special type of map resource (mcsdk_map) that is represented by
+ * a URI and is reference counted.
+ *
+ */
+mcsdk_define_handle(mcsdk_track);
+
+/**
+ * @brief A list of track resources (mcsdk_track). Note this is *not* a specialization of
+ * the more generic list resource.
+ *
+ */
 mcsdk_define_handle(mcsdk_track_list);
+
+/**
+ * @brief A resource type that can be used to edit track lists (mcsdk_track_list). In the
+ * future it will likely be merged with mcsdk_track_list, but currently exists as a
+ * separate type for legacy reasons.
+ *
+ */
 mcsdk_define_handle(mcsdk_track_list_editor);
+
+/**
+ * @brief A high-level service used for querying metadata. It generally vends tracks,
+ * lists of tracks, or maps of different resource types.
+ *
+ */
 mcsdk_define_handle(mcsdk_svc_metadata);
+
+/**
+ * @brief A high-level service used for audio playback. Manages an internal queue and
+ * takes care of all low-level playback details including output management, gapless
+ * and crossfading playback, replay gain, and more.
+ *
+ */
 mcsdk_define_handle(mcsdk_svc_playback);
+
+/**
+ * @brief The indexer service is used to populate musikcore's internal database using
+ * a list of paths and plugins to retrieve audio metadata.
+ *
+ */
 mcsdk_define_handle(mcsdk_svc_indexer);
+
+/**
+ * @brief A low-level service that can be used to query the internal database using
+ * SQL. It can be used to run queries and retrieve data asynchronously.
+ *
+ */
 mcsdk_define_handle(mcsdk_svc_library);
+
+/**
+ * @brief A type that looks similar to a mutable map (mcsdk_map), but is also able
+ * to serialize and deserialize itself.
+ *
+ */
 mcsdk_define_handle(mcsdk_prefs);
+
+/**
+ * @brief A raw audio buffer; they are always interleaved, 32-bit floating point samples.
+ *
+ */
 mcsdk_define_handle(mcsdk_audio_buffer);
+
+/**
+ * @brief Audio buffers (mcsdk_audio_buffer) are provided to the output (mcsdk_audio_output),
+ * and may be cached for further use. When the output has finished with the buffer, it calls
+ * the buffer provider (mcsdk_audio_buffer_provider) to let it know the buffer can be freed
+ * or recycled for later use.
+ *
+ */
 mcsdk_define_handle(mcsdk_audio_buffer_provider);
+
+/**
+ * @brief An abstract stream of data, generally backed by a file. It may be other things like
+ * a memory buffer, an HTTP request, or anything that can read and/or write bytes.
+ *
+ */
 mcsdk_define_handle(mcsdk_data_stream);
-mcsdk_define_handle(mcsdk_device);
-mcsdk_define_handle(mcsdk_device_list);
+
+/**
+ * @brief Represents an audio device, usually a physical sound card, but may be a virtual device.
+ *
+ */
+mcsdk_define_handle(mcsdk_audio_device);
+
+/**
+ * @brief A list of audio devices (mcsdk_audio_device). Every audio output (mcsdk_output) is
+ * able to provide the caller with a list of audio devices it supports.
+ *
+ */
+mcsdk_define_handle(mcsdk_audio_device_list);
+
+/**
+ * @brief An audio output is a type that is able to take raw audio buffers (mcsdk_audio_buffer)
+ * and send them to an audio device (mcsdk_audio_device).
+ *
+ */
 mcsdk_define_handle(mcsdk_audio_output);
+
+/**
+ * @brief A Decoder reads raw data from a data stream (mcsdk_data_stream) and produces uncompressed
+ * audio buffers (mcsdk_audio_buffer) that can be used for playback by an output (mcsdk_audio_output)
+ *
+ */
 mcsdk_define_handle(mcsdk_decoder);
+
+/**
+ * @brief An encoder accepts uncompressed audio buffers (mcsdk_audio_buffer) and encodes and/or
+ * compresses them to the specified target format.
+ *
+ */
 mcsdk_define_handle(mcsdk_encoder);
+
+/**
+ * @brief A blocking encoder writes directly to an output data stream (mcsdk_data_stream). The
+ * caller must feed all data into the encoder, one audio buffer (mcsdk_audio_buffer) at a time
+ * until it reaches end of file. The contents of the data stream may not be used until the
+ * encoding process has finished.
+ *
+ */
 mcsdk_define_handle(mcsdk_blocking_encoder);
+
+/**
+ * @brief A streaming encoder accepts raw audio buffers (mcsdk_audio_buffer), and returns byte
+ * arrays directly to the caller. As such, streaming encoders can be used to stream audio data
+ * to clients in real time, without needing to wait for completion. Streaming encoders are
+ * generally preferred, but not always possible to implement for some formats.
+ *
+ */
 mcsdk_define_handle(mcsdk_streaming_encoder);
+
+/**
+ * @brief An audio stream is a type that orchestrates reading data from a stream, decoding it
+ * via a decoder (mcsdk_audio_decoder) and applying any required DSP transformations. It's used
+ * internally by audio player instances (mcsdk_audio_player).
+ *
+ */
 mcsdk_define_handle(mcsdk_audio_stream);
+
+/**
+ * @brief An audio player accepts a data URI and an output (mcsdk_audio_output), and constructs
+ * the relevant audio stream (mcsdk_audio_stream). Internally, it manages a thread nad feeds
+ * the output device until the audio stream has reached end of file. It deals with buffering,
+ * retries and error handling.
+ *
+ */
 mcsdk_define_handle(mcsdk_audio_player);
+
+/**
+ * @brief A low-level database connection. This can be queried directly for audio data using
+ * SQL. It's generally backed by a `sqlite` database. In general using the metadata service
+ * (mcsdk_svc_metadata) is preferred. If that's not possible, it's probably a good idea to
+ * run queries through the library service (mcsdk_svc_library) instead, as it will ensure
+ * they are run on a background thread. Users should only use mcsdk_db_connection as a last
+ * resort.
+ *
+ */
 mcsdk_define_handle(mcsdk_db_connection);
+
+/**
+ * @brief Used to construct a statement that can be used to query a database (mcsdk_db_connection).
+ * More or less a wrapper around prepared statements.
+ *
+ */
 mcsdk_define_handle(mcsdk_db_statement);
+
+/**
+ * @brief A database transaction to be used with a database connection (mcsdk_db_connection).
+ *
+ */
 mcsdk_define_handle(mcsdk_db_transaction);
 
+/**
+ * @brief A callback set used by mcsdk_audio_player to communicate state changes.
+ *
+ */
 typedef struct mcsdk_audio_player_callbacks {
     void (*on_prepared)(mcsdk_audio_player p);
     void (*on_started)(mcsdk_audio_player p);
@@ -268,12 +593,23 @@ typedef struct mcsdk_audio_player_callbacks {
     void (*on_mixpoint)(mcsdk_audio_player p, int id, double time);
 } mcsdk_audio_player_callbacks;
 
+/**
+ * @brief A callback set used by mcsdk_svc_indexer to communicate state changes and metadata
+ * scan progress.
+ *
+ */
 typedef struct mcsdk_svc_indexer_callbacks {
     void (*on_started)(mcsdk_svc_indexer i);
     void (*on_finished)(mcsdk_svc_indexer i, int tracks_processed);
     void (*on_progress)(mcsdk_svc_indexer i, int tracks_processed);
 } mcsdk_svc_indexer_callbacks;
 
+
+/**
+ * @brief Represents the replay gain settings that will be applied by an audio player
+ * (mcsdk_audio_player) to a track.
+ *
+ */
 typedef struct mcsdk_audio_player_gain {
     float preamp;
     float gain;
@@ -281,19 +617,40 @@ typedef struct mcsdk_audio_player_gain {
     float peakValid;
 } mcsdk_audio_player_gain;
 
+/**
+ * @brief Callback used to run a query from the metadata library (mcsdk_svc_library).
+ *
+ */
 typedef bool (*mcsdk_svc_library_run_query_callback)(mcsdk_svc_library l, mcsdk_db_connection db, void* user_context);
 
 /*
  * global setup
  */
 
+/**
+ * @brief Initialize the environment. This ensures the small set of required globals
+ * are configured properly.
+ *
+ * @return
+ */
 mcsdk_export void mcsdk_env_init();
+
+/**
+ * @brief Reset the global environment to its default state.
+ *
+ * @return
+ */
 mcsdk_export void mcsdk_env_release();
 
 /*
  * instance context
  */
 
+/**
+ * @brief A structure that contains everything necessary to use musikcore, from metadata
+ * indexing to play queue management and everything in between.
+ *
+ */
 typedef struct mcsdk_context {
     mcsdk_svc_metadata metadata;
     mcsdk_svc_playback playback;
@@ -304,9 +661,41 @@ typedef struct mcsdk_context {
     mcsdk_internal internal;
 } mcsdk_context;
 
+/**
+ * @brief Allocate and initialize a new musikcore context (mcsdk_context). While it's
+ * possible for multiple contexts to exist at the same time, external plugins will
+ * only be aware of the first one created, or the last one set via
+ * mcsdk_set_plugin_context().
+ *
+ * @param context
+ * @return void
+ */
 mcsdk_export void mcsdk_context_init(mcsdk_context** context);
+
+/**
+ * @brief Deinitializes all resources associated with the specified context, then
+ * deallocates the structure itself.
+ *
+ * @param context
+ * @return void
+ */
 mcsdk_export void mcsdk_context_release(mcsdk_context** context);
+
+/**
+ * @brief Reinitializes all external plugins with the specified plugin context.
+ * Passing a NULL context is allowed.
+ *
+ * @param context
+ * @return
+ */
 mcsdk_export void mcsdk_set_plugin_context(mcsdk_context* context);
+
+/**
+ * @brief Check to see if the supplied context is the active plugin context.
+ *
+ * @param context
+ * @return true if it is, false otherwise.
+ */
 mcsdk_export bool mcsdk_is_plugin_context(mcsdk_context* context);
 
 /*
@@ -424,8 +813,8 @@ mcsdk_export void mcsdk_svc_playback_play_at(mcsdk_svc_playback pb, size_t index
 mcsdk_export bool mcsdk_svc_playback_next(mcsdk_svc_playback pb);
 mcsdk_export bool mcsdk_svc_playback_previous(mcsdk_svc_playback pb);
 mcsdk_export void mcsdk_svc_playback_stop(mcsdk_svc_playback pb);
-mcsdk_export mcsdk_repeat_mode mcsdk_svc_playback_get_repeat_mode(mcsdk_svc_playback pb);
-mcsdk_export void mcsdk_svc_playback_set_repeat_mode(mcsdk_svc_playback pb, mcsdk_repeat_mode mode);
+mcsdk_export mcsdk_playback_repeat_mode mcsdk_svc_playback_get_repeat_mode(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_set_repeat_mode(mcsdk_svc_playback pb, mcsdk_playback_repeat_mode mode);
 mcsdk_export void mcsdk_svc_playback_toggle_repeat_mode(mcsdk_svc_playback pb);
 mcsdk_export mcsdk_playback_state mcsdk_svc_playback_get_playback_state(mcsdk_svc_playback pb);
 mcsdk_export bool mcsdk_svc_playback_is_shuffled(mcsdk_svc_playback pb);
@@ -445,8 +834,8 @@ mcsdk_export mcsdk_track mcsdk_svc_playback_get_playing_track(mcsdk_svc_playback
 mcsdk_export void mcsdk_svc_playback_copy_from(mcsdk_svc_playback pb, const mcsdk_track_list track_list);
 mcsdk_export void mcsdk_svc_playback_play(mcsdk_svc_playback pb, const mcsdk_track_list source, size_t index);
 mcsdk_export mcsdk_track_list_editor mcsdk_svc_playback_edit_playlist(mcsdk_svc_playback pb);
-mcsdk_export mcsdk_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb);
-mcsdk_export void mcsdk_svc_playback_set_time_change_mode(mcsdk_svc_playback pb, mcsdk_time_change_mode mode);
+mcsdk_export mcsdk_playback_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb);
+mcsdk_export void mcsdk_svc_playback_set_time_change_mode(mcsdk_svc_playback pb, mcsdk_playback_time_change_mode mode);
 mcsdk_export void mcsdk_svc_playback_reload_output(mcsdk_svc_playback pb);
 mcsdk_export mcsdk_track_list mcsdk_svc_playback_clone(mcsdk_svc_playback pb);
 
@@ -468,7 +857,7 @@ mcsdk_export void mcsdk_prefs_release(mcsdk_prefs p);
  * IDataStream
  */
 
-mcsdk_export bool mcsdk_data_stream_open(mcsdk_data_stream ds, const char *uri, mcsdk_stream_open_flags flags);
+mcsdk_export bool mcsdk_data_stream_open(mcsdk_data_stream ds, const char *uri, mcsdk_data_stream_open_flags flags);
 mcsdk_export bool mcsdk_data_stream_close(mcsdk_data_stream ds);
 mcsdk_export void mcsdk_data_stream_interrupt(mcsdk_data_stream ds);
 mcsdk_export bool mcsdk_data_stream_is_readable(mcsdk_data_stream ds);
@@ -509,17 +898,17 @@ mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffe
  * IDevice
  */
 
-mcsdk_export const char* mcsdk_device_get_name(mcsdk_device d);
-mcsdk_export const char* mcsdk_device_get_id(mcsdk_device d);
-mcsdk_export void mcsdk_device_release(mcsdk_device d);
+mcsdk_export const char* mcsdk_audio_device_get_name(mcsdk_audio_device d);
+mcsdk_export const char* mcsdk_audio_device_get_id(mcsdk_audio_device d);
+mcsdk_export void mcsdk_audio_device_release(mcsdk_audio_device d);
 
 /*
  * IDeviceList
  */
 
-mcsdk_export size_t mcsdk_device_list_get_count(mcsdk_device_list dl);
-mcsdk_export const mcsdk_device mcsdk_device_list_get_at(mcsdk_device_list dl, size_t index);
-mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl);
+mcsdk_export size_t mcsdk_audio_device_list_get_count(mcsdk_audio_device_list dl);
+mcsdk_export const mcsdk_audio_device mcsdk_audio_device_list_get_at(mcsdk_audio_device_list dl, size_t index);
+mcsdk_export void mcsdk_audio_device_list_release(mcsdk_audio_device_list dl);
 
 /*
  * IOutput
@@ -534,9 +923,9 @@ mcsdk_export int mcsdk_audio_output_play(mcsdk_audio_output o, mcsdk_audio_buffe
 mcsdk_export void mcsdk_audio_output_drain(mcsdk_audio_output o);
 mcsdk_export double mcsdk_audio_output_get_latency(mcsdk_audio_output o);
 mcsdk_export const char* mcsdk_audio_output_get_name(mcsdk_audio_output o);
-mcsdk_export mcsdk_device_list mcsdk_audio_output_get_device_list(mcsdk_audio_output o);
+mcsdk_export mcsdk_audio_device_list mcsdk_audio_output_get_device_list(mcsdk_audio_output o);
 mcsdk_export bool mcsdk_audio_output_set_default_device(mcsdk_audio_output o, const char* device_id);
-mcsdk_export mcsdk_device mcsdk_audio_output_get_default_device(mcsdk_audio_output o);
+mcsdk_export mcsdk_audio_device mcsdk_audio_output_get_default_device(mcsdk_audio_output o);
 mcsdk_export void mcsdk_audio_output_release(mcsdk_audio_output o);
 
 /*
@@ -589,8 +978,8 @@ mcsdk_export void mcsdk_debug_error(const char* tag, const char* message);
  * IEnvironment
  */
 
-mcsdk_export size_t mcsdk_env_get_path(mcsdk_path_type type, char* dst, int size);
-mcsdk_export mcsdk_data_stream mcsdk_env_open_data_stream(const char* uri, mcsdk_stream_open_flags flags);
+mcsdk_export size_t mcsdk_env_get_path(mcsdk_env_path_type type, char* dst, int size);
+mcsdk_export mcsdk_data_stream mcsdk_env_open_data_stream(const char* uri, mcsdk_data_stream_open_flags flags);
 mcsdk_export mcsdk_decoder mcsdk_env_open_decoder(mcsdk_data_stream stream);
 mcsdk_export mcsdk_encoder mcsdk_env_open_encoder(const char* type) ;
 mcsdk_export mcsdk_audio_buffer mcsdk_env_create_audio_buffer(size_t samples, size_t rate, size_t channels);
@@ -598,8 +987,8 @@ mcsdk_export mcsdk_prefs mcsdk_env_open_preferences(const char* name);
 mcsdk_export size_t mcsdk_env_get_output_count();
 mcsdk_export mcsdk_audio_output mcsdk_env_get_output_at_index(size_t index);
 mcsdk_export mcsdk_audio_output mcsdk_env_get_output_with_name(const char* name);
-mcsdk_export mcsdk_replay_gain_mode mcsdk_env_get_replay_gain_mode();
-mcsdk_export void mcsdk_env_set_replay_gain_mode(mcsdk_replay_gain_mode mode);
+mcsdk_export mcsdk_playback_replay_gain_mode mcsdk_env_get_replay_gain_mode();
+mcsdk_export void mcsdk_env_set_replay_gain_mode(mcsdk_playback_replay_gain_mode mode);
 mcsdk_export float mcsdk_env_get_preamp_gain();
 mcsdk_export void mcsdk_env_set_preamp_gain(float gain);
 mcsdk_export bool mcsdk_env_is_equalizer_enabled();
@@ -609,8 +998,8 @@ mcsdk_export bool mcsdk_env_set_equalizer_band_values(double values[], size_t co
 mcsdk_export void mcsdk_env_reload_playback_output();
 mcsdk_export void mcsdk_env_set_default_output(mcsdk_audio_output output);
 mcsdk_export mcsdk_audio_output mcsdk_env_get_default_output();
-mcsdk_export mcsdk_transport_type mcsdk_env_get_transport_type();
-mcsdk_export void mcsdk_env_set_transport_type(mcsdk_transport_type type);
+mcsdk_export mcsdk_playback_transport_type mcsdk_env_get_transport_type();
+mcsdk_export void mcsdk_env_set_transport_type(mcsdk_playback_transport_type type);
 
 /*
  * IStream
@@ -623,7 +1012,7 @@ mcsdk_export double mcsdk_audio_stream_set_position(mcsdk_audio_stream as, doubl
 mcsdk_export double mcsdk_audio_stream_get_duration(mcsdk_audio_stream as);
 mcsdk_export bool mcsdk_audio_stream_open_uri(mcsdk_audio_stream as, const char* uri);
 mcsdk_export void mcsdk_audio_stream_interrupt(mcsdk_audio_stream as);
-mcsdk_export mcsdk_stream_capability mcsdk_audio_stream_get_capabilities(mcsdk_audio_stream as);
+mcsdk_export mcsdk_audio_stream_capability mcsdk_audio_stream_get_capabilities(mcsdk_audio_stream as);
 mcsdk_export bool mcsdk_audio_stream_is_eof(mcsdk_audio_stream as);
 mcsdk_export void mcsdk_audio_stream_release(mcsdk_audio_stream as);
 
@@ -640,7 +1029,7 @@ mcsdk_export double mcsdk_audio_player_get_position(mcsdk_audio_player ap);
 mcsdk_export void mcsdk_audio_player_set_position(mcsdk_audio_player ap, double seconds);
 mcsdk_export double mcsdk_audio_player_get_duration(mcsdk_audio_player ap);
 mcsdk_export void mcsdk_audio_player_add_mix_point(mcsdk_audio_player ap, int id, double time);
-mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_stream_capability capability);
+mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_audio_stream_capability capability);
 mcsdk_export mcsdk_audio_player_gain mcsdk_audio_player_get_default_gain();
 mcsdk_export void mcsdk_audio_player_release(mcsdk_audio_player ap, mcsdk_audio_player_release_mode mode);
 

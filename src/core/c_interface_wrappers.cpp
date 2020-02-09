@@ -402,11 +402,11 @@ mcsdk_export void mcsdk_svc_playback_stop(mcsdk_svc_playback pb) {
     PLAYBACK(pb)->Stop();
 }
 
-mcsdk_export mcsdk_repeat_mode mcsdk_svc_playback_get_repeat_mode(mcsdk_svc_playback pb) {
-    return (mcsdk_repeat_mode) PLAYBACK(pb)->GetRepeatMode();
+mcsdk_export mcsdk_playback_repeat_mode mcsdk_svc_playback_get_repeat_mode(mcsdk_svc_playback pb) {
+    return (mcsdk_playback_repeat_mode) PLAYBACK(pb)->GetRepeatMode();
 }
 
-mcsdk_export void mcsdk_svc_playback_set_repeat_mode(mcsdk_svc_playback pb, mcsdk_repeat_mode mode) {
+mcsdk_export void mcsdk_svc_playback_set_repeat_mode(mcsdk_svc_playback pb, mcsdk_playback_repeat_mode mode) {
     PLAYBACK(pb)->SetRepeatMode((RepeatMode) mode);
 }
 
@@ -486,11 +486,11 @@ mcsdk_export mcsdk_track_list_editor mcsdk_svc_playback_edit_playlist(mcsdk_svc_
     return mcsdk_track_list_editor { PLAYBACK(pb)->EditPlaylist() };
 }
 
-mcsdk_export mcsdk_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb) {
-    return (mcsdk_time_change_mode) PLAYBACK(pb)->GetTimeChangeMode();
+mcsdk_export mcsdk_playback_time_change_mode mcsdk_svc_playback_get_time_change_mode(mcsdk_svc_playback pb) {
+    return (mcsdk_playback_time_change_mode) PLAYBACK(pb)->GetTimeChangeMode();
 }
 
-mcsdk_export void mcsdk_svc_playback_set_time_change_mode(mcsdk_svc_playback pb, mcsdk_time_change_mode mode) {
+mcsdk_export void mcsdk_svc_playback_set_time_change_mode(mcsdk_svc_playback pb, mcsdk_playback_time_change_mode mode) {
     PLAYBACK(pb)->SetTimeChangeMode((TimeChangeMode) mode);
 }
 
@@ -546,7 +546,7 @@ mcsdk_export void mcsdk_prefs_release(mcsdk_prefs p) {
  * IDataStream
  */
 
-mcsdk_export bool mcsdk_data_stream_open(mcsdk_data_stream ds, const char *uri, mcsdk_stream_open_flags flags) {
+mcsdk_export bool mcsdk_data_stream_open(mcsdk_data_stream ds, const char *uri, mcsdk_data_stream_open_flags flags) {
     return DATASTREAM(ds)->Open(uri, (OpenFlags) flags);
 }
 
@@ -662,15 +662,15 @@ mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffe
  * IDevice
  */
 
-mcsdk_export const char* mcsdk_device_get_name(mcsdk_device d) {
+mcsdk_export const char* mcsdk_audio_device_get_name(mcsdk_audio_device d) {
     return DEVICE(d)->Name();
 }
 
-mcsdk_export const char* mcsdk_device_get_id(mcsdk_device d) {
+mcsdk_export const char* mcsdk_audio_device_get_id(mcsdk_audio_device d) {
     return DEVICE(d)->Id();
 }
 
-mcsdk_export void mcsdk_device_release(mcsdk_device d) {
+mcsdk_export void mcsdk_audio_device_release(mcsdk_audio_device d) {
     RELEASE(d, DEVICE);
 }
 
@@ -678,15 +678,15 @@ mcsdk_export void mcsdk_device_release(mcsdk_device d) {
  * IDeviceList
  */
 
-mcsdk_export size_t mcsdk_device_list_get_count(mcsdk_device_list dl) {
+mcsdk_export size_t mcsdk_audio_device_list_get_count(mcsdk_audio_device_list dl) {
     return DEVICELIST(dl)->Count();
 }
 
-mcsdk_export const mcsdk_device mcsdk_device_list_get_at(mcsdk_device_list dl, size_t index) {
-    return mcsdk_device { (void*) DEVICELIST(dl)->At(index) };
+mcsdk_export const mcsdk_audio_device mcsdk_audio_device_list_get_at(mcsdk_audio_device_list dl, size_t index) {
+    return mcsdk_audio_device { (void*) DEVICELIST(dl)->At(index) };
 }
 
-mcsdk_export void mcsdk_device_list_release(mcsdk_device_list dl) {
+mcsdk_export void mcsdk_audio_device_list_release(mcsdk_audio_device_list dl) {
     RELEASE(dl, DEVICELIST);
 }
 
@@ -730,16 +730,16 @@ mcsdk_export const char* mcsdk_audio_output_get_name(mcsdk_audio_output o) {
     return OUTPUT(o)->Name();
 }
 
-mcsdk_export mcsdk_device_list mcsdk_audio_output_get_device_list(mcsdk_audio_output o) {
-    return mcsdk_device_list { OUTPUT(o)->GetDeviceList() };
+mcsdk_export mcsdk_audio_device_list mcsdk_audio_output_get_device_list(mcsdk_audio_output o) {
+    return mcsdk_audio_device_list { OUTPUT(o)->GetDeviceList() };
 }
 
 mcsdk_export bool mcsdk_audio_output_set_default_device(mcsdk_audio_output o, const char* device_id) {
     return OUTPUT(o)->SetDefaultDevice(device_id);
 }
 
-mcsdk_export mcsdk_device mcsdk_audio_output_get_default_device(mcsdk_audio_output o) {
-    return mcsdk_device { OUTPUT(o)->GetDefaultDevice() };
+mcsdk_export mcsdk_audio_device mcsdk_audio_output_get_default_device(mcsdk_audio_output o) {
+    return mcsdk_audio_device { OUTPUT(o)->GetDefaultDevice() };
 }
 
 mcsdk_export void mcsdk_audio_output_release(mcsdk_audio_output o) {
@@ -861,11 +861,11 @@ mcsdk_export void mcsdk_debug_error(const char* tag, const char* message) {
  * IEnvironment
  */
 
-mcsdk_export size_t mcsdk_env_get_path(mcsdk_path_type type, char* dst, int size) {
+mcsdk_export size_t mcsdk_env_get_path(mcsdk_env_path_type type, char* dst, int size) {
     return ENV.GetPath((PathType) type, dst, size);
 }
 
-mcsdk_export mcsdk_data_stream mcsdk_env_open_data_stream(const char* uri, mcsdk_stream_open_flags flags) {
+mcsdk_export mcsdk_data_stream mcsdk_env_open_data_stream(const char* uri, mcsdk_data_stream_open_flags flags) {
     return mcsdk_data_stream { ENV.GetDataStream(uri, (OpenFlags) flags) };
 }
 
@@ -897,11 +897,11 @@ mcsdk_export mcsdk_audio_output mcsdk_env_get_output_with_name(const char* name)
     return mcsdk_audio_output { ENV.GetOutputWithName(name) };
 }
 
-mcsdk_export mcsdk_replay_gain_mode mcsdk_env_get_replay_gain_mode() {
-    return (mcsdk_replay_gain_mode) ENV.GetReplayGainMode();
+mcsdk_export mcsdk_playback_replay_gain_mode mcsdk_env_get_replay_gain_mode() {
+    return (mcsdk_playback_replay_gain_mode) ENV.GetReplayGainMode();
 }
 
-mcsdk_export void mcsdk_env_set_replay_gain_mode(mcsdk_replay_gain_mode mode) {
+mcsdk_export void mcsdk_env_set_replay_gain_mode(mcsdk_playback_replay_gain_mode mode) {
     ENV.SetReplayGainMode((ReplayGainMode) mode);
 }
 
@@ -941,11 +941,11 @@ mcsdk_export mcsdk_audio_output mcsdk_env_get_default_output() {
     return mcsdk_audio_output { ENV.GetDefaultOutput() };
 }
 
-mcsdk_export mcsdk_transport_type mcsdk_env_get_transport_type() {
-    return (mcsdk_transport_type) ENV.GetTransportType();
+mcsdk_export mcsdk_playback_transport_type mcsdk_env_get_transport_type() {
+    return (mcsdk_playback_transport_type) ENV.GetTransportType();
 }
 
-mcsdk_export void mcsdk_env_set_transport_type(mcsdk_transport_type type) {
+mcsdk_export void mcsdk_env_set_transport_type(mcsdk_playback_transport_type type) {
     ENV.SetTransportType((TransportType) type);
 }
 
@@ -980,8 +980,8 @@ mcsdk_export bool mcsdk_audio_stream_open_uri(mcsdk_audio_stream as, const char*
 mcsdk_export void mcsdk_audio_stream_interrupt(mcsdk_audio_stream as) {
     AUDIOSTREAM(as)->Interrupt();
 }
-mcsdk_export mcsdk_stream_capability mcsdk_audio_stream_get_capabilities(mcsdk_audio_stream as) {
-    return (mcsdk_stream_capability) AUDIOSTREAM(as)->GetCapabilities();
+mcsdk_export mcsdk_audio_stream_capability mcsdk_audio_stream_get_capabilities(mcsdk_audio_stream as) {
+    return (mcsdk_audio_stream_capability) AUDIOSTREAM(as)->GetCapabilities();
 }
 
 mcsdk_export bool mcsdk_audio_stream_is_eof(mcsdk_audio_stream as) {
@@ -1162,7 +1162,7 @@ mcsdk_export void mcsdk_audio_player_add_mix_point(mcsdk_audio_player ap, int id
     }
 }
 
-mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_stream_capability capability) {
+mcsdk_export bool mcsdk_audio_player_has_capability(mcsdk_audio_player ap, mcsdk_audio_stream_capability capability) {
     mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
