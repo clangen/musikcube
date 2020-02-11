@@ -12,6 +12,8 @@ MSBuild.exe musikcube.sln /m /nologo /verbosity:minimal /p:Configuration=Release
 MSBuild.exe musikcube.sln /m /nologo /verbosity:minimal /p:Configuration=Release-Con /p:Platform=Win64
 MSBuild.exe musikcube.sln /m /nologo /verbosity:minimal /p:Configuration=Release-DLL /p:Platform=Win64
 copy bin32\Release-DLL\musikcore.dll bin32\Release\musikcore.dll
+copy bin32\Release-DLL\musikcore.lib bin32\Release\musikcore.lib
 copy bin32\Release-Con\musikcube.exe bin32\Release\musikcube-cmd.exe
 copy bin64\Release-DLL\musikcore.dll bin64\Release\musikcore.dll
+copy bin64\Release-DLL\musikcore.lib bin64\Release\musikcore.lib
 copy bin64\Release-Con\musikcube.exe bin64\Release\musikcube-cmd.exe
