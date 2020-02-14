@@ -18,24 +18,27 @@ printw
 
 ### Description
 
-   The printw() functions add a formatted string to the window at
-   the current or specified cursor position. The format strings are
-   the same as used in the standard C library's printf(). (printw()
-   can be used as a drop-in replacement for printf().)
+   The printw() functions add a formatted string to the window at the
+   current or specified cursor position. The format strings are the same
+   as used in the standard C library's printf(). (printw() can be used
+   as a drop-in replacement for printf().)
+
+   The duplication between vwprintw() and vw_printw() is for historic
+   reasons. In PDCurses, they're the same.
 
 ### Return Value
 
-   All functions return the number of characters printed, or
-   ERR on error.
+   All functions return the number of characters printed, or ERR on
+   error.
 
 ### Portability
-                             X/Open    BSD    SYS V
+                             X/Open  ncurses  NetBSD
     printw                      Y       Y       Y
     wprintw                     Y       Y       Y
     mvprintw                    Y       Y       Y
     mvwprintw                   Y       Y       Y
-    vwprintw                    Y       -      4.0
-    vw_printw                   Y
+    vwprintw                    Y       Y       Y
+    vw_printw                   Y       Y       Y
 
 **man-end****************************************************************/
 

@@ -3,15 +3,20 @@
 /* $Id: pdcwin.h,v 1.6 2008/07/13 06:36:32 wmcbrine Exp $ */
 
 #ifdef PDC_WIDE
-#ifndef UNICODE
-#define UNICODE
-#endif
-#ifndef _UNICODE
-#define _UNICODE
-#endif
+   #if !defined( UNICODE)
+      # define UNICODE
+   #endif
+   #if !defined( _UNICODE)
+      # define _UNICODE
+   #endif
 #endif
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
+# define _CRT_SECURE_NO_DEPRECATE 1   /* kill nonsense warnings */
+#endif
 
 #if defined( GS_8BIT_INDICES) && defined( PDC_WIDE)
      /* We only need the 'fallback font' for the wide-char version, */
@@ -84,14 +89,10 @@ for alternate chars.  With 16-bit chtypes,  there are only eight
 bits available to the character.  PDC_REAL_ATTR_SHIFT gives the
 number of low bits devoted to storing characters. */
 
-#if(CHTYPE_LONG >= 2)     /* 64-bit chtypes */
-    # define PDC_REAL_ATTR_SHIFT  21
-#else
-#ifdef CHTYPE_LONG         /* 32-bit chtypes */
+# ifdef CHTYPE_32
     # define PDC_REAL_ATTR_SHIFT  17
-#else                      /* 16-bit chtypes */
-    # define PDC_REAL_ATTR_SHIFT  8
-#endif
+#else          /* 64-bit chtypes */
+    # define PDC_REAL_ATTR_SHIFT  21
 #endif
 
  /* The PDC_set_function_key() function allows one to set a 'shut down'

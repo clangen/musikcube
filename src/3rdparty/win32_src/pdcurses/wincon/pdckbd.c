@@ -1,28 +1,6 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include "pdcwin.h"
-
-/*man-start**************************************************************
-
-pdckbd
-------
-
-### Synopsis
-
-    unsigned long PDC_get_input_fd(void);
-
-### Description
-
-   PDC_get_input_fd() returns the file descriptor that PDCurses
-   reads its input from. It can be used for select().
-
-### Portability
-                             X/Open    BSD    SYS V
-    PDC_get_input_fd            -       -       -
-
-**man-end****************************************************************/
-
-unsigned long pdc_key_modifiers = 0L;
 
 /* These variables are used to store information about the next
    Input Event. */
@@ -57,7 +35,7 @@ static KPTAB kptab[] =
    {0,          0,         0,           0,          0   }, /* 0  */
    {0,          0,         0,           0,          0   }, /* 1   VK_LBUTTON */
    {0,          0,         0,           0,          0   }, /* 2   VK_RBUTTON */
-   {CTL_PAUSE,  0,         0,           0,          0   }, /* 3   VK_CANCEL  */
+   {0,          0,         0,           0,          0   }, /* 3   VK_CANCEL  */
    {0,          0,         0,           0,          0   }, /* 4   VK_MBUTTON */
    {0,          0,         0,           0,          0   }, /* 5   */
    {0,          0,         0,           0,          0   }, /* 6   */
@@ -73,7 +51,7 @@ static KPTAB kptab[] =
    {0,          0,         0,           0,          0   }, /* 16  VK_SHIFT   HANDLED SEPARATELY */
    {0,          0,         0,           0,          0   }, /* 17  VK_CONTROL HANDLED SEPARATELY */
    {0,          0,         0,           0,          0   }, /* 18  VK_MENU    HANDLED SEPARATELY */
-   {KEY_PAUSE,  KEY_SPAUSE,CTL_PAUSE,   0,          0   }, /* 19  VK_PAUSE   */
+   {0,          0,         0,           0,          0   }, /* 19  VK_PAUSE   */
    {0,          0,         0,           0,          0   }, /* 20  VK_CAPITAL HANDLED SEPARATELY */
    {0,          0,         0,           0,          0   }, /* 21  VK_HANGUL  */
    {0,          0,         0,           0,          0   }, /* 22  */
@@ -98,20 +76,20 @@ static KPTAB kptab[] =
    {0,          0,         0,           0,          0   }, /* 41  VK_SELECT  */
    {0,          0,         0,           0,          0   }, /* 42  VK_PRINT   */
    {0,          0,         0,           0,          0   }, /* 43  VK_EXECUTE */
-   {KEY_PRINTSCREEN, 0,    0,       ALT_PRINTSCREEN, 0  }, /* 44  VK_SNAPSHOT*/
+   {0,          0,         0,           0,          0   }, /* 44  VK_SNAPSHOT*/
    {PAD0,       0x30,      CTL_PAD0,    ALT_PAD0,   11  }, /* 45  VK_INSERT  */
    {PADSTOP,    0x2E,      CTL_PADSTOP, ALT_PADSTOP,12  }, /* 46  VK_DELETE  */
    {0,          0,         0,           0,          0   }, /* 47  VK_HELP    */
-   {0x30,       0x29,      CTL_0,       ALT_0,      0   }, /* 48  */
-   {0x31,       0x21,      CTL_1,       ALT_1,      0   }, /* 49  */
-   {0x32,       0x40,      CTL_2,       ALT_2,      0   }, /* 50  */
-   {0x33,       0x23,      CTL_3,       ALT_3,      0   }, /* 51  */
-   {0x34,       0x24,      CTL_4,       ALT_4,      0   }, /* 52  */
-   {0x35,       0x25,      CTL_5,       ALT_5,      0   }, /* 53  */
-   {0x36,       0x5E,      CTL_6,       ALT_6,      0   }, /* 54  */
-   {0x37,       0x26,      CTL_7,       ALT_7,      0   }, /* 55  */
-   {0x38,       0x2A,      CTL_8,       ALT_8,      0   }, /* 56  */
-   {0x39,       0x28,      CTL_9,       ALT_9,      0   }, /* 57  */
+   {0x30,       0x29,      0,           ALT_0,      0   }, /* 48  */
+   {0x31,       0x21,      0,           ALT_1,      0   }, /* 49  */
+   {0x32,       0x40,      0,           ALT_2,      0   }, /* 50  */
+   {0x33,       0x23,      0,           ALT_3,      0   }, /* 51  */
+   {0x34,       0x24,      0,           ALT_4,      0   }, /* 52  */
+   {0x35,       0x25,      0,           ALT_5,      0   }, /* 53  */
+   {0x36,       0x5E,      0,           ALT_6,      0   }, /* 54  */
+   {0x37,       0x26,      0,           ALT_7,      0   }, /* 55  */
+   {0x38,       0x2A,      0,           ALT_8,      0   }, /* 56  */
+   {0x39,       0x28,      0,           ALT_9,      0   }, /* 57  */
    {0,          0,         0,           0,          0   }, /* 58  */
    {0,          0,         0,           0,          0   }, /* 59  */
    {0,          0,         0,           0,          0   }, /* 60  */
@@ -147,7 +125,7 @@ static KPTAB kptab[] =
    {0x7A,       0x5A,      0x1A,        ALT_Z,      0   }, /* 90  */
    {0,          0,         0,           0,          0   }, /* 91  VK_LWIN    */
    {0,          0,         0,           0,          0   }, /* 92  VK_RWIN    */
-   {KEY_APPS,   KEY_SAPPS, CTL_APPS,    ALT_APPS,   13  }, /* 93  VK_APPS    */
+   {0,          0,         0,           0,          0   }, /* 93  VK_APPS    */
    {0,          0,         0,           0,          0   }, /* 94  */
    {0,          0,         0,           0,          0   }, /* 95  */
    {0x30,       0,         CTL_PAD0,    ALT_PAD0,   0   }, /* 96  VK_NUMPAD0 */
@@ -181,154 +159,59 @@ static KPTAB kptab[] =
 
    /* 124 through 218 */
 
-    {0, 0, 0, 0, 0},  /* 124 VK_F13 */
-    {0, 0, 0, 0, 0},  /* 125 VK_F14 */
-    {0, 0, 0, 0, 0},  /* 126 VK_F15 */
-    {0, 0, 0, 0, 0},  /* 127 VK_F16 */
-    {0, 0, 0, 0, 0},  /* 128 VK_F17 */
-    {0, 0, 0, 0, 0},  /* 129 VK_F18 */
-    {0, 0, 0, 0, 0},  /* 130 VK_F19 */
-    {0, 0, 0, 0, 0},  /* 131 VK_F20 */
-    {0, 0, 0, 0, 0},  /* 132 VK_F21 */
-    {0, 0, 0, 0, 0},  /* 133 VK_F22 */
-    {0, 0, 0, 0, 0},  /* 134 VK_F23 */
-    {0, 0, 0, 0, 0},  /* 135 VK_F24 */
-    {0, 0, 0, 0, 0},  /* 136 unassigned */
-    {0, 0, 0, 0, 0},  /* 137 unassigned */
-    {0, 0, 0, 0, 0},  /* 138 unassigned */
-    {0, 0, 0, 0, 0},  /* 139 unassigned */
-    {0, 0, 0, 0, 0},  /* 140 unassigned */
-    {0, 0, 0, 0, 0},  /* 141 unassigned */
-    {0, 0, 0, 0, 0},  /* 142 unassigned */
-    {0, 0, 0, 0, 0},  /* 143 unassigned */
-    {0, 0, 0, 0, 0},  /* 144 VK_NUMLOCK */
-    {KEY_SCROLLLOCK, 0, 0, ALT_SCROLLLOCK, 0},    /* 145 VKSCROLL */
-    {0, 0, 0, 0, 0},  /* 146 OEM specific */
-    {0, 0, 0, 0, 0},  /* 147 OEM specific */
-    {0, 0, 0, 0, 0},  /* 148 OEM specific */
-    {0, 0, 0, 0, 0},  /* 149 OEM specific */
-    {0, 0, 0, 0, 0},  /* 150 OEM specific */
-    {0, 0, 0, 0, 0},  /* 151 Unassigned */
-    {0, 0, 0, 0, 0},  /* 152 Unassigned */
-    {0, 0, 0, 0, 0},  /* 153 Unassigned */
-    {0, 0, 0, 0, 0},  /* 154 Unassigned */
-    {0, 0, 0, 0, 0},  /* 155 Unassigned */
-    {0, 0, 0, 0, 0},  /* 156 Unassigned */
-    {0, 0, 0, 0, 0},  /* 157 Unassigned */
-    {0, 0, 0, 0, 0},  /* 158 Unassigned */
-    {0, 0, 0, 0, 0},  /* 159 Unassigned */
-    {0, 0, 0, 0, 0},  /* 160 VK_LSHIFT */
-    {0, 0, 0, 0, 0},  /* 161 VK_RSHIFT */
-    {0, 0, 0, 0, 0},  /* 162 VK_LCONTROL */
-    {0, 0, 0, 0, 0},  /* 163 VK_RCONTROL */
-    {0, 0, 0, 0, 0},  /* 164 VK_LMENU */
-    {0, 0, 0, 0, 0},  /* 165 VK_RMENU */
-    {0, 0, 0, 0, 14},  /* 166 VK_BROWSER_BACK        */
-    {0, 0, 0, 0, 15},  /* 167 VK_BROWSER_FORWARD     */
-    {0, 0, 0, 0, 16},  /* 168 VK_BROWSER_REFRESH     */
-    {0, 0, 0, 0, 17},  /* 169 VK_BROWSER_STOP        */
-    {0, 0, 0, 0, 18},  /* 170 VK_BROWSER_SEARCH      */
-    {0, 0, 0, 0, 19},  /* 171 VK_BROWSER_FAVORITES   */
-    {0, 0, 0, 0, 20},  /* 172 VK_BROWSER_HOME        */
-    {0, 0, 0, 0, 21},  /* 173 VK_VOLUME_MUTE         */
-    {0, 0, 0, 0, 22},  /* 174 VK_VOLUME_DOWN         */
-    {0, 0, 0, 0, 23},  /* 175 VK_VOLUME_UP           */
-    {0, 0, 0, 0, 24},  /* 176 VK_MEDIA_NEXT_TRACK    */
-    {0, 0, 0, 0, 25},  /* 177 VK_MEDIA_PREV_TRACK    */
-    {0, 0, 0, 0, 26},  /* 178 VK_MEDIA_STOP          */
-    {0, 0, 0, 0, 27},  /* 179 VK_MEDIA_PLAY_PAUSE    */
-    {0, 0, 0, 0, 28},  /* 180 VK_LAUNCH_MAIL         */
-    {0, 0, 0, 0, 29},  /* 181 VK_LAUNCH_MEDIA_SELECT */
-    {0, 0, 0, 0, 30},  /* 182 VK_LAUNCH_APP1         */
-    {0, 0, 0, 0, 31},  /* 183 VK_LAUNCH_APP2         */
-    {0, 0, 0, 0, 0},  /* 184 Reserved */
-    {0, 0, 0, 0, 0},  /* 185 Reserved */
-    {';', ':', CTL_SEMICOLON, ALT_SEMICOLON, 0},  /* 186 VK_OEM_1      */
-    {'=', '+', CTL_EQUAL,     ALT_EQUAL,     0},  /* 187 VK_OEM_PLUS   */
-    {',', '<', CTL_COMMA,     ALT_COMMA,     0},  /* 188 VK_OEM_COMMA  */
-    {'-', '_', CTL_MINUS,     ALT_MINUS,     0},  /* 189 VK_OEM_MINUS  */
-    {'.', '>', CTL_STOP,      ALT_STOP,      0},  /* 190 VK_OEM_PERIOD */
-    {'/', '?', CTL_FSLASH,    ALT_FSLASH,    0},  /* 191 VK_OEM_2      */
-    {'`', '~', CTL_BQUOTE,    ALT_BQUOTE,    0},  /* 192 VK_OEM_3      */
-    {0, 0, 0, 0, 0},  /* 193 */
-    {0, 0, 0, 0, 0},  /* 194 */
-    {0, 0, 0, 0, 0},  /* 195 */
-    {0, 0, 0, 0, 0},  /* 196 */
-    {0, 0, 0, 0, 0},  /* 197 */
-    {0, 0, 0, 0, 0},  /* 198 */
-    {0, 0, 0, 0, 0},  /* 199 */
-    {0, 0, 0, 0, 0},  /* 200 */
-    {0, 0, 0, 0, 0},  /* 201 */
-    {0, 0, 0, 0, 0},  /* 202 */
-    {0, 0, 0, 0, 0},  /* 203 */
-    {0, 0, 0, 0, 0},  /* 204 */
-    {0, 0, 0, 0, 0},  /* 205 */
-    {0, 0, 0, 0, 0},  /* 206 */
-    {0, 0, 0, 0, 0},  /* 207 */
-    {0, 0, 0, 0, 0},  /* 208 */
-    {0, 0, 0, 0, 0},  /* 209 */
-    {0, 0, 0, 0, 0},  /* 210 */
-    {0, 0, 0, 0, 0},  /* 211 */
-    {0, 0, 0, 0, 0},  /* 212 */
-    {0, 0, 0, 0, 0},  /* 213 */
-    {0, 0, 0, 0, 0},  /* 214 */
-    {0, 0, 0, 0, 0},  /* 215 */
-    {0, 0, 0, 0, 0},  /* 216 */
-    {0, 0, 0, 0, 0},  /* 217 */
-    {0, 0, 0, 0, 0},  /* 218 */
-   {0x5B,       0x7B,      0x1B,        ALT_LBRACKET,0  }, /* 219 VK_OEM_4 */
-   {0x5C,       0x7C,      0x1C,        ALT_BSLASH, 0   }, /* 220 VK_OEM_5 */
-   {0x5D,       0x7D,      0x1D,        ALT_RBRACKET,0  }, /* 221 VK_OEM_6 */
-   {'\'',       '"',       0x27,        ALT_FQUOTE, 0   }, /* 222 VK_OEM_7 */
-   {0,          0,         0,           0,          0   }, /* 223 VK_OEM_8 */
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+   {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0},
+
+   {0x5B,       0x7B,      0x1B,        ALT_LBRACKET,0  }, /* 219 */
+   {0x5C,       0x7C,      0x1C,        ALT_BSLASH, 0   }, /* 220 */
+   {0x5D,       0x7D,      0x1D,        ALT_RBRACKET,0  }, /* 221 */
+   {0,          0,         0x27,        ALT_FQUOTE, 0   }, /* 222 */
+   {0,          0,         0,           0,          0   }, /* 223 */
    {0,          0,         0,           0,          0   }, /* 224 */
    {0,          0,         0,           0,          0   }  /* 225 */
 };
 
-static const KPTAB ext_kptab[] =
+static KPTAB ext_kptab[] =
 {
-   {0,          0,              0,              0,          }, /*  0  MUST BE EMPTY */
-   {PADENTER,   SHF_PADENTER,   CTL_PADENTER,   ALT_PADENTER}, /*  1  13 */
-   {PADSLASH,   SHF_PADSLASH,   CTL_PADSLASH,   ALT_PADSLASH}, /*  2 111 */
-   {KEY_PPAGE,  KEY_SPREVIOUS,  CTL_PGUP,       ALT_PGUP    }, /*  3  33 */
-   {KEY_NPAGE,  KEY_SNEXT,      CTL_PGDN,       ALT_PGDN    }, /*  4  34 */
-   {KEY_END,    KEY_SEND,       CTL_END,        ALT_END     }, /*  5  35 */
-   {KEY_HOME,   KEY_SHOME,      CTL_HOME,       ALT_HOME    }, /*  6  36 */
-   {KEY_LEFT,   KEY_SLEFT,      CTL_LEFT,       ALT_LEFT    }, /*  7  37 */
-   {KEY_UP,     KEY_SUP,        CTL_UP,         ALT_UP      }, /*  8  38 */
-   {KEY_RIGHT,  KEY_SRIGHT,     CTL_RIGHT,      ALT_RIGHT   }, /*  9  39 */
-   {KEY_DOWN,   KEY_SDOWN,      CTL_DOWN,       ALT_DOWN    }, /* 10  40 */
-   {KEY_IC,     KEY_SIC,        CTL_INS,        ALT_INS     }, /* 11  45 */
-   {KEY_DC,     KEY_SDC,        CTL_DEL,        ALT_DEL     }, /* 12  46 */
-   {KEY_APPS,   KEY_SAPPS     , CTL_APPS,       ALT_APPS    }, /* 13  93  VK_APPS    */
-   {KEY_BROWSER_BACK, KEY_SBROWSER_BACK, KEY_CBROWSER_BACK, KEY_ABROWSER_BACK, }, /* 14 166 VK_BROWSER_BACK        */
-   {KEY_BROWSER_FWD,  KEY_SBROWSER_FWD,  KEY_CBROWSER_FWD,  KEY_ABROWSER_FWD,  }, /* 15 167 VK_BROWSER_FORWARD     */
-   {KEY_BROWSER_REF,  KEY_SBROWSER_REF,  KEY_CBROWSER_REF,  KEY_ABROWSER_REF,  }, /* 16 168 VK_BROWSER_REFRESH     */
-   {KEY_BROWSER_STOP, KEY_SBROWSER_STOP, KEY_CBROWSER_STOP, KEY_ABROWSER_STOP, }, /* 17 169 VK_BROWSER_STOP        */
-   {KEY_SEARCH,       KEY_SSEARCH,       KEY_CSEARCH,       KEY_ASEARCH,       }, /* 18 170 VK_BROWSER_SEARCH      */
-   {KEY_FAVORITES,    KEY_SFAVORITES,    KEY_CFAVORITES,    KEY_AFAVORITES,    }, /* 19 171 VK_BROWSER_FAVORITES   */
-   {KEY_BROWSER_HOME, KEY_SBROWSER_HOME, KEY_CBROWSER_HOME, KEY_ABROWSER_HOME, }, /* 20 172 VK_BROWSER_HOME        */
-   {KEY_VOLUME_MUTE,  KEY_SVOLUME_MUTE,  KEY_CVOLUME_MUTE,  KEY_AVOLUME_MUTE,  }, /* 21 173 VK_VOLUME_MUTE         */
-   {KEY_VOLUME_DOWN,  KEY_SVOLUME_DOWN,  KEY_CVOLUME_DOWN,  KEY_AVOLUME_DOWN,  }, /* 22 174 VK_VOLUME_DOWN         */
-   {KEY_VOLUME_UP,    KEY_SVOLUME_UP,    KEY_CVOLUME_UP,    KEY_AVOLUME_UP,    }, /* 23 175 VK_VOLUME_UP           */
-   {KEY_NEXT_TRACK,   KEY_SNEXT_TRACK,   KEY_CNEXT_TRACK,   KEY_ANEXT_TRACK,   }, /* 24 176 VK_MEDIA_NEXT_TRACK    */
-   {KEY_PREV_TRACK,   KEY_SPREV_TRACK,   KEY_CPREV_TRACK,   KEY_APREV_TRACK,   }, /* 25 177 VK_MEDIA_PREV_TRACK    */
-   {KEY_MEDIA_STOP,   KEY_SMEDIA_STOP,   KEY_CMEDIA_STOP,   KEY_AMEDIA_STOP,   }, /* 26 178 VK_MEDIA_STOP          */
-   {KEY_PLAY_PAUSE,   KEY_SPLAY_PAUSE,   KEY_CPLAY_PAUSE,   KEY_APLAY_PAUSE,   }, /* 27 179 VK_MEDIA_PLAY_PAUSE    */
-   {KEY_LAUNCH_MAIL,  KEY_SLAUNCH_MAIL,  KEY_CLAUNCH_MAIL,  KEY_ALAUNCH_MAIL,  }, /* 28 180 VK_LAUNCH_MAIL         */
-   {KEY_MEDIA_SELECT, KEY_SMEDIA_SELECT, KEY_CMEDIA_SELECT, KEY_AMEDIA_SELECT, }, /* 29 181 VK_LAUNCH_MEDIA_SELECT */
-   {KEY_LAUNCH_APP1,  KEY_SLAUNCH_APP1,  KEY_CLAUNCH_APP1,  KEY_ALAUNCH_APP1,  }, /* 30 182 VK_LAUNCH_APP1         */
-   {KEY_LAUNCH_APP2,  KEY_SLAUNCH_APP2,  KEY_CLAUNCH_APP2,  KEY_ALAUNCH_APP2,  }, /* 31 183 VK_LAUNCH_APP2         */
+   {0,          0,              0,              0,          }, /* MUST BE EMPTY */
+   {PADENTER,   SHF_PADENTER,   CTL_PADENTER,   ALT_PADENTER}, /* 13 */
+   {PADSLASH,   SHF_PADSLASH,   CTL_PADSLASH,   ALT_PADSLASH}, /* 111 */
+   {KEY_PPAGE,  KEY_SPREVIOUS,  CTL_PGUP,       ALT_PGUP    }, /* 33 */
+   {KEY_NPAGE,  KEY_SNEXT,      CTL_PGDN,       ALT_PGDN    }, /* 34 */
+   {KEY_END,    KEY_SEND,       CTL_END,        ALT_END     }, /* 35 */
+   {KEY_HOME,   KEY_SHOME,      CTL_HOME,       ALT_HOME    }, /* 36 */
+   {KEY_LEFT,   KEY_SLEFT,      CTL_LEFT,       ALT_LEFT    }, /* 37 */
+   {KEY_UP,     KEY_SUP,        CTL_UP,         ALT_UP      }, /* 38 */
+   {KEY_RIGHT,  KEY_SRIGHT,     CTL_RIGHT,      ALT_RIGHT   }, /* 39 */
+   {KEY_DOWN,   KEY_SDOWN,      CTL_DOWN,       ALT_DOWN    }, /* 40 */
+   {KEY_IC,     KEY_SIC,        CTL_INS,        ALT_INS     }, /* 45 */
+   {KEY_DC,     KEY_SDC,        CTL_DEL,        ALT_DEL     }, /* 46 */
+   {PADSLASH,   SHF_PADSLASH,   CTL_PADSLASH,   ALT_PADSLASH}, /* 191 */
 };
 
 /* End of kptab[] */
-
-unsigned long PDC_get_input_fd(void)
-{
-    PDC_LOG(("PDC_get_input_fd() - called\n"));
-
-    return 0L;
-}
 
 void PDC_set_keyboard_binary(bool on)
 {
@@ -365,12 +248,9 @@ bool PDC_check_key(void)
    description.
 */
 
-static int repeat_count = 0;
-
 static int _get_key_count(void)
 {
     int num_keys = 0, vk;
-    static int prev_vk = 0;
 
     PDC_LOG(("_get_key_count() - called\n"));
 
@@ -415,11 +295,6 @@ static int _get_key_count(void)
             if (KEV.uChar.UnicodeChar || !(MapVirtualKey(vk, 2) & 0x80000000))
                 num_keys = KEV.wRepeatCount;
         }
-        if( vk == prev_vk)
-            repeat_count++;
-        else
-            repeat_count = 0;
-        prev_vk = vk;
     }
     else
     {
@@ -435,7 +310,6 @@ static int _get_key_count(void)
             save_press = 0;
             num_keys = 1;
         }
-        repeat_count = prev_vk = 0;
     }
 
     PDC_LOG(("_get_key_count() - returning: num_keys %d\n", num_keys));
@@ -460,26 +334,20 @@ static int _process_key_event(void)
 
     SP->key_code = TRUE;
 
-    /* Save the key modifiers if required. Do this first to allow to
-       detect e.g. a pressed CTRL key after a hit of NUMLOCK. */
+    /* Save the key modifiers. Do this first to allow to detect e.g. a
+       pressed CTRL key after a hit of NUMLOCK. */
 
-    if (SP->save_key_modifiers)
-    {
-        if (state & (LEFT_ALT_PRESSED|RIGHT_ALT_PRESSED))
-            pdc_key_modifiers |= PDC_KEY_MODIFIER_ALT;
+    if (state & (LEFT_ALT_PRESSED|RIGHT_ALT_PRESSED))
+        SP->key_modifiers |= PDC_KEY_MODIFIER_ALT;
 
-        if (state & SHIFT_PRESSED)
-            pdc_key_modifiers |= PDC_KEY_MODIFIER_SHIFT;
+    if (state & SHIFT_PRESSED)
+        SP->key_modifiers |= PDC_KEY_MODIFIER_SHIFT;
 
-        if (state & (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED))
-            pdc_key_modifiers |= PDC_KEY_MODIFIER_CONTROL;
+    if (state & (LEFT_CTRL_PRESSED|RIGHT_CTRL_PRESSED))
+        SP->key_modifiers |= PDC_KEY_MODIFIER_CONTROL;
 
-        if (state & NUMLOCK_ON)
-            pdc_key_modifiers |= PDC_KEY_MODIFIER_NUMLOCK;
-
-        if( repeat_count)
-            pdc_key_modifiers |= PDC_KEY_MODIFIER_REPEAT;
-    }
+    if (state & NUMLOCK_ON)
+        SP->key_modifiers |= PDC_KEY_MODIFIER_NUMLOCK;
 
     /* Handle modifier keys hit by themselves */
 
@@ -569,17 +437,17 @@ static int _process_mouse_event(void)
     save_press = 0;
     SP->key_code = TRUE;
 
-    memset(&pdc_mouse_status, 0, sizeof(MOUSE_STATUS));
+    memset(&SP->mouse_status, 0, sizeof(MOUSE_STATUS));
 
     /* Handle scroll wheel */
 
     if (MEV.dwEventFlags == 4)
     {
-        pdc_mouse_status.changes = (MEV.dwButtonState & 0xFF000000) ?
+        SP->mouse_status.changes = (MEV.dwButtonState & 0xFF000000) ?
             PDC_MOUSE_WHEEL_DOWN : PDC_MOUSE_WHEEL_UP;
 
-        pdc_mouse_status.x = -1;
-        pdc_mouse_status.y = -1;
+        SP->mouse_status.x = -1;
+        SP->mouse_status.y = -1;
 
         memset(&old_mouse_status, 0, sizeof(old_mouse_status));
 
@@ -588,11 +456,11 @@ static int _process_mouse_event(void)
 
     if (MEV.dwEventFlags == 8)
     {
-        pdc_mouse_status.changes = (MEV.dwButtonState & 0xFF000000) ?
+        SP->mouse_status.changes = (MEV.dwButtonState & 0xFF000000) ?
             PDC_MOUSE_WHEEL_RIGHT : PDC_MOUSE_WHEEL_LEFT;
 
-        pdc_mouse_status.x = -1;
-        pdc_mouse_status.y = -1;
+        SP->mouse_status.x = -1;
+        SP->mouse_status.y = -1;
 
         memset(&old_mouse_status, 0, sizeof(old_mouse_status));
 
@@ -603,7 +471,7 @@ static int _process_mouse_event(void)
             ((MEV.dwEventFlags == 1) ? BUTTON_MOVED : BUTTON_PRESSED);
 
     for (i = 0; i < 3; i++)
-        pdc_mouse_status.button[i] =
+        SP->mouse_status.button[i] =
             (MEV.dwButtonState & button_mask[i]) ? action : 0;
 
     if (action == BUTTON_PRESSED && MEV.dwButtonState & 7 && SP->mouse_wait)
@@ -627,10 +495,10 @@ static int _process_mouse_event(void)
 
             for (i = 0; i < 3; i++)
             {
-                if (pdc_mouse_status.button[i] == BUTTON_PRESSED &&
+                if (SP->mouse_status.button[i] == BUTTON_PRESSED &&
                     !(ip.Event.MouseEvent.dwButtonState & button_mask[i]))
                 {
-                    pdc_mouse_status.button[i] = BUTTON_CLICKED;
+                    SP->mouse_status.button[i] = BUTTON_CLICKED;
                     have_click = TRUE;
                 }
             }
@@ -642,33 +510,33 @@ static int _process_mouse_event(void)
         }
     }
 
-    pdc_mouse_status.x = MEV.dwMousePosition.X;
-    pdc_mouse_status.y = MEV.dwMousePosition.Y;
+    SP->mouse_status.x = MEV.dwMousePosition.X;
+    SP->mouse_status.y = MEV.dwMousePosition.Y;
 
-    pdc_mouse_status.changes = 0;
+    SP->mouse_status.changes = 0;
 
     for (i = 0; i < 3; i++)
     {
-        if (old_mouse_status.button[i] != pdc_mouse_status.button[i])
-            pdc_mouse_status.changes |= (1 << i);
+        if (old_mouse_status.button[i] != SP->mouse_status.button[i])
+            SP->mouse_status.changes |= (1 << i);
 
-        if (pdc_mouse_status.button[i] == BUTTON_MOVED)
+        if (SP->mouse_status.button[i] == BUTTON_MOVED)
         {
             /* Discard non-moved "moves" */
 
-            if (pdc_mouse_status.x == old_mouse_status.x &&
-                pdc_mouse_status.y == old_mouse_status.y)
+            if (SP->mouse_status.x == old_mouse_status.x &&
+                SP->mouse_status.y == old_mouse_status.y)
                 return -1;
 
             /* Motion events always flag the button as changed */
 
-            pdc_mouse_status.changes |= (1 << i);
-            pdc_mouse_status.changes |= PDC_MOUSE_MOVED;
+            SP->mouse_status.changes |= (1 << i);
+            SP->mouse_status.changes |= PDC_MOUSE_MOVED;
             break;
         }
     }
 
-    old_mouse_status = pdc_mouse_status;
+    old_mouse_status = SP->mouse_status;
 
     /* Treat click events as release events for comparison purposes */
 
@@ -694,21 +562,19 @@ static int _process_mouse_event(void)
     {
         for (i = 0; i < 3; i++)
         {
-            if (pdc_mouse_status.changes & (1 << i))
-                pdc_mouse_status.button[i] |= shift_flags;
+            if (SP->mouse_status.changes & (1 << i))
+                SP->mouse_status.button[i] |= shift_flags;
         }
     }
 
     return KEY_MOUSE;
 }
 
-int pdc_resizeX, pdc_resizeY;
-
 /* return the next available key or mouse event */
 
 int PDC_get_key(void)
 {
-    pdc_key_modifiers = 0L;
+    SP->key_modifiers = 0L;
 
     if (!key_count)
     {
@@ -722,8 +588,6 @@ int PDC_get_key(void)
             key_count = 1;
         else if (save_ip.EventType == KEY_EVENT)
             key_count = _get_key_count();
-        else if (save_ip.EventType == WINDOW_BUFFER_SIZE_EVENT)
-            key_count = 1;
     }
 
     if (key_count)
@@ -764,7 +628,7 @@ void PDC_flushinp(void)
     FlushConsoleInputBuffer(pdc_con_in);
 }
 
-bool PDC_has_mouse( void)
+bool PDC_has_mouse(void)
 {
     return TRUE;
 }
@@ -788,4 +652,3 @@ int PDC_modifiers_set(void)
 {
     return OK;
 }
-

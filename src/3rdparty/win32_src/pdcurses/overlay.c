@@ -12,37 +12,37 @@ overlay
     int overlay(const WINDOW *src_w, WINDOW *dst_w)
     int overwrite(const WINDOW *src_w, WINDOW *dst_w)
     int copywin(const WINDOW *src_w, WINDOW *dst_w, int src_tr,
-    int src_tc, int dst_tr, int dst_tc, int dst_br,
-    int dst_bc, bool overlay)
+                int src_tc, int dst_tr, int dst_tc, int dst_br,
+                int dst_bc, int _overlay)
 
 ### Description
 
-   overlay() and overwrite() copy all the text from src_w into
-   dst_w. The windows need not be the same size. Those characters
-   in the source window that intersect with the destination window
-   are copied, so that the characters appear in the same physical
-   position on the screen. The difference between the two functions
-   is that overlay() is non-destructive (blanks are not copied)
-   while overwrite() is destructive (blanks are copied).
+   overlay() and overwrite() copy all the text from src_w into dst_w.
+   The windows need not be the same size. Those characters in the source
+   window that intersect with the destination window are copied, so that
+   the characters appear in the same physical position on the screen.
+   The difference between the two functions is that overlay() is non-
+   destructive (blanks are not copied) while overwrite() is destructive
+   (blanks are copied).
 
    copywin() is similar, but doesn't require that the two windows
-   overlap. The arguments src_tc and src_tr specify the top left
-   corner of the region to be copied. dst_tc, dst_tr, dst_br, and
-   dst_bc specify the region within the destination window to copy
-   to. The argument "overlay", if TRUE, indicates that the copy is
-   done non-destructively (as in overlay()); blanks in the source
-   window are not copied to the destination window. When overlay is
-   FALSE, blanks are copied.
+   overlap. The arguments src_tc and src_tr specify the top left corner
+   of the region to be copied. dst_tc, dst_tr, dst_br, and dst_bc
+   specify the region within the destination window to copy to. The
+   argument "overlay", if TRUE, indicates that the copy is done non-
+   destructively (as in overlay()); blanks in the source window are not
+   copied to the destination window. When overlay is FALSE, blanks are
+   copied.
 
 ### Return Value
 
    All functions return OK on success and ERR on error.
 
 ### Portability
-                             X/Open    BSD    SYS V
+                             X/Open  ncurses  NetBSD
     overlay                     Y       Y       Y
     overwrite                   Y       Y       Y
-    copywin                     Y       -      3.0
+    copywin                     Y       Y       Y
 
 **man-end****************************************************************/
 
@@ -210,5 +210,5 @@ int copywin(const WINDOW *src_w, WINDOW *dst_w, int src_tr, int src_tc,
     src_end_x = src_tc + min_cols;
 
     return _copy_win(src_w, dst_w, src_tr, src_tc, src_end_y, src_end_x,
-                     dst_tr, dst_tc, (bool)_overlay);
+                     dst_tr, dst_tc, _overlay);
 }

@@ -1,4 +1,4 @@
-/* Public Domain Curses */
+/* PDCurses */
 
 #include <curspriv.h>
 
@@ -35,27 +35,26 @@ inchstr
 
 ### Return Value
 
-   All functions return the number of elements read, or ERR on
-   error.
+   All functions return the number of elements read, or ERR on error.
 
 ### Portability
-                             X/Open    BSD    SYS V
-    inchstr                     Y       -      4.0
-    winchstr                    Y       -      4.0
-    mvinchstr                   Y       -      4.0
-    mvwinchstr                  Y       -      4.0
-    inchnstr                    Y       -      4.0
-    winchnstr                   Y       -      4.0
-    mvinchnstr                  Y       -      4.0
-    mvwinchnstr                 Y       -      4.0
-    in_wchstr                   Y
-    win_wchstr                  Y
-    mvin_wchstr                 Y
-    mvwin_wchstr                Y
-    in_wchnstr                  Y
-    win_wchnstr                 Y
-    mvin_wchnstr                Y
-    mvwin_wchnstr               Y
+                             X/Open  ncurses  NetBSD
+    inchstr                     Y       Y       Y
+    winchstr                    Y       Y       Y
+    mvinchstr                   Y       Y       Y
+    mvwinchstr                  Y       Y       Y
+    inchnstr                    Y       Y       Y
+    winchnstr                   Y       Y       Y
+    mvinchnstr                  Y       Y       Y
+    mvwinchnstr                 Y       Y       Y
+    in_wchstr                   Y       Y       Y
+    win_wchstr                  Y       Y       Y
+    mvin_wchstr                 Y       Y       Y
+    mvwin_wchstr                Y       Y       Y
+    in_wchnstr                  Y       Y       Y
+    win_wchnstr                 Y       Y       Y
+    mvin_wchnstr                Y       Y       Y
+    mvwin_wchnstr               Y       Y       Y
 
 **man-end****************************************************************/
 

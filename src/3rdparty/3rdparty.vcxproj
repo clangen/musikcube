@@ -484,7 +484,6 @@
     <ClCompile Include="win32_src\pdcurses\debug.c" />
     <ClCompile Include="win32_src\pdcurses\delch.c" />
     <ClCompile Include="win32_src\pdcurses\deleteln.c" />
-    <ClCompile Include="win32_src\pdcurses\deprec.c" />
     <ClCompile Include="win32_src\pdcurses\getch.c" />
     <ClCompile Include="win32_src\pdcurses\getstr.c" />
     <ClCompile Include="win32_src\pdcurses\getyx.c" />
@@ -512,7 +511,6 @@
     <ClCompile Include="win32_src\pdcurses\scr_dump.c" />
     <ClCompile Include="win32_src\pdcurses\slk.c" />
     <ClCompile Include="win32_src\pdcurses\termattr.c" />
-    <ClCompile Include="win32_src\pdcurses\terminfo.c" />
     <ClCompile Include="win32_src\pdcurses\touch.c" />
     <ClCompile Include="win32_src\pdcurses\util.c" />
     <ClCompile Include="win32_src\pdcurses\window.c" />

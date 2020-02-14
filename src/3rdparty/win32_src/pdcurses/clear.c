@@ -23,22 +23,22 @@ clear
    erase() and werase() copy blanks (i.e. the background chtype) to
    every cell of the window.
 
-   clear() and wclear() are similar to erase() and werase(), but
-   they also call clearok() to ensure that the the window is
-   cleared on the next wrefresh().
+   clear() and wclear() are similar to erase() and werase(), but they
+   also call clearok() to ensure that the the window is cleared on the
+   next wrefresh().
 
-   clrtobot() and wclrtobot() clear the window from the current
-   cursor position to the end of the window.
+   clrtobot() and wclrtobot() clear the window from the current cursor
+   position to the end of the window.
 
-   clrtoeol() and wclrtoeol() clear the window from the current
-   cursor position to the end of the current line.
+   clrtoeol() and wclrtoeol() clear the window from the current cursor
+   position to the end of the current line.
 
 ### Return Value
 
    All functions return OK on success and ERR on error.
 
 ### Portability
-                             X/Open    BSD    SYS V
+                             X/Open  ncurses  NetBSD
     clear                       Y       Y       Y
     wclear                      Y       Y       Y
     erase                       Y       Y       Y

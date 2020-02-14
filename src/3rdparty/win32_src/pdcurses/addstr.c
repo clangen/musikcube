@@ -29,38 +29,37 @@ addstr
 
 ### Description
 
-   These routines write all the characters of the null-terminated
-   string str or wide-character string wstr to the given window.
-   The functionality is similar to calling waddch() once for each
-   character in the string; except that, when PDCurses is built
-   with wide-character support enabled, the narrow-character
-   functions treat the string as a multibyte string in the current
-   locale, and convert it. The routines with n as the last
-   argument write at most n characters; if n is negative, then the
-   entire string will be added.
+   These routines write all the characters of the null-terminated string
+   str or wide-character string wstr to the given window. The
+   functionality is similar to calling waddch() once for each character
+   in the string; except that, when PDCurses is built with wide-
+   character support enabled, the narrow-character functions treat the
+   string as a multibyte string in the current locale, and convert it.
+   The routines with n as the last argument write at most n characters;
+   if n is negative, then the entire string will be added.
 
 ### Return Value
 
    All functions return OK or ERR.
 
 ### Portability
-                             X/Open    BSD    SYS V
+                             X/Open  ncurses  NetBSD
     addstr                      Y       Y       Y
     waddstr                     Y       Y       Y
     mvaddstr                    Y       Y       Y
     mvwaddstr                   Y       Y       Y
-    addnstr                     Y       -      4.0
-    waddnstr                    Y       -      4.0
-    mvaddnstr                   Y       -      4.0
-    mvwaddnstr                  Y       -      4.0
-    addwstr                     Y
-    waddwstr                    Y
-    mvaddwstr                   Y
-    mvwaddwstr                  Y
-    addnwstr                    Y
-    waddnwstr                   Y
-    mvaddnwstr                  Y
-    mvwaddnwstr                 Y
+    addnstr                     Y       Y       Y
+    waddnstr                    Y       Y       Y
+    mvaddnstr                   Y       Y       Y
+    mvwaddnstr                  Y       Y       Y
+    addwstr                     Y       Y       Y
+    waddwstr                    Y       Y       Y
+    mvaddwstr                   Y       Y       Y
+    mvwaddwstr                  Y       Y       Y
+    addnwstr                    Y       Y       Y
+    waddnwstr                   Y       Y       Y
+    mvaddnwstr                  Y       Y       Y
+    mvwaddnwstr                 Y       Y       Y
 
 **man-end****************************************************************/
 

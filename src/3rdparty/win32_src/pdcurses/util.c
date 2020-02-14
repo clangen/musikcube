@@ -26,51 +26,49 @@ util
 
 ### Description
 
-   unctrl() expands the text portion of the chtype c into a
-   printable string. Control characters are changed to the "^X"
-   notation; others are passed through. wunctrl() is the wide-
-   character version of the function.
+   unctrl() expands the text portion of the chtype c into a printable
+   string. Control characters are changed to the "^X" notation; others
+   are passed through. wunctrl() is the wide-character version of the
+   function.
 
    filter() and use_env() are no-ops in PDCurses.
 
    delay_output() inserts an ms millisecond pause in output.
 
-   getcchar() works in two modes: When wch is not NULL, it reads
-   the cchar_t pointed to by wcval and stores the attributes in
-   attrs, the color pair in color_pair, and the text in the
-   wide-character string wch. When wch is NULL, getcchar() merely
-   returns the number of wide characters in wcval. In either mode,
-   the opts argument is unused.
+   getcchar() works in two modes: When wch is not NULL, it reads the
+   cchar_t pointed to by wcval and stores the attributes in attrs, the
+   color pair in color_pair, and the text in the wide-character string
+   wch. When wch is NULL, getcchar() merely returns the number of wide
+   characters in wcval. In either mode, the opts argument is unused.
 
-   setcchar constructs a cchar_t at wcval from the wide-character
-   text at wch, the attributes in attr and the color pair in
-   color_pair. The opts argument is unused.
+   setcchar constructs a cchar_t at wcval from the wide-character text
+   at wch, the attributes in attr and the color pair in color_pair. The
+   opts argument is unused.
 
    Currently, the length returned by getcchar() is always 1 or 0.
-   Similarly, setcchar() will only take the first wide character
-   from wch, and ignore any others that it "should" take (i.e.,
-   combining characters). Nor will it correctly handle any
-   character outside the basic multilingual plane (UCS-2).
+   Similarly, setcchar() will only take the first wide character from
+   wch, and ignore any others that it "should" take (i.e., combining
+   characters). Nor will it correctly handle any character outside the
+   basic multilingual plane (UCS-2).
 
 ### Return Value
 
-   unctrl() and wunctrl() return NULL on failure. delay_output()
-   always returns OK.
+   wunctrl() returns NULL on failure. delay_output() always returns OK.
 
-   getcchar() returns the number of wide characters wcval points to
-   when wch is NULL; when it's not, getcchar() returns OK or ERR.
+   getcchar() returns the number of wide characters wcval points to when
+   wch is NULL; when it's not, getcchar() returns OK or ERR.
 
    setcchar() returns OK or ERR.
 
 ### Portability
-                             X/Open    BSD    SYS V
+                             X/Open  ncurses  NetBSD
     unctrl                      Y       Y       Y
-    filter                      Y       -      3.0
-    use_env                     Y       -      4.0
+    filter                      Y       Y       Y
+    use_env                     Y       Y       Y
     delay_output                Y       Y       Y
-    getcchar                    Y
-    setcchar                    Y
-    wunctrl                     Y
+    getcchar                    Y       Y       Y
+    setcchar                    Y       Y       Y
+    wunctrl                     Y       Y       Y
     PDC_mbtowc                  -       -       -
     PDC_mbstowcs                -       -       -
     PDC_wcstombs                -       -       -
@@ -129,6 +127,40 @@ int delay_output(int ms)
     return napms(ms);
 }
 
+int PDC_wc_to_utf8( char *dest, const int32_t code)
+{
+   int n_bytes_out;
+
+   if (code < 0x80)
+   {
+       dest[0] = (char)code;
+       n_bytes_out = 1;
+   }
+   else
+       if (code < 0x800)
+       {
+           dest[0] = (char) (((code >> 6) & 0x1f) | 0xc0);
+           dest[1] = (char) ((code & 0x3f) | 0x80);
+           n_bytes_out = 2;
+       }
+       else if( code < 0x10000)
+       {
+           dest[0] = (char) (((code >> 12) & 0x0f) | 0xe0);
+           dest[1] = (char) (((code >> 6) & 0x3f) | 0x80);
+           dest[2] = (char) ((code & 0x3f) | 0x80);
+           n_bytes_out = 3;
+       }
+       else       /* Unicode past 64K,  i.e.,  SMP */
+       {
+           dest[0] = (char) (((code >> 18) & 0x0f) | 0xf0);
+           dest[1] = (char) (((code >> 12) & 0x3f) | 0x80);
+           dest[2] = (char) (((code >> 6) & 0x3f) | 0x80);
+           dest[3] = (char) ((code & 0x3f) | 0x80);
+           n_bytes_out = 4;
+       }
+   return( n_bytes_out);
+}
+
 #ifdef PDC_WIDE
 int getcchar(const cchar_t *wcval, wchar_t *wch, attr_t *attrs,
              short *color_pair, void *opts)
@@ -172,6 +204,9 @@ wchar_t *wunctrl(cchar_t *wc)
     cchar_t ic;
 
     PDC_LOG(("wunctrl() - called\n"));
+
+    if (!wc)
+        return NULL;
 
     ic = *wc & A_CHARTEXT;
 
@@ -280,29 +315,7 @@ size_t PDC_wcstombs(char *dest, const wchar_t *src, size_t n)
         return 0;
 
     while (*src && i < n)
-    {
-        chtype code = *src++;
-
-        if (code < 0x80)
-        {
-            dest[i] = (char)code;
-            i++;
-        }
-        else
-            if (code < 0x800)
-            {
-                dest[i] = (char)((code & 0x07c0) >> 6) | 0xc0;
-                dest[i + 1] = (char)( (code & 0x003f) | 0x80);
-                i += 2;
-            }
-            else
-            {
-                dest[i] = (char)( ((code & 0xf000) >> 12) | 0xe0);
-                dest[i + 1] = (char)((code & 0x0fc0) >> 6) | 0x80;
-                dest[i + 2] = (char)( (code & 0x003f) | 0x80);
-                i += 3;
-            }
-    }
+       i += PDC_wc_to_utf8( dest + i, *src++);
 # else
     size_t i = wcstombs(dest, src, n);
 # endif

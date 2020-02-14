@@ -26,35 +26,35 @@ termattr
 
 ### Description
 
-   baudrate() is supposed to return the output speed of the
-   terminal. In PDCurses, it simply returns INT_MAX.
+   baudrate() is supposed to return the output speed of the terminal. In
+   PDCurses, it simply returns INT_MAX.
 
-   has_ic and has_il() return TRUE. These functions have meaning in
-   some other implementations of curses.
+   has_ic and has_il() return TRUE. These functions have meaning in some
+   other implementations of curses.
 
    erasechar() and killchar() return ^H and ^U, respectively -- the
-   ERASE and KILL characters. In other curses implementations,
-   these may vary by terminal type. erasewchar() and killwchar()
-   are the wide-character versions; they take a pointer to a
-   location in which to store the character, and return OK or ERR.
+   ERASE and KILL characters. In other curses implementations, these may
+   vary by terminal type. erasewchar() and killwchar() are the wide-
+   character versions; they take a pointer to a location in which to
+   store the character, and return OK or ERR.
 
-   longname() returns a pointer to a static area containing a
-   verbose description of the current terminal. The maximum length
-   of the string is 128 characters.  It is defined only after the
-   call to initscr() or newterm().
+   longname() returns a pointer to a static area containing a verbose
+   description of the current terminal. The maximum length of the string
+   is 128 characters. It is defined only after the call to initscr() or
+   newterm().
 
-   termname() returns a pointer to a static area containing a
-   short description of the current terminal (14 characters).
+   termname() returns a pointer to a static area containing a short
+   description of the current terminal (14 characters).
 
-   termattrs() returns a logical OR of all video attributes
-   supported by the terminal.
+   termattrs() returns a logical OR of all video attributes supported by
+   the terminal.
 
    wordchar() is a PDCurses extension of the concept behind the
-   functions erasechar() and killchar(), returning the "delete
-   word" character, ^W.
+   functions erasechar() and killchar(), returning the "delete word"
+   character, ^W.
 
 ### Portability
-                             X/Open    BSD    SYS V
+                             X/Open  ncurses  NetBSD
     baudrate                    Y       Y       Y
     erasechar                   Y       Y       Y
     has_ic                      Y       Y       Y
@@ -63,9 +63,9 @@ termattr
     longname                    Y       Y       Y
     termattrs                   Y       Y       Y
     termname                    Y       Y       Y
-    erasewchar                  Y
-    killwchar                   Y
-    term_attrs                  Y
+    erasewchar                  Y       Y       Y
+    killwchar                   Y       Y       Y
+    term_attrs                  Y       Y       Y
     wordchar                    -       -       -
 
 **man-end****************************************************************/
@@ -118,25 +118,16 @@ char *longname(void)
 
 chtype termattrs(void)
 {
-    chtype temp = A_BLINK | A_BOLD | A_INVIS | A_REVERSE | A_UNDERLINE
-          | A_LEFTLINE | A_RIGHTLINE | A_ITALIC;
-
-    /* note: blink is bold background on some platforms */
-
     PDC_LOG(("termattrs() - called\n"));
 
-    if (!SP->mono)
-        temp |= A_COLOR;
-
-    return temp;
+    return SP ? SP->termattrs : (chtype)0;
 }
 
 attr_t term_attrs(void)
 {
     PDC_LOG(("term_attrs() - called\n"));
 
-    return WA_BLINK | WA_BOLD | WA_INVIS | WA_LEFT | WA_REVERSE |
-           WA_RIGHT | WA_UNDERLINE;
+    return SP ? SP->termattrs : (attr_t)0;
 }
 
 char *termname(void)

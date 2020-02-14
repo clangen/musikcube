@@ -45,17 +45,4 @@ const char *PDC_sysname(void)
    return "WinGUI";
 }
 
-PDC_version_info PDC_version = { PDC_PORT_WINGUI,
-          PDC_VER_MAJOR, PDC_VER_MINOR, PDC_VER_CHANGE,
-          sizeof( chtype),
-#ifdef PDC_WIDE
-          TRUE,
-#else
-          FALSE,
-#endif
-#ifdef PDC_FORCE_UTF8
-          TRUE,
-#else
-          FALSE,
-#endif
-          };
+enum PDC_port PDC_port_val = PDC_PORT_WINGUI;

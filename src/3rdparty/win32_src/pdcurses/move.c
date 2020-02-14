@@ -10,22 +10,27 @@ move
 ### Synopsis
 
     int move(int y, int x);
+    int mvcur(int oldrow, int oldcol, int newrow, int newcol);
     int wmove(WINDOW *win, int y, int x);
 
 ### Description
 
-   The cursor associated with the window is moved to the given
-   location.  This does not move the physical cursor of the
-   terminal until refresh() is called.  The position specified is
+   move() and wmove() move the cursor associated with the window to the
+   given location. This does not move the physical cursor of the
+   terminal until refresh() is called. The position specified is
    relative to the upper left corner of the window, which is (0,0).
+
+   mvcur() moves the physical cursor without updating any window cursor
+   positions.
 
 ### Return Value
 
    All functions return OK on success and ERR on error.
 
 ### Portability
-                             X/Open    BSD    SYS V
+                             X/Open  ncurses  NetBSD
     move                        Y       Y       Y
+    mvcur                       Y       Y       Y
     wmove                       Y       Y       Y
 
 **man-end****************************************************************/
@@ -39,6 +44,21 @@ int move(int y, int x)
 
     stdscr->_curx = x;
     stdscr->_cury = y;
+
+    return OK;
+}
+
+int mvcur(int oldrow, int oldcol, int newrow, int newcol)
+{
+    PDC_LOG(("mvcur() - called: oldrow %d oldcol %d newrow %d newcol %d\n",
+             oldrow, oldcol, newrow, newcol));
+
+    if (!SP || newrow < 0 || newrow >= LINES || newcol < 0 || newcol >= COLS)
+        return ERR;
+
+    PDC_gotoyx(newrow, newcol);
+    SP->cursrow = newrow;
+    SP->curscol = newcol;
 
     return OK;
 }

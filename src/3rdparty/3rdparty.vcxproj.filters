@@ -34,9 +34,6 @@
     <ClCompile Include="src\kiss_fftr.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\terminfo.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
     <ClCompile Include="win32_src\pdcurses\touch.c">
       <Filter>src\pdcurses</Filter>
     </ClCompile>
@@ -80,9 +77,6 @@
       <Filter>src\pdcurses</Filter>
     </ClCompile>
     <ClCompile Include="win32_src\pdcurses\deleteln.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\deprec.c">
       <Filter>src\pdcurses</Filter>
     </ClCompile>
     <ClCompile Include="win32_src\pdcurses\getch.c">

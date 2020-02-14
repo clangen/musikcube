@@ -4,107 +4,109 @@
 
 /*man-start**************************************************************
 
-  Name:                                                         addch
+addch
+-----
 
-  Synopsis:
-        int addch(const chtype ch);
-        int waddch(WINDOW *win, const chtype ch);
-        int mvaddch(int y, int x, const chtype ch);
-        int mvwaddch(WINDOW *win, int y, int x, const chtype ch);
-        int echochar(const chtype ch);
-        int wechochar(WINDOW *win, const chtype ch);
+### Synopsis
 
-        int addrawch(chtype ch);
-        int waddrawch(WINDOW *win, chtype ch);
-        int mvaddrawch(int y, int x, chtype ch);
-        int mvwaddrawch(WINDOW *win, int y, int x, chtype ch);
+    int addch(const chtype ch);
+    int waddch(WINDOW *win, const chtype ch);
+    int mvaddch(int y, int x, const chtype ch);
+    int mvwaddch(WINDOW *win, int y, int x, const chtype ch);
+    int echochar(const chtype ch);
+    int wechochar(WINDOW *win, const chtype ch);
 
-        int add_wch(const cchar_t *wch);
-        int wadd_wch(WINDOW *win, const cchar_t *wch);
-        int mvadd_wch(int y, int x, const cchar_t *wch);
-        int mvwadd_wch(WINDOW *win, int y, int x, const cchar_t *wch);
-        int echo_wchar(const cchar_t *wch);
-        int wecho_wchar(WINDOW *win, const cchar_t *wch);
+    int addrawch(chtype ch);
+    int waddrawch(WINDOW *win, chtype ch);
+    int mvaddrawch(int y, int x, chtype ch);
+    int mvwaddrawch(WINDOW *win, int y, int x, chtype ch);
 
-  Description:
-        addch() adds the chtype ch to the default window (stdscr) at the
-        current cursor position, and advances the cursor. Note that
-        chtypes can convey both text (a single character) and
-        attributes, including a color pair. add_wch() is the wide-
-        character version of this function, taking a pointer to a
-        cchar_t instead of a chtype.
+    int add_wch(const cchar_t *wch);
+    int wadd_wch(WINDOW *win, const cchar_t *wch);
+    int mvadd_wch(int y, int x, const cchar_t *wch);
+    int mvwadd_wch(WINDOW *win, int y, int x, const cchar_t *wch);
+    int echo_wchar(const cchar_t *wch);
+    int wecho_wchar(WINDOW *win, const cchar_t *wch);
 
-        waddch() is like addch(), but also lets you specify the window.
-        (This is in fact the core output routine.) wadd_wch() is the
-        wide version.
+### Description
 
-        mvaddch() moves the cursor to the specified (y, x) position, and
-        adds ch to stdscr. mvadd_wch() is the wide version.
+   addch() adds the chtype ch to the default window (stdscr) at the
+   current cursor position, and advances the cursor. Note that chtypes
+   can convey both text (a single character) and attributes, including a
+   color pair. add_wch() is the wide-character version of this function,
+   taking a pointer to a cchar_t instead of a chtype.
 
-        mvwaddch() moves the cursor to the specified position and adds
-        ch to the specified window. mvwadd_wch() is the wide version.
+   waddch() is like addch(), but also lets you specify the window. (This
+   is in fact the core output routine.) wadd_wch() is the wide version.
 
-        echochar() adds ch to stdscr at the current cursor position and
-        calls refresh(). echo_wchar() is the wide version.
+   mvaddch() moves the cursor to the specified (y, x) position, and adds
+   ch to stdscr. mvadd_wch() is the wide version.
 
-        wechochar() adds ch to the specified window and calls
-        wrefresh(). wecho_wchar() is the wide version.
+   mvwaddch() moves the cursor to the specified position and adds ch to
+   the specified window. mvwadd_wch() is the wide version.
 
-        addrawch(), waddrawch(), mvaddrawch() and mvwaddrawch() are
-        PDCurses-specific wrappers for addch() etc. that disable the
-        translation of control characters.
+   echochar() adds ch to stdscr at the current cursor position and calls
+   refresh(). echo_wchar() is the wide version.
 
-        The following applies to all these functions:
+   wechochar() adds ch to the specified window and calls wrefresh().
+   wecho_wchar() is the wide version.
 
-        If the cursor moves on to the right margin, an automatic newline
-        is performed.  If scrollok is enabled, and a character is added
-        to the bottom right corner of the window, the scrolling region
-        will be scrolled up one line.  If scrolling is not allowed, ERR
-        will be returned.
+   addrawch(), waddrawch(), mvaddrawch() and mvwaddrawch() are PDCurses-
+   specific wrappers for addch() etc. that disable the translation of
+   control characters.
 
-        If ch is a tab, newline, or backspace, the cursor will be moved
-        appropriately within the window.  If ch is a newline, the
-        clrtoeol routine is called before the cursor is moved to the
-        beginning of the next line.  If newline mapping is off, the
-        cursor will be moved to the next line, but the x coordinate will
-        be unchanged.  If ch is a tab the cursor is moved to the next
-        tab position within the window.  If ch is another control
-        character, it will be drawn in the ^X notation.  Calling the
-        inch() routine after adding a control character returns the
-        representation of the control character, not the control
-        character.
+   The following applies to all these functions:
 
-        Video attributes can be combined with a character by ORing them
-        into the parameter. Text, including attributes, can be copied
-        from one place to another by using inch() and addch().
+   If the cursor moves on to the right margin, an automatic newline is
+   performed. If scrollok is enabled, and a character is added to the
+   bottom right corner of the window, the scrolling region will be
+   scrolled up one line. If scrolling is not allowed, ERR will be
+   returned.
 
-        Note that in PDCurses, for now, a cchar_t and a chtype are the
-        same. The text field is 16 bits wide, and is treated as Unicode
-        (UCS-2) when PDCurses is built with wide-character support
-        (define PDC_WIDE). So, in functions that take a chtype, like
-        addch(), both the wide and narrow versions will handle Unicode.
-        But for portability, you should use the wide functions.
+   If ch is a tab, newline, or backspace, the cursor will be moved
+   appropriately within the window. If ch is a newline, the clrtoeol
+   routine is called before the cursor is moved to the beginning of the
+   next line. If newline mapping is off, the cursor will be moved to
+   the next line, but the x coordinate will be unchanged. If ch is a
+   tab the cursor is moved to the next tab position within the window.
+   If ch is another control character, it will be drawn in the ^X
+   notation. Calling the inch() routine after adding a control
+   character returns the representation of the control character, not
+   the control character.
 
-  Return Value:
-        All functions return OK on success and ERR on error.
+   Video attributes can be combined with a character by ORing them into
+   the parameter. Text, including attributes, can be copied from one
+   place to another by using inch() and addch().
 
-  Portability                                X/Open    BSD    SYS V
-        addch                                   Y       Y       Y
-        waddch                                  Y       Y       Y
-        mvaddch                                 Y       Y       Y
-        mvwaddch                                Y       Y       Y
-        echochar                                Y       -      3.0
-        wechochar                               Y       -      3.0
-        addrawch                                -       -       -
-        waddrawch                               -       -       -
-        mvaddrawch                              -       -       -
-        mvwaddrawch                             -       -       -
-        add_wch                                 Y
-        wadd_wch                                Y
-        mvadd_wch                               Y
-        mvwadd_wch                              Y
-        echo_wchar                              Y
-        wecho_wchar                             Y
+   Note that in PDCurses, for now, a cchar_t and a chtype are the same.
+   The text field is 16 bits wide, and is treated as Unicode (UCS-2)
+   when PDCurses is built with wide-character support (define PDC_WIDE).
+   So, in functions that take a chtype, like addch(), both the wide and
+   narrow versions will handle Unicode. But for portability, you should
+   use the wide functions.
+
+### Return Value
+
+   All functions return OK on success and ERR on error.
+
+### Portability
+                             X/Open  ncurses  NetBSD
+    addch                       Y       Y       Y
+    waddch                      Y       Y       Y
+    mvaddch                     Y       Y       Y
+    mvwaddch                    Y       Y       Y
+    echochar                    Y       Y       Y
+    wechochar                   Y       Y       Y
+    add_wch                     Y       Y       Y
+    wadd_wch                    Y       Y       Y
+    mvadd_wch                   Y       Y       Y
+    mvwadd_wch                  Y       Y       Y
+    echo_wchar                  Y       Y       Y
+    wecho_wchar                 Y       Y       Y
+    addrawch                    -       -       -
+    waddrawch                   -       -       -
+    mvaddrawch                  -       -       -
+    mvwaddrawch                 -       -       -
 
 **man-end****************************************************************/
 
@@ -113,11 +115,7 @@
    That can only happen with 64-bit chtype / cchar_t,  and it's only
    worth doing if we're going past 8-byte characters in the first place.
    So if PDC_WIDE is defined _and_ we're using 64-bit chtypes,  we're
-   using the combining character scheme : */
-
-#if defined( PDC_WIDE) && defined( CHTYPE_LONG) && CHTYPE_LONG >= 2
-   #define USING_COMBINING_CHARACTER_SCHEME
-#endif
+   using the combining character scheme.  See curses.h. */
 
 #ifdef USING_COMBINING_CHARACTER_SCHEME
 #include <stdlib.h>
@@ -381,7 +379,7 @@ int waddch( WINDOW *win, const chtype ch)
     PDC_LOG(("waddch() - called: win=%p ch=%x (text=%c attr=0x%x)\n",
              win, ch, ch & A_CHARTEXT, ch & A_ATTRIBUTES));
 
-    if (!win)
+    if (!win || !SP)
         return ERR;
 
     x = win->_curx;

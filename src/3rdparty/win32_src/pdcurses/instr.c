@@ -29,37 +29,36 @@ instr
 
 ### Description
 
-   These functions take characters (or wide characters) from the
-   current or specified position in the window, and return them as
-   a string in str (or wstr). Attributes are ignored. The functions
-   with n as the last argument return a string at most n characters
-   long.
+   These functions take characters (or wide characters) from the current
+   or specified position in the window, and return them as a string in
+   str (or wstr). Attributes are ignored. The functions with n as the
+   last argument return a string at most n characters long.
 
 ### Return Value
 
-   Upon successful completion, innstr(), mvinnstr(), mvwinnstr()
-   and winnstr() return the number of characters actually read into
-   the string; instr(), mvinstr(), mvwinstr() and winstr() return
-   OK. Otherwise, all these functions return ERR.
+   Upon successful completion, innstr(), mvinnstr(), mvwinnstr() and
+   winnstr() return the number of characters actually read into the
+   string; instr(), mvinstr(), mvwinstr() and winstr() return OK.
+   Otherwise, all these functions return ERR.
 
 ### Portability
-                             X/Open    BSD    SYS V
-    instr                       Y       -      4.0
-    winstr                      Y       -      4.0
-    mvinstr                     Y       -      4.0
-    mvwinstr                    Y       -      4.0
-    innstr                      Y       -      4.0
-    winnstr                     Y       -      4.0
-    mvinnstr                    Y       -      4.0
-    mvwinnstr                   Y       -      4.0
-    inwstr                      Y
-    winwstr                     Y
-    mvinwstr                    Y
-    mvwinwstr                   Y
-    innwstr                     Y
-    winnwstr                    Y
-    mvinnwstr                   Y
-    mvwinnwstr                  Y
+                             X/Open  ncurses  NetBSD
+    instr                       Y       Y       Y
+    winstr                      Y       Y       Y
+    mvinstr                     Y       Y       Y
+    mvwinstr                    Y       Y       Y
+    innstr                      Y       Y       Y
+    winnstr                     Y       Y       Y
+    mvinnstr                    Y       Y       Y
+    mvwinnstr                   Y       Y       Y
+    inwstr                      Y       Y       Y
+    winwstr                     Y       Y       Y
+    mvinwstr                    Y       Y       Y
+    mvwinwstr                   Y       Y       Y
+    innwstr                     Y       Y       Y
+    winnwstr                    Y       Y       Y
+    mvinnwstr                   Y       Y       Y
+    mvwinnwstr                  Y       Y       Y
 
 **man-end****************************************************************/
 

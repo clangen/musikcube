@@ -43,57 +43,60 @@ border
 
 ### Description
 
-   border(), wborder(), and box() draw a border around the edge of
-   the window. If any argument is zero, an appropriate default is
-   used:
+   border(), wborder(), and box() draw a border around the edge of the
+   window. If any argument is zero, an appropriate default is used:
 
-   ls    left side of border             ACS_VLINE
-   rs    right side of border            ACS_VLINE
-   ts    top side of border              ACS_HLINE
-   bs    bottom side of border           ACS_HLINE
-   tl    top left corner of border       ACS_ULCORNER
-   tr    top right corner of border      ACS_URCORNER
-   bl    bottom left corner of border    ACS_LLCORNER
-   br    bottom right corner of border   ACS_LRCORNER
+    ls    left side of border             ACS_VLINE
+    rs    right side of border            ACS_VLINE
+    ts    top side of border              ACS_HLINE
+    bs    bottom side of border           ACS_HLINE
+    tl    top left corner of border       ACS_ULCORNER
+    tr    top right corner of border      ACS_URCORNER
+    bl    bottom left corner of border    ACS_LLCORNER
+    br    bottom right corner of border   ACS_LRCORNER
 
-   hline() and whline() draw a horizontal line, using ch, starting
-   from the current cursor position. The cursor position does not
-   change. The line is at most n characters long, or as many as
-   will fit in the window.
+   hline() and whline() draw a horizontal line, using ch, starting from
+   the current cursor position. The cursor position does not change. The
+   line is at most n characters long, or as many as will fit in the
+   window.
 
-   vline() and wvline() draw a vertical line, using ch, starting
-   from the current cursor position. The cursor position does not
-   change. The line is at most n characters long, or as many as
-   will fit in the window.
+   vline() and wvline() draw a vertical line, using ch, starting from
+   the current cursor position. The cursor position does not change. The
+   line is at most n characters long, or as many as will fit in the
+   window.
+
+   The *_set functions are the "wide-character" versions, taking
+   pointers to cchar_t instead of chtype. Note that in PDCurses, chtype
+   and cchar_t are the same.
 
 ### Return Value
 
    These functions return OK on success and ERR on error.
 
 ### Portability
-                             X/Open    BSD    SYS V
-    border                      Y       -      4.0
-    wborder                     Y       -      4.0
+                             X/Open  ncurses  NetBSD
+    border                      Y       Y       Y
+    wborder                     Y       Y       Y
     box                         Y       Y       Y
-    hline                       Y       -      4.0
-    vline                       Y       -      4.0
-    whline                      Y       -      4.0
-    wvline                      Y       -      4.0
-    mvhline                     Y
-    mvvline                     Y
-    mvwhline                    Y
-    mvwvline                    Y
-    border_set                  Y
-    wborder_set                 Y
-    box_set                     Y
-    hline_set                   Y
-    vline_set                   Y
-    whline_set                  Y
-    wvline_set                  Y
-    mvhline_set                 Y
-    mvvline_set                 Y
-    mvwhline_set                Y
-    mvwvline_set                Y
+    hline                       Y       Y       Y
+    vline                       Y       Y       Y
+    whline                      Y       Y       Y
+    wvline                      Y       Y       Y
+    mvhline                     Y       Y       Y
+    mvvline                     Y       Y       Y
+    mvwhline                    Y       Y       Y
+    mvwvline                    Y       Y       Y
+    border_set                  Y       Y       Y
+    wborder_set                 Y       Y       Y
+    box_set                     Y       Y       Y
+    hline_set                   Y       Y       Y
+    vline_set                   Y       Y       Y
+    whline_set                  Y       Y       Y
+    wvline_set                  Y       Y       Y
+    mvhline_set                 Y       Y       Y
+    mvvline_set                 Y       Y       Y
+    mvwhline_set                Y       Y       Y
+    mvwvline_set                Y       Y       Y
 
 **man-end****************************************************************/
 

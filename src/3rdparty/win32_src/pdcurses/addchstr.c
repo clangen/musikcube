@@ -30,39 +30,38 @@ addchstr
 
 ### Description
 
-   These routines write a chtype or cchar_t string directly into
-   the window structure, starting at the current or specified
-   position. The four routines with n as the last argument copy at
-   most n elements, but no more than will fit on the line. If n =
-   -1 then the whole string is copied, up to the maximum number
-   that will fit on the line.
+   These routines write a chtype or cchar_t string directly into the
+   window structure, starting at the current or specified position. The
+   four routines with n as the last argument copy at most n elements,
+   but no more than will fit on the line. If n == -1 then the whole
+   string is copied, up to the maximum number that will fit on the line.
 
-   The cursor position is not advanced. These routines do not check
-   for newline or other special characters, nor does any line
-   wrapping occur.
+   The cursor position is not advanced. These routines do not check for
+   newline or other special characters, nor does any line wrapping
+   occur.
 
 ### Return Value
 
    All functions return OK or ERR.
 
 ### Portability
-                             X/Open    BSD    SYS V
-    addchstr                    Y       -      4.0
-    waddchstr                   Y       -      4.0
-    mvaddchstr                  Y       -      4.0
-    mvwaddchstr                 Y       -      4.0
-    addchnstr                   Y       -      4.0
-    waddchnstr                  Y       -      4.0
-    mvaddchnstr                 Y       -      4.0
-    mvwaddchnstr                Y       -      4.0
-    add_wchstr                  Y
-    wadd_wchstr                 Y
-    mvadd_wchstr                Y
-    mvwadd_wchstr               Y
-    add_wchnstr                 Y
-    wadd_wchnstr                Y
-    mvadd_wchnstr               Y
-    mvwadd_wchnstr              Y
+                             X/Open  ncurses  NetBSD
+    addchstr                    Y       Y       Y
+    waddchstr                   Y       Y       Y
+    mvaddchstr                  Y       Y       Y
+    mvwaddchstr                 Y       Y       Y
+    addchnstr                   Y       Y       Y
+    waddchnstr                  Y       Y       Y
+    mvaddchnstr                 Y       Y       Y
+    mvwaddchnstr                Y       Y       Y
+    add_wchstr                  Y       Y       Y
+    wadd_wchstr                 Y       Y       Y
+    mvadd_wchstr                Y       Y       Y
+    mvwadd_wchstr               Y       Y       Y
+    add_wchnstr                 Y       Y       Y
+    wadd_wchnstr                Y       Y       Y
+    mvadd_wchnstr               Y       Y       Y
+    mvwadd_wchnstr              Y       Y       Y
 
 **man-end****************************************************************/
 

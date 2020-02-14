@@ -29,40 +29,39 @@ insstr
 
 ### Description
 
-   The insstr() functions insert a character string into a window
-   at the current cursor position, by repeatedly calling winsch().
-   When PDCurses is built with wide-character support enabled, the
-   narrow-character functions treat the string as a multibyte
-   string in the current locale, and convert it first. All
-   characters to the right of the cursor are moved to the right,
-   with the possibility of the rightmost characters on the line
-   being lost.  The cursor position does not change (after moving
-   to y, x, if specified).  The routines with n as the last
-   argument insert at most n characters; if n is negative, then the
-   entire string is inserted.
+   The insstr() functions insert a character string into a window at the
+   current cursor position, by repeatedly calling winsch(). When
+   PDCurses is built with wide-character support enabled, the narrow-
+   character functions treat the string as a multibyte string in the
+   current locale, and convert it first. All characters to the right of
+   the cursor are moved to the right, with the possibility of the
+   rightmost characters on the line being lost. The cursor position
+   does not change (after moving to y, x, if specified). The routines
+   with n as the last argument insert at most n characters; if n is
+   negative, then the entire string is inserted.
 
 ### Return Value
 
    All functions return OK on success and ERR on error.
 
 ### Portability
-                             X/Open    BSD    SYS V
-    insstr                      Y       -      4.0
-    winsstr                     Y       -      4.0
-    mvinsstr                    Y       -      4.0
-    mvwinsstr                   Y       -      4.0
-    insnstr                     Y       -      4.0
-    winsnstr                    Y       -      4.0
-    mvinsnstr                   Y       -      4.0
-    mvwinsnstr                  Y       -      4.0
-    ins_wstr                    Y
-    wins_wstr                   Y
-    mvins_wstr                  Y
-    mvwins_wstr                 Y
-    ins_nwstr                   Y
-    wins_nwstr                  Y
-    mvins_nwstr                 Y
-    mvwins_nwstr                Y
+                             X/Open  ncurses  NetBSD
+    insstr                      Y       Y       Y
+    winsstr                     Y       Y       Y
+    mvinsstr                    Y       Y       Y
+    mvwinsstr                   Y       Y       Y
+    insnstr                     Y       Y       Y
+    winsnstr                    Y       Y       Y
+    mvinsnstr                   Y       Y       Y
+    mvwinsnstr                  Y       Y       Y
+    ins_wstr                    Y       Y       Y
+    wins_wstr                   Y       Y       Y
+    mvins_wstr                  Y       Y       Y
+    mvwins_wstr                 Y       Y       Y
+    ins_nwstr                   Y       Y       Y
+    wins_nwstr                  Y       Y       Y
+    mvins_nwstr                 Y       Y       Y
+    mvwins_nwstr                Y       Y       Y
 
 **man-end****************************************************************/
 
@@ -83,7 +82,7 @@ int winsnstr(WINDOW *win, const char *str, int n)
 
     len = (int)strlen(str);
 
-    if (n < 0 || n < len)
+    if (n < 0 || n > len)
         n = len;
 
 #ifdef PDC_WIDE
@@ -191,7 +190,7 @@ int wins_nwstr(WINDOW *win, const wchar_t *wstr, int n)
     for (len = 0, p = wstr; *p; p++)
         len++;
 
-    if (n < 0 || n < len)
+    if (n < 0 || n > len)
         n = len;
 
     while (n)
