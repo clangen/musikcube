@@ -23,6 +23,10 @@ class Application : android.app.Application() {
 
         super.onCreate()
 
+        if (!BuildConfig.DEBUG) {
+            Fabric.with(this, Crashlytics())
+        }
+
         val prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         deviceId = prefs.getString(Prefs.Key.DEVICE_ID) ?: ""
         if (deviceId.isBlank()) {
@@ -38,10 +42,6 @@ class Application : android.app.Application() {
         appComponent.inject(this)
 
         gaplessService.schedule()
-
-        if (!BuildConfig.DEBUG) {
-            Fabric.with(this, Crashlytics())
-        }
     }
 
     companion object {

@@ -20,6 +20,10 @@
         android:theme="@style/AppTheme"
         tools:replace="android:allowBackup">
 
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="${crashlyticsCollectionEnabled}" />
+
         <activity
             android:name=".ui.home.activity.MainActivity"
             android:screenOrientation="portrait"
