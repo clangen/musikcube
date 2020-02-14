@@ -114,7 +114,7 @@ int CategoryListQuery::GetIndexOf(int64_t id) {
     auto result = this->GetResult();
     for (size_t i = 0; i < result->Count(); i++) {
         if (id == result->GetAt(i)->GetId()) {
-            return i;
+            return (int) i;
         }
     }
     return -1;

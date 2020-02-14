@@ -134,7 +134,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
             Statement query(sql.c_str(), db);
 
             for (size_t i = 0; i < externalIdCount; i++) {
-                query.BindText(i, externalIds[i]);
+                query.BindText((int) i, externalIds[i]);
             }
 
             /* gotta eat up some memory to preserve the input order. map the

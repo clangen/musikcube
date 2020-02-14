@@ -298,7 +298,7 @@ double Preferences::GetDouble(const char* key, double defaultValue) {
 
 int Preferences::GetString(const char* key, char* dst, size_t size, const char* defaultValue) {
     std::string value = this->GetString(std::string(key), defaultValue);
-    return CopyString(value, dst, size);
+    return (int) CopyString(value, dst, size);
 }
 
 void Preferences::SetBool(const char* key, bool value) {

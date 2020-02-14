@@ -96,7 +96,7 @@ musik::core::sdk::IResource::Class MetadataMap::GetClass() {
 int MetadataMap::GetString(const char* key, char* dst, int size) {
     auto it = metadata.find(key);
     if (it != metadata.end()) {
-        return CopyString(it->second, dst, size);
+        return (int) CopyString(it->second, dst, (size_t) size);
     }
 
     if (dst && size > 0) {

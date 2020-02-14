@@ -420,7 +420,7 @@ void Indexer::ReadMetadataFromFile(
 #endif
 }
 
-inline void Indexer::IncrementTracksScanned(size_t delta) {
+inline void Indexer::IncrementTracksScanned(int delta) {
     std::unique_lock<std::mutex> lock(IndexerTrack::sharedWriteMutex);
 
     this->incrementalUrisScanned.fetch_add(delta);
@@ -518,7 +518,7 @@ ScanResult Indexer::SyncSource(
         /* now tell it to do a wide-open scan. it can use this opportunity to
         remove old tracks, or add new ones. */
         try {
-            result = source->Scan(this, pathsList, paths.size());
+            result = source->Scan(this, pathsList, (unsigned int) paths.size());
         }
         catch (...) {
             debug::error("Indexer", "failed to index " + std::to_string(source->SourceId()));
