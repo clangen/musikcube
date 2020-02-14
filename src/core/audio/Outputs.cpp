@@ -61,6 +61,25 @@ static const std::string defaultOutput = "PulseAudio";
 
 #define LOWER(x) std::transform(x.begin(), x.end(), x.begin(), tolower);
 
+class NoOutput: public IOutput {
+    public:
+        virtual void Release() { delete this; }
+        virtual void Pause() { }
+        virtual void Resume() { }
+        virtual void SetVolume(double volume) { this->volume = volume; }
+        virtual double GetVolume() { return this->volume; }
+        virtual void Stop() { }
+        virtual int Play(IBuffer *buffer, IBufferProvider *provider) { return OutputInvalidState; }
+        virtual void Drain() { }
+        virtual double Latency() { return 0.0; }
+        virtual const char* Name() { return "NoOutput"; }
+        virtual IDeviceList* GetDeviceList() { return nullptr; }
+        virtual bool SetDefaultDevice(const char* deviceId) { return false; }
+        virtual IDevice* GetDefaultDevice() { return nullptr; }
+    private:
+        double volume{ 1.0f };
+};
+
 namespace musik {
     namespace core {
         namespace audio {
@@ -129,6 +148,9 @@ namespace musik {
 
                 musik::core::sdk::IOutput* GetUnmanagedOutput(size_t index) {
                     auto all = queryOutputs<NullDeleter>();
+                    if (!all.size()) {
+                        return new NoOutput();
+                    }
                     auto output = all[index].get();
                     all.erase(all.begin() + index);
                     release(all);
@@ -146,7 +168,7 @@ namespace musik {
                         }
                     }
                     release(all);
-                    return output;
+                    return output == nullptr ? new NoOutput() : output;
                 }
 
                 musik::core::sdk::IOutput* GetUnmanagedSelectedOutput() {
@@ -176,7 +198,7 @@ namespace musik {
 
                     release(plugins);
 
-                    return output;
+                    return output == nullptr ? new NoOutput() : output;
                 }
 
                 Output SelectedOutput() {
@@ -202,7 +224,7 @@ namespace musik {
                         return result;
                     }
 
-                    return Output();
+                    return Output(new NoOutput());
                 }
             }
         }
