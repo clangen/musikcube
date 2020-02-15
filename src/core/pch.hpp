@@ -38,3 +38,20 @@
     #include <core/db/Connection.h>
     #include <core/db/Statement.h>
 #endif
+
+#include <set>
+#include <vector>
+#include <map>
+#include <string>
+#include <algorithm>
+#include <unordered_map>
+#include <thread>
+
+#include <cmath>
+#include <string>
+
+#include <core/utfutil.h>
+
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string.hpp>
