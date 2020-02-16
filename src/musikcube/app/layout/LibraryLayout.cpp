@@ -78,7 +78,10 @@ namespace type {
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-#define REMEMBER(key, value) { this->prefs->SetString(key, value.c_str()); this->prefs->Save(); }
+#define REMEMBER(key, value) { \
+    auto prefs = Preferences::ForComponent(components::Session); \
+    prefs->SetString(key, value.c_str()); this->prefs->Save(); \
+}
 
 LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase()
@@ -198,10 +201,11 @@ void LibraryLayout::InitializeWindows() {
 
 void LibraryLayout::LoadLastSession() {
     if (this->prefs->GetBool(musik::core::prefs::keys::SaveSessionOnExit, true)) {
-        const std::string type = this->prefs->GetString(keys::LastLibraryView, type::Browse);
+        auto session = Preferences::ForComponent(components::Session);
+        const std::string type = session->GetString(keys::LastLibraryView, type::Browse);
         if (type == type::Directory) {
             const std::string lastDirectoryRoot =
-                this->prefs->GetString(keys::LastBrowseDirectoryRoot, "");
+                session->GetString(keys::LastBrowseDirectoryRoot, "");
 
             std::vector<std::string> paths;
             this->library->Indexer()->GetPaths(paths);

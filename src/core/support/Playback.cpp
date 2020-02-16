@@ -47,6 +47,14 @@ using namespace musik::core::sdk;
 namespace keys = musik::core::prefs::keys;
 using Prefs = std::shared_ptr<Preferences>;
 
+static Prefs Session() {
+    return Preferences::ForComponent(prefs::components::Session);
+}
+
+static Prefs Settings() {
+    return Preferences::ForComponent(prefs::components::Settings);
+}
+
 namespace musik {
     namespace core {
         namespace playback {
@@ -88,8 +96,9 @@ namespace musik {
                 playback.SetPosition(playback.GetPosition() - moveBy);
             }
 
-            void LoadPlaybackContext(Prefs prefs, ILibraryPtr library, PlaybackService& playback) {
-                if (prefs->GetBool(keys::SaveSessionOnExit, true)) {
+            void LoadPlaybackContext(ILibraryPtr library, PlaybackService& playback) {
+                if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
+                    auto prefs = Session();
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
                         PersistedPlayQueueQuery::Restore(library, playback));
 
@@ -103,8 +112,9 @@ namespace musik {
                 }
             }
 
-            void SavePlaybackContext(Prefs prefs, ILibraryPtr library, PlaybackService& playback) {
-                if (prefs->GetBool(keys::SaveSessionOnExit, true)) {
+            void SavePlaybackContext(ILibraryPtr library, PlaybackService& playback) {
+                if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
+                    auto prefs = Session();
                     if (playback.GetPlaybackState() != sdk::PlaybackStopped) {
                         prefs->SetInt(keys::LastPlayQueueIndex, (int)playback.GetIndex());
 

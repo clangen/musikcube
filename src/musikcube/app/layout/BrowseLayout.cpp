@@ -174,18 +174,20 @@ void BrowseLayout::InitializeWindows() {
 }
 
 void BrowseLayout::LoadLastSession() {
-    const std::string field = prefs->GetString(keys::LastBrowseCategoryType, "");
-    const int64_t id = (int64_t) prefs->GetDouble(keys::LastBrowseCategoryId, -1.0);
+    auto session = Preferences::ForComponent(components::Session);
+    const std::string field = session->GetString(keys::LastBrowseCategoryType, "");
+    const int64_t id = (int64_t) session->GetDouble(keys::LastBrowseCategoryId, -1.0);
     if (field.size()) {
         this->ScrollTo(field, id);
     }
 }
 
 void BrowseLayout::SaveSession() {
+    auto session = Preferences::ForComponent(components::Session);
     const std::string type = this->categoryList->GetFieldName().c_str();
     const double id = (double)this->categoryList->GetSelectedId();
-    this->prefs->SetString(keys::LastBrowseCategoryType, type.c_str());
-    this->prefs->SetDouble(keys::LastBrowseCategoryId, id);
+    session->SetString(keys::LastBrowseCategoryType, type.c_str());
+    session->SetDouble(keys::LastBrowseCategoryId, id);
 }
 
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {

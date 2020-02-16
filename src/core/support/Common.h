@@ -55,8 +55,4 @@ namespace musik { namespace core {
     std::string Trim(const std::string& str);
     bool FileToByteArray(const std::string& path, char** target, int& size, bool nullTerminate = false);
 
-    /* file-migration stuff. */
-    void MigrateOldDataDirectory(); /* renames ~/.mC2 -> ~/.musikcube */
-    void RemoveOldDlls();
-
 } }

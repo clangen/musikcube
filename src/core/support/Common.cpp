@@ -172,37 +172,6 @@ namespace musik { namespace core {
         return directory;
     }
 
-    void RemoveOldDlls() {
-    #ifdef WIN32
-        std::string path = GetPluginDirectory();
-        silentDelete(path + "libcurl.dll");
-        silentDelete(path + "crypto-41.dll");
-        silentDelete(path + "ssl-43.dll");
-        silentDelete(path + "tls-15.dll");
-        silentDelete(path + "crypto-43.dll");
-        silentDelete(path + "ssl-45.dll");
-        silentDelete(path + "tls-17.dll");
-#endif
-    }
-
-    void MigrateOldDataDirectory() {
-    #ifndef WIN32
-        std::string oldDirectory =
-            GetHomeDirectory() + std::string("/.musikcube/");
-
-        std::string newDirectory = GetDataDirectory(false);
-
-        boost::filesystem::path oldPath(oldDirectory);
-        boost::filesystem::path newPath(newDirectory);
-
-        if (boost::filesystem::exists(oldPath) &&
-            !boost::filesystem::exists(newPath))
-        {
-            boost::filesystem::rename(oldPath, newPath);
-        }
-    #endif
-    }
-
     std::string GetPath(const std::string &sFile) {
         std::string sPath;
         int length;

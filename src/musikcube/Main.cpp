@@ -98,15 +98,10 @@ int main(int argc, char* argv[]) {
     std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
     boost::filesystem::path::imbue(utf8Locale);
 
-    /* needs to come immediately after configuring the fs, before loading
-    any other subsystems */
-    musik::core::MigrateOldDataDirectory();
-
     /* ensure we have the correct locale loaded */
     musik::core::i18n::Locale::Instance().Initialize(musik::core::GetApplicationDirectory() + "/locales/");
 
 #ifdef WIN32
-    musik::core::RemoveOldDlls();
     AddDllDirectory(u8to16(musik::core::GetPluginDirectory()).c_str());
     #ifdef __PDCURSES__
         PDC_set_resize_limits(MIN_HEIGHT, 1000, MIN_WIDTH, 1000);

@@ -260,6 +260,17 @@ void Preferences::GetKeys(std::vector<std::string>& target) {
     }
 }
 
+bool Preferences::HasKey(const std::string& key) {
+    return json.find(key) != json.end();
+}
+
+void Preferences::Remove(const std::string& key) {
+    auto it = json.find(key);
+    if (it != json.end()) {
+        json.erase(it);
+    }
+}
+
 void Preferences::Load() {
     std::string str = fileToString(FILENAME(this->component));
     if (str.size()) {

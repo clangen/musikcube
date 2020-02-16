@@ -81,14 +81,16 @@ CategorySearchLayout::~CategorySearchLayout() {
 }
 
 void CategorySearchLayout::LoadLastSession() {
-    const std::string lastFilter = this->prefs->GetString(keys::LastTrackFilter);
+    auto session = Preferences::ForComponent(components::Session);
+    const std::string lastFilter = session->GetString(keys::LastCategoryFilter);
     if (lastFilter.size()) {
         this->input->SetText(lastFilter);
     }
 }
 
 void CategorySearchLayout::SaveSession() {
-    this->prefs->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
+    auto session = Preferences::ForComponent(components::Session);
+    session->SetString(keys::LastCategoryFilter, this->input->GetText().c_str());
 }
 
 void CategorySearchLayout::OnLayout() {
