@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -119,7 +120,6 @@ addch
 
 #ifdef USING_COMBINING_CHARACTER_SCHEME
 #include <stdlib.h>
-#include <assert.h>
 /*
  * A greatly stripped-down version of Markus Kuhn's excellent
  * wcwidth implementation.  For his latest version and many
@@ -379,6 +379,8 @@ int waddch( WINDOW *win, const chtype ch)
     PDC_LOG(("waddch() - called: win=%p ch=%x (text=%c attr=0x%x)\n",
              win, ch, ch & A_CHARTEXT, ch & A_ATTRIBUTES));
 
+    assert( SP);
+    assert( win);
     if (!win || !SP)
         return ERR;
 

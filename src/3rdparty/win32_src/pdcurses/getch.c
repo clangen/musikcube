@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -342,6 +343,8 @@ int wgetch(WINDOW *win)
 
     PDC_LOG(("wgetch() - called\n"));
 
+    assert( SP);
+    assert( win);
     if (!win || !SP)
         return ERR;
 
@@ -507,6 +510,7 @@ int flushinp(void)
 {
     PDC_LOG(("flushinp() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -523,6 +527,7 @@ unsigned long PDC_get_key_modifiers(void)
 {
     PDC_LOG(("PDC_get_key_modifiers() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -533,6 +538,7 @@ int PDC_return_key_modifiers(bool flag)
 {
     PDC_LOG(("PDC_return_key_modifiers() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 

@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -36,6 +37,7 @@ int beep(void)
 {
     PDC_LOG(("beep() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 

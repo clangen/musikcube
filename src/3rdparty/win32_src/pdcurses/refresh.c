@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -132,6 +133,8 @@ int doupdate(void)
 
     PDC_LOG(("doupdate() - called\n"));
 
+    assert( SP);
+    assert( curscr);
     if (!SP || !curscr)
         return ERR;
 

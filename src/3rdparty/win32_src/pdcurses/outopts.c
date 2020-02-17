@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -156,6 +157,7 @@ int raw_output(bool bf)
 {
     PDC_LOG(("raw_output() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -168,6 +170,7 @@ bool is_leaveok(const WINDOW *win)
 {
     PDC_LOG(("is_leaveok() - called\n"));
 
+    assert( win);
     if (!win)
         return FALSE;
 

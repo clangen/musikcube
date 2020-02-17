@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -87,6 +88,9 @@ int wgetnstr(WINDOW *win, char *str, int n)
 
     PDC_LOG(("wgetnstr() - called\n"));
 
+    assert( win);
+    assert( str);
+    assert( SP);
     if (!win || !str)
         return ERR;
 
@@ -284,6 +288,9 @@ int wgetn_wstr(WINDOW *win, wint_t *wstr, int n)
 
     PDC_LOG(("wgetn_wstr() - called\n"));
 
+    assert( win);
+    assert( wstr);
+    assert( SP);
     if (!win || !wstr)
         return ERR;
 

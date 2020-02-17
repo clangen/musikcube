@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -304,6 +305,7 @@ int slk_noutrefresh(void)
 {
     PDC_LOG(("slk_noutrefresh() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -338,6 +340,7 @@ int slk_clear(void)
 {
     PDC_LOG(("slk_clear() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -350,6 +353,7 @@ int slk_restore(void)
 {
     PDC_LOG(("slk_restore() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -362,6 +366,7 @@ int slk_touch(void)
 {
     PDC_LOG(("slk_touch() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -374,6 +379,7 @@ int slk_attron(const chtype attrs)
 
     PDC_LOG(("slk_attron() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -396,6 +402,7 @@ int slk_attroff(const chtype attrs)
 
     PDC_LOG(("slk_attroff() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -418,6 +425,7 @@ int slk_attrset(const chtype attrs)
 
     PDC_LOG(("slk_attrset() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -433,6 +441,7 @@ int slk_color(short color_pair)
 
     PDC_LOG(("slk_color() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -484,6 +493,7 @@ void PDC_slk_initialize(void)
 {
     if (slk)
     {
+        assert( SP);
         if (label_fmt < 0)
         {
             SP->slklines = 2;
@@ -538,6 +548,7 @@ int PDC_mouse_in_slk(int y, int x)
     /* If the line on which the mouse was clicked is NOT the last line
        of the screen, or the SLKs are hidden,  we are not interested in it. */
 
+    assert( SP);
     if (!slk || hidden || !SP->slk_winptr
                         || (y != SP->slk_winptr->_begy + label_line))
         return 0;

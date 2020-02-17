@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -137,6 +138,7 @@ int def_prog_mode(void)
 {
     PDC_LOG(("def_prog_mode() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -149,6 +151,7 @@ int def_shell_mode(void)
 {
     PDC_LOG(("def_shell_mode() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -161,6 +164,7 @@ int reset_prog_mode(void)
 {
     PDC_LOG(("reset_prog_mode() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -174,6 +178,7 @@ int reset_shell_mode(void)
 {
     PDC_LOG(("reset_shell_mode() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -187,6 +192,7 @@ int resetty(void)
 {
     PDC_LOG(("resetty() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -197,6 +203,7 @@ int savetty(void)
 {
     PDC_LOG(("savetty() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -225,10 +232,14 @@ int curs_set(int visibility)
     return ret_vis;
 }
 
+/* TODO : must initscr() be called for napms to work?  Certainly not
+on some platforms,  but is it true for all?  */
+
 int napms(int ms)
 {
     PDC_LOG(("napms() - called: ms=%d\n", ms));
 
+    assert( SP);
     if (!SP)
         return ERR;
 

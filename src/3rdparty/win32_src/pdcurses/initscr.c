@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -125,6 +126,7 @@ WINDOW *initscr(void)
     if (SP && SP->alive)
         return NULL;
     SP = calloc(1, sizeof(SCREEN));
+    assert( SP);
     if (!SP)
         return NULL;
 
@@ -274,6 +276,7 @@ int endwin(void)
     def_prog_mode();
     PDC_scr_close();
 
+    assert( SP);
     SP->alive = FALSE;
 
     return OK;
@@ -306,6 +309,7 @@ void delscreen(SCREEN *sp)
 {
     PDC_LOG(("delscreen() - called\n"));
 
+    assert( SP);
     if (!SP || sp != SP)
         return;
 

@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -248,6 +249,7 @@ WINDOW *newwin(int nlines, int ncols, int begy, int begx)
     if (!ncols)
         ncols  = COLS  - begx;
 
+    assert( SP);
     if (!SP || begy + nlines > SP->lines || begx + ncols > SP->cols)
         return (WINDOW *)NULL;
 
@@ -446,6 +448,8 @@ WINDOW *resize_window(WINDOW *win, int nlines, int ncols)
     PDC_LOG(("resize_window() - called: nlines %d ncols %d\n",
              nlines, ncols));
 
+    assert( SP);
+    assert( win);
     if (!win || !SP)
         return (WINDOW *)NULL;
 

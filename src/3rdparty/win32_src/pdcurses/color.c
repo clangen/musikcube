@@ -117,6 +117,7 @@ int start_color(void)
 {
     PDC_LOG(("start_color() - called\n"));
 
+    assert( SP);
     if (!SP || SP->mono)
         return ERR;
 
@@ -199,6 +200,7 @@ int init_extended_pair(int pair, int fg, int bg)
 {
     PDC_LOG(("init_pair() - called: pair %d fg %d bg %d\n", pair, fg, bg));
 
+    assert( SP);
     if (!SP || !SP->color_started || pair < 1 || pair >= COLOR_PAIRS ||
         fg < first_col || fg >= COLORS || bg < first_col || bg >= COLORS)
         return ERR;
@@ -219,6 +221,7 @@ int init_extended_color(int color, int red, int green, int blue)
 {
     PDC_LOG(("init_color() - called\n"));
 
+    assert( SP);
     if (!SP || color < 0 || color >= COLORS || !PDC_can_change_color() ||
         red < -1 || red > 1000 || green < -1 || green > 1000 ||
         blue < -1 || blue > 1000)
@@ -310,6 +313,7 @@ int PDC_set_line_color(short color)
 {
     PDC_LOG(("PDC_set_line_color() - called: %d\n", color));
 
+    assert( SP);
     if (!SP || color < -1 || color >= COLORS)
         return ERR;
 
@@ -322,6 +326,7 @@ int PDC_init_atrtab(void)
 {
     int i;
 
+    assert( SP);
     if( !SP->atrtab)
     {
        atrtab_size_alloced = PDC_COLOR_PAIRS;

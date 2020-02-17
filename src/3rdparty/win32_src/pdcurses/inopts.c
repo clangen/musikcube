@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -128,6 +129,7 @@ int cbreak(void)
 {
     PDC_LOG(("cbreak() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -140,6 +142,7 @@ int nocbreak(void)
 {
     PDC_LOG(("nocbreak() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -153,6 +156,7 @@ int echo(void)
 {
     PDC_LOG(("echo() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -165,6 +169,7 @@ int noecho(void)
 {
     PDC_LOG(("noecho() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -177,6 +182,7 @@ int halfdelay(int tenths)
 {
     PDC_LOG(("halfdelay() - called\n"));
 
+    assert( SP);
     if (!SP || tenths < 1 || tenths > 255)
         return ERR;
 
@@ -208,6 +214,7 @@ int meta(WINDOW *win, bool bf)
 {
     PDC_LOG(("meta() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -220,6 +227,7 @@ int nl(void)
 {
     PDC_LOG(("nl() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -232,6 +240,7 @@ int nonl(void)
 {
     PDC_LOG(("nonl() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -263,6 +272,7 @@ int raw(void)
 {
     PDC_LOG(("raw() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
@@ -276,6 +286,7 @@ int noraw(void)
 {
     PDC_LOG(("noraw() - called\n"));
 
+    assert( SP);
     if (!SP)
         return ERR;
 
