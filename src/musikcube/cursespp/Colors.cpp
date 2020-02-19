@@ -500,6 +500,16 @@ static bool canChangeColors() {
     if (termEnv && strlen(termEnv)) {
         term = std::string(termEnv);
         if (term == "Apple_Terminal") {
+            const char* termVer = std::getenv("TERM_PROGRAM_VERSION");
+            if (termVer && strlen(termVer)) {
+                /* note that older versions of Terminal.app don't support
+                true color mode. however, I recently tested with 433 and
+                it works fine! versions older than 433 may work as well,
+                but it's untested */
+                if (atoi(termVer) >= 433) {
+                    return true;
+                }
+            }
             return false;
         }
     }
