@@ -141,7 +141,6 @@ palette, use ones that most closely match our desired colors */
 #define COLOR_256_OFFWHITE 251
 
 #define SCALE(x) ((x * 1000) / 255)
-
 struct ThemeColor {
     ThemeColor() {
         Set(0, 0, 0, 0, -1);
