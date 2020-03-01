@@ -543,6 +543,11 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     WINDOW *c = this->GetContent();
+
+    if (!c) {
+        return;
+    }
+
     auto state = transport.GetPlaybackState();
     bool paused = (state == PlaybackPrepared || state == PlaybackPaused);
     bool stopped = (state == PlaybackStopped);

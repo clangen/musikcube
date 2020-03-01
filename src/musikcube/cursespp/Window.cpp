@@ -767,17 +767,19 @@ IWindow* Window::GetParent() const {
 }
 
 void Window::Clear() {
-    werase(this->content);
-    wmove(this->content, 0, 0);
+    if (this->content) {
+        werase(this->content);
+        wmove(this->content, 0, 0);
+    }
 
     bool focused = this->IsFocused();
     int64_t contentColor = focused ? this->focusedContentColor : this->contentColor;
     int64_t frameColor = focused ? this->focusedFrameColor : this->frameColor;
 
-    if (this->content == this->frame) {
+    if (this->content == this->frame && this->frame) {
         wbkgd(this->frame, contentColor);
     }
-    else {
+    else if (this->frame && this->content) {
         wbkgd(this->frame, frameColor);
         wbkgd(this->content, contentColor);
     }
