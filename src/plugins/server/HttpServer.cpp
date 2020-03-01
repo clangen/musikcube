@@ -294,9 +294,9 @@ bool HttpServer::Start() {
 
         httpServer = MHD_start_daemon(
 #if MHD_VERSION >= 0x00095300
-            MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD | ipVersion,
+            MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION | ipVersion,
 #else
-            MHD_USE_SELECT_INTERNALLY | ipVersion,
+            MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION | ipVersion,
 #endif
             context.prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port),
             nullptr,
