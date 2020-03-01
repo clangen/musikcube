@@ -136,7 +136,8 @@ enum PDC_port
     PDC_PORT_OS2 = 4,
     PDC_PORT_SDL1 = 5,
     PDC_PORT_SDL2 = 6,
-    PDC_PORT_VT = 7
+    PDC_PORT_VT = 7,
+    PDC_PORT_DOSVGA = 8
 };
 
 /* Use this structure with PDC_get_version() for run-time info about the
