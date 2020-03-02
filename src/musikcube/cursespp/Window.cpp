@@ -59,6 +59,14 @@ static std::shared_ptr<INavigationKeys> keys;
 
 #define ENABLE_BOUNDS_CHECK 1
 
+/* clangen says: we used to just be able to call wbkgd() prior to ncurses 6.2;
+however, something changed internally that causes the drawing to get corrupted
+if we don't call wbkgdset() first. this looks like a bug, and the release notes
+mention wbkgd() was changed, but it's unclear what exactly happened... */
+#define wbkgd_internal(window, color) \
+    wbkgdset(window, color); \
+    wbkgd(window, color);
+
 static inline void DrawCursor(IInput* input) {
     if (input) {
         Window* inputWindow = dynamic_cast<Window*>(input);
@@ -449,13 +457,13 @@ void Window::RepaintBackground() {
         this->content != this->frame)
     {
         werase(this->frame);
-        wbkgd(this->frame, focused? this->focusedFrameColor : this->frameColor);
+        wbkgd_internal(this->frame, focused? this->focusedFrameColor : this->frameColor);
         this->DrawFrameAndTitle();
     }
 
     if (this->content) {
         werase(this->content);
-        wbkgd(this->content, focused ? this->focusedContentColor : this->contentColor);
+        wbkgd_internal(this->content, focused ? this->focusedContentColor : this->contentColor);
     }
 
     this->Invalidate();
@@ -775,11 +783,10 @@ void Window::Clear() {
     int64_t frameColor = focused ? this->focusedFrameColor : this->frameColor;
 
     if (this->content == this->frame) {
-        wbkgd(this->frame, contentColor);
+        wbkgd_internal(this->frame, contentColor);
     }
     else {
-        wbkgd(this->frame, frameColor);
-        wbkgd(this->content, contentColor);
+        wbkgd_internal(this->frame, frameColor);
     }
 }
 
