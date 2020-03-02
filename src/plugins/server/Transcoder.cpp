@@ -275,14 +275,14 @@ IDataStream* Transcoder::TranscodeAndWait(
     else {
         IBlockingEncoder* blockingEncoder = dynamic_cast<IBlockingEncoder*>(encoder);
         if (blockingEncoder) {
-            bool waitForExisting = false;
+            bool alreadyTranscoding = false;
             {
                 /* see if there's already a blocking transcoder running for the specified
                 uri. if there is, wait for it to complete. if there's not, add it to the
                 running set */
                 std::unique_lock<std::mutex> lock(transcoderMutex);
-                waitForExisting = runningBlockingTranscoders.find(uri) != runningBlockingTranscoders.end();
-                if (waitForExisting) {
+                alreadyTranscoding = runningBlockingTranscoders.find(uri) != runningBlockingTranscoders.end();
+                if (alreadyTranscoding) {
                     while (runningBlockingTranscoders.find(uri) != runningBlockingTranscoders.end()) {
                         waitForTranscode.wait(lock);
                     }
@@ -292,7 +292,7 @@ IDataStream* Transcoder::TranscodeAndWait(
                 }
             }
 
-            if (!waitForExisting) {
+            if (!alreadyTranscoding) {
                 BlockingTranscoder blockingTranscoder(
                     context, blockingEncoder, uri, tempFilename, expectedFilename, bitrate);
 
