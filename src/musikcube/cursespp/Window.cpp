@@ -787,7 +787,7 @@ void Window::Clear() {
     if (this->content == this->frame && this->frame) {
         wbkgd_internal(this->frame, contentColor);
     }
-    else if (this->frame && this->context) {
+    else if (this->frame && this->content) {
         wbkgd_internal(this->frame, frameColor);
         wbkgd_internal(this->frame, contentColor);
     }
