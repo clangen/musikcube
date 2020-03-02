@@ -63,9 +63,14 @@ static std::shared_ptr<INavigationKeys> keys;
 however, something changed internally that causes the drawing to get corrupted
 if we don't call wbkgdset() first. this looks like a bug, and the release notes
 mention wbkgd() was changed, but it's unclear what exactly happened... */
-#define wbkgd_internal(window, color) \
-    wbkgdset(window, color); \
-    wbkgd(window, color);
+#ifndef WIN32
+    #define wbkgd_internal(window, color) \
+        wbkgdset(window, color); \
+        wbkgd(window, color);
+#else
+    #define wbkgd_internal(window, color) \
+        wbkgd(window, color);
+#endif
 
 static inline void DrawCursor(IInput* input) {
     if (input) {
