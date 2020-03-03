@@ -792,6 +792,7 @@ void Window::Clear() {
     }
     else {
         wbkgd_internal(this->frame, frameColor);
+        wbkgd_internal(this->content, contentColor);
     }
 }
 
