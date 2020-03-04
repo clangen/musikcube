@@ -156,7 +156,6 @@ namespace musik { namespace core {
             size_t last = result.find_last_of("/");
             result = result.substr(0, last); /* remove filename component */
         #endif
-        std::cout << result << std::endl;
 
         return result;
     }
