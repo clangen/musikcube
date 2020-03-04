@@ -56,6 +56,15 @@
     #include <limits.h>
 #endif
 
+// given the #ifdef/#else above, the following is not required.
+// Nor it is the #if FreeBSD below. 
+#ifdef __OpenBSD__
+	#include <sys/types.h>
+	#include <sys/sysctl.h>
+	#include <unistd.h>
+	#include <limits.h>
+#endif
+
 #ifdef __FreeBSD__
     #include <sys/types.h>
     #include <sys/sysctl.h>
@@ -125,15 +134,29 @@ namespace musik { namespace core {
                 mib[3] = -1;
                 size_t bufsize = sizeof(pathbuf);
                 sysctl(mib, 4, pathbuf, &bufsize, nullptr, 0);
-            #else
-                std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
-                readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
-	    #endif
+            #elif defined  __OpenBSD__
+			    int mib[4];
+			    char **argv;
+			    size_t len = ARG_MAX;
+
+			    mib[0] = CTL_KERN;
+			    mib[1] = KERN_PROC_ARGS;
+			    mib[2] = getpid();
+			    mib[3] = KERN_PROC_ARGV;
+
+			    argv = new char*[len];
+			    if (sysctl(mib, 4, argv, &len, nullptr, 0) < 0) abort();
+
+			    boost::filesystem::path command = boost::filesystem::system_complete(argv[0]);
+			    realpath(command.c_str(), pathbuf);
+			    delete[] argv;
+	        #endif
 
             result.assign(pathbuf);
             size_t last = result.find_last_of("/");
             result = result.substr(0, last); /* remove filename component */
         #endif
+        std::cout << result << std::endl;
 
         return result;
     }
