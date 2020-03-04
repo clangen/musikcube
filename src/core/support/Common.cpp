@@ -150,7 +150,10 @@ namespace musik { namespace core {
 			    boost::filesystem::path command = boost::filesystem::system_complete(argv[0]);
 			    realpath(command.c_str(), pathbuf);
 			    delete[] argv;
-	        #endif
+            #else
+                std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
+                readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
+	    #endif
 
             result.assign(pathbuf);
             size_t last = result.find_last_of("/");
