@@ -304,6 +304,14 @@ static size_t writePlayingFormat(
             }
         }
 
+        /* any % in the value string might be parsed by wprintw, so replace it */
+        std::size_t percentSignIndex = value.find("%");
+        while (percentSignIndex != std::string::npos) {
+            value.replace(percentSignIndex, 1, "%%");
+            /* we replaced one % with 2 of them, so we need to skip ahead 2 chars */
+            percentSignIndex = value.find("%", percentSignIndex + 2);
+        }
+
         ON(w, attr);
         checked_wprintw(w, value.c_str());
         OFF(w, attr);
