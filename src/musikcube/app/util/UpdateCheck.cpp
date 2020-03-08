@@ -66,6 +66,8 @@ static const std::string PLATFORM = "win32";
 static const std::string PLATFORM = "macos";
 #elif defined __FreeBSD__
 static const std::string PLATFORM = "freebsd";
+#elif defined __OpenBSD__
+static const std::string PLATFORM = "openbsd";
 #else
 static const std::string PLATFORM = "linux";
 #endif
