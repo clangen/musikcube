@@ -298,7 +298,22 @@ namespace cursespp {
             { "M-KEY_UP",    "M-up" },
             { "M-KEY_DOWN",  "M-down" },
             { "kUP5",        "CTL_UP" },
-            { "kDN5",        "CTL_DOWN" }
+            { "kDN5",        "CTL_DOWN" },
+#ifdef PDCURSES_WINCON
+            /* special bindings for the "Windows Terminal" app */
+            { "KEY_A2",      "KEY_UP" },
+            { "KEY_C2",      "KEY_DOWN" },
+            { "KEY_B3",      "KEY_RIGHT" },
+            { "KEY_B1",      "KEY_LEFT" },
+            { "KEY_A3",      "KEY_PPAGE" },
+            { "KEY_C3",      "KEY_NPAGE" },
+            { "KEY_A1",      "KEY_HOME" },
+            { "KEY_C1",      "KEY_END" },
+            { "CTL_PAD4",    "CTL_LEFT" },
+            { "CTL_PAD6",    "CTL_RIGHT" },
+            { "CTL_PAD8",    "CTL_UP" },
+            { "CTL_PAD9",    "CTL_DOWN" },
+#endif
        };
 
         std::string Normalize(const std::string& kn) {
