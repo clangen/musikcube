@@ -374,6 +374,12 @@ static const char* mcsdk_track_field_external_id = "external_id";
 #define mcsdk_handle_equals(x, y) x.opaque == y.opaque
 
 /**
+ * @brief For internal use only.
+ *
+ */
+mcsdk_define_handle(mcsdk_internal);
+
+/**
  * @brief An opaque resource identifier. If you have one of these you can use the
  * `mcsdk_resource_get_class` function to resolve the type.
  *
