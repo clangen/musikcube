@@ -84,14 +84,16 @@ TrackSearchLayout::~TrackSearchLayout() {
 }
 
 void TrackSearchLayout::LoadLastSession() {
-    const std::string lastFilter = this->prefs->GetString(keys::LastTrackFilter);
+    auto session = Preferences::ForComponent(components::Session);
+    const std::string lastFilter = session->GetString(keys::LastTrackFilter);
     if (lastFilter.size()) {
         this->input->SetText(lastFilter);
     }
 }
 
 void TrackSearchLayout::SaveSession() {
-    this->prefs->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
+    auto session = Preferences::ForComponent(components::Session);
+    session->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
 }
 
 void TrackSearchLayout::OnLayout() {

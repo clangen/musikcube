@@ -80,34 +80,34 @@ using namespace musik::core::audio;
 
 #define ENV musik::core::plugin::Environment()
 
-#define RESOURCE(x) reinterpret_cast<IResource*>(x.opaque)
-#define VALUE(x) reinterpret_cast<IValue*>(x.opaque)
-#define MAP(x) reinterpret_cast<IMap*>(x.opaque)
-#define VALUELIST(x) reinterpret_cast<IValueList*>(x.opaque)
-#define MAPLIST(x) reinterpret_cast<IMapList*>(x.opaque)
-#define TRACK(x) reinterpret_cast<ITrack*>(x.opaque)
-#define TRACKLIST(x) reinterpret_cast<ITrackList*>(x.opaque)
-#define TRACKLISTEDITOR(x) reinterpret_cast<ITrackListEditor*>(x.opaque)
-#define METADATA(x) reinterpret_cast<IMetadataProxy*>(x.opaque)
-#define PLAYBACK(x) reinterpret_cast<IPlaybackService*>(x.opaque)
-#define PREFS(x) reinterpret_cast<IPreferences*>(x.opaque)
-#define DATASTREAM(x) reinterpret_cast<IDataStream*>(x.opaque)
-#define BUFFER(x) reinterpret_cast<IBuffer*>(x.opaque)
-#define BUFFERPROVIDER(x) reinterpret_cast<IBufferProvider*>(x.opaque)
-#define DECODER(x) reinterpret_cast<IDecoder*>(x.opaque)
-#define ENCODER(x) reinterpret_cast<IEncoder*>(x.opaque)
-#define STREAMINGENCODER(x) reinterpret_cast<IStreamingEncoder*>(x.opaque)
-#define BLOCKINGENCODER(x) reinterpret_cast<IBlockingEncoder*>(x.opaque)
-#define DEVICE(x) reinterpret_cast<IDevice*>(x.opaque)
-#define DEVICELIST(x) reinterpret_cast<IDeviceList*>(x.opaque)
-#define OUTPUT(x) reinterpret_cast<IOutput*>(x.opaque)
-#define AUDIOSTREAM(x) reinterpret_cast<IStream*>(x.opaque)
-#define PLAYER(x) reinterpret_cast<mcsdk_player_context_internal*>(x.opaque)
-#define INDEXER(x) reinterpret_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)->indexer
-#define LIBRARY(x) reinterpret_cast<ILibrary*>(x.opaque)
-#define DBCONNECTION(x) reinterpret_cast<Connection*>(x.opaque)
-#define DBSTATEMENT(x) reinterpret_cast<Statement*>(x.opaque)
-#define DBTRANSACTION(x) reinterpret_cast<ScopedTransaction*>(x.opaque)
+#define RESOURCE(x) static_cast<IResource*>(x.opaque)
+#define VALUE(x) static_cast<IValue*>(x.opaque)
+#define MAP(x) static_cast<IMap*>(x.opaque)
+#define VALUELIST(x) static_cast<IValueList*>(x.opaque)
+#define MAPLIST(x) static_cast<IMapList*>(x.opaque)
+#define TRACK(x) static_cast<ITrack*>(x.opaque)
+#define TRACKLIST(x) static_cast<ITrackList*>(x.opaque)
+#define TRACKLISTEDITOR(x) static_cast<ITrackListEditor*>(x.opaque)
+#define METADATA(x) static_cast<IMetadataProxy*>(x.opaque)
+#define PLAYBACK(x) static_cast<IPlaybackService*>(x.opaque)
+#define PREFS(x) static_cast<IPreferences*>(x.opaque)
+#define DATASTREAM(x) static_cast<IDataStream*>(x.opaque)
+#define BUFFER(x) static_cast<IBuffer*>(x.opaque)
+#define BUFFERPROVIDER(x) static_cast<IBufferProvider*>(x.opaque)
+#define DECODER(x) static_cast<IDecoder*>(x.opaque)
+#define ENCODER(x) static_cast<IEncoder*>(x.opaque)
+#define STREAMINGENCODER(x) static_cast<IStreamingEncoder*>(x.opaque)
+#define BLOCKINGENCODER(x) static_cast<IBlockingEncoder*>(x.opaque)
+#define DEVICE(x) static_cast<IDevice*>(x.opaque)
+#define DEVICELIST(x) static_cast<IDeviceList*>(x.opaque)
+#define OUTPUT(x) static_cast<IOutput*>(x.opaque)
+#define AUDIOSTREAM(x) static_cast<IStream*>(x.opaque)
+#define PLAYER(x) static_cast<mcsdk_player_context_internal*>(x.opaque)
+#define INDEXER(x) static_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)->indexer
+#define LIBRARY(x) static_cast<ILibrary*>(x.opaque)
+#define DBCONNECTION(x) static_cast<Connection*>(x.opaque)
+#define DBSTATEMENT(x) static_cast<Statement*>(x.opaque)
+#define DBTRANSACTION(x) static_cast<ScopedTransaction*>(x.opaque)
 
 #define RELEASE(x, type) if (mcsdk_handle_ok(x)) { type(x)->Release(); x.opaque = nullptr; }
 
@@ -225,7 +225,7 @@ mcsdk_export bool mcsdk_track_list_can_edit(mcsdk_track_list tl) {
 }
 
 mcsdk_export mcsdk_track_list_editor mcsdk_track_list_edit(mcsdk_track_list tl) {
-    auto trackList = reinterpret_cast<TrackList*>(tl.opaque);
+    auto trackList = static_cast<TrackList*>(tl.opaque);
     auto trackListPtr = std::shared_ptr<TrackList>(trackList, [](TrackList*){});
     return mcsdk_track_list_editor { new TrackListEditor(trackListPtr) };
 }
@@ -654,8 +654,27 @@ mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab) {
  * IBufferProvider
  */
 
-mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffer_provider abp, mcsdk_audio_buffer ab) {
-    BUFFERPROVIDER(abp)->OnBufferProcessed(BUFFER(ab));
+class mcsdk_audio_buffer_provider_callback_proxy: public IBufferProvider {
+    public:
+        mcsdk_audio_buffer_provider_callback_proxy(mcsdk_audio_buffer_provider_processed_callback cb) {
+            this->cb = cb;
+        }
+
+        virtual void OnBufferProcessed(IBuffer *buffer) {
+            cb({ buffer });
+        }
+
+    private:
+        mcsdk_audio_buffer_provider_processed_callback cb;
+};
+
+mcsdk_export mcsdk_audio_buffer_provider mcsdk_audio_audio_buffer_provider_create(mcsdk_audio_buffer_provider_processed_callback cb) {
+    return { new mcsdk_audio_buffer_provider_callback_proxy(cb) };
+}
+
+mcsdk_export void mcsdk_audio_audio_buffer_provider_release(mcsdk_audio_buffer_provider abp) {
+    delete static_cast<mcsdk_audio_buffer_provider_callback_proxy*>(abp.opaque);
+    abp.opaque = nullptr;
 }
 
 /*
@@ -783,7 +802,7 @@ mcsdk_export void mcsdk_encoder_release(mcsdk_encoder e) {
 }
 
 mcsdk_export mcsdk_encoder_type mcsdk_encoder_get_type(mcsdk_encoder e) {
-    IEncoder* encoder = reinterpret_cast<IEncoder*>(e.opaque);
+    IEncoder* encoder = static_cast<IEncoder*>(e.opaque);
     if (dynamic_cast<IBlockingEncoder*>(encoder) != nullptr) {
         return mcsdk_encoder_type_blocking;
     }
@@ -1104,7 +1123,7 @@ mcsdk_export void mcsdk_audio_player_detach(mcsdk_audio_player ap, mcsdk_audio_p
     mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
-        auto proxy = reinterpret_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener);
+        auto proxy = static_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener);
         auto it = proxy->callbacks.find(callbacks);
         if (it != proxy->callbacks.end()) {
             proxy->callbacks.erase(it);
@@ -1116,7 +1135,7 @@ mcsdk_export void mcsdk_audio_player_attach(mcsdk_audio_player ap, mcsdk_audio_p
     mcsdk_player_context_internal* context = PLAYER(ap);
     std::unique_lock<std::mutex> lock(context->event_mutex);
     if (!context->player_finished) {
-        reinterpret_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener)->callbacks.insert(callbacks);
+        static_cast<mcsdk_audio_player_callback_proxy*>(context->event_listener)->callbacks.insert(callbacks);
     }
 }
 
@@ -1197,7 +1216,7 @@ mcsdk_export mcsdk_audio_player_gain mcsdk_audio_player_get_default_gain() {
  * IIndexer
  */
 
-#define INDEXER_INTERNAL(x) reinterpret_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)
+#define INDEXER_INTERNAL(x) static_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)
 
 mcsdk_export void mcsdk_svc_indexer_add_path(mcsdk_svc_indexer in, const char* path) {
     INDEXER(in)->AddPath(path);

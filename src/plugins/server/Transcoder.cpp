@@ -39,9 +39,15 @@
 #include "Util.h"
 #include <core/sdk/IBlockingEncoder.h>
 #include <boost/filesystem.hpp>
+#include <thread>
+#include <set>
 
 using namespace musik::core::sdk;
 using namespace boost::filesystem;
+
+std::mutex transcoderMutex;
+std::condition_variable waitForTranscode;
+std::set<std::string> runningBlockingTranscoders;
 
 static IEncoder* getEncoder(Context& context, const std::string& format) {
     std::string extension = "." + format;
@@ -267,13 +273,45 @@ IDataStream* Transcoder::TranscodeAndWait(
         return context.environment->GetDataStream(uri.c_str(), OpenFlags::Read);
     }
     else {
-        IBlockingEncoder* dataStreamEncoder = dynamic_cast<IBlockingEncoder*>(encoder);
-        if (dataStreamEncoder) {
-            BlockingTranscoder blockingTranscoder(
-                context, dataStreamEncoder, uri, tempFilename, expectedFilename, bitrate);
+        IBlockingEncoder* blockingEncoder = dynamic_cast<IBlockingEncoder*>(encoder);
+        if (blockingEncoder) {
+            bool alreadyTranscoding = false;
+            {
+                /* see if there's already a blocking transcoder running for the specified
+                uri. if there is, wait for it to complete. if there's not, add it to the
+                running set */
+                std::unique_lock<std::mutex> lock(transcoderMutex);
+                alreadyTranscoding = runningBlockingTranscoders.find(uri) != runningBlockingTranscoders.end();
+                if (alreadyTranscoding) {
+                    while (runningBlockingTranscoders.find(uri) != runningBlockingTranscoders.end()) {
+                        waitForTranscode.wait(lock);
+                    }
+                }
+                else {
+                    runningBlockingTranscoders.insert(uri);
+                }
+            }
 
-            if (!blockingTranscoder.Transcode()) {
-                return nullptr;
+            if (!alreadyTranscoding) {
+                BlockingTranscoder blockingTranscoder(
+                    context, blockingEncoder, uri, tempFilename, expectedFilename, bitrate);
+
+                bool success = blockingTranscoder.Transcode();
+
+                {
+                    /* let anyone else waiting for a resource to be transcoding that we
+                    finished. */
+                    std::unique_lock<std::mutex> lock(transcoderMutex);
+                    auto it = runningBlockingTranscoders.find(uri);
+                    if (it != runningBlockingTranscoders.end()) {
+                        runningBlockingTranscoders.erase(it);
+                    }
+                    waitForTranscode.notify_all();
+                }
+
+                if (!success) {
+                    return nullptr;
+                }
             }
         }
 

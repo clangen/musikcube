@@ -168,7 +168,7 @@ PlaybackService::PlaybackService(
 }
 
 PlaybackService::~PlaybackService() {
-    playback::SavePlaybackContext(appPrefs, library, *this);
+    playback::SavePlaybackContext(library, *this);
     this->messageQueue.Remove(this);
     savePreferences(*this, playbackPrefs);
     this->Stop();
@@ -299,7 +299,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     int type = message.Type();
     if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
         loadPreferences(this->transport, *this, playbackPrefs);
-        playback::LoadPlaybackContext(appPrefs, library, *this);
+        playback::LoadPlaybackContext(library, *this);
         this->InitRemotes();
     }
     else if (type == MESSAGE_MARK_TRACK_PLAYED) {

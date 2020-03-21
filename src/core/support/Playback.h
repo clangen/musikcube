@@ -49,12 +49,10 @@ namespace musik {
             void PauseOrResume(musik::core::audio::ITransport& transport);
 
             void LoadPlaybackContext(
-                std::shared_ptr<musik::core::Preferences> prefs,
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
             void SavePlaybackContext(
-                std::shared_ptr<musik::core::Preferences> prefs,
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
         }

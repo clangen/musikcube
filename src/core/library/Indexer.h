@@ -138,7 +138,7 @@ namespace musik { namespace core {
             int RemoveAllForSourceId(int sourceId);
 
             void Schedule(SyncType type, musik::core::sdk::IIndexerSource *source);
-            void IncrementTracksScanned(size_t delta = 1);
+            void IncrementTracksScanned(int delta = 1);
 
             void SyncDirectory(
                 boost::asio::io_service* io,
@@ -159,7 +159,7 @@ namespace musik { namespace core {
             boost::mutex stateMutex;
             boost::condition waitCondition;
             boost::thread *thread;
-            std::atomic<size_t> incrementalUrisScanned, totalUrisScanned;
+            std::atomic<int> incrementalUrisScanned, totalUrisScanned;
             std::deque<AddRemoveContext> addRemoveQueue;
             std::deque<SyncContext> syncQueue;
             TagReaderList tagReaders;

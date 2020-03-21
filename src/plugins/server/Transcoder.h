@@ -64,6 +64,7 @@ class Transcoder {
             size_t bitrate,
             const std::string& format);
 
+    private:
         static IDataStream* TranscodeOnDemand(
             Context& context,
             IStreamingEncoder* encoder,
@@ -71,7 +72,6 @@ class Transcoder {
             size_t bitrate,
             const std::string& format);
 
-    private:
         Transcoder() { }
         ~Transcoder() { }
 };

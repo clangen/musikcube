@@ -139,27 +139,6 @@
     <ClCompile Include="win32_src\pdcurses\panel.c">
       <Filter>src\pdcurses</Filter>
     </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\pdcclip.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\pdcdisp.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\pdcgetsc.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\pdckbd.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\pdcscrn.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\pdcsetsc.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
-    <ClCompile Include="win32_src\pdcurses\pdcutil.c">
-      <Filter>src\pdcurses</Filter>
-    </ClCompile>
     <ClCompile Include="win32_src\pdcurses\printw.c">
       <Filter>src\pdcurses</Filter>
     </ClCompile>
@@ -183,6 +162,12 @@
     </ClCompile>
     <ClCompile Include="src\md5.c">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcwincon.c">
+      <Filter>src\pdcurses</Filter>
+    </ClCompile>
+    <ClCompile Include="win32_src\pdcurses\pdcwingui.c">
+      <Filter>src\pdcurses</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

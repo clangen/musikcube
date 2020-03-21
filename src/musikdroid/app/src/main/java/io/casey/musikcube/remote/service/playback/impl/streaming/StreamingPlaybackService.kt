@@ -254,9 +254,17 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         if (requestAudioFocus()) {
             cancelScheduledPausedSleep()
 
-            if (playContext.currentPlayer != null) {
-                if (playContext.currentPlayer?.position ?: 0 > PREV_TRACK_GRACE_PERIOD_MILLIS) {
-                    playContext.currentPlayer?.position = 0
+            playContext.currentPlayer?.let { player ->
+                if (player.position > PREV_TRACK_GRACE_PERIOD_MILLIS) {
+                    /* if it takes too long to start up a player instance (e.g. we have to wait
+                    for the backend to transcode, sometimes the duration is a negative number.
+                    in that case we'll do this more heavy-weight reset */
+                    if (player.duration <= PREV_TRACK_GRACE_PERIOD_MILLIS) {
+                        playAt(queuePosition)
+                    }
+                    else {
+                        player.position = 0
+                    }
                     return
                 }
             }

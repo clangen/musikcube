@@ -74,8 +74,14 @@ using namespace musik::cube;
 using namespace cursespp;
 using namespace std::placeholders;
 
+#define ENABLE_COLOR_THEME_SELECTION
+
 #ifndef WIN32
 #define ENABLE_UNIX_TERMINAL_OPTIONS
+#endif
+
+#ifdef PDCURSES_WINCON
+#undef ENABLE_COLOR_THEME_SELECTION
 #endif
 
 #ifdef WIN32
@@ -331,7 +337,9 @@ void SettingsLayout::OnLayout() {
     this->replayGainDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->transportDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->lastFmDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+#ifdef ENABLE_COLOR_THEME_SELECTION
     this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+#endif
     this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->pluginsDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
 
@@ -429,9 +437,11 @@ void SettingsLayout::InitializeWindows() {
     this->lastFmDropdown->SetText(arrow + _TSTR("settings_last_fm"));
     this->lastFmDropdown->Activated.connect(this, &SettingsLayout::OnLastFmDropdownActivate);
 
+#ifdef ENABLE_COLOR_THEME_SELECTION
     this->themeDropdown.reset(new TextLabel());
     this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + _TSTR("settings_default_theme_name"));
     this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
+#endif
 
     this->hotkeyDropdown.reset(new TextLabel());
     this->hotkeyDropdown->SetText(arrow + _TSTR("settings_hotkey_tester"));
@@ -475,7 +485,9 @@ void SettingsLayout::InitializeWindows() {
     this->replayGainDropdown->SetFocusOrder(order++);
     this->transportDropdown->SetFocusOrder(order++);
     this->lastFmDropdown->SetFocusOrder(order++);
+#ifdef ENABLE_COLOR_THEME_SELECTION
     this->themeDropdown->SetFocusOrder(order++);
+#endif
     this->hotkeyDropdown->SetFocusOrder(order++);
     this->pluginsDropdown->SetFocusOrder(order++);
 
@@ -503,7 +515,10 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->replayGainDropdown);
     this->AddWindow(this->transportDropdown);
     this->AddWindow(this->lastFmDropdown);
+
+#ifdef ENABLE_COLOR_THEME_SELECTION
     this->AddWindow(this->themeDropdown);
+#endif
 
     if (this->serverAvailable) {
         this->AddWindow(this->serverDropdown);
@@ -619,7 +634,9 @@ void SettingsLayout::LoadPreferences() {
         colorTheme = _TSTR("settings_8color_theme_name");
     }
 
+#ifdef ENABLE_COLOR_THEME_SELECTION
     this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + colorTheme);
+#endif
 
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->CheckChanged.disconnect(this);

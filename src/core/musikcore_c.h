@@ -623,6 +623,8 @@ typedef struct mcsdk_audio_player_gain {
  */
 typedef bool (*mcsdk_svc_library_run_query_callback)(mcsdk_svc_library l, mcsdk_db_connection db, void* user_context);
 
+typedef bool (*mcsdk_audio_buffer_provider_processed_callback)(mcsdk_audio_buffer buffer);
+
 /*
  * global setup
  */
@@ -892,7 +894,8 @@ mcsdk_export void mcsdk_audio_buffer_release(mcsdk_audio_buffer ab);
  * IBufferProvider
  */
 
-mcsdk_export void mcsdk_audio_buffer_provider_notify_processed(mcsdk_audio_buffer_provider abp, mcsdk_audio_buffer ab);
+mcsdk_export mcsdk_audio_buffer_provider mcsdk_audio_audio_buffer_provider_create(mcsdk_audio_buffer_provider_processed_callback cb);
+mcsdk_export void mcsdk_audio_audio_buffer_provider_release(mcsdk_audio_buffer_provider abp);
 
 /*
  * IDevice

@@ -176,6 +176,9 @@ void CrossfadeTransport::SetPosition(double seconds) {
         Lock lock(this->stateMutex);
 
         if (this->active.player) {
+            if (this->state != PlaybackPlaying) {
+                this->SetPlaybackState(PlaybackPlaying);
+            }
             this->active.player->SetPosition(seconds);
         }
     }

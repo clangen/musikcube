@@ -237,6 +237,9 @@ void GaplessTransport::SetPosition(double seconds) {
         LockT lock(this->stateMutex);
 
         if (this->activePlayer) {
+            if (this->state != PlaybackPlaying) {
+                this->SetPlaybackState(PlaybackPlaying);
+            }
             this->activePlayer->SetPosition(seconds);
         }
     }

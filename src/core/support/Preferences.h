@@ -93,6 +93,8 @@ namespace musik { namespace core {
             virtual void SetString(const std::string& key, const char* value);
 
             void GetKeys(std::vector<std::string>& target);
+            bool HasKey(const std::string& key);
+            void Remove(const std::string& key);
 
         private:
             Preferences(const std::string& component, Mode mode);

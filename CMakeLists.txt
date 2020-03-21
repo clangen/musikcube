@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(musikcube)
 set (musikcube_VERSION_MAJOR 0)
-set (musikcube_VERSION_MINOR 83)
+set (musikcube_VERSION_MINOR 85)
 set (musikcube_VERSION_PATCH 0)
 set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
 
@@ -48,7 +48,7 @@ link_directories ("${musikcube_SOURCE_DIR}/bin/plugins")
 
 set(COMMON_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
 
-if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS})
 else()
   set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS} dl)
@@ -79,7 +79,7 @@ endif()
 
 # "/usr/local" doesn't seem to be included by default on macOS 10.12+
 # "/opt/local" is the default installation location for MacPorts
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   link_directories ("/usr/local/lib")
   link_directories ("/usr/local/opt/openssl/lib")
   include_directories("/usr/local/include")
@@ -88,7 +88,7 @@ endif ()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
   add_definitions (-DNO_NCURSESW)
-elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD" )
   add_definitions (-DNO_NCURSESW)
 endif()
 
@@ -192,6 +192,13 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   if (${ENABLE_SNDIO} MATCHES "true")
     add_subdirectory(src/plugins/sndioout)
     add_dependencies(musikcube sndioout)
+  endif()
+elseif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+  add_subdirectory(src/plugins/sndioout)
+  add_dependencies(musikcube sndioout)
+  if (${ENABLE_PULSEAUDIO} MATCHES "true")
+    add_subdirectory(src/plugins/pulseout) # disabled by default
+    add_dependencies(musikcube pulseout)
   endif()
 elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
   add_subdirectory(src/plugins/sndioout)

@@ -37,9 +37,9 @@
 #include <string>
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 83
+#define VERSION_MINOR 85
 #define VERSION_PATCH 0
-#define VERSION "0.83.0"
+#define VERSION "0.85.0"
 namespace musik {
     namespace cube {
         static inline std::string userAgent() {
@@ -49,6 +49,8 @@ namespace musik {
             static const std::string PLATFORM = "macos";
 #elif defined __FreeBSD__
             static const std::string PLATFORM = "freebsd";
+#elif defined __OpenBSD__
+            static const std::string PLATFORM = "openbsd";
 #else
             static const std::string PLATFORM = "linux";
 #endif
