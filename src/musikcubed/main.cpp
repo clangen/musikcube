@@ -27,7 +27,8 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::runtime;
 
-static const char* LOCKFILE = "/tmp/musikcubed.lock";
+static const char* DEFAULT_LOCKFILE = "/tmp/musikcubed.lock";
+static const char* LOCKFILE_OVERRIDE = "MUSIKCUBED_LOCKFILE_OVERRIDE";
 static const short EVENT_DISPATCH = 1;
 static const short EVENT_QUIT = 2;
 static const pid_t NOT_RUNNING = (pid_t) -1;
@@ -145,6 +146,15 @@ static void handleCommandLine(int argc, char** argv) {
     }
 }
 
+static std::string getLockfileFn() {
+    std::string result = DEFAULT_LOCKFILE;
+    const char* userLock = std::getenv(LOCKFILE_OVERRIDE);
+    if (userLock && strlen(userLock)) {
+        result = userLock;
+    }
+    return result;
+}
+
 static void stopDaemon() {
     pid_t pid = getDaemonPid();
     if (pid == NOT_RUNNING) {
@@ -173,7 +183,7 @@ static void stopDaemon() {
 }
 
 static pid_t getDaemonPid() {
-    std::ifstream lock(LOCKFILE);
+    std::ifstream lock(getLockfileFn());
     if (lock.good()) {
         int pid;
         lock >> pid;
@@ -223,7 +233,7 @@ static void initDaemon() {
     close(STDOUT_FILENO);
     freopen("/tmp/musikcube.log", "w", stderr);
 
-    std::ofstream lock(LOCKFILE);
+    std::ofstream lock(getLockfileFn());
     if (lock.good()) {
         lock << std::to_string((int) getpid());
     }
@@ -239,7 +249,7 @@ static void initForeground() {
         exit(EXIT_FAILURE);
     }
 
-    std::ofstream lock(LOCKFILE);
+    std::ofstream lock(getLockfileFn());
     if (lock.good()) {
         lock << std::to_string((int) getpid());
     }
@@ -258,6 +268,7 @@ static void initUtf8() {
 
 int main(int argc, char** argv) {
     initUtf8();
+    std::cout << "\n  using lockfile at: " << getLockfileFn();
     handleCommandLine(argc, argv);
     exitIfRunning();
 
@@ -286,5 +297,5 @@ int main(int argc, char** argv) {
 
     plugin::Deinit();
 
-    remove(LOCKFILE);
+    remove(getLockfileFn().c_str());
 }
