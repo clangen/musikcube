@@ -60,6 +60,12 @@ namespace musik {
                     const std::string& fieldValue,
                     int64_t fieldId);
 
+                static void ShowAddDirectoryOverlay(
+                    musik::core::runtime::IMessageQueue& messageQueue,
+                    musik::core::audio::PlaybackService& playback,
+                    musik::core::ILibraryPtr library,
+                    const std::string& directory);
+
                 static void ShowAlbumDividerOverlay(
                     musik::core::runtime::IMessageQueue& messageQueue,
                     musik::core::audio::PlaybackService& playback,
