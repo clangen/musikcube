@@ -192,6 +192,9 @@
     <ClCompile Include="app\util\Rating.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\util\MagicConstants.cpp">
+      <Filter>app\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -437,6 +440,9 @@
       <Filter>cursespp\include</Filter>
     </ClInclude>
     <ClInclude Include="app\util\Rating.h">
+      <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\util\MagicConstants.h">
       <Filter>app\util</Filter>
     </ClInclude>
   </ItemGroup>

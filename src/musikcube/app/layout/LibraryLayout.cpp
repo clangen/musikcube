@@ -395,10 +395,10 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
 
 void LibraryLayout::ShowDirectoryChooser() {
     BrowseOverlays::ShowDirectoryChooser(
-    this->library,
-    [this](std::string directory) {
-        this->ShowDirectories(directory);
-    });
+        this->library,
+        [this](std::string directory) {
+            this->ShowDirectories(directory);
+        });
 }
 
 bool LibraryLayout::KeyPress(const std::string& key) {

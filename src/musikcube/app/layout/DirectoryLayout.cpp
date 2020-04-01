@@ -177,7 +177,7 @@ void DirectoryLayout::OnDirectoryChanged(
 }
 
 void DirectoryLayout::UpdateTitle() {
-    std::string title = _TSTR("browse_title_tracks");
+    std::string title = "";
 
     size_t selected = this->directoryList->GetSelectedIndex();
     if (selected != ListWindow::NO_SELECTION) {
