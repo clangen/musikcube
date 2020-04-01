@@ -96,6 +96,7 @@ namespace musik {
                 void ShowBrowse(const std::string& category = "");
                 void ShowCategorySearch();
                 void ShowTrackSearch();
+                void ShowDirectoryChooser();
                 void ShowDirectories(const std::string& directory);
 
                 void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);

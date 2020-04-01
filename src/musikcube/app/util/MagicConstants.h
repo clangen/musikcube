@@ -34,22 +34,22 @@
 
 #pragma once
 
-#include <core/library/ILibrary.h>
-#include <functional>
+#include <string>
 
-namespace musik {
-    namespace cube {
-        class BrowseOverlays {
-            public:
-                static void ShowCategoryChooser(
-                    musik::core::ILibraryPtr library,
-                    std::function<void(std::string, std::string)> callback);
+namespace musik { namespace cube {
 
-                static void ShowDirectoryChooser(
-                    musik::core::ILibraryPtr library,
-                    std::function<void(std::string)> callback);
+    /**
+     * MagicConstants is used to house shared constants that are typically used as markers
+     * to glue together otherwise disjoint features that may make sense to interoperate in
+     * and integrate in the UI layer. One example of this: present directory browsing as
+     * a category type, even though it's a category in the database.
+     *
+     * We should strive for magic constants to be empty, but in some cases doing serious
+     * refactors of subsystems is prohibitively expensive and would not gain much.
+     */
+    struct MagicConstants {
+        static const std::string DirectoryCategoryType;
+        private: MagicConstants(){}
+    };
 
-                static void ShowIndexer(musik::core::ILibraryPtr library);
-        };
-    }
-}
+} }

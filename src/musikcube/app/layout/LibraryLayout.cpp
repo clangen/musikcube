@@ -48,6 +48,7 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
+#include <app/util/MagicConstants.h>
 #include <core/support/Playback.h>
 
 #include "LibraryLayout.h"
@@ -392,6 +393,14 @@ void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     LayoutBase::ProcessMessage(message);
 }
 
+void LibraryLayout::ShowDirectoryChooser() {
+    BrowseOverlays::ShowDirectoryChooser(
+    this->library,
+    [this](std::string directory) {
+        this->ShowDirectories(directory);
+    });
+}
+
 bool LibraryLayout::KeyPress(const std::string& key) {
     if (this->visibleLayout == this->browseLayout ||
         this->visibleLayout == this->directoryLayout)
@@ -419,8 +428,13 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseChooseCategory, key)) {
             BrowseOverlays::ShowCategoryChooser(
                 this->library,
-                [this](std::string category) {
-                    this->ShowBrowse(category);
+                [this](std::string category, std::string type) {
+                    if (type == MagicConstants::DirectoryCategoryType) {
+                        this->ShowDirectoryChooser();
+                    }
+                    else {
+                        this->ShowBrowse(category);
+                    }
                 });
             return true;
         }
@@ -443,11 +457,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseDirectories, key)) {
-        BrowseOverlays::ShowDirectoryChooser(
-            this->library,
-            [this](std::string directory) {
-                this->ShowDirectories(directory);
-            });
+        this->ShowDirectoryChooser();
         return true;
     }
     else if (this->GetFocus() == this->transportView && Hotkeys::Is(Hotkeys::Up, key)) {

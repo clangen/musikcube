@@ -50,6 +50,7 @@
 #include <core/runtime/Message.h>
 
 #include <app/util/Messages.h>
+#include <app/util/MagicConstants.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -76,8 +77,6 @@ static size_t lastTrackOverlayIndex = 0;
 static size_t lastCategoryOverlayIndex = 0;
 static int64_t lastPlaylistId = -1;
 static milliseconds lastOperationExpiry;
-
-static std::string kDirectoryFieldColumn = "__directoryCategory__";
 
 using Adapter = cursespp::SimpleScrollAdapter;
 
@@ -132,7 +131,7 @@ static std::shared_ptr<TrackList> queryTracksByCategory(
     special `fieldColumn` called `kDirectoryFieldColumn`. If we detect this case
     we'll run a special query for directory path matching */
     std::shared_ptr<TrackListQueryBase> query;
-    if (categoryType == kDirectoryFieldColumn) {
+    if (categoryType == MagicConstants::DirectoryCategoryType) {
         query = std::make_shared<DirectoryTrackListQuery>(library, categoryValue);
     }
     else {
@@ -558,7 +557,13 @@ void PlayQueueOverlays::ShowAddDirectoryOverlay(
     musik::core::ILibraryPtr library,
     const std::string& directory)
 {
-    ShowAddCategoryOverlay(messageQueue, playback, library, kDirectoryFieldColumn, directory, -1LL);
+    ShowAddCategoryOverlay(
+        messageQueue,
+        playback,
+        library,
+        MagicConstants::DirectoryCategoryType,
+        directory,
+        -1LL);
 }
 
 void PlayQueueOverlays::ShowAlbumDividerOverlay(

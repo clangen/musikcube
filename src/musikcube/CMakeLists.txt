@@ -30,6 +30,7 @@ set (CUBE_SRCS
 	./app/util/ConsoleLogger.cpp
 	./app/util/GlobalHotkeys.cpp
 	./app/util/Hotkeys.cpp
+	./app/util/MagicConstants.cpp
 	./app/util/PreferenceKeys.cpp
 	./app/util/Playback.cpp
 	./app/util/Rating.cpp
