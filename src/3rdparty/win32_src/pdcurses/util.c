@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -227,48 +228,52 @@ wchar_t *wunctrl(cchar_t *wc)
     return strbuf;
 }
 
+#define IS_CONTINUATION_BYTE( c) (((c) & 0xc0) == 0x80)
+
 int PDC_mbtowc(wchar_t *pwc, const char *s, size_t n)
 {
 # ifdef PDC_FORCE_UTF8
     wchar_t key;
-    int i = -1;
+    int i = 0;
     const unsigned char *string;
 
+    assert( s);
     if (!s || (n < 1))
         return -1;
-
-    if (!*s)
-        return 0;
 
     string = (const unsigned char *)s;
 
     key = string[0];
 
-    /* Simplistic UTF-8 decoder -- only does the BMP, minimal validation */
+    /* Simplistic UTF-8 decoder -- a little validation */
 
-    if (key & 0x80)
+    if ((key & 0xc0) == 0xc0 && IS_CONTINUATION_BYTE( string[1]))
     {
-        if ((key & 0xe0) == 0xc0)
+        if ((key & 0xe0) == 0xc0 && 1 < n)
         {
-            if (1 < n)
-            {
-                key = ((key & 0x1f) << 6) | (string[1] & 0x3f);
-                i = 2;
-            }
+            key = ((key & 0x1f) << 6) | (string[1] & 0x3f);
+            i = 2;      /* two-byte sequence : U+0080 to U+07FF */
         }
-        else if ((key & 0xe0) == 0xe0)
+        else if ((key & 0xf0) == 0xe0 && 2 < n
+                  && IS_CONTINUATION_BYTE( string[2]))
         {
-            if (2 < n)
-            {
-                key = ((key & 0x0f) << 12) | ((string[1] & 0x3f) << 6) |
-                      (string[2] & 0x3f);
-                i = 3;
-            }
+            key = ((key & 0x0f) << 12) | ((string[1] & 0x3f) << 6) |
+                  (string[2] & 0x3f);
+            i = 3;      /* three-byte sequence : U+0800 to U+FFFF */
+        }
+        else if ((key & 0xf8) == 0xf0 && 3 < n    /* SMP:  Unicode past 64K */
+                  && IS_CONTINUATION_BYTE( string[2])
+                  && IS_CONTINUATION_BYTE( string[3]))
+        {
+            key = ((key & 0x07) << 18) | ((string[1] & 0x3f) << 12) |
+                  ((string[2] & 0x3f) << 6) | (string[2] & 0x3f);
+            if( key <= 0x10ffff)
+                i = 4;     /* four-byte sequence : U+10000 to U+10FFFF */
         }
     }
-    else
+    else             /* 'ordinary' 7-bit ASCII */
         i = 1;
-
+    assert( i);
     if (i)
         *pwc = key;
 
