@@ -134,6 +134,7 @@ FfmpegDecoder::FfmpegDecoder() {
     this->resampler = nullptr;
     this->bufferSize = AV_INPUT_BUFFER_PADDING_SIZE + BUFFER_SIZE;
     this->buffer = new unsigned char[this->bufferSize];
+    this->outputFifo = nullptr;
 }
 
 FfmpegDecoder::~FfmpegDecoder() {

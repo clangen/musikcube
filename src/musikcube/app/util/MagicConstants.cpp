@@ -32,24 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <stdafx.h>
+#include "MagicConstants.h"
 
-#include <core/library/ILibrary.h>
-#include <functional>
+using namespace musik::cube;
 
-namespace musik {
-    namespace cube {
-        class BrowseOverlays {
-            public:
-                static void ShowCategoryChooser(
-                    musik::core::ILibraryPtr library,
-                    std::function<void(std::string, std::string)> callback);
+namespace musik { namespace cube {
 
-                static void ShowDirectoryChooser(
-                    musik::core::ILibraryPtr library,
-                    std::function<void(std::string)> callback);
+    const std::string MagicConstants::DirectoryCategoryType = "__DirectoryCategoryType__";
 
-                static void ShowIndexer(musik::core::ILibraryPtr library);
-        };
-    }
-}
+} }

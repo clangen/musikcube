@@ -77,19 +77,38 @@ static void resizedHandler(int signal) {
     resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
 }
 
-static bool isLangUtf8() {
-    const char* lang = std::getenv("LANG");
+static std::string getEnvironmentVariable(const std::string& name) {
+    std::string result;
+    const char* value = std::getenv(name.c_str());
+    if (value) {
+        result = value;
+    }
+    std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+    return result;
+}
 
-    if (!lang) {
-        return false;
+static bool containsUtf8(const std::string& value) {
+    return
+        value.find("utf-8") != std::string::npos ||
+        value.find("utf8") != std::string::npos;
+}
+
+static bool isLangUtf8() {
+    /* https://github.com/clangen/musikcube/issues/324 */
+
+    std::string lcAll = getEnvironmentVariable("LC_ALL");
+    std::string lcCType = getEnvironmentVariable("LC_CTYPE");
+    std::string lang = getEnvironmentVariable("LANG");
+
+    if (lcAll.size()) {
+        return containsUtf8(lcAll);
     }
 
-    std::string str = std::string(lang);
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    if (lcCType.size()) {
+        return containsUtf8(lcCType);
+    }
 
-    return
-        str.find("utf-8") != std::string::npos ||
-        str.find("utf8") != std::string::npos;
+    return containsUtf8(lang);
 }
 #endif
 

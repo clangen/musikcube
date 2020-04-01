@@ -35,7 +35,9 @@
 #include <stdafx.h>
 
 #include "BrowseOverlays.h"
+#include <app/util/MagicConstants.h>
 #include <core/library/query/local/AllCategoriesQuery.h>
+#include <core/i18n/Locale.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
@@ -48,7 +50,7 @@ using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 
-static const std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id" };
+static const std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id", "directory" };
 static std::string lastSelectedCategory, lastSelectedDirectory;
 
 static void showNoPathsError() {
@@ -64,7 +66,7 @@ static void showNoPathsError() {
 
 void BrowseOverlays::ShowCategoryChooser(
     musik::core::ILibraryPtr library,
-    std::function<void(std::string)> callback)
+    std::function<void(std::string, std::string)> callback)
 {
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
@@ -77,16 +79,29 @@ void BrowseOverlays::ShowCategoryChooser(
     adapter->SetSelectable(true);
 
     size_t index = 0;
-    auto filtered = query->GetResult()->Filter([&index, adapter](const Value& value) -> bool {
+
+    auto result = query->GetResult();
+
+    auto filtered = result->Filter([&index, adapter](const Value& value) -> bool {
         auto str = value->ToString();
-        if (BLACKLIST.find(str) == BLACKLIST.end()) {
-            adapter->AddEntry(str);
-            if (lastSelectedCategory == str) {
-                index = adapter->GetEntryCount() - 1;
-            }
-            return true;
+        return BLACKLIST.find(str) == BLACKLIST.end();
+    });
+
+    filtered->Add(std::make_shared<SdkValue>(
+        _TSTR("browse_title_directory"),
+        -1LL,
+        MagicConstants::DirectoryCategoryType));
+
+    filtered->Sort([](const auto a, const auto b) -> bool {
+        return a->ToString() < b->ToString();
+    });
+
+    filtered->Each([&index, adapter](const Value& value) {
+        auto str = value->ToString();
+        adapter->AddEntry(str);
+        if (lastSelectedCategory == str) {
+            index = adapter->GetEntryCount() - 1;
         }
-        return false;
     });
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
@@ -98,8 +113,9 @@ void BrowseOverlays::ShowCategoryChooser(
         .SetItemSelectedCallback(
         [callback, filtered]
         (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-        lastSelectedCategory = filtered->At(index)->ToString();
-            callback(lastSelectedCategory);
+            auto selected = filtered->At(index);
+            lastSelectedCategory = selected->ToString();
+            callback(lastSelectedCategory, selected->GetType());
         });
 
     cursespp::App::Overlays().Push(dialog);

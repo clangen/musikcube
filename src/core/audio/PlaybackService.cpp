@@ -147,6 +147,7 @@ PlaybackService::PlaybackService(
 , unshuffled(library)
 , repeatMode(RepeatNone)
 , messageQueue(messageQueue)
+, timeChangeMode(TimeChangeSeek)
 , seekPosition(-1.0f)
 , index(NO_POSITION)
 , nextIndex(NO_POSITION)

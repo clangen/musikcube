@@ -43,7 +43,6 @@
 #include <app/util/Playback.h>
 #include <app/util/Messages.h>
 #include <app/overlay/PlayQueueOverlays.h>
-#include <app/overlay/BrowseOverlays.h>
 
 #include "DirectoryLayout.h"
 
@@ -178,7 +177,7 @@ void DirectoryLayout::OnDirectoryChanged(
 }
 
 void DirectoryLayout::UpdateTitle() {
-    std::string title = _TSTR("browse_title_tracks");
+    std::string title = "";
 
     size_t selected = this->directoryList->GetSelectedIndex();
     if (selected != ListWindow::NO_SELECTION) {
@@ -242,10 +241,22 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
         }
     }
     else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
-        auto tracks = this->trackList->GetTrackList();
-        auto index = this->trackList->GetSelectedTrackIndex();
-        index = (index == ListWindow::NO_SELECTION) ? 0 : index;
-        this->playback.Play(*tracks.get(), index);
+        if (this->GetFocus() == this->directoryList) {
+            size_t index = this->directoryList->GetSelectedIndex();
+            if (index != DirectoryAdapter::NO_INDEX) {
+                auto path = this->adapter->GetFullPathAt(index);
+                if (path.size()) {
+                    PlayQueueOverlays::ShowAddDirectoryOverlay(
+                        Window::MessageQueue(), this->playback, this->library, path);
+                }
+            }
+        }
+        else {
+            auto tracks = this->trackList->GetTrackList();
+            auto index = this->trackList->GetSelectedTrackIndex();
+            index = (index == ListWindow::NO_SELECTION) ? 0 : index;
+            this->playback.Play(*tracks.get(), index);
+        }
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
         this->queryHash = 0;
