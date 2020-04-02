@@ -159,7 +159,7 @@ void LibraryLayout::ShowBrowse(const std::string& category) {
     if (category.size()) {
         this->browseLayout->SwitchCategory(category);
     }
-
+    this->lastBrowseCategoryType = category;
     REMEMBER(keys::LastLibraryView, type::Browse);
 }
 
@@ -167,7 +167,6 @@ void LibraryLayout::ShowCategorySearch() {
     SHOULD_REFOCUS(this->categorySearchLayout)
         ? this->categorySearchLayout->FocusInput()
         : this->ChangeMainLayout(this->categorySearchLayout);
-
     REMEMBER(keys::LastLibraryView, type::CategoryFilter);
 }
 
@@ -180,11 +179,13 @@ void LibraryLayout::ShowTrackSearch() {
 }
 
 void LibraryLayout::ShowDirectories(const std::string& directory) {
-    this->directoryLayout->SetDirectory(directory);
+    if (directory.size()) {
+        this->directoryLayout->SetDirectory(directory);
+        REMEMBER(keys::LastBrowseDirectoryRoot, directory);
+    }
     this->ChangeMainLayout(this->directoryLayout);
-
+    this->lastBrowseCategoryType = MagicConstants::DirectoryCategoryType;
     REMEMBER(keys::LastLibraryView, type::Directory);
-    REMEMBER(keys::LastBrowseDirectoryRoot, directory);
 }
 
 void LibraryLayout::InitializeWindows() {
@@ -445,7 +446,12 @@ bool LibraryLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowse, key)) {
-        this->ShowBrowse();
+        if (this->lastBrowseCategoryType == MagicConstants::DirectoryCategoryType) {
+            this->ShowDirectories();
+        }
+        else {
+            this->ShowBrowse();
+        }
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibraryFilter, key)) {

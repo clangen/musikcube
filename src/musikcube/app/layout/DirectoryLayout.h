@@ -62,7 +62,8 @@ namespace musik {
 
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
-                virtual void SetDirectory(const std::string& directory);
+                void SetDirectory(const std::string& directory);
+                std::string GetDirectory();
 
             protected:
                 virtual void OnLayout();

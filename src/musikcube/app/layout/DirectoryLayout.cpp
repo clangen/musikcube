@@ -129,6 +129,10 @@ void DirectoryLayout::SetDirectory(const std::string& directory) {
     this->Refresh(true);
 }
 
+std::string DirectoryLayout::GetDirectory() {
+    return this->adapter->GetCurrentPath();
+}
+
 void DirectoryLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
     if (visible) {

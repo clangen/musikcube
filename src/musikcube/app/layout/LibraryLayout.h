@@ -97,7 +97,7 @@ namespace musik {
                 void ShowCategorySearch();
                 void ShowTrackSearch();
                 void ShowDirectoryChooser();
-                void ShowDirectories(const std::string& directory);
+                void ShowDirectories(const std::string& directory = "");
 
                 void ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout);
                 void OnLayoutChanged();
@@ -115,6 +115,7 @@ namespace musik {
                 std::shared_ptr<TrackSearchLayout> trackSearchLayout;
                 std::shared_ptr<cursespp::LayoutBase> visibleLayout;
                 cursespp::ShortcutsWindow* shortcuts;
+                std::string lastBrowseCategoryType;
         };
     }
 }
