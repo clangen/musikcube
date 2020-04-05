@@ -350,7 +350,7 @@ IWindowPtr LibraryLayout::GetFocus() {
         result = this->visibleLayout->GetFocus();
     }
 
-     return result;
+    return result;
 }
 
 bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
