@@ -27,6 +27,7 @@ struct MPRISMetadataValues {
     std::string title;
     std::string album;
     std::string albumArtist;
+    std::string albumArt;
     std::string genre;
     std::string comment;
     uint32_t trackNumber;

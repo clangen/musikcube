@@ -4,12 +4,14 @@
 #include <map>
 #include <vector>
 #include <functional>
+#include <core/sdk/IEnvironment.h>
 
 extern "C" {
     #include <unistd.h>
 }
 
-thread_local char localBuffer[1024];
+std::string thumbnailPath;
+thread_local char localBuffer[4096];
 static MPRISRemote remote;
 
 static const std::map<MPRISProperty, const std::vector<const char*>> MPRISPropertyNames =
@@ -25,6 +27,12 @@ static std::string GetMetadataString(ITrack* track, const char* key)
     return std::string(localBuffer);
 }
 
+static std::string GetThumbnailPath(ITrack* track)
+{
+    int64_t thumbnailId = track->GetInt64(track::ThumbnailId);
+    return thumbnailPath + std::to_string(thumbnailId) + ".jpg";
+}
+
 static class MPRISPlugin : public IPlugin {
     public:
         MPRISPlugin() { }
@@ -38,6 +46,13 @@ static class MPRISPlugin : public IPlugin {
         void Reload() { }
         int SdkVersion() { return musik::core::sdk::SdkVersion; }
 } plugin;
+
+extern "C" void SetEnvironment(IEnvironment* environment) {
+    if (environment) {
+        environment->GetPath(PathLibrary, localBuffer, sizeof(localBuffer));
+        thumbnailPath = std::string(localBuffer) + "/thumbs/";
+    }
+}
 
 extern "C" IPlugin* GetPlugin() {
     return &plugin;
@@ -101,7 +116,7 @@ void MPRISRemote::MPRISDeinit() {
 
 void MPRISRemote::MPRISEmitChange(MPRISProperty prop) {
     if (bus) {
-        char** strv = (char**)(&MPRISPropertyNames.at(prop));
+        char** strv = (char**)(MPRISPropertyNames.at(prop).data());
         std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
         sd_bus_emit_properties_changed_strv(bus, "/org/mpris/MediaPlayer2",
                                             "org.mpris.MediaPlayer2.Player",
@@ -181,6 +196,7 @@ struct MPRISMetadataValues MPRISRemote::MPRISGetMetadata() {
             metadata.discNumber = curTrack->GetInt32(track::DiscNum);
             metadata.trackNumber = curTrack->GetInt32(track::TrackNum);
             metadata.length = curTrack->GetInt64(track::Duration)*1000*1000;
+            metadata.albumArt = GetThumbnailPath(curTrack);
             metadata.available = true;
         }
     }
