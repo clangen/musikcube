@@ -28,6 +28,10 @@ if [ $OS == "Linux" ]; then
   if [ -f "/etc/arch-release" ] || [ -f "/etc/manjaro-release" ]; then
     sudo pacman -S libogg libvorbis libmicrohttpd ffmpeg lame cmake ncurses boost pulseaudio libpulse alsa-lib curl libev taglib
   fi
+  if [ -f "/etc/SUSE-brand" ]; then
+    echo "detected SUSE"
+    sudo zypper install libcurl-devel libmicrohttpd-devel libboost_thread1_71_0-devel libboost_system1_71_0-devel libboost_filesystem1_71_0-devel libboost_date_time1_71_0-devel libboost_atomic1_71_0-devel libboost_chrono1_71_0-devel cmake ncurses-devel libogg-devel libvorbis-devel ffmpeg-3-libavcodec-devel ffmpeg-3-libswresample-devel ffmpeg-3-libavformat-devel ffmpeg-3-libavutil-devel libmp3lame-devel pulseaudio libpulse-devel alsa-devel zlib-devel libressl-devel libev-devel libtag-devel systemd-devel
+  fi
 fi
 if [ $OS == "Darwin" ]; then
   echo "detected macos"
@@ -37,7 +41,7 @@ if [ $OS == "FreeBSD" ]; then
   echo "detected freebsd"
   pkg install boost-all curl libvorbis libogg libmicrohttpd ffmpeg alsa-lib cmake sndio libev taglib bash
   portsnap fetch
-  portsnap extract (if first time using ports)
+  portsnap extract
   cd /usr/ports/audio/lame
   make reinstall
 fi
