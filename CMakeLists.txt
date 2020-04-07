@@ -264,7 +264,7 @@ install(
 # snap wrapper scripts, if applicable
 if (${SNAP_ENABLED} MATCHES "true")
   install(
-    FILES "${CMAKE_CURRENT_BINARY_DIR}src/musikcube/musikcube.snap"
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/src/musikcube/musikcube.snap"
     DESTINATION share/musikcube.snap
     PERMISSIONS
       OWNER_EXECUTE OWNER_READ OWNER_WRITE
