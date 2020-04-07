@@ -1,4 +1,4 @@
 #!/bin/bash 
 set -eu
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-LANG=C.UTF-8 "${DIR}/musikcube"
+PULSE_RUNTIME_PATH=/var/run/pulse PULSE_SYSTEM=1 LANG=C.UTF-8 "${DIR}/musikcube"
