@@ -368,5 +368,5 @@ add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)
 # strip binaries in release mode
 if (CMAKE_BUILD_TYPE MATCHES Release)
   message(STATUS "stripping binaries...")
-  add_custom_command(TARGET postbuild POST_BUILD COMMAND ./strip-nix.sh)
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_BINARY_DIR}/strip-nix.sh")
 endif()
