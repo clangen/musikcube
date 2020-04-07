@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+LANG=C.UTF-8 ./musikcube
