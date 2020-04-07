@@ -265,7 +265,7 @@ install(
 if (${SNAP_ENABLED} MATCHES "true")
   install(
     FILES "${CMAKE_SOURCE_DIR}/src/musikcube/musikcube.snap"
-    DESTINATION share/
+    DESTINATION share/musikcube/
     PERMISSIONS
       OWNER_EXECUTE OWNER_READ OWNER_WRITE
       GROUP_EXECUTE GROUP_READ GROUP_WRITE
@@ -273,7 +273,7 @@ if (${SNAP_ENABLED} MATCHES "true")
 
   install(
     FILES "${CMAKE_SOURCE_DIR}/src/musikcubed/musikcubed.snap"
-    DESTINATION share/
+    DESTINATION share/musikcube/
     PERMISSIONS
       OWNER_EXECUTE OWNER_READ OWNER_WRITE
       GROUP_EXECUTE GROUP_READ GROUP_WRITE
