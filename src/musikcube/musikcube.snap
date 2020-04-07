@@ -1,3 +1,4 @@
-#!/bin/sh
+#!/bin/bash 
 set -eu
-LANG=C.UTF-8 ./musikcube
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+LANG=C.UTF-8 "${DIR}/musikcube"
