@@ -1,0 +1,83 @@
+name: musikcube # you probably want to 'snapcraft register <name>'
+version: 0.85.0
+summary: a terminal-based music player, metadata indexer, and server
+description: |
+  musikcube is a fully functional terminal-based music player, library, and
+  streaming audio server that runs natively on Windows, macOS, and Linux. It
+  also runs well on a Raspberry Pi with a custom DAC (e.g. IQaudIO DAC+,
+  HiFiBerry DAC+ and others), and can output 24bit/192k audio comfortably.
+grade: stable # be 'stable' to release into candidate/stable channels
+confinement: strict # use 'strict' once you have the right plugs and slots
+base: core18
+
+parts:
+  musikcube:
+    plugin: cmake
+    configflags:
+      - -DSNAP_ENABLED=true
+      - -DCMAKE_BUILD_TYPE=Release
+    source: https://github.com/clangen/musikcube.git
+    build-packages:
+      - build-essential
+      - clang
+      - cmake
+      - libboost-thread1.65-dev
+      - libboost-system1.65-dev
+      - libboost-filesystem1.65-dev
+      - libboost-date-time1.65-dev
+      - libboost-atomic1.65-dev
+      - libboost-chrono1.65-dev
+      - libogg-dev
+      - libvorbis-dev
+      - libavutil-dev
+      - libavformat-dev
+      - libswresample-dev
+      - libncursesw5-dev
+      - libasound2-dev
+      - libpulse-dev
+      - libmicrohttpd-dev
+      - libmp3lame-dev
+      - libcurl4-openssl-dev
+      - libev-dev
+      - libtag1-dev
+      - libsystemd-dev
+      - libssl-dev
+    stage-packages:
+      - libboost-thread1.65.1
+      - libboost-system1.65.1
+      - libboost-chrono1.65.1
+      - libboost-filesystem1.65.1
+      - libboost-date-time1.65.1
+      - libmicrohttpd12
+      - libcurl4
+      - libogg0
+      - libvorbis0a
+      - libvorbisfile3
+      - libncursesw5
+      - libasound2
+      - libpulse0
+      - libmp3lame0
+      - libev4
+      - libavcodec-extra
+      - libavutil55
+      - libavformat57
+      - libswresample2
+      - libsystemd0
+      - libtag1v5
+
+apps:
+  musikcube:
+    command: share/musikcube/musikcube.snap
+    environment:
+      ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+    plugs:
+      - home
+      - removable-media
+      - pulseaudio
+      - network
+      - network-bind
+      - audio-playback
+      - alsa
+    slots:
+      - mpris
