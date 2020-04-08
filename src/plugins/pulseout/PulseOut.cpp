@@ -251,7 +251,7 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
         spec.rate = buffer->SampleRate();
 
         std::string deviceId = this->GetPreferredDeviceId();
-        std::cerr << "PulseOut: opening device: " << deviceId << "\n";
+        std::cerr << "PulseOut: opening device " << deviceId << "\n";
 
         /* output to preferred device id, as specified in prefs */
         this->audioConnection = pa_blocking_new(
