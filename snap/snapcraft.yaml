@@ -6,15 +6,24 @@ description: |
   streaming audio server that runs natively on Windows, macOS, and Linux. It
   also runs well on a Raspberry Pi with a custom DAC (e.g. IQaudIO DAC+,
   HiFiBerry DAC+ and others), and can output 24bit/192k audio comfortably.
-grade: stable # be 'stable' to release into candidate/stable channels
-confinement: strict # use 'strict' once you have the right plugs and slots
+grade: stable
+confinement: strict
 base: core18
 
 parts:
+  desktop-glib-musikcube:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: glib-only/
+    plugin: make
+    build-packages:
+      - libglib2.0-dev
+    stage-packages:
+      - libglib2.0-bin
+
   musikcube:
+    after:
+      - desktop-glib-musikcube
     plugin: cmake
-    build-environment:
-      - CMAKE_BUILD_PARALLEL_LEVEL: "6"
     configflags:
       - -DSNAP_ENABLED=true
       - -DCMAKE_BUILD_TYPE=Release
@@ -69,10 +78,12 @@ parts:
 
 apps:
   musikcube:
-    command: share/musikcube/musikcube.snap
+    desktop: share/applications/musikcube.desktop
+    command: desktop-launch $SNAP/share/musikcube/musikcube
     environment:
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
       ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
+      LANG: C.UTF-8
     plugs:
       - home
       - removable-media
@@ -81,22 +92,10 @@ apps:
       - network-bind
       - audio-playback
       - alsa
-    slots:
-      - mpris
-
-  musikcubed:
-    command: share/musikcube/musikcubed.snap
-    environment:
-      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
-      ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
-    plugs:
-      - home
-      - removable-media
-      - pulseaudio
-      - network
-      - network-bind
-      - audio-playback
-      - alsa
+      - unity7
+      - x11
+      - desktop
+      - desktop-legacy
     slots:
       - mpris
 
