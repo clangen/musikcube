@@ -13,6 +13,8 @@ base: core18
 parts:
   musikcube:
     plugin: cmake
+    build-environment:
+      - CMAKE_BUILD_PARALLEL_LEVEL: "6"
     configflags:
       - -DSNAP_ENABLED=true
       - -DCMAKE_BUILD_TYPE=Release
@@ -69,8 +71,8 @@ apps:
   musikcube:
     command: share/musikcube/musikcube.snap
     environment:
-      ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+      ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
     plugs:
       - home
       - removable-media
@@ -81,3 +83,23 @@ apps:
       - alsa
     slots:
       - mpris
+
+  musikcubed:
+    command: share/musikcube/musikcubed.snap
+    environment:
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+      ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
+    plugs:
+      - home
+      - removable-media
+      - pulseaudio
+      - network
+      - network-bind
+      - audio-playback
+      - alsa
+    slots:
+      - mpris
+
+layout:
+  /usr/share/alsa:
+    bind: $SNAP/usr/share/alsa
