@@ -499,20 +499,22 @@ void AlsaOut::SetFormat(IBuffer *buffer) {
 
         this->InitDevice();
 
-        int err = snd_pcm_set_params(
-            this->pcmHandle,
-            PCM_FORMAT,
-            PCM_ACCESS_TYPE,
-            this->channels,
-            this->rate,
-            1, /* allow resampling */
-            500000); /* 0.5s latency */
+        if (this->pcmHandle) {
+            int err = snd_pcm_set_params(
+                this->pcmHandle,
+                PCM_FORMAT,
+                PCM_ACCESS_TYPE,
+                this->channels,
+                this->rate,
+                1, /* allow resampling */
+                500000); /* 0.5s latency */
 
-        if (err > 0) {
-            std::cerr << "AlsaOut: set format error: " << snd_strerror(err) << std::endl;
-        }
-        else {
-            this->SetVolume(this->volume);
+            if (err > 0) {
+                std::cerr << "AlsaOut: set format error: " << snd_strerror(err) << std::endl;
+            }
+            else {
+                this->SetVolume(this->volume);
+            }
         }
 
         std::cerr << "AlsaOut: device format initialized from buffer\n";
