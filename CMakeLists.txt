@@ -237,12 +237,17 @@ file(GLOB locales "src/musikcube/data/locales/*.json")
 file(COPY ${locales} DESTINATION bin/locales)
 install(FILES ${locales} DESTINATION share/musikcube/locales)
 
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  file(GLOB_RECURSE linux_share "src/musikcube/data/linux/share/*")
+  install(FILES ${linux_share} DESTINATION share/)
+endif()
+
 # libmusikcore sshared library
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   install(FILES "bin/libmusikcore.dylib" DESTINATION share/musikcube)
-else ()
+else()
   install(FILES "bin/libmusikcore.so" DESTINATION share/musikcube)
-endif ()
+endif()
 
 # executable and shell script for musikcube
 install(
