@@ -238,8 +238,10 @@ file(COPY ${locales} DESTINATION bin/locales)
 install(FILES ${locales} DESTINATION share/musikcube/locales)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  file(GLOB_RECURSE linux_share "src/musikcube/data/linux/share/*")
-  install(FILES ${linux_share} DESTINATION share/)
+  file(GLOB_RECURSE linux_share_applications "src/musikcube/data/linux/share/applications/*")
+  install(FILES ${linux_share_applications} DESTINATION share/applications/)
+  file(GLOB_RECURSE linux_share_icons_48 "src/musikcube/data/linux/share/icons/hicolor/48x48/apps/*")
+  install(FILES ${linux_share_icons_48} DESTINATION share/icons/hicolor/48x48/apps/)
 endif()
 
 # libmusikcore sshared library
