@@ -165,6 +165,7 @@ AlsaOut::~AlsaOut() {
 }
 
 void AlsaOut::CloseDevice() {
+    LOCK("CloseDevice()");
     if (this->pcmHandle) {
         std::cerr << "AlsaOut: closing PCM handle\n";
         snd_pcm_close(this->pcmHandle);
@@ -417,12 +418,17 @@ void AlsaOut::WriteLoop() {
                     }
                 }
 
-                WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel); /* sets 'err' */
+                {
+                    LOCK("WRITE_BUFFER()");
+                    if (this->pcmHandle) {
+                        WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel); /* sets 'err' */
 
-                if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
-                    if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
-                        /* try one more time... */
-                        WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel);
+                        if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
+                            if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
+                                /* try one more time... */
+                                WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel);
+                            }
+                        }
                     }
                 }
 
