@@ -1,5 +1,0 @@
-#!/bin/bash 
-set -eu
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-PULSE_SOCKET="unix:/run/user/${UID}/pulse/native"
-LANG=C.UTF-8 PULSE_SERVER=${PULSE_SOCKET} "${DIR}/musikcube"
