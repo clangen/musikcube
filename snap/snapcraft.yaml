@@ -25,7 +25,6 @@ parts:
       - desktop-glib-musikcube
     plugin: cmake
     configflags:
-      - -DSNAP_ENABLED=true
       - -DCMAKE_BUILD_TYPE=Release
     source: https://github.com/clangen/musikcube.git
     build-packages:

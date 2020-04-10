@@ -268,25 +268,6 @@ install(
     GROUP_EXECUTE GROUP_READ GROUP_WRITE
     WORLD_EXECUTE WORLD_READ)
 
-# snap wrapper scripts, if applicable
-if (${SNAP_ENABLED} MATCHES "true")
-  install(
-    FILES "${CMAKE_SOURCE_DIR}/src/musikcube/musikcube.snap"
-    DESTINATION share/musikcube/
-    PERMISSIONS
-      OWNER_EXECUTE OWNER_READ OWNER_WRITE
-      GROUP_EXECUTE GROUP_READ GROUP_WRITE
-      WORLD_EXECUTE WORLD_READ)
-
-  install(
-    FILES "${CMAKE_SOURCE_DIR}/src/musikcubed/musikcubed.snap"
-    DESTINATION share/musikcube/
-    PERMISSIONS
-      OWNER_EXECUTE OWNER_READ OWNER_WRITE
-      GROUP_EXECUTE GROUP_READ GROUP_WRITE
-      WORLD_EXECUTE WORLD_READ)
-endif()
-
 # executable and shell script for daemon
 install(
   FILES bin/musikcubed
