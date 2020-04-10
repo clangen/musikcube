@@ -91,10 +91,7 @@ apps:
       - network-bind
       - audio-playback
       - alsa
-      - unity7
-      - x11
       - desktop
-      - desktop-legacy
     slots:
       - mpris
 
