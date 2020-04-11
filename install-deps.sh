@@ -23,7 +23,7 @@ if [ $OS == "Linux" ]; then
   if [ -f "/etc/fedora-release" ]; then
     DISTRO=`cat /etc/fedora-release`
     echo "detected ${DISTRO}"
-    sudo dnf install gcc-c++ make cmake boost-devel libogg-devel libvorbis-devel ffmpeg-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel taglib-devel systemd-devel
+    sudo dnf install gcc-c++ make cmake boost-devel libogg-devel libvorbis-devel ffmpeg-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel openssl-devel taglib-devel systemd-devel
   fi
   if [ -f "/etc/arch-release" ] || [ -f "/etc/manjaro-release" ]; then
     sudo pacman -S libogg libvorbis libmicrohttpd ffmpeg lame cmake ncurses boost pulseaudio libpulse alsa-lib curl libev taglib
