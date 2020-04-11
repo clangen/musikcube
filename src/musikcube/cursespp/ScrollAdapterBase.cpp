@@ -112,65 +112,69 @@ size_t ScrollAdapterBase::GetVisibleItems(
 void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, ScrollPosition& result) {
     WINDOW* window = scrollable->GetContent();
 
-    if (!scrollable->IsVisible() || !window || this->height == 0 || this->width == 0 || this->GetEntryCount() == 0) {
+    if (!scrollable->IsVisible() || !window || this->height == 0 || this->width == 0) {
         return;
     }
 
     werase(window);
 
-    if (index >= GetEntryCount()) {
-        index = GetEntryCount() - 1;
-    }
-
     std::deque<EntryPtr> visible;
-    size_t topIndex = GetVisibleItems(scrollable, index, visible);
-
     size_t drawnLines = 0;
+    size_t topIndex = 0;
+    size_t count = GetEntryCount();
 
-    for (size_t e = 0; e < visible.size(); e++) {
-        EntryPtr entry = visible.at(e);
-        size_t count = entry->GetLineCount();
+    if (count > 0) {
+        if (index >= count) {
+            index = count - 1;
+        }
 
-        for (size_t i = 0; i < count && drawnLines < this->height; i++) {
-            Color attrs = Color::Default;
+        topIndex = GetVisibleItems(scrollable, index, visible);
 
-            if (this->decorator) {
-                attrs = this->decorator(scrollable, topIndex + e, i, entry);
+        for (size_t e = 0; e < visible.size(); e++) {
+            EntryPtr entry = visible.at(e);
+            size_t count = entry->GetLineCount();
+
+            for (size_t i = 0; i < count && drawnLines < this->height; i++) {
+                Color attrs = Color::Default;
+
+                if (this->decorator) {
+                    attrs = this->decorator(scrollable, topIndex + e, i, entry);
+                }
+
+                if (attrs == -1) {
+                    attrs = entry->GetAttrs(i);
+                }
+
+                if (attrs != -1) {
+                    wattron(window, attrs);
+                }
+
+                std::string line = entry->GetLine(i);
+                size_t len = u8cols(line);
+
+                /* pad with empty spaces to the end of the line. this allows us to
+                do highlight rows. this should probably be configurable. */
+
+                int remain = this->width - len;
+                if (remain > 0) {
+                    line += std::string(remain, ' ');
+                }
+
+                /* string is padded above, we don't need a \n */
+
+                checked_wprintw(window, "%s", line.c_str());
+
+                if (attrs != -1) {
+                    wattroff(window, attrs);
+                }
+
+                ++drawnLines;
             }
-
-            if (attrs == -1) {
-                attrs = entry->GetAttrs(i);
-            }
-
-            if (attrs != -1) {
-                wattron(window, attrs);
-            }
-
-            std::string line = entry->GetLine(i);
-            size_t len = u8cols(line);
-
-            /* pad with empty spaces to the end of the line. this allows us to
-            do highlight rows. this should probably be configurable. */
-
-            int remain = this->width - len;
-            if (remain > 0) {
-                line += std::string(remain, ' ');
-            }
-
-            /* string is padded above, we don't need a \n */
-
-            checked_wprintw(window, "%s", line.c_str());
-
-            if (attrs != -1) {
-                wattroff(window, attrs);
-            }
-
-            ++drawnLines;
         }
     }
 
     result.visibleEntryCount = visible.size();
     result.firstVisibleEntryIndex = topIndex;
     result.lineCount = drawnLines;
-    result.totalEntries = GetEntryCount();
+    result.totalEntries = count;
 }
