@@ -237,12 +237,19 @@ file(GLOB locales "src/musikcube/data/locales/*.json")
 file(COPY ${locales} DESTINATION bin/locales)
 install(FILES ${locales} DESTINATION share/musikcube/locales)
 
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+  file(GLOB_RECURSE linux_share_applications "src/musikcube/data/linux/share/applications/*")
+  install(FILES ${linux_share_applications} DESTINATION share/applications/)
+  file(GLOB_RECURSE linux_share_icons_48 "src/musikcube/data/linux/share/icons/hicolor/48x48/apps/*")
+  install(FILES ${linux_share_icons_48} DESTINATION share/icons/hicolor/48x48/apps/)
+endif()
+
 # libmusikcore sshared library
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   install(FILES "bin/libmusikcore.dylib" DESTINATION share/musikcube)
-else ()
+else()
   install(FILES "bin/libmusikcore.so" DESTINATION share/musikcube)
-endif ()
+endif()
 
 # executable and shell script for musikcube
 install(
@@ -307,6 +314,9 @@ if (GENERATE_DEB MATCHES "1")
       set(DEB_AVUTIL_VERSION "56")
       set(DEB_AVFORMAT_VERSION "58")
       set(DEB_SWRESAMPLE_VERSION "3")
+    elseif (DEB_DISTRO MATCHES "focal")
+      set(DEB_BOOST_VERSION "1.71.0")
+      set(DEB_MICROHTTPD_VERSION "12")
     elseif (DEB_DISTRO MATCHES "xenial")
       set(DEB_BOOST_VERSION "1.58.0")
       set(DEB_MICROHTTPD_VERSION "10")
@@ -349,5 +359,5 @@ add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)
 # strip binaries in release mode
 if (CMAKE_BUILD_TYPE MATCHES Release)
   message(STATUS "stripping binaries...")
-  add_custom_command(TARGET postbuild POST_BUILD COMMAND ./strip-nix.sh)
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_SOURCE_DIR}/strip-nix.sh")
 endif()

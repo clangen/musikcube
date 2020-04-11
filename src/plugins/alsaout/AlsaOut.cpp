@@ -165,6 +165,7 @@ AlsaOut::~AlsaOut() {
 }
 
 void AlsaOut::CloseDevice() {
+    LOCK("CloseDevice()");
     if (this->pcmHandle) {
         std::cerr << "AlsaOut: closing PCM handle\n";
         snd_pcm_close(this->pcmHandle);
@@ -417,12 +418,17 @@ void AlsaOut::WriteLoop() {
                     }
                 }
 
-                WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel); /* sets 'err' */
+                {
+                    LOCK("WRITE_BUFFER()");
+                    if (this->pcmHandle) {
+                        WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel); /* sets 'err' */
 
-                if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
-                    if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
-                        /* try one more time... */
-                        WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel);
+                        if (err == -EINTR || err == -EPIPE || err == -ESTRPIPE) {
+                            if (!snd_pcm_recover(this->pcmHandle, err, 1)) {
+                                /* try one more time... */
+                                WRITE_BUFFER(this->pcmHandle, next, samplesPerChannel);
+                            }
+                        }
                     }
                 }
 
@@ -493,20 +499,22 @@ void AlsaOut::SetFormat(IBuffer *buffer) {
 
         this->InitDevice();
 
-        int err = snd_pcm_set_params(
-            this->pcmHandle,
-            PCM_FORMAT,
-            PCM_ACCESS_TYPE,
-            this->channels,
-            this->rate,
-            1, /* allow resampling */
-            500000); /* 0.5s latency */
+        if (this->pcmHandle) {
+            int err = snd_pcm_set_params(
+                this->pcmHandle,
+                PCM_FORMAT,
+                PCM_ACCESS_TYPE,
+                this->channels,
+                this->rate,
+                1, /* allow resampling */
+                500000); /* 0.5s latency */
 
-        if (err > 0) {
-            std::cerr << "AlsaOut: set format error: " << snd_strerror(err) << std::endl;
-        }
-        else {
-            this->SetVolume(this->volume);
+            if (err > 0) {
+                std::cerr << "AlsaOut: set format error: " << snd_strerror(err) << std::endl;
+            }
+            else {
+                this->SetVolume(this->volume);
+            }
         }
 
         std::cerr << "AlsaOut: device format initialized from buffer\n";

@@ -158,10 +158,15 @@ pa_blocking* pa_blocking_new(
     pa_blocking *p;
     int error = PA_ERR_INTERNAL, r;
 
+    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY server\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, !server || *server, PA_ERR_INVALID, NULL);
+    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY dir\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, dir == PA_STREAM_PLAYBACK || dir == PA_STREAM_RECORD, PA_ERR_INVALID, NULL);
+    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY device\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, !dev || *dev, PA_ERR_INVALID, NULL);
+    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY spec\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, ss && pa_sample_spec_valid(ss), PA_ERR_INVALID, NULL);
+    fprintf(stderr, "pulse_blocking_stream: CHECK_VALIDITY channel map\n");
     CHECK_VALIDITY_RETURN_ANY(rerror, !map || (pa_channel_map_valid(map) && map->channels == ss->channels), PA_ERR_INVALID, NULL)
 
     p = pa_xnew0(pa_blocking, 1);
@@ -170,33 +175,43 @@ pa_blocking* pa_blocking_new(
     p->sink_id = -1;
     p->hw_volume = -1;
 
-    if (!(p->mainloop = pa_threaded_mainloop_new()))
+    if (!(p->mainloop = pa_threaded_mainloop_new())) {
+        fprintf(stderr, "pulse_blocking_stream: failed to create main loop\n");
         goto fail;
+    }
 
-    if (!(p->context = pa_context_new(pa_threaded_mainloop_get_api(p->mainloop), name)))
+    if (!(p->context = pa_context_new(pa_threaded_mainloop_get_api(p->mainloop), name))) {
+        fprintf(stderr, "pulse_blocking_stream: failed to create context\n");
         goto fail;
+    }
 
     pa_context_set_state_callback(p->context, context_state_cb, p);
 
     if (pa_context_connect(p->context, server, 0, NULL) < 0) {
+        fprintf(stderr, "pulse_blocking_stream: failed to connect context\n");
         error = pa_context_errno(p->context);
         goto fail;
     }
 
     pa_threaded_mainloop_lock(p->mainloop);
 
-    if (pa_threaded_mainloop_start(p->mainloop) < 0)
+    if (pa_threaded_mainloop_start(p->mainloop) < 0) {
+        fprintf(stderr, "pulse_blocking_stream: failed to start main loop\n");
         goto unlock_and_fail;
+    }
 
     for (;;) {
         pa_context_state_t state;
 
         state = pa_context_get_state(p->context);
 
-        if (state == PA_CONTEXT_READY)
+        if (state == PA_CONTEXT_READY) {
+            fprintf(stderr, "pulse_blocking_stream: context is ready\n");
             break;
+        }
 
         if (!PA_CONTEXT_IS_GOOD(state)) {
+            fprintf(stderr, "pulse_blocking_stream: context is bad\n");
             error = pa_context_errno(p->context);
             goto unlock_and_fail;
         }
@@ -206,6 +221,7 @@ pa_blocking* pa_blocking_new(
     }
 
     if (!(p->stream = pa_stream_new(p->context, stream_name, ss, map))) {
+        fprintf(stderr, "pulse_blocking_stream: failed to create stream\n");
         error = pa_context_errno(p->context);
         goto unlock_and_fail;
     }
@@ -227,6 +243,7 @@ pa_blocking* pa_blocking_new(
                                      |PA_STREAM_AUTO_TIMING_UPDATE);
 
     if (r < 0) {
+        fprintf(stderr, "pulse_blocking_stream: failed to connect stream to output device\n");
         error = pa_context_errno(p->context);
         goto unlock_and_fail;
     }
@@ -236,10 +253,13 @@ pa_blocking* pa_blocking_new(
 
         state = pa_stream_get_state(p->stream);
 
-        if (state == PA_STREAM_READY)
+        if (state == PA_STREAM_READY) {
+            fprintf(stderr, "pulse_blocking_stream: stream is ready\n");
             break;
+        }
 
         if (!PA_STREAM_IS_GOOD(state)) {
+            fprintf(stderr, "pulse_blocking_stream: stream is bad\n");
             error = pa_context_errno(p->context);
             goto unlock_and_fail;
         }
@@ -249,13 +269,14 @@ pa_blocking* pa_blocking_new(
     }
 
     pa_threaded_mainloop_unlock(p->mainloop);
-
+    fflush(stderr);
     return p;
 
 unlock_and_fail:
     pa_threaded_mainloop_unlock(p->mainloop);
 
 fail:
+    fflush(stderr);
     if (rerror)
         *rerror = error;
     pa_blocking_free(p);

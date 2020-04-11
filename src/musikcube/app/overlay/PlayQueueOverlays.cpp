@@ -516,6 +516,7 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_start_of_queue"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_to_end_in_queue"));
     adapter->AddEntry(_TSTR("playqueue_overlay_add_as_next_in_queue"));
+    adapter->AddEntry(_TSTR("playqueue_overlay_add_hotswap_queue"));
     adapter->SetSelectable(true);
 
     size_t selectedIndex = 0;
@@ -541,6 +542,11 @@ void PlayQueueOverlays::ShowAddCategoryOverlay(
                 if (index == 0) {
                     showAddCategorySelectionToPlaylistOverlay(
                         messageQueue, library, fieldColumn, fieldValue, fieldId);
+                }
+                else if (index == adapter->GetEntryCount() - 1) {
+                    auto tracks = queryTracksByCategory(
+                        library, fieldColumn, fieldValue, fieldId);
+                    playback.HotSwap(*tracks);
                 }
                 else {
                     handleAddCategorySelectionToPlayQueue(

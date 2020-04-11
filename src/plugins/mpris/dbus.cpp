@@ -188,6 +188,7 @@ static int get_metadata(sd_bus* bus, const char* path, const char *iface,
         // append fields
         sd_msg_append_dict(reply, "mpris:trackid", metadata.trackid.c_str(), 'o');
         sd_msg_append_dict(reply, "mpris:length", &metadata.length, 'x');
+        sd_msg_append_dict(reply, "mpris:artUrl", metadata.albumArt.c_str(), 's');
         sd_msg_append_strlist_dict(reply, "xesam:artist", metadata.artist.c_str());
         sd_msg_append_dict(reply, "xesam:title", metadata.title.c_str(), 's');
         sd_msg_append_dict(reply, "xesam:album", metadata.album.c_str(), 's');

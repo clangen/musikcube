@@ -45,7 +45,20 @@ jobs:
     steps:
       - checkout
       - run: apt-get update
-      - run: apt-get install -y build-essential clang cmake libboost-thread1.67-dev libboost-system1.67-dev libboost-filesystem1.67-dev libboost-date-time1.67-dev libboost-atomic1.67-dev libboost-chrono1.67-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.67-dev libboost-system1.67-dev libboost-filesystem1.67-dev libboost-date-time1.67-dev libboost-atomic1.67-dev libboost-chrono1.67-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2
+      - run: make package
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - store_artifacts:
+          path: /root/debs/
+  build_ubuntu_focal:
+    docker:
+      - image: ubuntu:focal
+    steps:
+      - checkout
+      - run: apt-get update
+      - run: apt-get install -y build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
@@ -126,6 +139,7 @@ workflows:
       - build_ubuntu_cosmic: *workflow_filters
       - build_ubuntu_disco: *workflow_filters
       - build_ubuntu_eoan: *workflow_filters
+      - build_ubuntu_focal: *workflow_filters
       - build_fedora_26: *workflow_filters
       - build_fedora_27: *workflow_filters
       - build_fedora_28: *workflow_filters

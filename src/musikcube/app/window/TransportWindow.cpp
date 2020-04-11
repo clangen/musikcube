@@ -223,11 +223,12 @@ struct musik::cube::TransportDisplayCache {
         if (updatedTotal != secondsTotal) {
             secondsTotal = updatedTotal;
             if (secondsTotal <= 0 && secondsTotal != INT_MIN) {
-                std::string duration =
-                    this->track->GetString(constants::Track::DURATION);
-
-                if (duration.size()) {
-                    secondsTotal = std::stoi(duration);
+                if (this->track) {
+                    std::string duration =
+                        this->track->GetString(constants::Track::DURATION);
+                    if (duration.size()) {
+                        secondsTotal = std::stoi(duration);
+                    }
                 }
             }
 

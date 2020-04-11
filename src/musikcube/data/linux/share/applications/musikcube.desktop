@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=musikcube
+GenericName=musikcube
+Comment=terminal-based music player
+Exec=musikcube %U
+TryExec=musikcube
+Icon=musikcube
+Terminal=true
+Categories=AudioVideo;Player;Audio;
+StartupNotify=false
+StartupWMClass=musikcube

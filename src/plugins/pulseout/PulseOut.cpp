@@ -242,6 +242,7 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
         this->rate != buffer->SampleRate() ||
         this->channels != buffer->Channels())
     {
+        int errorCode = 0;
         this->CloseDevice();
 
         pa_sample_spec spec;
@@ -249,9 +250,8 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
         spec.channels = buffer->Channels();
         spec.rate = buffer->SampleRate();
 
-        std::cerr << "PulseOut: opening device\n";
-
         std::string deviceId = this->GetPreferredDeviceId();
+        std::cerr << "PulseOut: opening device " << deviceId << "\n";
 
         /* output to preferred device id, as specified in prefs */
         this->audioConnection = pa_blocking_new(
@@ -263,7 +263,11 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
             &spec,
             nullptr,
             nullptr,
-            0);
+            &errorCode);
+
+        if (!this->audioConnection) {
+            std::cerr << "PulseOut: failed to open device. errorCode=" << errorCode << "\n";
+        }
 
         if (!this->audioConnection && deviceId.size()) {
             /* fall back to default if preferred is not found */
@@ -276,7 +280,11 @@ void PulseOut::OpenDevice(musik::core::sdk::IBuffer* buffer) {
                 &spec,
                 nullptr,
                 nullptr,
-                0);
+                &errorCode);
+
+            if (!this->audioConnection) {
+                std::cerr << "PulseOut: failed to open default device. errorCode=" << errorCode << "\n";
+            }
         }
 
         if (this->audioConnection) {
