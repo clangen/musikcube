@@ -26,6 +26,8 @@ parts:
     plugin: cmake
     configflags:
       - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/usr
+      - -DENABLE_SNAP=true
     source: https://github.com/clangen/musikcube.git
     build-packages:
       - build-essential
@@ -76,9 +78,27 @@ parts:
       - libtag1v5
 
 apps:
-  musikcube:
-    desktop: share/applications/musikcube.desktop
-    command: desktop-launch $SNAP/share/musikcube/musikcube
+  app:
+    desktop: usr/share/applications/musikcube.snap.desktop
+    command: desktop-launch $SNAP/usr/share/musikcube/musikcube
+    environment:
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
+      ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
+      LANG: C.UTF-8
+    plugs:
+      - home
+      - removable-media
+      - pulseaudio
+      - network
+      - network-bind
+      - audio-playback
+      - alsa
+      - desktop
+    slots:
+      - mpris
+
+  daemon:
+    command: desktop-launch $SNAP/usr/share/musikcube/musikcubed
     environment:
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/pulseaudio
       ALSA_CONFIG_PATH: /snap/$SNAPCRAFT_PROJECT_NAME/current/usr/share/alsa/alsa.conf
