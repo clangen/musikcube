@@ -238,10 +238,14 @@ file(COPY ${locales} DESTINATION bin/locales)
 install(FILES ${locales} DESTINATION share/musikcube/locales)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  file(GLOB_RECURSE linux_share_applications "src/musikcube/data/linux/share/applications/*")
+  file(GLOB linux_share_applications "src/musikcube/data/linux/share/applications/*")
   install(FILES ${linux_share_applications} DESTINATION share/applications/)
-  file(GLOB_RECURSE linux_share_icons_48 "src/musikcube/data/linux/share/icons/hicolor/48x48/apps/*")
+  file(GLOB linux_share_icons_48 "src/musikcube/data/linux/share/icons/hicolor/48x48/apps/*")
   install(FILES ${linux_share_icons_48} DESTINATION share/icons/hicolor/48x48/apps/)
+  file(GLOB linux_share_icons_64 "src/musikcube/data/linux/share/icons/hicolor/64x64/apps/*")
+  install(FILES ${linux_share_icons_64} DESTINATION share/icons/hicolor/64x64/apps/)
+  file(GLOB linux_share_icons_128 "src/musikcube/data/linux/share/icons/hicolor/128x128/apps/*")
+  install(FILES ${linux_share_icons_128} DESTINATION share/icons/hicolor/128x128/apps/)
 endif()
 
 # libmusikcore sshared library
