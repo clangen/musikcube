@@ -1,3 +1,129 @@
+0.90.0
+
+musikcube:
+* included a new `musikcube-cmd.exe` binary that can be run from a standard
+  command-line session in Windows,  including cmd.exe, PowerShell, Windows
+  Terminal, or ConEmu.
+* added an OpenBSD port (castagnini)
+* added the ability to build as a `snap` package.
+* fixed build issues for platforms with ncurses and tinfo split (tobbez)
+* fixed an issue where percent signs in the transport weren't getting properly
+  escaped (the-eater)
+* fixed an issue where we may not properly detect UTF8 terminals in some cases
+* added true color support for macOS Terminal.app (previously was only
+  supported in iTerm)
+* fixed a handful of directory browsing bugs reported by (pcapiod)
+* fixed a bug where we weren't always properly reporting track metadata in the
+  MPRIS plugin.
+* added a way to add an `audd.io` API key, if you have one, to fetch lyrics
+* updated session data to be stored in its own config file
+* merged upstream PDCurses changes to fix a handful of minor bugs and better
+  support Windows Terminal
+* fixed a couple null pointer dereferences, and a couple instances where we
+  were using variables before they were initialized (detected with valgrind)
+* fixed some weird redraw issues on some platforms with ncurses 6.2
+* fixed some bugs where we weren't always compiling the MPRIS plugin for our
+  binary packages
+
+musikcore:
+* added a very basic C API for interacting with the SDK. see `musikcore_c.h`
+  and the companion project `core_c_demo`.
+* fixed an old bug in the `indexer` that would report an incorrect updated file
+  count.
+* added the ability to build a standalone `musikcore.dll` on Windows that can
+  be used with the new C API for easy integration with other languages or
+  environments.
+* fixed a bug where we may crash when playing 0-length files.
+* fixed an old bug where playback state would get out of sync if the user seeked
+  while paused.
+* cleaned up SDK constants
+
+musikdroid:
+* updated crash report tracking to use Firebase Crashlytics
+* upgraded ExoPlayer
+* upgrade to Android Studio 3.6
+
+server:
+* tweaked the threading model to better support multiple concurrent connections
+* fixed a bug where we may attempt to transcode the same file multiple times
+  simultaneously; now if there's a transcode for a shared resource in progress
+  we'll just wait until the original operation completes
+
+--------------------------------------------------------------------------------
+
+0.83.0
+
+musikcube:
+* #309: fixed a minor CMake configuration bug that could cause some formats
+  (e.g. `opus`) to not get recognized on some platforms (e.g. `linux`).
+
+--------------------------------------------------------------------------------
+
+0.82.0
+
+musikcube:
+* Fixed a small bug that could cause dialogs to get partially obscured on
+  certain versions of curses.
+
+--------------------------------------------------------------------------------
+
+0.81.0
+
+musikcube:
+* Added an `advanced setting` to hide the star rating column
+
+musikcore:
+* #308: audio decoding doesn't work with older versions of `ffmpeg`
+* #307: database initialization issue (hectorm)
+* #304: Updated `ru_RU` localization (adem4ik)
+
+--------------------------------------------------------------------------------
+
+0.80.0
+
+musikcube:
+* Added `zh_CN` localization (Siheyuan98)
+* Fixed #287: Window size not properly restored in Windows build
+* Fixed #276: Added the ability to rate tracks via `r` shortcut in all track
+  list views.
+* Fixed #260: Added the ability to sort track list results via `^S"` in search
+  and browse views
+* Fixed #173: Show song artist and title in the terminal titlebar
+* Fixed #299: Windows drives disappear in directory browser after checking/
+  unchecking "show dotfiles" option.
+* Fixed #257: Added an option to hide the command bar when not in command mode
+* Backported `SchemaOverlay` from upstream `cursespp` and use it in
+  `PluginsOverlay`.
+* Added an `advanced settings` to the settings view and re-arranged things a
+  bit.
+
+musikcore:
+* Fixed #290: A brand new transcoder implementation powered by ffmpeg that
+  supports `ogg`, `opus`, `aac`, `flac`, `wavepack`, and `wma` files. `mp3`
+  transcoding is still handled by `libmp3lame`.
+* Fixed a bug in `FfmpegDecoder` that could result in a pre-mature / incorrect
+  `EOF` error.
+* Fixed #294: we weren't properly querying the local DB for lyrics.
+* Fixed #293: bug parsing disc number in AAC files.
+* Fixed #298: bug decoding APE files. changes also include a complete refactor
+  and overhaul of the `FfmpegDecoder` plugin to use modern, non-deprecated
+  ffmpeg APIs.
+* Fixed #160: added support for WAV and AIF files.
+* Fixed #133: properly label and sort blank / empty category names as
+  `[unknown]` and ensure they are returned at the bottom of their respective
+  lists.
+
+musikdroid:
+* Allow for transcoder format selection in `musikdroid`'s settings screen.
+  (Part of #290)
+* Upgraded `musikdroid` to use the latest stable Android Studio and other
+  dependencies (ExoPlayer, AndroidX, etc), plus a bunch of compiler warning
+  fixes.
+* Fixed #296: notification not dismissed on stopping playback on some devices
+  running Android 10
+
+--------------------------------------------------------------------------------
+
 0.70.1
 
 musikcube:
