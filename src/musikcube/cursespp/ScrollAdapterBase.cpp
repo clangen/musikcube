@@ -112,15 +112,11 @@ size_t ScrollAdapterBase::GetVisibleItems(
 void ScrollAdapterBase::DrawPage(ScrollableWindow* scrollable, size_t index, ScrollPosition& result) {
     WINDOW* window = scrollable->GetContent();
 
-    if (!window) {
+    if (!scrollable->IsVisible() || !window || this->height == 0 || this->width == 0 || this->GetEntryCount() == 0) {
         return;
     }
 
     werase(window);
-
-    if (!scrollable->IsVisible() || !window || this->height == 0 || this->width == 0 || this->GetEntryCount() == 0) {
-        return;
-    }
 
     if (index >= GetEntryCount()) {
         index = GetEntryCount() - 1;
