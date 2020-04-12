@@ -3,7 +3,6 @@ package io.casey.musikcube.remote.ui.home.activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -12,7 +11,6 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
-import com.wooplr.spotlight.SpotlightView
 import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.playback.Playback
 import io.casey.musikcube.remote.service.playback.PlaybackState
@@ -95,7 +93,6 @@ class MainActivity : BaseActivity() {
         scheduleUpdateTime(true)
         runUpdateCheck()
         initObservers()
-        registerLayoutListener()
     }
 
     override fun onStart() {
@@ -176,7 +173,6 @@ class MainActivity : BaseActivity() {
                 when (states.first) {
                     IMetadataProxy.State.Connected -> {
                         rebindUi()
-                        checkShowSpotlight()
                         checkShowApiMismatch()
                     }
                     IMetadataProxy.State.Disconnected -> {
@@ -419,51 +415,6 @@ class MainActivity : BaseActivity() {
         }
     }
 
-    private fun registerLayoutListener() {
-        window.decorView.viewTreeObserver.addOnGlobalLayoutListener(
-            object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
-                    if (toolbarButton != null && data.provider.state == IMetadataProxy.State.Connected) {
-                        checkShowSpotlight()
-                        window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                    }
-                }
-            })
-    }
-
-    private fun checkShowSpotlight() {
-        /* sometimes the spotlight animation doesn't play properly; let's try to delay it
-        for a bit to make it more reliable */
-        handler.postDelayed({
-            val toolbarButton = findViewById<View>(R.id.action_remote_toggle)
-            if (!paused && !spotlightDisplayed && toolbarButton != null) {
-                SpotlightView.Builder(this@MainActivity)
-                    .introAnimationDuration(400)
-                    .enableRevealAnimation(true)
-                    .performClick(true)
-                    .fadeinTextDuration(400)
-                    .headingTvColor(getColorCompat(R.color.color_accent))
-                    .headingTvSize(24)
-                    .headingTvText(getString(R.string.spotlight_playback_mode_title))
-                    .subHeadingTvColor(Color.parseColor("#ffffff"))
-                    .subHeadingTvSize(14)
-                    .subHeadingTvText(getString(R.string.spotlight_playback_mode_message))
-                    .maskColor(Color.parseColor("#dc000000"))
-                    .target(toolbarButton)
-                    .lineAnimDuration(400)
-                    .lineAndArcColor(getColorCompat(R.color.color_primary))
-                    .dismissOnTouch(true)
-                    .dismissOnBackPress(true)
-                    .enableDismissAfterShown(true)
-                    .usageId(SPOTLIGHT_STREAMING_ID)
-                    .show()
-
-                spotlightDisplayed = true
-            }
-        }, 1000)
-    }
-
     private fun checkShowApiMismatch() {
         if (!apiMismatchDisplayed && data.wss.shouldUpgrade()) {
             val tag = ApiMismatchDialog.TAG
@@ -670,9 +621,7 @@ class MainActivity : BaseActivity() {
     }
 
     companion object {
-        private const val SPOTLIGHT_STREAMING_ID = "streaming_mode"
         private const val DEFAULT_UPGRADE_URL = "https://github.com/clangen/musikcube/releases/"
-        private var spotlightDisplayed = false
         private var apiMismatchDisplayed = false
 
         private var REPEAT_TO_STRING_ID: MutableMap<RepeatMode, Int> = mutableMapOf(
