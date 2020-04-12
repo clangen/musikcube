@@ -33,5 +33,7 @@ rm -rf %{buildroot}
 %{_prefix}/bin/musikcube
 %{_prefix}/bin/musikcubed
 %{_prefix}/share/musikcube/
+%{_prefix}/share/applications/
+%{_prefix}/share/icons/
 %{_prefix}/include/musikcube/
 %doc
