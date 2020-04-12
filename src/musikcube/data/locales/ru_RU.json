@@ -159,6 +159,7 @@
         "playqueue_overlay_add_to_start_of_queue": "добавить в начало очереди",
         "playqueue_overlay_add_to_end_in_queue": "добавить в конец очереди",
         "playqueue_overlay_add_as_next_in_queue": "добавить следующим в очереди",
+        "playqueue_overlay_add_hotswap_queue": "подменить существующую очередь",
         "playqueue_overlay_add_to_playlist": "добавить в плейлист",
         "playqueue_overlay_select_playlist_title": "выберите плейлист",
 
@@ -206,16 +207,16 @@
         "main_syncing_banner": "синхронизация метаданных (%d треков обработано)",
 
         "lyrics_list_title": "текст песни для '%s' от '%s'",
-        "lyrics_not_playing": "текст песни не отображается, так как сейчас ничего не играется!",
+        "lyrics_not_playing": "текст песни не отображается, так как сейчас ничего не играет!",
         "lyrics_loading": "поиск текста песни...",
         "lyrics_lookup_failed": "поиск текста песни не удался. нажмите '%s' для повтора.",
 
         "update_check_dialog_title": "доступна новая версия!",
         "update_check_dialog_message": "musikcube версии %s доступен для загрузки. список изменений и пакеты расположены на:\n\n%s",
         "update_check_no_updates_title": "проверка обновлений",
-        "update_check_no_updates_message": "обновления не найдены.",
+        "update_check_no_updates_message": "в данный момент обновлений нет.",
 
-        "track_list_sort_overlay_title": "выберите направление сортировки",
+        "track_list_sort_overlay_title": "сортировать по",
         "track_list_rate_track_overlay_title": "оценить трек",
 
         "track_list_sort_title": "названию трека",
@@ -248,7 +249,7 @@
         "server_overlay_width": 45,
         "preamp_overlay_width": 40,
         "equalizer_overlay_width": 46,
-        "track_search_sort_order_width": 32,
+        "track_search_sort_order_width": 34,
         "track_list_rate_track_width": 24
     }
 }
