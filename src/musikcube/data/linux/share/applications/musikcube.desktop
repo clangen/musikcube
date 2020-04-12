@@ -4,6 +4,7 @@ Type=Application
 Name=musikcube
 GenericName=musikcube
 Comment=terminal-based music player
+Comment[ru]=консольный аудиоплеер
 Exec=musikcube %U
 TryExec=musikcube
 Icon=musikcube
