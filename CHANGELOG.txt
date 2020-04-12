@@ -24,6 +24,8 @@ musikcube:
 * fixed some weird redraw issues on some platforms with ncurses 6.2
 * fixed some bugs where we weren't always compiling the MPRIS plugin for our
   binary packages
+* fixed a number of ALSA and PulseAudio bugs when devices are not available
+  or there is resource contention
 
 musikcore:
 * added a very basic C API for interacting with the SDK. see `musikcore_c.h`
