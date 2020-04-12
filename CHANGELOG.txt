@@ -1,3 +1,12 @@
+0.90.1
+
+(windows-only release)
+
+musikcube:
+* fixed crash in win32 server caused by an incorrectly-compiled zlib
+
+--------------------------------------------------------------------------------
+
 0.90.0
 
 musikcube:

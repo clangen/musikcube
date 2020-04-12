@@ -37,9 +37,9 @@
 #include <string>
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 90
+#define VERSION_MINOR 91
 #define VERSION_PATCH 0
-#define VERSION "0.90.0"
+#define VERSION "0.91.0"
 namespace musik {
     namespace cube {
         static inline std::string userAgent() {
