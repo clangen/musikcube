@@ -24,6 +24,7 @@ ipch
 build
 CPack*
 _CPack*
+*.snap
 musikcube.core
 src/3rdparty/bin
 src/3rdparty/obj
