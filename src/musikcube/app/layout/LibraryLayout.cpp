@@ -439,17 +439,21 @@ bool LibraryLayout::KeyPress(const std::string& key) {
                 });
             return true;
         }
-        else if (Hotkeys::Is(Hotkeys::TrackListPlayFromTop, key)) {
-            if (this->visibleLayout == this->browseLayout) {
-                this->browseLayout->PlayFromTop();
-            }
-            else if (this->visibleLayout == this->directoryLayout) {
-                this->directoryLayout->PlayFromTop();
-            }
-        }
     }
 
-    if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, key)) {
+    if (Hotkeys::Is(Hotkeys::TrackListPlayFromTop, key)) {
+        /* TODO: maybe have an IPlayFromTopLayout? meh... */
+        if (this->visibleLayout == this->browseLayout) {
+            this->browseLayout->PlayFromTop();
+        }
+        else if (this->visibleLayout == this->directoryLayout) {
+            this->directoryLayout->PlayFromTop();
+        }
+        else if (this->visibleLayout == this->trackSearchLayout) {
+            this->trackSearchLayout->PlayFromTop();
+        }
+    }
+    else if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, key)) {
         this->ShowNowPlaying();
         return true;
     }

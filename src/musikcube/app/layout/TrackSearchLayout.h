@@ -61,6 +61,7 @@ namespace musik {
                 virtual void OnVisibilityChanged(bool visible);
                 virtual bool KeyPress(const std::string& key);
 
+                void PlayFromTop();
                 void FocusInput();
                 void LoadLastSession();
 

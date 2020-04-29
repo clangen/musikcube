@@ -151,6 +151,10 @@ void TrackSearchLayout::Requery() {
         new SearchTrackListQuery(this->library, filter, sortOrder)));
 }
 
+void TrackSearchLayout::PlayFromTop() {
+    playback::PlayFromTop(*this->trackList, this->playback);
+}
+
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
     int type = message.Type();
 
