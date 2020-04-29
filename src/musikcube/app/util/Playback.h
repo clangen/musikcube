@@ -45,7 +45,11 @@
 namespace musik {
     namespace cube {
         namespace playback {
-            void Play(
+            void PlaySelected(
+                musik::cube::TrackListView& trackList,
+                musik::core::audio::PlaybackService& playback);
+
+            void PlayFromTop(
                 musik::cube::TrackListView& trackList,
                 musik::core::audio::PlaybackService& playback);
 

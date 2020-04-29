@@ -229,7 +229,7 @@ void TrackListView::OnEntryActivated(size_t index) {
             MessageQueue(), this->playback, this->library, track);
     }
     else {
-        playback::Play(*this, this->playback);
+        playback::PlaySelected(*this, this->playback);
     }
 
     ListWindow::OnEntryActivated(index);
@@ -285,6 +285,30 @@ bool TrackListView::KeyPress(const std::string& key) {
                     }
                 });
         }
+        handled = true;
+    }
+    else if (Hotkeys::Is(Hotkeys::TrackListNextGroup, key)) {
+        size_t next = this->headers.NextHeaderIndex(this->GetSelectedIndex());
+        if (next != HeaderCalculator::NO_INDEX) {
+            this->SetSelectedIndex(next);
+            if (!IsEntryVisible(next)) {
+                this->ScrollTo(next);
+            }
+        }
+        handled = true;
+    }
+    else if (Hotkeys::Is(Hotkeys::TrackListPreviousGroup, key)) {
+        size_t prev = this->headers.PrevHeaderIndex(this->GetSelectedIndex());
+        if (prev != HeaderCalculator::NO_INDEX) {
+            this->SetSelectedIndex(prev);
+            if (!IsEntryVisible(prev)) {
+                this->ScrollTo(prev);
+            }
+        }
+        handled = true;
+    }
+    else if (Hotkeys::Is(Hotkeys::TrackListPlayFromTop, key)) {
+        playback::PlayFromTop(*this, this->playback);
         handled = true;
     }
 
@@ -370,6 +394,34 @@ size_t TrackListView::HeaderCalculator::Count() {
 bool TrackListView::HeaderCalculator::HeaderAt(size_t index) {
     return this->absoluteOffsets &&
         this->absoluteOffsets->find(index) != this->absoluteOffsets->end();
+}
+
+size_t TrackListView::HeaderCalculator::NextHeaderIndex(size_t selectedIndex) {
+    size_t result = NO_INDEX;
+    if (this->absoluteOffsets) {
+        for (auto val : (*this->absoluteOffsets)) {
+            if (val > selectedIndex) {
+                result = val;
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+size_t TrackListView::HeaderCalculator::PrevHeaderIndex(size_t selectedIndex) {
+    size_t result = 0;
+    if (this->absoluteOffsets) {
+        for (auto val : (*this->absoluteOffsets)) {
+            if (selectedIndex > val) {
+                result = val;
+            }
+            else {
+                break;
+            }
+        }
+    }
+    return result;
 }
 
 /* * * * TrackListView::Adapter * * * */

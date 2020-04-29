@@ -220,6 +220,10 @@ bool DirectoryLayout::IsParentRoot() {
         root == this->adapter->GetCurrentPath();
 }
 
+void DirectoryLayout::PlayFromTop() {
+    playback::PlayFromTop(*this->trackList, this->playback);
+}
+
 bool DirectoryLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         if (this->GetFocus() == this->directoryList) {

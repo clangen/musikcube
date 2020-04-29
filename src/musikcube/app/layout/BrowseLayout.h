@@ -64,6 +64,7 @@ namespace musik {
 
                 void ScrollTo(const std::string& fieldType, int64_t fieldId);
                 void SwitchCategory(const std::string& fieldName);
+                void PlayFromTop();
 
                 void LoadLastSession();
 

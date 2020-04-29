@@ -63,11 +63,18 @@ static size_t getSelectedIndex(TrackListView& trackList) {
 namespace musik {
     namespace cube {
         namespace playback {
-            void Play(TrackListView& trackList, PlaybackService& playback) {
+            void PlaySelected(TrackListView& trackList, PlaybackService& playback) {
                 auto index = getSelectedIndex(trackList);
                 if (index != NO_SELECTION) {
                     auto tracks = trackList.GetTrackList();
                     playback.Play(*tracks, index);
+                }
+            }
+
+            void PlayFromTop(TrackListView& trackList, PlaybackService& playback) {
+                auto tracks = trackList.GetTrackList();
+                if (tracks && tracks->Count()) {
+                    playback.Play(*tracks, 0);
                 }
             }
 

@@ -111,6 +111,9 @@ namespace musik {
                     /* tracklist items */
                     TrackListRateTrack,
                     TrackListChangeSortOrder,
+                    TrackListNextGroup,
+                    TrackListPreviousGroup,
+                    TrackListPlayFromTop,
 
                     /* lyrics */
                     LyricsRetry,

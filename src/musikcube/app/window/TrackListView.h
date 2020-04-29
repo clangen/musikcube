@@ -140,11 +140,15 @@ namespace musik {
                 /* class to help with header offset calculation */
                 class HeaderCalculator {
                     public:
+                        static const size_t NO_INDEX = (size_t) -1;
+
                         void Set(Headers rawOffsets);
                         void Reset();
                         size_t AdapterToTrackListIndex(size_t index);
                         size_t TrackListToAdapterIndex(size_t index);
                         bool HeaderAt(size_t index);
+                        size_t NextHeaderIndex(size_t selectedIndex);
+                        size_t PrevHeaderIndex(size_t selectedIndex);
                         size_t Count();
 
                     private:

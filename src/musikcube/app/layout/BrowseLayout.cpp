@@ -299,6 +299,10 @@ void BrowseLayout::SwitchCategory(const std::string& fieldName) {
         : TrackRowRenderers::TrackNumType::Metadata);
 }
 
+void BrowseLayout::PlayFromTop() {
+    playback::PlayFromTop(*this->trackList, this->playback);
+}
+
 bool BrowseLayout::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         /* if the tracklist is NOT focused (i.e. the focus is on a

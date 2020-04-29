@@ -439,6 +439,14 @@ bool LibraryLayout::KeyPress(const std::string& key) {
                 });
             return true;
         }
+        else if (Hotkeys::Is(Hotkeys::TrackListPlayFromTop, key)) {
+            if (this->visibleLayout == this->browseLayout) {
+                this->browseLayout->PlayFromTop();
+            }
+            else if (this->visibleLayout == this->directoryLayout) {
+                this->directoryLayout->PlayFromTop();
+            }
+        }
     }
 
     if (Hotkeys::Is(Hotkeys::NavigateLibraryPlayQueue, key)) {
