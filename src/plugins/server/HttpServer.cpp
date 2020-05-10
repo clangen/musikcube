@@ -433,8 +433,10 @@ int HttpServer::HandleAudioTrackRequest(
     }
 
     if (track) {
-        std::string duration = GetMetadataString(track, key::duration);
-        std::string filename = GetMetadataString(track, key::filename);
+        const std::string duration = GetMetadataString(track, key::duration);
+        const std::string filename = GetMetadataString(track, key::filename);
+        const std::string title = GetMetadataString(track, key::title, "");
+        const std::string externalId = GetMetadataString(track, key::external_id, "");
 
         track->Release();
 
@@ -534,6 +536,10 @@ int HttpServer::HandleAudioTrackRequest(
             if (response) {
                 if (!isOnDemandTranscoder) {
                     MHD_add_response_header(response, "Accept-Ranges", "bytes");
+
+                    if (boost::filesystem::exists(title)) {
+                        MHD_add_response_header(response, "X-musikcube-Filename-Override", externalId.c_str());
+                    }
                 }
                 else {
                     MHD_add_response_header(response, "X-musikcube-Estimated-Content-Length", "true");

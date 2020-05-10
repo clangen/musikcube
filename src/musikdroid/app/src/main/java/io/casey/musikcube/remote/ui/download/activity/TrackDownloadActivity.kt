@@ -34,6 +34,7 @@ class TrackDownloadActivity: BaseActivity() {
     private val httpClient = createHttpClient(Application.instance)
     private val mutex = Object()
     private var pendingCall: Call? = null
+    private var outputFilename: String = ""
     private lateinit var spinner: MaterialProgressBar
     private lateinit var progress: MaterialProgressBar
     private val handler = Handler()
@@ -141,6 +142,7 @@ class TrackDownloadActivity: BaseActivity() {
                     }
                 }
 
+                outputFilename = getOutputFilename(response)
                 if (it.byteStream().toFile(outputFilename, onBytesReceived)) {
                     MediaScannerConnection.scanFile(
                         this@TrackDownloadActivity,
@@ -202,16 +204,6 @@ class TrackDownloadActivity: BaseActivity() {
         }
     }
 
-    private val outputFilename: String
-        get() {
-            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val title = intent.getStringExtra(EXTRA_TRACK_TITLE)
-            val externalId = intent.getStringExtra(EXTRA_EXTERNAL_ID)
-            var extension = intent.extras?.getString(EXTRA_EXTENSION, "mp3")
-            extension = if (extension.isNullOrBlank()) "mp3" else extension
-            return "$dir/musikdroid/$title-$externalId.$extension"
-        }
-
     private val trackUrl: Uri
         get() {
             val ssl = prefs.getBoolean(Prefs.Key.SSL_ENABLED, Prefs.Default.SSL_ENABLED)
@@ -226,6 +218,27 @@ class TrackDownloadActivity: BaseActivity() {
                 .appendPath("external_id")
                 .appendPath(intent.getStringExtra(EXTRA_EXTERNAL_ID)).build()
         }
+
+    private fun getOutputFilename(response: Response): String {
+        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val externalId = intent.getStringExtra(EXTRA_EXTERNAL_ID)
+        val rawTitle = intent.getStringExtra(EXTRA_TRACK_TITLE)
+        var filename = "$rawTitle-$externalId"
+
+        /* in some cases the server may request a filename override, so we try to honor that
+        here if possible */
+        val headers = response.headers().values(HTTP_HEADER_FILENAME_OVERRIDE)
+        if (headers.isNotEmpty()) {
+            filename = headers[0]
+        }
+
+        /* strip standard path delimiters */
+        filename = filename.replace("/", "_").replace("\\", "_")
+
+        var extension = intent.extras?.getString(EXTRA_EXTENSION, "mp3")
+        extension = if (extension.isNullOrBlank()) "mp3" else extension
+        return "$dir/musikdroid/$filename.$extension"
+    }
 
     class ConfirmCancelDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
@@ -274,6 +287,7 @@ class TrackDownloadActivity: BaseActivity() {
         private const val EXTRA_EXTERNAL_ID = "extra_external_id"
         private const val EXTRA_TRACK_TITLE = "extra_track_title"
         private const val EXTRA_EXTENSION = "extra_extension"
+        private const val HTTP_HEADER_FILENAME_OVERRIDE = "X-musikcube-Filename-Override"
 
         fun getStartIntent(activity: AppCompatActivity, track: ITrack): Intent {
             return Intent(activity, TrackDownloadActivity::class.java).apply {

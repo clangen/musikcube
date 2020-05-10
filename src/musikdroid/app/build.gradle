@@ -61,8 +61,8 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
-    implementation 'com.google.firebase:firebase-analytics:17.4.0'
-    implementation 'com.google.firebase:firebase-core:17.4.0'
+    implementation 'com.google.firebase:firebase-analytics:17.4.1'
+    implementation 'com.google.firebase:firebase-core:17.4.1'
     implementation 'com.google.firebase:firebase-crashlytics:17.0.0'
 
     implementation(name:'android-taskrunner-0.5', ext:'aar')
