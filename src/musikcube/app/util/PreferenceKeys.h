@@ -60,6 +60,7 @@ namespace musik { namespace cube { namespace prefs {
         extern const std::string RatingNegativeChar;
         extern const std::string AutoHideCommandBar;
         extern const std::string DisableRatingColumn;
+        extern const std::string DisableWindowTitleUpdates;
         extern const std::string AppQuitKey;
     }
 

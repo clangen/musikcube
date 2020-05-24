@@ -58,6 +58,7 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::RatingNegativeChar = "RatingNegativeChar";
     const std::string keys::AutoHideCommandBar = "AutoHideCommandBar";
     const std::string keys::DisableRatingColumn = "DisableRatingColumn";
+    const std::string keys::DisableWindowTitleUpdates = "DisableWindowTitleUpdates";
     const std::string keys::AppQuitKey = "AppQuitKey";
 
 } } }

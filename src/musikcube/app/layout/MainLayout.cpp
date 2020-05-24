@@ -128,7 +128,7 @@ void MainLayout::OnLayout() {
     if (this->library->Indexer()->GetState() == IIndexer::StateIndexing) {
         size_t cx = this->GetContentWidth();
         this->SetPadding(1, 0, 0, 0);
-        this->syncing->MoveAndResize(0, 0, cx, 1);
+        this->syncing->MoveAndResize(0, 0, (int) cx, 1);
         this->syncing->Show();
 
         if (this->syncUpdateCount == 0) {
@@ -234,7 +234,7 @@ void MainLayout::OnIndexerFinished(int count) {
 }
 
 void MainLayout::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
-    if (!track) {
+    if (prefs->GetBool(cube::prefs::keys::DisableWindowTitleUpdates, false) || !track) {
         App::Instance().SetTitle("musikcube");
     }
     else {
