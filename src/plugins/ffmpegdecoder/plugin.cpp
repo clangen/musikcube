@@ -139,14 +139,14 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
             std::string str(type);
             std::transform(str.begin(), str.end(), str.begin(), tolower);
 
-            auto it = typeToCodecId.find(type);
+            auto it = typeToCodecId.find(str);
             if (it != typeToCodecId.end()) {
                 if (supported.find(it->second) != supported.end()) {
                     return true;
                 }
             }
 
-            if (supportedTypesWithoutCodec.find(type) != supportedTypesWithoutCodec.end()) {
+            if (supportedTypesWithoutCodec.find(str) != supportedTypesWithoutCodec.end()) {
                 return true;
             }
 
