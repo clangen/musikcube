@@ -1,3 +1,26 @@
+0.92.0
+
+musikcube:
+* fixed bug in the ffmpeg decoder where
+* added three new hotkeys:
+  - `M-P`: start playback from the top of the current list of tracks
+  - `]`: jump to the next group in the current track list
+  - `[`: jump to the previous group in the current track list
+* added the ability to disable terminal title upgrades in `advanced settings`
+* updated ru_RU localization (adem4ik)
+* optimized png files (adem4ik)
+* added zn_CN localization (Siheyuan98)
+* fixed a bug where binary stripping was broken for out of tree builds
+* added the ability to disable binary stripping via DISABLE_STRIP=true flag
+
+musikdroid:
+* fixed a bug when downloading tracks without metadata, or metadata that
+  contains invalid path characters.
+* upgraded to the latest version of Android Studio
+* upgraded various dependencies
+
+--------------------------------------------------------------------------------
+
 0.90.1
 
 (windows-only release)
