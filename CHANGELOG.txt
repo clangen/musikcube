@@ -17,8 +17,14 @@ musikcube:
 musikdroid:
 * fixed a bug when downloading tracks without metadata, or metadata that
   contains invalid path characters.
+* fixed a bug where track downloads may get corrupted, and/or assigned an
+  incorrect file extension
 * upgraded to the latest version of Android Studio
 * upgraded various dependencies
+
+server:
+* added new `X-musikcube-File-Extension` HTTP response header that clients can
+  use as a hint when naming downloaded files.
 
 --------------------------------------------------------------------------------
 

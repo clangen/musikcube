@@ -227,15 +227,23 @@ class TrackDownloadActivity: BaseActivity() {
 
         /* in some cases the server may request a filename override, so we try to honor that
         here if possible */
-        val headers = response.headers().values(HTTP_HEADER_FILENAME_OVERRIDE)
-        if (headers.isNotEmpty()) {
-            filename = headers[0]
+        val filenameOverrideHeaders = response.headers().values(HTTP_HEADER_FILENAME_OVERRIDE)
+        if (filenameOverrideHeaders.isNotEmpty()) {
+            filename = filenameOverrideHeaders[0]
         }
 
         /* strip standard path delimiters */
         filename = filename.replace("/", "_").replace("\\", "_")
 
+        /* the server should give us the correct file extension as a custom response header,
+        so we'll use that if it's available. otherwise we'll try to parse it from the filename.
+        if both of those fail we'll just use 'mp3' */
         var extension = intent.extras?.getString(EXTRA_EXTENSION, "mp3")
+        val fileExtensionHeaders = response.headers().values(HTTP_HEADER_FILE_EXTENSION)
+        if (fileExtensionHeaders.isNotEmpty()) {
+            extension = fileExtensionHeaders[0]
+        }
+
         extension = if (extension.isNullOrBlank()) "mp3" else extension
         return "$dir/musikdroid/$filename.$extension"
     }
@@ -288,6 +296,7 @@ class TrackDownloadActivity: BaseActivity() {
         private const val EXTRA_TRACK_TITLE = "extra_track_title"
         private const val EXTRA_EXTENSION = "extra_extension"
         private const val HTTP_HEADER_FILENAME_OVERRIDE = "X-musikcube-Filename-Override"
+        private const val HTTP_HEADER_FILE_EXTENSION = "X-musikcube-File-Extension"
 
         fun getStartIntent(activity: AppCompatActivity, track: ITrack): Intent {
             return Intent(activity, TrackDownloadActivity::class.java).apply {

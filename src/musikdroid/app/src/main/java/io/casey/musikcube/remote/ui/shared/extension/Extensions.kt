@@ -467,7 +467,7 @@ fun InputStream.toFile(path: String, progress: ((Long) -> Unit)? = null): Boolea
                 count = reader.read(buffer)
                 total += count
                 if (count > 0) {
-                    out.write(buffer)
+                    out.write(buffer, 0, count)
                 }
                 ++iterations
                 /* post progress every ~(4096 * 25 = 102400) bytes */

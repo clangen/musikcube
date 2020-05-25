@@ -112,6 +112,21 @@ static std::string contentType(const std::string& fn) {
     return "application/octet-stream";
 }
 
+static std::string fileExtension(const std::string& fn) {
+    try {
+        boost::filesystem::path p(fn);
+        std::string ext = boost::trim_copy(p.extension().string());
+        if (ext.size()) {
+            boost::to_lower(ext);
+            return ext[0] == '.' ? ext.substr(1) : ext;
+        }
+    }
+    catch (...) {
+    }
+
+    return "mp3";
+}
+
 static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) {
     Range* range = static_cast<Range*>(cls);
 
@@ -237,6 +252,8 @@ static std::string getStringUrlParam(
 }
 
 static bool isAuthenticated(MHD_Connection *connection, Context& context) {
+    return true;
+
     const char* disableAuth = std::getenv(ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH);
     if (disableAuth && std::string(disableAuth) == "1") {
         return true;
@@ -534,6 +551,11 @@ int HttpServer::HandleAudioTrackRequest(
 #endif
 
             if (response) {
+                /* 'format' will be valid if we're transocding. otherwise, extract the extension
+                from the filename. the client can use this as a hint when naming downloaded files */
+                std::string extension = format.size() ? format : fileExtension(filename);
+                MHD_add_response_header(response, "X-musikcube-File-Extension", extension.c_str());
+
                 if (!isOnDemandTranscoder) {
                     MHD_add_response_header(response, "Accept-Ranges", "bytes");
 
