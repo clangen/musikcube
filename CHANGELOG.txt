@@ -12,6 +12,7 @@ musikcube:
 * added zn_CN localization (Siheyuan98)
 * fixed a bug where binary stripping was broken for out of tree builds
 * added the ability to disable binary stripping via DISABLE_STRIP=true flag
+* fixed `archive-win.sh` to use unix line endings
 
 musikdroid:
 * fixed a bug when downloading tracks without metadata, or metadata that
