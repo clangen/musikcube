@@ -19,6 +19,7 @@ musikdroid:
   contains invalid path characters.
 * fixed a bug where track downloads may get corrupted, and/or assigned an
   incorrect file extension
+* fixed a bug where FLAC decoding would crash the app
 * upgraded to the latest version of Android Studio
 * upgraded various dependencies
 
