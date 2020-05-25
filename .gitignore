@@ -25,6 +25,7 @@ build
 CPack*
 _CPack*
 *.snap
+prime
 musikcube.core
 src/3rdparty/bin
 src/3rdparty/obj
