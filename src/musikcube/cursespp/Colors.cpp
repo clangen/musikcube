@@ -37,6 +37,7 @@
 #include <cursespp/Colors.h>
 #include <boost/filesystem.hpp>
 #include <core/support/Common.h>
+#include <set>
 
 using namespace musik::core;
 using namespace cursespp;
@@ -492,12 +493,17 @@ struct Theme {
 
 /* some terminals report custom colors are supported, and also
 don't error when calling init_color(), but don't actually work. */
+
+static const std::set<std::string> kTrueColorTerminalBacklist = { "vscode" };
+
 static bool canChangeColors() {
-#ifdef __APPLE__
     const char* termEnv = std::getenv("TERM_PROGRAM");
     std::string term;
     if (termEnv && strlen(termEnv)) {
         term = std::string(termEnv);
+        if (kTrueColorTerminalBacklist.find(term) != kTrueColorTerminalBacklist.end()) {
+            return false;
+        }
         if (term == "Apple_Terminal") {
             const char* termVer = std::getenv("TERM_PROGRAM_VERSION");
             if (termVer && strlen(termVer)) {
@@ -512,10 +518,7 @@ static bool canChangeColors() {
             return false;
         }
     }
-    return can_change_color();
-#else
     return !!can_change_color();
-#endif
 }
 
 Colors::Colors() {
