@@ -11,9 +11,9 @@ MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuratio
 MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-Win /p:Platform=Win32
 MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-Con /p:Platform=Win32
 MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-DLL /p:Platform=Win32
-MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Release-Win /p:Platform=Win64
-MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Release-Con /p:Platform=Win64
-MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Release-DLL /p:Platform=Win64
-MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-Win /p:Platform=Win64
-MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-Con /p:Platform=Win64
-MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-DLL /p:Platform=Win64
+MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Release-Win /p:Platform=x64
+MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Release-Con /p:Platform=x64
+MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Release-DLL /p:Platform=x64
+MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-Win /p:Platform=x64
+MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-Con /p:Platform=x64
+MSBuild.exe musikcube.sln /m /t:Clean /nologo /verbosity:minimal /p:Configuration=Debug-DLL /p:Platform=x64
