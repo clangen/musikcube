@@ -38,6 +38,7 @@
 #include <core/sdk/IDebug.h>
 #include <core/sdk/ITagReader.h>
 #include <libopenmpt/libopenmpt.h>
+#include <string.h>
 
 extern "C" {
     #include "OpenMptDecoder.h"
