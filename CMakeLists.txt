@@ -103,6 +103,7 @@ add_subdirectory(src/plugins/httpdatastream)
 add_subdirectory(src/plugins/stockencoders)
 add_subdirectory(src/plugins/supereqdsp)
 add_subdirectory(src/plugins/gmedecoder)
+add_subdirectory(src/plugins/libopenmptdecoder)
 
 if (${FFMPEG_ENABLED} MATCHES "false")
   message(STATUS "[ffmpeg] enabled = false")

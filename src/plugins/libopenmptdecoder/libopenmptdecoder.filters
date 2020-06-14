@@ -1,0 +1,832 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd;cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="plugin\gme">
+      <UniqueIdentifier>{0c34f22a-70bf-4fb8-b96c-f08cd406fd53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugin\gme\higan">
+      <UniqueIdentifier>{280eb342-9894-41b2-911f-0c5f93b0a856}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugin\gme\higan\dsp">
+      <UniqueIdentifier>{f792f43e-8052-49cb-a377-d6a59ee84a6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugin\gme\higan\processor">
+      <UniqueIdentifier>{da658fc7-ef8f-40d1-bf27-f43b018a7a98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugin\gme\higan\processor\spc700">
+      <UniqueIdentifier>{d193944b-dfc4-4e31-9b24-93230815c095}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="plugin\gme\higan\smp">
+      <UniqueIdentifier>{dbf2c887-734f-4a7b-b20e-da7a33b8451e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="gme\gme.txt">
+      <Filter>plugin\gme</Filter>
+    </Text>
+    <Text Include="gme\license.txt">
+      <Filter>plugin\gme</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GmeDecoder.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="Constants.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="GmeDataStream.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="GmeIndexerSource.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\ymz280b.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ymz280b_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Z80_Cpu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Z80_Cpu_run.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\adlib.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ay_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ay_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ay_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\blargg_common.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\blargg_config.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\blargg_endian.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\blargg_errors.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\blargg_source.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Blip_Buffer.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Blip_Buffer_impl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Blip_Buffer_impl2.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Bml_Parser.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\c140.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\C140_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Chip_Resampler.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Classic_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\dac_control.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Data_Reader.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\dbopl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\divfix.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Downsampler.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Dual_Resampler.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Effects_Buffer.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\emuconfig.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Fir_Resampler.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\fm.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\fmopl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gb_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gb_Cpu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gb_Cpu_run.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gb_Oscs.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gbs_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gbs_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\gme.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\gme_custom_dprintf.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gme_File.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gme_Loader.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Gym_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Hes_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Hes_Apu_Adpcm.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Hes_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Hes_Cpu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Hes_Cpu_run.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Hes_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\i_fmpac.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\i_fmunit.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\i_vrc7.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\k051649.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\K051649_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\k053260.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\K053260_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\k054539.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\K054539_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\kmsnddev.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Kss_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Kss_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Kss_Scc_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\M3u_Playlist.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\mamedef.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\mathdefs.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Multi_Buffer.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Music_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Cpu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Cpu_run.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Fds_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Fme7_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Mmc5_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Namco_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Oscs.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Vrc6_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nes_Vrc7_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\nestypes.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nsf_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nsf_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nsf_Impl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Nsfe_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\okim6258.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Okim6258_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\okim6295.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Okim6295_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Opl_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\pwm.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Pwm_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\qmix.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Qsound_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Resampler.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\rf5c68.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Rf5C68_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Rf5C164_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Rom_Data.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\s_deltat.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\s_logtbl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\s_opl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\s_opltbl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sap_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sap_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sap_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\scd_pcm.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\segapcm.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\SegaPcm_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sgc_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sgc_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sgc_Impl.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sms_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Sms_Fm_Apu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Spc_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Spc_Filter.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Spc_Sfm.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Track_Filter.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Upsampler.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Vgm_Core.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Vgm_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\ym2151.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ym2151_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ym2203_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\ym2413.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ym2413_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ym2608_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ym2610b_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ym2612_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ym3812_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\ymdeltat.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\Ymf262_Emu.h">
+      <Filter>plugin\gme</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\higan\dsp\dsp.hpp">
+      <Filter>plugin\gme\higan\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\higan\dsp\SPC_DSP.h">
+      <Filter>plugin\gme\higan\dsp</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\higan\processor\spc700\memory.hpp">
+      <Filter>plugin\gme\higan\processor\spc700</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\higan\processor\spc700\registers.hpp">
+      <Filter>plugin\gme\higan\processor\spc700</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\higan\processor\spc700\spc700.hpp">
+      <Filter>plugin\gme\higan\processor\spc700</Filter>
+    </ClInclude>
+    <ClInclude Include="gme\higan\smp\smp.hpp">
+      <Filter>plugin\gme\higan\smp</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="GmeDataStream.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="GmeDecoder.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="GmeIndexerSource.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="plugin.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ymz280b_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Z80_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ay_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ay_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ay_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ay_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\blargg_common.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\blargg_errors.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Blip_Buffer.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Bml_Parser.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\c140.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\C140_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Classic_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\dac_control.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Data_Reader.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\dbopl.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Downsampler.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Dual_Resampler.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Effects_Buffer.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Fir_Resampler.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\fm.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\fm2612.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\fmopl.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gb_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gb_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gb_Oscs.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gbs_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gbs_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gbs_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\gme.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\gme_custom_dprintf.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gme_File.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gme_Loader.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Gym_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Hes_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Hes_Apu_Adpcm.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Hes_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Hes_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Hes_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\k051649.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\K051649_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\k053260.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\K053260_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\k054539.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\K054539_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Kss_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Kss_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Kss_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Kss_Scc_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\M3u_Playlist.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Multi_Buffer.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Music_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Fds_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Fme7_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Namco_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Oscs.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Vrc6_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nes_Vrc7_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nsf_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nsf_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nsf_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nsf_Impl.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Nsfe_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\okim6258.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Okim6258_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\okim6295.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Okim6295_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Opl_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\pwm.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Pwm_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\qmix.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Qsound_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Resampler.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\rf5c68.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Rf5C68_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Rf5C164_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Rom_Data.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\s_deltat.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\s_logtbl.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\s_opl.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\s_opltbl.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sap_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sap_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sap_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sap_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\scd_pcm.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\segapcm.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\SegaPcm_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sgc_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sgc_Cpu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sgc_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sgc_Impl.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sms_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Sms_Fm_Apu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Spc_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Spc_Filter.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Spc_Sfm.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Track_Filter.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Upsampler.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Vgm_Core.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Vgm_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\ym2151.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ym2151_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ym2203_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\ym2413.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ym2413_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ym2608_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ym2610b_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ym2612_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ym3812_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\ymdeltat.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\Ymf262_Emu.cpp">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\ymz280b.c">
+      <Filter>plugin\gme</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\higan\dsp\SPC_DSP.cpp">
+      <Filter>plugin\gme\higan\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\higan\dsp\dsp.cpp">
+      <Filter>plugin\gme\higan\dsp</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\higan\processor\spc700\spc700.cpp">
+      <Filter>plugin\gme\higan\processor\spc700</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\higan\smp\smp.cpp">
+      <Filter>plugin\gme\higan\smp</Filter>
+    </ClCompile>
+    <ClCompile Include="gme\higan\smp\timing.cpp">
+      <Filter>plugin\gme\higan\smp</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
