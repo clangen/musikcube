@@ -243,7 +243,8 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)..\" /Y /e</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
@@ -261,7 +262,8 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)..\" /Y /e</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Con|Win32'">
@@ -279,7 +281,8 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)..\" /Y /e</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -295,6 +298,10 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
     <ClCompile>
@@ -309,6 +316,10 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Con|x64'">
     <ClCompile>
@@ -323,6 +334,10 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -350,7 +365,8 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)..\" /Y /e</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
@@ -379,7 +395,8 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)..\" /Y /e</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-Con|Win32'">
@@ -408,7 +425,8 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\ffmpeg\*" "$(TargetDir)..\" /Y /e</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -428,6 +446,10 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
     <ClCompile>
@@ -446,6 +468,10 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-Con|x64'">
     <ClCompile>
@@ -464,6 +490,10 @@
       <AdditionalDependencies>avcodec-musikcube.lib;avformat-musikcube.lib;avutil-musikcube.lib;swresample-musikcube.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../3rdparty/bin/win64/lib</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FfmpegDecoder.cpp" />
