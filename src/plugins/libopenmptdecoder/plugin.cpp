@@ -36,7 +36,12 @@
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/sdk/IDebug.h>
-#include "OpenMptDecoder.h"
+#include <core/sdk/ITagReader.h>
+#include <libopenmpt/libopenmpt.h>
+
+extern "C" {
+    #include "OpenMptDecoder.h"
+}
 
 #ifdef WIN32
 #include <Windows.h>
@@ -65,6 +70,11 @@ class OpenMptPlugin: public IPlugin {
         virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
 };
 
+static bool canHandle(const char* type) {
+    const char* actualType = strlen(type) && type[0] == '.' ? &type[1] : type;
+    return openmpt_is_extension_supported(actualType);
+}
+
 class OpenMptDecoderFactory: public IDecoderFactory {
     public:
         virtual IDecoder* CreateDecoder() override {
@@ -76,7 +86,22 @@ class OpenMptDecoderFactory: public IDecoderFactory {
         }
 
         virtual bool CanHandle(const char* type) const override {
+            return canHandle(type);
+        }
+};
+
+class OpenMptTgReader : public ITagReader {
+    public:
+        virtual bool Read(const char *uri, musik::core::sdk::ITagStore *target) override {
             return false;
+        }
+
+        virtual bool CanRead(const char *extension) override {
+            return canHandle(extension);
+        }
+
+        virtual void Release() override {
+            delete this;
         }
 };
 
@@ -86,6 +111,10 @@ extern "C" DLLEXPORT IPlugin* GetPlugin() {
 
 extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
     return new OpenMptDecoderFactory();
+}
+
+extern "C" DLLEXPORT musik::core::sdk::ITagReader* GetTagReader() {
+    return new OpenMptTgReader();
 }
 
 extern "C" DLLEXPORT void SetDebug(IDebug* debug) {

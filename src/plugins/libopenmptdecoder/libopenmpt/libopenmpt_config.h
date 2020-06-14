@@ -62,8 +62,8 @@
 
 #define LIBOPENMPT_API_HELPER_EXPORT __declspec(dllexport)
 #define LIBOPENMPT_API_HELPER_IMPORT __declspec(dllimport)
-#define LIBOPENMPT_API_HELPER_PUBLIC 
-#define LIBOPENMPT_API_HELPER_LOCAL  
+#define LIBOPENMPT_API_HELPER_PUBLIC
+#define LIBOPENMPT_API_HELPER_LOCAL
 
 #elif defined(__EMSCRIPTEN__)
 
@@ -90,15 +90,15 @@
 
 #define LIBOPENMPT_API_HELPER_EXPORT __declspec(dllexport)
 #define LIBOPENMPT_API_HELPER_IMPORT __declspec(dllimport)
-#define LIBOPENMPT_API_HELPER_PUBLIC 
-#define LIBOPENMPT_API_HELPER_LOCAL  
+#define LIBOPENMPT_API_HELPER_PUBLIC
+#define LIBOPENMPT_API_HELPER_LOCAL
 
 #else
 
-#define LIBOPENMPT_API_HELPER_EXPORT 
-#define LIBOPENMPT_API_HELPER_IMPORT 
-#define LIBOPENMPT_API_HELPER_PUBLIC 
-#define LIBOPENMPT_API_HELPER_LOCAL  
+#define LIBOPENMPT_API_HELPER_EXPORT
+#define LIBOPENMPT_API_HELPER_IMPORT
+#define LIBOPENMPT_API_HELPER_PUBLIC
+#define LIBOPENMPT_API_HELPER_LOCAL
 
 #endif
 
@@ -116,7 +116,7 @@
 
 #if defined(LIBOPENMPT_USE_DLL)
 #if defined(_MSC_VER) && !defined(_DLL)
-#error "C++ interface is disabled if libopenmpt is built as a DLL and the runtime is statically linked. This is not supported by microsoft and cannot possibly work. Ever."
+//#error "C++ interface is disabled if libopenmpt is built as a DLL and the runtime is statically linked. This is not supported by microsoft and cannot possibly work. Ever."
 #undef LIBOPENMPT_CXX_API
 #define LIBOPENMPT_CXX_API LIBOPENMPT_API_HELPER_LOCAL
 #endif
@@ -126,7 +126,7 @@
 
 /* Only the C API is supported for emscripten. Disable the C++ API. */
 #undef LIBOPENMPT_CXX_API
-#define LIBOPENMPT_CXX_API LIBOPENMPT_API_HELPER_LOCAL 
+#define LIBOPENMPT_CXX_API LIBOPENMPT_API_HELPER_LOCAL
 #endif
 
 #endif
