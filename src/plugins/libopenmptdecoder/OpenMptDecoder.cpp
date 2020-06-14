@@ -32,7 +32,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
 #include "OpenMptDecoder.h"
 #include <core/sdk/IDebug.h>
 #include <cassert>
@@ -46,6 +45,7 @@ OpenMptDecoder::~OpenMptDecoder() {
 }
 
 bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
+    return false;
 }
 
 void OpenMptDecoder::Release() {
