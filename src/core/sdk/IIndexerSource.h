@@ -37,6 +37,7 @@
 #include "constants.h"
 #include "IIndexerWriter.h"
 #include "ITagStore.h"
+#include <string>
 
 namespace musik { namespace core { namespace sdk {
 

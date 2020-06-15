@@ -49,6 +49,7 @@
 #include <io.h>
 #define R_OK 0
 #else
+#include <unistd.h>
 #define DLLEXPORT
 #endif
 

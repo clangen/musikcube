@@ -36,6 +36,7 @@
 
 #include <string>
 #include <string.h>
+#include <memory>
 
 #ifdef WIN32
 #include <Windows.h>
