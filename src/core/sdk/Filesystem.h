@@ -176,7 +176,8 @@ namespace musik { namespace core { namespace sdk { namespace fs {
             }
             else {
                 std::string fn = entry->d_name;
-                callback(fn);
+                bool hasTrailingSlash = path[path.size() - 1] == '/';
+                callback(path + (hasTrailingSlash ? "" : "/") + fn);
             }
         }
 
