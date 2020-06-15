@@ -1,5 +1,6 @@
 set (openmptdecoder_SOURCES
   plugin.cpp
+  OpenMptDataStream.cpp
   OpenMptDecoder.cpp
   OpenMptIndexerSource.cpp
   Utility.cpp

@@ -45,8 +45,6 @@
 
 using namespace musik::core::sdk;
 
-static const std::string PLUGIN_NAME = "libopenmpt";
-
 extern IDebug* debug;
 extern IPreferences* prefs;
 

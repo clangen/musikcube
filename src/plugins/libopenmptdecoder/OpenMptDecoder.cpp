@@ -33,6 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "OpenMptDecoder.h"
+#include "OpenMptDataStream.h"
 #include <core/sdk/IDebug.h>
 #include <cassert>
 
@@ -92,7 +93,15 @@ bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
         callbacks, stream, logCallback,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 
-    return this->module != nullptr;
+    if (this->module) {
+        int track = static_cast<OpenMptDataStream*>(stream)->GetTrackNumber();
+        if (track >= 0 && track < openmpt_module_get_num_subsongs(module)) {
+            openmpt_module_select_subsong(this->module, track);
+        }
+        return true;
+    }
+
+    return false;
 }
 
 void OpenMptDecoder::Release() {

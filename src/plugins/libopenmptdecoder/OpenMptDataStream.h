@@ -34,13 +34,36 @@
 
 #pragma once
 
+#include <core/sdk/IDataStream.h>
 #include <string>
-#include <libopenmpt/libopenmpt.h>
 
-static const std::string PLUGIN_NAME = "libopenmpt";
-static const std::string EXTERNAL_ID_PREFIX = "libopenmpt";
+class OpenMptDataStream: public musik::core::sdk::IDataStream {
+    public:
+        using PositionType = musik::core::sdk::PositionType;
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
-extern bool isFileTypeSupported(const char* type);
-extern bool isFileSupported(const std::string& filename);
-extern bool fileToByteArray(const std::string& path, char** target, int& size);
-extern std::string readMetadataValue(openmpt_module* module, const char* key, const char* defaultValue = "");
+        virtual bool Open(const char *uri, OpenFlags flags) override;
+        virtual bool Close() override;
+        virtual void Interrupt() override;
+        virtual void Release() override;
+        virtual bool Readable() override { return true; }
+        virtual bool Writable() override { return false; }
+        virtual PositionType Read(void *buffer, PositionType readBytes) override;
+        virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
+        virtual bool SetPosition(PositionType position) override;
+        virtual PositionType Position() override;
+        virtual bool Seekable() override;
+        virtual bool Eof() override;
+        virtual long Length() override;
+        virtual const char* Type() override;
+        virtual const char* Uri() override;
+        virtual bool CanPrefetch() override;
+
+        int GetTrackNumber() { return this->trackNumber; }
+        std::string GetFilename() { return this->filename; }
+
+    private:
+        int trackNumber { 0 };
+        std::string filename;
+        musik::core::sdk::IDataStream* stream { nullptr };
+};

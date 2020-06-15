@@ -40,6 +40,7 @@
 #include <core/sdk/IEnvironment.h>
 #include <core/sdk/IDebug.h>
 #include "Utility.h"
+#include "OpenMptDataStream.h"
 #include "OpenMptDecoder.h"
 #include "OpenMptIndexerSource.h"
 
@@ -87,32 +88,32 @@ class OpenMptDecoderFactory: public IDecoderFactory {
 };
 
 class OpenMptDataStreamFactory : public IDataStreamFactory {
-public:
-    using OpenFlags = musik::core::sdk::OpenFlags;
+    public:
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
-    virtual bool CanRead(const char *uri) override {
-        std::string fn;
-        int track;
-        if (indexer::parseExternalId(std::string("libopenmpt"), std::string(uri), fn, track)) {
-            if (isFileSupported(fn)) {
-                return true;
+        virtual bool CanRead(const char *uri) override {
+            std::string fn;
+            int track;
+            if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), fn, track)) {
+                if (isFileSupported(fn)) {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
-    }
 
-    virtual IDataStream* Open(const char *uri, OpenFlags flags) override {
-        std::string fn;
-        int track;
-        if (indexer::parseExternalId(std::string("libopenmpt"), std::string(uri), fn, track)) {
-            return environment->GetDataStream(fn.c_str(), flags);
+        virtual IDataStream* Open(const char *uri, OpenFlags flags) override {
+            auto result = new OpenMptDataStream();
+            if (result->Open(uri, flags)) {
+                return result;
+            }
+            result->Release();
+            return nullptr;
         }
-        return nullptr;
-    }
 
-    virtual void Release() override {
-        delete this;
-    }
+        virtual void Release() override {
+            delete this;
+        }
 };
 
 extern "C" DLLEXPORT IPlugin* GetPlugin() {

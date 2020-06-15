@@ -496,12 +496,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="OpenMptDataStream.cpp" />
     <ClCompile Include="OpenMptDecoder.cpp" />
     <ClCompile Include="OpenMptIndexerSource.cpp" />
     <ClCompile Include="plugin.cpp" />
     <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="OpenMptDataStream.h" />
     <ClInclude Include="OpenMptDecoder.h" />
     <ClInclude Include="OpenMptIndexerSource.h" />
     <ClInclude Include="Utility.h" />

@@ -32,15 +32,76 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "Utility.h"
+#include "OpenMptDataStream.h"
+#include <core/sdk/IIndexerSource.h>
+#include <core/sdk/IEnvironment.h>
+#include <core/sdk/IIndexerSource.h>
 
-#include <string>
-#include <libopenmpt/libopenmpt.h>
+using namespace musik::core::sdk;
 
-static const std::string PLUGIN_NAME = "libopenmpt";
-static const std::string EXTERNAL_ID_PREFIX = "libopenmpt";
+extern IEnvironment* environment;
 
-extern bool isFileTypeSupported(const char* type);
-extern bool isFileSupported(const std::string& filename);
-extern bool fileToByteArray(const std::string& path, char** target, int& size);
-extern std::string readMetadataValue(openmpt_module* module, const char* key, const char* defaultValue = "");
+bool OpenMptDataStream::Open(const char *uri, OpenFlags flags) {
+    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), this->filename, this->trackNumber)) {
+        if (environment) {
+            this->stream = environment->GetDataStream(this->filename.c_str(), flags);
+            if (this->stream) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool OpenMptDataStream::Close() {
+    return this->stream->Close();
+}
+
+void OpenMptDataStream::Interrupt() {
+    this->stream->Interrupt();
+}
+
+void OpenMptDataStream::Release() {
+    if (stream) {
+        stream->Release();
+        stream = nullptr;
+    }
+    delete this;
+}
+
+PositionType OpenMptDataStream::Read(void *buffer, PositionType readBytes) {
+    return this->stream->Read(buffer, readBytes);
+}
+
+bool OpenMptDataStream::SetPosition(PositionType position) {
+    return this->stream->SetPosition(position);
+}
+
+PositionType OpenMptDataStream::Position() {
+    return this->stream->Position();
+}
+
+bool OpenMptDataStream::Seekable() {
+    return this->stream->Seekable();
+}
+
+bool OpenMptDataStream::Eof() {
+    return this->stream->Eof();
+}
+
+long OpenMptDataStream::Length() {
+    return this->stream->Length();
+}
+
+const char* OpenMptDataStream::Type() {
+    return this->stream->Type();
+}
+
+const char* OpenMptDataStream::Uri() {
+    return this->stream->Uri();
+}
+
+bool OpenMptDataStream::CanPrefetch() {
+    return this->stream->CanPrefetch();
+}
