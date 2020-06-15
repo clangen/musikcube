@@ -52,7 +52,7 @@ extern IPreferences* prefs;
 
 static void openmptLogFunc(const char *message, void *userdata) {
     if (debug) {
-        debug->Info("libopenmtpdecoder", message);
+        debug->Info("OpenMptIndexerSource", message);
     }
 }
 

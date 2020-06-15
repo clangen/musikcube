@@ -35,7 +35,9 @@
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
 #include <core/sdk/IDecoderFactory.h>
+#include <core/sdk/IDataStreamFactory.h>
 #include <core/sdk/IIndexerSource.h>
+#include <core/sdk/IEnvironment.h>
 #include <core/sdk/IDebug.h>
 #include "Utility.h"
 #include "OpenMptDecoder.h"
@@ -54,6 +56,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 using namespace musik::core::sdk;
 
 IDebug* debug = nullptr;
+IEnvironment* environment = nullptr;
 
 class OpenMptPlugin: public IPlugin {
     public:
@@ -83,6 +86,35 @@ class OpenMptDecoderFactory: public IDecoderFactory {
         }
 };
 
+class OpenMptDataStreamFactory : public IDataStreamFactory {
+public:
+    using OpenFlags = musik::core::sdk::OpenFlags;
+
+    virtual bool CanRead(const char *uri) override {
+        std::string fn;
+        int track;
+        if (indexer::parseExternalId(std::string("libopenmpt"), std::string(uri), fn, track)) {
+            if (isFileSupported(fn)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    virtual IDataStream* Open(const char *uri, OpenFlags flags) override {
+        std::string fn;
+        int track;
+        if (indexer::parseExternalId(std::string("libopenmpt"), std::string(uri), fn, track)) {
+            return environment->GetDataStream(fn.c_str(), flags);
+        }
+        return nullptr;
+    }
+
+    virtual void Release() override {
+        delete this;
+    }
+};
+
 extern "C" DLLEXPORT IPlugin* GetPlugin() {
     return new OpenMptPlugin();
 }
@@ -91,10 +123,18 @@ extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
     return new OpenMptDecoderFactory();
 }
 
+extern "C" DLLEXPORT IDataStreamFactory* GetDataStreamFactory() {
+    return new OpenMptDataStreamFactory();
+}
+
 extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
     return new OpenMptIndexerSource();
 }
 
 extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
     ::debug = debug;
+}
+
+extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
+    ::environment = environment;
 }

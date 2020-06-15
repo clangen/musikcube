@@ -36,16 +36,63 @@
 #include <core/sdk/IDebug.h>
 #include <cassert>
 
+using namespace musik::core::sdk;
+
 extern IDebug* debug;
 
+static const int kSampleRate = 48000;
+static const int kSamplesPerChannel = 2048;
+static const int kChannels = 2;
+
+static size_t readCallback(void *user, void *dst, size_t bytes) {
+    return (size_t) static_cast<IDataStream*>(user)->Read(dst, (PositionType) bytes);
+}
+
+static int seekCallback(void *user, int64_t offset, int whence) {
+    IDataStream* stream = static_cast<IDataStream*>(user);
+    switch (whence) {
+        case OPENMPT_STREAM_SEEK_SET:
+            return stream->SetPosition((PositionType) offset) ? 0 : -1;
+        case OPENMPT_STREAM_SEEK_CUR:
+            return stream->SetPosition((PositionType) offset + stream->Position()) ? 0 : -1;
+        case OPENMPT_STREAM_SEEK_END:
+            return stream->SetPosition(stream->Length() - 1 - (PositionType)offset) ? 0 : -1;
+    }
+    return -1;
+}
+
+static int64_t tellCallback(void *user) {
+    return (int64_t) static_cast<IDataStream*>(user)->Position();
+}
+
+static void logCallback(const char *message, void *userdata) {
+    if (debug) {
+        debug->Info("OpenMtpDecoder", message);
+    }
+}
+
 OpenMptDecoder::OpenMptDecoder() {
+    this->module = nullptr;
 }
 
 OpenMptDecoder::~OpenMptDecoder() {
+    if (this->module) {
+        openmpt_module_destroy(this->module);
+        this->module = nullptr;
+    }
 }
 
 bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
-    return false;
+    openmpt_stream_callbacks callbacks = { 0 };
+    callbacks.read = readCallback;
+    callbacks.seek = seekCallback;
+    callbacks.tell = tellCallback;
+
+    this->module = openmpt_module_create2(
+        callbacks, stream, logCallback,
+        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+
+    return this->module != nullptr;
 }
 
 void OpenMptDecoder::Release() {
@@ -53,14 +100,36 @@ void OpenMptDecoder::Release() {
 }
 
 double OpenMptDecoder::SetPosition(double seconds) {
+    if (this->module) {
+        return openmpt_module_set_position_seconds(this->module, seconds);
+    }
     return 0.0;
 }
 
 double OpenMptDecoder::GetDuration() {
+    if (this->module) {
+        return openmpt_module_get_duration_seconds(this->module);
+    }
     return 0.0;
 }
 
 bool OpenMptDecoder::GetBuffer(IBuffer *target) {
+    if (this->module) {
+        target->SetSampleRate(kSampleRate);
+        target->SetSamples(kSamplesPerChannel * kChannels);
+
+        int count = openmpt_module_read_interleaved_float_stereo(
+            this->module,
+            target->SampleRate(),
+            target->Samples() / target->Channels(),
+            target->BufferPointer());
+
+        if (count > 0) {
+            target->SetSamples(count * kChannels);
+            return true;
+        }
+    }
+
     return false;
 }
 

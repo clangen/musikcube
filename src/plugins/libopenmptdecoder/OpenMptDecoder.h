@@ -36,8 +36,7 @@
 
 #include <core/sdk/constants.h>
 #include <core/sdk/IDecoder.h>
-
-using namespace musik::core::sdk;
+#include <libopenmpt/libopenmpt.h>
 
 class OpenMptDecoder: public musik::core::sdk::IDecoder {
     public:
@@ -46,10 +45,11 @@ class OpenMptDecoder: public musik::core::sdk::IDecoder {
 
         virtual void Release() override;
         virtual double SetPosition(double seconds) override;
-        virtual bool GetBuffer(IBuffer *buffer) override;
+        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
         virtual double GetDuration() override;
         virtual bool Open(musik::core::sdk::IDataStream *stream) override;
         virtual bool Exhausted() override;
 
     private:
+        openmpt_module* module;
 };
