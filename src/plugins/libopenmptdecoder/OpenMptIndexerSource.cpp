@@ -166,6 +166,7 @@ void OpenMptIndexerSource::UpdateMetadata(
                 nullptr, nullptr, nullptr, nullptr, nullptr);
 
             if (module) {
+                std::string directory = fs::getDirectory(std::string(fn));
                 size_t count = openmpt_module_get_num_subsongs(module);
                 const char* keys = openmpt_module_get_metadata_keys(module);
                 if (count > 0) {
@@ -179,6 +180,9 @@ void OpenMptIndexerSource::UpdateMetadata(
                         std::string album = readMetadataValue(module, "container_long");
                         if (!album.size()) {
                             album = readMetadataValue(module, "container").c_str();
+                            if (!album.size()) {
+                                album = "[unknown mod album]";
+                            }
                         }
 
                         std::string title = readMetadataValue(module, "title");
@@ -191,10 +195,12 @@ void OpenMptIndexerSource::UpdateMetadata(
                             artist = "[unknown mod artist]";
                         }
 
-                        const std::string duration = std::to_string(openmpt_module_get_duration_seconds(module));
+                        const std::string duration = std::to_string(
+                            openmpt_module_get_duration_seconds(module));
 
                         auto track = indexer->CreateWriter();
                         track->SetValue("filename", externalId.c_str());
+                        track->SetValue("directory", directory.c_str());
                         track->SetValue("filetime", modifiedTimeStr.c_str());
                         track->SetValue("track", trackNum.c_str());
                         track->SetValue("album", album.c_str());

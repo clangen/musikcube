@@ -120,6 +120,21 @@ namespace musik { namespace core { namespace sdk { namespace fs {
     }
 
     template <typename String=std::string>
+    static inline std::string getDirectory(const String& filename) {
+        std::string canonicalized = canonicalizePath(filename);
+#ifdef WIN32
+        size_t pos = canonicalized.find_last_of("\\");
+#else
+        size_t pos = canonicalized.find_last_of("/");
+#endif
+        if (pos != std::string::npos) {
+            std::string result = canonicalized.substr(0, pos + 1);
+            return result;
+        }
+        return "";
+    }
+
+    template <typename String=std::string>
     void scanDirectory(
         const std::string& path,
         std::function<void(const std::string&)> callback,

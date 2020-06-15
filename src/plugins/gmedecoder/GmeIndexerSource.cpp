@@ -182,6 +182,8 @@ void GmeIndexerSource::UpdateMetadata(
                     KEY_DEFAULT_TRACK_LENGTH,
                     DEFAULT_TRACK_LENGTH));
 
+            const std::string directory = fs::getDirectory<std::string>(fn);
+
             for (int i = 0; i < gme_track_count(data); i++) {
                 const std::string externalId = indexer::createExternalId(EXTERNAL_ID_PREFIX, fn, i);
                 const std::string trackNum = std::to_string(i + 1);
@@ -190,6 +192,7 @@ void GmeIndexerSource::UpdateMetadata(
 
                 auto track = indexer->CreateWriter();
                 track->SetValue("filename", externalId.c_str());
+                track->SetValue("directory", directory.c_str());
                 track->SetValue("filetime", modifiedTimeStr.c_str());
                 track->SetValue("track", trackNum.c_str());
 
