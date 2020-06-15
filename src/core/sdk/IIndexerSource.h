@@ -72,7 +72,7 @@ namespace musik { namespace core { namespace sdk {
         template <typename String=std::string>
         static bool parseExternalId(const String& prefix, const String& externalId, String& fn, int& track) {
             if (externalId.find(String(prefix + "://")) == 0) {
-                String trimmed = externalId.substr(6);
+                String trimmed = externalId.substr(prefix.size() + 3);
                 auto slash = trimmed.find("/");
                 if (slash != String::npos) {
                     try {
