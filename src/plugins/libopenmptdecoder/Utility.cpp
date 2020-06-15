@@ -32,69 +32,82 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IDecoderFactory.h>
-#include <core/sdk/IIndexerSource.h>
-#include <core/sdk/IDebug.h>
 #include "Utility.h"
-#include "OpenMptDecoder.h"
-#include "OpenMptIndexerSource.h"
+#include <string.h>
+#include <core/sdk/String.h>
+#include <core/sdk/Filesystem.h>
 
 #ifdef WIN32
 #include <Windows.h>
-#define DLLEXPORT __declspec(dllexport)
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-    return true;
-}
-#else
-#define DLLEXPORT
 #endif
 
 using namespace musik::core::sdk;
 
-IDebug* debug = nullptr;
-
-class OpenMptPlugin: public IPlugin {
-    public:
-        virtual void Release() { delete this; };
-        virtual const char* Name() { return "libopenmpt IDecoder"; }
-        virtual const char* Version() { return "0.1.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "c367f42f-389a-4378-966c-1f96dad6a66a"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
-};
-
-class OpenMptDecoderFactory: public IDecoderFactory {
-    public:
-        virtual IDecoder* CreateDecoder() override {
-            return new OpenMptDecoder();
-        }
-
-        virtual void Release() override {
-            delete this;
-        }
-
-        virtual bool CanHandle(const char* type) const override {
-            return isFileTypeSupported(type);
-        }
-};
-
-extern "C" DLLEXPORT IPlugin* GetPlugin() {
-    return new OpenMptPlugin();
+bool isFileTypeSupported(const char* type) {
+    const char* actualType = strlen(type) && type[0] == '.' ? &type[1] : type;
+    return openmpt_is_extension_supported(actualType);
 }
 
-extern "C" DLLEXPORT IDecoderFactory* GetDecoderFactory() {
-    return new OpenMptDecoderFactory();
+bool isFileSupported(const std::string& filename) {
+    return isFileTypeSupported(fs::getFileExtension(filename).c_str());
 }
 
-extern "C" DLLEXPORT IIndexerSource* GetIndexerSource() {
-    return new OpenMptIndexerSource();
+bool fileToByteArray(const std::string& path, char** target, int& size) {
+#ifdef WIN32
+    std::wstring u16fn = str::u8to16(path.c_str());
+    FILE* file = _wfopen(u16fn.c_str(), L"rb");
+#else
+    FILE* file = fopen(path.c_str(), "rb");
+#endif
+
+    *target = nullptr;
+    size = 0;
+
+    if (!file) {
+        return false;
+    }
+
+    bool success = false;
+
+    if (fseek(file, 0L, SEEK_END) == 0) {
+        long fileSize = ftell(file);
+        if (fileSize == -1) {
+            goto close_and_return;
+        }
+
+        if (fseek(file, 0L, SEEK_SET) != 0) {
+            goto close_and_return;
+        }
+
+        *target = (char*)malloc(sizeof(char) * fileSize);
+        size = fread(*target, sizeof(char), fileSize, file);
+
+        if (size == fileSize) {
+            success = true;
+        }
+    }
+
+close_and_return:
+    fclose(file);
+
+    if (!success) {
+        free(*target);
+    }
+
+    return success;
 }
 
-extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
-    ::debug = debug;
+std::string readMetadataValue(openmpt_module* module, const char* key, const char* defaultValue) {
+    std::string result;
+    if (module && key && strlen(key)) {
+        const char* value = openmpt_module_get_metadata(module, key);
+        if (value) {
+            result = value;
+            openmpt_free_string(value);
+        }
+    }
+    if (!result.size() && defaultValue) {
+        result = defaultValue;
+    }
+    return result;
 }

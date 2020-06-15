@@ -1,6 +1,8 @@
 set (openmptdecoder_SOURCES
   plugin.cpp
   OpenMptDecoder.cpp
+  OpenMptIdexerSource.cpp
+  Utility.cpp
 )
 
 add_library(openmptdecoder SHARED ${openmptdecoder_SOURCES})

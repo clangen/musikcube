@@ -497,10 +497,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="OpenMptDecoder.cpp" />
+    <ClCompile Include="OpenMptIndexerSource.cpp" />
     <ClCompile Include="plugin.cpp" />
+    <ClCompile Include="Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="OpenMptDecoder.h" />
+    <ClInclude Include="OpenMptIndexerSource.h" />
+    <ClInclude Include="Utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
