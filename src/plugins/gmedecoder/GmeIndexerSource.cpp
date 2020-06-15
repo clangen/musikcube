@@ -36,6 +36,8 @@
 #include "GmeIndexerSource.h"
 #include <core/sdk/IDebug.h>
 #include <core/sdk/IPreferences.h>
+#include <core/sdk/String.h>
+#include <core/sdk/Filesystem.h>
 #include <string>
 #include <sstream>
 #include <set>
@@ -74,11 +76,27 @@ ScanResult GmeIndexerSource::Scan(
 {
     /* keep these for later, for the removal phase */
     for (size_t i = 0; i < indexerPathsCount; i++) {
-        this->paths.insert(canonicalizePath(indexerPaths[i]));
+        this->paths.insert(fs::canonicalizePath(std::string(indexerPaths[i])));
     }
 
+    auto checkFile = [this, indexer](const std::string& path) {
+        if (canHandle(path)) {
+            try {
+                this->UpdateMetadata(path, this, indexer);
+            }
+            catch (...) {
+                std::string error = str::format("error reading metadata for %s", path.c_str());
+                debug->Error(PLUGIN_NAME, error.c_str());
+            }
+        }
+    };
+
+    auto checkInterrupt = [this]() -> bool {
+        return this->interrupt;
+    };
+
     for (auto& path : this->paths) {
-        this->ScanDirectory(std::string(path), this, indexer);
+        fs::scanDirectory(std::string(path), checkFile, checkInterrupt);
     }
 
     indexer->CommitProgress(this, this->filesIndexed);
@@ -97,12 +115,12 @@ void GmeIndexerSource::ScanTrack(
 {
     std::string fn;
     int trackNum;
-    if (parseExternalId(externalId, fn, trackNum)) {
-        fn = canonicalizePath(fn);
+    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(externalId), fn, trackNum)) {
+        fn = fs::canonicalizePath(fn);
 
         /* if the file doesn't exist anymore, or it was flagged as invalid,
         we remove it */
-        if (!fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
+        if (!fs::fileExists(fn) || invalidFiles.find(fn) != invalidFiles.end()) {
             indexer->RemoveByExternalId(this, externalId);
             return;
         }
@@ -130,16 +148,16 @@ void GmeIndexerSource::UpdateMetadata(
 {
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
-    int modifiedTime = getLastModifiedTime(fn);
-    const std::string firstExternalId = createExternalId(fn, 0);
+    int modifiedTime = fs::getLastModifiedTime(fn);
+    const std::string firstExternalId = indexer::createExternalId(EXTERNAL_ID_PREFIX, fn, 0);
     int modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
     if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
-        fn = canonicalizePath(fn);
+        fn = fs::canonicalizePath(fn);
 
         gme_t* data = nullptr;
         gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
         if (err) {
-            debug->Error(PLUGIN_NAME, strfmt("error opening %s", fn.c_str()).c_str());
+            debug->Error(PLUGIN_NAME, str::format("error opening %s", fn.c_str()).c_str());
             invalidFiles.insert(fn);
         }
         else {
@@ -154,7 +172,7 @@ void GmeIndexerSource::UpdateMetadata(
                 if (m3u.size()) {
                     err = gme_load_m3u(data, m3u.c_str());
                     if (err) {
-                        debug->Error(PLUGIN_NAME, strfmt("m3u found, but load failed '%s'", err).c_str());
+                        debug->Error(PLUGIN_NAME, str::format("m3u found, but load failed '%s'", err).c_str());
                     }
                 }
             }
@@ -165,7 +183,7 @@ void GmeIndexerSource::UpdateMetadata(
                     DEFAULT_TRACK_LENGTH));
 
             for (int i = 0; i < gme_track_count(data); i++) {
-                const std::string externalId = createExternalId(fn, i);
+                const std::string externalId = indexer::createExternalId(EXTERNAL_ID_PREFIX, fn, i);
                 const std::string trackNum = std::to_string(i + 1);
                 const std::string defaultTitle = "Track " + std::to_string(1 + i);
                 const std::string modifiedTimeStr = std::to_string(modifiedTime);
@@ -178,7 +196,7 @@ void GmeIndexerSource::UpdateMetadata(
                 gme_info_t* info = nullptr;
                 err = gme_track_info(data, &info, i);
                 if (err) {
-                    debug->Error(PLUGIN_NAME, strfmt("error getting track %d: %s", i, err).c_str());
+                    debug->Error(PLUGIN_NAME, str::format("error getting track %d: %s", i, err).c_str());
                     track->SetValue("duration", defaultDuration.c_str());
                     track->SetValue("title", defaultTitle.c_str());
                 }
@@ -221,84 +239,4 @@ void GmeIndexerSource::UpdateMetadata(
         indexer->CommitProgress(this, this->filesIndexed + this->tracksIndexed);
         this->filesIndexed = this->tracksIndexed = 0;
     }
-}
-
-void GmeIndexerSource::ScanDirectory(
-    const std::string& path,
-    IIndexerSource* source,
-    IIndexerWriter* indexer)
-{
-#ifdef WIN32
-    auto path16 = u8to16(path.c_str()) + L"*";
-    WIN32_FIND_DATA findData;
-    HANDLE handle = FindFirstFile(path16.c_str(), &findData);
-
-    if (handle == INVALID_HANDLE_VALUE) {
-        return;
-    }
-
-    while (FindNextFile(handle, &findData)) {
-        if (!findData.cFileName) {
-            continue;
-        }
-        std::string relPath8 = u16to8(findData.cFileName);
-        std::string fullPath8 = path + "\\" + relPath8;
-        if (this->interrupt) {
-            return;
-        }
-        else if (findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
-            if (relPath8 != "." && relPath8 != "..") {
-                this->ScanDirectory(fullPath8 + "\\", source, indexer);
-            }
-        }
-        else {
-            if (canHandle(fullPath8)) {
-                try {
-                    this->UpdateMetadata(fullPath8, source, indexer);
-                }
-                catch (...) {
-                    std::string error = strfmt("error reading metadata for %s", fullPath8.c_str());
-                    debug->Error(PLUGIN_NAME, error.c_str());
-                }
-            }
-        }
-    }
-
-    FindClose(handle);
-#else
-    DIR *dir = nullptr;
-    struct dirent *entry = nullptr;
-
-    if (!(dir = opendir(path.c_str()))) {
-        return;
-    }
-
-    while ((entry = readdir(dir)) != nullptr) {
-        if (this->interrupt) {
-            return;
-        }
-        else if (entry->d_type == DT_DIR) {
-            std::string name = entry->d_name;
-            if (name == "." || name == "..") {
-                continue;
-            }
-            this->ScanDirectory(path + "/" + name, source, indexer);
-        }
-        else {
-            std::string fn = entry->d_name;
-            if (canHandle(fn)) {
-                std::string fullFn = path + "/" + fn;
-                try {
-                    this->UpdateMetadata(fullFn, source, indexer);
-                }
-                catch (...) {
-                    std::string error = strfmt("error reading metadata for %s", fullFn.c_str());
-                    debug->Error(PLUGIN_NAME, error.c_str());
-                }
-            }
-        }
-    }
-
-    closedir(dir);
-#endif
 }

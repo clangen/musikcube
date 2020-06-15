@@ -591,5 +591,11 @@
     <ClInclude Include="musikcore_c.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\Filesystem.h">
+      <Filter>src\sdk\io</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\String.h">
+      <Filter>src\sdk\io</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
