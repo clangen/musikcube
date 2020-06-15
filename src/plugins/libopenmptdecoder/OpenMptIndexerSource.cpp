@@ -187,6 +187,10 @@ void OpenMptIndexerSource::UpdateMetadata(
                         }
 
                         std::string artist = readMetadataValue(module, "artist");
+                        if (!artist.size()) {
+                            artist = "[unknown mod artist]";
+                        }
+
                         const std::string duration = std::to_string(openmpt_module_get_duration_seconds(module));
 
                         auto track = indexer->CreateWriter();

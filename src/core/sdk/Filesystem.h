@@ -138,8 +138,9 @@ namespace musik { namespace core { namespace sdk { namespace fs {
             if (!findData.cFileName) {
                 continue;
             }
+            bool hasTrailingSlash = path[path.size() - 1] == '\\';
             std::string relPath8 = str::u16to8(findData.cFileName);
-            std::string fullPath8 = path + "\\" + relPath8;
+            std::string fullPath8 = path + (hasTrailingSlash ? "" : "\\") + relPath8;
             if (interrupt && interrupt()) {
                 return;
             }
