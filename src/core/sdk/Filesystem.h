@@ -53,6 +53,7 @@
 #define DLLEXPORT
 #include <dirent.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #endif
 
 namespace musik { namespace core { namespace sdk { namespace fs {
@@ -182,7 +183,15 @@ namespace musik { namespace core { namespace sdk { namespace fs {
             if (interrupt && interrupt()) {
                 return;
             }
-            else if (entry->d_type == DT_DIR) {
+
+	    bool hasTrailingSlash = path[path.size() - 1] == '/';
+            std::string fn = path + (hasTrailingSlash ? "" : "/") + entry->d_name;
+
+	    struct stat info = {0};
+	    if (stat(fn.c_str(), &info) < 0) {
+                return;
+	    }
+            if (S_ISDIR(info.st_mode)) {
                 std::string name = entry->d_name;
                 if (name == "." || name == "..") {
                     continue;
@@ -190,9 +199,7 @@ namespace musik { namespace core { namespace sdk { namespace fs {
                 scanDirectory(path + "/" + name, callback, interrupt);
             }
             else {
-                std::string fn = entry->d_name;
-                bool hasTrailingSlash = path[path.size() - 1] == '/';
-                callback(path + (hasTrailingSlash ? "" : "/") + fn);
+                callback(fn);
             }
         }
 

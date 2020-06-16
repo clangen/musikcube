@@ -39,7 +39,7 @@ if [ $OS == "Darwin" ]; then
 fi
 if [ $OS == "FreeBSD" ]; then
   echo "detected freebsd"
-  pkg install boost-all curl libvorbis libogg libmicrohttpd ffmpeg alsa-lib cmake sndio libev taglib bash libopenmpt
+  pkg install boost-all ncurses curl libvorbis libogg libmicrohttpd ffmpeg alsa-lib cmake sndio libev taglib bash libopenmpt
   portsnap fetch
   portsnap extract
   cd /usr/ports/audio/lame
