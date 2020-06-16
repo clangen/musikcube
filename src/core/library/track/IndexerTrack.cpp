@@ -846,7 +846,7 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
 
     ProcessNonStandardMetadata(dbConnection);
 
-    /* sometimes indexer source plugins save the 'filename' field with a custom
+    /* sometimes indexer source plugins save the 'filename' field with a custom,
     encoded URI. in these cases the plugin can populate a 'directory' field
     with the actual directory, if one exists. otherwise, we'll just extract
     the directory from the 'filename'. */

@@ -111,3 +111,10 @@ std::string readMetadataValue(openmpt_module* module, const char* key, const cha
     }
     return result;
 }
+
+ISchema* createSchema() {
+    auto schema = new musik::core::sdk::TSchema<>();
+    schema->AddString(KEY_DEFAULT_ALBUM_NAME, DEFAULT_ALBUM_NAME);
+    schema->AddString(KEY_DEFAULT_ARTIST_NAME, DEFAULT_ARTIST_NAME);
+    return schema;
+}

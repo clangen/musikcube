@@ -36,11 +36,18 @@
 
 #include <string>
 #include <libopenmpt/libopenmpt.h>
+#include <core/sdk/ISchema.h>
 
 static const std::string PLUGIN_NAME = "libopenmpt";
 static const std::string EXTERNAL_ID_PREFIX = "libopenmpt";
+
+static const char* KEY_DEFAULT_ALBUM_NAME = "default_album_name";
+static const char* DEFAULT_ALBUM_NAME = "[unknown %s album]";
+static const char* KEY_DEFAULT_ARTIST_NAME = "default_artist_name";
+static const char* DEFAULT_ARTIST_NAME = "[unknown %s artist]";
 
 extern bool isFileTypeSupported(const char* type);
 extern bool isFileSupported(const std::string& filename);
 extern bool fileToByteArray(const std::string& path, char** target, int& size);
 extern std::string readMetadataValue(openmpt_module* module, const char* key, const char* defaultValue = "");
+extern musik::core::sdk::ISchema* createSchema();

@@ -34,10 +34,12 @@
 
 #include <core/sdk/constants.h>
 #include <core/sdk/IPlugin.h>
+#include <core/sdk/ISchema.h>
 #include <core/sdk/IDecoderFactory.h>
 #include <core/sdk/IDataStreamFactory.h>
 #include <core/sdk/IIndexerSource.h>
 #include <core/sdk/IEnvironment.h>
+#include <core/sdk/IPreferences.h>
 #include <core/sdk/IDebug.h>
 #include "Utility.h"
 #include "OpenMptDataStream.h"
@@ -58,6 +60,7 @@ using namespace musik::core::sdk;
 
 IDebug* debug = nullptr;
 IEnvironment* environment = nullptr;
+IPreferences* prefs = nullptr;
 
 class OpenMptPlugin: public IPlugin {
     public:
@@ -138,4 +141,12 @@ extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
 
 extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
     ::environment = environment;
+}
+
+extern "C" DLLEXPORT ISchema* GetSchema() {
+    return createSchema();
+}
+
+extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
+    ::prefs = prefs;
 }

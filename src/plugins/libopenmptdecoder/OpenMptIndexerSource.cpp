@@ -146,6 +146,19 @@ int OpenMptIndexerSource::SourceId() {
     return std::hash<std::string>()(PLUGIN_NAME);
 }
 
+static std::string formatDefaultValue(const char* key, const char* defaultValue, std::string type) {
+#ifdef __APPLE__
+    static __thread char threadLocalBuffer[4096];
+#else
+    static thread_local char threadLocalBuffer[4096];
+#endif
+    type = type.empty() ? "mod" : type;
+    prefs->GetString(key, threadLocalBuffer, 4096, defaultValue);
+    std::string value(threadLocalBuffer);
+    threadLocalBuffer[0] = 0;
+    return str::format(value, type.c_str());
+}
+
 void OpenMptIndexerSource::UpdateMetadata(
     std::string fn,
     IIndexerSource* source,
@@ -166,7 +179,8 @@ void OpenMptIndexerSource::UpdateMetadata(
                 nullptr, nullptr, nullptr, nullptr, nullptr);
 
             if (module) {
-                std::string directory = fs::getDirectory(std::string(fn));
+                std::string directory = fs::getDirectory(fn);
+                std::string extension = fs::getFileExtension(fn);
                 size_t count = openmpt_module_get_num_subsongs(module);
                 const char* keys = openmpt_module_get_metadata_keys(module);
                 if (count > 0) {
@@ -181,7 +195,8 @@ void OpenMptIndexerSource::UpdateMetadata(
                         if (!album.size()) {
                             album = readMetadataValue(module, "container").c_str();
                             if (!album.size()) {
-                                album = "[unknown mod album]";
+                                album = formatDefaultValue(
+                                    KEY_DEFAULT_ALBUM_NAME, DEFAULT_ALBUM_NAME, extension);
                             }
                         }
 
@@ -192,7 +207,8 @@ void OpenMptIndexerSource::UpdateMetadata(
 
                         std::string artist = readMetadataValue(module, "artist");
                         if (!artist.size()) {
-                            artist = "[unknown mod artist]";
+                            artist = formatDefaultValue(
+                                KEY_DEFAULT_ARTIST_NAME, DEFAULT_ARTIST_NAME, extension);
                         }
 
                         const std::string duration = std::to_string(
