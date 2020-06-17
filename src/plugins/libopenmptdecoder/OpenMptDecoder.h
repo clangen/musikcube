@@ -32,75 +32,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeDataStream.h"
-#include <core/sdk/IEnvironment.h>
-#include <core/sdk/IIndexerSource.h>
+#pragma once
 
-using namespace musik::core::sdk;
+#include <core/sdk/constants.h>
+#include <core/sdk/IDecoder.h>
+#include <libopenmpt/libopenmpt.h>
 
-extern IEnvironment* environment;
+class OpenMptDecoder: public musik::core::sdk::IDecoder {
+    public:
+        OpenMptDecoder();
+        ~OpenMptDecoder();
 
-bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
-    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), this->filename, this->trackNumber)) {
-        if (environment) {
-            this->stream = environment->GetDataStream(this->filename.c_str(), flags);
-            if (this->stream) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
+        virtual void Release() override;
+        virtual double SetPosition(double seconds) override;
+        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
+        virtual double GetDuration() override;
+        virtual bool Open(musik::core::sdk::IDataStream *stream) override;
+        virtual bool Exhausted() override;
 
-bool GmeDataStream::Close() {
-    return this->stream->Close();
-}
-
-void GmeDataStream::Interrupt() {
-    this->stream->Interrupt();
-}
-
-void GmeDataStream::Release() {
-    if (stream) {
-        stream->Release();
-        stream = nullptr;
-    }
-    delete this;
-}
-
-PositionType GmeDataStream::Read(void *buffer, PositionType readBytes) {
-    return this->stream->Read(buffer, readBytes);
-}
-
-bool GmeDataStream::SetPosition(PositionType position) {
-    return this->stream->SetPosition(position);
-}
-
-PositionType GmeDataStream::Position() {
-    return this->stream->Position();
-}
-
-bool GmeDataStream::Seekable() {
-    return this->stream->Seekable();
-}
-
-bool GmeDataStream::Eof() {
-    return this->stream->Eof();
-}
-
-long GmeDataStream::Length() {
-    return this->stream->Length();
-}
-
-const char* GmeDataStream::Type() {
-    return this->stream->Type();
-}
-
-const char* GmeDataStream::Uri() {
-    return this->stream->Uri();
-}
-
-bool GmeDataStream::CanPrefetch() {
-    return this->stream->CanPrefetch();
-}
+    private:
+        openmpt_module* module;
+};

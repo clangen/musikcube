@@ -617,6 +617,7 @@
     <ClInclude Include="runtime\Message.h" />
     <ClInclude Include="runtime\MessageQueue.h" />
     <ClInclude Include="sdk\constants.h" />
+    <ClInclude Include="sdk\Filesystem.h" />
     <ClInclude Include="sdk\HttpClient.h" />
     <ClInclude Include="sdk\IAnalyzer.h" />
     <ClInclude Include="sdk\IStreamingEncoder.h" />
@@ -661,6 +662,7 @@
     <ClInclude Include="sdk\ITrackListEditor.h" />
     <ClInclude Include="sdk\ITagStore.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
+    <ClInclude Include="sdk\String.h" />
     <ClInclude Include="support\Auddio.h" />
     <ClInclude Include="support\Common.h" />
     <ClInclude Include="support\Duration.h" />

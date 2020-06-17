@@ -32,75 +32,22 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeDataStream.h"
-#include <core/sdk/IEnvironment.h>
-#include <core/sdk/IIndexerSource.h>
+#pragma once
 
-using namespace musik::core::sdk;
+#include <string>
+#include <libopenmpt/libopenmpt.h>
+#include <core/sdk/ISchema.h>
 
-extern IEnvironment* environment;
+static const std::string PLUGIN_NAME = "libopenmpt";
+static const std::string EXTERNAL_ID_PREFIX = "libopenmpt";
 
-bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
-    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), this->filename, this->trackNumber)) {
-        if (environment) {
-            this->stream = environment->GetDataStream(this->filename.c_str(), flags);
-            if (this->stream) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
+static const char* KEY_DEFAULT_ALBUM_NAME = "default_album_name";
+static const char* DEFAULT_ALBUM_NAME = "[unknown %s album]";
+static const char* KEY_DEFAULT_ARTIST_NAME = "default_artist_name";
+static const char* DEFAULT_ARTIST_NAME = "[unknown %s artist]";
 
-bool GmeDataStream::Close() {
-    return this->stream->Close();
-}
-
-void GmeDataStream::Interrupt() {
-    this->stream->Interrupt();
-}
-
-void GmeDataStream::Release() {
-    if (stream) {
-        stream->Release();
-        stream = nullptr;
-    }
-    delete this;
-}
-
-PositionType GmeDataStream::Read(void *buffer, PositionType readBytes) {
-    return this->stream->Read(buffer, readBytes);
-}
-
-bool GmeDataStream::SetPosition(PositionType position) {
-    return this->stream->SetPosition(position);
-}
-
-PositionType GmeDataStream::Position() {
-    return this->stream->Position();
-}
-
-bool GmeDataStream::Seekable() {
-    return this->stream->Seekable();
-}
-
-bool GmeDataStream::Eof() {
-    return this->stream->Eof();
-}
-
-long GmeDataStream::Length() {
-    return this->stream->Length();
-}
-
-const char* GmeDataStream::Type() {
-    return this->stream->Type();
-}
-
-const char* GmeDataStream::Uri() {
-    return this->stream->Uri();
-}
-
-bool GmeDataStream::CanPrefetch() {
-    return this->stream->CanPrefetch();
-}
+extern bool isFileTypeSupported(const char* type);
+extern bool isFileSupported(const std::string& filename);
+extern bool fileToByteArray(const std::string& path, char** target, int& size);
+extern std::string readMetadataValue(openmpt_module* module, const char* key, const char* defaultValue = "");
+extern musik::core::sdk::ISchema* createSchema();

@@ -32,8 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeDataStream.h"
+#include "Utility.h"
+#include "OpenMptDataStream.h"
+#include <core/sdk/IIndexerSource.h>
 #include <core/sdk/IEnvironment.h>
 #include <core/sdk/IIndexerSource.h>
 
@@ -41,7 +42,7 @@ using namespace musik::core::sdk;
 
 extern IEnvironment* environment;
 
-bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
+bool OpenMptDataStream::Open(const char *uri, OpenFlags flags) {
     if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), this->filename, this->trackNumber)) {
         if (environment) {
             this->stream = environment->GetDataStream(this->filename.c_str(), flags);
@@ -53,15 +54,15 @@ bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
     return false;
 }
 
-bool GmeDataStream::Close() {
+bool OpenMptDataStream::Close() {
     return this->stream->Close();
 }
 
-void GmeDataStream::Interrupt() {
+void OpenMptDataStream::Interrupt() {
     this->stream->Interrupt();
 }
 
-void GmeDataStream::Release() {
+void OpenMptDataStream::Release() {
     if (stream) {
         stream->Release();
         stream = nullptr;
@@ -69,38 +70,38 @@ void GmeDataStream::Release() {
     delete this;
 }
 
-PositionType GmeDataStream::Read(void *buffer, PositionType readBytes) {
+PositionType OpenMptDataStream::Read(void *buffer, PositionType readBytes) {
     return this->stream->Read(buffer, readBytes);
 }
 
-bool GmeDataStream::SetPosition(PositionType position) {
+bool OpenMptDataStream::SetPosition(PositionType position) {
     return this->stream->SetPosition(position);
 }
 
-PositionType GmeDataStream::Position() {
+PositionType OpenMptDataStream::Position() {
     return this->stream->Position();
 }
 
-bool GmeDataStream::Seekable() {
+bool OpenMptDataStream::Seekable() {
     return this->stream->Seekable();
 }
 
-bool GmeDataStream::Eof() {
+bool OpenMptDataStream::Eof() {
     return this->stream->Eof();
 }
 
-long GmeDataStream::Length() {
+long OpenMptDataStream::Length() {
     return this->stream->Length();
 }
 
-const char* GmeDataStream::Type() {
+const char* OpenMptDataStream::Type() {
     return this->stream->Type();
 }
 
-const char* GmeDataStream::Uri() {
+const char* OpenMptDataStream::Uri() {
     return this->stream->Uri();
 }
 
-bool GmeDataStream::CanPrefetch() {
+bool OpenMptDataStream::CanPrefetch() {
     return this->stream->CanPrefetch();
 }

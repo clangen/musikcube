@@ -845,7 +845,16 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
     }
 
     ProcessNonStandardMetadata(dbConnection);
-    SaveDirectory(dbConnection, this->GetString("filename"));
+
+    /* sometimes indexer source plugins save the 'filename' field with a custom,
+    encoded URI. in these cases the plugin can populate a 'directory' field
+    with the actual directory, if one exists. otherwise, we'll just extract
+    the directory from the 'filename'. */
+    std::string path = this->GetString("directory").size() ?
+        this->GetString("directory") : this->GetString("filename");
+
+    SaveDirectory(dbConnection, path);
+
     SaveReplayGain(dbConnection);
 
     return true;

@@ -30,77 +30,51 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-//////////////////////////////////////////////////////////////////////////////
+//
+////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeDataStream.h"
-#include <core/sdk/IEnvironment.h>
+#pragma once
+
 #include <core/sdk/IIndexerSource.h>
+#include <functional>
+#include <set>
+#include <map>
 
-using namespace musik::core::sdk;
+class OpenMptIndexerSource: public musik::core::sdk::IIndexerSource {
+    public:
+        OpenMptIndexerSource();
+        ~OpenMptIndexerSource();
 
-extern IEnvironment* environment;
+        /* IIndexerSource */
+        virtual void Release();
+        virtual void OnBeforeScan();
+        virtual void OnAfterScan();
+        virtual int SourceId();
 
-bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
-    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), this->filename, this->trackNumber)) {
-        if (environment) {
-            this->stream = environment->GetDataStream(this->filename.c_str(), flags);
-            if (this->stream) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
+        virtual musik::core::sdk::ScanResult Scan(
+            musik::core::sdk::IIndexerWriter* indexer,
+            const char** indexerPaths,
+            unsigned indexerPathsCount);
 
-bool GmeDataStream::Close() {
-    return this->stream->Close();
-}
+        virtual void ScanTrack(
+            musik::core::sdk::IIndexerWriter* indexer,
+            musik::core::sdk::ITagStore* tagStore,
+            const char* externalId);
 
-void GmeDataStream::Interrupt() {
-    this->stream->Interrupt();
-}
+        virtual void Interrupt();
 
-void GmeDataStream::Release() {
-    if (stream) {
-        stream->Release();
-        stream = nullptr;
-    }
-    delete this;
-}
+        virtual bool NeedsTrackScan() { return true; }
 
-PositionType GmeDataStream::Read(void *buffer, PositionType readBytes) {
-    return this->stream->Read(buffer, readBytes);
-}
+        virtual bool HasStableIds() { return true; }
 
-bool GmeDataStream::SetPosition(PositionType position) {
-    return this->stream->SetPosition(position);
-}
+    private:
+        void UpdateMetadata(
+            std::string fn,
+            musik::core::sdk::IIndexerSource* source,
+            musik::core::sdk::IIndexerWriter* indexer);
 
-PositionType GmeDataStream::Position() {
-    return this->stream->Position();
-}
-
-bool GmeDataStream::Seekable() {
-    return this->stream->Seekable();
-}
-
-bool GmeDataStream::Eof() {
-    return this->stream->Eof();
-}
-
-long GmeDataStream::Length() {
-    return this->stream->Length();
-}
-
-const char* GmeDataStream::Type() {
-    return this->stream->Type();
-}
-
-const char* GmeDataStream::Uri() {
-    return this->stream->Uri();
-}
-
-bool GmeDataStream::CanPrefetch() {
-    return this->stream->CanPrefetch();
-}
+        std::set<std::string> invalidFiles;
+        std::set<std::string> paths;
+        size_t filesIndexed, tracksIndexed;
+        volatile bool interrupt { false };
+};

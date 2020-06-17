@@ -32,44 +32,49 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeIndexerSource.h"
+#include "Utility.h"
+#include "OpenMptIndexerSource.h"
 #include <core/sdk/IDebug.h>
 #include <core/sdk/IPreferences.h>
-#include <core/sdk/String.h>
 #include <core/sdk/Filesystem.h>
 #include <string>
 #include <sstream>
 #include <set>
 #include <map>
-#include <gme.h>
+#include <libopenmpt/libopenmpt.h>
 
 using namespace musik::core::sdk;
 
 extern IDebug* debug;
 extern IPreferences* prefs;
 
-GmeIndexerSource::GmeIndexerSource() {
+static void openmptLogFunc(const char *message, void *userdata) {
+    if (debug) {
+        debug->Info("OpenMptIndexerSource", message);
+    }
 }
 
-GmeIndexerSource::~GmeIndexerSource() {
+OpenMptIndexerSource::OpenMptIndexerSource() {
 }
 
-void GmeIndexerSource::Release() {
+OpenMptIndexerSource::~OpenMptIndexerSource() {
+}
+
+void OpenMptIndexerSource::Release() {
     delete this;
 }
 
-void GmeIndexerSource::OnBeforeScan() {
+void OpenMptIndexerSource::OnBeforeScan() {
     this->filesIndexed = this->tracksIndexed = 0;
     this->interrupt = false;
     this->paths.clear();
 }
 
-void GmeIndexerSource::OnAfterScan() {
+void OpenMptIndexerSource::OnAfterScan() {
     invalidFiles.clear();
 }
 
-ScanResult GmeIndexerSource::Scan(
+ScanResult OpenMptIndexerSource::Scan(
     IIndexerWriter* indexer,
     const char** indexerPaths,
     unsigned indexerPathsCount)
@@ -80,13 +85,13 @@ ScanResult GmeIndexerSource::Scan(
     }
 
     auto checkFile = [this, indexer](const std::string& path) {
-        if (canHandle(path)) {
+        if (isFileSupported(path)) {
             try {
                 this->UpdateMetadata(path, this, indexer);
             }
             catch (...) {
                 std::string error = str::format("error reading metadata for %s", path.c_str());
-                debug->Error(PLUGIN_NAME, error.c_str());
+                debug->Error(PLUGIN_NAME.c_str(), error.c_str());
             }
         }
     };
@@ -104,18 +109,18 @@ ScanResult GmeIndexerSource::Scan(
     return ScanCommit;
 }
 
-void GmeIndexerSource::Interrupt() {
+void OpenMptIndexerSource::Interrupt() {
     this->interrupt = true;
 }
 
-void GmeIndexerSource::ScanTrack(
+void OpenMptIndexerSource::ScanTrack(
     IIndexerWriter* indexer,
     ITagStore* tagStore,
     const char* externalId)
 {
     std::string fn;
     int trackNum;
-    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(externalId), fn, trackNum)) {
+    if (indexer::parseExternalId(PLUGIN_NAME, std::string(externalId), fn, trackNum)) {
         fn = fs::canonicalizePath(fn);
 
         /* if the file doesn't exist anymore, or it was flagged as invalid,
@@ -137,11 +142,24 @@ void GmeIndexerSource::ScanTrack(
     }
 }
 
-int GmeIndexerSource::SourceId() {
+int OpenMptIndexerSource::SourceId() {
     return std::hash<std::string>()(PLUGIN_NAME);
 }
 
-void GmeIndexerSource::UpdateMetadata(
+static std::string formatDefaultValue(const char* key, const char* defaultValue, std::string type) {
+#ifdef __APPLE__
+    static __thread char threadLocalBuffer[4096];
+#else
+    static thread_local char threadLocalBuffer[4096];
+#endif
+    type = type.empty() ? "mod" : type;
+    prefs->GetString(key, threadLocalBuffer, 4096, defaultValue);
+    std::string value(threadLocalBuffer);
+    threadLocalBuffer[0] = 0;
+    return str::format(value, type.c_str());
+}
+
+void OpenMptIndexerSource::UpdateMetadata(
     std::string fn,
     IIndexerSource* source,
     IIndexerWriter* indexer)
@@ -149,92 +167,77 @@ void GmeIndexerSource::UpdateMetadata(
     /* only need to do this check once, and it's relatively expensive because
     it requires a db read. cache we've already done it. */
     int modifiedTime = fs::getLastModifiedTime(fn);
-    const std::string firstExternalId = indexer::createExternalId(EXTERNAL_ID_PREFIX, fn, 0);
+    const std::string firstExternalId = indexer::createExternalId(PLUGIN_NAME, fn, 0);
     int modifiedDbTime = indexer->GetLastModifiedTime(this, firstExternalId.c_str());
     if (modifiedDbTime < 0 || modifiedTime != modifiedDbTime) {
         fn = fs::canonicalizePath(fn);
+        char* fileBytes = nullptr;
+        int fileBytesSize = 0;
+        if (fileToByteArray(fn, &fileBytes, fileBytesSize)) {
+            openmpt_module* module = openmpt_module_create_from_memory2(
+                fileBytes, (size_t)fileBytesSize, openmptLogFunc, this,
+                nullptr, nullptr, nullptr, nullptr, nullptr);
 
-        gme_t* data = nullptr;
-        gme_err_t err = gme_open_file(fn.c_str(), &data, gme_info_only);
-        if (err) {
-            debug->Error(PLUGIN_NAME, str::format("error opening %s", fn.c_str()).c_str());
-            invalidFiles.insert(fn);
-        }
-        else {
-            double minTrackLength = prefs->GetDouble(
-                KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
+            if (module) {
+                std::string directory = fs::getDirectory(fn);
+                std::string extension = fs::getFileExtension(fn);
+                size_t count = openmpt_module_get_num_subsongs(module);
+                const char* keys = openmpt_module_get_metadata_keys(module);
+                if (count > 0) {
+                    for (size_t i = 0; i < count; i++) {
+                        openmpt_module_select_subsong(module, i);
 
-            bool ignoreSfx = prefs->GetBool(
-                KEY_EXCLUDE_SOUND_EFFECTS, DEFAULT_EXCLUDE_SOUND_EFFECTS);
+                        const std::string externalId = indexer::createExternalId(PLUGIN_NAME, fn, i);
+                        const std::string trackNum = std::to_string(i + 1);
+                        const std::string modifiedTimeStr = std::to_string(modifiedTime);
 
-            if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
-                std::string m3u = getM3uFor(fn);
-                if (m3u.size()) {
-                    err = gme_load_m3u(data, m3u.c_str());
-                    if (err) {
-                        debug->Error(PLUGIN_NAME, str::format("m3u found, but load failed '%s'", err).c_str());
+                        std::string album = readMetadataValue(module, "container_long");
+                        if (!album.size()) {
+                            album = readMetadataValue(module, "container").c_str();
+                            if (!album.size()) {
+                                album = formatDefaultValue(
+                                    KEY_DEFAULT_ALBUM_NAME, DEFAULT_ALBUM_NAME, extension);
+                            }
+                        }
+
+                        std::string title = readMetadataValue(module, "title");
+                        if (!title.size()) {
+                            title = "Track " + std::to_string(1 + i);
+                        }
+
+                        std::string artist = readMetadataValue(module, "artist");
+                        if (!artist.size()) {
+                            artist = formatDefaultValue(
+                                KEY_DEFAULT_ARTIST_NAME, DEFAULT_ARTIST_NAME, extension);
+                        }
+
+                        const std::string duration = std::to_string(
+                            openmpt_module_get_duration_seconds(module));
+
+                        auto track = indexer->CreateWriter();
+                        track->SetValue("filename", externalId.c_str());
+                        track->SetValue("directory", directory.c_str());
+                        track->SetValue("filetime", modifiedTimeStr.c_str());
+                        track->SetValue("track", trackNum.c_str());
+                        track->SetValue("album", album.c_str());
+                        track->SetValue("title", title.c_str());
+                        track->SetValue("genre", "Electronic");
+                        track->SetValue("artist", artist.c_str());
+                        track->SetValue("album_artist", artist.c_str());
+                        track->SetValue("duration", duration.c_str());
+
+                        indexer->Save(source, track, externalId.c_str());
+                        track->Release();
+                        ++tracksIndexed;
                     }
                 }
+
+                openmpt_module_destroy(module);
+                module = nullptr;
             }
 
-            const std::string defaultDuration =
-                std::to_string(prefs->GetDouble(
-                    KEY_DEFAULT_TRACK_LENGTH,
-                    DEFAULT_TRACK_LENGTH));
-
-            const std::string directory = fs::getDirectory<std::string>(fn);
-
-            for (int i = 0; i < gme_track_count(data); i++) {
-                const std::string externalId = indexer::createExternalId(EXTERNAL_ID_PREFIX, fn, i);
-                const std::string trackNum = std::to_string(i + 1);
-                const std::string defaultTitle = "Track " + std::to_string(1 + i);
-                const std::string modifiedTimeStr = std::to_string(modifiedTime);
-
-                auto track = indexer->CreateWriter();
-                track->SetValue("filename", externalId.c_str());
-                track->SetValue("directory", directory.c_str());
-                track->SetValue("filetime", modifiedTimeStr.c_str());
-                track->SetValue("track", trackNum.c_str());
-
-                gme_info_t* info = nullptr;
-                err = gme_track_info(data, &info, i);
-                if (err) {
-                    debug->Error(PLUGIN_NAME, str::format("error getting track %d: %s", i, err).c_str());
-                    track->SetValue("duration", defaultDuration.c_str());
-                    track->SetValue("title", defaultTitle.c_str());
-                }
-                else if (info) {
-                    /* don't index tracks that are shorter than the specified minimum length.
-                    this allows users to ignore things like sound effects */
-                    if (minTrackLength > 0.0 &&
-                        ignoreSfx &&
-                        info->length > 0 &&
-                        info->length / 1000.0 < minTrackLength)
-                    {
-                        gme_free_info(info);
-                        continue;
-                    }
-
-                    std::string duration = (info->length == -1)
-                        ? defaultDuration
-                        : std::to_string((float) info->play_length / 1000.0f);
-
-                    track->SetValue("album", info->game);
-                    track->SetValue("album_artist", info->system);
-                    track->SetValue("genre", info->system);
-                    track->SetValue("duration", duration.c_str());
-                    track->SetValue("artist", strlen(info->author) ? info->author : info->system);
-                    track->SetValue("title", strlen(info->song) ? info->song : defaultTitle.c_str());
-                }
-
-                gme_free_info(info);
-                indexer->Save(source, track, externalId.c_str());
-                track->Release();
-                ++tracksIndexed;
-            }
+            free(fileBytes);
         }
-
-        gme_delete(data);
     }
 
     /* we commit progress every so often */

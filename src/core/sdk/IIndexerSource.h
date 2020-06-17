@@ -37,6 +37,7 @@
 #include "constants.h"
 #include "IIndexerWriter.h"
 #include "ITagStore.h"
+#include <string>
 
 namespace musik { namespace core { namespace sdk {
 
@@ -66,5 +67,41 @@ namespace musik { namespace core { namespace sdk {
 
             virtual int SourceId() = 0;
     };
+
+    namespace indexer {
+        template <typename String=std::string>
+        static bool parseExternalId(const String& prefix, const String& externalId, String& fn, int& track) {
+            if (externalId.find(String(prefix + "://")) == 0) {
+                String trimmed = externalId.substr(prefix.size() + 3);
+                auto slash = trimmed.find("/");
+                if (slash != String::npos) {
+                    try {
+                        track = std::stoi(trimmed.substr(0, slash));
+                        fn = trimmed.substr(slash + 1);
+                        return true;
+                    }
+                    catch (...) {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
+        template <typename String=std::string>
+        static inline String createExternalId(const String& prefix, const String& fn, int track) {
+            return prefix + "://" + std::to_string(track) + "/" + fn;
+        }
+
+        template <typename String=std::string>
+        static inline bool externalIdExists(const String& externalId) {
+            String fn;
+            int trackNum;
+            if (!parseExternalId(externalId, fn, trackNum)) {
+                return false;
+            }
+            return fileExists(fn);
+        }
+    }
 
 } } }

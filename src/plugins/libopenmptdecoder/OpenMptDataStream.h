@@ -32,75 +32,38 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "Constants.h"
-#include "GmeDataStream.h"
-#include <core/sdk/IEnvironment.h>
-#include <core/sdk/IIndexerSource.h>
+#pragma once
 
-using namespace musik::core::sdk;
+#include <core/sdk/IDataStream.h>
+#include <string>
 
-extern IEnvironment* environment;
+class OpenMptDataStream: public musik::core::sdk::IDataStream {
+    public:
+        using PositionType = musik::core::sdk::PositionType;
+        using OpenFlags = musik::core::sdk::OpenFlags;
 
-bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
-    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), this->filename, this->trackNumber)) {
-        if (environment) {
-            this->stream = environment->GetDataStream(this->filename.c_str(), flags);
-            if (this->stream) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
+        virtual bool Open(const char *uri, OpenFlags flags) override;
+        virtual bool Close() override;
+        virtual void Interrupt() override;
+        virtual void Release() override;
+        virtual bool Readable() override { return true; }
+        virtual bool Writable() override { return false; }
+        virtual PositionType Read(void *buffer, PositionType readBytes) override;
+        virtual PositionType Write(void *buffer, PositionType writeBytes) override { return 0; }
+        virtual bool SetPosition(PositionType position) override;
+        virtual PositionType Position() override;
+        virtual bool Seekable() override;
+        virtual bool Eof() override;
+        virtual long Length() override;
+        virtual const char* Type() override;
+        virtual const char* Uri() override;
+        virtual bool CanPrefetch() override;
 
-bool GmeDataStream::Close() {
-    return this->stream->Close();
-}
+        int GetTrackNumber() { return this->trackNumber; }
+        std::string GetFilename() { return this->filename; }
 
-void GmeDataStream::Interrupt() {
-    this->stream->Interrupt();
-}
-
-void GmeDataStream::Release() {
-    if (stream) {
-        stream->Release();
-        stream = nullptr;
-    }
-    delete this;
-}
-
-PositionType GmeDataStream::Read(void *buffer, PositionType readBytes) {
-    return this->stream->Read(buffer, readBytes);
-}
-
-bool GmeDataStream::SetPosition(PositionType position) {
-    return this->stream->SetPosition(position);
-}
-
-PositionType GmeDataStream::Position() {
-    return this->stream->Position();
-}
-
-bool GmeDataStream::Seekable() {
-    return this->stream->Seekable();
-}
-
-bool GmeDataStream::Eof() {
-    return this->stream->Eof();
-}
-
-long GmeDataStream::Length() {
-    return this->stream->Length();
-}
-
-const char* GmeDataStream::Type() {
-    return this->stream->Type();
-}
-
-const char* GmeDataStream::Uri() {
-    return this->stream->Uri();
-}
-
-bool GmeDataStream::CanPrefetch() {
-    return this->stream->CanPrefetch();
-}
+    private:
+        int trackNumber { 0 };
+        std::string filename;
+        musik::core::sdk::IDataStream* stream { nullptr };
+};

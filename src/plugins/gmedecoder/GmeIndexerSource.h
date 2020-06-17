@@ -73,11 +73,6 @@ class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
             musik::core::sdk::IIndexerSource* source,
             musik::core::sdk::IIndexerWriter* indexer);
 
-        void ScanDirectory(
-            const std::string& path,
-            musik::core::sdk::IIndexerSource* source,
-            musik::core::sdk::IIndexerWriter* indexer);
-
         std::set<std::string> invalidFiles;
         std::set<std::string> paths;
         size_t filesIndexed, tracksIndexed;
