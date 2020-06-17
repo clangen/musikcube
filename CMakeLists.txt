@@ -340,8 +340,7 @@ if (GENERATE_DEB MATCHES "1")
       set(DEB_AVFORMAT_VERSION "-ffmpeg56")
     endif()
 
-    set(DEPENDENCIES "libboost-thread${DEB_BOOST_VERSION},
-    libboost-system${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libmicrohttpd${DEB_MICROHTTPD_VERSION}, libcurl${DEB_LIBCURL_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libncursesw${DEB_NCURSES_VERSION}, libasound2, libpulse0, pulseaudio, libmp3lame0, libev4")
+    set(DEPENDENCIES "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libmicrohttpd${DEB_MICROHTTPD_VERSION}, libcurl${DEB_LIBCURL_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libncursesw${DEB_NCURSES_VERSION}, libasound2, libpulse0, pulseaudio, libmp3lame0, libev4, libopenmpt0")
 
     if (${FFMPEG_ENABLED} MATCHES "false")
       set(DEPENDENCIES "${DEPENDENCIES}, libflac8, libfaad2")
