@@ -158,6 +158,7 @@ namespace musik { namespace core { namespace sdk { namespace fs {
             std::string relPath8 = str::u16to8(findData.cFileName);
             std::string fullPath8 = path + (hasTrailingSlash ? "" : "\\") + relPath8;
             if (interrupt && interrupt()) {
+                FindClose(handle);
                 return;
             }
             else if (findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {
@@ -181,6 +182,7 @@ namespace musik { namespace core { namespace sdk { namespace fs {
 
         while ((entry = readdir(dir)) != nullptr) {
             if (interrupt && interrupt()) {
+                closedir(dir);
                 return;
             }
 
