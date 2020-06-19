@@ -57,7 +57,7 @@
 #endif
 
 // given the #ifdef/#else above, the following is not required.
-// Nor it is the #if FreeBSD below. 
+// Nor it is the #if FreeBSD below.
 #ifdef __OpenBSD__
 	#include <sys/types.h>
 	#include <sys/sysctl.h>
@@ -311,13 +311,30 @@ namespace musik { namespace core {
         }
     }
 
+    static inline bool IsSpace(const char c) {
+        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f';
+    }
+
     std::string Trim(const std::string& str) {
-        std::string s(str);
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-            std::not1(std::ptr_fun<int, int>(std::isspace))));
-        s.erase(std::find_if(s.rbegin(), s.rend(),
-            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-        return s;
+        int start = 0;
+        for (size_t i = 0; i < str.length(); i++) {
+            if (!IsSpace(str[i])) {
+                break;
+            }
+            ++start;
+        }
+        int end = (int) str.length();
+        for (size_t i = str.length() - 1; i >= 0; i--) {
+            if (!IsSpace(str[i])) {
+                break;
+            }
+            --end;
+        }
+        if (end > start) {
+            std::string result = str.substr((size_t) start, (size_t) end - start);
+            return result;
+        }
+        return str;
     }
 
     std::vector<std::string> Split(

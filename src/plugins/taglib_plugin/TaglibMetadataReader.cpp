@@ -103,13 +103,30 @@ namespace str {
         return input;
     }
 
-    static inline std::string trim(const std::string& str) {
-        std::string s(str);
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-            std::not1(std::ptr_fun<int, int>(std::isspace))));
-        s.erase(std::find_if(s.rbegin(), s.rend(),
-            std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-        return s;
+    static inline bool isSpace(const char c) {
+        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f';
+    }
+
+    std::string trim(const std::string& str) {
+        int start = 0;
+        for (size_t i = 0; i < str.length(); i++) {
+            if (!isSpace(str[i])) {
+                break;
+            }
+            ++start;
+        }
+        int end = (int)str.length();
+        for (size_t i = str.length() - 1; i >= 0; i--) {
+            if (!isSpace(str[i])) {
+                break;
+            }
+            --end;
+        }
+        if (end > start) {
+            std::string result = str.substr((size_t)start, (size_t)end - start);
+            return result;
+        }
+        return str;
     }
 
     static std::vector<std::string> split(
