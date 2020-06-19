@@ -1,3 +1,15 @@
+0.93.0
+
+musikcube:
+* added a new decoder based on `libopenmpt` to support playing mod/tracker
+  files.
+* fixed a bug when browsing directories that contain entries from custom
+  `IndexerSource` plugins
+* fixed directory scanning bugs related to NFS (and potentially other
+  filesystem) volumes.
+
+--------------------------------------------------------------------------------
+
 0.92.1
 
 server:
