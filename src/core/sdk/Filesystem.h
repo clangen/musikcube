@@ -186,13 +186,13 @@ namespace musik { namespace core { namespace sdk { namespace fs {
                 return;
             }
 
-	    bool hasTrailingSlash = path[path.size() - 1] == '/';
+            bool hasTrailingSlash = path[path.size() - 1] == '/';
             std::string fn = path + (hasTrailingSlash ? "" : "/") + entry->d_name;
 
-	    struct stat info = {0};
-	    if (stat(fn.c_str(), &info) < 0) {
+            struct stat info = {0};
+            if (stat(fn.c_str(), &info) < 0) {
                 return;
-	    }
+            }
             if (S_ISDIR(info.st_mode)) {
                 std::string name = entry->d_name;
                 if (name == "." || name == "..") {
