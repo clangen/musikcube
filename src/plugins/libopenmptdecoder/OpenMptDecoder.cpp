@@ -127,8 +127,11 @@ bool OpenMptDecoder::GetBuffer(IBuffer *target) {
         target->SetSampleRate(kSampleRate);
         target->SetSamples(kSamplesPerChannel * kChannels);
 
-        int samplesWritten = openmpt_module_read_interleaved_float_stereo(
-            this->module, kSampleRate, kSamplesPerChannel, target->BufferPointer());
+        int samplesWritten = (int) openmpt_module_read_interleaved_float_stereo(
+            this->module,
+            (int32_t) kSampleRate,
+            (size_t) kSamplesPerChannel,
+            target->BufferPointer());
 
         if (samplesWritten > 0) {
             target->SetSamples(samplesWritten * kChannels);
@@ -140,5 +143,8 @@ bool OpenMptDecoder::GetBuffer(IBuffer *target) {
 }
 
 bool OpenMptDecoder::Exhausted() {
-    return false;
+    if (this->module) {
+        return openmpt_module_get_position_seconds(this->module) >= this->GetDuration();
+    }
+    return true;
 }
