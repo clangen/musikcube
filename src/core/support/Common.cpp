@@ -316,23 +316,25 @@ namespace musik { namespace core {
     }
 
     std::string Trim(const std::string& str) {
-        int start = 0;
-        for (size_t i = 0; i < str.length(); i++) {
-            if (!IsSpace(str[i])) {
-                break;
+        if (str.size()) {
+            int start = 0;
+            for (size_t i = 0; i < str.length(); i++) {
+                if (!IsSpace(str[i])) {
+                    break;
+                }
+                ++start;
             }
-            ++start;
-        }
-        int end = (int) str.length();
-        for (size_t i = str.length() - 1; i >= 0; i--) {
-            if (!IsSpace(str[i])) {
-                break;
+            int end = (int)str.length();
+            for (size_t i = str.length() - 1; i >= 0; i--) {
+                if (!IsSpace(str[i])) {
+                    break;
+                }
+                --end;
             }
-            --end;
-        }
-        if (end > start) {
-            std::string result = str.substr((size_t) start, (size_t) end - start);
-            return result;
+            if (end > start) {
+                std::string result = str.substr((size_t)start, (size_t)end - start);
+                return result;
+            }
         }
         return str;
     }
