@@ -178,7 +178,11 @@ void OpenMptIndexerSource::UpdateMetadata(
                 fileBytes, (size_t)fileBytesSize, openmptLogFunc, this,
                 nullptr, nullptr, nullptr, nullptr, nullptr);
 
-            if (module) {
+            if (!module) {
+                debug->Error(PLUGIN_NAME.c_str(), str::format("error opening %s", fn.c_str()).c_str());
+                invalidFiles.insert(fn);
+            }
+            else {
                 std::string directory = fs::getDirectory(fn);
                 std::string extension = fs::getFileExtension(fn);
                 size_t count = openmpt_module_get_num_subsongs(module);
