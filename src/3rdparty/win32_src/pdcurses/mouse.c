@@ -310,6 +310,8 @@ mmask_t mousemask(mmask_t mask, mmask_t *oldmask)
     return SP->_trap_mbe;
 }
 
+#define BITS_PER_BUTTON       5
+
 int nc_getmouse(MEVENT *event)
 {
     int i;
@@ -336,8 +338,8 @@ int nc_getmouse(MEVENT *event)
     {
         if (Mouse_status.changes & (1 << i))
         {
-            int shf = i * 5;
-            short button = Mouse_status.button[i] & BUTTON_ACTION_MASK;
+            const int shf = i * BITS_PER_BUTTON;
+            const short button = Mouse_status.button[i] & BUTTON_ACTION_MASK;
 
             if (button == BUTTON_RELEASED)
                 bstate |= (BUTTON1_RELEASED << shf);
@@ -349,15 +351,6 @@ int nc_getmouse(MEVENT *event)
                 bstate |= (BUTTON1_DOUBLE_CLICKED << shf);
             else if (button == BUTTON_TRIPLE_CLICKED)
                 bstate |= (BUTTON1_TRIPLE_CLICKED << shf);
-
-            button = Mouse_status.button[i] & BUTTON_MODIFIER_MASK;
-
-            if (button & PDC_BUTTON_SHIFT)
-                bstate |= BUTTON_MODIFIER_SHIFT;
-            if (button & PDC_BUTTON_CONTROL)
-                bstate |= BUTTON_MODIFIER_CONTROL;
-            if (button & PDC_BUTTON_ALT)
-                bstate |= BUTTON_MODIFIER_ALT;
         }
     }
 
@@ -365,8 +358,21 @@ int nc_getmouse(MEVENT *event)
         bstate |= BUTTON4_PRESSED;
     else if (MOUSE_WHEEL_DOWN)
         bstate |= BUTTON5_PRESSED;
-//  if( MOUSE_MOVED)
-//      bstate |= REPORT_MOUSE_POSITION;
+                     /* 'Moves' (i.e.,  button is pressed) and 'position reports' */
+                     /* (mouse moved with no button down) are all reported as     */
+                     /* 'position reports' in NCurses,  which lacks 'move' events. */
+    if( (MOUSE_MOVED || MOUSE_POS_REPORT) && (SP->_trap_mbe & REPORT_MOUSE_POSITION))
+        bstate |= REPORT_MOUSE_POSITION;
+
+    for( i = 0; i < 3; i++)
+    {
+       if( Mouse_status.button[i] & PDC_BUTTON_SHIFT)
+           bstate |= BUTTON_MODIFIER_SHIFT;
+       if( Mouse_status.button[i] & PDC_BUTTON_CONTROL)
+           bstate |= BUTTON_MODIFIER_CONTROL;
+       if( Mouse_status.button[i] & PDC_BUTTON_ALT)
+           bstate |= BUTTON_MODIFIER_ALT;
+    }
 
     /* extra filter pass -- mainly for button modifiers */
 

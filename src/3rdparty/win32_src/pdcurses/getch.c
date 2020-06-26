@@ -235,7 +235,7 @@ static int _mouse_key(void)
 {
     int i, key = KEY_MOUSE, changes = SP->mouse_status.changes;
     const unsigned long mbe = SP->_trap_mbe;
-    bool can_select = !(mbe & (BUTTON1_MOVED || BUTTON1_PRESSED || BUTTON1_RELEASED));
+    bool can_select = !(mbe & (BUTTON1_MOVED | BUTTON1_PRESSED | BUTTON1_RELEASED));
     bool can_paste = !(mbe & BUTTON2_CLICKED);
             /* really means 'can do these things without shift' */
 

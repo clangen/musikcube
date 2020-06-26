@@ -1,3 +1,10 @@
+/* PDCurses */
+
+/* Palette management code used by VT and WinGUI for 'full color'
+(24-bit).  It will be used eventually by X11,  SDL1/2,  and DOSVGA,
+all of which are full-color capable.  See 'pdccolor.txt' for a
+rationale of how this works.    */
+
 #ifdef NO_STDINT_H
    #define uint64_t unsigned long long
    #define uint32_t unsigned long
@@ -58,22 +65,8 @@ PACKED_RGB PDC_default_color( int idx)
     return( rval);
 }
 
-/* We initialize the palette to be an array of,  at most,  256 values.
-Few programs will go beyond that.  Of those that do,  most will use
-default values.  For those that actually do set palette entries beyond
-256 (currently,  only testcurs),  the array is reallocated.  */
-
 int PDC_init_palette( void)
 {
-    int i;
-
-    palette_size = (COLORS > 256 ? 256 : COLORS);
-    rgbs = (PACKED_RGB *)calloc( palette_size, sizeof( PACKED_RGB));
-    assert( rgbs);
-    if( !rgbs)
-        return( -1);
-    for( i = 0; i < palette_size; i++)
-        rgbs[i] = PDC_default_color( i);
     return( 0);
 }
 
@@ -88,9 +81,7 @@ PACKED_RGB PDC_get_palette_entry( const int idx)
 {
    PACKED_RGB rval;
 
-   if( !rgbs && PDC_init_palette( ))
-      rval = ( idx ? 0xffffff : 0);
-   else if( idx < palette_size)
+   if( idx < palette_size)
       rval = rgbs[idx];
    else
       rval = PDC_default_color( idx);
@@ -104,12 +95,13 @@ int PDC_set_palette_entry( const int idx, const PACKED_RGB rgb)
 {
    int rval, i;
 
-   if( !rgbs && PDC_init_palette( ))
-      return( -1);
    if( idx >= palette_size)
       {
       int new_size = palette_size;
+      const int initial_palette_size = 8;
 
+      if( !new_size)
+         new_size = initial_palette_size;
       while( new_size <= idx)
          new_size *= 2;
       rgbs = realloc( rgbs, new_size * sizeof( PACKED_RGB));

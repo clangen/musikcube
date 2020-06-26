@@ -184,7 +184,7 @@ Only 32 are used in ncurses.  So caution is advised. */
 #define SUPERSCRIPT_N                     CHOOSE( 0xfc,  0x207f,  TBD)
 #define SUPERSCRIPT_2                     CHOOSE( 0xfd,  0x00b2, 0xb2)
 #define CENTERED_SQUARE                   CHOOSE( 0xfe,  0x25a0,  TBD)
-#define NON_BREAKING_SPACE                CHOOSE( 0xff,  0x00a0,  TBD)
+#define NON_BREAKING_SPACE                CHOOSE( 0xff,  0x00a0, 0xa0)
 
 
 

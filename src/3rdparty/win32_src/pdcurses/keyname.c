@@ -101,7 +101,7 @@ char *keyname(int key)
     "SHF_PADSTAR", "SHF_PADPLUS", "SHF_PADMINUS", "SHF_UP", "SHF_DOWN",
     "SHF_IC", "SHF_DC", "KEY_MOUSE", "KEY_SHIFT_L", "KEY_SHIFT_R",
     "KEY_CONTROL_L", "KEY_CONTROL_R", "KEY_ALT_L", "KEY_ALT_R",
-    "KEY_RESIZE", "KEY_SUP", "KEY_SDOWN"
+    "KEY_RESIZE", "KEY_SUP", "KEY_SDOWN",
                   /* Win32a extras: */
               "CTL_SEMICOLON", "CTL_EQUAL", "CTL_COMMA",
               "CTL_MINUS", "CTL_STOP", "CTL_FSLASH",

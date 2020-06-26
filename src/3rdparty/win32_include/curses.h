@@ -31,10 +31,10 @@ Defined by this header:
 #define PDC_BUILD (PDC_VER_MAJOR*1000 + PDC_VER_MINOR *100 + PDC_VER_CHANGE)
 #define PDC_VER_MAJOR    4
 #define PDC_VER_MINOR    1
-#define PDC_VER_CHANGE   1
+#define PDC_VER_CHANGE   99
 #define PDC_VER_YEAR   2020
-#define PDC_VER_MONTH    01
-#define PDC_VER_DAY      12
+#define PDC_VER_MONTH    05
+#define PDC_VER_DAY      20
 
 #define PDC_STRINGIZE( x) #x
 #define PDC_stringize( x) PDC_STRINGIZE( x)
@@ -104,8 +104,11 @@ extern "C"
 #if !defined(PDC_PP98) && !defined(__bool_true_false_are_defined)
 typedef unsigned char bool;
 #endif
-
+   
 #if defined( CHTYPE_32)
+   #if defined( CHTYPE_64)
+       #error CHTYPE cannot be both CHTYPE_32 and CHTYPE_64
+   #endif
    typedef uint32_t chtype;       /* chtypes will be 32 bits */
 #else
    #define CHTYPE_64
@@ -471,14 +474,16 @@ indicator.
 -------------------------------------------------------------------------------
          color number   |        modifiers      |         character eg 'a'
 
-
    We take five more bits for the character (thus allowing Unicode values
-past 64K;  UTF-16 can go up to 0x10ffff,  requiring 21 bits total),  and
-four more bits for attributes.  Three are currently used as A_OVERLINE, A_DIM,
-and A_STRIKEOUT;  one more is reserved for future use.  On most platforms,
-bits 31-38 are used to select a color pair (can run from 0 to 255).
-Bits 39 and 40 have been added to this to get 1024 color pairs,  and
-more eventually will probably be used.
+past 64K;  the full range of Unicode goes up to 0x10ffff,  requiring 21 bits
+total),  and four more bits for attributes.  Three are currently used as
+A_OVERLINE, A_DIM, and A_STRIKEOUT;  one more is reserved for future use.
+On some platforms,  bits 33-40 are used to select a color pair (can run from
+0 to 255). Bits 41 and 42 have been added to this to get 1024 color pairs.
+On some platforms (as of 2020 May 17,  WinGUI and VT),  bits 33-52 are used,
+allowing 2^20 = 1048576 color pairs.  That should be enough for anybody, and
+leaves twelve bits for other uses.
+
 **man-end****************************************************************/
 
 /*** Video attribute macros ***/
@@ -1336,6 +1341,29 @@ PDCEX  int     init_color(short, short, short, short);
 PDCEX  int     init_extended_color(int, int, int, int);
 PDCEX  int     init_extended_pair(int, int, int);
 PDCEX  int     init_pair(short, short, short);
+
+#ifdef PDC_WIDE
+   #ifdef PDC_FORCE_UTF8
+      #ifdef CHTYPE_32
+         #define initscr initscr_u32
+      #else
+         #define initscr initscr_u64
+      #endif
+   #else
+      #ifdef CHTYPE_32
+         #define initscr initscr_w32
+      #else
+         #define initscr initscr_w64
+      #endif
+   #endif
+#else       /* 8-bit chtypes */
+   #ifdef CHTYPE_32
+      #define initscr initscr_x32
+   #else
+      #define initscr initscr_x64
+   #endif
+#endif
+
 PDCEX  WINDOW *initscr(void);
 PDCEX  int     innstr(char *, int);
 PDCEX  int     insch(chtype);

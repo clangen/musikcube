@@ -439,15 +439,15 @@ static int _process_mouse_event(void)
 
     memset(&SP->mouse_status, 0, sizeof(MOUSE_STATUS));
 
+    SP->mouse_status.x = MEV.dwMousePosition.X;
+    SP->mouse_status.y = MEV.dwMousePosition.Y;
+
     /* Handle scroll wheel */
 
     if (MEV.dwEventFlags == 4)
     {
         SP->mouse_status.changes = (MEV.dwButtonState & 0xFF000000) ?
             PDC_MOUSE_WHEEL_DOWN : PDC_MOUSE_WHEEL_UP;
-
-        SP->mouse_status.x = -1;
-        SP->mouse_status.y = -1;
 
         memset(&old_mouse_status, 0, sizeof(old_mouse_status));
 
@@ -458,9 +458,6 @@ static int _process_mouse_event(void)
     {
         SP->mouse_status.changes = (MEV.dwButtonState & 0xFF000000) ?
             PDC_MOUSE_WHEEL_RIGHT : PDC_MOUSE_WHEEL_LEFT;
-
-        SP->mouse_status.x = -1;
-        SP->mouse_status.y = -1;
 
         memset(&old_mouse_status, 0, sizeof(old_mouse_status));
 
@@ -509,9 +506,6 @@ static int _process_mouse_event(void)
                 ReadConsoleInput(pdc_con_in, &ip, 1, &count);
         }
     }
-
-    SP->mouse_status.x = MEV.dwMousePosition.X;
-    SP->mouse_status.y = MEV.dwMousePosition.Y;
 
     SP->mouse_status.changes = 0;
 

@@ -39,6 +39,14 @@ int PDC_get_key(void)
         rval = PDC_key_queue[PDC_key_queue_low++];
         if( PDC_key_queue_low == KEY_QUEUE_SIZE)
             PDC_key_queue_low = 0;
+        if( rval == KEY_RESIZE)
+            while( PDC_key_queue[PDC_key_queue_low] == KEY_RESIZE
+                           && PDC_key_queue_low != PDC_key_queue_high)
+            {
+                PDC_key_queue_low++;
+                if( PDC_key_queue_low == KEY_QUEUE_SIZE)
+                    PDC_key_queue_low = 0;
+            }
     }
     SP->key_code = (rval >= KEY_MIN && rval <= KEY_MAX);
     return rval;

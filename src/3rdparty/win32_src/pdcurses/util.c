@@ -234,12 +234,14 @@ int PDC_mbtowc(wchar_t *pwc, const char *s, size_t n)
 {
 # ifdef PDC_FORCE_UTF8
     wchar_t key;
-    int i = 0;
+    int i = -1;
     const unsigned char *string;
 
-    assert( s);
     if (!s || (n < 1))
         return -1;
+
+    if (!*s)
+        return 0;
 
     string = (const unsigned char *)s;
 
@@ -273,9 +275,8 @@ int PDC_mbtowc(wchar_t *pwc, const char *s, size_t n)
     }
     else             /* 'ordinary' 7-bit ASCII */
         i = 1;
-    assert( i);
-    if (i)
-        *pwc = key;
+
+    *pwc = key;
 
     return i;
 # else

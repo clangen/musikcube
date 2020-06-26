@@ -6,7 +6,9 @@
 #include <assert.h>
 #include "pdccolor.h"
 #ifdef WIN32_LEAN_AND_MEAN
-   #include <shellapi.h>
+   #ifdef PDC_WIDE
+      #include <shellapi.h>
+   #endif
    #include <stdlib.h>
 #endif
 
@@ -600,11 +602,16 @@ static int set_mouse( const int button_index, const int button_state,
         return( -1);
     pt.x = x;
     pt.y = y;
-    if( button_index == -1)         /* mouse moved,  no button */
-        n_key_mouse_to_add = 1;
+    memset(&SP->mouse_status, 0, sizeof(MOUSE_STATUS));
+    if( button_state == BUTTON_MOVED)
+    {
+        if( button_index < 0)
+            SP->mouse_status.changes = PDC_MOUSE_POSITION;
+         else
+            SP->mouse_status.changes = PDC_MOUSE_MOVED | (1 << button_index);
+    }
     else
     {
-        memset(&SP->mouse_status, 0, sizeof(MOUSE_STATUS));
         if( button_index < PDC_MAX_MOUSE_BUTTONS)
         {
             SP->mouse_status.button[button_index] = (short)button_state;
@@ -652,15 +659,8 @@ static int set_mouse( const int button_index, const int button_state,
                     SP->mouse_status.changes |= PDC_MOUSE_WHEEL_LEFT;
                 }
              }
-                        /* I think it may be that for wheel events,  we   */
-                        /* return x = y = -1,  rather than getting the    */
-                        /* actual mouse position.  I don't like this, but */
-                        /* I like messing up existing apps even less.     */
-            pt.x = pt.y = -1;
         }
     }
-    if( button_state == BUTTON_MOVED)
-        SP->mouse_status.changes |= (button_index >= 0 ? PDC_MOUSE_MOVED : PDC_MOUSE_POSITION);
     SP->mouse_status.x = pt.x;
     SP->mouse_status.y = pt.y;
     {
@@ -882,7 +882,7 @@ PDC_argv,  and will be used instead of GetCommandLine.
 #ifdef __CYGWIN__
                      /* Can't lowercase Unicode text in Cygwin */
    #define my_tcslwr
-#elif defined _MSC_VER
+#elif defined( _MSC_VER ) || defined( __WATCOMC__ )
    #define my_tcslwr   _wcslwr
 #else
    #define my_tcslwr   wcslwr
@@ -1021,20 +1021,26 @@ static void get_app_name( TCHAR *buff, const size_t buff_size, const bool includ
     my_tcslwr( buff + 1);
 }
 
+/* Ensure compatibility with old compilers that don't support 64-bit targets. */
+#if !defined(_BASETSD_H_) && !defined(_BASETSD_H)
+#define LONG_PTR LONG
+#endif
+
+static BOOL CALLBACK get_app_icon_callback(HMODULE hModule, LPCTSTR lpszType,
+                                           LPTSTR lpszName, LONG_PTR lParam)
+{
+    *((HICON *) lParam) = LoadIcon(hModule, lpszName);
+    return FALSE; /* stop enumeration after first icon */
+}
+
 /* This function extracts the first icon from the executable that is
 executing this DLL */
 
-INLINE HICON get_app_icon( )
+INLINE HICON get_app_icon( HANDLE hModule)
 {
-#ifdef PDC_WIDE
-    wchar_t filename[MAX_PATH];
-#else
-    char filename[MAX_PATH];
-#endif
-
     HICON icon = NULL;
-    if ( GetModuleFileName( NULL, filename, sizeof(filename) ) != 0 )
-       icon = ExtractIcon( 0, filename, 0 );
+    EnumResourceNames(hModule, RT_GROUP_ICON,
+                      get_app_icon_callback, (LONG_PTR) &icon);
     return icon;
 }
 
@@ -1162,6 +1168,7 @@ static void adjust_font_size( const int font_size_change)
 #define WM_CHOOSE_FONT        (WM_USER + 6)
 
 static int add_resize_key = 1;
+static int resize_limits_set = 0;
 
 /*man-start**************************************************************
 
@@ -1197,6 +1204,7 @@ void PDC_set_resize_limits( const int new_min_lines, const int new_max_lines,
     max_lines = max( new_max_lines, min_lines);
     min_cols = max( new_min_cols, 2);
     max_cols = max( new_max_cols, min_cols);
+    resize_limits_set = 1;
 }
 
       /* The screen should hold the characters (PDC_cxChar * n_default_columns */
@@ -1267,15 +1275,18 @@ INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
         {
             extern int PDC_font_size;
             int x = -1, y = -1, bytes_read = 0;
+            int minl = 0, maxl = 0, minc = 0, maxc = 0;
 
             my_stscanf( data, _T( "%dx%d,%d,%d,%d,%d;%d,%d,%d,%d:%n"),
                              &x, &y, &PDC_font_size,
                              xloc, yloc, menu_shown,
-                             &min_lines, &max_lines,
-                             &min_cols, &max_cols,
+                             &minl, &maxl,
+                             &minc, &maxc,
                              &bytes_read);
             if( bytes_read > 0 && data[bytes_read - 1] == ':')
                my_tcscpy( PDC_font_name, data + bytes_read);
+            if ( !resize_limits_set)
+                PDC_set_resize_limits(minl, maxl, minc, maxc);
             if( n_cols)
                 *n_cols = x;
             if( n_rows)
@@ -1724,9 +1735,7 @@ static int add_mouse( int button, const int action, const int x, const int y)
    if( action == BUTTON_MOVED)
    {
        int i;
-#ifdef TEMP_REMOVE
        bool report_this_move = FALSE;
-#endif
 
        if( !actually_moved)     /* have to move to a new character cell, */
            return( -1);         /* not just a new pixel */
@@ -1736,16 +1745,18 @@ static int add_mouse( int button, const int action, const int x, const int y)
                button = i;
        if( button == -1 && !(SP->_trap_mbe & REPORT_MOUSE_POSITION))
            return( -1);
-#ifdef TEMP_REMOVE
-       if( (SP->_trap_mbe & REPORT_MOUSE_POSITION)
-               || (button == 1 && (SP->_trap_mbe & BUTTON1_MOVED))
+       if(        (button == 1 && (SP->_trap_mbe & BUTTON1_MOVED))
                || (button == 2 && (SP->_trap_mbe & BUTTON2_MOVED))
                || (button == 3 && (SP->_trap_mbe & BUTTON3_MOVED)))
            report_this_move = TRUE;
+       else if( SP->_trap_mbe & REPORT_MOUSE_POSITION)
+           {
+           report_this_move = TRUE;
+           button = 0;
+           }
        debug_printf( "Move button %d, (%d %d) : %d\n", button, x, y, report_this_move);
        if( !report_this_move)
            return( -1);
-#endif
    }
 
    if( !within_timeout || action == BUTTON_MOVED)
@@ -1846,15 +1857,19 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         return 0 ;
 
     case WM_MOUSEWHEEL:
-        debug_printf( "Mouse wheel: %x %lx\n", wParam, lParam);
-        modified_key_to_return = 0;
-        set_mouse( VERTICAL_WHEEL_EVENT, (short)( HIWORD(wParam)), 0, 0);
-        break;
-
     case WM_MOUSEHWHEEL:
-        debug_printf( "Mouse horiz wheel: %x %lx\n", wParam, lParam);
-        modified_key_to_return = 0;
-        set_mouse( HORIZONTAL_WHEEL_EVENT, (short)( HIWORD(wParam)), 0, 0);
+        {
+            POINT pt;
+
+            pt.x = LOWORD( lParam);
+            pt.y = HIWORD( lParam);
+            ScreenToClient( hwnd, &pt);
+            debug_printf( "Mouse wheel: %u %x %lx\n", message, wParam, lParam);
+            modified_key_to_return = 0;
+            set_mouse( (message == WM_MOUSEWHEEL)
+                      ? VERTICAL_WHEEL_EVENT : HORIZONTAL_WHEEL_EVENT,
+                      (short)( HIWORD(wParam)), pt.x / PDC_cxChar, pt.y / PDC_cyChar);
+        }
         break;
 
     case WM_MOUSEMOVE:
@@ -1921,10 +1936,7 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
       /* refresh.c.  I'm not entirely sure that this is what ought to be  */
       /* done,  though it does appear to work correctly.                  */
     case WM_PAINT:
-        if( hwnd && curscr )
-        {
-            HandlePaint( hwnd );
-        }
+        HandlePaint( hwnd );
         break;
 
     case WM_KEYUP:
@@ -1967,7 +1979,9 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         if( wParam != TIMER_ID_FOR_BLINKING)
         {
             KillTimer( PDC_hWnd, (int)wParam);
-//          within_timeout = FALSE;
+#if 0 /* checkme */
+            within_timeout = FALSE;
+#endif
         }
         else if( SP && curscr && curscr->_y)
         {
@@ -2027,7 +2041,9 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
            SetCapture( hwnd);
         else
            ReleaseCapture( );
-//      SetTimer( hwnd, 0, SP->mouse_wait, NULL);
+#if 0 /* checkme */
+        SetTimer( hwnd, 0, SP->mouse_wait, NULL);
+#endif
     }
     else
        add_mouse( -1, -1, -1, -1);
@@ -2092,7 +2108,7 @@ the window will still be entirely on-screen.
 These functions entered the Win32 API with Windows 2000.  If
 MONITOR_DEFAULTTONEAREST isn't defined,  we shouldn't try to do this.  */
 
-#ifdef MONITOR_DEFAULTTONEAREST
+#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
 
 static void clip_or_center_rect_to_monitor( LPRECT prc)
 {
@@ -2150,7 +2166,7 @@ INLINE int set_up_window( void)
     /* create the dialog window  */
     WNDCLASS   wndclass ;
     HMENU hMenu;
-    HANDLE hInstance = GetModuleHandleA( NULL);
+    HANDLE hInstance = GetModuleHandle( NULL);
     int n_default_columns = 80;
     int n_default_rows = 25;
     int xsize, ysize, window_style;
@@ -2166,7 +2182,7 @@ INLINE int set_up_window( void)
     originally_focussed_window = GetForegroundWindow( );
     debug_printf( "hInstance %x\nOriginal window %x\n", hInstance, originally_focussed_window);
     /* set the window icon from the icon in the process */
-    icon = get_app_icon();
+    icon = get_app_icon(hInstance);
     if( !icon )
        icon = LoadIcon( NULL, IDI_APPLICATION);
     if( !wndclass_has_been_registered)
@@ -2257,13 +2273,12 @@ INLINE int set_up_window( void)
     ShowWindow (PDC_hWnd,
                     (n_default_columns == -1) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
     debug_printf( "window shown\n");
-    ValidateRect( PDC_hWnd, NULL);       /* don't try repainting */
     UpdateWindow (PDC_hWnd) ;
     debug_printf( "window updated\n");
     SetTimer( PDC_hWnd, TIMER_ID_FOR_BLINKING, 500, NULL);
     debug_printf( "timer set\n");
 
-#ifdef MONITOR_DEFAULTTONEAREST
+#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
     /* if the window is off-screen, move it on screen. */
     clip_or_center_window_to_monitor( PDC_hWnd);
 #endif

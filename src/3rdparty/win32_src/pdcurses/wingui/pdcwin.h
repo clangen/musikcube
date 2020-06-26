@@ -11,12 +11,12 @@
    #endif
 #endif
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 # define _CRT_SECURE_NO_DEPRECATE 1   /* kill nonsense warnings */
 #endif
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 
 #if defined( GS_8BIT_INDICES) && defined( PDC_WIDE)
      /* We only need the 'fallback font' for the wide-char version, */

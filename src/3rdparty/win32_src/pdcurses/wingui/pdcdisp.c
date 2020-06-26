@@ -331,10 +331,9 @@ int PDC_choose_a_new_font( void)
     debug_printf( "In PDC_choose_a_new_font: %d\n", lf.lfHeight);
     memset( &cf, 0, sizeof( CHOOSEFONT));
     cf.lStructSize = sizeof( CHOOSEFONT);
-    cf.Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
+    cf.Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS | CF_FIXEDPITCHONLY | CF_SELECTSCRIPT;
     cf.hwndOwner = PDC_hWnd;
     cf.lpLogFont = &lf;
-    cf.rgbColors = RGB( 0, 0, 0);
     rval = ChooseFont( &cf);
     if( rval)
 #ifdef PDC_WIDE

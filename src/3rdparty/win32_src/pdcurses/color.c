@@ -52,6 +52,11 @@ color
    pair_content() is used to determine what the colors of a given color-
    pair consist of.
 
+   init_extended_pair() and extended_pair_content() use ints for the
+   color pair index and the color values.  These allow a larger number
+   of colors and color pairs to be supported,  eliminating the 32767
+   color and color pair limits.
+
    can_change_color() indicates if the terminal has the capability to
    change the definition of its colors.
 
@@ -61,6 +66,9 @@ color
 
    color_content() reports the current definition of a color in the same
    format as used by init_color().
+
+   init_extended_color() and extended_color_content() use integers for
+   the color index.  This enables us to have more than 32767 colors.
 
    assume_default_colors() and use_default_colors() emulate the ncurses
    extensions of the same names. assume_default_colors(f, b) is
