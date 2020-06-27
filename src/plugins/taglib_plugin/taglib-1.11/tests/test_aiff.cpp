@@ -40,6 +40,7 @@ class TestAIFF : public CppUnit::TestFixture
   CPPUNIT_TEST(testAiffProperties);
   CPPUNIT_TEST(testAiffCProperties);
   CPPUNIT_TEST(testSaveID3v2);
+  CPPUNIT_TEST(testSaveID3v23);
   CPPUNIT_TEST(testDuplicateID3v2);
   CPPUNIT_TEST(testFuzzedFile1);
   CPPUNIT_TEST(testFuzzedFile2);
@@ -51,14 +52,12 @@ public:
   {
     RIFF::AIFF::File f(TEST_FILE_PATH_C("empty.aiff"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(67, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(706, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(1, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->bitsPerSample());
-    CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->sampleWidth());
     CPPUNIT_ASSERT_EQUAL(2941U, f.audioProperties()->sampleFrames());
     CPPUNIT_ASSERT_EQUAL(false, f.audioProperties()->isAiffC());
   }
@@ -67,14 +66,12 @@ public:
   {
     RIFF::AIFF::File f(TEST_FILE_PATH_C("alaw.aifc"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(37, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(355, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(1, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->bitsPerSample());
-    CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->sampleWidth());
     CPPUNIT_ASSERT_EQUAL(1622U, f.audioProperties()->sampleFrames());
     CPPUNIT_ASSERT_EQUAL(true, f.audioProperties()->isAiffC());
     CPPUNIT_ASSERT_EQUAL(ByteVector("ALAW"), f.audioProperties()->compressionType());
@@ -106,6 +103,29 @@ public:
     {
       RIFF::AIFF::File f(newname.c_str());
       CPPUNIT_ASSERT(!f.hasID3v2Tag());
+    }
+  }
+
+  void testSaveID3v23()
+  {
+    ScopedFileCopy copy("empty", ".aiff");
+    string newname = copy.fileName();
+
+    String xxx = ByteVector(254, 'X');
+    {
+      RIFF::AIFF::File f(newname.c_str());
+      CPPUNIT_ASSERT_EQUAL(false, f.hasID3v2Tag());
+
+      f.tag()->setTitle(xxx);
+      f.tag()->setArtist("Artist A");
+      f.save(ID3v2::v3);
+      CPPUNIT_ASSERT_EQUAL(true, f.hasID3v2Tag());
+    }
+    {
+      RIFF::AIFF::File f2(newname.c_str());
+      CPPUNIT_ASSERT_EQUAL((unsigned int)3, f2.tag()->header()->majorVersion());
+      CPPUNIT_ASSERT_EQUAL(String("Artist A"), f2.tag()->artist());
+      CPPUNIT_ASSERT_EQUAL(xxx, f2.tag()->title());
     }
   }
 

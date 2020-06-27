@@ -340,7 +340,7 @@ namespace TagLib {
      * \deprecated
      */
      // BIC: remove
-    bool isNull() const;
+    TAGLIB_DEPRECATED bool isNull() const;
 
     /*!
      * Returns a ByteVector containing the string's data.  If \a t is Latin1 or
@@ -525,7 +525,7 @@ namespace TagLib {
      * \deprecated
      */
      // BIC: remove
-    static String null;
+    TAGLIB_DEPRECATED static String null;
 
   protected:
     /*!
@@ -536,6 +536,13 @@ namespace TagLib {
     void detach();
 
   private:
+    /*!
+     * \deprecated This variable is no longer used, but NEVER remove this. It
+     * may lead to a linkage error.
+     */
+     // BIC: remove
+    TAGLIB_DEPRECATED static const Type WCharByteOrder;
+
     class StringPrivate;
     StringPrivate *d;
   };

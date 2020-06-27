@@ -253,7 +253,7 @@ void Ogg::File::writePacket(unsigned int i, const ByteVector &packet)
   ByteVectorList packets = firstPage->packets();
   packets[i - firstPage->firstPacketIndex()] = packet;
 
-  if(firstPage != lastPage && lastPage->packetCount() > 2) {
+  if(firstPage != lastPage && lastPage->packetCount() > 1) {
     ByteVectorList lastPagePackets = lastPage->packets();
     lastPagePackets.erase(lastPagePackets.begin());
     packets.append(lastPagePackets);

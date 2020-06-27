@@ -174,6 +174,11 @@ namespace TagLib {
      */
     Map<Key, T> &operator=(const Map<Key, T> &m);
 
+    /*!
+     * Exchanges the content of this map by the content of \a m.
+     */
+    void swap(Map<Key, T> &m);
+
   protected:
     /*
      * If this List is being shared via implicit sharing, do a deep copy of the

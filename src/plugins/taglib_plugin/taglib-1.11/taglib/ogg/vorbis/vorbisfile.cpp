@@ -28,9 +28,9 @@
 #include <tstring.h>
 #include <tdebug.h>
 #include <tpropertymap.h>
+#include <tagutils.h>
 
 #include "vorbisfile.h"
-
 
 using namespace TagLib;
 
@@ -57,6 +57,18 @@ namespace TagLib {
    * an Ogg stream.  0x03 indicates the comment header.
    */
   static const char vorbisCommentHeaderID[] = { 0x03, 'v', 'o', 'r', 'b', 'i', 's', 0 };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// static members
+////////////////////////////////////////////////////////////////////////////////
+
+bool Vorbis::File::isSupported(IOStream *stream)
+{
+  // An Ogg Vorbis file has IDs "OggS" and "\x01vorbis" somewhere.
+
+  const ByteVector buffer = Utils::readHeader(stream, bufferSize(), false);
+  return (buffer.find("OggS") >= 0 && buffer.find("\x01vorbis") >= 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +121,7 @@ bool Vorbis::File::save()
   ByteVector v(vorbisCommentHeaderID);
 
   if(!d->comment)
-    d->comment = new Ogg::XiphComment;
+    d->comment = new Ogg::XiphComment();
   v.append(d->comment->render());
 
   setPacket(1, v);

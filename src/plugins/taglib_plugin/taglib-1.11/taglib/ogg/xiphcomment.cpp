@@ -261,10 +261,14 @@ bool Ogg::XiphComment::checkKey(const String &key)
 {
   if(key.size() < 1)
     return false;
-  for(String::ConstIterator it = key.begin(); it != key.end(); it++)
-      // forbid non-printable, non-ascii, '=' (#61) and '~' (#126)
-      if (*it < 32 || *it >= 128 || *it == 61 || *it == 126)
+
+  // A key may consist of ASCII 0x20 through 0x7D, 0x3D ('=') excluded.
+
+  for(String::ConstIterator it = key.begin(); it != key.end(); it++) {
+      if(*it < 0x20 || *it > 0x7D || *it == 0x3D)
         return false;
+  }
+
   return true;
 }
 
@@ -275,11 +279,18 @@ String Ogg::XiphComment::vendorID() const
 
 void Ogg::XiphComment::addField(const String &key, const String &value, bool replace)
 {
+  if(!checkKey(key)) {
+    debug("Ogg::XiphComment::addField() - Invalid key. Field not added.");
+    return;
+  }
+
+  const String upperKey = key.upper();
+
   if(replace)
-    removeFields(key.upper());
+    removeFields(upperKey);
 
   if(!key.isEmpty() && !value.isEmpty())
-    d->fieldListMap[key.upper()].append(value);
+    d->fieldListMap[upperKey].append(value);
 }
 
 void Ogg::XiphComment::removeField(const String &key, const String &value)
@@ -436,85 +447,69 @@ void Ogg::XiphComment::parse(const ByteVector &data)
     const unsigned int commentLength = data.toUInt(pos, false);
     pos += 4;
 
-    ByteVector entry = data.mid(pos, commentLength);
-
+    const ByteVector entry = data.mid(pos, commentLength);
     pos += commentLength;
 
     // Don't go past data end
+
     if(pos > data.size())
       break;
 
-    // Handle Pictures separately
-    if(entry.startsWith("METADATA_BLOCK_PICTURE=")) {
-
-      // We need base64 encoded data including padding
-      if((entry.size() - 23) > 3 && ((entry.size() - 23) % 4) == 0) {
-
-        // Decode base64 picture data
-        ByteVector picturedata = ByteVector::fromBase64(entry.mid(23));
-        if(picturedata.size()) {
-
-          // Decode Flac Picture
-          FLAC::Picture * picture = new FLAC::Picture();
-          if(picture->parse(picturedata)) {
-
-            d->pictureList.append(picture);
-
-            // continue to next field
-            continue;
-          }
-          else {
-            delete picture;
-            debug("Failed to decode FlacPicture block");
-          }
-        }
-        else {
-          debug("Failed to decode base64 encoded data");
-        }
-      }
-      else {
-        debug("Invalid base64 encoded data");
-      }
-    }
-
-    // Handle old picture standard
-    if(entry.startsWith("COVERART=")) {
-
-      if((entry.size() - 9) > 3 && ((entry.size() - 9) % 4) == 0) {
-
-        // Decode base64 picture data
-        ByteVector picturedata = ByteVector::fromBase64(entry.mid(9));
-        if (picturedata.size()) {
-
-          // Assume it's some type of image file
-          FLAC::Picture * picture = new FLAC::Picture();
-          picture->setData(picturedata);
-          picture->setMimeType("image/");
-          picture->setType(FLAC::Picture::Other);
-          d->pictureList.append(picture);
-
-          // continue to next field
-          continue;
-        }
-        else {
-          debug("Failed to decode base64 encoded data");
-        }
-      }
-      else {
-        debug("Invalid base64 encoded data");
-      }
-    }
-
     // Check for field separator
-    int sep = entry.find('=');
+
+    const int sep = entry.find('=');
     if(sep < 1) {
-      debug("Discarding invalid comment field.");
+      debug("Ogg::XiphComment::parse() - Discarding a field. Separator not found.");
       continue;
     }
 
-    // Parse key and value
-    String key = String(entry.mid(0, sep), String::UTF8);
-    String value = String(entry.mid(sep + 1), String::UTF8);
-    addField(key, value, false);
+    // Parse the key
+
+    const String key = String(entry.mid(0, sep), String::UTF8).upper();
+    if(!checkKey(key)) {
+      debug("Ogg::XiphComment::parse() - Discarding a field. Invalid key.");
+      continue;
+    }
+
+    if(key == "METADATA_BLOCK_PICTURE" || key == "COVERART") {
+
+      // Handle Pictures separately
+
+      const ByteVector picturedata = ByteVector::fromBase64(entry.mid(sep + 1));
+      if(picturedata.isEmpty()) {
+        debug("Ogg::XiphComment::parse() - Discarding a field. Invalid base64 data");
+        continue;
+      }
+
+      if(key[0] == L'M') {
+
+        // Decode FLAC Picture
+
+        FLAC::Picture * picture = new FLAC::Picture();
+        if(picture->parse(picturedata)) {
+          d->pictureList.append(picture);
+        }
+        else {
+          delete picture;
+          debug("Ogg::XiphComment::parse() - Failed to decode FLAC Picture block");
+        }
+      }
+      else {
+
+        // Assume it's some type of image file
+
+        FLAC::Picture * picture = new FLAC::Picture();
+        picture->setData(picturedata);
+        picture->setMimeType("image/");
+        picture->setType(FLAC::Picture::Other);
+        d->pictureList.append(picture);
+      }
+    }
+    else {
+
+      // Parse the text
+
+      addField(key, String(entry.mid(sep + 1), String::UTF8), false);
+    }
   }
 }

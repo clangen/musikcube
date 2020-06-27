@@ -34,76 +34,60 @@ if(NOT ${SIZEOF_DOUBLE} EQUAL 8)
   message(FATAL_ERROR "TagLib requires that double is 64-bit wide.")
 endif()
 
-# Enable check_cxx_source_compiles() to work with Boost "header-only" libraries.
-
-find_package(Boost)
-if(Boost_FOUND)
-  set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES};${Boost_INCLUDE_DIRS}")
-endif()
-
 # Determine which kind of atomic operations your compiler supports.
 
 check_cxx_source_compiles("
   #include <atomic>
   int main() {
-    std::atomic<unsigned int> x;
-    x.fetch_add(1);
-    x.fetch_sub(1);
+    std::atomic_int x(1);
+    ++x;
+    --x;
     return 0;
   }
 " HAVE_STD_ATOMIC)
 
 if(NOT HAVE_STD_ATOMIC)
-  find_package(Boost COMPONENTS atomic)
-  if(Boost_ATOMIC_FOUND)
-    set(HAVE_BOOST_ATOMIC 1)
-  else()
-    set(HAVE_BOOST_ATOMIC 0)
-  endif()
+  check_cxx_source_compiles("
+    int main() {
+      volatile int x;
+      __sync_add_and_fetch(&x, 1);
+      int y = __sync_sub_and_fetch(&x, 1);
+      return 0;
+    }
+  " HAVE_GCC_ATOMIC)
 
-  if(NOT HAVE_BOOST_ATOMIC)
+  if(NOT HAVE_GCC_ATOMIC)
     check_cxx_source_compiles("
+      #include <libkern/OSAtomic.h>
       int main() {
-        volatile int x;
-        __sync_add_and_fetch(&x, 1);
-        int y = __sync_sub_and_fetch(&x, 1);
+        volatile int32_t x;
+        OSAtomicIncrement32Barrier(&x);
+        int32_t y = OSAtomicDecrement32Barrier(&x);
         return 0;
       }
-    " HAVE_GCC_ATOMIC)
+    " HAVE_MAC_ATOMIC)
 
-    if(NOT HAVE_GCC_ATOMIC)
+    if(NOT HAVE_MAC_ATOMIC)
       check_cxx_source_compiles("
-        #include <libkern/OSAtomic.h>
+        #include <windows.h>
         int main() {
-          volatile int32_t x;
-          OSAtomicIncrement32Barrier(&x);
-          int32_t y = OSAtomicDecrement32Barrier(&x);
+          volatile LONG x;
+          InterlockedIncrement(&x);
+          LONG y = InterlockedDecrement(&x);
           return 0;
         }
-      " HAVE_MAC_ATOMIC)
+      " HAVE_WIN_ATOMIC)
 
-      if(NOT HAVE_MAC_ATOMIC)
+      if(NOT HAVE_WIN_ATOMIC)
         check_cxx_source_compiles("
-          #include <windows.h>
+          #include <ia64intrin.h>
           int main() {
-            volatile LONG x;
-            InterlockedIncrement(&x);
-            LONG y = InterlockedDecrement(&x);
+            volatile int x;
+            __sync_add_and_fetch(&x, 1);
+            int y = __sync_sub_and_fetch(&x, 1);
             return 0;
           }
-        " HAVE_WIN_ATOMIC)
-
-        if(NOT HAVE_WIN_ATOMIC)
-          check_cxx_source_compiles("
-            #include <ia64intrin.h>
-            int main() {
-              volatile int x;
-              __sync_add_and_fetch(&x, 1);
-              int y = __sync_sub_and_fetch(&x, 1);
-              return 0;
-            }
-          " HAVE_IA64_ATOMIC)
-        endif()
+        " HAVE_IA64_ATOMIC)
       endif()
     endif()
   endif()
@@ -112,69 +96,57 @@ endif()
 # Determine which kind of byte swap functions your compiler supports.
 
 check_cxx_source_compiles("
-  #include <boost/endian/conversion.hpp>
   int main() {
-    boost::endian::endian_reverse(static_cast<uint16_t>(1));
-    boost::endian::endian_reverse(static_cast<uint32_t>(1));
-    boost::endian::endian_reverse(static_cast<uint64_t>(1));
+    __builtin_bswap16(0);
+    __builtin_bswap32(0);
+    __builtin_bswap64(0);
     return 0;
   }
-" HAVE_BOOST_BYTESWAP)
+" HAVE_GCC_BYTESWAP)
 
-if(NOT HAVE_BOOST_BYTESWAP)
+if(NOT HAVE_GCC_BYTESWAP)
   check_cxx_source_compiles("
+    #include <byteswap.h>
     int main() {
-      __builtin_bswap16(0);
-      __builtin_bswap32(0);
-      __builtin_bswap64(0);
+      __bswap_16(0);
+      __bswap_32(0);
+      __bswap_64(0);
       return 0;
     }
-  " HAVE_GCC_BYTESWAP)
+  " HAVE_GLIBC_BYTESWAP)
 
-  if(NOT HAVE_GCC_BYTESWAP)
+  if(NOT HAVE_GLIBC_BYTESWAP)
     check_cxx_source_compiles("
-      #include <byteswap.h>
+      #include <stdlib.h>
       int main() {
-        __bswap_16(0);
-        __bswap_32(0);
-        __bswap_64(0);
+        _byteswap_ushort(0);
+        _byteswap_ulong(0);
+        _byteswap_uint64(0);
         return 0;
       }
-    " HAVE_GLIBC_BYTESWAP)
+    " HAVE_MSC_BYTESWAP)
 
-    if(NOT HAVE_GLIBC_BYTESWAP)
+    if(NOT HAVE_MSC_BYTESWAP)
       check_cxx_source_compiles("
-        #include <stdlib.h>
+        #include <libkern/OSByteOrder.h>
         int main() {
-          _byteswap_ushort(0);
-          _byteswap_ulong(0);
-          _byteswap_uint64(0);
+          OSSwapInt16(0);
+          OSSwapInt32(0);
+          OSSwapInt64(0);
           return 0;
         }
-      " HAVE_MSC_BYTESWAP)
+      " HAVE_MAC_BYTESWAP)
 
-      if(NOT HAVE_MSC_BYTESWAP)
+      if(NOT HAVE_MAC_BYTESWAP)
         check_cxx_source_compiles("
-          #include <libkern/OSByteOrder.h>
+          #include <sys/endian.h>
           int main() {
-            OSSwapInt16(0);
-            OSSwapInt32(0);
-            OSSwapInt64(0);
+            swap16(0);
+            swap32(0);
+            swap64(0);
             return 0;
           }
-        " HAVE_MAC_BYTESWAP)
-
-        if(NOT HAVE_MAC_BYTESWAP)
-          check_cxx_source_compiles("
-            #include <sys/endian.h>
-            int main() {
-              swap16(0);
-              swap32(0);
-              swap64(0);
-              return 0;
-            }
-          " HAVE_OPENBSD_BYTESWAP)
-        endif()
+        " HAVE_OPENBSD_BYTESWAP)
       endif()
     endif()
   endif()
@@ -225,15 +197,6 @@ if(NOT ZLIB_SOURCE)
   else()
     set(HAVE_ZLIB 0)
   endif()
-
-  if(NOT HAVE_ZLIB)
-    find_package(Boost COMPONENTS iostreams zlib)
-    if(Boost_IOSTREAMS_FOUND AND Boost_ZLIB_FOUND)
-      set(HAVE_BOOST_ZLIB 1)
-    else()
-      set(HAVE_BOOST_ZLIB 0)
-    endif()
-  endif()
 endif()
 
 # Determine whether CppUnit is installed.
@@ -246,3 +209,7 @@ if(BUILD_TESTS AND NOT BUILD_SHARED_LIBS)
   endif()
 endif()
 
+# Detect WinRT mode
+if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
+	set(PLATFORM WINRT 1)
+endif()

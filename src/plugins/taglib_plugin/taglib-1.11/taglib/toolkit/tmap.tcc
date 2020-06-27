@@ -48,9 +48,9 @@ public:
 };
 
 template <class Key, class T>
-Map<Key, T>::Map()
+Map<Key, T>::Map() :
+  d(new MapPrivate<Key, T>())
 {
-  d = new MapPrivate<Key, T>;
 }
 
 template <class Key, class T>
@@ -152,7 +152,7 @@ Map<Key, T> &Map<Key,T>::erase(const Key &key)
 template <class Key, class T>
 unsigned int Map<Key, T>::size() const
 {
-  return d->map.size();
+  return static_cast<unsigned int>(d->map.size());
 }
 
 template <class Key, class T>
@@ -171,14 +171,16 @@ T &Map<Key, T>::operator[](const Key &key)
 template <class Key, class T>
 Map<Key, T> &Map<Key, T>::operator=(const Map<Key, T> &m)
 {
-  if(&m == this)
-    return *this;
-
-  if(d->deref())
-    delete(d);
-  d = m.d;
-  d->ref();
+  Map<Key, T>(m).swap(*this);
   return *this;
+}
+
+template <class Key, class T>
+void Map<Key, T>::swap(Map<Key, T> &m)
+{
+  using std::swap;
+
+  swap(d, m.d);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

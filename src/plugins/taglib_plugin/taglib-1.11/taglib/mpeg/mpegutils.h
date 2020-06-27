@@ -41,17 +41,17 @@ namespace TagLib
        * MPEG frames can be recognized by the bit pattern 11111111 111, so the
        * first byte is easy to check for, however checking to see if the second byte
        * starts with \e 111 is a bit more tricky, hence these functions.
+       *
+       * \note This does not check the length of the vector, since this is an
+       * internal utility function.
        */
-      inline bool firstSyncByte(unsigned char byte)
+      inline bool isFrameSync(const ByteVector &bytes, unsigned int offset = 0)
       {
-        return (byte == 0xFF);
-      }
+        // 0xFF in the second byte is possible in theory, but it's very unlikely.
 
-      inline bool secondSynchByte(unsigned char byte)
-      {
-        // 0xFF is possible in theory, but it's very unlikely be a header.
-
-        return (byte != 0xFF && ((byte & 0xE0) == 0xE0));
+        const unsigned char b1 = bytes[offset + 0];
+        const unsigned char b2 = bytes[offset + 1];
+        return (b1 == 0xFF && b2 != 0xFF && (b2 & 0xE0) == 0xE0);
       }
 
     }

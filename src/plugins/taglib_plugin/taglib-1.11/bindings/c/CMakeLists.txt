@@ -21,7 +21,14 @@ set(tag_c_HDRS tag_c.h)
 add_library(tag_c tag_c.cpp ${tag_c_HDRS})
 
 target_link_libraries(tag_c tag)
-set_target_properties(tag_c PROPERTIES PUBLIC_HEADER "${tag_c_HDRS}")
+set_target_properties(tag_c PROPERTIES
+  PUBLIC_HEADER "${tag_c_HDRS}"
+  DEFINE_SYMBOL MAKE_TAGLIB_LIB
+)
+if(VISIBILITY_HIDDEN)
+	set_target_properties(tag_c PROPERTIES C_VISIBILITY_PRESET hidden
+	)
+endif()
 if(BUILD_FRAMEWORK)
   set_target_properties(tag_c PROPERTIES FRAMEWORK TRUE)
 endif()

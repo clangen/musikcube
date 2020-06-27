@@ -79,10 +79,9 @@ public:
   std::vector<Tag *> tags;
 };
 
-TagUnion::TagUnion(Tag *first, Tag *second, Tag *third)
+TagUnion::TagUnion(Tag *first, Tag *second, Tag *third) :
+  d(new TagUnionPrivate())
 {
-  d = new TagUnionPrivate;
-
   d->tags[0] = first;
   d->tags[1] = second;
   d->tags[2] = third;

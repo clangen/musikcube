@@ -56,8 +56,8 @@ class PublicFrame : public ID3v2::Frame
   public:
     PublicFrame() : ID3v2::Frame(ByteVector("XXXX\0\0\0\0\0\0", 10)) {}
     String readStringField(const ByteVector &data, String::Type encoding,
-                           int *positon = 0)
-      { return ID3v2::Frame::readStringField(data, encoding, positon); }
+                           int *position = 0)
+      { return ID3v2::Frame::readStringField(data, encoding, position); }
     virtual String toString() const { return String(); }
     virtual void parseFields(const ByteVector &) {}
     virtual ByteVector renderFields() const { return ByteVector(); }
@@ -109,6 +109,8 @@ class TestID3v2 : public CppUnit::TestFixture
   CPPUNIT_TEST(testW000);
   CPPUNIT_TEST(testPropertyInterface);
   CPPUNIT_TEST(testPropertyInterface2);
+  CPPUNIT_TEST(testPropertiesMovement);
+  CPPUNIT_TEST(testPropertyGrouping);
   CPPUNIT_TEST(testDeleteFrame);
   CPPUNIT_TEST(testSaveAndStripID3v1ShouldNotAddFrameFromID3v1ToId3v2);
   CPPUNIT_TEST(testParseChapterFrame);
@@ -118,6 +120,7 @@ class TestID3v2 : public CppUnit::TestFixture
   CPPUNIT_TEST(testShrinkPadding);
   CPPUNIT_TEST(testEmptyFrame);
   CPPUNIT_TEST(testDuplicateTags);
+  CPPUNIT_TEST(testParseTOCFrameWithManyChildren);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -142,7 +145,7 @@ public:
 
     MPEG::File file(newname.c_str());
     file.ID3v2Tag(true)->addFrame(f);
-    file.save(MPEG::File::ID3v2, true, 3);
+    file.save(MPEG::File::ID3v2, File::StripOthers, ID3v2::v3);
     CPPUNIT_ASSERT_EQUAL(true, file.hasID3v2Tag());
 
     ByteVector data = f->render();
@@ -163,7 +166,7 @@ public:
 
     MPEG::File file(copy.fileName().c_str());
     file.ID3v2Tag(true)->addFrame(f);
-    file.save(MPEG::File::ID3v2, true, 3);
+    file.save(MPEG::File::ID3v2, File::StripOthers, ID3v2::v3);
     CPPUNIT_ASSERT(file.hasID3v2Tag());
 
     ByteVector data = f->render();
@@ -248,8 +251,10 @@ public:
                                  "\x01"
                                  "d\x00"
                                  "\x00", 14);
+    ID3v2::Header header;
+    header.setMajorVersion(2);
     ID3v2::AttachedPictureFrame *frame =
-        dynamic_cast<TagLib::ID3v2::AttachedPictureFrame*>(factory->createFrame(data, (unsigned int)2));
+      dynamic_cast<TagLib::ID3v2::AttachedPictureFrame *>(factory->createFrame(data, &header));
 
     CPPUNIT_ASSERT(frame);
     CPPUNIT_ASSERT_EQUAL(String("image/jpeg"), frame->mimeType());
@@ -269,8 +274,10 @@ public:
                                  "\x01"
                                  "d\x00"
                                  "\x00", 14);
+    ID3v2::Header header;
+    header.setMajorVersion(2);
     ID3v2::UnknownFrame *frame =
-        dynamic_cast<TagLib::ID3v2::UnknownFrame*>(factory->createFrame(data, (unsigned int)2));
+      dynamic_cast<TagLib::ID3v2::UnknownFrame*>(factory->createFrame(data, &header));
 
     CPPUNIT_ASSERT(frame);
 
@@ -662,8 +669,10 @@ public:
                                  "\x00\x00"             // Frame flags
                                  "\x00"                 // Encoding
                                  "(22)Death Metal", 26);     // Text
+    ID3v2::Header header;
+    header.setMajorVersion(3);
     ID3v2::TextIdentificationFrame *frame =
-        dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, (unsigned int)3));
+      dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, &header));
     CPPUNIT_ASSERT_EQUAL((unsigned int)1, frame->fieldList().size());
     CPPUNIT_ASSERT_EQUAL(String("Death Metal"), frame->fieldList()[0]);
 
@@ -681,8 +690,10 @@ public:
                                  "\x00\x00"             // Frame flags
                                  "\x00"                 // Encoding
                                  "(4)Eurodisco", 23);   // Text
+    ID3v2::Header header;
+    header.setMajorVersion(3);
     ID3v2::TextIdentificationFrame *frame =
-        dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, (unsigned int)3));
+      dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, &header));
     CPPUNIT_ASSERT_EQUAL((unsigned int)2, frame->fieldList().size());
     CPPUNIT_ASSERT_EQUAL(String("4"), frame->fieldList()[0]);
     CPPUNIT_ASSERT_EQUAL(String("Eurodisco"), frame->fieldList()[1]);
@@ -700,8 +711,9 @@ public:
                                  "\x00\x00"               // Frame flags
                                  "\0"                   // Encoding
                                  "14\0Eurodisco", 23);     // Text
+    ID3v2::Header header;
     ID3v2::TextIdentificationFrame *frame =
-        dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, (unsigned int)4));
+      dynamic_cast<TagLib::ID3v2::TextIdentificationFrame*>(factory->createFrame(data, &header));
     CPPUNIT_ASSERT_EQUAL((unsigned int)2, frame->fieldList().size());
     CPPUNIT_ASSERT_EQUAL(String("14"), frame->fieldList()[0]);
     CPPUNIT_ASSERT_EQUAL(String("Eurodisco"), frame->fieldList()[1]);
@@ -753,7 +765,7 @@ public:
       foo.ID3v2Tag()->addFrame(new ID3v2::TextIdentificationFrame("TSOT", String::Latin1));
       foo.ID3v2Tag()->addFrame(new ID3v2::TextIdentificationFrame("TSST", String::Latin1));
       foo.ID3v2Tag()->addFrame(new ID3v2::TextIdentificationFrame("TSOP", String::Latin1));
-      foo.save(MPEG::File::AllTags, true, 3);
+      foo.save(MPEG::File::AllTags, File::StripOthers, ID3v2::v3);
     }
     {
       MPEG::File bar(newname.c_str());
@@ -920,6 +932,82 @@ public:
     CPPUNIT_ASSERT_EQUAL(frame6, ID3v2::UniqueFileIdentifierFrame::findByOwner(&tag, "http://musicbrainz.org"));
   }
 
+  void testPropertiesMovement()
+  {
+    ID3v2::Tag tag;
+    ID3v2::TextIdentificationFrame *frameMvnm = new ID3v2::TextIdentificationFrame("MVNM");
+    frameMvnm->setText("Movement Name");
+    tag.addFrame(frameMvnm);
+
+    ID3v2::TextIdentificationFrame *frameMvin = new ID3v2::TextIdentificationFrame("MVIN");
+    frameMvin->setText("2/3");
+    tag.addFrame(frameMvin);
+
+    PropertyMap properties = tag.properties();
+    CPPUNIT_ASSERT(properties.contains("MOVEMENTNAME"));
+    CPPUNIT_ASSERT(properties.contains("MOVEMENTNUMBER"));
+    CPPUNIT_ASSERT_EQUAL(String("Movement Name"), properties["MOVEMENTNAME"].front());
+    CPPUNIT_ASSERT_EQUAL(String("2/3"), properties["MOVEMENTNUMBER"].front());
+
+    ByteVector frameDataMvnm("MVNM"
+                             "\x00\x00\x00\x0e"
+                             "\x00\x00"
+                             "\x00"
+                             "Movement Name", 24);
+    CPPUNIT_ASSERT_EQUAL(frameDataMvnm, frameMvnm->render());
+    ByteVector frameDataMvin("MVIN"
+                             "\x00\x00\x00\x04"
+                             "\x00\x00"
+                             "\x00"
+                             "2/3", 14);
+    CPPUNIT_ASSERT_EQUAL(frameDataMvin, frameMvin->render());
+
+    ID3v2::FrameFactory *factory = ID3v2::FrameFactory::instance();
+    ID3v2::Header header;
+    ID3v2::TextIdentificationFrame *parsedFrameMvnm =
+      dynamic_cast<ID3v2::TextIdentificationFrame *>(
+        factory->createFrame(frameDataMvnm, &header));
+    ID3v2::TextIdentificationFrame *parsedFrameMvin =
+      dynamic_cast<ID3v2::TextIdentificationFrame *>(
+        factory->createFrame(frameDataMvin, &header));
+    CPPUNIT_ASSERT(parsedFrameMvnm);
+    CPPUNIT_ASSERT(parsedFrameMvin);
+    CPPUNIT_ASSERT_EQUAL(String("Movement Name"), parsedFrameMvnm->toString());
+    CPPUNIT_ASSERT_EQUAL(String("2/3"), parsedFrameMvin->toString());
+
+    tag.addFrame(parsedFrameMvnm);
+    tag.addFrame(parsedFrameMvin);
+  }
+
+  void testPropertyGrouping()
+  {
+    ID3v2::Tag tag;
+    ID3v2::TextIdentificationFrame *frameGrp1 = new ID3v2::TextIdentificationFrame("GRP1");
+    frameGrp1->setText("Grouping");
+    tag.addFrame(frameGrp1);
+
+    PropertyMap properties = tag.properties();
+    CPPUNIT_ASSERT(properties.contains("GROUPING"));
+    CPPUNIT_ASSERT_EQUAL(String("Grouping"), properties["GROUPING"].front());
+
+    ByteVector frameDataGrp1("GRP1"
+                             "\x00\x00\x00\x09"
+                             "\x00\x00"
+                             "\x00"
+                             "Grouping", 19);
+    CPPUNIT_ASSERT_EQUAL(frameDataGrp1, frameGrp1->render());
+
+    ID3v2::FrameFactory *factory = ID3v2::FrameFactory::instance();
+    ID3v2::Header header;
+    ID3v2::TextIdentificationFrame *parsedFrameGrp1 =
+      dynamic_cast<ID3v2::TextIdentificationFrame *>(
+        factory->createFrame(frameDataGrp1, &header));
+    CPPUNIT_ASSERT(parsedFrameGrp1);
+    CPPUNIT_ASSERT_EQUAL(String("Grouping"), parsedFrameGrp1->toString());
+
+    tag.addFrame(parsedFrameGrp1);
+  }
+
   void testDeleteFrame()
   {
     ScopedFileCopy copy("rare_frames", ".mp3");
@@ -955,7 +1043,7 @@ public:
       MPEG::File bar(newname.c_str());
       bar.ID3v2Tag()->removeFrames("TPE1");
       // Should strip ID3v1 here and not add old values to ID3v2 again
-      bar.save(MPEG::File::ID3v2, true);
+      bar.save(MPEG::File::ID3v2, File::StripOthers);
     }
 
     MPEG::File f(newname.c_str());
@@ -1135,15 +1223,15 @@ public:
 
     {
       MPEG::File f(newname.c_str());
-      f.ID3v2Tag()->setTitle(std::wstring(64 * 1024, L'X').c_str());
-      f.save(MPEG::File::ID3v2, true);
+      f.ID3v2Tag()->setTitle(longText(64 * 1024));
+      f.save(MPEG::File::ID3v2, File::StripOthers);
     }
     {
       MPEG::File f(newname.c_str());
       CPPUNIT_ASSERT(f.hasID3v2Tag());
       CPPUNIT_ASSERT_EQUAL(74789L, f.length());
       f.ID3v2Tag()->setTitle("ABCDEFGHIJ");
-      f.save(MPEG::File::ID3v2, true);
+      f.save(MPEG::File::ID3v2, File::StripOthers);
     }
     {
       MPEG::File f(newname.c_str());
@@ -1201,7 +1289,7 @@ public:
       CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
 
       f.ID3v2Tag()->setArtist("Artist A");
-      f.save(MPEG::File::ID3v2, true);
+      f.save(MPEG::File::ID3v2, File::StripOthers);
     }
     {
       MPEG::File f(copy.fileName().c_str());
@@ -1215,6 +1303,12 @@ public:
       CPPUNIT_ASSERT_EQUAL(f.readBlock(2089), audioStream);
 
     }
+  }
+
+  void testParseTOCFrameWithManyChildren()
+  {
+    MPEG::File f(TEST_FILE_PATH_C("toc_many_children.mp3"));
+    CPPUNIT_ASSERT(f.isValid());
   }
 
 };

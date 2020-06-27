@@ -46,7 +46,7 @@ public:
 
 Mod::Properties::Properties(AudioProperties::ReadStyle propertiesStyle) :
   AudioProperties(propertiesStyle),
-  d(new PropertiesPrivate)
+  d(new PropertiesPrivate())
 {
 }
 

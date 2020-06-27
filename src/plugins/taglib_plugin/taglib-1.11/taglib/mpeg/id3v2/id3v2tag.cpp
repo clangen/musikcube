@@ -60,6 +60,7 @@ class ID3v2::Tag::TagPrivate
 {
 public:
   TagPrivate() :
+    factory(0),
     file(0),
     tagOffset(0),
     extendedHeader(0),
@@ -249,13 +250,24 @@ void ID3v2::Tag::setComment(const String &s)
     return;
   }
 
-  if(!d->frameListMap["COMM"].isEmpty())
-    d->frameListMap["COMM"].front()->setText(s);
-  else {
-    CommentsFrame *f = new CommentsFrame(d->factory->defaultTextEncoding());
-    addFrame(f);
-    f->setText(s);
+  const FrameList &comments = d->frameListMap["COMM"];
+
+  if(!comments.isEmpty()) {
+    for(FrameList::ConstIterator it = comments.begin(); it != comments.end(); ++it) {
+      CommentsFrame *frame = dynamic_cast<CommentsFrame *>(*it);
+      if(frame && frame->description().isEmpty()) {
+        (*it)->setText(s);
+        return;
+      }
+    }
+
+    comments.front()->setText(s);
+    return;
   }
+
+  CommentsFrame *f = new CommentsFrame(d->factory->defaultTextEncoding());
+  addFrame(f);
+  f->setText(s);
 }
 
 void ID3v2::Tag::setGenre(const String &s)
@@ -286,7 +298,7 @@ void ID3v2::Tag::setGenre(const String &s)
 
 void ID3v2::Tag::setYear(unsigned int i)
 {
-  if(i <= 0) {
+  if(i == 0) {
     removeFrames("TDRC");
     return;
   }
@@ -295,7 +307,7 @@ void ID3v2::Tag::setYear(unsigned int i)
 
 void ID3v2::Tag::setTrack(unsigned int i)
 {
-  if(i <= 0) {
+  if(i == 0) {
     removeFrames("TRCK");
     return;
   }
@@ -461,7 +473,7 @@ PropertyMap ID3v2::Tag::setProperties(const PropertyMap &origProps)
 
 ByteVector ID3v2::Tag::render() const
 {
-  return render(4);
+  return render(ID3v2::v4);
 }
 
 void ID3v2::Tag::downgradeFrames(FrameList *frames, FrameList *newFrames) const
@@ -568,15 +580,15 @@ void ID3v2::Tag::downgradeFrames(FrameList *frames, FrameList *newFrames) const
 
 ByteVector ID3v2::Tag::render(int version) const
 {
+  return render(version == 3 ? v3 : v4);
+}
+
+ByteVector ID3v2::Tag::render(Version version) const
+{
   // We need to render the "tag data" first so that we have to correct size to
   // render in the tag's header.  The "tag data" -- everything that is included
   // in ID3v2::Header::tagSize() -- includes the extended header, frames and
   // padding, but does not include the tag's header or footer.
-
-  if(version != 3 && version != 4) {
-    debug("Unknown ID3v2 version, using ID3v2.4");
-    version = 4;
-  }
 
   // TODO: Render the extended header.
 
@@ -586,7 +598,7 @@ ByteVector ID3v2::Tag::render(int version) const
   newFrames.setAutoDelete(true);
 
   FrameList frameList;
-  if(version == 4) {
+  if(version == v4) {
     frameList = d->frameList;
   }
   else {
@@ -600,7 +612,7 @@ ByteVector ID3v2::Tag::render(int version) const
   // Loop through the frames rendering them and adding them to the tagData.
 
   for(FrameList::ConstIterator it = frameList.begin(); it != frameList.end(); it++) {
-    (*it)->header()->setVersion(version);
+    (*it)->header()->setVersion(version == v3 ? 3 : 4);
     if((*it)->header()->frameID().size() != 4) {
       debug("An ID3v2 frame of unsupported or unknown type \'"
           + String((*it)->header()->frameID()) + "\' has been discarded");
@@ -618,7 +630,6 @@ ByteVector ID3v2::Tag::render(int version) const
   }
 
   // Compute the amount of padding, and append that to tagData.
-  // TODO: Should be calculated in long long in taglib2.
 
   long originalSize = d->header.tagSize();
   long paddingSize = originalSize - (tagData.size() - Header::size());
@@ -697,7 +708,7 @@ void ID3v2::Tag::read()
     d->file->seek(d->tagOffset + d->header.completeTagSize() + extraSize);
 
     const ByteVector data = d->file->readBlock(Header::size());
-    if(data.size() < Header::size()|| !data.startsWith(Header::fileIdentifier()))
+    if(data.size() < Header::size() || !data.startsWith(Header::fileIdentifier()))
       break;
 
     extraSize += Header(data).completeTagSize();
@@ -723,7 +734,7 @@ void ID3v2::Tag::parse(const ByteVector &origData)
 
   if(d->header.extendedHeader()) {
     if(!d->extendedHeader)
-      d->extendedHeader = new ExtendedHeader;
+      d->extendedHeader = new ExtendedHeader();
     d->extendedHeader->setData(data);
     if(d->extendedHeader->size() <= data.size()) {
       frameDataPosition += d->extendedHeader->size();

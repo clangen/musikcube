@@ -240,7 +240,7 @@ namespace TagLib {
        * \see ID3v2FrameFactory
        * \deprecated This value should be passed in via the constructor
        */
-      void setID3v2FrameFactory(const ID3v2::FrameFactory *factory);
+      TAGLIB_DEPRECATED void setID3v2FrameFactory(const ID3v2::FrameFactory *factory);
 
       /*!
        * Returns the block of data used by FLAC::Properties for parsing the
@@ -248,7 +248,7 @@ namespace TagLib {
        *
        * \deprecated Always returns an empty vector.
        */
-      ByteVector streamInfoData(); // BIC: remove
+      TAGLIB_DEPRECATED ByteVector streamInfoData(); // BIC: remove
 
       /*!
        * Returns the length of the audio-stream, used by FLAC::Properties for
@@ -256,7 +256,7 @@ namespace TagLib {
        *
        * \deprecated Always returns zero.
        */
-      long streamLength();  // BIC: remove
+      TAGLIB_DEPRECATED long streamLength();  // BIC: remove
 
       /*!
        * Returns a list of pictures attached to the FLAC file.
@@ -317,6 +317,15 @@ namespace TagLib {
        * \see ID3v2Tag()
        */
       bool hasID3v2Tag() const;
+
+      /*!
+       * Returns whether or not the given \a stream can be opened as a FLAC
+       * file.
+       *
+       * \note This method is designed to do a quick check.  The result may
+       * not necessarily be correct.
+       */
+      static bool isSupported(IOStream *stream);
 
     private:
       File(const File &);

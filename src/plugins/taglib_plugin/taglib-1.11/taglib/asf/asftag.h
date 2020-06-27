@@ -160,6 +160,7 @@ namespace TagLib {
        * Returns a reference to the item list map.  This is an AttributeListMap of
        * all of the items in the tag.
        */
+      // BIC: return by value
       const AttributeListMap &attributeListMap() const;
 
       /*!

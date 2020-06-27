@@ -34,9 +34,7 @@
 # include <config.h>
 #endif
 
-#if defined(HAVE_BOOST_BYTESWAP)
-# include <boost/endian/conversion.hpp>
-#elif defined(HAVE_MSC_BYTESWAP)
+#if defined(HAVE_MSC_BYTESWAP)
 # include <stdlib.h>
 #elif defined(HAVE_GLIBC_BYTESWAP)
 # include <byteswap.h>
@@ -63,11 +61,7 @@ namespace TagLib
        */
       inline unsigned short byteSwap(unsigned short x)
       {
-#if defined(HAVE_BOOST_BYTESWAP)
-
-        return boost::endian::endian_reverse(static_cast<uint16_t>(x));
-
-#elif defined(HAVE_GCC_BYTESWAP)
+#if defined(HAVE_GCC_BYTESWAP)
 
         return __builtin_bswap16(x);
 
@@ -99,11 +93,7 @@ namespace TagLib
        */
       inline unsigned int byteSwap(unsigned int x)
       {
-#if defined(HAVE_BOOST_BYTESWAP)
-
-        return boost::endian::endian_reverse(static_cast<uint32_t>(x));
-
-#elif defined(HAVE_GCC_BYTESWAP)
+#if defined(HAVE_GCC_BYTESWAP)
 
         return __builtin_bswap32(x);
 
@@ -138,11 +128,7 @@ namespace TagLib
        */
       inline unsigned long long byteSwap(unsigned long long x)
       {
-#if defined(HAVE_BOOST_BYTESWAP)
-
-        return boost::endian::endian_reverse(static_cast<uint64_t>(x));
-
-#elif defined(HAVE_GCC_BYTESWAP)
+#if defined(HAVE_GCC_BYTESWAP)
 
         return __builtin_bswap64(x);
 
@@ -222,23 +208,6 @@ namespace TagLib
       }
 
       /*!
-       * Returns whether the two strings s1 and s2 are equal, ignoring the case of
-       * the characters.
-       *
-       * We took the trouble to define this one here, since there are some
-       * incompatible variations of case insensitive strcmp().
-       */
-      inline bool equalsIgnoreCase(const char *s1, const char *s2)
-      {
-        while(*s1 != '\0' && *s2 != '\0' && ::tolower(*s1) == ::tolower(*s2)) {
-          s1++;
-          s2++;
-        }
-
-        return (*s1 == '\0' && *s2 == '\0');
-      }
-
-      /*!
        * The types of byte order of the running system.
        */
       enum ByteOrder
@@ -250,7 +219,7 @@ namespace TagLib
       };
 
       /*!
-       * Returns the integer byte order of the system.
+       * Returns the byte order of the system.
        */
       inline ByteOrder systemByteOrder()
       {
@@ -261,26 +230,6 @@ namespace TagLib
 
         u.i = 1;
         if(u.c == 1)
-          return LittleEndian;
-        else
-          return BigEndian;
-      }
-
-      /*!
-       * Returns the IEEE754 byte order of the system.
-       */
-      inline ByteOrder floatByteOrder()
-      {
-        union {
-          double d;
-          char   c;
-        } u;
-
-        // 1.0 is stored in memory like 0x3FF0000000000000 in canonical form.
-        // So the first byte is zero if little endian.
-
-        u.d = 1.0;
-        if(u.c == 0)
           return LittleEndian;
         else
           return BigEndian;

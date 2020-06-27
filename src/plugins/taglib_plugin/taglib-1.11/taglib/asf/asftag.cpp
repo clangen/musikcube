@@ -39,10 +39,10 @@ public:
   AttributeListMap attributeListMap;
 };
 
-ASF::Tag::Tag()
-: TagLib::Tag()
+ASF::Tag::Tag() :
+  TagLib::Tag(),
+  d(new TagPrivate())
 {
-  d = new TagPrivate;
 }
 
 ASF::Tag::~Tag()

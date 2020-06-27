@@ -120,11 +120,24 @@ namespace TagLib {
         virtual bool save();
 
         /*!
+         * Save using a specific ID3v2 version (e.g. v3)
+         */
+        bool save(ID3v2::Version version);
+
+        /*!
          * Returns whether or not the file on disk actually has an ID3v2 tag.
          *
          * \see ID3v2Tag()
          */
         bool hasID3v2Tag() const;
+
+        /*!
+         * Check if the given \a stream can be opened as an AIFF file.
+         *
+         * \note This method is designed to do a quick check.  The result may
+         * not necessarily be correct.
+         */
+        static bool isSupported(IOStream *stream);
 
       private:
         File(const File &);

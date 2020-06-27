@@ -44,6 +44,7 @@ class TestWAV : public CppUnit::TestFixture
   CPPUNIT_TEST(testFloatProperties);
   CPPUNIT_TEST(testZeroSizeDataChunk);
   CPPUNIT_TEST(testID3v2Tag);
+  CPPUNIT_TEST(testSaveID3v23);
   CPPUNIT_TEST(testInfoTag);
   CPPUNIT_TEST(testStripTags);
   CPPUNIT_TEST(testDuplicateTags);
@@ -59,14 +60,12 @@ public:
   {
     RIFF::WAV::File f(TEST_FILE_PATH_C("empty.wav"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3675, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(32, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(2, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(1000, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->bitsPerSample());
-    CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->sampleWidth());
     CPPUNIT_ASSERT_EQUAL(3675U, f.audioProperties()->sampleFrames());
     CPPUNIT_ASSERT_EQUAL(1, f.audioProperties()->format());
   }
@@ -75,14 +74,12 @@ public:
   {
     RIFF::WAV::File f(TEST_FILE_PATH_C("alaw.wav"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3550, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(128, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(2, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(8000, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(8, f.audioProperties()->bitsPerSample());
-    CPPUNIT_ASSERT_EQUAL(8, f.audioProperties()->sampleWidth());
     CPPUNIT_ASSERT_EQUAL(28400U, f.audioProperties()->sampleFrames());
     CPPUNIT_ASSERT_EQUAL(6, f.audioProperties()->format());
   }
@@ -91,14 +88,12 @@ public:
   {
     RIFF::WAV::File f(TEST_FILE_PATH_C("float64.wav"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(97, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(5645, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(2, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(64, f.audioProperties()->bitsPerSample());
-    CPPUNIT_ASSERT_EQUAL(64, f.audioProperties()->sampleWidth());
     CPPUNIT_ASSERT_EQUAL(4281U, f.audioProperties()->sampleFrames());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->format());
   }
@@ -142,6 +137,29 @@ public:
       CPPUNIT_ASSERT(!f.hasID3v2Tag());
       CPPUNIT_ASSERT_EQUAL(String(L""), f.ID3v2Tag()->title());
       CPPUNIT_ASSERT_EQUAL(String(L""), f.ID3v2Tag()->artist());
+    }
+  }
+
+  void testSaveID3v23()
+  {
+    ScopedFileCopy copy("empty", ".wav");
+    string newname = copy.fileName();
+
+    String xxx = ByteVector(254, 'X');
+    {
+      RIFF::WAV::File f(newname.c_str());
+      CPPUNIT_ASSERT_EQUAL(false, f.hasID3v2Tag());
+
+      f.tag()->setTitle(xxx);
+      f.tag()->setArtist("Artist A");
+      f.save(RIFF::WAV::File::AllTags, File::StripOthers, ID3v2::v3);
+      CPPUNIT_ASSERT_EQUAL(true, f.hasID3v2Tag());
+    }
+    {
+      RIFF::WAV::File f2(newname.c_str());
+      CPPUNIT_ASSERT_EQUAL((unsigned int)3, f2.ID3v2Tag()->header()->majorVersion());
+      CPPUNIT_ASSERT_EQUAL(String("Artist A"), f2.tag()->artist());
+      CPPUNIT_ASSERT_EQUAL(xxx, f2.tag()->title());
     }
   }
 
@@ -197,7 +215,7 @@ public:
       RIFF::WAV::File f(filename.c_str());
       CPPUNIT_ASSERT(f.hasID3v2Tag());
       CPPUNIT_ASSERT(f.hasInfoTag());
-      f.save(RIFF::WAV::File::ID3v2, true);
+      f.save(RIFF::WAV::File::ID3v2, File::StripOthers);
     }
     {
       RIFF::WAV::File f(filename.c_str());
@@ -211,7 +229,7 @@ public:
       RIFF::WAV::File f(filename.c_str());
       CPPUNIT_ASSERT(f.hasID3v2Tag());
       CPPUNIT_ASSERT(f.hasInfoTag());
-      f.save(RIFF::WAV::File::Info, true);
+      f.save(RIFF::WAV::File::Info, File::StripOthers);
     }
     {
       RIFF::WAV::File f(filename.c_str());
@@ -277,14 +295,12 @@ public:
   {
     RIFF::WAV::File f(TEST_FILE_PATH_C("pcm_with_fact_chunk.wav"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3675, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(32, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(2, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(1000, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->bitsPerSample());
-    CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->sampleWidth());
     CPPUNIT_ASSERT_EQUAL(3675U, f.audioProperties()->sampleFrames());
     CPPUNIT_ASSERT_EQUAL(1, f.audioProperties()->format());
   }

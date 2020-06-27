@@ -127,9 +127,6 @@ namespace TagLib {
       /*!
        * Save the file.  This will primarily save and update the XiphComment.
        * Returns true if the save is successful.
-       *
-       * \warning In the current implementation, it's dangerous to call save()
-       * repeatedly.  It leads to a segfault.
        */
       virtual bool save();
 
@@ -145,6 +142,14 @@ namespace TagLib {
        * \see tag()
        */
       bool hasXiphComment() const;
+
+      /*!
+       * Check if the given \a stream can be opened as an Ogg FLAC file.
+       *
+       * \note This method is designed to do a quick check.  The result may
+       * not necessarily be correct.
+       */
+      static bool isSupported(IOStream *stream);
 
     private:
       File(const File &);

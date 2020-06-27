@@ -55,8 +55,10 @@ class TestMP4 : public CppUnit::TestFixture
   CPPUNIT_TEST(testCovrWrite);
   CPPUNIT_TEST(testCovrRead2);
   CPPUNIT_TEST(testProperties);
+  CPPUNIT_TEST(testPropertiesMovement);
   CPPUNIT_TEST(testFuzzedFile);
   CPPUNIT_TEST(testRepeatedSave);
+  CPPUNIT_TEST(testWithZeroLengthAtom);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -65,7 +67,6 @@ public:
   {
     MP4::File f(TEST_FILE_PATH_C("has-tags.m4a"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3708, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->bitrate());
@@ -80,7 +81,6 @@ public:
   {
     MP4::File f(TEST_FILE_PATH_C("empty_alac.m4a"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3705, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->bitrate());
@@ -95,7 +95,6 @@ public:
   {
     MP4::File f(TEST_FILE_PATH_C("blank_video.m4v"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(975, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(96, f.audioProperties()->bitrate());
@@ -378,6 +377,58 @@ public:
     f.setProperties(tags);
   }
 
+  void testPropertiesMovement()
+  {
+    MP4::File f(TEST_FILE_PATH_C("has-tags.m4a"));
+
+    PropertyMap tags = f.properties();
+
+    tags["WORK"] = StringList("Foo");
+    tags["MOVEMENTNAME"] = StringList("Bar");
+    tags["MOVEMENTNUMBER"] = StringList("2");
+    tags["MOVEMENTCOUNT"] = StringList("3");
+    tags["SHOWWORKMOVEMENT"] = StringList("1");
+    f.setProperties(tags);
+
+    tags = f.properties();
+
+    CPPUNIT_ASSERT(f.tag()->contains("\251wrk"));
+    CPPUNIT_ASSERT_EQUAL(StringList("Foo"), f.tag()->item("\251wrk").toStringList());
+    CPPUNIT_ASSERT_EQUAL(StringList("Foo"), tags["WORK"]);
+
+    CPPUNIT_ASSERT(f.tag()->contains("\251mvn"));
+    CPPUNIT_ASSERT_EQUAL(StringList("Bar"), f.tag()->item("\251mvn").toStringList());
+    CPPUNIT_ASSERT_EQUAL(StringList("Bar"), tags["MOVEMENTNAME"]);
+
+    CPPUNIT_ASSERT(f.tag()->contains("\251mvi"));
+    CPPUNIT_ASSERT_EQUAL(2, f.tag()->item("\251mvi").toInt());
+    CPPUNIT_ASSERT_EQUAL(StringList("2"), tags["MOVEMENTNUMBER"]);
+
+    CPPUNIT_ASSERT(f.tag()->contains("\251mvc"));
+    CPPUNIT_ASSERT_EQUAL(3, f.tag()->item("\251mvc").toInt());
+    CPPUNIT_ASSERT_EQUAL(StringList("3"), tags["MOVEMENTCOUNT"]);
+
+    CPPUNIT_ASSERT(f.tag()->contains("shwm"));
+    CPPUNIT_ASSERT_EQUAL(true, f.tag()->item("shwm").toBool());
+    CPPUNIT_ASSERT_EQUAL(StringList("1"), tags["SHOWWORKMOVEMENT"]);
+
+    tags["SHOWWORKMOVEMENT"] = StringList("0");
+    f.setProperties(tags);
+
+    tags = f.properties();
+
+    CPPUNIT_ASSERT(f.tag()->contains("shwm"));
+    CPPUNIT_ASSERT_EQUAL(false, f.tag()->item("shwm").toBool());
+    CPPUNIT_ASSERT_EQUAL(StringList("0"), tags["SHOWWORKMOVEMENT"]);
+
+    tags["WORK"] = StringList();
+    tags["MOVEMENTNAME"] = StringList();
+    tags["MOVEMENTNUMBER"] = StringList();
+    tags["MOVEMENTCOUNT"] = StringList();
+    tags["SHOWWORKMOVEMENT"] = StringList();
+    f.setProperties(tags);
+  }
+
   void testFuzzedFile()
   {
     MP4::File f(TEST_FILE_PATH_C("infloop.m4a"));
@@ -395,6 +446,15 @@ public:
     CPPUNIT_ASSERT_EQUAL(2862L, f.find("0123456789"));
     CPPUNIT_ASSERT_EQUAL(-1L, f.find("0123456789", 2863));
   }
+
+  void testWithZeroLengthAtom()
+  {
+    MP4::File f(TEST_FILE_PATH_C("zero-length-mdat.m4a"));
+    CPPUNIT_ASSERT(f.isValid());
+    CPPUNIT_ASSERT_EQUAL(1115, f.audioProperties()->lengthInMilliseconds());
+    CPPUNIT_ASSERT_EQUAL(22050, f.audioProperties()->sampleRate());
+  }
+
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(TestMP4);

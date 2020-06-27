@@ -33,20 +33,12 @@
 #include "tmap.h"
 #include "taglib_export.h"
 
+#include "id3v2.h"
 #include "id3v2framefactory.h"
 
 namespace TagLib {
 
   class File;
-
-  //! An ID3v2 implementation
-
-  /*!
-   * This is a relatively complete and flexible framework for working with ID3v2
-   * tags.
-   *
-   * \see ID3v2::Tag
-   */
 
   namespace ID3v2 {
 
@@ -201,7 +193,7 @@ namespace TagLib {
        * prone to change my mind, so this gets to stay around until near a
        * release.
        */
-      Footer *footer() const;
+      TAGLIB_DEPRECATED Footer *footer() const;
 
       /*!
        * Returns a reference to the frame list map.  This is an FrameListMap of
@@ -310,7 +302,7 @@ namespace TagLib {
        *    - otherwise, the key "LYRICS:<description>" is used;
        *  - if the frame ID is "TIPL" (involved peoples list), and if all the
        *    roles defined in the frame are known in TextIdentificationFrame::involvedPeopleMap(),
-       *    then "<role>=<name>" will be contained in the returned obejct for each
+       *    then "<role>=<name>" will be contained in the returned object for each
        *  - if the frame ID is "TMCL" (musician credit list), then
        *    "PERFORMER:<instrument>=<name>" will be contained in the returned
        *    PropertyMap for each defined musician
@@ -346,13 +338,17 @@ namespace TagLib {
       ByteVector render() const;
 
       /*!
+       * \deprecated
+       */
+      TAGLIB_DEPRECATED ByteVector render(int version) const;
+
+      /*!
        * Render the tag back to binary data, suitable to be written to disk.
        *
-       * The \a version parameter specifies the version of the rendered
-       * ID3v2 tag. It can be either 4 or 3.
+       * The \a version parameter specifies whether ID3v2.4 (default) or ID3v2.3
+       * should be used.
        */
-      // BIC: combine with the above method
-      ByteVector render(int version) const;
+      ByteVector render(Version version) const;
 
       /*!
        * Gets the current string handler that decides how the "Latin-1" data
@@ -396,6 +392,9 @@ namespace TagLib {
        */
       void setTextFrame(const ByteVector &id, const String &value);
 
+      /*!
+       * Dowgrade frames from ID3v2.4 (used internally and by default) to ID3v2.3
+       */
       void downgradeFrames(FrameList *existingFrames, FrameList *newFrames) const;
 
     private:

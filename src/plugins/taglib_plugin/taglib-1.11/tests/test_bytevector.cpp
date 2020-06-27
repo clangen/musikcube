@@ -46,6 +46,7 @@ class TestByteVector : public CppUnit::TestFixture
   CPPUNIT_TEST(testIntegerConversion);
   CPPUNIT_TEST(testFloatingPointConversion);
   CPPUNIT_TEST(testReplace);
+  CPPUNIT_TEST(testReplaceAndDetach);
   CPPUNIT_TEST(testIterator);
   CPPUNIT_TEST(testResize);
   CPPUNIT_TEST(testAppend1);
@@ -76,7 +77,6 @@ public:
 
     i.clear();
     CPPUNIT_ASSERT(i.isEmpty());
-    CPPUNIT_ASSERT(!i.isNull()); // deprecated, but worth it to check.
   }
 
   void testFind1()
@@ -223,26 +223,26 @@ public:
     const double Tolerance = 1.0e-7;
 
     const ByteVector pi32le("\xdb\x0f\x49\x40", 4);
-    CPPUNIT_ASSERT(::abs(pi32le.toFloat32LE(0) - M_PI) < Tolerance);
+    CPPUNIT_ASSERT(std::abs(pi32le.toFloat32LE(0) - M_PI) < Tolerance);
     CPPUNIT_ASSERT_EQUAL(pi32le, ByteVector::fromFloat32LE(pi32le.toFloat32LE(0)));
 
     const ByteVector pi32be("\x40\x49\x0f\xdb", 4);
-    CPPUNIT_ASSERT(::abs(pi32be.toFloat32BE(0) - M_PI) < Tolerance);
+    CPPUNIT_ASSERT(std::abs(pi32be.toFloat32BE(0) - M_PI) < Tolerance);
     CPPUNIT_ASSERT_EQUAL(pi32be, ByteVector::fromFloat32BE(pi32be.toFloat32BE(0)));
 
     const ByteVector pi64le("\x18\x2d\x44\x54\xfb\x21\x09\x40", 8);
-    CPPUNIT_ASSERT(::abs(pi64le.toFloat64LE(0) - M_PI) < Tolerance);
+    CPPUNIT_ASSERT(std::abs(pi64le.toFloat64LE(0) - M_PI) < Tolerance);
     CPPUNIT_ASSERT_EQUAL(pi64le, ByteVector::fromFloat64LE(pi64le.toFloat64LE(0)));
 
     const ByteVector pi64be("\x40\x09\x21\xfb\x54\x44\x2d\x18", 8);
-    CPPUNIT_ASSERT(::abs(pi64be.toFloat64BE(0) - M_PI) < Tolerance);
+    CPPUNIT_ASSERT(std::abs(pi64be.toFloat64BE(0) - M_PI) < Tolerance);
     CPPUNIT_ASSERT_EQUAL(pi64be, ByteVector::fromFloat64BE(pi64be.toFloat64BE(0)));
 
     const ByteVector pi80le("\x00\xc0\x68\x21\xa2\xda\x0f\xc9\x00\x40", 10);
-    CPPUNIT_ASSERT(::abs(pi80le.toFloat80LE(0) - M_PI) < Tolerance);
+    CPPUNIT_ASSERT(std::abs(pi80le.toFloat80LE(0) - M_PI) < Tolerance);
 
     const ByteVector pi80be("\x40\x00\xc9\x0f\xda\xa2\x21\x68\xc0\x00", 10);
-    CPPUNIT_ASSERT(::abs(pi80be.toFloat80BE(0) - M_PI) < Tolerance);
+    CPPUNIT_ASSERT(std::abs(pi80be.toFloat80BE(0) - M_PI) < Tolerance);
   }
 
   void testReplace()
@@ -310,6 +310,45 @@ public:
       CPPUNIT_ASSERT_EQUAL(ByteVector("<a>bcd<a>b<a>"), a);
       a.replace(ByteVector("<a>"), ByteVector("a"));
       CPPUNIT_ASSERT_EQUAL(ByteVector("abcdaba"), a);
+    }
+  }
+
+  void testReplaceAndDetach()
+  {
+    {
+      ByteVector a("abcdabf");
+      ByteVector b = a;
+      a.replace(ByteVector("a"), ByteVector("x"));
+      CPPUNIT_ASSERT_EQUAL(ByteVector("xbcdxbf"), a);
+      CPPUNIT_ASSERT_EQUAL(ByteVector("abcdabf"), b);
+    }
+    {
+      ByteVector a("abcdabf");
+      ByteVector b = a;
+      a.replace('a', 'x');
+      CPPUNIT_ASSERT_EQUAL(ByteVector("xbcdxbf"), a);
+      CPPUNIT_ASSERT_EQUAL(ByteVector("abcdabf"), b);
+    }
+    {
+      ByteVector a("abcdabf");
+      ByteVector b = a;
+      a.replace(ByteVector("ab"), ByteVector("xy"));
+      CPPUNIT_ASSERT_EQUAL(ByteVector("xycdxyf"), a);
+      CPPUNIT_ASSERT_EQUAL(ByteVector("abcdabf"), b);
+    }
+    {
+      ByteVector a("abcdabf");
+      ByteVector b = a;
+      a.replace(ByteVector("a"), ByteVector("<a>"));
+      CPPUNIT_ASSERT_EQUAL(ByteVector("<a>bcd<a>bf"), a);
+      CPPUNIT_ASSERT_EQUAL(ByteVector("abcdabf"), b);
+    }
+    {
+      ByteVector a("ab<c>dab<c>");
+      ByteVector b = a;
+      a.replace(ByteVector("<c>"), ByteVector("c"));
+      CPPUNIT_ASSERT_EQUAL(ByteVector("abcdabc"), a);
+      CPPUNIT_ASSERT_EQUAL(ByteVector("ab<c>dab<c>"), b);
     }
   }
 

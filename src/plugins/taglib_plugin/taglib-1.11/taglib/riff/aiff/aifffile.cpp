@@ -28,6 +28,7 @@
 #include <id3v2tag.h>
 #include <tstringlist.h>
 #include <tpropertymap.h>
+#include <tagutils.h>
 
 #include "aifffile.h"
 
@@ -52,6 +53,18 @@ public:
 
   bool hasID3v2;
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// static members
+////////////////////////////////////////////////////////////////////////////////
+
+bool RIFF::AIFF::File::isSupported(IOStream *stream)
+{
+  // An AIFF file has to start with "FORM????AIFF" or "FORM????AIFC".
+
+  const ByteVector id = Utils::readHeader(stream, 12, false);
+  return (id.startsWith("FORM") && (id.containsAt("AIFF", 8) || id.containsAt("AIFC", 8)));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // public members
@@ -105,6 +118,11 @@ RIFF::AIFF::Properties *RIFF::AIFF::File::audioProperties() const
 
 bool RIFF::AIFF::File::save()
 {
+    return save(ID3v2::v4);
+}
+
+bool RIFF::AIFF::File::save(ID3v2::Version version)
+{
   if(readOnly()) {
     debug("RIFF::AIFF::File::save() -- File is read only.");
     return false;
@@ -122,7 +140,7 @@ bool RIFF::AIFF::File::save()
   }
 
   if(tag() && !tag()->isEmpty()) {
-    setChunkData("ID3 ", d->tag->render());
+    setChunkData("ID3 ", d->tag->render(version));
     d->hasID3v2 = true;
   }
 

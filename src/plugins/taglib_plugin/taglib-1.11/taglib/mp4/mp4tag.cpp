@@ -71,14 +71,26 @@ MP4::Tag::Tag(TagLib::File *file, MP4::Atoms *atoms) :
       parseIntPair(atom);
     }
     else if(atom->name == "cpil" || atom->name == "pgap" || atom->name == "pcst" ||
-            atom->name == "hdvd") {
+            atom->name == "hdvd" || atom->name == "shwm") {
       parseBool(atom);
     }
-    else if(atom->name == "tmpo") {
+    else if(atom->name == "tmpo" || atom->name == "\251mvi" || atom->name == "\251mvc") {
       parseInt(atom);
     }
+    else if(atom->name == "rate") {
+      AtomDataList data = parseData2(atom);
+      if(!data.isEmpty()) {
+        AtomData val = data[0];
+        if (val.type == TypeUTF8) {
+          addItem(atom->name, StringList(String(val.data, String::UTF8)));
+        } else {
+          addItem(atom->name, (int)(val.data.toShort()));
+        }
+      }
+    }
     else if(atom->name == "tvsn" || atom->name == "tves" || atom->name == "cnID" ||
-            atom->name == "sfID" || atom->name == "atID" || atom->name == "geID") {
+            atom->name == "sfID" || atom->name == "atID" || atom->name == "geID" ||
+            atom->name == "cmID") {
       parseUInt(atom);
     }
     else if(atom->name == "plID") {
@@ -92,6 +104,9 @@ MP4::Tag::Tag(TagLib::File *file, MP4::Atoms *atoms) :
     }
     else if(atom->name == "covr") {
       parseCovr(atom);
+    }
+    else if(atom->name == "purl" || atom->name == "egid") {
+      parseText(atom, -1);
     }
     else {
       parseText(atom);
@@ -472,14 +487,26 @@ MP4::Tag::save()
     else if(name == "disk") {
       data.append(renderIntPairNoTrailing(name.data(String::Latin1), it->second));
     }
-    else if(name == "cpil" || name == "pgap" || name == "pcst" || name == "hdvd") {
+    else if(name == "cpil" || name == "pgap" || name == "pcst" || name == "hdvd" ||
+            name == "shwm") {
       data.append(renderBool(name.data(String::Latin1), it->second));
     }
-    else if(name == "tmpo") {
+    else if(name == "tmpo" || name == "\251mvi" || name == "\251mvc") {
       data.append(renderInt(name.data(String::Latin1), it->second));
     }
+    else if (name == "rate") {
+      const MP4::Item& item = it->second;
+      StringList value = item.toStringList();
+      if (value.isEmpty()) {
+        data.append(renderInt(name.data(String::Latin1), item));
+      }
+      else {
+        data.append(renderText(name.data(String::Latin1), item));
+      }
+    }
     else if(name == "tvsn" || name == "tves" || name == "cnID" ||
-            name == "sfID" || name == "atID" || name == "geID") {
+            name == "sfID" || name == "atID" || name == "geID" ||
+            name == "cmID") {
       data.append(renderUInt(name.data(String::Latin1), it->second));
     }
     else if(name == "plID") {
@@ -490,6 +517,9 @@ MP4::Tag::save()
     }
     else if(name == "covr") {
       data.append(renderCovr(name.data(String::Latin1), it->second));
+    }
+    else if(name == "purl" || name == "egid") {
+      data.append(renderText(name.data(String::Latin1), it->second, TypeImplicit));
     }
     else if(name.size() == 4){
       data.append(renderText(name.data(String::Latin1), it->second));
@@ -775,13 +805,23 @@ MP4::Tag::setGenre(const String &value)
 void
 MP4::Tag::setYear(unsigned int value)
 {
-  d->items["\251day"] = StringList(String::number(value));
+  if (value == 0) {
+    d->items.erase("\251day");
+  }
+  else {
+    d->items["\251day"] = StringList(String::number(value));
+  }
 }
 
 void
 MP4::Tag::setTrack(unsigned int value)
 {
-  d->items["trkn"] = MP4::Item(value, 0);
+  if (value == 0) {
+    d->items.erase("trkn");
+  }
+  else {
+    d->items["trkn"] = MP4::Item(value, 0);
+  }
 }
 
 bool MP4::Tag::isEmpty() const
@@ -844,6 +884,11 @@ namespace
     { "sonm", "TITLESORT" },
     { "soco", "COMPOSERSORT" },
     { "sosn", "SHOWSORT" },
+    { "shwm", "SHOWWORKMOVEMENT" },
+    { "\251wrk", "WORK" },
+    { "\251mvn", "MOVEMENTNAME" },
+    { "\251mvi", "MOVEMENTNUMBER" },
+    { "\251mvc", "MOVEMENTCOUNT" },
     { "----:com.apple.iTunes:MusicBrainz Track Id", "MUSICBRAINZ_TRACKID" },
     { "----:com.apple.iTunes:MusicBrainz Artist Id", "MUSICBRAINZ_ARTISTID" },
     { "----:com.apple.iTunes:MusicBrainz Album Id", "MUSICBRAINZ_ALBUMID" },
@@ -897,10 +942,10 @@ PropertyMap MP4::Tag::properties() const
         }
         props[key] = value;
       }
-      else if(key == "BPM") {
+      else if(key == "BPM" || key == "MOVEMENTNUMBER" || key == "MOVEMENTCOUNT") {
         props[key] = String::number(it->second.toInt());
       }
-      else if(key == "COMPILATION") {
+      else if(key == "COMPILATION" || key == "SHOWWORKMOVEMENT") {
         props[key] = String::number(it->second.toBool());
       }
       else {
@@ -942,21 +987,21 @@ PropertyMap MP4::Tag::setProperties(const PropertyMap &props)
     if(reverseKeyMap.contains(it->first)) {
       String name = reverseKeyMap[it->first];
       if((it->first == "TRACKNUMBER" || it->first == "DISCNUMBER") && !it->second.isEmpty()) {
-        int first = 0, second = 0;
         StringList parts = StringList::split(it->second.front(), "/");
         if(!parts.isEmpty()) {
-          first = parts[0].toInt();
+          int first = parts[0].toInt();
+          int second = 0;
           if(parts.size() > 1) {
             second = parts[1].toInt();
           }
           d->items[name] = MP4::Item(first, second);
         }
       }
-      else if(it->first == "BPM" && !it->second.isEmpty()) {
+      else if((it->first == "BPM" || it->first == "MOVEMENTNUMBER" || it->first == "MOVEMENTCOUNT") && !it->second.isEmpty()) {
         int value = it->second.front().toInt();
         d->items[name] = MP4::Item(value);
       }
-      else if(it->first == "COMPILATION" && !it->second.isEmpty()) {
+      else if((it->first == "COMPILATION" || it->first == "SHOWWORKMOVEMENT") && !it->second.isEmpty()) {
         bool value = (it->second.front().toInt() != 0);
         d->items[name] = MP4::Item(value);
       }

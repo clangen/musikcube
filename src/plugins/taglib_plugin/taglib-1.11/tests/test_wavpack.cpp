@@ -53,7 +53,6 @@ public:
   {
     WavPack::File f(TEST_FILE_PATH_C("no_length.wv"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3705, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(1, f.audioProperties()->bitrate());
@@ -69,7 +68,6 @@ public:
   {
     WavPack::File f(TEST_FILE_PATH_C("four_channels.wv"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3833, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(112, f.audioProperties()->bitrate());
@@ -85,7 +83,6 @@ public:
   {
     WavPack::File f(TEST_FILE_PATH_C("tagged.wv"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3550, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(172, f.audioProperties()->bitrate());

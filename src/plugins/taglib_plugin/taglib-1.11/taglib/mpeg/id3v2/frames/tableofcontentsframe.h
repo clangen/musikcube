@@ -29,6 +29,8 @@
 #include "id3v2tag.h"
 #include "id3v2frame.h"
 
+#include "tbytevectorlist.h"
+
 namespace TagLib {
 
   namespace ID3v2 {

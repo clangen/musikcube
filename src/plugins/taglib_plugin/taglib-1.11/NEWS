@@ -1,3 +1,33 @@
+============================
+
+ * Added support for DSF and DSDIFF files.
+ * Added support for WinRT.
+ * Added support for classical music tags of iTunes 12.5.
+ * Added support for file descriptor to FileStream.
+ * Added support for 'cmID', 'purl', 'egid' MP4 atoms.
+ * Enabled FileRef to detect file types based on the stream content.
+ * Dropped support for Windows 9x and NT 4.0 or older.
+ * Check for mandatory header objects in ASF files.
+ * Fixed OOB read on invalid Ogg FLAC files (CVE-2018-11439).
+ * Fixed handling of empty MPEG files.
+ * Fixed reading MP4 atoms with zero length.
+ * Fixed reading FLAC files with zero-sized seektables.
+ * Fixed handling of lowercase field names in Vorbis Comments.
+ * Fixed handling of 'rate' atoms in MP4 files.
+ * Fixed handling of invalid UTF-8 sequences.
+ * Fixed possible file corruptions when saving Ogg files.
+ * TableOfContentsFrame::toString() improved.
+ * UserTextIdentificationFrame::toString() improved.
+ * Marked FileRef::create() deprecated.
+ * Several smaller bug fixes and performance improvements.
+
+TagLib 1.11.1 (Oct 24, 2016)
+============================
+
+ * Fixed binary incompatible change in TagLib::String.
+ * Fixed reading ID3v2 CTOC frames with a lot of entries.
+ * Fixed seeking ByteVectorStream from the end.
+
 TagLib 1.11 (Apr 29, 2016)
 ==========================
 
@@ -215,7 +245,7 @@ TagLib 1.6.3 (Apr 17, 2010)
  * Fixed definitions of the TAGLIB_WITH_MP4 and TAGLIB_WITH_ASF macros.
  * Fixed upgrading of ID3v2.3 genre frame with ID3v1 code 0 (Blues).
  * New method `int String::toInt(bool *ok)` which can return whether the
-   conversion to a number was successfull.
+   conversion to a number was successful.
  * Fixed parsing of incorrectly written lengths in ID3v2 (affects mainly
    compressed frames). (BUG:231075)
 
@@ -223,7 +253,7 @@ TagLib 1.6.2 (Apr 9, 2010)
 ==========================
 
  * Read Vorbis Comments from the first FLAC metadata block, if there are
-   multipe ones. (BUG:211089)
+   multiple ones. (BUG:211089)
  * Fixed a memory leak in FileRef's OGA format detection.
  * Fixed compilation with the Sun Studio compiler. (BUG:215225)
  * Handle WM/TrackNumber attributes with DWORD content in WMA files.
@@ -258,7 +288,7 @@ TagLib 1.6 (Sep 13, 2009)
  * Added support for disabling dllimport/dllexport on Windows using the
    TAGLIB_STATIC macro.
  * Support for parsing the obsolete 'gnre' MP4 atom.
- * New cpp macros TAGLIB_WITH_MP4 and TAGLIB_WITH_ASF to determin if
+ * New cpp macros TAGLIB_WITH_MP4 and TAGLIB_WITH_ASF to determine if
    TagLib was built with MP4/ASF support.
 
 1.6 RC1:

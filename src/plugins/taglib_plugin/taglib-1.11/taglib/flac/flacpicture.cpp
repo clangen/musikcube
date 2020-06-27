@@ -50,14 +50,14 @@ public:
   ByteVector data;
 };
 
-FLAC::Picture::Picture()
+FLAC::Picture::Picture() :
+  d(new PicturePrivate())
 {
-  d = new PicturePrivate;
 }
 
-FLAC::Picture::Picture(const ByteVector &data)
+FLAC::Picture::Picture(const ByteVector &data) :
+  d(new PicturePrivate())
 {
-  d = new PicturePrivate;
   parse(data);
 }
 

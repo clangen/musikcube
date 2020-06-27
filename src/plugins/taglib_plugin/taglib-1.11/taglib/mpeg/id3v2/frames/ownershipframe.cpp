@@ -45,15 +45,17 @@ public:
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-OwnershipFrame::OwnershipFrame(String::Type encoding) : Frame("OWNE")
+OwnershipFrame::OwnershipFrame(String::Type encoding) :
+  Frame("OWNE"),
+  d(new OwnershipFramePrivate())
 {
-  d = new OwnershipFramePrivate;
   d->textEncoding = encoding;
 }
 
-OwnershipFrame::OwnershipFrame(const ByteVector &data) : Frame(data)
+OwnershipFrame::OwnershipFrame(const ByteVector &data) :
+  Frame(data),
+  d(new OwnershipFramePrivate())
 {
-  d = new OwnershipFramePrivate;
   setData(data);
 }
 
@@ -161,8 +163,9 @@ ByteVector OwnershipFrame::renderFields() const
 // private members
 ////////////////////////////////////////////////////////////////////////////////
 
-OwnershipFrame::OwnershipFrame(const ByteVector &data, Header *h) : Frame(h)
+OwnershipFrame::OwnershipFrame(const ByteVector &data, Header *h) :
+  Frame(h),
+  d(new OwnershipFramePrivate())
 {
-  d = new OwnershipFramePrivate;
   parseFields(fieldData(data));
 }

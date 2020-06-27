@@ -114,18 +114,21 @@ public:
     PropertyMap properties;
     properties["A"] = String("invalid key: one character");
     properties["MP+"] = String("invalid key: forbidden string");
+    properties[L"\x1234\x3456"] = String("invalid key: Unicode");
     properties["A B~C"] = String("valid key: space and tilde");
     properties["ARTIST"] = String("valid key: normal one");
 
     APE::Tag tag;
     PropertyMap unsuccessful = tag.setProperties(properties);
-    CPPUNIT_ASSERT_EQUAL((unsigned int)2, unsuccessful.size());
+    CPPUNIT_ASSERT_EQUAL((unsigned int)3, unsuccessful.size());
     CPPUNIT_ASSERT(unsuccessful.contains("A"));
     CPPUNIT_ASSERT(unsuccessful.contains("MP+"));
+    CPPUNIT_ASSERT(unsuccessful.contains(L"\x1234\x3456"));
 
     CPPUNIT_ASSERT_EQUAL((unsigned int)2, tag.itemListMap().size());
     tag.addValue("VALID KEY", "Test Value 1");
     tag.addValue("INVALID KEY \x7f", "Test Value 2");
+    tag.addValue(L"INVALID KEY \x1234\x3456", "Test Value 3");
     CPPUNIT_ASSERT_EQUAL((unsigned int)3, tag.itemListMap().size());
   }
 

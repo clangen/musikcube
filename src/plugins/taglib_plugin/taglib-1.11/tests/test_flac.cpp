@@ -62,6 +62,8 @@ class TestFLAC : public CppUnit::TestFixture
   CPPUNIT_TEST(testUpdateID3v2);
   CPPUNIT_TEST(testEmptyID3v2);
   CPPUNIT_TEST(testStripTags);
+  CPPUNIT_TEST(testRemoveXiphField);
+  CPPUNIT_TEST(testEmptySeekTable);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -259,7 +261,7 @@ public:
     ScopedFileCopy copy("no-tags", ".flac");
 
     FLAC::File f(copy.fileName().c_str());
-    f.xiphComment()->setTitle(std::string(8 * 1024, 'X').c_str());
+    f.xiphComment()->setTitle(longText(8 * 1024));
     f.save();
     CPPUNIT_ASSERT_EQUAL(12862L, f.length());
     f.save();
@@ -324,14 +326,12 @@ public:
   {
     FLAC::File f(TEST_FILE_PATH_C("sinewave.flac"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3550, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(145, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(2, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->bitsPerSample());
-    CPPUNIT_ASSERT_EQUAL(16, f.audioProperties()->sampleWidth());
     CPPUNIT_ASSERT_EQUAL(156556ULL, f.audioProperties()->sampleFrames());
     CPPUNIT_ASSERT_EQUAL(
       ByteVector("\xcf\xe3\xd9\xda\xba\xde\xab\x2c\xbf\x2c\xa2\x35\x27\x4b\x7f\x76"),
@@ -372,7 +372,7 @@ public:
 
     {
       FLAC::File f(copy.fileName().c_str());
-      f.xiphComment()->setTitle(std::wstring(128 * 1024, L'X').c_str());
+      f.xiphComment()->setTitle(longText(128 * 1024));
       f.save();
       CPPUNIT_ASSERT(f.length() > 128 * 1024);
     }
@@ -490,6 +490,46 @@ public:
       CPPUNIT_ASSERT(!f.hasID3v2Tag());
       CPPUNIT_ASSERT(f.xiphComment()->isEmpty());
       CPPUNIT_ASSERT_EQUAL(String("reference libFLAC 1.1.0 20030126"), f.xiphComment()->vendorID());
+    }
+  }
+
+  void testRemoveXiphField()
+  {
+    ScopedFileCopy copy("silence-44-s", ".flac");
+
+    {
+      FLAC::File f(copy.fileName().c_str());
+      f.xiphComment(true)->setTitle("XiphComment Title");
+      f.ID3v2Tag(true)->setTitle("ID3v2 Title");
+      f.save();
+    }
+    {
+      FLAC::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT_EQUAL(String("XiphComment Title"), f.xiphComment()->title());
+      f.xiphComment()->removeFields("TITLE");
+      f.save();
+    }
+    {
+      FLAC::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT_EQUAL(String(), f.xiphComment()->title());
+    }
+  }
+
+  void testEmptySeekTable()
+  {
+    ScopedFileCopy copy("empty-seektable", ".flac");
+    {
+      FLAC::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.isValid());
+      f.xiphComment(true)->setTitle("XiphComment Title");
+      f.save();
+    }
+    {
+      FLAC::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.isValid());
+      f.seek(42);
+      const ByteVector data = f.readBlock(4);
+      CPPUNIT_ASSERT_EQUAL(ByteVector("\x03\x00\x00\x00", 4), data);
     }
   }
 

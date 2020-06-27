@@ -277,7 +277,7 @@ void IT::File::read(bool)
   //       in the instrument/sample names and more characters
   //       afterwards. The spec does not mention such a case.
   //       Currently I just discard anything after a nil, but
-  //       e.g. VLC seems to interprete a nil as a space. I
+  //       e.g. VLC seems to interpret a nil as a space. I
   //       don't know what is the proper behaviour.
   for(unsigned short i = 0; i < instrumentCount; ++ i) {
     seek(192L + length + ((long)i << 2));

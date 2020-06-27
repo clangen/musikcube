@@ -43,6 +43,39 @@
 
 using namespace TagLib;
 
+// This macro is a workaround for the fact that we can't add virtual functions.
+// Should be true virtual functions in taglib2.
+
+#define VIRTUAL_FUNCTION_WORKAROUND(function_name, default_value)               \
+  if(dynamic_cast<const APE::Properties*>(this))                                \
+    return dynamic_cast<const APE::Properties*>(this)->function_name();         \
+  else if(dynamic_cast<const ASF::Properties*>(this))                           \
+    return dynamic_cast<const ASF::Properties*>(this)->function_name();         \
+  else if(dynamic_cast<const FLAC::Properties*>(this))                          \
+    return dynamic_cast<const FLAC::Properties*>(this)->function_name();        \
+  else if(dynamic_cast<const MP4::Properties*>(this))                           \
+    return dynamic_cast<const MP4::Properties*>(this)->function_name();         \
+  else if(dynamic_cast<const MPC::Properties*>(this))                           \
+    return dynamic_cast<const MPC::Properties*>(this)->function_name();         \
+  else if(dynamic_cast<const MPEG::Properties*>(this))                          \
+    return dynamic_cast<const MPEG::Properties*>(this)->function_name();        \
+  else if(dynamic_cast<const Ogg::Opus::Properties*>(this))                     \
+    return dynamic_cast<const Ogg::Opus::Properties*>(this)->function_name();   \
+  else if(dynamic_cast<const Ogg::Speex::Properties*>(this))                    \
+    return dynamic_cast<const Ogg::Speex::Properties*>(this)->function_name();  \
+  else if(dynamic_cast<const TrueAudio::Properties*>(this))                     \
+    return dynamic_cast<const TrueAudio::Properties*>(this)->function_name();   \
+  else if(dynamic_cast<const RIFF::AIFF::Properties*>(this))                    \
+    return dynamic_cast<const RIFF::AIFF::Properties*>(this)->function_name();  \
+  else if(dynamic_cast<const RIFF::WAV::Properties*>(this))                     \
+    return dynamic_cast<const RIFF::WAV::Properties*>(this)->function_name();   \
+  else if(dynamic_cast<const Vorbis::Properties*>(this))                        \
+    return dynamic_cast<const Vorbis::Properties*>(this)->function_name();      \
+  else if(dynamic_cast<const WavPack::Properties*>(this))                       \
+    return dynamic_cast<const WavPack::Properties*>(this)->function_name();     \
+  else                                                                          \
+    return (default_value);
+
 class AudioProperties::AudioPropertiesPrivate
 {
 
@@ -59,98 +92,12 @@ AudioProperties::~AudioProperties()
 
 int AudioProperties::lengthInSeconds() const
 {
-  // This is an ugly workaround but we can't add a virtual function.
-  // Should be virtual in taglib2.
-
-  if(dynamic_cast<const APE::Properties*>(this))
-    return dynamic_cast<const APE::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const ASF::Properties*>(this))
-    return dynamic_cast<const ASF::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const FLAC::Properties*>(this))
-    return dynamic_cast<const FLAC::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const MP4::Properties*>(this))
-    return dynamic_cast<const MP4::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const MPC::Properties*>(this))
-    return dynamic_cast<const MPC::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const MPEG::Properties*>(this))
-    return dynamic_cast<const MPEG::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const Ogg::Opus::Properties*>(this))
-    return dynamic_cast<const Ogg::Opus::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const Ogg::Speex::Properties*>(this))
-    return dynamic_cast<const Ogg::Speex::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const TrueAudio::Properties*>(this))
-    return dynamic_cast<const TrueAudio::Properties*>(this)->lengthInSeconds();
-
-  else if (dynamic_cast<const RIFF::AIFF::Properties*>(this))
-    return dynamic_cast<const RIFF::AIFF::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const RIFF::WAV::Properties*>(this))
-    return dynamic_cast<const RIFF::WAV::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const Vorbis::Properties*>(this))
-    return dynamic_cast<const Vorbis::Properties*>(this)->lengthInSeconds();
-
-  else if(dynamic_cast<const WavPack::Properties*>(this))
-    return dynamic_cast<const WavPack::Properties*>(this)->lengthInSeconds();
-
-  else
-    return 0;
+  VIRTUAL_FUNCTION_WORKAROUND(lengthInSeconds, 0)
 }
 
 int AudioProperties::lengthInMilliseconds() const
 {
-  // This is an ugly workaround but we can't add a virtual function.
-  // Should be virtual in taglib2.
-
-  if(dynamic_cast<const APE::Properties*>(this))
-    return dynamic_cast<const APE::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const ASF::Properties*>(this))
-    return dynamic_cast<const ASF::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const FLAC::Properties*>(this))
-    return dynamic_cast<const FLAC::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const MP4::Properties*>(this))
-    return dynamic_cast<const MP4::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const MPC::Properties*>(this))
-    return dynamic_cast<const MPC::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const MPEG::Properties*>(this))
-    return dynamic_cast<const MPEG::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const Ogg::Opus::Properties*>(this))
-    return dynamic_cast<const Ogg::Opus::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const Ogg::Speex::Properties*>(this))
-    return dynamic_cast<const Ogg::Speex::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const TrueAudio::Properties*>(this))
-    return dynamic_cast<const TrueAudio::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const RIFF::AIFF::Properties*>(this))
-    return dynamic_cast<const RIFF::AIFF::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const RIFF::WAV::Properties*>(this))
-    return dynamic_cast<const RIFF::WAV::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const Vorbis::Properties*>(this))
-    return dynamic_cast<const Vorbis::Properties*>(this)->lengthInMilliseconds();
-
-  else if(dynamic_cast<const WavPack::Properties*>(this))
-    return dynamic_cast<const WavPack::Properties*>(this)->lengthInMilliseconds();
-
-  else
-    return 0;
+  VIRTUAL_FUNCTION_WORKAROUND(lengthInMilliseconds, 0)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

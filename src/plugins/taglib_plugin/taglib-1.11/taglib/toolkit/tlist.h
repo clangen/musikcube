@@ -230,6 +230,11 @@ namespace TagLib {
     List<T> &operator=(const List<T> &l);
 
     /*!
+     * Exchanges the content of this list by the content of \a l.
+     */
+    void swap(List<T> &l);
+
+    /*!
      * Compares this list with \a l and returns true if all of the elements are
      * the same.
      */

@@ -182,7 +182,7 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
 
   // Check for the MPEG synch bytes.
 
-  if(!firstSyncByte(data[0]) || !secondSynchByte(data[1])) {
+  if(!isFrameSync(data)) {
     debug("MPEG::Header::parse() -- MPEG header did not match MPEG synch.");
     return;
   }
@@ -197,10 +197,8 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
     d->version = Version2;
   else if(versionBits == 3)
     d->version = Version1;
-  else {
-    debug("MPEG::Header::parse() -- Invalid MPEG version bits.");
+  else
     return;
-  }
 
   // Set the MPEG layer
 
@@ -212,10 +210,8 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
     d->layer = 2;
   else if(layerBits == 3)
     d->layer = 1;
-  else {
-    debug("MPEG::Header::parse() -- Invalid MPEG layer bits.");
+  else
     return;
-  }
 
   d->protectionEnabled = (static_cast<unsigned char>(data[1] & 0x01) == 0);
 
@@ -244,10 +240,8 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
 
   d->bitrate = bitrates[versionIndex][layerIndex][bitrateIndex];
 
-  if(d->bitrate == 0) {
-    debug("MPEG::Header::parse() -- Invalid bit rate.");
+  if(d->bitrate == 0)
     return;
-  }
 
   // Set the sample rate
 
@@ -264,7 +258,6 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
   d->sampleRate = sampleRates[d->version][samplerateIndex];
 
   if(d->sampleRate == 0) {
-    debug("MPEG::Header::parse() -- Invalid sample rate.");
     return;
   }
 
@@ -311,20 +304,16 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
     file->seek(offset + d->frameLength);
     const ByteVector nextData = file->readBlock(4);
 
-    if(nextData.size() < 4) {
-      debug("MPEG::Header::parse() -- Could not read the next frame header.");
+    if(nextData.size() < 4)
       return;
-    }
 
     const unsigned int HeaderMask = 0xfffe0c00;
 
     const unsigned int header     = data.toUInt(0, true)     & HeaderMask;
     const unsigned int nextHeader = nextData.toUInt(0, true) & HeaderMask;
 
-    if(header != nextHeader) {
-      debug("MPEG::Header::parse() -- The next frame was not consistent with this frame.");
+    if(header != nextHeader)
       return;
-    }
   }
 
   // Now that we're done parsing, set this to be a valid frame.

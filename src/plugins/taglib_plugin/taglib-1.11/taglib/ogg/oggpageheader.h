@@ -156,7 +156,7 @@ namespace TagLib {
       /*!
        * A special value of containing the position of the packet to be
        * interpreted by the codec.  It is only supported here so that it may be
-       * coppied from one page to another.
+       * copied from one page to another.
        *
        * \see absoluteGranularPosition()
        */

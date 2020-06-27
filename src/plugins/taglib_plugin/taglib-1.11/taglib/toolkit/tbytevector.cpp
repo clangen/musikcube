@@ -29,7 +29,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <cstddef>
 
 #include <tstring.h>
 #include <tdebug.h>
@@ -63,7 +62,7 @@ int findChar(
 
   for(TIterator it = dataBegin + offset; it < dataEnd; it += byteAlign) {
     if(*it == c)
-      return (it - dataBegin);
+      return static_cast<int>(it - dataBegin);
   }
 
   return -1;
@@ -105,7 +104,7 @@ int findVector(
       ++itPattern;
 
       if(itPattern == patternEnd)
-        return (it - dataBegin);
+        return static_cast<int>(it - dataBegin);
     }
   }
 
@@ -125,7 +124,7 @@ T toNumber(const ByteVector &v, size_t offset, size_t length, bool mostSignifica
   T sum = 0;
   for(size_t i = 0; i < length; i++) {
     const size_t shift = (mostSignificantByteFirst ? length - 1 - i : i) * 8;
-    sum |= static_cast<T>(static_cast<unsigned char>(v[offset + i])) << shift;
+    sum |= static_cast<T>(static_cast<unsigned char>(v[static_cast<int>(offset + i)])) << shift;
   }
 
   return sum;
@@ -176,7 +175,7 @@ TFloat toFloat(const ByteVector &v, size_t offset)
   } tmp;
   ::memcpy(&tmp, v.data() + offset, sizeof(TInt));
 
-  if(ENDIAN != Utils::floatByteOrder())
+  if(ENDIAN != Utils::systemByteOrder())
     tmp.i = Utils::byteSwap(tmp.i);
 
   return tmp.f;
@@ -191,7 +190,7 @@ ByteVector fromFloat(TFloat value)
   } tmp;
   tmp.f = value;
 
-  if(ENDIAN != Utils::floatByteOrder())
+  if(ENDIAN != Utils::systemByteOrder())
     tmp.i = Utils::byteSwap(tmp.i);
 
   return ByteVector(reinterpret_cast<char *>(&tmp), sizeof(TInt));
@@ -300,7 +299,7 @@ ByteVector ByteVector::null;
 ByteVector ByteVector::fromCString(const char *s, unsigned int length)
 {
   if(length == 0xffffffff)
-    return ByteVector(s, ::strlen(s));
+    return ByteVector(s, static_cast<unsigned int>(::strlen(s)));
   else
     return ByteVector(s, length);
 }
@@ -375,7 +374,7 @@ ByteVector::ByteVector(const char *data, unsigned int length) :
 }
 
 ByteVector::ByteVector(const char *data) :
-  d(new ByteVectorPrivate(data, ::strlen(data)))
+  d(new ByteVectorPrivate(data, static_cast<unsigned int>(::strlen(data))))
 {
 }
 
@@ -485,46 +484,60 @@ ByteVector &ByteVector::replace(char oldByte, char newByte)
 
 ByteVector &ByteVector::replace(const ByteVector &pattern, const ByteVector &with)
 {
-  // TODO: This takes O(n!) time in the worst case. Rewrite it to run in O(n) time.
-
-  if(pattern.size() == 0 || pattern.size() > size())
-    return *this;
-
   if(pattern.size() == 1 && with.size() == 1)
     return replace(pattern[0], with[0]);
 
-  const size_t withSize    = with.size();
-  const size_t patternSize = pattern.size();
-  const ptrdiff_t diff = withSize - patternSize;
+  // Check if there is at least one occurrence of the pattern.
 
-  size_t offset = 0;
-  while (true) {
-    offset = find(pattern, offset);
-    if(offset == static_cast<size_t>(-1)) // Use npos in taglib2.
-      break;
+  int offset = find(pattern, 0);
+  if(offset == -1)
+    return *this;
+
+  if(pattern.size() == with.size()) {
+
+    // We think this case might be common enough to optimize it.
 
     detach();
+    do
+    {
+      ::memcpy(data() + offset, with.data(), with.size());
+      offset = find(pattern, offset + pattern.size());
+    } while(offset != -1);
+  }
+  else {
 
-    if(diff < 0) {
-      ::memmove(
-        data() + offset + withSize,
-        data() + offset + patternSize,
-        size() - offset - patternSize);
-      resize(size() + diff);
+    // Loop once to calculate the result size.
+
+    unsigned int dstSize = size();
+    do
+    {
+      dstSize += with.size() - pattern.size();
+      offset = find(pattern, offset + pattern.size());
+    } while(offset != -1);
+
+    // Loop again to copy modified data to the new vector.
+
+    ByteVector dst(dstSize);
+    int dstOffset = 0;
+
+    offset = 0;
+    while(true) {
+      const int next = find(pattern, offset);
+      if(next == -1) {
+        ::memcpy(dst.data() + dstOffset, data() + offset, size() - offset);
+        break;
+      }
+
+      ::memcpy(dst.data() + dstOffset, data() + offset, next - offset);
+      dstOffset += next - offset;
+
+      ::memcpy(dst.data() + dstOffset, with.data(), with.size());
+      dstOffset += with.size();
+
+      offset = next + pattern.size();
     }
-    else if(diff > 0) {
-      resize(size() + diff);
-      ::memmove(
-        data() + offset + withSize,
-        data() + offset + patternSize,
-        size() - diff - offset - patternSize);
-    }
 
-    ::memcpy(data() + offset, with.data(), with.size());
-
-    offset += withSize;
-    if(offset > size() - patternSize)
-      break;
+    swap(dst);
   }
 
   return *this;
@@ -963,7 +976,7 @@ ByteVector ByteVector::fromBase64(const ByteVector & input)
 
   // Only return output if we processed all bytes
   if(len == 0) {
-    output.resize(dst - (unsigned char*) output.data());
+    output.resize(static_cast<unsigned int>(dst - (unsigned char*) output.data()));
     return output;
   }
   return ByteVector();

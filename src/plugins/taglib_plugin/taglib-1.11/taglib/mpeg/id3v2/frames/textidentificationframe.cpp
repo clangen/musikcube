@@ -45,16 +45,16 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 TextIdentificationFrame::TextIdentificationFrame(const ByteVector &type, String::Type encoding) :
-  Frame(type)
+  Frame(type),
+  d(new TextIdentificationFramePrivate())
 {
-  d = new TextIdentificationFramePrivate;
   d->textEncoding = encoding;
 }
 
 TextIdentificationFrame::TextIdentificationFrame(const ByteVector &data) :
-  Frame(data)
+  Frame(data),
+  d(new TextIdentificationFramePrivate())
 {
-  d = new TextIdentificationFramePrivate;
   setData(data);
 }
 
@@ -252,9 +252,10 @@ ByteVector TextIdentificationFrame::renderFields() const
 // TextIdentificationFrame private members
 ////////////////////////////////////////////////////////////////////////////////
 
-TextIdentificationFrame::TextIdentificationFrame(const ByteVector &data, Header *h) : Frame(h)
+TextIdentificationFrame::TextIdentificationFrame(const ByteVector &data, Header *h) :
+  Frame(h),
+  d(new TextIdentificationFramePrivate())
 {
-  d = new TextIdentificationFramePrivate;
   parseFields(fieldData(data));
 }
 
@@ -276,7 +277,7 @@ PropertyMap TextIdentificationFrame::makeTIPLProperties() const
         break;
       }
     if(!found){
-      // invalid involved role -> mark whole frame as unsupported in order to be consisten with writing
+      // invalid involved role -> mark whole frame as unsupported in order to be consistent with writing
       map.clear();
       map.unsupportedData().append(frameID());
       return map;
@@ -338,7 +339,13 @@ UserTextIdentificationFrame::UserTextIdentificationFrame(const String &descripti
 
 String UserTextIdentificationFrame::toString() const
 {
-  return "[" + description() + "] " + fieldList().toString();
+  // first entry is the description itself, drop from values list
+  StringList l = fieldList();
+  for(StringList::Iterator it = l.begin(); it != l.end(); ++it) {
+    l.erase(it);
+    break;
+  }
+  return "[" + description() + "] " + l.toString();
 }
 
 String UserTextIdentificationFrame::description() const

@@ -111,8 +111,8 @@ Frame *Frame::createTextualFrame(const String &key, const StringList &values) //
   // check if the key is contained in the key<=>frameID mapping
   ByteVector frameID = keyToFrameID(key);
   if(!frameID.isEmpty()) {
-    // Apple proprietary WFED (Podcast URL) is in fact a text frame.
-    if(frameID[0] == 'T' || frameID == "WFED"){ // text frame
+    // Apple proprietary WFED (Podcast URL), MVNM (Movement Name), MVIN (Movement Number), GRP1 (Grouping) are in fact text frames.
+    if(frameID[0] == 'T' || frameID == "WFED" || frameID == "MVNM" || frameID == "MVIN" || frameID == "GRP1"){ // text frame
       TextIdentificationFrame *frame = new TextIdentificationFrame(frameID, String::UTF8);
       frame->setText(values);
       return frame;
@@ -198,15 +198,15 @@ ByteVector Frame::render() const
 // protected members
 ////////////////////////////////////////////////////////////////////////////////
 
-Frame::Frame(const ByteVector &data)
+Frame::Frame(const ByteVector &data) :
+  d(new FramePrivate())
 {
-  d = new FramePrivate;
   d->header = new Header(data);
 }
 
-Frame::Frame(Header *h)
+Frame::Frame(Header *h) :
+  d(new FramePrivate())
 {
-  d = new FramePrivate;
   d->header = h;
 }
 
@@ -392,6 +392,9 @@ namespace
     { "TDES", "PODCASTDESC" },
     { "TGID", "PODCASTID" },
     { "WFED", "PODCASTURL" },
+    { "MVNM", "MOVEMENTNAME" },
+    { "MVIN", "MOVEMENTNUMBER" },
+    { "GRP1", "GROUPING" },
   };
   const size_t frameTranslationSize = sizeof(frameTranslation) / sizeof(frameTranslation[0]);
 
@@ -474,8 +477,8 @@ PropertyMap Frame::asProperties() const
   // workaround until this function is virtual
   if(id == "TXXX")
     return dynamic_cast< const UserTextIdentificationFrame* >(this)->asProperties();
-  // Apple proprietary WFED (Podcast URL) is in fact a text frame.
-  else if(id[0] == 'T' || id == "WFED")
+  // Apple proprietary WFED (Podcast URL), MVNM (Movement Name), MVIN (Movement Number), GRP1 (Grouping) are in fact text frames.
+  else if(id[0] == 'T' || id == "WFED" || id == "MVNM" || id == "MVIN" || id == "GRP1")
     return dynamic_cast< const TextIdentificationFrame* >(this)->asProperties();
   else if(id == "WXXX")
     return dynamic_cast< const UserUrlLinkFrame* >(this)->asProperties();
@@ -571,15 +574,15 @@ unsigned int Frame::Header::size(unsigned int version)
 // public members (Frame::Header)
 ////////////////////////////////////////////////////////////////////////////////
 
-Frame::Header::Header(const ByteVector &data, bool synchSafeInts)
+Frame::Header::Header(const ByteVector &data, bool synchSafeInts) :
+  d(new HeaderPrivate())
 {
-  d = new HeaderPrivate;
   setData(data, synchSafeInts);
 }
 
-Frame::Header::Header(const ByteVector &data, unsigned int version)
+Frame::Header::Header(const ByteVector &data, unsigned int version) :
+  d(new HeaderPrivate())
 {
-  d = new HeaderPrivate;
   setData(data, version);
 }
 

@@ -53,9 +53,9 @@ ByteVectorStream::ByteVectorStreamPrivate::ByteVectorStreamPrivate(const ByteVec
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-ByteVectorStream::ByteVectorStream(const ByteVector &data)
+ByteVectorStream::ByteVectorStream(const ByteVector &data) :
+  d(new ByteVectorStreamPrivate(data))
 {
-  d = new ByteVectorStreamPrivate(data);
 }
 
 ByteVectorStream::~ByteVectorStream()
@@ -137,7 +137,7 @@ void ByteVectorStream::seek(long offset, Position p)
     d->position += offset;
     break;
   case End:
-    d->position = length() - offset;
+    d->position = length() + offset; // offset is expected to be negative
     break;
   }
 }

@@ -32,6 +32,7 @@
 #include <id3v2tag.h>
 #include <id3v2frame.h>
 #include <id3v2header.h>
+#include <commentsframe.h>
 
 #include <id3v1tag.h>
 
@@ -65,8 +66,15 @@ int main(int argc, char *argv[])
            << endl;
 
       ID3v2::FrameList::ConstIterator it = id3v2tag->frameList().begin();
-      for(; it != id3v2tag->frameList().end(); it++)
-        cout << (*it)->frameID() << " - \"" << (*it)->toString() << "\"" << endl;
+      for(; it != id3v2tag->frameList().end(); it++) {
+        cout << (*it)->frameID();
+
+        if(ID3v2::CommentsFrame *comment = dynamic_cast<ID3v2::CommentsFrame *>(*it))
+          if(!comment->description().isEmpty())
+            cout << " [" << comment->description() << "]";
+
+        cout << " - \"" << (*it)->toString() << "\"" << endl;
+      }
     }
     else
       cout << "file does not have a valid id3v2 tag" << endl;

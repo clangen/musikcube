@@ -103,13 +103,34 @@ inline bool fileEqual(const string &filename1, const string &filename2)
   return stream1.good() == stream2.good();
 }
 
+#ifdef TAGLIB_STRING_H
+
+namespace TagLib {
+
+  inline String longText(size_t length, bool random = false)
+  {
+    const wchar_t chars[] = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_";
+
+    std::wstring text(length, L'X');
+
+    if(random) {
+      for(size_t i = 0; i < length; ++i)
+        text[i] = chars[rand() % 53];
+    }
+
+    return String(text);
+  }
+}
+
+#endif
+
 class ScopedFileCopy
 {
 public:
-  ScopedFileCopy(const string &filename, const string &ext, bool deleteFile=true)
+  ScopedFileCopy(const string &filename, const string &ext, bool deleteFile=true) :
+    m_deleteFile(deleteFile),
+    m_filename(copyFile(filename, ext))
   {
-    m_deleteFile = deleteFile;
-    m_filename = copyFile(filename, ext);
   }
 
   ~ScopedFileCopy()
@@ -118,12 +139,12 @@ public:
       deleteFile(m_filename);
   }
 
-  string fileName()
+  string fileName() const
   {
     return m_filename;
   }
 
 private:
-  bool m_deleteFile;
-  string m_filename;
+  const bool m_deleteFile;
+  const string m_filename;
 };

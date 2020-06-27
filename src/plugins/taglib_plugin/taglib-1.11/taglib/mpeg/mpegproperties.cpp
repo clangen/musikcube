@@ -157,23 +157,13 @@ void MPEG::Properties::read(File *file)
 {
   // Only the first valid frame is required if we have a VBR header.
 
-  long firstFrameOffset = file->firstFrameOffset();
+  const long firstFrameOffset = file->firstFrameOffset();
   if(firstFrameOffset < 0) {
     debug("MPEG::Properties::read() -- Could not find an MPEG frame in the stream.");
     return;
   }
 
-  Header firstHeader(file, firstFrameOffset);
-
-  while(!firstHeader.isValid()) {
-    firstFrameOffset = file->nextFrameOffset(firstFrameOffset + 1);
-    if(firstFrameOffset < 0) {
-      debug("MPEG::Properties::read() -- Could not find a valid first MPEG frame in the stream.");
-      return;
-    }
-
-    firstHeader = Header(file, firstFrameOffset);
-  }
+  const Header firstHeader(file, firstFrameOffset, false);
 
   // Check for a VBR header that will help us in gathering information about a
   // VBR stream.
@@ -207,24 +197,13 @@ void MPEG::Properties::read(File *file)
 
     // Look for the last MPEG audio frame to calculate the stream length.
 
-    long lastFrameOffset = file->lastFrameOffset();
+    const long lastFrameOffset = file->lastFrameOffset();
     if(lastFrameOffset < 0) {
       debug("MPEG::Properties::read() -- Could not find an MPEG frame in the stream.");
       return;
     }
 
-    Header lastHeader(file, lastFrameOffset, false);
-
-    while(!lastHeader.isValid()) {
-      lastFrameOffset = file->previousFrameOffset(lastFrameOffset);
-      if(lastFrameOffset < 0) {
-        debug("MPEG::Properties::read() -- Could not find a valid last MPEG frame in the stream.");
-        return;
-      }
-
-      lastHeader = Header(file, lastFrameOffset, false);
-    }
-
+    const Header lastHeader(file, lastFrameOffset, false);
     const long streamLength = lastFrameOffset - firstFrameOffset + lastHeader.frameLength();
     if(streamLength > 0)
       d->length = static_cast<int>(streamLength * 8.0 / d->bitrate + 0.5);

@@ -43,14 +43,16 @@ public:
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-PopularimeterFrame::PopularimeterFrame() : Frame("POPM")
+PopularimeterFrame::PopularimeterFrame() :
+  Frame("POPM"),
+  d(new PopularimeterFramePrivate())
 {
-  d = new PopularimeterFramePrivate;
 }
 
-PopularimeterFrame::PopularimeterFrame(const ByteVector &data) : Frame(data)
+PopularimeterFrame::PopularimeterFrame(const ByteVector &data) :
+  Frame(data),
+  d(new PopularimeterFramePrivate())
 {
-  d = new PopularimeterFramePrivate;
   setData(data);
 }
 
@@ -130,8 +132,9 @@ ByteVector PopularimeterFrame::renderFields() const
 // private members
 ////////////////////////////////////////////////////////////////////////////////
 
-PopularimeterFrame::PopularimeterFrame(const ByteVector &data, Header *h) : Frame(h)
+PopularimeterFrame::PopularimeterFrame(const ByteVector &data, Header *h) :
+  Frame(h),
+  d(new PopularimeterFramePrivate())
 {
-  d = new PopularimeterFramePrivate;
   parseFields(fieldData(data));
 }

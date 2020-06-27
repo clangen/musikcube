@@ -55,7 +55,7 @@ namespace TagLib {
        *
        * \deprecated
        */
-      Properties(File *file, ReadStyle style = Average);
+      TAGLIB_DEPRECATED Properties(File *file, ReadStyle style = Average);
 
       /*!
        * Create an instance of APE::Properties with the data read from the
@@ -76,7 +76,7 @@ namespace TagLib {
        *
        * \deprecated
        */
-      virtual int length() const;
+      TAGLIB_DEPRECATED virtual int length() const;
 
       /*!
        * Returns the length of the file in seconds.  The length is rounded down to

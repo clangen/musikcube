@@ -38,7 +38,7 @@ namespace TagLib {
 
     /*!
      * This class implements ID3v2 extended headers.  It attempts to follow,
-     * both semantically and programatically, the structure specified in
+     * both semantically and programmatically, the structure specified in
      * the ID3v2 standard.  The API is based on the properties of ID3v2 extended
      * headers specified there.  If any of the terms used in this documentation
      * are unclear please check the specification in the linked section.

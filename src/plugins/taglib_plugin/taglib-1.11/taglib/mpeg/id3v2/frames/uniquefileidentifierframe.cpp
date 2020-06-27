@@ -45,16 +45,16 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 UniqueFileIdentifierFrame::UniqueFileIdentifierFrame(const ByteVector &data) :
-    ID3v2::Frame(data)
+  ID3v2::Frame(data),
+  d(new UniqueFileIdentifierFramePrivate())
 {
-  d = new UniqueFileIdentifierFramePrivate;
   setData(data);
 }
 
 UniqueFileIdentifierFrame::UniqueFileIdentifierFrame(const String &owner, const ByteVector &id) :
-    ID3v2::Frame("UFID")
+  ID3v2::Frame("UFID"),
+  d(new UniqueFileIdentifierFramePrivate())
 {
-  d = new UniqueFileIdentifierFramePrivate;
   d->owner = owner;
   d->identifier = id;
 }
@@ -141,8 +141,8 @@ ByteVector UniqueFileIdentifierFrame::renderFields() const
 }
 
 UniqueFileIdentifierFrame::UniqueFileIdentifierFrame(const ByteVector &data, Header *h) :
-  Frame(h)
+  Frame(h),
+  d(new UniqueFileIdentifierFramePrivate())
 {
-  d = new UniqueFileIdentifierFramePrivate;
   parseFields(fieldData(data));
 }

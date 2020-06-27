@@ -46,15 +46,15 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 EventTimingCodesFrame::EventTimingCodesFrame() :
-  Frame("ETCO")
+  Frame("ETCO"),
+  d(new EventTimingCodesFramePrivate())
 {
-  d = new EventTimingCodesFramePrivate;
 }
 
 EventTimingCodesFrame::EventTimingCodesFrame(const ByteVector &data) :
-  Frame(data)
+  Frame(data),
+  d(new EventTimingCodesFramePrivate())
 {
-  d = new EventTimingCodesFramePrivate;
   setData(data);
 }
 
@@ -136,9 +136,9 @@ ByteVector EventTimingCodesFrame::renderFields() const
 // private members
 ////////////////////////////////////////////////////////////////////////////////
 
-EventTimingCodesFrame::EventTimingCodesFrame(const ByteVector &data, Header *h)
-  : Frame(h)
+EventTimingCodesFrame::EventTimingCodesFrame(const ByteVector &data, Header *h) :
+  Frame(h),
+  d(new EventTimingCodesFramePrivate())
 {
-  d = new EventTimingCodesFramePrivate();
   parseFields(fieldData(data));
 }

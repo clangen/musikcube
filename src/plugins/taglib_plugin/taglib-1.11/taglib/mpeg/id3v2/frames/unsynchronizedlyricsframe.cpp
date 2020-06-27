@@ -50,16 +50,16 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 UnsynchronizedLyricsFrame::UnsynchronizedLyricsFrame(String::Type encoding) :
-  Frame("USLT")
+  Frame("USLT"),
+  d(new UnsynchronizedLyricsFramePrivate())
 {
-  d = new UnsynchronizedLyricsFramePrivate;
   d->textEncoding = encoding;
 }
 
 UnsynchronizedLyricsFrame::UnsynchronizedLyricsFrame(const ByteVector &data) :
-  Frame(data)
+  Frame(data),
+  d(new UnsynchronizedLyricsFramePrivate())
 {
-  d = new UnsynchronizedLyricsFramePrivate;
   setData(data);
 }
 
@@ -118,7 +118,7 @@ PropertyMap UnsynchronizedLyricsFrame::asProperties() const
 {
   PropertyMap map;
   String key = description().upper();
-  if(key.isEmpty() || key.upper() == "LYRICS")
+  if(key.isEmpty() || key == "LYRICS")
     map.insert("LYRICS", text());
   else
     map.insert("LYRICS:" + key, text());
@@ -190,9 +190,9 @@ ByteVector UnsynchronizedLyricsFrame::renderFields() const
 // private members
 ////////////////////////////////////////////////////////////////////////////////
 
-UnsynchronizedLyricsFrame::UnsynchronizedLyricsFrame(const ByteVector &data, Header *h)
-  : Frame(h)
+UnsynchronizedLyricsFrame::UnsynchronizedLyricsFrame(const ByteVector &data, Header *h) :
+  Frame(h),
+  d(new UnsynchronizedLyricsFramePrivate())
 {
-  d = new UnsynchronizedLyricsFramePrivate();
   parseFields(fieldData(data));
 }

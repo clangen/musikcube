@@ -14,10 +14,10 @@ EOH
 	exit 1;
 }
 
-prefix=${CMAKE_INSTALL_PREFIX}
-exec_prefix=${CMAKE_INSTALL_PREFIX}
-libdir=${LIB_INSTALL_DIR}
-includedir=${INCLUDE_INSTALL_DIR}
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
 
 flags=""
 
@@ -29,13 +29,13 @@ while test $# -gt 0
 do
   case $1 in
     --libs)
-	  flags="$flags -L$libdir -ltag"
+	  flags="$flags -L$libdir -ltag @ZLIB_LIBRARIES_FLAGS@"
 	  ;;
     --cflags)
 	  flags="$flags -I$includedir/taglib"
 	  ;;
     --version)
-	  echo ${TAGLIB_LIB_VERSION_STRING}
+	  echo @TAGLIB_LIB_VERSION_STRING@
 	  ;;
     --prefix)
 	  echo $prefix

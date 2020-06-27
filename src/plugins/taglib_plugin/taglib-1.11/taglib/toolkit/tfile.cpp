@@ -69,39 +69,38 @@ using namespace TagLib;
 class File::FilePrivate
 {
 public:
-  FilePrivate(IOStream *stream, bool owner);
+  FilePrivate(IOStream *stream, bool owner) :
+    stream(stream),
+    streamOwner(owner),
+    valid(true) {}
+
+  ~FilePrivate()
+  {
+    if(streamOwner)
+      delete stream;
+  }
 
   IOStream *stream;
   bool streamOwner;
   bool valid;
 };
 
-File::FilePrivate::FilePrivate(IOStream *stream, bool owner) :
-  stream(stream),
-  streamOwner(owner),
-  valid(true)
-{
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-File::File(FileName fileName)
+File::File(FileName fileName) :
+  d(new FilePrivate(new FileStream(fileName), true))
 {
-  IOStream *stream = new FileStream(fileName);
-  d = new FilePrivate(stream, true);
 }
 
-File::File(IOStream *stream)
+File::File(IOStream *stream) :
+  d(new FilePrivate(stream, false))
 {
-  d = new FilePrivate(stream, false);
 }
 
 File::~File()
 {
-  if(d->stream && d->streamOwner)
-    delete d->stream;
   delete d;
 }
 

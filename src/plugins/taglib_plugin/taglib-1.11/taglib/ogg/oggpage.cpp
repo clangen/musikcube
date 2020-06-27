@@ -208,15 +208,15 @@ List<Ogg::Page *> Ogg::Page::paginate(const ByteVectorList &packets,
 
   static const unsigned int SplitSize = 32 * 255;
 
-  // Force repagination if the packets are too large for a page.
+  // Force repagination if the segment table will exceed the size limit.
 
   if(strategy != Repaginate) {
 
-    size_t totalSize = packets.size();
+    size_t tableSize = 0;
     for(ByteVectorList::ConstIterator it = packets.begin(); it != packets.end(); ++it)
-      totalSize += it->size();
+      tableSize += it->size() / 255 + 1;
 
-    if(totalSize > 255 * 255)
+    if(tableSize > 255)
       strategy = Repaginate;
   }
 

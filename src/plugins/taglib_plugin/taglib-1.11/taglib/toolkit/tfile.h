@@ -63,6 +63,23 @@ namespace TagLib {
     };
 
     /*!
+     * Specify which tags to strip either explicitly, or on save.
+     */
+    enum StripTags {
+      StripNone,  //<! Don't strip any tags
+      StripOthers //<! Strip all tags not explicitly referenced in method call
+    };
+
+    /*!
+     * Used to specify if when saving files, if values between different tag
+     * types should be syncronized.
+     */
+    enum DuplicateTags {
+      Duplicate,     //<! Syncronize values between different tag types
+      DoNotDuplicate //<! Do not syncronize values between different tag types
+    };
+
+    /*!
      * Destroys this File instance.
      */
     virtual ~File();
@@ -86,7 +103,7 @@ namespace TagLib {
      * format, the returned map's unsupportedData() list will contain one entry identifying
      * that object (e.g. the frame type for ID3v2 tags). Use removeUnsupportedProperties()
      * to remove (a subset of) them.
-     * For files that contain more than one tag (e.g. an MP3 with both an ID3v2 and an ID3v2
+     * For files that contain more than one tag (e.g. an MP3 with both an ID3v1 and an ID3v2
      * tag) only the most "modern" one will be exported (ID3v2 in this case).
      * BIC: Will be made virtual in future releases.
      */
@@ -246,14 +263,14 @@ namespace TagLib {
      *
      * \deprecated
      */
-    static bool isReadable(const char *file);
+    TAGLIB_DEPRECATED static bool isReadable(const char *file);
 
     /*!
      * Returns true if \a file can be opened for writing.
      *
      * \deprecated
      */
-    static bool isWritable(const char *name);
+    TAGLIB_DEPRECATED static bool isWritable(const char *name);
 
   protected:
     /*!

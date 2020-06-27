@@ -42,7 +42,7 @@ namespace TagLib {
     /*!
      * \deprecated
      */
-    typedef TagLib::Map<String, Item> ItemListMap;
+    TAGLIB_DEPRECATED typedef TagLib::Map<String, Item> ItemListMap;
     typedef TagLib::Map<String, Item> ItemMap;
 
     class TAGLIB_EXPORT Tag: public TagLib::Tag
@@ -74,7 +74,7 @@ namespace TagLib {
         /*!
          * \deprecated Use the item() and setItem() API instead
          */
-        ItemMap &itemListMap();
+        TAGLIB_DEPRECATED ItemMap &itemListMap();
 
         /*!
          * Returns a string-keyed map of the MP4::Items for this tag.

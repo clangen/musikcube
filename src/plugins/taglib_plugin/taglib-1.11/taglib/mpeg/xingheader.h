@@ -111,8 +111,8 @@ namespace TagLib {
        *
        * \deprecated Always returns 0.
        */
-      static int xingHeaderOffset(TagLib::MPEG::Header::Version v,
-                                  TagLib::MPEG::Header::ChannelMode c);
+      TAGLIB_DEPRECATED static int xingHeaderOffset(TagLib::MPEG::Header::Version v,
+                                                    TagLib::MPEG::Header::ChannelMode c);
 
     private:
       XingHeader(const XingHeader &);

@@ -49,18 +49,17 @@ public:
     albumGain(0),
     albumPeak(0) {}
 
-  int          version;
-  int          length;
-  int          bitrate;
-  int          sampleRate;
-  int          channels;
+  int version;
+  int length;
+  int bitrate;
+  int sampleRate;
+  int channels;
   unsigned int totalFrames;
   unsigned int sampleFrames;
-  unsigned int trackGain;
-  unsigned int trackPeak;
-  unsigned int albumGain;
-  unsigned int albumPeak;
-  String       flags;
+  int trackGain;
+  int trackPeak;
+  int albumGain;
+  int albumPeak;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -312,9 +311,9 @@ void MPC::Properties::readSV7(const ByteVector &data, long streamLength)
     const unsigned int gapless = data.toUInt(5, false);
 
     d->trackGain = data.toShort(14, false);
-    d->trackPeak = data.toShort(12, false);
+    d->trackPeak = data.toUShort(12, false);
     d->albumGain = data.toShort(18, false);
-    d->albumPeak = data.toShort(16, false);
+    d->albumPeak = data.toUShort(16, false);
 
     // convert gain info
     if(d->trackGain != 0) {

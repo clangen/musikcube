@@ -5,6 +5,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/../taglib/mpeg
   ${CMAKE_CURRENT_SOURCE_DIR}/../taglib/mpeg/id3v1
   ${CMAKE_CURRENT_SOURCE_DIR}/../taglib/mpeg/id3v2
+  ${CMAKE_CURRENT_SOURCE_DIR}/../taglib/mpeg/id3v2/frames
   ${CMAKE_CURRENT_SOURCE_DIR}/../bindings/c/
 )
 

@@ -38,6 +38,7 @@ class TestByteVectorStream : public CppUnit::TestFixture
   CPPUNIT_TEST(testReadBlock);
   CPPUNIT_TEST(testRemoveBlock);
   CPPUNIT_TEST(testInsert);
+  CPPUNIT_TEST(testSeekEnd);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -110,6 +111,19 @@ public:
     CPPUNIT_ASSERT_EQUAL(ByteVector("yyxfoa"), *stream.data());
     stream.insert(ByteVector("123"), 3, 0);
     CPPUNIT_ASSERT_EQUAL(ByteVector("yyx123foa"), *stream.data());
+  }
+
+  void testSeekEnd()
+  {
+    ByteVector v("abcdefghijklmnopqrstuvwxyz");
+    ByteVectorStream stream(v);
+    CPPUNIT_ASSERT_EQUAL(26L, stream.length());
+
+    stream.seek(-4, IOStream::End);
+    CPPUNIT_ASSERT_EQUAL(ByteVector("w"), stream.readBlock(1));
+
+    stream.seek(-25, IOStream::End);
+    CPPUNIT_ASSERT_EQUAL(ByteVector("b"), stream.readBlock(1));
   }
 
 };

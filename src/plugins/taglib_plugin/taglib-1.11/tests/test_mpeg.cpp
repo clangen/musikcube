@@ -64,6 +64,7 @@ class TestMPEG : public CppUnit::TestFixture
   CPPUNIT_TEST(testEmptyID3v2);
   CPPUNIT_TEST(testEmptyID3v1);
   CPPUNIT_TEST(testEmptyAPE);
+  CPPUNIT_TEST(testIgnoreGarbage);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -72,7 +73,6 @@ public:
   {
     MPEG::File f(TEST_FILE_PATH_C("lame_cbr.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(1887, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(1887, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(1887164, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(64, f.audioProperties()->bitrate());
@@ -85,7 +85,6 @@ public:
   {
     MPEG::File f(TEST_FILE_PATH_C("lame_vbr.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(1887, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(1887, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(1887164, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(70, f.audioProperties()->bitrate());
@@ -96,9 +95,8 @@ public:
 
   void testAudioPropertiesVBRIHeader()
   {
-    MPEG::File f(TEST_FILE_PATH_C("vbri.mp3"));
+    MPEG::File f(TEST_FILE_PATH_C("rare_frames.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(222, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(222, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(222198, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(233, f.audioProperties()->bitrate());
@@ -111,7 +109,6 @@ public:
   {
     MPEG::File f(TEST_FILE_PATH_C("bladeenc.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(3, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(3553, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(64, f.audioProperties()->bitrate());
@@ -119,13 +116,8 @@ public:
     CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT(!f.audioProperties()->xingHeader());
 
-    long last = f.lastFrameOffset();
-    MPEG::Header lastHeader(&f, last, false);
-
-    while(!lastHeader.isValid()) {
-      last = f.previousFrameOffset(last);
-      lastHeader = MPEG::Header(&f, last, false);
-    }
+    const long last = f.lastFrameOffset();
+    const MPEG::Header lastHeader(&f, last, false);
 
     CPPUNIT_ASSERT_EQUAL(28213L, last);
     CPPUNIT_ASSERT_EQUAL(209, lastHeader.frameLength());
@@ -135,7 +127,6 @@ public:
   {
     MPEG::File f(TEST_FILE_PATH_C("invalid-frames1.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(392, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(160, f.audioProperties()->bitrate());
@@ -148,7 +139,6 @@ public:
   {
     MPEG::File f(TEST_FILE_PATH_C("invalid-frames2.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(314, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(192, f.audioProperties()->bitrate());
@@ -161,9 +151,8 @@ public:
   {
     MPEG::File f(TEST_FILE_PATH_C("invalid-frames3.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(0, f.audioProperties()->lengthInSeconds());
-    CPPUNIT_ASSERT_EQUAL(176, f.audioProperties()->lengthInMilliseconds());
+    CPPUNIT_ASSERT_EQUAL(183, f.audioProperties()->lengthInMilliseconds());
     CPPUNIT_ASSERT_EQUAL(320, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(2, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(44100, f.audioProperties()->sampleRate());
@@ -174,7 +163,6 @@ public:
   {
     MPEG::File f(TEST_FILE_PATH_C("mpeg2.mp3"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(5387, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(5387, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(5387285, f.audioProperties()->lengthInMilliseconds());
   }
@@ -191,7 +179,7 @@ public:
 
       f.tag()->setTitle(xxx);
       f.tag()->setArtist("Artist A");
-      f.save(MPEG::File::AllTags, true, 4);
+      f.save(MPEG::File::AllTags, File::StripOthers, ID3v2::v4);
       CPPUNIT_ASSERT_EQUAL(true, f.hasID3v2Tag());
     }
     {
@@ -234,7 +222,7 @@ public:
 
       f.tag()->setTitle(xxx);
       f.tag()->setArtist("Artist A");
-      f.save(MPEG::File::AllTags, true, 3);
+      f.save(MPEG::File::AllTags, File::StripOthers, ID3v2::v3);
       CPPUNIT_ASSERT_EQUAL(true, f.hasID3v2Tag());
     }
     {
@@ -373,7 +361,7 @@ public:
     {
       MPEG::File f(copy.fileName().c_str());
       f.ID3v2Tag(true)->setTitle("");
-      f.save(MPEG::File::ID3v2, false);
+      f.save(MPEG::File::ID3v2, File::StripNone);
     }
     {
       MPEG::File f(copy.fileName().c_str());
@@ -393,7 +381,7 @@ public:
     {
       MPEG::File f(copy.fileName().c_str());
       f.ID3v1Tag(true)->setTitle("");
-      f.save(MPEG::File::ID3v1, false);
+      f.save(MPEG::File::ID3v1, File::StripNone);
     }
     {
       MPEG::File f(copy.fileName().c_str());
@@ -413,11 +401,32 @@ public:
     {
       MPEG::File f(copy.fileName().c_str());
       f.APETag(true)->setTitle("");
-      f.save(MPEG::File::APE, false);
+      f.save(MPEG::File::APE, File::StripNone);
     }
     {
       MPEG::File f(copy.fileName().c_str());
       CPPUNIT_ASSERT(!f.hasAPETag());
+    }
+  }
+
+  void testIgnoreGarbage()
+  {
+    const ScopedFileCopy copy("garbage", ".mp3");
+    {
+      MPEG::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.isValid());
+      CPPUNIT_ASSERT(f.hasID3v2Tag());
+      CPPUNIT_ASSERT_EQUAL(2255L, f.firstFrameOffset());
+      CPPUNIT_ASSERT_EQUAL(6015L, f.lastFrameOffset());
+      CPPUNIT_ASSERT_EQUAL(String("Title A"), f.ID3v2Tag()->title());
+      f.ID3v2Tag()->setTitle("Title B");
+      f.save();
+    }
+    {
+      MPEG::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.isValid());
+      CPPUNIT_ASSERT(f.hasID3v2Tag());
+      CPPUNIT_ASSERT_EQUAL(String("Title B"), f.ID3v2Tag()->title());
     }
   }
 

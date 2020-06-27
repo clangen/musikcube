@@ -95,13 +95,13 @@ unsigned int RIFF::File::riffSize() const
 
 unsigned int RIFF::File::chunkCount() const
 {
-  return d->chunks.size();
+  return static_cast<unsigned int>(d->chunks.size());
 }
 
 unsigned int RIFF::File::chunkDataSize(unsigned int i) const
 {
   if(i >= d->chunks.size()) {
-    debug("RIFF::File::chunkPadding() - Index out of range. Returning 0.");
+    debug("RIFF::File::chunkDataSize() - Index out of range. Returning 0.");
     return 0;
   }
 
@@ -111,7 +111,7 @@ unsigned int RIFF::File::chunkDataSize(unsigned int i) const
 unsigned int RIFF::File::chunkOffset(unsigned int i) const
 {
   if(i >= d->chunks.size()) {
-    debug("RIFF::File::chunkPadding() - Index out of range. Returning 0.");
+    debug("RIFF::File::chunkOffset() - Index out of range. Returning 0.");
     return 0;
   }
 
@@ -161,19 +161,19 @@ void RIFF::File::setChunkData(unsigned int i, const ByteVector &data)
   std::vector<Chunk>::iterator it = d->chunks.begin();
   std::advance(it, i);
 
-  const int originalSize = it->size + it->padding;
+  const long long originalSize = static_cast<long long>(it->size) + it->padding;
 
   writeChunk(it->name, data, it->offset - 8, it->size + it->padding + 8);
 
   it->size    = data.size();
-  it->padding = data.size() % 1;
+  it->padding = data.size() % 2;
 
-  const int diff = it->size + it->padding - originalSize;
+  const long long diff = static_cast<long long>(it->size) + it->padding - originalSize;
 
   // Now update the internal offsets
 
   for(++it; it != d->chunks.end(); ++it)
-    it->offset += diff;
+    it->offset += static_cast<int>(diff);
 
   // Update the global size.
 
@@ -187,7 +187,7 @@ void RIFF::File::setChunkData(const ByteVector &name, const ByteVector &data)
 
 void RIFF::File::setChunkData(const ByteVector &name, const ByteVector &data, bool alwaysCreate)
 {
-  if(d->chunks.size() == 0) {
+  if(d->chunks.empty()) {
     debug("RIFF::File::setChunkData - No valid chunks found.");
     return;
   }
@@ -269,7 +269,7 @@ void RIFF::File::removeChunk(unsigned int i)
 
 void RIFF::File::removeChunk(const ByteVector &name)
 {
-  for(int i = d->chunks.size() - 1; i >= 0; --i) {
+  for(int i = static_cast<int>(d->chunks.size()) - 1; i >= 0; --i) {
     if(d->chunks[i].name == name)
       removeChunk(i);
   }
@@ -292,7 +292,6 @@ void RIFF::File::read()
   d->size = readBlock(4).toUInt(bigEndian);
 
   offset += 8;
-  seek(offset);
 
   // + 8: chunk header at least, fix for additional junk bytes
   while(offset + 8 <= length()) {
@@ -307,32 +306,39 @@ void RIFF::File::read()
       break;
     }
 
-    if(static_cast<long long>(tell()) + chunkSize > length()) {
+    if(static_cast<long long>(offset) + 8 + chunkSize > length()) {
       debug("RIFF::File::read() -- Chunk '" + chunkName + "' has invalid size (larger than the file size)");
       setValid(false);
       break;
     }
 
-    offset += 8;
-
     Chunk chunk;
-    chunk.name   = chunkName;
-    chunk.size   = chunkSize;
-    chunk.offset = offset;
+    chunk.name    = chunkName;
+    chunk.size    = chunkSize;
+    chunk.offset  = offset + 8;
+    chunk.padding = 0;
 
-    offset += chunk.size;
-
-    seek(offset);
+    offset = chunk.offset + chunk.size;
 
     // Check padding
 
-    chunk.padding = 0;
-
     if(offset & 1) {
+      seek(offset);
       const ByteVector iByte = readBlock(1);
-      if(iByte.size() == 1 && iByte[0] == '\0') {
-        chunk.padding = 1;
-        offset++;
+      if(iByte.size() == 1) {
+        bool skipPadding = iByte[0] == '\0';
+        if(!skipPadding) {
+          // Padding byte is not zero, check if it is good to ignore it
+          const ByteVector fourCcAfterPadding = readBlock(4);
+          if(isValidChunkName(fourCcAfterPadding)) {
+            // Use the padding, it is followed by a valid chunk name.
+            skipPadding = true;
+          }
+        }
+        if(skipPadding) {
+          chunk.padding = 1;
+          offset++;
+        }
       }
     }
 

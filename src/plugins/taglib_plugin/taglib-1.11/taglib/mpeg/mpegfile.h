@@ -32,6 +32,8 @@
 
 #include "mpegproperties.h"
 
+#include "id3v2.h"
+
 namespace TagLib {
 
   namespace ID3v2 { class Tag; class FrameFactory; }
@@ -191,49 +193,39 @@ namespace TagLib {
       bool save(int tags);
 
       /*!
-       * Save the file.  This will attempt to save all of the tag types that are
-       * specified by OR-ing together TagTypes values.  The save() method above
-       * uses AllTags.  This returns true if saving was successful.
-       *
-       * If \a stripOthers is true this strips all tags not included in the mask,
-       * but does not modify them in memory, so later calls to save() which make
-       * use of these tags will remain valid.  This also strips empty tags.
+       * \deprecated
        */
       // BIC: combine with the above method
-      bool save(int tags, bool stripOthers);
+      TAGLIB_DEPRECATED bool save(int tags, bool stripOthers);
+
+      /*!
+       * \deprecated
+       */
+      // BIC: combine with the above method
+      TAGLIB_DEPRECATED bool save(int tags, bool stripOthers, int id3v2Version);
+
+      /*!
+       * \deprecated
+       */
+      // BIC: combine with the above method
+      TAGLIB_DEPRECATED bool save(int tags, bool stripOthers, int id3v2Version, bool duplicateTags);
 
       /*!
        * Save the file.  This will attempt to save all of the tag types that are
-       * specified by OR-ing together TagTypes values.  The save() method above
-       * uses AllTags.  This returns true if saving was successful.
+       * specified by OR-ing together TagTypes values.
        *
-       * If \a stripOthers is true this strips all tags not included in the mask,
-       * but does not modify them in memory, so later calls to save() which make
-       * use of these tags will remain valid.  This also strips empty tags.
+       * \a strip can be set to strip all tags except those in \a tags.  Those
+       * tags will not be modified in memory, and thus remain valid.
        *
-       * The \a id3v2Version parameter specifies the version of the saved
-       * ID3v2 tag. It can be either 4 or 3.
+       * \a version specifies the ID3v2 version to be used for writing tags.  By
+       * default, the latest standard, ID3v2.4 is used.
+       *
+       * If \a duplicate is set to DuplicateTags and at least one tag -- ID3v1
+       * or ID3v2 -- exists this will duplicate its content into the other tag.
        */
-      // BIC: combine with the above method
-      bool save(int tags, bool stripOthers, int id3v2Version);
-
-      /*!
-       * Save the file.  This will attempt to save all of the tag types that are
-       * specified by OR-ing together TagTypes values.  The save() method above
-       * uses AllTags.  This returns true if saving was successful.
-       *
-       * If \a stripOthers is true this strips all tags not included in the mask,
-       * but does not modify them in memory, so later calls to save() which make
-       * use of these tags will remain valid.  This also strips empty tags.
-       *
-       * The \a id3v2Version parameter specifies the version of the saved
-       * ID3v2 tag. It can be either 4 or 3.
-       *
-       * If \a duplicateTags is true and at least one tag -- ID3v1 or ID3v2 --
-       * exists this will duplicate its content into the other tag.
-       */
-      // BIC: combine with the above method
-      bool save(int tags, bool stripOthers, int id3v2Version, bool duplicateTags);
+      bool save(int tags, StripTags strip,
+                ID3v2::Version version = ID3v2::v4,
+                DuplicateTags duplicate = Duplicate);
 
       /*!
        * Returns a pointer to the ID3v2 tag of the file.
@@ -325,7 +317,7 @@ namespace TagLib {
        * \see ID3v2FrameFactory
        * \deprecated This value should be passed in via the constructor
        */
-      void setID3v2FrameFactory(const ID3v2::FrameFactory *factory);
+      TAGLIB_DEPRECATED void setID3v2FrameFactory(const ID3v2::FrameFactory *factory);
 
       /*!
        * Returns the position in the file of the first MPEG frame.
@@ -369,6 +361,15 @@ namespace TagLib {
        * \see APETag()
        */
       bool hasAPETag() const;
+
+      /*!
+       * Returns whether or not the given \a stream can be opened as an MPEG
+       * file.
+       *
+       * \note This method is designed to do a quick check.  The result may
+       * not necessarily be correct.
+       */
+      static bool isSupported(IOStream *stream);
 
     private:
       File(const File &);

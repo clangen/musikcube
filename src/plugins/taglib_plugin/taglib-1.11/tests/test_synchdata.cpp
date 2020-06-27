@@ -75,8 +75,8 @@ public:
 
   void testToUIntBroken()
   {
-    char data[] = { 0, 0, 0, -1 };
-    char data2[] = { 0, 0, -1, -1 };
+    char data[] = { 0, 0, 0, (char)-1 };
+    char data2[] = { 0, 0, (char)-1, (char)-1 };
 
     CPPUNIT_ASSERT_EQUAL((unsigned int)255, ID3v2::SynchData::toUInt(ByteVector(data, 4)));
     CPPUNIT_ASSERT_EQUAL((unsigned int)65535, ID3v2::SynchData::toUInt(ByteVector(data2, 4)));
@@ -84,7 +84,7 @@ public:
 
   void testToUIntBrokenAndTooLarge()
   {
-    char data[] = { 0, 0, 0, -1, 0 };
+    char data[] = { 0, 0, 0, (char)-1, 0 };
     ByteVector v(data, 5);
 
     CPPUNIT_ASSERT_EQUAL((unsigned int)255, ID3v2::SynchData::toUInt(v));

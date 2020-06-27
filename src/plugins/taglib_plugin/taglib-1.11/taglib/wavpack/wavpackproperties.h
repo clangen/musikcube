@@ -58,12 +58,12 @@ namespace TagLib {
        * \deprecated This constructor will be dropped in favor of the one below
        * in a future version.
        */
-      Properties(const ByteVector &data, long streamLength, ReadStyle style = Average);
+      TAGLIB_DEPRECATED Properties(const ByteVector &data, long streamLength,
+                                   ReadStyle style = Average);
 
       /*!
        * Create an instance of WavPack::Properties.
        */
-      // BIC: merge with the above constructor
       Properties(File *file, long streamLength, ReadStyle style = Average);
 
       /*!
@@ -79,7 +79,7 @@ namespace TagLib {
        *
        * \deprecated
        */
-      virtual int length() const;
+      TAGLIB_DEPRECATED virtual int length() const;
 
       /*!
        * Returns the length of the file in seconds.  The length is rounded down to

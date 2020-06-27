@@ -45,6 +45,7 @@ class TestFile : public CppUnit::TestFixture
   CPPUNIT_TEST(testFindInSmallFile);
   CPPUNIT_TEST(testRFindInSmallFile);
   CPPUNIT_TEST(testSeek);
+  CPPUNIT_TEST(testTruncate);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -127,6 +128,24 @@ public:
     CPPUNIT_ASSERT_EQUAL((long)4128, f.tell());
     f.seek(300, File::Current);
     CPPUNIT_ASSERT_EQUAL((long)4428, f.tell());
+  }
+
+  void testTruncate()
+  {
+    ScopedFileCopy copy("empty", ".ogg");
+    std::string name = copy.fileName();
+
+    {
+      PlainFile f(name.c_str());
+      CPPUNIT_ASSERT_EQUAL(4328L, f.length());
+
+      f.truncate(2000);
+      CPPUNIT_ASSERT_EQUAL(2000L, f.length());
+    }
+    {
+      PlainFile f(name.c_str());
+      CPPUNIT_ASSERT_EQUAL(2000L, f.length());
+    }
   }
 
 };

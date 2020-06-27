@@ -47,23 +47,24 @@ using namespace APE;
 
 namespace
 {
-  bool isKeyValid(const char *key, size_t length)
+  const unsigned int MinKeyLength = 2;
+  const unsigned int MaxKeyLength = 255;
+
+  bool isKeyValid(const ByteVector &key)
   {
     const char *invalidKeys[] = { "ID3", "TAG", "OGGS", "MP+", 0 };
 
-    if(length < 2 || length > 255)
-      return false;
-
     // only allow printable ASCII including space (32..126)
 
-    for(const char *p = key; p < key + length; ++p) {
-      const int c = static_cast<unsigned char>(*p);
+    for(ByteVector::ConstIterator it = key.begin(); it != key.end(); ++it) {
+      const int c = static_cast<unsigned char>(*it);
       if(c < 32 || c > 126)
         return false;
     }
 
+    const String upperKey = String(key).upper();
     for(size_t i = 0; invalidKeys[i] != 0; ++i) {
-      if(Utils::equalsIgnoreCase(key, invalidKeys[i]))
+      if(upperKey == invalidKeys[i])
         return false;
     }
 
@@ -191,7 +192,7 @@ void APE::Tag::setGenre(const String &s)
 
 void APE::Tag::setYear(unsigned int i)
 {
-  if(i <= 0)
+  if(i == 0)
     removeItem("YEAR");
   else
     addValue("YEAR", String::number(i), true);
@@ -199,7 +200,7 @@ void APE::Tag::setYear(unsigned int i)
 
 void APE::Tag::setTrack(unsigned int i)
 {
-  if(i <= 0)
+  if(i == 0)
     removeItem("TRACK");
   else
     addValue("TRACK", String::number(i), true);
@@ -296,11 +297,10 @@ PropertyMap APE::Tag::setProperties(const PropertyMap &origProps)
 
 bool APE::Tag::checkKey(const String &key)
 {
-  if(!key.isLatin1())
+  if(key.size() < MinKeyLength || key.size() > MaxKeyLength)
     return false;
 
-  const std::string data = key.to8Bit(false);
-  return isKeyValid(data.c_str(), data.size());
+  return isKeyValid(key.data(String::UTF8));
 }
 
 APE::Footer *APE::Tag::footer() const
@@ -419,7 +419,10 @@ void APE::Tag::parse(const ByteVector &data)
     const unsigned int keyLength = nullPos - pos - 8;
     const unsigned int valLegnth = data.toUInt(pos, false);
 
-    if(isKeyValid(&data[pos + 8], keyLength)){
+    if(keyLength >= MinKeyLength
+      && keyLength <= MaxKeyLength
+      && isKeyValid(data.mid(pos + 8, keyLength)))
+    {
       APE::Item item;
       item.parse(data.mid(pos));
 

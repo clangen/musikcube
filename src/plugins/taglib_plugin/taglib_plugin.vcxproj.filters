@@ -304,9 +304,6 @@
     <ClCompile Include="taglib-1.11\taglib\toolkit\tzlib.cpp">
       <Filter>taglib-1.11</Filter>
     </ClCompile>
-    <ClCompile Include="taglib-1.11\taglib\toolkit\unicode.cpp">
-      <Filter>taglib-1.11</Filter>
-    </ClCompile>
     <ClCompile Include="taglib-1.11\taglib\trueaudio\trueaudiofile.cpp">
       <Filter>taglib-1.11</Filter>
     </ClCompile>
@@ -646,9 +643,6 @@
       <Filter>taglib-1.11</Filter>
     </ClInclude>
     <ClInclude Include="taglib-1.11\taglib\toolkit\tzlib.h">
-      <Filter>taglib-1.11</Filter>
-    </ClInclude>
-    <ClInclude Include="taglib-1.11\taglib\toolkit\unicode.h">
       <Filter>taglib-1.11</Filter>
     </ClInclude>
     <ClInclude Include="taglib-1.11\taglib\trueaudio\trueaudiofile.h">

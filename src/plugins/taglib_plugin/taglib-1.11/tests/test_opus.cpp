@@ -50,10 +50,9 @@ public:
   {
     Ogg::Opus::File f(TEST_FILE_PATH_C("correctness_gain_silent_output.opus"));
     CPPUNIT_ASSERT(f.audioProperties());
-    CPPUNIT_ASSERT_EQUAL(7, f.audioProperties()->length());
     CPPUNIT_ASSERT_EQUAL(7, f.audioProperties()->lengthInSeconds());
     CPPUNIT_ASSERT_EQUAL(7737, f.audioProperties()->lengthInMilliseconds());
-    CPPUNIT_ASSERT_EQUAL(37, f.audioProperties()->bitrate());
+    CPPUNIT_ASSERT_EQUAL(36, f.audioProperties()->bitrate());
     CPPUNIT_ASSERT_EQUAL(1, f.audioProperties()->channels());
     CPPUNIT_ASSERT_EQUAL(48000, f.audioProperties()->sampleRate());
     CPPUNIT_ASSERT_EQUAL(48000, f.audioProperties()->inputSampleRate());
@@ -93,13 +92,11 @@ public:
     ScopedFileCopy copy("correctness_gain_silent_output", ".opus");
     string newname = copy.fileName();
 
-    String longText(std::string(128 * 1024, ' ').c_str());
-    for(size_t i = 0; i < longText.length(); ++i)
-      longText[i] = static_cast<wchar_t>(L'A' + (i % 26));
+    const String text = longText(128 * 1024, true);
 
     {
       Ogg::Opus::File f(newname.c_str());
-      f.tag()->setTitle(longText);
+      f.tag()->setTitle(text);
       f.save();
     }
     {
@@ -111,7 +108,7 @@ public:
       CPPUNIT_ASSERT_EQUAL(131380U, f.packet(1).size());
       CPPUNIT_ASSERT_EQUAL(5U, f.packet(2).size());
       CPPUNIT_ASSERT_EQUAL(5U, f.packet(3).size());
-      CPPUNIT_ASSERT_EQUAL(longText, f.tag()->title());
+      CPPUNIT_ASSERT_EQUAL(text, f.tag()->title());
 
       CPPUNIT_ASSERT(f.audioProperties());
       CPPUNIT_ASSERT_EQUAL(7737, f.audioProperties()->lengthInMilliseconds());

@@ -48,15 +48,17 @@ public:
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-CommentsFrame::CommentsFrame(String::Type encoding) : Frame("COMM")
+CommentsFrame::CommentsFrame(String::Type encoding) :
+  Frame("COMM"),
+  d(new CommentsFramePrivate())
 {
-  d = new CommentsFramePrivate;
   d->textEncoding = encoding;
 }
 
-CommentsFrame::CommentsFrame(const ByteVector &data) : Frame(data)
+CommentsFrame::CommentsFrame(const ByteVector &data) :
+  Frame(data),
+  d(new CommentsFramePrivate())
 {
-  d = new CommentsFramePrivate;
   setData(data);
 }
 
@@ -188,8 +190,9 @@ ByteVector CommentsFrame::renderFields() const
 // private members
 ////////////////////////////////////////////////////////////////////////////////
 
-CommentsFrame::CommentsFrame(const ByteVector &data, Header *h) : Frame(h)
+CommentsFrame::CommentsFrame(const ByteVector &data, Header *h) :
+  Frame(h),
+  d(new CommentsFramePrivate())
 {
-  d = new CommentsFramePrivate();
   parseFields(fieldData(data));
 }

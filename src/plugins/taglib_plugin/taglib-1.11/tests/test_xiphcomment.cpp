@@ -42,10 +42,12 @@ class TestXiphComment : public CppUnit::TestFixture
   CPPUNIT_TEST(testSetYear);
   CPPUNIT_TEST(testTrack);
   CPPUNIT_TEST(testSetTrack);
-  CPPUNIT_TEST(testInvalidKeys);
+  CPPUNIT_TEST(testInvalidKeys1);
+  CPPUNIT_TEST(testInvalidKeys2);
   CPPUNIT_TEST(testClearComment);
   CPPUNIT_TEST(testRemoveFields);
   CPPUNIT_TEST(testPicture);
+  CPPUNIT_TEST(testLowercaseFields);
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -90,17 +92,30 @@ public:
     CPPUNIT_ASSERT_EQUAL(String("3"), cmt.fieldListMap()["TRACKNUMBER"].front());
   }
 
-  void testInvalidKeys()
+  void testInvalidKeys1()
   {
     PropertyMap map;
     map[""] = String("invalid key: empty string");
     map["A=B"] = String("invalid key: contains '='");
     map["A~B"] = String("invalid key: contains '~'");
+    map["A\x7F" "B"] = String("invalid key: contains '\x7F'");
+    map[L"A\x3456" "B"] = String("invalid key: Unicode");
 
     Ogg::XiphComment cmt;
     PropertyMap unsuccessful = cmt.setProperties(map);
-    CPPUNIT_ASSERT_EQUAL((unsigned int)3, unsuccessful.size());
+    CPPUNIT_ASSERT_EQUAL((unsigned int)5, unsuccessful.size());
     CPPUNIT_ASSERT(cmt.properties().isEmpty());
+  }
+
+  void testInvalidKeys2()
+  {
+    Ogg::XiphComment cmt;
+    cmt.addField("", "invalid key: empty string");
+    cmt.addField("A=B", "invalid key: contains '='");
+    cmt.addField("A~B", "invalid key: contains '~'");
+    cmt.addField("A\x7F" "B", "invalid key: contains '\x7F'");
+    cmt.addField(L"A\x3456" "B", "invalid key: Unicode");
+    CPPUNIT_ASSERT_EQUAL(0U, cmt.fieldCount());
   }
 
   void testClearComment()
@@ -175,6 +190,23 @@ public:
       CPPUNIT_ASSERT_EQUAL(String("image/jpeg"), lst[0]->mimeType());
       CPPUNIT_ASSERT_EQUAL(String("new image"), lst[0]->description());
       CPPUNIT_ASSERT_EQUAL(ByteVector("JPEG data"), lst[0]->data());
+    }
+  }
+
+  void testLowercaseFields()
+  {
+    const ScopedFileCopy copy("lowercase-fields", ".ogg");
+    {
+      Vorbis::File f(copy.fileName().c_str());
+      List<FLAC::Picture *> lst = f.tag()->pictureList();
+      CPPUNIT_ASSERT_EQUAL(String("TEST TITLE"), f.tag()->title());
+      CPPUNIT_ASSERT_EQUAL(String("TEST ARTIST"), f.tag()->artist());
+      CPPUNIT_ASSERT_EQUAL((unsigned int)1, lst.size());
+      f.save();
+    }
+    {
+      Vorbis::File f(copy.fileName().c_str());
+      CPPUNIT_ASSERT(f.find("METADATA_BLOCK_PICTURE") > 0);
     }
   }
 
