@@ -125,31 +125,31 @@ else()
   add_dependencies(musikcube ffmpegdecoder)
 endif()
 
-# some versions of Ubuntu ship with a taglib binary that is missing some
-# symbols we depend on. for these distros, we compile taglib ourselves
-# and link against it statically.
+# we use a bundled version of taglib because the latest release is from 2016,
+# and the upstream git repo is hundreds of commits ahead and has a number of
+# important bugfixes.
 
-set(USE_BUNDLED_TAGLIB "false")
+set(USE_BUNDLED_TAGLIB "true")
 
-if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  set(USE_BUNDLED_TAGLIB "false")
-elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  find_program(LSB_RELEASE lsb_release)
-
-  if(NOT ${LSB_RELEASE} MATCHES "LSB_RELEASE-NOTFOUND")
-    execute_process(
-      COMMAND ${LSB_RELEASE} -cs
-      OUTPUT_VARIABLE DISTRO
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    message(STATUS "[taglib] detected distro = ${DISTRO}")
-
-    if (DISTRO MATCHES "xenial" OR DISTRO MATCHES "zesty" OR DISTRO MATCHES "artful")
-      set(USE_BUNDLED_TAGLIB "true")
-    endif()
-  endif()
-endif()
+#if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "Darwin")
+#  set(USE_BUNDLED_TAGLIB "false")
+#elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+#  find_program(LSB_RELEASE lsb_release)
+#
+#  if(NOT ${LSB_RELEASE} MATCHES "LSB_RELEASE-NOTFOUND")
+#    execute_process(
+#      COMMAND ${LSB_RELEASE} -cs
+#      OUTPUT_VARIABLE DISTRO
+#      OUTPUT_STRIP_TRAILING_WHITESPACE
+#    )
+#
+#    message(STATUS "[taglib] detected distro = ${DISTRO}")
+#
+#    if (DISTRO MATCHES "xenial" OR DISTRO MATCHES "zesty" OR DISTRO MATCHES "artful")
+#      set(USE_BUNDLED_TAGLIB "true")
+#    endif()
+#  endif()
+#endif()
 
 message(STATUS "[taglib] using bundled taglib = ${USE_BUNDLED_TAGLIB}")
 
