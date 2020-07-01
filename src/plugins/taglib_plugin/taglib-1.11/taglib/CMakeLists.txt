@@ -336,6 +336,7 @@ set(tag_LIB_SRCS
   tagutils.cpp
 )
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(tag ${tag_LIB_SRCS} ${tag_HDRS})
 
 if(HAVE_ZLIB AND NOT HAVE_ZLIB_SOURCE)
@@ -356,7 +357,7 @@ endif()
 
 if(BUILD_FRAMEWORK)
   unset(INSTALL_NAME_DIR)
-  set_target_properties(tag PROPERTIES 
+  set_target_properties(tag PROPERTIES
       FRAMEWORK TRUE
       MACOSX_RPATH 1
       VERSION "A"

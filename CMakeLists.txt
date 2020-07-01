@@ -92,39 +92,6 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD
   add_definitions (-DNO_NCURSESW)
 endif()
 
-add_subdirectory(src/core)
-add_subdirectory(src/core_c_demo)
-add_subdirectory(src/musikcube)
-add_subdirectory(src/musikcubed)
-add_subdirectory(src/plugins/taglib_plugin)
-add_subdirectory(src/plugins/nullout)
-add_subdirectory(src/plugins/server)
-add_subdirectory(src/plugins/httpdatastream)
-add_subdirectory(src/plugins/stockencoders)
-add_subdirectory(src/plugins/supereqdsp)
-add_subdirectory(src/plugins/gmedecoder)
-
-find_library(LIBOPENMPT NAMES openmpt)
-if ("${LIBOPENMPT}" STREQUAL "LIBOPENMPT-NOTFOUND")
-  message(STATUS "[libopenmpt] *not* found! plugin will not be built.")
-else()
-  message(STATUS "[libopenmpt] enabled = true; found library at ${LIBOPENMPT}")
-  add_subdirectory(src/plugins/libopenmptdecoder)
-endif()
-
-if (${FFMPEG_ENABLED} MATCHES "false")
-  message(STATUS "[ffmpeg] enabled = false")
-  add_subdirectory(src/plugins/m4adecoder)
-  add_subdirectory(src/plugins/oggdecoder)
-  add_subdirectory(src/plugins/nomaddecoder)
-  add_subdirectory(src/plugins/flacdecoder)
-  add_dependencies(musikcube m4adecoder oggdecoder nomaddecoder flacdecoder)
-else()
-  message(STATUS "[ffmpeg] enabled = true")
-  add_subdirectory(src/plugins/ffmpegdecoder)
-  add_dependencies(musikcube ffmpegdecoder)
-endif()
-
 # we use a bundled version of taglib because the latest release is from 2016,
 # and the upstream git repo is hundreds of commits ahead and has a number of
 # important bugfixes.
@@ -165,11 +132,46 @@ if (${USE_BUNDLED_TAGLIB} MATCHES "true")
     INSTALL_COMMAND make install)
 
   include_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
-  link_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib")
-  add_dependencies(taglibreader taglib)
 endif()
 
 # end gross taglib detection stuff
+
+add_subdirectory(src/core)
+add_subdirectory(src/core_c_demo)
+add_subdirectory(src/musikcube)
+add_subdirectory(src/musikcubed)
+add_subdirectory(src/plugins/taglib_plugin)
+add_subdirectory(src/plugins/nullout)
+add_subdirectory(src/plugins/server)
+add_subdirectory(src/plugins/httpdatastream)
+add_subdirectory(src/plugins/stockencoders)
+add_subdirectory(src/plugins/supereqdsp)
+add_subdirectory(src/plugins/gmedecoder)
+
+if (${USE_BUNDLED_TAGLIB} MATCHES "true")
+  add_dependencies(taglibreader taglib)
+endif()
+
+find_library(LIBOPENMPT NAMES openmpt)
+if ("${LIBOPENMPT}" STREQUAL "LIBOPENMPT-NOTFOUND")
+  message(STATUS "[libopenmpt] *not* found! plugin will not be built.")
+else()
+  message(STATUS "[libopenmpt] enabled = true; found library at ${LIBOPENMPT}")
+  add_subdirectory(src/plugins/libopenmptdecoder)
+endif()
+
+if (${FFMPEG_ENABLED} MATCHES "false")
+  message(STATUS "[ffmpeg] enabled = false")
+  add_subdirectory(src/plugins/m4adecoder)
+  add_subdirectory(src/plugins/oggdecoder)
+  add_subdirectory(src/plugins/nomaddecoder)
+  add_subdirectory(src/plugins/flacdecoder)
+  add_dependencies(musikcube m4adecoder oggdecoder nomaddecoder flacdecoder)
+else()
+  message(STATUS "[ffmpeg] enabled = true")
+  add_subdirectory(src/plugins/ffmpegdecoder)
+  add_dependencies(musikcube ffmpegdecoder)
+endif()
 
 # systemd / MPRIS detection
 
