@@ -350,11 +350,17 @@ void Indexer::ReadMetadataFromFile(
     const boost::filesystem::path& file,
     const std::string& pathId)
 {
+    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - ["##x"] %s\n", file.string().c_str()); }
+
     musik::core::IndexerTrack track(0);
     TagStore* store = nullptr;
 
+    bool needsToBeIndexed = track.NeedsToBeIndexed(file, this->dbConnection);
+
     /* get cached filesize, parts, size, etc */
-    if (track.NeedsToBeIndexed(file, this->dbConnection)) {
+    if (needsToBeIndexed) {
+        APPEND_LOG("needs to be indexed")
+
         bool saveToDb = false;
 
         /* read the tag from the plugin */
@@ -364,11 +370,9 @@ void Indexer::ReadMetadataFromFile(
         while (it != this->tagReaders.end()) {
             try {
                 if ((*it)->CanRead(track.GetString("extension").c_str())) {
-                    if (logFile) {
-                        fprintf(logFile, "    - %s\n", file.string().c_str());
-                    }
-
+                    APPEND_LOG("can read")
                     if ((*it)->Read(file.string().c_str(), store)) {
+                        APPEND_LOG("did read")
                         saveToDb = true;
                         break;
                     }
@@ -406,7 +410,15 @@ void Indexer::ReadMetadataFromFile(
             }
 #endif
         }
+        else {
+            APPEND_LOG("read failed")
+        }
     }
+    else {
+        APPEND_LOG("does not need to be indexed")
+    }
+
+    #undef APPEND_LOG
 
     if (store) {
         store->Release();
