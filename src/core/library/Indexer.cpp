@@ -622,7 +622,7 @@ void Indexer::ThreadLoop() {
 
             /* done with sync, remove all the threads in the pool to free resources. they'll
             be re-created later if we index again. */
-            io.stop();
+            io.post([&io]() { io.stop(); });
             threadPool.join_all();
         }
         else {
