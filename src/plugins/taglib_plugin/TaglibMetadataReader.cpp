@@ -90,6 +90,7 @@
 #include <functional>
 #include <cctype>
 #include <algorithm>
+#include <string.h>
 
 #ifdef WIN32
 #define FFMPEG_ENABLED
