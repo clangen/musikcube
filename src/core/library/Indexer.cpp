@@ -350,7 +350,7 @@ void Indexer::ReadMetadataFromFile(
     const boost::filesystem::path& file,
     const std::string& pathId)
 {
-    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - ["##x"] %s\n", file.string().c_str()); }
+    #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.string().c_str()); }
 
     musik::core::IndexerTrack track(0);
     TagStore* store = nullptr;
