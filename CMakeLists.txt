@@ -95,46 +95,7 @@ endif()
 # we use a bundled version of taglib because the latest release is from 2016,
 # and the upstream git repo is hundreds of commits ahead and has a number of
 # important bugfixes.
-
 set(USE_BUNDLED_TAGLIB "true")
-
-#if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "Darwin")
-#  set(USE_BUNDLED_TAGLIB "false")
-#elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
-#  find_program(LSB_RELEASE lsb_release)
-#
-#  if(NOT ${LSB_RELEASE} MATCHES "LSB_RELEASE-NOTFOUND")
-#    execute_process(
-#      COMMAND ${LSB_RELEASE} -cs
-#      OUTPUT_VARIABLE DISTRO
-#      OUTPUT_STRIP_TRAILING_WHITESPACE
-#    )
-#
-#    message(STATUS "[taglib] detected distro = ${DISTRO}")
-#
-#    if (DISTRO MATCHES "xenial" OR DISTRO MATCHES "zesty" OR DISTRO MATCHES "artful")
-#      set(USE_BUNDLED_TAGLIB "true")
-#    endif()
-#  endif()
-#endif()
-
-message(STATUS "[taglib] using bundled taglib = ${USE_BUNDLED_TAGLIB}")
-
-if (${USE_BUNDLED_TAGLIB} MATCHES "true")
-  include(ExternalProject)
-
-  ExternalProject_Add(taglib
-    SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
-    BUILD_IN_SOURCE 0
-    DOWNLOAD_COMMAND ""
-    UPDATE_COMMAND ""
-    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
-    INSTALL_COMMAND make install)
-
-  include_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
-endif()
-
-# end gross taglib detection stuff
 
 add_subdirectory(src/core)
 add_subdirectory(src/core_c_demo)
@@ -147,10 +108,6 @@ add_subdirectory(src/plugins/httpdatastream)
 add_subdirectory(src/plugins/stockencoders)
 add_subdirectory(src/plugins/supereqdsp)
 add_subdirectory(src/plugins/gmedecoder)
-
-if (${USE_BUNDLED_TAGLIB} MATCHES "true")
-  add_dependencies(taglibreader taglib)
-endif()
 
 find_library(LIBOPENMPT NAMES openmpt)
 if ("${LIBOPENMPT}" STREQUAL "LIBOPENMPT-NOTFOUND")
