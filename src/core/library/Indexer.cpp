@@ -108,8 +108,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , incrementalUrisScanned(0)
 , totalUrisScanned(0)
 , state(StateStopped)
-, prefs(Preferences::ForComponent(prefs::components::Settings))
-, readSemaphore(prefs->GetInt(prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS)) {
+, prefs(Preferences::ForComponent(prefs::components::Settings)) {
     if (prefs->GetBool(prefs::keys::IndexerLogEnabled, false) && !logFile) {
         openLogFile();
     }
@@ -425,7 +424,6 @@ void Indexer::ReadMetadataFromFile(
     }
 
     this->IncrementTracksScanned();
-    this->readSemaphore.post();
 }
 
 inline void Indexer::IncrementTracksScanned(int delta) {
@@ -476,18 +474,23 @@ void Indexer::SyncDirectory(
                 this->SyncDirectory(io, syncRoot, file->path().string(), pathId);
             }
             else {
-                if (io) {
-                    this->readSemaphore.wait();
+                std::string extension = file->path().extension().string();
+                for (auto it : this->tagReaders) {
+                    if (it->CanRead(extension.c_str())) {
+                        if (io) {
+                            io->post(boost::bind(
+                                &Indexer::ReadMetadataFromFile,
+                                this,
+                                file->path(),
+                                pathIdStr));
+                        }
+                        else {
+                            this->ReadMetadataFromFile(file->path(), pathIdStr);
+                        }
+                        break;
+                    }
+                }
 
-                    io->post(boost::bind(
-                        &Indexer::ReadMetadataFromFile,
-                        this,
-                        file->path(),
-                        pathIdStr));
-                }
-                else {
-                    this->ReadMetadataFromFile(file->path(), pathIdStr);
-                }
             }
         }
     }
