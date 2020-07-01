@@ -102,6 +102,12 @@ using namespace std::placeholders;
     checkbox->SetText(caption); \
     checkbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 
+#ifdef __arm__
+static const int DEFAULT_MAX_INDEXER_THREADS = 2;
+#else
+static const int DEFAULT_MAX_INDEXER_THREADS = 4;
+#endif
+
 using EntryPtr = IScrollAdapter::EntryPtr;
 
 static const std::string arrow = "> ";
@@ -121,6 +127,9 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     schema->AddBool(cube::prefs::keys::DisableWindowTitleUpdates, false);
     schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
     schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
+    schema->AddBool(core::prefs::keys::IndexerLogEnabled, false);
+    schema->AddInt(core::prefs::keys::IndexerThreadCount, DEFAULT_MAX_INDEXER_THREADS);
+    schema->AddInt(core::prefs::keys::IndexerTransactionInterval, 300);
     schema->AddString(core::prefs::keys::AuddioApiToken, "");
     return schema;
 }

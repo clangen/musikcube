@@ -44,7 +44,6 @@ namespace musik { namespace core { namespace prefs {
     const std::string components::Session = "session";
 
     const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
-    const std::string keys::MaxTagReadThreads = "MaxTagReadThreads";
     const std::string keys::RemoveMissingFiles = "RemoveMissingFiles";
     const std::string keys::SyncOnStartup = "SyncOnStartup";
     const std::string keys::Volume = "Volume";
@@ -54,6 +53,8 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::Transport = "Transport";
     const std::string keys::Locale = "Locale";
     const std::string keys::IndexerLogEnabled = "IndexerLogEnabled";
+    const std::string keys::IndexerThreadCount = "IndexerThreadCount";
+    const std::string keys::IndexerTransactionInterval = "IndexerTransactionInterval";
     const std::string keys::ReplayGainMode = "ReplayGainMode";
     const std::string keys::PreampDecibels = "PreampDecibels";
     const std::string keys::SaveSessionOnExit = "SaveSessionOnExit";

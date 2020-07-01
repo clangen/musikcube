@@ -48,7 +48,6 @@ namespace musik { namespace core { namespace prefs {
 
     namespace keys {
         extern const std::string AutoSyncIntervalMillis;
-        extern const std::string MaxTagReadThreads;
         extern const std::string RemoveMissingFiles;
         extern const std::string SyncOnStartup;
         extern const std::string Volume;
@@ -58,6 +57,9 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string Transport;
         extern const std::string Locale;
         extern const std::string IndexerLogEnabled;
+        extern const std::string IndexerThreadCount;
+        extern const std::string IndexerTransactionInterval;
+
         extern const std::string ReplayGainMode;
         extern const std::string PreampDecibels;
         extern const std::string SaveSessionOnExit;

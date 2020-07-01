@@ -58,7 +58,6 @@
 
 #include <atomic>
 
-#define MULTI_THREADED_INDEXER 1
 #define STRESS_TEST_DB 0
 
 static const std::string TAG = "Indexer";
@@ -66,9 +65,9 @@ static const size_t TRANSACTION_INTERVAL = 300;
 static FILE* logFile = nullptr;
 
 #ifdef __arm__
-static const int MAX_THREADS = 2;
+static const int DEFAULT_MAX_THREADS = 2;
 #else
-static const int MAX_THREADS = 4;
+static const int DEFAULT_MAX_THREADS = 4;
 #endif
 
 using namespace musik::core;
@@ -110,7 +109,7 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 , totalUrisScanned(0)
 , state(StateStopped)
 , prefs(Preferences::ForComponent(prefs::components::Settings))
-, readSemaphore(prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS)) {
+, readSemaphore(prefs->GetInt(prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS)) {
     if (prefs->GetBool(prefs::keys::IndexerLogEnabled, false) && !logFile) {
         openLogFile();
     }
@@ -414,10 +413,7 @@ void Indexer::ReadMetadataFromFile(
     }
 
     this->IncrementTracksScanned();
-
-#ifdef MULTI_THREADED_INDEXER
     this->readSemaphore.post();
-#endif
 }
 
 inline void Indexer::IncrementTracksScanned(int delta) {
@@ -426,6 +422,7 @@ inline void Indexer::IncrementTracksScanned(int delta) {
     this->incrementalUrisScanned.fetch_add(delta);
     this->totalUrisScanned.fetch_add(delta);
 
+    int interval = prefs->GetInt(prefs::keys::IndexerTransactionInterval, TRANSACTION_INTERVAL);
     if (this->incrementalUrisScanned > TRANSACTION_INTERVAL) {
         this->trackTransaction->CommitAndRestart();
         this->Progress(this->totalUrisScanned);
@@ -595,26 +592,27 @@ void Indexer::ThreadLoop() {
         this->dbConnection.Open(this->dbFilename.c_str(), 0);
         this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
 
-#if MULTI_THREADED_INDEXER
-        boost::asio::io_service io;
-        boost::thread_group threadPool;
-        boost::asio::io_service::work work(io);
+        int threadCount = prefs->GetInt(prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS);
+        if (threadCount > 1) {
+            boost::asio::io_service io;
+            boost::thread_group threadPool;
+            boost::asio::io_service::work work(io);
 
-        /* initialize the thread pool -- we'll use this to index tracks in parallel. */
-        int threadCount = prefs->GetInt(prefs::keys::MaxTagReadThreads, MAX_THREADS);
-        for (int i = 0; i < threadCount; i++) {
-            threadPool.create_thread(boost::bind(&boost::asio::io_service::run, &io));
+            /* initialize the thread pool -- we'll use this to index tracks in parallel. */
+            for (int i = 0; i < threadCount; i++) {
+                threadPool.create_thread(boost::bind(&boost::asio::io_service::run, &io));
+            }
+
+            this->Synchronize(context, &io);
+
+            /* done with sync, remove all the threads in the pool to free resources. they'll
+            be re-created later if we index again. */
+            io.stop();
+            threadPool.join_all();
         }
-
-        this->Synchronize(context, &io);
-
-        /* done with sync, remove all the threads in the pool to free resources. they'll
-        be re-created later if we index again. */
-        io.stop();
-        threadPool.join_all();
-#else
-        this->Synchronize(context, nullptr);
-#endif
+        else {
+            this->Synchronize(context, nullptr);
+        }
 
         this->FinalizeSync(context);
 
