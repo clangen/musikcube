@@ -40,6 +40,7 @@ struct LogMessage: public Message {
 ConsoleLogger::ConsoleLogger(IMessageQueue& messageQueue)
 : messageQueue(messageQueue) {
     this->adapter = std::make_shared<SimpleScrollAdapter>();
+    this->adapter->SetMaxEntries(1000);
     this->adapter->SetSelectable(true);
 }
 

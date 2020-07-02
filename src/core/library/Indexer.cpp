@@ -302,6 +302,7 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
         /* read metadata from the files  */
         for (std::size_t i = 0; i < paths.size(); ++i) {
+            musik::debug::info(TAG, "scanning " + paths[i]);
             this->SyncDirectory(io, paths[i], paths[i], pathIds[i]);
         }
 
@@ -470,7 +471,7 @@ void Indexer::SyncDirectory(
         for( ; file != end && !this->Bail(); file++) {
             if (is_directory(file->status())) {
                 /* recursion here */
-                musik::debug::info(TAG, "scanning " + file->path().string());
+                /* musik::debug::info(TAG, "scanning subdirectory " + file->path().string()); */
                 this->SyncDirectory(io, syncRoot, file->path().string(), pathId);
             }
             else {
