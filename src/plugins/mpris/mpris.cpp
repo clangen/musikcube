@@ -137,7 +137,7 @@ void MPRISRemote::MPRISEmitSeek(double curpos) {
 
 void MPRISRemote::MPRISLoop() {
     while (!stop_processing) {
-        if (bus && sd_bus_get_current_slot(bus)) {
+        if (bus) {
             if (sd_bus_process(bus, NULL) > 0) {
                 continue;
             }
