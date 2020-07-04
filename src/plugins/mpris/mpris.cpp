@@ -63,6 +63,8 @@ extern "C" IPlaybackRemote* GetPlaybackRemote() {
 }
 
 bool MPRISRemote::MPRISInit() {
+    std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
+
     int ret = 0;
     std::string requested_name;
 
@@ -104,10 +106,13 @@ bool MPRISRemote::MPRISInit() {
 }
 
 void MPRISRemote::MPRISDeinit() {
-    sd_bus_close(this->bus);
-    sd_bus_unref(this->bus);
-    bus = NULL;
-    stop_processing = true;
+    {
+        std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
+        sd_bus_close(this->bus);
+        sd_bus_unref(this->bus);
+        bus = NULL;
+        stop_processing = true;
+    }
     if (thread) {
         thread->join();
         thread.reset();
@@ -115,9 +120,9 @@ void MPRISRemote::MPRISDeinit() {
 }
 
 void MPRISRemote::MPRISEmitChange(MPRISProperty prop) {
+    std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
     if (bus) {
         char** strv = (char**)(MPRISPropertyNames.at(prop).data());
-        std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
         sd_bus_emit_properties_changed_strv(bus, "/org/mpris/MediaPlayer2",
                                             "org.mpris.MediaPlayer2.Player",
                                             strv);
@@ -126,9 +131,9 @@ void MPRISRemote::MPRISEmitChange(MPRISProperty prop) {
 };
 
 void MPRISRemote::MPRISEmitSeek(double curpos) {
+    std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
     if (bus) {
         int64_t position = (int64_t)(curpos*1000*1000);
-        std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
         sd_bus_emit_signal(bus, "/org/mpris/MediaPlayer2",
                            "org.mpris.MediaPlayer2.Player",
                            "Seeked", "x", position);
@@ -136,15 +141,19 @@ void MPRISRemote::MPRISEmitSeek(double curpos) {
 };
 
 void MPRISRemote::MPRISLoop() {
-    while (!stop_processing) {
-        if (bus) {
-            if (sd_bus_process(bus, NULL) > 0) {
-                continue;
+    while (true) {
+        {
+            std::unique_lock<decltype(sd_mutex)> lock(sd_mutex);
+            if (stop_processing || !bus) {
+                return;
             }
-            if (sd_bus_wait(bus, 500*1000) < 0) {
-                break;
+            if (sd_bus_process(bus, nullptr) == 0) {
+                if (sd_bus_wait(bus, 0) < 0) {
+                    break;
+                }
             }
         }
+        usleep(500 * 1000);
     }
 }
 
