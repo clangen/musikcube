@@ -508,8 +508,6 @@ void Indexer::SyncDirectory(
     }
     catch(...) {
     }
-
-    #undef WAIT_FOR_ACTIVE
 }
 
 ScanResult Indexer::SyncSource(
