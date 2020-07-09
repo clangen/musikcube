@@ -146,6 +146,7 @@ namespace musik { namespace core {
                 int64_t pathId);
 
             void ReadMetadataFromFile(
+                boost::asio::io_service* io,
                 const boost::filesystem::path& path,
                 const std::string& pathId);
 

@@ -347,9 +347,20 @@ void Indexer::FinalizeSync(const SyncContext& context) {
 }
 
 void Indexer::ReadMetadataFromFile(
+    boost::asio::io_service* io,
     const boost::filesystem::path& file,
     const std::string& pathId)
 {
+    /* we do this here because work may have already been queued before the abort
+    flag was raised */
+    if (io && this->Bail()) {
+        if (!io->stopped()) {
+            musik::debug::info(TAG, "run aborted");
+            io->stop();
+        }
+        return;
+    }
+
     #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.string().c_str()); }
 
     musik::core::IndexerTrack track(0);
@@ -447,10 +458,6 @@ void Indexer::SyncDirectory(
     const std::string &currentPath,
     int64_t pathId)
 {
-    if (this->Bail()) {
-        return;
-    }
-
     std::string normalizedSyncRoot = NormalizeDir(syncRoot);
     std::string normalizedCurrentPath = NormalizeDir(currentPath);
     std::string leaf = boost::filesystem::path(currentPath).leaf().string(); /* trailing subdir in currentPath */
@@ -469,6 +476,9 @@ void Indexer::SyncDirectory(
         std::vector<Thread> threads;
 
         for( ; file != end && !this->Bail(); file++) {
+            if (this->Bail()) {
+                break;
+            }
             if (is_directory(file->status())) {
                 /* recursion here */
                 /* musik::debug::info(TAG, "scanning subdirectory " + file->path().string()); */
@@ -482,11 +492,12 @@ void Indexer::SyncDirectory(
                             io->post(boost::bind(
                                 &Indexer::ReadMetadataFromFile,
                                 this,
+                                io,
                                 file->path(),
                                 pathIdStr));
                         }
                         else {
-                            this->ReadMetadataFromFile(file->path(), pathIdStr);
+                            this->ReadMetadataFromFile(nullptr, file->path(), pathIdStr);
                         }
                         break;
                     }
@@ -623,7 +634,12 @@ void Indexer::ThreadLoop() {
 
             /* done with sync, remove all the threads in the pool to free resources. they'll
             be re-created later if we index again. */
-            io.post([&io]() { io.stop(); });
+            io.post([&io]() {
+                if (!io.stopped()) {
+                    musik::debug::info(TAG, "scan completed successfully");
+                    io.stop();
+                }
+            });
             threadPool.join_all();
         }
         else {
