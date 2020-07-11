@@ -109,6 +109,23 @@ add_subdirectory(src/plugins/stockencoders)
 add_subdirectory(src/plugins/supereqdsp)
 add_subdirectory(src/plugins/gmedecoder)
 
+# ideally this section would exist in the taglib plugin itself, but that doesn't seem to
+# work properly in older versions of CMake (specifically, the one that ships on Ubuntu
+# 18.04)
+if (${USE_BUNDLED_TAGLIB} MATCHES "true")
+  include(ExternalProject)
+
+  ExternalProject_Add(taglib
+    SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
+    BUILD_IN_SOURCE 0
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
+    INSTALL_COMMAND make install)
+
+  add_dependencies(taglibreader taglib)
+endif()
+
 find_library(LIBOPENMPT NAMES openmpt)
 if ("${LIBOPENMPT}" STREQUAL "LIBOPENMPT-NOTFOUND")
   message(STATUS "[libopenmpt] *not* found! plugin will not be built.")
