@@ -54,6 +54,7 @@ parts:
       - libtag1-dev
       - libsystemd-dev
       - libssl-dev
+      - libopenmpt-dev
     stage-packages:
       - libboost-thread1.65.1
       - libboost-system1.65.1
@@ -76,6 +77,7 @@ parts:
       - libswresample2
       - libsystemd0
       - libtag1v5
+      - libopenmpt0
 
 apps:
   app:
