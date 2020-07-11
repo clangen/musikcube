@@ -8,7 +8,7 @@ description: |
   HiFiBerry DAC+ and others), and can output 24bit/192k audio comfortably.
 grade: stable
 confinement: strict
-base: core18
+base: core20
 
 parts:
   desktop-glib-musikcube:
@@ -24,21 +24,21 @@ parts:
     after:
       - desktop-glib-musikcube
     plugin: cmake
-    configflags:
-      - -DCMAKE_BUILD_TYPE=Release
-      - -DCMAKE_INSTALL_PREFIX=/usr
-      - -DENABLE_SNAP=true
+    cmake-parameters:
+      - "-DCMAKE_BUILD_TYPE=Release"
+      - "-DCMAKE_INSTALL_PREFIX=/usr"
+      - "-DENABLE_SNAP=true"
     source: https://github.com/clangen/musikcube.git
     build-packages:
       - build-essential
       - clang
       - cmake
-      - libboost-thread1.65-dev
-      - libboost-system1.65-dev
-      - libboost-filesystem1.65-dev
-      - libboost-date-time1.65-dev
-      - libboost-atomic1.65-dev
-      - libboost-chrono1.65-dev
+      - libboost-thread1.71-dev
+      - libboost-system1.71-dev
+      - libboost-filesystem1.71-dev
+      - libboost-date-time1.71-dev
+      - libboost-atomic1.71-dev
+      - libboost-chrono1.71-dev
       - libogg-dev
       - libvorbis-dev
       - libavutil-dev
@@ -54,13 +54,12 @@ parts:
       - libtag1-dev
       - libsystemd-dev
       - libssl-dev
-      - libopenmpt-dev
     stage-packages:
-      - libboost-thread1.65.1
-      - libboost-system1.65.1
-      - libboost-chrono1.65.1
-      - libboost-filesystem1.65.1
-      - libboost-date-time1.65.1
+      - libboost-thread1.71.0
+      - libboost-system1.71.0
+      - libboost-chrono1.71.0
+      - libboost-filesystem1.71.0
+      - libboost-date-time1.71.0
       - libmicrohttpd12
       - libcurl4
       - libogg0
@@ -72,12 +71,11 @@ parts:
       - libmp3lame0
       - libev4
       - libavcodec-extra
-      - libavutil55
-      - libavformat57
-      - libswresample2
+      - libavutil56
+      - libavformat58
+      - libswresample3
       - libsystemd0
       - libtag1v5
-      - libopenmpt0
 
 apps:
   app:
