@@ -4,9 +4,24 @@ musikcube:
 * added a new decoder based on `libopenmpt` to support playing mod/tracker
   files.
 * fixed a bug when browsing directories that contain entries from custom
-  `IndexerSource` plugins
+  `IndexerSource` plugins.
 * fixed directory scanning bugs related to NFS (and potentially other
   filesystem) volumes.
+* fixed a nasty race condition in the MPRIS plugin that could cause the app to
+  crash on certain events.
+* compile against the source version of taglib to get a number of important
+  bug fixes that haven't been released yet.
+* fixed a memory leak in the GME plugin when aborting a directory scan
+* fixed a bug that could cause advanced setting integer values to not save
+  properly.
+* reduced Indexer log spew.
+* removed more unnecessary boost cruft in the Indexer
+* fixed an Indexer bug that could result in tracks not getting added to the
+  library.
+* fixed a bug where the Indexer couldn't always be interrupted while scanning.
+
+musikdroid:
+* upgrade to Android Studio 4.0 and related tooling
 
 --------------------------------------------------------------------------------
 
