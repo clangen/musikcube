@@ -11,7 +11,7 @@ rm -rf bin/
 
 ./clean-nix.sh
 cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true -DFFMPEG_ENABLED=false .
-make -j4
+make -j7
 
 DIRNAME="musikcube_macos_$VERSION"
 OUTPATH="bin/dist/$DIRNAME"
