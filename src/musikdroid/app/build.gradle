@@ -19,7 +19,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 29
         versionCode 106
-        versionName "0.92.0"
+        versionName "0.93.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -61,9 +61,9 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 
-    implementation 'com.google.firebase:firebase-analytics:17.4.3'
-    implementation 'com.google.firebase:firebase-core:17.4.3'
-    implementation 'com.google.firebase:firebase-crashlytics:17.0.1'
+    implementation 'com.google.firebase:firebase-analytics:17.4.4'
+    implementation 'com.google.firebase:firebase-core:17.4.4'
+    implementation 'com.google.firebase:firebase-crashlytics:17.1.1'
 
     implementation(name:'android-taskrunner-0.5', ext:'aar')
     implementation(name:'exoplayer-extension-flac-release-v2', ext:'aar')
