@@ -43,6 +43,10 @@ extern "C" {
 #include <mutex>
 #include <vector>
 
+#if MHD_VERSION < 0x00097000
+#define MHD_Result int
+#endif
+
 class HttpServer {
     public:
         HttpServer(Context& context);
@@ -53,7 +57,7 @@ class HttpServer {
         void Wait();
 
     private:
-        static int HandleRequest(
+        static MHD_Result HandleRequest(
             void *cls,
             struct MHD_Connection *connection,
             const char *url,

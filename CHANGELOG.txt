@@ -1,3 +1,10 @@
+0.93.1
+
+server:
+* fixed compile error on some platforms caused by updated libmicrohttpd APIs
+
+--------------------------------------------------------------------------------
+
 0.93.0
 
 musikcube:
@@ -19,6 +26,7 @@ musikcube:
 * fixed an Indexer bug that could result in tracks not getting added to the
   library.
 * fixed a bug where the Indexer couldn't always be interrupted while scanning.
+* upgraded snap from core18 to core20.
 
 musikdroid:
 * upgrade to Android Studio 4.0 and related tooling

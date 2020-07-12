@@ -307,22 +307,29 @@ bool HttpServer::Start() {
             ipVersion = MHD_USE_IPv6;
         }
 
-        httpServer = MHD_start_daemon(
+        int serverFlags =
 #if MHD_VERSION >= 0x00095300
-            MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION | ipVersion,
+            MHD_USE_AUTO | MHD_USE_INTERNAL_POLLING_THREAD | MHD_USE_THREAD_PER_CONNECTION | ipVersion;
 #else
-            MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION | ipVersion,
+            MHD_USE_SELECT_INTERNALLY | MHD_USE_THREAD_PER_CONNECTION | ipVersion;
 #endif
-            context.prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port),
-            nullptr,
-            nullptr,
-            &HttpServer::HandleRequest,
-            this,
-            MHD_OPTION_UNESCAPE_CALLBACK,
-            &HttpServer::HandleUnescape,
-            this,
-            MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
-            MHD_OPTION_END);
+
+        int serverPort =
+            context.prefs->GetInt(prefs::http_server_port.c_str(), defaults::http_server_port);
+
+        httpServer = MHD_start_daemon(
+            serverFlags,
+            serverPort,
+            nullptr,                                    /* accept() policy callback */
+            nullptr,                                    /* accept() policy callback data */
+            &HttpServer::HandleRequest,                 /* request handler callback */
+            this,                                       /* request handler callback data */
+            MHD_OPTION_UNESCAPE_CALLBACK,               /* option to configure unescaping */
+            &HttpServer::HandleUnescape,                /* callback to be called for unescaping data */
+            this,                                       /* unescape data callback data */
+            MHD_OPTION_LISTENING_ADDRESS_REUSE,         /* option to configure address reuse */
+            1,                                          /* enable address reuse */
+            MHD_OPTION_END);                            /* terminal option */
 
         this->running = (httpServer != nullptr);
         return running;
@@ -349,7 +356,7 @@ size_t HttpServer::HandleUnescape(void * cls, struct MHD_Connection *c, char *s)
     return strlen(s);
 }
 
-int HttpServer::HandleRequest(
+MHD_Result HttpServer::HandleRequest(
     void *cls,
     struct MHD_Connection *connection,
     const char *url,
@@ -419,7 +426,7 @@ int HttpServer::HandleRequest(
     std::cerr << "*******************************\n\n";
 #endif
 
-    return ret;
+    return (MHD_Result) ret;
 }
 
 int HttpServer::HandleAudioTrackRequest(
