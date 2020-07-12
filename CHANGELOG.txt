@@ -1,3 +1,10 @@
+0.93.1
+
+server:
+* fixed compile error on some platforms caused by updated libmicrohttpd APIs
+
+--------------------------------------------------------------------------------
+
 0.93.0
 
 musikcube:
