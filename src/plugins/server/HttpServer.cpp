@@ -349,7 +349,7 @@ size_t HttpServer::HandleUnescape(void * cls, struct MHD_Connection *c, char *s)
     return strlen(s);
 }
 
-int HttpServer::HandleRequest(
+MHD_Result HttpServer::HandleRequest(
     void *cls,
     struct MHD_Connection *connection,
     const char *url,
@@ -419,7 +419,7 @@ int HttpServer::HandleRequest(
     std::cerr << "*******************************\n\n";
 #endif
 
-    return ret;
+    return (MHD_Result) ret;
 }
 
 int HttpServer::HandleAudioTrackRequest(
