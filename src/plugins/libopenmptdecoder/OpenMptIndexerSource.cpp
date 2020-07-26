@@ -101,7 +101,9 @@ ScanResult OpenMptIndexerSource::Scan(
     };
 
     for (auto& path : this->paths) {
-        fs::scanDirectory(std::string(path), checkFile, checkInterrupt);
+        if (!this->interrupt) {
+            fs::scanDirectory(std::string(path), checkFile, checkInterrupt);
+        }
     }
 
     indexer->CommitProgress(this, this->filesIndexed);

@@ -191,6 +191,7 @@ namespace musik { namespace core { namespace sdk { namespace fs {
 
             struct stat info = {0};
             if (stat(fn.c_str(), &info) < 0) {
+                closedir(dir);
                 return;
             }
             if (S_ISDIR(info.st_mode)) {
