@@ -38,6 +38,7 @@
 #include <core/sdk/IIndexerSource.h>
 #include <functional>
 #include <set>
+#include <atomic>
 #include <map>
 
 class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
@@ -76,5 +77,5 @@ class GmeIndexerSource: public musik::core::sdk::IIndexerSource {
         std::set<std::string> invalidFiles;
         std::set<std::string> paths;
         size_t filesIndexed, tracksIndexed;
-        volatile bool interrupt { false };
+        std::atomic<bool> interrupt { false };
 };

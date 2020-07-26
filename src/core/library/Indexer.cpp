@@ -555,7 +555,7 @@ ScanResult Indexer::SyncSource(
         /* finally, allow the source to update metadata for any tracks that it
         previously indexed, if it needs to. */
         {
-            if (source->NeedsTrackScan()) {
+            if (!this->Bail() && source->NeedsTrackScan()) {
                 db::Statement tracks(
                     "SELECT id, filename, external_id FROM tracks WHERE source_id=? ORDER BY id",
                     this->dbConnection);

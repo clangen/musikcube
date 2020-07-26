@@ -39,6 +39,7 @@
 #include <functional>
 #include <set>
 #include <map>
+#include <atomic>
 
 class OpenMptIndexerSource: public musik::core::sdk::IIndexerSource {
     public:
@@ -76,5 +77,5 @@ class OpenMptIndexerSource: public musik::core::sdk::IIndexerSource {
         std::set<std::string> invalidFiles;
         std::set<std::string> paths;
         size_t filesIndexed, tracksIndexed;
-        volatile bool interrupt { false };
+        std::atomic<bool> interrupt { false };
 };
