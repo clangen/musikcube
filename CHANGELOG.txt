@@ -1,3 +1,12 @@
+0.94.0
+
+musikcube:
+* fixed a bug in the indexer that could prevent custom sources from getting
+  interrupted correctly.
+* fixed a bug in libmicrothttpd version detection.
+
+--------------------------------------------------------------------------------
+
 0.93.1
 
 server:
