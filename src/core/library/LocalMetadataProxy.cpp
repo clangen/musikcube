@@ -730,8 +730,6 @@ bool LocalMetadataProxy::AppendToPlaylistWithExternalIds(
 bool LocalMetadataProxy::AppendToPlaylistWithTrackList(
     const int64_t playlistId, ITrackList* trackList, int offset)
 {
-    static auto deleter = [](musik::core::sdk::ITrackList* trackList) {};
-
     bool result = appendToPlaylist(
         this->library, playlistId, trackList, offset);
 
