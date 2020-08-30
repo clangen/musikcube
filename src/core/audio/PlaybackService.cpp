@@ -445,12 +445,15 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             this->transport->ReloadOutput();
 
             if (index != NO_POSITION) {
-                this->Play(index);
+                auto startMode = (state != PlaybackPaused && state != PlaybackPrepared)
+                    ? ITransport::StartMode::Immediate : ITransport::StartMode::Wait;
+
+                this->PlayAt(index, startMode);
                 if (time > 0.0f) {
                     this->transport->SetPosition(time);
                 }
 
-                if (state == PlaybackPaused) {
+                if (startMode == ITransport::StartMode::Wait) {
                     this->transport->Pause();
                 }
             }
