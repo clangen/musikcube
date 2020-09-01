@@ -125,7 +125,7 @@ WINDOW *getwin(FILE *filep)
 
     /* allocate the minchng and maxchng arrays */
 
-    win->_firstch = malloc(nlines * sizeof(int));
+    win->_firstch = malloc(nlines * sizeof(int) * 2);
     if (!win->_firstch)
     {
         free(win->_y);
@@ -133,14 +133,7 @@ WINDOW *getwin(FILE *filep)
         return (WINDOW *)NULL;
     }
 
-    win->_lastch = malloc(nlines * sizeof(int));
-    if (!win->_lastch)
-    {
-        free(win->_firstch);
-        free(win->_y);
-        free(win);
-        return (WINDOW *)NULL;
-    }
+    win->_lastch = win->_firstch + nlines;
 
     /* allocate the lines */
 

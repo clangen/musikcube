@@ -158,7 +158,7 @@ WINDOW *PDC_makenew(int nlines, int ncols, int begy, int begx)
 
     /* allocate the minchng and maxchng arrays */
 
-    win->_firstch = malloc(nlines * sizeof(int));
+    win->_firstch = malloc(nlines * sizeof(int) * 2);
     if (!win->_firstch)
     {
         free(win->_y);
@@ -166,14 +166,7 @@ WINDOW *PDC_makenew(int nlines, int ncols, int begy, int begx)
         return (WINDOW *)NULL;
     }
 
-    win->_lastch = malloc(nlines * sizeof(int));
-    if (!win->_lastch)
-    {
-        free(win->_firstch);
-        free(win->_y);
-        free(win);
-        return (WINDOW *)NULL;
-    }
+    win->_lastch = win->_firstch + nlines;
 
     /* initialize window variables */
 
@@ -199,6 +192,7 @@ WINDOW *PDC_makelines(WINDOW *win)
 
     PDC_LOG(("PDC_makelines() - called\n"));
 
+    assert( win);
     if (!win)
         return (WINDOW *)NULL;
 
@@ -216,7 +210,6 @@ WINDOW *PDC_makelines(WINDOW *win)
                 free(win->_y[j]);
 
             free(win->_firstch);
-            free(win->_lastch);
             free(win->_y);
             free(win);
 
@@ -269,6 +262,7 @@ int delwin(WINDOW *win)
 
     PDC_LOG(("delwin() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -280,7 +274,6 @@ int delwin(WINDOW *win)
                 free(win->_y[i]);
 
     free(win->_firstch);
-    free(win->_lastch);
     free(win->_y);
     free(win);
 
@@ -291,6 +284,7 @@ int mvwin(WINDOW *win, int y, int x)
 {
     PDC_LOG(("mvwin() - called\n"));
 
+    assert( win);
     if (!win || (y + win->_maxy > LINES || y < 0)
              || (x + win->_maxx > COLS || x < 0))
         return ERR;
@@ -312,6 +306,7 @@ WINDOW *subwin(WINDOW *orig, int nlines, int ncols, int begy, int begx)
 
     /* make sure window fits inside the original one */
 
+    assert( orig);
     if (!orig || (begy < orig->_begy) || (begx < orig->_begx) ||
         (begy + nlines) > (orig->_begy + orig->_maxy) ||
         (begx + ncols) > (orig->_begx + orig->_maxx))
@@ -362,6 +357,7 @@ int mvderwin(WINDOW *win, int pary, int parx)
     int i, j;
     WINDOW *mypar;
 
+    assert( win);
     if (!win || !(win->_parent))
         return ERR;
 
@@ -388,6 +384,7 @@ WINDOW *dupwin(WINDOW *win)
     chtype *ptr, *ptr1;
     int nlines, ncols, begy, begx, i;
 
+    assert( win);
     if (!win)
         return (WINDOW *)NULL;
 
@@ -522,7 +519,6 @@ WINDOW *resize_window(WINDOW *win, int nlines, int ncols)
     new->_cury = save_cury;
 
     free(win->_firstch);
-    free(win->_lastch);
     free(win->_y);
 
     *win = *new;
@@ -550,6 +546,7 @@ int syncok(WINDOW *win, bool bf)
 {
     PDC_LOG(("syncok() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 

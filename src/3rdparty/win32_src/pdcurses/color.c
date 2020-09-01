@@ -214,7 +214,7 @@ int init_extended_pair(int pair, int fg, int bg)
         return ERR;
 
     _init_pair_core(pair, fg, bg);
-
+    curscr->_clear = TRUE;
     return OK;
 }
 
@@ -222,6 +222,7 @@ bool has_colors(void)
 {
     PDC_LOG(("has_colors() - called\n"));
 
+    assert( SP);
     return SP ? !(SP->mono) : FALSE;
 }
 
@@ -236,7 +237,7 @@ int init_extended_color(int color, int red, int green, int blue)
         return ERR;
 
     SP->dirty = TRUE;
-
+    curscr->_clear = TRUE;
     return PDC_init_color(color, red, green, blue);
 }
 
@@ -326,7 +327,7 @@ int PDC_set_line_color(short color)
         return ERR;
 
     SP->line_color = color;
-
+    curscr->_clear = TRUE;
     return OK;
 }
 

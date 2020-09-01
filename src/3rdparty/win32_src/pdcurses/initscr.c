@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <panel.h>
 #include <assert.h>
 
 /*man-start**************************************************************
@@ -286,6 +287,7 @@ bool isendwin(void)
 {
     PDC_LOG(("isendwin() - called\n"));
 
+    assert( SP);
     return SP ? !(SP->alive) : FALSE;
 }
 
@@ -336,10 +338,15 @@ void delscreen(SCREEN *sp)
 
 int resize_term(int nlines, int ncols)
 {
+    PANEL *panel_ptr = NULL;
+
     PDC_LOG(("resize_term() - called: nlines %d\n", nlines));
 
-    if (!stdscr || PDC_resize_screen(nlines, ncols) == ERR)
+    if( PDC_resize_screen(nlines, ncols) == ERR)
         return ERR;
+
+    if( !stdscr)
+        return OK;
 
     SP->resized = FALSE;
 
@@ -374,6 +381,11 @@ int resize_term(int nlines, int ncols)
     touchwin(stdscr);
     wnoutrefresh(stdscr);
 
+    while( (panel_ptr = panel_above( panel_ptr)) != NULL)
+    {
+        touchwin(panel_window(panel_ptr));
+        wnoutrefresh(panel_window(panel_ptr));
+    }
     return OK;
 }
 
@@ -393,6 +405,7 @@ void PDC_get_version(PDC_VERSION *ver)
 {
     extern enum PDC_port PDC_port_val;
 
+    assert( ver);
     if (!ver)
         return;
 

@@ -16,6 +16,8 @@ panel
     PANEL *new_panel(WINDOW *win);
     PANEL *panel_above(const PANEL *pan);
     PANEL *panel_below(const PANEL *pan);
+    PANEL *ground_panel(SCREEN *sp);
+    PANEL *ceiling_panel(SCREEN *sp);
     int panel_hidden(const PANEL *pan);
     const void *panel_userptr(const PANEL *pan);
     WINDOW *panel_window(const PANEL *pan);
@@ -64,6 +66,10 @@ panel
    or NULL if pan is the bottom panel. If the value of pan passed is
    NULL, this function returns a pointer to the top panel in the deck.
 
+   ground_panel() returns a pointer to the bottom panel in the deck.
+
+   ceiling_panel() returns a pointer to the top panel in the deck.
+
    panel_hidden() returns OK if pan is hidden and ERR if it is not.
 
    panel_userptr() - Each panel has a user pointer available for
@@ -104,6 +110,8 @@ panel
     new_panel                   -       Y       Y
     panel_above                 -       Y       Y
     panel_below                 -       Y       Y
+    ground_panel                -       Y       N
+    ceiling_panel               -       Y       N
     panel_hidden                -       Y       Y
     panel_userptr               -       Y       Y
     panel_window                -       Y       Y
@@ -452,7 +460,7 @@ int hide_panel(PANEL *pan)
 int move_panel(PANEL *pan, int starty, int startx)
 {
     WINDOW *win;
-    int maxy, maxx;
+    int maxy, maxx, rval;
 
     if (!pan)
         return ERR;
@@ -462,18 +470,19 @@ int move_panel(PANEL *pan, int starty, int startx)
 
     win = pan->win;
 
-    if (mvwin(win, starty, startx) == ERR)
-        return ERR;
-
-    getbegyx(win, pan->wstarty, pan->wstartx);
-    getmaxyx(win, maxy, maxx);
-    pan->wendy = pan->wstarty + maxy;
-    pan->wendx = pan->wstartx + maxx;
+    rval = mvwin(win, starty, startx);
+    if( rval != ERR)
+    {
+        getbegyx(win, pan->wstarty, pan->wstartx);
+        getmaxyx(win, maxy, maxx);
+        pan->wendy = pan->wstarty + maxy;
+        pan->wendx = pan->wstartx + maxx;
+    }
 
     if (_panel_is_linked(pan))
         _calculate_obscure();
 
-    return OK;
+    return rval;
 }
 
 PANEL *new_panel(WINDOW *win)
@@ -527,6 +536,16 @@ PANEL *panel_above(const PANEL *pan)
 PANEL *panel_below(const PANEL *pan)
 {
     return pan ? pan->below : _top_panel;
+}
+
+PANEL *ceiling_panel( SCREEN *sp)
+{
+   return( panel_below( NULL));
+}
+
+PANEL *ground_panel( SCREEN *sp)
+{
+   return( panel_above( NULL));
 }
 
 int panel_hidden(const PANEL *pan)
