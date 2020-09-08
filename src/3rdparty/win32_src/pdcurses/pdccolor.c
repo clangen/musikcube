@@ -18,7 +18,7 @@ rationale of how this works.    */
 #define PACKED_RGB uint32_t
 
 #ifndef PACK_RGB
-   #define PACK_RGB( red, green, blue) ((red) | ((green)<<8) | ((PACKED_RGB)(blue) << 16))
+   #define PACK_RGB( red, green, blue) ((red) | ((green)<<8) | ((blue) << 16))
 #endif
 
 #include <curspriv.h>
@@ -206,6 +206,14 @@ void PDC_get_rgb_values( const chtype srcp,
         else if( PDC_blink_state)
             reverse_colors ^= 1;
     }
+    if( reverse_colors)
+    {
+        const PACKED_RGB temp = *foreground_rgb;
+
+        *foreground_rgb = *background_rgb;
+        *background_rgb = temp;
+    }
+
     if( srcp & A_BOLD & ~SP->termattrs)
         *foreground_rgb = intensified_color( *foreground_rgb);
     if( intensify_backgnd)
@@ -219,11 +227,4 @@ void PDC_get_rgb_values( const chtype srcp,
         *foreground_rgb = (PACKED_RGB)-1;
     if( default_background)
         *background_rgb = (PACKED_RGB)-1;
-    if( reverse_colors)
-    {
-        const PACKED_RGB temp = *foreground_rgb;
-
-        *foreground_rgb = *background_rgb;
-        *background_rgb = temp;
-    }
 }

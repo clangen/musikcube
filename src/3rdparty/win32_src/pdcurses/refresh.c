@@ -58,18 +58,6 @@ refresh
 
 #include <string.h>
 
-static void _normalize_cursor( WINDOW *win)
-{
-    if( win->_cury < 0)
-        win->_cury = 0;
-    if( win->_cury >= win->_maxy)
-        win->_cury = win->_maxy - 1;
-    if( win->_curx < 0)
-        win->_curx = 0;
-    if( win->_curx >= win->_maxx)
-        win->_curx = win->_maxx - 1;
-}
-
 int wnoutrefresh(WINDOW *win)
 {
     int begy, begx;     /* window's place on screen   */
@@ -83,20 +71,15 @@ int wnoutrefresh(WINDOW *win)
     begy = win->_begy;
     begx = win->_begx;
 
-    for (i = 0, j = begy; i < win->_maxy && j < curscr->_maxy; i++, j++)
+    for (i = 0, j = begy; i < win->_maxy; i++, j++)
     {
-        if (win->_firstch[i] != _NO_CHANGE && j >= 0)
+        if (win->_firstch[i] != _NO_CHANGE)
         {
             chtype *src = win->_y[i];
             chtype *dest = curscr->_y[j] + begx;
 
             int first = win->_firstch[i]; /* first changed */
             int last = win->_lastch[i];   /* last changed */
-
-            if( last > curscr->_maxx - begx - 1)    /* don't run off right-hand */
-                last = curscr->_maxx - begx - 1;    /* edge of screen */
-            if( first < -begx)       /* ...nor the left edge */
-                first = -begx;
 
             /* ignore areas on the outside that are marked as changed,
                but really aren't */
@@ -138,7 +121,6 @@ int wnoutrefresh(WINDOW *win)
     {
         curscr->_cury = win->_cury + begy;
         curscr->_curx = win->_curx + begx;
-        _normalize_cursor( curscr);
     }
 
     return OK;
