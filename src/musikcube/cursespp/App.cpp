@@ -153,8 +153,8 @@ void App::InitCurses() {
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
     #ifdef PDCURSES_WINGUI
         PDC_set_default_menu_visibility(0);
+        PDC_set_title(this->appTitle.c_str());
         PDC_set_color_intensify_enabled(false);
-        this->SetTitle(this->appTitle);
     #endif
 #endif
 
@@ -187,8 +187,6 @@ void App::InitCurses() {
     }
 
     this->initialized = true;
-
-    this->SetTitle(this->appTitle);
 }
 
 void App::SetKeyHandler(KeyHandler handler) {
@@ -269,9 +267,6 @@ void App::SetDefaultMenuVisibility(bool visible) {
 
 void App::SetTitle(const std::string& title) {
     this->appTitle = title;
-    if (!initialized) {
-        return;
-    }
 #ifdef WIN32
     PDC_set_title(this->appTitle.c_str());
     win32::SetAppTitle(this->appTitle);
