@@ -3,7 +3,7 @@
 VERSION=$1
 
 if [ -z "$VERSION" ]; then
-  echo "usage: ./archive-win.sh <version>"
+  echo "usage: archive-win.sh <version>"
   exit
 fi
 
