@@ -2,7 +2,9 @@
 set start=%time%
 @echo on
 
-call clean-win.bat
+SET scriptdir=%~dp0
+
+call %scriptdir%\clean-win.bat
 
 echo "*** BUILDING MILKDROP ***"
 MSBuild.exe ../milkdrop2-musikcube/milkdrop2-musikcube.sln /m /nologo /verbosity:minimal /p:Configuration=Release /p:Platform=Win32

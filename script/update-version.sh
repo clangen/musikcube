@@ -5,7 +5,7 @@ MINOR=$2
 PATCH=$3
 
 if [ -z "$MAJOR" ] || [ -z "$MINOR" ] || [ -z "$PATCH" ]; then
-  echo "usage: ./update-version.sh <major> <minor> <patch>"
+  echo "usage: update-version.sh <major> <minor> <patch>"
   exit
 fi
 

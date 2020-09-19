@@ -3,13 +3,15 @@
 VERSION=$1
 
 if [ -z "$VERSION" ]; then
-  echo "usage: ./archive-macos.sh <version>"
+  echo "usage: archive-macos.sh <version>"
   exit
 fi
 
+SCRIPTDIR=`dirname "$0"`
+
 rm -rf bin/
 
-./clean-nix.sh
+${SCRIPTDIR}/clean-nix.sh
 cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true -DFFMPEG_ENABLED=false .
 make -j7
 
