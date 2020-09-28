@@ -104,9 +104,10 @@ void TrackOverlays::ShowRateTrackOverlay(
 
     auto updateRatingInLibrary = [track, library, callback, dialog](int index) {
         auto query = std::make_shared<SetTrackRatingQuery>(track->GetId(), (int) index);
-        library->Enqueue(query, ILibrary::QuerySynchronous);
-        dialog->Dismiss();
-        callback(true);
+        library->Enqueue(query, 0, [dialog, callback](auto q) {
+            dialog->Dismiss();
+            callback(true);
+        });
     };
 
     dialog->SetAdapter(adapter)

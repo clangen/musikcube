@@ -233,8 +233,7 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
                 this->QueryCompleted(query.get());
             }
         }
-
-        if (context->callback) {
+        else if (context->callback) {
             context->callback(context->query);
         }
 
