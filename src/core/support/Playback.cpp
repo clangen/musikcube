@@ -102,13 +102,13 @@ namespace musik {
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
                         PersistedPlayQueueQuery::Restore(library, playback));
 
-                    library->Enqueue(query, ILibrary::QuerySynchronous);
-
-                    int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
-                    if (index >= 0) {
-                        double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
-                        playback.Prepare(index, time);
-                    }
+                    library->Enqueue(query, 0, [&playback, prefs, query](auto q) {
+                        int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
+                        if (index >= 0) {
+                            double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
+                            playback.Prepare(index, time);
+                        }
+                    });
                 }
             }
 

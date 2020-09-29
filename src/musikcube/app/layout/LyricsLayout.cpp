@@ -135,26 +135,26 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
     if (track && track->GetId() != this->currentTrackId) {
         this->currentTrackId = track->GetId();
         this->SetState(State::Loading);
-
         auto trackExternalId = track->GetString("external_id");
         auto lyricsDbQuery = std::make_shared<LyricsQuery>(trackExternalId);
-        this->library->Enqueue(lyricsDbQuery, ILibrary::QuerySynchronous);
-        auto localLyrics = lyricsDbQuery->GetResult();
-        if (localLyrics.size()) {
-            this->OnLyricsLoaded(track, localLyrics);
-        }
-        else {
-            auddio::FindLyrics(track, [this](TrackPtr track, std::string remoteLyrics) {
-                if (this->currentTrackId == track->GetId()) {
-                    if (remoteLyrics.size()) {
-                        this->OnLyricsLoaded(track, remoteLyrics);
+        this->library->Enqueue(lyricsDbQuery, 0, [this, lyricsDbQuery, track](auto q) {
+            auto localLyrics = lyricsDbQuery->GetResult();
+            if (localLyrics.size()) {
+                this->OnLyricsLoaded(track, localLyrics);
+            }
+            else {
+                auddio::FindLyrics(track, [this](TrackPtr track, std::string remoteLyrics) {
+                    if (this->currentTrackId == track->GetId()) {
+                        if (remoteLyrics.size()) {
+                            this->OnLyricsLoaded(track, remoteLyrics);
+                        }
+                        else {
+                            this->SetState(State::Failed);
+                        }
                     }
-                    else {
-                        this->SetState(State::Failed);
-                    }
-                }
-            });
-        }
+                });
+            }
+        });
     }
     else if (!track) {
         this->currentTrackId = -1LL;
