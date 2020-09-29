@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void Retain() = 0;
             virtual int Uri(char* dst, int size) = 0;
 
-            /* sdk v13 */
+            /* sdk v19 */
             virtual ReplayGain GetReplayGain() = 0;
     };
 
