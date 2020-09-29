@@ -34,14 +34,9 @@
 
 #pragma once
 
-namespace musik { namespace core { namespace sdk {
+#include "ReplayGain.h"
 
-    struct ReplayGain {
-        float trackGain;
-        float trackPeak;
-        float albumGain;
-        float albumPeak;
-    };
+namespace musik { namespace core { namespace sdk {
 
     class ITagStore {
         public:

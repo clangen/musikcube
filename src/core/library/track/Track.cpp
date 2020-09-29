@@ -98,6 +98,10 @@ class SdkWrapper : public Track {
             return track->GetValue(dst, size);
         }
 
+        virtual ReplayGain GetReplayGain() {
+            return track->GetReplayGain();
+        }
+
         /* pure virtual methods defined by Track, but not defined in ITrack. therefore,
         these methods cannot be called by the SDK, and should throw. */
         #define NO_IMPL throw std::runtime_error("not implemented");

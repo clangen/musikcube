@@ -196,9 +196,6 @@
     <ClCompile Include="library\query\local\AppendPlaylistQuery.cpp">
       <Filter>src\library\query\local</Filter>
     </ClCompile>
-    <ClCompile Include="library\query\local\ReplayGainQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
     <ClCompile Include="library\query\local\util\CategoryQueryUtil.cpp">
       <Filter>src\library\query\local\util</Filter>
     </ClCompile>
@@ -522,9 +519,6 @@
     <ClInclude Include="support\Messages.h">
       <Filter>src\support</Filter>
     </ClInclude>
-    <ClInclude Include="library\query\local\ReplayGainQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
     <ClInclude Include="library\query\local\util\CategoryQueryUtil.h">
       <Filter>src\library\query\local\util</Filter>
     </ClInclude>
@@ -596,6 +590,9 @@
     </ClInclude>
     <ClInclude Include="sdk\String.h">
       <Filter>src\sdk\io</Filter>
+    </ClInclude>
+    <ClInclude Include="sdk\ReplayGain.h">
+      <Filter>src\sdk\metadata</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

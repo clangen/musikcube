@@ -210,7 +210,7 @@ IBuffer* Stream::GetNextProcessedOutputBuffer() {
 }
 
 void Stream::RefillInternalBuffers() {
-    int recycled = this->recycledBuffers.size();
+    int recycled = (int) this->recycledBuffers.size();
     int count = 0;
 
     if (!this->rawBuffer) { /* not initialized */

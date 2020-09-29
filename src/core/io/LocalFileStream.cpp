@@ -162,7 +162,7 @@ PositionType LocalFileStream::Write(void* buffer, PositionType writeBytes) {
     long position = ftell(this->file);
     size_t written = fwrite(buffer, 1, writeBytes, this->file);
     if (written + position > this->filesize) {
-        this->filesize = written + position;
+        this->filesize = (int) written + position;
     }
 
     return (PositionType) written;

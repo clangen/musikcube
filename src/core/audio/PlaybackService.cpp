@@ -40,7 +40,6 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
 #include <core/library/query/local/MarkTrackPlayedQuery.h>
-#include <core/library/query/local/ReplayGainQuery.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
@@ -1126,18 +1125,14 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
     if (mode != Mode::Disabled && index < this->playlist.Count()) {
         auto track = this->playlist.Get(index);
         if (track) {
-            int64_t id = track->GetId();
-            auto query = std::make_shared<ReplayGainQuery>(id);
-            if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
-                auto rg = query->GetResult();
-                float gain = (mode == Mode::Album) ? rg->albumGain : rg->trackGain;
-                float peak = (mode == Mode::Album) ? rg->albumPeak : rg->trackPeak;
-                if (gain != 1.0f) {
-                    /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
-                    result.gain = powf(10.0f, (gain / 20.0f));
-                    result.peak = (1.0f / peak);
-                    result.peakValid = true;
-                }
+            auto rg = track->GetReplayGain();
+            float gain = (mode == Mode::Album) ? rg.albumGain : rg.trackGain;
+            float peak = (mode == Mode::Album) ? rg.albumPeak : rg.trackPeak;
+            if (gain != 1.0f) {
+                /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
+                result.gain = powf(10.0f, (gain / 20.0f));
+                result.peak = (1.0f / peak);
+                result.peakValid = true;
             }
         }
     }

@@ -207,6 +207,17 @@ void IndexerTrack::SetReplayGain(const ReplayGain& replayGain) {
     memcpy(this->internalMetadata->replayGain.get(), &replayGain, sizeof(ReplayGain));
 }
 
+ReplayGain IndexerTrack::GetReplayGain() {
+    /* note: in practice this will never be called. the indexer only ever sets
+    the replay gain value, but never queries it. just return a dummy value. */
+    ReplayGain gain;
+    gain.albumGain = 1.0f;
+    gain.albumPeak = 1.0f;
+    gain.trackGain = 1.0f;
+    gain.trackPeak = 1.0f;
+    return gain;
+}
+
 std::string IndexerTrack::Uri() {
     return this->GetString("filename");
 }

@@ -40,7 +40,7 @@
 
 namespace musik { namespace core {
 
-    class IndexerTrack : public Track {
+    class IndexerTrack: public Track {
         public:
             IndexerTrack(int64_t trackId);
             virtual ~IndexerTrack(void);
@@ -59,9 +59,9 @@ namespace musik { namespace core {
             virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
             virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
-
             virtual std::string Uri();
             virtual int Uri(char* dst, int size);
+            virtual musik::core::sdk::ReplayGain GetReplayGain();
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
             virtual MetadataIteratorRange GetAllValues();

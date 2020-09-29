@@ -43,7 +43,6 @@
 
 #include <core/debug.h>
 #include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/ReplayGainQuery.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/runtime/Message.h>
 #include <core/support/Playback.h>
@@ -205,15 +204,15 @@ struct musik::cube::TransportDisplayCache {
             if (this->track) {
                 title = this->track->GetString(constants::Track::TITLE);
                 title = title.size() ? title : Strings.EMPTY_SONG;
-                titleCols = u8cols(title);
+                titleCols = (int) u8cols(title);
 
                 album = this->track->GetString(constants::Track::ALBUM);
                 album = album.size() ? album : Strings.EMPTY_ALBUM;
-                albumCols = u8cols(album);
+                albumCols = (int) u8cols(album);
 
                 artist = this->track->GetString(constants::Track::ARTIST);
                 artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
-                artistCols = u8cols(artist);
+                artistCols = (int) u8cols(artist);
             }
         }
 
@@ -239,7 +238,7 @@ struct musik::cube::TransportDisplayCache {
                 totalTime = "∞";
             }
 
-            totalTimeCols = u8cols(totalTime);
+            totalTimeCols = (int) u8cols(totalTime);
         }
     }
 };
@@ -519,7 +518,6 @@ void TransportWindow::OnRedraw() {
 
 void TransportWindow::UpdateReplayGainState() {
     using Mode = ReplayGainMode;
-    using Query = db::local::ReplayGainQuery;
 
     auto prefs = Preferences::ForComponent(prefs::components::Playback);
 
@@ -530,14 +528,10 @@ void TransportWindow::UpdateReplayGainState() {
 
     if (this->replayGainMode != Mode::Disabled) {
         if (this->currentTrack) {
-            auto query = std::make_shared<Query>(this->currentTrack->GetId());
-            if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
-                auto result = query->GetResult();
-
-                this->hasReplayGain = result && (
-                    result->albumGain != 1.0f || result->albumPeak != 1.0f ||
-                    result->trackGain != 1.0f || result->albumPeak != 1.0f);
-            }
+            ReplayGain gain = this->currentTrack->GetReplayGain();
+            this->hasReplayGain =
+                gain.albumGain != 1.0f || gain.albumPeak != 1.0f ||
+                gain.trackGain != 1.0f || gain.albumPeak != 1.0f;
         }
     }
 }
@@ -603,7 +597,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     ON(c, shuffleAttrs);
     checked_wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
-    this->shufflePos.Set(shuffleOffset, shuffleWidth);
+    this->shufflePos.Set(shuffleOffset, (int) shuffleWidth);
 
     /* volume slider */
 
@@ -614,11 +608,11 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (muted) {
         volume = Strings.MUTED;
-        this->volumePos.Set(0, u8cols(Strings.MUTED));
+        this->volumePos.Set(0, (int) u8cols(Strings.MUTED));
     }
     else {
         volume = Strings.VOLUME;
-        this->volumePos.Set(u8cols(Strings.VOLUME), 11);
+        this->volumePos.Set((int) u8cols(Strings.VOLUME), 11);
 
         for (int i = 0; i < 11; i++) {
             volume += (i == thumbOffset) ? "■" : "─";
@@ -735,13 +729,13 @@ void TransportWindow::Update(TimeMode timeMode) {
     OFF(c, currentTimeAttrs);
 
     ON(c, timerAttrs);
-    this->timePos.Set(getcurx(c), u8cols(timerTrack));
+    this->timePos.Set(getcurx(c), (int) u8cols(timerTrack));
     checked_waddstr(c, timerTrack.c_str()); /* may be a very long string */
     checked_wprintw(c, " %s", displayCache->totalTime.c_str());
     OFF(c, timerAttrs);
 
     ON(c, repeatAttrs);
-    this->repeatPos.Set(getcurx(c), u8cols(repeatModeLabel));
+    this->repeatPos.Set(getcurx(c), (int) u8cols(repeatModeLabel));
     checked_wprintw(c, repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
 

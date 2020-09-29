@@ -512,7 +512,6 @@
     <ClCompile Include="library\query\local\MarkTrackPlayedQuery.cpp" />
     <ClCompile Include="library\query\local\NowPlayingTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\PersistedPlayQueueQuery.cpp" />
-    <ClCompile Include="library\query\local\ReplayGainQuery.cpp" />
     <ClCompile Include="library\query\local\SavePlaylistQuery.cpp" />
     <ClCompile Include="library\query\local\SearchTrackListQuery.cpp" />
     <ClCompile Include="library\query\local\SetTrackRatingQuery.cpp" />
@@ -592,7 +591,6 @@
     <ClInclude Include="library\query\local\MarkTrackPlayedQuery.h" />
     <ClInclude Include="library\query\local\NowPlayingTrackListQuery.h" />
     <ClInclude Include="library\query\local\PersistedPlayQueueQuery.h" />
-    <ClInclude Include="library\query\local\ReplayGainQuery.h" />
     <ClInclude Include="library\query\local\SavePlaylistQuery.h" />
     <ClInclude Include="library\query\local\SearchTrackListQuery.h" />
     <ClInclude Include="library\query\local\SetTrackRatingQuery.h" />
@@ -662,6 +660,7 @@
     <ClInclude Include="sdk\ITrackListEditor.h" />
     <ClInclude Include="sdk\ITagStore.h" />
     <ClInclude Include="sdk\IVisualizer.h" />
+    <ClInclude Include="sdk\ReplayGain.h" />
     <ClInclude Include="sdk\String.h" />
     <ClInclude Include="support\Auddio.h" />
     <ClInclude Include="support\Common.h" />

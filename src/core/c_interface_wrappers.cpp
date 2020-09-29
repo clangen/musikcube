@@ -1235,7 +1235,7 @@ mcsdk_export int mcsdk_svc_indexer_get_paths_count(mcsdk_svc_indexer in) {
 mcsdk_export int mcsdk_svc_indexer_get_paths_at(mcsdk_svc_indexer in, int index, char* dst, int len) {
     std::vector<std::string> paths;
     INDEXER(in)->GetPaths(paths);
-    return CopyString(paths[index], dst, (int) len);
+    return (int) CopyString(paths[index], dst, (int) len);
 }
 
 mcsdk_export void mcsdk_svc_indexer_schedule(mcsdk_svc_indexer in, mcsdk_svc_indexer_sync_type type) {
@@ -1305,7 +1305,7 @@ mcsdk_export int mcsdk_svc_library_get_id(mcsdk_svc_library l) {
 }
 
 mcsdk_export int mcsdk_svc_library_get_name(mcsdk_svc_library l, char* dst, int len) {
-    return CopyString(LIBRARY(l)->Name(), dst, len);
+    return (int) CopyString(LIBRARY(l)->Name(), dst, len);
 }
 
 /*
@@ -1349,7 +1349,7 @@ mcsdk_export float mcsdk_db_statement_column_float(mcsdk_db_statement stmt, int 
 }
 
 mcsdk_export int mcsdk_db_statement_column_text(mcsdk_db_statement stmt, int column, char* dst, int len) {
-    return CopyString(DBSTATEMENT(stmt)->ColumnText(column), dst, len);
+    return (int) CopyString(DBSTATEMENT(stmt)->ColumnText(column), dst, len);
 }
 
 mcsdk_export mcsdk_db_result mcsdk_db_statement_step(mcsdk_db_statement stmt) {

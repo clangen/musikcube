@@ -113,15 +113,15 @@ void Statement::BindNull(int position) {
     sqlite3_bind_null(this->stmt, position + 1);
 }
 
-int Statement::ColumnInt32(int column) {
+const int Statement::ColumnInt32(int column) {
     return sqlite3_column_int(this->stmt, column);
 }
 
-int64_t Statement::ColumnInt64(int column) {
+const int64_t Statement::ColumnInt64(int column) {
     return sqlite3_column_int64(this->stmt, column);
 }
 
-float Statement::ColumnFloat(int column) {
+const float Statement::ColumnFloat(int column) {
     return (float) sqlite3_column_double(this->stmt, column);
 }
 
@@ -133,4 +133,8 @@ const char* Statement::ColumnText(int column) {
 const wchar_t* Statement::ColumnTextW(int column) {
     const wchar_t* text = (wchar_t*) sqlite3_column_text16(this->stmt, column);
     return text ? text : L"";
+}
+
+const bool Statement::IsNull(int column) {
+    return sqlite3_column_type(this->stmt, column) == SQLITE_NULL;
 }

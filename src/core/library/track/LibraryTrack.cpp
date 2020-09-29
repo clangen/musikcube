@@ -43,23 +43,29 @@
 #include <core/library/LocalLibrary.h>
 
 using namespace musik::core;
+using namespace musik::core::sdk;
 
 LibraryTrack::LibraryTrack()
 : id(0)
-, libraryId(0) {
+, libraryId(0)
+, gain(nullptr) {
 }
 
 LibraryTrack::LibraryTrack(int64_t id, int libraryId)
 : id(id)
-, libraryId(libraryId) {
+, libraryId(libraryId)
+, gain(nullptr) {
 }
 
-LibraryTrack::LibraryTrack(int64_t id, musik::core::ILibraryPtr library)
+LibraryTrack::LibraryTrack(int64_t id, ILibraryPtr library)
 : id(id)
-, libraryId(library->Id()) {
+, libraryId(library->Id())
+, gain(nullptr) {
 }
 
 LibraryTrack::~LibraryTrack() {
+    delete gain;
+    gain = nullptr;
 }
 
 std::string LibraryTrack::GetString(const char* metakey) {
@@ -136,10 +142,25 @@ bool LibraryTrack::ContainsThumbnail() {
     return false;
 }
 
-void LibraryTrack::SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) {
-    /* do nothing, we don't use this value and this method should never be
-    called. it's used by the IndexerTrack implementation, and also by the
-    playback engine, but not here in the library. */
+void LibraryTrack::SetReplayGain(const ReplayGain& replayGain) {
+    if (this->gain) {
+        delete this->gain;
+        this->gain = nullptr;
+    }
+    this->gain = new ReplayGain();
+    *this->gain = replayGain;
+}
+
+ReplayGain LibraryTrack::GetReplayGain() {
+    if (this->gain) {
+        return *gain;
+    }
+    ReplayGain gain;
+    gain.albumGain = 1.0;
+    gain.albumPeak = 1.0;
+    gain.trackGain = 1.0;
+    gain.trackPeak = 1.0;
+    return gain;
 }
 
 std::string LibraryTrack::Uri() {
@@ -147,11 +168,11 @@ std::string LibraryTrack::Uri() {
 }
 
 int LibraryTrack::GetString(const char* key, char* dst, int size) {
-    return CopyString(this->GetString(key), dst, size);
+    return (int) CopyString(this->GetString(key), dst, size);
 }
 
 int LibraryTrack::Uri(char* dst, int size) {
-    return CopyString(this->Uri(), dst, size);
+    return (int) CopyString(this->Uri(), dst, size);
 }
 
 Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {
@@ -227,6 +248,8 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         "FROM tracks t, paths p, albums al " \
         "WHERE t.id=? AND t.album_id=al.id", db);
 
+    db::Statement replayGainQuery("SELECT album_gain, album_peak, track_gain, track_peak FROM replay_gain WHERE track_id=?", db);
+
     trackQuery.BindInt64(0, (int64_t) target->GetId());
     if (trackQuery.Step() == db::Row) {
         target->SetValue("track", trackQuery.ColumnText(0));
@@ -258,6 +281,16 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         allMetadataQuery.BindInt64(0, (int64_t) target->GetId());
         while (allMetadataQuery.Step() == db::Row) {
             target->SetValue(allMetadataQuery.ColumnText(1), allMetadataQuery.ColumnText(0));
+        }
+
+        replayGainQuery.BindInt64(0, (int64_t)target->GetId());
+        if (replayGainQuery.Step() == db::Row) {
+            ReplayGain gain;
+            gain.albumGain = replayGainQuery.ColumnFloat(0);
+            gain.albumPeak = replayGainQuery.ColumnFloat(1);
+            gain.trackGain = replayGainQuery.ColumnFloat(2);
+            gain.trackPeak = replayGainQuery.ColumnFloat(3);
+            target->SetReplayGain(gain);
         }
 
         return true;

@@ -35,14 +35,17 @@
 #pragma once
 
 #include "IMap.h"
-#include "constants.h"
+#include "ReplayGain.h"
 
 namespace musik { namespace core { namespace sdk {
 
-    class ITrack : public IMap {
+    class ITrack: public IMap {
         public:
             virtual void Retain() = 0;
             virtual int Uri(char* dst, int size) = 0;
+
+            /* sdk v13 */
+            virtual ReplayGain GetReplayGain() = 0;
     };
 
 } } }

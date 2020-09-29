@@ -35,24 +35,29 @@
 #include "pch.hpp"
 #include "TrackMetadataQuery.h"
 #include <core/library/LocalLibraryConstants.h>
+#include <core/sdk/ReplayGain.h>
 
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core;
 using namespace musik::core::library;
+using namespace musik::core::sdk;
 
-static const std::string COLUMNS = "t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id, t.rating ";
+static const std::string COLUMNS = "t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id, t.rating, replay_gain.album_gain, replay_gain.album_peak, replay_gain.track_gain, replay_gain.track_peak ";
 static const std::string TABLES = "tracks t, albums al, artists alar, artists ar, genres gn";
+static const std::string REPLAY_GAIN_JOIN = "replay_gain ON t.id=replay_gain.track_id";
 static const std::string PREDICATE = "t.album_id=al.id AND t.album_artist_id=alar.id AND t.visual_genre_id=gn.id AND t.visual_artist_id=ar.id";
 
 static const std::string ALL_METADATA_QUERY_BY_ID =
     "SELECT DISTINCT " + COLUMNS + " " +
     "FROM " + TABLES + " " +
+    "LEFT JOIN " + REPLAY_GAIN_JOIN + " " +
     "WHERE t.id=? AND " + PREDICATE;
 
 static const std::string ALL_METADATA_QUERY_BY_EXTERNAL_ID =
     "SELECT DISTINCT " + COLUMNS + " " +
     "FROM " + TABLES + " " +
+    "LEFT JOIN " + REPLAY_GAIN_JOIN + " " +
     "WHERE t.external_id=? AND " + PREDICATE;
 
 static const std::string IDS_ONLY_QUERY_BY_ID =
@@ -68,6 +73,8 @@ TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Typ
 }
 
 bool TrackMetadataQuery::OnRun(Connection& db) {
+    OutputDebugStringA(ALL_METADATA_QUERY_BY_ID.c_str());
+
     bool queryById = this->result->GetId() != 0;
 
     std::string query;
@@ -119,6 +126,13 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
             result->SetValue(constants::Track::SOURCE_ID, trackQuery.ColumnText(17));
             result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(18));
             result->SetValue(constants::Track::RATING, trackQuery.ColumnText(19));
+
+            ReplayGain gain;
+            gain.albumGain = trackQuery.IsNull(20) ? 1.0f : trackQuery.ColumnFloat(20);
+            gain.albumPeak = trackQuery.IsNull(21) ? 1.0f : trackQuery.ColumnFloat(21);
+            gain.trackGain = trackQuery.IsNull(22) ? 1.0f : trackQuery.ColumnFloat(22);
+            gain.trackPeak = trackQuery.IsNull(23) ? 1.0f : trackQuery.ColumnFloat(23);
+            result->SetReplayGain(gain);
         }
         else {
             result->SetValue(constants::Track::EXTERNAL_ID, trackQuery.ColumnText(0));

@@ -35,7 +35,6 @@ set(CORE_SOURCES
   ./library/query/local/MarkTrackPlayedQuery.cpp
   ./library/query/local/NowPlayingTrackListQuery.cpp
   ./library/query/local/PersistedPlayQueueQuery.cpp
-  ./library/query/local/ReplayGainQuery.cpp
   ./library/query/local/SavePlaylistQuery.cpp
   ./library/query/local/SearchTrackListQuery.cpp
   ./library/query/local/SetTrackRatingQuery.cpp

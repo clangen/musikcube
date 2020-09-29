@@ -163,8 +163,8 @@ static class Environment: public IEnvironment {
         virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) override {
             musik::core::audio::Buffer* buffer = new Buffer();
             buffer->SetChannels(2);
-            buffer->SetSampleRate(rate);
-            buffer->SetSamples(samples);
+            buffer->SetSampleRate((long) rate);
+            buffer->SetSamples((long) samples);
             return buffer;
         }
 

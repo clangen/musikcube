@@ -42,7 +42,7 @@
 
 namespace musik { namespace core {
 
-    class LibraryTrack : public Track {
+    class LibraryTrack: public Track {
         public:
             LibraryTrack();
             LibraryTrack(int64_t id, int libraryId);
@@ -71,6 +71,7 @@ namespace musik { namespace core {
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
             virtual int GetString(const char* key, char* dst, int size);
             virtual int Uri(char* dst, int size);
+            virtual musik::core::sdk::ReplayGain GetReplayGain();
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
             virtual MetadataIteratorRange GetAllValues();
@@ -83,6 +84,7 @@ namespace musik { namespace core {
             int libraryId;
             Track::MetadataMap metadata;
             std::mutex mutex;
+            musik::core::sdk::ReplayGain* gain;
     };
 
 } }
