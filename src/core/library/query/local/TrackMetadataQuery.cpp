@@ -66,9 +66,8 @@ static const std::string IDS_ONLY_QUERY_BY_ID =
 static const std::string IDS_ONLY_QUERY_BY_EXTERNAL_ID =
     "SELECT DISTINCT external_id, source_id FROM tracks WHERE tracks.external_id=?";
 
-TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Type type) {
+TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, Type type) {
     this->result = target;
-    this->library = library;
     this->type = type;
 }
 

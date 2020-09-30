@@ -34,7 +34,6 @@
 
 #include "LocalQueryBase.h"
 
-#include <core/library/ILibrary.h>
 #include <core/library/track/Track.h>
 
 namespace musik { namespace core { namespace db { namespace local {
@@ -45,7 +44,6 @@ class TrackMetadataQuery : public LocalQueryBase {
 
         TrackMetadataQuery(
             musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
             Type type = Full);
 
         virtual ~TrackMetadataQuery() { }
@@ -60,7 +58,6 @@ class TrackMetadataQuery : public LocalQueryBase {
 
     private:
         Type type;
-        ILibraryPtr library;
         TrackPtr result;
 };
 

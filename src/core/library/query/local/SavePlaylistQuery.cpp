@@ -438,7 +438,7 @@ TrackPtr SavePlaylistQuery::TrackListWrapper::Get(
     TrackPtr result = std::make_shared<LibraryTrack>(rawTracks->GetId(index), library);
     if (rawTracks) {
         std::shared_ptr<TrackMetadataQuery> query(
-            new TrackMetadataQuery(result, library, TrackMetadataQuery::IdsOnly));
+            new TrackMetadataQuery(result, TrackMetadataQuery::IdsOnly));
 
         library->Enqueue(query, ILibrary::QuerySynchronous);
     }

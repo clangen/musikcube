@@ -132,8 +132,7 @@ TrackPtr TrackList::Get(size_t index) const {
 
         auto target = TrackPtr(new LibraryTrack(id, this->library));
 
-        std::shared_ptr<TrackMetadataQuery> query(
-            new TrackMetadataQuery(target, this->library));
+        std::shared_ptr<TrackMetadataQuery> query(new TrackMetadataQuery(target));
 
         this->library->Enqueue(query, ILibrary::QuerySynchronous);
 
