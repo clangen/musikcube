@@ -216,7 +216,8 @@ MetadataState IndexerTrack::GetMetadataState() {
 }
 
 void IndexerTrack::SetMetadataState(MetadataState state) {
-    throw std::runtime_error("not implemented");
+    /* not used, but needs to be stubbed because Indexer uses TrackMetadataQuery,
+    which calls this method */
 }
 
 std::string IndexerTrack::Uri() {

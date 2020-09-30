@@ -35,12 +35,7 @@
 #include "pch.hpp"
 
 #include <core/library/track/LibraryTrack.h>
-#include <core/library/LibraryFactory.h>
-
 #include <core/support/Common.h>
-#include <core/db/Connection.h>
-#include <core/db/Statement.h>
-#include <core/library/LocalLibrary.h>
 
 using namespace musik::core;
 using namespace musik::core::sdk;
@@ -209,107 +204,4 @@ int LibraryTrack::LibraryId() {
 
 TrackPtr LibraryTrack::Copy() {
     return TrackPtr(new LibraryTrack(this->id, this->libraryId));
-}
-
-bool LibraryTrack::Load(Track *target, db::Connection &db) {
-    /* if no ID is specified, see if we can look one up by filename
-    in the current database. */
-    if (target->GetId() == 0) {
-        std::string path = target->GetString("filename");
-
-        if (!path.size()) {
-            return false;
-        }
-
-        target->SetMetadataState(MetadataState::Loading);
-
-        db::Statement idFromFn(
-            "SELECT id " \
-            "FROM tracks " \
-            "WHERE filename=? " \
-            "LIMIT 1", db);
-
-        idFromFn.BindText(0, path.c_str());
-
-        if (idFromFn.Step() != db::Row) {
-            return false;
-        }
-
-        target->SetId(idFromFn.ColumnInt64(0));
-    }
-
-    db::Statement genresQuery(
-        "SELECT g.name " \
-        "FROM genres g, track_genres tg " \
-        "WHERE tg.genre_id=g.id AND tg.track_id=? " \
-        "ORDER BY tg.id", db);
-
-    db::Statement artistsQuery(
-        "SELECT ar.name " \
-        "FROM artists ar, track_artists ta " \
-        "WHERE ta.artist_id=ar.id AND ta.track_id=? "\
-        "ORDER BY ta.id", db);
-
-    db::Statement allMetadataQuery(
-        "SELECT mv.content, mk.name " \
-        "FROM meta_values mv, meta_keys mk, track_meta tm " \
-        "WHERE tm.track_id=? AND tm.meta_value_id=mv.id AND mv.meta_key_id=mk.id " \
-        "ORDER BY tm.id", db);
-
-    db::Statement trackQuery(
-        "SELECT t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.rating " \
-        "FROM tracks t, paths p, albums al " \
-        "WHERE t.id=? AND t.album_id=al.id", db);
-
-    db::Statement replayGainQuery("SELECT album_gain, album_peak, track_gain, track_peak FROM replay_gain WHERE track_id=?", db);
-
-    trackQuery.BindInt64(0, (int64_t) target->GetId());
-    if (trackQuery.Step() == db::Row) {
-        target->SetValue("track", trackQuery.ColumnText(0));
-        target->SetValue("disc", trackQuery.ColumnText(1));
-        target->SetValue("bpm", trackQuery.ColumnText(2));
-        target->SetValue("duration", trackQuery.ColumnText(3));
-        target->SetValue("filesize", trackQuery.ColumnText(4));
-        target->SetValue("title", trackQuery.ColumnText(5));
-        target->SetValue("filename", trackQuery.ColumnText(6));
-        target->SetValue("thumbnail_id", trackQuery.ColumnText(7));
-        target->SetValue("album", trackQuery.ColumnText(8));
-        target->SetValue("filetime", trackQuery.ColumnText(9));
-        target->SetValue("visual_genre_id", trackQuery.ColumnText(10));
-        target->SetValue("visual_artist_id", trackQuery.ColumnText(11));
-        target->SetValue("album_artist_id", trackQuery.ColumnText(12));
-        target->SetValue("album_id", trackQuery.ColumnText(13));
-        target->SetValue("rating", trackQuery.ColumnText(14));
-
-        genresQuery.BindInt64(0, (int64_t) target->GetId());
-        while (genresQuery.Step() == db::Row) {
-            target->SetValue("genre", genresQuery.ColumnText(0));
-        }
-
-        artistsQuery.BindInt64(0, (int64_t) target->GetId());
-        while (artistsQuery.Step() == db::Row) {
-            target->SetValue("artist", artistsQuery.ColumnText(0));
-        }
-
-        allMetadataQuery.BindInt64(0, (int64_t) target->GetId());
-        while (allMetadataQuery.Step() == db::Row) {
-            target->SetValue(allMetadataQuery.ColumnText(1), allMetadataQuery.ColumnText(0));
-        }
-
-        replayGainQuery.BindInt64(0, (int64_t)target->GetId());
-        if (replayGainQuery.Step() == db::Row) {
-            ReplayGain gain;
-            gain.albumGain = replayGainQuery.ColumnFloat(0);
-            gain.albumPeak = replayGainQuery.ColumnFloat(1);
-            gain.trackGain = replayGainQuery.ColumnFloat(2);
-            gain.trackPeak = replayGainQuery.ColumnFloat(3);
-            target->SetReplayGain(gain);
-        }
-
-        target->SetMetadataState(MetadataState::Loaded);
-        return true;
-    }
-
-    target->SetMetadataState(MetadataState::Missing);
-    return false;
 }

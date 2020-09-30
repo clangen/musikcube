@@ -80,8 +80,6 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetAllValues();
             virtual TrackPtr Copy();
 
-            static bool Load(Track *target, db::Connection &db);
-
         private:
             int64_t id;
             int libraryId;

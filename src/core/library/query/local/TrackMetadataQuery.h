@@ -42,9 +42,7 @@ class TrackMetadataQuery : public LocalQueryBase {
     public:
         enum Type { Full, IdsOnly };
 
-        TrackMetadataQuery(
-            musik::core::TrackPtr target,
-            Type type = Full);
+        TrackMetadataQuery(musik::core::TrackPtr target, Type type = Full);
 
         virtual ~TrackMetadataQuery() { }
 

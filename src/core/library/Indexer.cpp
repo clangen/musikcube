@@ -41,6 +41,7 @@
 #include <core/debug.h>
 #include <core/library/track/IndexerTrack.h>
 #include <core/library/track/LibraryTrack.h>
+#include <core/library/query/local/TrackMetadataQuery.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
@@ -74,6 +75,8 @@ using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::core::audio;
 using namespace musik::core::library;
+using namespace musik::core::db;
+using namespace musik::core::db::local;
 
 using Thread = std::unique_ptr<boost::thread>;
 
@@ -909,9 +912,11 @@ void Indexer::RunAnalyzers() {
 
         getNextTrack.ResetAndUnbind();
 
-        IndexerTrack track(trackId);
+        auto track = std::make_shared<IndexerTrack>(trackId);
+        TrackMetadataQuery query(track);
+        query.Run(this->dbConnection);
 
-        if (LibraryTrack::Load(&track, this->dbConnection)) {
+        if (query.GetStatus() == IQuery::Finished) {
             PluginVector runningAnalyzers;
 
             TagStore* store = new TagStore(track);
@@ -926,7 +931,7 @@ void Indexer::RunAnalyzers() {
                 audio::IStreamPtr stream = audio::Stream::Create(2048, 2.0, StreamFlags::NoDSP);
 
                 if (stream) {
-                    if (stream->OpenStream(track.Uri())) {
+                    if (stream->OpenStream(track->Uri())) {
 
                         /* decode the stream quickly, passing to all analyzers */
 
@@ -959,7 +964,7 @@ void Indexer::RunAnalyzers() {
                         completed successfully, then save the track. */
 
                         if (successPlugins>0) {
-                            track.Save(this->dbConnection, this->libraryPath);
+                            track->Save(this->dbConnection, this->libraryPath);
                         }
                     }
                 }
