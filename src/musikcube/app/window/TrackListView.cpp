@@ -462,10 +462,16 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
     TrackPtr track = parent.tracks->Get(trackIndex);
 
-    if (!track) {
+    if (!track ||
+        track->GetMetadataState() == MetadataState::Missing ||
+        track->GetMetadataState() == MetadataState::NotLoaded)
+    {
         auto entry = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
         entry->SetAttrs(selected ? Color::ListItemHighlighted : Color::TextError);
         return entry;
+    }
+    else if (track->GetMetadataState() == MetadataState::Loading) {
+        return std::shared_ptr<SingleLineEntry>(new SingleLineEntry(" -"));
     }
 
     Color attrs = Color::Default;

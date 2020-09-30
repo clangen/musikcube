@@ -95,6 +95,7 @@ namespace musik { namespace core {
             virtual MetadataIteratorRange GetValues(const char* metakey) = 0;
             virtual MetadataIteratorRange GetAllValues() = 0;
             virtual TrackPtr Copy() = 0;
+            virtual void SetMetadataState(musik::core::sdk::MetadataState state) = 0;
 
             /* for SDK interop */
             ITrack* GetSdkValue();

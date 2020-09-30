@@ -184,7 +184,7 @@ void IndexerTrack::SetThumbnail(const char *data, long size) {
 int64_t IndexerTrack::GetThumbnailId() {
     std::string key = this->GetString("album") + "-" + this->GetString("album_artist");
     size_t id = hash32(key.c_str());
-    auto it = thumbnailIdCache.find(id);
+    auto it = thumbnailIdCache.find((int) id);
     if (it != thumbnailIdCache.end()) {
         return it->second;
     }
@@ -208,14 +208,15 @@ void IndexerTrack::SetReplayGain(const ReplayGain& replayGain) {
 }
 
 ReplayGain IndexerTrack::GetReplayGain() {
-    /* note: in practice this will never be called. the indexer only ever sets
-    the replay gain value, but never queries it. just return a dummy value. */
-    ReplayGain gain;
-    gain.albumGain = 1.0f;
-    gain.albumPeak = 1.0f;
-    gain.trackGain = 1.0f;
-    gain.trackPeak = 1.0f;
-    return gain;
+    throw std::runtime_error("not implemented");
+}
+
+MetadataState IndexerTrack::GetMetadataState() {
+    throw std::runtime_error("not implemented");
+}
+
+void IndexerTrack::SetMetadataState(MetadataState state) {
+    throw std::runtime_error("not implemented");
 }
 
 std::string IndexerTrack::Uri() {
@@ -223,11 +224,11 @@ std::string IndexerTrack::Uri() {
 }
 
 int IndexerTrack::GetString(const char* key, char* dst, int size) {
-    return CopyString(this->GetString(key), dst, size);
+    return (int) CopyString(this->GetString(key), dst, size);
 }
 
 int IndexerTrack::Uri(char* dst, int size) {
-    return CopyString(this->Uri(), dst, size);
+    return (int) CopyString(this->Uri(), dst, size);
 }
 
 Track::MetadataIteratorRange IndexerTrack::GetValues(const char* metakey) {
@@ -632,7 +633,7 @@ int64_t IndexerTrack::SaveAlbum(db::Connection& dbConnection, int64_t thumbnailI
         updateStatement.BindInt64(1, albumId);
         updateStatement.Step();
 
-        thumbnailIdCache[albumId] = thumbnailId;
+        thumbnailIdCache[(int) albumId] = thumbnailId;
     }
 
     return albumId;

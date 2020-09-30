@@ -39,6 +39,7 @@
 #include <core/library/LocalLibrary.h>
 #include <core/db/Connection.h>
 #include <mutex>
+#include <atomic>
 
 namespace musik { namespace core {
 
@@ -72,6 +73,8 @@ namespace musik { namespace core {
             virtual int GetString(const char* key, char* dst, int size);
             virtual int Uri(char* dst, int size);
             virtual musik::core::sdk::ReplayGain GetReplayGain();
+            virtual musik::core::sdk::MetadataState GetMetadataState();
+            virtual void SetMetadataState(musik::core::sdk::MetadataState state);
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
             virtual MetadataIteratorRange GetAllValues();
@@ -84,6 +87,7 @@ namespace musik { namespace core {
             int libraryId;
             Track::MetadataMap metadata;
             std::mutex mutex;
+            std::atomic<musik::core::sdk::MetadataState> state;
             musik::core::sdk::ReplayGain* gain;
     };
 

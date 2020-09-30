@@ -102,6 +102,10 @@ class SdkWrapper : public Track {
             return track->GetReplayGain();
         }
 
+        virtual MetadataState GetMetadataState() {
+            return track->GetMetadataState();
+        }
+
         /* pure virtual methods defined by Track, but not defined in ITrack. therefore,
         these methods cannot be called by the SDK, and should throw. */
         #define NO_IMPL throw std::runtime_error("not implemented");
@@ -117,6 +121,7 @@ class SdkWrapper : public Track {
         virtual MetadataIteratorRange GetValues(const char* metakey) override { NO_IMPL }
         virtual MetadataIteratorRange GetAllValues() override { NO_IMPL }
         virtual TrackPtr Copy() override { NO_IMPL }
+        virtual void SetMetadataState(MetadataState state) override { NO_IMPL }
         #undef NO_IMPL
 
     private:

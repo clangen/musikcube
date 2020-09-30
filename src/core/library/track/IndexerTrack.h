@@ -62,13 +62,14 @@ namespace musik { namespace core {
             virtual std::string Uri();
             virtual int Uri(char* dst, int size);
             virtual musik::core::sdk::ReplayGain GetReplayGain();
+            virtual musik::core::sdk::MetadataState GetMetadataState();
 
             virtual MetadataIteratorRange GetValues(const char* metakey);
             virtual MetadataIteratorRange GetAllValues();
             virtual TrackPtr Copy();
-
             virtual int64_t GetId();
             virtual void SetId(int64_t trackId) { this->trackId = trackId; }
+            virtual void SetMetadataState(musik::core::sdk::MetadataState state);
 
             bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,

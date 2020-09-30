@@ -48,19 +48,22 @@ using namespace musik::core::sdk;
 LibraryTrack::LibraryTrack()
 : id(0)
 , libraryId(0)
-, gain(nullptr) {
+, gain(nullptr)
+, state(MetadataState::NotLoaded) {
 }
 
 LibraryTrack::LibraryTrack(int64_t id, int libraryId)
 : id(id)
 , libraryId(libraryId)
-, gain(nullptr) {
+, gain(nullptr)
+, state(MetadataState::NotLoaded) {
 }
 
 LibraryTrack::LibraryTrack(int64_t id, ILibraryPtr library)
 : id(id)
 , libraryId(library->Id())
-, gain(nullptr) {
+, gain(nullptr)
+, state(MetadataState::NotLoaded) {
 }
 
 LibraryTrack::~LibraryTrack() {
@@ -151,6 +154,14 @@ void LibraryTrack::SetReplayGain(const ReplayGain& replayGain) {
     *this->gain = replayGain;
 }
 
+MetadataState LibraryTrack::GetMetadataState() {
+    return this->state;
+}
+
+void LibraryTrack::SetMetadataState(musik::core::sdk::MetadataState state) {
+    this->state = state;
+}
+
 ReplayGain LibraryTrack::GetReplayGain() {
     if (this->gain) {
         return *gain;
@@ -209,6 +220,8 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
         if (!path.size()) {
             return false;
         }
+
+        target->SetMetadataState(MetadataState::Loading);
 
         db::Statement idFromFn(
             "SELECT id " \
@@ -293,8 +306,10 @@ bool LibraryTrack::Load(Track *target, db::Connection &db) {
             target->SetReplayGain(gain);
         }
 
+        target->SetMetadataState(MetadataState::Loaded);
         return true;
     }
 
+    target->SetMetadataState(MetadataState::Missing);
     return false;
 }

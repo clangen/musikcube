@@ -36,6 +36,7 @@
 
 #include "IMap.h"
 #include "ReplayGain.h"
+#include "constants.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -46,6 +47,7 @@ namespace musik { namespace core { namespace sdk {
 
             /* sdk v19 */
             virtual ReplayGain GetReplayGain() = 0;
+            virtual MetadataState GetMetadataState() = 0;
     };
 
 } } }

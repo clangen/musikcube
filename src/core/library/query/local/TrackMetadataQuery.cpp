@@ -73,7 +73,7 @@ TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Typ
 }
 
 bool TrackMetadataQuery::OnRun(Connection& db) {
-    OutputDebugStringA(ALL_METADATA_QUERY_BY_ID.c_str());
+    result->SetMetadataState(MetadataState::Loading);
 
     bool queryById = this->result->GetId() != 0;
 
@@ -139,8 +139,10 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
             result->SetValue(constants::Track::SOURCE_ID, trackQuery.ColumnText(1));
         }
 
+        result->SetMetadataState(MetadataState::Loaded);
         return true;
     }
 
+    result->SetMetadataState(MetadataState::Missing);
     return false;
 }

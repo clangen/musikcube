@@ -83,7 +83,7 @@ namespace musik {
                 PathLibrary = 4
             };
 
-            enum class Capability : int {
+            enum class Capability: int {
                 Prebuffer = 0x01
             };
 
@@ -92,13 +92,13 @@ namespace musik {
                 ScanRollback = 2
             };
 
-            enum class ReplayGainMode : int {
+            enum class ReplayGainMode: int {
                 Disabled = 0,
                 Track = 1,
                 Album = 2
             };
 
-            enum class TransportType : int {
+            enum class TransportType: int {
                 Gapless = 0,
                 Crossfade = 1
             };
@@ -112,6 +112,13 @@ namespace musik {
             enum class StreamFlags: int {
                 None = 0,
                 NoDSP = 1
+            };
+
+            enum class MetadataState: int {
+                NotLoaded = 0,
+                Loading = 1,
+                Loaded = 2,
+                Missing = 3
             };
 
             static const size_t EqualizerBandCount = 18;
