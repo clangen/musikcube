@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/query/local/util/CategoryQueryUtil.h>
 #include <core/library/query/local/util/SdkWrappers.h>
 #include <core/db/Statement.h>
@@ -45,7 +45,7 @@
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class CategoryListQuery : public musik::core::db::LocalQueryBase {
+    class CategoryListQuery : public musik::core::db::QueryBase {
         public:
             using Result = SdkValueList::Shared;
 

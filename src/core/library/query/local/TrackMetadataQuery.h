@@ -32,13 +32,13 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "LocalQueryBase.h"
+#include <core/library/QueryBase.h>
 
 #include <core/library/track/Track.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-class TrackMetadataQuery : public LocalQueryBase {
+class TrackMetadataQuery : public QueryBase {
     public:
         enum Type { Full, IdsOnly };
 

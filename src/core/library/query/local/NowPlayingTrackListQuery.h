@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/audio/PlaybackService.h>
 
 #include "TrackListQueryBase.h"

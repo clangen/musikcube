@@ -36,7 +36,7 @@
 
 #include <core/library/LocalLibrary.h>
 #include <core/config.h>
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
 #include <core/library/Indexer.h>

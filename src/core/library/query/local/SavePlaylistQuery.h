@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/track/TrackList.h>
 #include <core/db/Connection.h>
 #include <core/library/ILibrary.h>
@@ -42,7 +42,7 @@
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class SavePlaylistQuery : public musik::core::db::LocalQueryBase {
+    class SavePlaylistQuery : public musik::core::db::QueryBase {
         public:
             static std::shared_ptr<SavePlaylistQuery> Save(
                 musik::core::ILibraryPtr library,

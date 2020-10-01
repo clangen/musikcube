@@ -241,6 +241,12 @@
     <ClCompile Include="c_interface_wrappers.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="library\RemoteLibrary.cpp">
+      <Filter>src\library</Filter>
+    </ClCompile>
+    <ClCompile Include="library\QueryRegistry.cpp">
+      <Filter>src\library</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -397,9 +403,6 @@
       <Filter>src\library\query\local</Filter>
     </ClInclude>
     <ClInclude Include="library\query\local\CategoryListQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="Library\query\local\LocalQueryBase.h">
       <Filter>src\library\query\local</Filter>
     </ClInclude>
     <ClInclude Include="plugin\Plugins.h">
@@ -593,6 +596,18 @@
     </ClInclude>
     <ClInclude Include="sdk\ReplayGain.h">
       <Filter>src\sdk\metadata</Filter>
+    </ClInclude>
+    <ClInclude Include="library\RemoteLibrary.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\QueryRegistry.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\LocalQueryBase.h">
+      <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\QueryBase.h">
+      <Filter>src\library</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

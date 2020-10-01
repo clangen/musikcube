@@ -34,14 +34,14 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/query/local/util/CategoryQueryUtil.h>
 #include <core/library/metadata/MetadataMapList.h>
 #include <core/db/Connection.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class AlbumListQuery : public musik::core::db::LocalQueryBase {
+    class AlbumListQuery : public musik::core::db::QueryBase {
         public:
             AlbumListQuery(
                 const std::string& filter = "");

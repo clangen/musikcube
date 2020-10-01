@@ -34,13 +34,13 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/query/local/util/SdkWrappers.h>
 #include <core/sdk/IValueList.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class AllCategoriesQuery : public musik::core::db::LocalQueryBase {
+    class AllCategoriesQuery : public musik::core::db::QueryBase {
         public:
             using Result = SdkValueList::Shared;
 

@@ -35,12 +35,12 @@
 #pragma once
 
 #include <core/library/ILibrary.h>
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/db/Connection.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class DeletePlaylistQuery : public musik::core::db::LocalQueryBase {
+    class DeletePlaylistQuery : public musik::core::db::QueryBase {
         public:
             DeletePlaylistQuery(
                 musik::core::ILibraryPtr library,

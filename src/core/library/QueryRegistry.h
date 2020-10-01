@@ -34,45 +34,15 @@
 
 #pragma once
 
-#include <core/library/QueryBase.h>
-#include <core/audio/PlaybackService.h>
+#include <core/library/IQuery.h>
+#include <string>
+#include <memory>
 
-namespace musik { namespace core { namespace db { namespace local {
+namespace musik { namespace core { namespace library {
 
-    class PersistedPlayQueueQuery : public musik::core::db::QueryBase {
-        public:
-            static PersistedPlayQueueQuery* Save(
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback)
-            {
-                return new PersistedPlayQueueQuery(library, playback, Type::Save);
-            }
+    namespace QueryRegistry {
+        std::shared_ptr<musik::core::db::ISerializableQuery> CreateLocalQueryFor(
+            const std::string& name, const std::string& data);
+    }
 
-            static PersistedPlayQueueQuery* Restore(
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback)
-            {
-                return new PersistedPlayQueueQuery(library, playback, Type::Restore);
-            }
-
-            virtual ~PersistedPlayQueueQuery();
-
-            virtual std::string Name() { return "PersistedPlayQueueQuery"; }
-
-        protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
-
-        private:
-            enum class Type { Save, Restore };
-
-            PersistedPlayQueueQuery(
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback,
-                Type type);
-
-            musik::core::ILibraryPtr library;
-            musik::core::audio::PlaybackService& playback;
-            Type type;
-    };
-
-} } } }
+} } }

@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include "TrackList.h"
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>

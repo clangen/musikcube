@@ -34,14 +34,14 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/track/TrackList.h>
 #include <stdint.h>
 #include <vector>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class AppendPlaylistQuery : public musik::core::db::LocalQueryBase {
+    class AppendPlaylistQuery : public musik::core::db::QueryBase {
         public:
             AppendPlaylistQuery(
                 musik::core::ILibraryPtr library,

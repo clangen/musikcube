@@ -32,47 +32,26 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "pch.hpp"
 
-#include <core/library/QueryBase.h>
-#include <core/audio/PlaybackService.h>
+#include "QueryRegistry.h"
+#include <core/library/query/local/LyricsQuery.h>
 
-namespace musik { namespace core { namespace db { namespace local {
+using namespace musik::core::db;
+using namespace musik::core::db::local;
 
-    class PersistedPlayQueueQuery : public musik::core::db::QueryBase {
-        public:
-            static PersistedPlayQueueQuery* Save(
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback)
-            {
-                return new PersistedPlayQueueQuery(library, playback, Type::Save);
+namespace musik { namespace core { namespace library {
+
+    namespace QueryRegistry {
+        std::shared_ptr<ISerializableQuery> CreateLocalQueryFor(
+            const std::string& name, const std::string& data)
+        {
+            if (name == LyricsQuery::kQueryName) {
+                return LyricsQuery::DeserializeQuery(data);
             }
 
-            static PersistedPlayQueueQuery* Restore(
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback)
-            {
-                return new PersistedPlayQueueQuery(library, playback, Type::Restore);
-            }
+            return std::shared_ptr<ISerializableQuery>();
+        }
+    }
 
-            virtual ~PersistedPlayQueueQuery();
-
-            virtual std::string Name() { return "PersistedPlayQueueQuery"; }
-
-        protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
-
-        private:
-            enum class Type { Save, Restore };
-
-            PersistedPlayQueueQuery(
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback,
-                Type type);
-
-            musik::core::ILibraryPtr library;
-            musik::core::audio::PlaybackService& playback;
-            Type type;
-    };
-
-} } } }
+} } }

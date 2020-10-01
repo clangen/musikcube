@@ -35,6 +35,7 @@
 #include "pch.hpp"
 #include <core/library/LibraryFactory.h>
 #include <core/library/LocalLibrary.h>
+#include <core/library/RemoteLibrary.h>
 #include <core/db/Connection.h>
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
@@ -56,20 +57,21 @@ LibraryFactory::LibraryFactory() {
     for (size_t i = 0; i < libraries.size(); i++) {
         std::string name = libraries.at(i);
         int id = prefs->GetInt(name);
-        this->AddLibrary(id, LocalLibrary, name);
+        this->AddLibrary(id, LibraryType::Local, name);
     }
 
     if (this->libraries.empty()) {
-        this->CreateLibrary("Local Library", LocalLibrary);
+        this->CreateLibrary("Local Library", LibraryType::Local);
     }
 }
 
 LibraryFactory::~LibraryFactory() {
 }
 
-ILibraryPtr LibraryFactory::AddLibrary(int id, int type, const std::string& name)
-{
-    ILibraryPtr library = library::LocalLibrary::Create(name, id);
+ILibraryPtr LibraryFactory::AddLibrary(int id, LibraryType type, const std::string& name) {
+    ILibraryPtr library = (type == LibraryType::Local)
+        ? library::LocalLibrary::Create(name, id)
+        : library::RemoteLibrary::Create(name, id);
 
     if (library) {
         this->libraries.push_back(library);
@@ -88,7 +90,7 @@ void LibraryFactory::Shutdown() {
     Instance().libraries.clear();
 }
 
-ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
+ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, LibraryType type) {
     auto prefs = Preferences::ForComponent(prefs::components::Libraries);
     std::vector<std::string> libraries;
     prefs->GetKeys(libraries);
@@ -113,7 +115,7 @@ ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, int type) {
     ++nextId; /* unique */
     prefs->SetInt(name, nextId);
 
-    return this->AddLibrary(nextId, LocalLibrary, name);
+    return this->AddLibrary(nextId, type, name);
 }
 
 LibraryFactory::LibraryVector& LibraryFactory::Libraries() {

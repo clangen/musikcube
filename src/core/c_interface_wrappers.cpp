@@ -59,7 +59,7 @@
 #include <core/sdk/IStreamingEncoder.h>
 #include <core/sdk/IDevice.h>
 #include <core/sdk/IOutput.h>
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/ILibrary.h>
 #include <core/library/IIndexer.h>
 #include <core/library/track/TrackList.h>
@@ -1266,7 +1266,7 @@ mcsdk_export void mcsdk_svc_indexer_remove_callbacks(mcsdk_svc_indexer in, mcsdk
  * ILibrary
  */
 
-class mcsdk_db_wrapped_query: public LocalQueryBase {
+class mcsdk_db_wrapped_query: public QueryBase {
     public:
         mcsdk_db_wrapped_query(
             mcsdk_svc_library library,

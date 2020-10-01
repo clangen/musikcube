@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include "MetadataMap.h"
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>

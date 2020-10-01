@@ -500,6 +500,7 @@
     <ClCompile Include="library\LocalMetadataProxy.cpp" />
     <ClCompile Include="library\metadata\MetadataMap.cpp" />
     <ClCompile Include="library\metadata\MetadataMapList.cpp" />
+    <ClCompile Include="library\QueryRegistry.cpp" />
     <ClCompile Include="library\query\local\AlbumListQuery.cpp" />
     <ClCompile Include="library\query\local\AllCategoriesQuery.cpp" />
     <ClCompile Include="library\query\local\AppendPlaylistQuery.cpp" />
@@ -517,6 +518,7 @@
     <ClCompile Include="library\query\local\SetTrackRatingQuery.cpp" />
     <ClCompile Include="library\query\local\TrackMetadataQuery.cpp" />
     <ClCompile Include="library\query\local\util\CategoryQueryUtil.cpp" />
+    <ClCompile Include="library\RemoteLibrary.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
@@ -577,8 +579,11 @@
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibraryConstants.h" />
     <ClInclude Include="library\LocalMetadataProxy.h" />
+    <ClInclude Include="library\LocalQueryBase.h" />
     <ClInclude Include="library\metadata\MetadataMap.h" />
     <ClInclude Include="library\metadata\MetadataMapList.h" />
+    <ClInclude Include="library\QueryBase.h" />
+    <ClInclude Include="library\QueryRegistry.h" />
     <ClInclude Include="library\query\local\AlbumListQuery.h" />
     <ClInclude Include="library\query\local\AllCategoriesQuery.h" />
     <ClInclude Include="library\query\local\AppendPlaylistQuery.h" />
@@ -595,11 +600,11 @@
     <ClInclude Include="library\query\local\SearchTrackListQuery.h" />
     <ClInclude Include="library\query\local\SetTrackRatingQuery.h" />
     <ClInclude Include="library\query\local\TrackListQueryBase.h" />
-    <ClInclude Include="Library\query\local\LocalQueryBase.h" />
     <ClInclude Include="library\query\local\TrackMetadataQuery.h" />
     <ClInclude Include="library\query\local\util\CategoryQueryUtil.h" />
     <ClInclude Include="library\query\local\util\SdkWrappers.h" />
     <ClInclude Include="library\query\local\util\TrackSort.h" />
+    <ClInclude Include="library\RemoteLibrary.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />
     <ClInclude Include="library\track\LibraryTrack.h" />
     <ClInclude Include="library\track\Track.h" />

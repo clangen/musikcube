@@ -48,8 +48,9 @@ namespace musik { namespace core {
             typedef std::map<int, ILibraryPtr> LibraryMap;
             typedef sigslot::signal0<> LibrariesUpdatedEvent;
 
-            enum LibraryType {
-                LocalLibrary = 1
+            enum class LibraryType: int {
+                Local = 1,
+                Remote = 2
             };
 
             ~LibraryFactory();
@@ -58,7 +59,7 @@ namespace musik { namespace core {
             static LibraryVector& Libraries();
             static ILibraryPtr Default();
 
-            ILibraryPtr CreateLibrary(const std::string& name, int type);
+            ILibraryPtr CreateLibrary(const std::string& name, LibraryType type);
             void Shutdown();
 
             ILibraryPtr GetLibrary(int identifier);
@@ -67,7 +68,7 @@ namespace musik { namespace core {
         private:
             LibraryFactory();
 
-            ILibraryPtr AddLibrary(int id, int type, const std::string& name);
+            ILibraryPtr AddLibrary(int id, LibraryType type, const std::string& name);
 
             LibraryVector libraries;
             LibraryMap libraryMap;

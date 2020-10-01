@@ -34,10 +34,15 @@
 
 #include "pch.hpp"
 #include "LyricsQuery.h"
+#include <json.hpp>
 
 using namespace musik::core::db;
 using namespace musik::core::db::local;
 using namespace musik::core::sdk;
+
+const std::string LyricsQuery::kQueryName = "LyricsQuery";
+
+/* IQuery */
 
 LyricsQuery::LyricsQuery(const std::string& trackExternalId) {
     this->trackExternalId = trackExternalId;
@@ -70,4 +75,30 @@ bool LyricsQuery::OnRun(musik::core::db::Connection &db) {
     }
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string LyricsQuery::SerializeQuery() {
+    nlohmann::json query;
+    query["name"] = this->Name();
+    query["options"] = {{ "trackExternalId", this->trackExternalId }};
+    return query.dump();
+}
+
+std::string LyricsQuery::SerializeResult() {
+    nlohmann::json query;
+    query["result"] = this->result;
+    return query.dump();
+}
+
+void LyricsQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    this->result = nlohmann::json::parse(data).value("result", "");
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<LyricsQuery> LyricsQuery::DeserializeQuery(const std::string& data) {
+    nlohmann::json query = nlohmann::json::parse(data);
+    return std::make_shared<LyricsQuery>(query["options"].value("trackExternalId", ""));
 }

@@ -34,11 +34,11 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class SetTrackRatingQuery: public musik::core::db::LocalQueryBase {
+    class SetTrackRatingQuery: public musik::core::db::QueryBase {
         public:
             SetTrackRatingQuery(int64_t trackId, int rating);
             virtual ~SetTrackRatingQuery();

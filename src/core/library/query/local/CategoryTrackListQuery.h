@@ -36,7 +36,7 @@
 
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/library/query/local/util/CategoryQueryUtil.h>
 #include <core/library/query/local/util/TrackSort.h>
 #include <core/db/Statement.h>

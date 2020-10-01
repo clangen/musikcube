@@ -40,30 +40,25 @@
 #include <core/library/ILibrary.h>
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
-#include <core/library/QueryBase.h>
 
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 
-#include <sigslot/sigslot.h>
 #include <string>
 
 namespace musik { namespace core { namespace library {
 
-    class LocalLibrary :
+    class RemoteLibrary :
         public ILibrary,
         public musik::core::runtime::IMessageTarget,
-        public std::enable_shared_from_this<LocalLibrary>
+        public std::enable_shared_from_this<RemoteLibrary>
     {
         public:
-            using LocalQuery = musik::core::db::QueryBase;
-            using LocalQueryPtr = std::shared_ptr<LocalQuery>;
-
             static ILibraryPtr Create(std::string name, int id);
 
-            LocalLibrary(const LocalLibrary&) = delete;
-            virtual ~LocalLibrary();
+            RemoteLibrary(const RemoteLibrary&) = delete;
+            virtual ~RemoteLibrary();
 
             /* ILibrary */
             virtual int Enqueue(
@@ -81,29 +76,18 @@ namespace musik { namespace core { namespace library {
             /* IMessageTarget */
             virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
-            /* implementation specific */
-            db::Connection& GetConnection() { return this->db; }
-            std::string GetLibraryDirectory();
-            std::string GetDatabaseFilename();
-            static void CreateDatabase(db::Connection &db);
-
-            /* indexes */
-            static void DropIndexes(db::Connection &db);
-            static void CreateIndexes(db::Connection &db);
-            static void InvalidateTrackMetadata(db::Connection &db);
-
         private:
             class QueryCompletedMessage;
 
             struct QueryContext {
-                LocalQueryPtr query;
+                std::shared_ptr<musik::core::db::ISerializableQuery> query;
                 Callback callback;
             };
 
             using QueryContextPtr = std::shared_ptr<QueryContext>;
             using QueryList = std::list<QueryContextPtr>;
 
-            LocalLibrary(std::string name, int id); /* ctor */
+            RemoteLibrary(std::string name, int id); /* ctor */
 
             void RunQuery(QueryContextPtr context, bool notify = true);
             void ThreadProc();
@@ -121,9 +105,6 @@ namespace musik { namespace core { namespace library {
             std::condition_variable_any queueCondition;
             std::recursive_mutex mutex;
             std::atomic<bool> exit;
-
-            core::IIndexer *indexer;
-            core::db::Connection db;
     };
 
 } } }

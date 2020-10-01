@@ -34,14 +34,14 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
 #include <core/library/track/TrackList.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class TrackListQueryBase : public musik::core::db::LocalQueryBase {
+    class TrackListQueryBase : public musik::core::db::QueryBase {
         public:
             typedef std::shared_ptr<musik::core::TrackList> Result;
             typedef std::shared_ptr<std::set<size_t> > Headers;

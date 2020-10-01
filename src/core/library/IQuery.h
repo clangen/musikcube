@@ -54,11 +54,18 @@ namespace musik { namespace core { namespace db {
             } Status;
 
             virtual ~IQuery() { }
-
             virtual int GetStatus() = 0;
             virtual int GetId() = 0;
             virtual int GetOptions() = 0;
             virtual std::string Name() = 0;
+    };
+
+    class ISerializableQuery: public IQuery {
+        public:
+            virtual ~ISerializableQuery() { }
+            virtual std::string SerializeQuery() = 0;
+            virtual std::string SerializeResult() = 0;
+            virtual void DeserializeResult(const std::string& data) = 0;
     };
 
 } } }

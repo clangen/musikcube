@@ -173,7 +173,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
         std::shared_ptr<TrackList> result;
 };
 
-class RemoveFromPlaylistQuery : public LocalQueryBase {
+class RemoveFromPlaylistQuery : public QueryBase {
     public:
         RemoveFromPlaylistQuery(
             ILibraryPtr library,

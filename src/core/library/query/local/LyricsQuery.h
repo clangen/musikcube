@@ -34,18 +34,26 @@
 
 #pragma once
 
-#include <core/library/query/local/LocalQueryBase.h>
+#include <core/library/QueryBase.h>
 
 namespace musik { namespace core { namespace db { namespace local {
 
-    class LyricsQuery : public musik::core::db::LocalQueryBase {
+    class LyricsQuery: public musik::core::db::QueryBase {
         public:
+            static const std::string kQueryName;
+
             LyricsQuery(const std::string& trackExternalId);
             virtual ~LyricsQuery();
 
-            std::string Name() { return "LyricsQuery"; }
-
+            /* IQuery */
+            std::string Name() { return kQueryName; }
             virtual std::string GetResult();
+
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<LyricsQuery> DeserializeQuery(const std::string& data);
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);

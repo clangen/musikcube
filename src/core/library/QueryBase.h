@@ -45,16 +45,16 @@
 
 namespace musik { namespace core { namespace db {
 
-    class LocalQueryBase : public IQuery, public sigslot::has_slots<> {
+    class QueryBase: public ISerializableQuery, public sigslot::has_slots<> {
         public:
-            LocalQueryBase()
+            QueryBase()
             : status(0)
             , options(0)
             , queryId(nextId())
             , cancel(false) {
             }
 
-            virtual ~LocalQueryBase() {
+            virtual ~QueryBase() {
             }
 
             bool Run(musik::core::db::Connection &db) {
@@ -75,6 +75,8 @@ namespace musik { namespace core { namespace db {
                 this->SetStatus(Failed);
                 return false;
             }
+
+            /* IQuery */
 
             virtual int GetStatus() {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
@@ -99,6 +101,20 @@ namespace musik { namespace core { namespace db {
             }
 
             virtual std::string Name() = 0;
+
+            /* ISerializableQuery */
+
+            virtual std::string SerializeQuery() {
+                throw std::runtime_error("not implemented");
+            }
+
+            virtual std::string SerializeResult() {
+                throw std::runtime_error("not implemented");
+            }
+
+            virtual void DeserializeResult(const std::string& data) {
+                throw std::runtime_error("not implemented");
+            }
 
         protected:
             void SetStatus(int status) {
