@@ -41,7 +41,7 @@
 #include <core/debug.h>
 #include <core/library/track/IndexerTrack.h>
 #include <core/library/track/LibraryTrack.h>
-#include <core/library/query/local/TrackMetadataQuery.h>
+#include <core/library/query/TrackMetadataQuery.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
@@ -76,7 +76,7 @@ using namespace musik::core::sdk;
 using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 
 using Thread = std::unique_ptr<boost::thread>;
 

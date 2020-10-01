@@ -56,7 +56,7 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::io;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
@@ -69,7 +69,7 @@ typedef void(*SetIndexerNotifier)(IIndexerNotifier*);
 static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b6421cc";
 
 static IMessageQueue* messageQueue = nullptr;
-static ILibraryPtr library;
+static ILibraryPtr defaultLibrary;
 static IPlaybackService* playback = nullptr;
 static LocalMetadataProxy* metadataProxy = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
@@ -131,8 +131,8 @@ static class Environment: public IEnvironment {
                 case PathApplication: path = GetApplicationDirectory(); break;
                 case PathPlugins: path = GetPluginDirectory(); break;
                 case PathLibrary: {
-                    if (library) {
-                        path = GetDataDirectory() + std::to_string(library->Id()) + "/";
+                    if (defaultLibrary) {
+                        path = GetDataDirectory() + std::to_string(defaultLibrary->Id()) + "/";
                     }
                     break;
                 }
@@ -225,14 +225,14 @@ static class Environment: public IEnvironment {
         }
 
         virtual void ReindexMetadata() override {
-            if (::library) {
-                ::library->Indexer()->Schedule(IIndexer::SyncType::Local);
+            if (::defaultLibrary) {
+                ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Local);
             }
         }
 
         virtual void RebuildMetadata() override {
-            if (::library) {
-                ::library->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
+            if (::defaultLibrary) {
+                ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
             }
         }
 
@@ -360,7 +360,7 @@ namespace musik { namespace core { namespace plugin {
         /* metadata proxies */
         delete metadataProxy;
         ::messageQueue = messageQueue;
-        ::library = library;
+        ::defaultLibrary = library;
         ::playback = playback;
         ::metadataProxy = new LocalMetadataProxy(library);
         ::playbackPrefs = Preferences::ForComponent(prefs::components::Playback);
@@ -407,7 +407,7 @@ namespace musik { namespace core { namespace plugin {
         delete metadataProxy;
         ::messageQueue = nullptr;
         ::metadataProxy = nullptr;
-        ::library.reset();
+        ::defaultLibrary.reset();
         ::playback = nullptr;
         ::playbackPrefs.reset();
 

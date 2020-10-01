@@ -37,17 +37,17 @@
 
 #include <core/debug.h>
 #include <core/db/ScopedTransaction.h>
-#include <core/library/query/local/AlbumListQuery.h>
-#include <core/library/query/local/AllCategoriesQuery.h>
-#include <core/library/query/local/AppendPlaylistQuery.h>
-#include <core/library/query/local/CategoryListQuery.h>
-#include <core/library/query/local/CategoryTrackListQuery.h>
-#include <core/library/query/local/DeletePlaylistQuery.h>
-#include <core/library/query/local/SearchTrackListQuery.h>
-#include <core/library/query/local/GetPlaylistQuery.h>
-#include <core/library/query/local/SavePlaylistQuery.h>
-#include <core/library/query/local/TrackMetadataQuery.h>
-#include <core/library/query/local/TrackListQueryBase.h>
+#include <core/library/query/AlbumListQuery.h>
+#include <core/library/query/AllCategoriesQuery.h>
+#include <core/library/query/AppendPlaylistQuery.h>
+#include <core/library/query/CategoryListQuery.h>
+#include <core/library/query/CategoryTrackListQuery.h>
+#include <core/library/query/DeletePlaylistQuery.h>
+#include <core/library/query/SearchTrackListQuery.h>
+#include <core/library/query/GetPlaylistQuery.h>
+#include <core/library/query/SavePlaylistQuery.h>
+#include <core/library/query/TrackMetadataQuery.h>
+#include <core/library/query/TrackListQueryBase.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
@@ -60,12 +60,12 @@
 
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 
-using PredicateList = musik::core::db::local::category::PredicateList;
+using PredicateList = musik::core::library::query::category::PredicateList;
 
 /* HELPERS */
 

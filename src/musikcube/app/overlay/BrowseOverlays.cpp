@@ -36,7 +36,7 @@
 
 #include "BrowseOverlays.h"
 #include <app/util/MagicConstants.h>
-#include <core/library/query/local/AllCategoriesQuery.h>
+#include <core/library/query/AllCategoriesQuery.h>
 #include <core/i18n/Locale.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
@@ -48,7 +48,7 @@ using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 
 static const std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id", "directory" };
 static std::string lastSelectedCategory, lastSelectedDirectory;

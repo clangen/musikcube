@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/library/query/local/util/TrackSort.h>
+#include <core/library/query/util/TrackSort.h>
 #include <core/library/ILibrary.h>
 #include <core/library/track/Track.h>
 
@@ -44,7 +44,7 @@ namespace musik {
     namespace cube {
         class TrackOverlays {
             public:
-                using TrackSortType = musik::core::db::local::TrackSortType;
+                using TrackSortType = musik::core::library::query::TrackSortType;
 
                 static void ShowTrackSearchSortOverlay(
                     TrackSortType currentSortType,

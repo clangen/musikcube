@@ -41,7 +41,7 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <core/library/query/local/TrackListQueryBase.h>
+#include <core/library/query/TrackListQueryBase.h>
 #include <core/audio/PlaybackService.h>
 
 #include <core/runtime/IMessage.h>
@@ -57,10 +57,10 @@ namespace musik {
         {
             public:
                 typedef musik::core::TrackPtr TrackPtr;
-                typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
+                typedef musik::core::library::query::TrackListQueryBase TrackListQueryBase;
 
                 /* events */
-                sigslot::signal1<musik::core::db::local::TrackListQueryBase*> Requeried;
+                sigslot::signal1<musik::core::library::query::TrackListQueryBase*> Requeried;
 
                 /* types */
                 typedef std::function<cursespp::Color(TrackPtr, size_t)> RowDecorator;

@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 
-#include <core/library/query/local/DirectoryTrackListQuery.h>
+#include <core/library/query/DirectoryTrackListQuery.h>
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
 #include <cursespp/Colors.h>
@@ -50,7 +50,7 @@ using namespace musik;
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;

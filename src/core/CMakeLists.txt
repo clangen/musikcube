@@ -23,23 +23,23 @@ set(CORE_SOURCES
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
   ./library/LocalMetadataProxy.cpp
-  ./library/query/local/AlbumListQuery.cpp
-  ./library/query/local/AllCategoriesQuery.cpp
-  ./library/query/local/AppendPlaylistQuery.cpp
-  ./library/query/local/GetPlaylistQuery.cpp
-  ./library/query/local/CategoryListQuery.cpp
-  ./library/query/local/CategoryTrackListQuery.cpp
-  ./library/query/local/DeletePlaylistQuery.cpp
-  ./library/query/local/DirectoryTrackListQuery.cpp
-  ./library/query/local/LyricsQuery.cpp
-  ./library/query/local/MarkTrackPlayedQuery.cpp
-  ./library/query/local/NowPlayingTrackListQuery.cpp
-  ./library/query/local/PersistedPlayQueueQuery.cpp
-  ./library/query/local/SavePlaylistQuery.cpp
-  ./library/query/local/SearchTrackListQuery.cpp
-  ./library/query/local/SetTrackRatingQuery.cpp
-  ./library/query/local/TrackMetadataQuery.cpp
-  ./library/query/local/util/CategoryQueryUtil.cpp
+  ./library/query/AlbumListQuery.cpp
+  ./library/query/AllCategoriesQuery.cpp
+  ./library/query/AppendPlaylistQuery.cpp
+  ./library/query/GetPlaylistQuery.cpp
+  ./library/query/CategoryListQuery.cpp
+  ./library/query/CategoryTrackListQuery.cpp
+  ./library/query/DeletePlaylistQuery.cpp
+  ./library/query/DirectoryTrackListQuery.cpp
+  ./library/query/LyricsQuery.cpp
+  ./library/query/MarkTrackPlayedQuery.cpp
+  ./library/query/NowPlayingTrackListQuery.cpp
+  ./library/query/PersistedPlayQueueQuery.cpp
+  ./library/query/SavePlaylistQuery.cpp
+  ./library/query/SearchTrackListQuery.cpp
+  ./library/query/SetTrackRatingQuery.cpp
+  ./library/query/TrackMetadataQuery.cpp
+  ./library/query/util/CategoryQueryUtil.cpp
   ./library/metadata/MetadataMap.cpp
   ./library/metadata/MetadataMapList.cpp
   ./library/track/IndexerTrack.cpp

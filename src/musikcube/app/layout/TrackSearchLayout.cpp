@@ -38,7 +38,7 @@
 #include <cursespp/Screen.h>
 
 #include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/SearchTrackListQuery.h>
+#include <core/library/query/SearchTrackListQuery.h>
 #include <core/support/PreferenceKeys.h>
 
 #include <app/util/Hotkeys.h>
@@ -52,7 +52,7 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;

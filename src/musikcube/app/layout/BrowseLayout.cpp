@@ -38,9 +38,9 @@
 #include <cursespp/Screen.h>
 
 #include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/CategoryTrackListQuery.h>
-#include <core/library/query/local/SavePlaylistQuery.h>
-#include <core/library/query/local/util/TrackSort.h>
+#include <core/library/query/CategoryTrackListQuery.h>
+#include <core/library/query/SavePlaylistQuery.h>
+#include <core/library/query/util/TrackSort.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/support/Messages.h>
 #include <core/i18n/Locale.h>
@@ -58,7 +58,7 @@ using namespace musik;
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;

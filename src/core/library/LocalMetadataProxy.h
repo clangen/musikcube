@@ -37,7 +37,7 @@
 #include <core/library/ILibrary.h>
 #include <core/sdk/IMetadataProxy.h>
 
-namespace musik { namespace core { namespace db { namespace local {
+namespace musik { namespace core { namespace library { namespace query {
 
     class LocalMetadataProxy : public musik::core::sdk::IMetadataProxy {
         public:

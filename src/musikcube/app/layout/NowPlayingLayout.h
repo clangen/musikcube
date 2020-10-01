@@ -70,7 +70,7 @@ namespace musik {
                 bool ProcessEditOperation(const std::string& key);
 
                 /* callbacks */
-                void OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query);
+                void OnTrackListRequeried(musik::core::library::query::TrackListQueryBase* query);
                 cursespp::Color RowDecorator(musik::core::TrackPtr track, size_t index);
                 void OnPlaylistSelected(int64_t playlistId);
 

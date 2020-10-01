@@ -39,7 +39,7 @@
 #include <core/audio/MasterTransport.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
-#include <core/library/query/local/MarkTrackPlayedQuery.h>
+#include <core/library/query/MarkTrackPlayedQuery.h>
 #include <core/plugin/PluginFactory.h>
 #include <core/runtime/MessageQueue.h>
 #include <core/runtime/Message.h>
@@ -53,7 +53,7 @@ using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 
 using musik::core::TrackPtr;
 using musik::core::ILibraryPtr;

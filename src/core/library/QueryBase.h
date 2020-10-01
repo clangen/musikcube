@@ -43,9 +43,12 @@
 #include <mutex>
 #include <atomic>
 
-namespace musik { namespace core { namespace db {
+namespace musik { namespace core { namespace library { namespace query {
 
-    class QueryBase: public ISerializableQuery, public sigslot::has_slots<> {
+    class QueryBase:
+        public musik::core::db::ISerializableQuery,
+        public sigslot::has_slots<>
+    {
         public:
             QueryBase()
             : status(0)
@@ -142,4 +145,4 @@ namespace musik { namespace core { namespace db {
             std::mutex stateMutex;
     };
 
-} } }
+} } } }

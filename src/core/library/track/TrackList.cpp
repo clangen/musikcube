@@ -39,8 +39,8 @@
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
-#include <core/library/query/local/TrackMetadataQuery.h>
-#include <core/library/query/local/util/SdkWrappers.h>
+#include <core/library/query/TrackMetadataQuery.h>
+#include <core/library/query/util/SdkWrappers.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 
@@ -51,7 +51,7 @@
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::sdk;
 
 TrackList::TrackList(ILibraryPtr library) {

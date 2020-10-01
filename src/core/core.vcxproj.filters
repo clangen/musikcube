@@ -38,9 +38,6 @@
     <Filter Include="src\library\query">
       <UniqueIdentifier>{aeae5187-aaff-493a-9d03-4b24dee39b7c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\library\query\local">
-      <UniqueIdentifier>{73173bbc-5951-460f-814d-25d1b71bf362}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\i18n">
       <UniqueIdentifier>{a8776591-b7ad-4f6f-a927-c4bfaaa1e8c8}</UniqueIdentifier>
     </Filter>
@@ -59,8 +56,8 @@
     <Filter Include="src\sdk\metadata">
       <UniqueIdentifier>{a39a447a-65ad-465c-839d-b96cc4a8e2e9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\library\query\local\util">
-      <UniqueIdentifier>{3c3cc444-39fd-482f-aca9-3e67b98d8fc0}</UniqueIdentifier>
+    <Filter Include="src\library\query\util">
+      <UniqueIdentifier>{dc049bce-1b23-4e92-bf64-b5f11ac2d09b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -154,27 +151,6 @@
     <ClCompile Include="library\track\TrackList.cpp">
       <Filter>src\library\track</Filter>
     </ClCompile>
-    <ClCompile Include="library\query\local\CategoryTrackListQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\DeletePlaylistQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\GetPlaylistQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\NowPlayingTrackListQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\SavePlaylistQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\SearchTrackListQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\CategoryListQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
     <ClCompile Include="plugin\Plugins.cpp">
       <Filter>src\plugin</Filter>
     </ClCompile>
@@ -184,23 +160,8 @@
     <ClCompile Include="library\metadata\MetadataMapList.cpp">
       <Filter>src\library\metadata</Filter>
     </ClCompile>
-    <ClCompile Include="library\query\local\AlbumListQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
     <ClCompile Include="i18n\Locale.cpp">
       <Filter>src\i18n</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\TrackMetadataQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\AppendPlaylistQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\util\CategoryQueryUtil.cpp">
-      <Filter>src\library\query\local\util</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\AllCategoriesQuery.cpp">
-      <Filter>src\library\query\local</Filter>
     </ClCompile>
     <ClCompile Include="support\Playback.cpp">
       <Filter>src\support</Filter>
@@ -211,12 +172,6 @@
     <ClCompile Include="audio\MasterTransport.cpp">
       <Filter>src\audio</Filter>
     </ClCompile>
-    <ClCompile Include="library\query\local\DirectoryTrackListQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\PersistedPlayQueueQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
     <ClCompile Include="support\LastFm.cpp">
       <Filter>src\support</Filter>
     </ClCompile>
@@ -225,15 +180,6 @@
     </ClCompile>
     <ClCompile Include="library\LocalMetadataProxy.cpp">
       <Filter>src\library</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\LyricsQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\MarkTrackPlayedQuery.cpp">
-      <Filter>src\library\query\local</Filter>
-    </ClCompile>
-    <ClCompile Include="library\query\local\SetTrackRatingQuery.cpp">
-      <Filter>src\library\query\local</Filter>
     </ClCompile>
     <ClCompile Include="c_context.cpp">
       <Filter>src</Filter>
@@ -246,6 +192,57 @@
     </ClCompile>
     <ClCompile Include="library\QueryRegistry.cpp">
       <Filter>src\library</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\AllCategoriesQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\AppendPlaylistQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\CategoryTrackListQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\DeletePlaylistQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\DirectoryTrackListQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\GetPlaylistQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\LyricsQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\MarkTrackPlayedQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\NowPlayingTrackListQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\PersistedPlayQueueQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\SavePlaylistQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\SearchTrackListQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\SetTrackRatingQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\TrackMetadataQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\util\CategoryQueryUtil.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\AlbumListQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\CategoryListQuery.cpp">
+      <Filter>src\library\query\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -381,30 +378,6 @@
     <ClInclude Include="sdk\IPreferences.h">
       <Filter>src\sdk</Filter>
     </ClInclude>
-    <ClInclude Include="library\query\local\CategoryTrackListQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\DeletePlaylistQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\GetPlaylistQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\NowPlayingTrackListQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\SavePlaylistQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\SearchTrackListQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\TrackListQueryBase.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\CategoryListQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
     <ClInclude Include="plugin\Plugins.h">
       <Filter>src\plugin</Filter>
     </ClInclude>
@@ -414,14 +387,8 @@
     <ClInclude Include="library\metadata\MetadataMap.h">
       <Filter>src\library\metadata</Filter>
     </ClInclude>
-    <ClInclude Include="library\query\local\AlbumListQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
     <ClInclude Include="i18n\Locale.h">
       <Filter>src\i18n</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\TrackMetadataQuery.h">
-      <Filter>src\library\query\local</Filter>
     </ClInclude>
     <ClInclude Include="sdk\IEnvironment.h">
       <Filter>src\sdk</Filter>
@@ -510,9 +477,6 @@
     <ClInclude Include="sdk\ITagStore.h">
       <Filter>src\sdk\metadata</Filter>
     </ClInclude>
-    <ClInclude Include="library\query\local\AppendPlaylistQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
     <ClInclude Include="sdk\IEncoder.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
@@ -522,15 +486,6 @@
     <ClInclude Include="support\Messages.h">
       <Filter>src\support</Filter>
     </ClInclude>
-    <ClInclude Include="library\query\local\util\CategoryQueryUtil.h">
-      <Filter>src\library\query\local\util</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\util\SdkWrappers.h">
-      <Filter>src\library\query\local\util</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\AllCategoriesQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
     <ClInclude Include="support\Duration.h">
       <Filter>src\support</Filter>
     </ClInclude>
@@ -539,12 +494,6 @@
     </ClInclude>
     <ClInclude Include="audio\MasterTransport.h">
       <Filter>src\audio</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\DirectoryTrackListQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\PersistedPlayQueueQuery.h">
-      <Filter>src\library\query\local</Filter>
     </ClInclude>
     <ClInclude Include="io\HttpClient.h">
       <Filter>src\io</Filter>
@@ -573,18 +522,6 @@
     <ClInclude Include="sdk\IStreamingEncoder.h">
       <Filter>src\sdk\audio</Filter>
     </ClInclude>
-    <ClInclude Include="library\query\local\LyricsQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\MarkTrackPlayedQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\util\TrackSort.h">
-      <Filter>src\library\query\local\util</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\local\SetTrackRatingQuery.h">
-      <Filter>src\library\query\local</Filter>
-    </ClInclude>
     <ClInclude Include="musikcore_c.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -608,6 +545,66 @@
     </ClInclude>
     <ClInclude Include="library\QueryBase.h">
       <Filter>src\library</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\AllCategoriesQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\AppendPlaylistQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\CategoryTrackListQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\DeletePlaylistQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\DirectoryTrackListQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\GetPlaylistQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\LyricsQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\MarkTrackPlayedQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\NowPlayingTrackListQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\PersistedPlayQueueQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\SavePlaylistQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\SearchTrackListQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\SetTrackRatingQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\TrackListQueryBase.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\TrackMetadataQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\util\CategoryQueryUtil.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\AlbumListQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\CategoryListQuery.h">
+      <Filter>src\library\query\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\util\TrackSort.h">
+      <Filter>src\library\query\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\util\SdkWrappers.h">
+      <Filter>src\library\query\util</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

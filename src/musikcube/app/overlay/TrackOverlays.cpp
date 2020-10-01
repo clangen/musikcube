@@ -35,8 +35,8 @@
 #include <stdafx.h>
 
 #include "TrackOverlays.h"
-#include <core/library/query/local/util/TrackSort.h>
-#include <core/library/query/local/SetTrackRatingQuery.h>
+#include <core/library/query/util/TrackSort.h>
+#include <core/library/query/SetTrackRatingQuery.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
@@ -48,7 +48,7 @@ using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 
 static const int kDefaultSortOverlayWidth = 32;
 static const int kDefaultRatingOverlayWidth = 24;

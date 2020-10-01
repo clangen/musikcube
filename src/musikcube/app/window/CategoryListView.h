@@ -39,7 +39,7 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ScrollAdapterBase.h>
 
-#include <core/library/query/local/CategoryListQuery.h>
+#include <core/library/query/CategoryListQuery.h>
 
 #include <core/audio/PlaybackService.h>
 #include <core/library/IQuery.h>
@@ -111,7 +111,7 @@ namespace musik {
                 musik::core::audio::PlaybackService& playback;
                 Adapter *adapter;
 
-                std::shared_ptr<musik::core::db::local::CategoryListQuery> activeQuery;
+                std::shared_ptr<musik::core::library::query::CategoryListQuery> activeQuery;
 
                 musik::core::ILibraryPtr library;
                 musik::core::TrackPtr playing;
@@ -119,7 +119,7 @@ namespace musik {
                 std::string fieldName, fieldIdColumn;
                 std::string filter;
                 int64_t selectAfterQuery;
-                musik::core::db::local::CategoryListQuery::Result metadata;
+                musik::core::library::query::CategoryListQuery::Result metadata;
         };
     }
 }

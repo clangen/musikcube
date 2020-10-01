@@ -55,7 +55,7 @@
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::library;;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::audio;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;

@@ -74,7 +74,7 @@ namespace musik {
                 void InitializeWindows();
                 void Requery();
 
-                void OnRequeried(musik::core::db::local::TrackListQueryBase* query);
+                void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
 
                 void OnInputChanged(
                     cursespp::TextInput* sender,

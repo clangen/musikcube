@@ -50,7 +50,7 @@
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::cube;

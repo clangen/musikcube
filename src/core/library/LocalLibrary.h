@@ -57,7 +57,7 @@ namespace musik { namespace core { namespace library {
         public std::enable_shared_from_this<LocalLibrary>
     {
         public:
-            using LocalQuery = musik::core::db::QueryBase;
+            using LocalQuery = musik::core::library::query::QueryBase;
             using LocalQueryPtr = std::shared_ptr<LocalQuery>;
 
             static ILibraryPtr Create(std::string name, int id);

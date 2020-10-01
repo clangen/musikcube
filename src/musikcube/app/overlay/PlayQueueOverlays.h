@@ -36,7 +36,7 @@
 
 #include <core/audio/PlaybackService.h>
 #include <core/library/ILibrary.h>
-#include <core/library/query/local/TrackListQueryBase.h>
+#include <core/library/query/TrackListQueryBase.h>
 #include <app/window/TrackListView.h>
 
 namespace musik {

@@ -37,7 +37,7 @@
 #include <core/i18n/Locale.h>
 #include <core/support/Auddio.h>
 #include <core/support/Common.h>
-#include <core/library/query/local/LyricsQuery.h>
+#include <core/library/query/LyricsQuery.h>
 #include <core/library/RemoteLibrary.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
@@ -49,7 +49,7 @@
 using namespace musik::cube;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 using namespace cursespp;

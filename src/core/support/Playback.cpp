@@ -34,14 +34,14 @@
 
 #include "pch.hpp"
 #include "Playback.h"
-#include <core/library/query/local/PersistedPlayQueueQuery.h>
+#include <core/library/query/PersistedPlayQueueQuery.h>
 #include <core/sdk/constants.h>
 #include <core/support/PreferenceKeys.h>
 #include <cmath>
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::sdk;
 
 namespace keys = musik::core::prefs::keys;

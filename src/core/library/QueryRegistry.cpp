@@ -35,10 +35,10 @@
 #include "pch.hpp"
 
 #include "QueryRegistry.h"
-#include <core/library/query/local/LyricsQuery.h>
+#include <core/library/query/LyricsQuery.h>
 
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 
 namespace musik { namespace core { namespace library {
 

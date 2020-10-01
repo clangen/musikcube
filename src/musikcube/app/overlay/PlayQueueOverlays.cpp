@@ -41,12 +41,12 @@
 #include <core/audio/Visualizer.h>
 #include <core/library/LocalLibraryConstants.h>
 
-#include <core/library/query/local/CategoryTrackListQuery.h>
-#include <core/library/query/local/CategoryListQuery.h>
-#include <core/library/query/local/DirectoryTrackListQuery.h>
-#include <core/library/query/local/GetPlaylistQuery.h>
-#include <core/library/query/local/SavePlaylistQuery.h>
-#include <core/library/query/local/DeletePlaylistQuery.h>
+#include <core/library/query/CategoryTrackListQuery.h>
+#include <core/library/query/CategoryListQuery.h>
+#include <core/library/query/DirectoryTrackListQuery.h>
+#include <core/library/query/GetPlaylistQuery.h>
+#include <core/library/query/SavePlaylistQuery.h>
+#include <core/library/query/DeletePlaylistQuery.h>
 #include <core/runtime/Message.h>
 
 #include <app/util/Messages.h>
@@ -66,7 +66,7 @@ using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
 using namespace musik::cube;
