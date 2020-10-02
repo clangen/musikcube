@@ -235,13 +235,16 @@
     <ClCompile Include="library\query\TrackMetadataQuery.cpp">
       <Filter>src\library\query</Filter>
     </ClCompile>
-    <ClCompile Include="library\query\util\CategoryQueryUtil.cpp">
-      <Filter>src\library\query</Filter>
-    </ClCompile>
     <ClCompile Include="library\query\AlbumListQuery.cpp">
       <Filter>src\library\query</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\util\CategoryQueryUtil.cpp">
+      <Filter>src\library\query\util</Filter>
+    </ClCompile>
     <ClCompile Include="library\query\CategoryListQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
+    <ClCompile Include="library\query\util\Serialization.cpp">
       <Filter>src\library\query\util</Filter>
     </ClCompile>
   </ItemGroup>
@@ -540,9 +543,6 @@
     <ClInclude Include="library\QueryRegistry.h">
       <Filter>src\library</Filter>
     </ClInclude>
-    <ClInclude Include="library\LocalQueryBase.h">
-      <Filter>src\library</Filter>
-    </ClInclude>
     <ClInclude Include="library\QueryBase.h">
       <Filter>src\library</Filter>
     </ClInclude>
@@ -591,19 +591,22 @@
     <ClInclude Include="library\query\TrackMetadataQuery.h">
       <Filter>src\library\query</Filter>
     </ClInclude>
-    <ClInclude Include="library\query\util\CategoryQueryUtil.h">
-      <Filter>src\library\query</Filter>
-    </ClInclude>
     <ClInclude Include="library\query\AlbumListQuery.h">
       <Filter>src\library\query</Filter>
-    </ClInclude>
-    <ClInclude Include="library\query\CategoryListQuery.h">
-      <Filter>src\library\query\util</Filter>
     </ClInclude>
     <ClInclude Include="library\query\util\TrackSort.h">
       <Filter>src\library\query\util</Filter>
     </ClInclude>
     <ClInclude Include="library\query\util\SdkWrappers.h">
+      <Filter>src\library\query\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\util\CategoryQueryUtil.h">
+      <Filter>src\library\query\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\CategoryListQuery.h">
+      <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\util\Serialization.h">
       <Filter>src\library\query\util</Filter>
     </ClInclude>
   </ItemGroup>

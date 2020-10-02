@@ -47,6 +47,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class CategoryListQuery : public musik::core::library::query::QueryBase {
         public:
+            static const std::string kQueryName;
+
             using Result = SdkValueList::Shared;
 
             CategoryListQuery(
@@ -65,10 +67,17 @@ namespace musik { namespace core { namespace library { namespace query {
 
             virtual ~CategoryListQuery();
 
-            std::string Name() { return "CategoryListQuery"; }
+            std::string Name() { return kQueryName; }
 
+            /* IQuery */
             virtual Result GetResult();
             virtual int GetIndexOf(int64_t id);
+
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<CategoryListQuery> DeserializeQuery(const std::string& data);
 
             musik::core::sdk::IValueList* GetSdkResult();
 
@@ -76,7 +85,13 @@ namespace musik { namespace core { namespace library { namespace query {
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
-            enum OutputType { Regular, Extended, Playlist };
+            CategoryListQuery();
+
+            enum class OutputType: int {
+                Regular = 1,
+                Extended = 2,
+                Playlist = 3
+            };
 
             void QueryPlaylist(musik::core::db::Connection &db);
             void QueryRegular(musik::core::db::Connection &db);

@@ -37,6 +37,7 @@
 #include <json.hpp>
 #include "CategoryQueryUtil.h"
 #include <core/library/metadata/MetadataMapList.h>
+#include <core/library/query/util/SdkWrappers.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -55,6 +56,13 @@ namespace musik { namespace core { namespace library { namespace query {
         void MetadataMapListFromJson(
             const nlohmann::json& input,
             musik::core::MetadataMapList& output);
+
+        nlohmann::json ValueListToJson(
+            const musik::core::library::query::SdkValueList& input);
+
+        void ValueListFromJson(
+            const nlohmann::json& input,
+            musik::core::library::query::SdkValueList& output);
 
     }
 

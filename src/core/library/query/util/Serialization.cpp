@@ -44,14 +44,14 @@ namespace musik { namespace core { namespace library { namespace query {
 
         nlohmann::json PredicateListToJson(const category::PredicateList& input) {
             nlohmann::json result;
-            for (auto it : input) {
+            for (auto& it : input) {
                 result.push_back({ it.first, it.second });
             }
             return result;
         }
 
         void PredicateListFromJson(const nlohmann::json& input, category::PredicateList& output) {
-            for (auto it : input) {
+            for (auto& it : input) {
                 output.push_back({ it[0], it[1] });
             }
         }
@@ -87,6 +87,29 @@ namespace musik { namespace core { namespace library { namespace query {
                     outputMap->Set(kv.key().c_str(), kv.value().get<std::string>().c_str());
                 }
                 output.Add(outputMap);
+            }
+        }
+
+        nlohmann::json ValueListToJson(const SdkValueList& input) {
+            nlohmann::json result;
+            input.Each([&result](auto value) {
+                result.push_back({
+                    { "value", value->ToString() },
+                    { "id", value->GetId() },
+                    { "type", value->GetType() }
+                });
+            });
+            return result;
+        }
+
+        void ValueListFromJson(const nlohmann::json& input, SdkValueList& output) {
+            output.Clear();
+            for (auto& v : input) {
+                output.Add(std::make_shared<SdkValue>(
+                    v["value"],
+                    v["id"],
+                    v["type"]
+               ));
             }
         }
 

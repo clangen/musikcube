@@ -173,8 +173,15 @@ void RemoteLibrary::ThreadProc() {
 
 void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
     if (context) {
-        auto queryBytes = context->query->SerializeQuery();
-        auto localQuery = QueryRegistry::CreateLocalQueryFor(context->query->Name(), queryBytes);
+        /* CAL TODO: eventually make the request over a websocket. right now we just
+        do everything via loopback to the local library for testing. we do, however,
+        go through the motions by serializing the inbound query to a string, then
+        bouncing through the QueryRegister to create a new instance, run the query
+        locally, serialize the result, then deserialize it again to emulate the entire
+        flow. */
+
+        auto localQuery = QueryRegistry::CreateLocalQueryFor(
+            context->query->Name(), context->query->SerializeQuery());
 
         auto onComplete = [this, notify, context, localQuery]() {
             if (notify) {
@@ -188,8 +195,6 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
             else if (context->callback) {
                 context->callback(context->query);
             }
-
-            context->query.reset();
         };
 
         if (!localQuery) {
@@ -197,8 +202,6 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
             return;
         }
 
-        /* CAL TODO: eventually make the request over a websocket. right now we just
-        do everything via loopback to the local library for testing. */
         LibraryFactory::Default()->Enqueue(
             localQuery, 
             0, 

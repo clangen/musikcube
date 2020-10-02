@@ -131,11 +131,15 @@ namespace musik { namespace core { namespace library { namespace query {
                 this->values->push_back(value);
             }
 
+            void Clear() {
+                this->values->clear();
+            }
+
             void Sort(std::function<bool(const SdkValue::Shared&, const SdkValue::Shared&)> compare) {
                 std::sort(values->begin(), values->end(), compare);
             }
 
-            Shared Filter(std::function<bool(const SdkValue::Shared&)> keep) {
+            Shared Filter(std::function<bool(const SdkValue::Shared&)> keep) const {
                 Shared result = std::make_shared<SdkValueList>();
                 for (size_t i = 0; i < values->size(); i++) {
                     SdkValue::Shared value = values->at(i);
@@ -147,7 +151,7 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
             template <typename T>
-            std::vector<T> Map(std::function<T(const SdkValue::Shared&)> fun) {
+            std::vector<T> Map(std::function<T(const SdkValue::Shared&)> fun) const {
                 std::vector<T> result;
                 for (size_t i = 0; i < values->size(); i++) {
                     result.push_back(fun(values->at(i)));
@@ -155,7 +159,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 return result;
             }
 
-            void Each(std::function<void(const SdkValue::Shared&)> fun) {
+            void Each(std::function<void(const SdkValue::Shared&)> fun) const {
                 for (size_t i = 0; i < values->size(); i++) {
                     fun(values->at(i));
                 }

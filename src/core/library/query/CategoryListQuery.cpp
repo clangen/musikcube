@@ -35,6 +35,7 @@
 #include "pch.hpp"
 #include "CategoryListQuery.h"
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/query/util/Serialization.h>
 #include <core/db/Statement.h>
 #include <core/i18n/Locale.h>
 #include <core/utfutil.h>
@@ -45,17 +46,23 @@ using musik::core::db::Row;
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 
-static const std::string UNFILTERED_PLAYLISTS_QUERY =
+static const std::string kUnfilteredPlaylistsQuery =
     "SELECT DISTINCT id, name "
     "FROM playlists "
     "ORDER BY name;";
 
-static const std::string FILTERED_PLAYLISTS_QUERY =
+static const std::string kFilteredPlaylistsQuery =
     "SELECT DISTINCT id, name "
     "FROM playlists"
     "WHERE LOWER(name) LIKE LOWER(?) "
     "ORDER BY name;";
+
+const std::string CategoryListQuery::kQueryName = "CategoryListQuery";
+
+CategoryListQuery::CategoryListQuery() {
+}
 
 CategoryListQuery::CategoryListQuery(
     const std::string& trackField, const std::string& filter)
@@ -89,13 +96,13 @@ CategoryListQuery::CategoryListQuery(
     auto end = category::REGULAR_PROPERTY_MAP.end();
 
     if (trackField == "playlists") {
-        this->outputType = Playlist;
+        this->outputType = OutputType::Playlist;
     }
     else if (category::GetPropertyType(trackField) == category::PropertyType::Regular) {
-        this->outputType = Regular;
+        this->outputType = OutputType::Regular;
     }
     else {
-        this->outputType = Extended;
+        this->outputType = OutputType::Extended;
     }
 }
 
@@ -124,8 +131,8 @@ void CategoryListQuery::QueryPlaylist(musik::core::db::Connection& db) {
     bool filtered = this->filter.size();
 
     std::string query = filtered
-        ? FILTERED_PLAYLISTS_QUERY
-        : UNFILTERED_PLAYLISTS_QUERY;
+        ? kFilteredPlaylistsQuery
+        : kUnfilteredPlaylistsQuery;
 
     Statement stmt(query.c_str() , db);
 
@@ -219,10 +226,51 @@ bool CategoryListQuery::OnRun(Connection& db) {
     result.reset(new SdkValueList());
 
     switch (this->outputType) {
-        case Playlist: QueryPlaylist(db); break;
-        case Regular: QueryRegular(db); break;
-        case Extended: QueryExtended(db); break;
+        case OutputType::Playlist: QueryPlaylist(db); break;
+        case OutputType::Regular: QueryRegular(db); break;
+        case OutputType::Extended: QueryExtended(db); break;
     }
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string CategoryListQuery::SerializeQuery() {
+    nlohmann::json query;
+    query["name"] = kQueryName;
+    query["options"] = {
+        { "trackField", this->trackField },
+        { "filter", this->filter },
+        { "outputType", this->outputType },
+        { "regularPredicateList", PredicateListToJson(this->regular) },
+        { "extendedPredicateList", PredicateListToJson(this->extended) }
+    };
+    return query.dump();
+}
+
+std::string CategoryListQuery::SerializeResult() {
+    nlohmann::json result = {
+        { "result", ValueListToJson(*this->result) }
+    };
+    return result.dump();
+}
+
+void CategoryListQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    auto json = nlohmann::json::parse(data);
+    this->result = std::make_shared<SdkValueList>();
+    ValueListFromJson(json["result"], *this->result);
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<CategoryListQuery> CategoryListQuery::DeserializeQuery(const std::string& data) {
+    nlohmann::json options = nlohmann::json::parse(data)["options"];
+    std::shared_ptr<CategoryListQuery> result(new CategoryListQuery());
+    result->trackField = options.value("trackField", "");
+    result->filter = options.value("filter", "");
+    result->outputType = (OutputType)options.value("outputType", OutputType::Regular);
+    PredicateListFromJson(options["regularPredicateList"], result->regular);
+    PredicateListFromJson(options["extendedPredicateList"], result->extended);
+    return result;
 }

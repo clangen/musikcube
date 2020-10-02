@@ -518,6 +518,7 @@
     <ClCompile Include="library\query\SetTrackRatingQuery.cpp" />
     <ClCompile Include="library\query\TrackMetadataQuery.cpp" />
     <ClCompile Include="library\query\util\CategoryQueryUtil.cpp" />
+    <ClCompile Include="library\query\util\Serialization.cpp" />
     <ClCompile Include="library\RemoteLibrary.cpp" />
     <ClCompile Include="library\track\IndexerTrack.cpp" />
     <ClCompile Include="library\track\LibraryTrack.cpp" />
@@ -579,7 +580,6 @@
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibraryConstants.h" />
     <ClInclude Include="library\LocalMetadataProxy.h" />
-    <ClInclude Include="library\LocalQueryBase.h" />
     <ClInclude Include="library\metadata\MetadataMap.h" />
     <ClInclude Include="library\metadata\MetadataMapList.h" />
     <ClInclude Include="library\QueryBase.h" />
@@ -603,6 +603,7 @@
     <ClInclude Include="library\query\TrackMetadataQuery.h" />
     <ClInclude Include="library\query\util\CategoryQueryUtil.h" />
     <ClInclude Include="library\query\util\SdkWrappers.h" />
+    <ClInclude Include="library\query\util\Serialization.h" />
     <ClInclude Include="library\query\util\TrackSort.h" />
     <ClInclude Include="library\RemoteLibrary.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />

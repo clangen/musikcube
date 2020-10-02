@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include "QueryRegistry.h"
+#include <core/library/query/CategoryListQuery.h>
 #include <core/library/query/LyricsQuery.h>
 
 using namespace musik::core::db;
@@ -48,6 +49,9 @@ namespace musik { namespace core { namespace library {
         {
             if (name == LyricsQuery::kQueryName) {
                 return LyricsQuery::DeserializeQuery(data);
+            }
+            if (name == CategoryListQuery::kQueryName) {
+                return CategoryListQuery::DeserializeQuery(data);
             }
 
             return std::shared_ptr<ISerializableQuery>();

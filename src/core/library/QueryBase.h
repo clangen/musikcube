@@ -51,7 +51,7 @@ namespace musik { namespace core { namespace library { namespace query {
     {
         public:
             QueryBase()
-            : status(0)
+            : status(IQuery::Idle)
             , options(0)
             , queryId(nextId())
             , cancel(false) {
@@ -79,6 +79,14 @@ namespace musik { namespace core { namespace library { namespace query {
                 return false;
             }
 
+            virtual void Cancel() {
+                this->cancel = true;
+            }
+
+            virtual bool IsCanceled() {
+                return cancel;
+            }
+
             /* IQuery */
 
             virtual int GetStatus() {
@@ -93,14 +101,6 @@ namespace musik { namespace core { namespace library { namespace query {
             virtual int GetOptions() {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 return this->options;
-            }
-
-            virtual void Cancel() {
-                this->cancel = true;
-            }
-
-            virtual bool IsCanceled() {
-                return cancel;
             }
 
             virtual std::string Name() = 0;

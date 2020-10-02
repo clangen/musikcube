@@ -127,12 +127,12 @@ bool AlbumListQuery::OnRun(Connection& db) {
         std::string albumName = stmt.ColumnText(1);
         std::shared_ptr<MetadataMap> row(new MetadataMap(albumId, albumName, "album"));
 
-        row->Set(Track::ALBUM_ID, stmt.ColumnText(0));
-        row->Set(Track::ALBUM, albumName);
-        row->Set(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
-        row->Set(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
-        row->Set(Track::ALBUM_ARTIST, stmt.ColumnText(3));
-        row->Set(Track::THUMBNAIL_ID, stmt.ColumnText(4));
+        row->Set(constants::Track::ALBUM_ID, stmt.ColumnText(0));
+        row->Set(constants::Track::ALBUM, albumName);
+        row->Set(constants::Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
+        row->Set(constants::Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
+        row->Set(constants::Track::ALBUM_ARTIST, stmt.ColumnText(3));
+        row->Set(constants::Track::THUMBNAIL_ID, stmt.ColumnText(4));
 
         result->Add(row);
     }
