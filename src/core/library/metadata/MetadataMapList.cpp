@@ -69,6 +69,10 @@ IMap* MetadataMapList::GetAt(size_t index) const {
     return this->entries.at(index)->GetSdkValue();
 }
 
+void MetadataMapList::Clear() {
+    this->entries.clear();
+}
+
 void MetadataMapList::Add(MetadataMapPtr entry) {
     this->entries.push_back(entry);
 }

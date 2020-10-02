@@ -38,6 +38,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <functional>
 
 namespace musik { namespace core {
 
@@ -69,9 +70,11 @@ namespace musik { namespace core {
             virtual double GetDouble(const char* key, double defaultValue = 0.0f);
 
             /* implementation specific */
-            void SetValue(const char* key, const std::string& value);
-            std::string GetValue(const char* key);
+            void Set(const char* key, const std::string& value);
+            std::string Get(const char* key);
+            std::string GetTypeValue();
             musik::core::sdk::IMap* GetSdkValue();
+            void Each(std::function<void(const std::string&, const std::string&)> callback);
 
         private:
             int64_t id;

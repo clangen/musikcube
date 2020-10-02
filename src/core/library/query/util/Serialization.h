@@ -34,54 +34,28 @@
 
 #pragma once
 
-#include <core/library/QueryBase.h>
-#include <core/library/query/util/CategoryQueryUtil.h>
+#include <json.hpp>
+#include "CategoryQueryUtil.h"
 #include <core/library/metadata/MetadataMapList.h>
-#include <core/db/Connection.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
-    class AlbumListQuery : public musik::core::library::query::QueryBase {
-        public:
-            static const std::string kQueryName;
+    namespace serialization {
 
-            AlbumListQuery(
-                const std::string& filter = "");
+        nlohmann::json PredicateListToJson(
+            const musik::core::library::query::category::PredicateList& input);
 
-            AlbumListQuery(
-                const std::string& fieldIdName,
-                int64_t fieldIdValue,
-                const std::string& filter = "");
+        void PredicateListFromJson(
+            const nlohmann::json& input,
+            musik::core::library::query::category::PredicateList& output);
 
-            AlbumListQuery(
-                const category::Predicate predicate,
-                const std::string& filter = "");
+        nlohmann::json MetadataMapListToJson(
+            const musik::core::MetadataMapList& input);
 
-            AlbumListQuery(
-                const category::PredicateList predicates,
-                const std::string& filter = "");
+        void MetadataMapListFromJson(
+            const nlohmann::json& input,
+            musik::core::MetadataMapList& output);
 
-            virtual ~AlbumListQuery();
-
-            /* IQuery */
-            std::string Name() { return kQueryName; }
-            musik::core::MetadataMapListPtr GetResult();
-
-            /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
-            static std::shared_ptr<AlbumListQuery> DeserializeQuery(const std::string& data);
-
-            /* AlbumListQuery */
-            musik::core::sdk::IMapList* GetSdkResult();
-
-        protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
-
-            std::string filter;
-            category::PredicateList regular, extended;
-            musik::core::MetadataMapListPtr result;
-    };
+    }
 
 } } } }

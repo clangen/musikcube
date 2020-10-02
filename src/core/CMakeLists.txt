@@ -42,6 +42,7 @@ set(CORE_SOURCES
   ./library/query/SetTrackRatingQuery.cpp
   ./library/query/TrackMetadataQuery.cpp
   ./library/query/util/CategoryQueryUtil.cpp
+  ./library/query/util/Serialization.cpp
   ./library/metadata/MetadataMap.cpp
   ./library/metadata/MetadataMapList.cpp
   ./library/track/IndexerTrack.cpp

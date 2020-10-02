@@ -106,7 +106,11 @@ int MetadataMap::GetString(const char* key, char* dst, int size) {
     return 0;
 }
 
-std::string MetadataMap::GetValue(const char* key) {
+std::string MetadataMap::GetTypeValue() {
+    return this->value;
+}
+
+std::string MetadataMap::Get(const char* key) {
     auto it = metadata.find(key);
     if (it != metadata.end()) {
         return it->second;
@@ -116,9 +120,9 @@ std::string MetadataMap::GetValue(const char* key) {
 
 long long MetadataMap::GetInt64(const char* key, long long defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = Get(key);
         if (value.size()) {
-            return std::stoll(GetValue(key));
+            return std::stoll(Get(key));
         }
     }
     catch (...) {
@@ -128,9 +132,9 @@ long long MetadataMap::GetInt64(const char* key, long long defaultValue) {
 
 int MetadataMap::GetInt32(const char* key, unsigned int defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = Get(key);
         if (value.size()) {
-            return std::stol(GetValue(key));
+            return std::stol(Get(key));
         }
     }
     catch (...) {
@@ -140,9 +144,9 @@ int MetadataMap::GetInt32(const char* key, unsigned int defaultValue) {
 
 double MetadataMap::GetDouble(const char* key, double defaultValue) {
     try {
-        std::string value = GetValue(key);
+        std::string value = Get(key);
         if (value.size()) {
-            return std::stod(GetValue(key));
+            return std::stod(Get(key));
         }
     }
     catch (...) {
@@ -158,10 +162,15 @@ const char* MetadataMap::GetType() {
     return this->type.c_str();
 }
 
-void MetadataMap::SetValue(const char* key, const std::string& value) {
+void MetadataMap::Set(const char* key, const std::string& value) {
     this->metadata[key] = value;
 }
 
 musik::core::sdk::IMap* MetadataMap::GetSdkValue() {
     return new SdkWrapper(shared_from_this());
+}
+void MetadataMap::Each(std::function<void(const std::string&, const std::string&)> callback) {
+    for (auto kv : this->metadata) {
+        callback(kv.first, kv.second);
+    }
 }

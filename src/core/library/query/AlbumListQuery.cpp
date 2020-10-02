@@ -37,13 +37,18 @@
 
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
+#include <core/library/query/util/Serialization.h>
+#include <json.hpp>
 
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 using namespace musik::core::library::constants;
 
 #define RESET_RESULT(x) x.reset(new MetadataMapList())
+
+const std::string AlbumListQuery::kQueryName = "AlbumListQuery";
 
 AlbumListQuery::AlbumListQuery(const std::string& filter)
 : AlbumListQuery(category::PredicateList(), filter)
@@ -122,15 +127,52 @@ bool AlbumListQuery::OnRun(Connection& db) {
         std::string albumName = stmt.ColumnText(1);
         std::shared_ptr<MetadataMap> row(new MetadataMap(albumId, albumName, "album"));
 
-        row->SetValue(Track::ALBUM_ID, stmt.ColumnText(0));
-        row->SetValue(Track::ALBUM, albumName);
-        row->SetValue(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
-        row->SetValue(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
-        row->SetValue(Track::ALBUM_ARTIST, stmt.ColumnText(3));
-        row->SetValue(Track::THUMBNAIL_ID, stmt.ColumnText(4));
+        row->Set(Track::ALBUM_ID, stmt.ColumnText(0));
+        row->Set(Track::ALBUM, albumName);
+        row->Set(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
+        row->Set(Track::ALBUM_ARTIST_ID, stmt.ColumnText(2));
+        row->Set(Track::ALBUM_ARTIST, stmt.ColumnText(3));
+        row->Set(Track::THUMBNAIL_ID, stmt.ColumnText(4));
 
         result->Add(row);
     }
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string AlbumListQuery::SerializeQuery() {
+    nlohmann::json query;
+    query["name"] = kQueryName;
+    query["options"] = {
+        { "filter", this->filter },
+        { "regularPredicateList", PredicateListToJson(this->regular) },
+        { "extendedPredicateList", PredicateListToJson(this->extended) }
+    };
+    return query.dump();
+}
+
+std::string AlbumListQuery::SerializeResult() {
+    nlohmann::json result = {
+        { "result", MetadataMapListToJson(*this->result) }
+    };
+    return result.dump();
+}
+
+void AlbumListQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    auto json = nlohmann::json::parse(data);
+    this->result = std::make_shared<MetadataMapList>();
+    MetadataMapListFromJson(json["result"], *this->result);
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<AlbumListQuery> AlbumListQuery::DeserializeQuery(const std::string& data) {
+    nlohmann::json options = nlohmann::json::parse(data)["options"];
+    std::shared_ptr<AlbumListQuery> result(new AlbumListQuery());
+    result->filter = options.value("filter", "");
+    PredicateListFromJson(options["regularPredicateList"], result->regular);
+    PredicateListFromJson(options["extendedPredicateList"], result->extended);
+    return result;
 }

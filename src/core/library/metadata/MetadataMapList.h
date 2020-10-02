@@ -55,6 +55,7 @@ namespace musik { namespace core {
             virtual musik::core::sdk::IMap* GetAt(size_t index) const;
 
             /* implementation specific */
+            void Clear();
             void Add(MetadataMapPtr entry);
             musik::core::sdk::IMapList* GetSdkValue();
 
