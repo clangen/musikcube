@@ -34,20 +34,25 @@
 
 #include <stdafx.h>
 
+#include "CategorySearchLayout.h"
+
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
+
 #include <core/library/LocalLibraryConstants.h>
 #include <core/support/PreferenceKeys.h>
+
+#include <app/util/Messages.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
-#include "CategorySearchLayout.h"
 
 using namespace musik::core::library::constants;
 
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
+using namespace musik::core::runtime;
 using namespace musik::cube;
 using namespace cursespp;
 
@@ -55,6 +60,7 @@ namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
 #define SEARCH_HEIGHT 3
+#define REQUERY_INTERVAL_MS 300
 
 #define IS_CATEGORY(x) \
     x == this->albums || \
@@ -139,7 +145,7 @@ void CategorySearchLayout::FocusInput() {
 
 void CategorySearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
-        this->Requery();
+        Debounce(message::RequeryCategoryList, 0, 0, REQUERY_INTERVAL_MS);
     }
 }
 
@@ -195,3 +201,10 @@ bool CategorySearchLayout::KeyPress(const std::string& key) {
 
     return LayoutBase::KeyPress(key);
 }
+
+void CategorySearchLayout::ProcessMessage(IMessage &message) {
+    if (message.Type() == message::RequeryCategoryList) {
+        this->Requery();
+    }
+}
+

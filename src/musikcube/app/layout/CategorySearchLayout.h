@@ -71,7 +71,8 @@ namespace musik {
 
             protected:
                 virtual void OnLayout();
-
+                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+    
             private:
                 void InitializeWindows(musik::core::audio::PlaybackService& playback);
                 void OnCategoryEntryActivated(cursespp::ListWindow* sender, size_t index);
