@@ -4,4 +4,4 @@ rm -rf bin
 find . -name CMakeCache.txt -delete
 find . -name CMakeFiles -type d -exec rm -rf "{}" \; 2> /dev/null
 rm -f Makefile
-rm *.cmake
+rm -f *.cmake
