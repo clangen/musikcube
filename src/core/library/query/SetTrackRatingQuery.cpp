@@ -79,11 +79,13 @@ std::string SetTrackRatingQuery::SerializeResult() {
 
 void SetTrackRatingQuery::DeserializeResult(const std::string& data) {
     auto input = nlohmann::json::parse(data);
-    this->SetStatus(input["result"].get<bool>() == true ? IQuery::Finished : IQuery::Failed));
+    this->SetStatus(input["result"].get<bool>() == true
+        ? IQuery::Finished : IQuery::Failed);
 }
 
 std::shared_ptr<SetTrackRatingQuery> SetTrackRatingQuery::DeserializeQuery(const std::string& data) {
     auto options = nlohmann::json::parse(data)["options"];
     return std::make_shared<SetTrackRatingQuery>(
-        options["trackId"].get<int64_t>(), options.get["rating"])
+        options["trackId"].get<int64_t>(),
+        options["rating"]);
 }

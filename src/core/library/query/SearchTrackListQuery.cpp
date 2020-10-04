@@ -37,11 +37,14 @@
 
 #include <core/i18n/Locale.h>
 #include <core/library/track/LibraryTrack.h>
+#include <core/library/query/util/Serialization.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
+
+#include <json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -52,16 +55,17 @@ using musik::core::ILibraryPtr;
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 using namespace boost::algorithm;
+
+const std::string SearchTrackListQuery::kQueryName = "SearchTrackListQuery";
 
 SearchTrackListQuery::SearchTrackListQuery(
     ILibraryPtr library, const std::string& filter, TrackSortType sort)
 {
     this->library = library;
-
-    if (filter.size()) {
-        this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
-    }
+    this->sortType = sort;
+    this->filter = filter;
 
     if (kTrackSearchSortOrderByPredicate.find(sort) != kTrackSearchSortOrderByPredicate.end()) {
         this->orderByPredicate = kTrackSearchSortOrderByPredicate.find(sort)->second + " AND ";
@@ -135,10 +139,11 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     Statement trackQuery(query.c_str(), db);
 
     if (hasFilter) {
-        trackQuery.BindText(0, this->filter);
-        trackQuery.BindText(1, this->filter);
-        trackQuery.BindText(2, this->filter);
-        trackQuery.BindText(3, this->filter);
+        std::string filterWithWildcard = "%" + trim_copy(to_lower_copy(filter)) + "%";
+        trackQuery.BindText(0, filterWithWildcard);
+        trackQuery.BindText(1, filterWithWildcard);
+        trackQuery.BindText(2, filterWithWildcard);
+        trackQuery.BindText(3, filterWithWildcard);
     }
 
     while (trackQuery.Step() == Row) {
@@ -159,4 +164,44 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     }
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string SearchTrackListQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", {
+            { "filter", filter },
+            { "sortType", sortType}
+        }}
+    };
+    return output.dump();
+}
+
+std::string SearchTrackListQuery::SerializeResult() {
+    nlohmann::json output = {
+        { "result", {
+            { "headers", *this->headers },
+            { "trackList", TrackListToJson(*this->result, true) }
+        }}
+    };
+    return output.dump();
+}
+
+void SearchTrackListQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    nlohmann::json result = nlohmann::json::parse(data)["result"];
+    this->result = std::make_shared<TrackList>(this->library);
+    TrackListFromJson(result["trackList"], *this->result, this->library);
+    JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *this->headers);
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<SearchTrackListQuery> SearchTrackListQuery::DeserializeQuery(musik::core::ILibraryPtr library, const std::string& data) {
+    auto options = nlohmann::json::parse(data)["options"];
+    return std::make_shared<SearchTrackListQuery>(
+        library,
+        options["filter"].get<std::string>(),
+        options["sortType"].get<TrackSortType>());
 }

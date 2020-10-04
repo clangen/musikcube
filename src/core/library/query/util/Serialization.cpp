@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 #include "Serialization.h"
+#include <core/library/track/LibraryTrack.h>
 
 using namespace musik::core;
 using namespace musik::core::library::query;
@@ -195,6 +196,22 @@ namespace musik { namespace core { namespace library { namespace query {
                 replayGain.albumPeak = replayGainJson.value("albumPeak", 1.0f);
                 replayGain.trackGain = replayGainJson.value("trackGain", 1.0f);
                 replayGain.trackPeak = replayGainJson.value("trackPeak", 1.0f);
+            }
+        }
+
+        nlohmann::json TrackListToJson(const musik::core::TrackList& input, bool onlyIds) {
+            nlohmann::json output;
+            for (size_t i = 0; i < input.Count(); i++) {
+                output.push_back(TrackToJson(input.Get(i), onlyIds));
+            }
+            return output;
+        }
+
+        void TrackListFromJson(const nlohmann::json& input, musik::core::TrackList& output, musik::core::ILibraryPtr library) {
+            output.Clear();
+            for (auto& trackJson : input) {
+                TrackPtr track = std::make_shared<LibraryTrack>(-1LL, library);
+                output.Add(trackJson["id"].get<int64_t>());
             }
         }
 

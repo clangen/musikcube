@@ -41,6 +41,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class SearchTrackListQuery : public TrackListQueryBase {
         public:
+            static const std::string kQueryName;
+
             SearchTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& filter,
@@ -48,7 +50,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             virtual ~SearchTrackListQuery();
 
-            virtual std::string Name() { return "SearchTrackListQuery"; }
+            virtual std::string Name() { return kQueryName; }
 
             std::string GetSortDisplayString();
 
@@ -56,19 +58,31 @@ namespace musik { namespace core { namespace library { namespace query {
             virtual Headers GetHeaders();
             virtual size_t GetQueryHash();
 
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<SearchTrackListQuery> DeserializeQuery(
+                musik::core::ILibraryPtr library, const std::string& data);
+
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
             musik::core::ILibraryPtr library;
-            Result result;
-            Headers headers;
             bool parseHeaders;
-            std::string filter;
             std::string orderBy;
             std::string orderByPredicate;
             std::string displayString;
             size_t hash;
+
+            /* serialized query fields */
+            std::string filter;
+            TrackSortType sortType;
+
+            /* serialized result fields */
+            Result result;
+            Headers headers;
     };
 
 } } } }

@@ -39,6 +39,8 @@
 #include <core/library/metadata/MetadataMapList.h>
 #include <core/library/query/util/SdkWrappers.h>
 #include <core/library/track/Track.h>
+#include <core/library/track/TrackList.h>
+#include <core/library/ILibrary.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -73,6 +75,23 @@ namespace musik { namespace core { namespace library { namespace query {
             const nlohmann::json& input,
             musik::core::TrackPtr output,
             bool onlyIds = false);
+
+        nlohmann::json TrackListToJson(
+            const musik::core::TrackList& input,
+            bool onlyIds = false);
+
+        void TrackListFromJson(
+            const nlohmann::json& input,
+            musik::core::TrackList& output,
+            musik::core::ILibraryPtr library);
+
+        template <typename SetType, typename DataType>
+        void JsonArrayToSet(const nlohmann::json& input, SetType& output) {
+            for (auto& value : input) {
+                output.insert(value.get<DataType>());
+            }
+        }
+
     }
 
 } } } }
