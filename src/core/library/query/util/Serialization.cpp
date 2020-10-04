@@ -161,7 +161,7 @@ namespace musik { namespace core { namespace library { namespace query {
             track->SetValue(field, json.value(field, "").c_str());
 
         void TrackFromJson(const nlohmann::json& input, musik::core::TrackPtr output, bool onlyIds) {
-            output->SetId(input["id"].get<long long>());
+            output->SetId(input["id"].get<int64_t>());
             COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::EXTERNAL_ID)
             COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::SOURCE_ID)
 
