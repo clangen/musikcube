@@ -1,0 +1,15 @@
+[x] AlbumListQuery
+[x] AllCategoriesQuery
+[ ] AppendPlaylistQuery
+[ ] GetPlaylistQuery
+[x] CategoryListQuery
+[ ] CategoryTrackListQuery
+[ ] DeletePlaylistQuery
+[ ] DirectoryTrackListQuery
+[x] LyricsQuery
+[ ] MarkTrackPlayedQuery
+[ ] NowPlayingTrackListQuery
+[ ] SavePlaylistQuery
+[ ] SearchTrackListQuery
+[x] SetTrackRatingQuery
+[x] TrackMetadataQuery
