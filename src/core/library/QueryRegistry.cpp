@@ -35,9 +35,23 @@
 #include "pch.hpp"
 
 #include "QueryRegistry.h"
+#include <core/library/query/AlbumListQuery.h>
+#include <core/library/query/AllCategoriesQuery.h>
+//#include <core/library/query/AppendPlaylistQuery.h>
+//#include <core/library/query/GetPlaylistQuery.h>
 #include <core/library/query/CategoryListQuery.h>
+//#include <core/library/query/CategoryTrackListQuery.h>
+//#include <core/library/query/DeletePlaylistQuery.h>
+//#include <core/library/query/DirectoryTrackListQuery.h>
 #include <core/library/query/LyricsQuery.h>
+// #include <core/library/query/MarkTrackPlayedQuery.h>
+// #include <core/library/query/NowPlayingTrackListQuery.h>
+// #include <core/library/query/SavePlaylistQuery.h>
+#include <core/library/query/SearchTrackListQuery.h>
+#include <core/library/query/SetTrackRatingQuery.h>
+#include <core/library/query/TrackMetadataQuery.h>
 
+using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 
@@ -45,15 +59,45 @@ namespace musik { namespace core { namespace library {
 
     namespace QueryRegistry {
         std::shared_ptr<ISerializableQuery> CreateLocalQueryFor(
-            const std::string& name, const std::string& data)
+            const std::string& name, const std::string& data, ILibraryPtr library)
         {
-            if (name == LyricsQuery::kQueryName) {
-                return LyricsQuery::DeserializeQuery(data);
+            if (name == AlbumListQuery::kQueryName) {
+                return AlbumListQuery::DeserializeQuery(data);
             }
+            if (name == AllCategoriesQuery::kQueryName) {
+                return AllCategoriesQuery::DeserializeQuery(data);
+            }
+            //if (name == AppendPlaylistQuery::kQueryName) {
+            //}
+            //if (name == GetPlaylistQuery::kQueryName) {
+            //}
             if (name == CategoryListQuery::kQueryName) {
                 return CategoryListQuery::DeserializeQuery(data);
             }
-
+            //if (name == CategoryTrackListQuery::kQueryName) {
+            //}
+            //if (name == DeletePlaylistQuery::kQueryName) {
+            //}
+            //if (name == DirectoryTrackListQuery::kQueryName) {
+            //}
+            if (name == LyricsQuery::kQueryName) {
+                return LyricsQuery::DeserializeQuery(data);
+            }
+            //if (name == MarkTrackPlayedQuery::kQueryName) {
+            //}
+            //if (name == NowPlayingTrackListQuery::kQueryName) {
+            //}
+            //if (name == SavePlaylistQuery::kQueryName) {
+            //}
+            if (name == SearchTrackListQuery::kQueryName) {
+                return SearchTrackListQuery::DeserializeQuery(library, data);
+            }
+            if (name == SetTrackRatingQuery::kQueryName) {
+                return SetTrackRatingQuery::DeserializeQuery(data);
+            }
+            if (name == TrackMetadataQuery::kQueryName) {
+                return TrackMetadataQuery::DeserializeQuery(library, data);
+            }
             return std::shared_ptr<ISerializableQuery>();
         }
     }

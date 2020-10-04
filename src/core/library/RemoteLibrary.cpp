@@ -180,8 +180,10 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
         locally, serialize the result, then deserialize it again to emulate the entire
         flow. */
 
+        auto localLibrary = LibraryFactory::Default();
+
         auto localQuery = QueryRegistry::CreateLocalQueryFor(
-            context->query->Name(), context->query->SerializeQuery());
+            context->query->Name(), context->query->SerializeQuery(), localLibrary);
 
         auto onComplete = [this, notify, context, localQuery]() {
             if (notify) {
@@ -202,7 +204,7 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
             return;
         }
 
-        LibraryFactory::Default()->Enqueue(
+        localLibrary->Enqueue(
             localQuery, 
             0, 
             [context, onComplete, localQuery](auto result) {
