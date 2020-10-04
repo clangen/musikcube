@@ -35,13 +35,19 @@
 #include "pch.hpp"
 #include "TrackMetadataQuery.h"
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/query/util/Serialization.h>
+#include <core/library/track/LibraryTrack.h>
 #include <core/sdk/ReplayGain.h>
+#include <json.hpp>
 
-using namespace musik::core::db;
-using namespace musik::core::library::query;
 using namespace musik::core;
+using namespace musik::core::db;
 using namespace musik::core::library;
+using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 using namespace musik::core::sdk;
+
+const std::string TrackMetadataQuery::kQueryName = "TrackMetadataQuery";
 
 static const std::string COLUMNS = "t.track, t.disc, t.bpm, t.duration, t.filesize, t.title, t.filename, t.thumbnail_id, al.name AS album, alar.name AS album_artist, gn.name AS genre, ar.name AS artist, t.filetime, t.visual_genre_id, t.visual_artist_id, t.album_artist_id, t.album_id, t.source_id, t.external_id, t.rating, replay_gain.album_gain, replay_gain.album_peak, replay_gain.track_gain, replay_gain.track_peak ";
 static const std::string TABLES = "tracks t, albums al, artists alar, artists ar, genres gn";
@@ -66,8 +72,9 @@ static const std::string IDS_ONLY_QUERY_BY_ID =
 static const std::string IDS_ONLY_QUERY_BY_EXTERNAL_ID =
     "SELECT DISTINCT external_id, source_id FROM tracks WHERE tracks.external_id=?";
 
-TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, Type type) {
+TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Type type) {
     this->result = target;
+    this->library = library;
     this->type = type;
 }
 
@@ -78,7 +85,7 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
 
     std::string query;
 
-    if (this->type == Full) {
+    if (this->type == Type::Full) {
         query = queryById
             ? ALL_METADATA_QUERY_BY_ID
             : ALL_METADATA_QUERY_BY_EXTERNAL_ID;
@@ -104,7 +111,7 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
     }
 
     if (trackQuery.Step() == Row) {
-        if (this->type == Full) {
+        if (this->type == Type::Full) {
             result->SetValue(constants::Track::TRACK_NUM, trackQuery.ColumnText(0));
             result->SetValue(constants::Track::DISC_NUM, trackQuery.ColumnText(1));
             result->SetValue(constants::Track::BPM, trackQuery.ColumnText(2));
@@ -144,4 +151,43 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
 
     result->SetMetadataState(MetadataState::Missing);
     return false;
+}
+
+/* ISerializableQuery */
+
+std::string TrackMetadataQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", {
+            { "type", this->type },
+            { "track", TrackToJson(this->result, true) }
+        }}
+    };
+    return output.dump();
+}
+
+std::string TrackMetadataQuery::SerializeResult() {
+    nlohmann::json output = {
+        { "result", TrackToJson(this->result, this->type == Type::IdsOnly) }
+    };
+    return output.dump();
+}
+
+void TrackMetadataQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    auto input = nlohmann::json::parse(data);
+    auto parsedResult = std::make_shared<LibraryTrack>(-1LL, this->library);
+    TrackFromJson(input, parsedResult);
+    this->result = parsedResult;
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<TrackMetadataQuery> TrackMetadataQuery::DeserializeQuery(
+    musik::core::ILibraryPtr library, const std::string& data)
+{
+    auto json = nlohmann::json::parse(data);
+    int64_t id = json["options"]["id"].get<int64_t>();
+    Type type = json["options"]["id"].get<Type>();
+    return std::make_shared<TrackMetadataQuery>(
+        std::make_shared<LibraryTrack>(id, library), library, type);
 }

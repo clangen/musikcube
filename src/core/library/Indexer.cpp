@@ -43,6 +43,7 @@
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/query/TrackMetadataQuery.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/LibraryFactory.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 #include <core/plugin/PluginFactory.h>
@@ -913,7 +914,7 @@ void Indexer::RunAnalyzers() {
         getNextTrack.ResetAndUnbind();
 
         auto track = std::make_shared<IndexerTrack>(trackId);
-        TrackMetadataQuery query(track);
+        TrackMetadataQuery query(track, LibraryFactory::Default());
         query.Run(this->dbConnection);
 
         if (query.GetStatus() == IQuery::Finished) {

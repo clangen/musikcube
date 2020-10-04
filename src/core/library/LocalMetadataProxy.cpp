@@ -326,7 +326,7 @@ ITrack* LocalMetadataProxy::QueryTrackById(int64_t trackId) {
     try {
         TrackPtr target(new LibraryTrack(trackId, this->library));
 
-        std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target));
+        std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target, this->library));
 
         this->library->Enqueue(search, ILibrary::QuerySynchronous);
 
@@ -347,7 +347,7 @@ ITrack* LocalMetadataProxy::QueryTrackByExternalId(const char* externalId) {
             TrackPtr target(new LibraryTrack(0, this->library));
             target->SetValue("external_id", externalId);
 
-            std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target));
+            std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target, this->library));
 
             this->library->Enqueue(search, ILibrary::QuerySynchronous);
 

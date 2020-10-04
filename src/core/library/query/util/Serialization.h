@@ -38,6 +38,7 @@
 #include "CategoryQueryUtil.h"
 #include <core/library/metadata/MetadataMapList.h>
 #include <core/library/query/util/SdkWrappers.h>
+#include <core/library/track/Track.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -64,6 +65,14 @@ namespace musik { namespace core { namespace library { namespace query {
             const nlohmann::json& input,
             musik::core::library::query::SdkValueList& output);
 
+        nlohmann::json TrackToJson(
+            const musik::core::TrackPtr input,
+            bool onlyIds = false);
+
+        void TrackFromJson(
+            const nlohmann::json& input,
+            musik::core::TrackPtr output,
+            bool onlyIds = false);
     }
 
 } } } }

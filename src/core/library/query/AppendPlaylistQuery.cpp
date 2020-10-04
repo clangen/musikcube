@@ -125,7 +125,7 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
         auto target = TrackPtr(new LibraryTrack(id, this->library));
 
         std::shared_ptr<TrackMetadataQuery> query(
-            new TrackMetadataQuery(target, TrackMetadataQuery::IdsOnly));
+            new TrackMetadataQuery(target, this->library, TrackMetadataQuery::Type::IdsOnly));
 
         this->library->Enqueue(query, ILibrary::QuerySynchronous);
 

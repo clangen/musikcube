@@ -113,6 +113,91 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
+        #define COPY_TRACK_FIELD_TO_JSON(track, json, field) \
+            json[field] = track->GetString(field);
+
+        nlohmann::json TrackToJson(const musik::core::TrackPtr input, bool onlyIds) {
+            nlohmann::json output;
+
+            output["id"] = input->GetId();
+            COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::EXTERNAL_ID)
+            COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::SOURCE_ID)
+
+            if (!onlyIds) {
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::TRACK_NUM)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::DISC_NUM)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::BPM)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::DURATION)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::FILESIZE)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::TITLE)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::FILENAME)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::THUMBNAIL_ID)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::ALBUM)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::ALBUM_ARTIST)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::GENRE)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::ARTIST)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::FILETIME)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::GENRE_ID)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::ARTIST_ID)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::ALBUM_ARTIST_ID)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::ALBUM_ID)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::SOURCE_ID)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::EXTERNAL_ID)
+                COPY_TRACK_FIELD_TO_JSON(input, output, constants::Track::RATING)
+
+                auto replayGain = input->GetReplayGain();
+                output["replayGain"] = {
+                    { "albumGain", replayGain.albumGain },
+                    { "albumPeak", replayGain.albumPeak },
+                    { "trackGain", replayGain.trackGain },
+                    { "trackPeak", replayGain.trackPeak }
+                };
+            }
+
+            return output;
+        }
+
+        #define COPY_JSON_FIELD_TO_TRACK(json, track, field) \
+            track->SetValue(field, json.value(field, "").c_str());
+
+        void TrackFromJson(const nlohmann::json& input, musik::core::TrackPtr output, bool onlyIds) {
+            output->SetId(input["id"].get<long long>());
+            COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::EXTERNAL_ID)
+            COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::SOURCE_ID)
+
+            if (!onlyIds) {
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::TRACK_NUM)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::DISC_NUM)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::BPM)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::DURATION)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::FILESIZE)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::TITLE)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::FILENAME)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::THUMBNAIL_ID)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::ALBUM)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::ALBUM_ARTIST)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::GENRE)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::ARTIST)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::FILETIME)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::GENRE_ID)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::ARTIST_ID)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::ALBUM_ARTIST_ID)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::ALBUM_ID)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::SOURCE_ID)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::EXTERNAL_ID)
+                COPY_JSON_FIELD_TO_TRACK(input, output, constants::Track::RATING)
+
+                auto replayGainJson = input["replayGain"];
+                replayGainJson = replayGainJson.is_null() ? nlohmann::json() : replayGainJson;
+
+                musik::core::sdk::ReplayGain replayGain;
+                replayGain.albumGain = replayGainJson.value("albumGain", 1.0f);
+                replayGain.albumPeak = replayGainJson.value("albumPeak", 1.0f);
+                replayGain.trackGain = replayGainJson.value("trackGain", 1.0f);
+                replayGain.trackPeak = replayGainJson.value("trackPeak", 1.0f);
+            }
+        }
+
     }
 
 } } } }

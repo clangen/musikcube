@@ -32,17 +32,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/library/QueryBase.h>
+#pragma once
 
+#include <core/library/QueryBase.h>
 #include <core/library/track/Track.h>
+#include <core/library/ILibrary.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
 class TrackMetadataQuery : public QueryBase {
     public:
-        enum Type { Full, IdsOnly };
+        static const std::string kQueryName;
 
-        TrackMetadataQuery(musik::core::TrackPtr target, Type type = Full);
+        enum class Type: int { Full = 0, IdsOnly = 1 };
+
+        TrackMetadataQuery(
+            musik::core::TrackPtr target,
+            musik::core::ILibraryPtr library,
+            Type type = Type::Full);
 
         virtual ~TrackMetadataQuery() { }
 
@@ -50,13 +57,22 @@ class TrackMetadataQuery : public QueryBase {
             return this->result;
         }
 
+        /* ISerializableQuery */
+        virtual std::string SerializeQuery();
+        virtual std::string SerializeResult();
+        virtual void DeserializeResult(const std::string& data);
+
+        static std::shared_ptr<TrackMetadataQuery> DeserializeQuery(
+            musik::core::ILibraryPtr library, const std::string& data);
+
     protected:
         virtual bool OnRun(musik::core::db::Connection& db);
         virtual std::string Name() { return "TrackMetadataQuery"; }
 
     private:
         Type type;
-        TrackPtr result;
+        musik::core::ILibraryPtr library;
+        musik::core::TrackPtr result;
 };
 
 } } } }
