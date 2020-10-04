@@ -10,6 +10,6 @@
 [ ] MarkTrackPlayedQuery
 [ ] NowPlayingTrackListQuery
 [ ] SavePlaylistQuery
-[ ] SearchTrackListQuery
+[x] SearchTrackListQuery
 [x] SetTrackRatingQuery
 [x] TrackMetadataQuery
