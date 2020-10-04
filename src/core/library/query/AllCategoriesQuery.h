@@ -42,15 +42,23 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class AllCategoriesQuery : public musik::core::library::query::QueryBase {
         public:
+            static const std::string kQueryName;
+
             using Result = SdkValueList::Shared;
 
             AllCategoriesQuery();
             virtual ~AllCategoriesQuery();
 
-            std::string Name() { return "AllCategoriesQuery"; }
+            std::string Name() { return kQueryName; }
 
             virtual Result GetResult();
             musik::core::sdk::IValueList* GetSdkResult();
+
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<AllCategoriesQuery> DeserializeQuery(const std::string& data);
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);

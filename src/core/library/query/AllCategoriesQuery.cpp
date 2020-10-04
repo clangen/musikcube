@@ -34,13 +34,18 @@
 
 #include "pch.hpp"
 #include "AllCategoriesQuery.h"
+#include <core/library/query/util/Serialization.h>
 #include <core/db/Statement.h>
+#include <json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
+
+const std::string AllCategoriesQuery::kQueryName = "AllCategoriesQuery";
 
 AllCategoriesQuery::AllCategoriesQuery() {
     this->result.reset(new SdkValueList());
@@ -78,4 +83,33 @@ bool AllCategoriesQuery::OnRun(Connection& db) {
     });
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string AllCategoriesQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", nlohmann::json() }
+    };
+    return output.dump();
+}
+
+std::string AllCategoriesQuery::SerializeResult() {
+    nlohmann::json output = {
+        { "result", ValueListToJson(this->result) }
+    };
+    return output.dump();
+}
+
+void AllCategoriesQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    auto json = nlohmann::json::parse(data);
+    this->result = std::make_shared<SdkValueList>();
+    ValueListFromJson(json["result"], *this->result);
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<AllCategoriesQuery> AllCategoriesQuery::DeserializeQuery(const std::string& data) {
+    return std::make_shared<AllCategoriesQuery>();
 }
