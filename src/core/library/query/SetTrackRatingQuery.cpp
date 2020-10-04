@@ -34,10 +34,13 @@
 
 #include "pch.hpp"
 #include "SetTrackRatingQuery.h"
+#include <json.hpp>
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::sdk;
+
+const std::string SetTrackRatingQuery::kQueryName = "SetTrackRatingQuery";
 
 SetTrackRatingQuery::SetTrackRatingQuery(int64_t trackId, int rating) {
     this->trackId = trackId;
@@ -55,4 +58,32 @@ bool SetTrackRatingQuery::OnRun(musik::core::db::Connection &db) {
         return true;
     }
     return false;
+}
+
+/* ISerializableQuery */
+std::string SetTrackRatingQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", {
+            { "trackId", this->trackId },
+            { "rating", this->rating }
+        }}
+    };
+    return output.dump();
+}
+
+std::string SetTrackRatingQuery::SerializeResult() {
+    nlohmann::json output = { { "result", true } };
+    return output.dump();
+}
+
+void SetTrackRatingQuery::DeserializeResult(const std::string& data) {
+    auto input = nlohmann::json::parse(data);
+    this->SetStatus(input["result"].get<bool>() == true ? IQuery::Finished : IQuery::Failed));
+}
+
+std::shared_ptr<SetTrackRatingQuery> SetTrackRatingQuery::DeserializeQuery(const std::string& data) {
+    auto options = nlohmann::json::parse(data)["options"];
+    return std::make_shared<SetTrackRatingQuery>(
+        options["trackId"].get<int64_t>(), options.get["rating"])
 }
