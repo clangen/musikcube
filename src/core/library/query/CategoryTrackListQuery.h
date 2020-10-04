@@ -47,6 +47,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class CategoryTrackListQuery : public TrackListQueryBase {
         public:
+            static const std::string kQueryName;
+
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& filter = "",
@@ -73,31 +75,44 @@ namespace musik { namespace core { namespace library { namespace query {
 
             virtual ~CategoryTrackListQuery();
 
-            virtual std::string Name() { return "CategoryTrackListQuery"; }
+            virtual std::string Name() { return kQueryName; }
 
             virtual Result GetResult();
             virtual Headers GetHeaders();
             virtual size_t GetQueryHash();
 
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<CategoryTrackListQuery> DeserializeQuery(
+                musik::core::ILibraryPtr library, const std::string& data);
+
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
-            enum Type { Playlist, Regular };
+            enum class Type: int { Playlist = 0, Regular = 1 };
 
             void PlaylistQuery(musik::core::db::Connection &db);
             void RegularQuery(musik::core::db::Connection &db);
             void ProcessResult(musik::core::db::Statement& stmt);
 
+            /* regular instance variables */
             musik::core::ILibraryPtr library;
             bool parseHeaders;
-            Result result;
-            Headers headers;
-            Type type;
-            category::PredicateList regular, extended;
             size_t hash;
             std::string orderBy;
+            Type type;
+
+            /* serialized result fields */
+            Result result;
+            Headers headers;
+
+            /* serialized query fields */
             std::string filter;
+            category::PredicateList regular, extended;
+            TrackSortType sortType;
     };
 
 } } } }

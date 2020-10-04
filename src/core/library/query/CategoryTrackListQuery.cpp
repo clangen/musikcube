@@ -39,9 +39,12 @@
 
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/query/util/Serialization.h>
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
+
+#include <json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -51,8 +54,11 @@ using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 using namespace musik::core::library::constants;
 using namespace boost::algorithm;
+
+const std::string CategoryTrackListQuery::kQueryName = "CategoryTrackListQuery";
 
 CategoryTrackListQuery::CategoryTrackListQuery(
     musik::core::ILibraryPtr library,
@@ -91,18 +97,15 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     this->result.reset(new musik::core::TrackList(library));
     this->headers.reset(new std::set<size_t>());
     this->hash = category::Hash(predicates);
+    this->sortType = sortType;
 
     category::SplitPredicates(predicates, this->regular, this->extended);
 
-    if (filter.size()) {
-        this->filter = "%" + trim_copy(to_lower_copy(filter)) + "%";
-    }
-
     if (predicates.size() == 1 && predicates[0].first == Playlists::TABLE_NAME) {
-        this->type = Playlist;
+        this->type = Type::Playlist;
     }
     else {
-        this->type = Regular;
+        this->type = Type::Regular;
     }
 
     this->orderBy = "ORDER BY " + kTrackListSortOrderBy.find(sortType)->second;
@@ -141,20 +144,21 @@ void CategoryTrackListQuery::RegularQuery(musik::core::db::Connection &db) {
     std::string query = category::CATEGORY_TRACKLIST_QUERY;
     std::string extended = InnerJoinExtended(this->extended, args);
     std::string regular = JoinRegular(this->regular, args, " AND ");
-    std::string trackFilter;
+    std::string trackFilterClause, trackFilterValue;
     std::string limitAndOffset = this->GetLimitAndOffset();
 
     if (this->filter.size()) {
-        trackFilter = category::CATEGORY_TRACKLIST_FILTER;
-        args.push_back(category::StringArgument(this->filter));
-        args.push_back(category::StringArgument(this->filter));
-        args.push_back(category::StringArgument(this->filter));
-        args.push_back(category::StringArgument(this->filter));
+        trackFilterValue = "%" + trim_copy(to_lower_copy(filter)) + "%";
+        trackFilterClause = category::CATEGORY_TRACKLIST_FILTER;
+        args.push_back(category::StringArgument(trackFilterValue));
+        args.push_back(category::StringArgument(trackFilterValue));
+        args.push_back(category::StringArgument(trackFilterValue));
+        args.push_back(category::StringArgument(trackFilterValue));
     }
 
     category::ReplaceAll(query, "{{extended_predicates}}", extended);
     category::ReplaceAll(query, "{{regular_predicates}}", regular);
-    category::ReplaceAll(query, "{{tracklist_filter}}", trackFilter);
+    category::ReplaceAll(query, "{{tracklist_filter}}", trackFilterClause);
     category::ReplaceAll(query, "{{order_by}}", this->orderBy);
     category::ReplaceAll(query, "{{limit_and_offset}}", limitAndOffset);
 
@@ -188,9 +192,56 @@ bool CategoryTrackListQuery::OnRun(Connection& db) {
     }
 
     switch (this->type) {
-        case Playlist: this->PlaylistQuery(db); break;
-        case Regular: this->RegularQuery(db); break;
+        case Type::Playlist: this->PlaylistQuery(db); break;
+        case Type::Regular: this->RegularQuery(db); break;
     }
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string CategoryTrackListQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", {
+            { "filter", filter },
+            { "regularPredicateList", PredicateListToJson(regular) },
+            { "extendedPredicateList", PredicateListToJson(extended) },
+            { "sortType", sortType }
+        }}
+    };
+    return output.dump();
+}
+
+std::string CategoryTrackListQuery::SerializeResult() {
+    nlohmann::json output = {
+        { "result", {
+            { "headers", *this->headers },
+            { "trackList", TrackListToJson(*this->result, true) }
+        }}
+    };
+    return output.dump();
+}
+
+void CategoryTrackListQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    nlohmann::json result = nlohmann::json::parse(data)["result"];
+    this->result = std::make_shared<TrackList>(this->library);
+    TrackListFromJson(result["trackList"], *this->result, this->library);
+    JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *this->headers);
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<CategoryTrackListQuery> CategoryTrackListQuery::DeserializeQuery(
+    musik::core::ILibraryPtr library, const std::string& data)
+{
+    nlohmann::json options = nlohmann::json::parse(data)["options"];
+    auto result = std::make_shared<CategoryTrackListQuery>(
+        library,
+        options["filter"].get<std::string>(),
+        options["sortType"].get<TrackSortType>());
+    PredicateListFromJson(options["regularPredicateList"], result->regular);
+    PredicateListFromJson(options["extendedPredicateList"], result->extended);
+    return result;
 }

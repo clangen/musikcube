@@ -3,7 +3,7 @@
 [ ] AppendPlaylistQuery
 [ ] GetPlaylistQuery
 [x] CategoryListQuery
-[ ] CategoryTrackListQuery
+[x] CategoryTrackListQuery
 [ ] DeletePlaylistQuery
 [ ] DirectoryTrackListQuery
 [x] LyricsQuery

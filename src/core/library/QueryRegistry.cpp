@@ -40,7 +40,7 @@
 //#include <core/library/query/AppendPlaylistQuery.h>
 //#include <core/library/query/GetPlaylistQuery.h>
 #include <core/library/query/CategoryListQuery.h>
-//#include <core/library/query/CategoryTrackListQuery.h>
+#include <core/library/query/CategoryTrackListQuery.h>
 //#include <core/library/query/DeletePlaylistQuery.h>
 //#include <core/library/query/DirectoryTrackListQuery.h>
 #include <core/library/query/LyricsQuery.h>
@@ -74,8 +74,9 @@ namespace musik { namespace core { namespace library {
             if (name == CategoryListQuery::kQueryName) {
                 return CategoryListQuery::DeserializeQuery(data);
             }
-            //if (name == CategoryTrackListQuery::kQueryName) {
-            //}
+            if (name == CategoryTrackListQuery::kQueryName) {
+                return CategoryTrackListQuery::DeserializeQuery(library, data);
+            }
             //if (name == DeletePlaylistQuery::kQueryName) {
             //}
             //if (name == DirectoryTrackListQuery::kQueryName) {
