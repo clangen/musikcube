@@ -277,8 +277,8 @@ int main(int argc, char** argv) {
     srand((unsigned int) time(0));
 
     EvMessageQueue messageQueue;
-    auto library = LibraryFactory::Default();
-    library->SetMessageQueue(messageQueue);
+    LibraryFactory::Initialize(messageQueue);
+    auto library = LibraryFactory::Instance().Default();
 
     {
         PlaybackService playback(messageQueue, library);
