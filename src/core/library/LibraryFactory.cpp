@@ -58,19 +58,7 @@ LibraryFactory& LibraryFactory::Instance() {
 };
 
 LibraryFactory::LibraryFactory() {
-    auto prefs = Preferences::ForComponent(prefs::components::Libraries);
-    std::vector<std::string> libraries;
-    prefs->GetKeys(libraries);
-
-    for (size_t i = 0; i < libraries.size(); i++) {
-        std::string name = libraries.at(i);
-        int id = prefs->GetInt(name);
-        this->AddLibrary(id, LibraryType::Local, name);
-    }
-
-    if (this->libraries.empty()) {
-        this->CreateLibrary("Local Library", LibraryType::Local);
-    }
+    this->CreateLibrary("Local Library", LibraryType::Local);
 }
 
 LibraryFactory::~LibraryFactory() {
@@ -129,7 +117,10 @@ ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, LibraryType t
     }
 
     if (existingId != -1) {
-        return this->GetLibrary(existingId);
+        auto library = this->GetLibrary(existingId);
+        if (!library) {
+            return this->AddLibrary(existingId, type, name);
+        }
     }
 
     ++nextId; /* unique */
