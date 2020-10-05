@@ -44,27 +44,36 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class GetPlaylistQuery : public TrackListQueryBase {
         public:
+            static const std::string kQueryName;
+
             GetPlaylistQuery(
                 musik::core::ILibraryPtr library,
                 int64_t playlistId);
 
             virtual ~GetPlaylistQuery();
 
-            virtual std::string Name() { return "GetPlaylistQuery"; }
+            virtual std::string Name() { return kQueryName; }
 
             virtual Result GetResult();
             virtual Headers GetHeaders();
             virtual size_t GetQueryHash();
+
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<GetPlaylistQuery> DeserializeQuery(
+                musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
             musik::core::ILibraryPtr library;
-            Result result;
-            Headers headers;
             int64_t playlistId;
             size_t hash;
+            Result result;
+            Headers headers;
     };
 
 } } } }

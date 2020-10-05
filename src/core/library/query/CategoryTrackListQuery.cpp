@@ -100,13 +100,7 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     this->sortType = sortType;
 
     category::SplitPredicates(predicates, this->regular, this->extended);
-
-    if (predicates.size() == 1 && predicates[0].first == Playlists::TABLE_NAME) {
-        this->type = Type::Playlist;
-    }
-    else {
-        this->type = Type::Regular;
-    }
+    this->ScanPredicateListsForQueryType();
 
     this->orderBy = "ORDER BY " + kTrackListSortOrderBy.find(sortType)->second;
     this->parseHeaders = kTrackSortTypeWithAlbumGrouping.find(sortType) != kTrackSortTypeWithAlbumGrouping.end();
@@ -114,6 +108,15 @@ CategoryTrackListQuery::CategoryTrackListQuery(
 
 CategoryTrackListQuery::~CategoryTrackListQuery() {
 
+}
+
+void CategoryTrackListQuery::ScanPredicateListsForQueryType() {
+    if (this->extended.size() == 1 && this->extended[0].first == Playlists::TABLE_NAME) {
+        this->type = Type::Playlist;
+    }
+    else {
+        this->type = Type::Regular;
+    }
 }
 
 CategoryTrackListQuery::Result CategoryTrackListQuery::GetResult() {
@@ -243,5 +246,6 @@ std::shared_ptr<CategoryTrackListQuery> CategoryTrackListQuery::DeserializeQuery
         options["sortType"].get<TrackSortType>());
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);
+    result->ScanPredicateListsForQueryType();
     return result;
 }

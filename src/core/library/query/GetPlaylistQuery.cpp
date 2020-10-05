@@ -37,7 +37,10 @@
 
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/query/util/Serialization.h>
 #include <core/db/Statement.h>
+
+#include <json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -48,6 +51,9 @@ using musik::core::ILibraryPtr;
 using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
+
+const std::string GetPlaylistQuery::kQueryName = "GetPlaylistQuery";
 
 GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, int64_t playlistId) {
     this->library = library;
@@ -94,4 +100,43 @@ bool GetPlaylistQuery::OnRun(Connection& db) {
     }
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string GetPlaylistQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", {
+            { "playlistId", playlistId },
+        }}
+    };
+    return output.dump();
+}
+
+std::string GetPlaylistQuery::SerializeResult() {
+    nlohmann::json output = {
+        { "result", {
+            { "headers", *this->headers },
+            { "trackList", TrackListToJson(*this->result, true) }
+        }}
+    };
+    return output.dump();
+}
+
+void GetPlaylistQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    nlohmann::json result = nlohmann::json::parse(data)["result"];
+    this->result = std::make_shared<TrackList>(this->library);
+    TrackListFromJson(result["trackList"], *this->result, this->library, true);
+    JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *this->headers);
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<GetPlaylistQuery> GetPlaylistQuery::DeserializeQuery(
+    musik::core::ILibraryPtr library, const std::string& data)
+{
+    auto options = nlohmann::json::parse(data)["options"];
+    return std::make_shared<GetPlaylistQuery>(
+        library, options["playlistId"].get<int64_t>());
 }

@@ -94,6 +94,8 @@ namespace musik { namespace core { namespace library { namespace query {
         private:
             enum class Type: int { Playlist = 0, Regular = 1 };
 
+            void ScanPredicateListsForQueryType();
+
             void PlaylistQuery(musik::core::db::Connection &db);
             void RegularQuery(musik::core::db::Connection &db);
             void ProcessResult(musik::core::db::Statement& stmt);
