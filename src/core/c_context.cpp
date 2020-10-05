@@ -171,8 +171,8 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
 
     auto internal = new mcsdk_context_internal();
 
-    internal->library = LibraryFactory::Default();
-    internal->library->SetMessageQueue(internal->message_queue);
+    LibraryFactory::Initialize(internal->message_queue);
+    internal->library = LibraryFactory::Instance().Default();
     internal->playback = new PlaybackService(internal->message_queue, internal->library);
     internal->metadata = new LocalMetadataProxy(internal->library);
     internal->preferences = Preferences::ForComponent(prefs::components::Settings);

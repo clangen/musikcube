@@ -186,8 +186,8 @@ std::shared_ptr<TrackMetadataQuery> TrackMetadataQuery::DeserializeQuery(
     musik::core::ILibraryPtr library, const std::string& data)
 {
     auto json = nlohmann::json::parse(data);
-    int64_t id = json["options"]["id"].get<int64_t>();
+    auto parsedTrack = std::make_shared<LibraryTrack>(-1LL, library);
+    TrackFromJson(json["options"]["track"], parsedTrack, true);
     Type type = json["options"]["type"].get<Type>();
-    return std::make_shared<TrackMetadataQuery>(
-        std::make_shared<LibraryTrack>(id, library), library, type);
+    return std::make_shared<TrackMetadataQuery>(parsedTrack, library, type);
 }

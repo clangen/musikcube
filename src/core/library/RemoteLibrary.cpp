@@ -55,6 +55,17 @@ using namespace musik::core::runtime;
 
 #define MESSAGE_QUERY_COMPLETED 5000
 
+class NullIndexer: public musik::core::IIndexer {
+    public:
+        virtual ~NullIndexer() override { }
+        virtual void AddPath(const std::string& path) override { }
+        virtual void RemovePath(const std::string& path) override { }
+        virtual void GetPaths(std::vector<std::string>& paths) override { }
+        virtual void Schedule(SyncType type) override { }
+        virtual void Stop() override { }
+        virtual State GetState() override { return StateIdle; }
+} kNullIndexer;
+
 class RemoteLibrary::QueryCompletedMessage: public Message {
     public:
         using QueryContextPtr = RemoteLibrary::QueryContextPtr;
@@ -180,7 +191,8 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
         locally, serialize the result, then deserialize it again to emulate the entire
         flow. */
 
-        auto localLibrary = LibraryFactory::Default();
+        auto localLibrary = LibraryFactory::Instance().Default();
+        localLibrary->SetMessageQueue(*this->messageQueue);
 
         auto localQuery = QueryRegistry::CreateLocalQueryFor(
             context->query->Name(), context->query->SerializeQuery(), localLibrary);
@@ -194,7 +206,7 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
                     this->QueryCompleted(localQuery.get());
                 }
             }
-            else if (context->callback) {
+            if (context->callback) {
                 context->callback(context->query);
             }
         };
@@ -206,7 +218,7 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
 
         localLibrary->Enqueue(
             localQuery, 
-            0, 
+            ILibrary::QuerySynchronous, /* CAL TODO: make async! we have to make TrackList support async lookup first tho. */
             [context, onComplete, localQuery](auto result) {
                 if (localQuery->GetStatus() == IQuery::Finished) {
                     context->query->DeserializeResult(localQuery->SerializeResult());
@@ -234,5 +246,5 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
 }
 
 musik::core::IIndexer* RemoteLibrary::Indexer() {
-    return nullptr;
+    return &kNullIndexer;
 }

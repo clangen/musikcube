@@ -53,6 +53,7 @@
 #include <core/debug.h>
 #include <core/i18n/Locale.h>
 #include <core/library/LibraryFactory.h>
+#include <core/library/RemoteLibrary.h>
 #include <core/plugin/Plugins.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/sdk/constants.h>
@@ -116,8 +117,9 @@ int main(int argc, char* argv[]) {
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
     musik::debug::Start({ fileLogger, consoleLogger });
 
-    ILibraryPtr library = LibraryFactory::Default();
-    library->SetMessageQueue(Window::MessageQueue());
+    LibraryFactory::Initialize(Window::MessageQueue());
+    ILibraryPtr library = LibraryFactory::Instance().Default();
+    //ILibraryPtr library = LibraryFactory::Instance().CreateLibrary("remote", LibraryFactory::LibraryType::Remote);
 
     {
         auto prefs = Preferences::ForComponent(

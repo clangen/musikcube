@@ -243,8 +243,6 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
                 query->Name().c_str(),
                 query->GetStatus()));
         }
-
-        query.reset();
     }
 }
 

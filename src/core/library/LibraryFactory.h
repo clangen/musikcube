@@ -36,6 +36,7 @@
 
 #include <core/config.h>
 #include <core/library/LocalLibrary.h>
+#include <core/runtime/IMessageQueue.h>
 #include <sigslot/sigslot.h>
 #include <map>
 #include <vector>
@@ -44,9 +45,12 @@ namespace musik { namespace core {
 
     class LibraryFactory {
         public:
-            typedef std::vector<ILibraryPtr> LibraryVector;
-            typedef std::map<int, ILibraryPtr> LibraryMap;
-            typedef sigslot::signal0<> LibrariesUpdatedEvent;
+            using LibraryVector = std::vector<ILibraryPtr>;
+            using LibraryMap = std::map<int, ILibraryPtr>;
+            using LibrariesUpdatedEvent = sigslot::signal0<>;
+            using IMessageQueue = musik::core::runtime::IMessageQueue;
+
+            LibrariesUpdatedEvent LibrariesUpdated;
 
             enum class LibraryType: int {
                 Local = 1,
@@ -55,15 +59,15 @@ namespace musik { namespace core {
 
             ~LibraryFactory();
 
+            static void Initialize(IMessageQueue& messageQueue);
             static LibraryFactory& Instance();
-            static LibraryVector& Libraries();
-            static ILibraryPtr Default();
+            static void Shutdown();
 
+            ILibraryPtr Default();
+            LibraryVector Libraries();
             ILibraryPtr CreateLibrary(const std::string& name, LibraryType type);
-            void Shutdown();
 
             ILibraryPtr GetLibrary(int identifier);
-            LibrariesUpdatedEvent LibrariesUpdated;
 
         private:
             LibraryFactory();

@@ -197,6 +197,8 @@ namespace musik { namespace core { namespace library { namespace query {
                 replayGain.trackGain = replayGainJson.value("trackGain", 1.0f);
                 replayGain.trackPeak = replayGainJson.value("trackPeak", 1.0f);
             }
+
+            output->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
         }
 
         nlohmann::json TrackListToJson(const musik::core::TrackList& input, bool onlyIds) {

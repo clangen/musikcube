@@ -43,9 +43,17 @@
 
 using namespace musik::core;
 
+static LibraryFactory::IMessageQueue* sMessageQueue = nullptr;
+static std::shared_ptr<LibraryFactory> sInstance;
+
+void LibraryFactory::Initialize(IMessageQueue& messageQueue) {
+    sMessageQueue = &messageQueue;
+}
+
 LibraryFactory& LibraryFactory::Instance() {
-    typedef std::shared_ptr<LibraryFactory> InstanceType;
-    static InstanceType sInstance(new LibraryFactory());
+    if (!sInstance) {
+        sInstance = std::shared_ptr<LibraryFactory>(new LibraryFactory());
+    }
     return *sInstance;
 };
 
@@ -74,6 +82,9 @@ ILibraryPtr LibraryFactory::AddLibrary(int id, LibraryType type, const std::stri
         : library::RemoteLibrary::Create(name, id);
 
     if (library) {
+        if (sMessageQueue) {
+            library->SetMessageQueue(*sMessageQueue);
+        }
         this->libraries.push_back(library);
         this->libraryMap[id] = library;
         this->LibrariesUpdated();
@@ -83,11 +94,12 @@ ILibraryPtr LibraryFactory::AddLibrary(int id, LibraryType type, const std::stri
 }
 
 void LibraryFactory::Shutdown() {
-    for (ILibraryPtr library : this->libraries) {
-        library->Close();
+    if (sInstance) {
+        for (ILibraryPtr library : sInstance->libraries) {
+            library->Close();
+        }
+        sInstance->libraries.clear();
     }
-
-    Instance().libraries.clear();
 }
 
 ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, LibraryType type) {
@@ -98,18 +110,26 @@ ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, LibraryType t
     /* ensure the library doesn't already exist, and figure out a
     new unique identifier for this one... */
 
+    int existingId = -1;
     int nextId = 0; /* we start at 1 becuase we always have. */
     for (size_t i = 0; i < libraries.size(); i++) {
         std::string n = libraries.at(i);
         int id = prefs->GetInt(name);
 
         if (n == name) {
-            throw std::runtime_error("cannot create library! it already exists!");
+            /* we already created a library with this name, let's go ahead
+            and look it up and return it. */
+            existingId = id;
+            break;
         }
 
         if (id > nextId) {
             nextId = id;
         }
+    }
+
+    if (existingId != -1) {
+        return this->GetLibrary(existingId);
     }
 
     ++nextId; /* unique */
@@ -118,7 +138,7 @@ ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, LibraryType t
     return this->AddLibrary(nextId, type, name);
 }
 
-LibraryFactory::LibraryVector& LibraryFactory::Libraries() {
+LibraryFactory::LibraryVector LibraryFactory::Libraries() {
     return LibraryFactory::Instance().libraries;
 }
 
@@ -133,7 +153,6 @@ ILibraryPtr LibraryFactory::GetLibrary(int identifier) {
             return lib->second;
         }
     }
-
     return ILibraryPtr();
 }
 
