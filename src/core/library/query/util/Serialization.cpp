@@ -38,6 +38,7 @@
 
 using namespace musik::core;
 using namespace musik::core::library::query;
+using namespace musik::core::sdk;
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -117,7 +118,7 @@ namespace musik { namespace core { namespace library { namespace query {
         #define COPY_TRACK_FIELD_TO_JSON(track, json, field) \
             json[field] = track->GetString(field);
 
-        nlohmann::json TrackToJson(const musik::core::TrackPtr input, bool onlyIds) {
+        nlohmann::json TrackToJson(const TrackPtr input, bool onlyIds) {
             nlohmann::json output;
 
             output["id"] = input->GetId();
@@ -198,22 +199,35 @@ namespace musik { namespace core { namespace library { namespace query {
                 replayGain.trackPeak = replayGainJson.value("trackPeak", 1.0f);
             }
 
-            output->SetMetadataState(musik::core::sdk::MetadataState::Loaded);
+            output->SetMetadataState(MetadataState::Loaded);
         }
 
-        nlohmann::json TrackListToJson(const musik::core::TrackList& input, bool onlyIds) {
+        nlohmann::json TrackListToJson(const TrackList& input, bool onlyIds) {
             nlohmann::json output;
-            for (size_t i = 0; i < input.Count(); i++) {
-                output.push_back(TrackToJson(input.Get(i), onlyIds));
+            if (onlyIds) {
+                for (size_t i = 0; i < input.Count(); i++) {
+                    output.push_back(input.GetId(i));
+                }
+            }
+            else {
+                for (size_t i = 0; i < input.Count(); i++) {
+                    output.push_back(TrackToJson(input.Get(i), onlyIds));
+                }
             }
             return output;
         }
 
-        void TrackListFromJson(const nlohmann::json& input, musik::core::TrackList& output, musik::core::ILibraryPtr library) {
+        void TrackListFromJson(const nlohmann::json& input, TrackList& output, ILibraryPtr library, bool onlyIds) {
             output.Clear();
-            for (auto& trackJson : input) {
-                TrackPtr track = std::make_shared<LibraryTrack>(-1LL, library);
-                output.Add(trackJson["id"].get<int64_t>());
+            if (onlyIds) {
+                for (auto& trackId : input) {
+                    output.Add(trackId.get<int64_t>());
+                }
+            }
+            else {
+                for (auto& trackJson : input) {
+                    output.Add(trackJson["id"].get<int64_t>());
+                }
             }
         }
 

@@ -74,16 +74,17 @@ namespace musik { namespace core { namespace library { namespace query {
         void TrackFromJson(
             const nlohmann::json& input,
             musik::core::TrackPtr output,
-            bool onlyIds = false);
+            bool onlyIds);
 
         nlohmann::json TrackListToJson(
             const musik::core::TrackList& input,
-            bool onlyIds = false);
+            bool onlyIds);
 
         void TrackListFromJson(
             const nlohmann::json& input,
             musik::core::TrackList& output,
-            musik::core::ILibraryPtr library);
+            musik::core::ILibraryPtr library,
+            bool onlyIds);
 
         template <typename SetType, typename DataType>
         void JsonArrayToSet(const nlohmann::json& input, SetType& output) {

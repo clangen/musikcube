@@ -177,7 +177,7 @@ void TrackMetadataQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     auto input = nlohmann::json::parse(data);
     auto parsedResult = std::make_shared<LibraryTrack>(-1LL, this->library);
-    TrackFromJson(input["result"], parsedResult);
+    TrackFromJson(input["result"], parsedResult, false);
     this->result = parsedResult;
     this->SetStatus(IQuery::Finished);
 }

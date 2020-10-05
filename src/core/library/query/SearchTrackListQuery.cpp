@@ -193,7 +193,7 @@ void SearchTrackListQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     nlohmann::json result = nlohmann::json::parse(data)["result"];
     this->result = std::make_shared<TrackList>(this->library);
-    TrackListFromJson(result["trackList"], *this->result, this->library);
+    TrackListFromJson(result["trackList"], *this->result, this->library, true);
     JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *this->headers);
     this->SetStatus(IQuery::Finished);
 }
