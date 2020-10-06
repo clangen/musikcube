@@ -134,6 +134,12 @@ void LocalLibrary::Close() {
     }
 }
 
+bool LocalLibrary::IsConfigured() {
+    std::vector<std::string> paths;
+    Indexer()->GetPaths(paths);
+    return paths.size() > 0;
+}
+
 std::string LocalLibrary::GetLibraryDirectory() {
     std::string directory(musik::core::GetDataDirectory());
 

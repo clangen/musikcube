@@ -67,6 +67,7 @@ namespace musik { namespace core {
             virtual const std::string& Name() = 0;
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
+            virtual bool IsConfigured() = 0;
             virtual void Close() = 0;
     };
 

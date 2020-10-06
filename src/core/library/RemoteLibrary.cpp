@@ -130,6 +130,10 @@ void RemoteLibrary::Close() {
     }
 }
 
+bool RemoteLibrary::IsConfigured() {
+    return LibraryFactory::Instance().Default()->IsConfigured(); /* CAL TODO FIXME */
+}
+
 int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
         auto defaultLocalLibrary = LibraryFactory::Instance().Default();

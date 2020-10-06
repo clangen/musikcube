@@ -112,9 +112,7 @@ MainLayout::MainLayout(
 
     /* take user to settings if they don't have a valid configuration. otherwise,
     switch to the library view immediately */
-    std::vector<std::string> paths;
-    library->Indexer()->GetPaths(paths);
-    this->SetLayout(paths.size() > 0 ? libraryLayout : settingsLayout);
+    this->SetLayout(library->IsConfigured() ? libraryLayout : settingsLayout);
     this->SetAutoHideCommandBar(this->prefs->GetBool(prefs::keys::AutoHideCommandBar, false));
 
     this->RunUpdateCheck();
