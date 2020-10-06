@@ -57,7 +57,9 @@ namespace musik { namespace core {
             /* implementation specific */
             void Clear();
             void Add(MetadataMapPtr entry);
+
             musik::core::sdk::IMapList* GetSdkValue();
+            MetadataMapPtr GetSharedAt(size_t index) const;
 
         private:
             std::vector<MetadataMapPtr> entries;

@@ -62,7 +62,7 @@ namespace musik { namespace core { namespace library { namespace query {
             nlohmann::json result;
             for (size_t i = 0; i < input.Count(); i++) {
                 nlohmann::json outputMetadata;
-                auto inputMap = static_cast<MetadataMap*>(input.GetAt(i));
+                auto inputMap = input.GetSharedAt(i);
                 inputMap->Each([&outputMetadata](const std::string& key, const std::string& value) {
                     outputMetadata[key] = value;
                 });
@@ -80,10 +80,9 @@ namespace musik { namespace core { namespace library { namespace query {
             output.Clear();
             for (auto inputMap : input) {
                 auto outputMap = std::make_shared<MetadataMap>(
-                    input.value("id", -1LL),
-                    input.value("value", "unknown"),
-                    input.value("type", "unknown")
-                );
+                    input["id"].get<uint64_t>(),
+                    input["value"].get<std::string>(),
+                    input["type"].get<std::string>());
                 auto& metadata = input["metadata"];
                 for (auto& kv : metadata.items()) {
                     outputMap->Set(kv.key().c_str(), kv.value().get<std::string>().c_str());

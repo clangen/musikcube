@@ -69,6 +69,10 @@ IMap* MetadataMapList::GetAt(size_t index) const {
     return this->entries.at(index)->GetSdkValue();
 }
 
+MetadataMapPtr MetadataMapList::GetSharedAt(size_t index) const {
+    return this->entries.at(index);
+}
+
 void MetadataMapList::Clear() {
     this->entries.clear();
 }

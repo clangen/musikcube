@@ -169,8 +169,9 @@ void MetadataMap::Set(const char* key, const std::string& value) {
 musik::core::sdk::IMap* MetadataMap::GetSdkValue() {
     return new SdkWrapper(shared_from_this());
 }
+
 void MetadataMap::Each(std::function<void(const std::string&, const std::string&)> callback) {
-    for (auto kv : this->metadata) {
+    for (auto& kv : this->metadata) {
         callback(kv.first, kv.second);
     }
 }
