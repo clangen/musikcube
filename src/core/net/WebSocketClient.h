@@ -37,6 +37,7 @@
 #include <core/config.h>
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/client.hpp>
+#include <thread>
 
 namespace musik { namespace core { namespace net {
 
@@ -82,8 +83,13 @@ namespace musik { namespace core { namespace net {
 
             int64_t EnqueueQuery(const std::string& data);
 
+            void Reconnect();
+
         private:
             Client client;
+            boost::asio::io_service io;
+            std::shared_ptr<std::thread> thread;
+            std::recursive_mutex mutex;
     };
 
 } } }

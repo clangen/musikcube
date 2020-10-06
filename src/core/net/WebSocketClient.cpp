@@ -36,49 +36,72 @@
 
 #include <core/net/WebSocketclient.h>
 
+#include <json.hpp>
+
 using namespace musik::core::net;
 
 using Client = WebSocketClient::Client;
 using Message = WebSocketClient::Message;
 using Connection = WebSocketClient::Connection;
-using websocketpp::lib::placeholders::_1;
-using websocketpp::lib::placeholders::_2;
 
-void on_open(Client* c, Connection hdl) {
-    std::string msg = "Hello";
-    c->send(hdl, msg, websocketpp::frame::opcode::text);
-    c->get_alog().write(websocketpp::log::alevel::app, "Sent Message: " + msg);
-}
+static const std::string sUri = "ws://192.168.1.221:7905";
 
-void on_fail(Client* c, Connection hdl) {
-    c->get_alog().write(websocketpp::log::alevel::app, "Connection Failed");
-}
-
-void on_message(Client* c, Connection hdl, Message msg) {
-    c->get_alog().write(websocketpp::log::alevel::app, "Received Reply: " + msg->get_payload());
-    c->close(hdl, websocketpp::close::status::normal, "");
-}
-
-void on_close(Client* c, Connection hdl) {
-    c->get_alog().write(websocketpp::log::alevel::app, "Connection Closed");
-}
+static const nlohmann::json sAuthRequest = {
+    { "name", "authenticate" },
+    { "type" , "request" },
+    { "id", "this-is-a-random-auth-message-id" },
+    { "device_id", "remote-random-device" },
+    { "options", {
+        { "password", "" }
+    }}
+};
 
 WebSocketClient::WebSocketClient() {
-    //new std::thread([]() {
-    //    Client client;
-    //    client.set_access_channels(websocketpp::log::alevel::all);
-    //    client.clear_access_channels(websocketpp::log::alevel::frame_payload);
-    //    client.init_asio();
-    //    websocketpp::lib::error_code ec;
-    //    Client::connection_ptr connection = client.get_connection("ws://192.168.1.221:7905", ec);
-    //    client.set_open_handler(bind(&on_open, &client, ::_1));
-    //    client.set_fail_handler(bind(&on_fail, &client, ::_1));
-    //    client.set_message_handler(bind(&on_message, &client, ::_1, ::_2));
-    //    client.set_close_handler(bind(&on_close, &client, ::_1));
-    //    client.connect(connection);
-    //    client.run();
-    //});
+    io.restart();
+
+    websocketpp::lib::error_code ec;
+    client.init_asio(&io, ec);
+
+    client.set_open_handler([this](auto connection) {
+        this->client.send(connection, sAuthRequest.dump(), websocketpp::frame::opcode::text);
+    });
+    client.set_fail_handler([this](auto connection) {
+        /* todo fail handler */
+        auto failed = "failed";
+    });
+    client.set_message_handler([this](auto connection, Message message) {
+        auto response = message->get_payload();
+    });
+    client.set_close_handler([this](auto connection) {
+        /* todo connection closed */
+        auto closed = "closed";
+    });
+
+    this->Reconnect();
 }
 
 WebSocketClient::~WebSocketClient() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+
+    if (this->thread) {
+        io.stop();
+        this->thread->join();
+        this->thread.reset();
+    }
+}
+
+void WebSocketClient::Reconnect() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+
+    if (this->thread) {
+        io.stop();
+        this->thread->join();
+    }
+
+    this->thread.reset(new std::thread([&]() {
+        websocketpp::lib::error_code ec;
+        Client::connection_ptr connection = client.get_connection(sUri, ec);
+        client.connect(connection);
+        client.run();
+    }));
 }
