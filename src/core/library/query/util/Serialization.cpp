@@ -231,6 +231,14 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
+        nlohmann::json ITrackListToJsonIdList(const ITrackList& input) {
+            nlohmann::json output;
+            for (size_t i = 0; i < input.Count(); i++) {
+                output.push_back(input.GetId(i));
+            }
+            return output;
+        }
+
     }
 
 } } } }

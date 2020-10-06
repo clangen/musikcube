@@ -34,6 +34,7 @@
 
 #include "pch.hpp"
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/query/util/Serialization.h>
 #include <core/i18n/Locale.h>
 #include "DirectoryTrackListQuery.h"
 #include "CategoryTrackListQuery.h"
@@ -44,7 +45,10 @@ using musik::core::ILibraryPtr;
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 using namespace musik::core::library;
+
+const std::string DirectoryTrackListQuery::kQueryName = "DirectoryTrackListQuery";
 
 DirectoryTrackListQuery::DirectoryTrackListQuery(
     ILibraryPtr library,
@@ -100,4 +104,40 @@ bool DirectoryTrackListQuery::OnRun(Connection& db) {
     }
 
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string DirectoryTrackListQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", {
+            { "directory", directory },
+            { "filter", filter },
+        }}
+    };
+    return FinalizeSerializedQueryWithLimitAndOffset(output);
+}
+
+std::string DirectoryTrackListQuery::SerializeResult() {
+    return InitializeSerializedResultWithHeadersAndTrackList().dump();
+}
+
+void DirectoryTrackListQuery::DeserializeResult(const std::string& data) {
+    this->SetStatus(IQuery::Failed);
+    nlohmann::json result = nlohmann::json::parse(data)["result"];
+    this->DeserializeTrackListAndHeaders(result, this->library, this->result, this->headers);
+    this->SetStatus(IQuery::Finished);
+}
+
+std::shared_ptr<DirectoryTrackListQuery> DirectoryTrackListQuery::DeserializeQuery(
+    ILibraryPtr library, const std::string& data)
+{
+    auto options = nlohmann::json::parse(data)["options"];
+    auto result = std::make_shared<DirectoryTrackListQuery>(
+        library,
+        options["directory"].get<std::string>(),
+        options["filter"].get<std::string>());
+    result->ExtractLimitAndOffsetFromDeserializedQuery(options);
+    return result;
 }

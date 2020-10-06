@@ -86,6 +86,9 @@ namespace musik { namespace core { namespace library { namespace query {
             musik::core::ILibraryPtr library,
             bool onlyIds);
 
+        nlohmann::json ITrackListToJsonIdList(
+            const musik::core::sdk::ITrackList& input);
+
         template <typename SetType, typename DataType>
         void JsonArrayToSet(const nlohmann::json& input, SetType& output) {
             for (auto& value : input) {

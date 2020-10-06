@@ -57,6 +57,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             int64_t trackId;
             int rating;
+            bool result{ false };
     };
 
 } } } }

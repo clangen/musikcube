@@ -49,6 +49,8 @@ using namespace musik::core::db;
 using namespace musik::core::library::constants;
 using namespace musik::core::library::query;
 
+const std::string NowPlayingTrackListQuery::kQueryName = "NowPlayingTrackListQuery";
+
 NowPlayingTrackListQuery::NowPlayingTrackListQuery(
     ILibraryPtr library, musik::core::audio::PlaybackService& playback)
 : library(library)

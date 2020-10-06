@@ -40,10 +40,14 @@
 #include <core/support/Messages.h>
 #include <core/runtime/Message.h>
 
+#include <json.hpp>
+
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::runtime;
+
+const std::string DeletePlaylistQuery::kQueryName = "DeletePlaylistQuery";
 
 static std::string DELETE_PLAYLIST_TRACKS_QUERY =
     "DELETE FROM playlist_tracks WHERE playlist_id=?;";
@@ -68,20 +72,53 @@ bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
 
     if (deleteTracks.Step() == db::Error) {
         transaction.Cancel();
-        return false;
+        this->result = false;
     }
+    else {
+        /* delete the container */
+        Statement deletePlaylist(DELETE_PLAYLIST_QUERY.c_str(), db);
+        deletePlaylist.BindInt64(0, this->playlistId);
 
-    /* delete the container */
-    Statement deletePlaylist(DELETE_PLAYLIST_QUERY.c_str(), db);
-    deletePlaylist.BindInt64(0, this->playlistId);
-
-    if (deletePlaylist.Step() == db::Error) {
-        transaction.Cancel();
-        return false;
+        if (deletePlaylist.Step() == db::Error) {
+            transaction.Cancel();
+            this->result = false;
+        }
+        else {
+            this->library->GetMessageQueue().Broadcast(
+                Message::Create(nullptr, message::PlaylistDeleted, playlistId));
+            this->result = true;
+        }
     }
+    return this->result;
+}
 
-    this->library->GetMessageQueue().Broadcast(
-        Message::Create(nullptr, message::PlaylistDeleted, playlistId));
 
-    return true;
+/* ISerializableQuery */
+
+std::string DeletePlaylistQuery::SerializeQuery() {
+    nlohmann::json output = {
+    { "name", kQueryName },
+        { "options", {
+            { "playlistId", this->playlistId },
+        }}
+    };
+    return output.dump();
+}
+
+std::string DeletePlaylistQuery::SerializeResult() {
+    nlohmann::json output = { { "result", this->result } };
+    return output.dump();
+}
+
+void DeletePlaylistQuery::DeserializeResult(const std::string& data) {
+    auto input = nlohmann::json::parse(data);
+    this->SetStatus(input["result"].get<bool>() == true
+        ? IQuery::Finished : IQuery::Failed);
+}
+
+std::shared_ptr<DeletePlaylistQuery> DeletePlaylistQuery::DeserializeQuery(
+    musik::core::ILibraryPtr library, const std::string& data)
+{
+    auto options = nlohmann::json::parse(data)["options"];
+    return std::make_shared<DeletePlaylistQuery>(library, options["playlistId"].get<int64_t>());
 }

@@ -43,13 +43,15 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class NowPlayingTrackListQuery : public TrackListQueryBase {
         public:
+            static const std::string kQueryName;
+
             NowPlayingTrackListQuery(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
             virtual ~NowPlayingTrackListQuery();
 
-            virtual std::string Name() { return "NowPlayingTrackListQuery"; }
+            virtual std::string Name() { return kQueryName; }
             virtual Result GetResult();
             virtual Headers GetHeaders();
             virtual size_t GetQueryHash();

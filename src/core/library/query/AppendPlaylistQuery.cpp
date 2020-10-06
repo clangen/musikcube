@@ -36,10 +36,12 @@
 #include "AppendPlaylistQuery.h"
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/query/TrackMetadataQuery.h>
+#include <core/library/query/util/Serialization.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
 #include <core/db/Statement.h>
+#include <json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -47,9 +49,12 @@ using musik::core::db::Row;
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 using namespace musik::core::runtime;
+
+const std::string AppendPlaylistQuery::kQueryName = "AppendPlaylistQuery";
 
 static std::string INSERT_PLAYLIST_TRACK_QUERY =
     "INSERT INTO playlist_tracks (track_external_id, source_id, playlist_id, sort_order) "
@@ -87,9 +92,12 @@ AppendPlaylistQuery::AppendPlaylistQuery(
 }
 
 bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
+    this->result = false;
+
     ITrackList* tracks = sharedTracks ? sharedTracks.get() : rawTracks;
 
     if (!tracks || !tracks->Count() || playlistId == 0) {
+        this->result = true;
         return true;
     }
 
@@ -148,5 +156,45 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
     this->library->GetMessageQueue().Broadcast(
         Message::Create(nullptr, message::PlaylistModified, playlistId));
 
+    this->result = true;
     return true;
+}
+
+/* ISerializableQuery */
+
+std::string AppendPlaylistQuery::SerializeQuery() {
+    ITrackList* tracks = rawTracks ? rawTracks : sharedTracks.get();
+    nlohmann::json output = {
+    { "name", kQueryName },
+        { "options", {
+            { "playlistId", this->playlistId },
+            { "offset", this->offset },
+            { "tracks", ITrackListToJsonIdList(*tracks) }
+        }}
+    };
+    return output.dump();
+}
+
+std::string AppendPlaylistQuery::SerializeResult() {
+    nlohmann::json output = { { "result", this->result } };
+    return output.dump();
+}
+
+void AppendPlaylistQuery::DeserializeResult(const std::string& data) {
+    auto input = nlohmann::json::parse(data);
+    this->SetStatus(input["result"].get<bool>() == true
+        ? IQuery::Finished : IQuery::Failed);
+}
+
+std::shared_ptr<AppendPlaylistQuery> AppendPlaylistQuery::DeserializeQuery(
+    musik::core::ILibraryPtr library, const std::string& data)
+{
+    auto options = nlohmann::json::parse(data)["options"];
+    auto trackList = std::make_shared<TrackList>(library);
+    TrackListFromJson(options["tracks"], *trackList, library, true);
+    return std::make_shared<AppendPlaylistQuery>(
+        library,
+        options["playlistId"].get<int64_t>(),
+        trackList,
+        options["offset"].get<int>());
 }

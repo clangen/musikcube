@@ -38,6 +38,9 @@
 #include <core/db/Connection.h>
 #include <core/library/track/Track.h>
 #include <core/library/track/TrackList.h>
+#include <core/library/query/util/Serialization.h>
+
+#include <json.hpp>
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -67,11 +70,48 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
         protected:
+
+            /* for IMetadataProxy */
+
             std::string GetLimitAndOffset() {
                 if (this->limit > 0 && this->offset >= 0) {
                     return u8fmt("LIMIT %d OFFSET %d", this->limit, this->offset);
                 }
                 return "";
+            }
+
+            /* for ISerialization */
+
+            const std::string FinalizeSerializedQueryWithLimitAndOffset(nlohmann::json &output) {
+                auto& options = output["options"];
+                options["limit"] = this->limit;
+                options["offset"] = this->offset;
+                return output.dump();
+            }
+
+            void ExtractLimitAndOffsetFromDeserializedQuery(nlohmann::json& options) {
+                this->limit = options.value("limit", -1);
+                this->offset = options.value("offset", 0);
+            }
+
+            nlohmann::json InitializeSerializedResultWithHeadersAndTrackList() {
+                nlohmann::json output = {
+                    { "result", {
+                        { "headers", *this->GetHeaders() },
+                        { "trackList", serialization::TrackListToJson(*this->GetResult(), true) }
+                    }}
+                };
+                return output;
+            }
+
+            void DeserializeTrackListAndHeaders(
+                nlohmann::json &result,
+                ILibraryPtr library,
+                Result tracks,
+                Headers headers)
+            {
+                serialization::TrackListFromJson(result["trackList"], *tracks, library, true);
+                serialization::JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *headers);
             }
 
         private:

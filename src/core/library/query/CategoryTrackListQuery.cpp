@@ -214,25 +214,17 @@ std::string CategoryTrackListQuery::SerializeQuery() {
             { "sortType", sortType }
         }}
     };
-    return output.dump();
+    return FinalizeSerializedQueryWithLimitAndOffset(output);
 }
 
 std::string CategoryTrackListQuery::SerializeResult() {
-    nlohmann::json output = {
-        { "result", {
-            { "headers", *this->headers },
-            { "trackList", TrackListToJson(*this->result, true) }
-        }}
-    };
-    return output.dump();
+    return InitializeSerializedResultWithHeadersAndTrackList().dump();
 }
 
 void CategoryTrackListQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     nlohmann::json result = nlohmann::json::parse(data)["result"];
-    this->result = std::make_shared<TrackList>(this->library);
-    TrackListFromJson(result["trackList"], *this->result, this->library, true);
-    JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *this->headers);
+    this->DeserializeTrackListAndHeaders(result, this->library, this->result, this->headers);
     this->SetStatus(IQuery::Finished);
 }
 
@@ -244,6 +236,7 @@ std::shared_ptr<CategoryTrackListQuery> CategoryTrackListQuery::DeserializeQuery
         library,
         options["filter"].get<std::string>(),
         options["sortType"].get<TrackSortType>());
+    result->ExtractLimitAndOffsetFromDeserializedQuery(options);
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);
     result->ScanPredicateListsForQueryType();

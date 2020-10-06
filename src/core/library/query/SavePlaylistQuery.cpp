@@ -38,17 +38,24 @@
 
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/query/TrackMetadataQuery.h>
+#include <core/library/query/util/Serialization.h>
+#include <core/library/LocalLibraryConstants.h>
 #include <core/db/ScopedTransaction.h>
 #include <core/db/Statement.h>
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
 
 using namespace musik::core;
+using namespace musik::core::sdk;
 using namespace musik::core::db;
+using namespace musik::core::library;
 using namespace musik::core::library::query;
+using namespace musik::core::library::query::serialization;
 using namespace musik::core::runtime;
 
 /* CONSTANTS */
+
+const std::string SavePlaylistQuery::kQueryName = "SavePlaylistQuery";
 
 static std::string CREATE_PLAYLIST_QUERY =
     "INSERT INTO playlists (name) VALUES (?);";
@@ -130,7 +137,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
     auto result = std::shared_ptr<SavePlaylistQuery>(
         new SavePlaylistQuery(library, playlistId, tracks));
 
-    result->op = AppendOp;
+    result->op = Operation::Append;
 
     return result;
 }
@@ -146,7 +153,7 @@ std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::Append(
     auto result = std::shared_ptr<SavePlaylistQuery>(
         new SavePlaylistQuery(library, playlistId, categoryType, categoryId));
 
-    result->op = AppendOp;
+    result->op = Operation::Append;
 
     return result;
 }
@@ -162,7 +169,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->playlistName = playlistName;
     this->tracks.rawTracks = nullptr;
     this->tracks.sharedTracks = tracks;
-    this->op = CreateOp;
+    this->op = Operation::Create;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -175,7 +182,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->categoryId = -1;
     this->playlistName = playlistName;
     this->tracks.rawTracks = tracks;
-    this->op = CreateOp;
+    this->op = Operation::Create;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -189,7 +196,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->categoryId = categoryId;
     this->categoryType = categoryType;
     this->playlistName = playlistName;
-    this->op = CreateOp;
+    this->op = Operation::Create;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -200,7 +207,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->library = library;
     this->playlistId = playlistId;
     this->tracks.sharedTracks = tracks;
-    this->op = ReplaceOp;
+    this->op = Operation::Replace;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -211,7 +218,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->library = library;
     this->playlistId = playlistId;
     this->tracks.rawTracks = tracks;
-    this->op = ReplaceOp;
+    this->op = Operation::Replace;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -224,7 +231,7 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->playlistId = playlistId;
     this->categoryId = categoryId;
     this->categoryType = categoryType;
-    this->op = AppendOp;
+    this->op = Operation::Append;
 }
 
 SavePlaylistQuery::SavePlaylistQuery(
@@ -236,7 +243,12 @@ SavePlaylistQuery::SavePlaylistQuery(
     this->categoryId = -1;
     this->playlistId = playlistId;
     this->playlistName = playlistName;
-    this->op = RenameOp;
+    this->op = Operation::Rename;
+}
+
+SavePlaylistQuery::SavePlaylistQuery(musik::core::ILibraryPtr library) {
+    this->library = library;
+    this->categoryId = -1;
 }
 
 SavePlaylistQuery::~SavePlaylistQuery() {
@@ -394,13 +406,14 @@ bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
 }
 
 bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
+    this->result = false;
     switch (this->op) {
-        case RenameOp: return this->RenamePlaylist(db);
-        case ReplaceOp: return this->ReplacePlaylist(db);
-        case CreateOp: return this->CreatePlaylist(db);
-        case AppendOp: return this->AppendToPlaylist(db);
+        case Operation::Rename: this->result = this->RenamePlaylist(db); break;
+        case Operation::Replace: this->result = this->ReplacePlaylist(db); break;
+        case Operation::Create: this->result = this->CreatePlaylist(db); break;
+        case Operation::Append: this->result = this->AppendToPlaylist(db); break;
     }
-    return false;
+    return this->result;
 }
 
 /* SUPPORTING TYPES */
@@ -444,4 +457,54 @@ TrackPtr SavePlaylistQuery::TrackListWrapper::Get(
     }
 
     return result;
+}
+
+ITrackList* SavePlaylistQuery::TrackListWrapper::Get() {
+    if (sharedTracks) {
+        return sharedTracks.get();
+    }
+    return rawTracks;
+}
+
+/* ISerializableQuery */
+
+std::string SavePlaylistQuery::SerializeQuery() {
+    nlohmann::json output = {
+    { "name", kQueryName },
+        { "options", {
+            { "op", this->op },
+            { "playlistName", this->playlistName },
+            { "categoryType", this->categoryType },
+            { "playlistId", this->playlistId },
+            { "categoryId", this->categoryId },
+            { "tracks", ITrackListToJsonIdList(*tracks.Get()) }
+        }}
+    };
+    return output.dump();
+}
+
+std::string SavePlaylistQuery::SerializeResult() {
+    nlohmann::json output = { { "result", this->result } };
+    return output.dump();
+}
+
+void SavePlaylistQuery::DeserializeResult(const std::string& data) {
+    auto input = nlohmann::json::parse(data);
+    this->SetStatus(input["result"].get<bool>() == true
+        ? IQuery::Finished : IQuery::Failed);
+}
+
+std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::DeserializeQuery(
+    musik::core::ILibraryPtr library, const std::string& data)
+{
+    auto options = nlohmann::json::parse(data)["options"];
+    auto output = std::shared_ptr<SavePlaylistQuery>(new SavePlaylistQuery(library));
+    output->op = options["op"].get<Operation>();
+    output->playlistName = options["playlistName"].get<std::string>();
+    output->categoryType = options["categoryType"].get<std::string>();
+    output->playlistId = options["playlistId"].get<int64_t>();
+    output->categoryId = options["categoryId"].get<int64_t>();
+    output->tracks.sharedTracks = std::make_shared<TrackList>(library);
+    TrackListFromJson(options["tracks"], *output->tracks.sharedTracks, library, true);
+    return output;
 }

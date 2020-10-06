@@ -40,13 +40,22 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class MarkTrackPlayedQuery: public QueryBase {
         public:
+            static const std::string kQueryName;
+
             MarkTrackPlayedQuery(const int64_t trackId);
             virtual ~MarkTrackPlayedQuery();
             std::string Name() { return "MarkTrackPlayedQuery"; }
 
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<MarkTrackPlayedQuery> DeserializeQuery(const std::string& data);
+
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
             int64_t trackId;
+            bool result{ false };
     };
 
 } } } }

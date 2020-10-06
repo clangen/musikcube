@@ -34,10 +34,13 @@
 
 #include "pch.hpp"
 #include "MarkTrackPlayedQuery.h"
+#include <json.hpp>
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::sdk;
+
+const std::string MarkTrackPlayedQuery::kQueryName = "MarkTrackPlayedQuery";
 
 MarkTrackPlayedQuery::MarkTrackPlayedQuery(const int64_t trackId) {
     this->trackId = trackId;
@@ -55,9 +58,34 @@ bool MarkTrackPlayedQuery::OnRun(musik::core::db::Connection &db) {
 
     stmt.BindInt64(0, this->trackId);
 
-    if (stmt.Step() == db::Done) {
-        return true;
-    }
+    this->result = stmt.Step() == db::Done;
+    return this->result;
+}
 
-    return false;
+/* ISerializableQuery */
+
+std::string MarkTrackPlayedQuery::SerializeQuery() {
+    nlohmann::json output = {
+        { "name", kQueryName },
+        { "options", {
+            { "trackId", this->trackId },
+        }}
+    };
+    return output.dump();
+}
+
+std::string MarkTrackPlayedQuery::SerializeResult() {
+    nlohmann::json output = { { "result", this->result } };
+    return output.dump();
+}
+
+void MarkTrackPlayedQuery::DeserializeResult(const std::string& data) {
+    auto input = nlohmann::json::parse(data);
+    this->SetStatus(input["result"].get<bool>() == true
+        ? IQuery::Finished : IQuery::Failed);
+}
+
+std::shared_ptr<MarkTrackPlayedQuery> MarkTrackPlayedQuery::DeserializeQuery(const std::string& data) {
+    auto options = nlohmann::json::parse(data)["options"];
+    return std::make_shared<MarkTrackPlayedQuery>(options["trackId"].get<int64_t>());
 }

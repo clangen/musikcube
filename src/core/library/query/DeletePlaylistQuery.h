@@ -42,13 +42,22 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class DeletePlaylistQuery : public musik::core::library::query::QueryBase {
         public:
+            static const std::string kQueryName;
+
             DeletePlaylistQuery(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId);
 
             virtual ~DeletePlaylistQuery();
 
-            virtual std::string Name() { return "DeletePlaylistQuery"; }
+            virtual std::string Name() { return kQueryName; }
+
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<DeletePlaylistQuery> DeserializeQuery(
+                musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
@@ -56,6 +65,7 @@ namespace musik { namespace core { namespace library { namespace query {
         private:
             int64_t playlistId;
             musik::core::ILibraryPtr library;
+            bool result{ false };
     };
 
 } } } }

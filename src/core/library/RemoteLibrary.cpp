@@ -131,6 +131,11 @@ void RemoteLibrary::Close() {
 }
 
 int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
+    if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
+        auto defaultLocalLibrary = LibraryFactory::Instance().Default();
+        return defaultLocalLibrary->Enqueue(query, options, callback);
+    }
+    
     auto serializableQuery = std::dynamic_pointer_cast<ISerializableQuery>(query);
 
     if (serializableQuery) {
@@ -206,7 +211,7 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
                     this->QueryCompleted(localQuery.get());
                 }
             }
-            if (context->callback) {
+            else if (context->callback) {
                 context->callback(context->query);
             }
         };

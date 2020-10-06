@@ -43,6 +43,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class AppendPlaylistQuery : public musik::core::library::query::QueryBase {
         public:
+            static const std::string kQueryName;
+
             AppendPlaylistQuery(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
@@ -57,17 +59,24 @@ namespace musik { namespace core { namespace library { namespace query {
 
             virtual ~AppendPlaylistQuery() { }
 
-            std::string Name() { return "AppendPlaylistQuery"; }
+            std::string Name() { return kQueryName; }
+
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<AppendPlaylistQuery> DeserializeQuery(
+                musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 
-            int64_t playlistId;
-
             musik::core::ILibraryPtr library;
             std::shared_ptr<musik::core::TrackList> sharedTracks;
             musik::core::sdk::ITrackList* rawTracks;
+            int64_t playlistId;
             int offset;
+            bool result{ false };
     };
 
 } } } }

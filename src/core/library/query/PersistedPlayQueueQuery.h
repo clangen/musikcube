@@ -41,6 +41,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class PersistedPlayQueueQuery : public musik::core::library::query::QueryBase {
         public:
+            static const std::string kQueryName;
+
             static PersistedPlayQueueQuery* Save(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback)
@@ -57,7 +59,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             virtual ~PersistedPlayQueueQuery();
 
-            virtual std::string Name() { return "PersistedPlayQueueQuery"; }
+            virtual std::string Name() { return kQueryName; }
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);

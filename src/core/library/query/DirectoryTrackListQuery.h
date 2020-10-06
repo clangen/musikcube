@@ -41,6 +41,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
     class DirectoryTrackListQuery : public TrackListQueryBase {
         public:
+            static const std::string kQueryName;
+
             DirectoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& directory,
@@ -48,10 +50,17 @@ namespace musik { namespace core { namespace library { namespace query {
 
             virtual ~DirectoryTrackListQuery();
 
-            virtual std::string Name() { return "DirectoryTrackListQuery"; }
+            virtual std::string Name() { return kQueryName; }
             virtual Result GetResult() { return this->result; }
             virtual Headers GetHeaders() { return this->headers; }
             virtual size_t GetQueryHash() { return this->hash; }
+
+            /* ISerializableQuery */
+            virtual std::string SerializeQuery();
+            virtual std::string SerializeResult();
+            virtual void DeserializeResult(const std::string& data);
+            static std::shared_ptr<DirectoryTrackListQuery> DeserializeQuery(
+                musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);

@@ -54,13 +54,12 @@ bool SetTrackRatingQuery::OnRun(musik::core::db::Connection &db) {
     Statement stmt("UPDATE tracks SET rating=? WHERE id=?", db);
     stmt.BindInt32(0, this->rating);
     stmt.BindInt64(1, this->trackId);
-    if (stmt.Step() == db::Done) {
-        return true;
-    }
-    return false;
+    this->result = stmt.Step() == db::Done;
+    return this->result;
 }
 
 /* ISerializableQuery */
+
 std::string SetTrackRatingQuery::SerializeQuery() {
     nlohmann::json output = {
         { "name", kQueryName },
@@ -73,7 +72,7 @@ std::string SetTrackRatingQuery::SerializeQuery() {
 }
 
 std::string SetTrackRatingQuery::SerializeResult() {
-    nlohmann::json output = { { "result", true } };
+    nlohmann::json output = { { "result", this->result } };
     return output.dump();
 }
 

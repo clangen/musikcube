@@ -37,16 +37,17 @@
 #include "QueryRegistry.h"
 #include <core/library/query/AlbumListQuery.h>
 #include <core/library/query/AllCategoriesQuery.h>
-//#include <core/library/query/AppendPlaylistQuery.h>
+#include <core/library/query/AppendPlaylistQuery.h>
 #include <core/library/query/GetPlaylistQuery.h>
 #include <core/library/query/CategoryListQuery.h>
 #include <core/library/query/CategoryTrackListQuery.h>
-//#include <core/library/query/DeletePlaylistQuery.h>
-//#include <core/library/query/DirectoryTrackListQuery.h>
+#include <core/library/query/DeletePlaylistQuery.h>
+#include <core/library/query/DirectoryTrackListQuery.h>
 #include <core/library/query/LyricsQuery.h>
-// #include <core/library/query/MarkTrackPlayedQuery.h>
-// #include <core/library/query/NowPlayingTrackListQuery.h>
-// #include <core/library/query/SavePlaylistQuery.h>
+#include <core/library/query/MarkTrackPlayedQuery.h>
+#include <core/library/query/NowPlayingTrackListQuery.h>
+#include <core/library/query/PersistedPlayQueueQuery.h>
+#include <core/library/query/SavePlaylistQuery.h>
 #include <core/library/query/SearchTrackListQuery.h>
 #include <core/library/query/SetTrackRatingQuery.h>
 #include <core/library/query/TrackMetadataQuery.h>
@@ -67,8 +68,9 @@ namespace musik { namespace core { namespace library {
             if (name == AllCategoriesQuery::kQueryName) {
                 return AllCategoriesQuery::DeserializeQuery(data);
             }
-            //if (name == AppendPlaylistQuery::kQueryName) {
-            //}
+            if (name == AppendPlaylistQuery::kQueryName) {
+                return AppendPlaylistQuery::DeserializeQuery(library, data);
+            }
             if (name == GetPlaylistQuery::kQueryName) {
                 return GetPlaylistQuery::DeserializeQuery(library, data);
             }
@@ -78,19 +80,21 @@ namespace musik { namespace core { namespace library {
             if (name == CategoryTrackListQuery::kQueryName) {
                 return CategoryTrackListQuery::DeserializeQuery(library, data);
             }
-            //if (name == DeletePlaylistQuery::kQueryName) {
-            //}
-            //if (name == DirectoryTrackListQuery::kQueryName) {
-            //}
+            if (name == DeletePlaylistQuery::kQueryName) {
+                return DeletePlaylistQuery::DeserializeQuery(library, data);
+            }
+            if (name == DirectoryTrackListQuery::kQueryName) {
+                return DirectoryTrackListQuery::DeserializeQuery(library, data);
+            }
             if (name == LyricsQuery::kQueryName) {
                 return LyricsQuery::DeserializeQuery(data);
             }
-            //if (name == MarkTrackPlayedQuery::kQueryName) {
-            //}
-            //if (name == NowPlayingTrackListQuery::kQueryName) {
-            //}
-            //if (name == SavePlaylistQuery::kQueryName) {
-            //}
+            if (name == MarkTrackPlayedQuery::kQueryName) {
+                return MarkTrackPlayedQuery::DeserializeQuery(data);
+            }
+            if (name == SavePlaylistQuery::kQueryName) {
+                return SavePlaylistQuery::DeserializeQuery(library, data);
+            }
             if (name == SearchTrackListQuery::kQueryName) {
                 return SearchTrackListQuery::DeserializeQuery(library, data);
             }
@@ -101,6 +105,15 @@ namespace musik { namespace core { namespace library {
                 return TrackMetadataQuery::DeserializeQuery(library, data);
             }
             return std::shared_ptr<ISerializableQuery>();
+        }
+
+        bool IsLocalOnlyQuery(const std::string& queryName) {
+            static const std::set<std::string> sLocalOnlyQuerys = {
+                NowPlayingTrackListQuery::kQueryName,
+                PersistedPlayQueueQuery::kQueryName
+            };
+
+            return sLocalOnlyQuerys.find(queryName) != sLocalOnlyQuerys.end();
         }
     }
 
