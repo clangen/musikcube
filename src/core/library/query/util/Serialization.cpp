@@ -78,12 +78,13 @@ namespace musik { namespace core { namespace library { namespace query {
 
         void MetadataMapListFromJson(const nlohmann::json& input, MetadataMapList& output) {
             output.Clear();
-            for (auto inputMap : input) {
+            for (size_t i = 0; i < input.size(); i++) {
+                auto& element = input[i];
                 auto outputMap = std::make_shared<MetadataMap>(
-                    input["id"].get<uint64_t>(),
-                    input["value"].get<std::string>(),
-                    input["type"].get<std::string>());
-                auto& metadata = input["metadata"];
+                    element.value("id", -1LL),
+                    element.value("value", "unknown"),
+                    element.value("type", "unknown"));
+                auto& metadata = element["metadata"];
                 for (auto& kv : metadata.items()) {
                     outputMap->Set(kv.key().c_str(), kv.value().get<std::string>().c_str());
                 }
