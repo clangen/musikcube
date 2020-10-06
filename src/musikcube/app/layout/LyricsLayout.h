@@ -36,7 +36,7 @@ namespace musik { namespace cube {
             void UpdateAdapter(const std::string& lyrics);
 
             State state { State::NotPlaying };
-            musik::core::ILibraryPtr library, remoteLibrary;
+            musik::core::ILibraryPtr library;
             musik::core::audio::PlaybackService& playback;
             std::shared_ptr<cursespp::SimpleScrollAdapter> adapter;
             std::shared_ptr<cursespp::ListWindow> listView;
