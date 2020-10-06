@@ -49,6 +49,7 @@ set(CORE_SOURCES
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp
   ./library/track/TrackList.cpp
+  ./net/WebSocketClient.cpp
   ./plugin/PluginFactory.cpp
   ./plugin/Plugins.cpp
   ./runtime/Message.cpp

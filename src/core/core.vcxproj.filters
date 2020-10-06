@@ -59,6 +59,9 @@
     <Filter Include="src\library\query\util">
       <UniqueIdentifier>{dc049bce-1b23-4e92-bf64-b5f11ac2d09b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\net">
+      <UniqueIdentifier>{9b550321-941c-4088-8840-e03edd9bf95b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -246,6 +249,9 @@
     </ClCompile>
     <ClCompile Include="library\query\util\Serialization.cpp">
       <Filter>src\library\query\util</Filter>
+    </ClCompile>
+    <ClCompile Include="net\WebSocketClient.cpp">
+      <Filter>src\net</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -498,9 +504,6 @@
     <ClInclude Include="audio\MasterTransport.h">
       <Filter>src\audio</Filter>
     </ClInclude>
-    <ClInclude Include="io\HttpClient.h">
-      <Filter>src\io</Filter>
-    </ClInclude>
     <ClInclude Include="support\LastFm.h">
       <Filter>src\support</Filter>
     </ClInclude>
@@ -608,6 +611,9 @@
     </ClInclude>
     <ClInclude Include="library\query\util\Serialization.h">
       <Filter>src\library\query\util</Filter>
+    </ClInclude>
+    <ClInclude Include="net\WebSocketClient.h">
+      <Filter>src\net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

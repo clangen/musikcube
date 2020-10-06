@@ -524,6 +524,7 @@
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
     <ClCompile Include="library\track\TrackList.cpp" />
+    <ClCompile Include="net\WebSocketClient.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">Create</PrecompiledHeader>
@@ -570,7 +571,6 @@
     <ClInclude Include="debug.h" />
     <ClInclude Include="i18n\Locale.h" />
     <ClInclude Include="io\DataStreamFactory.h" />
-    <ClInclude Include="io\HttpClient.h" />
     <ClInclude Include="io\LocalFileStream.h" />
     <ClInclude Include="library\IIndexer.h" />
     <ClInclude Include="library\ILibrary.h" />
@@ -611,6 +611,7 @@
     <ClInclude Include="library\track\Track.h" />
     <ClInclude Include="library\track\TrackList.h" />
     <ClInclude Include="musikcore_c.h" />
+    <ClInclude Include="net\WebSocketClient.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="config.h" />
     <ClInclude Include="plugin\PluginFactory.h" />

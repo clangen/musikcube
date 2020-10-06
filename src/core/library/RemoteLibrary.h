@@ -40,6 +40,7 @@
 #include <core/library/ILibrary.h>
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
+#include <core/net/WebSocketClient.h>
 
 #include <thread>
 #include <mutex>
@@ -97,6 +98,7 @@ namespace musik { namespace core { namespace library {
             QueryList queryQueue;
 
             musik::core::runtime::IMessageQueue* messageQueue;
+            musik::core::net::WebSocketClient wsc;
 
             std::string identifier;
             int id;
@@ -106,6 +108,7 @@ namespace musik { namespace core { namespace library {
             std::condition_variable_any queueCondition;
             std::recursive_mutex mutex;
             std::atomic<bool> exit;
+
     };
 
 } } }

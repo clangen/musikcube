@@ -41,7 +41,6 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/extensions/permessage_deflate/enabled.hpp>
 #include <websocketpp/server.hpp>
-#include <websocketpp/server.hpp>
 
 #include <mutex>
 #include <condition_variable>
