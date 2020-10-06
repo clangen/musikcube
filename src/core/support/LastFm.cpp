@@ -77,7 +77,7 @@ static void validate(musik::core::lastfm::Session& session) {
 static std::string encode(std::string value) {
     static CURL* curl = curl_easy_init();
     if (curl && value.c_str()) {
-        char* encoded = curl_easy_escape(curl, value.c_str(), value.size());
+        char* encoded = curl_easy_escape(curl, value.c_str(), (int) value.size());
         if (encoded) {
             value = encoded;
             curl_free(encoded);
@@ -109,7 +109,7 @@ static std::string gernateSignedUrlParams(
     EX_MD5_CTX context = {};
     unsigned char rawDigest[16];
     Ex_MD5_Init(&context);
-    Ex_MD5_Update(&context, (const void*)toHash.c_str(), toHash.length());
+    Ex_MD5_Update(&context, (const void*)toHash.c_str(), (unsigned long) toHash.length());
     Ex_MD5_Final(rawDigest, &context);
 
     /* convert to hex */
