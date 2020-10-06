@@ -66,6 +66,10 @@ class SdkWrapper : public Track {
             }
         }
 
+        virtual int64_t GetId() {
+            return track->GetId();
+        }
+
         virtual int GetString(const char* key, char* dst, int size) override {
             return track->GetString(key, dst, size);
         }

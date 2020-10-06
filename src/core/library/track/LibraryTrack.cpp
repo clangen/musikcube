@@ -69,8 +69,11 @@ LibraryTrack::~LibraryTrack() {
 std::string LibraryTrack::GetString(const char* metakey) {
     std::unique_lock<std::mutex> lock(this->mutex);
     MetadataMap::iterator metavalue = this->metadata.find(metakey);
-    if (metavalue != this->metadata.end()) {
-        return metavalue->second;
+    while (metavalue != this->metadata.end()) {
+        if (metavalue->second.size() > 0) {
+            return metavalue->second;
+        }
+        ++metavalue;
     }
     return "";
 }
@@ -112,8 +115,14 @@ double LibraryTrack::GetDouble(const char* key, double defaultValue) {
 }
 
 void LibraryTrack::SetValue(const char* metakey, const char* value) {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    this->metadata.insert(std::pair<std::string, std::string>(metakey,value));
+    if (value) {
+        std::string strValue(value);
+        if (strValue.size()) {
+            std::unique_lock<std::mutex> lock(this->mutex);
+            this->metadata.insert(std::pair<std::string, std::string>(metakey, strValue));
+        }
+
+    }
 }
 
 void LibraryTrack::ClearValue(const char* metakey) {
