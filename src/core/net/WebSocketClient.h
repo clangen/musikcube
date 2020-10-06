@@ -42,13 +42,47 @@ namespace musik { namespace core { namespace net {
 
     class WebSocketClient {
         public:
+            using Client = websocketpp::client<websocketpp::config::asio_client>;
+            using Message = websocketpp::config::asio_client::message_type::ptr;
+            using Connection = websocketpp::connection_hdl;
+
+            enum class State: int {
+                Disconnected = 0,
+                Connecting = 1,
+                Connected = 2
+            };
+
+            enum class ErrorCode: int {
+                QueryFailed = 1,
+                Disconnected = 2
+            };
+
+            class Listener {
+                public:
+                    using Client = WebSocketClient;
+                    using State = Client::State;
+                    using ErrorCode = Client::ErrorCode;
+                    virtual void OnClientInvalidPassword(Client* client) = 0;
+                    virtual void OnClientStateChanged(
+                        Client* client, State newState, State oldState) = 0;
+                    virtual void OnClientQuerySucceeded(
+                        Client* client, int64_t queryId, const std::string& result) = 0;
+                    virtual void OnClientQueryFailed(
+                        Client* client, int64_t queryId, ErrorCode result) = 0;
+            };
+
             WebSocketClient();
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
-        private:
-            typedef websocketpp::client<websocketpp::config::asio_client> Client;
+            void Connect(
+                const std::string& hostname,
+                const short port,
+                const std::string& password);
 
+            int64_t EnqueueQuery(const std::string& data);
+
+        private:
             Client client;
     };
 

@@ -38,7 +38,46 @@
 
 using namespace musik::core::net;
 
+using Client = WebSocketClient::Client;
+using Message = WebSocketClient::Message;
+using Connection = WebSocketClient::Connection;
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+
+void on_open(Client* c, Connection hdl) {
+    std::string msg = "Hello";
+    c->send(hdl, msg, websocketpp::frame::opcode::text);
+    c->get_alog().write(websocketpp::log::alevel::app, "Sent Message: " + msg);
+}
+
+void on_fail(Client* c, Connection hdl) {
+    c->get_alog().write(websocketpp::log::alevel::app, "Connection Failed");
+}
+
+void on_message(Client* c, Connection hdl, Message msg) {
+    c->get_alog().write(websocketpp::log::alevel::app, "Received Reply: " + msg->get_payload());
+    c->close(hdl, websocketpp::close::status::normal, "");
+}
+
+void on_close(Client* c, Connection hdl) {
+    c->get_alog().write(websocketpp::log::alevel::app, "Connection Closed");
+}
+
 WebSocketClient::WebSocketClient() {
+    //new std::thread([]() {
+    //    Client client;
+    //    client.set_access_channels(websocketpp::log::alevel::all);
+    //    client.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    //    client.init_asio();
+    //    websocketpp::lib::error_code ec;
+    //    Client::connection_ptr connection = client.get_connection("ws://192.168.1.221:7905", ec);
+    //    client.set_open_handler(bind(&on_open, &client, ::_1));
+    //    client.set_fail_handler(bind(&on_fail, &client, ::_1));
+    //    client.set_message_handler(bind(&on_message, &client, ::_1, ::_2));
+    //    client.set_close_handler(bind(&on_close, &client, ::_1));
+    //    client.connect(connection);
+    //    client.run();
+    //});
 }
 
 WebSocketClient::~WebSocketClient() {
