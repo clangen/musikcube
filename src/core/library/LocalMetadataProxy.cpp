@@ -331,7 +331,7 @@ ITrack* LocalMetadataProxy::QueryTrackById(int64_t trackId) {
         this->library->Enqueue(search, ILibrary::QuerySynchronous);
 
         if (search->GetStatus() == IQuery::Finished) {
-            return target->GetSdkValue();
+            return search->Result()->GetSdkValue();
         }
     }
     catch (...) {
@@ -352,7 +352,7 @@ ITrack* LocalMetadataProxy::QueryTrackByExternalId(const char* externalId) {
             this->library->Enqueue(search, ILibrary::QuerySynchronous);
 
             if (search->GetStatus() == IQuery::Finished) {
-                return target->GetSdkValue();
+                return search->Result()->GetSdkValue();
             }
         }
         catch (...) {
