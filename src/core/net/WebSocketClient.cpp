@@ -164,18 +164,15 @@ void WebSocketClient::Disconnect() {
 
 std::string WebSocketClient::EnqueueQuery(Query query) {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    if (this->state == State::Connected || this->state == State::Disconnected) {
-        auto messageId = generateMessageId();
-        messageIdToQuery[messageId] = query;
-        if (this->state == State::Connected) {
-            this->client.send(
-                this->connection,
-                createSendRawQueryRequest(query->SerializeQuery(), messageId),
-                websocketpp::frame::opcode::text);
-        }
-        return messageId;
+    auto messageId = generateMessageId();
+    messageIdToQuery[messageId] = query;
+    if (this->state == State::Connected) {
+        this->client.send(
+            this->connection,
+            createSendRawQueryRequest(query->SerializeQuery(), messageId),
+            websocketpp::frame::opcode::text);
     }
-    return "";
+    return messageId;
 }
 
 void WebSocketClient::Reconnect() {

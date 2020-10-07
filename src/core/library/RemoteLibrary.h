@@ -45,7 +45,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-
+#include <unordered_map>
 #include <string>
 
 namespace musik { namespace core { namespace library {
@@ -104,6 +104,10 @@ namespace musik { namespace core { namespace library {
             void RunQueryOnLoopback(QueryContextPtr context, bool notify);
             void RunQueryOnWebSocketClient(QueryContextPtr context, bool notify);
 
+            void OnQueryCompleted(const std::string& messageId, Query query);
+            void OnQueryCompleted(QueryContextPtr context);
+            void NotifyQueryCompleted(QueryContextPtr context);
+
             void ThreadProc();
             QueryContextPtr GetNextQuery();
 
@@ -115,6 +119,8 @@ namespace musik { namespace core { namespace library {
             std::string identifier;
             int id;
             std::string name;
+
+            std::unordered_map<std::string, QueryContextPtr> queriesInFlight;
 
             std::thread* thread;
             std::condition_variable_any queueCondition;

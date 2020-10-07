@@ -192,20 +192,53 @@ void RemoteLibrary::ThreadProc() {
     }
 }
 
+void RemoteLibrary::NotifyQueryCompleted(QueryContextPtr context) {
+    this->QueryCompleted(context->query.get());
+    if (context->callback) {
+        context->callback(context->query);
+    }
+}
+
+void RemoteLibrary::OnQueryCompleted(QueryContextPtr context) {
+    if (context) {
+        if (this->messageQueue) {
+            this->messageQueue->Post(std::make_shared<QueryCompletedMessage>(this, context));
+        }
+        else {
+            this->NotifyQueryCompleted(context);
+        }
+    }
+}
+
+void RemoteLibrary::OnQueryCompleted(const std::string& messageId, Query query) {
+    QueryContextPtr context;
+
+    {
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        context = queriesInFlight[messageId];
+        queriesInFlight.erase(messageId);
+    }
+
+    if (context) {
+        this->OnQueryCompleted(context);
+    }
+}
+
 void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
+#if 0
     this->RunQueryOnLoopback(context, notify);
+#else
+    this->RunQueryOnWebSocketClient(context, notify);
+#endif
 }
 
 void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context, bool notify) {
     if (context) {
-        /* CAL TODO: eventually make the request over a websocket. right now we just
-        do everything via loopback to the local library for testing. we do, however,
+        /* do everything via loopback to the local library for testing. we do, however,
         go through the motions by serializing the inbound query to a string, then
         bouncing through the QueryRegister to create a new instance, run the query
         locally, serialize the result, then deserialize it again to emulate the entire
         flow. */
-
-        wsc.EnqueueQuery(context->query);
 
         auto localLibrary = LibraryFactory::Instance().Default();
         localLibrary->SetMessageQueue(*this->messageQueue);
@@ -213,40 +246,30 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context, bool notify) {
         auto localQuery = QueryRegistry::CreateLocalQueryFor(
             context->query->Name(), context->query->SerializeQuery(), localLibrary);
 
-        auto onComplete = [this, notify, context, localQuery]() {
-            if (notify) {
-                if (this->messageQueue) {
-                    this->messageQueue->Post(std::make_shared<QueryCompletedMessage>(this, context));
-                }
-                else {
-                    this->QueryCompleted(localQuery.get());
-                }
-            }
-            else if (context->callback) {
-                context->callback(context->query);
-            }
-        };
-
         if (!localQuery) {
-            onComplete();
+            OnQueryCompleted(context);
             return;
         }
 
         localLibrary->Enqueue(
             localQuery,
             ILibrary::QuerySynchronous, /* CAL TODO: make async! we have to make TrackList support async lookup first tho. */
-                [context, onComplete, localQuery](auto result) {
+                [this, context, localQuery](auto result) {
                 if (localQuery->GetStatus() == IQuery::Finished) {
                     context->query->DeserializeResult(localQuery->SerializeResult());
                 }
-                onComplete();
+                this->OnQueryCompleted(context);
             });
     }
 }
 
 void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context, bool notify) {
     if (context->query) {
-        wsc.EnqueueQuery(context->query);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        const std::string messageId = wsc.EnqueueQuery(context->query);
+        if (messageId.size()) {
+            queriesInFlight[messageId] = context;
+        }
     }
 }
 
@@ -263,13 +286,7 @@ musik::core::IIndexer* RemoteLibrary::Indexer() {
 void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
         auto context = static_cast<QueryCompletedMessage*>(&message)->GetContext();
-        auto query = context->query;
-
-        this->QueryCompleted(context->query.get());
-
-        if (context->callback) {
-            context->callback(query);
-        }
+        this->NotifyQueryCompleted(context);
     }
 }
 
@@ -284,9 +301,9 @@ void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State o
 }
 
 void RemoteLibrary::OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) {
-
+    this->OnQueryCompleted(messageId, query);
 }
 
 void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::ErrorCode result) {
-
+    this->OnQueryCompleted(messageId, query);
 }
