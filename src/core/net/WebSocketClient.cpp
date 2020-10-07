@@ -100,7 +100,7 @@ WebSocketClient::WebSocketClient(Listener* listener) {
         this->SetState(State::Authenticating);
         this->client.send(
             connection,
-            createAuthenticateRequest(""),
+            createAuthenticateRequest(this->password),
             websocketpp::frame::opcode::text);
     });
 
