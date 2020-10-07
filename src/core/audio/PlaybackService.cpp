@@ -60,8 +60,6 @@ using musik::core::ILibraryPtr;
 using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
 
-#undef DEBUG_USE_HTTP_URIS
-
 #define NO_POSITION (size_t) -1
 #define START_OVER (size_t) -2
 
@@ -1094,11 +1092,7 @@ std::string PlaybackService::UriAtIndex(size_t index) {
     if (index < this->playlist.Count()) {
         auto track = this->playlist.Get(index);
         if (track) {
-#ifdef DEBUG_USE_HTTP_URIS
-            return "http://localhost:7906/audio/" + std::to_string(track->GetId());
-#else
-            return track->Uri();
-#endif
+            return this->library->GetResourceLocator().GetTrackUri(track.get());
         }
     }
     return "";

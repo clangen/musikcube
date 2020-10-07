@@ -47,13 +47,15 @@ class FileReadStream;
 
 class HttpDataStream : public IDataStream {
     public:
+        static const std::string kRemoteTrackHost;
+
         using OpenFlags = musik::core::sdk::OpenFlags;
 
         HttpDataStream();
         ~HttpDataStream();
 
         virtual void Release();
-        virtual bool Open(const char *uri, OpenFlags flags = OpenFlags::Read);
+        virtual bool Open(const char *rawUri, OpenFlags flags = OpenFlags::Read);
         virtual bool Close();
         virtual bool Readable() { return true; }
         virtual bool Writable() { return false; }
@@ -81,18 +83,17 @@ class HttpDataStream : public IDataStream {
         void ThreadProc();
 
         static size_t CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
-        static size_t CurlHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
+        static size_t CurlReadHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
+        static int CurlTransferCallback(void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
 
-        static int CurlTransferCallback(
-            void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
-
-        std::string uri, type;
+        std::string resolvedUri, type;
         size_t length;
         std::string filename;
         FILE* writeFile;
         CURL* curlEasy;
+        curl_slist *curlHeaders{ nullptr };
 
-        volatile long written;
+        volatile long written, totalWritten;
         volatile bool interrupted;
         volatile State state;
 

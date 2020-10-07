@@ -54,6 +54,18 @@ using namespace musik::core::runtime;
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
+class LocalResourceLocator: public ILibrary::IResourceLocator {
+    public:
+        virtual std::string GetTrackUri(
+            musik::core::sdk::ITrack* track,
+            const std::string& defaultUri) override
+        {
+            char buffer[4096];
+            int size = track->Uri(buffer, sizeof(buffer));
+            return size > 0 ? std::string(buffer) : defaultUri;
+        }
+} sResourceLocator;
+
 class LocalLibrary::QueryCompletedMessage: public Message {
     public:
         using QueryContextPtr = LocalLibrary::QueryContextPtr;
@@ -254,6 +266,10 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
 
 void LocalLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
     this->messageQueue = &queue;
+}
+
+ILibrary::IResourceLocator& LocalLibrary::GetResourceLocator() {
+    return sResourceLocator;
 }
 
 void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {

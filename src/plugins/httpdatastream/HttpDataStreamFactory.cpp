@@ -48,7 +48,10 @@ HttpDataStreamFactory::~HttpDataStreamFactory() {
 bool HttpDataStreamFactory::CanRead(const char *uri) {
     std::string str(uri);
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    return str.find("http://") == 0 || str.find("https://") == 0;
+    return
+        str.find("http://") == 0 ||
+        str.find("https://") == 0 ||
+        str.find(HttpDataStream::kRemoteTrackHost) == 0;
 }
 
 IDataStream* HttpDataStreamFactory::Open(const char *uri, OpenFlags flags) {

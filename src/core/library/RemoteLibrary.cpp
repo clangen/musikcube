@@ -40,11 +40,11 @@
 #include <core/support/Preferences.h>
 #include <core/library/Indexer.h>
 #include <core/library/IQuery.h>
+#include <core/library/LibraryFactory.h>
 #include <core/library/QueryRegistry.h>
 #include <core/runtime/Message.h>
 #include <core/debug.h>
-
-#include <core/library/LibraryFactory.h> /* CAL TODO: remove this */
+#include <json.hpp>
 
 static const std::string TAG = "RemoteLibrary";
 
@@ -54,6 +54,9 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 
 #define MESSAGE_QUERY_COMPLETED 5000
+
+static const std::string kServerHost = "127.0.0.1";
+static const std::string kServerPassword = "";
 
 class NullIndexer: public musik::core::IIndexer {
     public:
@@ -89,13 +92,13 @@ ILibraryPtr RemoteLibrary::Create(std::string name, int id) {
     return lib;
 }
 
-RemoteLibrary::RemoteLibrary(std::string name,int id)
+RemoteLibrary::RemoteLibrary(std::string name, int id)
 : name(name)
 , id(id)
 , exit(false)
 , messageQueue(nullptr)
 , wsc(this) {
-    this->wsc.Connect("ws://192.168.1.36:7905", "");
+    this->wsc.Connect("ws://" + kServerHost + ":7905", kServerPassword);
     this->identifier = std::to_string(id);
     this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
 }
@@ -137,6 +140,25 @@ bool RemoteLibrary::IsConfigured() {
     return LibraryFactory::Instance().Default()->IsConfigured(); /* CAL TODO FIXME */
 }
 
+static inline bool isQueryDone(RemoteLibrary::Query query) {
+    switch (query->GetStatus()) {
+        case IQuery::Idle:
+        case IQuery::Running:
+            return false;
+        default:
+            return true;
+    }
+}
+
+bool RemoteLibrary::IsQueryInFlight(Query query) {
+    for (auto& kv : this->queriesInFlight) {
+        if (query == kv.second->query) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
         auto defaultLocalLibrary = LibraryFactory::Instance().Default();
@@ -153,7 +175,11 @@ int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callba
         if (options & ILibrary::QuerySynchronous) {
             this->RunQuery(context); /* false = do not notify via QueryCompleted */
             std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
-            while (!this->exit && context->query->GetStatus() == IQuery::Idle) {
+            while (
+                !this->exit &&
+                this->IsQueryInFlight(context->query) &&
+                !isQueryDone(context->query))
+            {
                 this->syncQueryCondition.wait(lock);
             }
         }
@@ -310,4 +336,29 @@ void RemoteLibrary::OnClientQuerySucceeded(Client* client, const std::string& me
 
 void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::ErrorCode result) {
     this->OnQueryCompleted(messageId, query);
+}
+
+/* RemoteLibrary::RemoteResourceLocator */
+
+std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) {
+    std::string type = ".mp3";
+
+    char buffer[4096];
+    int size = track->Uri(buffer, sizeof(buffer));
+    if (size) {
+        std::string originalUri = buffer;
+        std::string::size_type lastDot = originalUri.find_last_of(".");
+        if (lastDot != std::string::npos) {
+            type = originalUri.substr(lastDot).c_str();
+        }
+    }
+
+    const std::string uri = "http://" + kServerHost + ":7906/audio/id/" + std::to_string(track->GetId());
+    nlohmann::json path = {
+        { "uri", uri },
+        { "type", type },
+        { "password", kServerPassword }
+    };
+
+    return "musikcore://remote-track/" + path.dump();
 }

@@ -162,7 +162,7 @@ LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
     if (parts.size() == 2 && parts.at(0) == PREFIX) {
         try {
             auto entry = std::shared_ptr<Entry>(new Entry());
-            entry->id = std::stoul(parts.at(1).c_str());
+            entry->id = std::stoull(parts.at(1).c_str());
             entry->path = path.string();
             entry->type = ext;
             entry->time = fs::last_write_time(path);

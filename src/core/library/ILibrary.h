@@ -40,6 +40,7 @@
 
 #include <core/library/IIndexer.h>
 #include <core/library/IQuery.h>
+#include <core/sdk/ITrack.h>
 #include <core/runtime/IMessageQueue.h>
 
 namespace musik { namespace core {
@@ -50,6 +51,13 @@ namespace musik { namespace core {
             using Callback = std::function<void(QueryPtr)>;
 
             sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
+
+            class IResourceLocator {
+                public:
+                    virtual std::string GetTrackUri(
+                        musik::core::sdk::ITrack* track,
+                        const std::string& defaultUri = "") = 0;
+            };
 
             enum QueryFlag {
                 QuerySynchronous = 1
@@ -67,6 +75,7 @@ namespace musik { namespace core {
             virtual const std::string& Name() = 0;
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) = 0;
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
+            virtual IResourceLocator& GetResourceLocator() = 0;
             virtual bool IsConfigured() = 0;
             virtual void Close() = 0;
     };

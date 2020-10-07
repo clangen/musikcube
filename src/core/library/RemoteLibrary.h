@@ -54,7 +54,8 @@ namespace musik { namespace core { namespace library {
         public ILibrary,
         public musik::core::runtime::IMessageTarget,
         public std::enable_shared_from_this<RemoteLibrary>,
-        public musik::core::net::WebSocketClient::Listener
+        public musik::core::net::WebSocketClient::Listener,
+        public ILibrary::IResourceLocator
     {
         public:
             using Client = musik::core::net::WebSocketClient;
@@ -75,6 +76,7 @@ namespace musik { namespace core { namespace library {
             virtual const std::string& Name() override;
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
+            virtual IResourceLocator& GetResourceLocator() { return *this; }
             virtual bool IsConfigured() override;
             virtual void Close() override;
 
@@ -86,6 +88,9 @@ namespace musik { namespace core { namespace library {
             virtual void OnClientStateChanged(Client* client, State newState, State oldState) override;
             virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) override;
             virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::ErrorCode reason) override;
+
+            /* IResourceLocator */
+            virtual std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
 
         private:
             class QueryCompletedMessage;
@@ -107,6 +112,8 @@ namespace musik { namespace core { namespace library {
             void OnQueryCompleted(const std::string& messageId, Query query);
             void OnQueryCompleted(QueryContextPtr context);
             void NotifyQueryCompleted(QueryContextPtr context);
+
+            bool IsQueryInFlight(Query query);
 
             void ThreadProc();
             QueryContextPtr GetNextQuery();

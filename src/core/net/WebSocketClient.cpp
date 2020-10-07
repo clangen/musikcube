@@ -79,13 +79,12 @@ static inline std::string createSendRawQueryRequest(const std::string& rawQuery,
     return rawQueryJson.dump();
 }
 
-static inline bool extractMessageIdAndQueryResult(
-    nlohmann::json& responseJson, std::string& messageId, std::string& rawResult)
+static inline bool extractRawQueryResult(
+    nlohmann::json& responseJson, std::string& rawResult)
 {
     if (responseJson["name"].get<std::string>() != "send_raw_query") {
         return false;
     }
-    messageId = responseJson["id"].get<std::string>();
     rawResult = responseJson["options"]["raw_query_data"].get<std::string>();
     return true;
 }
@@ -111,21 +110,29 @@ WebSocketClient::WebSocketClient(Listener* listener) {
     client.set_message_handler([this](Connection connection, Message message) {
         nlohmann::json responseJson = nlohmann::json::parse(message->get_payload());
         auto name = responseJson["name"].get<std::string>();
+        auto messageId = responseJson["id"].get<std::string>();
         if (name == "authenticate") {
             this->connection = connection;
             this->SetState(State::Connected);
         }
         else if (name == "send_raw_query") {
-            std::string messageId, rawResult;
-            if (extractMessageIdAndQueryResult(responseJson, messageId, rawResult)) {
-                auto query = this->messageIdToQuery[messageId];
-                if (query) {
-                    query->DeserializeResult(rawResult);
-                    this->listener->OnClientQuerySucceeded(this, messageId, query);
-                }
-                else {
-                    this->listener->OnClientQueryFailed(
-                        this, messageId, query, ErrorCode::QueryNotFound);
+            auto query = this->messageIdToQuery[messageId];
+            auto& options = responseJson["options"];
+            if (options.find("success") != options.end() && options["success"] == false) {
+                this->listener->OnClientQueryFailed(
+                    this, messageId, query, ErrorCode::QueryFailed);
+            }
+            else {
+                std::string rawResult;
+                if (extractRawQueryResult(responseJson, rawResult)) {
+                    if (query) {
+                        query->DeserializeResult(rawResult);
+                        this->listener->OnClientQuerySucceeded(this, messageId, query);
+                    }
+                    else {
+                        this->listener->OnClientQueryFailed(
+                            this, messageId, query, ErrorCode::QueryNotFound);
+                    }
                 }
             }
         }

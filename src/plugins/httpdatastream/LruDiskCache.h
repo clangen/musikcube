@@ -36,6 +36,7 @@
 #include <vector>
 #include <mutex>
 #include <ctime>
+#include <cstdint>
 
 #include <boost/filesystem.hpp>
 
@@ -56,7 +57,7 @@ class LruDiskCache {
 
     private:
         struct Entry {
-            size_t id;
+            uint64_t id;
             std::string path;
             std::string type;
             std::time_t time;
