@@ -624,6 +624,7 @@
     <ClInclude Include="sdk\constants.h" />
     <ClInclude Include="sdk\Filesystem.h" />
     <ClInclude Include="sdk\HttpClient.h" />
+    <ClInclude Include="sdk\IAllocator.h" />
     <ClInclude Include="sdk\IAnalyzer.h" />
     <ClInclude Include="sdk\IStreamingEncoder.h" />
     <ClInclude Include="sdk\IBuffer.h" />

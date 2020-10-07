@@ -615,5 +615,8 @@
     <ClInclude Include="net\WebSocketClient.h">
       <Filter>src\net</Filter>
     </ClInclude>
+    <ClInclude Include="sdk\IAllocator.h">
+      <Filter>src\sdk</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

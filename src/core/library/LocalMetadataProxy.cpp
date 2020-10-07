@@ -48,6 +48,8 @@
 #include <core/library/query/SavePlaylistQuery.h>
 #include <core/library/query/TrackMetadataQuery.h>
 #include <core/library/query/TrackListQueryBase.h>
+#include <core/library/QueryRegistry.h>
+#include <core/library/LibraryFactory.h>
 #include <core/library/track/LibraryTrack.h>
 #include <core/library/LocalLibraryConstants.h>
 #include <core/runtime/Message.h>
@@ -55,6 +57,7 @@
 #include <core/support/Common.h>
 #include <vector>
 #include <map>
+#include <json.hpp>
 
 #define TAG "LocalMetadataProxy"
 
@@ -775,4 +778,40 @@ ITrackList* LocalMetadataProxy::QueryTracksByExternalId(
     }
 
     return nullptr;
+}
+
+bool LocalMetadataProxy::SendRawQuery(
+    const char* query, IAllocator& allocator, char** resultData, int* resultSize)
+{
+    try {
+        nlohmann::json json = nlohmann::json::parse(query);
+        auto localLibrary = LibraryFactory::Instance().Default();
+        std::string name = json["name"];
+        auto libraryQuery = QueryRegistry::CreateLocalQueryFor(name, query, localLibrary);
+        if (libraryQuery) {
+            localLibrary->Enqueue(libraryQuery, ILibrary::QuerySynchronous);
+            if (libraryQuery->GetStatus() == IQuery::Finished) {
+                std::string result = libraryQuery->SerializeResult();
+                *resultData = (char*) allocator.Allocate(result.size() + 1);
+                if (*resultData) {
+                    *resultSize = result.size() + 1;
+                    strncpy(*resultData, result.c_str(), *resultSize);
+                    return true;
+                }
+                else {
+                    musik::debug::error(TAG, "SendRawQuery failed: memory allocation failed");
+                }
+            }
+            else {
+                musik::debug::error(TAG, "SendRawQuery failed: query returned failure");
+            }
+        }
+        else {
+            musik::debug::error(TAG, "SendRawQuery failed: could not find query in registry");
+        }
+    }
+    catch (...) {
+        musik::debug::error(TAG, "SendRawQuery failed: exception thrown");
+    }
+    return false;
 }

@@ -137,6 +137,7 @@ class WebSocketServer {
         void RespondWithFailure(connection_hdl connection, json& request);
         void RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id);
 
+        void RespondWithSendRawQuery(connection_hdl connection, json& request);
         void RespondWithSetVolume(connection_hdl connection, json& request);
         void RespondWithPlaybackOverview(connection_hdl connection, json& reuest);
         bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);

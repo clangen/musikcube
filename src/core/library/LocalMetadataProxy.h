@@ -151,6 +151,12 @@ namespace musik { namespace core { namespace library { namespace query {
                 const int* sortOrders,
                 int count) override;
 
+            virtual bool SendRawQuery(
+                const char* query,
+                musik::core::sdk::IAllocator& allocator,
+                char** resultData,
+                int* resultSize) override;
+
             virtual void Release() override;
 
         private:

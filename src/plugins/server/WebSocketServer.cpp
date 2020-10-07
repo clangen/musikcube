@@ -307,6 +307,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
             this->RespondWithSuccess(connection, request);
             return;
         }
+        if (name == request::send_raw_query) {
+            this->RespondWithSendRawQuery(connection, request);
+            return;
+        }
         if (name == request::pause_or_resume) {
             context.playback->PauseOrResume();
             this->RespondWithSuccess(connection, request);
@@ -594,6 +598,25 @@ void WebSocketServer::RespondWithFailure(connection_hdl connection, json& reques
     };
 
     wss->send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
+}
+
+void WebSocketServer::RespondWithSendRawQuery(connection_hdl connection, json& request) {
+    json& options = request[message::options];
+    std::string data = options.value(key::raw_query_data, "");
+    PluginAllocator<WebSocketServer> allocator;
+    bool responded = false;
+    char* responseData = nullptr;
+    int responseSize = 0;
+    if (context.metadataProxy->SendRawQuery(data.c_str(), allocator, &responseData, &responseSize)) {
+        if (responseSize) {
+            this->RespondWithOptions(connection, request, { { key::raw_query_data, responseData } });
+            responded = true;
+        }
+        allocator.Free((void*) responseData);
+    }
+    if (!responded) {
+        this->RespondWithFailure(connection, request);
+    }
 }
 
 void WebSocketServer::RespondWithSetVolume(connection_hdl connection, json& request) {

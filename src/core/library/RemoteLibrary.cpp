@@ -93,7 +93,8 @@ RemoteLibrary::RemoteLibrary(std::string name,int id)
 : name(name)
 , id(id)
 , exit(false)
-, messageQueue(nullptr) {
+, messageQueue(nullptr)
+, wsc(this) {
     this->identifier = std::to_string(id);
     this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
 }
@@ -192,6 +193,10 @@ void RemoteLibrary::ThreadProc() {
 }
 
 void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
+    this->RunQueryOnLoopback(context, notify);
+}
+
+void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context, bool notify) {
     if (context) {
         /* CAL TODO: eventually make the request over a websocket. right now we just
         do everything via loopback to the local library for testing. we do, however,
@@ -199,6 +204,8 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
         bouncing through the QueryRegister to create a new instance, run the query
         locally, serialize the result, then deserialize it again to emulate the entire
         flow. */
+
+        wsc.EnqueueQuery(context->query);
 
         auto localLibrary = LibraryFactory::Instance().Default();
         localLibrary->SetMessageQueue(*this->messageQueue);
@@ -226,9 +233,9 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
         }
 
         localLibrary->Enqueue(
-            localQuery, 
+            localQuery,
             ILibrary::QuerySynchronous, /* CAL TODO: make async! we have to make TrackList support async lookup first tho. */
-            [context, onComplete, localQuery](auto result) {
+                [context, onComplete, localQuery](auto result) {
                 if (localQuery->GetStatus() == IQuery::Finished) {
                     context->query->DeserializeResult(localQuery->SerializeResult());
                 }
@@ -237,9 +244,21 @@ void RemoteLibrary::RunQuery(QueryContextPtr context, bool notify) {
     }
 }
 
+void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context, bool notify) {
+    if (context->query) {
+        wsc.EnqueueQuery(context->query);
+    }
+}
+
 void RemoteLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
     this->messageQueue = &queue;
 }
+
+musik::core::IIndexer* RemoteLibrary::Indexer() {
+    return &kNullIndexer;
+}
+
+/* IMessageTarget */
 
 void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
@@ -254,6 +273,20 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
 }
 
-musik::core::IIndexer* RemoteLibrary::Indexer() {
-    return &kNullIndexer;
+/* WebSocketClient::Listener */
+
+void RemoteLibrary::OnClientInvalidPassword(Client* client) {
+
+}
+
+void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State oldState) {
+
+}
+
+void RemoteLibrary::OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) {
+
+}
+
+void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::ErrorCode result) {
+
 }

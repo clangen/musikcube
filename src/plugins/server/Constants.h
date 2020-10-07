@@ -115,6 +115,7 @@ namespace key {
     static const std::string delta = "delta";
     static const std::string relative = "relative";
     static const std::string password = "password";
+    static const std::string raw_query_data = "raw_query_data";
     static const std::string authenticated = "authenticated";
     static const std::string environment = "environment";
     static const std::string playlist_id = "playlist_id";
@@ -162,6 +163,7 @@ namespace type {
 namespace request {
     static const std::string authenticate = "authenticate";
     static const std::string ping = "ping";
+    static const std::string send_raw_query = "send_raw_query";
     static const std::string pause_or_resume = "pause_or_resume";
     static const std::string stop = "stop";
     static const std::string previous = "previous";

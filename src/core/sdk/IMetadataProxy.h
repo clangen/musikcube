@@ -38,6 +38,7 @@
 #include "IValueList.h"
 #include "IMapList.h"
 #include "ITrack.h"
+#include "IAllocator.h"
 
 namespace musik { namespace core { namespace sdk {
 
@@ -139,6 +140,12 @@ namespace musik { namespace core { namespace sdk {
                 const char** externalIds,
                 const int* sortOrders,
                 int count) = 0;
+
+            virtual bool SendRawQuery(
+                const char* query,
+                IAllocator& allocator,
+                char** resultData,
+                int* resultSize) = 0;
 
             virtual void Release() = 0;
     };

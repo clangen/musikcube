@@ -35,9 +35,11 @@
 #pragma once
 
 #include <core/config.h>
+#include <core/library/IQuery.h>
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/client.hpp>
 #include <thread>
+#include <unordered_map>
 
 namespace musik { namespace core { namespace net {
 
@@ -46,16 +48,21 @@ namespace musik { namespace core { namespace net {
             using Client = websocketpp::client<websocketpp::config::asio_client>;
             using Message = websocketpp::config::asio_client::message_type::ptr;
             using Connection = websocketpp::connection_hdl;
+            using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
 
             enum class State: int {
                 Disconnected = 0,
                 Connecting = 1,
-                Connected = 2
+                Authenticating = 2,
+                Connected = 3,
+                Disconnecting = 4,
             };
 
             enum class ErrorCode: int {
                 QueryFailed = 1,
-                Disconnected = 2
+                Disconnected = 2,
+                AuthFailed = 3,
+                QueryNotFound = 4,
             };
 
             class Listener {
@@ -64,32 +71,36 @@ namespace musik { namespace core { namespace net {
                     using State = Client::State;
                     using ErrorCode = Client::ErrorCode;
                     virtual void OnClientInvalidPassword(Client* client) = 0;
-                    virtual void OnClientStateChanged(
-                        Client* client, State newState, State oldState) = 0;
-                    virtual void OnClientQuerySucceeded(
-                        Client* client, int64_t queryId, const std::string& result) = 0;
-                    virtual void OnClientQueryFailed(
-                        Client* client, int64_t queryId, ErrorCode result) = 0;
+                    virtual void OnClientStateChanged(Client* client, State newState, State oldState) = 0;
+                    virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) = 0;
+                    virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, ErrorCode result) = 0;
             };
 
-            WebSocketClient();
+            WebSocketClient(Listener* listener);
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
-            void Connect(
-                const std::string& hostname,
-                const short port,
-                const std::string& password);
-
-            int64_t EnqueueQuery(const std::string& data);
-
+            void Connect(const std::string& uri, const std::string& password);
+            void Disconnect();
             void Reconnect();
 
+            std::string EnqueueQuery(Query query);
+
         private:
+            void SetState(State state);
+            void InvalidatePendingQueries();
+            void SendPendingQueries();
+
             Client client;
+            Connection connection;
             boost::asio::io_service io;
             std::shared_ptr<std::thread> thread;
             std::recursive_mutex mutex;
+            std::string password;
+            std::unordered_map<std::string, Query> messageIdToQuery;
+            bool quit{ false };
+            State state{ State::Disconnected };
+            Listener* listener{ nullptr };
     };
 
 } } }

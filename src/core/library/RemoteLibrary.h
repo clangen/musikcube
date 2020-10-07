@@ -53,9 +53,12 @@ namespace musik { namespace core { namespace library {
     class RemoteLibrary :
         public ILibrary,
         public musik::core::runtime::IMessageTarget,
-        public std::enable_shared_from_this<RemoteLibrary>
+        public std::enable_shared_from_this<RemoteLibrary>,
+        public musik::core::net::WebSocketClient::Listener
     {
         public:
+            using Client = musik::core::net::WebSocketClient;
+            using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
             static ILibraryPtr Create(std::string name, int id);
 
             RemoteLibrary(const RemoteLibrary&) = delete;
@@ -78,6 +81,12 @@ namespace musik { namespace core { namespace library {
             /* IMessageTarget */
             virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
+            /* WebSocketClient::Listener */
+            virtual void OnClientInvalidPassword(Client* client) override;
+            virtual void OnClientStateChanged(Client* client, State newState, State oldState) override;
+            virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) override;
+            virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::ErrorCode reason) override;
+
         private:
             class QueryCompletedMessage;
 
@@ -92,6 +101,9 @@ namespace musik { namespace core { namespace library {
             RemoteLibrary(std::string name, int id); /* ctor */
 
             void RunQuery(QueryContextPtr context, bool notify = true);
+            void RunQueryOnLoopback(QueryContextPtr context, bool notify);
+            void RunQueryOnWebSocketClient(QueryContextPtr context, bool notify);
+
             void ThreadProc();
             QueryContextPtr GetNextQuery();
 
