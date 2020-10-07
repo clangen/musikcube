@@ -100,9 +100,9 @@ namespace musik { namespace core { namespace library {
 
             RemoteLibrary(std::string name, int id); /* ctor */
 
-            void RunQuery(QueryContextPtr context, bool notify = true);
-            void RunQueryOnLoopback(QueryContextPtr context, bool notify);
-            void RunQueryOnWebSocketClient(QueryContextPtr context, bool notify);
+            void RunQuery(QueryContextPtr context);
+            void RunQueryOnLoopback(QueryContextPtr context);
+            void RunQueryOnWebSocketClient(QueryContextPtr context);
 
             void OnQueryCompleted(const std::string& messageId, Query query);
             void OnQueryCompleted(QueryContextPtr context);
@@ -123,8 +123,8 @@ namespace musik { namespace core { namespace library {
             std::unordered_map<std::string, QueryContextPtr> queriesInFlight;
 
             std::thread* thread;
-            std::condition_variable_any queueCondition;
-            std::recursive_mutex mutex;
+            std::condition_variable_any queueCondition, syncQueryCondition;
+            std::recursive_mutex queueMutex;
             std::atomic<bool> exit;
 
     };
