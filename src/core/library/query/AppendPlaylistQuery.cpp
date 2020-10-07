@@ -153,11 +153,15 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
 
     transaction.CommitAndRestart();
 
-    this->library->GetMessageQueue().Broadcast(
-        Message::Create(nullptr, message::PlaylistModified, playlistId));
+    this->SendPlaylistMutationBroadcast();
 
     this->result = true;
     return true;
+}
+
+void AppendPlaylistQuery::SendPlaylistMutationBroadcast() {
+    this->library->GetMessageQueue().Broadcast(
+        Message::Create(nullptr, message::PlaylistModified, playlistId));
 }
 
 /* ISerializableQuery */
@@ -182,8 +186,11 @@ std::string AppendPlaylistQuery::SerializeResult() {
 
 void AppendPlaylistQuery::DeserializeResult(const std::string& data) {
     auto input = nlohmann::json::parse(data);
-    this->SetStatus(input["result"].get<bool>() == true
-        ? IQuery::Finished : IQuery::Failed);
+    this->result = input["result"].get<bool>();
+    this->SetStatus(result ? IQuery::Finished : IQuery::Failed);
+    if (result) {
+        SendPlaylistMutationBroadcast();
+    }
 }
 
 std::shared_ptr<AppendPlaylistQuery> AppendPlaylistQuery::DeserializeQuery(

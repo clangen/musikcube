@@ -84,14 +84,17 @@ bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {
             this->result = false;
         }
         else {
-            this->library->GetMessageQueue().Broadcast(
-                Message::Create(nullptr, message::PlaylistDeleted, playlistId));
+            this->SendPlaylistMutationBroadcast();
             this->result = true;
         }
     }
     return this->result;
 }
 
+void DeletePlaylistQuery::SendPlaylistMutationBroadcast() {
+    this->library->GetMessageQueue().Broadcast(
+        Message::Create(nullptr, message::PlaylistModified, playlistId));
+}
 
 /* ISerializableQuery */
 
@@ -112,8 +115,11 @@ std::string DeletePlaylistQuery::SerializeResult() {
 
 void DeletePlaylistQuery::DeserializeResult(const std::string& data) {
     auto input = nlohmann::json::parse(data);
-    this->SetStatus(input["result"].get<bool>() == true
-        ? IQuery::Finished : IQuery::Failed);
+    this->result = input["result"].get<bool>();
+    this->SetStatus(result ? IQuery::Finished : IQuery::Failed);
+    if (this->result) {
+        this->SendPlaylistMutationBroadcast();
+    }
 }
 
 std::shared_ptr<DeletePlaylistQuery> DeletePlaylistQuery::DeserializeQuery(

@@ -63,6 +63,8 @@ namespace musik { namespace core { namespace library { namespace query {
             virtual bool OnRun(musik::core::db::Connection &db);
 
         private:
+            void SendPlaylistMutationBroadcast();
+
             int64_t playlistId;
             musik::core::ILibraryPtr library;
             bool result{ false };

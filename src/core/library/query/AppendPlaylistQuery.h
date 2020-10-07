@@ -71,6 +71,9 @@ namespace musik { namespace core { namespace library { namespace query {
         protected:
             virtual bool OnRun(musik::core::db::Connection &db);
 
+        private:
+            void SendPlaylistMutationBroadcast();
+
             musik::core::ILibraryPtr library;
             std::shared_ptr<musik::core::TrackList> sharedTracks;
             musik::core::sdk::ITrackList* rawTracks;
