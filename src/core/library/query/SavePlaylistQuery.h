@@ -144,6 +144,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
             SavePlaylistQuery(musik::core::ILibraryPtr library); /* for query (de)serialization */
 
+            void SendPlaylistMutationBroadcast();
+
             struct TrackListWrapper {
                 TrackListWrapper();
                 TrackListWrapper(std::shared_ptr<musik::core::TrackList> shared);

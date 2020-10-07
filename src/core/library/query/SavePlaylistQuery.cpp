@@ -344,9 +344,6 @@ bool SavePlaylistQuery::CreatePlaylist(musik::core::db::Connection &db) {
         }
     }
 
-    this->library->GetMessageQueue().Broadcast(
-        Message::Create(nullptr, message::PlaylistCreated, playlistId));
-
     return true;
 }
 
@@ -354,14 +351,7 @@ bool SavePlaylistQuery::RenamePlaylist(musik::core::db::Connection &db) {
     Statement renamePlaylist(RENAME_PLAYLIST_QUERY.c_str(), db);
     renamePlaylist.BindText(0, this->playlistName);
     renamePlaylist.BindInt64(1, this->playlistId);
-    bool result = (renamePlaylist.Step() != db::Error);
-
-    if (result) {
-        this->library->GetMessageQueue().Broadcast(
-            Message::Create(nullptr, message::PlaylistRenamed, playlistId));
-    }
-
-    return result;
+    return (renamePlaylist.Step() != db::Error);
 }
 
 bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
@@ -382,9 +372,6 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
         return false;
     }
 
-    this->library->GetMessageQueue().Broadcast(
-        Message::Create(nullptr, message::PlaylistModified, playlistId));
-
     return true;
 }
 
@@ -399,9 +386,6 @@ bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
         transaction.Cancel();
     }
 
-    this->library->GetMessageQueue().Broadcast(
-        Message::Create(nullptr, message::PlaylistModified, playlistId));
-
     return result;
 }
 
@@ -413,7 +397,31 @@ bool SavePlaylistQuery::OnRun(musik::core::db::Connection &db) {
         case Operation::Create: this->result = this->CreatePlaylist(db); break;
         case Operation::Append: this->result = this->AppendToPlaylist(db); break;
     }
+    if (this->result) {
+        this->SendPlaylistMutationBroadcast();
+    }
     return this->result;
+}
+
+void SavePlaylistQuery::SendPlaylistMutationBroadcast() {
+    switch (this->op) {
+        case Operation::Rename:
+            this->library->GetMessageQueue().Broadcast(
+                Message::Create(nullptr, message::PlaylistRenamed, playlistId));
+            break;
+        case Operation::Replace:
+            this->library->GetMessageQueue().Broadcast(
+                Message::Create(nullptr, message::PlaylistModified, playlistId));
+            break;
+        case Operation::Create:
+            this->library->GetMessageQueue().Broadcast(
+                Message::Create(nullptr, message::PlaylistCreated, playlistId));
+            break;
+        case Operation::Append:
+            this->library->GetMessageQueue().Broadcast(
+                Message::Create(nullptr, message::PlaylistModified, playlistId)); 
+            break;
+    }
 }
 
 /* SUPPORTING TYPES */
@@ -469,15 +477,18 @@ ITrackList* SavePlaylistQuery::TrackListWrapper::Get() {
 /* ISerializableQuery */
 
 std::string SavePlaylistQuery::SerializeQuery() {
+    nlohmann::json tracksJson = tracks.Get()
+        ? ITrackListToJsonIdList(*tracks.Get())
+        : nlohmann::json();
     nlohmann::json output = {
-    { "name", kQueryName },
+        { "name", kQueryName },
         { "options", {
             { "op", this->op },
             { "playlistName", this->playlistName },
             { "categoryType", this->categoryType },
             { "playlistId", this->playlistId },
             { "categoryId", this->categoryId },
-            { "tracks", ITrackListToJsonIdList(*tracks.Get()) }
+            { "tracks", tracksJson }
         }}
     };
     return output.dump();
@@ -490,8 +501,11 @@ std::string SavePlaylistQuery::SerializeResult() {
 
 void SavePlaylistQuery::DeserializeResult(const std::string& data) {
     auto input = nlohmann::json::parse(data);
-    this->SetStatus(input["result"].get<bool>() == true
-        ? IQuery::Finished : IQuery::Failed);
+    this->result = input["result"].get<bool>();
+    this->SetStatus(result ? IQuery::Finished : IQuery::Failed);
+    if (result) {
+        SendPlaylistMutationBroadcast();
+    }
 }
 
 std::shared_ptr<SavePlaylistQuery> SavePlaylistQuery::DeserializeQuery(
