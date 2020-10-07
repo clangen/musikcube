@@ -34,6 +34,10 @@
 
 #pragma once
 
+/* curses defines a timeout() method that causes issues with
+asio's streambuf. include it up front so work around this */
+#include <boost/asio/basic_socket_streambuf.hpp>
+
 #include <core/config.h>
 #include <core/i18n/Locale.h>
 #include <core/library/ILibrary.h>

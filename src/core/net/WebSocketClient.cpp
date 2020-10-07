@@ -34,7 +34,7 @@
 
 #include "pch.hpp"
 
-#include <core/net/WebSocketclient.h>
+#include <core/net/WebSocketClient.h>
 #include <core/library/query/AllCategoriesQuery.h>
 #include <atomic>
 #include <json.hpp>
@@ -49,7 +49,7 @@ using Connection = WebSocketClient::Connection;
 
 static const std::string sUri = "ws://127.0.0.1:7905";
 
-static std::atomic<int> nextMessageId = 0;
+static std::atomic<int> nextMessageId(0);
 
 static inline std::string generateMessageId() {
     return "integrated-websocket-client-" + std::to_string(nextMessageId.fetch_add(1));
