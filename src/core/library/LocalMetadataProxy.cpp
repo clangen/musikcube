@@ -794,7 +794,7 @@ bool LocalMetadataProxy::SendRawQuery(
                 std::string result = libraryQuery->SerializeResult();
                 *resultData = (char*) allocator.Allocate(result.size() + 1);
                 if (*resultData) {
-                    *resultSize = result.size() + 1;
+                    *resultSize = (int) result.size() + 1;
                     strncpy(*resultData, result.c_str(), *resultSize);
                     return true;
                 }

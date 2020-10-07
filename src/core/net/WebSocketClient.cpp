@@ -47,8 +47,6 @@ using Client = WebSocketClient::Client;
 using Message = WebSocketClient::Message;
 using Connection = WebSocketClient::Connection;
 
-static const std::string sUri = "ws://127.0.0.1:7905";
-
 static std::atomic<int> nextMessageId(0);
 
 static inline std::string generateMessageId() {
@@ -139,27 +137,10 @@ WebSocketClient::WebSocketClient(Listener* listener) {
         }
         this->SetState(State::Disconnected);
     });
-
-    this->Reconnect();
 }
 
 WebSocketClient::~WebSocketClient() {
     this->Disconnect();
-}
-
-void WebSocketClient::Disconnect() {
-    std::shared_ptr<std::thread> oldThread;
-
-    {
-        std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-        oldThread = this->thread;
-        this->thread.reset();
-    }
-
-    if (oldThread) {
-        io.stop();
-        oldThread->join();
-    }
 }
 
 std::string WebSocketClient::EnqueueQuery(Query query) {
@@ -175,6 +156,16 @@ std::string WebSocketClient::EnqueueQuery(Query query) {
     return messageId;
 }
 
+void WebSocketClient::Connect(const std::string& uri, const std::string& password) {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    this->Disconnect();
+    this->uri = uri;
+    this->password = password;
+    if (this->uri.size()) {
+        this->Reconnect();
+    }
+}
+
 void WebSocketClient::Reconnect() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
 
@@ -182,14 +173,39 @@ void WebSocketClient::Reconnect() {
 
     io.restart();
 
+    this->SetState(State::Connecting);
     this->thread.reset(new std::thread([&]() {
-        websocketpp::lib::error_code ec;
-        Client::connection_ptr connection = client.get_connection(sUri, ec);
-        client.connect(connection);
-        this->SetState(State::Connecting);
-        client.run();
+        std::string uri;
+
+        {
+            std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+            uri = this->uri;
+        }
+
+        if (uri.size()) {
+            websocketpp::lib::error_code ec;
+            Client::connection_ptr connection = client.get_connection(this->uri, ec);
+            client.connect(connection);
+            client.run();
+        }
+
         this->SetState(State::Disconnected);
     }));
+}
+
+void WebSocketClient::Disconnect() {
+    std::shared_ptr<std::thread> oldThread;
+
+    {
+        std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+        oldThread = this->thread;
+        this->thread.reset();
+    }
+
+    if (oldThread) {
+        io.stop();
+        oldThread->join();
+    }
 }
 
 void WebSocketClient::InvalidatePendingQueries() {
@@ -226,9 +242,10 @@ void WebSocketClient::SetState(State state) {
                 this->connection.reset();
                 this->InvalidatePendingQueries();
                 break;
-
             case State::Connected:
                 this->SendPendingQueries();
+                break;
+            default:
                 break;
         }
 

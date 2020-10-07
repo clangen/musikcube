@@ -81,8 +81,8 @@ namespace musik { namespace core { namespace net {
             virtual ~WebSocketClient();
 
             void Connect(const std::string& uri, const std::string& password);
-            void Disconnect();
             void Reconnect();
+            void Disconnect();
 
             std::string EnqueueQuery(Query query);
 
@@ -96,7 +96,7 @@ namespace musik { namespace core { namespace net {
             boost::asio::io_service io;
             std::shared_ptr<std::thread> thread;
             std::recursive_mutex mutex;
-            std::string password;
+            std::string uri, password;
             std::unordered_map<std::string, Query> messageIdToQuery;
             bool quit{ false };
             State state{ State::Disconnected };

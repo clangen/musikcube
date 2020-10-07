@@ -95,6 +95,7 @@ RemoteLibrary::RemoteLibrary(std::string name,int id)
 , exit(false)
 , messageQueue(nullptr)
 , wsc(this) {
+    this->wsc.Connect("ws://192.168.1.36:7905", "");
     this->identifier = std::to_string(id);
     this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
 }

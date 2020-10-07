@@ -66,7 +66,7 @@ class SdkWrapper : public Track {
             }
         }
 
-        virtual int64_t GetId() {
+        virtual int64_t GetId() override {
             return track->GetId();
         }
 
@@ -102,11 +102,11 @@ class SdkWrapper : public Track {
             return track->GetValue(dst, size);
         }
 
-        virtual ReplayGain GetReplayGain() {
+        virtual ReplayGain GetReplayGain() override {
             return track->GetReplayGain();
         }
 
-        virtual MetadataState GetMetadataState() {
+        virtual MetadataState GetMetadataState() override {
             return track->GetMetadataState();
         }
 
