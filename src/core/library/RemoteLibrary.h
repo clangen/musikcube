@@ -76,7 +76,7 @@ namespace musik { namespace core { namespace library {
             virtual const std::string& Name() override;
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
-            virtual IResourceLocator& GetResourceLocator() { return *this; }
+            virtual musik::core::ILibrary::IResourceLocator& GetResourceLocator() override { return *this; }
             virtual bool IsConfigured() override;
             virtual void Close() override;
 
