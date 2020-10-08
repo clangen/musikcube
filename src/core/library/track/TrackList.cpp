@@ -40,13 +40,12 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/track/Track.h>
 #include <core/library/query/TrackMetadataQuery.h>
+#include <core/library/query/TrackMetadataBatchQuery.h>
 #include <core/library/query/util/SdkWrappers.h>
 #include <core/db/Connection.h>
 #include <core/db/Statement.h>
 
 #include <map>
-
-#define MAX_SIZE 50
 
 using namespace musik::core;
 using namespace musik::core::db;
@@ -54,17 +53,22 @@ using namespace musik::core::library;
 using namespace musik::core::library::query;
 using namespace musik::core::sdk;
 
-TrackList::TrackList(ILibraryPtr library) {
-    this->library = library;
+static const size_t kDefaultCacheSize = 50;
+
+TrackList::TrackList(ILibraryPtr library)
+: library(library)
+, cacheSize(kDefaultCacheSize) {
 }
 
 TrackList::TrackList(TrackList* other)
 : ids(other->ids)
-, library(other->library) {
+, library(other->library)
+, cacheSize(kDefaultCacheSize) {
 }
 
 TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)
-: library(library) {
+: library(library)
+, cacheSize(kDefaultCacheSize) {
     if (trackIdCount > 0) {
         this->ids.insert(this->ids.end(), &trackIds[0], &trackIds[trackIdCount]);
     }
@@ -122,26 +126,20 @@ bool TrackList::Delete(size_t index) {
 }
 
 TrackPtr TrackList::Get(size_t index) const {
-    try {
-        auto id = this->ids.at(index);
-        auto cached = this->GetFromCache(id);
+    auto id = this->ids.at(index);
+    auto cached = this->GetFromCache(id);
 
-        if (cached) {
-            return cached;
-        }
-
-        auto target = TrackPtr(new LibraryTrack(id, this->library));
-
-        std::shared_ptr<TrackMetadataQuery> query(new TrackMetadataQuery(target, this->library));
-
-        this->library->Enqueue(query, ILibrary::QuerySynchronous);
-
-        if (query->GetStatus() == IQuery::Finished) {
-            this->AddToCache(id, query->Result());
-            return query->Result();
-        }
+    if (cached) {
+        return cached;
     }
-    catch (...) {
+
+    auto target = TrackPtr(new LibraryTrack(id, this->library));
+
+    std::shared_ptr<TrackMetadataQuery> query(new TrackMetadataQuery(target, this->library));
+    this->library->Enqueue(query, ILibrary::QuerySynchronous);
+    if (query->GetStatus() == IQuery::Finished) {
+        this->AddToCache(id, query->Result());
+        return query->Result();
     }
 
     return TrackPtr();
@@ -215,12 +213,35 @@ void TrackList::AddToCache(int64_t key, TrackPtr value) const {
     cacheList.push_front(key);
     this->cacheMap[key] = std::make_pair(value, cacheList.begin());
 
-    if (this->cacheMap.size() > MAX_SIZE) {
+    while (this->cacheMap.size() > cacheSize) {
         auto last = cacheList.end();
         --last;
         cacheMap.erase(this->cacheMap.find(*last));
         cacheList.erase(last);
     }
+}
+
+void TrackList::CacheWindow(size_t from, size_t to) {
+    if (to - from > this->cacheSize) {
+        this->SetCacheSize(to - from);
+    }
+
+    std::set<int64_t> idsNotInCache;
+    for (size_t i = from; i <= to; i++) {
+        auto id = this->ids[i];
+        if (this->cacheMap.find(id) == this->cacheMap.end() &&
+            this->idsPendingCache.find(id) == this->idsPendingCache.end())
+        {
+            idsNotInCache.insert(id);
+            idsPendingCache.insert(id);
+        }
+    }
+
+    /* TODO FINISH ME */
+}
+
+void TrackList::SetCacheSize(size_t size) {
+    this->cacheSize = size;
 }
 
 ITrackList* TrackList::GetSdkValue() {

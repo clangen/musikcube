@@ -78,6 +78,8 @@ namespace musik { namespace core {
             void Swap(TrackList& list);
             void CopyFrom(const TrackList& from);
             void CopyTo(TrackList& to);
+            void CacheWindow(size_t from, size_t to);
+            void SetCacheSize(size_t size);
 
             musik::core::sdk::ITrackList* GetSdkValue();
 
@@ -93,7 +95,9 @@ namespace musik { namespace core {
             mutable CacheList cacheList;
             mutable CacheMap cacheMap;
 
+            size_t cacheSize;
             std::vector<int64_t> ids;
+            std::set<int64_t> idsPendingCache;
             ILibraryPtr library;
     };
 

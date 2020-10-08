@@ -516,6 +516,7 @@
     <ClCompile Include="library\query\SavePlaylistQuery.cpp" />
     <ClCompile Include="library\query\SearchTrackListQuery.cpp" />
     <ClCompile Include="library\query\SetTrackRatingQuery.cpp" />
+    <ClCompile Include="library\query\TrackMetadataBatchQuery.cpp" />
     <ClCompile Include="library\query\TrackMetadataQuery.cpp" />
     <ClCompile Include="library\query\util\CategoryQueryUtil.cpp" />
     <ClCompile Include="library\query\util\Serialization.cpp" />
@@ -600,10 +601,12 @@
     <ClInclude Include="library\query\SearchTrackListQuery.h" />
     <ClInclude Include="library\query\SetTrackRatingQuery.h" />
     <ClInclude Include="library\query\TrackListQueryBase.h" />
+    <ClInclude Include="library\query\TrackMetadataBatchQuery.h" />
     <ClInclude Include="library\query\TrackMetadataQuery.h" />
     <ClInclude Include="library\query\util\CategoryQueryUtil.h" />
     <ClInclude Include="library\query\util\SdkWrappers.h" />
     <ClInclude Include="library\query\util\Serialization.h" />
+    <ClInclude Include="library\query\util\TrackQueryFragments.h" />
     <ClInclude Include="library\query\util\TrackSort.h" />
     <ClInclude Include="library\RemoteLibrary.h" />
     <ClInclude Include="library\track\IndexerTrack.h" />

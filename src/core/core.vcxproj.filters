@@ -253,6 +253,9 @@
     <ClCompile Include="net\WebSocketClient.cpp">
       <Filter>src\net</Filter>
     </ClCompile>
+    <ClCompile Include="library\query\TrackMetadataBatchQuery.cpp">
+      <Filter>src\library\query</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -617,6 +620,12 @@
     </ClInclude>
     <ClInclude Include="sdk\IAllocator.h">
       <Filter>src\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\util\TrackQueryFragments.h">
+      <Filter>src\library\query\util</Filter>
+    </ClInclude>
+    <ClInclude Include="library\query\TrackMetadataBatchQuery.h">
+      <Filter>src\library\query</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

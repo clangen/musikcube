@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
-#include "TrackMetadataQuery.h"
+#include "TrackMetadataBatchQuery.h"
 #include <core/library/LocalLibraryConstants.h>
 #include <core/library/query/util/Serialization.h>
 #include <core/library/track/LibraryTrack.h>
@@ -48,96 +48,81 @@ using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 using namespace musik::core::sdk;
 
-const std::string TrackMetadataQuery::kQueryName = "TrackMetadataQuery";
+const std::string TrackMetadataBatchQuery::kQueryName = "TrackMetadataBatchQuery";
 
-TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Type type) {
-    this->result = target;
-    this->library = library;
-    this->type = type;
+TrackMetadataBatchQuery::TrackMetadataBatchQuery(std::unordered_set<int64_t> trackIds, ILibraryPtr library)
+: trackIds(trackIds)
+, library(library) {
 }
 
-bool TrackMetadataQuery::OnRun(Connection& db) {
-    result->SetMetadataState(MetadataState::Loading);
-
-    bool queryById = this->result->GetId() != 0;
-
-    std::string query;
-
-    if (this->type == Type::Full) {
-        query = queryById
-            ? tracks::kAllMetadataQueryById
-            : tracks::kAllMetadataQueryByExternalId;
+bool TrackMetadataBatchQuery::OnRun(Connection& db) {
+    std::string idList;
+    size_t i = 0;
+    for (int64_t id : this->trackIds) {
+        idList += std::to_string(id);
+        if (i < this->trackIds.size() - 1) {
+            idList += ",";
+        }
     }
-    else {
-        query = queryById
-            ? tracks::kIdsOnlyQueryById
-            : tracks::kIdsOnlyQueryByExternalId;
-    }
+
+    std::string query = tracks::kAllMetadataQueryByIdBatch;
+    ReplaceAll(query, "{{ids}}", idList);
 
     Statement trackQuery(query.c_str(), db);
 
-    if (queryById) {
-        trackQuery.BindInt64(0, (int64_t) this->result->GetId());
-    }
-    else {
-        const std::string& externalId = this->result->GetString("external_id");
-        if (!externalId.size()) {
-            return false;
-        }
-
-        trackQuery.BindText(0, externalId);
+    while (trackQuery.Step() == Row) {
+        auto id = trackQuery.ColumnInt64(0);
+        auto track = std::make_shared<LibraryTrack>(id, this->library);
+        tracks::ParseFullTrackMetadata(track, trackQuery);
+        this->result[id] = track;
     }
 
-    if (trackQuery.Step() == Row) {
-        if (this->type == Type::Full) {
-            tracks::ParseFullTrackMetadata(result, trackQuery);
-        }
-        else {
-            tracks::ParseIdsOnlyTrackMetadata(result, trackQuery);
-        }
-        result->SetMetadataState(MetadataState::Loaded);
-        return true;
-    }
-
-    result->SetMetadataState(MetadataState::Missing);
-    return false;
+    return true;
 }
 
 /* ISerializableQuery */
 
-std::string TrackMetadataQuery::SerializeQuery() {
+std::string TrackMetadataBatchQuery::SerializeQuery() {
     nlohmann::json output = {
         { "name", kQueryName },
         { "options", {
-            { "type", this->type },
-            { "track", TrackToJson(this->result, true) }
+            { "trackIds", this->trackIds }
         }}
     };
     return output.dump();
 }
 
-std::string TrackMetadataQuery::SerializeResult() {
+std::string TrackMetadataBatchQuery::SerializeResult() {
+    nlohmann::json idToTrackMap;
+    for (auto& kv : this->result) {
+        auto trackJson = TrackToJson(kv.second, false);;
+        idToTrackMap[std::to_string(kv.first)] = trackJson;
+    }
     nlohmann::json output = {
-        { "result", TrackToJson(this->result, this->type == Type::IdsOnly) }
+        { "result", idToTrackMap }
     };
     return output.dump();
 }
 
-void TrackMetadataQuery::DeserializeResult(const std::string& data) {
+void TrackMetadataBatchQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
-    auto input = nlohmann::json::parse(data);
-    auto parsedResult = std::make_shared<LibraryTrack>(-1LL, this->library);
-    TrackFromJson(input["result"], parsedResult, false);
-    this->result = parsedResult;
+    auto input = nlohmann::json::parse(data)["result"];
+    for (auto& kv : input.items()) {
+        int64_t id = std::atoll(kv.key().c_str());
+        auto track = std::make_shared<LibraryTrack>(id, this->library);
+        TrackFromJson(kv.value(), track, false);
+        this->result[id] = track;
+    }
     this->SetStatus(IQuery::Finished);
 }
 
-std::shared_ptr<TrackMetadataQuery> TrackMetadataQuery::DeserializeQuery(
+std::shared_ptr<TrackMetadataBatchQuery> TrackMetadataBatchQuery::DeserializeQuery(
     musik::core::ILibraryPtr library, const std::string& data)
 {
+    using SetType = std::unordered_set <int64_t>;
     auto json = nlohmann::json::parse(data);
     auto parsedTrack = std::make_shared<LibraryTrack>(-1LL, library);
-    TrackFromJson(json["options"]["track"], parsedTrack, true);
-    Type type = json["options"]["type"].get<Type>();
-    return std::make_shared<TrackMetadataQuery>(parsedTrack, library, type);
+    SetType trackIds;
+    JsonArrayToSet<SetType, int64_t>(json["options"]["trackIds"], trackIds);
+    return std::make_shared<TrackMetadataBatchQuery>(trackIds, library);
 }

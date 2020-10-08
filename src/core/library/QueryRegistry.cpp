@@ -50,6 +50,7 @@
 #include <core/library/query/SavePlaylistQuery.h>
 #include <core/library/query/SearchTrackListQuery.h>
 #include <core/library/query/SetTrackRatingQuery.h>
+#include <core/library/query/TrackMetadataBatchQuery.h>
 #include <core/library/query/TrackMetadataQuery.h>
 
 using namespace musik::core;
@@ -100,6 +101,9 @@ namespace musik { namespace core { namespace library {
             }
             if (name == SetTrackRatingQuery::kQueryName) {
                 return SetTrackRatingQuery::DeserializeQuery(data);
+            }
+            if (name == TrackMetadataBatchQuery::kQueryName) {
+                return TrackMetadataBatchQuery::DeserializeQuery(library, data);
             }
             if (name == TrackMetadataQuery::kQueryName) {
                 return TrackMetadataQuery::DeserializeQuery(library, data);

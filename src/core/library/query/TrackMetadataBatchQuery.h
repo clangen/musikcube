@@ -37,23 +37,25 @@
 #include <core/library/QueryBase.h>
 #include <core/library/track/Track.h>
 #include <core/library/ILibrary.h>
+#include <unordered_set>
+#include <unordered_map>
 
 namespace musik { namespace core { namespace library { namespace query {
 
-class TrackMetadataQuery : public QueryBase {
+class TrackMetadataBatchQuery: public QueryBase {
     public:
         static const std::string kQueryName;
 
-        enum class Type: int { Full = 0, IdsOnly = 1 };
+        using IdToTrackMap = std::unordered_map<int64_t, TrackPtr>;
 
-        TrackMetadataQuery(
-            musik::core::TrackPtr target,
-            musik::core::ILibraryPtr library,
-            Type type = Type::Full);
+        TrackMetadataBatchQuery(
+            std::unordered_set<int64_t> trackIds,
+            musik::core::ILibraryPtr library);
 
-        virtual ~TrackMetadataQuery() { }
+        virtual ~TrackMetadataBatchQuery() {
+        }
 
-        TrackPtr Result() {
+        const IdToTrackMap& Result() {
             return this->result;
         }
 
@@ -62,7 +64,7 @@ class TrackMetadataQuery : public QueryBase {
         virtual std::string SerializeResult();
         virtual void DeserializeResult(const std::string& data);
 
-        static std::shared_ptr<TrackMetadataQuery> DeserializeQuery(
+        static std::shared_ptr<TrackMetadataBatchQuery> DeserializeQuery(
             musik::core::ILibraryPtr library, const std::string& data);
 
     protected:
@@ -70,9 +72,9 @@ class TrackMetadataQuery : public QueryBase {
         virtual std::string Name() { return kQueryName; }
 
     private:
-        Type type;
         musik::core::ILibraryPtr library;
-        musik::core::TrackPtr result;
+        std::unordered_set<int64_t> trackIds;
+        IdToTrackMap result;
 };
 
 } } } }
