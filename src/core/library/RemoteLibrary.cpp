@@ -116,6 +116,8 @@ const std::string& RemoteLibrary::Name() {
 }
 
 void RemoteLibrary::Close() {
+    this->wsc.Disconnect();
+
     std::thread* thread = nullptr;
 
     {
