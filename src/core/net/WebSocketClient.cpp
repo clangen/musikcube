@@ -90,6 +90,10 @@ static inline bool extractRawQueryResult(
 }
 
 WebSocketClient::WebSocketClient(Listener* listener) {
+#if 1
+    client.clear_access_channels(websocketpp::log::alevel::all);
+#endif
+
     this->listener = listener;
 
     websocketpp::lib::error_code ec;
