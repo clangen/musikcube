@@ -50,7 +50,16 @@ namespace musik { namespace core {
             using QueryPtr = std::shared_ptr<musik::core::db::IQuery>;
             using Callback = std::function<void(QueryPtr)>;
 
+            enum class ConnectionState : int {
+                NotApplicable = -1,
+                Disconnected = 0,
+                Connected = 1,
+                Connecting = 2,
+                AuthenticationFailure = 3
+            };
+
             sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
+            sigslot::signal1<ConnectionState> ConnectionStateChanged;
 
             class IResourceLocator {
                 public:
@@ -77,6 +86,7 @@ namespace musik { namespace core {
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
             virtual IResourceLocator& GetResourceLocator() = 0;
             virtual bool IsConfigured() = 0;
+            virtual ConnectionState GetConnectionState() = 0;
             virtual void Close() = 0;
     };
 

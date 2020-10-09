@@ -55,6 +55,7 @@ using namespace musik::core::runtime;
 
 #define MESSAGE_QUERY_COMPLETED 5000
 #define MESSAGE_RECONNECT_SOCKET 5001
+#define MESSAGE_UPDATE_CONNECTION_STATE 5002
 
 static const std::string kServerHost = "192.168.1.227";
 static const std::string kServerPassword = "842655";
@@ -327,18 +328,35 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
             this->wsc.Connect(kServerHost, kServerPort, kServerPassword);
         }
     }
+    else if (message.Type() == MESSAGE_UPDATE_CONNECTION_STATE) {
+        this->connectionState = (ConnectionState) message.UserData1();
+        this->ConnectionStateChanged(this->connectionState);
+    }
 }
 
 /* WebSocketClient::Listener */
 
 void RemoteLibrary::OnClientInvalidPassword(Client* client) {
-
+    this->messageQueue->Post(Message::Create(this, MESSAGE_UPDATE_CONNECTION_STATE, (int) ConnectionState::AuthenticationFailure));
 }
 
 void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State oldState) {
-    if (this->messageQueue && newState == State::Disconnected) {
-        this->messageQueue->Remove(this, MESSAGE_RECONNECT_SOCKET);
-        this->messageQueue->Post(Message::Create(this, MESSAGE_RECONNECT_SOCKET, 0, 0), 2500);
+    static std::map<State, ConnectionState> kConnectionStateMap = {
+        { State::Disconnected, ConnectionState::Disconnected },
+        { State::Disconnecting, ConnectionState::Disconnected },
+        { State::Connecting, ConnectionState::Connecting },
+        { State::Connected, ConnectionState::Connected },
+    };
+
+    if (this->messageQueue) {
+        if (newState == State::Disconnected) {
+            this->messageQueue->Remove(this, MESSAGE_RECONNECT_SOCKET);
+            this->messageQueue->Post(Message::Create(this, MESSAGE_RECONNECT_SOCKET), 2500);
+        }
+        this->messageQueue->Post(Message::Create(
+            this,
+            MESSAGE_UPDATE_CONNECTION_STATE,
+            (int) kConnectionStateMap[newState]));
     }
 }
 

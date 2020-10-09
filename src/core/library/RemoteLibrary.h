@@ -76,8 +76,9 @@ namespace musik { namespace core { namespace library {
             virtual const std::string& Name() override;
             virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
-            virtual musik::core::ILibrary::IResourceLocator& GetResourceLocator() override { return *this; }
+            virtual IResourceLocator& GetResourceLocator() override { return *this; }
             virtual bool IsConfigured() override;
+            virtual ConnectionState GetConnectionState() override { return this->connectionState; }
             virtual void Close() override;
 
             /* IMessageTarget */
@@ -132,6 +133,7 @@ namespace musik { namespace core { namespace library {
             std::thread* thread;
             std::condition_variable_any queueCondition, syncQueryCondition;
             std::recursive_mutex queueMutex;
+            std::atomic<ConnectionState> connectionState{ ConnectionState::Disconnected };
             std::atomic<bool> exit;
 
     };

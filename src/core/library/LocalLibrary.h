@@ -78,6 +78,7 @@ namespace musik { namespace core { namespace library {
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
             virtual IResourceLocator& GetResourceLocator() override;
             virtual bool IsConfigured() override;
+            virtual ConnectionState GetConnectionState() override { return ConnectionState::NotApplicable; }
             virtual void Close() override;
 
             /* IMessageTarget */
