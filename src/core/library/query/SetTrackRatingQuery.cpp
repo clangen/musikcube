@@ -34,7 +34,7 @@
 
 #include "pch.hpp"
 #include "SetTrackRatingQuery.h"
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;

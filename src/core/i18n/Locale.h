@@ -38,7 +38,7 @@
 #include <core/support/Preferences.h>
 #include <unordered_map>
 #include <sigslot/sigslot.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace musik { namespace core { namespace i18n {
 

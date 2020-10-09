@@ -44,7 +44,7 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;

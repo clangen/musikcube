@@ -57,7 +57,7 @@
 #include <core/support/Common.h>
 #include <vector>
 #include <map>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 #define TAG "LocalMetadataProxy"
 

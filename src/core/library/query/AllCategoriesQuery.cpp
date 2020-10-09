@@ -36,7 +36,7 @@
 #include "AllCategoriesQuery.h"
 #include <core/library/query/util/Serialization.h>
 #include <core/db/Statement.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;

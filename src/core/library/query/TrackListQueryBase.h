@@ -40,7 +40,7 @@
 #include <core/library/track/TrackList.h>
 #include <core/library/query/util/Serialization.h>
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace musik { namespace core { namespace library { namespace query {
 

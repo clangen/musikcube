@@ -41,7 +41,7 @@
 #include <core/config.h>
 #include <core/db/Connection.h>
 #include <core/sdk/IPreferences.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace musik { namespace core {
     class Preferences : public musik::core::sdk::IPreferences {

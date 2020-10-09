@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <cursespp/Colors.h>
 #include <boost/filesystem.hpp>
 #include <core/support/Common.h>

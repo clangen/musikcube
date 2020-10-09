@@ -40,7 +40,7 @@
 #include <core/support/PreferenceKeys.h>
 #include <curl/curl.h>
 #include <sstream>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 /* https://api.audd.io/findLyrics/?q=the%20beatles%20sgt%20pepper%20reprise */
 

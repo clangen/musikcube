@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include "CategoryQueryUtil.h"
 #include <core/library/metadata/MetadataMapList.h>
 #include <core/library/query/util/SdkWrappers.h>

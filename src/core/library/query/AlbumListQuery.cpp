@@ -38,7 +38,7 @@
 #include <core/library/LocalLibraryConstants.h>
 #include <core/db/Statement.h>
 #include <core/library/query/util/Serialization.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace musik::core;
 using namespace musik::core::db;

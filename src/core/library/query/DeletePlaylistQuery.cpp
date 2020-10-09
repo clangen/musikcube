@@ -40,7 +40,7 @@
 #include <core/support/Messages.h>
 #include <core/runtime/Message.h>
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace musik::core;
 using namespace musik::core::db;

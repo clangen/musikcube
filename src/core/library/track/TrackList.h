@@ -80,6 +80,7 @@ namespace musik { namespace core {
             void CopyTo(TrackList& to);
             void CacheWindow(size_t from, size_t to) const;
             void SetCacheWindowSize(size_t size);
+            const std::vector<int64_t> GetIds() const { return ids; };
 
             musik::core::sdk::ITrackList* GetSdkValue();
 

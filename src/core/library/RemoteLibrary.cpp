@@ -44,7 +44,7 @@
 #include <core/library/QueryRegistry.h>
 #include <core/runtime/Message.h>
 #include <core/debug.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 static const std::string TAG = "RemoteLibrary";
 

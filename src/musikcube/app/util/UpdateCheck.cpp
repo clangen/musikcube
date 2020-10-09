@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include "UpdateCheck.h"
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <cursespp/App.h>
 #include <cursespp/Window.h>

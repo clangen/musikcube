@@ -41,7 +41,7 @@
 #include <core/runtime/Message.h>
 #include <core/support/Messages.h>
 #include <core/db/Statement.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using musik::core::db::Statement;
 using musik::core::db::Row;

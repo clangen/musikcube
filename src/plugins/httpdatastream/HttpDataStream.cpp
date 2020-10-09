@@ -50,7 +50,7 @@
 #include <unordered_map>
 
 /* meh... */
-#include <../../3rdparty/include/json.hpp>
+#include <../../3rdparty/include/nlohmann/json.hpp>
 #include <../../3rdparty/include/websocketpp/base64/base64.hpp>
 
 #ifdef WIN32

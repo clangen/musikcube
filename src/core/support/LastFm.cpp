@@ -38,7 +38,7 @@
 #include <core/support/Preferences.h>
 #include <core/sdk/HttpClient.h>
 #include <core/support/PreferenceKeys.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <sstream>
 #include <map>
 

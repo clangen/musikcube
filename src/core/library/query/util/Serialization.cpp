@@ -205,9 +205,7 @@ namespace musik { namespace core { namespace library { namespace query {
         nlohmann::json TrackListToJson(const TrackList& input, bool onlyIds) {
             nlohmann::json output;
             if (onlyIds) {
-                for (size_t i = 0; i < input.Count(); i++) {
-                    output.push_back(input.GetId(i));
-                }
+                output = input.GetIds();
             }
             else {
                 for (size_t i = 0; i < input.Count(); i++) {

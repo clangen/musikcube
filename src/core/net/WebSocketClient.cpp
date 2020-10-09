@@ -37,7 +37,7 @@
 #include <core/net/WebSocketClient.h>
 #include <core/library/query/AllCategoriesQuery.h>
 #include <atomic>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using namespace musik::core;
 using namespace musik::core::library;
