@@ -40,6 +40,7 @@ set(CORE_SOURCES
   ./library/query/SavePlaylistQuery.cpp
   ./library/query/SearchTrackListQuery.cpp
   ./library/query/SetTrackRatingQuery.cpp
+  ./library/query/TrackMetadataBatchQuery.cpp
   ./library/query/TrackMetadataQuery.cpp
   ./library/query/util/CategoryQueryUtil.cpp
   ./library/query/util/Serialization.cpp
