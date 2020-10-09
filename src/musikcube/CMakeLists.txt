@@ -7,6 +7,7 @@ set (CUBE_SRCS
 	./app/layout/HotkeysLayout.cpp
 	./app/layout/SettingsLayout.cpp
 	./app/layout/LibraryLayout.cpp
+	./app/layout/LibraryNotConnectedLayout.cpp
 	./app/layout/LyricsLayout.cpp
 	./app/layout/MainLayout.cpp
 	./app/layout/NowPlayingLayout.cpp

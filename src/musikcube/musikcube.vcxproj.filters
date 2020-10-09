@@ -195,6 +195,9 @@
     <ClCompile Include="app\util\MagicConstants.cpp">
       <Filter>app\util</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\LibraryNotConnectedLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -444,6 +447,9 @@
     </ClInclude>
     <ClInclude Include="app\util\MagicConstants.h">
       <Filter>app\util</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\LibraryNotConnectedLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
