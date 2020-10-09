@@ -244,8 +244,6 @@ void WebSocketClient::SendPendingQueries() {
             createSendRawQueryRequest(query->SerializeQuery(), messageId),
             websocketpp::frame::opcode::text);
     }
-
-    this->messageIdToQuery.clear();
 }
 
 void WebSocketClient::SetState(State state) {
