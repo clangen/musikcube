@@ -37,6 +37,8 @@
 #include <cursespp/LayoutBase.h>
 #include <core/library/ILibrary.h>
 #include <cursespp/ITopLevelLayout.h>
+#include <cursespp/TextLabel.h>
+#include <cursespp/ShortcutsWindow.h>
 
 namespace musik { namespace cube {
 
@@ -58,6 +60,8 @@ namespace musik { namespace cube {
 
         private:
             musik::core::ILibraryPtr library;
+            std::shared_ptr<cursespp::TextLabel> messageText;
+            cursespp::ShortcutsWindow* shortcuts{ nullptr };
     };
 
 } }

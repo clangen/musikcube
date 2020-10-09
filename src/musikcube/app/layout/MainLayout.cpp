@@ -161,7 +161,7 @@ bool MainLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateLibrary, key)) {
-        this->SetLayout(libraryLayout);
+        this->SwitchToLibraryLayout();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {

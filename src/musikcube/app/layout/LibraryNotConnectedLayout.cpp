@@ -49,10 +49,16 @@ using namespace cursespp;
 LibraryNotConnectedLayout::LibraryNotConnectedLayout(ILibraryPtr library)
 : LayoutBase()
 , library(library) {
+    this->messageText = std::make_shared<TextLabel>("library not connected", text::AlignCenter);
+    this->AddWindow(this->messageText);
 }
 
 void LibraryNotConnectedLayout::OnLayout() {
-    LayoutBase::OnLayout();
+    LayoutBase::OnLayout();    LayoutBase::OnLayout();
+    int cx = this->GetContentWidth();
+    int cy = this->GetContentHeight();
+    this->messageText->MoveAndResize(0, 0, cx, cy);
+    this->messageText->MoveAndResize(1, cy / 2, cx - 2, 1);
 }
 
 void LibraryNotConnectedLayout::OnVisibilityChanged(bool visible) {
@@ -67,6 +73,28 @@ void LibraryNotConnectedLayout::OnLibraryStateChanged(ILibrary::ConnectionState 
 
 }
 
-void LibraryNotConnectedLayout::SetShortcutsWindow(cursespp::ShortcutsWindow* w) {
+void LibraryNotConnectedLayout::SetShortcutsWindow(cursespp::ShortcutsWindow* shortcuts) {
+    this->shortcuts = shortcuts;
 
+    if (this->shortcuts) {
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateConsole), _TSTR("shortcuts_console"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateSettings), _TSTR("shortcuts_settings"));
+        shortcuts->AddShortcut(Hotkeys::Get(Hotkeys::NavigateLibrary), _TSTR("shortcuts_library"));
+        shortcuts->AddShortcut(App::Instance().GetQuitKey(), _TSTR("shortcuts_quit"));
+
+        shortcuts->SetChangedCallback([this](std::string key) {
+            if (Hotkeys::Is(Hotkeys::NavigateConsole, key)) {
+                this->Broadcast(message::JumpToConsole);
+            }
+            if (Hotkeys::Is(Hotkeys::NavigateSettings, key)) {
+                this->Broadcast(message::JumpToSettings);
+            }
+            else if (key == App::Instance().GetQuitKey()) {
+                App::Instance().Quit();
+            }
+            this->KeyPress(key);
+        });
+
+        shortcuts->SetActive(Hotkeys::Get(Hotkeys::NavigateLibrary));
+    }
 }
