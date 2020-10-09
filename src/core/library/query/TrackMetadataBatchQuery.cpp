@@ -63,6 +63,7 @@ bool TrackMetadataBatchQuery::OnRun(Connection& db) {
         if (i < this->trackIds.size() - 1) {
             idList += ",";
         }
+        ++i;
     }
 
     std::string query = tracks::kAllMetadataQueryByIdBatch;

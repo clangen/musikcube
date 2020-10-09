@@ -327,7 +327,7 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         this->state = Loading;
         downloadThread.reset(new std::thread(&HttpDataStream::ThreadProc, this));
 
-        /* wait until headers have finished */
+        /* wait until we have a few hundred k of data */
         startedContition.wait(lock);
 
         return true;
