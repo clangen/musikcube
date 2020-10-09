@@ -60,6 +60,7 @@ namespace cursespp {
             virtual cursespp::IWindowPtr FocusPrev() override;
 
             void SetLayout(std::shared_ptr<cursespp::LayoutBase> layout);
+            std::shared_ptr<cursespp::LayoutBase> GetLayout() { return this->layout; }
 
             void SetAutoHideCommandBar(bool autoHide);
             bool GetAutoHideCommandBar();

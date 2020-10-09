@@ -74,17 +74,24 @@ namespace musik {
                 void OnIndexerProgress(int count);
                 void OnIndexerFinished(int count);
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+                void OnLibraryConnectionStateChanged(musik::core::ILibrary::ConnectionState state);
 
-                void Initialize();
+                bool IsLibraryConnected();
+
                 void RunUpdateCheck();
+                void SetInitialLayout();
+                void SwitchToLibraryLayout();
+                void SwitchToPlayQueue();
 
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<cursespp::TextLabel> syncing;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
                 std::shared_ptr<cursespp::LayoutBase> libraryLayout;
+                std::shared_ptr<cursespp::LayoutBase> libraryNotConnectedLayout;
                 std::shared_ptr<cursespp::LayoutBase> settingsLayout;
                 std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
                 std::shared_ptr<cursespp::LayoutBase> lyricsLayout;
+                musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
                 bool shortcutsFocused;
                 int syncUpdateCount;

@@ -47,6 +47,7 @@
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LyricsLayout.h>
 #include <app/layout/LibraryLayout.h>
+#include <app/layout/LibraryNotConnectedLayout.h>
 #include <app/layout/SettingsLayout.h>
 #include <app/layout/HotkeysLayout.h>
 #include <app/util/Hotkeys.h>
@@ -91,15 +92,19 @@ MainLayout::MainLayout(
 : shortcutsFocused(false)
 , syncUpdateCount(0)
 , library(library)
+, playback(playback)
 , AppLayout(app) {
     this->prefs = Preferences::ForComponent("settings");
 
+    library->ConnectionStateChanged.connect(this, &MainLayout::OnLibraryConnectionStateChanged);
     library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
     library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
     playback.TrackChanged.connect(this, &MainLayout::OnTrackChanged);
 
-    this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
+    /* note we don't create `libraryLayout` here; instead we do it lazily once we're sure
+    it has been connected. see SwitchToLibraryLayout() */
+    this->libraryNotConnectedLayout = std::make_shared<LibraryNotConnectedLayout>(library);
     this->lyricsLayout = std::make_shared<LyricsLayout>(playback, library);
     this->consoleLayout = std::make_shared<ConsoleLayout>(logger);
     this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
@@ -112,7 +117,7 @@ MainLayout::MainLayout(
 
     /* take user to settings if they don't have a valid configuration. otherwise,
     switch to the library view immediately */
-    this->SetLayout(library->IsConfigured() ? libraryLayout : settingsLayout);
+    this->SetInitialLayout();
     this->SetAutoHideCommandBar(this->prefs->GetBool(prefs::keys::AutoHideCommandBar, false));
 
     this->RunUpdateCheck();
@@ -195,12 +200,10 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
         this->SetLayout(hotkeysLayout);
     }
     else if (type == message::JumpToLibrary) {
-        this->SetLayout(libraryLayout);
+        this->SwitchToLibraryLayout();
     }
     else if (type == message::JumpToPlayQueue) {
-        this->SetLayout(libraryLayout);
-        libraryLayout->KeyPress(Hotkeys::Get(
-            Hotkeys::NavigateLibraryPlayQueue));
+        this->SwitchToPlayQueue();
     }
     else if (type == message::IndexerStarted) {
         this->syncUpdateCount = 0;
@@ -216,6 +219,51 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
         if (!syncing->IsVisible()) {
             this->Layout();
         }
+    }
+}
+
+bool MainLayout::IsLibraryConnected() {
+    using State = ILibrary::ConnectionState;
+    auto state = library->GetConnectionState();
+    return state == State::Connected || state == State::NotApplicable;
+}
+
+void MainLayout::SetInitialLayout() {
+    if (library->IsConfigured()) {
+        this->SwitchToLibraryLayout();
+    }
+    else {
+        this->SetLayout(settingsLayout);
+    }
+}
+
+void MainLayout::SwitchToPlayQueue() {
+    if (IsLibraryConnected()) {
+        this->SetLayout(libraryLayout);
+        libraryLayout->KeyPress(Hotkeys::Get(Hotkeys::NavigateLibraryPlayQueue));
+    }
+}
+
+void MainLayout::SwitchToLibraryLayout() {
+    if (IsLibraryConnected()) {
+        if (!this->libraryLayout) {
+            this->libraryLayout.reset(new LibraryLayout(playback, library));
+        }
+        this->SetLayout(libraryLayout);
+    }
+    else {
+        this->libraryLayout.reset();
+        this->SetLayout(this->libraryNotConnectedLayout);
+    }
+}
+
+void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state) {
+    auto currentLayout = this->GetLayout();
+
+    if (currentLayout == this->libraryLayout ||
+        currentLayout == this->libraryNotConnectedLayout)
+    {
+        this->SwitchToLibraryLayout();
     }
 }
 

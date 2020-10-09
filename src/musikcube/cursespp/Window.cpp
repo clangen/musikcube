@@ -75,16 +75,15 @@ mention wbkgd() was changed, but it's unclear what exactly happened... */
 static inline void DrawCursor(IInput* input) {
     if (input) {
         Window* inputWindow = dynamic_cast<Window*>(input);
-        if (inputWindow) {
+        if (inputWindow && inputWindow->GetContent()) {
             WINDOW* content = inputWindow->GetContent();
             curs_set(1);
             wtimeout(content, IDLE_TIMEOUT_MS);
             wmove(content, 0, input->Position());
+            return;
         }
     }
-    else {
-        curs_set(0);
-    }
+    curs_set(0);
 }
 
 static inline void DrawTooSmall() {

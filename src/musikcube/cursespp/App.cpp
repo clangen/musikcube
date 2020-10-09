@@ -405,7 +405,7 @@ void App::Run(ILayoutPtr layout) {
 
         timeout(IDLE_TIMEOUT_MS);
 
-        if (this->state.input) {
+        if (this->state.input && this->state.focused->GetContent()) {
             /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
             keypad(c, TRUE);
