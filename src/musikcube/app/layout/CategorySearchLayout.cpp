@@ -83,7 +83,7 @@ CategorySearchLayout::CategorySearchLayout(musik::core::audio::PlaybackService& 
 }
 
 CategorySearchLayout::~CategorySearchLayout() {
-
+    this->SaveSession();
 }
 
 void CategorySearchLayout::LoadLastSession() {

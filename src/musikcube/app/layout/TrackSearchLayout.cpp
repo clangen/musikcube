@@ -81,6 +81,7 @@ TrackSearchLayout::TrackSearchLayout(
 }
 
 TrackSearchLayout::~TrackSearchLayout() {
+    this->SaveSession();
 }
 
 void TrackSearchLayout::LoadLastSession() {
