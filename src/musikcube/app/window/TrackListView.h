@@ -99,6 +99,7 @@ namespace musik {
 
                 virtual void OnEntryActivated(size_t index);
                 virtual void OnEntryContextMenu(size_t index);
+                virtual void OnDimensionsChanged();
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();
@@ -159,6 +160,8 @@ namespace musik {
                 };
 
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+
+                void AdjustTrackListCacheWindowSize();
 
                 void ScrollToPlaying();
                 void SelectFirstTrack();

@@ -124,6 +124,7 @@ void TrackListView::OnQueryCompleted(IQuery* query) {
             bool prevQuerySame = this->lastQueryHash == this->query->GetQueryHash();
 
             this->tracks = this->query->GetResult();
+            this->AdjustTrackListCacheWindowSize();
             this->headers.Set(this->query->GetHeaders());
             this->lastQueryHash = this->query->GetQueryHash();
 
@@ -153,6 +154,7 @@ std::shared_ptr<TrackList> TrackListView::GetTrackList() {
 void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
     if (this->tracks != trackList) {
         this->tracks = trackList;
+        this->AdjustTrackListCacheWindowSize();
         this->ScrollToTop();
         this->SelectFirstTrack();
     }
@@ -220,6 +222,18 @@ void TrackListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
         this->ScrollToPlaying();
     }
+}
+
+void TrackListView::AdjustTrackListCacheWindowSize() {
+    auto height = this->GetHeight();
+    if (tracks && height > 0) {
+        tracks->SetCacheWindowSize(this->GetHeight());
+    }
+}
+
+void TrackListView::OnDimensionsChanged() {
+    this->AdjustTrackListCacheWindowSize();
+    ListWindow::OnDimensionsChanged();
 }
 
 void TrackListView::OnEntryActivated(size_t index) {
