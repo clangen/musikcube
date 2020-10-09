@@ -329,8 +329,11 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
         }
     }
     else if (message.Type() == MESSAGE_UPDATE_CONNECTION_STATE) {
-        this->connectionState = (ConnectionState) message.UserData1();
-        this->ConnectionStateChanged(this->connectionState);
+        auto updatedState = (ConnectionState)message.UserData1();
+        if (updatedState != this->connectionState) {
+            this->connectionState = updatedState;
+            this->ConnectionStateChanged(this->connectionState);
+        }
     }
 }
 
