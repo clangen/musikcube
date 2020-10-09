@@ -291,6 +291,10 @@ void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state
     {
         this->SwitchToLibraryLayout();
     }
+
+    if (state == ILibrary::ConnectionState::Disconnected) {
+        this->playback.Stop();
+    }
 }
 
 void MainLayout::OnIndexerStarted() {
