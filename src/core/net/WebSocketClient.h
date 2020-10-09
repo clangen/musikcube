@@ -92,8 +92,9 @@ namespace musik { namespace core { namespace net {
             void Reconnect();
             void Disconnect();
 
-            State ConnectionState();
-            ConnectionError LastConnectionError();
+            State ConnectionState() const;
+            ConnectionError LastConnectionError() const;
+            std::string Uri() const;
 
             std::string EnqueueQuery(Query query);
 
@@ -107,7 +108,7 @@ namespace musik { namespace core { namespace net {
             Connection connection;
             boost::asio::io_service io;
             std::shared_ptr<std::thread> thread;
-            std::recursive_mutex mutex;
+            mutable std::recursive_mutex mutex;
             std::string uri, password;
             std::unordered_map<std::string, Query> messageIdToQuery;
             std::atomic<bool> quit{ false };

@@ -160,14 +160,19 @@ WebSocketClient::~WebSocketClient() {
     this->Disconnect();
 }
 
-WebSocketClient::ConnectionError WebSocketClient::LastConnectionError() {
+WebSocketClient::ConnectionError WebSocketClient::LastConnectionError() const {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     return this->connectionError;
 }
 
-WebSocketClient::State WebSocketClient::ConnectionState() {
+WebSocketClient::State WebSocketClient::ConnectionState() const {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     return this->state;
+}
+
+std::string WebSocketClient::Uri() const {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    return this->uri;
 }
 
 void WebSocketClient::SetDisconnected(ConnectionError errorCode) {

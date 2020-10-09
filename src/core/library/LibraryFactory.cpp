@@ -58,14 +58,14 @@ LibraryFactory& LibraryFactory::Instance() {
 };
 
 LibraryFactory::LibraryFactory() {
-    this->CreateLibrary("Local Library", LibraryType::Local);
+    this->CreateLibrary("Local Library", ILibrary::Type::Local);
 }
 
 LibraryFactory::~LibraryFactory() {
 }
 
-ILibraryPtr LibraryFactory::AddLibrary(int id, LibraryType type, const std::string& name) {
-    ILibraryPtr library = (type == LibraryType::Local)
+ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::string& name) {
+    ILibraryPtr library = (type == ILibrary::Type::Local)
         ? library::LocalLibrary::Create(name, id)
         : library::RemoteLibrary::Create(name, id);
 
@@ -90,7 +90,7 @@ void LibraryFactory::Shutdown() {
     }
 }
 
-ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, LibraryType type) {
+ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, ILibrary::Type type) {
     auto prefs = Preferences::ForComponent(prefs::components::Libraries);
     std::vector<std::string> libraries;
     prefs->GetKeys(libraries);

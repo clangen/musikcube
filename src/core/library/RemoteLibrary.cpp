@@ -169,7 +169,7 @@ int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callba
         auto defaultLocalLibrary = LibraryFactory::Instance().Default();
         return defaultLocalLibrary->Enqueue(query, options, callback);
     }
-    
+
     auto serializableQuery = std::dynamic_pointer_cast<ISerializableQuery>(query);
 
     if (serializableQuery) {
@@ -394,4 +394,9 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
     };
 
     return "musikcore://remote-track/" + path.dump();
+}
+
+/* RemoteLibrary */
+const net::WebSocketClient& RemoteLibrary::WebSocketClient() const {
+    return this->wsc;
 }

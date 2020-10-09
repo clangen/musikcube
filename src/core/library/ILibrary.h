@@ -50,7 +50,12 @@ namespace musik { namespace core {
             using QueryPtr = std::shared_ptr<musik::core::db::IQuery>;
             using Callback = std::function<void(QueryPtr)>;
 
-            enum class ConnectionState : int {
+            enum class Type: int {
+                Local = 1,
+                Remote = 2
+            };
+
+            enum class ConnectionState: int {
                 NotApplicable = -1,
                 Disconnected = 0,
                 Connected = 1,
@@ -58,8 +63,9 @@ namespace musik { namespace core {
                 AuthenticationFailure = 3
             };
 
-            sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
-            sigslot::signal1<ConnectionState> ConnectionStateChanged;
+            enum QueryFlag {
+                QuerySynchronous = 1
+            };
 
             class IResourceLocator {
                 public:
@@ -68,9 +74,8 @@ namespace musik { namespace core {
                         const std::string& defaultUri = "") = 0;
             };
 
-            enum QueryFlag {
-                QuerySynchronous = 1
-            };
+            sigslot::signal1<musik::core::db::IQuery*> QueryCompleted;
+            sigslot::signal1<ConnectionState> ConnectionStateChanged;
 
             virtual ~ILibrary() { }
 
@@ -86,7 +91,8 @@ namespace musik { namespace core {
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() = 0;
             virtual IResourceLocator& GetResourceLocator() = 0;
             virtual bool IsConfigured() = 0;
-            virtual ConnectionState GetConnectionState() = 0;
+            virtual ConnectionState GetConnectionState() const = 0;
+            virtual Type GetType() const = 0;
             virtual void Close() = 0;
     };
 

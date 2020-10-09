@@ -35,30 +35,78 @@
 #include <stdafx.h>
 #include <app/layout/LibraryNotConnectedLayout.h>
 #include <core/i18n/Locale.h>
+#include <core/library/RemoteLibrary.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>
+#include <cursespp/Colors.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
+#include <unordered_map>
 
 using namespace musik::cube;
 using namespace musik::core;
-using namespace musik::core::runtime;
+using namespace musik::core::library;
+using namespace musik::core::net;
 using namespace cursespp;
+
+static inline std::string resolveErrorMessage(const ILibrary* library) {
+    static const std::map<WebSocketClient::ConnectionError, std::string> kStateToErrorString = {
+        { WebSocketClient::ConnectionError::ClosedByServer, "library_error_closed_by_server" },
+        { WebSocketClient::ConnectionError::ConnectionFailed, "library_error_connection_failed" },
+        { WebSocketClient::ConnectionError::InvalidPassword, "library_error_invalid_password" },
+    };
+
+    if (library->GetType() == ILibrary::Type::Remote) {
+        const RemoteLibrary* remoteLibrary = static_cast<const RemoteLibrary*>(library);
+        auto error = remoteLibrary->WebSocketClient().LastConnectionError();
+        auto it = kStateToErrorString.find(error);
+        if (it != kStateToErrorString.end()) {
+            return _TSTR(it->second);
+        }
+        return _TSTR("library_error_connection_failed");
+    }
+
+    if (library->GetConnectionState() == ILibrary::ConnectionState::AuthenticationFailure) {
+        return _TSTR("library_error_invalid_password");
+    }
+
+    return _TSTR("library_error_unknown");
+}
+
+static inline std::string resolveMessageText(const ILibrary* library) {
+    if (library->GetType() == ILibrary::Type::Remote) {
+        auto host = dynamic_cast<const RemoteLibrary*>(library)->WebSocketClient().Uri();
+        if (host.find("ws://") == 0) { host = host.substr(5); }
+        if (host.size()) {
+            return u8fmt(_TSTR("library_not_connected_with_hostname"), host.c_str());
+        }
+    }
+    return _TSTR("library_not_connected");
+}
 
 LibraryNotConnectedLayout::LibraryNotConnectedLayout(ILibraryPtr library)
 : LayoutBase()
 , library(library) {
-    this->messageText = std::make_shared<TextLabel>("library not connected", text::AlignCenter);
+    this->library->ConnectionStateChanged.connect(this, &LibraryNotConnectedLayout::OnLibraryStateChanged);
+    this->messageText = std::make_shared<TextLabel>("", text::AlignCenter);
+    this->messageText->SetContentColor(Color::TextError);
+    this->errorText = std::make_shared<TextLabel>("", text::AlignCenter);
+    this->errorText->SetContentColor(Color::TextDisabled);
+    this->helpText = std::make_shared<TextLabel>(_TSTR("library_configuration_in_settings"), text::AlignCenter);
     this->AddWindow(this->messageText);
+    this->AddWindow(this->errorText);
+    this->AddWindow(this->helpText);
+    this->UpdateErrorText();
 }
 
 void LibraryNotConnectedLayout::OnLayout() {
-    LayoutBase::OnLayout();    LayoutBase::OnLayout();
+    LayoutBase::OnLayout();
     int cx = this->GetContentWidth();
     int cy = this->GetContentHeight();
-    this->messageText->MoveAndResize(0, 0, cx, cy);
-    this->messageText->MoveAndResize(1, cy / 2, cx - 2, 1);
+    this->messageText->MoveAndResize(1, (cy / 2) - 2, cx - 2, 1);
+    this->errorText->MoveAndResize(1, (cy / 2) - 1, cx - 2, 1);
+    this->helpText->MoveAndResize(1, (cy / 2) + 1, cx - 2, 1);
 }
 
 void LibraryNotConnectedLayout::OnVisibilityChanged(bool visible) {
@@ -70,7 +118,14 @@ bool LibraryNotConnectedLayout::KeyPress(const std::string& kn) {
 }
 
 void LibraryNotConnectedLayout::OnLibraryStateChanged(ILibrary::ConnectionState state) {
+    this->UpdateErrorText();
+}
 
+void LibraryNotConnectedLayout::UpdateErrorText() {
+    auto library = this->library.get();
+    auto error = u8fmt(_TSTR("library_error_format"), resolveErrorMessage(library).c_str());
+    this->errorText->SetText(error);
+    this->messageText->SetText(resolveMessageText(library));
 }
 
 void LibraryNotConnectedLayout::SetShortcutsWindow(cursespp::ShortcutsWindow* shortcuts) {

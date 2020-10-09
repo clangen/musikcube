@@ -52,11 +52,6 @@ namespace musik { namespace core {
 
             LibrariesUpdatedEvent LibrariesUpdated;
 
-            enum class LibraryType: int {
-                Local = 1,
-                Remote = 2
-            };
-
             ~LibraryFactory();
 
             static void Initialize(IMessageQueue& messageQueue);
@@ -65,14 +60,14 @@ namespace musik { namespace core {
 
             ILibraryPtr Default();
             LibraryVector Libraries();
-            ILibraryPtr CreateLibrary(const std::string& name, LibraryType type);
+            ILibraryPtr CreateLibrary(const std::string& name, ILibrary::Type type);
 
             ILibraryPtr GetLibrary(int identifier);
 
         private:
             LibraryFactory();
 
-            ILibraryPtr AddLibrary(int id, LibraryType type, const std::string& name);
+            ILibraryPtr AddLibrary(int id, ILibrary::Type type, const std::string& name);
 
             LibraryVector libraries;
             LibraryMap libraryMap;

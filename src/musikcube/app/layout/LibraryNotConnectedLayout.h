@@ -59,8 +59,12 @@ namespace musik { namespace cube {
             void OnLibraryStateChanged(musik::core::ILibrary::ConnectionState state);
 
         private:
+            void UpdateErrorText();
+
             musik::core::ILibraryPtr library;
             std::shared_ptr<cursespp::TextLabel> messageText;
+            std::shared_ptr<cursespp::TextLabel> errorText;
+            std::shared_ptr<cursespp::TextLabel> helpText;
             cursespp::ShortcutsWindow* shortcuts{ nullptr };
     };
 

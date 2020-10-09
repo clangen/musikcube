@@ -83,8 +83,11 @@ namespace musik {
                 void SwitchToLibraryLayout();
                 void SwitchToPlayQueue();
 
+                bool ShowTopBanner();
+                void UpdateTopBannerText();
+
                 std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<cursespp::TextLabel> syncing;
+                std::shared_ptr<cursespp::TextLabel> topBanner;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
                 std::shared_ptr<cursespp::LayoutBase> libraryLayout;
                 std::shared_ptr<cursespp::LayoutBase> libraryNotConnectedLayout;

@@ -78,7 +78,8 @@ namespace musik { namespace core { namespace library {
             virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
             virtual ILibrary::IResourceLocator& GetResourceLocator() override { return *this; }
             virtual bool IsConfigured() override;
-            virtual ConnectionState GetConnectionState() override { return this->connectionState; }
+            virtual ConnectionState GetConnectionState() const override { return this->connectionState; }
+            virtual Type GetType() const override { return Type::Remote; }
             virtual void Close() override;
 
             /* IMessageTarget */
@@ -92,6 +93,9 @@ namespace musik { namespace core { namespace library {
 
             /* IResourceLocator */
             virtual std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
+
+            /* RemoteLibrary */
+            const musik::core::net::WebSocketClient& WebSocketClient() const;
 
         private:
             class QueryCompletedMessage;

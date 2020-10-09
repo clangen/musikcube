@@ -40,6 +40,7 @@
 
 #include <core/runtime/Message.h>
 #include <core/support/Auddio.h>
+#include <core/library/RemoteLibrary.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
@@ -61,12 +62,13 @@
 using namespace musik;
 using namespace musik::cube;
 using namespace musik::core;
+using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace cursespp;
 
 static UpdateCheck updateCheck;
 
-static void updateSyncingText(TextLabel* label, int updates) {
+static inline void updateSyncingText(TextLabel* label, int updates) {
     try {
         if (updates <= 0) {
             label->SetText(
@@ -82,6 +84,13 @@ static void updateSyncingText(TextLabel* label, int updates) {
     catch (...) {
         /* swallow. incomplete locale. don't crash. */
     }
+}
+
+static inline void updateRemoteLibraryConnectedText(TextLabel* label, const ILibrary* library) {
+    auto host = static_cast<const RemoteLibrary*>(library)->WebSocketClient().Uri();
+    if (host.find("ws://") == 0) { host = host.substr(5); }
+    auto value = u8fmt(_TSTR("library_remote_connected_banner"), host.c_str());
+    label->SetText(value, cursespp::text::AlignCenter);
 }
 
 MainLayout::MainLayout(
@@ -110,10 +119,10 @@ MainLayout::MainLayout(
     this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();
 
-    this->syncing.reset(new TextLabel());
-    this->syncing->SetContentColor(Color::Banner);
-    this->syncing->Hide();
-    this->AddWindow(this->syncing);
+    this->topBanner.reset(new TextLabel());
+    this->topBanner->SetContentColor(Color::Banner);
+    this->topBanner->Hide();
+    this->AddWindow(this->topBanner);
 
     /* take user to settings if they don't have a valid configuration. otherwise,
     switch to the library view immediately */
@@ -127,20 +136,38 @@ MainLayout::~MainLayout() {
     updateCheck.Cancel();
 }
 
+bool MainLayout::ShowTopBanner() {
+    auto libraryType = this->library->GetType();
+    if (libraryType == ILibrary::Type::Local) {
+        return this->library->Indexer()->GetState() == IIndexer::StateIndexing;
+    }
+    else if (libraryType == ILibrary::Type::Remote) {
+        return this->library->GetConnectionState() == ILibrary::ConnectionState::Connected;
+    }
+    return false;
+}
+
+void MainLayout::UpdateTopBannerText() {
+    auto libraryType = this->library->GetType();
+    if (libraryType == ILibrary::Type::Local) {
+        updateSyncingText(this->topBanner.get(), this->syncUpdateCount);
+    }
+    else if (libraryType == ILibrary::Type::Remote) {
+        updateRemoteLibraryConnectedText(this->topBanner.get(), this->library.get());
+    }
+}
+
 void MainLayout::OnLayout() {
-    if (this->library->Indexer()->GetState() == IIndexer::StateIndexing) {
+    if (this->ShowTopBanner()) {
         size_t cx = this->GetContentWidth();
         this->SetPadding(1, 0, 0, 0);
-        this->syncing->MoveAndResize(0, 0, (int) cx, 1);
-        this->syncing->Show();
-
-        if (this->syncUpdateCount == 0) {
-            updateSyncingText(this->syncing.get(), 0);
-        }
+        this->topBanner->MoveAndResize(0, 0, (int) cx, 1);
+        this->topBanner->Show();
+        this->UpdateTopBannerText();
     }
     else {
         this->SetPadding(0, 0, 0, 0);
-        this->syncing->Hide();
+        this->topBanner->Hide();
     }
 
     AppLayout::OnLayout();
@@ -214,9 +241,8 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
     else if (type == message::IndexerProgress) {
         this->syncUpdateCount = (int) message.UserData1();
-        updateSyncingText(this->syncing.get(), this->syncUpdateCount);
-
-        if (!syncing->IsVisible()) {
+        this->UpdateTopBannerText();
+        if (!topBanner->IsVisible()) {
             this->Layout();
         }
     }
