@@ -121,21 +121,24 @@ WebSocketClient::WebSocketClient(Listener* listener) {
         }
         else if (name == "send_raw_query") {
             auto query = this->messageIdToQuery[messageId];
-            auto& options = responseJson["options"];
-            if (options.find("success") != options.end() && options["success"] == false) {
-                this->listener->OnClientQueryFailed(
-                    this, messageId, query, ErrorCode::QueryFailed);
-            }
-            else {
-                std::string rawResult;
-                if (extractRawQueryResult(responseJson, rawResult)) {
-                    if (query) {
-                        query->DeserializeResult(rawResult);
-                        this->listener->OnClientQuerySucceeded(this, messageId, query);
-                    }
-                    else {
-                        this->listener->OnClientQueryFailed(
-                            this, messageId, query, ErrorCode::QueryNotFound);
+            if (query) {
+                this->messageIdToQuery.erase(messageId);
+                auto& options = responseJson["options"];
+                if (options.find("success") != options.end() && options["success"] == false) {
+                    this->listener->OnClientQueryFailed(
+                        this, messageId, query, ErrorCode::QueryFailed);
+                }
+                else {
+                    std::string rawResult;
+                    if (extractRawQueryResult(responseJson, rawResult)) {
+                        if (query) {
+                            query->DeserializeResult(rawResult);
+                            this->listener->OnClientQuerySucceeded(this, messageId, query);
+                        }
+                        else {
+                            this->listener->OnClientQueryFailed(
+                                this, messageId, query, ErrorCode::QueryNotFound);
+                        }
                     }
                 }
             }
@@ -241,6 +244,8 @@ void WebSocketClient::SendPendingQueries() {
             createSendRawQueryRequest(query->SerializeQuery(), messageId),
             websocketpp::frame::opcode::text);
     }
+
+    this->messageIdToQuery.clear();
 }
 
 void WebSocketClient::SetState(State state) {
