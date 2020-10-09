@@ -54,9 +54,11 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 
 #define MESSAGE_QUERY_COMPLETED 5000
+#define MESSAGE_RECONNECT_SOCKET 5001
 
-static const std::string kServerHost = "127.0.0.1";
-static const std::string kServerPassword = "";
+static const std::string kServerHost = "192.168.1.227";
+static const std::string kServerPassword = "842655";
+static const short kServerPort = 7905;
 
 class NullIndexer: public musik::core::IIndexer {
     public:
@@ -98,7 +100,7 @@ RemoteLibrary::RemoteLibrary(std::string name, int id)
 , exit(false)
 , messageQueue(nullptr)
 , wsc(this) {
-    this->wsc.Connect("ws://" + kServerHost + ":7905", kServerPassword);
+    this->wsc.Connect(kServerHost, kServerPort, kServerPassword);
     this->identifier = std::to_string(id);
     this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
 }
@@ -320,6 +322,11 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
         auto context = static_cast<QueryCompletedMessage*>(&message)->GetContext();
         this->NotifyQueryCompleted(context);
     }
+    else if (message.Type() == MESSAGE_RECONNECT_SOCKET) {
+        if (this->wsc.ConnectionState() == Client::State::Disconnected) {
+            this->wsc.Connect(kServerHost, kServerPort, kServerPassword);
+        }
+    }
 }
 
 /* WebSocketClient::Listener */
@@ -329,14 +336,17 @@ void RemoteLibrary::OnClientInvalidPassword(Client* client) {
 }
 
 void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State oldState) {
-
+    if (this->messageQueue && newState == State::Disconnected) {
+        this->messageQueue->Remove(this, MESSAGE_RECONNECT_SOCKET);
+        this->messageQueue->Post(Message::Create(this, MESSAGE_RECONNECT_SOCKET, 0, 0), 2500);
+    }
 }
 
 void RemoteLibrary::OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) {
     this->OnQueryCompleted(messageId, query);
 }
 
-void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::ErrorCode result) {
+void RemoteLibrary::OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError result) {
     this->OnQueryCompleted(messageId, query);
 }
 

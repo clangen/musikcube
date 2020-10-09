@@ -87,7 +87,7 @@ namespace musik { namespace core { namespace library {
             virtual void OnClientInvalidPassword(Client* client) override;
             virtual void OnClientStateChanged(Client* client, State newState, State oldState) override;
             virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) override;
-            virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::ErrorCode reason) override;
+            virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError reason) override;
 
             /* IResourceLocator */
             virtual std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;

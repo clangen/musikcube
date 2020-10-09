@@ -108,7 +108,7 @@ WebSocketClient::WebSocketClient(Listener* listener) {
     });
 
     client.set_fail_handler([this](Connection connection) {
-        this->SetState(State::Disconnected);
+        this->SetDisconnected(ConnectionError::ConnectionFailed);
     });
 
     client.set_message_handler([this](Connection connection, Message message) {
@@ -126,7 +126,7 @@ WebSocketClient::WebSocketClient(Listener* listener) {
                 auto& options = responseJson["options"];
                 if (options.find("success") != options.end() && options["success"] == false) {
                     this->listener->OnClientQueryFailed(
-                        this, messageId, query, ErrorCode::QueryFailed);
+                        this, messageId, query, QueryError::QueryFailed);
                 }
                 else {
                     std::string rawResult;
@@ -137,7 +137,7 @@ WebSocketClient::WebSocketClient(Listener* listener) {
                         }
                         else {
                             this->listener->OnClientQueryFailed(
-                                this, messageId, query, ErrorCode::QueryNotFound);
+                                this, messageId, query, QueryError::QueryNotFound);
                         }
                     }
                 }
@@ -147,14 +147,33 @@ WebSocketClient::WebSocketClient(Listener* listener) {
 
     client.set_close_handler([this](Connection connection) {
         if (this->state == State::Authenticating) {
+            this->SetDisconnected(ConnectionError::InvalidPassword);
             this->listener->OnClientInvalidPassword(this);
         }
-        this->SetState(State::Disconnected);
+        else {
+            this->SetDisconnected(ConnectionError::ClosedByServer);
+        }
     });
 }
 
 WebSocketClient::~WebSocketClient() {
     this->Disconnect();
+}
+
+WebSocketClient::ConnectionError WebSocketClient::LastConnectionError() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    return this->connectionError;
+}
+
+WebSocketClient::State WebSocketClient::ConnectionState() {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    return this->state;
+}
+
+void WebSocketClient::SetDisconnected(ConnectionError errorCode) {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    this->connectionError = errorCode;
+    this->SetState(State::Disconnected);
 }
 
 std::string WebSocketClient::EnqueueQuery(Query query) {
@@ -170,10 +189,10 @@ std::string WebSocketClient::EnqueueQuery(Query query) {
     return messageId;
 }
 
-void WebSocketClient::Connect(const std::string& uri, const std::string& password) {
+void WebSocketClient::Connect(const std::string& host, short port, const std::string& password) {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     this->Disconnect();
-    this->uri = uri;
+    this->uri = "ws://" + host + ":" + std::to_string(port);
     this->password = password;
     if (this->uri.size()) {
         this->Reconnect();
@@ -227,7 +246,7 @@ void WebSocketClient::InvalidatePendingQueries() {
 
     for (auto& kv : this->messageIdToQuery) {
         this->listener->OnClientQueryFailed(
-            this, kv.first, kv.second, ErrorCode::Disconnected);
+            this, kv.first, kv.second, QueryError::Disconnected);
     }
 
     this->messageIdToQuery.clear();
@@ -257,6 +276,7 @@ void WebSocketClient::SetState(State state) {
                 this->InvalidatePendingQueries();
                 break;
             case State::Connected:
+                this->connectionError = ConnectionError::None;
                 this->SendPendingQueries();
                 break;
             default:

@@ -40,6 +40,7 @@
 #include <websocketpp/client.hpp>
 #include <thread>
 #include <unordered_map>
+#include <atomic>
 
 namespace musik { namespace core { namespace net {
 
@@ -58,31 +59,41 @@ namespace musik { namespace core { namespace net {
                 Disconnecting = 4,
             };
 
-            enum class ErrorCode: int {
+            enum class QueryError: int {
                 QueryFailed = 1,
                 Disconnected = 2,
                 AuthFailed = 3,
                 QueryNotFound = 4,
             };
 
+            enum class ConnectionError : int {
+                None = 0,
+                InvalidPassword = 1,
+                ConnectionFailed = 2,
+                ClosedByServer = 3,
+            };
+
             class Listener {
                 public:
                     using Client = WebSocketClient;
                     using State = Client::State;
-                    using ErrorCode = Client::ErrorCode;
+                    using QueryError = Client::QueryError;
                     virtual void OnClientInvalidPassword(Client* client) = 0;
                     virtual void OnClientStateChanged(Client* client, State newState, State oldState) = 0;
                     virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) = 0;
-                    virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, ErrorCode result) = 0;
+                    virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, QueryError result) = 0;
             };
 
             WebSocketClient(Listener* listener);
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
-            void Connect(const std::string& uri, const std::string& password);
+            void Connect(const std::string& host, short port, const std::string& password);
             void Reconnect();
             void Disconnect();
+
+            State ConnectionState();
+            ConnectionError LastConnectionError();
 
             std::string EnqueueQuery(Query query);
 
@@ -90,6 +101,7 @@ namespace musik { namespace core { namespace net {
             void SetState(State state);
             void InvalidatePendingQueries();
             void SendPendingQueries();
+            void SetDisconnected(ConnectionError errorCode);
 
             Client client;
             Connection connection;
@@ -98,7 +110,8 @@ namespace musik { namespace core { namespace net {
             std::recursive_mutex mutex;
             std::string uri, password;
             std::unordered_map<std::string, Query> messageIdToQuery;
-            bool quit{ false };
+            std::atomic<bool> quit{ false };
+            ConnectionError connectionError{ ConnectionError::None };
             State state{ State::Disconnected };
             Listener* listener{ nullptr };
     };
