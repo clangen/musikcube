@@ -125,7 +125,7 @@ bool TrackList::Delete(size_t index) {
     return false;
 }
 
-TrackPtr TrackList::Get(size_t index) const {
+TrackPtr TrackList::Get(size_t index, bool async) const {
 #if 0
     /* one at a time */
     auto id = this->ids.at(index);
@@ -147,14 +147,21 @@ TrackPtr TrackList::Get(size_t index) const {
     auto cached = this->GetFromCache(id);
     if (cached) { return cached; }
 
-    int half = (this->cacheSize - 1) / 2;
-    int remain = this->cacheSize - 1;
-    int from = index - half;
+    int half = ((int) this->cacheSize - 1) / 2;
+    int remain = (int) this->cacheSize - 1;
+    int from = (int) index - half;
     remain -= from > 0 ? half : (half + from);
-    int to = index + remain;
-    this->CacheWindow(std::max(0, from), to);
+    int to = (int) index + remain;
+    this->CacheWindow(std::max(0, from), to, async);
 
     cached = this->GetFromCache(id);
+
+    if (async && !cached) {
+        auto loadingTrack = std::make_shared<LibraryTrack>(this->ids[index], this->library);
+        loadingTrack->SetMetadataState(MetadataState::Loading);
+        return loadingTrack;
+    }
+
     return cached;
 #endif
 }
@@ -239,11 +246,14 @@ void TrackList::PruneCache() const {
     }
 }
 
-void TrackList::CacheWindow(size_t from, size_t to) const {
+void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
     std::unordered_set<int64_t> idsNotInCache;
     for (size_t i = from; i <= std::min(to, this->ids.size() - 1); i++) {
         auto id = this->ids[i];
         if (this->cacheMap.find(id) == this->cacheMap.end()) {
+            if (async && currentWindow.Contains(i)) {
+                continue;
+            }
             idsNotInCache.insert(id);
         }
     }
@@ -252,12 +262,41 @@ void TrackList::CacheWindow(size_t from, size_t to) const {
         return;
     }
 
+    if (async && currentWindow.Valid()) {
+        this->nextWindow.Set(from, to);
+        return; /* when this query finishes we'll start up the next one.
+         this is like a poor man's debounce. or maybe a rich man's debounce? */
+    }
+
     auto query = std::make_shared<TrackMetadataBatchQuery>(idsNotInCache, this->library);
-    this->library->Enqueue(query, ILibrary::QuerySynchronous);
-    if (query->GetStatus() == IQuery::Finished) {
-        auto& result = query->Result();
-        for (auto& kv : result) {
-            this->AddToCache(kv.first, kv.second);
+
+    if (async) {
+        currentWindow.Set(from, to);
+        this->library->Enqueue(query, 0, [this, from, to, query](auto q) {
+            if (query->GetStatus() == IQuery::Finished) {
+                auto& result = query->Result();
+                for (auto& kv : result) {
+                    this->AddToCache(kv.first, kv.second);
+                }
+            }
+
+            this->currentWindow.Reset();
+            if (this->nextWindow.Valid()) {
+                size_t from = nextWindow.from, to = nextWindow.to;
+                nextWindow.Reset();
+                this->CacheWindow(from, to, true);
+            }
+
+            this->WindowCached(const_cast<TrackList*>(this), from, to);
+        });
+    }
+    else {
+        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+        if (query->GetStatus() == IQuery::Finished) {
+            auto& result = query->Result();
+            for (auto& kv : result) {
+                this->AddToCache(kv.first, kv.second);
+            }
         }
     }
 }

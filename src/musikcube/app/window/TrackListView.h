@@ -97,9 +97,14 @@ namespace musik {
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
 
+                void SetTrackListAndUpateEventHandlers(
+                    std::shared_ptr<musik::core::TrackList> trackList);
+
                 virtual void OnEntryActivated(size_t index);
                 virtual void OnEntryContextMenu(size_t index);
                 virtual void OnDimensionsChanged();
+                virtual void OnTrackListWindowCached(
+                    const musik::core::TrackList* track, size_t from, size_t to);
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();

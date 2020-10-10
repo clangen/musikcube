@@ -79,7 +79,7 @@ static inline void DrawCursor(IInput* input) {
             WINDOW* content = inputWindow->GetContent();
             curs_set(1);
             wtimeout(content, IDLE_TIMEOUT_MS);
-            wmove(content, 0, input->Position());
+            wmove(content, 0, (int) input->Position());
             return;
         }
     }

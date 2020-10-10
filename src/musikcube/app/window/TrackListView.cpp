@@ -52,6 +52,8 @@
 
 #define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
 
+static const bool kGetAsync = false;
+
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::db;
@@ -117,13 +119,17 @@ void TrackListView::SetRowRenderer(TrackRowRenderers::Renderer renderer) {
     this->renderer = renderer;
 }
 
+void TrackListView::OnTrackListWindowCached(const musik::core::TrackList* track, size_t from, size_t to) {
+    this->Redraw();
+}
+
 void TrackListView::OnQueryCompleted(IQuery* query) {
     if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
             bool hadTracks = this->tracks && this->tracks->Count() > 0;
             bool prevQuerySame = this->lastQueryHash == this->query->GetQueryHash();
 
-            this->tracks = this->query->GetResult();
+            this->SetTrackListAndUpateEventHandlers(this->query->GetResult());
             this->AdjustTrackListCacheWindowSize();
             this->headers.Set(this->query->GetHeaders());
             this->lastQueryHash = this->query->GetQueryHash();
@@ -153,7 +159,7 @@ std::shared_ptr<TrackList> TrackListView::GetTrackList() {
 
 void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
     if (this->tracks != trackList) {
-        this->tracks = trackList;
+        this->SetTrackListAndUpateEventHandlers(trackList);
         this->AdjustTrackListCacheWindowSize();
         this->ScrollToTop();
         this->SelectFirstTrack();
@@ -215,6 +221,16 @@ void TrackListView::ScrollToPlaying() {
                 return;
             }
         }
+    }
+}
+
+void TrackListView::SetTrackListAndUpateEventHandlers(std::shared_ptr<TrackList> trackList) {
+    if (this->tracks) {
+        this->tracks->WindowCached.disconnect(this);
+    }
+    this->tracks = trackList;
+    if (this->tracks) {
+        this->tracks->WindowCached.connect(this, &TrackListView::OnTrackListWindowCached);
     }
 }
 
@@ -451,11 +467,12 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         /* the next track at the next logical index will have the album
         tracks we're interesetd in. */
         auto trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
-        TrackPtr track = parent.tracks->Get(trackIndex);
+        TrackPtr track = parent.tracks->Get(trackIndex, kGetAsync);
 
         if (track) {
-            std::string album = track->GetString(constants::Track::ALBUM);
-
+            std::string album = track->GetMetadataState() == MetadataState::Loaded
+                ? track->GetString(constants::Track::ALBUM) : "-";
+            
             if (!album.size()) {
                 album = _TSTR("tracklist_unknown_album");
             }
@@ -474,19 +491,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     }
 
     size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
-    TrackPtr track = parent.tracks->Get(trackIndex);
-
-    if (!track ||
-        track->GetMetadataState() == MetadataState::Missing ||
-        track->GetMetadataState() == MetadataState::NotLoaded)
-    {
-        auto entry = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
-        entry->SetAttrs(selected ? Color::ListItemHighlighted : Color::TextError);
-        return entry;
-    }
-    else if (track->GetMetadataState() == MetadataState::Loading) {
-        return std::shared_ptr<SingleLineEntry>(new SingleLineEntry(" -"));
-    }
+    TrackPtr track = parent.tracks->Get(trackIndex, kGetAsync);
 
     Color attrs = Color::Default;
 
@@ -510,6 +515,12 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         }
     }
 
+    if (!track || track->GetMetadataState() != MetadataState::Loaded) {
+        auto entry = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("  -"));
+        entry->SetAttrs(attrs);
+        return entry;
+    }
+    
     std::string text = parent.renderer(
         track, rawIndex, this->GetWidth(), parent.trackNumType);
 
