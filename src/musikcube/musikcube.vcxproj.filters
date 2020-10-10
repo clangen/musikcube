@@ -60,9 +60,6 @@
     <ClCompile Include="app\overlay\ColorThemeOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
-    <ClCompile Include="app\overlay\LocaleOverlay.cpp">
-      <Filter>app\overlay</Filter>
-    </ClCompile>
     <ClCompile Include="app\overlay\ServerOverlay.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
@@ -201,6 +198,9 @@
     <ClCompile Include="app\layout\LocalLibrarySettingsLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\overlay\SettingsOverlays.cpp">
+      <Filter>app\overlay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -263,9 +263,6 @@
     </ClInclude>
     <ClInclude Include="resource.h" />
     <ClInclude Include="app\overlay\ColorThemeOverlay.h">
-      <Filter>app\overlay</Filter>
-    </ClInclude>
-    <ClInclude Include="app\overlay\LocaleOverlay.h">
       <Filter>app\overlay</Filter>
     </ClInclude>
     <ClInclude Include="app\util\Messages.h">
@@ -456,6 +453,9 @@
     </ClInclude>
     <ClInclude Include="app\layout\LocalLibrarySettingsLayout.h">
       <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\overlay\SettingsOverlays.h">
+      <Filter>app\overlay</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

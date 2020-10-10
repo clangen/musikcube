@@ -56,7 +56,7 @@
 #include <app/util/UpdateCheck.h>
 #include <app/overlay/ColorThemeOverlay.h>
 #include <app/overlay/LastFmOverlay.h>
-#include <app/overlay/LocaleOverlay.h>
+#include <app/overlay/SettingsOverlays.h>
 #include <app/overlay/PlaybackOverlays.h>
 #include <app/overlay/PluginOverlay.h>
 #include <app/overlay/ServerOverlay.h>
@@ -214,8 +214,12 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     }
 }
 
+void SettingsLayout::OnLibraryTypeDropdownActivated(cursespp::TextLabel* label) {
+    SettingsOverlays::ShowLibraryTypeOverlay([this]() { this->LoadPreferences(); });
+}
+
 void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {
-    LocaleOverlay::Show([this](){ this->LoadPreferences(); });
+    SettingsOverlays::ShowLocaleOverlay([this](){ this->LoadPreferences(); });
 }
 
 void SettingsLayout::OnOutputDriverDropdownActivated(cursespp::TextLabel* label) {
@@ -317,15 +321,16 @@ void SettingsLayout::OnLayout() {
     int cx = this->GetWidth(), cy = this->GetHeight();
 
     /* top row (library config) */
-    int libraryLayoutHeight = cy / 2;
-    this->localLibraryLayout->MoveAndResize(0, 0, cx, libraryLayoutHeight);
+    this->libraryTypeDropdown->MoveAndResize(1, 1, cx - 1, LABEL_HEIGHT);
+    int libraryLayoutHeight = std::min(12, cy / 2);
+    this->localLibraryLayout->MoveAndResize(2, 2, cx - 3, libraryLayoutHeight);
 
     /* bottom row (dropdowns, checkboxes) */
     int columnCx = (cx - 5) / 2; /* 3 = left + right + middle padding */
     int column1 = 1;
     int column2 = columnCx + 3;
 
-    y = BOTTOM(this->localLibraryLayout);
+    y = BOTTOM(this->localLibraryLayout) + 1;
     this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -342,7 +347,7 @@ void SettingsLayout::OnLayout() {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     }
 
-    y = BOTTOM(this->localLibraryLayout);
+    y = BOTTOM(this->localLibraryLayout) + 1;
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->enableTransparencyCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
@@ -362,6 +367,9 @@ void SettingsLayout::OnLayout() {
 
 void SettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
+
+    this->libraryTypeDropdown.reset(new TextLabel());
+    this->libraryTypeDropdown->Activated.connect(this, &SettingsLayout::OnLibraryTypeDropdownActivated);
 
     this->localLibraryLayout.reset(new LocalLibrarySettingsLayout(this->library, this->playback));
 
@@ -424,6 +432,7 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->saveSessionCheckbox, _TSTR("settings_save_session_on_exit"));
 
     int order = 0;
+    this->libraryTypeDropdown->SetFocusOrder(order++);
     this->localLibraryLayout->SetFocusOrder(order++);
     this->localeDropdown->SetFocusOrder(order++);
     this->outputDriverDropdown->SetFocusOrder(order++);
@@ -453,6 +462,7 @@ void SettingsLayout::InitializeWindows() {
     this->advancedDropdown->SetFocusOrder(order++);
     this->updateDropdown->SetFocusOrder(order++);
 
+    this->AddWindow(this->libraryTypeDropdown);
     this->AddWindow(this->localLibraryLayout);
     this->AddWindow(this->localeDropdown);
     this->AddWindow(this->outputDriverDropdown);
@@ -612,7 +622,15 @@ void SettingsLayout::LoadPreferences() {
             ? _TSTR("settings_transport_type_gapless")
             : _TSTR("settings_transport_type_crossfade");
 
-    this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName);
+    this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName); 
+
+    /* library type */
+    std::string libraryType =
+        (ILibrary::Type) prefs->GetInt(core::prefs::keys::LibraryType, (int) ILibrary::Type::Local) == ILibrary::Type::Local
+            ? _TSTR("settings_library_type_local") 
+            : _TSTR("settings_library_type_remote");
+
+    this->libraryTypeDropdown->SetText(arrow + _TSTR("settings_library_type") + libraryType);
 }
 
 void SettingsLayout::UpdateServerAvailability() {

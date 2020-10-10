@@ -59,7 +59,6 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string IndexerLogEnabled;
         extern const std::string IndexerThreadCount;
         extern const std::string IndexerTransactionInterval;
-
         extern const std::string ReplayGainMode;
         extern const std::string PreampDecibels;
         extern const std::string SaveSessionOnExit;
@@ -70,6 +69,10 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string LastFmUsername;
         extern const std::string DisableAlbumArtistFallback;
         extern const std::string AuddioApiToken;
+        extern const std::string LibraryType;
+        extern const std::string RemoteLibraryHostname;
+        extern const std::string RemoteLibraryPort;
+        extern const std::string RemoteLibraryPassword;
     }
 
 } } }

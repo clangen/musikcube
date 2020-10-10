@@ -34,9 +34,12 @@
 
 #include <stdafx.h>
 
-#include "LocaleOverlay.h"
+#include "SettingsOverlays.h"
 
 #include <core/i18n/Locale.h>
+#include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
+#include <core/library/ILibrary.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
@@ -46,6 +49,7 @@
 using namespace musik;
 using namespace musik::core;
 using namespace musik::cube;
+using namespace musik::cube::SettingsOverlays;
 using namespace cursespp;
 
 using Callback = std::function<void()>;
@@ -65,12 +69,9 @@ static void showNeedsRestart(Callback cb = Callback()) {
     App::Overlays().Push(dialog);
 }
 
-LocaleOverlay::LocaleOverlay() {
-}
-
 static std::vector<std::string> allLocales;
 
-void LocaleOverlay::Show(std::function<void()> callback) {
+void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> callback) {
     auto locale = i18n::Locale::Instance();
 
     using Adapter = cursespp::SimpleScrollAdapter;
@@ -86,7 +87,7 @@ void LocaleOverlay::Show(std::function<void()> callback) {
     for (size_t i = 0; i < allLocales.size(); i++) {
         adapter->AddEntry(allLocales[i]);
         if (allLocales[i] == currentLocale) {
-            selectedIndex = (int) i;
+            selectedIndex = (int)i;
         }
     }
 
@@ -102,6 +103,38 @@ void LocaleOverlay::Show(std::function<void()> callback) {
                     i18n::Locale::Instance().SetSelectedLocale(allLocales[index]);
                     showNeedsRestart(callback);
                 }
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()> callback) {
+    auto prefs = Preferences::ForComponent(prefs::components::Settings);
+
+    auto libraryType = (ILibrary::Type) prefs->GetInt(
+        prefs::keys::LibraryType, (int) ILibrary::Type::Local);
+
+    using Adapter = cursespp::SimpleScrollAdapter;
+    using ListOverlay = cursespp::ListOverlay;
+
+    std::shared_ptr<Adapter> adapter(new Adapter());
+    adapter->SetSelectable(true);
+    adapter->AddEntry(_TSTR("settings_library_type_local"));
+    adapter->AddEntry(_TSTR("settings_library_type_remote"));
+
+    int selectedIndex = libraryType == ILibrary::Type::Local ? 0 : 1;
+
+    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("settings_library_type_overlay_title"))
+        .SetSelectedIndex(selectedIndex)
+        .SetItemSelectedCallback(
+            [prefs, callback]
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                auto updatedType = index == 0 ? ILibrary::Type::Local : ILibrary::Type::Remote;
+                prefs->SetInt(prefs::keys::LibraryType, (int)updatedType);
+                callback();
             });
 
     cursespp::App::Overlays().Push(dialog);

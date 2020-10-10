@@ -118,8 +118,8 @@ int main(int argc, char* argv[]) {
     musik::debug::Start({ fileLogger, consoleLogger });
 
     LibraryFactory::Initialize(Window::MessageQueue());
-    ILibraryPtr library = LibraryFactory::Instance().Default();
-    // ILibraryPtr library = LibraryFactory::Instance().CreateLibrary("remote", ILibrary::Type::Remote);
+    //ILibraryPtr library = LibraryFactory::Instance().Default();
+    ILibraryPtr library = LibraryFactory::Instance().CreateLibrary("remote", ILibrary::Type::Remote);
 
     {
         auto prefs = Preferences::ForComponent(

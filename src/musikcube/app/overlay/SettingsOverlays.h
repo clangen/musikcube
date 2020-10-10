@@ -36,14 +36,13 @@
 
 #include <functional>
 
-namespace musik {
-    namespace cube {
-        class LocaleOverlay {
-            public:
-                static void Show(std::function<void()> callback);
+namespace musik { namespace cube {
 
-            private:
-                LocaleOverlay();
-        };
+    namespace SettingsOverlays {
+
+        void ShowLocaleOverlay(std::function<void()> callback);
+
+        void ShowLibraryTypeOverlay(std::function<void()> callback);
+
     }
-}
+} }

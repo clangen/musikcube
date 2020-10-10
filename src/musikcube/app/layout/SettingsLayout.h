@@ -91,6 +91,7 @@ namespace musik { namespace cube {
 
             void OnCheckboxChanged(cursespp::Checkbox* checkbox, bool checked);
 
+            void OnLibraryTypeDropdownActivated(cursespp::TextLabel* label);
             void OnOutputDriverDropdownActivated(cursespp::TextLabel* label);
             void OnOutputDeviceDropdownActivated(cursespp::TextLabel* label);
             void OnReplayGainDropdownActivated(cursespp::TextLabel* label);
@@ -112,6 +113,7 @@ namespace musik { namespace cube {
             std::shared_ptr<musik::core::Preferences> prefs;
 
             using Text = std::shared_ptr<cursespp::TextLabel>;
+            Text libraryTypeDropdown;
             Text localeDropdown;
             Text outputDriverDropdown;
             Text outputDeviceDropdown;
