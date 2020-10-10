@@ -20,13 +20,13 @@ set (CUBE_SRCS
 	./app/overlay/ColorThemeOverlay.cpp
 	./app/overlay/EqualizerOverlay.cpp
 	./app/overlay/LastFmOverlay.cpp
-	./app/overlay/LocaleOverlay.cpp
 	./app/overlay/PlaybackOverlays.cpp
 	./app/overlay/PlayQueueOverlays.cpp
 	./app/overlay/PluginOverlay.cpp
 	./app/overlay/PreampOverlay.cpp
 	./app/overlay/ReassignHotkeyOverlay.cpp
 	./app/overlay/ServerOverlay.cpp
+	./app/overlay/SettingsOverlays.cpp
 	./app/overlay/TrackOverlays.cpp
 	./app/overlay/VisualizerOverlay.cpp
 	./app/util/ConsoleLogger.cpp
