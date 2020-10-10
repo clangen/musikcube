@@ -38,6 +38,7 @@
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
+#include <core/library/LibraryFactory.h>
 #include <core/support/PreferenceKeys.h>
 
 #include <algorithm>
@@ -45,6 +46,7 @@
 
 using namespace musik;
 using namespace musik::core;
+using namespace musik::core::library;
 using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
@@ -110,6 +112,7 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->pwLabel.reset(new TextLabel());
     this->pwLabel->SetText(_TSTR("settings_library_type_remote_password"), text::AlignRight);
     this->pwInput.reset(new TextInput(TextInput::StyleLine));
+    this->pwInput->SetInputMode(IInput::InputPassword);
 
     this->ipv6Cb.reset(new Checkbox());
     this->ipv6Cb->SetText(_TSTR("settings_server_use_ipv6"));
@@ -145,7 +148,37 @@ void RemoteLibrarySettingsLayout::OnVisibilityChanged(bool visible) {
 }
 
 void RemoteLibrarySettingsLayout::LoadPreferences() {
+    auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
+    auto wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
+    auto httpPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
+    auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
+    auto ipv6 = prefs->GetBool(core::prefs::keys::RemoteLibraryIpv6, false);
+    this->hostInput->SetText(host);
+    this->wssPortInput->SetText(std::to_string(wssPort));
+    this->httpPortInput->SetText(std::to_string(httpPort));
+    this->pwInput->SetText(password);
+    this->ipv6Cb->SetChecked(ipv6);
 }
 
 void RemoteLibrarySettingsLayout::SavePreferences() {
+    auto host = this->hostInput->GetText();
+    auto wssPort = std::stoi(this->wssPortInput->GetText());
+    auto httpPort = std::stoi(this->httpPortInput->GetText());
+    auto password = this->pwInput->GetText();
+    auto ipv6 = this->ipv6Cb->IsChecked();
+
+    if (wssPort > 65535 || wssPort < 0) { wssPort = 7905; }
+    if (httpPort > 65535 || httpPort < 0) { httpPort = 7905; }
+
+    prefs->SetString(core::prefs::keys::RemoteLibraryHostname, host.size() ? host.c_str() : "127.0.0.1");
+    prefs->SetInt(core::prefs::keys::RemoteLibraryWssPort, wssPort);
+    prefs->SetInt(core::prefs::keys::RemoteLibraryHttpPort, httpPort);
+    prefs->SetString(core::prefs::keys::RemoteLibraryPassword, password.c_str());
+    prefs->SetBool(core::prefs::keys::RemoteLibraryIpv6, ipv6);
+
+    auto library = LibraryFactory::Instance().DefaultRemoteLibrary();
+    auto remoteLibrary = std::dynamic_pointer_cast<RemoteLibrary>(library);
+    if (remoteLibrary) {
+        remoteLibrary->ReloadConnectionFromPreferences();
+    }
 }

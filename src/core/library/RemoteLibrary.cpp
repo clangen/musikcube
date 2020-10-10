@@ -409,5 +409,6 @@ void RemoteLibrary::ReloadConnectionFromPreferences() {
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
     auto port = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
-    this->wsc.Connect(host, port, password);
+    auto ipv6 = prefs->GetBool(core::prefs::keys::RemoteLibraryIpv6, false);
+    this->wsc.Connect(host, port, password, ipv6);
 }

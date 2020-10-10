@@ -36,6 +36,7 @@
 
 #include <core/config.h>
 #include <core/library/LocalLibrary.h>
+#include <core/library/RemoteLibrary.h>
 #include <core/runtime/IMessageQueue.h>
 #include <sigslot/sigslot.h>
 #include <map>
