@@ -278,7 +278,7 @@ int main(int argc, char** argv) {
 
     EvMessageQueue messageQueue;
     LibraryFactory::Initialize(messageQueue);
-    auto library = LibraryFactory::Instance().Default();
+    auto library = LibraryFactory::Instance().DefaultLocalLibrary();
 
     {
         PlaybackService playback(messageQueue, library);

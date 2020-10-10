@@ -23,6 +23,7 @@ set(CORE_SOURCES
   ./library/LibraryFactory.cpp
   ./library/LocalLibrary.cpp
   ./library/LocalMetadataProxy.cpp
+  ./library/MasterLibrary.cpp
   ./library/QueryRegistry.cpp
   ./library/RemoteLibrary.cpp
   ./library/query/AlbumListQuery.cpp
