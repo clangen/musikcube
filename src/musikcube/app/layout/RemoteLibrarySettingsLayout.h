@@ -36,6 +36,8 @@
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextLabel.h>
+#include <cursespp/TextInput.h>
+#include <cursespp/Checkbox.h>
 #include <core/library/ILibrary.h>
 #include <core/support/Preferences.h>
 
@@ -54,9 +56,13 @@ namespace musik { namespace cube {
         private:
             void InitializeWindows();
             void LoadPreferences();
+            void SavePreferences();
 
             musik::core::ILibraryPtr library;
 
             std::shared_ptr<musik::core::Preferences> prefs;
+            std::shared_ptr<cursespp::TextLabel> portLabel, hostLabel, pwLabel;
+            std::shared_ptr<cursespp::TextInput> portInput, hostInput, pwInput;
+            std::shared_ptr<cursespp::Checkbox> ipv6Cb;
     };
 } }
