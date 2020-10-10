@@ -111,6 +111,7 @@ MainLayout::MainLayout(
     this->prefs = Preferences::ForComponent("settings");
 
     library->ConnectionStateChanged.connect(this, &MainLayout::OnLibraryConnectionStateChanged);
+    library->LibraryChanged.connect(this, &MainLayout::OnLibraryChanged);
     library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
     library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
     library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
@@ -300,6 +301,12 @@ void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state
     if (state == ILibrary::ConnectionState::Disconnected) {
         this->playback.Stop();
     }
+}
+
+void MainLayout::OnLibraryChanged() {
+    this->playback.Stop();
+    this->libraryLayout.reset(new LibraryLayout(playback, library));
+    this->Layout();
 }
 
 void MainLayout::OnIndexerStarted() {

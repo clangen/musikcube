@@ -75,6 +75,7 @@ namespace musik {
                 void OnIndexerFinished(int count);
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnLibraryConnectionStateChanged(musik::core::ILibrary::ConnectionState state);
+                void OnLibraryChanged();
 
                 bool IsLibraryConnected();
 

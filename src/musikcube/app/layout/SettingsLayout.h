@@ -48,12 +48,11 @@
 
 #include <core/audio/PlaybackService.h>
 #include <core/audio/MasterTransport.h>
+#include <core/library/MasterLibrary.h>
+#include <core/support/Preferences.h>
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
-
-#include <core/library/ILibrary.h>
-#include <core/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
 
@@ -66,9 +65,11 @@ namespace musik { namespace cube {
         public sigslot::has_slots<>
     {
         public:
+            using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
+
             SettingsLayout(
                 cursespp::App& app,
-                musik::core::ILibraryPtr library,
+                MasterLibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
             virtual ~SettingsLayout();
@@ -106,7 +107,7 @@ namespace musik { namespace cube {
             void OnAdvancedSettingsActivate(cursespp::TextLabel* label);
 
             cursespp::App& app;
-            musik::core::ILibraryPtr library;
+            MasterLibraryPtr library;
             musik::core::IIndexer* indexer;
             musik::core::audio::PlaybackService& playback;
 

@@ -161,7 +161,7 @@ static void setTransportType(TransportType type) {
 
 SettingsLayout::SettingsLayout(
     cursespp::App& app,
-    musik::core::ILibraryPtr library,
+    MasterLibraryPtr library,
     musik::core::audio::PlaybackService& playback)
 : LayoutBase()
 , app(app)
@@ -215,7 +215,10 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
 }
 
 void SettingsLayout::OnLibraryTypeDropdownActivated(cursespp::TextLabel* label) {
-    SettingsOverlays::ShowLibraryTypeOverlay([this]() { this->LoadPreferences(); });
+    SettingsOverlays::ShowLibraryTypeOverlay([this]() {
+        this->LoadPreferences();
+        this->library->LoadDefaultLibrary();
+    });
 }
 
 void SettingsLayout::OnLocaleDropdownActivate(cursespp::TextLabel* label) {

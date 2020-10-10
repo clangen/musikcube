@@ -121,6 +121,8 @@ void MasterLibrary::LoadDefaultLibrary() {
             this->wrappedLibrary->QueryCompleted.connect(this, &MasterLibrary::OnQueryCompleted);
             this->wrappedLibrary->ConnectionStateChanged.connect(this, &MasterLibrary::OnConectionStateChanged);
         }
+
+        this->LibraryChanged();
     }
 }
 
