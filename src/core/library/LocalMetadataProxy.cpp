@@ -785,7 +785,7 @@ bool LocalMetadataProxy::SendRawQuery(
 {
     try {
         nlohmann::json json = nlohmann::json::parse(query);
-        auto localLibrary = LibraryFactory::Instance().Default();
+        auto localLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
         std::string name = json["name"];
         auto libraryQuery = QueryRegistry::CreateLocalQueryFor(name, query, localLibrary);
         if (libraryQuery) {

@@ -66,6 +66,8 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace cursespp;
 
+using MasterLibraryPtr = MainLayout::MasterLibraryPtr;
+
 static UpdateCheck updateCheck;
 
 static inline void updateSyncingText(TextLabel* label, int updates) {
@@ -86,18 +88,21 @@ static inline void updateSyncingText(TextLabel* label, int updates) {
     }
 }
 
-static inline void updateRemoteLibraryConnectedText(TextLabel* label, const ILibrary* library) {
-    auto host = static_cast<const RemoteLibrary*>(library)->WebSocketClient().Uri();
-    if (host.find("ws://") == 0) { host = host.substr(5); }
-    auto value = u8fmt(_TSTR("library_remote_connected_banner"), host.c_str());
-    label->SetText(value, cursespp::text::AlignCenter);
+static inline void updateRemoteLibraryConnectedText(TextLabel* label, MasterLibraryPtr library) {
+    RemoteLibrary* remoteLibrary = dynamic_cast<RemoteLibrary*>(library->Wrapped().get());
+    if (remoteLibrary) {
+        std::string host = remoteLibrary->WebSocketClient().Uri();
+        if (host.find("ws://") == 0) { host = host.substr(5); }
+        auto value = u8fmt(_TSTR("library_remote_connected_banner"), host.c_str());
+        label->SetText(value, cursespp::text::AlignCenter);
+    }
 }
 
 MainLayout::MainLayout(
     cursespp::App& app,
     musik::cube::ConsoleLogger* logger,
     musik::core::audio::PlaybackService& playback,
-    ILibraryPtr library)
+    MasterLibraryPtr library)
 : shortcutsFocused(false)
 , syncUpdateCount(0)
 , library(library)
@@ -153,7 +158,7 @@ void MainLayout::UpdateTopBannerText() {
         updateSyncingText(this->topBanner.get(), this->syncUpdateCount);
     }
     else if (libraryType == ILibrary::Type::Remote) {
-        updateRemoteLibraryConnectedText(this->topBanner.get(), this->library.get());
+        updateRemoteLibraryConnectedText(this->topBanner.get(), this->library);
     }
 }
 

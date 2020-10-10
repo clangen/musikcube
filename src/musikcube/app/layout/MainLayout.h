@@ -41,10 +41,8 @@
 
 #include <core/audio/PlaybackService.h>
 #include <core/support/Preferences.h>
-#include <core/library/ILibrary.h>
 #include <core/runtime/IMessageTarget.h>
-
-#include <core/audio/MasterTransport.h>
+#include <core/library/MasterLibrary.h>
 
 #include <app/util/ConsoleLogger.h>
 
@@ -54,11 +52,13 @@ namespace musik {
     namespace cube {
         class MainLayout : public cursespp::AppLayout {
             public:
+                using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
+
                 MainLayout(
                     cursespp::App& app,
                     ConsoleLogger* logger,
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    MasterLibraryPtr library);
 
                 virtual ~MainLayout();
 
@@ -95,7 +95,7 @@ namespace musik {
                 std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
                 std::shared_ptr<cursespp::LayoutBase> lyricsLayout;
                 musik::core::audio::PlaybackService& playback;
-                musik::core::ILibraryPtr library;
+                MasterLibraryPtr library;
                 bool shortcutsFocused;
                 int syncUpdateCount;
         };

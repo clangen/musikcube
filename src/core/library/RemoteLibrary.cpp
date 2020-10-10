@@ -142,7 +142,7 @@ void RemoteLibrary::Close() {
 }
 
 bool RemoteLibrary::IsConfigured() {
-    return LibraryFactory::Instance().Default()->IsConfigured(); /* CAL TODO FIXME */
+    return LibraryFactory::Instance().DefaultLocalLibrary()->IsConfigured(); /* CAL TODO FIXME */
 }
 
 static inline bool isQueryDone(RemoteLibrary::Query query) {
@@ -166,7 +166,7 @@ bool RemoteLibrary::IsQueryInFlight(Query query) {
 
 int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
-        auto defaultLocalLibrary = LibraryFactory::Instance().Default();
+        auto defaultLocalLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
         return defaultLocalLibrary->Enqueue(query, options, callback);
     }
 
@@ -275,7 +275,7 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
         locally, serialize the result, then deserialize it again to emulate the entire
         flow. */
 
-        auto localLibrary = LibraryFactory::Instance().Default();
+        auto localLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
         localLibrary->SetMessageQueue(*this->messageQueue);
 
         auto localQuery = QueryRegistry::CreateLocalQueryFor(

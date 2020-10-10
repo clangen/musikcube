@@ -914,7 +914,7 @@ void Indexer::RunAnalyzers() {
         getNextTrack.ResetAndUnbind();
 
         auto track = std::make_shared<IndexerTrack>(trackId);
-        TrackMetadataQuery query(track, LibraryFactory::Instance().Default());
+        TrackMetadataQuery query(track, LibraryFactory::Instance().DefaultLocalLibrary());
         query.Run(this->dbConnection);
 
         if (query.GetStatus() == IQuery::Finished) {

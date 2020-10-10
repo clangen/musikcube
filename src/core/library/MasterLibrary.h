@@ -35,45 +35,49 @@
 #pragma once
 
 #include <core/config.h>
-#include <core/library/LocalLibrary.h>
-#include <core/runtime/IMessageQueue.h>
+#include <core/db/Connection.h>
+
+#include <core/library/ILibrary.h>
+#include <core/library/IIndexer.h>
+#include <core/library/IQuery.h>
+#include <core/library/QueryBase.h>
+
+#include <mutex>
+
 #include <sigslot/sigslot.h>
-#include <map>
-#include <vector>
 
-namespace musik { namespace core {
+namespace musik { namespace core { namespace library {
 
-    class LibraryFactory {
+    class MasterLibrary: public ILibrary, public sigslot::has_slots<> {
         public:
-            using LibraryVector = std::vector<ILibraryPtr>;
-            using LibraryMap = std::map<int, ILibraryPtr>;
-            using LibrariesUpdatedEvent = sigslot::signal0<>;
-            using IMessageQueue = musik::core::runtime::IMessageQueue;
+            MasterLibrary();
+            virtual ~MasterLibrary();
 
-            LibrariesUpdatedEvent LibrariesUpdated;
+            virtual int Enqueue(QueryPtr query, unsigned int options = 0, Callback = Callback()) override;
+            virtual musik::core::IIndexer *Indexer() override;
+            virtual int Id() override;
+            virtual const std::string& Name() override;
+            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override;
+            virtual IResourceLocator& GetResourceLocator() override;
+            virtual bool IsConfigured() override;
+            virtual ConnectionState GetConnectionState() const override;
+            virtual Type GetType() const override;
+            virtual void Close() override;
 
-            ~LibraryFactory();
+            ILibraryPtr Wrapped() const { return Get(); }
 
-            static void Initialize(IMessageQueue& messageQueue);
-            static LibraryFactory& Instance();
-            static void Shutdown();
-
-            ILibraryPtr DefaultLocalLibrary();
-            ILibraryPtr DefaultRemoteLibrary();
-            ILibraryPtr DefaultLibrary(ILibrary::Type type);
-
-            LibraryVector Libraries();
-            ILibraryPtr CreateLibrary(const std::string& name, ILibrary::Type type);
-
-            ILibraryPtr GetLibrary(int identifier);
+            void LoadDefaultLibrary();
 
         private:
-            LibraryFactory();
 
-            ILibraryPtr AddLibrary(int id, ILibrary::Type type, const std::string& name);
+            ILibraryPtr Get() const;
 
-            LibraryVector libraries;
-            LibraryMap libraryMap;
+            void OnQueryCompleted(musik::core::db::IQuery* query);
+            void OnConectionStateChanged(ConnectionState state);
+
+            ILibraryPtr wrappedLibrary;
+            mutable std::recursive_mutex libraryMutex;
     };
 
-} }
+} } }

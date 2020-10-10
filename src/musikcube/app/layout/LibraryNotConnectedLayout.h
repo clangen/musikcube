@@ -35,7 +35,7 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
-#include <core/library/ILibrary.h>
+#include <core/library/MasterLibrary.h>
 #include <cursespp/ITopLevelLayout.h>
 #include <cursespp/TextLabel.h>
 #include <cursespp/ShortcutsWindow.h>
@@ -48,7 +48,9 @@ namespace musik { namespace cube {
         public sigslot::has_slots<>
     {
         public:
-            LibraryNotConnectedLayout(musik::core::ILibraryPtr library);
+            using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
+
+            LibraryNotConnectedLayout(MasterLibraryPtr library);
 
             virtual void OnLayout() override;
             virtual bool KeyPress(const std::string& kn) override;
@@ -61,7 +63,7 @@ namespace musik { namespace cube {
         private:
             void UpdateErrorText();
 
-            musik::core::ILibraryPtr library;
+            MasterLibraryPtr library;
             std::shared_ptr<cursespp::TextLabel> messageText;
             std::shared_ptr<cursespp::TextLabel> errorText;
             std::shared_ptr<cursespp::TextLabel> helpText;

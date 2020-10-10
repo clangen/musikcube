@@ -53,7 +53,7 @@
 #include <core/debug.h>
 #include <core/i18n/Locale.h>
 #include <core/library/LibraryFactory.h>
-#include <core/library/RemoteLibrary.h>
+#include <core/library/MasterLibrary.h>
 #include <core/plugin/Plugins.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/sdk/constants.h>
@@ -118,8 +118,7 @@ int main(int argc, char* argv[]) {
     musik::debug::Start({ fileLogger, consoleLogger });
 
     LibraryFactory::Initialize(Window::MessageQueue());
-    //ILibraryPtr library = LibraryFactory::Instance().Default();
-    ILibraryPtr library = LibraryFactory::Instance().CreateLibrary("remote", ILibrary::Type::Remote);
+    auto library = std::make_shared<musik::core::library::MasterLibrary>();
 
     {
         auto prefs = Preferences::ForComponent(

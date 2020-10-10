@@ -58,7 +58,8 @@ LibraryFactory& LibraryFactory::Instance() {
 };
 
 LibraryFactory::LibraryFactory() {
-    this->CreateLibrary("Local Library", ILibrary::Type::Local);
+    this->CreateLibrary("default-local-library", ILibrary::Type::Local);
+    this->CreateLibrary("default-remote-library", ILibrary::Type::Remote);
 }
 
 LibraryFactory::~LibraryFactory() {
@@ -133,8 +134,17 @@ LibraryFactory::LibraryVector LibraryFactory::Libraries() {
     return LibraryFactory::Instance().libraries;
 }
 
-ILibraryPtr LibraryFactory::Default() {
+ILibraryPtr LibraryFactory::DefaultLocalLibrary() {
     return LibraryFactory::Instance().libraries.at(0);
+}
+
+ILibraryPtr LibraryFactory::DefaultRemoteLibrary() {
+    return LibraryFactory::Instance().libraries.at(1);
+}
+
+ILibraryPtr LibraryFactory::DefaultLibrary(ILibrary::Type type) {
+    return type == ILibrary::Type::Local
+        ? DefaultLocalLibrary() : DefaultRemoteLibrary();
 }
 
 ILibraryPtr LibraryFactory::GetLibrary(int identifier) {

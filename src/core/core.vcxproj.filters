@@ -256,6 +256,9 @@
     <ClCompile Include="library\query\TrackMetadataBatchQuery.cpp">
       <Filter>src\library\query</Filter>
     </ClCompile>
+    <ClCompile Include="library\MasterLibrary.cpp">
+      <Filter>src\library</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -626,6 +629,9 @@
     </ClInclude>
     <ClInclude Include="library\query\TrackMetadataBatchQuery.h">
       <Filter>src\library\query</Filter>
+    </ClInclude>
+    <ClInclude Include="library\MasterLibrary.h">
+      <Filter>src\library</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

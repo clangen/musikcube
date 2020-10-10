@@ -498,6 +498,7 @@
     <ClCompile Include="library\LocalLibrary.cpp" />
     <ClCompile Include="library\LibraryFactory.cpp" />
     <ClCompile Include="library\LocalMetadataProxy.cpp" />
+    <ClCompile Include="library\MasterLibrary.cpp" />
     <ClCompile Include="library\metadata\MetadataMap.cpp" />
     <ClCompile Include="library\metadata\MetadataMapList.cpp" />
     <ClCompile Include="library\QueryRegistry.cpp" />
@@ -581,6 +582,7 @@
     <ClInclude Include="library\LibraryFactory.h" />
     <ClInclude Include="library\LocalLibraryConstants.h" />
     <ClInclude Include="library\LocalMetadataProxy.h" />
+    <ClInclude Include="library\MasterLibrary.h" />
     <ClInclude Include="library\metadata\MetadataMap.h" />
     <ClInclude Include="library\metadata\MetadataMapList.h" />
     <ClInclude Include="library\QueryBase.h" />

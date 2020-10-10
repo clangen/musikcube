@@ -50,15 +50,17 @@ using namespace musik::core::library;
 using namespace musik::core::net;
 using namespace cursespp;
 
-static inline std::string resolveErrorMessage(const ILibrary* library) {
+using MasterLibraryPtr = LibraryNotConnectedLayout::MasterLibraryPtr;
+
+static inline std::string resolveErrorMessage(MasterLibraryPtr library) {
     static const std::map<WebSocketClient::ConnectionError, std::string> kStateToErrorString = {
         { WebSocketClient::ConnectionError::ClosedByServer, "library_error_closed_by_server" },
         { WebSocketClient::ConnectionError::ConnectionFailed, "library_error_connection_failed" },
         { WebSocketClient::ConnectionError::InvalidPassword, "library_error_invalid_password" },
     };
 
-    if (library->GetType() == ILibrary::Type::Remote) {
-        const RemoteLibrary* remoteLibrary = static_cast<const RemoteLibrary*>(library);
+    auto remoteLibrary = dynamic_cast<const RemoteLibrary*>(library->Wrapped().get());
+    if (remoteLibrary) {
         auto error = remoteLibrary->WebSocketClient().LastConnectionError();
         auto it = kStateToErrorString.find(error);
         if (it != kStateToErrorString.end()) {
@@ -74,9 +76,10 @@ static inline std::string resolveErrorMessage(const ILibrary* library) {
     return _TSTR("library_error_unknown");
 }
 
-static inline std::string resolveMessageText(const ILibrary* library) {
-    if (library->GetType() == ILibrary::Type::Remote) {
-        auto host = dynamic_cast<const RemoteLibrary*>(library)->WebSocketClient().Uri();
+static inline std::string resolveMessageText(MasterLibraryPtr library) {
+    auto remoteLibrary = dynamic_cast<const RemoteLibrary*>(library->Wrapped().get());
+    if (remoteLibrary) {
+        auto host = remoteLibrary->WebSocketClient().Uri();
         if (host.find("ws://") == 0) { host = host.substr(5); }
         if (host.size()) {
             return u8fmt(_TSTR("library_not_connected_with_hostname"), host.c_str());
@@ -85,7 +88,7 @@ static inline std::string resolveMessageText(const ILibrary* library) {
     return _TSTR("library_not_connected");
 }
 
-LibraryNotConnectedLayout::LibraryNotConnectedLayout(ILibraryPtr library)
+LibraryNotConnectedLayout::LibraryNotConnectedLayout(MasterLibraryPtr library)
 : LayoutBase()
 , library(library) {
     this->library->ConnectionStateChanged.connect(this, &LibraryNotConnectedLayout::OnLibraryStateChanged);
@@ -122,10 +125,9 @@ void LibraryNotConnectedLayout::OnLibraryStateChanged(ILibrary::ConnectionState 
 }
 
 void LibraryNotConnectedLayout::UpdateErrorText() {
-    auto library = this->library.get();
-    auto error = u8fmt(_TSTR("library_error_format"), resolveErrorMessage(library).c_str());
+    auto error = u8fmt(_TSTR("library_error_format"), resolveErrorMessage(this->library).c_str());
     this->errorText->SetText(error);
-    this->messageText->SetText(resolveMessageText(library));
+    this->messageText->SetText(resolveMessageText(this->library));
 }
 
 void LibraryNotConnectedLayout::SetShortcutsWindow(cursespp::ShortcutsWindow* shortcuts) {
