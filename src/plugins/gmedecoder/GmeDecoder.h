@@ -47,7 +47,7 @@ using namespace musik::core::sdk;
 class GmeDecoder: public musik::core::sdk::IDecoder {
     public:
         GmeDecoder();
-        ~GmeDecoder();
+        virtual ~GmeDecoder();
 
         virtual void Release() override;
         virtual double SetPosition(double seconds) override;
@@ -65,5 +65,6 @@ class GmeDecoder: public musik::core::sdk::IDecoder {
         int totalSamples { 0 };
         int samplesPlayed { 0 };
         bool exhausted { false };
+        bool isWrappedDataStream{ false };
         std::mutex mutex;
 };

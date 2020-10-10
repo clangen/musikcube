@@ -86,7 +86,7 @@ class HttpDataStream : public IDataStream {
         static size_t CurlReadHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
         static int CurlTransferCallback(void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
 
-        std::string resolvedUri, type;
+        std::string originalUri, httpUri, type;
         size_t length;
         std::string filename;
         FILE* writeFile;

@@ -81,6 +81,11 @@ OpenMptDecoder::~OpenMptDecoder() {
         openmpt_module_destroy(this->module);
         this->module = nullptr;
     }
+
+    if (this->wrappedDataStream) {
+        delete this->wrappedDataStream;
+        this->wrappedDataStream = nullptr;
+    }
 }
 
 bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
@@ -94,7 +99,18 @@ bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 
     if (this->module) {
-        int track = static_cast<OpenMptDataStream*>(stream)->GetTrackNumber();
+        auto mptStream = dynamic_cast<OpenMptDataStream*>(stream);
+        if (!mptStream) {
+            mptStream = new OpenMptDataStream();
+            if (!mptStream->Open(stream->Uri(), OpenMptDataStream::OpenFlags::Read)) {
+                delete mptStream;
+                mptStream = nullptr;
+                return false;
+            }
+            this->wrappedDataStream = mptStream; /* we need to clean it up later */
+        }
+
+        int track = mptStream->GetTrackNumber();
         if (track >= 0 && track < openmpt_module_get_num_subsongs(module)) {
             openmpt_module_select_subsong(this->module, track);
         }

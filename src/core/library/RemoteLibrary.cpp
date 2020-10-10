@@ -374,6 +374,7 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
     std::string type = ".mp3";
 
     char buffer[4096];
+    buffer[0] = 0;
     int size = track->Uri(buffer, sizeof(buffer));
     if (size) {
         std::string originalUri = buffer;
@@ -391,6 +392,7 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
     const std::string uri = "http://" + host + ":" + std::to_string(port) + "/audio/id/" + std::to_string(track->GetId());
     nlohmann::json path = {
         { "uri", uri },
+        { "originalUri", std::string(buffer) },
         { "type", type },
         { "password", password }
     };

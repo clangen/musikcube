@@ -34,6 +34,7 @@
 
 #include "Constants.h"
 #include "GmeDecoder.h"
+#include "GmeDataStream.h"
 #include <core/sdk/IPreferences.h>
 #include <core/sdk/IDebug.h>
 #include <cassert>
@@ -57,12 +58,26 @@ GmeDecoder::~GmeDecoder() {
     gme_free_info(this->info);
     this->gme = nullptr;
     this->info = nullptr;
+    if (this->isWrappedDataStream) {
+        this->stream->Release();
+        this->stream = nullptr;
+    }
     delete[] buffer;
 }
 
 bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
     this->stream = dynamic_cast<GmeDataStream*>(stream);
-    assert(this->stream);
+
+    if (!this->stream) {
+        this->stream = new GmeDataStream();
+        if (!this->stream->Open(stream->Uri(), GmeDataStream::OpenFlags::Read)) {
+            delete this->stream;
+            this->stream = nullptr;
+            return false;
+        }
+        this->isWrappedDataStream = true;
+    }
+
     auto length = stream->Length();
     const char* data = new char[length];
     if (stream->Read((void*) data, length) == length) {

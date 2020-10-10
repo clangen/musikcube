@@ -36,6 +36,7 @@
 
 #include <core/sdk/constants.h>
 #include <core/sdk/IDecoder.h>
+#include <core/sdk/IDataStream.h>
 #include <libopenmpt/libopenmpt.h>
 
 class OpenMptDecoder: public musik::core::sdk::IDecoder {
@@ -52,4 +53,5 @@ class OpenMptDecoder: public musik::core::sdk::IDecoder {
 
     private:
         openmpt_module* module;
+        musik::core::sdk::IDataStream* wrappedDataStream{ nullptr };
 };

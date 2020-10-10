@@ -208,7 +208,7 @@ HttpDataStream::HttpDataStream() {
 }
 
 HttpDataStream::~HttpDataStream() {
-    auto id = cacheId(this->resolvedUri);
+    auto id = cacheId(this->httpUri);
     if (this->state == Finished) {
         diskCache.Finalize(id, this->Type());
     }
@@ -245,15 +245,16 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
 
     diskCache.Init(cachePath, MAX_CACHE_FILES);
 
-    this->resolvedUri = rawUri;
+    this->httpUri = rawUri;
 
     std::unordered_map<std::string, std::string> requestHeaders;
 
-    if (this->resolvedUri.find(kRemoteTrackHost) == 0) {
+    if (this->httpUri.find(kRemoteTrackHost) == 0) {
         try {
             nlohmann::json options = nlohmann::json::parse(
-                this->resolvedUri.substr(kRemoteTrackHost.size()));
-            this->resolvedUri = options["uri"].get<std::string>();
+                this->httpUri.substr(kRemoteTrackHost.size()));
+            this->httpUri = options["uri"].get<std::string>();
+            this->originalUri = options["originalUri"].get<std::string>();
             this->type = options.value("type", ".mp3");
 
             std::string password = options.value("password", "");
@@ -266,7 +267,7 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         }
     }
 
-    auto id = cacheId(resolvedUri);
+    auto id = cacheId(httpUri);
 
     if (diskCache.Cached(id)) {
         FILE* file = diskCache.Open(id, "rb", this->type, this->length);
@@ -278,13 +279,13 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
     this->writeFile = diskCache.Open(id, "wb");
 
     if (this->writeFile) {
-        this->reader.reset(new FileReadStream(this->resolvedUri));
+        this->reader.reset(new FileReadStream(this->httpUri));
 
         this->curlEasy = curl_easy_init();
 
         // curl_easy_setopt (this->curlEasy, CURLOPT_VERBOSE, verbose);
 
-        curl_easy_setopt(this->curlEasy, CURLOPT_URL, this->resolvedUri.c_str());
+        curl_easy_setopt(this->curlEasy, CURLOPT_URL, this->httpUri.c_str());
         curl_easy_setopt(this->curlEasy, CURLOPT_HEADER, 0);
         curl_easy_setopt(this->curlEasy, CURLOPT_HTTPGET, 1);
         curl_easy_setopt(this->curlEasy, CURLOPT_FOLLOWLOCATION, 1);
@@ -424,7 +425,7 @@ const char* HttpDataStream::Type() {
 }
 
 const char* HttpDataStream::Uri() {
-    return this->resolvedUri.c_str();
+    return this->originalUri.c_str();
 }
 
 size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
@@ -463,7 +464,9 @@ size_t HttpDataStream::CurlReadHeaderCallback(char *buffer, size_t size, size_t 
             stream->length = std::atoi(value.c_str());
         }
         else if (key == "Content-Type") {
-            stream->type = value;
+            if (!stream->type.size()) {
+                stream->type = value;
+            }
         }
     }
 
