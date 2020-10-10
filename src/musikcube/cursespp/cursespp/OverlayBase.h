@@ -74,15 +74,6 @@ namespace cursespp {
                 return false;
             }
 
-            virtual IWindowPtr FocusFirst() override {
-                auto focus = LayoutBase::FocusFirst();
-                if (!focus) {
-                    focus = shared_from_this();
-                    this->Focus();
-                }
-                return focus;
-            }
-
             void Dismiss() {
                 if (this->stack) {
                     stack->Remove(this);
