@@ -243,12 +243,12 @@
         "track_list_sort_genre": "genre",
 
         "library_not_connected": "could not connect to the musikcube library",
-        "library_not_connected_with_hostname": "could not connect the musikcube library at %s",
+        "library_not_connected_with_hostname": "could not connect to %s",
         "library_error_format": "error: %s",
-        "library_error_connection_failed": "could not connect to the server",
-        "library_error_closed_by_server": "the server hung up",
+        "library_error_connection_failed": "server offline",
+        "library_error_closed_by_server": "server hung up",
         "library_error_invalid_password": "incorrect password",
-        "library_error_unknown": "unknown",
+        "library_error_unknown": "???",
         "library_configuration_in_settings": "the library connection can be configured in settings",
         "library_remote_connected_banner": "connected to %s",
 
