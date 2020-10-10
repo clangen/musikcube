@@ -72,9 +72,9 @@ TextInput::TextInput(TextInput::Style style, IInput::InputMode inputMode)
 , inputMode(inputMode)
 , enterEnabled(true)
 , truncate(false) {
-    this->SetFocusedContentColor(Color::TextFocused);
     if (style == StyleLine) {
         this->SetFrameVisible(false);
+        this->SetFocusedContentColor(Color::TextFocused);
     }
 }
 
