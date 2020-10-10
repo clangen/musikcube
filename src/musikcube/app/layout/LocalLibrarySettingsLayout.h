@@ -43,22 +43,20 @@
 namespace musik { namespace cube {
     class LocalLibrarySettingsLayout: public cursespp::LayoutBase {
         public:
-            LocalLibrarySettingsLayout(musik::core::ILibraryPtr library);
+            LocalLibrarySettingsLayout();
 
             virtual ~LocalLibrarySettingsLayout();
 
-            virtual void OnVisibilityChanged(bool visible);
             virtual bool KeyPress(const std::string& key);
 
             void ToggleShowDotFiles();
+            void LoadPreferences();
 
         protected:
             virtual void OnLayout();
 
         private:
             void InitializeWindows();
-            void RefreshAddedPaths();
-            void LoadPreferences();
             void AddSelectedDirectory();
             void RemoveSelectedDirectory();
             void DrillIntoSelectedDirectory();

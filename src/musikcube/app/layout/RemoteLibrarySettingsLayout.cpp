@@ -60,9 +60,8 @@ static inline size_t longestStringLength(const std::vector<std::string>&& keys) 
     return max;
 }
 
-RemoteLibrarySettingsLayout::RemoteLibrarySettingsLayout(musik::core::ILibraryPtr library)
-: LayoutBase()
-, library(library) {
+RemoteLibrarySettingsLayout::RemoteLibrarySettingsLayout()
+: LayoutBase() {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->SetFocusMode(FocusModeTerminating);
     this->InitializeWindows();

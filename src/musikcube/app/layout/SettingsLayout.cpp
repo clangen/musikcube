@@ -385,8 +385,8 @@ void SettingsLayout::InitializeWindows() {
     this->libraryTypeDropdown.reset(new TextLabel());
     this->libraryTypeDropdown->Activated.connect(this, &SettingsLayout::OnLibraryTypeDropdownActivated);
 
-    this->localLibraryLayout.reset(new LocalLibrarySettingsLayout(this->library));
-    this->remoteLibraryLayout.reset(new RemoteLibrarySettingsLayout(this->library));
+    this->localLibraryLayout.reset(new LocalLibrarySettingsLayout());
+    this->remoteLibraryLayout.reset(new RemoteLibrarySettingsLayout());
 
     this->localeDropdown.reset(new TextLabel());
     this->localeDropdown->Activated.connect(this, &SettingsLayout::OnLocaleDropdownActivate);
@@ -541,7 +541,6 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 
     if (visible) {
         this->LoadPreferences();
-        this->remoteLibraryLayout->LoadPreferences();
         this->CheckShowFirstRunDialog();
     }
     else {
@@ -652,6 +651,9 @@ void SettingsLayout::LoadPreferences() {
             : _TSTR("settings_library_type_remote");
 
     this->libraryTypeDropdown->SetText(arrow + _TSTR("settings_library_type") + libraryType);
+
+    this->localLibraryLayout->LoadPreferences();
+    this->remoteLibraryLayout->LoadPreferences();
 
     this->Layout();
 }

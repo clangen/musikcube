@@ -44,7 +44,7 @@
 namespace musik { namespace cube {
     class RemoteLibrarySettingsLayout: public cursespp::LayoutBase  {
         public:
-            RemoteLibrarySettingsLayout(musik::core::ILibraryPtr library);
+            RemoteLibrarySettingsLayout();
 
             virtual ~RemoteLibrarySettingsLayout();
 

@@ -43,6 +43,7 @@
 
 #include <core/library/Indexer.h>
 #include <core/library/LocalLibraryConstants.h>
+#include <core/library/LibraryFactory.h>
 #include <core/support/PreferenceKeys.h>
 #include <core/support/Messages.h>
 
@@ -61,9 +62,9 @@ using namespace cursespp;
 using EntryPtr = IScrollAdapter::EntryPtr;
 static bool showDotfiles = false;
 
-LocalLibrarySettingsLayout::LocalLibrarySettingsLayout(musik::core::ILibraryPtr library)
+LocalLibrarySettingsLayout::LocalLibrarySettingsLayout()
 : LayoutBase()
-, library(library)
+, library(LibraryFactory::Instance().DefaultLocalLibrary())
 , indexer(library->Indexer()) {
     this->browseAdapter.reset(new DirectoryAdapter());
     this->addedPathsAdapter.reset(new SimpleScrollAdapter());
@@ -86,7 +87,7 @@ void LocalLibrarySettingsLayout::OnLayout() {
     this->addedPathsList->MoveAndResize(rightX, 0, rightWidth, pathsHeight);
 }
 
-void LocalLibrarySettingsLayout::RefreshAddedPaths() {
+void LocalLibrarySettingsLayout::LoadPreferences() {
     this->addedPathsAdapter->Clear();
 
     std::vector<std::string> paths;
@@ -147,13 +148,6 @@ void LocalLibrarySettingsLayout::InitializeWindows() {
     this->AddWindow(this->addedPathsList);
 }
 
-void LocalLibrarySettingsLayout::OnVisibilityChanged(bool visible) {
-    LayoutBase::OnVisibilityChanged(visible);
-    if (visible) {
-        this->RefreshAddedPaths();
-    }
-}
-
 void LocalLibrarySettingsLayout::ToggleShowDotFiles() {
     showDotfiles = !showDotfiles;
     this->browseAdapter->SetDotfilesVisible(showDotfiles);
@@ -171,7 +165,7 @@ void LocalLibrarySettingsLayout::AddSelectedDirectory() {
 
     if (path.size()) {
         this->indexer->AddPath(path);
-        this->RefreshAddedPaths();
+        this->LoadPreferences();
         this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
     }
 }
@@ -183,7 +177,7 @@ void LocalLibrarySettingsLayout::RemoveSelectedDirectory() {
     size_t index = this->addedPathsList->GetSelectedIndex();
     if (index != ListWindow::NO_SELECTION) {
         this->indexer->RemovePath(paths.at(index));
-        this->RefreshAddedPaths();
+        this->LoadPreferences();
         this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
     }
 }
