@@ -34,6 +34,8 @@
 
 #include <stdafx.h>
 
+#include "LocalLibrarySettingsLayout.h"
+
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
@@ -48,8 +50,6 @@
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 
-#include "LocalLibrarySettingsLayout.h"
-
 using namespace std::placeholders;
 using namespace musik;
 using namespace musik::core;
@@ -61,14 +61,10 @@ using namespace cursespp;
 using EntryPtr = IScrollAdapter::EntryPtr;
 static bool showDotfiles = false;
 
-LocalLibrarySettingsLayout::LocalLibrarySettingsLayout(
-    musik::core::ILibraryPtr library,
-    musik::core::audio::PlaybackService& playback)
+LocalLibrarySettingsLayout::LocalLibrarySettingsLayout(musik::core::ILibraryPtr library)
 : LayoutBase()
 , library(library)
-, indexer(library->Indexer())
-, playback(playback) {
-    this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
+, indexer(library->Indexer()) {
     this->browseAdapter.reset(new DirectoryAdapter());
     this->addedPathsAdapter.reset(new SimpleScrollAdapter());
     this->SetFocusMode(FocusModeTerminating);

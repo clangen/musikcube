@@ -325,15 +325,26 @@ void SettingsLayout::OnLayout() {
 
     /* top row (library config) */
     this->libraryTypeDropdown->MoveAndResize(1, 1, cx - 1, LABEL_HEIGHT);
-    int libraryLayoutHeight = std::min(12, cy / 2);
-    this->localLibraryLayout->MoveAndResize(2, 2, cx - 3, libraryLayoutHeight);
+    std::shared_ptr<LayoutBase> libraryLayout;
+    if (this->library->GetType() == ILibrary::Type::Local) {
+        int libraryLayoutHeight = std::min(12, cy / 2);
+        this->localLibraryLayout->MoveAndResize(3, 2, cx - 4, libraryLayoutHeight);
+        this->remoteLibraryLayout->Hide();
+        libraryLayout = this->localLibraryLayout;
+    }
+    else {
+        this->localLibraryLayout->Hide();
+        this->remoteLibraryLayout->MoveAndResize(2, 3, cx - 4, 5);
+        libraryLayout = this->remoteLibraryLayout;
+    }
+    libraryLayout->Show();
 
     /* bottom row (dropdowns, checkboxes) */
     int columnCx = (cx - 5) / 2; /* 3 = left + right + middle padding */
     int column1 = 1;
     int column2 = columnCx + 3;
 
-    y = BOTTOM(this->localLibraryLayout) + 1;
+    y = BOTTOM(libraryLayout) + 1;
     this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -350,7 +361,7 @@ void SettingsLayout::OnLayout() {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     }
 
-    y = BOTTOM(this->localLibraryLayout) + 1;
+    y = BOTTOM(libraryLayout) + 1;
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->enableTransparencyCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
@@ -374,7 +385,8 @@ void SettingsLayout::InitializeWindows() {
     this->libraryTypeDropdown.reset(new TextLabel());
     this->libraryTypeDropdown->Activated.connect(this, &SettingsLayout::OnLibraryTypeDropdownActivated);
 
-    this->localLibraryLayout.reset(new LocalLibrarySettingsLayout(this->library, this->playback));
+    this->localLibraryLayout.reset(new LocalLibrarySettingsLayout(this->library));
+    this->remoteLibraryLayout.reset(new RemoteLibrarySettingsLayout(this->library));
 
     this->localeDropdown.reset(new TextLabel());
     this->localeDropdown->Activated.connect(this, &SettingsLayout::OnLocaleDropdownActivate);
@@ -437,6 +449,7 @@ void SettingsLayout::InitializeWindows() {
     int order = 0;
     this->libraryTypeDropdown->SetFocusOrder(order++);
     this->localLibraryLayout->SetFocusOrder(order++);
+    this->remoteLibraryLayout->SetFocusOrder(order++);
     this->localeDropdown->SetFocusOrder(order++);
     this->outputDriverDropdown->SetFocusOrder(order++);
     this->outputDeviceDropdown->SetFocusOrder(order++);
@@ -467,6 +480,7 @@ void SettingsLayout::InitializeWindows() {
 
     this->AddWindow(this->libraryTypeDropdown);
     this->AddWindow(this->localLibraryLayout);
+    this->AddWindow(this->remoteLibraryLayout);
     this->AddWindow(this->localeDropdown);
     this->AddWindow(this->outputDriverDropdown);
     this->AddWindow(this->outputDeviceDropdown);
@@ -625,15 +639,17 @@ void SettingsLayout::LoadPreferences() {
             ? _TSTR("settings_transport_type_gapless")
             : _TSTR("settings_transport_type_crossfade");
 
-    this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName); 
+    this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName);
 
     /* library type */
     std::string libraryType =
         (ILibrary::Type) prefs->GetInt(core::prefs::keys::LibraryType, (int) ILibrary::Type::Local) == ILibrary::Type::Local
-            ? _TSTR("settings_library_type_local") 
+            ? _TSTR("settings_library_type_local")
             : _TSTR("settings_library_type_remote");
 
     this->libraryTypeDropdown->SetText(arrow + _TSTR("settings_library_type") + libraryType);
+
+    this->Layout();
 }
 
 void SettingsLayout::UpdateServerAvailability() {

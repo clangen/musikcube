@@ -37,21 +37,13 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/SimpleScrollAdapter.h>
-#include <cursespp/TextLabel.h>
-
-#include <core/audio/PlaybackService.h>
-#include <core/audio/MasterTransport.h>
 #include <core/library/ILibrary.h>
-#include <core/support/Preferences.h>
-
 #include <app/model/DirectoryAdapter.h>
 
 namespace musik { namespace cube {
-    class LocalLibrarySettingsLayout: public cursespp::LayoutBase  {
+    class LocalLibrarySettingsLayout: public cursespp::LayoutBase {
         public:
-            LocalLibrarySettingsLayout(
-                musik::core::ILibraryPtr library,
-                musik::core::audio::PlaybackService& playback);
+            LocalLibrarySettingsLayout(musik::core::ILibraryPtr library);
 
             virtual ~LocalLibrarySettingsLayout();
 
@@ -79,9 +71,7 @@ namespace musik { namespace cube {
 
             musik::core::ILibraryPtr library;
             musik::core::IIndexer* indexer;
-            musik::core::audio::PlaybackService& playback;
 
-            std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<cursespp::ListWindow> browseList;
             std::shared_ptr<cursespp::ListWindow> addedPathsList;
             std::shared_ptr<cursespp::SimpleScrollAdapter> addedPathsAdapter;

@@ -57,6 +57,7 @@
 #include <sigslot/sigslot.h>
 
 #include "LocalLibrarySettingsLayout.h"
+#include "RemoteLibrarySettingsLayout.h"
 
 namespace musik { namespace cube {
     class SettingsLayout :
@@ -140,6 +141,7 @@ namespace musik { namespace cube {
             std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;
 
             std::shared_ptr<LocalLibrarySettingsLayout> localLibraryLayout;
+            std::shared_ptr<RemoteLibrarySettingsLayout> remoteLibraryLayout;
 
             bool serverAvailable = false;
     };
