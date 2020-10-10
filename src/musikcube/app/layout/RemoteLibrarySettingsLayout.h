@@ -48,15 +48,14 @@ namespace musik { namespace cube {
 
             virtual ~RemoteLibrarySettingsLayout();
 
-            virtual void OnVisibilityChanged(bool visible);
+            void LoadPreferences();
+            void SavePreferences();
 
         protected:
             virtual void OnLayout();
 
         private:
             void InitializeWindows();
-            void LoadPreferences();
-            void SavePreferences();
 
             musik::core::ILibraryPtr library;
 

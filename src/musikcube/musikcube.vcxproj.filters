@@ -201,6 +201,9 @@
     <ClCompile Include="app\overlay\SettingsOverlays.cpp">
       <Filter>app\overlay</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\RemoteLibrarySettingsLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -456,6 +459,9 @@
     </ClInclude>
     <ClInclude Include="app\overlay\SettingsOverlays.h">
       <Filter>app\overlay</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\RemoteLibrarySettingsLayout.h">
+      <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

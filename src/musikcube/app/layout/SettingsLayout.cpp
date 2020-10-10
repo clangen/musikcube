@@ -541,7 +541,11 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 
     if (visible) {
         this->LoadPreferences();
+        this->remoteLibraryLayout->LoadPreferences();
         this->CheckShowFirstRunDialog();
+    }
+    else {
+        this->remoteLibraryLayout->SavePreferences();
     }
 }
 

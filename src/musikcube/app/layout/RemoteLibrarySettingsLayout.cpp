@@ -137,16 +137,6 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->ipv6Cb->SetFocusOrder(order++);
 }
 
-void RemoteLibrarySettingsLayout::OnVisibilityChanged(bool visible) {
-    LayoutBase::OnVisibilityChanged(visible);
-    if (visible) {
-        this->LoadPreferences();
-    }
-    else {
-        this->SavePreferences();
-    }
-}
-
 void RemoteLibrarySettingsLayout::LoadPreferences() {
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
     auto wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);

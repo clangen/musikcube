@@ -195,14 +195,13 @@ std::string WebSocketClient::EnqueueQuery(Query query) {
 }
 
 void WebSocketClient::Connect(const std::string& host, short port, const std::string& password, bool ipv6) {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    this->Disconnect();
     auto newUri = "ws://" + host + ":" + std::to_string(port);
     if (newUri != this->uri ||
         password != this->password ||
         ipv6 != this->ipv6 ||
         this->state != State::Connected)
     {
+        this->Disconnect();
         this->ipv6 = ipv6;
         this->uri = newUri;
         this->password = password;
