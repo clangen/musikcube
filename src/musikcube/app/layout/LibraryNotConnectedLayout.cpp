@@ -125,7 +125,9 @@ void LibraryNotConnectedLayout::OnLibraryStateChanged(ILibrary::ConnectionState 
 }
 
 void LibraryNotConnectedLayout::UpdateErrorText() {
-    auto error = u8fmt(_TSTR("library_error_format"), resolveErrorMessage(this->library).c_str());
+    auto format = this->library->GetConnectionState() == ILibrary::ConnectionState::Connecting
+        ? _TSTR("library_error_format_retrying") : _TSTR("library_error_format");
+    auto error = u8fmt(format, resolveErrorMessage(this->library).c_str());
     this->errorText->SetText(error);
     this->messageText->SetText(resolveMessageText(this->library));
 }
