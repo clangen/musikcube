@@ -38,6 +38,7 @@
 #include <core/config.h>
 #include <core/support/Common.h>
 #include <core/support/Preferences.h>
+#include <core/support/PreferenceKeys.h>
 #include <core/library/Indexer.h>
 #include <core/library/IQuery.h>
 #include <core/library/LibraryFactory.h>
@@ -56,10 +57,6 @@ using namespace musik::core::runtime;
 #define MESSAGE_QUERY_COMPLETED 5000
 #define MESSAGE_RECONNECT_SOCKET 5001
 #define MESSAGE_UPDATE_CONNECTION_STATE 5002
-
-static const std::string kServerHost = "192.168.1.227";
-static const std::string kServerPassword = "842655";
-static const short kServerPort = 7905;
 
 class NullIndexer: public musik::core::IIndexer {
     public:
@@ -101,9 +98,9 @@ RemoteLibrary::RemoteLibrary(std::string name, int id)
 , exit(false)
 , messageQueue(nullptr)
 , wsc(this) {
-    this->wsc.Connect(kServerHost, kServerPort, kServerPassword);
     this->identifier = std::to_string(id);
     this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
+    this->ReloadConnectionFromPreferences();
 }
 
 RemoteLibrary::~RemoteLibrary() {
@@ -325,7 +322,7 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
     else if (message.Type() == MESSAGE_RECONNECT_SOCKET) {
         if (this->wsc.ConnectionState() == Client::State::Disconnected) {
-            this->wsc.Connect(kServerHost, kServerPort, kServerPassword);
+            this->ReloadConnectionFromPreferences();
         }
     }
     else if (message.Type() == MESSAGE_UPDATE_CONNECTION_STATE) {
@@ -386,17 +383,31 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
         }
     }
 
-    const std::string uri = "http://" + kServerHost + ":7906/audio/id/" + std::to_string(track->GetId());
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
+    auto port = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7905);
+    auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
+
+    const std::string uri = "http://" + host + ":" + std::to_string(port) + "/audio/id/" + std::to_string(track->GetId());
     nlohmann::json path = {
         { "uri", uri },
         { "type", type },
-        { "password", kServerPassword }
+        { "password", password }
     };
 
     return "musikcore://remote-track/" + path.dump();
 }
 
 /* RemoteLibrary */
+
 const net::WebSocketClient& RemoteLibrary::WebSocketClient() const {
     return this->wsc;
+}
+
+void RemoteLibrary::ReloadConnectionFromPreferences() {
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
+    auto port = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
+    auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
+    this->wsc.Connect(host, port, password);
 }

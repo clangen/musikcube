@@ -95,6 +95,7 @@ namespace musik { namespace core { namespace library {
             virtual std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
 
             /* RemoteLibrary */
+            void ReloadConnectionFromPreferences();
             const musik::core::net::WebSocketClient& WebSocketClient() const;
 
         private:

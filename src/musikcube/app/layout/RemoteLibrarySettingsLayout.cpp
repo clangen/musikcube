@@ -72,7 +72,8 @@ RemoteLibrarySettingsLayout::~RemoteLibrarySettingsLayout() {
 void RemoteLibrarySettingsLayout::OnLayout() {
     size_t labelWidth = longestStringLength({
         "settings_library_type_remote_hostname",
-        "settings_library_type_remote_port",
+        "settings_library_type_remote_wss_port",
+        "settings_library_type_remote_http_port",
         "settings_library_type_remote_password"
      });
 
@@ -81,10 +82,13 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     int y = 0;
     this->hostLabel->MoveAndResize(0, y, labelWidth, 1);
     this->hostInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
-    this->portLabel->MoveAndResize(0, y, labelWidth, 1);
-    this->portInput->MoveAndResize(labelWidth + 1, y++, 5, 1);
+    this->wssPortLabel->MoveAndResize(0, y, labelWidth, 1);
+    this->wssPortInput->MoveAndResize(labelWidth + 1, y++, 5, 1);
+    this->httpPortLabel->MoveAndResize(0, y, labelWidth, 1);
+    this->httpPortInput->MoveAndResize(labelWidth + 1, y++, 5, 1);
     this->pwLabel->MoveAndResize(0, y, labelWidth, 1);
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
+    ++y;
     this->ipv6Cb->MoveAndResize(0, y++, cx, 1);
 }
 
@@ -95,9 +99,13 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->hostLabel->SetText(_TSTR("settings_library_type_remote_hostname"), text::AlignRight);
     this->hostInput.reset(new TextInput(TextInput::StyleLine));
 
-    this->portLabel.reset(new TextLabel());
-    this->portLabel->SetText(_TSTR("settings_library_type_remote_port"), text::AlignRight);
-    this->portInput.reset(new TextInput(TextInput::StyleLine));
+    this->wssPortLabel.reset(new TextLabel());
+    this->wssPortLabel->SetText(_TSTR("settings_library_type_remote_wss_port"), text::AlignRight);
+    this->wssPortInput.reset(new TextInput(TextInput::StyleLine));
+
+    this->httpPortLabel.reset(new TextLabel());
+    this->httpPortLabel->SetText(_TSTR("settings_library_type_remote_http_port"), text::AlignRight);
+    this->httpPortInput.reset(new TextInput(TextInput::StyleLine));
 
     this->pwLabel.reset(new TextLabel());
     this->pwLabel->SetText(_TSTR("settings_library_type_remote_password"), text::AlignRight);
@@ -108,15 +116,20 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
 
     this->AddWindow(this->hostLabel);
     this->AddWindow(this->hostInput);
-    this->AddWindow(this->portLabel);
-    this->AddWindow(this->portInput);
+    this->AddWindow(this->hostLabel);
+    this->AddWindow(this->hostInput);
+    this->AddWindow(this->wssPortLabel);
+    this->AddWindow(this->wssPortInput);
+    this->AddWindow(this->httpPortLabel);
+    this->AddWindow(this->httpPortInput);
     this->AddWindow(this->pwLabel);
     this->AddWindow(this->pwInput);
     this->AddWindow(this->ipv6Cb);
 
     int order = 0;
     this->hostInput->SetFocusOrder(order++);
-    this->portInput->SetFocusOrder(order++);
+    this->wssPortInput->SetFocusOrder(order++);
+    this->httpPortInput->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
     this->ipv6Cb->SetFocusOrder(order++);
 }

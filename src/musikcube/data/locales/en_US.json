@@ -109,7 +109,8 @@
         "settings_library_type_local": "local",
         "settings_library_type_remote": "remote",
         "settings_library_type_remote_hostname": "hostname:",
-        "settings_library_type_remote_port": "port:",
+        "settings_library_type_remote_wss_port": "metadata port:",
+        "settings_library_type_remote_http_port": "audio port:",
         "settings_library_type_remote_password": "password:",
         "settings_library_type_overlay_title": "library type",
 

@@ -61,8 +61,8 @@ namespace musik { namespace cube {
             musik::core::ILibraryPtr library;
 
             std::shared_ptr<musik::core::Preferences> prefs;
-            std::shared_ptr<cursespp::TextLabel> portLabel, hostLabel, pwLabel;
-            std::shared_ptr<cursespp::TextInput> portInput, hostInput, pwInput;
+            std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel;
+            std::shared_ptr<cursespp::TextInput> httpPortInput, wssPortInput, hostInput, pwInput;
             std::shared_ptr<cursespp::Checkbox> ipv6Cb;
     };
 } }

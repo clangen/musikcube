@@ -334,7 +334,7 @@ void SettingsLayout::OnLayout() {
     }
     else {
         this->localLibraryLayout->Hide();
-        this->remoteLibraryLayout->MoveAndResize(2, 3, cx - 4, 4);
+        this->remoteLibraryLayout->MoveAndResize(2, 3, cx - 4, 6);
         libraryLayout = this->remoteLibraryLayout;
     }
     libraryLayout->Show();

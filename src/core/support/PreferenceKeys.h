@@ -71,7 +71,8 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string AuddioApiToken;
         extern const std::string LibraryType;
         extern const std::string RemoteLibraryHostname;
-        extern const std::string RemoteLibraryPort;
+        extern const std::string RemoteLibraryWssPort;
+        extern const std::string RemoteLibraryHttpPort;
         extern const std::string RemoteLibraryPassword;
     }
 
