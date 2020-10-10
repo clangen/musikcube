@@ -791,6 +791,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClCompile Include="app\layout\LibraryLayout.cpp" />
     <ClCompile Include="app\layout\ConsoleLayout.cpp" />
     <ClCompile Include="app\layout\LibraryNotConnectedLayout.cpp" />
+    <ClCompile Include="app\layout\LocalLibrarySettingsLayout.cpp" />
     <ClCompile Include="app\layout\LyricsLayout.cpp" />
     <ClCompile Include="app\layout\NowPlayingLayout.cpp" />
     <ClCompile Include="app\layout\CategorySearchLayout.cpp" />
@@ -874,6 +875,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\ConsoleLayout.h" />
     <ClInclude Include="app\layout\LibraryNotConnectedLayout.h" />
+    <ClInclude Include="app\layout\LocalLibrarySettingsLayout.h" />
     <ClInclude Include="app\layout\LyricsLayout.h" />
     <ClInclude Include="app\layout\NowPlayingLayout.h" />
     <ClInclude Include="app\layout\CategorySearchLayout.h" />

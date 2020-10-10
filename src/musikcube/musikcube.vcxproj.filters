@@ -198,6 +198,9 @@
     <ClCompile Include="app\layout\LibraryNotConnectedLayout.cpp">
       <Filter>app\layout</Filter>
     </ClCompile>
+    <ClCompile Include="app\layout\LocalLibrarySettingsLayout.cpp">
+      <Filter>app\layout</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -449,6 +452,9 @@
       <Filter>app\util</Filter>
     </ClInclude>
     <ClInclude Include="app\layout\LibraryNotConnectedLayout.h">
+      <Filter>app\layout</Filter>
+    </ClInclude>
+    <ClInclude Include="app\layout\LocalLibrarySettingsLayout.h">
       <Filter>app\layout</Filter>
     </ClInclude>
   </ItemGroup>

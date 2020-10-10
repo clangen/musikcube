@@ -72,7 +72,6 @@ using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
-using namespace std::placeholders;
 
 #define ENABLE_COLOR_THEME_SELECTION
 
@@ -111,7 +110,6 @@ static const int DEFAULT_MAX_INDEXER_THREADS = 4;
 using EntryPtr = IScrollAdapter::EntryPtr;
 
 static const std::string arrow = "> ";
-static bool showDotfiles = false;
 
 static UpdateCheck updateCheck;
 
@@ -171,8 +169,6 @@ SettingsLayout::SettingsLayout(
 , indexer(library->Indexer())
 , playback(playback) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
-    this->browseAdapter.reset(new DirectoryAdapter());
-    this->addedPathsAdapter.reset(new SimpleScrollAdapter());
     this->UpdateServerAvailability();
     this->InitializeWindows();
 }
@@ -191,9 +187,7 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
         this->prefs->Save();
     }
     else if (cb == dotfileCheckbox.get()) {
-        showDotfiles = !showDotfiles;
-        this->browseAdapter->SetDotfilesVisible(showDotfiles);
-        this->browseList->OnAdapterChanged();
+        this->localLibraryLayout->ToggleShowDotFiles();
     }
     else if (cb == seekScrubCheckbox.get()) {
         TimeChangeMode mode = cb->IsChecked() ? TimeChangeSeek : TimeChangeScrub;
@@ -322,25 +316,16 @@ void SettingsLayout::OnLayout() {
     int x = this->GetX(), y = this->GetY();
     int cx = this->GetWidth(), cy = this->GetHeight();
 
-    /* top row (directory setup) */
-    int startY = 0;
-    int leftX = 0;
-    int leftWidth = cx / 3; /* 1/3 width */
-    int rightX = leftWidth;
-    int rightWidth = cx - rightX; /* remainder (~2/3) */
-
-    int pathListsY = startY;
-    int pathsHeight = (cy - pathListsY) / 2;
-
-    this->browseList->MoveAndResize(leftX, pathListsY, leftWidth, pathsHeight);
-    this->addedPathsList->MoveAndResize(rightX, pathListsY, rightWidth, pathsHeight);
+    /* top row (library config) */
+    int libraryLayoutHeight = cy / 2;
+    this->localLibraryLayout->MoveAndResize(0, 0, cx, libraryLayoutHeight);
 
     /* bottom row (dropdowns, checkboxes) */
     int columnCx = (cx - 5) / 2; /* 3 = left + right + middle padding */
     int column1 = 1;
     int column2 = columnCx + 3;
 
-    y = BOTTOM(this->browseList);
+    y = BOTTOM(this->localLibraryLayout);
     this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -357,7 +342,7 @@ void SettingsLayout::OnLayout() {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
     }
 
-    y = BOTTOM(this->browseList);
+    y = BOTTOM(this->localLibraryLayout);
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->enableTransparencyCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
@@ -375,58 +360,10 @@ void SettingsLayout::OnLayout() {
     this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
-void SettingsLayout::RefreshAddedPaths() {
-    this->addedPathsAdapter->Clear();
-
-    std::vector<std::string> paths;
-    this->indexer->GetPaths(paths);
-
-    for (size_t i = 0; i < paths.size(); i++) {
-        auto v = paths.at(i);
-        auto e = EntryPtr(new SingleLineEntry(v));
-        this->addedPathsAdapter->AddEntry(e);
-    }
-
-    this->addedPathsList->OnAdapterChanged();
-}
-
-Color SettingsLayout::ListItemDecorator(
-    ScrollableWindow* scrollable,
-    size_t index,
-    size_t line,
-    IScrollAdapter::EntryPtr entry)
-{
-    if (scrollable == this->addedPathsList.get() ||
-        scrollable == this->browseList.get())
-    {
-         ListWindow* lw = static_cast<ListWindow*>(scrollable);
-         if (lw->GetSelectedIndex() == index) {
-             return Color::ListItemHighlighted;
-         }
-    }
-    return Color::Default;
-}
-
 void SettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
-    this->addedPathsList.reset(new cursespp::ListWindow(this->addedPathsAdapter));
-    this->addedPathsList->SetFrameTitle(_TSTR("settings_backspace_to_remove"));
-
-    this->browseList.reset(new cursespp::ListWindow(this->browseAdapter));
-    this->browseList->SetFrameTitle(_TSTR("settings_space_to_add"));
-
-    ScrollAdapterBase::ItemDecorator decorator =
-        std::bind(
-            &SettingsLayout::ListItemDecorator,
-            this,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4);
-
-    this->addedPathsAdapter->SetItemDecorator(decorator);
-    this->browseAdapter->SetItemDecorator(decorator);
+    this->localLibraryLayout.reset(new LocalLibrarySettingsLayout(this->library, this->playback));
 
     this->localeDropdown.reset(new TextLabel());
     this->localeDropdown->Activated.connect(this, &SettingsLayout::OnLocaleDropdownActivate);
@@ -487,8 +424,7 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->saveSessionCheckbox, _TSTR("settings_save_session_on_exit"));
 
     int order = 0;
-    this->browseList->SetFocusOrder(order++);
-    this->addedPathsList->SetFocusOrder(order++);
+    this->localLibraryLayout->SetFocusOrder(order++);
     this->localeDropdown->SetFocusOrder(order++);
     this->outputDriverDropdown->SetFocusOrder(order++);
     this->outputDeviceDropdown->SetFocusOrder(order++);
@@ -517,8 +453,7 @@ void SettingsLayout::InitializeWindows() {
     this->advancedDropdown->SetFocusOrder(order++);
     this->updateDropdown->SetFocusOrder(order++);
 
-    this->AddWindow(this->browseList);
-    this->AddWindow(this->addedPathsList);
+    this->AddWindow(this->localLibraryLayout);
     this->AddWindow(this->localeDropdown);
     this->AddWindow(this->outputDriverDropdown);
     this->AddWindow(this->outputDeviceDropdown);
@@ -578,7 +513,6 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
 
     if (visible) {
-        this->RefreshAddedPaths();
         this->LoadPreferences();
         this->CheckShowFirstRunDialog();
     }
@@ -681,68 +615,6 @@ void SettingsLayout::LoadPreferences() {
     this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName);
 }
 
-void SettingsLayout::AddSelectedDirectory() {
-    size_t index = this->browseList->GetSelectedIndex();
-
-    if (index == ListWindow::NO_SELECTION) {
-        index = 0;
-    }
-
-    std::string path = this->browseAdapter->GetFullPathAt(index);
-
-    if (path.size()) {
-        this->indexer->AddPath(path);
-        this->RefreshAddedPaths();
-        this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
-    }
-}
-
-void SettingsLayout::RemoveSelectedDirectory() {
-    std::vector<std::string> paths;
-    this->indexer->GetPaths(paths);
-
-    size_t index = this->addedPathsList->GetSelectedIndex();
-    if (index != ListWindow::NO_SELECTION) {
-        this->indexer->RemovePath(paths.at(index));
-        this->RefreshAddedPaths();
-        this->library->Indexer()->Schedule(IIndexer::SyncType::Local);
-    }
-}
-
-void SettingsLayout::DrillIntoSelectedDirectory() {
-    size_t selectIndexAt = this->browseAdapter->Select(this->browseList.get());
-
-    if (selectIndexAt == DirectoryAdapter::NO_INDEX) {
-        selectIndexAt = 0;
-    }
-
-    this->browseList->SetSelectedIndex(selectIndexAt);
-    this->browseList->ScrollTo(selectIndexAt);
-}
-
 void SettingsLayout::UpdateServerAvailability() {
     this->serverAvailable = !!ServerOverlay::FindServerPlugin().get();
-}
-
-bool SettingsLayout::KeyPress(const std::string& key) {
-    if (key == "KEY_ENTER") {
-        if (this->GetFocus() == this->browseList) {
-            this->DrillIntoSelectedDirectory();
-            return true;
-        }
-    }
-    else if (key == " ") {
-        if (this->GetFocus() == this->browseList) {
-            this->AddSelectedDirectory();
-            return true;
-        }
-    }
-    else if (key == "KEY_BACKSPACE" || key == "KEY_DC") { /* backspace */
-        if (this->GetFocus() == this->addedPathsList) {
-            this->RemoveSelectedDirectory();
-            return true;
-        }
-    }
-
-    return LayoutBase::KeyPress(key);
 }

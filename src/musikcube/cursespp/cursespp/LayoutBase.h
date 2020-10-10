@@ -63,6 +63,7 @@ namespace cursespp {
             virtual void Invalidate();
             virtual void OnParentVisibilityChanged(bool visible);
             virtual void OnChildVisibilityChanged(bool visible, IWindow* child);
+            virtual void Focus();
 
             /* IOrderable */
             virtual void BringToTop();
@@ -104,6 +105,8 @@ namespace cursespp {
         protected:
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnLayout();
+            virtual IWindowPtr EnsureValidFocusFromNext();
+            virtual IWindowPtr EnsureValidFocusFromPrev();
 
             IWindowPtr EnsureValidFocus();
 
