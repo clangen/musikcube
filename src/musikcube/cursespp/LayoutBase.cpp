@@ -298,6 +298,14 @@ bool LayoutBase::SetFocus(IWindowPtr focus) {
     else {
         for (size_t i = 0; i < this->focusable.size(); i++) {
             if (this->focusable[i] == focus) {
+                /* if we're focused, we need to ensure our parent sets its correct
+                focus index to us! and so on up to the root view. note that this
+                needs to be called before updating our internal focus; recursively,
+                parents need to have their focus index set before children */
+                auto asLayout = dynamic_cast<ILayout*>(this->GetParent());
+                if (asLayout) {
+                    asLayout->SetFocus(shared_from_this());
+                }
                 this->focused = i;
                 this->EnsureValidFocus();
                 return true;
