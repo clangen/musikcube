@@ -55,6 +55,7 @@ static std::string tempFilename(const std::string& root, size_t id) {
 
 static std::string finalFilename(const std::string& root, size_t id, std::string extension) {
     al::replace_all(extension, "/", "-");
+    al::replace_all(extension, ".", "");
     return root + "/" + PREFIX + "_" + std::to_string(id) + "." + extension;
 }
 
