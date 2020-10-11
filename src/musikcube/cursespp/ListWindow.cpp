@@ -300,12 +300,14 @@ bool ListWindow::KeyPress(const std::string& key) {
         auto selected = this->GetSelectedIndex();
         if (selected != NO_SELECTION) {
             this->OnEntryActivated(selected);
+            return true;
         }
     }
     else if (key == "M-enter") {
         auto selected = this->GetSelectedIndex();
         if (selected != NO_SELECTION) {
             this->OnEntryContextMenu(selected);
+            return true;
         }
     }
     return ScrollableWindow::KeyPress(key);
