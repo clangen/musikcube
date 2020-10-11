@@ -51,7 +51,10 @@ class OpenMptDecoder: public musik::core::sdk::IDecoder {
         virtual bool Open(musik::core::sdk::IDataStream *stream) override;
         virtual bool Exhausted() override;
 
+        musik::core::sdk::IDataStream* Stream() { return this->stream; }
+
     private:
         openmpt_module* module;
-        musik::core::sdk::IDataStream* wrappedDataStream{ nullptr };
+        musik::core::sdk::IDataStream* stream{ nullptr };
+        bool isWrappedStream{ false };
 };

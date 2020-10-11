@@ -69,8 +69,8 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
     this->stream = dynamic_cast<GmeDataStream*>(stream);
 
     if (!this->stream) {
-        this->stream = new GmeDataStream();
-        if (!this->stream->Open(stream->Uri(), GmeDataStream::OpenFlags::Read)) {
+        this->stream = new GmeDataStream(stream);
+        if (!this->stream->Parse(stream->Uri())) {
             delete this->stream;
             this->stream = nullptr;
             return false;

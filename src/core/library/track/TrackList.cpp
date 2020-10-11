@@ -126,6 +126,11 @@ bool TrackList::Delete(size_t index) {
 }
 
 TrackPtr TrackList::Get(size_t index, bool async) const {
+    if (index > this->ids.size() - 1) {
+        auto missing = std::make_shared<LibraryTrack>(-1LL, this->library);
+        missing->SetMetadataState(MetadataState::Missing);
+        return missing;
+    }
 #if 0
     /* one at a time */
     auto id = this->ids.at(index);

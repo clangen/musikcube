@@ -46,11 +46,12 @@ static const int kSamplesPerChannel = 2048;
 static const int kChannels = 2;
 
 static size_t readCallback(void *user, void *dst, size_t bytes) {
-    return (size_t) static_cast<IDataStream*>(user)->Read(dst, (PositionType) bytes);
+    auto stream = static_cast<OpenMptDecoder*>(user)->Stream();
+    return (size_t) stream->Read(dst, (PositionType) bytes);
 }
 
 static int seekCallback(void *user, int64_t offset, int whence) {
-    IDataStream* stream = static_cast<IDataStream*>(user);
+    auto stream = static_cast<OpenMptDecoder*>(user)->Stream();
     switch (whence) {
         case OPENMPT_STREAM_SEEK_SET:
             return stream->SetPosition((PositionType) offset) ? 0 : -1;
@@ -63,7 +64,7 @@ static int seekCallback(void *user, int64_t offset, int whence) {
 }
 
 static int64_t tellCallback(void *user) {
-    return (int64_t) static_cast<IDataStream*>(user)->Position();
+    return (int64_t) static_cast<OpenMptDecoder*>(user)->Stream()->Position();
 }
 
 static void logCallback(const char *message, void *userdata) {
@@ -82,34 +83,39 @@ OpenMptDecoder::~OpenMptDecoder() {
         this->module = nullptr;
     }
 
-    if (this->wrappedDataStream) {
-        delete this->wrappedDataStream;
-        this->wrappedDataStream = nullptr;
+    if (this->isWrappedStream) {
+        delete this->stream;
+        this->stream = nullptr;
     }
 }
 
 bool OpenMptDecoder::Open(musik::core::sdk::IDataStream *stream) {
+    auto mptStream = dynamic_cast<OpenMptDataStream*>(stream);
+    if (mptStream) {
+        this->stream = mptStream;
+        this->isWrappedStream = false;
+    }
+    else {
+        mptStream = new OpenMptDataStream(stream);
+        if (!mptStream->Parse(stream->Uri())) {
+            delete mptStream;
+            mptStream = nullptr;
+            return false;
+        }
+        this->stream = mptStream;
+        this->isWrappedStream = true; /* we need to clean it up later */
+    }
+
     openmpt_stream_callbacks callbacks = { 0 };
     callbacks.read = readCallback;
     callbacks.seek = seekCallback;
     callbacks.tell = tellCallback;
 
     this->module = openmpt_module_create2(
-        callbacks, stream, logCallback,
+        callbacks, this, logCallback,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 
     if (this->module) {
-        auto mptStream = dynamic_cast<OpenMptDataStream*>(stream);
-        if (!mptStream) {
-            mptStream = new OpenMptDataStream();
-            if (!mptStream->Open(stream->Uri(), OpenMptDataStream::OpenFlags::Read)) {
-                delete mptStream;
-                mptStream = nullptr;
-                return false;
-            }
-            this->wrappedDataStream = mptStream; /* we need to clean it up later */
-        }
-
         int track = mptStream->GetTrackNumber();
         if (track >= 0 && track < openmpt_module_get_num_subsongs(module)) {
             openmpt_module_select_subsong(this->module, track);

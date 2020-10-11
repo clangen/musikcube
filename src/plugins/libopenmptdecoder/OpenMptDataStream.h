@@ -42,6 +42,10 @@ class OpenMptDataStream: public musik::core::sdk::IDataStream {
         using PositionType = musik::core::sdk::PositionType;
         using OpenFlags = musik::core::sdk::OpenFlags;
 
+        OpenMptDataStream();
+        OpenMptDataStream(musik::core::sdk::IDataStream* stream);
+        virtual ~OpenMptDataStream();
+
         virtual bool Open(const char *uri, OpenFlags flags) override;
         virtual bool Close() override;
         virtual void Interrupt() override;
@@ -59,6 +63,7 @@ class OpenMptDataStream: public musik::core::sdk::IDataStream {
         virtual const char* Uri() override;
         virtual bool CanPrefetch() override;
 
+        bool Parse(const char* uri);
         int GetTrackNumber() { return this->trackNumber; }
         std::string GetFilename() { return this->filename; }
 
@@ -66,4 +71,5 @@ class OpenMptDataStream: public musik::core::sdk::IDataStream {
         int trackNumber { 0 };
         std::string filename;
         musik::core::sdk::IDataStream* stream { nullptr };
+        bool releaseStream{ true };
 };
