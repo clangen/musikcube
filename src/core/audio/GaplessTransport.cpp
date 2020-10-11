@@ -120,20 +120,20 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
 
             this->nextPlayer = nullptr;
             this->activePlayer = newPlayer;
-        }
 
-        /* first argument suppresses the "Stop" event from getting triggered,
-        the second param is used for gapless playback -- we won't stop the output
-        and will allow pending buffers to finish if we're not automatically
-        playing the next track. note we do this outside of critical section so
-        outputs *can* stop buffers immediately, and not to worry about causing a
-        deadlock. */
-        this->StopInternal(true, !playingNext, newPlayer);
-        this->SetNextCanStart(false);
-        this->output->Resume();
+            /* first argument suppresses the "Stop" event from getting triggered,
+            the second param is used for gapless playback -- we won't stop the output
+            and will allow pending buffers to finish if we're not automatically
+            playing the next track. note we do this outside of critical section so
+            outputs *can* stop buffers immediately, and not to worry about causing a
+            deadlock. */
+            this->StopInternal(true, !playingNext, newPlayer);
+            this->SetNextCanStart(false);
+            this->output->Resume();
 
-        if (mode == StartMode::Immediate) {
-            newPlayer->Play();
+            if (mode == StartMode::Immediate) {
+                newPlayer->Play();
+            }
         }
 
         this->RaiseStreamEvent(StreamScheduled, newPlayer);
