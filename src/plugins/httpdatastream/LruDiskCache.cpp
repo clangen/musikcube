@@ -145,7 +145,7 @@ void LruDiskCache::Purge() {
 }
 
 LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
-    std::string fn = path.string();
+    std::string fn = path.stem().string() + path.extension().string();
     std::vector<std::string> parts;
     boost::split(parts, fn, boost::is_any_of("_"));
     if (parts.size() == 3 && parts[0] == PREFIX) {
@@ -276,7 +276,7 @@ void LruDiskCache::SortAndPrune() {
     int extras = count - this->maxEntries;
     for (int i = 0; i < extras; i++) {
         auto entry = this->cached.back();
-        if (rm(entry->path)) {
+        if (rm(this->root + "/" + entry->path)) {
             this->cached.pop_back();
         }
     }
