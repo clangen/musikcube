@@ -161,7 +161,7 @@ class FileReadStream {
                 this->underflow.wait(lock);
             }
 
-            if (this->interrupted && this->Eof()) {
+            if (this->interrupted || this->Eof()) {
                 return 0;
             }
 
@@ -377,12 +377,13 @@ void HttpDataStream::ThreadProc() {
 
 bool HttpDataStream::Close() {
     this->Interrupt();
-    this->reader.reset();
 
     if (this->downloadThread) {
         downloadThread->join();
         this->downloadThread.reset();
     }
+
+    this->reader.reset();
 
     return true;
 }
@@ -434,7 +435,6 @@ size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, v
     size_t total = size * nmemb;
     size_t result = fwrite(ptr, size, nmemb, stream->writeFile);
     stream->written += result;
-
 
     if (stream->written >= NOTIFY_INTERVAL_BYTES) {
         fflush(stream->writeFile);
