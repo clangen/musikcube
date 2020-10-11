@@ -245,8 +245,8 @@ struct Theme {
         buttonForegroundActive.Set(THEME_COLOR_BUTTON_FOREGROUND_ACTIVE, 24, 24, 20, COLOR_BLACK);
 
         /* banner */
-        bannerBackground.Set(THEME_COLOR_BANNER_BACKGROUND, 255, 150, 32, COLOR_256_ORANGE);
-        bannerForeground.Set(THEME_COLOR_BANNER_FOREGROUND, 24, 24, 20, COLOR_BLACK);
+        bannerBackground.Set(THEME_COLOR_BACKGROUND, 24, 24, 20, -1);
+        bannerForeground.Set(THEME_COLOR_TEXT_DISABLED, 128, 128, 128, COLOR_256_MEDIUM_GRAY);
 
         /* footer */
         footerBackground.Set(THEME_COLOR_FOOTER_BACKGROUND, 102, 217, 238, COLOR_256_BLUE);
