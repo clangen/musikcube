@@ -251,7 +251,24 @@ bool AppLayout::KeyPress(const std::string& key) {
     }
 
     /* otherwise, pass along to our child layout */
-    return this->layout ? this->layout->KeyPress(key) : false;
+    if (this->layout->KeyPress(key)) {
+        return true;
+    }
+
+    /* the child layout didn't handle it directly, so let's walk
+    up the parent hierarhcy to see if there's someone who can. */
+    auto focus = this->layout->GetFocus().get();
+    while (focus != nullptr && focus != this) {
+        auto asKeyHandler = dynamic_cast<IKeyHandler*>(focus);
+        if (asKeyHandler) {
+            if (asKeyHandler->KeyPress(key)) {
+                return true;
+            }
+        }
+        focus = focus->GetParent();
+    }
+
+    return false;
 }
 
 void AppLayout::SetAutoHideCommandBar(bool autoHide) {

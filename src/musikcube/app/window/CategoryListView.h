@@ -85,7 +85,7 @@ namespace musik {
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
-                virtual void OnEntryContextMenu(size_t index);
+                virtual bool OnEntryContextMenu(size_t index);
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();

@@ -81,8 +81,8 @@ namespace cursespp {
 
         protected:
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
-            virtual void OnEntryActivated(size_t index);
-            virtual void OnEntryContextMenu(size_t index);
+            virtual bool OnEntryActivated(size_t index);
+            virtual bool OnEntryContextMenu(size_t index);
             virtual void OnInvalidated();
             virtual void OnDimensionsChanged();
             virtual void DecorateFrame();

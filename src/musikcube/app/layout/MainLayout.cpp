@@ -205,7 +205,9 @@ bool MainLayout::KeyPress(const std::string& key) {
         ToastOverlay::Show(u8fmt(_TSTR("console_version"), VERSION), -1);
         return true;
     }
-
+    else if (this->GetLayout()->KeyPress(key)) {
+        return true;
+    }
     return AppLayout::KeyPress(key);
 }
 

@@ -214,9 +214,10 @@ bool CategoryListView::KeyPress(const std::string& key) {
     return ListWindow::KeyPress(key);
 }
 
-void CategoryListView::OnEntryContextMenu(size_t index) {
+bool CategoryListView::OnEntryContextMenu(size_t index) {
     ListWindow::OnEntryContextMenu(index);
     this->ShowContextMenu();
+    return true;
 }
 
 void CategoryListView::ShowContextMenu() {

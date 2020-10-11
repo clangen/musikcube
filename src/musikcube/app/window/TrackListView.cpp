@@ -252,7 +252,7 @@ void TrackListView::OnDimensionsChanged() {
     ListWindow::OnDimensionsChanged();
 }
 
-void TrackListView::OnEntryActivated(size_t index) {
+bool TrackListView::OnEntryActivated(size_t index) {
     if (headers.HeaderAt(this->GetSelectedIndex())) {
         TrackPtr track = this->GetSelectedTrack();
         PlayQueueOverlays::ShowAlbumDividerOverlay(
@@ -261,13 +261,13 @@ void TrackListView::OnEntryActivated(size_t index) {
     else {
         playback::PlaySelected(*this, this->playback);
     }
-
-    ListWindow::OnEntryActivated(index);
+    return true;
 }
 
-void TrackListView::OnEntryContextMenu(size_t index) {
+bool TrackListView::OnEntryContextMenu(size_t index) {
     ListWindow::OnEntryContextMenu(index);
     this->ShowContextMenu();
+    return true;
 }
 
 void TrackListView::ShowContextMenu() {

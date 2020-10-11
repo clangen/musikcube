@@ -493,20 +493,6 @@ bool LayoutBase::KeyPress(const std::string& key) {
         this->FocusNext();
         return true;
     }
-    /* we find the focus recursively, then let the child deepest in the
-    hierarchy process the key event. if that fails we move up to its parent,
-    and so on until we reach ourself. */
-    auto focus = this->GetFocus().get();
-    while (focus != this) {
-        auto asKeyHandler = dynamic_cast<IKeyHandler*>(focus);
-        if (asKeyHandler) {
-            if (asKeyHandler->KeyPress(key)) {
-                return true;
-            }
-        }
-        focus = focus->GetParent();
-    }
-
     return false;
 }
 
