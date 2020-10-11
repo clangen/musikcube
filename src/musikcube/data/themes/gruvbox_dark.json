@@ -91,12 +91,12 @@
       "palette": 235
     },
     "banner_background": {
-      "hex": "#458588",
-      "palette": 66
+      "hex": "#282828",
+      "palette": 235
     },
     "banner_foreground": {
-      "hex": "#fbf1c7",
-      "palette": 229
+      "hex": "#7c6f64",
+      "palette": 243
     },
     "footer_background": {
       "hex": "#b16286",
