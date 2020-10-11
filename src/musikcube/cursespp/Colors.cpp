@@ -394,7 +394,7 @@ struct Theme {
         /* banner */
         init_pair(
             Color::Banner,
-            bannerForeground.Id(mode, COLOR_GRAYTEXT),
+            bannerForeground.Id(mode, COLOR_WHITE),
             backgroundId);
 
         /* footer */
