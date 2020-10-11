@@ -77,14 +77,13 @@ LocalLibrarySettingsLayout::~LocalLibrarySettingsLayout() {
 
 void LocalLibrarySettingsLayout::OnLayout() {
     int cx = this->GetWidth();
-    int startY = 0;
     int leftX = 0;
     int leftWidth = cx / 3; /* 1/3 width */
     int rightX = leftWidth;
     int rightWidth = cx - rightX; /* remainder (~2/3) */
-    int pathsHeight = this->GetHeight();
-    this->browseList->MoveAndResize(leftX, 0, leftWidth, pathsHeight);
-    this->addedPathsList->MoveAndResize(rightX, 0, rightWidth, pathsHeight);
+    int pathsHeight = this->GetHeight() - 1;
+    this->browseList->MoveAndResize(leftX, 1, leftWidth, pathsHeight);
+    this->addedPathsList->MoveAndResize(rightX, 1, rightWidth, pathsHeight);
 }
 
 void LocalLibrarySettingsLayout::LoadPreferences() {

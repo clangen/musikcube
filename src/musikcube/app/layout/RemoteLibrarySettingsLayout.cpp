@@ -89,8 +89,7 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     this->httpPortInput->MoveAndResize(labelWidth + 1, y++, 5, 1);
     this->pwLabel->MoveAndResize(0, y, labelWidth, 1);
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
-    ++y;
-    this->ipv6Cb->MoveAndResize(0, y++, cx, 1);
+    this->ipv6Cb->MoveAndResize(labelWidth - 3, y++, cx - labelWidth, 1);
 }
 
 void RemoteLibrarySettingsLayout::InitializeWindows() {
