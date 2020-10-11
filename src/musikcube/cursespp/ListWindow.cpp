@@ -346,6 +346,7 @@ bool ListWindow::OnEntryActivated(size_t index) {
         this->EntryActivated(this, index);
         return true;
     }
+    return false;
 }
 
 bool ListWindow::OnEntryContextMenu(size_t index) {
