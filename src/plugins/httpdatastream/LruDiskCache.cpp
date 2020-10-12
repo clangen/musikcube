@@ -152,7 +152,7 @@ LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
         try {
             auto entry = std::shared_ptr<Entry>(new Entry());
             entry->id = std::stoull(parts[1].c_str());
-            entry->path = fn;
+            entry->path = path.string();
             entry->type = parts[2];
             entry->time = fs::last_write_time(path);
             al::replace_all(entry->type, "-", "/");

@@ -271,9 +271,14 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
 
     if (diskCache.Cached(id)) {
         FILE* file = diskCache.Open(id, "rb", this->type, this->length);
-        this->reader.reset(new FileReadStream(file, this->length));
-        this->state = Cached;
-        return true;
+        if (file) {
+            this->reader.reset(new FileReadStream(file, this->length));
+            this->state = Cached;
+            return true;
+        }
+        else {
+            diskCache.Delete(id);
+        }
     }
 
     this->writeFile = diskCache.Open(id, "wb");
