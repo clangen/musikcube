@@ -41,6 +41,8 @@
 
 using namespace cursespp;
 
+/* TODO: this seems to be busted in many cases; either fix the
+implementation or get rid of this. */
 static std::map<ILayout*, int> lastFocusMap;
 
 #define ENABLE_DEMO_MODE 0
@@ -155,8 +157,8 @@ IWindowPtr AppLayout::FocusPrev() {
 void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
     if (layout != this->layout) {
         if (this->layout) {
-            this->RemoveWindow(this->layout);
             last(this->layout.get(), this->layout->GetFocusIndex());
+            this->RemoveWindow(this->layout);
             this->layout->Hide();
         }
 
@@ -180,7 +182,7 @@ void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
             this->Layout();
 
             if (!this->shortcuts->IsFocused()) {
-                auto lastFocusIndex = last(this->layout.get());
+                auto lastFocusIndex = std::max(0, last(this->layout.get()));
                 this->layout->SetFocusIndex(lastFocusIndex);
             }
         }
