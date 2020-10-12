@@ -82,7 +82,6 @@ namespace cursespp {
             cursespp::IWindowPtr lastFocus;
             ITopLevelLayout* topLevelLayout;
             size_t paddingT{0}, paddingL{0}, paddingB{0}, paddingR{0};
-            bool shortcutsFocused;
             bool autoHideCommandBar{ false };
     };
 }

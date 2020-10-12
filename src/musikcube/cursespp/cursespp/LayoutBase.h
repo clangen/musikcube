@@ -77,7 +77,7 @@ namespace cursespp {
             virtual bool SetFocus(IWindowPtr window);
 
             virtual int GetFocusIndex();
-            virtual void SetFocusIndex(int index);
+            virtual void SetFocusIndex(int index, bool applyFocus = true);
 
             virtual int GetFocusableCount();
             virtual IWindowPtr GetFocusableAt(int index);

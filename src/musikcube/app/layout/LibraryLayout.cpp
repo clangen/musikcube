@@ -346,7 +346,7 @@ IWindowPtr LibraryLayout::GetFocus() {
     auto result = this->visibleLayout->GetFocus();
 
     if (!result) {
-        this->visibleLayout->SetFocusIndex(0);
+        this->visibleLayout->SetFocusIndex(0, false);
         result = this->visibleLayout->GetFocus();
     }
 

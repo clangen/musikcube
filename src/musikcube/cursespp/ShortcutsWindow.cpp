@@ -138,10 +138,10 @@ bool ShortcutsWindow::KeyPress(const std::string& key) {
                 /* replace the original key we cached when we were forcused originally
                 to "commit" the operation, as it'll be swapped back when we lose focus */
                 this->originalKey = this->activeKey;
-
                 if (this->changedCallback) {
                     this->changedCallback(this->activeKey);
                 }
+                return true;
             }
         }
     }

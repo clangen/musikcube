@@ -467,12 +467,14 @@ int LayoutBase::GetFocusIndex() {
     return this->focused;
 }
 
-void LayoutBase::SetFocusIndex(int index) {
+void LayoutBase::SetFocusIndex(int index, bool applyFocus) {
     if (!this->focusable.size()) {
         this->IndexFocusables();
     }
     this->focused = index;
-    this->EnsureValidFocus();
+    if (applyFocus) {
+        this->EnsureValidFocus();
+    }
 }
 
 int LayoutBase::GetFocusableCount() {
