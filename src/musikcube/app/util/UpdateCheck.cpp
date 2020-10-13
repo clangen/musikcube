@@ -157,7 +157,7 @@ bool UpdateCheck::Run(Callback callback) {
                 short minor = platform[MINOR];
                 short patch = platform[PATCH];
 
-                this->updateUrl = platform[URL];
+                this->updateUrl = platform[URL].get<std::string>();
                 this->latestVersion = formattedVersion(major, minor, patch);
 
                 int64_t current = versionCode(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);

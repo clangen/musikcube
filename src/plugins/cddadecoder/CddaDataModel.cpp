@@ -38,6 +38,7 @@
 #include <Windows.h>
 #include <dbt.h>
 #include <map>
+#include <functional>
 
 #define CLASS_NAME L"CddaDataModelEventClass"
 #define WINDOW_NAME L"CddaDataModelWindow"

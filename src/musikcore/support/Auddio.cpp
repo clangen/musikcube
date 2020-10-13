@@ -100,7 +100,7 @@ namespace musik { namespace core { namespace auddio {
                         std::string response = client->Stream().str();
                         auto json = nlohmann::json::parse(response);
                         if (json.value("status", "") == "success") {
-                            lyrics = json["result"][0]["lyrics"];
+                            lyrics = json["result"][0]["lyrics"].get<std::string>();
                         }
                     }
                     catch (...) {
