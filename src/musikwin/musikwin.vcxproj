@@ -283,7 +283,7 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\font\*.ttf" "$(TargetDir)fonts\" /Y 
     <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">
       <Project>{b2165720-b4b2-4f4b-8888-8c390c3cb4db}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\core\core.vcxproj">
+    <ProjectReference Include="..\musikcore\musikcore.vcxproj">
       <Project>{b2165720-b4b2-4f4b-9634-8c390c3cb4db}</Project>
     </ProjectReference>
     <ProjectReference Include="..\glue\glue.vcxproj">

@@ -865,7 +865,7 @@
     <ClInclude Include="TaglibMetadataReader.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\core\core.vcxproj">
+    <ProjectReference Include="..\..\musikcore\musikcore.vcxproj">
       <Project>{b2165720-b4b2-4f4b-9634-8c390c3cb4db}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
