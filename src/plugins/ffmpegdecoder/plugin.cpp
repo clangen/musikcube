@@ -32,9 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/IDecoderFactory.h>
 #include "FfmpegDecoder.h"
 
 extern "C" {

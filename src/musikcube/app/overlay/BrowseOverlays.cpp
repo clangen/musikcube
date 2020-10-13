@@ -36,8 +36,8 @@
 
 #include "BrowseOverlays.h"
 #include <app/util/MagicConstants.h>
-#include <core/library/query/AllCategoriesQuery.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/library/query/AllCategoriesQuery.h>
+#include <musikcore/i18n/Locale.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>

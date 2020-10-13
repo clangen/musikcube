@@ -40,8 +40,8 @@
 #include <cursespp/Window.h>
 #include <cursespp/DialogOverlay.h>
 
-#include <core/runtime/Message.h>
-#include <core/support/Common.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/Common.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>

@@ -35,8 +35,8 @@
 #pragma once
 
 #include "pch.h"
-#include <core/sdk/IBuffer.h>
-#include <core/sdk/IBufferProvider.h>
+#include <musikcore/sdk/IBuffer.h>
+#include <musikcore/sdk/IBufferProvider.h>
 
 class WaveOut;
 

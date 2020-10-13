@@ -35,7 +35,7 @@
 #pragma once
 
 #include <win32cpp/TopLevelWindow.hpp>
-#include <core/runtime/IMessageQueue.h>
+#include <musikcore/runtime/IMessageQueue.h>
 
 namespace musik { namespace win {
     class MainWindow : public win32cpp::TopLevelWindow {

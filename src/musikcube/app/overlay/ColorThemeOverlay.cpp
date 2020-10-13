@@ -36,9 +36,9 @@
 
 #include "ColorThemeOverlay.h"
 
-#include <core/support/Common.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/support/Preferences.h>
+#include <musikcore/support/Common.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Preferences.h>
 
 #include <app/util/PreferenceKeys.h>
 

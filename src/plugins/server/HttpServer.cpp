@@ -38,7 +38,7 @@
 #include "Transcoder.h"
 #include "TranscodingAudioDataStream.h"
 
-#include <core/sdk/ITrack.h>
+#include <musikcore/sdk/ITrack.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>

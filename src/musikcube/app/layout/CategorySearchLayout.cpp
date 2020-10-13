@@ -40,8 +40,8 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Messages.h>
 #include <app/util/Hotkeys.h>

@@ -34,8 +34,8 @@
 
 #include <stdafx.h>
 #include <app/layout/LibraryNotConnectedLayout.h>
-#include <core/i18n/Locale.h>
-#include <core/library/RemoteLibrary.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/library/RemoteLibrary.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>

@@ -32,15 +32,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/ISchema.h>
-#include <core/sdk/IDecoderFactory.h>
-#include <core/sdk/IDataStreamFactory.h>
-#include <core/sdk/IIndexerSource.h>
-#include <core/sdk/IEnvironment.h>
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/IDebug.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/ISchema.h>
+#include <musikcore/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/IDataStreamFactory.h>
+#include <musikcore/sdk/IIndexerSource.h>
+#include <musikcore/sdk/IEnvironment.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/IDebug.h>
 #include "Utility.h"
 #include "OpenMptDataStream.h"
 #include "OpenMptDecoder.h"

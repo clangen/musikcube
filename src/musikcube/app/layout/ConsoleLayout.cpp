@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include <app/layout/ConsoleLayout.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/i18n/Locale.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>

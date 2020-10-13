@@ -38,8 +38,8 @@
 #include "HttpServer.h"
 #include "WebSocketServer.h"
 
-#include <core/sdk/IPlaybackRemote.h>
-#include <core/sdk/IPlugin.h>
+#include <musikcore/sdk/IPlaybackRemote.h>
+#include <musikcore/sdk/IPlugin.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>

@@ -48,16 +48,16 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/audio/Visualizer.h>
-#include <core/debug.h>
-#include <core/i18n/Locale.h>
-#include <core/library/LibraryFactory.h>
-#include <core/library/MasterLibrary.h>
-#include <core/plugin/Plugins.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/sdk/constants.h>
-#include <core/support/Common.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/Visualizer.h>
+#include <musikcore/debug.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/plugin/Plugins.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/support/Common.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>

@@ -43,12 +43,12 @@
 #include <cursespp/SchemaOverlay.h>
 #include <cursespp/AppLayout.h>
 
-#include <core/library/Indexer.h>
-#include <core/library/LocalLibraryConstants.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/audio/Outputs.h>
-#include <core/support/Messages.h>
-#include <core/sdk/ISchema.h>
+#include <musikcore/library/Indexer.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/audio/Outputs.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/sdk/ISchema.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>

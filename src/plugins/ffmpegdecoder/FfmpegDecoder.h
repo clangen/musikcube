@@ -34,9 +34,9 @@
 
 #pragma once
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IDecoder.h>
-#include <core/sdk/IDataStream.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IDecoder.h>
+#include <musikcore/sdk/IDataStream.h>
 
 extern "C" {
     #include <libavformat/avio.h>

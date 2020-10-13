@@ -34,8 +34,8 @@
 
 #include "Utility.h"
 #include <string.h>
-#include <core/sdk/String.h>
-#include <core/sdk/Filesystem.h>
+#include <musikcore/sdk/String.h>
+#include <musikcore/sdk/Filesystem.h>
 
 #ifdef WIN32
 #include <Windows.h>

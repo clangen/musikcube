@@ -76,7 +76,7 @@ if you're interested in writing your own frontend, [api documentation is availab
 
 # sdk
 
-the musikcube sdk is a set of small, pure-virtual c++ classes and a handful of enums and constants. they're still in the process of being slimmed down. you can see what they currently look like here: https://github.com/clangen/musikcube/tree/master/src/core/sdk
+the musikcube sdk is a set of small, pure-virtual c++ classes and a handful of enums and constants. they're still in the process of being slimmed down. you can see what they currently look like here: https://github.com/clangen/musikcube/tree/master/src/musikcore/sdk
 
 # dependencies
 

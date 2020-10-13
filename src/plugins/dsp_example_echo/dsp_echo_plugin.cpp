@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -36,7 +36,7 @@
 
 #include "pch.h"
 
-#include <core/IPlugin.h>
+#include <musikcore/IPlugin.h>
 #include "DSPEcho.h"
 
 
@@ -51,7 +51,7 @@ class DSPEchoPlugin : public musik::core::IPlugin
 
     const utfchar* Name()       { return TEXT("DSP echo example"); };
     const utfchar* Version()    { return TEXT("1"); };
-    const utfchar* Author()     { return TEXT("Daniel Önnerby"); };
+    const utfchar* Author()     { return TEXT("Daniel ï¿½nnerby"); };
 };
 
 extern "C" __declspec(dllexport) musik::core::IPlugin* GetPlugin()

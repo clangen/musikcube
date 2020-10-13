@@ -36,7 +36,7 @@
 
 #include <string>
 #include <libopenmpt/libopenmpt.h>
-#include <core/sdk/ISchema.h>
+#include <musikcore/sdk/ISchema.h>
 
 static const std::string PLUGIN_NAME = "libopenmpt";
 static const std::string EXTERNAL_ID_PREFIX = "libopenmpt";

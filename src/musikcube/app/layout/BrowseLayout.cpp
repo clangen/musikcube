@@ -37,13 +37,13 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/CategoryTrackListQuery.h>
-#include <core/library/query/SavePlaylistQuery.h>
-#include <core/library/query/util/TrackSort.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/support/Messages.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/library/query/CategoryTrackListQuery.h>
+#include <musikcore/library/query/SavePlaylistQuery.h>
+#include <musikcore/library/query/util/TrackSort.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/i18n/Locale.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>

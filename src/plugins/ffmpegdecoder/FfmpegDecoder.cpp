@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "FfmpegDecoder.h"
-#include <core/sdk/IDebug.h>
+#include <musikcore/sdk/IDebug.h>
 #include <algorithm>
 #include <string>
 

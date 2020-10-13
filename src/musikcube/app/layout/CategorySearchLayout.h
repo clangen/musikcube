@@ -41,9 +41,9 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
-#include <core/support/Preferences.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/ILibrary.h>
+#include <musikcore/support/Preferences.h>
 
 #include <sigslot/sigslot.h>
 
@@ -72,7 +72,7 @@ namespace musik {
             protected:
                 virtual void OnLayout();
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-    
+
             private:
                 void InitializeWindows(musik::core::audio::PlaybackService& playback);
                 void OnCategoryEntryActivated(cursespp::ListWindow* sender, size_t index);

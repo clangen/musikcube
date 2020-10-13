@@ -34,10 +34,10 @@
 
 #include <stdafx.h>
 #include <app/layout/LyricsLayout.h>
-#include <core/i18n/Locale.h>
-#include <core/support/Auddio.h>
-#include <core/support/Common.h>
-#include <core/library/query/LyricsQuery.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/support/Auddio.h>
+#include <musikcore/support/Common.h>
+#include <musikcore/library/query/LyricsQuery.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>

@@ -40,10 +40,10 @@
 #include <cursespp/Text.h>
 #include <cursespp/ToastOverlay.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/audio/PlaybackService.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/audio/PlaybackService.h>
 
-#include <core/support/Duration.h>
+#include <musikcore/support/Duration.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
@@ -472,7 +472,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         if (track) {
             std::string album = track->GetMetadataState() == MetadataState::Loaded
                 ? track->GetString(constants::Track::ALBUM) : "-";
-            
+
             if (!album.size()) {
                 album = _TSTR("tracklist_unknown_album");
             }
@@ -520,7 +520,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         entry->SetAttrs(attrs);
         return entry;
     }
-    
+
     std::string text = parent.renderer(
         track, rawIndex, this->GetWidth(), parent.trackNumType);
 

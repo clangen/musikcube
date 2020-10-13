@@ -34,8 +34,8 @@
 
 #include "stdafx.h"
 #include "TaglibMetadataReader.h"
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
 
 #ifdef WIN32
     #define DLLEXPORT __declspec(dllexport)

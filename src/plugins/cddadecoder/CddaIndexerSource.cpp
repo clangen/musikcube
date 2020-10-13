@@ -36,7 +36,7 @@
 
 #include "CddaIndexerSource.h"
 
-#include <core/sdk/IIndexerNotifier.h>
+#include <musikcore/sdk/IIndexerNotifier.h>
 
 #include <curl/curl.h>
 

@@ -38,8 +38,8 @@
 #include <boost/thread/condition.hpp>
 #include <boost/thread/thread.hpp>
 
-#include <core/sdk/IOutput.h>
-#include <core/sdk/IDevice.h>
+#include <musikcore/sdk/IOutput.h>
+#include <musikcore/sdk/IDevice.h>
 
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/condition.hpp>

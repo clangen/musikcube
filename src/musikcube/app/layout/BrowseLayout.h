@@ -39,9 +39,9 @@
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
-#include <core/audio/PlaybackService.h>
-#include <core/support/Preferences.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
 

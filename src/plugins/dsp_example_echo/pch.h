@@ -2,7 +2,7 @@
 //
 // License Agreement:
 //
-// The following are Copyright © 2008, Daniel Önnerby
+// The following are Copyright ï¿½ 2008, Daniel ï¿½nnerby
 //
 // All rights reserved.
 //
@@ -37,6 +37,6 @@
 // Precompiled headers
 #pragma once
 
-#include <core/config.h>
+#include <musikcore/config.h>
 
 //#include "vld/vld.h"

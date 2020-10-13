@@ -36,7 +36,7 @@
 
 #include "VisualizerOverlay.h"
 
-#include <core/audio/Visualizer.h>
+#include <musikcore/audio/Visualizer.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>

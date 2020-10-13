@@ -5,7 +5,7 @@
 #endif
 
 #include <stdio.h>
-#include <core/musikcore_c.h>
+#include <musikcore/musikcore_c.h>
 
 #define ENCODER_TYPE ".opus"
 

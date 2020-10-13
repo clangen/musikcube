@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/sdk/IOutput.h>
+#include <musikcore/sdk/IOutput.h>
 #include <sndio.h>
 #include <mutex>
 #include <list>

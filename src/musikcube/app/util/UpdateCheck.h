@@ -35,7 +35,7 @@
 #include <curl/curl.h>
 #include <thread>
 #include <mutex>
-#include <core/runtime/IMessageTarget.h>
+#include <musikcore/runtime/IMessageTarget.h>
 
 namespace musik { namespace cube {
     class UpdateCheck : private musik::core::runtime::IMessageTarget {

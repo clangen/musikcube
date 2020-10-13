@@ -40,8 +40,8 @@
 
 #ifdef FFMPEG_ENABLED
 
-#include <core/sdk/IBlockingEncoder.h>
-#include <core/sdk/DataBuffer.h>
+#include <musikcore/sdk/IBlockingEncoder.h>
+#include <musikcore/sdk/DataBuffer.h>
 #include <string>
 
 extern "C" {

@@ -36,10 +36,10 @@
 
 #include <cursespp/Window.h>
 #include <cursespp/IKeyHandler.h>
-#include <core/library/track/Track.h>
-#include <core/runtime/IMessage.h>
-#include <core/audio/PlaybackService.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/track/Track.h>
+#include <musikcore/runtime/IMessage.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/PreferenceKeys.h>
 #include <sigslot/sigslot.h>
 
 namespace musik {

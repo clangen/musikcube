@@ -35,7 +35,7 @@
 
 #pragma once
 
-#include <core/sdk/IIndexerSource.h>
+#include <musikcore/sdk/IIndexerSource.h>
 #include <functional>
 #include <set>
 #include <atomic>

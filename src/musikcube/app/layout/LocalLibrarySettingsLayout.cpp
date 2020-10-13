@@ -41,11 +41,11 @@
 #include <cursespp/Screen.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <core/library/Indexer.h>
-#include <core/library/LocalLibraryConstants.h>
-#include <core/library/LibraryFactory.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/support/Messages.h>
+#include <musikcore/library/Indexer.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Messages.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>

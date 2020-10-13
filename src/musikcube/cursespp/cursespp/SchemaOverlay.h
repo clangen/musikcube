@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <core/support/Preferences.h>
-#include <core/sdk/ISchema.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/sdk/ISchema.h>
 
 namespace cursespp {
     class SchemaOverlay {

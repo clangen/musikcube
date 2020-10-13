@@ -43,9 +43,9 @@
 #include <app/layout/CategorySearchLayout.h>
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
-#include <core/audio/PlaybackService.h>
-#include <core/support/Preferences.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
 

@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include "Hotkeys.h"
-#include <core/support/Preferences.h>
+#include <musikcore/support/Preferences.h>
 #include <app/util/Playback.h>
 #include <unordered_map>
 #include <unordered_set>

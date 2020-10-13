@@ -39,13 +39,13 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
 
-#include <core/support/Duration.h>
+#include <musikcore/support/Duration.h>
 
-#include <core/debug.h>
-#include <core/library/LocalLibraryConstants.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/runtime/Message.h>
-#include <core/support/Playback.h>
+#include <musikcore/debug.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/Playback.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>

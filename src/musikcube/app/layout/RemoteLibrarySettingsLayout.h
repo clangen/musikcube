@@ -38,8 +38,8 @@
 #include <cursespp/TextLabel.h>
 #include <cursespp/TextInput.h>
 #include <cursespp/Checkbox.h>
-#include <core/library/ILibrary.h>
-#include <core/support/Preferences.h>
+#include <musikcore/library/ILibrary.h>
+#include <musikcore/support/Preferences.h>
 
 namespace musik { namespace cube {
     class RemoteLibrarySettingsLayout: public cursespp::LayoutBase  {

@@ -34,9 +34,9 @@
 
 #pragma once
 
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
-#include <core/library/query/TrackListQueryBase.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/query/TrackListQueryBase.h>
 #include <app/window/TrackListView.h>
 
 namespace musik {

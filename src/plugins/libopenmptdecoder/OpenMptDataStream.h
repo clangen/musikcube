@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IDataStream.h>
+#include <musikcore/sdk/IDataStream.h>
 #include <string>
 
 class OpenMptDataStream: public musik::core::sdk::IDataStream {

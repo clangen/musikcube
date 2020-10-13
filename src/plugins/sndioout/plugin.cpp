@@ -32,8 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
 #include "SndioOut.h"
 
 class SndioPlugin : public musik::core::sdk::IPlugin {

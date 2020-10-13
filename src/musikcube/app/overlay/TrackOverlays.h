@@ -34,9 +34,9 @@
 
 #pragma once
 
-#include <core/library/query/util/TrackSort.h>
-#include <core/library/ILibrary.h>
-#include <core/library/track/Track.h>
+#include <musikcore/library/query/util/TrackSort.h>
+#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/track/Track.h>
 
 #include <functional>
 

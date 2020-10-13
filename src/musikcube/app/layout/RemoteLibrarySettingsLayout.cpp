@@ -38,8 +38,8 @@
 
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
-#include <core/library/LibraryFactory.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <algorithm>
 #include <vector>

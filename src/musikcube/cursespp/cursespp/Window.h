@@ -37,7 +37,7 @@
 #include <cursespp/curses_config.h>
 #include <cursespp/IWindow.h>
 #include <cursespp/INavigationKeys.h>
-#include <core/runtime/IMessageQueue.h>
+#include <musikcore/runtime/IMessageQueue.h>
 
 #ifdef WIN32
 #define IDLE_TIMEOUT_MS 10

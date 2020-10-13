@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStreamFactory.h>
+#include <musikcore/sdk/IDataStreamFactory.h>
 
 using namespace musik::core::sdk;
 

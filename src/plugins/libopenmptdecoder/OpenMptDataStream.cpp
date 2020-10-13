@@ -34,9 +34,9 @@
 
 #include "Utility.h"
 #include "OpenMptDataStream.h"
-#include <core/sdk/IIndexerSource.h>
-#include <core/sdk/IEnvironment.h>
-#include <core/sdk/IIndexerSource.h>
+#include <musikcore/sdk/IIndexerSource.h>
+#include <musikcore/sdk/IEnvironment.h>
+#include <musikcore/sdk/IIndexerSource.h>
 #include <cassert>
 
 using namespace musik::core::sdk;

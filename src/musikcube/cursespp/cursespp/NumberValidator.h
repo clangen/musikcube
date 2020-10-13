@@ -36,7 +36,7 @@
 #pragma once
 
 #include <cursespp/InputOverlay.h>
-#include <core/utfutil.h>
+#include <musikcore/utfutil.h>
 
 namespace cursespp {
 

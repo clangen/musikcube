@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 #include <functional>
-#include <core/sdk/IEnvironment.h>
+#include <musikcore/sdk/IEnvironment.h>
 
 extern "C" {
     #include <unistd.h>

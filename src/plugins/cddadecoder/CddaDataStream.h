@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStream.h>
+#include <musikcore/sdk/IDataStream.h>
 
 #include "ntddcdrm.h"
 #include "devioctl.h"

@@ -39,8 +39,8 @@
 #include <cursespp/MultiLineEntry.h>
 #include <cursespp/Text.h>
 
-#include <core/runtime/IMessage.h>
-#include <core/library/LocalLibraryConstants.h>
+#include <musikcore/runtime/IMessage.h>
+#include <musikcore/library/LocalLibraryConstants.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>

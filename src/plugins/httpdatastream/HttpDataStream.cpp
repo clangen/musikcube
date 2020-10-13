@@ -37,7 +37,7 @@
 #include "HttpDataStream.h"
 #include "LruDiskCache.h"
 
-#include <core/sdk/IEnvironment.h>
+#include <musikcore/sdk/IEnvironment.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>

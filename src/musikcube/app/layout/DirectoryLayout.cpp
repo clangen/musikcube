@@ -34,9 +34,9 @@
 
 #include <stdafx.h>
 
-#include <core/library/query/DirectoryTrackListQuery.h>
-#include <core/support/Messages.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/library/query/DirectoryTrackListQuery.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/i18n/Locale.h>
 #include <cursespp/Colors.h>
 #include <cursespp/ToastOverlay.h>
 #include <app/util/Hotkeys.h>

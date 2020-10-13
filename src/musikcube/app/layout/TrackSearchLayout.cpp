@@ -37,9 +37,9 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/SearchTrackListQuery.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>

@@ -37,10 +37,10 @@
 #include "PreampOverlay.h"
 #include "PlaybackOverlays.h"
 
-#include <core/plugin/PluginFactory.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/i18n/Locale.h>
 
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>

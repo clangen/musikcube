@@ -41,11 +41,11 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <core/library/query/TrackListQueryBase.h>
-#include <core/audio/PlaybackService.h>
+#include <musikcore/library/query/TrackListQueryBase.h>
+#include <musikcore/audio/PlaybackService.h>
 
-#include <core/runtime/IMessage.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/runtime/IMessage.h>
+#include <musikcore/library/ILibrary.h>
 
 #include <app/util/TrackRowRenderers.h>
 

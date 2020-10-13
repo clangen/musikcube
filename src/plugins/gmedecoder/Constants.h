@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <core/sdk/ISchema.h>
-#include <core/sdk/String.h>
+#include <musikcore/sdk/ISchema.h>
+#include <musikcore/sdk/String.h>
 #include <string>
 #include <set>
 #include <iostream>

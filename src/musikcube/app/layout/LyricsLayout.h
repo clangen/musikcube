@@ -5,8 +5,8 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ITopLevelLayout.h>
 #include <cursespp/SimpleScrollAdapter.h>
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/ILibrary.h>
 
 namespace musik { namespace cube {
 

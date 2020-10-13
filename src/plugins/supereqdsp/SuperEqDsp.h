@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include <core/sdk/IDSP.h>
+#include <musikcore/sdk/IDSP.h>
 #include "supereq/Equ.h"
 
 using namespace musik::core::sdk;

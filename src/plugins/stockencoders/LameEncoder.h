@@ -32,8 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IStreamingEncoder.h>
-#include <core/sdk/DataBuffer.h>
+#include <musikcore/sdk/IStreamingEncoder.h>
+#include <musikcore/sdk/DataBuffer.h>
 #include <lame/lame.h>
 
 class LameEncoder: public musik::core::sdk::IStreamingEncoder {

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/library/ILibrary.h>
+#include <musikcore/library/ILibrary.h>
 #include <functional>
 
 namespace musik {

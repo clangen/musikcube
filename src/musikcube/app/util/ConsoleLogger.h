@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core/debug.h>
-#include <core/runtime/IMessageQueue.h>
+#include <musikcore/debug.h>
+#include <musikcore/runtime/IMessageQueue.h>
 #include <cursespp/Colors.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <sigslot/sigslot.h>

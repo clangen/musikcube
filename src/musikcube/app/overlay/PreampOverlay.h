@@ -36,9 +36,9 @@
 
 #include <functional>
 
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IPlaybackService.h>
-#include <core/support/Preferences.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/IPlaybackService.h>
+#include <musikcore/support/Preferences.h>
 
 #include <cursespp/Checkbox.h>
 #include <cursespp/TextInput.h>

@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <core/sdk/IDecoder.h>
+#include <musikcore/sdk/IDecoder.h>
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>

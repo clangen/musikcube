@@ -34,7 +34,7 @@
 
 #include "OpenMptDecoder.h"
 #include "OpenMptDataStream.h"
-#include <core/sdk/IDebug.h>
+#include <musikcore/sdk/IDebug.h>
 #include <cassert>
 
 using namespace musik::core::sdk;

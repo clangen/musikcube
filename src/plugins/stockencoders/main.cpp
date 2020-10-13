@@ -32,9 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IPlaybackRemote.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IEncoderFactory.h>
+#include <musikcore/sdk/IPlaybackRemote.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/IEncoderFactory.h>
 #include <set>
 #include <algorithm>
 

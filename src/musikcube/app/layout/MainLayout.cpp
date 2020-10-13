@@ -38,9 +38,9 @@
 #include <cursespp/Colors.h>
 #include <cursespp/ToastOverlay.h>
 
-#include <core/runtime/Message.h>
-#include <core/support/Auddio.h>
-#include <core/library/RemoteLibrary.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/Auddio.h>
+#include <musikcore/library/RemoteLibrary.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>

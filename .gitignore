@@ -30,7 +30,7 @@ musikcube.core
 src/3rdparty/bin
 src/3rdparty/obj
 src/contrib
-src/core/obj
+src/musikcore/obj
 src/plugins/oggdecoder/obj
 src/plugins/server/libmicrohttpd-prefix
 src/plugins/server/microhttpd

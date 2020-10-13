@@ -56,7 +56,7 @@
 
 #include <set>
 
-#include <core/sdk/ITagReader.h>
+#include <musikcore/sdk/ITagReader.h>
 
 class TaglibMetadataReader : public musik::core::sdk::ITagReader {
     public:

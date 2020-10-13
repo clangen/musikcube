@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IIndexerSource.h>
+#include <musikcore/sdk/IIndexerSource.h>
 #include "CddaDataModel.h"
 
 #include <functional>

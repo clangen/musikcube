@@ -35,8 +35,8 @@
 #include "Constants.h"
 #include "GmeDecoder.h"
 #include "GmeDataStream.h"
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/IDebug.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/IDebug.h>
 #include <cassert>
 
 static const int BUFFER_SAMPLE_COUNT = 2048;

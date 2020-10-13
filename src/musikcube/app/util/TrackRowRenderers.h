@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/library/track/Track.h>
+#include <musikcore/library/track/Track.h>
 
 namespace musik {
     namespace cube {

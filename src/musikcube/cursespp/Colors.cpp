@@ -36,7 +36,7 @@
 #include <nlohmann/json.hpp>
 #include <cursespp/Colors.h>
 #include <boost/filesystem.hpp>
-#include <core/support/Common.h>
+#include <musikcore/support/Common.h>
 #include <set>
 
 using namespace musik::core;

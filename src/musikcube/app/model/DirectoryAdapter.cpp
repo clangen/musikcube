@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 
-#include <core/support/Common.h>
+#include <musikcore/support/Common.h>
 #include <cursespp/Text.h>
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/SingleLineEntry.h>

@@ -38,10 +38,10 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/runtime/Message.h>
-#include <core/support/Messages.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <app/overlay/BrowseOverlays.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -49,7 +49,7 @@
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/MagicConstants.h>
-#include <core/support/Playback.h>
+#include <musikcore/support/Playback.h>
 
 #include "LibraryLayout.h"
 

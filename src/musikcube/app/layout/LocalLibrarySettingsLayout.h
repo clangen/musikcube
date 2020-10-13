@@ -37,7 +37,7 @@
 #include <cursespp/LayoutBase.h>
 #include <cursespp/ListWindow.h>
 #include <cursespp/SimpleScrollAdapter.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/library/ILibrary.h>
 #include <app/model/DirectoryAdapter.h>
 
 namespace musik { namespace cube {

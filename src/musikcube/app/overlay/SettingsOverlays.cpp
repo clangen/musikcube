@@ -36,10 +36,10 @@
 
 #include "SettingsOverlays.h"
 
-#include <core/i18n/Locale.h>
-#include <core/support/Preferences.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/library/ILibrary.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>

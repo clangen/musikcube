@@ -34,9 +34,9 @@
 
 #include "NullOut.h"
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/ISchema.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/ISchema.h>
 
 using namespace musik::core::sdk;
 

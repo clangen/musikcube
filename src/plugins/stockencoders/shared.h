@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IEnvironment.h>
+#include <musikcore/sdk/IEnvironment.h>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)

@@ -35,7 +35,7 @@
 #pragma once
 
 #include <stdafx.h>
-#include <core/support/Messages.h>
+#include <musikcore/support/Messages.h>
 
 namespace musik {
     namespace cube {

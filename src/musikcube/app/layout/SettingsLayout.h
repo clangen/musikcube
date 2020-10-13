@@ -46,10 +46,10 @@
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/ITopLevelLayout.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/audio/MasterTransport.h>
-#include <core/library/MasterLibrary.h>
-#include <core/support/Preferences.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/MasterTransport.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/support/Preferences.h>
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>

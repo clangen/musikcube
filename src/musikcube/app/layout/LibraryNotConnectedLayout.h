@@ -35,7 +35,7 @@
 #pragma once
 
 #include <cursespp/LayoutBase.h>
-#include <core/library/MasterLibrary.h>
+#include <musikcore/library/MasterLibrary.h>
 #include <cursespp/ITopLevelLayout.h>
 #include <cursespp/TextLabel.h>
 #include <cursespp/ShortcutsWindow.h>

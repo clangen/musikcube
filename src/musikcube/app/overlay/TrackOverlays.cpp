@@ -35,8 +35,8 @@
 #include <stdafx.h>
 
 #include "TrackOverlays.h"
-#include <core/library/query/util/TrackSort.h>
-#include <core/library/query/SetTrackRatingQuery.h>
+#include <musikcore/library/query/util/TrackSort.h>
+#include <musikcore/library/query/SetTrackRatingQuery.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>

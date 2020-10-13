@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/ITrackList.h>
+#include <musikcore/sdk/ITrackList.h>
 #include <map>
 #include <string>
 

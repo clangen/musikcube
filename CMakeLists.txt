@@ -65,7 +65,7 @@ message(STATUS "[build] link libraries are: ${musikcube_LINK_LIBS}")
 
 include_directories (
   "${musikcube_SOURCE_DIR}/src"
-  "${musikcube_SOURCE_DIR}/src/core"
+  "${musikcube_SOURCE_DIR}/src/musikcore"
   "${musikcube_SOURCE_DIR}/src/musikcube"
   "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
   "${musikcube_SOURCE_DIR}/src/3rdparty/include")
@@ -97,7 +97,7 @@ endif()
 # important bugfixes.
 set(USE_BUNDLED_TAGLIB "true")
 
-add_subdirectory(src/core)
+add_subdirectory(src/musikcore)
 add_subdirectory(src/core_c_demo)
 add_subdirectory(src/musikcube)
 add_subdirectory(src/musikcubed)
@@ -193,8 +193,8 @@ else ()
   install(FILES ${plugins} DESTINATION share/musikcube/plugins)
 endif ()
 
-file(GLOB sdk_headers "src/core/sdk/*.h")
-install(FILES ${sdk_headers} DESTINATION include/musikcube/core/sdk)
+file(GLOB sdk_headers "src/musikcore/sdk/*.h")
+install(FILES ${sdk_headers} DESTINATION include/musikcube/musikcore/sdk)
 
 file(GLOB themes "src/musikcube/data/themes/*.json")
 file(COPY ${themes} DESTINATION bin/themes)

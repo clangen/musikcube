@@ -7,9 +7,9 @@
 
 #include <shlwapi.h>
 
-#include <core/sdk/constants.h>
-#include <core/sdk/ISpectrumVisualizer.h>
-#include <core/sdk/IPlugin.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/ISpectrumVisualizer.h>
+#include <musikcore/sdk/IPlugin.h>
 
 #include "MemoryDC.h"
 

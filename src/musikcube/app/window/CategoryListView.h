@@ -39,12 +39,12 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ScrollAdapterBase.h>
 
-#include <core/library/query/CategoryListQuery.h>
+#include <musikcore/library/query/CategoryListQuery.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/library/IQuery.h>
-#include <core/library/ILibrary.h>
-#include <core/runtime/IMessage.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/IQuery.h>
+#include <musikcore/library/ILibrary.h>
+#include <musikcore/runtime/IMessage.h>
 
 #include <mutex>
 

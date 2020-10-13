@@ -35,8 +35,8 @@
 #include "Context.h"
 #include "Snapshots.h"
 
-#include <core/sdk/constants.h>
-#include <core/sdk/ITrack.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/ITrack.h>
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/extensions/permessage_deflate/enabled.hpp>

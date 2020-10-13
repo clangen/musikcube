@@ -2,7 +2,7 @@
 #include <app/util/ConsoleLogger.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/SingleLineEntry.h>
-#include <core/runtime/Message.h>
+#include <musikcore/runtime/Message.h>
 #include <app/util/Messages.h>
 #include <time.h>
 

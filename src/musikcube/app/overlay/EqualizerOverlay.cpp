@@ -42,8 +42,8 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
 
-#include <core/support/Messages.h>
-#include <core/plugin/PluginFactory.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/plugin/PluginFactory.h>
 
 #include <app/util/Messages.h>
 

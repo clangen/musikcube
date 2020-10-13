@@ -38,17 +38,17 @@
 asio's streambuf. include it up front so work around this */
 #include <boost/asio/basic_socket_streambuf.hpp>
 
-#include <core/config.h>
-#include <core/i18n/Locale.h>
-#include <core/library/ILibrary.h>
-#include <core/library/LocalLibrary.h>
-#include <core/library/track/Track.h>
-#include <core/library/track/TrackList.h>
-#include <core/audio/PlaybackService.h>
-#include <core/audio/ITransport.h>
-#include <core/support/Preferences.h>
+#include <musikcore/config.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/library/ILibrary.h>
+#include <musikcore/library/LocalLibrary.h>
+#include <musikcore/library/track/Track.h>
+#include <musikcore/library/track/TrackList.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/ITransport.h>
+#include <musikcore/support/Preferences.h>
 #include <cursespp/curses_config.h>
-#include <core/utfutil.h>
+#include <musikcore/utfutil.h>
 
 #include <cursespp/App.h>
 #include <cursespp/AppLayout.h>

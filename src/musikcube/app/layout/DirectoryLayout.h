@@ -41,9 +41,9 @@
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
-#include <core/audio/PlaybackService.h>
+#include <musikcore/audio/PlaybackService.h>
 
-#include <core/library/ILibrary.h>
+#include <musikcore/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
 

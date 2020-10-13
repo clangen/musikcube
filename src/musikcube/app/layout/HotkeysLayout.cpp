@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include "HotkeysLayout.h"
-#include <core/support/Common.h>
+#include <musikcore/support/Common.h>
 #include <cursespp/App.h>
 #include <cursespp/Colors.h>
 #include <cursespp/DialogOverlay.h>

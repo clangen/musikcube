@@ -36,11 +36,11 @@
 
 #include "PluginOverlay.h"
 
-#include <core/support/Common.h>
-#include <core/support/Preferences.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/plugin/PluginFactory.h>
-#include <core/sdk/ISchema.h>
+#include <musikcore/support/Common.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/sdk/ISchema.h>
 
 #include <cursespp/App.h>
 #include <cursespp/DialogOverlay.h>

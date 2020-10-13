@@ -37,8 +37,8 @@
 #include <string>
 #include <boost/bimap.hpp>
 
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/IValue.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/IValue.h>
 
 #ifdef WIN32
 #include <Windows.h>

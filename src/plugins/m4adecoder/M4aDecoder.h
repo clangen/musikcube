@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IDecoder.h>
+#include <musikcore/sdk/IDecoder.h>
 #include <neaacdec.h>
 #include <mp4ff.h>
 

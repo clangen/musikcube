@@ -34,10 +34,10 @@
 
 #pragma once
 
-#include <core/sdk/IMetadataProxy.h>
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/IPlaybackService.h>
-#include <core/sdk/IEnvironment.h>
+#include <musikcore/sdk/IMetadataProxy.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/IPlaybackService.h>
+#include <musikcore/sdk/IEnvironment.h>
 
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>

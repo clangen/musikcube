@@ -41,8 +41,8 @@
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
 
-#include <core/runtime/Message.h>
-#include <core/runtime/MessageQueue.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/runtime/MessageQueue.h>
 
 using namespace cursespp;
 using namespace musik::core::runtime;

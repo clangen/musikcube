@@ -39,10 +39,10 @@
 #include <cursespp/TextInput.h>
 #include <cursespp/TextLabel.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/support/Preferences.h>
-#include <core/runtime/IMessageTarget.h>
-#include <core/library/MasterLibrary.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/runtime/IMessageTarget.h>
+#include <musikcore/library/MasterLibrary.h>
 
 #include <app/util/ConsoleLogger.h>
 

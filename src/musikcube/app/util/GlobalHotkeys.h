@@ -36,8 +36,8 @@
 
 #include <stdafx.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/ILibrary.h>
 
 namespace musik {
     namespace cube {

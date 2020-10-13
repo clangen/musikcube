@@ -35,7 +35,7 @@
 
 #include "pch.h"
 
-#include <core/sdk/IOutput.h>
+#include <musikcore/sdk/IOutput.h>
 
 using namespace musik::core::sdk;
 

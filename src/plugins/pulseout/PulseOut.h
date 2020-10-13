@@ -35,8 +35,8 @@
 
 #include "pch.h"
 
-#include <core/sdk/IOutput.h>
-#include <core/sdk/IDevice.h>
+#include <musikcore/sdk/IOutput.h>
+#include <musikcore/sdk/IDevice.h>
 
 #include <mutex>
 #include "pulse_blocking_stream.h"

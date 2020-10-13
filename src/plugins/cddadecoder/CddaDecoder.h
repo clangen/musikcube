@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IDecoder.h>
+#include <musikcore/sdk/IDecoder.h>
 #include "CddaDataStream.h"
 
 #include "ntddcdrm.h"

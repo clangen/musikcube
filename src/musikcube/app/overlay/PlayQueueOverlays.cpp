@@ -38,16 +38,16 @@
 
 #include "PlayQueueOverlays.h"
 
-#include <core/audio/Visualizer.h>
-#include <core/library/LocalLibraryConstants.h>
+#include <musikcore/audio/Visualizer.h>
+#include <musikcore/library/LocalLibraryConstants.h>
 
-#include <core/library/query/CategoryTrackListQuery.h>
-#include <core/library/query/CategoryListQuery.h>
-#include <core/library/query/DirectoryTrackListQuery.h>
-#include <core/library/query/GetPlaylistQuery.h>
-#include <core/library/query/SavePlaylistQuery.h>
-#include <core/library/query/DeletePlaylistQuery.h>
-#include <core/runtime/Message.h>
+#include <musikcore/library/query/CategoryTrackListQuery.h>
+#include <musikcore/library/query/CategoryListQuery.h>
+#include <musikcore/library/query/DirectoryTrackListQuery.h>
+#include <musikcore/library/query/GetPlaylistQuery.h>
+#include <musikcore/library/query/SavePlaylistQuery.h>
+#include <musikcore/library/query/DeletePlaylistQuery.h>
+#include <musikcore/runtime/Message.h>
 
 #include <app/util/Messages.h>
 #include <app/util/MagicConstants.h>
@@ -148,14 +148,14 @@ static void queryTracksByCategory(
 }
 
 static void queryPlaylists(
-    ILibraryPtr library, 
+    ILibraryPtr library,
     std::function<void(std::shared_ptr<CategoryListQuery>)> callback)
 {
     std::shared_ptr<CategoryListQuery> query(
         new CategoryListQuery(Playlists::TABLE_NAME, ""));
 
     library->Enqueue(query, 0, [callback, query](auto q) {
-        callback(query->GetStatus() == IQuery::Finished 
+        callback(query->GetStatus() == IQuery::Finished
             ? query : std::shared_ptr<CategoryListQuery>());
     });
 }
@@ -650,7 +650,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
 void PlayQueueOverlays::ShowLoadPlaylistOverlay(
     PlaybackService& playback, ILibraryPtr library, PlaylistSelectedCallback selectedCallback)
 {
-    auto playlistsCallback = 
+    auto playlistsCallback =
         [&playback, library, selectedCallback]
         (std::shared_ptr<CategoryListQuery> playlistQuery)
     {

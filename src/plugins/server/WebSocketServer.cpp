@@ -37,7 +37,7 @@
 
 #include <iostream>
 
-#include <core/sdk/constants.h>
+#include <musikcore/sdk/constants.h>
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
