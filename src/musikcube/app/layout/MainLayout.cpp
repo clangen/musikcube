@@ -41,6 +41,7 @@
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Auddio.h>
 #include <musikcore/library/RemoteLibrary.h>
+#include <musikcore/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
@@ -52,7 +53,6 @@
 #include <app/layout/SettingsLayout.h>
 #include <app/layout/HotkeysLayout.h>
 #include <app/util/Hotkeys.h>
-#include <app/version.h>
 
 #include <map>
 

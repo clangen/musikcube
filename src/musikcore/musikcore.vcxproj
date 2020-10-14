@@ -684,6 +684,7 @@
     <ClInclude Include="support\PreferenceKeys.h" />
     <ClInclude Include="support\Preferences.h" />
     <ClInclude Include="utfutil.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3rdparty\3rdparty.vcxproj">

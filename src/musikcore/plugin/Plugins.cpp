@@ -36,10 +36,10 @@
 #include "Plugins.h"
 #include "PluginFactory.h"
 
+#include <musikcore/debug.h>
+#include <musikcore/version.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/support/Preferences.h>
-
-#include <musikcore/debug.h>
 #include <musikcore/io/DataStreamFactory.h>
 #include <musikcore/audio/Buffer.h>
 #include <musikcore/audio/Streams.h>
@@ -342,6 +342,11 @@ static class Environment: public IEnvironment {
                 playback->ReloadOutput();
             }
         }
+
+        virtual const char* GetAppVersion() override {
+            return VERSION;
+        }
+
 } environment;
 
 namespace musik { namespace core { namespace plugin {

@@ -72,6 +72,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetTransportType(TransportType type) = 0;
             virtual void ReindexMetadata() = 0;
             virtual void RebuildMetadata() = 0;
+            virtual const char* GetAppVersion() = 0;
     };
 
 } } }

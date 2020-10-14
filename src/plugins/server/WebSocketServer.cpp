@@ -129,6 +129,7 @@ static json getEnvironment(Context& context) {
         { prefs::http_server_enabled, context.prefs->GetBool(prefs::http_server_enabled.c_str()) },
         { prefs::http_server_port, context.prefs->GetInt(prefs::http_server_port.c_str()) },
         { key::sdk_version, musik::core::sdk::SdkVersion },
+        { key::app_version, context.environment->GetAppVersion() },
         { key::api_version, ApiVersion }
     };
 }

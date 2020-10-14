@@ -633,5 +633,8 @@
     <ClInclude Include="library\MasterLibrary.h">
       <Filter>src\library</Filter>
     </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

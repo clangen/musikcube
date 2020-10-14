@@ -129,6 +129,7 @@ namespace key {
     static const std::string predicates = "predicates";
     static const std::string sdk_version = "sdk_version";
     static const std::string api_version = "api_version";
+    static const std::string app_version = "app_version";
     static const std::string driver_name = "driver_name";
     static const std::string all = "all";
     static const std::string selected = "selected";
@@ -243,4 +244,4 @@ static auto TRANSPORT_TYPE_TO_STRING = makeBimap<musik::core::sdk::TransportType
     { musik::core::sdk::TransportType::Crossfade, "crossfade" },
 });
 
-static const int ApiVersion = 15;
+static const int ApiVersion = 20;
