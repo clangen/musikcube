@@ -193,7 +193,9 @@
         "shortcuts_tracks": "tracks",
         "shortcuts_play_queue": "play queue",
 
-        "transport_playing_format": "playing $title by $artist from $album",
+        "transport_playing_format": "$state $title by $artist from $album",
+        "transport_playing_format_playing": "playing",
+        "transport_playing_format_buffering": "buffering",
         "transport_stopped": "playback is stopped",
         "transport_empty_song": "[song]",
         "transport_empty_album": "[album]",

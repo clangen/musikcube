@@ -116,6 +116,7 @@ namespace musik {
 
                 void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnPlaybackModeChanged();
+                void OnPlaybackStreamStateChanged(musik::core::sdk::StreamState);
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
                 void OnPlaybackShuffled(bool shuffled);
@@ -131,6 +132,7 @@ namespace musik {
                 musik::core::TrackPtr currentTrack;
                 FocusTarget focus, lastFocus;
                 std::unique_ptr<TransportDisplayCache> displayCache;
+                bool buffering{ false };
                 double lastTime;
         };
     }

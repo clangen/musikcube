@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace audio {
             };
 
             struct EventListener {
-                virtual void OnPlayerPrepared(Player *player) { }
+                virtual void OnPlayerBuffered(Player *player) { }
                 virtual void OnPlayerStarted(Player *player) { }
                 virtual void OnPlayerAlmostEnded(Player *player) { }
                 virtual void OnPlayerFinished(Player *player) { }
@@ -102,6 +102,8 @@ namespace musik { namespace core { namespace audio {
 
             std::string GetUrl() const { return this->url; }
 
+            musik::core::sdk::StreamState GetStreamState() { return this->streamState; }
+
         private:
             friend void playerThreadLoop(Player* player);
 
@@ -135,7 +137,7 @@ namespace musik { namespace core { namespace audio {
                 Idle = 0,
                 Playing = 1,
                 Quit = 2
-            } States;
+            } InternalState;
 
             bool Exited();
             int State();
@@ -162,7 +164,8 @@ namespace musik { namespace core { namespace audio {
             double nextMixPoint;
             std::atomic<double> currentPosition;
             std::atomic<double> seekToPosition;
-            int state;
+            std::atomic<musik::core::sdk::StreamState> streamState;
+            std::atomic<int> internalState;
             bool notifiedStarted;
             float* spectrum;
             DestroyMode destroyMode;

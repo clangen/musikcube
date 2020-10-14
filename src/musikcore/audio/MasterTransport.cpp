@@ -163,6 +163,10 @@ PlaybackState MasterTransport::GetPlaybackState() {
     return this->transport->GetPlaybackState();
 }
 
+StreamState MasterTransport::GetStreamState() {
+    return this->transport->GetStreamState();
+}
+
 void MasterTransport::OnStreamEvent(int type, std::string url) {
     this->StreamEvent(type, url);
 }

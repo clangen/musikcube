@@ -57,11 +57,12 @@ static std::string TAG = "GaplessTransport";
         instance->activePlayer->Detach(instance); \
         instance->activePlayer->Destroy(); \
         instance->activePlayer = nullptr; \
+        instance->activePlayerState = StreamError; \
     }
 
 GaplessTransport::GaplessTransport()
 : volume(1.0)
-, state(PlaybackStopped)
+, playbackState(PlaybackStopped)
 , activePlayer(nullptr)
 , nextPlayer(nullptr)
 , nextCanStart(false)
@@ -77,7 +78,12 @@ GaplessTransport::~GaplessTransport() {
 
 PlaybackState GaplessTransport::GetPlaybackState() {
     LockT lock(this->stateMutex);
-    return this->state;
+    return this->playbackState;
+}
+
+StreamState GaplessTransport::GetStreamState() {
+    LockT lock(this->stateMutex);
+    return this->activePlayerState;
 }
 
 void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
@@ -121,6 +127,10 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
             this->nextPlayer = nullptr;
             this->activePlayer = newPlayer;
 
+            if (newPlayer) {
+                this->RaiseStreamEvent(newPlayer->GetStreamState(), newPlayer);
+            }
+
             /* first argument suppresses the "Stop" event from getting triggered,
             the second param is used for gapless playback -- we won't stop the output
             and will allow pending buffers to finish if we're not automatically
@@ -135,8 +145,6 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
                 newPlayer->Play();
             }
         }
-
-        this->RaiseStreamEvent(StreamScheduled, newPlayer);
     }
 }
 
@@ -237,7 +245,7 @@ void GaplessTransport::SetPosition(double seconds) {
         LockT lock(this->stateMutex);
 
         if (this->activePlayer) {
-            if (this->state != PlaybackPlaying) {
+            if (this->playbackState != PlaybackPlaying) {
                 this->SetPlaybackState(PlaybackPlaying);
             }
             this->activePlayer->SetPosition(seconds);
@@ -289,9 +297,9 @@ void GaplessTransport::SetNextCanStart(bool nextCanStart) {
     this->nextCanStart = nextCanStart;
 }
 
-void GaplessTransport::OnPlayerPrepared(Player* player) {
+void GaplessTransport::OnPlayerBuffered(Player* player) {
     if (player == this->activePlayer) {
-        this->RaiseStreamEvent(StreamPrepared, player);
+        this->RaiseStreamEvent(StreamBuffered, player);
         this->SetPlaybackState(PlaybackPrepared);
     }
 }
@@ -372,8 +380,8 @@ void GaplessTransport::SetPlaybackState(int state) {
 
     {
         LockT lock(this->stateMutex);
-        changed = (this->state != state);
-        this->state = (PlaybackState) state;
+        changed = (this->playbackState != state);
+        this->playbackState = (PlaybackState) state;
     }
 
     if (changed) {
@@ -382,5 +390,11 @@ void GaplessTransport::SetPlaybackState(int state) {
 }
 
 void GaplessTransport::RaiseStreamEvent(int type, Player* player) {
+    {
+        LockT lock(this->stateMutex);
+        if (player == activePlayer) {
+            this->activePlayerState = (StreamState) type;
+        }
+    }
     this->StreamEvent(type, player->GetUrl());
 }

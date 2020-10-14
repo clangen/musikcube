@@ -123,7 +123,8 @@ Player::Player(
     DestroyMode destroyMode,
     EventListener *listener,
     Gain gain)
-: state(Player::Idle)
+: internalState(Player::Idle)
+, streamState(StreamBuffering)
 , stream(Stream::Create())
 , url(url)
 , currentPosition(0)
@@ -159,8 +160,8 @@ Player::~Player() {
 void Player::Play() {
     std::unique_lock<std::mutex> lock(this->queueMutex);
 
-    if (this->state != Player::Quit) {
-        this->state = Player::Playing;
+    if (this->internalState != Player::Quit) {
+        this->internalState = Player::Playing;
         this->writeToOutputCondition.notify_all();
     }
 }
@@ -173,11 +174,11 @@ void Player::Destroy() {
 
         std::unique_lock<std::mutex> lock(this->queueMutex);
 
-        if (this->state == Player::Quit && !this->thread) {
+        if (this->internalState == Player::Quit && !this->thread) {
             return; /* already terminated (or terminating) */
         }
 
-        this->state = Player::Quit;
+        this->internalState = Player::Quit;
         this->writeToOutputCondition.notify_all();
         this->thread->detach();
         delete this->thread;
@@ -258,7 +259,7 @@ void Player::AddMixPoint(int id, double time) {
 
 int Player::State() {
     std::unique_lock<std::mutex> lock(this->queueMutex);
-    return this->state;
+    return this->internalState;
 }
 
 bool Player::HasCapability(Capability c) {
@@ -297,13 +298,14 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     if (player->stream->OpenStream(player->url)) {
         for (Listener* l : player->Listeners()) {
-            l->OnPlayerPrepared(player);
+            player->streamState = StreamBuffered;
+            l->OnPlayerBuffered(player);
         }
 
         /* wait until we enter the Playing or Quit state */
         {
             std::unique_lock<std::mutex> lock(player->queueMutex);
-            while (player->state == Player::Idle) {
+            while (player->internalState == Player::Idle) {
                 player->writeToOutputCondition.wait(lock);
             }
         }
@@ -419,6 +421,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         it wasn't stopped by the user. raise the "almost ended" flag. */
         if (!player->Exited()) {
             for (Listener* l : player->Listeners()) {
+                player->streamState = StreamAlmostDone;
                 l->OnPlayerAlmostEnded(player);
             }
         }
@@ -428,6 +431,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     else {
         if (!player->Exited()) {
             for (Listener* l : player->Listeners()) {
+                player->streamState = StreamError;
                 l->OnPlayerError(player);
             }
         }
@@ -454,13 +458,15 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     if (!player->Exited()) {
         for (Listener* l : player->Listeners()) {
+            player->streamState = StreamFinished;
             l->OnPlayerFinished(player);
         }
     }
 
-    player->state = Player::Quit;
+    player->internalState = Player::Quit;
 
     for (Listener* l : player->Listeners()) {
+        player->streamState = StreamStopped;
         l->OnPlayerDestroying(player);
     }
 
@@ -471,7 +477,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
 bool Player::Exited() {
     std::unique_lock<std::mutex> lock(this->queueMutex);
-    return (this->state == Player::Quit);
+    return (this->internalState == Player::Quit);
 }
 
 static inline void initHammingWindow() {
@@ -587,6 +593,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         }
 
         if (!this->notifiedStarted) {
+            this->streamState = StreamPlaying;
             this->notifiedStarted = true;
             started = true;
         }

@@ -1019,7 +1019,7 @@ class mcsdk_audio_player_callback_proxy: public Player::EventListener {
     public:
         std::set<mcsdk_audio_player_callbacks*> callbacks;
         mcsdk_player_context_internal* context;
-        virtual void OnPlayerPrepared(Player *player) {
+        virtual void OnPlayerBuffered(Player *player) {
             std::unique_lock<std::mutex> lock(this->context->event_mutex);
             for (auto c : callbacks) {
                 if (c->on_prepared) {

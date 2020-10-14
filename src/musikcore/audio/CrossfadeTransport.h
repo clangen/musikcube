@@ -83,6 +83,7 @@ namespace musik { namespace core { namespace audio {
             virtual void ReloadOutput();
 
             virtual musik::core::sdk::PlaybackState GetPlaybackState();
+            virtual musik::core::sdk::StreamState GetStreamState();
 
         private:
             using Lock = std::unique_lock<std::recursive_mutex>;
@@ -129,13 +130,14 @@ namespace musik { namespace core { namespace audio {
 
             void OnCrossfaderEmptied();
 
-            virtual void OnPlayerPrepared(Player* player);
+            virtual void OnPlayerBuffered(Player* player);
             virtual void OnPlayerStarted(Player* player);
             virtual void OnPlayerFinished(Player* player);
             virtual void OnPlayerError(Player* player);
             virtual void OnPlayerMixPoint(Player* player, int id, double time);
 
-            musik::core::sdk::PlaybackState state;
+            musik::core::sdk::PlaybackState playbackState;
+            musik::core::sdk::StreamState activePlayerState;
             std::recursive_mutex stateMutex;
             Crossfader crossfader;
             PlayerContext active;

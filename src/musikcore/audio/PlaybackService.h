@@ -63,7 +63,8 @@ namespace musik { namespace core { namespace audio {
 
             /* copied from Transport, but will be automatically called on the
             specified MessageQueue's thread! */
-            sigslot::signal1<int> PlaybackEvent;
+            sigslot::signal1<musik::core::sdk::PlaybackState> PlaybackStateChanged;
+            sigslot::signal1<musik::core::sdk::StreamState> StreamStateChanged;
             sigslot::signal0<> VolumeChanged;
             sigslot::signal1<double> TimeChanged;
 

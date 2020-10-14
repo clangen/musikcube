@@ -47,9 +47,9 @@ namespace musik {
                 PlaybackPlaying = 4,
             };
 
-            enum StreamEventType {
-                StreamScheduled = 1,
-                StreamPrepared = 2,
+            enum StreamState {
+                StreamBuffering = 1,
+                StreamBuffered = 2,
                 StreamPlaying = 3,
                 StreamAlmostDone = 4,
                 StreamFinished = 5,

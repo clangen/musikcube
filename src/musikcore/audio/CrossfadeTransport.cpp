@@ -50,7 +50,7 @@ static std::string TAG = "CrossfadeTransport";
 
 CrossfadeTransport::CrossfadeTransport()
 : volume(1.0)
-, state(PlaybackStopped)
+, playbackState(PlaybackStopped)
 , muted(false)
 , crossfader(*this)
 , active(*this, crossfader)
@@ -66,7 +66,12 @@ CrossfadeTransport::~CrossfadeTransport() {
 
 PlaybackState CrossfadeTransport::GetPlaybackState() {
     Lock lock(this->stateMutex);
-    return this->state;
+    return this->playbackState;
+}
+
+StreamState CrossfadeTransport::GetStreamState() {
+    Lock lock(this->stateMutex);
+    return this->activePlayerState;
 }
 
 void CrossfadeTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
@@ -88,6 +93,12 @@ void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode
             this->active.Reset();
             this->next.TransferTo(this->active);
 
+            if (this->active.player) {
+                this->RaiseStreamEvent(
+                    this->active.player->GetStreamState(),
+                    this->active.player);
+            }
+
             if (immediate) {
                 this->active.Start(this->volume);
             }
@@ -98,7 +109,7 @@ void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode
         }
     }
 
-    this->RaiseStreamEvent(StreamScheduled, this->active.player);
+    this->RaiseStreamEvent(StreamBuffering, this->active.player);
 }
 
 std::string CrossfadeTransport::Uri() {
@@ -176,7 +187,7 @@ void CrossfadeTransport::SetPosition(double seconds) {
         Lock lock(this->stateMutex);
 
         if (this->active.player) {
-            if (this->state != PlaybackPlaying) {
+            if (this->playbackState != PlaybackPlaying) {
                 this->SetPlaybackState(PlaybackPlaying);
             }
             this->active.player->SetPosition(seconds);
@@ -243,7 +254,7 @@ void CrossfadeTransport::SetVolume(double volume) {
     }
 }
 
-void CrossfadeTransport::OnPlayerPrepared(Player* player) {
+void CrossfadeTransport::OnPlayerBuffered(Player* player) {
     {
         Lock lock(this->stateMutex);
 
@@ -280,7 +291,7 @@ void CrossfadeTransport::OnPlayerPrepared(Player* player) {
     }
 
     if (player == this->active.player) {
-        this->RaiseStreamEvent(StreamPrepared, player);
+        this->RaiseStreamEvent(StreamBuffered, player);
         this->SetPlaybackState(PlaybackPrepared);
     }
 }
@@ -364,8 +375,8 @@ void CrossfadeTransport::SetPlaybackState(int state) {
 
     {
         Lock lock(this->stateMutex);
-        changed = (this->state != state);
-        this->state = (PlaybackState) state;
+        changed = (this->playbackState != state);
+        this->playbackState = (PlaybackState) state;
     }
 
     if (changed) {
@@ -374,6 +385,13 @@ void CrossfadeTransport::SetPlaybackState(int state) {
 }
 
 void CrossfadeTransport::RaiseStreamEvent(int type, Player* player) {
+    {
+        Lock lock(this->stateMutex);
+        if (player == active.player) {
+            this->activePlayerState = (StreamState) type;
+        }
+    }
+
     this->StreamEvent(type, player->GetUrl());
 }
 

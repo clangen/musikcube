@@ -133,6 +133,8 @@ void tokenize(const std::string& format, TokenList& tokens) {
 /* a cache of localized, pre-formatted strings we use every second. */
 static struct StringCache {
     std::string PLAYING_FORMAT;
+    std::string PLAYING;
+    std::string BUFFERING;
     std::string STOPPED;
     std::string EMPTY_SONG;
     std::string EMPTY_ALBUM;
@@ -146,6 +148,8 @@ static struct StringCache {
 
     void Initialize() {
         PLAYING_FORMAT = _TSTR("transport_playing_format");
+        PLAYING = _TSTR("transport_playing_format_playing");
+        BUFFERING = _TSTR("transport_playing_format_buffering");
         STOPPED = _TSTR("transport_stopped");
         EMPTY_SONG = _TSTR("transport_empty_song");
         EMPTY_ALBUM = _TSTR("transport_empty_album");
@@ -248,6 +252,7 @@ utf8 characters and ellipsizing */
 static size_t writePlayingFormat(
     WINDOW *w,
     TransportDisplayCache& displayCache,
+    bool buffering,
     size_t width)
 {
     TokenList tokens;
@@ -255,6 +260,7 @@ static size_t writePlayingFormat(
 
     Color dim = Color::TextDisabled;
     Color gb = Color::TextActive;
+    Color warn = Color::TextWarning;
     size_t remaining = width;
 
     auto it = tokens.begin();
@@ -263,19 +269,30 @@ static size_t writePlayingFormat(
 
         Color attr = dim;
         std::string value;
-        size_t cols;
+        size_t cols = 0;
 
         if (token->type == Token::Placeholder) {
-            attr = gb;
+            if (token->value == "$state") {
+                if (buffering) {
+                    attr = warn;
+                    value = Strings.BUFFERING;
+                }
+                else {
+                    value = Strings.PLAYING;
+                }
+            }
             if (token->value == "$title") {
+                attr = gb;
                 value = displayCache.title;
                 cols = displayCache.titleCols;
             }
             else if (token->value == "$album") {
+                attr = gb;
                 value = displayCache.album;
                 cols = displayCache.albumCols;
             }
             else if (token->value == "$artist") {
+                attr = gb;
                 value = displayCache.artist;
                 cols = displayCache.artistCols;
             }
@@ -349,6 +366,7 @@ TransportWindow::TransportWindow(
     this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
     this->playback.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
+    this->playback.StreamStateChanged.connect(this, &TransportWindow::OnPlaybackStreamStateChanged);
     this->paused = false;
     this->lastTime = DEFAULT_TIME;
     this->shufflePos.y = 0;
@@ -478,7 +496,7 @@ void TransportWindow::OnFocusChanged(bool focused) {
 }
 
 void TransportWindow::ProcessMessage(IMessage &message) {
-    int type = message.Type();
+    const int type = message.Type();
 
     if (type == message::RefreshTransport) {
         this->Update((TimeMode) message.UserData1());
@@ -487,6 +505,10 @@ void TransportWindow::ProcessMessage(IMessage &message) {
             DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
         }
     }
+    else if (type == message::TransportBuffering) {
+        this->buffering = true;
+        this->Update();
+    }
 }
 
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
@@ -494,6 +516,17 @@ void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track
     this->lastTime = DEFAULT_TIME;
     this->UpdateReplayGainState();
     DEBOUNCE_REFRESH(TimeSync, 0);
+}
+
+void TransportWindow::OnPlaybackStreamStateChanged(StreamState state) {
+    if (state == StreamBuffering) {
+        this->Debounce(message::TransportBuffering, 0, 0, 250);
+    }
+    else {
+        this->Remove(message::TransportBuffering);
+        this->buffering = false;
+        this->Update();
+    }
 }
 
 void TransportWindow::OnPlaybackModeChanged() {
@@ -587,7 +620,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
     else {
         displayCache->Update(transport, this->currentTrack);
-        writePlayingFormat(c, *this->displayCache, cx - shuffleWidth);
+        writePlayingFormat(c, *this->displayCache, this->buffering, cx - shuffleWidth);
     }
 
     /* draw the "shuffle" label */

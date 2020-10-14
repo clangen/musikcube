@@ -305,15 +305,13 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
     else if (type == MESSAGE_STREAM_EVENT) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
-
-        int64_t eventType = streamMessage->GetEventType();
+        StreamState eventType = (StreamState) streamMessage->GetEventType();
 
         if (eventType == StreamPlaying) {
             TrackPtr track;
 
             {
                 std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-
                 if (this->nextIndex != NO_POSITION) {
                     /* in most cases when we get here it means that the next track is
                     starting, so we want to update our internal index. however, because
@@ -343,6 +341,16 @@ void PlaybackService::ProcessMessage(IMessage &message) {
 
             this->PrepareNextTrack();
         }
+
+        bool raiseStreamEvent = false;
+        {
+            std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+            raiseStreamEvent = this->UriAtIndex(this->index) == streamMessage->GetUri();
+        }
+
+        if (raiseStreamEvent) {
+            this->StreamStateChanged(eventType);
+        }
     }
     else if (type == MESSAGE_PLAYBACK_EVENT) {
         int64_t eventType = message.UserData1();
@@ -365,7 +373,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             (*it)->OnPlaybackStateChanged((PlaybackState) eventType);
         }
 
-        this->PlaybackEvent((PlaybackState) eventType);
+        this->PlaybackStateChanged((PlaybackState) eventType);
     }
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport->GetPlaybackState() != PlaybackStopped) {

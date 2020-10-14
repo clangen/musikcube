@@ -79,6 +79,7 @@ namespace musik { namespace core { namespace audio {
             virtual void ReloadOutput() = 0;
 
             virtual musik::core::sdk::PlaybackState GetPlaybackState() = 0;
+            virtual musik::core::sdk::StreamState GetStreamState() = 0;
     };
 
 } } }

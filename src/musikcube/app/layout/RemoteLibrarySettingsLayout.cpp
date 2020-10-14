@@ -51,8 +51,8 @@ using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
 
-static inline size_t longestStringLength(const std::vector<std::string>&& keys) {
-    size_t max = 0;
+static inline int longestStringLength(const std::vector<std::string>&& keys) {
+    int max = 0;
     for (auto& str: keys) {
         size_t len = u8cols(_TSTR(str));
         max = len > max ? len : max;
@@ -71,7 +71,7 @@ RemoteLibrarySettingsLayout::~RemoteLibrarySettingsLayout() {
 }
 
 void RemoteLibrarySettingsLayout::OnLayout() {
-    size_t labelWidth = longestStringLength({
+    const int labelWidth = longestStringLength({
         "settings_library_type_remote_hostname",
         "settings_library_type_remote_wss_port",
         "settings_library_type_remote_http_port",
