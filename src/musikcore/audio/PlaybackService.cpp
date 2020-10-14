@@ -307,7 +307,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
         StreamState eventType = (StreamState) streamMessage->GetEventType();
 
-        if (eventType == StreamPlaying) {
+        if (eventType == StreamBuffering || eventType == StreamBuffered || eventType == StreamPlaying) {
             TrackPtr track;
 
             {

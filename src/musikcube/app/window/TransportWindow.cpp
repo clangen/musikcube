@@ -506,6 +506,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == message::TransportBuffering) {
+        this->currentTrack = this->playback.GetPlaying();
         this->buffering = true;
         this->Update();
     }
@@ -514,6 +515,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
     this->lastTime = DEFAULT_TIME;
+    this->buffering = playback.GetTransport().GetStreamState() == StreamBuffering;
     this->UpdateReplayGainState();
     DEBOUNCE_REFRESH(TimeSync, 0);
 }

@@ -390,11 +390,16 @@ void GaplessTransport::SetPlaybackState(int state) {
 }
 
 void GaplessTransport::RaiseStreamEvent(int type, Player* player) {
+    bool eventIsFromActivePlayer = false;
     {
         LockT lock(this->stateMutex);
-        if (player == activePlayer) {
-            this->activePlayerState = (StreamState) type;
+        eventIsFromActivePlayer = (player == activePlayer);
+        if (eventIsFromActivePlayer) {
+            this->activePlayerState = (StreamState)type;
         }
     }
-    this->StreamEvent(type, player->GetUrl());
+
+    if (eventIsFromActivePlayer) {
+        this->StreamEvent(type, player->GetUrl());
+    }
 }

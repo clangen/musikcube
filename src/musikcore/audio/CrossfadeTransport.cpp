@@ -385,14 +385,18 @@ void CrossfadeTransport::SetPlaybackState(int state) {
 }
 
 void CrossfadeTransport::RaiseStreamEvent(int type, Player* player) {
+    bool eventIsFromActivePlayer = false;
     {
         Lock lock(this->stateMutex);
-        if (player == active.player) {
-            this->activePlayerState = (StreamState) type;
+        eventIsFromActivePlayer = (player == active.player);
+        if (eventIsFromActivePlayer) {
+            this->activePlayerState = (StreamState)type;
         }
     }
 
-    this->StreamEvent(type, player->GetUrl());
+    if (eventIsFromActivePlayer) {
+        this->StreamEvent(type, player->GetUrl());
+    }
 }
 
 CrossfadeTransport::PlayerContext::PlayerContext(
