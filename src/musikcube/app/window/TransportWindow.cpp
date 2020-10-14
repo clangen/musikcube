@@ -192,7 +192,7 @@ struct musik::cube::TransportDisplayCache {
 
     std::string CurrentTime(int secondsCurrent) {
         if (secondsTotal != INT_MIN) {
-            secondsCurrent = std::min(secondsCurrent, secondsTotal);
+            secondsCurrent = std::max(0, std::min(secondsCurrent, secondsTotal));
         }
         return musik::core::duration::Duration(secondsCurrent);
     }
@@ -612,7 +612,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* playing SONG TITLE from ALBUM NAME */
 
-    if (stopped) {
+    if (stopped && !this->buffering) {
         ON(c, disabled);
         checked_wprintw(c, Strings.STOPPED.c_str());
         displayCache->Reset();
@@ -695,7 +695,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     only works if REFRESH_INTERVAL_MS is 1000. */
     int secondsCurrent = (int) round(this->lastTime); /* mode == TimeLast */
 
-    if (timeMode == TimeSmooth) {
+    if (!this->buffering && timeMode == TimeSmooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
         double actualTime = playback.GetPosition();
 
@@ -708,8 +708,8 @@ void TransportWindow::Update(TimeMode timeMode) {
 
         secondsCurrent = (int) round(smoothedTime);
     }
-    else if (timeMode == TimeSync) {
-        this->lastTime = playback.GetPosition();
+    else {
+        this->lastTime = std::max(0.0, playback.GetPosition());
         secondsCurrent = (int) round(this->lastTime);
     }
 
