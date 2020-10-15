@@ -41,12 +41,14 @@
 #include <thread>
 #include <unordered_map>
 #include <atomic>
+#include <memory>
 
 namespace musik { namespace core { namespace net {
 
     class WebSocketClient {
         public:
             using Client = websocketpp::client<websocketpp::config::asio_client>;
+            using ClientPtr = std::unique_ptr<Client>;
             using Message = websocketpp::config::asio_client::message_type::ptr;
             using Connection = websocketpp::connection_hdl;
             using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
@@ -105,7 +107,7 @@ namespace musik { namespace core { namespace net {
             void SendPendingQueries();
             void SetDisconnected(ConnectionError errorCode);
 
-            Client client;
+            ClientPtr client;
             Connection connection;
             boost::asio::io_service io;
             std::shared_ptr<std::thread> thread;
