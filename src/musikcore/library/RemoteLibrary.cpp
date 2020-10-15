@@ -52,6 +52,7 @@ static const std::string TAG = "RemoteLibrary";
 using namespace musik::core;
 using namespace musik::core::db;
 using namespace musik::core::library;
+using namespace musik::core::net;
 using namespace musik::core::runtime;
 
 #define MESSAGE_QUERY_COMPLETED 5000
@@ -327,10 +328,8 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     }
     else if (message.Type() == MESSAGE_UPDATE_CONNECTION_STATE) {
         auto updatedState = (ConnectionState)message.UserData1();
-        if (updatedState != this->connectionState) {
-            this->connectionState = updatedState;
-            this->ConnectionStateChanged(this->connectionState);
-        }
+        this->connectionState = updatedState;
+        this->ConnectionStateChanged(this->connectionState);
     }
 }
 
@@ -349,7 +348,12 @@ void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State o
     };
 
     if (this->messageQueue) {
-        if (newState == State::Disconnected) {
+        const auto reason = this->wsc.LastConnectionError();
+        bool attemptReconnect =
+            newState == State::Disconnected &&
+            reason != WebSocketClient::ConnectionError::InvalidPassword &&
+            reason != WebSocketClient::ConnectionError::IncompatibleVersion;
+        if (attemptReconnect) {
             this->messageQueue->Remove(this, MESSAGE_RECONNECT_SOCKET);
             this->messageQueue->Post(Message::Create(this, MESSAGE_RECONNECT_SOCKET), 2500);
         }

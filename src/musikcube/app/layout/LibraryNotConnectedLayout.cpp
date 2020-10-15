@@ -57,6 +57,7 @@ static inline std::string resolveErrorMessage(MasterLibraryPtr library) {
         { WebSocketClient::ConnectionError::ClosedByServer, "library_error_closed_by_server" },
         { WebSocketClient::ConnectionError::ConnectionFailed, "library_error_connection_failed" },
         { WebSocketClient::ConnectionError::InvalidPassword, "library_error_invalid_password" },
+        { WebSocketClient::ConnectionError::IncompatibleVersion, "library_error_incompatible_version" },
     };
 
     auto remoteLibrary = dynamic_cast<const RemoteLibrary*>(library->Wrapped().get());

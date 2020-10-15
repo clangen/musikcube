@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include <musikcore/net/WebSocketClient.h>
+#include <musikcore/version.h>
 #include <nlohmann/json.hpp>
 
 using namespace musik::core;
@@ -114,7 +115,13 @@ WebSocketClient::WebSocketClient(Listener* listener) {
         auto messageId = responseJson["id"].get<std::string>();
         if (name == "authenticate") {
             this->connection = connection;
-            this->SetState(State::Connected);
+            auto appVersion = responseJson["options"]["environment"]["app_version"];
+            if (!appVersion.is_string() || appVersion.get<std::string>() != VERSION) {
+                this->SetDisconnected(ConnectionError::IncompatibleVersion);
+            }
+            else {
+                this->SetState(State::Connected);
+            }
         }
         else if (name == "send_raw_query") {
             auto query = this->messageIdToQuery[messageId];

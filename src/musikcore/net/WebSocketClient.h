@@ -69,8 +69,9 @@ namespace musik { namespace core { namespace net {
             enum class ConnectionError : int {
                 None = 0,
                 InvalidPassword = 1,
-                ConnectionFailed = 2,
-                ClosedByServer = 3,
+                IncompatibleVersion = 2,
+                ConnectionFailed = 3,
+                ClosedByServer = 4,
             };
 
             class Listener {
