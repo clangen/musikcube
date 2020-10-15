@@ -29,7 +29,7 @@
         "browse_categories_title": "select category",
         "browse_title_directory_tracks": "tracks in %s",
 
-        "browse_pick_path_overlay_title": "select root directory",
+        "browse_pick_path_overlay_title": "select music directory",
         "browse_pick_path_last_directory": "last directory",
         "browse_no_paths_overlay_error_title": "no paths configured",
         "browse_no_paths_overlay_error_message": "you have not configured any metadata paths.\n\nyou must add at least one path in the settings screen before you can browse by directory.",
@@ -56,7 +56,7 @@
         "hotkeys_delete_binding_message": "would you like to reset the key binding for '{{key}}' to its default '{{default}}'?",
 
         "settings_space_to_add": "browse (SPACE to add)",
-        "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
+        "settings_backspace_to_remove": "music paths (BACKSPACE to remove)",
         "settings_enable_disable_plugins": "configure plugins",
         "settings_color_theme": "color theme: ",
         "settings_hotkey_tester": "key bindings",
