@@ -327,15 +327,24 @@ void SettingsLayout::OnLayout() {
     /* top row (library config) */
     this->libraryTypeDropdown->MoveAndResize(1, 1, cx - 1, LABEL_HEIGHT);
     std::shared_ptr<LayoutBase> libraryLayout;
+    static const int kLibraryTypePadding = 5;
     if (this->library->GetType() == ILibrary::Type::Local) {
-        int libraryLayoutHeight = std::min(12, cy / 2);
-        this->localLibraryLayout->MoveAndResize(3, 2, cx - 4, libraryLayoutHeight);
+        const int libraryLayoutHeight = std::min(12, cy / 2);
+        this->localLibraryLayout->MoveAndResize(
+            kLibraryTypePadding,
+            2,
+            cx - (kLibraryTypePadding * 2),
+            libraryLayoutHeight);
         this->remoteLibraryLayout->Hide();
         libraryLayout = this->localLibraryLayout;
     }
     else {
         this->localLibraryLayout->Hide();
-        this->remoteLibraryLayout->MoveAndResize(2, 3, cx - 4, 5);
+        this->remoteLibraryLayout->MoveAndResize(
+            kLibraryTypePadding,
+            3,
+            cx - (kLibraryTypePadding * 2),
+            4);
         libraryLayout = this->remoteLibraryLayout;
     }
     libraryLayout->Show();
