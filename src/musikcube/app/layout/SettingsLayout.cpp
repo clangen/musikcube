@@ -114,13 +114,14 @@ static const std::string arrow = "> ";
 static UpdateCheck updateCheck;
 
 static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
-    std::shared_ptr<TSchema<>> schema(new musik::core::sdk::TSchema<>());
+    auto schema = std::make_shared<TSchema<>>();
     schema->AddBool(cube::prefs::keys::AutoUpdateCheck, false);
 #ifdef ENABLE_MINIMIZE_TO_TRAY
     schema->AddBool(cube::prefs::keys::MinimizeToTray, false);
     schema->AddBool(cube::prefs::keys::StartMinimized, false);
 #endif
     schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
+    schema->AddBool(core::prefs::keys::AsyncTrackListQueries, false);
     schema->AddBool(cube::prefs::keys::DisableRatingColumn, false);
     schema->AddBool(cube::prefs::keys::DisableWindowTitleUpdates, false);
     schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());

@@ -42,7 +42,7 @@
 
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/audio/PlaybackService.h>
-
+#include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Duration.h>
 
 #include <app/util/Hotkeys.h>
@@ -52,7 +52,10 @@
 
 #define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
 
-static const bool kGetAsync = false;
+/* this is pretty gross, but i think we'll eventually settle on one versus the other
+and i don't want to bother adding a bunch of annoying infrastructure to more
+dynamnically switch between this */
+static bool sGetAsync = false;
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -232,6 +235,8 @@ void TrackListView::SetTrackListAndUpateEventHandlers(std::shared_ptr<TrackList>
     if (this->tracks) {
         this->tracks->WindowCached.connect(this, &TrackListView::OnTrackListWindowCached);
     }
+    sGetAsync = Preferences::ForComponent(prefs::components::Settings)->GetBool(
+        prefs::keys::AsyncTrackListQueries, false);
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {
@@ -461,13 +466,13 @@ size_t TrackListView::Adapter::GetEntryCount() {
 }
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t rawIndex) {
-    bool selected = (rawIndex == parent.GetSelectedIndex());
+    const bool selected = (rawIndex == parent.GetSelectedIndex());
 
     if (this->parent.headers.HeaderAt(rawIndex)) {
         /* the next track at the next logical index will have the album
         tracks we're interesetd in. */
-        auto trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
-        TrackPtr track = parent.tracks->Get(trackIndex, kGetAsync);
+        auto const trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
+        TrackPtr track = parent.tracks->Get(trackIndex, sGetAsync);
 
         if (track) {
             std::string album = track->GetMetadataState() == MetadataState::Loaded
@@ -479,8 +484,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
             album = text::Ellipsize(album, this->GetWidth());
 
-            std::shared_ptr<TrackListEntry> entry(new
-                TrackListEntry(album, trackIndex, RowType::Separator));
+            auto entry = std::make_shared<TrackListEntry>(
+                album, trackIndex, RowType::Separator);
 
             entry->SetAttrs(selected
                 ? Color::ListItemHeaderHighlighted
@@ -491,7 +496,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     }
 
     size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
-    TrackPtr track = parent.tracks->Get(trackIndex, kGetAsync);
+    TrackPtr track = parent.tracks->Get(trackIndex, sGetAsync);
 
     Color attrs = Color::Default;
 
@@ -516,7 +521,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     }
 
     if (!track || track->GetMetadataState() != MetadataState::Loaded) {
-        auto entry = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("  -"));
+        auto entry = std::make_shared<SingleLineEntry>("  -");
         entry->SetAttrs(attrs);
         return entry;
     }
@@ -524,9 +529,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     std::string text = parent.renderer(
         track, rawIndex, this->GetWidth(), parent.trackNumType);
 
-    std::shared_ptr<TrackListEntry> entry(
-        new TrackListEntry(text, trackIndex, RowType::Track));
-
+    auto entry = std::make_shared<TrackListEntry>(text, trackIndex, RowType::Track);
     entry->SetAttrs(attrs);
 
     return entry;
