@@ -327,9 +327,9 @@ void SettingsLayout::OnLayout() {
     /* top row (library config) */
     this->libraryTypeDropdown->MoveAndResize(1, 1, cx - 1, LABEL_HEIGHT);
     std::shared_ptr<LayoutBase> libraryLayout;
-    static const int kLibraryTypePadding = 5;
+    static const int kLibraryTypePadding = 3;
     if (this->library->GetType() == ILibrary::Type::Local) {
-        const int libraryLayoutHeight = std::min(12, cy / 2);
+        const int libraryLayoutHeight = std::min(10, cy / 2);
         this->localLibraryLayout->MoveAndResize(
             kLibraryTypePadding,
             2,
