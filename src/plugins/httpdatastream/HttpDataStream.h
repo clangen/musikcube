@@ -101,4 +101,5 @@ class HttpDataStream : public IDataStream {
         std::condition_variable startedContition;
         std::shared_ptr<std::thread> downloadThread;
         std::shared_ptr<FileReadStream> reader;
+        int precacheSizeBytes, chunkSizeBytes, maxCacheFiles;
 };

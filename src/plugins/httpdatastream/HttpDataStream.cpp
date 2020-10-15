@@ -38,6 +38,8 @@
 #include "LruDiskCache.h"
 
 #include <musikcore/sdk/IEnvironment.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/ISchema.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -62,14 +64,19 @@
 using namespace musik::core::sdk;
 namespace al = boost::algorithm;
 
-static const int MAX_CACHE_FILES = 35;
-static const int NOTIFY_INTERVAL_BYTES = 131072; /* 2^17 */
-static const int PRECACHE_BYTES = 524288; /*2^19 */
-
 static std::mutex globalMutex;
 static IEnvironment* environment;
 static LruDiskCache diskCache;
 static std::string cachePath;
+static IPreferences* prefs;
+
+static const int kDefaultMaxCacheFiles = 35;
+static const int kDefaultPreCacheSizeBytes = 524288; /*2^19 */
+static const int kDefaultChunkSizeBytes = 131072; /* 2^17 */
+
+static const std::string kMaxCacheFiles = "max_cache_files";
+static const std::string kPreCacheBufferSizeBytesKey = "precache_buffer_size_bytes";
+static const std::string kChunkSizeBytesKey = "chunk_size_bytes";
 
 const std::string HttpDataStream::kRemoteTrackHost = "musikcore://remote-track/";
 
@@ -87,6 +94,18 @@ extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
             boost::filesystem::create_directories(p);
         }
     }
+}
+
+extern "C" DLLEXPORT void SetPreferences(IPreferences * prefs) {
+    ::prefs = prefs;
+}
+
+extern "C" DLLEXPORT musik::core::sdk::ISchema * GetSchema() {
+    auto schema = new TSchema<>();
+    schema->AddInt(kMaxCacheFiles, kDefaultMaxCacheFiles);
+    schema->AddInt(kPreCacheBufferSizeBytesKey, kDefaultPreCacheSizeBytes, 32768);
+    schema->AddInt(kChunkSizeBytesKey, kDefaultChunkSizeBytes, 32768);
+    return schema;
 }
 
 static bool parseHeader(std::string raw, std::string& key, std::string& value) {
@@ -241,9 +260,13 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         return false;
     }
 
+    this->precacheSizeBytes = prefs->GetInt(kPreCacheBufferSizeBytesKey.c_str(), kDefaultPreCacheSizeBytes);
+    this->chunkSizeBytes = prefs->GetInt(kChunkSizeBytesKey.c_str(), kDefaultChunkSizeBytes);
+    this->maxCacheFiles = prefs->GetInt(kMaxCacheFiles.c_str(), kDefaultMaxCacheFiles);
+
     std::unique_lock<std::mutex> lock(this->stateMutex);
 
-    diskCache.Init(cachePath, MAX_CACHE_FILES);
+    diskCache.Init(cachePath, this->maxCacheFiles);
 
     this->httpUri = rawUri;
 
@@ -441,7 +464,7 @@ size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, v
     size_t result = fwrite(ptr, size, nmemb, stream->writeFile);
     stream->written += result;
 
-    if (stream->written >= NOTIFY_INTERVAL_BYTES) {
+    if (stream->written >= stream->chunkSizeBytes) {
         fflush(stream->writeFile);
         stream->reader->Add(stream->written);
         stream->written = 0;
@@ -449,7 +472,7 @@ size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, v
 
     if (stream->totalWritten > -1) {
         stream->totalWritten += result;
-        if (stream->totalWritten >= PRECACHE_BYTES) {
+        if (stream->totalWritten >= stream->precacheSizeBytes) {
             stream->startedContition.notify_all();
             stream->totalWritten = -1;
         }
