@@ -45,7 +45,6 @@
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
-#include <app/util/UpdateCheck.h>
 #include <app/layout/ConsoleLayout.h>
 #include <app/layout/LyricsLayout.h>
 #include <app/layout/LibraryLayout.h>
@@ -67,8 +66,6 @@ using namespace musik::core::runtime;
 using namespace cursespp;
 
 using MasterLibraryPtr = MainLayout::MasterLibraryPtr;
-
-static UpdateCheck updateCheck;
 
 static inline void updateSyncingText(TextLabel* label, int updates) {
     try {

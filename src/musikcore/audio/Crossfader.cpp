@@ -65,14 +65,15 @@ using namespace std::chrono;
 
 Crossfader::Crossfader(ITransport& transport)
 : transport(transport) {
+    this->messageQueue.Register(this);
     this->quit = false;
     this->paused = false;
-
     this->thread.reset(new std::thread(
         std::bind(&Crossfader::ThreadLoop, this)));
 }
 
 Crossfader::~Crossfader() {
+    this->messageQueue.Unregister(this);
     this->quit = true;
     this->messageQueue.Post(Message::Create(this, MESSAGE_QUIT, 0, 0));
     this->thread->join();

@@ -125,7 +125,9 @@ void MessageQueue::Dispatch() {
 
     Iterator it = this->dispatch.begin();
     while (it != this->dispatch.end()) {
-        this->Dispatch((*it)->message);
+        if (this->targets.find((*it)->message->Target()) != this->targets.end()) {
+            this->Dispatch((*it)->message);
+        }
         delete *it;
         it++;
     }
@@ -134,6 +136,25 @@ void MessageQueue::Dispatch() {
 
     if (this->queue.size()) {
         this->nextMessageTime.store((*this->queue.begin())->time.count());
+    }
+}
+
+void MessageQueue::Register(IMessageTarget* target) {
+    LockT lock(this->queueMutex);
+    this->targets.insert(target);
+}
+
+void MessageQueue::Unregister(IMessageTarget* target) {
+    bool shouldRemove = false;
+    {
+        LockT lock(this->queueMutex);
+        if (this->targets.find(target) != this->targets.end()) {
+            this->targets.erase(target);
+            shouldRemove = true;
+        }
+    }
+    if (shouldRemove) {
+        this->Remove(target);
     }
 }
 
@@ -199,16 +220,26 @@ bool MessageQueue::Contains(IMessageTarget *target, int type) {
 }
 
 void MessageQueue::Broadcast(IMessagePtr message, int64_t delayMs) {
+    LockT lock(this->queueMutex);
+
     if (message->Target()) {
         throw new std::runtime_error("broadcasts cannot have a target!");
     }
 
-    this->Post(message, delayMs);
+    this->Enqueue(message, delayMs);
 }
 
 void MessageQueue::Post(IMessagePtr message, int64_t delayMs) {
     LockT lock(this->queueMutex);
 
+    if (this->targets.find(message->Target()) == this->targets.end()) {
+        return;
+    }
+
+    this->Enqueue(message, delayMs);
+}
+
+void MessageQueue::Enqueue(IMessagePtr message, int64_t delayMs) {
     delayMs = std::max((int64_t) 0, delayMs);
 
     milliseconds now = duration_cast<milliseconds>(

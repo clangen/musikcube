@@ -112,6 +112,9 @@ LocalLibrary::LocalLibrary(std::string name,int id)
 
 LocalLibrary::~LocalLibrary() {
     this->Close();
+    if (this->messageQueue) {
+        this->messageQueue->Unregister(this);
+    }
 }
 
 int LocalLibrary::Id() {
@@ -265,7 +268,11 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
 }
 
 void LocalLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
+    if (this->messageQueue && this->messageQueue != &queue) {
+        this->messageQueue->Unregister(this);
+    }
     this->messageQueue = &queue;
+    queue.Register(this);
 }
 
 ILibrary::IResourceLocator& LocalLibrary::GetResourceLocator() {

@@ -19,6 +19,7 @@ namespace musik { namespace cube {
             ConsoleLogger(musik::core::runtime::IMessageQueue& messageQueue);
             ConsoleLogger(const ConsoleLogger& other) = delete;
             ConsoleLogger& operator=(const ConsoleLogger& other) = delete;
+            virtual ~ConsoleLogger();
 
             virtual void verbose(const std::string& tag, const std::string& string) override;
             virtual void info(const std::string& tag, const std::string& string) override;

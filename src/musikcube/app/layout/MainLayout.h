@@ -45,6 +45,7 @@
 #include <musikcore/library/MasterLibrary.h>
 
 #include <app/util/ConsoleLogger.h>
+#include <app/util/UpdateCheck.h>
 
 #include <sigslot/sigslot.h>
 
@@ -99,6 +100,7 @@ namespace musik {
                 MasterLibraryPtr library;
                 bool shortcutsFocused;
                 int syncUpdateCount;
+                UpdateCheck updateCheck;
         };
     }
 }

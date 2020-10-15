@@ -53,6 +53,7 @@
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
+#include <app/util/UpdateCheck.h>
 
 #include <sigslot/sigslot.h>
 
@@ -143,6 +144,7 @@ namespace musik { namespace cube {
             std::shared_ptr<LocalLibrarySettingsLayout> localLibraryLayout;
             std::shared_ptr<RemoteLibrarySettingsLayout> remoteLibraryLayout;
 
+            UpdateCheck updateCheck;
             bool serverAvailable = false;
     };
 } }

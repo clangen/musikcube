@@ -39,10 +39,16 @@ struct LogMessage: public Message {
 
 ConsoleLogger::ConsoleLogger(IMessageQueue& messageQueue)
 : messageQueue(messageQueue) {
+    messageQueue.Register(this);
     this->adapter = std::make_shared<SimpleScrollAdapter>();
     this->adapter->SetMaxEntries(1000);
     this->adapter->SetSelectable(true);
 }
+
+ConsoleLogger::~ConsoleLogger() {
+    this->messageQueue.Unregister(this);
+}
+
 
 void ConsoleLogger::verbose(const std::string& tag, const std::string& string) {
     this->FormatAndDispatch(tag, "v", string, Color::Default);

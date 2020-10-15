@@ -49,15 +49,17 @@ namespace musik { namespace core { namespace runtime {
             MessageQueue();
             virtual ~MessageQueue();
 
-            virtual void Post(IMessagePtr message, int64_t delayMs = 0);
-            virtual void Broadcast(IMessagePtr message, int64_t messageMs = 0);
-            virtual int Remove(IMessageTarget *target, int type = -1);
-            virtual bool Contains(IMessageTarget *target, int type = -1);
-            virtual void Debounce(IMessagePtr message, int64_t delayMs = 0);
-            virtual void RegisterForBroadcasts(IMessageTargetPtr target);
-            virtual void UnregisterForBroadcasts(IMessageTarget *target);
-            virtual void WaitAndDispatch(int64_t timeoutMillis = -1);
-            virtual void Dispatch();
+            void Post(IMessagePtr message, int64_t delayMs = 0) override;
+            void Broadcast(IMessagePtr message, int64_t messageMs = 0) override;
+            int Remove(IMessageTarget *target, int type = -1) override;
+            bool Contains(IMessageTarget *target, int type = -1) override;
+            void Debounce(IMessagePtr message, int64_t delayMs = 0) override;
+            void Register(IMessageTarget* target) override;
+            void Unregister(IMessageTarget* target) override;
+            void RegisterForBroadcasts(IMessageTargetPtr target) override;
+            void UnregisterForBroadcasts(IMessageTarget *target) override;
+            void WaitAndDispatch(int64_t timeoutMillis = -1) override;
+            void Dispatch() override;
 
         protected:
             int64_t GetNextMessageTime() {
@@ -66,6 +68,8 @@ namespace musik { namespace core { namespace runtime {
 
         private:
             typedef std::weak_ptr<IMessageTarget> IWeakMessageTarget;
+
+            void Enqueue(IMessagePtr message, int64_t delayMs);
 
             struct EnqueuedMessage {
                 IMessagePtr message;
@@ -83,6 +87,7 @@ namespace musik { namespace core { namespace runtime {
             std::list<EnqueuedMessage*> queue;
             std::list<EnqueuedMessage*> dispatch;
             std::set<IWeakMessageTarget, WeakPtrLess> receivers;
+            std::set<IMessageTarget*> targets;
             std::condition_variable_any waitForDispatch;
             std::atomic<int64_t> nextMessageTime;
 

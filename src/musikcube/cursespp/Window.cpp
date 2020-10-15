@@ -155,10 +155,11 @@ Window::Window(IWindow *parent) {
     this->focusOrder = -1;
     this->id = NEXT_ID++;
     this->badBounds = false;
+    Window::MessageQueue().Register(this);
 }
 
 Window::~Window() {
-    messageQueue.Remove(this);
+    Window::MessageQueue().Unregister(this);
     if (::top == this) { top = nullptr; }
     if (::focused == this) { focused = nullptr; }
     this->Destroy();

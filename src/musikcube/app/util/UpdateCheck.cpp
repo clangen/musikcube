@@ -114,6 +114,11 @@ int UpdateCheck::CurlTransferCallback(
 
 UpdateCheck::UpdateCheck() {
     this->curl = nullptr;
+    Window::MessageQueue().Register(this);
+}
+
+UpdateCheck::~UpdateCheck() {
+    Window::MessageQueue().Unregister(this);
 }
 
 bool UpdateCheck::Run(Callback callback) {

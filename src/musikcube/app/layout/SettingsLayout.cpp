@@ -53,7 +53,6 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
-#include <app/util/UpdateCheck.h>
 #include <app/overlay/ColorThemeOverlay.h>
 #include <app/overlay/LastFmOverlay.h>
 #include <app/overlay/SettingsOverlays.h>
@@ -110,8 +109,6 @@ static const int DEFAULT_MAX_INDEXER_THREADS = 4;
 using EntryPtr = IScrollAdapter::EntryPtr;
 
 static const std::string arrow = "> ";
-
-static UpdateCheck updateCheck;
 
 static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     auto schema = std::make_shared<TSchema<>>();

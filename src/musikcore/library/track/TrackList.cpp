@@ -274,10 +274,10 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
     }
 
     auto query = std::make_shared<TrackMetadataBatchQuery>(idsNotInCache, this->library);
-
     if (async) {
         currentWindow.Set(from, to);
-        this->library->Enqueue(query, 0, [this, from, to, query](auto q) {
+        auto shared = shared_from_this(); /* ensure we remain alive for the duration of the query */
+        this->library->Enqueue(query, 0, [this, shared, from, to, query](auto q) {
             if (query->GetStatus() == IQuery::Finished) {
                 auto& result = query->Result();
                 for (auto& kv : result) {

@@ -377,6 +377,7 @@ TransportWindow::TransportWindow(
 }
 
 TransportWindow::~TransportWindow() {
+    this->disconnect_all();
 }
 
 void TransportWindow::SetFocus(FocusTarget target) {

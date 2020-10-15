@@ -48,6 +48,8 @@ namespace musik {
                     virtual void Broadcast(IMessagePtr message, int64_t delayMs = 0) = 0;
                     virtual bool Contains(IMessageTarget *target, int type = -1) = 0;
                     virtual void Debounce(IMessagePtr message, int64_t delayMs = 0) = 0;
+                    virtual void Register(IMessageTarget* target) = 0;
+                    virtual void Unregister(IMessageTarget* target) = 0;
                     virtual void RegisterForBroadcasts(IMessageTargetPtr target) = 0;
                     virtual void UnregisterForBroadcasts(IMessageTarget *target) = 0;
                     virtual void WaitAndDispatch(int64_t timeoutMillis = -1) = 0;

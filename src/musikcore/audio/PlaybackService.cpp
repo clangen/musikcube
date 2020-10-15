@@ -155,6 +155,7 @@ PlaybackService::PlaybackService(
     transport->VolumeChanged.connect(this, &PlaybackService::OnVolumeChanged);
     transport->TimeChanged.connect(this, &PlaybackService::OnTimeChanged);
     library->Indexer()->Finished.connect(this, &PlaybackService::OnIndexerFinished);
+    messageQueue.Register(this);
     messageQueue.Post(Message::Create(this, MESSAGE_LOAD_PLAYBACK_CONTEXT));
 }
 
@@ -162,12 +163,12 @@ PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
     ILibraryPtr library)
 : PlaybackService(messageQueue, library, std::make_shared<MasterTransport>()) {
-
+    messageQueue.Register(this);
 }
 
 PlaybackService::~PlaybackService() {
     playback::SavePlaybackContext(library, *this);
-    this->messageQueue.Remove(this);
+    this->messageQueue.Unregister(this);
     savePreferences(*this, playbackPrefs);
     this->Stop();
     this->ResetRemotes();

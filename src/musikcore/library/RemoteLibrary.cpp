@@ -106,6 +106,9 @@ RemoteLibrary::RemoteLibrary(std::string name, int id)
 
 RemoteLibrary::~RemoteLibrary() {
     this->Close();
+    if (this->messageQueue) {
+        this->messageQueue->Unregister(this);
+    }
 }
 
 int RemoteLibrary::Id() {
@@ -307,7 +310,11 @@ void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context) {
 }
 
 void RemoteLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) {
+    if (this->messageQueue && this->messageQueue != &queue) {
+        this->messageQueue->Unregister(this);
+    }
     this->messageQueue = &queue;
+    this->messageQueue->Register(this);
 }
 
 musik::core::IIndexer* RemoteLibrary::Indexer() {
