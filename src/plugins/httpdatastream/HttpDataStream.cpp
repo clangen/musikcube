@@ -196,7 +196,9 @@ class FileReadStream {
                 this->underflow.wait(lock);
             }
 
-            if (this->interrupted || this->Eof()) {
+            /* if we've been interrupted, or we know we're at EOF and have been asked
+            to read beyond it. */
+            if (this->interrupted || (position >= this->Position() && this->Eof())) {
                 return false;
             }
 
