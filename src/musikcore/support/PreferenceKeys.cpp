@@ -70,7 +70,6 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::RemoteLibraryWssPort = "RemoteLibraryWssPort";
     const std::string keys::RemoteLibraryHttpPort = "RemoteLibraryHttpPort";
     const std::string keys::RemoteLibraryPassword = "RemoteLibraryPassword";
-    const std::string keys::RemoteLibraryIpv6 = "RemoteLibraryIpv6";
     const std::string keys::AsyncTrackListQueries = "AsyncTrackListQueries";
 
 } } }

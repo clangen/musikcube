@@ -89,7 +89,6 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     this->httpPortInput->MoveAndResize(labelWidth + 1, y++, 5, 1);
     this->pwLabel->MoveAndResize(0, y, labelWidth, 1);
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
-    //this->ipv6Cb->MoveAndResize(labelWidth - 3, y++, cx - labelWidth, 1);
 }
 
 void RemoteLibrarySettingsLayout::InitializeWindows() {
@@ -112,9 +111,6 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->pwInput.reset(new TextInput(TextInput::StyleLine));
     this->pwInput->SetInputMode(IInput::InputPassword);
 
-    //this->ipv6Cb.reset(new Checkbox());
-    //this->ipv6Cb->SetText(_TSTR("settings_server_use_ipv6"));
-
     this->AddWindow(this->hostLabel);
     this->AddWindow(this->hostInput);
     this->AddWindow(this->hostLabel);
@@ -125,14 +121,12 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->AddWindow(this->httpPortInput);
     this->AddWindow(this->pwLabel);
     this->AddWindow(this->pwInput);
-    //this->AddWindow(this->ipv6Cb);
 
     int order = 0;
     this->hostInput->SetFocusOrder(order++);
     this->wssPortInput->SetFocusOrder(order++);
     this->httpPortInput->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
-    //this->ipv6Cb->SetFocusOrder(order++);
 }
 
 void RemoteLibrarySettingsLayout::LoadPreferences() {
@@ -140,12 +134,10 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     auto wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
     auto httpPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
-    //auto ipv6 = prefs->GetBool(core::prefs::keys::RemoteLibraryIpv6, false);
     this->hostInput->SetText(host);
     this->wssPortInput->SetText(std::to_string(wssPort));
     this->httpPortInput->SetText(std::to_string(httpPort));
     this->pwInput->SetText(password);
-    //this->ipv6Cb->SetChecked(ipv6);
 }
 
 void RemoteLibrarySettingsLayout::SavePreferences() {
@@ -153,7 +145,6 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     auto wssPort = std::stoi(this->wssPortInput->GetText());
     auto httpPort = std::stoi(this->httpPortInput->GetText());
     auto password = this->pwInput->GetText();
-    //auto ipv6 = this->ipv6Cb->IsChecked();
 
     if (wssPort > 65535 || wssPort < 0) { wssPort = 7905; }
     if (httpPort > 65535 || httpPort < 0) { httpPort = 7905; }
@@ -162,7 +153,6 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     prefs->SetInt(core::prefs::keys::RemoteLibraryWssPort, wssPort);
     prefs->SetInt(core::prefs::keys::RemoteLibraryHttpPort, httpPort);
     prefs->SetString(core::prefs::keys::RemoteLibraryPassword, password.c_str());
-    //prefs->SetBool(core::prefs::keys::RemoteLibraryIpv6, ipv6);
 
     auto library = LibraryFactory::Instance().DefaultRemoteLibrary();
     auto remoteLibrary = std::dynamic_pointer_cast<RemoteLibrary>(library);

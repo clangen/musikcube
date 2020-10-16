@@ -91,7 +91,7 @@ namespace musik { namespace core { namespace net {
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
-            void Connect(const std::string& host, short port, const std::string& password, bool ipv6 = false);
+            void Connect(const std::string& host, short port, const std::string& password);
             void Reconnect();
             void Disconnect();
 
@@ -113,7 +113,6 @@ namespace musik { namespace core { namespace net {
             std::shared_ptr<std::thread> thread;
             mutable std::recursive_mutex mutex;
             std::string uri, password;
-            bool ipv6{ false };
             std::unordered_map<std::string, Query> messageIdToQuery;
             std::atomic<bool> quit{ false };
             ConnectionError connectionError{ ConnectionError::None };
