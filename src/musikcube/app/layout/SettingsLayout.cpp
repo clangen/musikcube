@@ -118,6 +118,7 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     schema->AddBool(cube::prefs::keys::StartMinimized, false);
 #endif
     schema->AddBool(cube::prefs::keys::AutoHideCommandBar, false);
+    schema->AddInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
     schema->AddBool(core::prefs::keys::AsyncTrackListQueries, false);
     schema->AddBool(cube::prefs::keys::DisableRatingColumn, false);
     schema->AddBool(cube::prefs::keys::DisableWindowTitleUpdates, false);

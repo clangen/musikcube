@@ -35,6 +35,8 @@
 #include "pch.hpp"
 
 #include <musikcore/net/WebSocketClient.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Preferences.h>
 #include <musikcore/version.h>
 #include <nlohmann/json.hpp>
 
@@ -226,6 +228,9 @@ void WebSocketClient::Reconnect() {
 
     io.restart();
 
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto timeout = prefs->GetInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
+
     this->SetState(State::Connecting);
     this->thread = std::make_shared<std::thread>([&]() {
         std::string uri;
@@ -238,6 +243,7 @@ void WebSocketClient::Reconnect() {
         if (uri.size()) {
             websocketpp::lib::error_code ec;
             Client::connection_ptr connection = client->get_connection(this->uri, ec);
+            client->set_pong_timeout(timeout);
             client->connect(connection);
             client->run();
         }
