@@ -196,6 +196,8 @@ void musik::debug::Stop() {
         delete queue;
         queue = nullptr;
     }
+
+    backends.clear();
 }
 
 static void enqueue(debug_level level, const std::string& tag, const std::string& string) {

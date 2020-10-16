@@ -88,6 +88,7 @@ void LibraryFactory::Shutdown() {
             library->Close();
         }
         sInstance->libraries.clear();
+        sInstance->libraryMap.clear();
     }
 }
 

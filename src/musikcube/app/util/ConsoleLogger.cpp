@@ -49,7 +49,6 @@ ConsoleLogger::~ConsoleLogger() {
     this->messageQueue.Unregister(this);
 }
 
-
 void ConsoleLogger::verbose(const std::string& tag, const std::string& string) {
     this->FormatAndDispatch(tag, "v", string, Color::Default);
 }
