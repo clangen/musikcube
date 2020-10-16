@@ -136,7 +136,6 @@ namespace musik { namespace cube {
             Check dotfileCheckbox;
             Check syncOnStartupCheckbox;
             Check removeCheckbox;
-            Check seekScrubCheckbox;
             Check saveSessionCheckbox;
 
             std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;

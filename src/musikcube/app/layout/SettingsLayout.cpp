@@ -188,12 +188,6 @@ void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
     else if (cb == dotfileCheckbox.get()) {
         this->localLibraryLayout->ToggleShowDotFiles();
     }
-    else if (cb == seekScrubCheckbox.get()) {
-        TimeChangeMode mode = cb->IsChecked() ? TimeChangeSeek : TimeChangeScrub;
-        this->prefs->SetInt(core::prefs::keys::TimeChangeMode, (int)mode);
-        this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode) == (int) TimeChangeSeek);
-        this->playback.SetTimeChangeMode(mode);
-    }
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     else if (cb == paletteCheckbox.get()) {
         ColorThemeOverlay::Show256ColorsInfo(
@@ -363,7 +357,6 @@ void SettingsLayout::OnLayout() {
     this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
 #endif
     this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->pluginsDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
 
     if (serverAvailable) {
         this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
@@ -377,13 +370,9 @@ void SettingsLayout::OnLayout() {
     this->dotfileCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->removeCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->seekScrubCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->saveSessionCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-
-    ++y;
+    this->pluginsDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->advancedDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-
-    ++y;
     this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
 }
 
@@ -446,7 +435,6 @@ void SettingsLayout::InitializeWindows() {
     CREATE_CHECKBOX(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
     CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
     CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
-    CREATE_CHECKBOX(this->seekScrubCheckbox, _TSTR("settings_seek_not_scrub"));
 
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
     CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
@@ -468,7 +456,6 @@ void SettingsLayout::InitializeWindows() {
     this->themeDropdown->SetFocusOrder(order++);
 #endif
     this->hotkeyDropdown->SetFocusOrder(order++);
-    this->pluginsDropdown->SetFocusOrder(order++);
 
     if (this->serverAvailable) {
         this->serverDropdown->SetFocusOrder(order++);
@@ -481,8 +468,8 @@ void SettingsLayout::InitializeWindows() {
     this->dotfileCheckbox->SetFocusOrder(order++);
     this->syncOnStartupCheckbox->SetFocusOrder(order++);
     this->removeCheckbox->SetFocusOrder(order++);
-    this->seekScrubCheckbox->SetFocusOrder(order++);
     this->saveSessionCheckbox->SetFocusOrder(order++);
+    this->pluginsDropdown->SetFocusOrder(order++);
     this->advancedDropdown->SetFocusOrder(order++);
     this->updateDropdown->SetFocusOrder(order++);
 
@@ -509,15 +496,14 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->enableTransparencyCheckbox);
 #endif
     this->AddWindow(this->hotkeyDropdown);
-    this->AddWindow(this->pluginsDropdown);
 
     this->AddWindow(this->dotfileCheckbox);
     this->AddWindow(this->syncOnStartupCheckbox);
     this->AddWindow(this->removeCheckbox);
-    this->AddWindow(this->seekScrubCheckbox);
     this->AddWindow(this->saveSessionCheckbox);
+    this->AddWindow(this->pluginsDropdown);
     this->AddWindow(this->advancedDropdown);
-    this->AddWindow(updateDropdown);
+    this->AddWindow(this->updateDropdown);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
@@ -600,7 +586,6 @@ void SettingsLayout::CheckShowFirstRunDialog() {
 void SettingsLayout::LoadPreferences() {
     this->syncOnStartupCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::SyncOnStartup, true));
     this->removeCheckbox->SetChecked(this->prefs->GetBool(core::prefs::keys::RemoveMissingFiles, true));
-    this->seekScrubCheckbox->SetChecked(this->prefs->GetInt(core::prefs::keys::TimeChangeMode, TimeChangeScrub) == TimeChangeSeek);
 
     /* locale */
     this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + i18n::Locale::Instance().GetSelectedLocale());
