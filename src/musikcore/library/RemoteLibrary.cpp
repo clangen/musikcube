@@ -143,7 +143,8 @@ void RemoteLibrary::Close() {
 }
 
 bool RemoteLibrary::IsConfigured() {
-    return LibraryFactory::Instance().DefaultLocalLibrary()->IsConfigured(); /* CAL TODO FIXME */
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    return prefs->GetBool(core::prefs::keys::RemoteLibraryViewed, false);
 }
 
 static inline bool isQueryDone(RemoteLibrary::Query query) {

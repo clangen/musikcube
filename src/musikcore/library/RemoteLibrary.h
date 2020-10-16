@@ -66,33 +66,33 @@ namespace musik { namespace core { namespace library {
             virtual ~RemoteLibrary();
 
             /* ILibrary */
-            virtual int Enqueue(
+            int Enqueue(
                 QueryPtr query,
                 unsigned int options = 0,
                 Callback = Callback()) override;
 
-            virtual musik::core::IIndexer *Indexer() override;
-            virtual int Id() override;
-            virtual const std::string& Name() override;
-            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
-            virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
-            virtual ILibrary::IResourceLocator& GetResourceLocator() override { return *this; }
-            virtual bool IsConfigured() override;
-            virtual ConnectionState GetConnectionState() const override { return this->connectionState; }
-            virtual Type GetType() const override { return Type::Remote; }
-            virtual void Close() override;
+            musik::core::IIndexer *Indexer() override;
+            int Id() override;
+            const std::string& Name() override;
+            void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
+            ILibrary::IResourceLocator& GetResourceLocator() override { return *this; }
+            bool IsConfigured() override;
+            ConnectionState GetConnectionState() const override { return this->connectionState; }
+            Type GetType() const override { return Type::Remote; }
+            void Close() override;
 
             /* IMessageTarget */
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* WebSocketClient::Listener */
-            virtual void OnClientInvalidPassword(Client* client) override;
-            virtual void OnClientStateChanged(Client* client, State newState, State oldState) override;
-            virtual void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) override;
-            virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError reason) override;
+            void OnClientInvalidPassword(Client* client) override;
+            void OnClientStateChanged(Client* client, State newState, State oldState) override;
+            void OnClientQuerySucceeded(Client* client, const std::string& messageId, Query query) override;
+            void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, Client::QueryError reason) override;
 
             /* IResourceLocator */
-            virtual std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
+            std::string GetTrackUri(musik::core::sdk::ITrack* track, const std::string& defaultUri) override;
 
             /* RemoteLibrary */
             void ReloadConnectionFromPreferences();

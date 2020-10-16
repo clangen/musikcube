@@ -68,6 +68,7 @@ namespace musik {
                 virtual cursespp::IWindowPtr GetFocus() override;
                 virtual bool SetFocus(cursespp::IWindowPtr window) override;
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+                virtual void OnVisibilityChanged(bool visible) override;
 
                 virtual void SetShortcutsWindow(
                     cursespp::ShortcutsWindow* w) override;

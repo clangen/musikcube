@@ -114,6 +114,17 @@ void LibraryLayout::OnLayout() {
     }
 }
 
+void LibraryLayout::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+
+    if (visible &&
+        library->GetType() == ILibrary::Type::Remote &&
+        library->GetConnectionState() == ILibrary::ConnectionState::Connected)
+    {
+        prefs->SetBool(core::prefs::keys::RemoteLibraryViewed, true);
+    }
+}
+
 void LibraryLayout::ChangeMainLayout(std::shared_ptr<cursespp::LayoutBase> newLayout) {
     if (this->visibleLayout != newLayout) {
         this->transportView->SetFocus(TransportWindow::FocusNone);
