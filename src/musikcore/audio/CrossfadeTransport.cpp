@@ -329,6 +329,10 @@ void CrossfadeTransport::OnPlayerError(Player* player) {
     this->Stop();
 }
 
+void CrossfadeTransport::OnPlayerDestroying(Player* player) {
+    this->RaiseStreamEvent(StreamDestroyed, player);
+}
+
 void CrossfadeTransport::OnPlayerMixPoint(Player* player, int id, double time) {
     bool stopped = false;
 
@@ -428,6 +432,7 @@ void CrossfadeTransport::PlayerContext::Reset(
     this->startImmediate = false;
 
     if (this->player && this->output) {
+        this->transport.RaiseStreamEvent(StreamDestroyed, this->player);
         this->player->Detach(&this->transport);
         if (this->started && this->canFade) {
             crossfader.Cancel(
@@ -488,6 +493,7 @@ void CrossfadeTransport::PlayerContext::Start(double transportVolume) {
 void CrossfadeTransport::PlayerContext::Stop() {
     if (this->output && this->player) {
         this->output->Stop();
+        this->transport.RaiseStreamEvent(StreamDestroyed, this->player);
         this->player->Detach(&this->transport);
         this->player->Destroy();
     }

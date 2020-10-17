@@ -135,6 +135,7 @@ namespace musik { namespace core { namespace audio {
             virtual void OnPlayerFinished(Player* player);
             virtual void OnPlayerError(Player* player);
             virtual void OnPlayerMixPoint(Player* player, int id, double time);
+            virtual void OnPlayerDestroying(Player* player);
 
             musik::core::sdk::PlaybackState playbackState;
             musik::core::sdk::StreamState activePlayerState;
