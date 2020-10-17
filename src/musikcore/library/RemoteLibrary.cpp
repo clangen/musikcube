@@ -310,6 +310,11 @@ void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context) {
         if (messageId.size()) {
             queriesInFlight[messageId] = context;
         }
+        else {
+            context->query->Invalidate();
+            this->OnQueryCompleted(context);
+            this->syncQueryCondition.notify_all();
+        }
     }
 }
 

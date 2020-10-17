@@ -48,6 +48,8 @@ using ClientPtr = WebSocketClient::ClientPtr;
 using Message = WebSocketClient::Message;
 using Connection = WebSocketClient::Connection;
 
+static const bool kDisableOfflineQueue = true;
+
 static std::atomic<int> nextMessageId(0);
 
 static inline std::string generateMessageId() {
@@ -195,6 +197,10 @@ void WebSocketClient::SetDisconnected(ConnectionError errorCode) {
 
 std::string WebSocketClient::EnqueueQuery(Query query) {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    if (kDisableOfflineQueue && this->state != State::Connected) {
+        query->Invalidate(); /* mark it as failed */
+        return "";
+    }
     auto messageId = generateMessageId();
     messageIdToQuery[messageId] = query;
     if (this->state == State::Connected) {

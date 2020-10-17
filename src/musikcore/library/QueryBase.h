@@ -119,6 +119,10 @@ namespace musik { namespace core { namespace library { namespace query {
                 throw std::runtime_error("not implemented");
             }
 
+            virtual void Invalidate() {
+                this->SetStatus(IQuery::Failed);
+            }
+
         protected:
             void SetStatus(int status) {
                 std::unique_lock<std::mutex> lock(this->stateMutex);

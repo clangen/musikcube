@@ -66,6 +66,7 @@ namespace musik { namespace core { namespace db {
             virtual std::string SerializeQuery() = 0;
             virtual std::string SerializeResult() = 0;
             virtual void DeserializeResult(const std::string& data) = 0;
+            virtual void Invalidate() = 0;
     };
 
 } } }
