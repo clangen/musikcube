@@ -607,6 +607,12 @@ int HttpServer::HandleAudioTrackRequest(
                 file = nullptr;
             }
         }
+        else {
+            status = MHD_HTTP_NOT_FOUND;
+        }
+    }
+    else {
+        status = MHD_HTTP_NOT_FOUND;
     }
 
     return status;

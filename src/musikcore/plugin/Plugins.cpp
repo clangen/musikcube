@@ -47,6 +47,7 @@
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/library/LocalMetadataProxy.h>
+#include <musikcore/library/LibraryFactory.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/Messages.h>
 
@@ -367,8 +368,11 @@ namespace musik { namespace core { namespace plugin {
         ::messageQueue = messageQueue;
         ::defaultLibrary = library;
         ::playback = playback;
-        ::metadataProxy = new LocalMetadataProxy(library);
         ::playbackPrefs = Preferences::ForComponent(prefs::components::Playback);
+
+        /* even if the local client is connected to a remote server, the metadata proxy
+        always uses the default local library. */
+        ::metadataProxy = new LocalMetadataProxy(LibraryFactory::Instance().DefaultLocalLibrary());
 
         PluginFactory::Instance().QueryFunction<SetMetadataProxy>(
             "SetMetadataProxy",
