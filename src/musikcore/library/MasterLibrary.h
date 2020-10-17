@@ -50,7 +50,7 @@ namespace musik { namespace core { namespace library {
 
     class MasterLibrary: public ILibrary, public sigslot::has_slots<> {
         public:
-            sigslot::signal0<> LibraryChanged;
+            sigslot::signal2<ILibraryPtr, ILibraryPtr> LibraryChanged;
 
             MasterLibrary();
             virtual ~MasterLibrary();

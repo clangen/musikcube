@@ -76,7 +76,7 @@ namespace musik {
                 void OnIndexerFinished(int count);
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnLibraryConnectionStateChanged(musik::core::ILibrary::ConnectionState state);
-                void OnLibraryChanged();
+                void OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr);
 
                 bool IsLibraryConnected();
 
@@ -87,6 +87,8 @@ namespace musik {
 
                 bool ShowTopBanner();
                 void UpdateTopBannerText();
+
+                void RebindIndexerEventHandlers(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr);
 
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<cursespp::TextLabel> topBanner;

@@ -109,10 +109,9 @@ MainLayout::MainLayout(
 
     library->ConnectionStateChanged.connect(this, &MainLayout::OnLibraryConnectionStateChanged);
     library->LibraryChanged.connect(this, &MainLayout::OnLibraryChanged);
-    library->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
-    library->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
-    library->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
     playback.TrackChanged.connect(this, &MainLayout::OnTrackChanged);
+
+    this->RebindIndexerEventHandlers(ILibraryPtr(), this->library);
 
     /* note we don't create `libraryLayout` here; instead we do it lazily once we're sure
     it has been connected. see SwitchToLibraryLayout() */
@@ -302,10 +301,24 @@ void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state
     }
 }
 
-void MainLayout::OnLibraryChanged() {
+void MainLayout::OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
     this->playback.Stop();
-    this->libraryLayout.reset(new LibraryLayout(playback, library));
+    this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
+    this->RebindIndexerEventHandlers(prev, curr);
     this->Layout();
+}
+
+void MainLayout::RebindIndexerEventHandlers(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr) {
+    if (prev) {
+        prev->Indexer()->Started.disconnect(this);
+        prev->Indexer()->Finished.disconnect(this);
+        prev->Indexer()->Progress.disconnect(this);
+    }
+    if (curr) {
+        curr->Indexer()->Started.connect(this, &MainLayout::OnIndexerStarted);
+        curr->Indexer()->Finished.connect(this, &MainLayout::OnIndexerFinished);
+        curr->Indexer()->Progress.connect(this, &MainLayout::OnIndexerProgress);
+    }
 }
 
 void MainLayout::OnIndexerStarted() {

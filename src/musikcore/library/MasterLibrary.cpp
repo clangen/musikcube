@@ -122,7 +122,7 @@ void MasterLibrary::LoadDefaultLibrary() {
             this->wrappedLibrary->ConnectionStateChanged.connect(this, &MasterLibrary::OnConectionStateChanged);
         }
 
-        this->LibraryChanged();
+        this->LibraryChanged(prevWrappedLibrary, this->wrappedLibrary);
     }
 }
 
