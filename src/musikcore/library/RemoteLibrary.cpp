@@ -88,20 +88,23 @@ class RemoteLibrary::QueryCompletedMessage: public Message {
         QueryContextPtr context;
 };
 
-ILibraryPtr RemoteLibrary::Create(std::string name, int id) {
-    ILibraryPtr lib(new RemoteLibrary(name, id));
+ILibraryPtr RemoteLibrary::Create(std::string name, int id, MessageQueue* messageQueue) {
+    ILibraryPtr lib(new RemoteLibrary(name, id, messageQueue));
     return lib;
 }
 
-RemoteLibrary::RemoteLibrary(std::string name, int id)
+RemoteLibrary::RemoteLibrary(std::string name, int id, MessageQueue* messageQueue)
 : name(name)
 , id(id)
 , exit(false)
-, messageQueue(nullptr)
+, messageQueue(messageQueue)
 , wsc(this) {
     this->identifier = std::to_string(id);
     this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
     this->ReloadConnectionFromPreferences();
+    if (this->messageQueue) {
+        this->messageQueue->Register(this);
+    }
 }
 
 RemoteLibrary::~RemoteLibrary() {

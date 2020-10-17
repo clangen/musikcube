@@ -59,8 +59,9 @@ namespace musik { namespace core { namespace library {
         public:
             using LocalQuery = musik::core::library::query::QueryBase;
             using LocalQueryPtr = std::shared_ptr<LocalQuery>;
+            using MessageQueue = musik::core::runtime::IMessageQueue;
 
-            static ILibraryPtr Create(std::string name, int id);
+            static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
 
             LocalLibrary(const LocalLibrary&) = delete;
             virtual ~LocalLibrary();
@@ -107,7 +108,7 @@ namespace musik { namespace core { namespace library {
             using QueryContextPtr = std::shared_ptr<QueryContext>;
             using QueryList = std::list<QueryContextPtr>;
 
-            LocalLibrary(std::string name, int id); /* ctor */
+            LocalLibrary(std::string name, int id, MessageQueue* messageQueue); /* ctor */
 
             void RunQuery(QueryContextPtr context, bool notify = true);
             void ThreadProc();

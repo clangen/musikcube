@@ -84,16 +84,20 @@ class LocalLibrary::QueryCompletedMessage: public Message {
         QueryContextPtr context;
 };
 
-ILibraryPtr LocalLibrary::Create(std::string name, int id) {
-    ILibraryPtr lib(new LocalLibrary(name, id));
+ILibraryPtr LocalLibrary::Create(std::string name, int id, MessageQueue* messageQueue) {
+    ILibraryPtr lib(new LocalLibrary(name, id, messageQueue));
     return lib;
 }
 
-LocalLibrary::LocalLibrary(std::string name,int id)
+LocalLibrary::LocalLibrary(std::string name, int id, MessageQueue* messageQueue)
 : name(name)
 , id(id)
 , exit(false)
-, messageQueue(nullptr) {
+, messageQueue(messageQueue) {
+    if (this->messageQueue) {
+        this->messageQueue->Register(this);
+    }
+
     this->identifier = std::to_string(id);
 
     this->db.Open(this->GetDatabaseFilename().c_str());

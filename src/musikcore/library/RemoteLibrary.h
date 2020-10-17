@@ -60,7 +60,9 @@ namespace musik { namespace core { namespace library {
         public:
             using Client = musik::core::net::WebSocketClient;
             using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
-            static ILibraryPtr Create(std::string name, int id);
+            using MessageQueue = musik::core::runtime::IMessageQueue;
+
+            static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
 
             RemoteLibrary(const RemoteLibrary&) = delete;
             virtual ~RemoteLibrary();
@@ -109,7 +111,7 @@ namespace musik { namespace core { namespace library {
             using QueryContextPtr = std::shared_ptr<QueryContext>;
             using QueryList = std::list<QueryContextPtr>;
 
-            RemoteLibrary(std::string name, int id); /* ctor */
+            RemoteLibrary(std::string name, int id, MessageQueue* messageQueue); /* ctor */
 
             void RunQuery(QueryContextPtr context);
             void RunQueryOnLoopback(QueryContextPtr context);

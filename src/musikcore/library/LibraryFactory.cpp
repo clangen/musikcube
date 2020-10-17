@@ -67,13 +67,10 @@ LibraryFactory::~LibraryFactory() {
 
 ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::string& name) {
     ILibraryPtr library = (type == ILibrary::Type::Local)
-        ? library::LocalLibrary::Create(name, id)
-        : library::RemoteLibrary::Create(name, id);
+        ? library::LocalLibrary::Create(name, id, sMessageQueue)
+        : library::RemoteLibrary::Create(name, id, sMessageQueue);
 
     if (library) {
-        if (sMessageQueue) {
-            library->SetMessageQueue(*sMessageQueue);
-        }
         this->libraries.push_back(library);
         this->libraryMap[id] = library;
         this->LibrariesUpdated();
