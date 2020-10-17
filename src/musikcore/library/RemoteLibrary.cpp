@@ -180,7 +180,7 @@ int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callba
         context->callback = callback;
 
         if (options & ILibrary::QuerySynchronous) {
-            this->RunQuery(context); /* false = do not notify via QueryCompleted */
+            this->RunQuery(context);
             std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
             while (
                 !this->exit &&
