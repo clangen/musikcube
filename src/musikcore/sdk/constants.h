@@ -54,6 +54,7 @@ namespace musik {
                 StreamAlmostDone = 4,
                 StreamFinished = 5,
                 StreamStopped = 6,
+                StreamCompleted = 7,
                 StreamError = -1
             };
 

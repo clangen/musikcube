@@ -49,6 +49,7 @@ static std::string TAG = "GaplessTransport";
     if (instance->nextPlayer) { \
         instance->nextPlayer->Detach(instance); \
         instance->nextPlayer->Destroy(); \
+        this->RaiseStreamEvent(StreamCompleted, instance->nextPlayer); \
         instance->nextPlayer = nullptr; \
     }
 
@@ -56,8 +57,8 @@ static std::string TAG = "GaplessTransport";
     if (instance->activePlayer) { \
         instance->activePlayer->Detach(instance); \
         instance->activePlayer->Destroy(); \
+        this->RaiseStreamEvent(StreamCompleted, instance->activePlayer); \
         instance->activePlayer = nullptr; \
-        instance->activePlayerState = StreamError; \
     }
 
 GaplessTransport::GaplessTransport()
