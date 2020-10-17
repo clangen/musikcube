@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -53,9 +53,9 @@ static std::string tempFilename(const std::string& root, size_t id) {
     return root + "/" + PREFIX + "_" + std::to_string(id) + TEMP_EXTENSION;
 }
 
-static std::string finalFilename(const std::string& root, size_t id, std::string extension) {
-    al::replace_all(extension, "/", "-");
-    return root + "/" + PREFIX + "_" + std::to_string(id) + "." + extension;
+static std::string finalFilename(const std::string& root, size_t id, std::string type) {
+    al::replace_all(type, "/", "-");
+    return root + "/" + PREFIX + "_" + std::to_string(id) + "_" + type;
 }
 
 static bool isTemp(const fs::path& path) {
@@ -145,27 +145,17 @@ void LruDiskCache::Purge() {
 }
 
 LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
-    std::string fn = path.stem().string(); /* no extension */
-    std::string ext = path.extension().string();
-
-    if (ext.size()) {
-        if (ext.at(0) == '.') {
-            ext = ext.substr(1);
-        }
-
-        al::replace_all(ext, "-", "/");
-    }
-
+    std::string fn = path.stem().string() + path.extension().string();
     std::vector<std::string> parts;
     boost::split(parts, fn, boost::is_any_of("_"));
-
-    if (parts.size() == 2 && parts.at(0) == PREFIX) {
+    if (parts.size() == 3 && parts[0] == PREFIX) {
         try {
             auto entry = std::shared_ptr<Entry>(new Entry());
-            entry->id = std::stoul(parts.at(1).c_str());
+            entry->id = std::stoull(parts[1].c_str());
             entry->path = path.string();
-            entry->type = ext;
+            entry->type = parts[2];
             entry->time = fs::last_write_time(path);
+            al::replace_all(entry->type, "-", "/");
             return entry;
         }
         catch (...) {
@@ -286,7 +276,7 @@ void LruDiskCache::SortAndPrune() {
     int extras = count - this->maxEntries;
     for (int i = 0; i < extras; i++) {
         auto entry = this->cached.back();
-        if (rm(entry->path)) {
+        if (rm(this->root + "/" + entry->path)) {
             this->cached.pop_back();
         }
     }

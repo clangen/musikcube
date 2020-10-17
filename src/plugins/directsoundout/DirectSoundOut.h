@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -47,8 +47,8 @@
 #include <Ksmedia.h>
 #include <dsound.h>
 
-#include <core/sdk/IOutput.h>
-#include <core/sdk/IDevice.h>
+#include <musikcore/sdk/IOutput.h>
+#include <musikcore/sdk/IDevice.h>
 
 using namespace musik::core::sdk;
 

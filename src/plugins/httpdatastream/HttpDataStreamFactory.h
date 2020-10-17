@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStreamFactory.h>
+#include <musikcore/sdk/IDataStreamFactory.h>
 
 using namespace musik::core::sdk;
 

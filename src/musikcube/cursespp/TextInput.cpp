@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -74,6 +74,7 @@ TextInput::TextInput(TextInput::Style style, IInput::InputMode inputMode)
 , truncate(false) {
     if (style == StyleLine) {
         this->SetFrameVisible(false);
+        this->SetFocusedContentColor(Color::TextFocused);
     }
 }
 

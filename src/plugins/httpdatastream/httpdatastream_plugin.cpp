@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,8 +36,8 @@
 
 #include "HttpDataStreamFactory.h"
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>

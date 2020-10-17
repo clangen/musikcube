@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/IDecoderFactory.h>
 
 using namespace musik::core::sdk;
 

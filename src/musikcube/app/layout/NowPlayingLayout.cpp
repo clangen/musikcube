@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -37,15 +37,15 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
-#include <core/library/LocalLibraryConstants.h>
+#include <musikcore/library/LocalLibraryConstants.h>
 #include <app/util/Hotkeys.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/util/PreferenceKeys.h>
-#include <core/library/query/local/NowPlayingTrackListQuery.h>
-#include <core/library/query/local/GetPlaylistQuery.h>
-#include <core/library/query/local/PersistedPlayQueueQuery.h>
-#include <core/support/Duration.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/query/NowPlayingTrackListQuery.h>
+#include <musikcore/library/query/GetPlaylistQuery.h>
+#include <musikcore/library/query/PersistedPlayQueueQuery.h>
+#include <musikcore/support/Duration.h>
+#include <musikcore/support/PreferenceKeys.h>
 #include "NowPlayingLayout.h"
 
 #include <set>
@@ -56,7 +56,7 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library;
 using namespace musik::cube;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace cursespp;
 
 namespace keys = musik::cube::prefs::keys;
@@ -149,7 +149,7 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-void NowPlayingLayout::OnTrackListRequeried(musik::core::db::local::TrackListQueryBase* query) {
+void NowPlayingLayout::OnTrackListRequeried(musik::core::library::query::TrackListQueryBase* query) {
     /* in most cases we pull the TrackList directly from the PlaybackService.
     however, some user operations cause the TrackList to be loaded from
     the database, e.g. loading regular playlists. in these cases, copy

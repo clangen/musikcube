@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -299,13 +299,13 @@ bool ListWindow::KeyPress(const std::string& key) {
     if (key == "KEY_ENTER") {
         auto selected = this->GetSelectedIndex();
         if (selected != NO_SELECTION) {
-            this->OnEntryActivated(selected);
+            return this->OnEntryActivated(selected);
         }
     }
     else if (key == "M-enter") {
         auto selected = this->GetSelectedIndex();
         if (selected != NO_SELECTION) {
-            this->OnEntryContextMenu(selected);
+            return this->OnEntryContextMenu(selected);
         }
     }
     return ScrollableWindow::KeyPress(key);
@@ -341,12 +341,20 @@ bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
     return result;
 }
 
-void ListWindow::OnEntryActivated(size_t index) {
-    this->EntryActivated(this, index); /* external */
+bool ListWindow::OnEntryActivated(size_t index) {
+    if (this->EntryActivated.has_connections()) {
+        this->EntryActivated(this, index);
+        return true;
+    }
+    return false;
 }
 
-void ListWindow::OnEntryContextMenu(size_t index) {
-    this->EntryContextMenu(this, index); /* external */
+bool ListWindow::OnEntryContextMenu(size_t index) {
+    if (this->EntryContextMenu.has_connections()) {
+        this->EntryContextMenu(this, index);
+        return true;
+    }
+    return false;
 }
 
 IScrollAdapter::ScrollPosition& ListWindow::GetMutableScrollPosition() {

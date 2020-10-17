@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -37,9 +37,9 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/SearchTrackListQuery.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/library/query/SearchTrackListQuery.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -52,7 +52,7 @@
 
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::core::library::constants;
 using namespace musik::core::runtime;
@@ -81,6 +81,7 @@ TrackSearchLayout::TrackSearchLayout(
 }
 
 TrackSearchLayout::~TrackSearchLayout() {
+    this->SaveSession();
 }
 
 void TrackSearchLayout::LoadLastSession() {

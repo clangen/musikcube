@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,8 +34,8 @@
 
 #include "Utility.h"
 #include <string.h>
-#include <core/sdk/String.h>
-#include <core/sdk/Filesystem.h>
+#include <musikcore/sdk/String.h>
+#include <musikcore/sdk/Filesystem.h>
 
 #ifdef WIN32
 #include <Windows.h>

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -46,113 +46,104 @@
 #include <cursespp/DialogOverlay.h>
 #include <cursespp/ITopLevelLayout.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/audio/MasterTransport.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/MasterTransport.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/support/Preferences.h>
 
 #include <app/window/TrackListView.h>
 #include <app/model/DirectoryAdapter.h>
-
-#include <core/library/ILibrary.h>
-#include <core/support/Preferences.h>
+#include <app/util/UpdateCheck.h>
 
 #include <sigslot/sigslot.h>
 
-namespace musik {
-    namespace cube {
-        class SettingsLayout :
-            public cursespp::ITopLevelLayout,
-            public cursespp::LayoutBase,
-            public sigslot::has_slots<>
-        {
-            public:
-                SettingsLayout(
-                    cursespp::App& app,
-                    musik::core::ILibraryPtr library,
-                    musik::core::audio::PlaybackService& playback);
+#include "LocalLibrarySettingsLayout.h"
+#include "RemoteLibrarySettingsLayout.h"
 
-                virtual ~SettingsLayout();
+namespace musik { namespace cube {
+    class SettingsLayout :
+        public cursespp::ITopLevelLayout,
+        public cursespp::LayoutBase,
+        public sigslot::has_slots<>
+    {
+        public:
+            using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
 
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
-                virtual void OnAddedToParent(IWindow* parent);
-                virtual void OnRemovedFromParent(IWindow* parent);
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            SettingsLayout(
+                cursespp::App& app,
+                MasterLibraryPtr library,
+                musik::core::audio::PlaybackService& playback);
 
-                virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w);
+            virtual ~SettingsLayout();
 
-            protected:
-                virtual void OnLayout();
+            virtual void OnVisibilityChanged(bool visible);
+            virtual void OnAddedToParent(IWindow* parent);
+            virtual void OnRemovedFromParent(IWindow* parent);
+            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
-            private:
-                void InitializeWindows();
-                void RefreshAddedPaths();
-                void LoadPreferences();
-                void AddSelectedDirectory();
-                void RemoveSelectedDirectory();
-                void DrillIntoSelectedDirectory();
-                void CheckShowFirstRunDialog();
-                void UpdateServerAvailability();
+            virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w);
 
-                void OnCheckboxChanged(
-                    cursespp::Checkbox* checkbox, bool checked);
+        protected:
+            virtual void OnLayout();
 
-                void OnOutputDriverDropdownActivated(cursespp::TextLabel* label);
-                void OnOutputDeviceDropdownActivated(cursespp::TextLabel* label);
-                void OnReplayGainDropdownActivated(cursespp::TextLabel* label);
-                void OnTransportDropdownActivate(cursespp::TextLabel* label);
-                void OnPluginsDropdownActivate(cursespp::TextLabel* label);
-                void OnHotkeyDropdownActivate(cursespp::TextLabel* label);
-                void OnThemeDropdownActivate(cursespp::TextLabel* label);
-                void OnLocaleDropdownActivate(cursespp::TextLabel* label);
-                void OnServerDropdownActivate(cursespp::TextLabel* label);
-                void OnUpdateDropdownActivate(cursespp::TextLabel* label);
-                void OnLastFmDropdownActivate(cursespp::TextLabel* label);
-                void OnAdvancedSettingsActivate(cursespp::TextLabel* label);
+        private:
+            void InitializeWindows();
+            void LoadPreferences();
+            void CheckShowFirstRunDialog();
+            void UpdateServerAvailability();
 
-                cursespp::Color ListItemDecorator(
-                    cursespp::ScrollableWindow* w,
-                    size_t index,
-                    size_t line,
-                    cursespp::IScrollAdapter::EntryPtr entry);
+            void OnCheckboxChanged(cursespp::Checkbox* checkbox, bool checked);
 
-                cursespp::App& app;
-                musik::core::ILibraryPtr library;
-                musik::core::IIndexer* indexer;
-                musik::core::audio::PlaybackService& playback;
+            void OnLibraryTypeDropdownActivated(cursespp::TextLabel* label);
+            void OnOutputDriverDropdownActivated(cursespp::TextLabel* label);
+            void OnOutputDeviceDropdownActivated(cursespp::TextLabel* label);
+            void OnReplayGainDropdownActivated(cursespp::TextLabel* label);
+            void OnTransportDropdownActivate(cursespp::TextLabel* label);
+            void OnPluginsDropdownActivate(cursespp::TextLabel* label);
+            void OnHotkeyDropdownActivate(cursespp::TextLabel* label);
+            void OnThemeDropdownActivate(cursespp::TextLabel* label);
+            void OnLocaleDropdownActivate(cursespp::TextLabel* label);
+            void OnServerDropdownActivate(cursespp::TextLabel* label);
+            void OnUpdateDropdownActivate(cursespp::TextLabel* label);
+            void OnLastFmDropdownActivate(cursespp::TextLabel* label);
+            void OnAdvancedSettingsActivate(cursespp::TextLabel* label);
 
-                std::shared_ptr<musik::core::Preferences> prefs;
+            cursespp::App& app;
+            MasterLibraryPtr library;
+            musik::core::IIndexer* indexer;
+            musik::core::audio::PlaybackService& playback;
 
-                using Text = std::shared_ptr<cursespp::TextLabel>;
-                Text localeDropdown;
-                Text outputDriverDropdown;
-                Text outputDeviceDropdown;
-                Text replayGainDropdown;
-                Text transportDropdown;
-                Text lastFmDropdown;
-                Text pluginsDropdown;
-                Text hotkeyDropdown;
-                Text serverDropdown;
-                Text updateDropdown;
-                Text themeDropdown;
-                Text advancedDropdown;
+            std::shared_ptr<musik::core::Preferences> prefs;
 
-                using Check = std::shared_ptr<cursespp::Checkbox>;
-                Check paletteCheckbox;
-                Check enableTransparencyCheckbox;
-                Check dotfileCheckbox;
-                Check syncOnStartupCheckbox;
-                Check removeCheckbox;
-                Check seekScrubCheckbox;
-                Check saveSessionCheckbox;
+            using Text = std::shared_ptr<cursespp::TextLabel>;
+            Text libraryTypeDropdown;
+            Text localeDropdown;
+            Text outputDriverDropdown;
+            Text outputDeviceDropdown;
+            Text replayGainDropdown;
+            Text transportDropdown;
+            Text lastFmDropdown;
+            Text pluginsDropdown;
+            Text hotkeyDropdown;
+            Text serverDropdown;
+            Text updateDropdown;
+            Text themeDropdown;
+            Text advancedDropdown;
 
-                std::shared_ptr<cursespp::ListWindow> browseList;
-                std::shared_ptr<cursespp::ListWindow> addedPathsList;
-                std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;
+            using Check = std::shared_ptr<cursespp::Checkbox>;
+            Check paletteCheckbox;
+            Check enableTransparencyCheckbox;
+            Check dotfileCheckbox;
+            Check syncOnStartupCheckbox;
+            Check removeCheckbox;
+            Check saveSessionCheckbox;
 
-                std::shared_ptr<cursespp::SimpleScrollAdapter> addedPathsAdapter;
-                std::shared_ptr<DirectoryAdapter> browseAdapter;
+            std::shared_ptr<cursespp::DialogOverlay> firstRunDialog;
 
-                bool serverAvailable = false;
-        };
-    }
-}
+            std::shared_ptr<LocalLibrarySettingsLayout> localLibraryLayout;
+            std::shared_ptr<RemoteLibrarySettingsLayout> remoteLibraryLayout;
+
+            UpdateCheck updateCheck;
+            bool serverAvailable = false;
+    };
+} }

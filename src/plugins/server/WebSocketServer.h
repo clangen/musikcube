@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -35,18 +35,17 @@
 #include "Context.h"
 #include "Snapshots.h"
 
-#include <core/sdk/constants.h>
-#include <core/sdk/ITrack.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/ITrack.h>
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/extensions/permessage_deflate/enabled.hpp>
-#include <websocketpp/server.hpp>
 #include <websocketpp/server.hpp>
 
 #include <mutex>
 #include <condition_variable>
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 class WebSocketServer {
     public:
@@ -138,6 +137,7 @@ class WebSocketServer {
         void RespondWithFailure(connection_hdl connection, json& request);
         void RespondWithSuccess(connection_hdl connection, const std::string& name, const std::string& id);
 
+        void RespondWithSendRawQuery(connection_hdl connection, json& request);
         void RespondWithSetVolume(connection_hdl connection, json& request);
         void RespondWithPlaybackOverview(connection_hdl connection, json& reuest);
         bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);

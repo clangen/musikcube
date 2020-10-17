@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,8 +34,9 @@
 
 #include "Constants.h"
 #include "GmeDecoder.h"
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/IDebug.h>
+#include "GmeDataStream.h"
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/IDebug.h>
 #include <cassert>
 
 static const int BUFFER_SAMPLE_COUNT = 2048;
@@ -57,12 +58,26 @@ GmeDecoder::~GmeDecoder() {
     gme_free_info(this->info);
     this->gme = nullptr;
     this->info = nullptr;
+    if (this->isWrappedDataStream) {
+        this->stream->Release();
+        this->stream = nullptr;
+    }
     delete[] buffer;
 }
 
 bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
     this->stream = dynamic_cast<GmeDataStream*>(stream);
-    assert(this->stream);
+
+    if (!this->stream) {
+        this->stream = new GmeDataStream(stream);
+        if (!this->stream->Parse(stream->Uri())) {
+            delete this->stream;
+            this->stream = nullptr;
+            return false;
+        }
+        this->isWrappedDataStream = true;
+    }
+
     auto length = stream->Length();
     const char* data = new char[length];
     if (stream->Read((void*) data, length) == length) {

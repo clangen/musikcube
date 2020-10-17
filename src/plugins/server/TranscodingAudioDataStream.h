@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -32,9 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IDataStream.h>
-#include <core/sdk/IStreamingEncoder.h>
-#include <core/sdk/DataBuffer.h>
+#include <musikcore/sdk/IDataStream.h>
+#include <musikcore/sdk/IStreamingEncoder.h>
+#include <musikcore/sdk/DataBuffer.h>
 #include "Context.h"
 #include <thread>
 #include <condition_variable>

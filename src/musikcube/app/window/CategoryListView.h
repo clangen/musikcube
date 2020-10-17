@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -39,12 +39,12 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ScrollAdapterBase.h>
 
-#include <core/library/query/local/CategoryListQuery.h>
+#include <musikcore/library/query/CategoryListQuery.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/library/IQuery.h>
-#include <core/library/ILibrary.h>
-#include <core/runtime/IMessage.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/IQuery.h>
+#include <musikcore/library/ILibrary.h>
+#include <musikcore/runtime/IMessage.h>
 
 #include <mutex>
 
@@ -85,7 +85,7 @@ namespace musik {
 
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
-                virtual void OnEntryContextMenu(size_t index);
+                virtual bool OnEntryContextMenu(size_t index);
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();
@@ -111,7 +111,7 @@ namespace musik {
                 musik::core::audio::PlaybackService& playback;
                 Adapter *adapter;
 
-                std::shared_ptr<musik::core::db::local::CategoryListQuery> activeQuery;
+                std::shared_ptr<musik::core::library::query::CategoryListQuery> activeQuery;
 
                 musik::core::ILibraryPtr library;
                 musik::core::TrackPtr playing;
@@ -119,7 +119,7 @@ namespace musik {
                 std::string fieldName, fieldIdColumn;
                 std::string filter;
                 int64_t selectAfterQuery;
-                musik::core::db::local::CategoryListQuery::Result metadata;
+                musik::core::library::query::CategoryListQuery::Result metadata;
         };
     }
 }

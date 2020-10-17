@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/IDecoderFactory.h>
 
 class FlacDecoderFactory : public musik::core::sdk::IDecoderFactory {
     public:

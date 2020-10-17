@@ -36,11 +36,11 @@
 
 #include <app/view/MainWindow.h>
 
-#include <core/runtime/IMessageQueue.h>
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/runtime/IMessageQueue.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/ILibrary.h>
 
-#include <core/library/query/local/TrackListQueryBase.h>
+#include <musikcore/library/query/local/TrackListQueryBase.h>
 
 #include <win32cpp/EditView.hpp>
 #include <win32cpp/Button.hpp>

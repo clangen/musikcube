@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,10 +36,10 @@
 
 #include <cursespp/Window.h>
 #include <cursespp/IKeyHandler.h>
-#include <core/library/track/Track.h>
-#include <core/runtime/IMessage.h>
-#include <core/audio/PlaybackService.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/track/Track.h>
+#include <musikcore/runtime/IMessage.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/PreferenceKeys.h>
 #include <sigslot/sigslot.h>
 
 namespace musik {
@@ -116,6 +116,7 @@ namespace musik {
 
                 void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnPlaybackModeChanged();
+                void OnPlaybackStreamStateChanged(musik::core::sdk::StreamState);
                 void OnTransportVolumeChanged();
                 void OnTransportTimeChanged(double time);
                 void OnPlaybackShuffled(bool shuffled);
@@ -131,6 +132,7 @@ namespace musik {
                 musik::core::TrackPtr currentTrack;
                 FocusTarget focus, lastFocus;
                 std::unique_ptr<TransportDisplayCache> displayCache;
+                bool buffering{ false };
                 double lastTime;
         };
     }

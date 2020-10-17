@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -41,6 +41,8 @@
 
 using namespace cursespp;
 
+/* TODO: this seems to be busted in many cases; either fix the
+implementation or get rid of this. */
 static std::map<ILayout*, int> lastFocusMap;
 
 #define ENABLE_DEMO_MODE 0
@@ -60,8 +62,7 @@ static void last(ILayout* layout, int last) {
 }
 
 AppLayout::AppLayout(cursespp::App& app)
-: shortcutsFocused(false)
-, topLevelLayout(nullptr)
+: topLevelLayout(nullptr)
 , LayoutBase() {
     this->Initialize();
     this->EnableDemoModeIfNecessary();
@@ -79,7 +80,6 @@ void AppLayout::OnLayout() {
     --cy;
 #endif
 
-    bool sf = this->shortcutsFocused;
     int mainCyOffset = this->autoHideCommandBar ? 0 : 1;
 
     if (this->layout) {
@@ -92,7 +92,7 @@ void AppLayout::OnLayout() {
         0, Screen::GetHeight() - 1, Screen::GetWidth(), 1);
 
     if (this->autoHideCommandBar) {
-        if (sf) {
+        if (this->shortcuts->IsFocused()) {
             this->shortcuts->Show();
             this->shortcuts->BringToTop();
         }
@@ -125,7 +125,7 @@ void AppLayout::SetPadding(size_t t, size_t l, size_t b, size_t r) {
 }
 
 cursespp::IWindowPtr AppLayout::GetFocus() {
-    if (this->shortcutsFocused) {
+    if (this->shortcuts->IsFocused()) {
         return this->shortcuts;
     }
     if (this->layout) {
@@ -135,7 +135,7 @@ cursespp::IWindowPtr AppLayout::GetFocus() {
 }
 
 IWindowPtr AppLayout::FocusNext() {
-    if (this->shortcutsFocused) {
+    if (this->shortcuts->IsFocused()) {
         return this->BlurShortcuts();
     }
     else if (this->layout) {
@@ -145,7 +145,7 @@ IWindowPtr AppLayout::FocusNext() {
 }
 
 IWindowPtr AppLayout::FocusPrev() {
-    if (this->shortcutsFocused) {
+    if (this->shortcuts->IsFocused()) {
         return this->BlurShortcuts();
     }
     else if (this->layout) {
@@ -157,8 +157,8 @@ IWindowPtr AppLayout::FocusPrev() {
 void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
     if (layout != this->layout) {
         if (this->layout) {
-            this->RemoveWindow(this->layout);
             last(this->layout.get(), this->layout->GetFocusIndex());
+            this->RemoveWindow(this->layout);
             this->layout->Hide();
         }
 
@@ -182,7 +182,7 @@ void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
             this->Layout();
 
             if (!this->shortcuts->IsFocused()) {
-                auto lastFocusIndex = last(this->layout.get());
+                auto lastFocusIndex = std::max(0, last(this->layout.get()));
                 this->layout->SetFocusIndex(lastFocusIndex);
             }
         }
@@ -190,7 +190,6 @@ void AppLayout::SetLayout(std::shared_ptr<cursespp::LayoutBase> layout) {
 }
 
 cursespp::IWindowPtr AppLayout::BlurShortcuts() {
-    this->shortcutsFocused = false;
     this->shortcuts->Hide();
     this->shortcuts->Blur();
 
@@ -226,21 +225,21 @@ void AppLayout::FocusShortcuts() {
 bool AppLayout::KeyPress(const std::string& key) {
     /* otherwise, see if the user is monkeying around with the
     shortcut bar focus... */
+    auto shortcutsFocused = this->shortcuts->IsFocused();
     if (key == "^["  ||
-        (key == "KEY_ENTER" && this->shortcutsFocused) ||
-        (key == "KEY_UP" && this->shortcutsFocused))
+        (key == "KEY_ENTER" && shortcutsFocused) ||
+        (key == "KEY_UP" && shortcutsFocused))
     {
-        this->shortcutsFocused = !this->shortcutsFocused;
-        if (this->shortcutsFocused) {
-            this->FocusShortcuts();
+        if (shortcutsFocused) {
+            this->BlurShortcuts();
         }
         else {
-            this->BlurShortcuts();
+            this->FocusShortcuts();
         }
         return true;
     }
 
-    if (this->shortcutsFocused) {
+    if (shortcutsFocused) {
         if (key == "KEY_DOWN" || key == "KEY_LEFT" ||
             key == "KEY_UP" || key == "KEY_RIGHT")
         {
@@ -251,7 +250,24 @@ bool AppLayout::KeyPress(const std::string& key) {
     }
 
     /* otherwise, pass along to our child layout */
-    return this->layout ? this->layout->KeyPress(key) : false;
+    if (this->layout->KeyPress(key)) {
+        return true;
+    }
+
+    /* the child layout didn't handle it directly, so let's walk
+    up the parent hierarhcy to see if there's someone who can. */
+    auto focus = this->layout->GetFocus().get();
+    while (focus != nullptr && focus != this) {
+        auto asKeyHandler = dynamic_cast<IKeyHandler*>(focus);
+        if (asKeyHandler) {
+            if (asKeyHandler->KeyPress(key)) {
+                return true;
+            }
+        }
+        focus = focus->GetParent();
+    }
+
+    return false;
 }
 
 void AppLayout::SetAutoHideCommandBar(bool autoHide) {

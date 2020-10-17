@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <core/sdk/IDecoder.h>
-#include <core/sdk/IDataStream.h>
+#include <musikcore/sdk/IDecoder.h>
+#include <musikcore/sdk/IDataStream.h>
 
 extern "C" {
     #include <nomad.h>

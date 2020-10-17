@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,9 +36,9 @@
 
 #include "PlaybackOverlays.h"
 
-#include <core/audio/Outputs.h>
-#include <core/support/Preferences.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/audio/Outputs.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>

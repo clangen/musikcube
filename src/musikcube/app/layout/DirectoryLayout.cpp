@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,9 +34,9 @@
 
 #include <stdafx.h>
 
-#include <core/library/query/local/DirectoryTrackListQuery.h>
-#include <core/support/Messages.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/library/query/DirectoryTrackListQuery.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/i18n/Locale.h>
 #include <cursespp/Colors.h>
 #include <cursespp/ToastOverlay.h>
 #include <app/util/Hotkeys.h>
@@ -50,7 +50,7 @@ using namespace musik;
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/constants.h>
+#include <musikcore/sdk/constants.h>
 #include <math.h>
 
 #ifdef WIN32

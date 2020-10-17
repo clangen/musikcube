@@ -29,7 +29,7 @@
         "browse_categories_title": "select category",
         "browse_title_directory_tracks": "tracks in %s",
 
-        "browse_pick_path_overlay_title": "select root directory",
+        "browse_pick_path_overlay_title": "select music directory",
         "browse_pick_path_last_directory": "last directory",
         "browse_no_paths_overlay_error_title": "no paths configured",
         "browse_no_paths_overlay_error_message": "you have not configured any metadata paths.\n\nyou must add at least one path in the settings screen before you can browse by directory.",
@@ -56,7 +56,7 @@
         "hotkeys_delete_binding_message": "would you like to reset the key binding for '{{key}}' to its default '{{default}}'?",
 
         "settings_space_to_add": "browse (SPACE to add)",
-        "settings_backspace_to_remove": "indexed paths (BACKSPACE to remove)",
+        "settings_backspace_to_remove": "music paths (BACKSPACE to remove)",
         "settings_enable_disable_plugins": "configure plugins",
         "settings_color_theme": "color theme: ",
         "settings_hotkey_tester": "key bindings",
@@ -103,7 +103,16 @@
         "settings_server_invalid_settings_title": "invalid settings",
         "settings_server_invalid_settings_message": "invalid or missing settings. please check the values and try again.",
         "settings_server_use_ipv6": "use ipv6",
-        "settings_enable_transparency": "enable transparency support",
+        "settings_enable_transparency": "transparent background",
+
+        "settings_library_type": "library type: ",
+        "settings_library_type_local": "local",
+        "settings_library_type_remote": "remote",
+        "settings_library_type_remote_hostname": "hostname:",
+        "settings_library_type_remote_wss_port": "metadata port:",
+        "settings_library_type_remote_http_port": "audio port:",
+        "settings_library_type_remote_password": "password:",
+        "settings_library_type_overlay_title": "library type",
 
         "settings_preamp": "preamp and replaygain",
         "settings_preamp_label": "preamp gain (dB):",
@@ -184,7 +193,9 @@
         "shortcuts_tracks": "tracks",
         "shortcuts_play_queue": "play queue",
 
-        "transport_playing_format": "playing $title by $artist from $album",
+        "transport_playing_format": "$state $title by $artist from $album",
+        "transport_playing_format_playing": "playing",
+        "transport_playing_format_buffering": "buffering",
         "transport_stopped": "playback is stopped",
         "transport_empty_song": "[song]",
         "transport_empty_album": "[album]",
@@ -233,6 +244,18 @@
         "track_list_sort_play_count_asc": "play count [asc]",
         "track_list_sort_play_count_desc": "play count [desc]",
         "track_list_sort_genre": "genre",
+
+        "library_not_connected": "could not connect to the musikcube library",
+        "library_not_connected_with_hostname": "could not connect to %s",
+        "library_error_format": "error: %s",
+        "library_error_format_retrying": "error: %s (retrying...)",
+        "library_error_connection_failed": "server offline",
+        "library_error_closed_by_server": "server hung up",
+        "library_error_invalid_password": "incorrect password",
+        "library_error_incompatible_version": "incompatible server version",
+        "library_error_unknown": "???",
+        "library_configuration_in_settings": "the library connection can be configured in settings",
+        "library_remote_connected_banner": "connected to %s",
 
         "unknown_category_value": "[unknown #%d]"
     },

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,8 +34,9 @@
 
 #pragma once
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IDecoder.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IDecoder.h>
+#include <musikcore/sdk/IDataStream.h>
 #include <libopenmpt/libopenmpt.h>
 
 class OpenMptDecoder: public musik::core::sdk::IDecoder {
@@ -50,6 +51,10 @@ class OpenMptDecoder: public musik::core::sdk::IDecoder {
         virtual bool Open(musik::core::sdk::IDataStream *stream) override;
         virtual bool Exhausted() override;
 
+        musik::core::sdk::IDataStream* Stream() { return this->stream; }
+
     private:
         openmpt_module* module;
+        musik::core::sdk::IDataStream* stream{ nullptr };
+        bool isWrappedStream{ false };
 };

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,10 +34,10 @@
 
 #include <stdafx.h>
 #include <app/layout/LyricsLayout.h>
-#include <core/i18n/Locale.h>
-#include <core/support/Auddio.h>
-#include <core/support/Common.h>
-#include <core/library/query/local/LyricsQuery.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/support/Auddio.h>
+#include <musikcore/support/Common.h>
+#include <musikcore/library/query/LyricsQuery.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>
@@ -48,7 +48,7 @@
 using namespace musik::cube;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::runtime;
 using namespace musik::core::sdk;
 using namespace cursespp;
@@ -135,26 +135,26 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
     if (track && track->GetId() != this->currentTrackId) {
         this->currentTrackId = track->GetId();
         this->SetState(State::Loading);
-
         auto trackExternalId = track->GetString("external_id");
         auto lyricsDbQuery = std::make_shared<LyricsQuery>(trackExternalId);
-        this->library->Enqueue(lyricsDbQuery, ILibrary::QuerySynchronous);
-        auto localLyrics = lyricsDbQuery->GetResult();
-        if (localLyrics.size()) {
-            this->OnLyricsLoaded(track, localLyrics);
-        }
-        else {
-            auddio::FindLyrics(track, [this](TrackPtr track, std::string remoteLyrics) {
-                if (this->currentTrackId == track->GetId()) {
-                    if (remoteLyrics.size()) {
-                        this->OnLyricsLoaded(track, remoteLyrics);
+        this->library->Enqueue(lyricsDbQuery, 0, [this, lyricsDbQuery, track](auto q) {
+            auto localLyrics = lyricsDbQuery->GetResult();
+            if (localLyrics.size()) {
+                this->OnLyricsLoaded(track, localLyrics);
+            }
+            else {
+                auddio::FindLyrics(track, [this](TrackPtr track, std::string remoteLyrics) {
+                    if (this->currentTrackId == track->GetId()) {
+                        if (remoteLyrics.size()) {
+                            this->OnLyricsLoaded(track, remoteLyrics);
+                        }
+                        else {
+                            this->SetState(State::Failed);
+                        }
                     }
-                    else {
-                        this->SetState(State::Failed);
-                    }
-                }
-            });
-        }
+                });
+            }
+        });
     }
     else if (!track) {
         this->currentTrackId = -1LL;

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -35,7 +35,7 @@
 #pragma once
 
 #include <stdafx.h>
-#include <core/support/Messages.h>
+#include <musikcore/support/Messages.h>
 
 namespace musik {
     namespace cube {
@@ -54,18 +54,20 @@ namespace musik {
             static const int IndexerProgress        = First + 3;
             static const int IndexerFinished        = First + 4;
             static const int RequeryTrackList       = First + 5;
-            static const int RefreshTransport       = First + 6;
-            static const int RefreshLogs            = First + 7;
-            static const int UpdateCheckFinished    = First + 8;
-            static const int JumpToConsole          = First + 9;
-            static const int JumpToLibrary          = First + 10;
-            static const int JumpToSettings         = First + 11;
-            static const int JumpToLyrics           = First + 12;
-            static const int JumpToHotkeys          = First + 13;
-            static const int JumpToPlayQueue        = First + 14;
-            static const int SetLastFmState         = First + 15;
-            static const int UpdateEqualizer        = First + 16;
-            static const int DebugLog               = First + 17;
+            static const int RequeryCategoryList    = First + 6;
+            static const int RefreshTransport       = First + 7;
+            static const int TransportBuffering     = First + 8;
+            static const int RefreshLogs            = First + 9;
+            static const int UpdateCheckFinished    = First + 10;
+            static const int JumpToConsole          = First + 11;
+            static const int JumpToLibrary          = First + 12;
+            static const int JumpToSettings         = First + 13;
+            static const int JumpToLyrics           = First + 14;
+            static const int JumpToHotkeys          = First + 15;
+            static const int JumpToPlayQueue        = First + 16;
+            static const int SetLastFmState         = First + 17;
+            static const int UpdateEqualizer        = First + 18;
+            static const int DebugLog               = First + 19;
         }
     }
 }

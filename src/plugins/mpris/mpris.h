@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include <core/sdk/IPlaybackRemote.h>
-#include <core/sdk/IPlugin.h>
+#include <musikcore/sdk/IPlaybackRemote.h>
+#include <musikcore/sdk/IPlugin.h>
 #include <mutex>
 #include <thread>
 

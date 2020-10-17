@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -35,8 +35,8 @@
 #pragma once
 
 #include "pch.h"
-#include <core/sdk/IBuffer.h>
-#include <core/sdk/IBufferProvider.h>
+#include <musikcore/sdk/IBuffer.h>
+#include <musikcore/sdk/IBufferProvider.h>
 
 class WaveOut;
 

@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/IDecoderFactory.h>
 
 class NomadDecoderFactory : public musik::core::sdk::IDecoderFactory {
   public:

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -33,10 +33,10 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include <stdafx.h>
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 #include <cursespp/Colors.h>
 #include <boost/filesystem.hpp>
-#include <core/support/Common.h>
+#include <musikcore/support/Common.h>
 #include <set>
 
 using namespace musik::core;
@@ -245,8 +245,8 @@ struct Theme {
         buttonForegroundActive.Set(THEME_COLOR_BUTTON_FOREGROUND_ACTIVE, 24, 24, 20, COLOR_BLACK);
 
         /* banner */
-        bannerBackground.Set(THEME_COLOR_BANNER_BACKGROUND, 255, 150, 32, COLOR_256_ORANGE);
-        bannerForeground.Set(THEME_COLOR_BANNER_FOREGROUND, 24, 24, 20, COLOR_BLACK);
+        bannerBackground.Set(THEME_COLOR_BANNER_BACKGROUND, 24, 24, 20, -1);
+        bannerForeground.Set(THEME_COLOR_BANNER_FOREGROUND, 128, 128, 128, COLOR_256_MEDIUM_GRAY);
 
         /* footer */
         footerBackground.Set(THEME_COLOR_FOOTER_BACKGROUND, 102, 217, 238, COLOR_256_BLUE);
@@ -394,8 +394,8 @@ struct Theme {
         /* banner */
         init_pair(
             Color::Banner,
-            bannerForeground.Id(mode, COLOR_BLACK),
-            bannerBackground.Id(mode, COLOR_YELLOW));
+            bannerForeground.Id(mode, COLOR_WHITE),
+            backgroundId);
 
         /* footer */
         init_pair(

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,13 +34,13 @@
 
 #include <stdafx.h>
 #include <app/layout/ConsoleLayout.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/version.h>
 #include <cursespp/App.h>
 #include <cursespp/Screen.h>
 #include <cursespp/ToastOverlay.h>
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
-#include <app/version.h>
 
 using namespace musik::cube;
 using namespace musik::core;

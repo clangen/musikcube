@@ -33,8 +33,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "CoreAudioOut.h"
-#include <core/sdk/constants.h>
-#include <core/sdk/IPreferences.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPreferences.h>
 #include <iostream>
 #include <vector>
 

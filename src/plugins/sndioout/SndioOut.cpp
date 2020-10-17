@@ -34,8 +34,8 @@
 
 #include "SndioOut.h"
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPreferences.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPreferences.h>
 #include <math.h>
 #include <limits.h>
 #include <iostream>

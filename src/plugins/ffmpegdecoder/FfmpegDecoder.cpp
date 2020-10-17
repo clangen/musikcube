@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "FfmpegDecoder.h"
-#include <core/sdk/IDebug.h>
+#include <musikcore/sdk/IDebug.h>
 #include <algorithm>
 #include <string>
 
@@ -166,10 +166,9 @@ void FfmpegDecoder::Release() {
 double FfmpegDecoder::SetPosition(double seconds) {
     if (this->ioContext && this->formatContext && this->codecContext) {
         AVStream* stream = this->formatContext->streams[this->streamId];
-        AVRational baseQ = { 1, AV_TIME_BASE };
-        int64_t pts = av_rescale_q((int64_t)(seconds * AV_TIME_BASE), baseQ, stream->time_base);
-        avcodec_flush_buffers(this->codecContext);
-        if (av_seek_frame(this->formatContext, this->streamId, pts, 0) >= 0) {
+        AVRational timeBase = stream->time_base;
+        int64_t seekTime = stream->start_time + av_rescale((int64_t) seconds, timeBase.den, timeBase.num);
+        if (av_seek_frame(this->formatContext, this->streamId, seekTime, AVSEEK_FLAG_ANY) >= 0) {
             return seconds;
         }
     }

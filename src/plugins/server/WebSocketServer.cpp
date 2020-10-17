@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -37,7 +37,7 @@
 
 #include <iostream>
 
-#include <core/sdk/constants.h>
+#include <musikcore/sdk/constants.h>
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
@@ -129,6 +129,7 @@ static json getEnvironment(Context& context) {
         { prefs::http_server_enabled, context.prefs->GetBool(prefs::http_server_enabled.c_str()) },
         { prefs::http_server_port, context.prefs->GetInt(prefs::http_server_port.c_str()) },
         { key::sdk_version, musik::core::sdk::SdkVersion },
+        { key::app_version, context.environment->GetAppVersion() },
         { key::api_version, ApiVersion }
     };
 }
@@ -305,6 +306,10 @@ void WebSocketServer::HandleRequest(connection_hdl connection, json& request) {
 
         if (name == request::ping) {
             this->RespondWithSuccess(connection, request);
+            return;
+        }
+        if (name == request::send_raw_query) {
+            this->RespondWithSendRawQuery(connection, request);
             return;
         }
         if (name == request::pause_or_resume) {
@@ -594,6 +599,25 @@ void WebSocketServer::RespondWithFailure(connection_hdl connection, json& reques
     };
 
     wss->send(connection, error.dump().c_str(), websocketpp::frame::opcode::text);
+}
+
+void WebSocketServer::RespondWithSendRawQuery(connection_hdl connection, json& request) {
+    json& options = request[message::options];
+    std::string data = options.value(key::raw_query_data, "");
+    PluginAllocator<WebSocketServer> allocator;
+    bool responded = false;
+    char* responseData = nullptr;
+    int responseSize = 0;
+    if (context.metadataProxy->SendRawQuery(data.c_str(), allocator, &responseData, &responseSize)) {
+        if (responseSize) {
+            this->RespondWithOptions(connection, request, { { key::raw_query_data, responseData } });
+            responded = true;
+        }
+        allocator.Free((void*) responseData);
+    }
+    if (!responded) {
+        this->RespondWithFailure(connection, request);
+    }
 }
 
 void WebSocketServer::RespondWithSetVolume(connection_hdl connection, json& request) {

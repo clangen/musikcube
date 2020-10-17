@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -39,14 +39,13 @@
 #include <cursespp/TextInput.h>
 #include <cursespp/TextLabel.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/support/Preferences.h>
-#include <core/library/ILibrary.h>
-#include <core/runtime/IMessageTarget.h>
-
-#include <core/audio/MasterTransport.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/runtime/IMessageTarget.h>
+#include <musikcore/library/MasterLibrary.h>
 
 #include <app/util/ConsoleLogger.h>
+#include <app/util/UpdateCheck.h>
 
 #include <sigslot/sigslot.h>
 
@@ -54,11 +53,13 @@ namespace musik {
     namespace cube {
         class MainLayout : public cursespp::AppLayout {
             public:
+                using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
+
                 MainLayout(
                     cursespp::App& app,
                     ConsoleLogger* logger,
                     musik::core::audio::PlaybackService& playback,
-                    musik::core::ILibraryPtr library);
+                    MasterLibraryPtr library);
 
                 virtual ~MainLayout();
 
@@ -74,20 +75,34 @@ namespace musik {
                 void OnIndexerProgress(int count);
                 void OnIndexerFinished(int count);
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+                void OnLibraryConnectionStateChanged(musik::core::ILibrary::ConnectionState state);
+                void OnLibraryChanged(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr);
 
-                void Initialize();
+                bool IsLibraryConnected();
+
                 void RunUpdateCheck();
+                void SetInitialLayout();
+                void SwitchToLibraryLayout();
+                void SwitchToPlayQueue();
+
+                bool ShowTopBanner();
+                void UpdateTopBannerText();
+
+                void RebindIndexerEventHandlers(musik::core::ILibraryPtr prev, musik::core::ILibraryPtr curr);
 
                 std::shared_ptr<musik::core::Preferences> prefs;
-                std::shared_ptr<cursespp::TextLabel> syncing;
+                std::shared_ptr<cursespp::TextLabel> topBanner;
                 std::shared_ptr<cursespp::LayoutBase> consoleLayout;
                 std::shared_ptr<cursespp::LayoutBase> libraryLayout;
+                std::shared_ptr<cursespp::LayoutBase> libraryNotConnectedLayout;
                 std::shared_ptr<cursespp::LayoutBase> settingsLayout;
                 std::shared_ptr<cursespp::LayoutBase> hotkeysLayout;
                 std::shared_ptr<cursespp::LayoutBase> lyricsLayout;
-                musik::core::ILibraryPtr library;
+                musik::core::audio::PlaybackService& playback;
+                MasterLibraryPtr library;
                 bool shortcutsFocused;
                 int syncUpdateCount;
+                UpdateCheck updateCheck;
         };
     }
 }

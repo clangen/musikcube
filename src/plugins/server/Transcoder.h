@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -35,10 +35,10 @@
 #pragma once
 
 #include "Context.h"
-#include <core/sdk/constants.h>
-#include <core/sdk/IDataStream.h>
-#include <core/sdk/IDecoder.h>
-#include <core/sdk/IStreamingEncoder.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IDataStream.h>
+#include <musikcore/sdk/IDecoder.h>
+#include <musikcore/sdk/IStreamingEncoder.h>
 #include <string>
 
 class Transcoder {

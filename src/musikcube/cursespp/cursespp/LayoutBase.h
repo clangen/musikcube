@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -63,6 +63,7 @@ namespace cursespp {
             virtual void Invalidate();
             virtual void OnParentVisibilityChanged(bool visible);
             virtual void OnChildVisibilityChanged(bool visible, IWindow* child);
+            virtual void Focus();
 
             /* IOrderable */
             virtual void BringToTop();
@@ -76,7 +77,7 @@ namespace cursespp {
             virtual bool SetFocus(IWindowPtr window);
 
             virtual int GetFocusIndex();
-            virtual void SetFocusIndex(int index);
+            virtual void SetFocusIndex(int index, bool applyFocus = true);
 
             virtual int GetFocusableCount();
             virtual IWindowPtr GetFocusableAt(int index);
@@ -104,6 +105,8 @@ namespace cursespp {
         protected:
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnLayout();
+            virtual IWindowPtr EnsureValidFocusFromNext();
+            virtual IWindowPtr EnsureValidFocusFromPrev();
 
             IWindowPtr EnsureValidFocus();
 

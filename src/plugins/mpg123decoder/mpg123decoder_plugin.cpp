@@ -33,7 +33,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
-#include <core/sdk/IPlugin.h>
+#include <musikcore/sdk/IPlugin.h>
 #include "Mpg123DecoderFactory.h"
 
 #ifdef WIN32

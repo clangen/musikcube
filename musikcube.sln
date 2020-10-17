@@ -25,7 +25,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cddadecoder", "src\plugins\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3rdparty", "src\3rdparty\3rdparty.vcxproj", "{B2165720-B4B2-4F4B-8888-8C390C3CB4DB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "musikcore", "src\core\core.vcxproj", "{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "musikcore", "src\musikcore\musikcore.vcxproj", "{B2165720-B4B2-4F4B-9634-8C390C3CB4DB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "taglib_plugin", "src\plugins\taglib_plugin\taglib_plugin.vcxproj", "{7CD00EC4-D090-48BE-9388-FA4857AC332C}"
 EndProject

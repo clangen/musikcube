@@ -33,11 +33,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "MainController.h"
-#include <core/library/LocalLibraryConstants.h>
-#include <core/runtime/Message.h>
-#include <core/library/query/local/SearchTrackListQuery.h>
-#include <core/support/Playback.h>
-#include <core/support/Duration.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/library/query/local/SearchTrackListQuery.h>
+#include <musikcore/support/Playback.h>
+#include <musikcore/support/Duration.h>
 
 using namespace musik::win;
 using namespace musik::core;

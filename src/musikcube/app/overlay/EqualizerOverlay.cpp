@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -42,8 +42,8 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/Text.h>
 
-#include <core/support/Messages.h>
-#include <core/plugin/PluginFactory.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/plugin/PluginFactory.h>
 
 #include <app/util/Messages.h>
 

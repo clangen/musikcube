@@ -9,10 +9,10 @@ if [ -z "$MAJOR" ] || [ -z "$MINOR" ] || [ -z "$PATCH" ]; then
   exit
 fi
 
-sed -Ei.bak "s/(\s*)(#define VERSION_MAJOR )(.*)/\1\2${MAJOR}/g" src/musikcube/app/version.h
-sed -Ei.bak "s/(\s*)(#define VERSION_MINOR )(.*)/\1\2${MINOR}/g" src/musikcube/app/version.h
-sed -Ei.bak "s/(\s*)(#define VERSION_PATCH )(.*)/\1\2${PATCH}/g" src/musikcube/app/version.h
-sed -Ei.bak "s/(\s*)(#define VERSION )(.*)/\1\2\"${MAJOR}.${MINOR}.${PATCH}\"/g" src/musikcube/app/version.h
+sed -Ei.bak "s/(\s*)(#define VERSION_MAJOR )(.*)/\1\2${MAJOR}/g" src/musikcore/version.h
+sed -Ei.bak "s/(\s*)(#define VERSION_MINOR )(.*)/\1\2${MINOR}/g" src/musikcore/version.h
+sed -Ei.bak "s/(\s*)(#define VERSION_PATCH )(.*)/\1\2${PATCH}/g" src/musikcore/version.h
+sed -Ei.bak "s/(\s*)(#define VERSION )(.*)/\1\2\"${MAJOR}.${MINOR}.${PATCH}\"/g" src/musikcore/version.h
 
 # visual studio resource files are utf16-le, so sed can't operate on them
 # directly. convert to utf8, process, then back to utf16-le
@@ -35,7 +35,7 @@ sed -Ei.bak "s/(\s*)(version: )(.*)/\1\2${MAJOR}.${MINOR}.${PATCH}/g" snap/snapc
 
 # ugh. there's a way to tell sed not to backup, but it's different on gnu and
 # bsd sed variants. this is easier than trying to switch the args dynamically.
-rm src/musikcube/app/version.h.bak
+rm src/musikcore/version.h.bak
 rm CMakeLists.txt.bak
 rm musikcube.spec.bak
 rm snap/snapcraft.yaml.bak

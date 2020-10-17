@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,7 +36,7 @@
 
 #include "VisualizerOverlay.h"
 
-#include <core/audio/Visualizer.h>
+#include <musikcore/audio/Visualizer.h>
 
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>

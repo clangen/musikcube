@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,8 +36,8 @@
 #include "WaveOut.h"
 #include <string>
 #include <vector>
-#include <core/sdk/constants.h>
-#include <core/sdk/IPreferences.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPreferences.h>
 
 #define MAX_VOLUME 0xFFFF
 #define MAX_BUFFERS_PER_OUTPUT 16

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -37,7 +37,7 @@
 #include "TranscodingAudioDataStream.h"
 #include "Constants.h"
 #include "Util.h"
-#include <core/sdk/IBlockingEncoder.h>
+#include <musikcore/sdk/IBlockingEncoder.h>
 #include <boost/filesystem.hpp>
 #include <thread>
 #include <set>

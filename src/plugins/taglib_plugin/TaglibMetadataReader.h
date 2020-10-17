@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -56,7 +56,7 @@
 
 #include <set>
 
-#include <core/sdk/ITagReader.h>
+#include <musikcore/sdk/ITagReader.h>
 
 class TaglibMetadataReader : public musik::core::sdk::ITagReader {
     public:

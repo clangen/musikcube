@@ -41,10 +41,10 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include <win32cpp/Application.hpp>
 
-#include <core/library/LibraryFactory.h>
-#include <core/audio/PlaybackService.h>
-#include <core/support/Preferences.h>
-#include <core/audio/Visualizer.h>
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/audio/Visualizer.h>
 
 #include <app/view/MainWindow.h>
 #include <app/controller/MainController.h>

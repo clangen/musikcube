@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -60,6 +60,7 @@ namespace cursespp {
             virtual cursespp::IWindowPtr FocusPrev() override;
 
             void SetLayout(std::shared_ptr<cursespp::LayoutBase> layout);
+            std::shared_ptr<cursespp::LayoutBase> GetLayout() { return this->layout; }
 
             void SetAutoHideCommandBar(bool autoHide);
             bool GetAutoHideCommandBar();
@@ -81,7 +82,6 @@ namespace cursespp {
             cursespp::IWindowPtr lastFocus;
             ITopLevelLayout* topLevelLayout;
             size_t paddingT{0}, paddingL{0}, paddingB{0}, paddingR{0};
-            bool shortcutsFocused;
             bool autoHideCommandBar{ false };
     };
 }

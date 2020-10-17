@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -41,8 +41,8 @@
 #include <app/overlay/VisualizerOverlay.h>
 #include <app/util/Playback.h>
 
-#include <core/audio/Visualizer.h>
-#include <core/support/Playback.h>
+#include <musikcore/audio/Visualizer.h>
+#include <musikcore/support/Playback.h>
 
 using namespace musik::core;
 using namespace musik::core::audio;

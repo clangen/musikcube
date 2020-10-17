@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -32,9 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IPlaybackRemote.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IEncoderFactory.h>
+#include <musikcore/sdk/IPlaybackRemote.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/IEncoderFactory.h>
 #include <set>
 #include <algorithm>
 

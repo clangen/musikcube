@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -35,7 +35,7 @@
 
 #pragma once
 
-#include <core/sdk/IIndexerSource.h>
+#include <musikcore/sdk/IIndexerSource.h>
 #include <functional>
 #include <set>
 #include <map>

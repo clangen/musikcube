@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,10 +34,10 @@
 
 #include "Constants.h"
 #include "GmeIndexerSource.h"
-#include <core/sdk/IDebug.h>
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/String.h>
-#include <core/sdk/Filesystem.h>
+#include <musikcore/sdk/IDebug.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/String.h>
+#include <musikcore/sdk/Filesystem.h>
 #include <string>
 #include <sstream>
 #include <set>

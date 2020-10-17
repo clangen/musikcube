@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,10 +34,10 @@
 
 #include "pch.h"
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IPreferences.h>
-#include <core/sdk/ISchema.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/IPreferences.h>
+#include <musikcore/sdk/ISchema.h>
 #include "WasapiOut.h"
 
 class WasapiPlugin : public musik::core::sdk::IPlugin {

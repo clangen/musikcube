@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -43,9 +43,9 @@
 #include <app/layout/CategorySearchLayout.h>
 #include <app/layout/TrackSearchLayout.h>
 #include <app/window/TransportWindow.h>
-#include <core/audio/PlaybackService.h>
-#include <core/support/Preferences.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/Preferences.h>
+#include <musikcore/library/ILibrary.h>
 
 #include <sigslot/sigslot.h>
 
@@ -68,6 +68,7 @@ namespace musik {
                 virtual cursespp::IWindowPtr GetFocus() override;
                 virtual bool SetFocus(cursespp::IWindowPtr window) override;
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+                virtual void OnVisibilityChanged(bool visible) override;
 
                 virtual void SetShortcutsWindow(
                     cursespp::ShortcutsWindow* w) override;

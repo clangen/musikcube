@@ -2,7 +2,7 @@
 #include <app/util/ConsoleLogger.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/SingleLineEntry.h>
-#include <core/runtime/Message.h>
+#include <musikcore/runtime/Message.h>
 #include <app/util/Messages.h>
 #include <time.h>
 
@@ -39,9 +39,14 @@ struct LogMessage: public Message {
 
 ConsoleLogger::ConsoleLogger(IMessageQueue& messageQueue)
 : messageQueue(messageQueue) {
+    messageQueue.Register(this);
     this->adapter = std::make_shared<SimpleScrollAdapter>();
     this->adapter->SetMaxEntries(1000);
     this->adapter->SetSelectable(true);
+}
+
+ConsoleLogger::~ConsoleLogger() {
+    this->messageQueue.Unregister(this);
 }
 
 void ConsoleLogger::verbose(const std::string& tag, const std::string& string) {

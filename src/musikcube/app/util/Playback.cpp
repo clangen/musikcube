@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -35,7 +35,7 @@
 #include <stdafx.h>
 #include "Playback.h"
 
-#include <core/sdk/constants.h>
+#include <musikcore/sdk/constants.h>
 
 using namespace musik::core;
 using namespace musik::core::audio;

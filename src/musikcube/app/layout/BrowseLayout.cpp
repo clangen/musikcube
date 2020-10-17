@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -37,13 +37,13 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/CategoryTrackListQuery.h>
-#include <core/library/query/local/SavePlaylistQuery.h>
-#include <core/library/query/local/util/TrackSort.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/support/Messages.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/library/query/CategoryTrackListQuery.h>
+#include <musikcore/library/query/SavePlaylistQuery.h>
+#include <musikcore/library/query/util/TrackSort.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/i18n/Locale.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
@@ -58,7 +58,7 @@ using namespace musik;
 using namespace musik::core::library::constants;
 using namespace musik::core;
 using namespace musik::core::audio;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;

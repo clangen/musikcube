@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,15 +34,30 @@
 
 #include "Constants.h"
 #include "GmeDataStream.h"
-#include <core/sdk/IEnvironment.h>
-#include <core/sdk/IIndexerSource.h>
+#include <musikcore/sdk/IEnvironment.h>
+#include <musikcore/sdk/IIndexerSource.h>
+#include <cassert>
 
 using namespace musik::core::sdk;
 
 extern IEnvironment* environment;
 
+GmeDataStream::GmeDataStream()
+: stream(nullptr) {
+}
+
+GmeDataStream::GmeDataStream(musik::core::sdk::IDataStream* stream)
+: stream(stream)
+, releaseStream(false) {
+}
+
+GmeDataStream::~GmeDataStream() {
+}
+
+
 bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
-    if (indexer::parseExternalId(EXTERNAL_ID_PREFIX, std::string(uri), this->filename, this->trackNumber)) {
+    assert(this->stream == nullptr);
+    if (this->Parse(uri)) {
         if (environment) {
             this->stream = environment->GetDataStream(this->filename.c_str(), flags);
             if (this->stream) {
@@ -51,6 +66,14 @@ bool GmeDataStream::Open(const char *uri, OpenFlags flags) {
         }
     }
     return false;
+}
+
+bool GmeDataStream::Parse(const char *uri) {
+    return indexer::parseExternalId(
+        EXTERNAL_ID_PREFIX,
+        std::string(uri),
+        this->filename,
+        this->trackNumber);
 }
 
 bool GmeDataStream::Close() {
@@ -62,7 +85,7 @@ void GmeDataStream::Interrupt() {
 }
 
 void GmeDataStream::Release() {
-    if (stream) {
+    if (releaseStream && stream) {
         stream->Release();
         stream = nullptr;
     }

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -41,11 +41,11 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/SingleLineEntry.h>
 
-#include <core/library/query/local/TrackListQueryBase.h>
-#include <core/audio/PlaybackService.h>
+#include <musikcore/library/query/TrackListQueryBase.h>
+#include <musikcore/audio/PlaybackService.h>
 
-#include <core/runtime/IMessage.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/runtime/IMessage.h>
+#include <musikcore/library/ILibrary.h>
 
 #include <app/util/TrackRowRenderers.h>
 
@@ -57,10 +57,10 @@ namespace musik {
         {
             public:
                 typedef musik::core::TrackPtr TrackPtr;
-                typedef musik::core::db::local::TrackListQueryBase TrackListQueryBase;
+                typedef musik::core::library::query::TrackListQueryBase TrackListQueryBase;
 
                 /* events */
-                sigslot::signal1<musik::core::db::local::TrackListQueryBase*> Requeried;
+                sigslot::signal1<musik::core::library::query::TrackListQueryBase*> Requeried;
 
                 /* types */
                 typedef std::function<cursespp::Color(TrackPtr, size_t)> RowDecorator;
@@ -97,8 +97,14 @@ namespace musik {
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
 
-                virtual void OnEntryActivated(size_t index);
-                virtual void OnEntryContextMenu(size_t index);
+                void SetTrackListAndUpateEventHandlers(
+                    std::shared_ptr<musik::core::TrackList> trackList);
+
+                virtual bool OnEntryActivated(size_t index);
+                virtual bool OnEntryContextMenu(size_t index);
+                virtual void OnDimensionsChanged();
+                virtual void OnTrackListWindowCached(
+                    const musik::core::TrackList* track, size_t from, size_t to);
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();
@@ -159,6 +165,8 @@ namespace musik {
                 };
 
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);
+
+                void AdjustTrackListCacheWindowSize();
 
                 void ScrollToPlaying();
                 void SelectFirstTrack();

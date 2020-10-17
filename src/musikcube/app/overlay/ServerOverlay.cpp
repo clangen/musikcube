@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,8 +36,8 @@
 
 #include "ServerOverlay.h"
 
-#include <core/plugin/PluginFactory.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/plugin/PluginFactory.h>
+#include <musikcore/i18n/Locale.h>
 
 #include <app/util/PreferenceKeys.h>
 

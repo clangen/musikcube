@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -48,15 +48,16 @@
 #include <app/util/Hotkeys.h>
 #include <app/util/PreferenceKeys.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/audio/Visualizer.h>
-#include <core/debug.h>
-#include <core/i18n/Locale.h>
-#include <core/library/LibraryFactory.h>
-#include <core/plugin/Plugins.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/sdk/constants.h>
-#include <core/support/Common.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/Visualizer.h>
+#include <musikcore/debug.h>
+#include <musikcore/i18n/Locale.h>
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/library/MasterLibrary.h>
+#include <musikcore/plugin/Plugins.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/support/Common.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -116,8 +117,8 @@ int main(int argc, char* argv[]) {
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
     musik::debug::Start({ fileLogger, consoleLogger });
 
-    ILibraryPtr library = LibraryFactory::Default();
-    library->SetMessageQueue(Window::MessageQueue());
+    LibraryFactory::Initialize(Window::MessageQueue());
+    auto library = std::make_shared<musik::core::library::MasterLibrary>();
 
     {
         auto prefs = Preferences::ForComponent(

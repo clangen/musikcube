@@ -34,8 +34,8 @@
 
 #include "MainWindow.h"
 
-#include <core/config.h>
-#include <core/runtime/MessageQueue.h>
+#include <musikcore/config.h>
+#include <musikcore/runtime/MessageQueue.h>
 
 #include <chrono>
 

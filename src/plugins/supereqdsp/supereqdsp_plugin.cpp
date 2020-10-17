@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -27,10 +27,10 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "constants.h"
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/ISchema.h>
-#include <core/sdk/IDSP.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/ISchema.h>
+#include <musikcore/sdk/IDSP.h>
 #include "SuperEqDsp.h"
 
 class SuperEqPlugin : public musik::core::sdk::IPlugin {

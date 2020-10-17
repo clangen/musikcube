@@ -32,10 +32,10 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/constants.h>
-#include <core/sdk/IPlugin.h>
-#include <core/sdk/IPlaybackRemote.h>
-#include <core/sdk/IDebug.h>
+#include <musikcore/sdk/constants.h>
+#include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/IPlaybackRemote.h>
+#include <musikcore/sdk/IDebug.h>
 #include <mutex>
 #include <iostream>
 #include "SPMediaKeyTap.h"

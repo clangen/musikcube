@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 #include "Hotkeys.h"
-#include <core/support/Preferences.h>
+#include <musikcore/support/Preferences.h>
 #include <app/util/Playback.h>
 #include <unordered_map>
 #include <unordered_set>

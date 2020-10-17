@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -78,10 +78,43 @@ LayoutBase::~LayoutBase() {
     }
 }
 
+void LayoutBase::Focus() {
+    Window::Focus();
+    this->FocusFirst();
+}
+
 IWindowPtr LayoutBase::EnsureValidFocus() {
     auto newFocus = this->GetFocus();
     if (newFocus && this->IsVisible()) {
         newFocus->Focus();
+    }
+    return newFocus;
+}
+
+IWindowPtr LayoutBase::EnsureValidFocusFromNext() {
+    auto newFocus = this->GetFocus();
+    if (newFocus && this->IsVisible()) {
+        LayoutBase* layout = dynamic_cast<LayoutBase*>(newFocus.get());
+        if (layout) {
+            layout->FocusFirst();
+        }
+        else {
+            newFocus->Focus();
+        }
+    }
+    return newFocus;
+}
+
+IWindowPtr LayoutBase::EnsureValidFocusFromPrev() {
+    auto newFocus = this->GetFocus();
+    if (newFocus && this->IsVisible()) {
+        LayoutBase* layout = dynamic_cast<LayoutBase*>(newFocus.get());
+        if (layout) {
+            layout->FocusLast();
+        }
+        else {
+            newFocus->Focus();
+        }
     }
     return newFocus;
 }
@@ -265,6 +298,14 @@ bool LayoutBase::SetFocus(IWindowPtr focus) {
     else {
         for (size_t i = 0; i < this->focusable.size(); i++) {
             if (this->focusable[i] == focus) {
+                /* if we're focused, we need to ensure our parent sets its correct
+                focus index to us! and so on up to the root view. note that this
+                needs to be called before updating our internal focus; recursively,
+                parents need to have their focus index set before children */
+                auto asLayout = dynamic_cast<ILayout*>(this->GetParent());
+                if (asLayout) {
+                    asLayout->SetFocus(shared_from_this());
+                }
                 this->focused = i;
                 this->EnsureValidFocus();
                 return true;
@@ -276,6 +317,37 @@ bool LayoutBase::SetFocus(IWindowPtr focus) {
 
 IWindowPtr LayoutBase::FocusNext() {
     sigslot::signal1<FocusDirection>* notify = nullptr;
+
+    /* GetFocus() will return the focused Window recursively. once we know
+    what it is, see if it can focus next. if it cannot, see if its parent
+    can, and so on, until we reach ourselves. reaching ourself is the base
+    case, and we drop through to the actual focus logic below.
+
+    NOTE: IF YOU UPDATE THIS LOGIC, ALSO UPDATE THE CORRESPONDING CODE IN
+    LayoutBase::FocusPrev() */
+    auto currFocus = this->GetFocus().get();
+    if (currFocus) {
+        do {
+            auto asLayout = dynamic_cast<LayoutBase*>(currFocus);
+            if (asLayout) {
+                auto nextFocus = asLayout->FocusNext();
+                if (nextFocus) {
+                    if (notify) {
+                        (*notify)(FocusForward);
+                    }
+                    return nextFocus;
+                }
+            }
+
+            Window* parent = (Window*) currFocus->GetParent();
+            if (parent == this) { /* base case / stop condition. this should always be hit */
+                break;
+            }
+            currFocus = parent;
+        } while (true);
+    }
+
+    /*** actual focus logic starts here ***/
 
     if (this->focused == NO_FOCUS && this->focusMode == FocusModeTerminating) {
         /* nothing. we're already terminated. */
@@ -295,7 +367,7 @@ IWindowPtr LayoutBase::FocusNext() {
         }
     }
 
-    this->EnsureValidFocus();
+    this->EnsureValidFocusFromNext();
 
     if (notify) {
         (*notify)(FocusForward);
@@ -306,6 +378,37 @@ IWindowPtr LayoutBase::FocusNext() {
 
 IWindowPtr LayoutBase::FocusPrev() {
     sigslot::signal1<FocusDirection>* notify = nullptr;
+
+    /* GetFocus() will return the focused Window recursively. once we know
+    what it is, see if it can focus next. if it cannot, see if its parent
+    can, and so on, until we reach ourselves. reaching ourself is the base
+    case, and we drop through to the actual focus logic below.
+
+    NOTE: IF YOU UPDATE THIS LOGIC, ALSO UPDATE THE CORRESPONDING CODE IN
+    LayoutBase::FocusNext() */
+    auto currFocus = this->GetFocus().get();
+    if (currFocus) {
+        do {
+            auto asLayout = dynamic_cast<LayoutBase*>(currFocus);
+            if (asLayout) {
+                auto prevFocus = asLayout->FocusPrev();
+                if (prevFocus) {
+                    if (notify) {
+                        (*notify)(FocusForward);
+                    }
+                    return prevFocus;
+                }
+            }
+
+            Window* parent = (Window*) currFocus->GetParent();
+            if (parent == this) { /* base case/stop condition. this should always be hit */
+                break;
+            }
+            currFocus = parent;
+        } while (true);
+    }
+
+    /*** actual focus logic starts here ***/
 
     --this->focused;
     if (this->focused < 0) {
@@ -319,7 +422,7 @@ IWindowPtr LayoutBase::FocusPrev() {
         }
     }
 
-    this->EnsureValidFocus();
+    this->EnsureValidFocusFromPrev();
 
     if (notify) {
         (*notify)(FocusBackward);
@@ -342,6 +445,17 @@ IWindowPtr LayoutBase::GetFocus() {
     if (this->focused >= 0 && (int) this->focusable.size() > this->focused) {
         auto view = this->focusable[this->focused];
         if (view->IsVisible()) {
+            /* see if the currently focused view is a layout. if it is, see if it
+            has something focused. if it does, return that. if it doesn't, just
+            return the view itself. this is confusing, but allows nested circular
+            layouts to function automatically */
+            LayoutBase* asLayoutBase = dynamic_cast<LayoutBase*>(view.get());
+            if (asLayoutBase) {
+                auto focused = asLayoutBase->GetFocus();
+                if (focused) {
+                    return focused;
+                }
+            }
             return view;
         }
     }
@@ -353,12 +467,14 @@ int LayoutBase::GetFocusIndex() {
     return this->focused;
 }
 
-void LayoutBase::SetFocusIndex(int index) {
+void LayoutBase::SetFocusIndex(int index, bool applyFocus) {
     if (!this->focusable.size()) {
         this->IndexFocusables();
     }
     this->focused = index;
-    this->EnsureValidFocus();
+    if (applyFocus) {
+        this->EnsureValidFocus();
+    }
 }
 
 int LayoutBase::GetFocusableCount() {
@@ -387,7 +503,6 @@ bool LayoutBase::KeyPress(const std::string& key) {
         this->FocusNext();
         return true;
     }
-
     return false;
 }
 

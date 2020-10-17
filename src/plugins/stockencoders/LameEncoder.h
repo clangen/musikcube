@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -32,8 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include <core/sdk/IStreamingEncoder.h>
-#include <core/sdk/DataBuffer.h>
+#include <musikcore/sdk/IStreamingEncoder.h>
+#include <musikcore/sdk/DataBuffer.h>
 #include <lame/lame.h>
 
 class LameEncoder: public musik::core::sdk::IStreamingEncoder {

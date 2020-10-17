@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -72,15 +72,6 @@ namespace cursespp {
                 }
 
                 return false;
-            }
-
-            virtual IWindowPtr FocusFirst() override {
-                auto focus = LayoutBase::FocusFirst();
-                if (!focus) {
-                    focus = shared_from_this();
-                    this->Focus();
-                }
-                return focus;
             }
 
             void Dismiss() {

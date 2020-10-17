@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/IDecoderFactory.h>
 
 class Mpg123DecoderFactory : public musik::core::sdk::IDecoderFactory {
   public:

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -38,6 +38,7 @@
 #include <Windows.h>
 #include <dbt.h>
 #include <map>
+#include <functional>
 
 #define CLASS_NAME L"CddaDataModelEventClass"
 #define WINDOW_NAME L"CddaDataModelWindow"

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -64,7 +64,7 @@ namespace cursespp {
             virtual int GetFocusIndex() = 0;
 
             virtual bool SetFocus(IWindowPtr window) = 0;
-            virtual void SetFocusIndex(int index) = 0;
+            virtual void SetFocusIndex(int index, bool applyFocus = true) = 0;
 
             virtual int GetFocusableCount() = 0;
             virtual IWindowPtr GetFocusableAt(int index) = 0;

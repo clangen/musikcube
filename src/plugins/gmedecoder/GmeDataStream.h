@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,13 +34,17 @@
 
 #pragma once
 
-#include <core/sdk/IDataStream.h>
+#include <musikcore/sdk/IDataStream.h>
 #include <string>
 
 class GmeDataStream: public musik::core::sdk::IDataStream {
     public:
         using PositionType = musik::core::sdk::PositionType;
         using OpenFlags = musik::core::sdk::OpenFlags;
+
+        GmeDataStream();
+        GmeDataStream(musik::core::sdk::IDataStream* stream);
+        virtual ~GmeDataStream();
 
         virtual bool Open(const char *uri, OpenFlags flags) override;
         virtual bool Close() override;
@@ -59,6 +63,7 @@ class GmeDataStream: public musik::core::sdk::IDataStream {
         virtual const char* Uri() override;
         virtual bool CanPrefetch() override;
 
+        bool Parse(const char* uri);
         int GetTrackNumber() { return this->trackNumber; }
         std::string GetFilename() { return this->filename; }
 
@@ -66,4 +71,5 @@ class GmeDataStream: public musik::core::sdk::IDataStream {
         int trackNumber { 0 };
         std::string filename;
         musik::core::sdk::IDataStream* stream { nullptr };
+        bool releaseStream{ true };
 };

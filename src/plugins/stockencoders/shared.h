@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/sdk/IEnvironment.h>
+#include <musikcore/sdk/IEnvironment.h>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)

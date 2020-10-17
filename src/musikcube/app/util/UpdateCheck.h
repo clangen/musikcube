@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -32,13 +32,15 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
 #include <curl/curl.h>
 #include <thread>
 #include <mutex>
-#include <core/runtime/IMessageTarget.h>
+#include <musikcore/runtime/IMessageTarget.h>
 
 namespace musik { namespace cube {
-    class UpdateCheck : private musik::core::runtime::IMessageTarget {
+    class UpdateCheck: private musik::core::runtime::IMessageTarget {
         public:
             /* args = updateRequired, version, url */
             using Callback = std::function<void(bool, std::string, std::string)>;
@@ -49,6 +51,8 @@ namespace musik { namespace cube {
             static void ShowNoUpgradeFoundOverlay();
 
             UpdateCheck();
+            ~UpdateCheck();
+
             bool Run(Callback callback);
             void Cancel();
 

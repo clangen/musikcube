@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <core/sdk/IOutput.h>
-#include <core/sdk/IBufferProvider.h>
+#include <musikcore/sdk/IOutput.h>
+#include <musikcore/sdk/IBufferProvider.h>
 #include <deque>
 #include <mutex>
 #include <AudioToolbox/AudioQueue.h>

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,7 +34,7 @@
 
 #include <stdafx.h>
 
-#include <core/support/Common.h>
+#include <musikcore/support/Common.h>
 #include <cursespp/Text.h>
 #include <cursespp/ScrollAdapterBase.h>
 #include <cursespp/SingleLineEntry.h>

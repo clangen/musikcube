@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -39,7 +39,7 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 #include <cursespp/Text.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/i18n/Locale.h>
 
 using namespace cursespp;
 

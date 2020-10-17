@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -40,10 +40,10 @@
 #include <cursespp/Text.h>
 #include <cursespp/ToastOverlay.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/audio/PlaybackService.h>
-
-#include <core/support/Duration.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Duration.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Playback.h>
@@ -51,6 +51,11 @@
 #include <app/overlay/TrackOverlays.h>
 
 #define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
+
+/* this is pretty gross, but i think we'll eventually settle on one versus the other
+and i don't want to bother adding a bunch of annoying infrastructure to more
+dynamnically switch between this */
+static bool sGetAsync = false;
 
 using namespace musik::core;
 using namespace musik::core::audio;
@@ -117,13 +122,18 @@ void TrackListView::SetRowRenderer(TrackRowRenderers::Renderer renderer) {
     this->renderer = renderer;
 }
 
+void TrackListView::OnTrackListWindowCached(const musik::core::TrackList* track, size_t from, size_t to) {
+    this->Redraw();
+}
+
 void TrackListView::OnQueryCompleted(IQuery* query) {
     if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
             bool hadTracks = this->tracks && this->tracks->Count() > 0;
             bool prevQuerySame = this->lastQueryHash == this->query->GetQueryHash();
 
-            this->tracks = this->query->GetResult();
+            this->SetTrackListAndUpateEventHandlers(this->query->GetResult());
+            this->AdjustTrackListCacheWindowSize();
             this->headers.Set(this->query->GetHeaders());
             this->lastQueryHash = this->query->GetQueryHash();
 
@@ -152,7 +162,8 @@ std::shared_ptr<TrackList> TrackListView::GetTrackList() {
 
 void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
     if (this->tracks != trackList) {
-        this->tracks = trackList;
+        this->SetTrackListAndUpateEventHandlers(trackList);
+        this->AdjustTrackListCacheWindowSize();
         this->ScrollToTop();
         this->SelectFirstTrack();
     }
@@ -216,13 +227,37 @@ void TrackListView::ScrollToPlaying() {
     }
 }
 
+void TrackListView::SetTrackListAndUpateEventHandlers(std::shared_ptr<TrackList> trackList) {
+    if (this->tracks) {
+        this->tracks->WindowCached.disconnect(this);
+    }
+    this->tracks = trackList;
+    if (this->tracks) {
+        this->tracks->WindowCached.connect(this, &TrackListView::OnTrackListWindowCached);
+    }
+    sGetAsync = Preferences::ForComponent(prefs::components::Settings)->GetBool(
+        prefs::keys::AsyncTrackListQueries, false);
+}
+
 void TrackListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
         this->ScrollToPlaying();
     }
 }
 
-void TrackListView::OnEntryActivated(size_t index) {
+void TrackListView::AdjustTrackListCacheWindowSize() {
+    auto height = this->GetHeight();
+    if (tracks && height > 0) {
+        tracks->SetCacheWindowSize(this->GetHeight());
+    }
+}
+
+void TrackListView::OnDimensionsChanged() {
+    this->AdjustTrackListCacheWindowSize();
+    ListWindow::OnDimensionsChanged();
+}
+
+bool TrackListView::OnEntryActivated(size_t index) {
     if (headers.HeaderAt(this->GetSelectedIndex())) {
         TrackPtr track = this->GetSelectedTrack();
         PlayQueueOverlays::ShowAlbumDividerOverlay(
@@ -231,13 +266,13 @@ void TrackListView::OnEntryActivated(size_t index) {
     else {
         playback::PlaySelected(*this, this->playback);
     }
-
-    ListWindow::OnEntryActivated(index);
+    return true;
 }
 
-void TrackListView::OnEntryContextMenu(size_t index) {
+bool TrackListView::OnEntryContextMenu(size_t index) {
     ListWindow::OnEntryContextMenu(index);
     this->ShowContextMenu();
+    return true;
 }
 
 void TrackListView::ShowContextMenu() {
@@ -431,16 +466,17 @@ size_t TrackListView::Adapter::GetEntryCount() {
 }
 
 IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWindow* window, size_t rawIndex) {
-    bool selected = (rawIndex == parent.GetSelectedIndex());
+    const bool selected = (rawIndex == parent.GetSelectedIndex());
 
     if (this->parent.headers.HeaderAt(rawIndex)) {
         /* the next track at the next logical index will have the album
         tracks we're interesetd in. */
-        auto trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
-        TrackPtr track = parent.tracks->Get(trackIndex);
+        auto const trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex + 1);
+        TrackPtr track = parent.tracks->Get(trackIndex, sGetAsync);
 
         if (track) {
-            std::string album = track->GetString(constants::Track::ALBUM);
+            std::string album = track->GetMetadataState() == MetadataState::Loaded
+                ? track->GetString(constants::Track::ALBUM) : "-";
 
             if (!album.size()) {
                 album = _TSTR("tracklist_unknown_album");
@@ -448,8 +484,8 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
             album = text::Ellipsize(album, this->GetWidth());
 
-            std::shared_ptr<TrackListEntry> entry(new
-                TrackListEntry(album, trackIndex, RowType::Separator));
+            auto entry = std::make_shared<TrackListEntry>(
+                album, trackIndex, RowType::Separator);
 
             entry->SetAttrs(selected
                 ? Color::ListItemHeaderHighlighted
@@ -460,13 +496,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     }
 
     size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
-    TrackPtr track = parent.tracks->Get(trackIndex);
-
-    if (!track) {
-        auto entry = std::shared_ptr<SingleLineEntry>(new SingleLineEntry("track missing"));
-        entry->SetAttrs(selected ? Color::ListItemHighlighted : Color::TextError);
-        return entry;
-    }
+    TrackPtr track = parent.tracks->Get(trackIndex, sGetAsync);
 
     Color attrs = Color::Default;
 
@@ -490,12 +520,16 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         }
     }
 
+    if (!track || track->GetMetadataState() != MetadataState::Loaded) {
+        auto entry = std::make_shared<SingleLineEntry>("  -");
+        entry->SetAttrs(attrs);
+        return entry;
+    }
+
     std::string text = parent.renderer(
         track, rawIndex, this->GetWidth(), parent.trackNumType);
 
-    std::shared_ptr<TrackListEntry> entry(
-        new TrackListEntry(text, trackIndex, RowType::Track));
-
+    auto entry = std::make_shared<TrackListEntry>(text, trackIndex, RowType::Track);
     entry->SetAttrs(attrs);
 
     return entry;

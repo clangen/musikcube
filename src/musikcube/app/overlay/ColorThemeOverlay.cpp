@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,9 +36,9 @@
 
 #include "ColorThemeOverlay.h"
 
-#include <core/support/Common.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/support/Preferences.h>
+#include <musikcore/support/Common.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Preferences.h>
 
 #include <app/util/PreferenceKeys.h>
 

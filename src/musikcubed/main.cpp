@@ -7,20 +7,20 @@
 #include <signal.h>
 #include <ev++.h>
 
-#include <core/audio/PlaybackService.h>
-#include <core/audio/MasterTransport.h>
-#include <core/debug.h>
-#include <core/library/LibraryFactory.h>
-#include <core/plugin/Plugins.h>
-#include <core/runtime/MessageQueue.h>
-#include <core/runtime/Message.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/support/Common.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/audio/MasterTransport.h>
+#include <musikcore/debug.h>
+#include <musikcore/library/LibraryFactory.h>
+#include <musikcore/plugin/Plugins.h>
+#include <musikcore/runtime/MessageQueue.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Common.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 
-#include "../musikcube/app/version.h"
+#include "../musikcore/version.h"
 
 using namespace musik;
 using namespace musik::core;
@@ -277,8 +277,8 @@ int main(int argc, char** argv) {
     srand((unsigned int) time(0));
 
     EvMessageQueue messageQueue;
-    auto library = LibraryFactory::Default();
-    library->SetMessageQueue(messageQueue);
+    LibraryFactory::Initialize(messageQueue);
+    auto library = LibraryFactory::Instance().DefaultLocalLibrary();
 
     {
         PlaybackService playback(messageQueue, library);

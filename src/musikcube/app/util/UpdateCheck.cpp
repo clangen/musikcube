@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -34,18 +34,18 @@
 
 #include <stdafx.h>
 #include "UpdateCheck.h"
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 #include <cursespp/App.h>
 #include <cursespp/Window.h>
 #include <cursespp/DialogOverlay.h>
 
-#include <core/runtime/Message.h>
-#include <core/support/Common.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/Common.h>
+#include <musikcore/version.h>
 
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
-#include <app/version.h>
 
 using namespace nlohmann;
 using namespace musik::cube;
@@ -114,6 +114,11 @@ int UpdateCheck::CurlTransferCallback(
 
 UpdateCheck::UpdateCheck() {
     this->curl = nullptr;
+    Window::MessageQueue().Register(this);
+}
+
+UpdateCheck::~UpdateCheck() {
+    Window::MessageQueue().Unregister(this);
 }
 
 bool UpdateCheck::Run(Callback callback) {
@@ -157,7 +162,7 @@ bool UpdateCheck::Run(Callback callback) {
                 short minor = platform[MINOR];
                 short patch = platform[PATCH];
 
-                this->updateUrl = platform[URL];
+                this->updateUrl = platform[URL].get<std::string>();
                 this->latestVersion = formattedVersion(major, minor, patch);
 
                 int64_t current = versionCode(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);

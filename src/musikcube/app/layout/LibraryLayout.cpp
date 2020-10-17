@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -38,10 +38,10 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Screen.h>
 
-#include <core/library/LocalLibraryConstants.h>
-#include <core/runtime/Message.h>
-#include <core/support/Messages.h>
-#include <core/support/PreferenceKeys.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/Messages.h>
+#include <musikcore/support/PreferenceKeys.h>
 
 #include <app/overlay/BrowseOverlays.h>
 #include <app/overlay/PlayQueueOverlays.h>
@@ -49,7 +49,7 @@
 #include <app/util/Messages.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/MagicConstants.h>
-#include <core/support/Playback.h>
+#include <musikcore/support/Playback.h>
 
 #include "LibraryLayout.h"
 
@@ -111,6 +111,17 @@ void LibraryLayout::OnLayout() {
     if (this->visibleLayout) {
         this->visibleLayout->MoveAndResize(x, y, cx, mainHeight);
         this->visibleLayout->Show();
+    }
+}
+
+void LibraryLayout::OnVisibilityChanged(bool visible) {
+    LayoutBase::OnVisibilityChanged(visible);
+
+    if (visible &&
+        library->GetType() == ILibrary::Type::Remote &&
+        library->GetConnectionState() == ILibrary::ConnectionState::Connected)
+    {
+        prefs->SetBool(core::prefs::keys::RemoteLibraryViewed, true);
     }
 }
 
@@ -346,7 +357,7 @@ IWindowPtr LibraryLayout::GetFocus() {
     auto result = this->visibleLayout->GetFocus();
 
     if (!result) {
-        this->visibleLayout->SetFocusIndex(0);
+        this->visibleLayout->SetFocusIndex(0, false);
         result = this->visibleLayout->GetFocus();
     }
 

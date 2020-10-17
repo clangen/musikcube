@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -115,6 +115,7 @@ namespace key {
     static const std::string delta = "delta";
     static const std::string relative = "relative";
     static const std::string password = "password";
+    static const std::string raw_query_data = "raw_query_data";
     static const std::string authenticated = "authenticated";
     static const std::string environment = "environment";
     static const std::string playlist_id = "playlist_id";
@@ -128,6 +129,7 @@ namespace key {
     static const std::string predicates = "predicates";
     static const std::string sdk_version = "sdk_version";
     static const std::string api_version = "api_version";
+    static const std::string app_version = "app_version";
     static const std::string driver_name = "driver_name";
     static const std::string all = "all";
     static const std::string selected = "selected";
@@ -162,6 +164,7 @@ namespace type {
 namespace request {
     static const std::string authenticate = "authenticate";
     static const std::string ping = "ping";
+    static const std::string send_raw_query = "send_raw_query";
     static const std::string pause_or_resume = "pause_or_resume";
     static const std::string stop = "stop";
     static const std::string previous = "previous";
@@ -241,4 +244,4 @@ static auto TRANSPORT_TYPE_TO_STRING = makeBimap<musik::core::sdk::TransportType
     { musik::core::sdk::TransportType::Crossfade, "crossfade" },
 });
 
-static const int ApiVersion = 15;
+static const int ApiVersion = 20;

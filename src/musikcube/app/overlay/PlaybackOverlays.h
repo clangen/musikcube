@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -35,8 +35,8 @@
 #pragma once
 
 #include <functional>
-#include <core/audio/MasterTransport.h>
-#include <core/sdk/IPlaybackService.h>
+#include <musikcore/audio/MasterTransport.h>
+#include <musikcore/sdk/IPlaybackService.h>
 
 namespace musik {
     namespace cube {

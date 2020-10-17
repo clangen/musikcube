@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -38,7 +38,7 @@
 #include "Transcoder.h"
 #include "TranscodingAudioDataStream.h"
 
-#include <core/sdk/ITrack.h>
+#include <musikcore/sdk/ITrack.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>

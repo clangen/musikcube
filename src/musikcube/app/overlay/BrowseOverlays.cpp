@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -36,8 +36,8 @@
 
 #include "BrowseOverlays.h"
 #include <app/util/MagicConstants.h>
-#include <core/library/query/local/AllCategoriesQuery.h>
-#include <core/i18n/Locale.h>
+#include <musikcore/library/query/AllCategoriesQuery.h>
+#include <musikcore/i18n/Locale.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
@@ -48,7 +48,7 @@ using namespace cursespp;
 using namespace musik::cube;
 using namespace musik::core;
 using namespace musik::core::db;
-using namespace musik::core::db::local;
+using namespace musik::core::library::query;
 
 static const std::set<std::string> BLACKLIST = { "bitrate", "channels", "lyrics", "path_id", "directory" };
 static std::string lastSelectedCategory, lastSelectedDirectory;
@@ -73,52 +73,52 @@ void BrowseOverlays::ShowCategoryChooser(
     using Value = SdkValue::Shared;
 
     auto query = std::make_shared<AllCategoriesQuery>();
-    library->Enqueue(query, ILibrary::QuerySynchronous);
+    library->Enqueue(query, 0, [callback, query](auto q) {
+        std::shared_ptr<Adapter> adapter(new Adapter());
+        adapter->SetSelectable(true);
 
-    std::shared_ptr<Adapter> adapter(new Adapter());
-    adapter->SetSelectable(true);
+        size_t index = 0;
 
-    size_t index = 0;
+        auto result = query->GetResult();
 
-    auto result = query->GetResult();
-
-    auto filtered = result->Filter([&index, adapter](const Value& value) -> bool {
-        auto str = value->ToString();
-        return BLACKLIST.find(str) == BLACKLIST.end();
-    });
-
-    filtered->Add(std::make_shared<SdkValue>(
-        _TSTR("browse_title_directory"),
-        -1LL,
-        MagicConstants::DirectoryCategoryType));
-
-    filtered->Sort([](const auto a, const auto b) -> bool {
-        return a->ToString() < b->ToString();
-    });
-
-    filtered->Each([&index, adapter](const Value& value) {
-        auto str = value->ToString();
-        adapter->AddEntry(str);
-        if (lastSelectedCategory == str) {
-            index = adapter->GetEntryCount() - 1;
-        }
-    });
-
-    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
-
-    dialog->SetAdapter(adapter)
-        .SetTitle(_TSTR("browse_categories_title"))
-        .SetWidth(_DIMEN("browse_categories_overlay_width", 35))
-        .SetSelectedIndex(index)
-        .SetItemSelectedCallback(
-        [callback, filtered]
-        (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-            auto selected = filtered->At(index);
-            lastSelectedCategory = selected->ToString();
-            callback(lastSelectedCategory, selected->GetType());
+        auto filtered = result->Filter([&index, adapter](const Value& value) -> bool {
+            auto str = value->ToString();
+            return BLACKLIST.find(str) == BLACKLIST.end();
         });
 
-    cursespp::App::Overlays().Push(dialog);
+        filtered->Add(std::make_shared<SdkValue>(
+            _TSTR("browse_title_directory"),
+            -1LL,
+            MagicConstants::DirectoryCategoryType));
+
+        filtered->Sort([](const auto a, const auto b) -> bool {
+            return a->ToString() < b->ToString();
+        });
+
+        filtered->Each([&index, adapter](const Value& value) {
+            auto str = value->ToString();
+            adapter->AddEntry(str);
+            if (lastSelectedCategory == str) {
+                index = adapter->GetEntryCount() - 1;
+            }
+        });
+
+        std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+
+        dialog->SetAdapter(adapter)
+            .SetTitle(_TSTR("browse_categories_title"))
+            .SetWidth(_DIMEN("browse_categories_overlay_width", 35))
+            .SetSelectedIndex(index)
+            .SetItemSelectedCallback(
+                [callback, filtered]
+                (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                    auto selected = filtered->At(index);
+                    lastSelectedCategory = selected->ToString();
+                    callback(lastSelectedCategory, selected->GetType());
+                });
+
+        cursespp::App::Overlays().Push(dialog);
+    });
 }
 
 void BrowseOverlays::ShowDirectoryChooser(

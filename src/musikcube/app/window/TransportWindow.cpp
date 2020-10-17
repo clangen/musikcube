@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2019 musikcube team
+// Copyright (c) 2004-2020 musikcube team
 //
 // All rights reserved.
 //
@@ -39,14 +39,13 @@
 #include <cursespp/Colors.h>
 #include <cursespp/Text.h>
 
-#include <core/support/Duration.h>
+#include <musikcore/support/Duration.h>
 
-#include <core/debug.h>
-#include <core/library/LocalLibraryConstants.h>
-#include <core/library/query/local/ReplayGainQuery.h>
-#include <core/support/PreferenceKeys.h>
-#include <core/runtime/Message.h>
-#include <core/support/Playback.h>
+#include <musikcore/debug.h>
+#include <musikcore/library/LocalLibraryConstants.h>
+#include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/runtime/Message.h>
+#include <musikcore/support/Playback.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -134,6 +133,8 @@ void tokenize(const std::string& format, TokenList& tokens) {
 /* a cache of localized, pre-formatted strings we use every second. */
 static struct StringCache {
     std::string PLAYING_FORMAT;
+    std::string PLAYING;
+    std::string BUFFERING;
     std::string STOPPED;
     std::string EMPTY_SONG;
     std::string EMPTY_ALBUM;
@@ -147,6 +148,8 @@ static struct StringCache {
 
     void Initialize() {
         PLAYING_FORMAT = _TSTR("transport_playing_format");
+        PLAYING = _TSTR("transport_playing_format_playing");
+        BUFFERING = _TSTR("transport_playing_format_buffering");
         STOPPED = _TSTR("transport_stopped");
         EMPTY_SONG = _TSTR("transport_empty_song");
         EMPTY_ALBUM = _TSTR("transport_empty_album");
@@ -189,7 +192,7 @@ struct musik::cube::TransportDisplayCache {
 
     std::string CurrentTime(int secondsCurrent) {
         if (secondsTotal != INT_MIN) {
-            secondsCurrent = std::min(secondsCurrent, secondsTotal);
+            secondsCurrent = std::max(0, std::min(secondsCurrent, secondsTotal));
         }
         return musik::core::duration::Duration(secondsCurrent);
     }
@@ -205,15 +208,15 @@ struct musik::cube::TransportDisplayCache {
             if (this->track) {
                 title = this->track->GetString(constants::Track::TITLE);
                 title = title.size() ? title : Strings.EMPTY_SONG;
-                titleCols = u8cols(title);
+                titleCols = (int) u8cols(title);
 
                 album = this->track->GetString(constants::Track::ALBUM);
                 album = album.size() ? album : Strings.EMPTY_ALBUM;
-                albumCols = u8cols(album);
+                albumCols = (int) u8cols(album);
 
                 artist = this->track->GetString(constants::Track::ARTIST);
                 artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
-                artistCols = u8cols(artist);
+                artistCols = (int) u8cols(artist);
             }
         }
 
@@ -239,7 +242,7 @@ struct musik::cube::TransportDisplayCache {
                 totalTime = "∞";
             }
 
-            totalTimeCols = u8cols(totalTime);
+            totalTimeCols = (int) u8cols(totalTime);
         }
     }
 };
@@ -249,6 +252,7 @@ utf8 characters and ellipsizing */
 static size_t writePlayingFormat(
     WINDOW *w,
     TransportDisplayCache& displayCache,
+    bool buffering,
     size_t width)
 {
     TokenList tokens;
@@ -256,6 +260,7 @@ static size_t writePlayingFormat(
 
     Color dim = Color::TextDisabled;
     Color gb = Color::TextActive;
+    Color warn = Color::TextWarning;
     size_t remaining = width;
 
     auto it = tokens.begin();
@@ -264,19 +269,30 @@ static size_t writePlayingFormat(
 
         Color attr = dim;
         std::string value;
-        size_t cols;
+        size_t cols = 0;
 
         if (token->type == Token::Placeholder) {
-            attr = gb;
+            if (token->value == "$state") {
+                if (buffering) {
+                    attr = warn;
+                    value = Strings.BUFFERING;
+                }
+                else {
+                    value = Strings.PLAYING;
+                }
+            }
             if (token->value == "$title") {
+                attr = gb;
                 value = displayCache.title;
                 cols = displayCache.titleCols;
             }
             else if (token->value == "$album") {
+                attr = gb;
                 value = displayCache.album;
                 cols = displayCache.albumCols;
             }
             else if (token->value == "$artist") {
+                attr = gb;
                 value = displayCache.artist;
                 cols = displayCache.artistCols;
             }
@@ -350,6 +366,7 @@ TransportWindow::TransportWindow(
     this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
     this->playback.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
+    this->playback.StreamStateChanged.connect(this, &TransportWindow::OnPlaybackStreamStateChanged);
     this->paused = false;
     this->lastTime = DEFAULT_TIME;
     this->shufflePos.y = 0;
@@ -360,6 +377,7 @@ TransportWindow::TransportWindow(
 }
 
 TransportWindow::~TransportWindow() {
+    this->disconnect_all();
 }
 
 void TransportWindow::SetFocus(FocusTarget target) {
@@ -479,7 +497,7 @@ void TransportWindow::OnFocusChanged(bool focused) {
 }
 
 void TransportWindow::ProcessMessage(IMessage &message) {
-    int type = message.Type();
+    const int type = message.Type();
 
     if (type == message::RefreshTransport) {
         this->Update((TimeMode) message.UserData1());
@@ -488,13 +506,30 @@ void TransportWindow::ProcessMessage(IMessage &message) {
             DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
         }
     }
+    else if (type == message::TransportBuffering) {
+        this->currentTrack = this->playback.GetPlaying();
+        this->buffering = true;
+        this->Update();
+    }
 }
 
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
     this->lastTime = DEFAULT_TIME;
+    this->buffering = playback.GetTransport().GetStreamState() == StreamBuffering;
     this->UpdateReplayGainState();
     DEBOUNCE_REFRESH(TimeSync, 0);
+}
+
+void TransportWindow::OnPlaybackStreamStateChanged(StreamState state) {
+    if (state == StreamBuffering) {
+        this->Debounce(message::TransportBuffering, 0, 0, 250);
+    }
+    else {
+        this->Remove(message::TransportBuffering);
+        this->buffering = false;
+        this->Update();
+    }
 }
 
 void TransportWindow::OnPlaybackModeChanged() {
@@ -519,7 +554,6 @@ void TransportWindow::OnRedraw() {
 
 void TransportWindow::UpdateReplayGainState() {
     using Mode = ReplayGainMode;
-    using Query = db::local::ReplayGainQuery;
 
     auto prefs = Preferences::ForComponent(prefs::components::Playback);
 
@@ -530,14 +564,10 @@ void TransportWindow::UpdateReplayGainState() {
 
     if (this->replayGainMode != Mode::Disabled) {
         if (this->currentTrack) {
-            auto query = std::make_shared<Query>(this->currentTrack->GetId());
-            if (this->library->Enqueue(query, ILibrary::QuerySynchronous)) {
-                auto result = query->GetResult();
-
-                this->hasReplayGain = result && (
-                    result->albumGain != 1.0f || result->albumPeak != 1.0f ||
-                    result->trackGain != 1.0f || result->albumPeak != 1.0f);
-            }
+            ReplayGain gain = this->currentTrack->GetReplayGain();
+            this->hasReplayGain =
+                gain.albumGain != 1.0f || gain.albumPeak != 1.0f ||
+                gain.trackGain != 1.0f || gain.albumPeak != 1.0f;
         }
     }
 }
@@ -585,7 +615,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* playing SONG TITLE from ALBUM NAME */
 
-    if (stopped) {
+    if (stopped && !this->buffering) {
         ON(c, disabled);
         checked_wprintw(c, Strings.STOPPED.c_str());
         displayCache->Reset();
@@ -593,7 +623,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
     else {
         displayCache->Update(transport, this->currentTrack);
-        writePlayingFormat(c, *this->displayCache, cx - shuffleWidth);
+        writePlayingFormat(c, *this->displayCache, this->buffering, cx - shuffleWidth);
     }
 
     /* draw the "shuffle" label */
@@ -603,7 +633,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     ON(c, shuffleAttrs);
     checked_wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
-    this->shufflePos.Set(shuffleOffset, shuffleWidth);
+    this->shufflePos.Set(shuffleOffset, (int) shuffleWidth);
 
     /* volume slider */
 
@@ -614,11 +644,11 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (muted) {
         volume = Strings.MUTED;
-        this->volumePos.Set(0, u8cols(Strings.MUTED));
+        this->volumePos.Set(0, (int) u8cols(Strings.MUTED));
     }
     else {
         volume = Strings.VOLUME;
-        this->volumePos.Set(u8cols(Strings.VOLUME), 11);
+        this->volumePos.Set((int) u8cols(Strings.VOLUME), 11);
 
         for (int i = 0; i < 11; i++) {
             volume += (i == thumbOffset) ? "■" : "─";
@@ -668,7 +698,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     only works if REFRESH_INTERVAL_MS is 1000. */
     int secondsCurrent = (int) round(this->lastTime); /* mode == TimeLast */
 
-    if (timeMode == TimeSmooth) {
+    if (!this->buffering && timeMode == TimeSmooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
         double actualTime = playback.GetPosition();
 
@@ -681,8 +711,8 @@ void TransportWindow::Update(TimeMode timeMode) {
 
         secondsCurrent = (int) round(smoothedTime);
     }
-    else if (timeMode == TimeSync) {
-        this->lastTime = playback.GetPosition();
+    else {
+        this->lastTime = std::max(0.0, playback.GetPosition());
         secondsCurrent = (int) round(this->lastTime);
     }
 
@@ -735,13 +765,13 @@ void TransportWindow::Update(TimeMode timeMode) {
     OFF(c, currentTimeAttrs);
 
     ON(c, timerAttrs);
-    this->timePos.Set(getcurx(c), u8cols(timerTrack));
+    this->timePos.Set(getcurx(c), (int) u8cols(timerTrack));
     checked_waddstr(c, timerTrack.c_str()); /* may be a very long string */
     checked_wprintw(c, " %s", displayCache->totalTime.c_str());
     OFF(c, timerAttrs);
 
     ON(c, repeatAttrs);
-    this->repeatPos.Set(getcurx(c), u8cols(repeatModeLabel));
+    this->repeatPos.Set(getcurx(c), (int) u8cols(repeatModeLabel));
     checked_wprintw(c, repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
 

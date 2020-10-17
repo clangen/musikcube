@@ -5,8 +5,8 @@
 #include <cursespp/ListWindow.h>
 #include <cursespp/ITopLevelLayout.h>
 #include <cursespp/SimpleScrollAdapter.h>
-#include <core/audio/PlaybackService.h>
-#include <core/library/ILibrary.h>
+#include <musikcore/audio/PlaybackService.h>
+#include <musikcore/library/ILibrary.h>
 
 namespace musik { namespace cube {
 
@@ -28,9 +28,6 @@ namespace musik { namespace cube {
         private:
             enum class State: int { NotPlaying, Loading, Loaded, Failed };
 
-            void OnAdapterChanged(cursespp::SimpleScrollAdapter* adapter);
-            void OnSelectionChanged(cursespp::ListWindow* window, size_t index, size_t prev);
-            void OnPlaybackEvent(int playbackEvent);
             void OnTrackChanged(size_t index, musik::core::TrackPtr track);
             void OnLyricsLoaded(musik::core::TrackPtr track, const std::string& lyrics);
 
