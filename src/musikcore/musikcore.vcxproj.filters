@@ -259,6 +259,9 @@
     <ClCompile Include="library\MasterLibrary.cpp">
       <Filter>src\library</Filter>
     </ClCompile>
+    <ClCompile Include="net\RawWebSocketClient.cpp">
+      <Filter>src\net</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -635,6 +638,9 @@
     </ClInclude>
     <ClInclude Include="version.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="net\RawWebSocketClient.h">
+      <Filter>src\net</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

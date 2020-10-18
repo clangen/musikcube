@@ -43,7 +43,6 @@
 using namespace musik::core;
 using namespace musik::core::net;
 
-using Client = WebSocketClient::Client;
 using ClientPtr = WebSocketClient::ClientPtr;
 using Message = WebSocketClient::Message;
 using Connection = WebSocketClient::Connection;
@@ -93,30 +92,23 @@ static inline bool extractRawQueryResult(
 }
 
 WebSocketClient::WebSocketClient(Listener* listener) {
-    client = std::make_unique<Client>();
-
-#if 1
-    client->clear_access_channels(websocketpp::log::alevel::all);
-#endif
+    rawClient = std::make_unique<RawWebSocketClient>(io);
 
     this->listener = listener;
 
-    websocketpp::lib::error_code ec;
-    client->init_asio(&io, ec);
+    rawClient->SetMode(RawWebSocketClient::Mode::TLS);
 
-    client->set_open_handler([this](Connection connection) {
+    rawClient->SetOpenHandler([this](Connection connection) {
         this->SetState(State::Authenticating);
-        this->client->send(
-            connection,
-            createAuthenticateRequest(this->password),
-            websocketpp::frame::opcode::text);
+        this->rawClient->Send(
+            connection, createAuthenticateRequest(this->password));
     });
 
-    client->set_fail_handler([this](Connection connection) {
+    rawClient->SetFailHandler([this](Connection connection) {
         this->SetDisconnected(ConnectionError::ConnectionFailed);
     });
 
-    client->set_message_handler([this](Connection connection, Message message) {
+    rawClient->SetMessageHandler([this](Connection connection, Message message) {
         nlohmann::json responseJson = nlohmann::json::parse(message->get_payload());
         auto name = responseJson["name"].get<std::string>();
         auto messageId = responseJson["id"].get<std::string>();
@@ -156,7 +148,7 @@ WebSocketClient::WebSocketClient(Listener* listener) {
         }
     });
 
-    client->set_close_handler([this](Connection connection) {
+    rawClient->SetCloseHandler([this](Connection connection) {
         if (this->state == State::Authenticating) {
             this->SetDisconnected(ConnectionError::InvalidPassword);
             this->listener->OnClientInvalidPassword(this);
@@ -171,7 +163,7 @@ WebSocketClient::~WebSocketClient() {
     this->Disconnect();
     /* need to ensure this is destroyed before the io_service, hence
     wrapping it in a unique_ptr and explicitly resetting it here. */
-    this->client.reset();
+    this->rawClient.reset();
 }
 
 WebSocketClient::ConnectionError WebSocketClient::LastConnectionError() const {
@@ -204,10 +196,9 @@ std::string WebSocketClient::EnqueueQuery(Query query) {
     auto messageId = generateMessageId();
     messageIdToQuery[messageId] = query;
     if (this->state == State::Connected) {
-        this->client->send(
+        this->rawClient->Send(
             this->connection,
-            createSendRawQueryRequest(query->SerializeQuery(), messageId),
-            websocketpp::frame::opcode::text);
+            createSendRawQueryRequest(query->SerializeQuery(), messageId));
     }
     return messageId;
 }
@@ -248,10 +239,9 @@ void WebSocketClient::Reconnect() {
 
         if (uri.size()) {
             websocketpp::lib::error_code ec;
-            Client::connection_ptr connection = client->get_connection(this->uri, ec);
-            client->set_pong_timeout(timeout);
-            client->connect(connection);
-            client->run();
+            rawClient->SetPongTimeout(timeout);
+            rawClient->Connect(uri);
+            rawClient->Run();
         }
 
         this->SetState(State::Disconnected);
@@ -290,10 +280,9 @@ void WebSocketClient::SendPendingQueries() {
     for (auto& kv : this->messageIdToQuery) {
         auto messageId = kv.first;
         auto query = kv.second;
-        this->client->send(
+        this->rawClient->Send(
             this->connection,
-            createSendRawQueryRequest(query->SerializeQuery(), messageId),
-            websocketpp::frame::opcode::text);
+            createSendRawQueryRequest(query->SerializeQuery(), messageId));
     }
 }
 

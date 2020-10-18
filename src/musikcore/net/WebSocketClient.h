@@ -35,10 +35,8 @@
 #pragma once
 
 #include <musikcore/config.h>
+#include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/library/IQuery.h>
-#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/config/asio_client.hpp>
-#include <websocketpp/client.hpp>
 #include <thread>
 #include <unordered_map>
 #include <atomic>
@@ -48,11 +46,7 @@ namespace musik { namespace core { namespace net {
 
     class WebSocketClient {
         public:
-            using Client = websocketpp::client<websocketpp::config::asio_client>;
-            using ClientPtr = std::unique_ptr<Client>;
-            using SslClient = websocketpp::client<websocketpp::config::asio_tls_client>;
-            using SslClientPtr = std::unique_ptr<SslClient>;
-            using SslContext = std::shared_ptr<boost::asio::ssl::context>;
+            using ClientPtr = std::unique_ptr<RawWebSocketClient>;
             using Message = websocketpp::config::asio_client::message_type::ptr;
             using Connection = websocketpp::connection_hdl;
             using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
@@ -111,7 +105,7 @@ namespace musik { namespace core { namespace net {
             void SendPendingQueries();
             void SetDisconnected(ConnectionError errorCode);
 
-            ClientPtr client;
+            ClientPtr rawClient;
             Connection connection;
             boost::asio::io_service io;
             std::shared_ptr<std::thread> thread;
