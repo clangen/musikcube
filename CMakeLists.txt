@@ -46,7 +46,7 @@ set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 
 link_directories ("${musikcube_SOURCE_DIR}/bin/plugins")
 
-set(COMMON_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread crypto)
+set(COMMON_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread ssl crypto)
 
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   set (musikcube_LINK_LIBS ${COMMON_LINK_LIBS})
