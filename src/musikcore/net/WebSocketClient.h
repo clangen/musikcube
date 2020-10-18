@@ -89,7 +89,12 @@ namespace musik { namespace core { namespace net {
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
-            void Connect(const std::string& host, short port, const std::string& password);
+            void Connect(
+                const std::string& host,
+                short port,
+                const std::string& password,
+                bool useTls);
+
             void Reconnect();
             void Disconnect();
 
@@ -110,6 +115,7 @@ namespace musik { namespace core { namespace net {
             boost::asio::io_service io;
             std::shared_ptr<std::thread> thread;
             mutable std::recursive_mutex mutex;
+            bool useTls{ false };
             std::string uri, password;
             std::unordered_map<std::string, Query> messageIdToQuery;
             std::atomic<bool> quit{ false };

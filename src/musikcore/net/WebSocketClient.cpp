@@ -193,6 +193,9 @@ std::string WebSocketClient::EnqueueQuery(Query query) {
         query->Invalidate(); /* mark it as failed */
         return "";
     }
+    if (!query) {
+        return "";
+    }
     auto messageId = generateMessageId();
     messageIdToQuery[messageId] = query;
     if (this->state == State::Connected) {
@@ -203,13 +206,20 @@ std::string WebSocketClient::EnqueueQuery(Query query) {
     return messageId;
 }
 
-void WebSocketClient::Connect(const std::string& host, short port, const std::string& password) {
+void WebSocketClient::Connect(
+    const std::string& host,
+    short port,
+    const std::string& password,
+    bool useTls)
+{
     auto newUri = "ws://" + host + ":" + std::to_string(port);
     if (newUri != this->uri ||
         password != this->password ||
+        useTls != this->useTls ||
         this->state != State::Connected)
     {
         this->Disconnect();
+        this->useTls = useTls;
         this->uri = newUri;
         this->password = password;
         if (this->uri.size()) {
@@ -238,7 +248,10 @@ void WebSocketClient::Reconnect() {
         }
 
         if (uri.size()) {
-            websocketpp::lib::error_code ec;
+            auto mode = this->useTls
+                ? RawWebSocketClient::Mode::TLS
+                : RawWebSocketClient::Mode::PlainText;
+            rawClient->SetMode(mode);
             rawClient->SetPongTimeout(timeout);
             rawClient->Connect(uri);
             rawClient->Run();
@@ -280,9 +293,11 @@ void WebSocketClient::SendPendingQueries() {
     for (auto& kv : this->messageIdToQuery) {
         auto messageId = kv.first;
         auto query = kv.second;
-        this->rawClient->Send(
-            this->connection,
-            createSendRawQueryRequest(query->SerializeQuery(), messageId));
+        if (query) {
+            this->rawClient->Send(
+                this->connection,
+                createSendRawQueryRequest(query->SerializeQuery(), messageId));
+        }
     }
 }
 

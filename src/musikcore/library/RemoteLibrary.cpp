@@ -408,8 +408,10 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
     auto port = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7905);
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
+    auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
 
-    const std::string uri = "http://" + host + ":" + std::to_string(port) + "/audio/id/" + std::to_string(track->GetId());
+    const std::string scheme = useTls ? "https://" : "http://";
+    const std::string uri = scheme + host + ":" + std::to_string(port) + "/audio/id/" + std::to_string(track->GetId());
     nlohmann::json path = {
         { "uri", uri },
         { "originalUri", std::string(buffer) },
@@ -431,5 +433,6 @@ void RemoteLibrary::ReloadConnectionFromPreferences() {
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
     auto port = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
-    this->wsc.Connect(host, port, password);
+    auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
+    this->wsc.Connect(host, port, password, useTls);
 }
