@@ -113,6 +113,7 @@
         "settings_library_type_remote_http_port": "audio port:",
         "settings_library_type_remote_password": "password:",
         "settings_library_type_overlay_title": "library type",
+        "settings_library_type_remote_use_tls": "use ssl/tls",
 
         "settings_preamp": "preamp and replaygain",
         "settings_preamp_label": "preamp gain (dB):",

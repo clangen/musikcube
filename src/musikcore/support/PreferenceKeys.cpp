@@ -72,6 +72,8 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::RemoteLibraryPassword = "RemoteLibraryPassword";
     const std::string keys::RemoteLibraryViewed = "RemoteLibraryViewed";
     const std::string keys::RemoteLibraryLatencyTimeoutMs = "RemoteLibraryLatencyTimeoutMs";
+    const std::string keys::RemoteLibraryWssTls = "RemoteLibraryWssTls";
+    const std::string keys::RemoteLibraryHttpTls = "RemoteLibraryHttpTls";
     const std::string keys::AsyncTrackListQueries = "AsyncTrackListQueries";
 
 } } }

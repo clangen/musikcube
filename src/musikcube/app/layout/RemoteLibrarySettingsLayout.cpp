@@ -51,6 +51,8 @@ using namespace musik::core::sdk;
 using namespace musik::cube;
 using namespace cursespp;
 
+#define R(x) (x->GetX() + x->GetWidth())
+
 static inline int longestStringLength(const std::vector<std::string>&& keys) {
     int max = 0;
     for (auto& str: keys) {
@@ -77,6 +79,8 @@ void RemoteLibrarySettingsLayout::OnLayout() {
         "settings_library_type_remote_http_port",
         "settings_library_type_remote_password"
      });
+    
+    const int checkboxWidth = u8cols(_TSTR("settings_library_type_remote_use_tls")) + 4;
 
     int cx = this->GetWidth();
     int inputWidth = std::min((int) 32, (int) (cx - labelWidth - 1));
@@ -84,9 +88,11 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     this->hostLabel->MoveAndResize(0, y, labelWidth, 1);
     this->hostInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
     this->wssPortLabel->MoveAndResize(0, y, labelWidth, 1);
-    this->wssPortInput->MoveAndResize(labelWidth + 1, y++, 5, 1);
+    this->wssPortInput->MoveAndResize(labelWidth + 1, y, 5, 1);
+    this->wssTlsCheckbox->MoveAndResize(R(this->wssPortInput) + 1, y++, checkboxWidth, 1);
     this->httpPortLabel->MoveAndResize(0, y, labelWidth, 1);
-    this->httpPortInput->MoveAndResize(labelWidth + 1, y++, 5, 1);
+    this->httpPortInput->MoveAndResize(labelWidth + 1, y, 5, 1);
+    this->httpTlsCheckbox->MoveAndResize(R(this->wssPortInput) + 1, y++, checkboxWidth, 1);
     this->pwLabel->MoveAndResize(0, y, labelWidth, 1);
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
 }
@@ -102,9 +108,15 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->wssPortLabel->SetText(_TSTR("settings_library_type_remote_wss_port"), text::AlignRight);
     this->wssPortInput.reset(new TextInput(TextInput::StyleLine));
 
+    this->wssTlsCheckbox.reset(new Checkbox());
+    this->wssTlsCheckbox->SetText(_TSTR("settings_library_type_remote_use_tls"));
+
     this->httpPortLabel.reset(new TextLabel());
     this->httpPortLabel->SetText(_TSTR("settings_library_type_remote_http_port"), text::AlignRight);
     this->httpPortInput.reset(new TextInput(TextInput::StyleLine));
+
+    this->httpTlsCheckbox.reset(new Checkbox());
+    this->httpTlsCheckbox->SetText(_TSTR("settings_library_type_remote_use_tls"));
 
     this->pwLabel.reset(new TextLabel());
     this->pwLabel->SetText(_TSTR("settings_library_type_remote_password"), text::AlignRight);
@@ -117,15 +129,19 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->AddWindow(this->hostInput);
     this->AddWindow(this->wssPortLabel);
     this->AddWindow(this->wssPortInput);
+    this->AddWindow(this->wssTlsCheckbox);
     this->AddWindow(this->httpPortLabel);
     this->AddWindow(this->httpPortInput);
+    this->AddWindow(this->httpTlsCheckbox);
     this->AddWindow(this->pwLabel);
     this->AddWindow(this->pwInput);
 
     int order = 0;
     this->hostInput->SetFocusOrder(order++);
     this->wssPortInput->SetFocusOrder(order++);
+    this->wssTlsCheckbox->SetFocusOrder(order++);
     this->httpPortInput->SetFocusOrder(order++);
+    this->httpTlsCheckbox->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
 }
 
@@ -134,9 +150,13 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     auto wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
     auto httpPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
+    auto wssTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
+    auto httpTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
     this->hostInput->SetText(host);
     this->wssPortInput->SetText(std::to_string(wssPort));
+    this->wssTlsCheckbox->SetChecked(wssTls);
     this->httpPortInput->SetText(std::to_string(httpPort));
+    this->httpTlsCheckbox->SetChecked(httpTls);
     this->pwInput->SetText(password);
 }
 
@@ -145,6 +165,8 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     auto wssPort = std::stoi(this->wssPortInput->GetText());
     auto httpPort = std::stoi(this->httpPortInput->GetText());
     auto password = this->pwInput->GetText();
+    auto wssTls = this->wssTlsCheckbox->IsChecked();
+    auto httpTls = this->httpTlsCheckbox->IsChecked();
 
     if (wssPort > 65535 || wssPort < 0) { wssPort = 7905; }
     if (httpPort > 65535 || httpPort < 0) { httpPort = 7905; }
@@ -153,6 +175,8 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     prefs->SetInt(core::prefs::keys::RemoteLibraryWssPort, wssPort);
     prefs->SetInt(core::prefs::keys::RemoteLibraryHttpPort, httpPort);
     prefs->SetString(core::prefs::keys::RemoteLibraryPassword, password.c_str());
+    prefs->SetBool(core::prefs::keys::RemoteLibraryWssTls, wssTls);
+    prefs->SetBool(core::prefs::keys::RemoteLibraryHttpTls, httpTls);
 
     auto library = LibraryFactory::Instance().DefaultRemoteLibrary();
     auto remoteLibrary = std::dynamic_pointer_cast<RemoteLibrary>(library);
