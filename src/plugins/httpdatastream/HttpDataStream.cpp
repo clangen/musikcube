@@ -464,10 +464,11 @@ size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, v
 
     size_t total = size * nmemb;
     size_t result = fwrite(ptr, size, nmemb, stream->writeFile);
+    fflush(stream->writeFile); /* normally we wouldn't want to do this, but it ensures
+     data written is available immediately to any simultaneous readers */
     stream->written += result;
 
     if (stream->written >= stream->chunkSizeBytes) {
-        fflush(stream->writeFile);
         stream->reader->Add(stream->written);
         stream->written = 0;
     }
