@@ -276,7 +276,7 @@ void LruDiskCache::SortAndPrune() {
     int extras = count - this->maxEntries;
     for (int i = 0; i < extras; i++) {
         auto entry = this->cached.back();
-        if (rm(this->root + "/" + entry->path)) {
+        if (rm(entry->path)) {
             this->cached.pop_back();
         }
     }
