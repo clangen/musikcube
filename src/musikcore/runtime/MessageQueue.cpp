@@ -115,7 +115,8 @@ void MessageQueue::Dispatch() {
                 /* it's possible the target (receiver) has been unregistered;
                 if that's the case, just discard it. otherwise, add it to the
                 output set to be dispatched outside of the critical section */
-                if (this->targets.find((*it)->message->Target()) != this->targets.end()) {
+                auto const target = (*it)->message->Target();
+                if (target == nullptr || this->targets.find(target) != this->targets.end()) {
                     this->dispatch.push_back(m);
                 }
                 it = this->queue.erase(it);
