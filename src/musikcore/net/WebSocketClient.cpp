@@ -261,7 +261,7 @@ void WebSocketClient::Reconnect() {
     auto timeout = prefs->GetInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
 
     this->SetState(State::Connecting);
-    this->thread = std::make_shared<std::thread>([&]() {
+    this->thread = std::make_shared<std::thread>([&, timeout]() {
         std::string uri;
 
         {
