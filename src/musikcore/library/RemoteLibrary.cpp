@@ -98,7 +98,7 @@ RemoteLibrary::RemoteLibrary(std::string name, int id, MessageQueue* messageQueu
 , id(id)
 , exit(false)
 , messageQueue(messageQueue)
-, wsc(this) {
+, wsc(messageQueue, this) {
     this->identifier = std::to_string(id);
     this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
     this->ReloadConnectionFromPreferences();
@@ -324,6 +324,7 @@ void RemoteLibrary::SetMessageQueue(musik::core::runtime::IMessageQueue& queue) 
     }
     this->messageQueue = &queue;
     this->messageQueue->Register(this);
+    this->wsc.SetMessageQueue(messageQueue);
 }
 
 musik::core::IIndexer* RemoteLibrary::Indexer() {

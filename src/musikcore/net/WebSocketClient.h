@@ -37,6 +37,7 @@
 #include <musikcore/config.h>
 #include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/library/IQuery.h>
+#include <musikcore/runtime/IMessageQueue.h>
 #include <thread>
 #include <unordered_map>
 #include <atomic>
@@ -44,10 +45,10 @@
 
 namespace musik { namespace core { namespace net {
 
-    class WebSocketClient {
+    class WebSocketClient: public musik::core::runtime::IMessageTarget {
         public:
             using ClientPtr = std::unique_ptr<RawWebSocketClient>;
-            using Message = websocketpp::config::asio_client::message_type::ptr;
+            using ClientMessage = websocketpp::config::asio_client::message_type::ptr;
             using Connection = websocketpp::connection_hdl;
             using Query = std::shared_ptr<musik::core::db::ISerializableQuery>;
 
@@ -85,7 +86,10 @@ namespace musik { namespace core { namespace net {
                     virtual void OnClientQueryFailed(Client* client, const std::string& messageId, Query query, QueryError result) = 0;
             };
 
-            WebSocketClient(Listener* listener);
+            WebSocketClient(
+                musik::core::runtime::IMessageQueue* messageQueue,
+                Listener* listener);
+
             WebSocketClient(const WebSocketClient&) = delete;
             virtual ~WebSocketClient();
 
@@ -103,6 +107,11 @@ namespace musik { namespace core { namespace net {
             std::string Uri() const;
 
             std::string EnqueueQuery(Query query);
+
+            void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
+
+            /* IMessageTarget */
+            void ProcessMessage(musik::core::runtime::IMessage& message) override;
 
         private:
             void SetState(State state);
@@ -122,6 +131,7 @@ namespace musik { namespace core { namespace net {
             ConnectionError connectionError{ ConnectionError::None };
             State state{ State::Disconnected };
             Listener* listener{ nullptr };
+            musik::core::runtime::IMessageQueue* messageQueue;
     };
 
 } } }

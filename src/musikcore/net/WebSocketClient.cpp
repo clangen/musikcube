@@ -37,15 +37,20 @@
 #include <musikcore/net/WebSocketClient.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
+#include <musikcore/runtime/Message.h>
 #include <musikcore/version.h>
 #include <nlohmann/json.hpp>
 
 using namespace musik::core;
 using namespace musik::core::net;
+using namespace musik::core::runtime;
 
 using ClientPtr = WebSocketClient::ClientPtr;
-using Message = WebSocketClient::Message;
+using ClientMessage = WebSocketClient::ClientMessage;
 using Connection = WebSocketClient::Connection;
+
+static const int64_t kPingIntervalMs = 3500;
+static const int kPingMessage = 6000;
 
 static const bool kDisableOfflineQueue = true;
 
@@ -55,11 +60,22 @@ static inline std::string generateMessageId() {
     return "integrated-websocket-client-" + std::to_string(nextMessageId.fetch_add(1));
 }
 
+static inline std::string createPingRequest() {
+    const nlohmann::json authRequestJson = {
+        { "name", "ping" },
+        { "type" , "request" },
+        { "id", generateMessageId() },
+        { "device_id", "remote-random-device" },
+        { "options", nlohmann::json() }
+    };
+    return authRequestJson.dump();
+}
+
 static inline std::string createAuthenticateRequest(const std::string& password) {
     const nlohmann::json authRequestJson = {
         { "name", "authenticate" },
         { "type" , "request" },
-        { "id", "this-is-a-random-auth-message-id-0" },
+        { "id", generateMessageId() },
         { "device_id", "remote-random-device" },
         { "options", {
             { "password", password }
@@ -91,7 +107,10 @@ static inline bool extractRawQueryResult(
     return true;
 }
 
-WebSocketClient::WebSocketClient(Listener* listener) {
+WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener)
+: messageQueue(nullptr) {
+    this->SetMessageQueue(messageQueue);
+
     rawClient = std::make_unique<RawWebSocketClient>(io);
 
     this->listener = listener;
@@ -108,7 +127,7 @@ WebSocketClient::WebSocketClient(Listener* listener) {
         this->SetDisconnected(ConnectionError::ConnectionFailed);
     });
 
-    rawClient->SetMessageHandler([this](Connection connection, Message message) {
+    rawClient->SetMessageHandler([this](Connection connection, ClientMessage message) {
         nlohmann::json responseJson = nlohmann::json::parse(message->get_payload());
         auto name = responseJson["name"].get<std::string>();
         auto messageId = responseJson["id"].get<std::string>();
@@ -164,6 +183,9 @@ WebSocketClient::~WebSocketClient() {
     /* need to ensure this is destroyed before the io_service, hence
     wrapping it in a unique_ptr and explicitly resetting it here. */
     this->rawClient.reset();
+    if (this->messageQueue) {
+        this->messageQueue->Unregister(this);
+    }
 }
 
 WebSocketClient::ConnectionError WebSocketClient::LastConnectionError() const {
@@ -321,5 +343,30 @@ void WebSocketClient::SetState(State state) {
 
         this->state = state;
         this->listener->OnClientStateChanged(this, state, oldState);
+    }
+}
+
+void WebSocketClient::SetMessageQueue(IMessageQueue* messageQueue) {
+    if (messageQueue == this->messageQueue) {
+        return;
+    }
+    if (this->messageQueue) {
+        this->messageQueue->Unregister(this);
+    }
+    this->messageQueue = messageQueue;
+    if (this->messageQueue) {
+        this->messageQueue->Register(this);
+        this->messageQueue->Post(Message::Create(this, kPingMessage), kPingIntervalMs);
+    }
+}
+
+/* IMessageTarget */
+void WebSocketClient::ProcessMessage(IMessage& message) {
+    if (message.Type() == kPingMessage) {
+        std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+        if (this->state == State::Connected) {
+            this->rawClient->Send(this->connection, createPingRequest());
+        }
+        this->messageQueue->Post(Message::Create(this, kPingMessage), kPingIntervalMs);
     }
 }
