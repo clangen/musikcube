@@ -191,12 +191,12 @@ namespace musik { namespace core { namespace library { namespace query {
 
                 auto replayGainJson = input["replayGain"];
                 replayGainJson = replayGainJson.is_null() ? nlohmann::json() : replayGainJson;
-
                 musik::core::sdk::ReplayGain replayGain;
                 replayGain.albumGain = replayGainJson.value("albumGain", 1.0f);
                 replayGain.albumPeak = replayGainJson.value("albumPeak", 1.0f);
                 replayGain.trackGain = replayGainJson.value("trackGain", 1.0f);
                 replayGain.trackPeak = replayGainJson.value("trackPeak", 1.0f);
+                output->SetReplayGain(replayGain);
             }
 
             output->SetMetadataState(MetadataState::Loaded);
