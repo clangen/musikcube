@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -66,6 +67,7 @@ int touchwin(WINDOW *win)
 
     PDC_LOG(("touchwin() - called: Win=%x\n", win));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -85,6 +87,7 @@ int touchline(WINDOW *win, int start, int count)
     PDC_LOG(("touchline() - called: win=%p start %d count %d\n",
              win, start, count));
 
+    assert( win);
     if (!win || start > win->_maxy || start + count > win->_maxy)
         return ERR;
 
@@ -103,6 +106,7 @@ int untouchwin(WINDOW *win)
 
     PDC_LOG(("untouchwin() - called: win=%p", win));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -122,6 +126,7 @@ int wtouchln(WINDOW *win, int y, int n, int changed)
     PDC_LOG(("wtouchln() - called: win=%p y=%d n=%d changed=%d\n",
              win, y, n, changed));
 
+    assert( win);
     if (!win || y > win->_maxy || y + n > win->_maxy)
         return ERR;
 
@@ -146,6 +151,7 @@ bool is_linetouched(WINDOW *win, int line)
 {
     PDC_LOG(("is_linetouched() - called: win=%p line=%d\n", win, line));
 
+    assert( win);
     if (!win || line > win->_maxy || line < 0)
         return FALSE;
 
@@ -158,6 +164,7 @@ bool is_wintouched(WINDOW *win)
 
     PDC_LOG(("is_wintouched() - called: win=%p\n", win));
 
+    assert( win);
     if (win)
         for (i = 0; i < win->_maxy; i++)
             if (win->_firstch[i] != _NO_CHANGE)
@@ -172,6 +179,8 @@ int touchoverlap(const WINDOW *win1, WINDOW *win2)
 
     PDC_LOG(("touchoverlap() - called: win1=%p win2=%p\n", win1, win2));
 
+    assert( win1);
+    assert( win2);
     if (!win1 || !win2)
         return ERR;
 

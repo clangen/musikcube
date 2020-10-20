@@ -268,6 +268,7 @@ int ripoffline(int line, int (*init)(WINDOW *, int))
 {
     PDC_LOG(("ripoffline() - called: line=%d\n", line));
 
+    assert( init);
     if (linesrippedoff < 5 && line && init)
     {
         linesripped[(int)linesrippedoff].line = line;

@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -60,6 +61,8 @@ static int _copy_win(const WINDOW *src_w, WINDOW *dst_w, int src_tr,
     int xdiff = src_bc - src_tc;
     int ydiff = src_br - src_tr;
 
+    assert( src_w);
+    assert( dst_w);
     if (!src_w || !dst_w)
         return ERR;
 
@@ -122,6 +125,8 @@ int _copy_overlap(const WINDOW *src_w, WINDOW *dst_w, bool overlay)
     int src_start_x, src_start_y, dst_start_x, dst_start_y;
     int xdiff, ydiff;
 
+    assert( src_w);
+    assert( dst_w);
     if (!src_w || !dst_w)
         return ERR;
 
@@ -194,6 +199,8 @@ int copywin(const WINDOW *src_w, WINDOW *dst_w, int src_tr, int src_tc,
 
     PDC_LOG(("copywin() - called\n"));
 
+    assert( src_w);
+    assert( dst_w);
     if (!src_w || !dst_w || dst_w == curscr || dst_br >= dst_w->_maxy
         || dst_bc >= dst_w->_maxx || dst_tr < 0 || dst_tc < 0)
         return ERR;

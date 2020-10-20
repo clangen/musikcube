@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -118,6 +119,7 @@ WINDOW *subpad(WINDOW *orig, int nlines, int ncols, int begy, int begx)
     PDC_LOG(("subpad() - called: lines=%d cols=%d begy=%d begx=%d\n",
              nlines, ncols, begy, begx));
 
+    assert( orig);
     if (!orig || !(orig->_flags & _PAD))
         return (WINDOW *)NULL;
 
@@ -184,6 +186,7 @@ int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
 
     PDC_LOG(("pnoutrefresh() - called\n"));
 
+    assert( w);
     if (!w || !(w->_flags & (_PAD|_SUBPAD)) || (sy2 >= LINES) || (sx2 >= COLS))
         return ERR;
 
@@ -259,6 +262,7 @@ int pecho_wchar(WINDOW *pad, const cchar_t *wch)
 {
     PDC_LOG(("pecho_wchar() - called\n"));
 
+    assert( wch);
     if (!wch || (waddch(pad, *wch) == ERR))
         return ERR;
 
@@ -271,6 +275,7 @@ bool is_pad(const WINDOW *pad)
 {
     PDC_LOG(("is_pad() - called\n"));
 
+    assert( pad);
     if (!pad)
         return FALSE;
 

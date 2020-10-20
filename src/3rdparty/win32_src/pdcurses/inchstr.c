@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -65,6 +66,8 @@ int winchnstr(WINDOW *win, chtype *ch, int n)
 
     PDC_LOG(("winchnstr() - called\n"));
 
+    assert( win);
+    assert( ch);
     if (!win || !ch || n < 0)
         return ERR;
 

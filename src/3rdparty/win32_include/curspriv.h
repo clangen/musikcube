@@ -9,13 +9,13 @@
 
 #if defined(__TURBOC__) || defined(__EMX__) || defined(__DJGPP__) || \
     defined(PDC_99) || defined(__WATCOMC__)
-# ifndef HAVE_VSSCANF
+# if !defined( HAVE_VSSCANF) && !defined( __DMC__)
 #  define HAVE_VSSCANF       /* have vsscanf() */
 # endif
 #endif
 
 #if defined(PDC_99) || defined(__WATCOMC__)
-# ifndef HAVE_VSNPRINTF
+# if !defined( HAVE_VSNPRINTF) && !defined( __DMC__)
 #  define HAVE_VSNPRINTF     /* have vsnprintf() */
 # endif
 #endif
@@ -87,6 +87,7 @@ int     PDC_mouse_in_slk(int, int);
 void    PDC_slk_free(void);
 void    PDC_slk_initialize(void);
 void    PDC_sync(WINDOW *);
+void    PDC_set_default_colors( const int, const int);
 
 #ifdef PDC_WIDE
 int     PDC_mbtowc(wchar_t *, const char *, size_t);

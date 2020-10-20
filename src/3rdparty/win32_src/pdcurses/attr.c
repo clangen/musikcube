@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -133,6 +134,7 @@ int wattroff(WINDOW *win, chtype attrs)
 {
     PDC_LOG(("wattroff() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -154,6 +156,7 @@ int wattron(WINDOW *win, chtype attrs)
 
     PDC_LOG(("wattron() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -183,6 +186,7 @@ int wattrset(WINDOW *win, chtype attrs)
 {
     PDC_LOG(("wattrset() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -228,6 +232,7 @@ int wstandout(WINDOW *win)
 
 chtype getattrs(WINDOW *win)
 {
+    assert( win);
     return win ? win->_attrs : 0;
 }
 
@@ -235,6 +240,7 @@ int wcolor_set(WINDOW *win, short color_pair, void *opts)
 {
     PDC_LOG(("wcolor_set() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -254,6 +260,7 @@ int wattr_get(WINDOW *win, attr_t *attrs, short *color_pair, void *opts)
 {
     PDC_LOG(("wattr_get() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -305,6 +312,7 @@ int wattr_set(WINDOW *win, attr_t attrs, short color_pair, void *opts)
 {
     PDC_LOG(("wattr_set() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -327,6 +335,7 @@ int wchgat(WINDOW *win, int n, attr_t attr, short color, const void *opts)
 
     PDC_LOG(("wchgat() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 

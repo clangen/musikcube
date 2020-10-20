@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -151,6 +152,7 @@ int erasewchar(wchar_t *ch)
 {
     PDC_LOG(("erasewchar() - called\n"));
 
+    assert( ch);
     if (!ch)
         return ERR;
 
@@ -163,6 +165,7 @@ int killwchar(wchar_t *ch)
 {
     PDC_LOG(("killwchar() - called\n"));
 
+    assert( ch);
     if (!ch)
         return ERR;
 

@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -74,6 +75,8 @@ int waddchnstr(WINDOW *win, const chtype *ch, int n)
 
     PDC_LOG(("waddchnstr() - called: win=%p n=%d\n", win, n));
 
+    assert( win);
+    assert( ch);
     if (!win || !ch || !n || n < -1)
         return ERR;
 

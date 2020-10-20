@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -60,6 +61,7 @@ int wdeleteln(WINDOW *win)
 
     PDC_LOG(("wdeleteln() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -122,6 +124,7 @@ int winsdelln(WINDOW *win, int n)
 
     PDC_LOG(("winsdelln() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -156,6 +159,7 @@ int winsertln(WINDOW *win)
 
     PDC_LOG(("winsertln() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 

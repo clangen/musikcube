@@ -241,6 +241,7 @@ bool wenclose(const WINDOW *win, int y, int x)
 {
     PDC_LOG(("wenclose() - called: %p %d %d\n", win, y, x));
 
+    assert( win);
     return (win && y >= win->_begy && y < win->_begy + win->_maxy
                 && x >= win->_begx && x < win->_begx + win->_maxx);
 }
@@ -251,6 +252,9 @@ bool wmouse_trafo(const WINDOW *win, int *y, int *x, bool to_screen)
 
     PDC_LOG(("wmouse_trafo() - called\n"));
 
+    assert( win);
+    assert( x);
+    assert( y);
     if (!win || !y || !x)
         return FALSE;
 
@@ -388,6 +392,7 @@ int ungetmouse(MEVENT *event)
 
     PDC_LOG(("ungetmouse() - called\n"));
 
+    assert( event);
     if (!event || ungot)
         return ERR;
 

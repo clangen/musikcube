@@ -1,13 +1,16 @@
 /* PDCurses */
 
 #include "pdcwin.h"
+#ifdef WIN32_LEAN_AND_MEAN
+#include <mmsystem.h>
+#endif
 
 void PDC_beep(void)
 {
     PDC_LOG(("PDC_beep() - called\n"));
 
-/*  MessageBeep(MB_OK); */
-    MessageBeep(0XFFFFFFFF);
+    if (!PlaySound((LPCTSTR) SND_ALIAS_SYSTEMDEFAULT, NULL, SND_ALIAS_ID))
+        Beep(800, 200);
 }
 
 void PDC_napms(int ms)
