@@ -157,9 +157,11 @@ void TrackSearchLayout::PlayFromTop() {
 }
 
 void TrackSearchLayout::ProcessMessage(IMessage &message) {
-    LayoutBase::ProcessMessage(message);
     if (message.Type() == message::RequeryTrackList) {
         this->Requery();
+    }
+    else {
+        LayoutBase::ProcessMessage(message);
     }
 }
 
