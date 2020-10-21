@@ -262,15 +262,8 @@ void Window::SetParent(IWindow* parent) {
 }
 
 void Window::RecreateForUpdatedDimensions() {
-    /* this is some old rotten code I happened upon, but it seems like if
-    Create() is called for windows that have a frame, the OnVisibilityChanged
-    callback is handled automatically. this needs to get cleaned up. */
-    const bool hasFrame = !!this->frame;
-    if (hasFrame || this->isVisibleInParent) {
-        this->Recreate();
-        this->NotifyVisibilityChange(true);
-    }
-
+    this->Recreate();
+    this->NotifyVisibilityChange(true);
     this->OnDimensionsChanged();
 }
 
@@ -508,18 +501,17 @@ void Window::Show() {
         /* remember that someone tried to make us visible, but don't do
         anything because we could corrupt the display */
         this->isVisibleInParent = true;
+        this->NotifyVisibilityChange(false);
         return;
     }
-
-    bool becameVisible = false;
 
     if (this->badBounds) {
         if (!this->CheckForBoundsError()) {
             this->Recreate();
             this->badBounds = false;
-            becameVisible = true;
         }
         this->isVisibleInParent = true;
+        this->NotifyVisibilityChange(false);
     }
     else {
         if (this->framePanel) {
@@ -532,21 +524,17 @@ void Window::Show() {
 
                 this->isVisibleInParent = true;
                 drawPending = true;
-                becameVisible = true;
             }
         }
         else {
             this->Create();
-            becameVisible = true;
             this->isVisibleInParent = true;
         }
 
         if (this->isDirty) {
             this->Redraw();
         }
-    }
 
-    if (becameVisible) {
         this->NotifyVisibilityChange(true);
     }
 }
@@ -573,15 +561,15 @@ void Window::OnParentVisibilityChanged(bool visible) {
 }
 
 bool Window::CheckForBoundsError() {
-    if (this->parent && ((Window *)this->parent)->CheckForBoundsError()) {
+    if (this->parent && ((Window *) this->parent)->CheckForBoundsError()) {
         return true;
     }
 
-    int screenCy = Screen::GetHeight();
-    int screenCx = Screen::GetWidth();
+    int const screenCy = Screen::GetHeight();
+    int const screenCx = Screen::GetWidth();
 
-    int cx = this->GetWidth();
-    int cy = this->GetHeight();
+    int const cx = this->GetWidth();
+    int const cy = this->GetHeight();
 
     if (cx <= 0 || cy <= 0) {
         return true;
@@ -734,25 +722,21 @@ void Window::Create() {
 }
 
 void Window::Hide() {
-    bool becameHidden = false;
     this->Blur();
+
     if (this->frame) {
         if (this->isVisibleInParent) {
             this->Destroy();
             this->isVisibleInParent = false;
-            becameHidden = true;
         }
     }
     else {
         if (this->isVisibleInParent) {
-            becameHidden = true;
             this->isVisibleInParent = false;
         }
     }
 
-    if (becameHidden) {
-        this->NotifyVisibilityChange(false);
-    }
+    this->NotifyVisibilityChange(false);
 }
 
 void Window::Destroy() {
@@ -769,6 +753,8 @@ void Window::Destroy() {
     this->framePanel = this->contentPanel = 0;
     this->content = this->frame = 0;
     this->isDirty = true;
+
+    this->NotifyVisibilityChange(false);
 }
 
 void Window::SetFrameVisible(bool enabled) {
