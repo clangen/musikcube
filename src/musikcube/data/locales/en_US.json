@@ -116,7 +116,7 @@
         "settings_library_type_overlay_title": "library type",
         "settings_library_type_remote_use_tls": "use tls",
         "settings_library_type_remote_tls_warning_overlay_title": "musikcube and tls",
-        "settings_library_type_remote_tls_warning_overlay_message": "the musikcube server does not support ssl/tls out of the box.\n\nif you want to use ssl/tls you'll need to setup ssl termination using something like nginx.\n\nto find out more see the following wiki page: https://github.com/clangen/musikcube/wiki/ssl-server-setup",
+        "settings_library_type_remote_tls_warning_overlay_message": "the musikcube server does not support ssl/tls out of the box.\n\nif you want to use ssl/tls you'll need to setup ssl termination using something like nginx.\n\nto find out more see the following wiki page:\n\n{{link}}",
 
         "settings_preamp": "preamp and replaygain",
         "settings_preamp_label": "preamp gain (dB):",

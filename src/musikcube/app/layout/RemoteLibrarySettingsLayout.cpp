@@ -40,6 +40,7 @@
 #include <cursespp/Colors.h>
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/support/PreferenceKeys.h>
+#include <app/overlay/SettingsOverlays.h>
 
 #include <algorithm>
 #include <vector>
@@ -97,6 +98,12 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
 }
 
+void RemoteLibrarySettingsLayout::OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
+    if (checked) {
+        SettingsOverlays::CheckShowTlsWarningDialog();
+    }
+}
+
 void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
@@ -146,6 +153,9 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
 }
 
 void RemoteLibrarySettingsLayout::LoadPreferences() {
+    this->wssTlsCheckbox->CheckChanged.disconnect(this);
+    this->httpTlsCheckbox->CheckChanged.disconnect(this);
+
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
     auto wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
     auto httpPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
@@ -158,6 +168,9 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpPortInput->SetText(std::to_string(httpPort));
     this->httpTlsCheckbox->SetChecked(httpTls);
     this->pwInput->SetText(password);
+
+    this->wssTlsCheckbox->CheckChanged.connect(this, &RemoteLibrarySettingsLayout::OnTlsCheckboxChanged);
+    this->httpTlsCheckbox->CheckChanged.connect(this, &RemoteLibrarySettingsLayout::OnTlsCheckboxChanged);
 }
 
 void RemoteLibrarySettingsLayout::SavePreferences() {

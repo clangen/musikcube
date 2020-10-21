@@ -39,6 +39,7 @@
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
+#include <musikcore/support/Common.h>
 #include <musikcore/library/ILibrary.h>
 
 #include <musikcube/app/util/PreferenceKeys.h>
@@ -49,13 +50,20 @@
 #include <cursespp/ListOverlay.h>
 #include <cursespp/DialogOverlay.h>
 
+#include <chrono>
+
 using namespace musik;
 using namespace musik::core;
 using namespace musik::cube;
 using namespace musik::cube::SettingsOverlays;
 using namespace cursespp;
+using namespace std::chrono;
 
 using Callback = std::function<void()>;
+
+static const std::string kTlsInfoUrl = "https://github.com/clangen/musikcube/wiki/ssl-server-setup";
+static const int64_t kTlsWarningCooldownMs = 20000;
+int64_t lastTlsWarningTime = 0;
 
 static void showNeedsRestart(Callback cb = Callback()) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
@@ -173,16 +181,23 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
 
     if (!prefs->GetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, false)) {
+        const int64_t now = duration_cast<milliseconds>(
+            system_clock::now().time_since_epoch()).count();
+
+        if (now - lastTlsWarningTime < kTlsWarningCooldownMs) {
+            return;
+        }
+
+        lastTlsWarningTime = now;
+
         auto dialog = std::make_shared<DialogOverlay>();
 
-        std::string message = u8fmt(
-            _TSTR("settings_library_type_remote_tls_warning_overlay_message"),
-            Hotkeys::Get(Hotkeys::NavigateLibrary).c_str(),
-            Hotkeys::Get(Hotkeys::NavigateConsole).c_str());
+        std::string message = _TSTR("settings_library_type_remote_tls_warning_overlay_message");
+        musik::core::ReplaceAll(message, "{{link}}", kTlsInfoUrl);
 
         (*dialog)
             .SetTitle(_TSTR("settings_library_type_remote_tls_warning_overlay_title"))
-            .SetMessage(_TSTR("settings_library_type_remote_tls_warning_overlay_message"))
+            .SetMessage(message)
             .AddButton(
                 "KEY_ENTER",
                 "ENTER",
@@ -192,7 +207,7 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
                 "o",
                 _TSTR("button_open_url"),
                 [](std::string key) {
-                    /* CAL TODO */
+                    musik::core::OpenFile(kTlsInfoUrl);
                 })
             .AddButton(
                 "d",

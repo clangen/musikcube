@@ -42,7 +42,7 @@
 #include <musikcore/support/Preferences.h>
 
 namespace musik { namespace cube {
-    class RemoteLibrarySettingsLayout: public cursespp::LayoutBase  {
+    class RemoteLibrarySettingsLayout: public cursespp::LayoutBase, public sigslot::has_slots<>  {
         public:
             RemoteLibrarySettingsLayout();
 
@@ -53,6 +53,7 @@ namespace musik { namespace cube {
 
         protected:
             virtual void OnLayout();
+            virtual void OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked);
 
         private:
             void InitializeWindows();
