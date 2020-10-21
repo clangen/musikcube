@@ -92,6 +92,9 @@ void ToastOverlay::ProcessMessage(IMessage &message) {
     if (message.Type() == TOAST_MESSAGE_HIDE) {
         this->Dismiss();
     }
+    else {
+        OverlayBase::ProcessMessage(message);
+    }
 }
 
 void ToastOverlay::RecalculateSize() {

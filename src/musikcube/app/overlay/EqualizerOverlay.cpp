@@ -222,6 +222,9 @@ void EqualizerOverlay::ProcessMessage(musik::core::runtime::IMessage &message) {
         this->enabledCb->SetChecked(this->prefs->GetBool("enabled", false));
         this->listView->OnAdapterChanged();
     }
+    else {
+        OverlayBase::ProcessMessage(message);
+    }
 }
 
 void EqualizerOverlay::UpdateSelectedBand(double delta) {

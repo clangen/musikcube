@@ -535,7 +535,7 @@ void SettingsLayout::OnVisibilityChanged(bool visible) {
 
     if (visible) {
         this->LoadPreferences();
-        this->CheckShowFirstRunDialog();
+        SettingsOverlays::CheckShowFirstRunDialog();
     }
     else {
         this->remoteLibraryLayout->SavePreferences();
@@ -554,32 +554,6 @@ void SettingsLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     LayoutBase::ProcessMessage(message);
     if (message.Type() == core::message::EnvironmentUpdated) {
         this->LoadPreferences();
-    }
-}
-
-void SettingsLayout::CheckShowFirstRunDialog() {
-    if (!this->prefs->GetBool(cube::prefs::keys::FirstRunSettingsDisplayed)) {
-        if (!this->firstRunDialog) {
-            this->firstRunDialog.reset(new DialogOverlay());
-
-            std::string message = u8fmt(
-                _TSTR("settings_first_run_dialog_body"),
-                Hotkeys::Get(Hotkeys::NavigateLibrary).c_str(),
-                Hotkeys::Get(Hotkeys::NavigateConsole).c_str());
-            (*this->firstRunDialog)
-                .SetTitle(_TSTR("settings_first_run_dialog_title"))
-                .SetMessage(message)
-                .AddButton(
-                    "KEY_ENTER",
-                    "ENTER",
-                    _TSTR("button_ok"),
-                    [this](std::string key) {
-                        this->prefs->SetBool(cube::prefs::keys::FirstRunSettingsDisplayed, true);
-                        this->firstRunDialog.reset();
-                    });
-
-            App::Overlays().Push(this->firstRunDialog);
-        }
     }
 }
 

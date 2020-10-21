@@ -41,6 +41,9 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/library/ILibrary.h>
 
+#include <musikcube/app/util/PreferenceKeys.h>
+#include <musikcube/app/util/Hotkeys.h>
+
 #include <cursespp/App.h>
 #include <cursespp/SimpleScrollAdapter.h>
 #include <cursespp/ListOverlay.h>
@@ -109,10 +112,10 @@ void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> call
 }
 
 void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()> callback) {
-    auto prefs = Preferences::ForComponent(prefs::components::Settings);
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
 
-    auto libraryType = (ILibrary::Type) prefs->GetInt(
-        prefs::keys::LibraryType, (int) ILibrary::Type::Local);
+    const auto libraryType = (ILibrary::Type) prefs->GetInt(
+        core::prefs::keys::LibraryType, (int) ILibrary::Type::Local);
 
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
@@ -133,9 +136,72 @@ void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()>
             [prefs, callback]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 auto updatedType = index == 0 ? ILibrary::Type::Local : ILibrary::Type::Remote;
-                prefs->SetInt(prefs::keys::LibraryType, (int)updatedType);
+                prefs->SetInt(core::prefs::keys::LibraryType, (int)updatedType);
                 callback();
             });
 
     cursespp::App::Overlays().Push(dialog);
+}
+
+void musik::cube::SettingsOverlays::CheckShowFirstRunDialog() {
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+
+    if (!prefs->GetBool(cube::prefs::keys::FirstRunSettingsDisplayed)) {
+        auto dialog = std::make_shared<DialogOverlay>();
+
+        std::string message = u8fmt(
+            _TSTR("settings_first_run_dialog_body"),
+            Hotkeys::Get(Hotkeys::NavigateLibrary).c_str(),
+            Hotkeys::Get(Hotkeys::NavigateConsole).c_str());
+
+        (*dialog)
+            .SetTitle(_TSTR("settings_first_run_dialog_title"))
+            .SetMessage(message)
+            .AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                _TSTR("button_ok"),
+                [prefs](std::string key) {
+                    prefs->SetBool(cube::prefs::keys::FirstRunSettingsDisplayed, true);
+                });
+
+        App::Overlays().Push(dialog);
+    }
+}
+
+void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+
+    if (!prefs->GetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, false)) {
+        auto dialog = std::make_shared<DialogOverlay>();
+
+        std::string message = u8fmt(
+            _TSTR("settings_library_type_remote_tls_warning_overlay_message"),
+            Hotkeys::Get(Hotkeys::NavigateLibrary).c_str(),
+            Hotkeys::Get(Hotkeys::NavigateConsole).c_str());
+
+        (*dialog)
+            .SetTitle(_TSTR("settings_library_type_remote_tls_warning_overlay_title"))
+            .SetMessage(_TSTR("settings_library_type_remote_tls_warning_overlay_message"))
+            .AddButton(
+                "KEY_ENTER",
+                "ENTER",
+                _TSTR("button_ok"))
+            .AddButton(
+                "o",
+                "o",
+                _TSTR("button_open_url"),
+                [](std::string key) {
+                    /* CAL TODO */
+                })
+            .AddButton(
+                "d",
+                "d",
+                _TSTR("button_dont_show_again"),
+                [prefs](std::string key) {
+                    prefs->SetBool(core::prefs::keys::RemoteLibraryTlsWarningSuppressed, true);
+                });
+
+        App::Overlays().Push(dialog);
+    }
 }

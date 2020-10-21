@@ -74,6 +74,9 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::RemoteLibraryLatencyTimeoutMs = "RemoteLibraryLatencyTimeoutMs";
     const std::string keys::RemoteLibraryWssTls = "RemoteLibraryWssTls";
     const std::string keys::RemoteLibraryHttpTls = "RemoteLibraryHttpTls";
+    const std::string keys::RemoteLibraryTlsWarningSuppressed = "RemoteLibraryTlsWarningSuppressed";
+    const std::string keys::RemoteLibraryTranscoderFormat = "RemoteLibraryTranscoderFormat";
+    const std::string keys::RemoteLibraryTranscoderBitrate = "RemoteLibraryTranscoderBitrate";
     const std::string keys::AsyncTrackListQueries = "AsyncTrackListQueries";
 
 } } }

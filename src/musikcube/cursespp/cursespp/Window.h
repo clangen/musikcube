@@ -52,6 +52,11 @@ namespace cursespp {
 
     class Window : public IWindow, public std::enable_shared_from_this<IWindow> {
         public:
+            /* range of message ids reserved for internal use. exercise caution if
+            creating your own messages within this range. */
+            static const int kFirstReservedMessageId;
+            static const int kLastReservedMessageId;
+
             Window(IWindow* parent = nullptr);
             virtual ~Window();
 
@@ -161,6 +166,8 @@ namespace cursespp {
             virtual void OnAddedToParent(IWindow* newParent);
             virtual void OnRemovedFromParent(IWindow* oldParent);
 
+            void NotifyVisibilityChange(bool becameVisibile);
+
         private:
             IWindow* parent;
             PANEL* framePanel;
@@ -177,5 +184,6 @@ namespace cursespp {
             std::string title;
             int width, height, x, y;
             int lastAbsoluteX, lastAbsoluteY;
+            bool lastNotifiedVisible{ false };
     };
 }

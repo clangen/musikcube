@@ -16,6 +16,7 @@
         "button_open_url": "open url",
         "button_dont_remind_me": "don't remind me",
         "button_remind_me_later": "remind me later",
+        "button_dont_show_again": "don't show this again",
 
         "browse_title_artists": "artists",
         "browse_title_albums": "albums",
@@ -113,7 +114,9 @@
         "settings_library_type_remote_http_port": "audio port:",
         "settings_library_type_remote_password": "password:",
         "settings_library_type_overlay_title": "library type",
-        "settings_library_type_remote_use_tls": "use ssl/tls",
+        "settings_library_type_remote_use_tls": "use tls",
+        "settings_library_type_remote_tls_warning_overlay_title": "musikcube and tls",
+        "settings_library_type_remote_tls_warning_overlay_message": "the musikcube server does not support ssl/tls out of the box.\n\nif you want to use ssl/tls you'll need to setup ssl termination using something like nginx.\n\nto find out more see the following wiki page: https://github.com/clangen/musikcube/wiki/ssl-server-setup",
 
         "settings_preamp": "preamp and replaygain",
         "settings_preamp_label": "preamp gain (dB):",

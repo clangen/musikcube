@@ -44,5 +44,9 @@ namespace musik { namespace cube {
 
         void ShowLibraryTypeOverlay(std::function<void()> callback);
 
+        void CheckShowFirstRunDialog();
+
+        void CheckShowTlsWarningDialog();
+
     }
 } }

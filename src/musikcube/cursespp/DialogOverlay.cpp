@@ -52,8 +52,9 @@ DialogOverlay::DialogOverlay() {
 
     this->width = this->height = 0;
     this->autoDismiss = true;
+    this->escDismiss = false;
 
-    this->shortcuts.reset(new ShortcutsWindow());
+    this->shortcuts = std::make_shared<ShortcutsWindow>();
     this->shortcuts->SetAlignment(text::AlignRight);
 
     this->shortcuts->SetChangedCallback([this](std::string key) {
@@ -110,6 +111,11 @@ DialogOverlay& DialogOverlay::SetAutoDismiss(bool dismiss) {
     return *this;
 }
 
+DialogOverlay& DialogOverlay::SetDismissOnEscKey(bool dismiss) {
+    this->escDismiss = dismiss;
+    return *this;
+}
+
 DialogOverlay& DialogOverlay::ClearButtons() {
     this->shortcuts->RemoveAll();
     this->buttons.clear();
@@ -136,7 +142,7 @@ DialogOverlay& DialogOverlay::OnDismiss(DismissCallback dismissCb) {
 }
 
 bool DialogOverlay::ProcessKey(const std::string& key) {
-    auto it = this->buttons.find(key);
+    const auto it = this->buttons.find(key);
 
     if (it != this->buttons.end()) {
         ButtonCallback cb = it->second;
@@ -149,6 +155,11 @@ bool DialogOverlay::ProcessKey(const std::string& key) {
             this->Dismiss();
         }
 
+        return true;
+    }
+
+    if (this->escDismiss && key == "^[" || key == "ESC") {
+        this->Dismiss();
         return true;
     }
 

@@ -511,6 +511,9 @@ void TransportWindow::ProcessMessage(IMessage &message) {
         this->buffering = true;
         this->Update();
     }
+    else {
+        Window::ProcessMessage(message);
+    }
 }
 
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {

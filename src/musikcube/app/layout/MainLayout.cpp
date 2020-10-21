@@ -250,6 +250,8 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
             this->Layout();
         }
     }
+
+    LayoutBase::ProcessMessage(message);
 }
 
 bool MainLayout::IsLibraryConnected() {

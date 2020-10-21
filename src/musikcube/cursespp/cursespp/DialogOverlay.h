@@ -65,6 +65,8 @@ namespace cursespp {
 
             DialogOverlay& SetAutoDismiss(bool dismiss = true);
 
+            DialogOverlay& SetDismissOnEscKey(bool dismiss = true);
+
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
 
@@ -82,6 +84,7 @@ namespace cursespp {
             std::shared_ptr<ShortcutsWindow> shortcuts;
             int width, height;
             bool autoDismiss;
+            bool escDismiss;
             DismissCallback dismissCb;
 
             std::map<std::string, ButtonCallback> buttons;

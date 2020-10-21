@@ -57,6 +57,10 @@ static Window* focused = nullptr;
 static MessageQueue messageQueue;
 static std::shared_ptr<INavigationKeys> keys;
 
+const int Window::kLastReservedMessageId = INT_MAX;
+const int Window::kFirstReservedMessageId = kLastReservedMessageId - 1024;
+static const int kNotifyVisibilityChangedMessageId = Window::kFirstReservedMessageId + 1;
+
 #define ENABLE_BOUNDS_CHECK 1
 
 /* clangen says: we used to just be able to call wbkgd() prior to ncurses 6.2;
@@ -170,7 +174,16 @@ int Window::GetId() const {
 }
 
 void Window::ProcessMessage(musik::core::runtime::IMessage &message) {
-
+    if (message.Type() == kNotifyVisibilityChangedMessageId) {
+        bool becameVisible = message.UserData1() != 0LL;
+        if (becameVisible != this->lastNotifiedVisible) {
+            this->lastNotifiedVisible = becameVisible;
+            this->OnVisibilityChanged(becameVisible);
+            if (this->parent) {
+                this->parent->OnChildVisibilityChanged(becameVisible, this);
+            }
+        }
+    }
 }
 
 bool Window::IsVisible() {
@@ -235,7 +248,7 @@ void Window::SetParent(IWindow* parent) {
 
         this->parent = parent;
 
-        if (visible) {
+        if (this->parent && visible) {
             this->Show();
         }
 
@@ -249,13 +262,13 @@ void Window::SetParent(IWindow* parent) {
 }
 
 void Window::RecreateForUpdatedDimensions() {
-    bool hasFrame = !!this->frame;
+    /* this is some old rotten code I happened upon, but it seems like if
+    Create() is called for windows that have a frame, the OnVisibilityChanged
+    callback is handled automatically. this needs to get cleaned up. */
+    const bool hasFrame = !!this->frame;
     if (hasFrame || this->isVisibleInParent) {
         this->Recreate();
-
-        if (!hasFrame) {
-            this->OnVisibilityChanged(true);
-        }
+        this->NotifyVisibilityChange(true);
     }
 
     this->OnDimensionsChanged();
@@ -498,13 +511,13 @@ void Window::Show() {
         return;
     }
 
-    bool notifyParent = false;
+    bool becameVisible = false;
 
     if (this->badBounds) {
         if (!this->CheckForBoundsError()) {
             this->Recreate();
             this->badBounds = false;
-            notifyParent = true;
+            becameVisible = true;
         }
         this->isVisibleInParent = true;
     }
@@ -519,13 +532,12 @@ void Window::Show() {
 
                 this->isVisibleInParent = true;
                 drawPending = true;
-                notifyParent = true;
-                this->OnVisibilityChanged(true);
+                becameVisible = true;
             }
         }
         else {
             this->Create();
-            notifyParent = true;
+            becameVisible = true;
             this->isVisibleInParent = true;
         }
 
@@ -534,8 +546,8 @@ void Window::Show() {
         }
     }
 
-    if (notifyParent && this->parent) {
-        this->parent->OnChildVisibilityChanged(true, this);
+    if (becameVisible) {
+        this->NotifyVisibilityChange(true);
     }
 }
 
@@ -713,34 +725,33 @@ void Window::Create() {
         this->Show();
 
         if (hadBadBounds && this->isVisibleInParent) {
-            this->OnVisibilityChanged(true);
-            if (this->parent) {
-                this->parent->OnChildVisibilityChanged(true, this);
-            }
+            this->NotifyVisibilityChange(true);
+        }
+        else if (!hadBadBounds && this->badBounds) {
+            this->NotifyVisibilityChange(false);
         }
     }
 }
 
 void Window::Hide() {
-    bool notifyParent = false;
+    bool becameHidden = false;
     this->Blur();
     if (this->frame) {
         if (this->isVisibleInParent) {
             this->Destroy();
             this->isVisibleInParent = false;
-            this->OnVisibilityChanged(false);
-            notifyParent = true;
+            becameHidden = true;
         }
     }
     else {
         if (this->isVisibleInParent) {
-            notifyParent = true;
+            becameHidden = true;
             this->isVisibleInParent = false;
         }
     }
 
-    if (notifyParent && this->parent) {
-        this->parent->OnChildVisibilityChanged(false, this);
+    if (becameHidden) {
+        this->NotifyVisibilityChange(false);
     }
 }
 
@@ -857,6 +868,10 @@ bool Window::FocusInParent() {
         return layout->SetFocus(shared_from_this());
     }
     return false;
+}
+
+void Window::NotifyVisibilityChange(bool becameVisible) {
+    this->Debounce(kNotifyVisibilityChangedMessageId, becameVisible ? 1LL : 0LL, 0, 0);
 }
 
 /* default keys for navigating around sub-views. apps can override this shim to

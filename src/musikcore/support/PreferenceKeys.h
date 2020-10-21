@@ -78,6 +78,9 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string RemoteLibraryLatencyTimeoutMs;
         extern const std::string RemoteLibraryWssTls;
         extern const std::string RemoteLibraryHttpTls;
+        extern const std::string RemoteLibraryTlsWarningSuppressed;
+        extern const std::string RemoteLibraryTranscoderFormat;
+        extern const std::string RemoteLibraryTranscoderBitrate;
         extern const std::string AsyncTrackListQueries;
     }
 

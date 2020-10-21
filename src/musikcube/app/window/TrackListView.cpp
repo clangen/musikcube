@@ -243,6 +243,9 @@ void TrackListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
         this->ScrollToPlaying();
     }
+    else {
+        ListWindow::ProcessMessage(message);
+    }
 }
 
 void TrackListView::AdjustTrackListCacheWindowSize() {

@@ -203,6 +203,7 @@ bool CategorySearchLayout::KeyPress(const std::string& key) {
 }
 
 void CategorySearchLayout::ProcessMessage(IMessage &message) {
+    LayoutBase::ProcessMessage(message);
     if (message.Type() == message::RequeryCategoryList) {
         this->Requery();
     }
