@@ -219,6 +219,7 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
 }
 
 void RemoteLibrarySettingsLayout::LoadPreferencesAndLayout() {
+    this->SavePreferences();
     this->LoadPreferences();
     this->Layout();
 }
