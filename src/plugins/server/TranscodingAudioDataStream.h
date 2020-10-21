@@ -98,6 +98,6 @@ class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
         FILE* outFile;
         std::string tempFilename, finalFilename;
         std::string format;
-        bool interrupted;
+        bool interrupted{ false }, encoderInitialized{ false };
         long detachTolerance;
 };

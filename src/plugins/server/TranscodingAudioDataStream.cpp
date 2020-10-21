@@ -59,7 +59,6 @@ TranscodingAudioDataStream::TranscodingAudioDataStream(
     this->bitrate = bitrate;
     this->interrupted = false;
     this->eof = false;
-    this->encoder = nullptr;
     this->outFile = nullptr;
     this->detachTolerance = 0;
     this->format = format;
@@ -196,10 +195,10 @@ PositionType TranscodingAudioDataStream::Read(void *buffer, PositionType bytesTo
     bool hasBuffer = false;
 
     /* init */
-    if (this->decoder && !this->encoder) {
+    if (!this->encoderInitialized) {
         hasBuffer = this->decoder->GetBuffer(this->pcmBuffer);
         if (hasBuffer) {
-            this->encoder->Initialize(
+            this->encoderInitialized = this->encoder->Initialize(
                 this->pcmBuffer->SampleRate(),
                 this->pcmBuffer->Channels(),
                 this->bitrate);
