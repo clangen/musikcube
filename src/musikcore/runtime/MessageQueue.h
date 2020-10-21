@@ -44,6 +44,7 @@
 #include <set>
 
 namespace musik { namespace core { namespace runtime {
+
     class MessageQueue : public IMessageQueue {
         public:
             MessageQueue();
@@ -93,4 +94,5 @@ namespace musik { namespace core { namespace runtime {
 
             void Dispatch(IMessagePtr message);
     };
+
 } } }

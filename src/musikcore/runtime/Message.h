@@ -37,6 +37,7 @@
 #include "IMessage.h"
 
 namespace musik { namespace core { namespace runtime {
+
     class Message : public IMessage {
         protected:
             Message(
@@ -65,4 +66,5 @@ namespace musik { namespace core { namespace runtime {
             int messageType;
             int64_t data1, data2;
     };
+
 } } }
