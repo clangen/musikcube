@@ -55,25 +55,23 @@ namespace musik { namespace core { namespace library {
             MasterLibrary();
             virtual ~MasterLibrary();
 
-            virtual int Enqueue(QueryPtr query, unsigned int options = 0, Callback = Callback()) override;
-            virtual musik::core::IIndexer *Indexer() override;
-            virtual int Id() override;
-            virtual const std::string& Name() override;
-            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
-            virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override;
-            virtual IResourceLocator& GetResourceLocator() override;
-            virtual bool IsConfigured() override;
-            virtual ConnectionState GetConnectionState() const override;
-            virtual Type GetType() const override;
-            virtual void Close() override;
+            int Enqueue(QueryPtr query, unsigned int options = 0, Callback = Callback()) override;
+            musik::core::IIndexer *Indexer() override;
+            int Id() override;
+            const std::string& Name() override;
+            void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            musik::core::runtime::IMessageQueue& GetMessageQueue() override;
+            IResourceLocator& GetResourceLocator() override;
+            bool IsConfigured() override;
+            ConnectionState GetConnectionState() const override;
+            Type GetType() const override;
+            void Close() override;
 
-            ILibraryPtr Wrapped() const { return Get(); }
+            ILibraryPtr Wrapped() const noexcept { return this->wrappedLibrary; }
 
             void LoadDefaultLibrary();
 
         private:
-
-            ILibraryPtr Get() const;
 
             void OnQueryCompleted(musik::core::db::IQuery* query);
             void OnConectionStateChanged(ConnectionState state);

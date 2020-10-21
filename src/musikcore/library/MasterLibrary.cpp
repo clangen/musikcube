@@ -50,53 +50,48 @@ MasterLibrary::MasterLibrary() {
 MasterLibrary::~MasterLibrary() {
 }
 
-ILibraryPtr MasterLibrary::Get() const {
-    std::unique_lock<decltype(this->libraryMutex)> lock(this->libraryMutex);
-    return this->wrappedLibrary;
-}
-
 int MasterLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
-    return Get()->Enqueue(query, options, callback);
+    return this->wrappedLibrary->Enqueue(query, options, callback);
 }
 
 IIndexer* MasterLibrary::Indexer() {
-    return Get()->Indexer();
+    return this->wrappedLibrary->Indexer();
 }
 
 int MasterLibrary::Id() {
-    return Get()->Id();
+    return this->wrappedLibrary->Id();
 }
 
 const std::string& MasterLibrary::Name() {
-    return Get()->Name();
+    return this->wrappedLibrary->Name();
 }
 
 void MasterLibrary::SetMessageQueue(IMessageQueue& queue) {
-    this->Get()->SetMessageQueue(queue);
+    this->wrappedLibrary->SetMessageQueue(queue);
 }
 
 IMessageQueue& MasterLibrary::GetMessageQueue() {
-    return Get()->GetMessageQueue();
+    return this->wrappedLibrary->GetMessageQueue();
 }
 
 MasterLibrary::IResourceLocator& MasterLibrary::GetResourceLocator() {
-    return Get()->GetResourceLocator();
+    return this->wrappedLibrary->GetResourceLocator();
 }
 
 bool MasterLibrary::IsConfigured() {
-    return Get()->IsConfigured();
+    return this->wrappedLibrary->IsConfigured();
 }
 
 MasterLibrary::ConnectionState MasterLibrary::GetConnectionState() const {
-    return Get()->GetConnectionState();
+    return this->wrappedLibrary->GetConnectionState();
 }
 
 MasterLibrary::Type MasterLibrary::GetType() const {
-    return Get()->GetType();
+    return this->wrappedLibrary->GetType();
 }
 
 void MasterLibrary::Close() {
-    Get()->Close();
+    this->wrappedLibrary->Close();
 }
 
 void MasterLibrary::LoadDefaultLibrary() {
