@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
         App app("musikcube"); /* must be before layout creation */
 
 #ifdef WIN32
-        app.SetIcon(IDI_ICON1);
+        //app.SetIcon(IDI_ICON1);
         app.SetSingleInstanceId("musikcube");
 #endif
 

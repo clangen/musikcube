@@ -211,8 +211,8 @@ namespace cursespp {
             const HWND hwnd = GetMainWindow();
             icon16 = loadIcon(resourceId, 16);
             icon32 = loadIcon(resourceId, 48);
-            SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) icon16);
-            SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) icon32);
+            PostMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM) icon16);
+            PostMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM) icon32);
         }
 
         void InterceptWndProc() {
