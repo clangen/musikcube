@@ -83,6 +83,8 @@ namespace musik {
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
 
+                virtual void OnVisibilityChanged(bool visible) override;
+
             protected:
                 virtual cursespp::IScrollAdapter& GetScrollAdapter();
                 virtual bool OnEntryContextMenu(size_t index);

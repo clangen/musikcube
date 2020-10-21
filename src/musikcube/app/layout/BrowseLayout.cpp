@@ -228,15 +228,6 @@ void BrowseLayout::ScrollTo(const std::string& fieldType, int64_t fieldId) {
     this->categoryList->SetFrameTitle(getTitleForCategory(fieldType));
 }
 
-void BrowseLayout::OnVisibilityChanged(bool visible) {
-    LayoutBase::OnVisibilityChanged(visible);
-
-    if (visible) {
-        this->categoryList->Requery(
-            this->categoryList->GetSelectedId());
-    }
-}
-
 void BrowseLayout::OnIndexerProgress(int count) {
     this->Post(message::IndexerProgress);
 }
@@ -370,6 +361,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
                         this->categoryList->Requery(this->categoryList->GetFilter(), id);
                     });
             }
+            return true;
         }
         else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsDelete, key)) {
             if (this->GetFocus() == this->categoryList) {
@@ -382,6 +374,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
                         });
                 }
             }
+            return true;
         }
     }
 

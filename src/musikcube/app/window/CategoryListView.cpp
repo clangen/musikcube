@@ -92,6 +92,14 @@ CategoryListView::~CategoryListView() {
     delete adapter;
 }
 
+void CategoryListView::OnVisibilityChanged(bool visible) {
+    ListWindow::OnVisibilityChanged(visible);
+
+    if (visible && !this->activeQuery) {
+        this->Requery(this->GetSelectedId());
+    }
+}
+
 void CategoryListView::RequeryWithField(
     const std::string& fieldName,
     const std::string& filter,

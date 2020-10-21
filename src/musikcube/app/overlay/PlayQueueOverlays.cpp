@@ -334,8 +334,8 @@ static void handleJumpTo(
     IMessageQueue& messageQueue,
     TrackPtr track)
 {
-    int64_t type;
-    int64_t id;
+    int64_t type = -1LL;
+    int64_t id = -1LL;
 
     if (index == 0) {
         type = cube::message::category::Album;
@@ -350,8 +350,10 @@ static void handleJumpTo(
         id = track->GetInt64(library::constants::Track::GENRE_ID);
     }
 
-    messageQueue.Broadcast(runtime::Message::Create(
-        nullptr, cube::message::JumpToCategory, type, id));
+    if (type != -1LL && id != -1LL) {
+        messageQueue.Broadcast(runtime::Message::Create(
+            nullptr, cube::message::JumpToCategory, type, id));
+    }
 }
 
 static void showAddCategorySelectionToPlaylistOverlay(

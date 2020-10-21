@@ -58,7 +58,6 @@ namespace musik {
 
                 virtual ~BrowseLayout();
 
-                virtual void OnVisibilityChanged(bool visible) override;
                 virtual bool KeyPress(const std::string& key) override;
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
