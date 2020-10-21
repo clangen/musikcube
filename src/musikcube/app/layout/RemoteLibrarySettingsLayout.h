@@ -53,16 +53,21 @@ namespace musik { namespace cube {
 
         protected:
             virtual void OnLayout();
-            virtual void OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked);
 
         private:
             void InitializeWindows();
+            void LoadPreferencesAndLayout();
+
+            void OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked);
+            void OnActivateTranscoderFormat(cursespp::TextLabel* tl);
+            void OnActivateTranscoderBitrate(cursespp::TextLabel* tl);
 
             musik::core::ILibraryPtr library;
 
             std::shared_ptr<musik::core::Preferences> prefs;
             std::shared_ptr<cursespp::TextLabel> httpPortLabel, wssPortLabel, hostLabel, pwLabel;
             std::shared_ptr<cursespp::TextInput> httpPortInput, wssPortInput, hostInput, pwInput;
-            std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox;
+            std::shared_ptr<cursespp::Checkbox> wssTlsCheckbox, httpTlsCheckbox, transcoderCheckbox;
+            std::shared_ptr<cursespp::TextLabel> transcoderFormatDropdown, transcoderBitrateDropdown;
     };
 } }

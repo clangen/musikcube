@@ -48,5 +48,9 @@ namespace musik { namespace cube {
 
         void CheckShowTlsWarningDialog();
 
+        void ShowTranscoderBitrateOverlay(std::function<void()> callback);
+
+        void ShowTranscoderFormatOverlay(std::function<void()> callback);
+
     }
 } }

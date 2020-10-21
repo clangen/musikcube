@@ -65,6 +65,14 @@ static const std::string kTlsInfoUrl = "https://github.com/clangen/musikcube/wik
 static const int64_t kTlsWarningCooldownMs = 20000;
 int64_t lastTlsWarningTime = 0;
 
+static const std::vector<std::string> kTranscoderFormats = { "mp3", "opus", "ogg", "flac", "aac" };
+static const std::string kDefaultTranscoderFormat = "ogg";
+static const int kDefaultTranscoderFormatOverlayWidth = 24;
+
+static const std::vector<int> kTranscoderBitrates = { 64, 96, 128, 192, 256, 320 };
+static const int kDefaultTranscoderBitrate = 192;
+static const int kDefaultTranscoderBitrateOverlayWidth = 24;
+
 static void showNeedsRestart(Callback cb = Callback()) {
     std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
 
@@ -219,4 +227,77 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
 
         App::Overlays().Push(dialog);
     }
+}
+
+void musik::cube::SettingsOverlays::ShowTranscoderBitrateOverlay(std::function<void()> callback) {
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+
+    int currentBitrate = prefs->GetInt(
+        core::prefs::keys::RemoteLibraryTranscoderBitrate,
+        kDefaultTranscoderBitrate);
+
+    int selectedIndex = 0;
+
+    auto adapter = std::make_shared<SimpleScrollAdapter>();
+    adapter->SetSelectable(true);
+    for (int i = 0; i < kTranscoderBitrates.size(); i++) {
+        int const bitrate = kTranscoderBitrates.at(i);
+        if (bitrate == currentBitrate) {
+            selectedIndex = i;
+        }
+        adapter->AddEntry(std::to_string(bitrate));
+    }
+
+    auto dialog = std::make_shared<ListOverlay>();
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("settings_library_type_remote_library_transcoder_bitrate_overlay_title"))
+        .SetWidth(_DIMEN("transcoder_bitrate_overlay_width", kDefaultTranscoderBitrateOverlayWidth))
+        .SetSelectedIndex(selectedIndex)
+        .SetItemSelectedCallback(
+            [prefs, callback]
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                prefs->SetInt(
+                    core::prefs::keys::RemoteLibraryTranscoderBitrate,
+                    kTranscoderBitrates[index]);
+                callback();
+            });
+
+    cursespp::App::Overlays().Push(dialog);
+}
+
+void musik::cube::SettingsOverlays::ShowTranscoderFormatOverlay(std::function<void()> callback) {
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+
+    std::string const currentFormat = prefs->GetString(
+        core::prefs::keys::RemoteLibraryTranscoderFormat,
+        kDefaultTranscoderFormat);
+
+    int selectedIndex = 0;
+
+    auto adapter = std::make_shared<SimpleScrollAdapter>();
+    adapter->SetSelectable(true);
+    for (int i = 0; i < kTranscoderFormats.size(); i++) {
+        std::string const format = kTranscoderFormats.at(i);
+        if (format == currentFormat) {
+            selectedIndex = i;
+        }
+        adapter->AddEntry(format);
+    }
+
+    auto dialog = std::make_shared<ListOverlay>();
+
+    dialog->SetAdapter(adapter)
+        .SetTitle(_TSTR("settings_library_type_remote_library_transcoder_format_overlay_title"))
+        .SetWidth(_DIMEN("transcoder_bitrate_overlay_width", kDefaultTranscoderFormatOverlayWidth))
+        .SetSelectedIndex(selectedIndex)
+        .SetItemSelectedCallback(
+            [prefs, callback]
+            (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
+                std::string const updatedFormat = kTranscoderFormats[index];
+                prefs->SetString(core::prefs::keys::RemoteLibraryTranscoderFormat, updatedFormat.c_str());
+                callback();
+            });
+
+    cursespp::App::Overlays().Push(dialog);
 }

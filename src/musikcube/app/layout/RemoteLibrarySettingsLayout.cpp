@@ -54,6 +54,8 @@ using namespace cursespp;
 
 #define R(x) (x->GetX() + x->GetWidth())
 
+static const std::string kArrowSymbol = "> ";
+
 static inline int longestStringLength(const std::vector<std::string>&& keys) {
     int max = 0;
     for (auto& str: keys) {
@@ -80,11 +82,11 @@ void RemoteLibrarySettingsLayout::OnLayout() {
         "settings_library_type_remote_http_port",
         "settings_library_type_remote_password"
      });
-    
+
     const int checkboxWidth = u8cols(_TSTR("settings_library_type_remote_use_tls")) + 4;
 
-    int cx = this->GetWidth();
-    int inputWidth = std::min((int) 32, (int) (cx - labelWidth - 1));
+    int const cx = this->GetWidth();
+    int const inputWidth = std::min((int) 32, (int) (cx - labelWidth - 1));
     int y = 0;
     this->hostLabel->MoveAndResize(0, y, labelWidth, 1);
     this->hostInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
@@ -96,6 +98,18 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     this->httpTlsCheckbox->MoveAndResize(R(this->wssPortInput) + 1, y++, checkboxWidth, 1);
     this->pwLabel->MoveAndResize(0, y, labelWidth, 1);
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
+
+    this->transcoderCheckbox->MoveAndResize(
+        0, y,
+        u8cols(this->transcoderCheckbox->GetText()) + 4, 1);
+
+    this->transcoderFormatDropdown->MoveAndResize(
+        R(this->transcoderCheckbox) + 1, y,
+        u8cols(this->transcoderFormatDropdown->GetText()), 1);
+
+    this->transcoderBitrateDropdown->MoveAndResize(
+        R(this->transcoderFormatDropdown) + 1, y,
+        u8cols(this->transcoderBitrateDropdown->GetText()), 1);
 }
 
 void RemoteLibrarySettingsLayout::OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
@@ -107,28 +121,35 @@ void RemoteLibrarySettingsLayout::OnTlsCheckboxChanged(cursespp::Checkbox* cb, b
 void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
-    this->hostLabel.reset(new TextLabel());
+    this->hostLabel = std::make_shared<TextLabel>();
     this->hostLabel->SetText(_TSTR("settings_library_type_remote_hostname"), text::AlignRight);
-    this->hostInput.reset(new TextInput(TextInput::StyleLine));
+    this->hostInput = std::make_shared<TextInput>(TextInput::StyleLine);
 
-    this->wssPortLabel.reset(new TextLabel());
+    this->wssPortLabel = std::make_shared<TextLabel>();
     this->wssPortLabel->SetText(_TSTR("settings_library_type_remote_wss_port"), text::AlignRight);
-    this->wssPortInput.reset(new TextInput(TextInput::StyleLine));
+    this->wssPortInput = std::make_shared<TextInput>(TextInput::StyleLine);
 
-    this->wssTlsCheckbox.reset(new Checkbox());
+    this->wssTlsCheckbox = std::make_shared<Checkbox>();
     this->wssTlsCheckbox->SetText(_TSTR("settings_library_type_remote_use_tls"));
 
-    this->httpPortLabel.reset(new TextLabel());
+    this->httpPortLabel = std::make_shared<TextLabel>();
     this->httpPortLabel->SetText(_TSTR("settings_library_type_remote_http_port"), text::AlignRight);
-    this->httpPortInput.reset(new TextInput(TextInput::StyleLine));
+    this->httpPortInput = std::make_shared<TextInput>(TextInput::StyleLine);
 
-    this->httpTlsCheckbox.reset(new Checkbox());
+    this->httpTlsCheckbox = std::make_shared<Checkbox>();
     this->httpTlsCheckbox->SetText(_TSTR("settings_library_type_remote_use_tls"));
 
-    this->pwLabel.reset(new TextLabel());
+    this->pwLabel = std::make_shared<TextLabel>();
     this->pwLabel->SetText(_TSTR("settings_library_type_remote_password"), text::AlignRight);
-    this->pwInput.reset(new TextInput(TextInput::StyleLine));
+    this->pwInput = std::make_shared<TextInput>(TextInput::StyleLine);
     this->pwInput->SetInputMode(IInput::InputPassword);
+
+    this->transcoderCheckbox = std::make_shared<Checkbox>();
+    this->transcoderCheckbox->SetText(_TSTR("settings_library_type_remote_library_transcoder_enable"));
+    this->transcoderFormatDropdown = std::make_shared<TextLabel>();
+    this->transcoderFormatDropdown->Activated.connect(this, &RemoteLibrarySettingsLayout::OnActivateTranscoderFormat);
+    this->transcoderBitrateDropdown = std::make_shared<TextLabel>();
+    this->transcoderBitrateDropdown->Activated.connect(this, &RemoteLibrarySettingsLayout::OnActivateTranscoderBitrate);
 
     this->AddWindow(this->hostLabel);
     this->AddWindow(this->hostInput);
@@ -142,6 +163,9 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->AddWindow(this->httpTlsCheckbox);
     this->AddWindow(this->pwLabel);
     this->AddWindow(this->pwInput);
+    this->AddWindow(this->transcoderCheckbox);
+    this->AddWindow(this->transcoderFormatDropdown);
+    this->AddWindow(this->transcoderBitrateDropdown);
 
     int order = 0;
     this->hostInput->SetFocusOrder(order++);
@@ -150,6 +174,9 @@ void RemoteLibrarySettingsLayout::InitializeWindows() {
     this->httpPortInput->SetFocusOrder(order++);
     this->httpTlsCheckbox->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
+    this->transcoderCheckbox->SetFocusOrder(order++);
+    this->transcoderFormatDropdown->SetFocusOrder(order++);
+    this->transcoderBitrateDropdown->SetFocusOrder(order++);
 }
 
 void RemoteLibrarySettingsLayout::LoadPreferences() {
@@ -157,11 +184,11 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpTlsCheckbox->CheckChanged.disconnect(this);
 
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    auto wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
-    auto httpPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
-    auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
-    auto wssTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
-    auto httpTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
+    auto const wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
+    auto const httpPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
+    auto const password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
+    auto const wssTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
+    auto const httpTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
     this->hostInput->SetText(host);
     this->wssPortInput->SetText(std::to_string(wssPort));
     this->wssTlsCheckbox->SetChecked(wssTls);
@@ -169,8 +196,31 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpTlsCheckbox->SetChecked(httpTls);
     this->pwInput->SetText(password);
 
+    this->transcoderCheckbox->SetChecked(prefs->GetBool(core::prefs::keys::RemoteLibraryTranscoderEnabled, false));
+
+    const std::string transcodeFormat = prefs->GetString(core::prefs::keys::RemoteLibraryTranscoderFormat, "ogg");
+    this->transcoderFormatDropdown->SetText(
+        kArrowSymbol +
+        u8fmt(_TSTR(
+            "settings_library_type_remote_library_transcoder_format"),
+            transcodeFormat.c_str()),
+        text::AlignRight);
+
+    const int transcodeBitrate = prefs->GetInt(core::prefs::keys::RemoteLibraryTranscoderBitrate, 192);
+    this->transcoderBitrateDropdown->SetText(
+        kArrowSymbol +
+        u8fmt(_TSTR(
+            "settings_library_type_remote_library_transcoder_bitrate"),
+            transcodeBitrate),
+        text::AlignRight);
+
     this->wssTlsCheckbox->CheckChanged.connect(this, &RemoteLibrarySettingsLayout::OnTlsCheckboxChanged);
     this->httpTlsCheckbox->CheckChanged.connect(this, &RemoteLibrarySettingsLayout::OnTlsCheckboxChanged);
+}
+
+void RemoteLibrarySettingsLayout::LoadPreferencesAndLayout() {
+    this->LoadPreferences();
+    this->Layout();
 }
 
 void RemoteLibrarySettingsLayout::SavePreferences() {
@@ -178,8 +228,9 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     auto wssPort = std::stoi(this->wssPortInput->GetText());
     auto httpPort = std::stoi(this->httpPortInput->GetText());
     auto password = this->pwInput->GetText();
-    auto wssTls = this->wssTlsCheckbox->IsChecked();
-    auto httpTls = this->httpTlsCheckbox->IsChecked();
+    auto const wssTls = this->wssTlsCheckbox->IsChecked();
+    auto const httpTls = this->httpTlsCheckbox->IsChecked();
+    auto const transcoderEnabled = this->transcoderCheckbox->IsChecked();
 
     if (wssPort > 65535 || wssPort < 0) { wssPort = 7905; }
     if (httpPort > 65535 || httpPort < 0) { httpPort = 7905; }
@@ -190,10 +241,25 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
     prefs->SetString(core::prefs::keys::RemoteLibraryPassword, password.c_str());
     prefs->SetBool(core::prefs::keys::RemoteLibraryWssTls, wssTls);
     prefs->SetBool(core::prefs::keys::RemoteLibraryHttpTls, httpTls);
+    prefs->SetBool(core::prefs::keys::RemoteLibraryTranscoderEnabled, transcoderEnabled);
+
+    /* note: transcoder format and bitrate settings are saved via SettingsOverlays calls */
 
     auto library = LibraryFactory::Instance().DefaultRemoteLibrary();
     auto remoteLibrary = std::dynamic_pointer_cast<RemoteLibrary>(library);
     if (remoteLibrary) {
         remoteLibrary->ReloadConnectionFromPreferences();
     }
+}
+
+void RemoteLibrarySettingsLayout::OnActivateTranscoderFormat(cursespp::TextLabel* tl) {
+    SettingsOverlays::ShowTranscoderFormatOverlay([this]() {
+        this->LoadPreferencesAndLayout();
+    });
+}
+
+void RemoteLibrarySettingsLayout::OnActivateTranscoderBitrate(cursespp::TextLabel* tl) {
+    SettingsOverlays::ShowTranscoderBitrateOverlay([this]() {
+        this->LoadPreferencesAndLayout();
+    });
 }

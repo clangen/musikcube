@@ -412,7 +412,17 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
     auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
 
     const std::string scheme = useTls ? "https://" : "http://";
-    const std::string uri = scheme + host + ":" + std::to_string(port) + "/audio/id/" + std::to_string(track->GetId());
+
+    std::string uri = scheme + host + ":" + std::to_string(port) + "/audio/id/" + std::to_string(track->GetId());
+
+    if (prefs->GetBool(core::prefs::keys::RemoteLibraryTranscoderEnabled)) {
+        auto const bitrate = prefs->GetInt(core::prefs::keys::RemoteLibraryTranscoderBitrate);
+        auto const format = prefs->GetString(core::prefs::keys::RemoteLibraryTranscoderFormat);
+        if (bitrate > 0 && bitrate < 9999 && format.size()) {
+            uri += "?bitrate=" + std::to_string(bitrate) + "&format=" + format;
+        }
+    }
+
     nlohmann::json path = {
         { "uri", uri },
         { "originalUri", std::string(buffer) },
