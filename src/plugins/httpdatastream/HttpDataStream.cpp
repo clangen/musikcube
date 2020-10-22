@@ -76,7 +76,7 @@ static IEnvironment* environment;
 static LruDiskCache diskCache;
 static std::string cachePath;
 static IPreferences* prefs;
-static std::atomic<int64_t> nextInstanceId = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+static std::atomic<int64_t> nextInstanceId(duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
 
 static const int kDefaultMaxCacheFiles = 35;
 static const int kDefaultPreCacheSizeBytes = 524288; /*2^19 */
