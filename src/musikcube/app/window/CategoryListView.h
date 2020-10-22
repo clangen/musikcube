@@ -75,19 +75,20 @@ namespace musik {
 
                 void Reset();
 
-                virtual bool KeyPress(const std::string& key);
-
                 int64_t GetSelectedId();
                 std::string GetSelectedValue();
                 std::string GetFilter();
                 std::string GetFieldName();
                 void SetFieldName(const std::string& fieldName);
 
-                virtual void OnVisibilityChanged(bool visible) override;
+                /* IWindow */
+                bool KeyPress(const std::string& key) override;
+                void OnVisibilityChanged(bool visible) override;
 
             protected:
-                virtual cursespp::IScrollAdapter& GetScrollAdapter();
-                virtual bool OnEntryContextMenu(size_t index);
+                /* IListWindow */
+                cursespp::IScrollAdapter& GetScrollAdapter() override;
+                bool OnEntryContextMenu(size_t index) override;
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();
@@ -96,10 +97,10 @@ namespace musik {
                 public:
                     Adapter(CategoryListView &parent);
 
-                    virtual size_t GetEntryCount();
+                    size_t GetEntryCount() override;
 
-                    virtual cursespp::IScrollAdapter::EntryPtr
-                        GetEntry(cursespp::ScrollableWindow* window, size_t index);
+                    cursespp::IScrollAdapter::EntryPtr
+                        GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
                 private:
                     CategoryListView &parent;

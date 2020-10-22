@@ -58,11 +58,13 @@ namespace musik {
 
                 virtual ~NowPlayingLayout();
 
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
+                /* IWindow */
+                void OnVisibilityChanged(bool visible) override;
+                bool KeyPress(const std::string& key) override;
 
             protected:
-                virtual void OnLayout();
+                /* LayoutBase */
+                void OnLayout() override;
 
             private:
                 void InitializeWindows();

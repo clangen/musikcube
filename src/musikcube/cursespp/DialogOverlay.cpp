@@ -158,7 +158,7 @@ bool DialogOverlay::ProcessKey(const std::string& key) {
         return true;
     }
 
-    if (this->escDismiss && key == "^[" || key == "ESC") {
+    if (this->escDismiss && (key == "^[" || key == "ESC")) {
         this->Dismiss();
         return true;
     }
