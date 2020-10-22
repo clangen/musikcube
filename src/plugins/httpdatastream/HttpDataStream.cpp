@@ -56,8 +56,12 @@
 #include <../../3rdparty/include/websocketpp/base64/base64.hpp>
 
 #ifdef WIN32
+#include <Windows.h>
+#define sleepMs(x) Sleep(x);
 #define DLLEXPORT __declspec(dllexport)
 #else
+#include <unistd.h>
+#define sleepMs(x) usleep(x * 1000)
 #define DLLEXPORT
 #endif
 
@@ -73,10 +77,14 @@ static IPreferences* prefs;
 static const int kDefaultMaxCacheFiles = 35;
 static const int kDefaultPreCacheSizeBytes = 524288; /*2^19 */
 static const int kDefaultChunkSizeBytes = 131072; /* 2^17 */
+static const int kDefaultConnectionTimeoutSeconds = 30;
+static const int kDefaultReadTimeoutSeconds = 15;
 
 static const std::string kMaxCacheFiles = "max_cache_files";
 static const std::string kPreCacheBufferSizeBytesKey = "precache_buffer_size_bytes";
 static const std::string kChunkSizeBytesKey = "chunk_size_bytes";
+static const std::string kConnectionTimeoutSecondsKey = "connection_timeout_seconds";
+static const std::string kReadTimeoutSecondsKey = "read_timeout_seconds";
 
 const std::string HttpDataStream::kRemoteTrackHost = "musikcore://remote-track/";
 
@@ -105,6 +113,8 @@ extern "C" DLLEXPORT musik::core::sdk::ISchema * GetSchema() {
     schema->AddInt(kMaxCacheFiles, kDefaultMaxCacheFiles);
     schema->AddInt(kPreCacheBufferSizeBytesKey, kDefaultPreCacheSizeBytes, 32768);
     schema->AddInt(kChunkSizeBytesKey, kDefaultChunkSizeBytes, 32768);
+    schema->AddInt(kConnectionTimeoutSecondsKey, kDefaultConnectionTimeoutSeconds, 1);
+    schema->AddInt(kReadTimeoutSecondsKey, kDefaultReadTimeoutSeconds, 1);
     return schema;
 }
 
@@ -130,13 +140,13 @@ class FileReadStream {
         FileReadStream(FILE* file, long maxLength) {
             this->file = file;
             this->maxLength = maxLength;
-            this->Init();
+            this->Reset();
         }
 
         FileReadStream(const std::string& fn) {
             this->file = diskCache.Open(cacheId(fn), "rb");
             this->maxLength = -1;
-            Init();
+            Reset();
         }
 
         ~FileReadStream() {
@@ -146,13 +156,13 @@ class FileReadStream {
             }
         }
 
-        void Init() {
+        void Reset() {
             this->interrupted = false;
             this->length = 0;
 
             if (this->file) {
                 fseek(this->file, 0, SEEK_END);
-                this->length = (PositionType)ftell(this->file);
+                this->length = (PositionType) ftell(this->file);
                 fseek(this->file, 0, SEEK_SET);
             }
         }
@@ -223,17 +233,18 @@ class FileReadStream {
 
 HttpDataStream::HttpDataStream() {
     this->length = this->totalWritten = this->written = 0;
-    this->state = Idle;
+    this->state = State::NotStarted;
     this->writeFile = nullptr;
     this->interrupted = false;
 }
 
 HttpDataStream::~HttpDataStream() {
+    this->Close();
     auto id = cacheId(this->httpUri);
-    if (this->state == Finished) {
+    if (this->state == State::Downloaded) {
         diskCache.Finalize(id, this->Type());
     }
-    else if (this->state != Cached) {
+    else if (this->state != State::Cached) {
         diskCache.Delete(id);
     }
 }
@@ -266,51 +277,51 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
     this->chunkSizeBytes = prefs->GetInt(kChunkSizeBytesKey.c_str(), kDefaultChunkSizeBytes);
     this->maxCacheFiles = prefs->GetInt(kMaxCacheFiles.c_str(), kDefaultMaxCacheFiles);
 
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-
-    diskCache.Init(cachePath, this->maxCacheFiles);
-
-    this->httpUri = rawUri;
-
     std::unordered_map<std::string, std::string> requestHeaders;
 
-    if (this->httpUri.find(kRemoteTrackHost) == 0) {
-        try {
-            nlohmann::json options = nlohmann::json::parse(
-                this->httpUri.substr(kRemoteTrackHost.size()));
-            this->httpUri = options["uri"].get<std::string>();
-            this->originalUri = options["originalUri"].get<std::string>();
-            this->type = options.value("type", ".mp3");
+    {
+        std::unique_lock<std::mutex> lock(this->stateMutex);
 
-            std::string password = options.value("password", "");
-            std::string headerValue = "Basic " + websocketpp::base64_encode("default:" + password);
-            requestHeaders["Authorization"] = headerValue;
+        diskCache.Init(cachePath, this->maxCacheFiles);
+
+        this->httpUri = rawUri;
+
+        if (this->httpUri.find(kRemoteTrackHost) == 0) {
+            try {
+                nlohmann::json options = nlohmann::json::parse(
+                    this->httpUri.substr(kRemoteTrackHost.size()));
+                this->httpUri = options["uri"].get<std::string>();
+                this->originalUri = options["originalUri"].get<std::string>();
+                this->type = options.value("type", ".mp3");
+
+                std::string password = options.value("password", "");
+                std::string headerValue = "Basic " + websocketpp::base64_encode("default:" + password);
+                requestHeaders["Authorization"] = headerValue;
+            }
+            catch (...) {
+                /* malformed payload. not much we can do. */
+                return false;
+            }
         }
-        catch (...) {
-            /* malformed payload. not much we can do. */
-            return false;
+
+        auto const id = cacheId(httpUri);
+
+        if (diskCache.Cached(id)) {
+            FILE* file = diskCache.Open(id, "rb", this->type, this->length);
+            if (file) {
+                this->reader = std::make_shared<FileReadStream>(file, this->length);
+                this->state = State::Cached;
+                return true;
+            }
+            else {
+                diskCache.Delete(id);
+            }
         }
     }
 
-    auto id = cacheId(httpUri);
+    this->ResetFileHandles();
 
-    if (diskCache.Cached(id)) {
-        FILE* file = diskCache.Open(id, "rb", this->type, this->length);
-        if (file) {
-            this->reader.reset(new FileReadStream(file, this->length));
-            this->state = Cached;
-            return true;
-        }
-        else {
-            diskCache.Delete(id);
-        }
-    }
-
-    this->writeFile = diskCache.Open(id, "wb");
-
-    if (this->writeFile) {
-        this->reader.reset(new FileReadStream(this->httpUri));
-
+    if (this->writeFile && this->reader) {
         this->curlEasy = curl_easy_init();
 
         // curl_easy_setopt (this->curlEasy, CURLOPT_VERBOSE, verbose);
@@ -330,9 +341,12 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         curl_easy_setopt(this->curlEasy, CURLOPT_HEADERFUNCTION, &HttpDataStream::CurlReadHeaderCallback);
         curl_easy_setopt(this->curlEasy, CURLOPT_XFERINFOFUNCTION, &HttpDataStream::CurlTransferCallback);
 
-        // curl_easy_setopt (this->curlEasy, CURLOPT_CONNECTTIMEOUT, connecttimeout);
-        // curl_easy_setopt (this->curlEasy, CURLOPT_LOW_SPEED_TIME, readtimeout);
-        // curl_easy_setopt(this->curlEasy, CURLOPT_LOW_SPEED_LIMIT, 1);
+        const int connectionTimeout = prefs->GetInt(kConnectionTimeoutSecondsKey.c_str(), kDefaultConnectionTimeoutSeconds);
+        const int readTimeout = prefs->GetInt(kReadTimeoutSecondsKey.c_str(), kDefaultReadTimeoutSeconds);
+
+        curl_easy_setopt (this->curlEasy, CURLOPT_CONNECTTIMEOUT, connectionTimeout);
+        curl_easy_setopt (this->curlEasy, CURLOPT_LOW_SPEED_TIME, readTimeout);
+        curl_easy_setopt(this->curlEasy, CURLOPT_LOW_SPEED_LIMIT, 1);
 
         // if (useproxy == 1) {
         //     curl_easy_setopt (this->curlEasy, CURLOPT_PROXY, proxyaddress);
@@ -355,35 +369,70 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         }
 
         /* start downloading... */
-        this->state = Loading;
-        downloadThread.reset(new std::thread(&HttpDataStream::ThreadProc, this));
+        this->state = State::Downloading;
+        downloadThread = std::make_shared<std::thread>(&HttpDataStream::ThreadProc, this);
 
         /* wait until we have a few hundred k of data */
+        std::unique_lock<std::mutex> lock(this->stateMutex);
         startedContition.wait(lock);
 
-        return true;
+        return this->state != State::Error;
     }
 
     return false;
 }
 
+void HttpDataStream::ResetFileHandles() {
+    std::unique_lock<std::mutex> lock(this->stateMutex);
+
+    if (this->writeFile) {
+        fclose(this->writeFile);
+        this->writeFile = nullptr;
+    }
+
+    if (this->reader) {
+        this->reader->Interrupt();
+        this->reader.reset();
+    }
+
+    auto const id = cacheId(httpUri);
+    diskCache.Delete(id);
+    this->writeFile = diskCache.Open(id, "wb");
+    if (this->writeFile) {
+        this->reader = std::make_shared<FileReadStream>(this->httpUri);
+    }
+}
+
 void HttpDataStream::ThreadProc() {
     if (this->curlEasy) {
-        auto curlCode = curl_easy_perform(this->curlEasy);
-        if (curlCode == CURLE_OK) {
-            this->state = Finished;
-        }
-        else {
-            this->state = Error;
-        }
-
-        if (this->reader) {
-            if (this->written > 0) {
-                this->reader->Add(this->written);
-                this->written = 0;
+        static const int kMaxRetries = 3;
+        int retryCount = 0;
+        while (this->state != State::Downloaded && !this->interrupted) {
+            auto const curlCode = curl_easy_perform(this->curlEasy);
+            if (curlCode == CURLE_OK) {
+                this->state = State::Downloaded;
+                if (this->reader) {
+                    if (this->written > 0) {
+                        this->reader->Add(this->written);
+                        this->written = 0;
+                    }
+                    this->reader->Completed();
+                }
             }
-
-            this->reader->Completed();
+            else {
+                long httpStatusCode;
+                curl_easy_getinfo(this->curlEasy, CURLINFO_RESPONSE_CODE, &httpStatusCode);
+                if ((httpStatusCode < 400 || httpStatusCode >= 500) && retryCount < kMaxRetries) {
+                    this->ResetFileHandles();
+                    this->state = State::Retrying;
+                    ++retryCount;
+                    sleepMs(2000);
+                }
+                else {
+                    this->state = State::Error;
+                    this->interrupted = true;
+                }
+            }
         }
 
         startedContition.notify_all(); /* in case the header write function was never called */
@@ -408,9 +457,11 @@ void HttpDataStream::ThreadProc() {
 bool HttpDataStream::Close() {
     this->Interrupt();
 
-    if (this->downloadThread) {
-        downloadThread->join();
-        this->downloadThread.reset();
+    auto thread = this->downloadThread;
+    this->downloadThread.reset();
+
+    if (thread) {
+        thread->join();
     }
 
     this->reader.reset();
@@ -462,8 +513,8 @@ const char* HttpDataStream::Uri() {
 size_t HttpDataStream::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     HttpDataStream* stream = static_cast<HttpDataStream*>(userdata);
 
-    size_t total = size * nmemb;
-    size_t result = fwrite(ptr, size, nmemb, stream->writeFile);
+    const size_t total = size * nmemb;
+    const size_t result = fwrite(ptr, size, nmemb, stream->writeFile);
     fflush(stream->writeFile); /* normally we wouldn't want to do this, but it ensures
      data written is available immediately to any simultaneous readers */
     stream->written += result;

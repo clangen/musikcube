@@ -52,35 +52,37 @@ class HttpDataStream : public IDataStream {
         using OpenFlags = musik::core::sdk::OpenFlags;
 
         HttpDataStream();
-        ~HttpDataStream();
+        virtual ~HttpDataStream();
 
-        virtual void Release();
-        virtual bool Open(const char *rawUri, OpenFlags flags = OpenFlags::Read);
-        virtual bool Close();
-        virtual bool Readable() { return true; }
-        virtual bool Writable() { return false; }
-        virtual PositionType Read(void* buffer, PositionType readBytes);
-        virtual PositionType Write(void* buffer, PositionType writeBytes) { return 0; }
-        virtual bool SetPosition(PositionType position);
-        virtual PositionType Position();
-        virtual bool Eof();
-        virtual long Length();
-        virtual bool Seekable();
-        virtual const char* Type();
-        virtual const char* Uri();
-        virtual void Interrupt();
-        virtual bool CanPrefetch();
+        void Release() override;
+        bool Open(const char *rawUri, OpenFlags flags = OpenFlags::Read) override;
+        bool Close() override;
+        bool Readable() override  { return true; }
+        bool Writable() override  { return false; }
+        PositionType Read(void* buffer, PositionType readBytes) override;
+        PositionType Write(void* buffer, PositionType writeBytes) override  { return 0; }
+        bool SetPosition(PositionType position) override;
+        PositionType Position() override;
+        bool Eof() override;
+        long Length() override;
+        bool Seekable() override;
+        const char* Type() override;
+        const char* Uri() override;
+        void Interrupt() override;
+        bool CanPrefetch() override;
 
     private:
-        enum State {
-            Idle,
+        enum class State {
+            NotStarted,
             Cached,
-            Loading,
+            Downloading,
+            Retrying,
+            Downloaded,
             Error,
-            Finished
         };
 
         void ThreadProc();
+        void ResetFileHandles();
 
         static size_t CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
         static size_t CurlReadHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
