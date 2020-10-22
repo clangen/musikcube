@@ -55,6 +55,7 @@ namespace musik { namespace core { namespace audio {
 
             virtual void Start(const std::string& uri, Gain gain, StartMode mode);
             virtual void PrepareNextTrack(const std::string& uri, Gain gain);
+            virtual bool HasNextTrack();
 
             virtual std::string Uri();
 

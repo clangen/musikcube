@@ -420,6 +420,7 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
         auto const format = prefs->GetString(core::prefs::keys::RemoteLibraryTranscoderFormat);
         if (bitrate > 0 && bitrate < 9999 && format.size()) {
             uri += "?bitrate=" + std::to_string(bitrate) + "&format=" + format;
+            type = "." + format;
         }
     }
 

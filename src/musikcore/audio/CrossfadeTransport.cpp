@@ -79,6 +79,11 @@ void CrossfadeTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     this->next.Reset(uri, this, gain, false);
 }
 
+bool CrossfadeTransport::HasNextTrack() {
+    Lock lock(this->stateMutex);
+    return !!this->next.player;
+}
+
 void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
     {
         Lock lock(this->stateMutex);

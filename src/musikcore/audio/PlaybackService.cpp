@@ -308,7 +308,17 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
         StreamState eventType = (StreamState) streamMessage->GetEventType();
 
-        if (eventType == StreamBuffering || eventType == StreamBuffered || eventType == StreamPlaying) {
+        if (eventType == StreamDestroyed) {
+            /* it's possible that we tried to precache a track that was already being
+            buffered. in this case, it's possible that operation failed. if that's the
+            case, let's just load the next track now. */
+            if (!this->transport->HasNextTrack()) {
+                std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
+                this->nextIndex = NO_POSITION;
+                this->PrepareNextTrack();
+            }
+        }
+        else if (eventType == StreamBuffering || eventType == StreamBuffered || eventType == StreamPlaying) {
             TrackPtr track;
 
             {
@@ -318,7 +328,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                     starting, so we want to update our internal index. however, because
                     things are asynchronous, this may not always be the case, especially if
                     the tracks are very short, or the user is advancing through songs very
-                    quickly. make compare the track URIs before we update internal state. */
+                    quickly. compare the track URIs before we update internal state. */
                     if (this->nextIndex >= this->Count()) {
                         this->nextIndex = NO_POSITION;
                         this->transport->PrepareNextTrack("", ITransport::Gain());
@@ -340,7 +350,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 this->OnTrackChanged(this->index, track);
             }
 
-            this->PrepareNextTrack();
+            if (eventType == StreamPlaying) {
+                this->PrepareNextTrack();
+            }
         }
 
         bool raiseStreamEvent = false;

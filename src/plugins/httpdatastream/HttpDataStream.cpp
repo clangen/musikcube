@@ -47,9 +47,9 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
-#include <set>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 /* meh... */
 #include <../../3rdparty/include/nlohmann/json.hpp>
@@ -69,6 +69,7 @@ using namespace musik::core::sdk;
 namespace al = boost::algorithm;
 
 static std::mutex globalMutex;
+static std::unordered_set<int64_t> idsInProgress;
 static IEnvironment* environment;
 static LruDiskCache diskCache;
 static std::string cachePath;
@@ -240,13 +241,6 @@ HttpDataStream::HttpDataStream() {
 
 HttpDataStream::~HttpDataStream() {
     this->Close();
-    auto id = cacheId(this->httpUri);
-    if (this->state == State::Downloaded) {
-        diskCache.Finalize(id, this->Type());
-    }
-    else if (this->state != State::Cached) {
-        diskCache.Delete(id);
-    }
 }
 
 void HttpDataStream::Interrupt() {
@@ -306,20 +300,32 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
 
         auto const id = cacheId(httpUri);
 
-        if (diskCache.Cached(id)) {
-            FILE* file = diskCache.Open(id, "rb", this->type, this->length);
-            if (file) {
-                this->reader = std::make_shared<FileReadStream>(file, this->length);
-                this->state = State::Cached;
-                return true;
+        {
+            std::unique_lock<std::mutex> globalLock(globalMutex);
+            if (idsInProgress.find(id) != idsInProgress.end()) {
+                this->state = State::Conflict;
+                return false; /* another data stream is already processing this file. */
             }
-            else {
-                diskCache.Delete(id);
+
+            if (diskCache.Cached(id)) {
+                FILE* file = diskCache.Open(id, "rb", this->type, this->length);
+                if (file) {
+                    this->reader = std::make_shared<FileReadStream>(file, this->length);
+                    this->state = State::Cached;
+                    return true;
+                }
+                else {
+                    diskCache.Delete(id);
+                }
+            }
+
+            this->ResetFileHandles();
+
+            if (this->writeFile && this->reader) {
+                idsInProgress.insert(id);
             }
         }
     }
-
-    this->ResetFileHandles();
 
     if (this->writeFile && this->reader) {
         this->curlEasy = curl_easy_init();
@@ -383,8 +389,6 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
 }
 
 void HttpDataStream::ResetFileHandles() {
-    std::unique_lock<std::mutex> lock(this->stateMutex);
-
     if (this->writeFile) {
         fclose(this->writeFile);
         this->writeFile = nullptr;
@@ -423,7 +427,10 @@ void HttpDataStream::ThreadProc() {
                 long httpStatusCode;
                 curl_easy_getinfo(this->curlEasy, CURLINFO_RESPONSE_CODE, &httpStatusCode);
                 if ((httpStatusCode < 400 || httpStatusCode >= 500) && retryCount < kMaxRetries) {
-                    this->ResetFileHandles();
+                    {
+                        std::unique_lock<std::mutex> lock(this->stateMutex);
+                        this->ResetFileHandles();
+                    }
                     this->state = State::Retrying;
                     ++retryCount;
                     sleepMs(2000);
@@ -457,6 +464,8 @@ void HttpDataStream::ThreadProc() {
 bool HttpDataStream::Close() {
     this->Interrupt();
 
+    /* wait for the download thread to stop, this will ensure file writes have
+    completed. */
     auto thread = this->downloadThread;
     this->downloadThread.reset();
 
@@ -464,7 +473,31 @@ bool HttpDataStream::Close() {
         thread->join();
     }
 
+    /* need to close the reader so we can perform the filesystem operations below */
     this->reader.reset();
+
+    /* if we just downloaded the file let's rename it to its final name; if the
+    download failed, let's delete the temp file. */
+    auto id = cacheId(this->httpUri);
+    if (this->state == State::Downloaded) {
+        diskCache.Finalize(id, this->Type());
+    }
+    else if (this->state != State::Cached) {
+        diskCache.Delete(id);
+    }
+
+    {
+        /* if we were the instance that was actually downloading this file, let's
+        go ahead and remove it from the processing set so subsequent instances are
+        able to load it from cache. */
+        if (this->state != State::Conflict) {
+            std::unique_lock<std::mutex> globalLock(globalMutex);
+            auto it = idsInProgress.find(cacheId(httpUri));
+            if (it != idsInProgress.end()) {
+                idsInProgress.erase(it);
+            }
+        }
+    }
 
     return true;
 }

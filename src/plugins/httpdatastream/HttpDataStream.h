@@ -74,6 +74,7 @@ class HttpDataStream : public IDataStream {
     private:
         enum class State {
             NotStarted,
+            Conflict,
             Cached,
             Downloading,
             Retrying,
