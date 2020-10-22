@@ -46,11 +46,11 @@ class LruDiskCache {
 
         void Purge();
 
-        bool Finalize(size_t id, int64_t instance, std::string type);
-        FILE* Open(size_t id, int64_t instance, const std::string& mode);
-        FILE* Open(size_t id, int64_t instance, const std::string& mode, std::string& type, size_t& len);
+        bool Finalize(size_t id, int64_t instanceId, std::string type);
+        FILE* Open(size_t id, int64_t instanceId, const std::string& mode);
+        FILE* Open(size_t id, int64_t instanceId, const std::string& mode, std::string& type, size_t& len);
         bool Cached(size_t id);
-        void Delete(size_t id, int64_t instance);
+        void Delete(size_t id, int64_t instanceId);
         void Touch(size_t id);
 
         void Init(const std::string& root, size_t maxEntries);
