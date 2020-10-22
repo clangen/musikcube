@@ -77,8 +77,8 @@ static IPreferences* prefs;
 static const int kDefaultMaxCacheFiles = 35;
 static const int kDefaultPreCacheSizeBytes = 524288; /*2^19 */
 static const int kDefaultChunkSizeBytes = 131072; /* 2^17 */
-static const int kDefaultConnectionTimeoutSeconds = 30;
-static const int kDefaultReadTimeoutSeconds = 15;
+static const int kDefaultConnectionTimeoutSeconds = 15;
+static const int kDefaultReadTimeoutSeconds = 30;
 
 static const std::string kMaxCacheFiles = "max_cache_files";
 static const std::string kPreCacheBufferSizeBytesKey = "precache_buffer_size_bytes";
