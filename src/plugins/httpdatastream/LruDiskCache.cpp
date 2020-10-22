@@ -49,8 +49,8 @@ namespace al = boost::algorithm;
 
 using Lock = std::unique_lock<std::recursive_mutex>;
 
-static std::string tempFilename(const std::string& root, size_t id) {
-    return root + "/" + PREFIX + "_" + std::to_string(id) + TEMP_EXTENSION;
+static std::string tempFilename(const std::string& root, size_t id, int64_t instance) {
+    return root + "/" + PREFIX + "_" + std::to_string(id) + "_" + std::to_string(instance) + TEMP_EXTENSION;
 }
 
 static std::string finalFilename(const std::string& root, size_t id, std::string type) {
@@ -166,14 +166,14 @@ LruDiskCache::EntryPtr LruDiskCache::Parse(const fs::path& path) {
     return EntryPtr();
 }
 
-bool LruDiskCache::Finalize(size_t id, std::string type) {
+bool LruDiskCache::Finalize(size_t id, int64_t instance, std::string type) {
     Lock lock(stateMutex);
 
     if (type.size() == 0) {
         type = "unknown";
     }
 
-    fs::path src(tempFilename(this->root, id));
+    fs::path src(tempFilename(this->root, instance, id));
     fs::path dst(finalFilename(this->root, id, type));
 
     if (fs::exists(src)) {
@@ -211,13 +211,13 @@ bool LruDiskCache::Cached(size_t id) {
     return it != end;
 }
 
-FILE* LruDiskCache::Open(size_t id, const std::string& mode) {
+FILE* LruDiskCache::Open(size_t id, int64_t instance, const std::string& mode) {
     std::string type;
     size_t len;
-    return this->Open(id, mode, type, len);
+    return this->Open(id, instance, mode, type, len);
 }
 
-FILE* LruDiskCache::Open(size_t id, const std::string& mode, std::string& type, size_t& len) {
+FILE* LruDiskCache::Open(size_t id, int64_t instance, const std::string& mode, std::string& type, size_t& len) {
     Lock lock(stateMutex);
 
     auto end = this->cached.end();
@@ -241,10 +241,10 @@ FILE* LruDiskCache::Open(size_t id, const std::string& mode, std::string& type, 
     }
 
     /* open the file and return it regardless of cache status. */
-    return result ? result : fopen(tempFilename(this->root, id).c_str(), mode.c_str());
+    return result ? result : fopen(tempFilename(this->root, instance, id).c_str(), mode.c_str());
 }
 
-void LruDiskCache::Delete(size_t id) {
+void LruDiskCache::Delete(size_t id, int64_t instance) {
     Lock lock(stateMutex);
 
     auto it = this->cached.begin();
@@ -258,7 +258,7 @@ void LruDiskCache::Delete(size_t id) {
         }
     }
 
-    rm(tempFilename(this->root, id));
+    rm(tempFilename(this->root, id, instance));
 }
 
 void LruDiskCache::SortAndPrune() {

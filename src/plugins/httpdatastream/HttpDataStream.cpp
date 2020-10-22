@@ -50,6 +50,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include <chrono>
 
 /* meh... */
 #include <../../3rdparty/include/nlohmann/json.hpp>
@@ -65,15 +66,16 @@
 #define DLLEXPORT
 #endif
 
+using namespace std::chrono;
 using namespace musik::core::sdk;
 namespace al = boost::algorithm;
 
 static std::mutex globalMutex;
-static std::unordered_set<int64_t> idsInProgress;
 static IEnvironment* environment;
 static LruDiskCache diskCache;
 static std::string cachePath;
 static IPreferences* prefs;
+static int64_t nextInstanceId = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
 static const int kDefaultMaxCacheFiles = 35;
 static const int kDefaultPreCacheSizeBytes = 524288; /*2^19 */
@@ -144,8 +146,8 @@ class FileReadStream {
             this->Reset();
         }
 
-        FileReadStream(const std::string& fn) {
-            this->file = diskCache.Open(cacheId(fn), "rb");
+        FileReadStream(const std::string& fn, int64_t instanceId) {
+            this->file = diskCache.Open(cacheId(fn), instanceId, "rb");
             this->maxLength = -1;
             Reset();
         }
@@ -237,6 +239,7 @@ HttpDataStream::HttpDataStream() {
     this->state = State::NotStarted;
     this->writeFile = nullptr;
     this->interrupted = false;
+    this->instanceId = ++nextInstanceId;
 }
 
 HttpDataStream::~HttpDataStream() {
@@ -300,31 +303,19 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
 
         auto const id = cacheId(httpUri);
 
-        {
-            std::unique_lock<std::mutex> globalLock(globalMutex);
-            if (idsInProgress.find(id) != idsInProgress.end()) {
-                this->state = State::Conflict;
-                return false; /* another data stream is already processing this file. */
+        if (diskCache.Cached(id)) {
+            FILE* file = diskCache.Open(id, this->instanceId, "rb", this->type, this->length);
+            if (file) {
+                this->reader = std::make_shared<FileReadStream>(file, this->length);
+                this->state = State::Cached;
+                return true;
             }
-
-            if (diskCache.Cached(id)) {
-                FILE* file = diskCache.Open(id, "rb", this->type, this->length);
-                if (file) {
-                    this->reader = std::make_shared<FileReadStream>(file, this->length);
-                    this->state = State::Cached;
-                    return true;
-                }
-                else {
-                    diskCache.Delete(id);
-                }
-            }
-
-            this->ResetFileHandles();
-
-            if (this->writeFile && this->reader) {
-                idsInProgress.insert(id);
+            else {
+                diskCache.Delete(id, this->instanceId);
             }
         }
+
+        this->ResetFileHandles();
     }
 
     if (this->writeFile && this->reader) {
@@ -400,10 +391,10 @@ void HttpDataStream::ResetFileHandles() {
     }
 
     auto const id = cacheId(httpUri);
-    diskCache.Delete(id);
-    this->writeFile = diskCache.Open(id, "wb");
+    diskCache.Delete(id, this->instanceId);
+    this->writeFile = diskCache.Open(id, this->instanceId, "wb");
     if (this->writeFile) {
-        this->reader = std::make_shared<FileReadStream>(this->httpUri);
+        this->reader = std::make_shared<FileReadStream>(this->httpUri, this->instanceId);
     }
 }
 
@@ -480,23 +471,10 @@ bool HttpDataStream::Close() {
     download failed, let's delete the temp file. */
     auto id = cacheId(this->httpUri);
     if (this->state == State::Downloaded) {
-        diskCache.Finalize(id, this->Type());
+        diskCache.Finalize(id, this->instanceId, this->Type());
     }
     else if (this->state != State::Cached) {
-        diskCache.Delete(id);
-    }
-
-    {
-        /* if we were the instance that was actually downloading this file, let's
-        go ahead and remove it from the processing set so subsequent instances are
-        able to load it from cache. */
-        if (this->state != State::Conflict) {
-            std::unique_lock<std::mutex> globalLock(globalMutex);
-            auto it = idsInProgress.find(cacheId(httpUri));
-            if (it != idsInProgress.end()) {
-                idsInProgress.erase(it);
-            }
-        }
+        diskCache.Delete(id, this->instanceId);
     }
 
     return true;

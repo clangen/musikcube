@@ -105,4 +105,5 @@ class HttpDataStream : public IDataStream {
         std::shared_ptr<std::thread> downloadThread;
         std::shared_ptr<FileReadStream> reader;
         int precacheSizeBytes, chunkSizeBytes, maxCacheFiles;
+        int64_t instanceId;
 };
