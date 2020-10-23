@@ -73,6 +73,7 @@ RemoteLibrarySettingsLayout::RemoteLibrarySettingsLayout()
 }
 
 RemoteLibrarySettingsLayout::~RemoteLibrarySettingsLayout() {
+    this->SavePreferences();
 }
 
 void RemoteLibrarySettingsLayout::OnLayout() {
@@ -218,7 +219,7 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpTlsCheckbox->CheckChanged.connect(this, &RemoteLibrarySettingsLayout::OnTlsCheckboxChanged);
 }
 
-void RemoteLibrarySettingsLayout::LoadPreferencesAndLayout() {
+void RemoteLibrarySettingsLayout::SyncPreferencesAndLayout() {
     this->SavePreferences();
     this->LoadPreferences();
     this->Layout();
@@ -255,12 +256,12 @@ void RemoteLibrarySettingsLayout::SavePreferences() {
 
 void RemoteLibrarySettingsLayout::OnActivateTranscoderFormat(cursespp::TextLabel* tl) {
     SettingsOverlays::ShowTranscoderFormatOverlay([this]() {
-        this->LoadPreferencesAndLayout();
+        this->SyncPreferencesAndLayout();
     });
 }
 
 void RemoteLibrarySettingsLayout::OnActivateTranscoderBitrate(cursespp::TextLabel* tl) {
     SettingsOverlays::ShowTranscoderBitrateOverlay([this]() {
-        this->LoadPreferencesAndLayout();
+        this->SyncPreferencesAndLayout();
     });
 }

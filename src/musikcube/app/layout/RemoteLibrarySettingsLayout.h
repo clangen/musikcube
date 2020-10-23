@@ -56,7 +56,7 @@ namespace musik { namespace cube {
 
         private:
             void InitializeWindows();
-            void LoadPreferencesAndLayout();
+            void SyncPreferencesAndLayout();
 
             void OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked);
             void OnActivateTranscoderFormat(cursespp::TextLabel* tl);

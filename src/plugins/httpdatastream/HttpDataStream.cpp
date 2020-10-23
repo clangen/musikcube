@@ -199,8 +199,8 @@ class FileReadStream {
             }
 
             clearerr(this->file);
-            int available = this->length - this->Position();
-            unsigned actualReadBytes = std::max(0, std::min(available, (int) readBytes));
+            const int available = this->length - this->Position();
+            const unsigned actualReadBytes = std::max(0, std::min(available, (int) readBytes));
             return (PositionType) fread(buffer, 1, actualReadBytes, this->file);
         }
 
