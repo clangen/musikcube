@@ -55,7 +55,7 @@ namespace musik {
                 StreamFinished = 5,
                 StreamStopped = 6,
                 StreamDestroyed = 7,
-                StreamError = -1
+                StreamOpenFailed = -1
             };
 
             enum RepeatMode {

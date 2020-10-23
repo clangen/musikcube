@@ -361,13 +361,22 @@ void GaplessTransport::OnPlayerFinished(Player* player) {
     }
 }
 
-void GaplessTransport::OnPlayerError(Player* player) {
-    if (player == this->activePlayer) {
-        this->RaiseStreamEvent(StreamError, player);
-        this->SetPlaybackState(PlaybackStopped);
+void GaplessTransport::OnPlayerOpenFailed(Player* player) {
+    bool raiseEvents = false;
+    {
+        LockT lock(this->stateMutex);
+        if (player == this->activePlayer) {
+            RESET_ACTIVE_PLAYER(this);
+            RESET_NEXT_PLAYER(this);
+            raiseEvents = true;
+        }
+        else if (player == this->nextPlayer) {
+            RESET_NEXT_PLAYER(this);
+        }
     }
-    else if (player == this->nextPlayer) {
-        RESET_NEXT_PLAYER(this);
+    if (raiseEvents) {
+        this->RaiseStreamEvent(StreamOpenFailed, player);
+        this->SetPlaybackState(PlaybackStopped);
     }
 }
 
@@ -400,7 +409,7 @@ void GaplessTransport::RaiseStreamEvent(int type, Player* player) {
         LockT lock(this->stateMutex);
         eventIsFromActivePlayer = (player == activePlayer);
         if (eventIsFromActivePlayer) {
-            this->activePlayerState = (StreamState)type;
+            this->activePlayerState = (StreamState) type;
         }
     }
 

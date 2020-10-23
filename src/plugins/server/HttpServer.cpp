@@ -435,6 +435,16 @@ int HttpServer::HandleAudioTrackRequest(
     MHD_Connection *connection,
     std::vector<std::string>& pathParts)
 {
+    size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
+    int maxActiveTranscoders = server->context.prefs->GetInt(
+        prefs::transcoder_max_active_count.c_str(),
+        defaults::transcoder_max_active_count);
+
+    if (bitrate != 0 && Transcoder::GetActiveCount() >= maxActiveTranscoders) {
+        response = MHD_create_response_from_buffer(0, nullptr, MHD_RESPMEM_PERSISTENT);
+        return MHD_HTTP_TOO_MANY_REQUESTS;
+    }
+
     int status = MHD_HTTP_OK;
 
     ITrack* track = nullptr;
@@ -462,7 +472,6 @@ int HttpServer::HandleAudioTrackRequest(
 
         track->Release();
 
-        size_t bitrate = getUnsignedUrlParam(connection, "bitrate", 0);
         std::string format = "";
 
         if (bitrate != 0) {

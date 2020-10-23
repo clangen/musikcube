@@ -59,6 +59,8 @@ class BlockingTranscoder {
         bool Transcode();
         void Interrupt();
 
+        static int GetActiveCount();
+
     private:
         void Cleanup();
 

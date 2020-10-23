@@ -36,9 +36,12 @@
 #include "Util.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
+#include <atomic>
 
 #define BUFFER_SIZE 8192
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
+
+static std::atomic<int> activeCount(0);
 
 using namespace musik::core::sdk;
 
@@ -50,6 +53,7 @@ BlockingTranscoder::BlockingTranscoder(
     const std::string& finalFilename,
     int bitrate)
 : context(context) {
+    ++activeCount;
     this->interrupted = false;
     this->bitrate = bitrate;
     this->encoder = encoder;
@@ -60,6 +64,7 @@ BlockingTranscoder::BlockingTranscoder(
 }
 
 BlockingTranscoder::~BlockingTranscoder() {
+    --activeCount;
     this->Cleanup();
 }
 
@@ -138,4 +143,8 @@ bool BlockingTranscoder::Transcode() {
 
 void BlockingTranscoder::Interrupt() {
     this->interrupted = true;
+}
+
+int BlockingTranscoder::GetActiveCount() {
+    return activeCount.load();
 }

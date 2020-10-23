@@ -82,6 +82,8 @@ class TranscodingAudioDataStream : public musik::core::sdk::IDataStream {
         virtual const char* Uri() override;
         virtual bool CanPrefetch() override;
 
+        static int GetActiveCount();
+
     private:
         void Dispose();
 

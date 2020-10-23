@@ -319,3 +319,7 @@ IDataStream* Transcoder::TranscodeAndWait(
         return context.environment->GetDataStream(expectedFilename.c_str(), OpenFlags::Read);
     }
 }
+
+int Transcoder::GetActiveCount() {
+    return BlockingTranscoder::GetActiveCount() + TranscodingAudioDataStream::GetActiveCount();
+}

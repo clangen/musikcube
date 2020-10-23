@@ -36,9 +36,12 @@
 #include "Util.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
+#include <atomic>
 
 #define BUFFER_SIZE 8192
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
+
+static std::atomic<int> activeCount(0);
 
 using PositionType = TranscodingAudioDataStream::PositionType;
 
@@ -50,6 +53,7 @@ TranscodingAudioDataStream::TranscodingAudioDataStream(
     const std::string& format)
 : context(context)
 {
+    ++activeCount;
     this->encoder = encoder;
     this->input = nullptr;
     this->decoder = nullptr;
@@ -106,6 +110,7 @@ TranscodingAudioDataStream::TranscodingAudioDataStream(
 }
 
 TranscodingAudioDataStream::~TranscodingAudioDataStream() {
+    --activeCount;
 }
 
 bool TranscodingAudioDataStream::Open(const char *uri, OpenFlags flags) {
@@ -346,4 +351,8 @@ const char* TranscodingAudioDataStream::Uri() {
 
 bool TranscodingAudioDataStream::CanPrefetch() {
     return true;
+}
+
+int TranscodingAudioDataStream::GetActiveCount() {
+    return activeCount.load();
 }

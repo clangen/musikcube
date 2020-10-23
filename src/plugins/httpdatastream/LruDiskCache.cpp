@@ -109,8 +109,9 @@ void LruDiskCache::Init(const std::string& root, size_t maxEntries) {
         this->Purge(); /* always purge partial files on startup */
 
         /* index all the completed files... */
+        boost::system::error_code ec;
         fs::directory_iterator end;
-        fs::directory_iterator file(this->root);
+        fs::directory_iterator file(this->root, ec);
 
         while (file != end) {
             if (!is_directory(file->status())) {
@@ -131,8 +132,9 @@ void LruDiskCache::Init(const std::string& root, size_t maxEntries) {
 void LruDiskCache::Purge() {
     Lock lock(stateMutex);
 
+    boost::system::error_code ec;
     fs::directory_iterator end;
-    fs::directory_iterator file(this->root);
+    fs::directory_iterator file(this->root, ec);
 
     while (file != end) {
         if (!is_directory(file->status())) {
@@ -240,8 +242,19 @@ FILE* LruDiskCache::Open(size_t id, int64_t instanceId, const std::string& mode,
         this->Touch(id);
     }
 
+    if (result) {
+        return result;
+    }
+
+    /* ensure the cache directory exists */
+    boost::system::error_code ec;
+    boost::filesystem::path p(this->root);
+    if (!boost::filesystem::exists(p)) {
+        boost::filesystem::create_directories(p, ec);
+    }
+
     /* open the file and return it regardless of cache status. */
-    return result ? result : fopen(tempFilename(this->root, instanceId, id).c_str(), mode.c_str());
+    return fopen(tempFilename(this->root, instanceId, id).c_str(), mode.c_str());
 }
 
 void LruDiskCache::Delete(size_t id, int64_t instanceId) {

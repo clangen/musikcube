@@ -1051,7 +1051,7 @@ class mcsdk_audio_player_callback_proxy: public Player::EventListener {
                 }
             }
         }
-        virtual void OnPlayerError(Player *player) {
+        virtual void OnPlayerOpenFailed(Player *player) {
             std::unique_lock<std::mutex> lock(this->context->event_mutex);
             for (auto c : callbacks) {
                 if (c->on_error) {

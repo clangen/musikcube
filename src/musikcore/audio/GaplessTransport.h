@@ -98,7 +98,7 @@ namespace musik { namespace core { namespace audio {
             virtual void OnPlayerBuffered(Player* player);
             virtual void OnPlayerAlmostEnded(Player* player);
             virtual void OnPlayerFinished(Player* player);
-            virtual void OnPlayerError(Player* player);
+            virtual void OnPlayerOpenFailed(Player* player);
             virtual void OnPlayerDestroying(Player* player);
 
             musik::core::sdk::PlaybackState playbackState;

@@ -134,7 +134,7 @@ namespace musik { namespace core { namespace audio {
             virtual void OnPlayerBuffered(Player* player);
             virtual void OnPlayerStarted(Player* player);
             virtual void OnPlayerFinished(Player* player);
-            virtual void OnPlayerError(Player* player);
+            virtual void OnPlayerOpenFailed(Player* player);
             virtual void OnPlayerMixPoint(Player* player, int id, double time);
             virtual void OnPlayerDestroying(Player* player);
 

@@ -57,12 +57,13 @@ static const char* KEY_METADATA_SERVER_PORT = "websocket_server_port";
 static const char* KEY_AUDIO_SERVER_ENABLED = "http_server_enabled";
 static const char* KEY_AUDIO_SERVER_PORT = "http_server_port";
 static const char* KEY_TRANSCODER_CACHE_COUNT = "transcoder_cache_count";
+static const char* KEY_MAX_TRANSCODER_MAX_ACTIVE_COUNT = "transcoder_max_active_count";
 static const char* KEY_TRANSCODER_SYNCHRONOUS = "transcoder_synchronous";
 static const char* KEY_USE_IPV6 = "use_ipv6";
 static const char* KEY_PASSWORD = "password";
 
 #define VERTICAL_PADDING 2
-#define DEFAULT_HEIGHT 18
+#define DEFAULT_HEIGHT 20
 #define DEFAULT_WIDTH 45
 
 #define RIGHT(x) (x->GetX() + x->GetWidth())
@@ -76,7 +77,7 @@ static std::string settingIntToString(Prefs prefs, const std::string& key, int d
 }
 
 static void showInvalidDialog(Callback cb = Callback()) {
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+    auto dialog = std::make_shared<DialogOverlay>();
 
     (*dialog)
         .SetTitle(_TSTR("settings_server_invalid_settings_title"))
@@ -90,7 +91,7 @@ static void showInvalidDialog(Callback cb = Callback()) {
     App::Overlays().Push(dialog);
 }
 
-static int getIntFromTextInput(TextInput* input) {
+static int getIntFromTextInput(TextInput* input, int defaultValue = -1) {
     const std::string value = input->GetText();
     if (value.size()) {
         try {
@@ -100,7 +101,7 @@ static int getIntFromTextInput(TextInput* input) {
             /* swallow */
         }
     }
-    return -1;
+    return defaultValue;
 }
 
 ServerOverlay::ServerOverlay(Callback callback, Plugin plugin)
@@ -154,8 +155,11 @@ void ServerOverlay::InitViews() {
 
     this->transCacheLabel.reset(new TextLabel());
     this->transCacheLabel->SetText(_TSTR("settings_server_transcoder_cache_count"));
-
     this->transCacheInput.reset(new TextInput(TextInput::StyleLine));
+
+    this->maxTransLabel = std::make_shared<TextLabel>();
+    this->maxTransLabel->SetText(_TSTR("settings_server_maximum_transcoders"));
+    this->maxTransInput = std::make_shared<TextInput>(TextInput::StyleLine);
 
     /* password */
     this->pwLabel.reset(new TextLabel());
@@ -174,6 +178,8 @@ void ServerOverlay::InitViews() {
     style(*this->enableSyncTransCb);
     style(*this->transCacheLabel);
     style(*this->transCacheInput);
+    style(*this->maxTransLabel);
+    style(*this->maxTransInput);
     style(*this->pwLabel);
     style(*this->pwInput);
 
@@ -189,6 +195,8 @@ void ServerOverlay::InitViews() {
     this->AddWindow(this->enableSyncTransCb);
     this->AddWindow(this->transCacheLabel);
     this->AddWindow(this->transCacheInput);
+    this->AddWindow(this->maxTransLabel);
+    this->AddWindow(this->maxTransInput);
     this->AddWindow(this->pwLabel);
     this->AddWindow(this->pwInput);
     this->AddWindow(this->shortcuts);
@@ -202,6 +210,7 @@ void ServerOverlay::InitViews() {
     this->ipv6Cb->SetFocusOrder(order++);
     this->enableSyncTransCb->SetFocusOrder(order++);
     this->transCacheInput->SetFocusOrder(order++);
+    this->maxTransInput->SetFocusOrder(order++);
     this->pwInput->SetFocusOrder(order++);
 }
 
@@ -209,7 +218,7 @@ void ServerOverlay::Layout() {
     this->RecalculateSize();
     this->MoveAndResize(this->x, this->y, this->width, this->height);
 
-    auto clientHeight = this->GetContentHeight();
+    const auto clientHeight = this->GetContentHeight();
     auto clientWidth = this->GetContentWidth();
 
     this->titleLabel->MoveAndResize(0, 0, clientWidth, 1);
@@ -231,12 +240,18 @@ void ServerOverlay::Layout() {
     this->httpPortInput->MoveAndResize(x + 4 + httpPortLabelWidth + 1, y, 8, 1);
     y += 2;
 
-    this->ipv6Cb->MoveAndResize(x, y++, clientWidth, 1);
+    this->ipv6Cb->MoveAndResize(x, y, clientWidth, 1);
+    y += 2;
 
-    const int transCcacheLabelWidth = TEXT_WIDTH(transCacheLabel);
+    const int transCacheLabelWidth = TEXT_WIDTH(transCacheLabel);
     this->enableSyncTransCb->MoveAndResize(x, y++, clientWidth, 1);
-    this->transCacheLabel->MoveAndResize(x, y, transCcacheLabelWidth, 1);
-    this->transCacheInput->MoveAndResize(x + transCcacheLabelWidth + 1, y, 5, 1);
+    this->transCacheLabel->MoveAndResize(x, y, transCacheLabelWidth, 1);
+    this->transCacheInput->MoveAndResize(x + transCacheLabelWidth + 1, y, 5, 1);
+    y += 1;
+
+    const int maxTransLabelWidth = TEXT_WIDTH(maxTransLabel);
+    this->maxTransLabel->MoveAndResize(x, y, maxTransLabelWidth, 1);
+    this->maxTransInput->MoveAndResize(x + maxTransLabelWidth + 1, y, 3, 1);
     y += 2;
 
     const int pwLabelWidth = TEXT_WIDTH(pwLabel);
@@ -263,13 +278,15 @@ void ServerOverlay::Load() {
     this->httpPortInput->SetText(settingIntToString(prefs, KEY_AUDIO_SERVER_PORT, 7906));
     this->ipv6Cb->SetChecked(prefs->GetBool(KEY_USE_IPV6, false));
     this->transCacheInput->SetText(settingIntToString(prefs, KEY_TRANSCODER_CACHE_COUNT, 50));
+    this->maxTransInput->SetText(settingIntToString(prefs, KEY_MAX_TRANSCODER_MAX_ACTIVE_COUNT, 4));
     this->pwInput->SetText(prefs->GetString(KEY_PASSWORD, ""));
 }
 
 bool ServerOverlay::Save() {
-    int wssPort = getIntFromTextInput(this->wssPortInput.get());
-    int httpPort = getIntFromTextInput(this->httpPortInput.get());
-    int cacheCount = getIntFromTextInput(this->transCacheInput.get());
+    const int wssPort = getIntFromTextInput(this->wssPortInput.get(), 7905);
+    const int httpPort = getIntFromTextInput(this->httpPortInput.get(), 7906);
+    const int cacheCount = getIntFromTextInput(this->transCacheInput.get(), 50);
+    const int maxTransCount = getIntFromTextInput(this->maxTransInput.get(), 4);
 
     if (wssPort <= 0 || httpPort <= 0 || cacheCount < 0) {
         return false;
@@ -282,6 +299,7 @@ bool ServerOverlay::Save() {
     this->prefs->SetInt(KEY_METADATA_SERVER_PORT, wssPort);
     this->prefs->SetInt(KEY_AUDIO_SERVER_PORT, httpPort);
     this->prefs->SetInt(KEY_TRANSCODER_CACHE_COUNT, cacheCount);
+    this->prefs->SetInt(KEY_MAX_TRANSCODER_MAX_ACTIVE_COUNT, maxTransCount);
     this->prefs->SetString(KEY_PASSWORD, this->pwInput->GetText().c_str());
 
     this->prefs->Save();

@@ -64,6 +64,8 @@ class Transcoder {
             size_t bitrate,
             const std::string& format);
 
+        static int GetActiveCount();
+
     private:
         static IDataStream* TranscodeOnDemand(
             Context& context,

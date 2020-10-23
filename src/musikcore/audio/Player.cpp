@@ -431,8 +431,8 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     else {
         if (!player->Exited()) {
             for (Listener* l : player->Listeners()) {
-                player->streamState = StreamError;
-                l->OnPlayerError(player);
+                player->streamState = StreamOpenFailed;
+                l->OnPlayerOpenFailed(player);
             }
         }
     }

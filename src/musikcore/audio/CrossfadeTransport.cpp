@@ -329,8 +329,17 @@ void CrossfadeTransport::OnPlayerFinished(Player* player) {
     }
 }
 
-void CrossfadeTransport::OnPlayerError(Player* player) {
-    this->RaiseStreamEvent(StreamError, player);
+void CrossfadeTransport::OnPlayerOpenFailed(Player* player) {
+    {
+        Lock lock(this->stateMutex);
+        if (player == active.player) {
+            active.Reset();
+        }
+        else if (player == next.player) {
+            next.Reset();
+        }
+    }
+    this->RaiseStreamEvent(StreamOpenFailed, player);
     this->Stop();
 }
 

@@ -100,11 +100,6 @@ extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
         static char buffer[2046];
         environment->GetPath(PathData, buffer, sizeof(buffer));
         cachePath = std::string(buffer) + "/cache/httpclient/";
-
-        boost::filesystem::path p(cachePath);
-        if (!boost::filesystem::exists(p)) {
-            boost::filesystem::create_directories(p);
-        }
     }
 }
 
@@ -405,7 +400,9 @@ void HttpDataStream::ThreadProc() {
         int retryCount = 0;
         while (this->state != State::Downloaded && !this->interrupted) {
             auto const curlCode = curl_easy_perform(this->curlEasy);
-            if (curlCode == CURLE_OK) {
+            long httpStatusCode = 0;
+            curl_easy_getinfo(this->curlEasy, CURLINFO_RESPONSE_CODE, &httpStatusCode);
+            if (httpStatusCode == 200) {
                 this->state = State::Downloaded;
                 if (this->reader) {
                     if (this->written > 0) {
@@ -416,9 +413,12 @@ void HttpDataStream::ThreadProc() {
                 }
             }
             else {
-                long httpStatusCode;
-                curl_easy_getinfo(this->curlEasy, CURLINFO_RESPONSE_CODE, &httpStatusCode);
-                if ((httpStatusCode < 400 || httpStatusCode >= 500) && retryCount < kMaxRetries) {
+                if (httpStatusCode == 429) { /* too many requests */
+                     this->state = State::Retrying;
+                    ++retryCount;
+                    sleepMs(5000);
+                }
+                else if ((httpStatusCode < 400 || httpStatusCode >= 500) && retryCount < kMaxRetries) {
                     {
                         std::unique_lock<std::mutex> lock(this->stateMutex);
                         this->ResetFileHandles();
