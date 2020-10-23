@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.ui.settings.viewmodel
 
+import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.*
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -8,7 +9,7 @@ import io.reactivex.functions.Function3
 import io.reactivex.rxkotlin.subscribeBy
 import kotlin.math.max
 
-class RemoteSettingsViewModel: BaseRemoteViewModel() {
+class RemoteSettingsViewModel(private val environment: IEnvironment): BaseRemoteViewModel() {
     private var gain: IGainSettings? = null
     private var outputs: IOutputs? = null
 
@@ -75,6 +76,15 @@ class RemoteSettingsViewModel: BaseRemoteViewModel() {
         }
         return listOf()
     }
+
+    val environmentInformation: String
+        get() {
+            return context.getString(
+                R.string.remote_settings_version_format,
+                environment.serverVersion,
+                environment.apiVersion,
+                environment.sdkVersion)
+        }
 
     private fun save(replayGainMode: ReplayGainMode,
                      preampGain: Float,

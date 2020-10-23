@@ -47,4 +47,10 @@ object Metadata {
         const val DEVICE_NAME = "device_name"
         const val DEVICE_ID = "device_id"
     }
+
+    object Environment {
+        const val API_VERSION = "api_version"
+        const val SDK_VERSION = "sdk_version"
+        const val APP_VERSION = "app_version"
+    }
 }

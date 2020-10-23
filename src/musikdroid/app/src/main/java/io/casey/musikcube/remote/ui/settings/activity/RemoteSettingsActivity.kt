@@ -33,6 +33,7 @@ class RemoteSettingsActivity: BaseActivity() {
     private lateinit var configureEq: TextView
     private lateinit var reindexButton: TextView
     private lateinit var rebuildButton: TextView
+    private lateinit var environmentTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         component.inject(this)
@@ -55,6 +56,7 @@ class RemoteSettingsActivity: BaseActivity() {
         configureEq = findViewById(R.id.configure_eq_button)
         reindexButton = findViewById(R.id.reindex_button)
         rebuildButton = findViewById(R.id.rebuild_button)
+        environmentTextView = findViewById(R.id.environment_information)
         initListeners()
 
         viewModel = getViewModel()!!
@@ -87,7 +89,7 @@ class RemoteSettingsActivity: BaseActivity() {
 
     override fun <T : ViewModel<*>> createViewModel(): T? {
         @Suppress("unchecked_cast")
-        return RemoteSettingsViewModel() as T
+        return RemoteSettingsViewModel(data.wss.environment) as T
     }
 
     override val transitionType: Transition
@@ -104,6 +106,7 @@ class RemoteSettingsActivity: BaseActivity() {
             deviceSpinner.setSelection(viewModel.selectedDeviceIndex)
             transportSpinner.setSelection(TRANSPORT_TYPE_TO_INDEX.getValue(viewModel.transportType))
             replayGainSpinner.setSelection(REPLAYGAIN_MODE_TO_INDEX.getValue(viewModel.replayGainMode))
+            environmentTextView.text = viewModel.environmentInformation
             initialized = true
         }
 

@@ -144,6 +144,8 @@
     <string name="remote_settings_eq_enabled">enable equalizer</string>
     <string name="remote_settings_eq_label_format">%d hz</string>
     <string name="remote_settings_eq_value_format">%d dB</string>
+    <string name="remote_settings_environment_title">environment</string>
+    <string name="remote_settings_version_format">server version: %s\napi version: %d\nsdk version: %d</string>
     <string name="diagnostics_title">diagnostics</string>
     <string name="diagnostics_app_runtime">app runtime: %s</string>
     <string name="diagnostics_wakelock_runtime">wakelock runtime: %s</string>

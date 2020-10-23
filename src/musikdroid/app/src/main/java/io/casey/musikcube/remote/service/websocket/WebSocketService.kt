@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.service.websocket
 
+import android.annotation.SuppressLint
 import android.content.*
 import android.content.Context.CONNECTIVITY_SERVICE
 import android.net.ConnectivityManager
@@ -9,12 +10,15 @@ import android.os.Message
 import android.util.Log
 import com.neovisionaries.ws.client.*
 import io.casey.musikcube.remote.BuildConfig
+import io.casey.musikcube.remote.service.websocket.model.IEnvironment
+import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteEnvironment
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.getString
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
 import io.casey.musikcube.remote.util.Preconditions
 import io.reactivex.Observable
 import io.reactivex.subjects.ReplaySubject
+import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 
@@ -128,7 +132,9 @@ class WebSocketService constructor(private val context: Context) {
     private val networkChanged = NetworkChangedReceiver()
     private var thread: ConnectThread? = null
     private val interceptors = HashSet<(SocketMessage, Responder) -> Boolean>()
-    private var serverVersion = -1
+
+    var environment: IEnvironment = RemoteEnvironment()
+        private set
 
     init {
         scheduleRemoveStaleCallbacks()
@@ -141,7 +147,7 @@ class WebSocketService constructor(private val context: Context) {
             Log.d(TAG, "state=$newState")
 
             if (state == State.Disconnected) {
-                serverVersion = -1
+                environment = RemoteEnvironment()
             }
 
             if (state != newState) {
@@ -215,7 +221,7 @@ class WebSocketService constructor(private val context: Context) {
     }
 
     fun shouldUpgrade(): Boolean {
-        return serverVersion > 0 && serverVersion > MINIMUM_SUPPORTED_API_VERSION
+        return environment.apiVersion > MINIMUM_SUPPORTED_API_VERSION
     }
 
     private fun scheduleRemoveStaleCallbacks() {
@@ -297,6 +303,7 @@ class WebSocketService constructor(private val context: Context) {
         return id
     }
 
+    @SuppressLint("CheckResult")
     fun observe(message: SocketMessage, client: Client): Observable<SocketMessage> {
         Preconditions.throwIfNotOnMainThread()
 
@@ -503,9 +510,8 @@ class WebSocketService constructor(private val context: Context) {
             val message = SocketMessage.create(text!!)
             if (message != null) {
                 if (message.name == Messages.Request.Authenticate.toString()) {
-                    serverVersion = message.getJsonObjectOption("environment")?.
-                        optInt("api_version", -1) ?: -1
-
+                    environment = RemoteEnvironment(
+                        message.getJsonObjectOption("environment") ?: JSONObject())
                     handler.sendMessage(Message.obtain(
                         handler, MESSAGE_CONNECT_THREAD_FINISHED, websocket))
                 }
@@ -586,9 +592,7 @@ class WebSocketService constructor(private val context: Context) {
     private inner class NetworkChangedReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val cm = context.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-
             val info = cm.activeNetworkInfo
-
             if (info != null && info.isConnected) {
                 if (autoReconnect) {
                     connectIfNotConnected()
@@ -608,7 +612,7 @@ class WebSocketService constructor(private val context: Context) {
         private const val AUTO_DISCONNECT_DELAY_MILLIS = 10000L
         private const val FLAG_AUTHENTICATION_FAILED = 0xbeef
         private const val WEBSOCKET_FLAG_POLICY_VIOLATION = 1008
-        private const val MINIMUM_SUPPORTED_API_VERSION = 15
+        private const val MINIMUM_SUPPORTED_API_VERSION = 20
 
         private const val MESSAGE_BASE = 0xcafedead.toInt()
         private const val MESSAGE_CONNECT_THREAD_FINISHED = MESSAGE_BASE + 0

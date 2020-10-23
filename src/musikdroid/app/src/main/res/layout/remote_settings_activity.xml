@@ -132,6 +132,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="24dp"
                 android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
                 android:orientation="horizontal">
 
                 <TextView
@@ -150,6 +151,24 @@
                     android:text="@string/remote_settings_rebuild_button"/>
 
             </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="8dp"
+                android:text="@string/remote_settings_environment_title"/>
+
+
+            <TextView
+                android:id="@+id/environment_information"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="8dp"
+                android:layout_marginLeft="24dp"
+                android:singleLine="false"
+                android:text="@string/remote_settings_version_format"/>
 
         </LinearLayout>
 
