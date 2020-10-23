@@ -70,6 +70,7 @@ RemoteLibrarySettingsLayout::RemoteLibrarySettingsLayout()
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
     this->SetFocusMode(FocusModeTerminating);
     this->InitializeWindows();
+    this->LoadPreferences();
 }
 
 RemoteLibrarySettingsLayout::~RemoteLibrarySettingsLayout() {
