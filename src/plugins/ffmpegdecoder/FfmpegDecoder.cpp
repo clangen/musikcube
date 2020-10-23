@@ -78,9 +78,11 @@ static int readCallback(void* opaque, uint8_t* buffer, int bufferSize) {
     FfmpegDecoder* decoder = static_cast<FfmpegDecoder*>(opaque);
     if (decoder && decoder->Stream()) {
         auto count = decoder->Stream()->Read(buffer, (PositionType) bufferSize);
-        return (count == bufferSize) ? count : AVERROR_EOF;
+        if (count > 0) {
+            return count;
+        }
     }
-    return 0;
+    return AVERROR_EOF;
 }
 
 static int writeCallback(void* opaque, uint8_t* buffer, int bufferSize) {
