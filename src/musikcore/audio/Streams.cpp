@@ -92,6 +92,7 @@ namespace musik { namespace core { namespace audio {
             for (; factories != end && !factory; ++factories) {
                 if ((*factories)->CanHandle(dataStream->Type())) {
                     factory = (*factories);
+                    break;
                 }
             }
 
