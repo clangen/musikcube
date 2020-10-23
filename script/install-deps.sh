@@ -6,7 +6,7 @@ if [ $OS == "Linux" ]; then
     DISTRO=`lsb_release -cs`
     echo "detected ${DISTRO}"
     case $DISTRO in
-      "focal")
+      "focal" | "groovy")
         sudo apt-get install build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev
         ;;
       "cosmic" | "disco" | "eoan")
