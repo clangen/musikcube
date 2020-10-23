@@ -54,7 +54,16 @@ using namespace cursespp;
 
 #define R(x) (x->GetX() + x->GetWidth())
 
-static const std::string kArrowSymbol = "> ";
+constexpr const char* kArrowSymbol = "> ";
+
+static int getIntFromTextInput(TextInput& input, int defaultValue = -1) {
+    try {
+        return std::stoi(input.GetText());
+    }
+    catch (...) {
+        return defaultValue;
+    }
+}
 
 static inline int longestStringLength(const std::vector<std::string>&& keys) {
     int max = 0;
@@ -228,8 +237,8 @@ void RemoteLibrarySettingsLayout::SyncPreferencesAndLayout() {
 
 void RemoteLibrarySettingsLayout::SavePreferences() {
     auto host = this->hostInput->GetText();
-    auto wssPort = std::stoi(this->wssPortInput->GetText());
-    auto httpPort = std::stoi(this->httpPortInput->GetText());
+    auto wssPort = getIntFromTextInput(*this->wssPortInput, 7905);
+    auto httpPort = getIntFromTextInput(*this->httpPortInput, 7906);
     auto password = this->pwInput->GetText();
     auto const wssTls = this->wssTlsCheckbox->IsChecked();
     auto const httpTls = this->httpTlsCheckbox->IsChecked();

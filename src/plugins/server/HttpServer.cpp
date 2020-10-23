@@ -565,7 +565,7 @@ int HttpServer::HandleAudioTrackRequest(
 #endif
 
             if (response) {
-                /* 'format' will be valid if we're transocding. otherwise, extract the extension
+                /* 'format' will be valid if we're transcoding. otherwise, extract the extension
                 from the filename. the client can use this as a hint when naming downloaded files */
                 std::string extension = format.size() ? format : fileExtension(filename);
                 MHD_add_response_header(response, "X-musikcube-File-Extension", extension.c_str());
