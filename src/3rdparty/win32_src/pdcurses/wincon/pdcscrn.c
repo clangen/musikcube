@@ -518,12 +518,8 @@ int PDC_resize_screen(int nlines, int ncols)
 {
     SMALL_RECT rect;
     COORD size, max;
-    const bool prog_resize = nlines || ncols;
 
-    if( !stdscr)     /* We're trying to specify an initial screen size */
-    {                /* before calling initscr().  This works on some  */
-        return OK;   /* some platforms,  but not on this one (yet).    */
-    }
+    bool prog_resize = nlines || ncols;
 
     if (!prog_resize)
     {

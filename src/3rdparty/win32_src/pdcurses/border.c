@@ -1,7 +1,6 @@
 /* PDCurses */
 
 #include <curspriv.h>
-#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -142,7 +141,6 @@ int wborder(WINDOW *win, chtype ls, chtype rs, chtype ts, chtype bs,
 
     PDC_LOG(("wborder() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 
@@ -208,7 +206,6 @@ int whline(WINDOW *win, chtype ch, int n)
 
     PDC_LOG(("whline() - called\n"));
 
-    assert( win);
     if (!win || n < 1)
         return ERR;
 
@@ -266,7 +263,6 @@ int wvline(WINDOW *win, chtype ch, int n)
 
     PDC_LOG(("wvline() - called\n"));
 
-    assert( win);
     if (!win || n < 1)
         return ERR;
 
@@ -352,7 +348,6 @@ int whline_set(WINDOW *win, const cchar_t *wch, int n)
 {
     PDC_LOG(("whline_set() - called\n"));
 
-    assert( wch);
     return wch ? whline(win, *wch, n) : ERR;
 }
 
@@ -387,7 +382,6 @@ int wvline_set(WINDOW *win, const cchar_t *wch, int n)
 {
     PDC_LOG(("wvline_set() - called\n"));
 
-    assert( wch);
     return wch ? wvline(win, *wch, n) : ERR;
 }
 

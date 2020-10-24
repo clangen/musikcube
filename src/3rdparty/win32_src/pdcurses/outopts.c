@@ -76,7 +76,6 @@ int clearok(WINDOW *win, bool bf)
 {
     PDC_LOG(("clearok() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 
@@ -109,7 +108,6 @@ int leaveok(WINDOW *win, bool bf)
 {
     PDC_LOG(("leaveok() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 
@@ -131,7 +129,6 @@ int wsetscrreg(WINDOW *win, int top, int bottom)
 {
     PDC_LOG(("wsetscrreg() - called: top %d bottom %d\n", top, bottom));
 
-    assert( win);
     if (win && 0 <= top && top <= win->_cury &&
         win->_cury <= bottom && bottom < win->_maxy)
     {
@@ -148,7 +145,6 @@ int scrollok(WINDOW *win, bool bf)
 {
     PDC_LOG(("scrollok() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 

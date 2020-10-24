@@ -645,7 +645,6 @@ int wadd_wch(WINDOW *win, const cchar_t *wch)
 {
     PDC_LOG(("wadd_wch() - called: win=%p wch=%x\n", win, *wch));
 
-    assert( wch);
     return wch ? waddch(win, *wch) : ERR;
 }
 
@@ -688,7 +687,6 @@ int wecho_wchar(WINDOW *win, const cchar_t *wch)
 {
     PDC_LOG(("wecho_wchar() - called: win=%p wch=%x\n", win, *wch));
 
-    assert( wch);
     if (!wch || (wadd_wch(win, wch) == ERR))
         return ERR;
 

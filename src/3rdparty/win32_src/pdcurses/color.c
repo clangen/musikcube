@@ -151,24 +151,15 @@ int start_color(void)
     return OK;
 }
 
-static int _default_foreground_idx = COLOR_WHITE;
-static int _default_background_idx = COLOR_BLACK;
-
-void PDC_set_default_colors( const int fg_idx, const int bg_idx)
-{
-   _default_foreground_idx = fg_idx;
-   _default_background_idx = bg_idx;
-}
-
 static void _normalize(int *fg, int *bg)
 {
     const bool using_defaults = (SP->orig_attr && (default_colors || !SP->color_started));
 
     if (*fg == -1 || *fg == UNSET_COLOR_PAIR)
-        *fg = using_defaults ? SP->orig_fore : _default_foreground_idx;
+        *fg = using_defaults ? SP->orig_fore : COLOR_WHITE;
 
     if (*bg == -1 || *bg == UNSET_COLOR_PAIR)
-        *bg = using_defaults ? SP->orig_back : _default_background_idx;
+        *bg = using_defaults ? SP->orig_back : COLOR_BLACK;
 }
 
 static void _init_pair_core(int pair, int fg, int bg)
@@ -223,7 +214,7 @@ int init_extended_pair(int pair, int fg, int bg)
         return ERR;
 
     _init_pair_core(pair, fg, bg);
-    curscr->_clear = TRUE;
+
     return OK;
 }
 
@@ -231,7 +222,6 @@ bool has_colors(void)
 {
     PDC_LOG(("has_colors() - called\n"));
 
-    assert( SP);
     return SP ? !(SP->mono) : FALSE;
 }
 
@@ -246,7 +236,7 @@ int init_extended_color(int color, int red, int green, int blue)
         return ERR;
 
     SP->dirty = TRUE;
-    curscr->_clear = TRUE;
+
     return PDC_init_color(color, red, green, blue);
 }
 
@@ -336,21 +326,24 @@ int PDC_set_line_color(short color)
         return ERR;
 
     SP->line_color = color;
-    curscr->_clear = TRUE;
+
     return OK;
 }
 
 int PDC_init_atrtab(void)
 {
+    int i;
+
     assert( SP);
     if( !SP->atrtab)
     {
-       atrtab_size_alloced = 1;
+       atrtab_size_alloced = PDC_COLOR_PAIRS;
        SP->atrtab = calloc( atrtab_size_alloced, sizeof(PDC_PAIR));
        if( !SP->atrtab)
            return -1;
     }
-    _init_pair_core( 0, UNSET_COLOR_PAIR, UNSET_COLOR_PAIR);
+    for (i = 0; i < atrtab_size_alloced; i++)
+       _init_pair_core( i, UNSET_COLOR_PAIR, UNSET_COLOR_PAIR);
     return( 0);
 }
 

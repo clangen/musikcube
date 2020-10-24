@@ -166,14 +166,11 @@ int PDC_wc_to_utf8( char *dest, const int32_t code)
 int getcchar(const cchar_t *wcval, wchar_t *wch, attr_t *attrs,
              short *color_pair, void *opts)
 {
-    assert( wcval);
     if (!wcval)
         return ERR;
 
     if (wch)
     {
-        assert( attrs);
-        assert( color_pair);
         if (!attrs || !color_pair)
             return ERR;
 
@@ -193,8 +190,6 @@ int getcchar(const cchar_t *wcval, wchar_t *wch, attr_t *attrs,
 int setcchar(cchar_t *wcval, const wchar_t *wch, const attr_t attrs,
              short color_pair, const void *opts)
 {
-    assert( wcval);
-    assert( wch);
     if (!wcval || !wch)
         return ERR;
 
@@ -211,7 +206,6 @@ wchar_t *wunctrl(cchar_t *wc)
 
     PDC_LOG(("wunctrl() - called\n"));
 
-    assert( wc);
     if (!wc)
         return NULL;
 
@@ -243,8 +237,6 @@ int PDC_mbtowc(wchar_t *pwc, const char *s, size_t n)
     int i = -1;
     const unsigned char *string;
 
-    assert( s);
-    assert( pwc);
     if (!s || (n < 1))
         return -1;
 
@@ -288,8 +280,6 @@ int PDC_mbtowc(wchar_t *pwc, const char *s, size_t n)
 
     return i;
 # else
-    assert( s);
-    assert( pwc);
     return mbtowc(pwc, s, n);
 # endif
 }
@@ -299,8 +289,6 @@ size_t PDC_mbstowcs(wchar_t *dest, const char *src, size_t n)
 # ifdef PDC_FORCE_UTF8
     size_t i = 0, len;
 
-    assert( src);
-    assert( dest);
     if (!src || !dest)
         return 0;
 
@@ -329,8 +317,6 @@ size_t PDC_wcstombs(char *dest, const wchar_t *src, size_t n)
 # ifdef PDC_FORCE_UTF8
     size_t i = 0;
 
-    assert( src);
-    assert( dest);
     if (!src || !dest)
         return 0;
 

@@ -129,6 +129,8 @@ App::App(const std::string& title) {
     this->minWidth = this->minHeight = 0;
     this->mouseEnabled = true;
 
+    this->SetTitle(title);
+
 #ifdef WIN32
     this->iconId = 0;
     this->colorMode = Colors::RGB;
@@ -140,9 +142,6 @@ App::App(const std::string& title) {
     std::signal(SIGPIPE, SIG_IGN);
     this->colorMode = Colors::Palette;
 #endif
-
-    this->InitCurses();
-    this->SetTitle(title);
 }
 
 App::~App() {
@@ -150,6 +149,15 @@ App::~App() {
 }
 
 void App::InitCurses() {
+#ifdef WIN32
+    PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
+    #ifdef PDCURSES_WINGUI
+        PDC_set_default_menu_visibility(0);
+        PDC_set_title(this->appTitle.c_str());
+        PDC_set_color_intensify_enabled(false);
+    #endif
+#endif
+
     initscr();
     nonl();
     cbreak();
@@ -159,21 +167,17 @@ void App::InitCurses() {
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
 
-#ifdef WIN32
-    PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
-    #ifdef PDCURSES_WINGUI
-        /* needs to happen after initscr() */
-        PDC_set_default_menu_visibility(0);
-        PDC_set_title(this->appTitle.c_str());
-        PDC_set_color_intensify_enabled(false);
-        win32::InterceptWndProc();
-        win32::SetAppTitle(this->appTitle);
-        if (this->iconId) {
-            this->SetIcon(this->iconId);
-        }
-    #endif
-#else
+#ifndef WIN32
     set_escdelay(20);
+#endif
+
+#ifdef PDCURSES_WINGUI
+    /* needs to happen after initscr() */
+    win32::InterceptWndProc();
+    win32::SetAppTitle(this->appTitle);
+    if (this->iconId) {
+        this->SetIcon(this->iconId);
+    }
 #endif
 
     Colors::Init(this->colorMode, this->bgType);
@@ -377,6 +381,8 @@ void App::Run(ILayoutPtr layout) {
         return;
     }
 #endif
+
+    this->InitCurses();
 
     MEVENT mouseEvent;
     int64_t ch;

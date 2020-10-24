@@ -4,7 +4,6 @@
 #include <tchar.h>
 #include <stdint.h>
 #include <assert.h>
-#include <process.h>
 #include "pdccolor.h"
 #ifdef WIN32_LEAN_AND_MEAN
    #ifdef PDC_WIDE
@@ -67,7 +66,7 @@ cube of 16 million colors. */
 int PDC_show_ctrl_alts = 0;
 
 /* RR: Removed statis on next line */
-/*bool PDC_bDone = FALSE;*/
+bool PDC_bDone = FALSE;
 static HWND originally_focussed_window;
 
 int debug_printf( const char *format, ...)
@@ -106,8 +105,6 @@ int debug_printf( const char *format, ...)
 HWND PDC_hWnd;
 static int PDC_argc = 0;
 static char **PDC_argv = NULL;
-uint32_t winthr_id = 0;
-CRITICAL_SECTION PDC_cs;
 
 static void final_cleanup( void)
 {
@@ -144,7 +141,7 @@ void PDC_scr_close(void)
 {
     PDC_LOG(("PDC_scr_close() - called\n"));
     final_cleanup( );
-    /*PDC_bDone = TRUE;*/
+    PDC_bDone = TRUE;
 }
 
 /* NOTE that PDC_scr_free( ) is called only from delscreen( ),    */
@@ -610,11 +607,8 @@ static int set_mouse( const int button_index, const int button_state,
     {
         if( button_index < 0)
             SP->mouse_status.changes = PDC_MOUSE_POSITION;
-        else
-        {
+         else
             SP->mouse_status.changes = PDC_MOUSE_MOVED | (1 << button_index);
-            SP->mouse_status.button[button_index] = BUTTON_MOVED;
-        }
     }
     else
     {
@@ -1218,8 +1212,8 @@ void PDC_set_resize_limits( const int new_min_lines, const int new_max_lines,
       /* one on each side.  Vertically,  we need two frame heights,  plus room */
       /* for the application title and the menu.  */
 
-static void adjust_window_size( int *xpixels, int *ypixels, DWORD window_style,
-               const int menu_shown, DWORD window_ex_style)
+static void adjust_window_size( int *xpixels, int *ypixels, int window_style,
+               const int menu_shown)
 {
     RECT rect;
 
@@ -1227,7 +1221,7 @@ static void adjust_window_size( int *xpixels, int *ypixels, DWORD window_style,
     rect.right = *xpixels;
     rect.bottom = *ypixels;
 /*  printf( "Adjusting to %d, %d\n", *xpixels, *ypixels); */
-    AdjustWindowRectEx( &rect, window_style, menu_shown, window_ex_style);
+    AdjustWindowRect( &rect, window_style, menu_shown);
     *xpixels = rect.right - rect.left;
     *ypixels = rect.bottom - rect.top;
 }
@@ -1416,8 +1410,7 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
         int new_ypixels = PDC_cyChar * PDC_n_rows;
 
         adjust_window_size( &new_xpixels, &new_ypixels,
-                            GetWindowLong( PDC_hWnd, GWL_STYLE), menu_shown,
-                            GetWindowLong( PDC_hWnd, GWL_EXSTYLE));
+                            GetWindowLong( PDC_hWnd, GWL_STYLE), menu_shown);
         debug_printf( "Irregular size\n");
         SetWindowPos( PDC_hWnd, 0, 0, 0,
                       new_xpixels, new_ypixels,
@@ -1566,33 +1559,74 @@ static void HandleSyskeyDown( const WPARAM wParam, const LPARAM lParam,
         SP->key_modifiers |= PDC_KEY_MODIFIER_REPEAT;
 }
 
+/* Blinking text is supposed to blink twice a second.  Therefore,
+HandleTimer( ) is called every .5 seconds.
+
+   In truth,  it's not so much 'blinking' as 'changing certain types of
+text' that happens.  If text is really blinking (i.e.,  PDC_set_blink(TRUE)
+has been called),  we need to flip that text.  Or if text _was_ blinking
+and we've just called PDC_set_blink(FALSE),  all that text has to be
+redrawn in 'standout' mode.  Also,  if PDC_set_line_color() has been
+called,  all text with left/right/under/over/strikeout lines needs to
+be redrawn.
+
+   Also,  if we've switched from rendering bold text using a bold
+font to showing it in intensified color,  or vice versa,  then all
+bold text needs to be redrawn.
+
+   So.  After determining which attributes require redrawing (if any),
+we run through all of 'curscr' and look for text with those attributes
+set.  If we find such text,  we run it through PDC_transform_line.
+(To speed matters up slightly,  we skip over text at the start and end
+of each line that lacks the desired attributes. We could conceivably
+get more clever;  as it stands,  if the very first and very last
+characters are blinking,  we redraw the entire line,  even though
+everything in between may not require it.  But it would probably be a
+lot of code for little benefit.)
+
+   Note that by default,  we'll usually find that the line color hasn't
+changed and the 'blink mode' is still FALSE.  In that case,  attr_to_seek
+will be zero and the only thing we'll do here is to blink the cursor. */
+
 static void HandleTimer( const WPARAM wParam )
 {
     int i;           /* see WndProc() notes */
+    static attr_t prev_termattrs;
+    static int prev_line_color = -1;
+    chtype attr_to_seek = 0;
 
+    if( prev_line_color != SP->line_color)
+        attr_to_seek = A_ALL_LINES;
+    if( (SP->termattrs | prev_termattrs) & A_BLINK)
+        attr_to_seek |= A_BLINK;
+    if( (SP->termattrs ^ prev_termattrs) & A_BOLD)
+        attr_to_seek |= A_BOLD;
+    prev_line_color = SP->line_color;
+    prev_termattrs = SP->termattrs;
     PDC_blink_state ^= 1;
-    if( SP->termattrs & A_BLINK)
+    if( attr_to_seek)
     {
         for( i = 0; i < SP->lines; i++)
         {
             if( curscr->_y[i])
             {
-                int j = 0;
+                int j = 0, n_chars;
                 chtype *line = curscr->_y[i];
 
                 /* skip over starting text that isn't blinking: */
-                while( j < SP->cols)
+                while( j < SP->cols && !(*line & attr_to_seek))
                 {
-                    int k;
-
-                    while( j < SP->cols && !(line[j] & A_BLINK))
-                        j++;
-                    k = j;
-                    while( j < SP->cols && (line[j] & A_BLINK))
-                        j++;
-                    if( k != j)
-                        PDC_transform_line( i, k, j - k, line + k);
+                    j++;
+                    line++;
                 }
+                n_chars = SP->cols - j;
+                /* then skip over text at the end that's not blinking: */
+                while( n_chars && !(line[n_chars - 1] & attr_to_seek))
+                {
+                    n_chars--;
+                }
+                if( n_chars)
+                    PDC_transform_line( i, j, n_chars, line);
             }
 /*          else
                 MessageBox( 0, "NULL _y[] found\n", "PDCurses", MB_OK);  */
@@ -1636,8 +1670,9 @@ INLINE void HandleMenuToggle( bool *ptr_ignore_resize)
     if( !menu_shown)
     {
         hMenu = GetMenu( PDC_hWnd);   /* destroy existing menu */
-        SetMenu( PDC_hWnd, NULL);
         DestroyMenu( hMenu);
+        hMenu = CreateMenu( );        /* then set an empty menu */
+        SetMenu( PDC_hWnd, hMenu);
     }
     else
     {
@@ -1700,6 +1735,7 @@ static int add_mouse( int button, const int action, const int x, const int y)
    if( action == BUTTON_MOVED)
    {
        int i;
+       bool report_this_move = FALSE;
 
        if( !actually_moved)     /* have to move to a new character cell, */
            return( -1);         /* not just a new pixel */
@@ -1708,6 +1744,18 @@ static int add_mouse( int button, const int action, const int x, const int y)
            if( (mouse_state >> i) & 1)
                button = i;
        if( button == -1 && !(SP->_trap_mbe & REPORT_MOUSE_POSITION))
+           return( -1);
+       if(        (button == 1 && (SP->_trap_mbe & BUTTON1_MOVED))
+               || (button == 2 && (SP->_trap_mbe & BUTTON2_MOVED))
+               || (button == 3 && (SP->_trap_mbe & BUTTON3_MOVED)))
+           report_this_move = TRUE;
+       else if( SP->_trap_mbe & REPORT_MOUSE_POSITION)
+           {
+           report_this_move = TRUE;
+           button = 0;
+           }
+       debug_printf( "Move button %d, (%d %d) : %d\n", button, x, y, report_this_move);
+       if( !report_this_move)
            return( -1);
    }
 
@@ -1790,6 +1838,11 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     static bool ignore_resize = FALSE;
     int button = -1, action = -1;
 
+    PDC_hWnd = hwnd;
+    if( !hwnd)
+        debug_printf( "Null hWnd: msg %u, wParam %x, lParam %lx\n",
+                     message, wParam, lParam);
+
     switch (message)
     {
     case WM_SIZING:
@@ -1799,16 +1852,12 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     case WM_SIZE:
                 /* If ignore_resize = 1,  don't bother resizing; */
                 /* the final window size has yet to be set       */
-        if( ignore_resize == FALSE) {
-            EnterCriticalSection(&PDC_cs);
-            HandleSize( wParam, lParam);
-            LeaveCriticalSection(&PDC_cs);
-        }
+        if( ignore_resize == FALSE)
+           HandleSize( wParam, lParam);
         return 0 ;
 
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        EnterCriticalSection(&PDC_cs);
         {
             POINT pt;
 
@@ -1821,16 +1870,12 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
                       ? VERTICAL_WHEEL_EVENT : HORIZONTAL_WHEEL_EVENT,
                       (short)( HIWORD(wParam)), pt.x / PDC_cxChar, pt.y / PDC_cyChar);
         }
-        LeaveCriticalSection(&PDC_cs);
-        return 0;
+        break;
 
     case WM_MOUSEMOVE:
-        EnterCriticalSection(&PDC_cs);
         if( HandleMouseMove( wParam, lParam))
             modified_key_to_return = 0;
-        add_mouse( -1, -1, -1, -1);
-        LeaveCriticalSection(&PDC_cs);
-        return 0;
+        break;
 
     case WM_LBUTTONDOWN:
         button = 1;
@@ -1891,14 +1936,11 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
       /* refresh.c.  I'm not entirely sure that this is what ought to be  */
       /* done,  though it does appear to work correctly.                  */
     case WM_PAINT:
-        EnterCriticalSection(&PDC_cs);
         HandlePaint( hwnd );
-        LeaveCriticalSection(&PDC_cs);
-        return 0;
+        break;
 
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        EnterCriticalSection(&PDC_cs);
         if( wParam == VK_MENU && numpad_unicode_value)
         {
             modified_key_to_return = numpad_unicode_value;
@@ -1909,14 +1951,10 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         {
             add_key_to_queue( modified_key_to_return );
             modified_key_to_return = 0;
-            LeaveCriticalSection(&PDC_cs);
-            return 0;
         }
-        LeaveCriticalSection(&PDC_cs);
-        return DefWindowProc(hwnd, message, wParam, lParam);
+        break;
 
     case WM_CHAR:       /* _Don't_ add Shift-Tab;  it's handled elsewhere */
-        EnterCriticalSection(&PDC_cs);
         if( wParam == 3 && !SP->raw_inp)     /* Ctrl-C hit */
             exit( 0);
         if( wParam != 9 || !(GetKeyState( VK_SHIFT) & 0x8000))
@@ -1924,25 +1962,20 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
                add_key_to_queue( (int)wParam );
         key_already_handled = FALSE;
         last_key_handled = 0;
-        LeaveCriticalSection(&PDC_cs);
-        return 0;
+        break;
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
         if( wParam < 225 && wParam > 0 )
         {
-            EnterCriticalSection(&PDC_cs);
             HandleSyskeyDown( wParam, lParam, &modified_key_to_return );
-            LeaveCriticalSection(&PDC_cs);
-            return 0;
         }
-        return DefWindowProc(hwnd, message, wParam, lParam);
+        return 0 ;
 
     case WM_SYSCHAR:
         return 0 ;
 
     case WM_TIMER:
-        EnterCriticalSection(&PDC_cs);
         if( wParam != TIMER_ID_FOR_BLINKING)
         {
             KillTimer( PDC_hWnd, (int)wParam);
@@ -1955,84 +1988,66 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
             /* blink the blinking text */
             HandleTimer( wParam );
         }
-        add_mouse( -1, -1, -1, -1);
-        LeaveCriticalSection(&PDC_cs);
-        return 0;
+        break;
 
     case WM_CLOSE:
-        EnterCriticalSection(&PDC_cs);
-        if( !PDC_shutdown_key[FUNCTION_KEY_SHUT_DOWN])
         {
-            final_cleanup( );
-            /*PDC_bDone = TRUE;*/
-            exit( 0);
+            if( !PDC_shutdown_key[FUNCTION_KEY_SHUT_DOWN])
+            {
+                final_cleanup( );
+                PDC_bDone = TRUE;
+                exit( 0);
+            }
+            else
+                add_key_to_queue( PDC_shutdown_key[FUNCTION_KEY_SHUT_DOWN]);
         }
-        else
-            add_key_to_queue( PDC_shutdown_key[FUNCTION_KEY_SHUT_DOWN]);
-
-        LeaveCriticalSection(&PDC_cs);
         return( 0);
 
     case WM_COMMAND:
     case WM_SYSCOMMAND:
         if( wParam == WM_EXIT_GRACELESSLY)
         {
-            EnterCriticalSection(&PDC_cs);
             final_cleanup( );
-            /*PDC_bDone = TRUE;*/
+            PDC_bDone = TRUE;
             exit( 0);
         }
         else if( wParam == WM_ENLARGE_FONT || wParam == WM_SHRINK_FONT)
         {
-            EnterCriticalSection(&PDC_cs);
             adjust_font_size( (wParam == WM_ENLARGE_FONT) ? 1 : -1);
-            LeaveCriticalSection(&PDC_cs);
             return( 0);
         }
         else if( wParam == WM_CHOOSE_FONT)
         {
-            EnterCriticalSection(&PDC_cs);
             if( PDC_choose_a_new_font( ))
                 adjust_font_size( 0);
-            LeaveCriticalSection(&PDC_cs);
             return( 0);
         }
         else if( wParam == WM_TOGGLE_MENU)
         {
-            EnterCriticalSection(&PDC_cs);
             HandleMenuToggle( &ignore_resize);
-            LeaveCriticalSection(&PDC_cs);
-            return 0;
         }
-        return DefWindowProc(hwnd, message, wParam, lParam);
+        break;
 
     case WM_DESTROY:
-        EnterCriticalSection(&PDC_cs);
         PDC_LOG(("WM_DESTROY\n"));
         PostQuitMessage (0) ;
-        /*PDC_bDone = TRUE;*/
-        LeaveCriticalSection(&PDC_cs);
+        PDC_bDone = TRUE;
         return 0 ;
-
-    default:
-        return DefWindowProc( hwnd, message, wParam, lParam) ;
     }
-
-    /* mouse button handling code */
-    assert( button != -1);
-    EnterCriticalSection(&PDC_cs);
-
-    add_mouse( button, action, LOWORD( lParam) / PDC_cxChar, HIWORD( lParam) / PDC_cyChar);
-    if( action == BUTTON_PRESSED)
-       SetCapture( hwnd);
-    else
-       ReleaseCapture( );
+    if( button != -1)
+    {
+        add_mouse( button, action, LOWORD( lParam) / PDC_cxChar, HIWORD( lParam) / PDC_cyChar);
+        if( action == BUTTON_PRESSED)
+           SetCapture( hwnd);
+        else
+           ReleaseCapture( );
 #if 0 /* checkme */
-    SetTimer( hwnd, 0, SP->mouse_wait, NULL);
+        SetTimer( hwnd, 0, SP->mouse_wait, NULL);
 #endif
-
-    LeaveCriticalSection(&PDC_cs);
-    return 0;
+    }
+    else
+       add_mouse( -1, -1, -1, -1);
+    return DefWindowProc( hwnd, message, wParam, lParam) ;
 }
 
       /* Default behaviour is that,  when one clicks on the 'close' button, */
@@ -2126,79 +2141,6 @@ static void clip_or_center_window_to_monitor( HWND hwnd)
 }
 #endif
 
-struct PDC_WININFO {
-    HANDLE hInstance;
-    int xsize;
-    int ysize;
-    DWORD window_style;
-    DWORD window_ex_style;
-    int xloc;
-    int yloc;
-    TCHAR WindowTitle[MAX_PATH];
-};
-
-static const TCHAR *AppName = _T( "Curses_App");
-static HANDLE winthr_ready;
-
-/* Thread that creates and manages the WinGUI window.
-   The return type (and declared type of winthr_id) is uint32_t instead of
-   DWORD to avoid compiler warnings. */
-
-static uint32_t WINAPI window_thread(LPVOID lpParameter)
-{
-    MSG msg;
-    HMENU hMenu;
-    struct PDC_WININFO *winfo = (struct PDC_WININFO *) lpParameter;
-    BOOL rval;
-
-    PDC_hWnd = CreateWindowEx(winfo->window_ex_style, AppName,
-                    winfo->WindowTitle, winfo->window_style,
-                    winfo->xloc, winfo->yloc,
-                    winfo->xsize, winfo->ysize,
-                    NULL, (menu_shown ? set_menu( ) : NULL),
-                    winfo->hInstance, NULL) ;
-
-    if( !PDC_hWnd)
-    {
-        const DWORD last_error = GetLastError( );
-
-        debug_printf( "CreateWindow failed; GetLastError = %ld", last_error);
-        return( 2);
-    }
-
-    hMenu = GetSystemMenu( PDC_hWnd, FALSE);
-    AppendMenu( hMenu, MF_STRING | (menu_shown ? MF_CHECKED : MF_UNCHECKED), WM_TOGGLE_MENU, _T( "Menu"));
-    AppendMenu( hMenu, MF_STRING, WM_CHOOSE_FONT, _T( "Choose Font"));
-
-    debug_printf( "menu set\n");
-
-    ShowWindow (PDC_hWnd,
-                    (winfo->window_style & WS_MAXIMIZE) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
-    debug_printf( "window shown\n");
-    UpdateWindow (PDC_hWnd) ;
-    debug_printf( "window updated\n");
-    SetTimer( PDC_hWnd, TIMER_ID_FOR_BLINKING, 500, NULL);
-    debug_printf( "timer set\n");
-
-#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
-    /* if the window is off-screen, move it on screen. */
-    clip_or_center_window_to_monitor( PDC_hWnd);
-#endif
-
-    SetEvent(winthr_ready);
-
-    while ((rval = GetMessage(&msg, NULL, 0, 0)) == TRUE) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
-    if (rval == -1) {
-        debug_printf("GetMessage() error: GetLastError = %lu\n", GetLastError());
-        return 1;
-    }
-    return 0;
-}
-
 /* By default,  the user cannot resize the window.  This is because
 many apps don't handle KEY_RESIZE,  and one can get odd behavior
 in such cases.  There are two ways around this.  If you call
@@ -2223,33 +2165,29 @@ INLINE int set_up_window( void)
 {
     /* create the dialog window  */
     WNDCLASS   wndclass ;
+    HMENU hMenu;
     HANDLE hInstance = GetModuleHandle( NULL);
     int n_default_columns = 80;
     int n_default_rows = 25;
-    struct PDC_WININFO winfo;
+    int xsize, ysize, window_style;
+    int xloc = CW_USEDEFAULT;
+    int yloc = CW_USEDEFAULT;
+    TCHAR WindowTitle[MAX_PATH];
+    const TCHAR *AppName = _T( "Curses_App");
     HICON icon;
-    /*static bool wndclass_has_been_registered = FALSE;*/
-    HANDLE winthr_h;
-    HANDLE hWait[2];
-    DWORD winthr_status;
+    static bool wndclass_has_been_registered = FALSE;
 
     if( !hInstance)
         debug_printf( "No instance: %d\n", GetLastError( ));
-
-    winfo.hInstance = hInstance;
-    winfo.xloc = CW_USEDEFAULT;
-    winfo.yloc = CW_USEDEFAULT;
-
     originally_focussed_window = GetForegroundWindow( );
     debug_printf( "hInstance %x\nOriginal window %x\n", hInstance, originally_focussed_window);
-    /*if( !wndclass_has_been_registered)*/
+    /* set the window icon from the icon in the process */
+    icon = get_app_icon(hInstance);
+    if( !icon )
+       icon = LoadIcon( NULL, IDI_APPLICATION);
+    if( !wndclass_has_been_registered)
     {
         ATOM rval;
-
-        /* set the window icon from the icon in the process */
-        icon = get_app_icon(hInstance);
-        if( !icon )
-           icon = LoadIcon( NULL, IDI_APPLICATION);
 
         wndclass.style         = CS_VREDRAW ;
         wndclass.lpfnWndProc   = WndProc ;
@@ -2270,13 +2208,12 @@ INLINE int set_up_window( void)
             debug_printf( "RegisterClass failed: GetLastError = %lx\n", last_error);
             return( -1);
         }
-        /*wndclass_has_been_registered = TRUE;*/
+        wndclass_has_been_registered = TRUE;
     }
 
-    get_app_name( winfo.WindowTitle, MAX_PATH, TRUE);
-
+    get_app_name( WindowTitle, MAX_PATH, TRUE);
 #ifdef PDC_WIDE
-    debug_printf( "WindowTitle = '%ls'\n", winfo.WindowTitle);
+    debug_printf( "WindowTitle = '%ls'\n", WindowTitle);
 #endif
 
     if( PDC_n_rows > 2 && PDC_n_cols > 2)
@@ -2285,9 +2222,8 @@ INLINE int set_up_window( void)
         n_default_rows    = PDC_n_rows;
     }
 
-    get_default_sizes_from_registry( &n_default_columns, &n_default_rows,
-                                     &winfo.xloc, &winfo.yloc,
-                                     &menu_shown);
+    get_default_sizes_from_registry( &n_default_columns, &n_default_rows, &xloc, &yloc,
+                     &menu_shown);
 
     if( ttytype[1])
         PDC_set_resize_limits( (unsigned char)ttytype[0],
@@ -2295,55 +2231,57 @@ INLINE int set_up_window( void)
                                (unsigned char)ttytype[2],
                                (unsigned char)ttytype[3]);
     debug_printf( "Size %d x %d,  loc %d x %d;  menu %d\n",
-               n_default_columns, n_default_rows, winfo.xloc, winfo.yloc, menu_shown);
+               n_default_columns, n_default_rows, xloc, yloc, menu_shown);
     get_character_sizes( NULL, &PDC_cxChar, &PDC_cyChar);
 
     if( min_lines != max_lines || min_cols != max_cols)
-        winfo.window_style = ((n_default_columns == -1) ?
+        window_style = ((n_default_columns == -1) ?
                     WS_MAXIMIZE | WS_OVERLAPPEDWINDOW : WS_OVERLAPPEDWINDOW);
     else  /* fixed-size window:  looks "normal",  but w/o a maximize box */
-        winfo.window_style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-
-    winfo.window_ex_style = WS_EX_CLIENTEDGE;
+        window_style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
     if( n_default_columns == -1)
-        winfo.xsize = winfo.ysize = CW_USEDEFAULT;
+        xsize = ysize = CW_USEDEFAULT;
     else
     {
         keep_size_within_bounds( &n_default_rows, &n_default_columns);
-        winfo.xsize = PDC_cxChar * n_default_columns;
-        winfo.ysize = PDC_cyChar * n_default_rows;
-        adjust_window_size( &winfo.xsize, &winfo.ysize, winfo.window_style,
-                            menu_shown, winfo.window_ex_style);
+        xsize = PDC_cxChar * n_default_columns;
+        ysize = PDC_cyChar * n_default_rows;
+        adjust_window_size( &xsize, &ysize, window_style, menu_shown);
     }
 
-    InitializeCriticalSection(&PDC_cs);
-    winthr_ready = CreateEvent(NULL, FALSE, FALSE, NULL);
-    winthr_h = (HANDLE) _beginthreadex(NULL, 0, window_thread, &winfo, 0, &winthr_id);
-    if (winthr_h == (HANDLE) 0) {
-        debug_printf("_beginthreadex() failed: %s\n", strerror(errno));
-        DeleteCriticalSection(&PDC_cs);
-        CloseHandle(winthr_ready);
-        CloseHandle(winthr_h);
-        return -1;
+    PDC_hWnd = CreateWindow( AppName, WindowTitle, window_style,
+                    xloc, yloc,
+                    xsize, ysize,
+                    NULL, (menu_shown ? set_menu( ) : NULL),
+                    hInstance, NULL) ;
+
+    if( !PDC_hWnd)
+    {
+        const DWORD last_error = GetLastError( );
+
+        debug_printf( "CreateWindow failed; GetLastError = %ld", last_error);
+        return( -2);
     }
 
-    hWait[0] = winthr_ready;
-    hWait[1] = winthr_h;
-    WaitForMultipleObjects(2, hWait, FALSE, INFINITE);
-    CloseHandle(winthr_ready);
-    if (!GetExitCodeThread(winthr_h, &winthr_status)) {
-        debug_printf("GetExitCodeThread() failed: GetLastError = %lu\n", GetLastError());
-        DeleteCriticalSection(&PDC_cs);
-        CloseHandle(winthr_h);
-        return -1;
-    }
-    CloseHandle(winthr_h);
-    if (winthr_status != STILL_ACTIVE) {
-        debug_printf("Premature window_thread termination: exit code = %lu\n", winthr_status);
-        DeleteCriticalSection(&PDC_cs);
-        return winthr_status;
-    }
+    hMenu = GetSystemMenu( PDC_hWnd, FALSE);
+    AppendMenu( hMenu, MF_STRING | (menu_shown ? MF_CHECKED : MF_UNCHECKED), WM_TOGGLE_MENU, _T( "Menu"));
+    AppendMenu( hMenu, MF_STRING, WM_CHOOSE_FONT, _T( "Choose Font"));
+
+    debug_printf( "menu set\n");
+
+    ShowWindow (PDC_hWnd,
+                    (n_default_columns == -1) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
+    debug_printf( "window shown\n");
+    UpdateWindow (PDC_hWnd) ;
+    debug_printf( "window updated\n");
+    SetTimer( PDC_hWnd, TIMER_ID_FOR_BLINKING, 500, NULL);
+    debug_printf( "timer set\n");
+
+#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
+    /* if the window is off-screen, move it on screen. */
+    clip_or_center_window_to_monitor( PDC_hWnd);
+#endif
 
     return( 0);
 }
@@ -2408,8 +2346,6 @@ int PDC_scr_open(void)
     while( !PDC_get_rows( ))     /* wait for screen to be drawn and */
       ;                          /* actual size to be determined    */
 
-    EnterCriticalSection(&PDC_cs);
-
     debug_printf( "Back from PDC_get_rows\n");
     SP->lines = PDC_get_rows();
     SP->cols = PDC_get_columns();
@@ -2457,19 +2393,11 @@ int PDC_resize_screen( int nlines, int ncols)
 
         if( new_width != client_rect.right || new_height != client_rect.bottom)
         {                    /* check to make sure size actually changed */
-            DWORD thr_id = GetCurrentThreadId();
             add_resize_key = 0;
-
-            if (thr_id != winthr_id)
-                LeaveCriticalSection(&PDC_cs);
-
             SetWindowPos( PDC_hWnd, 0, 0, 0,
                    new_width + (rect.right - rect.left) - client_rect.right,
                    new_height + (rect.bottom - rect.top) - client_rect.bottom,
                   SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW);
-
-            if (thr_id != winthr_id)
-                EnterCriticalSection(&PDC_cs);
         }
     }
     return OK;
@@ -2499,6 +2427,17 @@ void PDC_save_screen_mode(int i)
 {
 }
 
+/* NOTE:  as with PDC_init_color() (see below),  this function has to
+redraw all text with color attribute 'pair' to match the newly-set
+foreground and background colors.  The loops to go through every character
+in curscr,  looking for those that need to be redrawn and ignoring
+those at the front and start of each line,  are very similar. */
+
+static int get_pair( const chtype ch)
+{
+   return( (int)( (ch & A_COLOR) >> PDC_COLOR_SHIFT));
+}
+
 bool PDC_can_change_color(void)
 {
     return TRUE;
@@ -2515,12 +2454,63 @@ int PDC_color_content( int color, int *red, int *green, int *blue)
     return OK;
 }
 
+/* We have an odd problem when changing colors with PDC_init_color().  On
+palette-based systems,  you just change the palette and the hardware takes
+care of the rest.  Here,  though,  we actually need to redraw any text that's
+drawn in the specified color.  So we gotta look at each character and see if
+either the foreground or background matches the index that we're changing.
+Then, that text gets redrawn.  For speed/simplicity,  the code looks for the
+first and last character in each line that would be affected, then draws those
+in between (frequently,  this will be zero characters, i.e., no text on that
+particular line happens to use the color index in question.)  See similar code
+above for PDC_init_pair(),  to handle basically the same problem. */
+
+static int color_used_for_this_char( const chtype c, const int idx)
+{
+    const int color = get_pair( c);
+    int fg, bg;
+    int rval;
+
+    extended_pair_content( color, &fg, &bg);
+    rval = (fg == idx || bg == idx);
+    return( rval);
+}
+
 int PDC_init_color( int color, int red, int green, int blue)
 {
     const COLORREF new_rgb = RGB(DIVROUND(red * 255, 1000),
                                  DIVROUND(green * 255, 1000),
                                  DIVROUND(blue * 255, 1000));
 
-    PDC_set_palette_entry( color, new_rgb);
+    if( !PDC_set_palette_entry( color, new_rgb))
+    {
+        /* Possibly go through curscr and redraw everything with that color! */
+        if( curscr && curscr->_y)
+        {
+            int i;
+
+            for( i = 0; i < SP->lines; i++)
+                if( curscr->_y[i])
+                {
+                    int j = 0, n_chars;
+                    chtype *line = curscr->_y[i];
+
+             /* skip over starting text that isn't of the desired color: */
+                    while( j < SP->cols
+                                 && !color_used_for_this_char( *line, color))
+                    {
+                        j++;
+                        line++;
+                    }
+                    n_chars = SP->cols - j;
+            /* then skip over text at the end that's not the right color: */
+                    while( n_chars &&
+                         !color_used_for_this_char( line[n_chars - 1], color))
+                        n_chars--;
+                    if( n_chars)
+                        PDC_transform_line( i, j, n_chars, line);
+                }
+        }
+    }
     return OK;
 }

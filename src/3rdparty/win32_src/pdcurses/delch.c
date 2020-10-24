@@ -1,7 +1,6 @@
 /* PDCurses */
 
 #include <curspriv.h>
-#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -45,7 +44,6 @@ int wdelch(WINDOW *win)
 
     PDC_LOG(("wdelch() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 

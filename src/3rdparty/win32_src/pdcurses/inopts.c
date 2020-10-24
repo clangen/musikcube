@@ -202,7 +202,6 @@ int keypad(WINDOW *win, bool bf)
 {
     PDC_LOG(("keypad() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 
@@ -254,7 +253,6 @@ int nodelay(WINDOW *win, bool flag)
 {
     PDC_LOG(("nodelay() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 
@@ -319,7 +317,6 @@ void wtimeout(WINDOW *win, int delay)
 {
     PDC_LOG(("wtimeout() - called\n"));
 
-    assert( win);
     if (!win)
         return;
 
@@ -375,7 +372,6 @@ bool is_keypad(const WINDOW *win)
 {
     PDC_LOG(("is_keypad() - called\n"));
 
-    assert( win);
     if (!win)
         return FALSE;
 

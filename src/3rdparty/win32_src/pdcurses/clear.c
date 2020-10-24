@@ -1,7 +1,6 @@
 /* PDCurses */
 
 #include <curspriv.h>
-#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -59,7 +58,6 @@ int wclrtoeol(WINDOW *win)
     PDC_LOG(("wclrtoeol() - called: Row: %d Col: %d\n",
              win->_cury, win->_curx));
 
-    assert( win);
     if (!win)
         return ERR;
 
@@ -95,7 +93,6 @@ int wclrtobot(WINDOW *win)
 
     PDC_LOG(("wclrtobot() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 
@@ -147,7 +144,6 @@ int wclear(WINDOW *win)
 {
     PDC_LOG(("wclear() - called\n"));
 
-    assert( win);
     if (!win)
         return ERR;
 
