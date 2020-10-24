@@ -396,8 +396,8 @@ void HttpDataStream::ResetFileHandles() {
 
 void HttpDataStream::ThreadProc() {
     if (this->curlEasy) {
-        static const int kMaxRetries = 3;
-        int retryCount = 0;
+        static const int kMaxRetries = 10;
+        int retryCount = 0; /* note: weighted based on failure type */
         while (this->state != State::Downloaded && !this->interrupted) {
             auto const curlCode = curl_easy_perform(this->curlEasy);
             long httpStatusCode = 0;
@@ -415,7 +415,7 @@ void HttpDataStream::ThreadProc() {
             else {
                 if (httpStatusCode == 429) { /* too many requests */
                      this->state = State::Retrying;
-                    ++retryCount;
+                    retryCount += 1;
                     sleepMs(5000);
                 }
                 else if ((httpStatusCode < 400 || httpStatusCode >= 500) && retryCount < kMaxRetries) {
@@ -424,7 +424,7 @@ void HttpDataStream::ThreadProc() {
                         this->ResetFileHandles();
                     }
                     this->state = State::Retrying;
-                    ++retryCount;
+                    retryCount += 2;
                     sleepMs(2000);
                 }
                 else {
