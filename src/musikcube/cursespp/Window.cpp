@@ -59,7 +59,7 @@ static Window* focused = nullptr;
 static MessageQueue messageQueue;
 static std::shared_ptr<INavigationKeys> keys;
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(_DEBUG)
     #ifdef WIN32
         static DWORD mainThreadId = GetCurrentThreadId();
         #define ASSERT_MAIN_THREAD() assert(GetCurrentThreadId() == mainThreadId);
