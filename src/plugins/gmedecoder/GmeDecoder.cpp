@@ -78,10 +78,10 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
         this->isWrappedDataStream = true;
     }
 
-    auto length = stream->Length();
-    const char* data = new char[length];
-    if (stream->Read((void*) data, length) == length) {
-        if (!gme_open_data(data, length, &this->gme, SAMPLE_RATE)) {
+    auto dataLength = stream->Length();
+    const char* data = new char[dataLength];
+    if (stream->Read((void*) data, dataLength) == dataLength) {
+        if (!gme_open_data(data, dataLength, &this->gme, SAMPLE_RATE)) {
             int trackNum = this->stream->GetTrackNumber();
 
             if (prefs->GetBool(KEY_ENABLE_M3U, DEFAULT_ENABLE_M3U)) {
@@ -111,11 +111,11 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                 const double minTrackLength = prefs->GetDouble(
                     KEY_MINIMUM_TRACK_LENGTH, DEFAULT_MINIMUM_TRACK_LENGTH);
 
-                double length = (double) this->info->play_length / 1000.0;
+                double audioLength = (double) this->info->play_length / 1000.0;
 
                 /* any track whose length is less than the specified minimum track
                 length is considered a sound effect, and won't be looped or extended */
-                const bool isSfx = (length > 0.0) && (length <= minTrackLength);
+                const bool isSfx = (audioLength > 0.0) && (audioLength <= minTrackLength);
 
                 if (!isSfx && loopForever) {
                     this->length = LENGTH_FOREVER;
@@ -133,7 +133,7 @@ bool GmeDecoder::Open(musik::core::sdk::IDataStream *stream) {
                         (int)(fadeLength * 1000.0));
                 }
                 else {
-                    this->length = length;
+                    this->length = audioLength;
                 }
             }
 
