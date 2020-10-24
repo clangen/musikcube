@@ -45,22 +45,6 @@ using namespace musik::core::sdk;
 
 static std::string TAG = "GaplessTransport";
 
-#define RESET_NEXT_PLAYER(instance) \
-    if (instance->nextPlayer) { \
-        instance->nextPlayer->Detach(instance); \
-        instance->nextPlayer->Destroy(); \
-        this->RaiseStreamEvent(StreamDestroyed, instance->nextPlayer); \
-        instance->nextPlayer = nullptr; \
-    }
-
-#define RESET_ACTIVE_PLAYER(instance) \
-    if (instance->activePlayer) { \
-        instance->activePlayer->Detach(instance); \
-        instance->activePlayer->Destroy(); \
-        this->RaiseStreamEvent(StreamDestroyed, instance->activePlayer); \
-        instance->activePlayer = nullptr; \
-    }
-
 GaplessTransport::GaplessTransport()
 : volume(1.0)
 , playbackState(PlaybackStopped)
@@ -73,8 +57,8 @@ GaplessTransport::GaplessTransport()
 
 GaplessTransport::~GaplessTransport() {
     LockT lock(this->stateMutex);
-    RESET_NEXT_PLAYER(this);
-    RESET_ACTIVE_PLAYER(this);
+    this->ResetNextPlayer();
+    this->ResetActivePlayer();
 }
 
 PlaybackState GaplessTransport::GetPlaybackState() {
@@ -92,7 +76,7 @@ void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     {
         LockT lock(this->stateMutex);
 
-        RESET_NEXT_PLAYER(this);
+        this->ResetNextPlayer();
 
         if (uri.size()) {
             this->nextPlayer = Player::Create(uri, this->output, Player::NoDrain, this, gain);
@@ -103,10 +87,6 @@ void GaplessTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     if (startNext) {
         this->StartWithPlayer(this->nextPlayer);
     }
-}
-
-bool GaplessTransport::HasNextTrack() {
-    return !!this->nextPlayer;
 }
 
 void GaplessTransport::Start(const std::string& uri, Gain gain, StartMode mode) {
@@ -124,10 +104,10 @@ void GaplessTransport::StartWithPlayer(Player* newPlayer, StartMode mode) {
 
             playingNext = (newPlayer == nextPlayer);
             if (newPlayer != nextPlayer) {
-                RESET_NEXT_PLAYER(this);
+                this->ResetNextPlayer();
             }
 
-            RESET_ACTIVE_PLAYER(this);
+            this->ResetActivePlayer();
 
             this->nextPlayer = nullptr;
             this->activePlayer = newPlayer;
@@ -182,9 +162,9 @@ void GaplessTransport::StopInternal(
         {
             LockT lock(this->stateMutex);
 
-            RESET_NEXT_PLAYER(this);
+            this->ResetNextPlayer();
             if (this->activePlayer != exclude) {
-                RESET_ACTIVE_PLAYER(this);
+                this->ResetActivePlayer();
             }
         }
 
@@ -366,12 +346,12 @@ void GaplessTransport::OnPlayerOpenFailed(Player* player) {
     {
         LockT lock(this->stateMutex);
         if (player == this->activePlayer) {
-            RESET_ACTIVE_PLAYER(this);
-            RESET_NEXT_PLAYER(this);
+            this->ResetActivePlayer();
+            this->ResetNextPlayer();
             raiseEvents = true;
         }
         else if (player == this->nextPlayer) {
-            RESET_NEXT_PLAYER(this);
+            this->ResetNextPlayer();
         }
     }
     if (raiseEvents) {
@@ -384,7 +364,7 @@ void GaplessTransport::OnPlayerDestroying(Player *player) {
     LockT lock(this->stateMutex);
 
     if (player == this->activePlayer) {
-        RESET_ACTIVE_PLAYER(this);
+        this->ResetActivePlayer();
         return;
     }
 }
@@ -415,5 +395,23 @@ void GaplessTransport::RaiseStreamEvent(int type, Player* player) {
 
     if (eventIsFromActivePlayer) {
         this->StreamEvent(type, player->GetUrl());
+    }
+}
+
+void GaplessTransport::ResetNextPlayer() {
+    if (this->nextPlayer) {
+        this->nextPlayer->Detach(this);
+        this->nextPlayer->Destroy();
+        this->RaiseStreamEvent(StreamDestroyed, this->nextPlayer);
+        this->nextPlayer = nullptr;
+    }
+}
+
+void GaplessTransport::ResetActivePlayer() {
+    if (this->activePlayer) {
+        this->activePlayer->Detach(this);
+        this->activePlayer->Destroy();
+        this->RaiseStreamEvent(StreamDestroyed, this->activePlayer);
+        this->activePlayer = nullptr;
     }
 }

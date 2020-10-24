@@ -308,17 +308,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
         StreamState eventType = (StreamState) streamMessage->GetEventType();
 
-        if (eventType == StreamDestroyed) {
-            /* it's possible that we tried to precache a track that was already being
-            buffered. in this case, it's possible that operation failed. if that's the
-            case, let's just load the next track now. */
-            if (!this->transport->HasNextTrack()) {
-                std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-                this->nextIndex = NO_POSITION;
-                this->PrepareNextTrack();
-            }
-        }
-        else if (eventType == StreamBuffering || eventType == StreamBuffered || eventType == StreamPlaying) {
+        if (eventType == StreamBuffering || eventType == StreamBuffered || eventType == StreamPlaying) {
             TrackPtr track;
 
             {

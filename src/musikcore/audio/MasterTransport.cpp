@@ -107,10 +107,6 @@ void MasterTransport::PrepareNextTrack(const std::string& uri, Gain gain) {
     this->transport->PrepareNextTrack(uri, gain);
 }
 
-bool MasterTransport::HasNextTrack() {
-    return this->transport->HasNextTrack();
-}
-
 void MasterTransport::Start(const std::string& uri, Gain gain, StartMode type) {
     this->transport->Start(uri, gain, type);
 }
