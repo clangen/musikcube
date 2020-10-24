@@ -41,6 +41,7 @@
 #include <atomic>
 #include <memory>
 #include <functional>
+#include <system_error>
 
 namespace musik { namespace core { namespace net {
 
@@ -58,6 +59,7 @@ namespace musik { namespace core { namespace net {
             using FailHandler = std::function<void(Connection)>;
             using MessageHandler = std::function<void(Connection, Message)>;
             using CloseHandler = std::function<void(Connection)>;
+            using SendMessageErrorHandler = std::function<void(std::error_code)>;
 
             enum class Mode: int {
                 PlainText = 0,
@@ -73,6 +75,7 @@ namespace musik { namespace core { namespace net {
             void SetFailHandler(FailHandler failHandler);
             void SetMessageHandler(MessageHandler messageHandler);
             void SetCloseHandler(CloseHandler closeHandler);
+            void SetSendMessageErrorHandler(SendMessageErrorHandler errorHandler);
             void Send(Connection connection, const std::string& message);
             void SetPongTimeout(long timeoutMs);
             void Connect(const std::string& uri);
@@ -83,6 +86,7 @@ namespace musik { namespace core { namespace net {
             Mode mode;
             TlsClientPtr tlsClient;
             PlainTextClientPtr plainTextClient;
+            SendMessageErrorHandler sendMessageErrorHandler;
     };
 
 } } }

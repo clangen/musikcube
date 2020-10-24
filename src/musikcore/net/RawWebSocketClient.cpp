@@ -98,12 +98,20 @@ void RawWebSocketClient::SetCloseHandler(CloseHandler closeHandler) {
     this->tlsClient->set_close_handler(closeHandler);
 }
 
+void RawWebSocketClient::SetSendMessageErrorHandler(SendMessageErrorHandler errorHandler) {
+    this->sendMessageErrorHandler = errorHandler;
+}
+
 void RawWebSocketClient::Send(Connection connection, const std::string& message) {
+    std::error_code ec;
     if (mode == Mode::PlainText) {
-        this->plainTextClient->send(connection, message, websocketpp::frame::opcode::text);
+        this->plainTextClient->send(connection, message, websocketpp::frame::opcode::text, ec);
     }
     else if (mode == Mode::TLS) {
-        this->tlsClient->send(connection, message, websocketpp::frame::opcode::text);
+        this->tlsClient->send(connection, message, websocketpp::frame::opcode::text, ec);
+    }
+    if (ec && sendMessageErrorHandler) {
+        sendMessageErrorHandler(ec);
     }
 }
 
