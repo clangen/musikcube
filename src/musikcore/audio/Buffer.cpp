@@ -36,12 +36,6 @@
 
 #include <musikcore/audio/Buffer.h>
 
-#define DEBUG 0
-
-#if DEBUG > 0
-#include <iostream>
-#endif
-
 #ifdef WIN32
     #define CopyFloat(dst, src, num) CopyMemory(dst, src, (num) * sizeof(float))
 #else

@@ -59,20 +59,16 @@ static Window* focused = nullptr;
 static MessageQueue messageQueue;
 static std::shared_ptr<INavigationKeys> keys;
 
-#ifndef WIN32
-    #if DEBUG
-        static int64_t mainThreadId = reinterpret_cast<int64_t>(pthread_self());
-        #define ASSERT_MAIN_THREAD() assert(reinterpret_cast<int64_t>(pthread_self()) == mainThreadId);
-    #else
-        #define ASSERT_MAIN_THREAD()
-    #endif
-#else
-    #if DEBUG
-        #define ASSERT_MAIN_THREAD()
-    #else
+#ifdef DEBUG
+    #ifdef WIN32
         static DWORD mainThreadId = GetCurrentThreadId();
         #define ASSERT_MAIN_THREAD() assert(GetCurrentThreadId() == mainThreadId);
+    #else
+        static pthread_t mainThreadId = pthread_self();
+        #define ASSERT_MAIN_THREAD() assert(pthread_self() == mainThreadId);
     #endif
+#else
+    #define ASSERT_MAIN_THREAD()
 #endif
 
 const int Window::kLastReservedMessageId = INT_MAX;
