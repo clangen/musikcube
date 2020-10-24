@@ -40,6 +40,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 using namespace musik::core::sdk;
 
@@ -96,9 +97,9 @@ class HttpDataStream : public IDataStream {
         CURL* curlEasy;
         curl_slist *curlHeaders{ nullptr };
 
-        volatile long written, totalWritten;
-        volatile bool interrupted;
-        volatile State state;
+        std::atomic<long> written, totalWritten;
+        std::atomic<bool> interrupted;
+        std::atomic<State> state;
 
         std::mutex stateMutex;
         std::condition_variable startedContition;
