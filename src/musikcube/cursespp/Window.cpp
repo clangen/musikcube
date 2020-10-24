@@ -70,7 +70,8 @@ static std::shared_ptr<INavigationKeys> keys;
     #if DEBUG
         #define ASSERT_MAIN_THREAD()
     #else
-        /* CAL TODO */
+        static DWORD mainThreadId = GetCurrentThreadId();
+        #define ASSERT_MAIN_THREAD() assert(GetCurrentThreadId() == mainThreadId);
     #endif
 #endif
 
