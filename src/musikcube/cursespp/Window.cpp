@@ -44,6 +44,8 @@
 #include <musikcore/runtime/Message.h>
 #include <musikcore/runtime/MessageQueue.h>
 
+#include <cassert>
+
 using namespace cursespp;
 using namespace musik::core::runtime;
 
@@ -56,6 +58,21 @@ static Window* focused = nullptr;
 
 static MessageQueue messageQueue;
 static std::shared_ptr<INavigationKeys> keys;
+
+#ifndef WIN32
+    #if DEBUG
+        static int64_t mainThreadId = reinterpret_cast<int64_t>(pthread_self());
+        #define ASSERT_MAIN_THREAD() assert(reinterpret_cast<int64_t>(pthread_self()) == mainThreadId);
+    #else
+        #define ASSERT_MAIN_THREAD()
+    #endif
+#else
+    #if DEBUG
+        #define ASSERT_MAIN_THREAD()
+    #else
+        /* CAL TODO */
+    #endif
+#endif
 
 const int Window::kLastReservedMessageId = INT_MAX;
 const int Window::kFirstReservedMessageId = kLastReservedMessageId - 1024;
@@ -101,6 +118,8 @@ static inline void DrawTooSmall() {
 }
 
 bool Window::WriteToScreen(IInput* input) {
+    ASSERT_MAIN_THREAD();
+
     if (drawPending && !freeze) {
         drawPending = false;
         update_panels();
@@ -117,6 +136,8 @@ bool Window::WriteToScreen(IInput* input) {
 }
 
 void Window::InvalidateScreen() {
+    ASSERT_MAIN_THREAD();
+
     werase(stdscr);
     drawPending = true;
 }
@@ -187,14 +208,20 @@ void Window::ProcessMessage(musik::core::runtime::IMessage &message) {
 }
 
 bool Window::IsVisible() {
+    ASSERT_MAIN_THREAD();
+
     return !this->badBounds && this->isVisibleInParent;
 }
 
 bool Window::IsFocused() {
+    ASSERT_MAIN_THREAD();
+
     return ::focused == this;
 }
 
 void Window::BringToTop() {
+    ASSERT_MAIN_THREAD();
+
     if (this->framePanel) {
         top_panel(this->framePanel);
 
@@ -207,10 +234,14 @@ void Window::BringToTop() {
 }
 
 bool Window::IsTop() {
+    ASSERT_MAIN_THREAD();
+
     return (::top == this);
 }
 
 void Window::SendToBottom() {
+    ASSERT_MAIN_THREAD();
+
     if (this->framePanel) {
         bottom_panel(this->contentPanel);
 
@@ -237,6 +268,8 @@ void Window::Remove(int messageType) {
 }
 
 void Window::SetParent(IWindow* parent) {
+    ASSERT_MAIN_THREAD();
+
     if (this->parent != parent) {
         IWindowGroup* group = dynamic_cast<IWindowGroup*>(this->parent);
         IWindow* oldParent = this->parent;
@@ -268,6 +301,8 @@ void Window::RecreateForUpdatedDimensions() {
 }
 
 void Window::MoveAndResize(int x, int y, int width, int height) {
+    ASSERT_MAIN_THREAD();
+
     bool sizeChanged = this->width != width || this->height != height;
 
     this->x = x;
@@ -299,6 +334,8 @@ void Window::DestroyIfBadBounds() {
 }
 
 void Window::SetSize(int width, int height) {
+    ASSERT_MAIN_THREAD();
+
     if (this->width != width || this->height != height) {
         this->width = width;
         this->height = height;
@@ -310,6 +347,8 @@ void Window::SetSize(int width, int height) {
 }
 
 void Window::SetPosition(int x, int y) {
+    ASSERT_MAIN_THREAD();
+
     this->x = x;
     this->y = y;
     int absX = this->GetAbsoluteX();
@@ -358,6 +397,8 @@ void Window::DecorateFrame() {
 }
 
 void Window::Redraw() {
+    ASSERT_MAIN_THREAD();
+
     this->isDirty = true;
 
     if (this->IsVisible() && this->IsParentVisible()) {
@@ -379,14 +420,20 @@ void Window::Redraw() {
 }
 
 int Window::GetWidth() const {
+    ASSERT_MAIN_THREAD();
+
     return this->width;
 }
 
 int Window::GetHeight() const {
+    ASSERT_MAIN_THREAD();
+
     return this->height;
 }
 
 int Window::GetContentHeight() const {
+    ASSERT_MAIN_THREAD();
+
     if (!this->drawFrame) {
         return this->height;
     }
@@ -395,6 +442,8 @@ int Window::GetContentHeight() const {
 }
 
 int Window::GetContentWidth() const {
+    ASSERT_MAIN_THREAD();
+
     if (!this->drawFrame) {
         return this->width;
     }
@@ -403,14 +452,20 @@ int Window::GetContentWidth() const {
 }
 
 int Window::GetX() const {
+    ASSERT_MAIN_THREAD();
+
     return this->x;
 }
 
 int Window::GetY() const {
+    ASSERT_MAIN_THREAD();
+
     return this->y;
 }
 
 void Window::SetContentColor(Color color) {
+    ASSERT_MAIN_THREAD();
+
     this->contentColor = (color == Color::Default)
         ? Color::ContentColorDefault : color;
 
@@ -419,6 +474,8 @@ void Window::SetContentColor(Color color) {
 }
 
 void Window::SetFocusedContentColor(Color color) {
+    ASSERT_MAIN_THREAD();
+
     this->focusedContentColor = (color == Color::Default)
         ? Color::ContentColorDefault : color;
 
@@ -427,6 +484,8 @@ void Window::SetFocusedContentColor(Color color) {
 }
 
 void Window::SetFrameColor(Color color) {
+    ASSERT_MAIN_THREAD();
+
     this->frameColor = (color == Color::Default)
         ? Color::FrameColorDefault : color;
 
@@ -435,6 +494,8 @@ void Window::SetFrameColor(Color color) {
 }
 
 void Window::SetFocusedFrameColor(Color color) {
+    ASSERT_MAIN_THREAD();
+
     this->focusedFrameColor = (color == Color::Default)
         ? Color::FrameColorFocused : color;
 
@@ -443,6 +504,8 @@ void Window::SetFocusedFrameColor(Color color) {
 }
 
 void Window::DrawFrameAndTitle() {
+    ASSERT_MAIN_THREAD();
+
     box(this->frame, 0, 0);
 
     /* draw the title, if one is specified */
@@ -460,6 +523,8 @@ void Window::DrawFrameAndTitle() {
 }
 
 void Window::RepaintBackground() {
+    ASSERT_MAIN_THREAD();
+
     bool focused = IsFocused();
 
     if (this->drawFrame &&
@@ -481,22 +546,32 @@ void Window::RepaintBackground() {
 }
 
 WINDOW* Window::GetContent() const {
+    ASSERT_MAIN_THREAD();
+
     return this->content;
 }
 
 WINDOW* Window::GetFrame() const {
+    ASSERT_MAIN_THREAD();
+
     return this->frame;
 }
 
 int Window::GetFocusOrder() {
+    ASSERT_MAIN_THREAD();
+
     return this->focusOrder;
 }
 
 void Window::SetFocusOrder(int order) {
+    ASSERT_MAIN_THREAD();
+
     this->focusOrder = order;
 }
 
 void Window::Show() {
+    ASSERT_MAIN_THREAD();
+
     if (parent && !parent->IsVisible()) {
         /* remember that someone tried to make us visible, but don't do
         anything because we could corrupt the display */
@@ -608,24 +683,34 @@ bool Window::CheckForBoundsError() {
 }
 
 int Window::GetAbsoluteX() const {
+    ASSERT_MAIN_THREAD();
+
     return this->parent ? (this->x + parent->GetAbsoluteX()) : this->x;
 }
 
 int Window::GetAbsoluteY() const {
+    ASSERT_MAIN_THREAD();
+
     return this->parent ? (this->y + parent->GetAbsoluteY()) : this->y;
 }
 
 void Window::SetFrameTitle(const std::string& title) {
+    ASSERT_MAIN_THREAD();
+
     this->title = title;
     this->Destroy();
     this->Redraw();
 }
 
 std::string Window::GetFrameTitle() const {
+    ASSERT_MAIN_THREAD();
+
     return this->title;
 }
 
 void Window::Create() {
+    ASSERT_MAIN_THREAD();
+
     assert(this->frame == nullptr);
     assert(this->content == nullptr);
     assert(this->framePanel == nullptr);
@@ -722,6 +807,8 @@ void Window::Create() {
 }
 
 void Window::Hide() {
+    ASSERT_MAIN_THREAD();
+
     this->Blur();
 
     if (this->frame) {
@@ -740,6 +827,8 @@ void Window::Hide() {
 }
 
 void Window::Destroy() {
+    ASSERT_MAIN_THREAD();
+
     if (this->frame) {
         del_panel(this->framePanel);
         delwin(this->frame);
@@ -758,6 +847,8 @@ void Window::Destroy() {
 }
 
 void Window::SetFrameVisible(bool enabled) {
+    ASSERT_MAIN_THREAD();
+
     if (enabled != this->drawFrame) {
         this->drawFrame = enabled;
 
@@ -769,14 +860,20 @@ void Window::SetFrameVisible(bool enabled) {
 }
 
 bool Window::IsFrameVisible() {
+    ASSERT_MAIN_THREAD();
+
     return this->drawFrame;
 }
 
 IWindow* Window::GetParent() const {
+    ASSERT_MAIN_THREAD();
+
     return this->parent;
 }
 
 void Window::Clear() {
+    ASSERT_MAIN_THREAD();
+
     if (this->content) {
         werase(this->content);
         wmove(this->content, 0, 0);
@@ -796,6 +893,8 @@ void Window::Clear() {
 }
 
 void Window::Invalidate() {
+    ASSERT_MAIN_THREAD();
+
     if (this->isVisibleInParent) {
         if (this->frame) {
             drawPending = true;
@@ -804,6 +903,8 @@ void Window::Invalidate() {
 }
 
 bool Window::IsParentVisible() {
+    ASSERT_MAIN_THREAD();
+
     if (this->parent == nullptr) {
         return true;
     }
@@ -820,6 +921,8 @@ bool Window::IsParentVisible() {
 }
 
 void Window::Focus() {
+    ASSERT_MAIN_THREAD();
+
     if (::focused != this) {
         if (::focused) { ::focused->Blur(); }
         ::focused = this;
@@ -831,6 +934,8 @@ void Window::Focus() {
 }
 
 void Window::Blur() {
+    ASSERT_MAIN_THREAD();
+
     if (::focused == this) {
         ::focused = nullptr;
         this->isDirty = true;
@@ -841,6 +946,8 @@ void Window::Blur() {
 }
 
 void Window::SetNavigationKeys(std::shared_ptr<INavigationKeys> keys) {
+    ASSERT_MAIN_THREAD();
+
     ::keys = keys;
 }
 
@@ -849,6 +956,8 @@ bool Window::MouseEvent(const IMouseHandler::Event& mouseEvent) {
 }
 
 bool Window::FocusInParent() {
+    ASSERT_MAIN_THREAD();
+
     auto layout = dynamic_cast<ILayout*>(this->GetParent());
     if (layout) {
         return layout->SetFocus(shared_from_this());
