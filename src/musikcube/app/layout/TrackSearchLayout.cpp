@@ -137,7 +137,7 @@ void TrackSearchLayout::OnVisibilityChanged(bool visible) {
         this->SaveSession();
         this->input->SetText("");
         this->trackList->Clear();
-        this->SetFocusIndex(0);
+        this->SetFocusIndex(0, false);
     }
 }
 
