@@ -33,49 +33,50 @@ parts:
       - build-essential
       - clang
       - cmake
-      - libboost-thread1.71-dev
-      - libboost-system1.71-dev
-      - libboost-filesystem1.71-dev
-      - libboost-date-time1.71-dev
+      - libasound2-dev
+      - libavformat-dev
+      - libavutil-dev
       - libboost-atomic1.71-dev
       - libboost-chrono1.71-dev
-      - libogg-dev
-      - libvorbis-dev
-      - libavutil-dev
-      - libavformat-dev
-      - libswresample-dev
-      - libncursesw5-dev
-      - libasound2-dev
-      - libpulse-dev
-      - libmicrohttpd-dev
-      - libmp3lame-dev
+      - libboost-date-time1.71-dev
+      - libboost-filesystem1.71-dev
+      - libboost-system1.71-dev
+      - libboost-thread1.71-dev
       - libcurl4-openssl-dev
       - libev-dev
-      - libtag1-dev
-      - libsystemd-dev
+      - libmicrohttpd-dev
+      - libmp3lame-dev
+      - libncursesw5-dev
+      - libogg-dev
+      - libpulse-dev
       - libssl-dev
+      - libswresample-dev
+      - libsystemd-dev
+      - libtag1-dev
+      - libvorbis-dev
     stage-packages:
-      - libboost-thread1.71.0
-      - libboost-system1.71.0
-      - libboost-chrono1.71.0
-      - libboost-filesystem1.71.0
-      - libboost-date-time1.71.0
-      - libmicrohttpd12
-      - libcurl4
-      - libogg0
-      - libvorbis0a
-      - libvorbisfile3
-      - libncursesw5
       - libasound2
-      - libpulse0
-      - libmp3lame0
-      - libev4
       - libavcodec-extra
-      - libavutil56
       - libavformat58
+      - libavutil56
+      - libboost-chrono1.71.0
+      - libboost-date-time1.71.0
+      - libboost-filesystem1.71.0
+      - libboost-system1.71.0
+      - libboost-thread1.71.0
+      - libcurl4
+      - libev4
+      - libmicrohttpd12
+      - libmp3lame0
+      - libncursesw5
+      - libogg0
+      - libpulse0
+      - libssl1.1
       - libswresample3
       - libsystemd0
       - libtag1v5
+      - libvorbis0a
+      - libvorbisfile3
 
 apps:
   app:
