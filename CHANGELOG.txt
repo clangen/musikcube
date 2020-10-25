@@ -1,9 +1,75 @@
 0.94.0
 
-musikcube:
+* added support for remote libraries (i.e connecting to a musikcube app or
+  daemon running on a different machine) to the terminal client:
+  - updated nearly all queries against the database in the app to be
+    asynchronous. this was not necessary before because most local DB queries
+    are extremely fast; however, when queries are sent over the network that may
+    not be the case. there are still a small handful of queries made on the UI
+    thread, but all of the really egregious ones have been fixed.
+  - added a new `ISerializableQuery` interface that defines how a query can be
+    serialized and deserialized. all queries now implement this interface.
+  - defined a new `SendRawQuery` method to `IMetadataProxy` that is used by the
+    server to send serialized queries to `musikcore`, and then respond with
+    serialized results to the calling client.
+  - added `WebSocketClient` that is used to connect to a `musikcube` server and
+    authenticate. it takes serialized queries from the client and sends them to
+    the server, then parses responses and unpacks the serialized result.
+  - added a new `RemoteLibrary` implementation of `ILibrary`. it serializes
+    queries and sends them to the server via `WebSocketClient`. once complete,
+    `WebSocketClient` hands the serialized result back to `RemoteLibrary`, which
+    then deserializes the result into the original query and notifies the caller.
+  - added `MasterLibrary` in the same vein as `MasterTransport`. it's more a
+    less a `pimpl` that allows us to switch the selected library under the hood
+    without a majority of the app knowing or caring.
+  - revamped the settings screen to allow selecting between local and remote
+    libraries.
+  - added a new screen that is displayed when a remote library is disconnected,
+    and shows some diagnostic information.
+  - added a new banner on the top of the app when connected to a remote library.
+  - added buffering states to Stream/Transport/PlaybackService and friends.
+  - updated the transport window to display buffering status when appropriate.
+* fixed a number of bugs in `cursespp` related to nested layout focusing.
+* fixed buggy visibility change events in `cursespp::Window` and removed old
+  hacked-up code that was working around the problems in the app layer.
+* fixed a handful of `KeyPress()` propagation bugs across the app.
+* found and fixed a handful of bugs in `HttpDataStream` that have been laying
+  dormant, waiting to be exercised.
+* fixed bugs related to `LruDiskCache` parsing and pruning.
+* fixed potential memory leaks in GmeDataStream and OpenMptDataStream
+* fixed some weird edge-casey command bar focus issues.
+* finally renamed `src/core` to `src/musikcore`
+* added a ja_JP locale (trackiss)
+* rearranged the settings window to ensure everything fits properly in an 80x24
+  terminal
+* fixed some bugs in `MessageQueue` by now requiring explicit `IMessageTarget`
+  registration and unregistration for all messages. there was a small time
+  window (read: race condition) where it was possible to attempt to dispatch
+  messages to a destroyed target.
+* fixed a handful of components that were running their initial queries twice
+  or more as they were being initialized.
+* updated copyright date across all source files
+* upgraded a number of tools and dependencies:
+  - migrated to VS2019 for Windows musikcube builds
+  - migrated to Android Studio 4.1 for musikdroid builds
+  - upgraded `websocketpp` and `json.hpp` and moved them out of `src/plugins`
+    and into `src/3rdparty` so they can be used by the main app.
+  - upgraded to boost 1.74.0
+  - upgraded to openssl 1.1.1h
 * fixed a bug in the indexer that could prevent custom sources from getting
   interrupted correctly.
 * fixed a bug in libmicrothttpd version detection.
+* fixed a bug where switching to a different output device while paused would
+  cause playback to resume.
+* moved all shell scripts to their own subdirectory so they don't pollute the
+  root.
+* fixed an old bug in `LocalLibrary` that could cause query result callbacks
+  to fire twice.
+* added the ability to limit the number of simultaneous audio transcoders in
+  the server.
+* added support for Ubuntu Groovy
+* various other minor fixes that were exposed by making queries asynchronous by
+  default.
 
 --------------------------------------------------------------------------------
 
