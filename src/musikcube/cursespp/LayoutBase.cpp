@@ -91,32 +91,29 @@ IWindowPtr LayoutBase::EnsureValidFocus() {
     return newFocus;
 }
 
-IWindowPtr LayoutBase::EnsureValidFocusFromNext() {
-    auto newFocus = this->GetFocus();
-    if (newFocus && this->IsVisible()) {
-        LayoutBase* layout = dynamic_cast<LayoutBase*>(newFocus.get());
-        if (layout) {
-            layout->FocusFirst();
-        }
-        else {
-            newFocus->Focus();
-        }
+LayoutBase* LayoutBase::GetLayoutAtFocusIndex() {
+    if (this->focused >= 0 && (int) this->focusable.size() > this->focused) {
+        return dynamic_cast<LayoutBase*>(this->focusable.at(this->focused).get());
     }
-    return newFocus;
+    return nullptr;
+}
+
+IWindowPtr LayoutBase::EnsureValidFocusFromNext() {
+    /* if the item we just focused is a layout, then we ask it to focus its
+    first child. otherwise we call through to our default logic to make sure
+    the regular view at the focus index is focused. */
+    IWindowPtr result;
+    const auto layoutAtFocus = GetLayoutAtFocusIndex();
+    if (layoutAtFocus) { result = layoutAtFocus->FocusFirst(); }
+    return result ? result : this->EnsureValidFocus();
 }
 
 IWindowPtr LayoutBase::EnsureValidFocusFromPrev() {
-    auto newFocus = this->GetFocus();
-    if (newFocus && this->IsVisible()) {
-        LayoutBase* layout = dynamic_cast<LayoutBase*>(newFocus.get());
-        if (layout) {
-            layout->FocusLast();
-        }
-        else {
-            newFocus->Focus();
-        }
-    }
-    return newFocus;
+    /* see comment in EnsureValidFocusFromNext() */
+    IWindowPtr result;
+    const auto layoutAtFocus = GetLayoutAtFocusIndex();
+    if (layoutAtFocus) { result = layoutAtFocus->FocusLast(); }
+    return result ? result : this->EnsureValidFocus();
 }
 
 void LayoutBase::OnVisibilityChanged(bool visible) {

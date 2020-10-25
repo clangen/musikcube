@@ -115,6 +115,7 @@ namespace cursespp {
             void RemoveFocusable(IWindowPtr window);
             void SortFocusables();
             void IndexFocusables();
+            LayoutBase* GetLayoutAtFocusIndex();
 
             std::vector<IWindowPtr> children;
             std::vector<IWindowPtr> focusable;
