@@ -523,10 +523,14 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         }
     }
 
-    if (!track || track->GetMetadataState() != MetadataState::Loaded) {
+    if (!track) {
         auto entry = std::make_shared<SingleLineEntry>("  -");
         entry->SetAttrs(attrs);
         return entry;
+    }
+
+    if (track->GetMetadataState() != MetadataState::Loaded) {
+        attrs = Color::TextDisabled;
     }
 
     std::string text = parent.renderer(
