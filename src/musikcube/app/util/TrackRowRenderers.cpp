@@ -53,6 +53,8 @@ using namespace cursespp;
 
 #define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
 
+static const bool kEnableSkeletonRows = true;
+static const std::string kSkeletonChar = "░";
 static const int kDurationColWidth = 5; /* 00:00 */
 static const int kRatingBreakpointWidth = 90;
 
@@ -73,7 +75,7 @@ static inline std::string getRatingForTrack(TrackPtr track, size_t width) {
 static std::string placeholder(int width) {
     std::string result;
     for (int i = 0; i < width; i++) {
-        result += "-"; // "░";
+        result += kSkeletonChar;
     }
     return result;
 }
@@ -114,7 +116,7 @@ namespace AlbumSort {
 
     static const Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
         if (track->GetMetadataState() != musik::core::sdk::MetadataState::Loaded) {
-            return skeleton(track, width);
+            return kEnableSkeletonRows ? skeleton(track, width) : std::string(width, ' ');;
         }
 
         std::string trackNum;
@@ -209,7 +211,7 @@ namespace NowPlaying {
 
     static const Renderer renderer = [](TrackPtr track, size_t index, size_t width, TrackNumType type) -> std::string {
         if (track->GetMetadataState() != musik::core::sdk::MetadataState::Loaded) {
-            return skeleton(track, width);
+            return kEnableSkeletonRows ? skeleton(track, width) : std::string(width, ' ');
         }
 
         const size_t trackColWidth = std::max(kTrackColWidth, DIGITS(index + 1));
