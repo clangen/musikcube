@@ -303,7 +303,7 @@ bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
     auto query = std::shared_ptr<CategoryTrackListQuery>(
         new CategoryTrackListQuery(library, categoryType, categoryId));
 
-    this->library->Enqueue(query, ILibrary::QuerySynchronous);
+    this->library->EnqueueAndWait(query);
 
     if (query->GetStatus() == IQuery::Finished) {
         auto tracks = query->GetResult();
@@ -461,7 +461,7 @@ TrackPtr SavePlaylistQuery::TrackListWrapper::Get(
         std::shared_ptr<TrackMetadataQuery> query(
             new TrackMetadataQuery(result, library, TrackMetadataQuery::Type::IdsOnly));
 
-        library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->EnqueueAndWait(query);
     }
 
     return result;

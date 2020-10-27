@@ -50,8 +50,12 @@ MasterLibrary::MasterLibrary() {
 MasterLibrary::~MasterLibrary() {
 }
 
-int MasterLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
-    return this->wrappedLibrary->Enqueue(query, options, callback);
+int MasterLibrary::Enqueue(QueryPtr query, Callback cb) {
+    return this->wrappedLibrary->Enqueue(query, cb);
+}
+
+int MasterLibrary::EnqueueAndWait(QueryPtr query, int64_t timeoutMs, Callback cb) {
+    return this->wrappedLibrary->EnqueueAndWait(query, timeoutMs, cb);
 }
 
 IIndexer* MasterLibrary::Indexer() {

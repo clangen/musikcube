@@ -60,6 +60,7 @@ namespace musik { namespace core { namespace library {
             using LocalQuery = musik::core::library::query::QueryBase;
             using LocalQueryPtr = std::shared_ptr<LocalQuery>;
             using MessageQueue = musik::core::runtime::IMessageQueue;
+            using IIndexer = musik::core::IIndexer;
 
             static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
 
@@ -67,24 +68,21 @@ namespace musik { namespace core { namespace library {
             virtual ~LocalLibrary();
 
             /* ILibrary */
-            virtual int Enqueue(
-                QueryPtr query,
-                unsigned int options = 0,
-                Callback = Callback()) override;
-
-            virtual musik::core::IIndexer *Indexer() override;
-            virtual int Id() override;
-            virtual const std::string& Name() override;
-            virtual void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
-            virtual musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
-            virtual IResourceLocator& GetResourceLocator() override;
-            virtual bool IsConfigured() override;
-            virtual ConnectionState GetConnectionState() const override { return ConnectionState::NotApplicable; }
-            virtual Type GetType() const override { return Type::Local; }
-            virtual void Close() override;
+            int Enqueue(QueryPtr query, Callback cb = Callback()) override;
+            int EnqueueAndWait(QueryPtr query, int64_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
+            IIndexer *Indexer() override;
+            int Id() override;
+            const std::string& Name() override;
+            void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
+            MessageQueue& GetMessageQueue() override { return *messageQueue; }
+            IResourceLocator& GetResourceLocator() override;
+            bool IsConfigured() override;
+            ConnectionState GetConnectionState() const override { return ConnectionState::NotApplicable; }
+            Type GetType() const override { return Type::Local; }
+            void Close() override;
 
             /* IMessageTarget */
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* implementation specific */
             db::Connection& GetConnection() { return this->db; }

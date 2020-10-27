@@ -102,7 +102,7 @@ namespace musik {
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
                         PersistedPlayQueueQuery::Restore(library, playback));
 
-                    library->Enqueue(query, 0, [&playback, prefs, query](auto q) {
+                    library->Enqueue(query, [&playback, prefs, query](auto q) {
                         int index = prefs->GetInt(keys::LastPlayQueueIndex, -1);
                         if (index >= 0) {
                             double time = prefs->GetDouble(keys::LastPlayQueueTime, 0.0f);
@@ -131,7 +131,7 @@ namespace musik {
                     auto query = std::shared_ptr<PersistedPlayQueueQuery>(
                         PersistedPlayQueueQuery::Save(library, playback));
 
-                    library->Enqueue(query, ILibrary::QuerySynchronous);
+                    library->EnqueueAndWait(query);
                 }
             }
         }

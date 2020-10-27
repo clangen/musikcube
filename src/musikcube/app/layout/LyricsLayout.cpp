@@ -137,7 +137,7 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
         this->SetState(State::Loading);
         auto trackExternalId = track->GetString("external_id");
         auto lyricsDbQuery = std::make_shared<LyricsQuery>(trackExternalId);
-        this->library->Enqueue(lyricsDbQuery, 0, [this, lyricsDbQuery, track](auto q) {
+        this->library->Enqueue(lyricsDbQuery, [this, lyricsDbQuery, track](auto q) {
             auto localLyrics = lyricsDbQuery->GetResult();
             if (localLyrics.size()) {
                 this->OnLyricsLoaded(track, localLyrics);

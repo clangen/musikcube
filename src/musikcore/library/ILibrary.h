@@ -42,8 +42,11 @@
 #include <musikcore/library/IQuery.h>
 #include <musikcore/sdk/ITrack.h>
 #include <musikcore/runtime/IMessageQueue.h>
+#include <limits>
 
 namespace musik { namespace core {
+
+    static int64_t kWaitIndefinite = std::numeric_limits<int64_t>::max();
 
     class ILibrary {
         public:
@@ -63,10 +66,6 @@ namespace musik { namespace core {
                 AuthenticationFailure = 3
             };
 
-            enum QueryFlag {
-                QuerySynchronous = 1
-            };
-
             class IResourceLocator {
                 public:
                     virtual std::string GetTrackUri(
@@ -79,7 +78,8 @@ namespace musik { namespace core {
 
             virtual ~ILibrary() { }
 
-            virtual int Enqueue(QueryPtr query, unsigned int options = 0, Callback = Callback()) = 0;
+            virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
+            virtual int EnqueueAndWait(QueryPtr query, int64_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
             virtual IIndexer *Indexer() = 0;
             virtual int Id() = 0;
             virtual const std::string& Name() = 0;

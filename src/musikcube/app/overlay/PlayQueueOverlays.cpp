@@ -141,7 +141,7 @@ static void queryTracksByCategory(
         query = std::make_shared<CategoryTrackListQuery>(library, categoryType, categoryId);
     }
 
-    library->Enqueue(query, 0, [query, callback](auto q) {
+    library->Enqueue(query, [query, callback](auto q) {
         callback(query->GetStatus() == IQuery::Finished
             ? query->GetResult()  : std::shared_ptr<TrackList>());
     });
@@ -154,7 +154,7 @@ static void queryPlaylists(
     std::shared_ptr<CategoryListQuery> query(
         new CategoryListQuery(Playlists::TABLE_NAME, ""));
 
-    library->Enqueue(query, 0, [callback, query](auto q) {
+    library->Enqueue(query, [callback, query](auto q) {
         callback(query->GetStatus() == IQuery::Finished
             ? query : std::shared_ptr<CategoryListQuery>());
     });
@@ -225,7 +225,7 @@ static void createNewPlaylist(
             [&queue, tracks, library, callback](const std::string& name) {
                 if (name.size()) {
                     auto query = SavePlaylistQuery::Save(library, name, tracks);
-                    library->Enqueue(query, 0, [&queue, callback](auto query) {
+                    library->Enqueue(query, [&queue, callback](auto query) {
                         setLastPlaylistId(std::static_pointer_cast<SavePlaylistQuery>(query)->GetPlaylistId());
                         if (callback) {
                             callback(query);
@@ -251,7 +251,7 @@ void PlayQueueOverlays::ShowRenamePlaylistOverlay(
         .SetInputAcceptedCallback(
             [library, playlistId, callback](const std::string& name) {
                 if (name.size()) {
-                    library->Enqueue(SavePlaylistQuery::Rename(library, playlistId, name), 0, callback);
+                    library->Enqueue(SavePlaylistQuery::Rename(library, playlistId, name), callback);
                 }
             });
 
@@ -278,7 +278,7 @@ void PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
             _TSTR("button_yes"),
             [library, playlistId, callback](const std::string& str) {
                 library->Enqueue(std::shared_ptr<DeletePlaylistQuery>(
-                    new DeletePlaylistQuery(library, playlistId)), 0, callback);
+                    new DeletePlaylistQuery(library, playlistId)), callback);
             });
 
     App::Overlays().Push(dialog);
@@ -628,7 +628,7 @@ void PlayQueueOverlays::ShowAlbumDividerOverlay(
                 std::shared_ptr<CategoryTrackListQuery> query(
                     new CategoryTrackListQuery(library, albumColumn, albumId));
 
-                library->Enqueue(query, 0, [&playback, query](auto q) {
+                library->Enqueue(query, [&playback, query](auto q) {
                     if (query->GetStatus() == IQuery::Finished) {
                         playback.Play(*query->GetResult().get(), 0);
                     }

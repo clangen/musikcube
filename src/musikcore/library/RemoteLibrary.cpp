@@ -166,25 +166,41 @@ bool RemoteLibrary::IsQueryInFlight(Query query) {
             return true;
         }
     }
+    for (auto queryContext : this->queryQueue) {
+        if (queryContext->query == query) {
+            return true;
+        }
+    }
     return false;
 }
 
-int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
+int RemoteLibrary::Enqueue(QueryPtr query, Callback callback) {
+    return this->EnqueueAndWait(query, 0LL, callback);
+}
+
+int RemoteLibrary::EnqueueAndWait(QueryPtr query, int64_t timeoutMs, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
         auto defaultLocalLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
-        return defaultLocalLibrary->Enqueue(query, options, callback);
+        return defaultLocalLibrary->EnqueueAndWait(query, timeoutMs, callback);
     }
 
     auto serializableQuery = std::dynamic_pointer_cast<ISerializableQuery>(query);
 
     if (serializableQuery) {
+        std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
+
+        if (this->exit) {
+            return -1;
+        }
+
         auto context = std::make_shared<QueryContext>();
         context->query = serializableQuery;
         context->callback = callback;
 
-        if (options & ILibrary::QuerySynchronous) {
-            this->RunQuery(context);
-            std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
+        queryQueue.push_back(context);
+        queueCondition.notify_all();
+
+        if (timeoutMs > 0) {
             while (
                 !this->exit &&
                 this->IsQueryInFlight(context->query) &&
@@ -192,12 +208,6 @@ int RemoteLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callba
             {
                 this->syncQueryCondition.wait(lock);
             }
-        }
-        else {
-            std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
-            if (this->exit) { return -1; }
-            queryQueue.push_back(context);
-            queueCondition.notify_all();
         }
 
         return query->GetId();
@@ -291,15 +301,15 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
             return;
         }
 
-        localLibrary->Enqueue(
+        localLibrary->EnqueueAndWait(
             localQuery,
-            ILibrary::QuerySynchronous, /* CAL TODO: make async! we have to make TrackList support async lookup first tho. */
-                [this, context, localQuery](auto result) {
-                if (localQuery->GetStatus() == IQuery::Finished) {
-                    context->query->DeserializeResult(localQuery->SerializeResult());
-                }
-                this->OnQueryCompleted(context);
-            });
+            kWaitIndefinite,
+            [this, context, localQuery](auto result) {
+            if (localQuery->GetStatus() == IQuery::Finished) {
+                context->query->DeserializeResult(localQuery->SerializeResult());
+            }
+            this->OnQueryCompleted(context);
+        });
     }
 }
 

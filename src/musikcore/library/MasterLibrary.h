@@ -55,7 +55,8 @@ namespace musik { namespace core { namespace library {
             MasterLibrary();
             virtual ~MasterLibrary();
 
-            int Enqueue(QueryPtr query, unsigned int options = 0, Callback = Callback()) override;
+            int Enqueue(QueryPtr query, Callback cb = Callback()) override;
+            int EnqueueAndWait(QueryPtr query, int64_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) override;
             musik::core::IIndexer *Indexer() override;
             int Id() override;
             const std::string& Name() override;

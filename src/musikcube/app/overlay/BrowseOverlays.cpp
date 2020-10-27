@@ -73,7 +73,7 @@ void BrowseOverlays::ShowCategoryChooser(
     using Value = SdkValue::Shared;
 
     auto query = std::make_shared<AllCategoriesQuery>();
-    library->Enqueue(query, 0, [callback, query](auto q) {
+    library->Enqueue(query, [callback, query](auto q) {
         std::shared_ptr<Adapter> adapter(new Adapter());
         adapter->SetSelectable(true);
 

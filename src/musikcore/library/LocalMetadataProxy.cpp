@@ -312,7 +312,7 @@ ITrackList* LocalMetadataProxy::QueryTracks(const char* query, int limit, int of
             search->SetLimitAndOffset(limit, offset);
         }
 
-        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(search);
 
         if (search->GetStatus() == IQuery::Finished) {
             return search->GetSdkResult();
@@ -331,7 +331,7 @@ ITrack* LocalMetadataProxy::QueryTrackById(int64_t trackId) {
 
         std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target, this->library));
 
-        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(search);
 
         if (search->GetStatus() == IQuery::Finished) {
             return search->Result()->GetSdkValue();
@@ -352,7 +352,7 @@ ITrack* LocalMetadataProxy::QueryTrackByExternalId(const char* externalId) {
 
             std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target, this->library));
 
-            this->library->Enqueue(search, ILibrary::QuerySynchronous);
+            this->library->EnqueueAndWait(search);
 
             if (search->GetStatus() == IQuery::Finished) {
                 return search->Result()->GetSdkValue();
@@ -389,7 +389,7 @@ ITrackList* LocalMetadataProxy::QueryTracksByCategory(
             search->SetLimitAndOffset(limit, offset);
         }
 
-        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(search);
 
         if (search->GetStatus() == IQuery::Finished) {
             return search->GetSdkResult();
@@ -414,7 +414,7 @@ ITrackList* LocalMetadataProxy::QueryTracksByCategories(
             query->SetLimitAndOffset(limit, offset);
         }
 
-        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return query->GetSdkResult();
@@ -434,7 +434,7 @@ IValueList* LocalMetadataProxy::QueryCategory(const char* type, const char* filt
 IValueList* LocalMetadataProxy::ListCategories() {
     try {
         auto query = std::make_shared<AllCategoriesQuery>();
-        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return query->GetSdkResult();
@@ -460,7 +460,7 @@ IValueList* LocalMetadataProxy::QueryCategoryWithPredicate(
                 { field, predicateId },
                 std::string(filter ? filter : "")));
 
-        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(search);
 
         if (search->GetStatus() == IQuery::Finished) {
             return search->GetSdkResult();
@@ -482,7 +482,7 @@ IValueList* LocalMetadataProxy::QueryCategoryWithPredicates(
         auto query = std::make_shared<CategoryListQuery>(
             type, predicateList, std::string(filter ? filter : ""));
 
-        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return query->GetSdkResult();
@@ -504,7 +504,7 @@ IMapList* LocalMetadataProxy::QueryAlbums(
             categoryIdValue,
             std::string(filter ? filter : "")));
 
-        this->library->Enqueue(search, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(search);
 
         if (search->GetStatus() == IQuery::Finished) {
             return search->GetSdkResult();
@@ -534,13 +534,13 @@ static uint64_t savePlaylist(
             std::shared_ptr<SavePlaylistQuery> query =
                 SavePlaylistQuery::Replace(library, playlistId, trackList);
 
-            library->Enqueue(query, ILibrary::QuerySynchronous);
+            library->EnqueueAndWait(query);
 
             if (query->GetStatus() == IQuery::Finished) {
                 if (strlen(playlistName)) {
                     query = SavePlaylistQuery::Rename(library, playlistId, playlistName);
 
-                    library->Enqueue(query, ILibrary::QuerySynchronous);
+                    library->EnqueueAndWait(query);
 
                     if (query->GetStatus() == IQuery::Finished) {
                         return playlistId;
@@ -555,7 +555,7 @@ static uint64_t savePlaylist(
             std::shared_ptr<SavePlaylistQuery> query =
                 SavePlaylistQuery::Save(library, playlistName, trackList);
 
-            library->Enqueue(query, ILibrary::QuerySynchronous);
+            library->EnqueueAndWait(query);
 
             if (query->GetStatus() == IQuery::Finished) {
                 return query->GetPlaylistId();
@@ -601,7 +601,7 @@ int64_t LocalMetadataProxy::SavePlaylistWithExternalIds(
         std::shared_ptr<Query> query =
             std::make_shared<Query>(this->library, externalIds, externalIdCount);
 
-        library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return savePlaylist(this->library, query->GetResult(), playlistName, playlistId);
@@ -633,7 +633,7 @@ bool LocalMetadataProxy::RenamePlaylist(const int64_t playlistId, const char* na
             std::shared_ptr<SavePlaylistQuery> query =
                 SavePlaylistQuery::Rename(library, playlistId, name);
 
-            this->library->Enqueue(query, ILibrary::QuerySynchronous);
+            this->library->EnqueueAndWait(query);
 
             if (query->GetStatus() == IQuery::Finished) {
                 return true;
@@ -652,7 +652,7 @@ bool LocalMetadataProxy::DeletePlaylist(const int64_t playlistId) {
         std::shared_ptr<DeletePlaylistQuery> query =
             std::make_shared<DeletePlaylistQuery>(library, playlistId);
 
-        this->library->Enqueue(query, ILibrary::QuerySynchronous);
+        this->library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return true;
@@ -677,7 +677,7 @@ static bool appendToPlaylist(
             std::make_shared<AppendPlaylistQuery>(
                 library, playlistId, trackList, offset);
 
-        library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return true;
@@ -714,7 +714,7 @@ bool LocalMetadataProxy::AppendToPlaylistWithExternalIds(
         std::shared_ptr<Query> query =
             std::make_shared<Query>(this->library, externalIds, externalIdCount);
 
-        library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return appendToPlaylist(this->library, playlistId, query->GetResult(), offset);
@@ -747,7 +747,7 @@ size_t LocalMetadataProxy::RemoveTracksFromPlaylist(
         auto query = std::make_shared<RemoveFromPlaylistQuery>(
             this->library, playlistId, externalIds, sortOrders, count);
 
-        library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return query->GetResult();
@@ -767,7 +767,7 @@ ITrackList* LocalMetadataProxy::QueryTracksByExternalId(
         auto query = std::make_shared<ExternalIdListToTrackListQuery>(
             this->library, externalIds, externalIdCount);
 
-        library->Enqueue(query, ILibrary::QuerySynchronous);
+        library->EnqueueAndWait(query);
 
         if (query->GetStatus() == IQuery::Finished) {
             return query->GetSdkResult();
@@ -789,7 +789,7 @@ bool LocalMetadataProxy::SendRawQuery(
         std::string name = json["name"];
         auto libraryQuery = QueryRegistry::CreateLocalQueryFor(name, query, localLibrary);
         if (libraryQuery) {
-            localLibrary->Enqueue(libraryQuery, ILibrary::QuerySynchronous);
+            localLibrary->EnqueueAndWait(libraryQuery);
             if (libraryQuery->GetStatus() == IQuery::Finished) {
                 std::string result = libraryQuery->SerializeResult();
                 *resultData = (char*) allocator.Allocate(result.size() + 1);

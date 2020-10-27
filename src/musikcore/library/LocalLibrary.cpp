@@ -42,13 +42,16 @@
 #include <musikcore/library/Indexer.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/debug.h>
+#include <limits>
 
 static const std::string TAG = "LocalLibrary";
 static bool scheduleSyncDueToDbUpgrade = false;
+static int kWaitIndefinite = std::numeric_limits<int64_t>::max();
 
 using namespace musik::core;
 using namespace musik::core::library;
 using namespace musik::core::runtime;
+using namespace std::chrono;
 
 #define DATABASE_VERSION 9
 #define VERBOSE_LOGGING 0
@@ -180,7 +183,11 @@ std::string LocalLibrary::GetDatabaseFilename() {
     return this->GetLibraryDirectory() + "musik.db";
 }
 
-int LocalLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callback) {
+int LocalLibrary::Enqueue(QueryPtr query, Callback callback) {
+    return this->EnqueueAndWait(query, 0LL, callback);
+}
+
+int LocalLibrary::EnqueueAndWait(QueryPtr query, int64_t timeoutMs, Callback callback) {
     LocalQueryPtr localQuery = std::dynamic_pointer_cast<LocalQuery>(query);
 
     if (localQuery) {
@@ -194,15 +201,23 @@ int LocalLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callbac
         context->query = localQuery;
         context->callback = callback;
 
-        if (options & ILibrary::QuerySynchronous) {
-            this->RunQuery(context, false); /* false = do not notify via QueryCompleted */
-        }
-        else {
-            queryQueue.push_back(context);
-            queueCondition.notify_all();
+        queryQueue.push_back(context);
+        queueCondition.notify_all();
 
-            if (VERBOSE_LOGGING) {
-                musik::debug::info(TAG, "query '" + localQuery->Name() + "' enqueued");
+        if (VERBOSE_LOGGING) {
+            musik::debug::info(TAG, "query '" + localQuery->Name() + "' enqueued");
+        }
+
+        if (timeoutMs > 0) {
+            while (!this->exit && (
+                    context->query->GetStatus() == db::IQuery::Idle ||
+                    context->query->GetStatus() == db::IQuery::Running)
+                )
+            {
+                auto result = this->queueCondition.wait_for(lock, timeoutMs * milliseconds(1));
+                if (result == std::cv_status::timeout) {
+                    break;
+                }
             }
         }
 
@@ -211,7 +226,6 @@ int LocalLibrary::Enqueue(QueryPtr query, unsigned int options, Callback callbac
 
     return -1;
 }
-
 
 LocalLibrary::QueryContextPtr LocalLibrary::GetNextQuery() {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
@@ -234,6 +248,7 @@ void LocalLibrary::ThreadProc() {
         auto query = GetNextQuery();
         if (query) {
             this->RunQuery(query);
+            this->queueCondition.notify_all();
         }
     }
 }
