@@ -213,9 +213,14 @@ int LocalLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback call
                     context->query->GetStatus() == db::IQuery::Running)
                 )
             {
-                auto result = this->queueCondition.wait_for(lock, timeoutMs * milliseconds(1));
-                if (result == std::cv_status::timeout) {
-                    break;
+                if (timeoutMs == kWaitIndefinite) {
+                    this->queueCondition.wait(lock);
+                }
+                else {
+                    auto result = this->queueCondition.wait_for(lock, timeoutMs * milliseconds(1));
+                    if (result == std::cv_status::timeout) {
+                        break;
+                    }
                 }
             }
         }
