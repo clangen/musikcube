@@ -54,6 +54,7 @@ using namespace musik::core::library::query;
 using namespace musik::core::sdk;
 
 static const size_t kDefaultCacheSize = 50;
+static const int64_t kCacheWindowTimeoutMs = 50LL;
 
 TrackList::TrackList(ILibraryPtr library)
 : library(library)
@@ -298,7 +299,7 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
             completionFinished = true;
         };
 
-        this->library->EnqueueAndWait(query, 75LL, completion);
+        this->library->EnqueueAndWait(query, kCacheWindowTimeoutMs, completion);
 
         auto status = query->GetStatus();
         if (status != IQuery::Idle && status != IQuery::Running) {
