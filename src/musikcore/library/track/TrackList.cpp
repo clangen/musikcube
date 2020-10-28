@@ -278,9 +278,9 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
     if (async) {
         currentWindow.Set(from, to);
         auto shared = shared_from_this(); /* ensure we remain alive for the duration of the query */
-        bool completionFinished = false;
-        auto completion = [this, &completionFinished, shared, from, to, query](auto q) {
-            if (completionFinished) {
+        auto completionFinished = std::make_shared<bool>(false); /* ugh... keep it alive. */
+        auto completion = [this, completionFinished, shared, from, to, query](auto q) {
+            if (*completionFinished) {
                 return;
             }
             if (query->GetStatus() == IQuery::Finished) {
@@ -296,7 +296,7 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
                 this->CacheWindow(from, to, true);
             }
             this->WindowCached(const_cast<TrackList*>(this), from, to);
-            completionFinished = true;
+            *completionFinished = true;
         };
 
         this->library->EnqueueAndWait(query, kCacheWindowTimeoutMs, completion);
