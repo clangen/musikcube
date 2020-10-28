@@ -54,7 +54,7 @@ using namespace musik::core::library::query;
 using namespace musik::core::sdk;
 
 static const size_t kDefaultCacheSize = 50;
-static const int64_t kCacheWindowTimeoutMs = 50LL;
+static const int64_t kCacheWindowTimeoutMs = 100LL;
 
 TrackList::TrackList(ILibraryPtr library)
 : library(library)

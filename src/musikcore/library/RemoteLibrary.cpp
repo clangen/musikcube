@@ -46,6 +46,7 @@
 #include <musikcore/runtime/Message.h>
 #include <musikcore/debug.h>
 #include <nlohmann/json.hpp>
+#include <chrono>
 
 static const std::string TAG = "RemoteLibrary";
 
@@ -54,6 +55,7 @@ using namespace musik::core::db;
 using namespace musik::core::library;
 using namespace musik::core::net;
 using namespace musik::core::runtime;
+using namespace std::chrono;
 
 #define MESSAGE_QUERY_COMPLETED 5000
 #define MESSAGE_RECONNECT_SOCKET 5001
@@ -206,7 +208,10 @@ int RemoteLibrary::EnqueueAndWait(QueryPtr query, int64_t timeoutMs, Callback ca
                 this->IsQueryInFlight(context->query) &&
                 !isQueryDone(context->query))
             {
-                this->syncQueryCondition.wait(lock);
+                auto result = this->syncQueryCondition.wait_for(lock, timeoutMs * milliseconds(1));
+                if (result == std::cv_status::timeout) {
+                    break;
+                }
             }
         }
 
