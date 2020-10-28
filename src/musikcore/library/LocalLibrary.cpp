@@ -186,7 +186,7 @@ int LocalLibrary::Enqueue(QueryPtr query, Callback callback) {
     return this->EnqueueAndWait(query, 0LL, callback);
 }
 
-int LocalLibrary::EnqueueAndWait(QueryPtr query, int64_t timeoutMs, Callback callback) {
+int LocalLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
     LocalQueryPtr localQuery = std::dynamic_pointer_cast<LocalQuery>(query);
 
     if (localQuery) {

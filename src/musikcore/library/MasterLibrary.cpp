@@ -54,7 +54,7 @@ int MasterLibrary::Enqueue(QueryPtr query, Callback cb) {
     return this->wrappedLibrary->Enqueue(query, cb);
 }
 
-int MasterLibrary::EnqueueAndWait(QueryPtr query, int64_t timeoutMs, Callback cb) {
+int MasterLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback cb) {
     return this->wrappedLibrary->EnqueueAndWait(query, timeoutMs, cb);
 }
 

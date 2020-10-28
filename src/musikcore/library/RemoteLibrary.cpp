@@ -180,7 +180,7 @@ int RemoteLibrary::Enqueue(QueryPtr query, Callback callback) {
     return this->EnqueueAndWait(query, 0LL, callback);
 }
 
-int RemoteLibrary::EnqueueAndWait(QueryPtr query, int64_t timeoutMs, Callback callback) {
+int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback callback) {
     if (QueryRegistry::IsLocalOnlyQuery(query->Name())) {
         auto defaultLocalLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
         return defaultLocalLibrary->EnqueueAndWait(query, timeoutMs, callback);

@@ -46,7 +46,7 @@
 
 namespace musik { namespace core {
 
-    static int64_t kWaitIndefinite = std::numeric_limits<int64_t>::max();
+    static size_t kWaitIndefinite = std::numeric_limits<size_t>::max();
 
     class ILibrary {
         public:
@@ -79,7 +79,7 @@ namespace musik { namespace core {
             virtual ~ILibrary() { }
 
             virtual int Enqueue(QueryPtr query, Callback cb = Callback()) = 0;
-            virtual int EnqueueAndWait(QueryPtr query, int64_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
+            virtual int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback cb = Callback()) = 0;
             virtual IIndexer *Indexer() = 0;
             virtual int Id() = 0;
             virtual const std::string& Name() = 0;

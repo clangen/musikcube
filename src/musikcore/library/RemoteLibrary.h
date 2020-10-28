@@ -69,7 +69,7 @@ namespace musik { namespace core { namespace library {
 
             /* ILibrary */
             int Enqueue(QueryPtr query, Callback = Callback()) override;
-            int EnqueueAndWait(QueryPtr query, int64_t timeoutMs = kWaitIndefinite, Callback = Callback()) override;
+            int EnqueueAndWait(QueryPtr query, size_t timeoutMs = kWaitIndefinite, Callback = Callback()) override;
             musik::core::IIndexer *Indexer() override;
             int Id() override;
             const std::string& Name() override;

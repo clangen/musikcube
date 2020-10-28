@@ -313,6 +313,7 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
             for (auto& kv : result) {
                 this->AddToCache(kv.first, kv.second);
             }
+            this->WindowCached(const_cast<TrackList*>(this), from, to);
         }
     }
 }
