@@ -51,6 +51,7 @@
 #include <app/overlay/TrackOverlays.h>
 
 #define WINDOW_MESSAGE_SCROLL_TO_PLAYING 1003
+#define WINDOW_MESSAGE_TRACK_LIST_WINDOW_CACHED 1004
 
 /* this is pretty gross, but i think we'll eventually settle on one versus the other
 and i don't want to bother adding a bunch of annoying infrastructure to more
@@ -123,7 +124,7 @@ void TrackListView::SetRowRenderer(TrackRowRenderers::Renderer renderer) {
 }
 
 void TrackListView::OnTrackListWindowCached(const musik::core::TrackList* track, size_t from, size_t to) {
-    this->Redraw();
+    this->Debounce(WINDOW_MESSAGE_TRACK_LIST_WINDOW_CACHED, 0, 0, 50);
 }
 
 void TrackListView::OnQueryCompleted(IQuery* query) {
@@ -242,6 +243,9 @@ void TrackListView::SetTrackListAndUpateEventHandlers(std::shared_ptr<TrackList>
 void TrackListView::ProcessMessage(IMessage &message) {
     if (message.Type() == WINDOW_MESSAGE_SCROLL_TO_PLAYING) {
         this->ScrollToPlaying();
+    }
+    else if (message.Type() == WINDOW_MESSAGE_TRACK_LIST_WINDOW_CACHED) {
+        this->Redraw();
     }
     else {
         ListWindow::ProcessMessage(message);

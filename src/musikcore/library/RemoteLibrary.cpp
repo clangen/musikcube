@@ -275,6 +275,7 @@ void RemoteLibrary::OnQueryCompleted(const std::string& messageId, Query query) 
 }
 
 void RemoteLibrary::RunQuery(QueryContextPtr context) {
+    std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
 #if 0
     this->RunQueryOnLoopback(context);
 #else
@@ -315,7 +316,6 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
 
 void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context) {
     if (context->query) {
-        std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
         const std::string messageId = wsc.EnqueueQuery(context->query);
         if (messageId.size()) {
             queriesInFlight[messageId] = context;

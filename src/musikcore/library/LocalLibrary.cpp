@@ -46,7 +46,6 @@
 
 static const std::string TAG = "LocalLibrary";
 static bool scheduleSyncDueToDbUpgrade = false;
-static int kWaitIndefinite = std::numeric_limits<int64_t>::max();
 
 using namespace musik::core;
 using namespace musik::core::library;

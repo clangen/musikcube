@@ -277,23 +277,33 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
     if (async) {
         currentWindow.Set(from, to);
         auto shared = shared_from_this(); /* ensure we remain alive for the duration of the query */
-        this->library->EnqueueAndWait(query, 50LL, [this, shared, from, to, query](auto q) {
+        bool completionFinished = false;
+        auto completion = [this, &completionFinished, shared, from, to, query](auto q) {
+            if (completionFinished) {
+                return;
+            }
             if (query->GetStatus() == IQuery::Finished) {
                 auto& result = query->Result();
                 for (auto& kv : result) {
                     this->AddToCache(kv.first, kv.second);
                 }
             }
-
             this->currentWindow.Reset();
             if (this->nextWindow.Valid()) {
                 size_t from = nextWindow.from, to = nextWindow.to;
                 nextWindow.Reset();
                 this->CacheWindow(from, to, true);
             }
-
             this->WindowCached(const_cast<TrackList*>(this), from, to);
-        });
+            completionFinished = true;
+        };
+
+        this->library->EnqueueAndWait(query, 75LL, completion);
+
+        auto status = query->GetStatus();
+        if (status != IQuery::Idle && status != IQuery::Running) {
+            completion(query);
+        }
     }
     else {
         this->library->EnqueueAndWait(query);

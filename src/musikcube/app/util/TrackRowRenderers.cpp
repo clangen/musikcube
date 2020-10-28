@@ -54,7 +54,7 @@ using namespace cursespp;
 #define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
 
 static const bool kEnableSkeletonRows = true;
-static const std::string kSkeletonChar = "░";
+static const std::string kSkeletonChar = "-"; // "░";
 static const int kDurationColWidth = 5; /* 00:00 */
 static const int kRatingBreakpointWidth = 90;
 
