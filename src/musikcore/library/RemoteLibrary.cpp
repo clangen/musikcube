@@ -63,13 +63,13 @@ using namespace std::chrono;
 
 class NullIndexer: public musik::core::IIndexer {
     public:
-        virtual ~NullIndexer() override { }
-        virtual void AddPath(const std::string& path) override { }
-        virtual void RemovePath(const std::string& path) override { }
-        virtual void GetPaths(std::vector<std::string>& paths) override { }
-        virtual void Schedule(SyncType type) override { }
-        virtual void Stop() override { }
-        virtual State GetState() override { return StateIdle; }
+        virtual ~NullIndexer() { }
+        void AddPath(const std::string& path) noexcept override { }
+        void RemovePath(const std::string& path) noexcept override { }
+        void GetPaths(std::vector<std::string>& paths) noexcept override { }
+        void Schedule(SyncType type) noexcept override { }
+        void Stop() noexcept override { }
+        State GetState() noexcept override { return StateIdle; }
 } kNullIndexer;
 
 class RemoteLibrary::QueryCompletedMessage: public Message {
