@@ -93,6 +93,7 @@ TrackListView::TrackListView(
     this->decorator = decorator;
     this->trackNumType = TrackRowRenderers::TrackNumType::Metadata;
     this->renderer = TrackRowRenderers::Get(TrackRowRenderers::Type::AlbumSort);
+    this->playing = playback.GetPlaying();
 }
 
 TrackListView::~TrackListView() {

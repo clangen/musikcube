@@ -60,6 +60,12 @@ using musik::core::ILibraryPtr;
 using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
 
+/* internally PlaybackService leverages a message queue for synchronization;
+tracks are a special in that they are heavy-weight so aggressively exjected
+from caches... sometimes we may have to query for them. if they take more than
+the specified timeout we consider it a failure and stop playback. */
+static const size_t kTrackTimeoutMs = 3000;
+
 #define NO_POSITION (size_t) -1
 #define START_OVER (size_t) -2
 
@@ -332,12 +338,16 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 }
 
                 if (this->index != NO_POSITION) {
-                    track = this->playlist.Get(this->index);
+                    track = this->playlist.GetWithTimeout(this->index, kTrackTimeoutMs);
                 }
             }
 
             if (track) {
                 this->OnTrackChanged(this->index, track);
+            }
+            else {
+                this->Stop();
+                return;
             }
 
             if (eventType == StreamPlaying) {
@@ -365,9 +375,12 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             /* notify track change as soon as we're prepared. if we wait until
             we start playing, it may be a while until the UI knows to redraw! */
             if (this->UriAtIndex(this->index) == transport->Uri()) {
-                auto track = this->playlist.Get(this->index);
+                auto track = this->playlist.GetWithTimeout(this->index, kTrackTimeoutMs);
                 if (track) {
                     this->OnTrackChanged(this->index, track);
+                }
+                else {
+                    this->Stop();
                 }
             }
         }
@@ -589,26 +602,18 @@ bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
     bool found = false;
     auto playingTrack = this->GetPlaying();
     if (playingTrack && tracks.Count() > index) {
-        auto supplantTrack = tracks.Get(index);
-        auto supplantLibrary = supplantTrack->Library();
         auto supplantId = tracks.GetId(index);
-
-        auto playingId = playingTrack->GetId();
-        auto playingLibrary = playingTrack->Library();
+        const auto playingId = playingTrack->GetId();
 
         /* look at the index hint, see if we can find a matching track without
         iteration. */
-        if (supplantId == playingId && supplantLibrary == playingLibrary) {
+        if (supplantId == playingId) {
             found = true;
         }
         /* otherwise search the input */
         else {
             for (size_t i = 0; i < tracks.Count(); i++) {
-                supplantTrack = tracks.Get(i);
-                auto supplantLibrary = supplantTrack->Library();
-                auto supplantId = supplantTrack->GetId();
-
-                if (supplantId == playingId && supplantLibrary == playingLibrary) {
+                if (tracks.GetId(i) == playingId) {
                     index = i;
                     found = true;
                 }
@@ -828,7 +833,7 @@ double PlaybackService::GetDuration() {
 
         size_t index = this->index;
         if (index < this->playlist.Count()) {
-            track = this->playlist.Get(index);
+            track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
         }
     }
 
@@ -845,7 +850,7 @@ ITrack* PlaybackService::GetTrack(size_t index) {
     const size_t count = this->playlist.Count();
 
     if (count && index < this->playlist.Count()) {
-        auto track = this->playlist.Get(index);
+        auto track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs * 10);
         if (track) {
             return track->GetSdkValue();
         }
@@ -876,7 +881,7 @@ TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
         return TrackPtr();
     }
 
-    return this->playlist.Get(index);
+    return this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
 }
 
 Editor PlaybackService::Edit() {
@@ -1101,7 +1106,7 @@ void PlaybackService::Editor::Release() {
 
 std::string PlaybackService::UriAtIndex(size_t index) {
     if (index < this->playlist.Count()) {
-        auto track = this->playlist.Get(index);
+        auto track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
         if (track) {
             return this->library->GetResourceLocator().GetTrackUri(track.get());
         }
@@ -1128,7 +1133,7 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
     Mode mode = (Mode)playbackPrefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
 
     if (mode != Mode::Disabled && index < this->playlist.Count()) {
-        auto track = this->playlist.Get(index);
+        auto track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
         if (track) {
             auto rg = track->GetReplayGain();
             float gain = (mode == Mode::Album) ? rg.albumGain : rg.trackGain;

@@ -292,15 +292,10 @@ void MainLayout::SwitchToLibraryLayout() {
 
 void MainLayout::OnLibraryConnectionStateChanged(ILibrary::ConnectionState state) {
     auto currentLayout = this->GetLayout();
-
     if (currentLayout == this->libraryLayout ||
         currentLayout == this->libraryNotConnectedLayout)
     {
         this->SwitchToLibraryLayout();
-    }
-
-    if (state == ILibrary::ConnectionState::Disconnected) {
-        this->playback.Stop();
     }
 }
 

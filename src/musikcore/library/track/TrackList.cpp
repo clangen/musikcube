@@ -172,6 +172,22 @@ TrackPtr TrackList::Get(size_t index, bool async) const {
 #endif
 }
 
+TrackPtr TrackList::GetWithTimeout(size_t index, size_t timeoutMs) const {
+    auto id = this->ids.at(index);
+    auto cached = this->GetFromCache(id);
+    if (cached) { return cached; }
+
+    auto target = std::make_shared<LibraryTrack>(id, this->library);
+    auto query = std::make_shared<TrackMetadataQuery>(target, this->library);
+    this->library->EnqueueAndWait(query, timeoutMs);
+    if (query->GetStatus() == IQuery::Finished) {
+        this->AddToCache(id, query->Result());
+        return query->Result();
+    }
+
+    return TrackPtr();
+}
+
 ITrack* TrackList::GetTrack(size_t index) const {
     return this->Get(index)->GetSdkValue();
 }

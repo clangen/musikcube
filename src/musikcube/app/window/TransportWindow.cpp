@@ -373,6 +373,7 @@ TransportWindow::TransportWindow(
     this->repeatPos.y = 1;
     this->volumePos.y = 1;
     this->timePos.y = 1;
+    this->currentTrack = playback.GetPlaying();
     this->UpdateReplayGainState();
 }
 

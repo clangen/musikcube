@@ -79,8 +79,7 @@ namespace musik { namespace core {
 
             /* implementation specific */
             TrackPtr Get(size_t index, bool async = false) const;
-            TrackPtr GetSync(size_t index) const { return this->Get(index, false); }
-            TrackPtr GetAsync(size_t index) const { return this->Get(index, true); }
+            TrackPtr GetWithTimeout(size_t index, size_t timeoutMs) const;
             void ClearCache();
             void Swap(TrackList& list);
             void CopyFrom(const TrackList& from);
