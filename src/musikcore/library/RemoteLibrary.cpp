@@ -199,23 +199,28 @@ int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback cal
         context->query = serializableQuery;
         context->callback = callback;
 
-        queryQueue.push_back(context);
-        queueCondition.notify_all();
+        if (timeoutMs == kWaitIndefinite) {
+            this->RunQuery(context);
+        }
+        else {
+            queryQueue.push_back(context);
+            queueCondition.notify_all();
 
-        if (timeoutMs > 0) {
-            while (
-                !this->exit &&
-                this->IsQueryInFlight(context->query) &&
-                !isQueryDone(context->query))
-            {
-                if (timeoutMs == kWaitIndefinite) {
-                    this->syncQueryCondition.wait(lock);
-                    break;
-                }
-                else {
-                    auto result = this->syncQueryCondition.wait_for(lock, timeoutMs * milliseconds(1));
-                    if (result == std::cv_status::timeout) {
+            if (timeoutMs > 0) {
+                while (
+                    !this->exit &&
+                    this->IsQueryInFlight(context->query) &&
+                    !isQueryDone(context->query))
+                {
+                    if (timeoutMs == kWaitIndefinite) {
+                        this->syncQueryCondition.wait(lock);
                         break;
+                    }
+                    else {
+                        auto result = this->syncQueryCondition.wait_for(lock, timeoutMs * milliseconds(1));
+                        if (result == std::cv_status::timeout) {
+                            break;
+                        }
                     }
                 }
             }

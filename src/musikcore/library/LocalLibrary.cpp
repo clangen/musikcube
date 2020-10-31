@@ -196,27 +196,27 @@ int LocalLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback call
             return -1;
         }
 
-        auto context = std::make_shared<QueryContext>();
-        context->query = localQuery;
-        context->callback = callback;
-
-        queryQueue.push_back(context);
-        queueCondition.notify_all();
-
         if (VERBOSE_LOGGING) {
             musik::debug::info(TAG, "query '" + localQuery->Name() + "' enqueued");
         }
 
-        if (timeoutMs > 0) {
-            while (!this->exit && (
+        auto context = std::make_shared<QueryContext>();
+        context->query = localQuery;
+        context->callback = callback;
+
+        if (timeoutMs == kWaitIndefinite) {
+            this->RunQuery(context);
+        }
+        else {
+            queryQueue.push_back(context);
+            queueCondition.notify_all();
+
+            if (timeoutMs > 0) {
+                while (!this->exit && (
                     context->query->GetStatus() == db::IQuery::Idle ||
                     context->query->GetStatus() == db::IQuery::Running)
-                )
-            {
-                if (timeoutMs == kWaitIndefinite) {
-                    this->queueCondition.wait(lock);
-                }
-                else {
+                    )
+                {
                     auto result = this->queueCondition.wait_for(lock, timeoutMs * milliseconds(1));
                     if (result == std::cv_status::timeout) {
                         break;
