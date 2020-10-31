@@ -257,8 +257,7 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
 
 bool MainLayout::IsLibraryConnected() {
     using State = ILibrary::ConnectionState;
-    auto state = library->GetConnectionState();
-    return state == State::Connected || state == State::NotApplicable;
+    return library->GetConnectionState()  == State::Connected;
 }
 
 void MainLayout::SetInitialLayout() {

@@ -77,7 +77,7 @@ namespace musik { namespace core { namespace library {
             MessageQueue& GetMessageQueue() override { return *messageQueue; }
             IResourceLocator& GetResourceLocator() override;
             bool IsConfigured() override;
-            ConnectionState GetConnectionState() const override { return ConnectionState::NotApplicable; }
+            ConnectionState GetConnectionState() const override { return ConnectionState::Connected; }
             Type GetType() const override { return Type::Local; }
             void Close() override;
 

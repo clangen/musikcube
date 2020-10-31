@@ -59,7 +59,6 @@ namespace musik { namespace core {
             };
 
             enum class ConnectionState: int {
-                NotApplicable = -1,
                 Disconnected = 0,
                 Connected = 1,
                 Connecting = 2,
