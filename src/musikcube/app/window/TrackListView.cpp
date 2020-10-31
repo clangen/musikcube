@@ -238,7 +238,7 @@ void TrackListView::SetTrackListAndUpateEventHandlers(std::shared_ptr<TrackList>
         this->tracks->WindowCached.connect(this, &TrackListView::OnTrackListWindowCached);
     }
     sGetAsync = Preferences::ForComponent(prefs::components::Settings)->GetBool(
-        prefs::keys::AsyncTrackListQueries, false);
+        prefs::keys::AsyncTrackListQueries, true);
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {
