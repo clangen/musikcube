@@ -57,7 +57,7 @@
     "overlay_focused_text": {
       "hex": "#dc322f",
       "palette": 160
-    },    
+    },
     "shortcuts_background": {
       "hex": "#586e75",
       "palette": 240
@@ -90,19 +90,27 @@
       "hex": "#fdf6e3",
       "palette": 230
     },
-    "banner_background": {
-      "hex": "#cb4b16",
-      "palette": 166
+    "header_background": {
+      "hex": "#002b36",
+      "palette": 234
     },
-    "banner_foreground": {
-      "hex": "#eee8d5",
-      "palette": 254
+    "header_foreground": {
+      "hex": "#93a1a1",
+      "palette": 245
     },
     "footer_background": {
       "hex": "#cb4b16",
       "palette": 166
     },
     "footer_foreground": {
+      "hex": "#eee8d5",
+      "palette": 254
+    },
+    "banner_background": {
+      "hex": "#cb4b16",
+      "palette": 166
+    },
+    "banner_foreground": {
       "hex": "#eee8d5",
       "palette": 254
     },

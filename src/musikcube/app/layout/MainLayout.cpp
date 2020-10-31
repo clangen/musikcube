@@ -122,7 +122,7 @@ MainLayout::MainLayout(
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();
 
     this->topBanner.reset(new TextLabel());
-    this->topBanner->SetContentColor(Color::Banner);
+    this->topBanner->SetContentColor(Color::Header);
     this->topBanner->Hide();
     this->AddWindow(this->topBanner);
 

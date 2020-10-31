@@ -76,8 +76,9 @@ namespace cursespp {
                 OverlayListFrame = 25,
                 OverlayListFrameFocused = 26,
 
-                Banner = 27,
-                Footer = 28
+                Header = 27,
+                Footer = 28,
+                Banner = 29
             };
 
             Color() {

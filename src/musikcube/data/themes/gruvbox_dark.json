@@ -90,11 +90,11 @@
       "hex": "#282828",
       "palette": 235
     },
-    "banner_background": {
+    "header_background": {
       "hex": "#282828",
       "palette": 235
     },
-    "banner_foreground": {
+    "header_foreground": {
       "hex": "#7c6f64",
       "palette": 243
     },
@@ -103,6 +103,14 @@
       "palette": 132
     },
     "footer_foreground": {
+      "hex": "#fbf1c7",
+      "palette": 229
+    },
+    "banner_background": {
+      "hex": "#458588",
+      "palette": 66
+    },
+    "banner_foreground": {
       "hex": "#fbf1c7",
       "palette": 229
     },
