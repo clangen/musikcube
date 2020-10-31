@@ -76,6 +76,18 @@ jobs:
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
           path: /root/rpms/
+  build_fedora_33:
+    docker:
+      - image: fedora:33
+    steps:
+      - checkout
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
+      - run: dnf builddep -y musikcube.spec
+      - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
+      - run: rpmbuild -ba -vv musikcube.spec
+      - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - store_artifacts:
+          path: /root/rpms/
 workflow_filters: &workflow_filters
   filters:
     branches:
@@ -92,3 +104,4 @@ workflows:
       - build_ubuntu_groovy: *workflow_filters
       - build_fedora_31: *workflow_filters
       - build_fedora_32: *workflow_filters
+      - build_fedora_33: *workflow_filters
