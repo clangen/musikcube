@@ -70,6 +70,7 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string DisableAlbumArtistFallback;
         extern const std::string AuddioApiToken;
         extern const std::string LibraryType;
+        extern const std::string PlaybackTrackQueryTimeoutMs;
         extern const std::string RemoteLibraryHostname;
         extern const std::string RemoteLibraryWssPort;
         extern const std::string RemoteLibraryHttpPort;

@@ -60,12 +60,6 @@ using musik::core::ILibraryPtr;
 using musik::core::audio::ITransport;
 using Editor = PlaybackService::Editor;
 
-/* internally PlaybackService leverages a message queue for synchronization;
-tracks are a special in that they are heavy-weight so aggressively exjected
-from caches... sometimes we may have to query for them. if they take more than
-the specified timeout we consider it a failure and stop playback. */
-static const size_t kTrackTimeoutMs = 3000;
-
 #define NO_POSITION (size_t) -1
 #define START_OVER (size_t) -2
 
@@ -139,6 +133,12 @@ static inline void savePreferences(
     prefs->SetInt(keys::RepeatMode, playback.GetRepeatMode());
     prefs->SetInt(keys::TimeChangeMode, playback.GetTimeChangeMode());
 }
+
+/* internally PlaybackService leverages a message queue for synchronization;
+tracks are a special in that they are heavy-weight so aggressively exjected
+from caches... sometimes we may have to query for them. if they take more than
+the specified timeout we consider it a failure and stop playback. */
+#define TRACK_TIMEOUT_MS() (size_t) this->appPrefs->GetInt(keys::PlaybackTrackQueryTimeoutMs, 5000)
 
 PlaybackService::PlaybackService(
     IMessageQueue& messageQueue,
@@ -853,7 +853,7 @@ ITrack* PlaybackService::GetTrack(size_t index) {
     const size_t count = this->playlist.Count();
 
     if (count && index < this->playlist.Count()) {
-        auto track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs * 10);
+        auto track = this->playlist.GetWithTimeout(index, TRACK_TIMEOUT_MS() * 10);
         if (track) {
             return track->GetSdkValue();
         }
@@ -888,7 +888,7 @@ TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
         return TrackPtr();
     }
 
-    return this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
+    return this->playlist.GetWithTimeout(index, TRACK_TIMEOUT_MS());
 }
 
 Editor PlaybackService::Edit() {

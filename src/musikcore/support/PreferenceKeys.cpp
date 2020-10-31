@@ -66,6 +66,7 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::DisableAlbumArtistFallback = "DisableAlbumArtistFallback";
     const std::string keys::AuddioApiToken = "AuddioApiToken";
     const std::string keys::LibraryType = "LibraryType";
+    const std::string keys::PlaybackTrackQueryTimeoutMs = "PlaybackTrackQueryTimeoutMs";
     const std::string keys::RemoteLibraryHostname = "RemoteLibraryHostname";
     const std::string keys::RemoteLibraryWssPort = "RemoteLibraryWssPort";
     const std::string keys::RemoteLibraryHttpPort = "RemoteLibraryHttpPort";
