@@ -31,8 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
+#include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IOutput.h>
 #include <sndio.h>
 #include <mutex>
@@ -57,7 +59,7 @@ class SndioOut : public IOutput {
         virtual void SetVolume(double volume) override;
         virtual double GetVolume() override;
         virtual void Stop() override;
-        virtual int Play(IBuffer *buffer, IBufferProvider *provider) override;
+        virtual musik::core::sdk::OutputState Play(IBuffer *buffer, IBufferProvider *provider) override;
         virtual double Latency() override;
         virtual void Drain() override;
         virtual IDeviceList* GetDeviceList() override;
