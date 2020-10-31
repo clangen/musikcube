@@ -338,7 +338,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
                 }
 
                 if (this->index != NO_POSITION) {
-                    track = this->playlist.GetWithTimeout(this->index, kTrackTimeoutMs);
+                    track = TrackAtIndexWithTimeout(this->index);
                 }
             }
 
@@ -375,7 +375,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             /* notify track change as soon as we're prepared. if we wait until
             we start playing, it may be a while until the UI knows to redraw! */
             if (this->UriAtIndex(this->index) == transport->Uri()) {
-                auto track = this->playlist.GetWithTimeout(this->index, kTrackTimeoutMs);
+                auto track = TrackAtIndexWithTimeout(this->index);
                 if (track) {
                     this->OnTrackChanged(this->index, track);
                 }
@@ -830,10 +830,9 @@ double PlaybackService::GetDuration() {
 
     {
         std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-
         size_t index = this->index;
         if (index < this->playlist.Count()) {
-            track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
+            track = TrackAtIndexWithTimeout(index);
         }
     }
 
@@ -845,6 +844,10 @@ double PlaybackService::GetDuration() {
 }
 
 ITrack* PlaybackService::GetTrack(size_t index) {
+    if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected) {
+        return nullptr;
+    }
+
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     const size_t count = this->playlist.Count();
@@ -874,7 +877,11 @@ TrackPtr PlaybackService::GetPlaying() {
     return this->playingTrack;
 }
 
-TrackPtr PlaybackService::GetTrackAtIndex(size_t index) {
+TrackPtr PlaybackService::TrackAtIndexWithTimeout(size_t index) {
+    if (this->library->GetConnectionState() != ILibrary::ConnectionState::Connected) {
+        return TrackPtr();
+    }
+
     std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
 
     if (index >= this->playlist.Count()) {
@@ -1106,7 +1113,7 @@ void PlaybackService::Editor::Release() {
 
 std::string PlaybackService::UriAtIndex(size_t index) {
     if (index < this->playlist.Count()) {
-        auto track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
+        auto track = TrackAtIndexWithTimeout(index);
         if (track) {
             return this->library->GetResourceLocator().GetTrackUri(track.get());
         }
@@ -1133,7 +1140,7 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
     Mode mode = (Mode)playbackPrefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
 
     if (mode != Mode::Disabled && index < this->playlist.Count()) {
-        auto track = this->playlist.GetWithTimeout(index, kTrackTimeoutMs);
+        auto track = TrackAtIndexWithTimeout(index);
         if (track) {
             auto rg = track->GetReplayGain();
             float gain = (mode == Mode::Album) ? rg.albumGain : rg.trackGain;

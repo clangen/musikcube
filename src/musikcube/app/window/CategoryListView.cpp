@@ -81,11 +81,7 @@ CategoryListView::CategoryListView(
     this->fieldIdColumn = getFieldIdColumn(fieldName);
     this->adapter = new Adapter(*this);
     this->playback.TrackChanged.connect(this, &CategoryListView::OnTrackChanged);
-
-    size_t index = playback.GetIndex();
-    if (index != ListWindow::NO_SELECTION) {
-        this->playing = playback.GetTrackAtIndex(index);
-    }
+    this->playing = playback.GetPlaying();
 }
 
 CategoryListView::~CategoryListView() {

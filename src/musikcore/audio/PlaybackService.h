@@ -123,7 +123,6 @@ namespace musik { namespace core { namespace audio {
             void Prepare(size_t index, double position = 0.0f);
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(const musik::core::TrackList& source);
-            musik::core::TrackPtr GetTrackAtIndex(size_t index);
             musik::core::TrackPtr GetPlaying();
 
             std::shared_ptr<const musik::core::TrackList> GetTrackList() {
@@ -189,6 +188,8 @@ namespace musik { namespace core { namespace audio {
             void MarkTrackAsPlayed(int64_t trackId);
 
             void PlayAt(size_t index, ITransport::StartMode mode);
+
+            musik::core::TrackPtr TrackAtIndexWithTimeout(size_t index);
 
             std::string UriAtIndex(size_t index);
             musik::core::audio::ITransport::Gain GainAtIndex(size_t index);
