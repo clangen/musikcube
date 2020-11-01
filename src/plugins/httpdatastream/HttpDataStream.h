@@ -79,6 +79,7 @@ class HttpDataStream : public IDataStream {
             Cached,
             Downloading,
             Retrying,
+            Aborted,
             Downloaded,
             Error,
         };

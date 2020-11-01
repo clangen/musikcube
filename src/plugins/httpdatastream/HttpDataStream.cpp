@@ -403,7 +403,10 @@ void HttpDataStream::ThreadProc() {
             long httpStatusCode = 0;
             curl_easy_getinfo(this->curlEasy, CURLINFO_RESPONSE_CODE, &httpStatusCode);
             if (httpStatusCode == 200) {
-                this->state = State::Downloaded;
+                this->state = curlCode != CURLE_OK
+                    ? State::Aborted
+                    : State::Downloaded;
+
                 if (this->reader) {
                     if (this->written > 0) {
                         this->reader->Add(this->written);
