@@ -167,11 +167,11 @@ StreamState MasterTransport::GetStreamState() {
     return this->transport->GetStreamState();
 }
 
-void MasterTransport::OnStreamEvent(int type, std::string url) {
+void MasterTransport::OnStreamEvent(musik::core::sdk::StreamState type, std::string url) {
     this->StreamEvent(type, url);
 }
 
-void MasterTransport::OnPlaybackEvent(int type) {
+void MasterTransport::OnPlaybackEvent(musik::core::sdk::PlaybackState type) {
     this->PlaybackEvent(type);
 }
 

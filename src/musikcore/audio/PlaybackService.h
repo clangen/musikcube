@@ -174,8 +174,8 @@ namespace musik { namespace core { namespace audio {
             Editor Edit();
 
         private:
-            void OnStreamEvent(int eventType, std::string uri);
-            void OnPlaybackEvent(int eventType);
+            void OnStreamEvent(musik::core::sdk::StreamState eventType, std::string uri);
+            void OnPlaybackEvent(musik::core::sdk::PlaybackState eventType);
             void OnTrackChanged(size_t pos, musik::core::TrackPtr track);
             void OnVolumeChanged();
             void OnTimeChanged(double time);

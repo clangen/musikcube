@@ -223,16 +223,16 @@ namespace broadcast {
 }
 
 static auto PLAYBACK_STATE_TO_STRING = makeBimap<musik::core::sdk::PlaybackState, std::string>({
-    { musik::core::sdk::PlaybackStopped, "stopped" },
-    { musik::core::sdk::PlaybackPlaying, "playing" },
-    { musik::core::sdk::PlaybackPrepared, "prepared" },
-    { musik::core::sdk::PlaybackPaused, "paused" }
+    { musik::core::sdk::PlaybackState::Stopped, "stopped" },
+    { musik::core::sdk::PlaybackState::Playing, "playing" },
+    { musik::core::sdk::PlaybackState::Prepared, "prepared" },
+    { musik::core::sdk::PlaybackState::Paused, "paused" }
 });
 
 static auto REPEAT_MODE_TO_STRING = makeBimap<musik::core::sdk::RepeatMode, std::string>({
-    { musik::core::sdk::RepeatNone, "none" },
-    { musik::core::sdk::RepeatTrack, "track" },
-    { musik::core::sdk::RepeatList, "list" }
+    { musik::core::sdk::RepeatMode::None, "none" },
+    { musik::core::sdk::RepeatMode::Track, "track" },
+    { musik::core::sdk::RepeatMode::List, "list" }
 });
 
 static auto REPLAYGAIN_MODE_TO_STRING = makeBimap<musik::core::sdk::ReplayGainMode, std::string>({

@@ -165,23 +165,23 @@ IDevice* SndioOut::GetDefaultDevice() {
     return nullptr;
 }
 
-int SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+OutputState SndioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     std::this_thread::yield();
 
     if (this->state != StatePlaying) {
-        return OutputInvalidState;
+        return OutputState::InvalidState;
     }
 
     {
         LOCK()
         if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
-            return OutputBufferFull;
+            return OutputState::BufferFull;
         }
         this->buffers.push_back(BufferContext{provider, buffer});
     }
 
     NOTIFY()
-    return OutputBufferWritten;
+    return OutputState::BufferWritten;
 }
 
 void SndioOut::WriteLoop() {

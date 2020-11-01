@@ -40,48 +40,48 @@
 namespace musik {
     namespace core {
         namespace sdk {
-            enum PlaybackState {
-                PlaybackStopped = 1,
-                PlaybackPaused = 2,
-                PlaybackPrepared = 3,
-                PlaybackPlaying = 4,
+            enum class PlaybackState: int {
+                Stopped = 1,
+                Paused = 2,
+                Prepared = 3,
+                Playing = 4,
             };
 
-            enum StreamState {
-                StreamBuffering = 1,
-                StreamBuffered = 2,
-                StreamPlaying = 3,
-                StreamAlmostDone = 4,
-                StreamFinished = 5,
-                StreamStopped = 6,
-                StreamDestroyed = 7,
-                StreamOpenFailed = -1
+            enum class StreamState: int {
+                Buffering = 1,
+                Buffered = 2,
+                Playing = 3,
+                AlmostDone = 4,
+                Finished = 5,
+                Stopped = 6,
+                Destroyed = 7,
+                OpenFailed = -1
             };
 
-            enum RepeatMode {
-                RepeatNone = 0,
-                RepeatTrack = 1,
-                RepeatList = 2
+            enum class RepeatMode: int {
+                None = 0,
+                Track = 1,
+                List = 2
             };
 
-            enum OutputPlay {
-                OutputFormatError = -4,
-                OutputInvalidState = -3,
-                OutputBufferFull = -2,
-                OutputBufferWritten = -1
+            enum class OutputState: int {
+                FormatError = -4,
+                InvalidState = -3,
+                BufferFull = -2,
+                BufferWritten = -1
             };
 
-            enum TimeChangeMode {
-                TimeChangeSeek = 0,
-                TimeChangeScrub = 1
+            enum class TimeChangeMode: int {
+                Seek = 0,
+                Scrub = 1
             };
 
-            enum PathType {
-                PathUserHome = 0,
-                PathData = 1,
-                PathApplication = 2,
-                PathPlugins = 3,
-                PathLibrary = 4
+            enum class PathType: int {
+                UserHome = 0,
+                Data = 1,
+                Application = 2,
+                Plugins = 3,
+                Library = 4
             };
 
             enum class Capability: int {

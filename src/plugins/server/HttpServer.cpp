@@ -636,8 +636,7 @@ int HttpServer::HandleThumbnailRequest(
     int status = MHD_HTTP_NOT_FOUND;
 
     char pathBuffer[4096];
-    server->context.environment->GetPath(
-        PathType::PathLibrary, pathBuffer, sizeof(pathBuffer));
+    server->context.environment->GetPath(PathType::Library, pathBuffer, sizeof(pathBuffer));
 
     if (strlen(pathBuffer)) {
         std::string path = std::string(pathBuffer) + "thumbs/" + pathParts.at(1) + ".jpg";

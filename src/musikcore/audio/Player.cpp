@@ -124,7 +124,7 @@ Player::Player(
     EventListener *listener,
     Gain gain)
 : internalState(Player::Idle)
-, streamState(StreamBuffering)
+, streamState(StreamState::Buffering)
 , stream(Stream::Create())
 , url(url)
 , currentPosition(0)
@@ -298,7 +298,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     if (player->stream->OpenStream(player->url)) {
         for (Listener* l : player->Listeners()) {
-            player->streamState = StreamBuffered;
+            player->streamState = StreamState::Buffered;
             l->OnPlayerBuffered(player);
         }
 
@@ -370,9 +370,9 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                 /* if this result is negative it's an error code defined by the sdk's
                 OutputPlay enum. if it's a positive number it's the number of milliseconds
                 we should wait until automatically trying to play the buffer again. */
-                int playResult = player->output->Play(buffer, player);
+                OutputState playResult = player->output->Play(buffer, player);
 
-                if (playResult == OutputBufferWritten) {
+                if (playResult == OutputState::BufferWritten) {
                     buffer = nullptr; /* reset so we pick up a new one next iteration */
                 }
                 else {
@@ -382,17 +382,17 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
                     /* if the playResult value >= 0, that means the output requested a
                     specific callback time because its internal buffer is full. */
-                    if (playResult >= 0) {
+                    if ((int) playResult >= 0) {
                         /* if there is no visualizer active, we can introduce an
                         artifical delay of 25% of the buffer size to ease CPU load */
                         auto visualizer = vis::SelectedVisualizer();
                         if (!visualizer || !visualizer->Visible()) {
                             sleepMs = std::max(
                                 (int)(player->output->Latency() * 250.0),
-                                playResult);
+                                (int) playResult);
                         }
                         else {
-                            sleepMs = playResult;
+                            sleepMs = (int) playResult;
                         }
                     }
 
@@ -421,7 +421,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         it wasn't stopped by the user. raise the "almost ended" flag. */
         if (!player->Exited()) {
             for (Listener* l : player->Listeners()) {
-                player->streamState = StreamAlmostDone;
+                player->streamState = StreamState::AlmostDone;
                 l->OnPlayerAlmostEnded(player);
             }
         }
@@ -431,7 +431,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     else {
         if (!player->Exited()) {
             for (Listener* l : player->Listeners()) {
-                player->streamState = StreamOpenFailed;
+                player->streamState = StreamState::OpenFailed;
                 l->OnPlayerOpenFailed(player);
             }
         }
@@ -458,7 +458,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
 
     if (!player->Exited()) {
         for (Listener* l : player->Listeners()) {
-            player->streamState = StreamFinished;
+            player->streamState = StreamState::Finished;
             l->OnPlayerFinished(player);
         }
     }
@@ -466,7 +466,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     player->internalState = Player::Quit;
 
     for (Listener* l : player->Listeners()) {
-        player->streamState = StreamStopped;
+        player->streamState = StreamState::Stopped;
         l->OnPlayerDestroying(player);
     }
 
@@ -593,7 +593,7 @@ void Player::OnBufferProcessed(IBuffer *buffer) {
         }
 
         if (!this->notifiedStarted) {
-            this->streamState = StreamPlaying;
+            this->streamState = StreamState::Playing;
             this->notifiedStarted = true;
             started = true;
         }

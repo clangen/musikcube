@@ -49,8 +49,8 @@ namespace musik { namespace core { namespace audio {
                 Immediate = 0, Wait = 1
             };
 
-            sigslot::signal2<int, std::string> StreamEvent;
-            sigslot::signal1<int> PlaybackEvent;
+            sigslot::signal2<musik::core::sdk::StreamState, std::string> StreamEvent;
+            sigslot::signal1<musik::core::sdk::PlaybackState> PlaybackEvent;
             sigslot::signal0<> VolumeChanged;
             sigslot::signal1<double> TimeChanged;
 

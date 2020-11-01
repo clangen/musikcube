@@ -444,18 +444,18 @@ void AlsaOut::WriteLoop() {
     std::cerr << "AlsaOut: thread finished\n";
 }
 
-int AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
+OutputState AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     this->SetFormat(buffer);
 
     {
         LOCK("play");
 
         if (this->paused) {
-            return OutputInvalidState;
+            return OutputState::InvalidState;
         }
 
         if (this->CountBuffersWithProvider(provider) >= BUFFER_COUNT) {
-            return OutputBufferFull;
+            return OutputState::BufferFull;
         }
 
         std::shared_ptr<BufferContext> context(new BufferContext());
@@ -472,7 +472,7 @@ int AlsaOut::Play(IBuffer *buffer, IBufferProvider* provider) {
         }
     }
 
-    return OutputBufferWritten;
+    return OutputState::BufferWritten;
 }
 
 void AlsaOut::Drain() {

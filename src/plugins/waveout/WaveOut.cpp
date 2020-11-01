@@ -269,7 +269,7 @@ WaveOut::WaveOutBufferPtr WaveOut::GetEmptyBuffer() {
     }
 }
 
-int WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+OutputState WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     LockT lock(this->bufferQueueMutex);
 
     /* if we have a different format, return false and wait for the pending
@@ -280,7 +280,7 @@ int WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             this->currentSampleRate != buffer->SampleRate();
 
         if (formatChanged) {
-            return OutputFormatError;
+            return OutputState::FormatError;
         }
     }
 
@@ -298,7 +298,7 @@ int WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             LockT lock2(this->outputDeviceMutex);
 
             if (!this->playing) {
-                return OutputInvalidState;
+                return OutputState::InvalidState;
             }
         }
 
@@ -313,11 +313,11 @@ int WaveOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (waveBuffer->WriteToOutput()) {
             this->queuedBuffers.push_back(waveBuffer);
-            return OutputBufferWritten;
+            return OutputState::BufferWritten;
         }
     }
 
-    return OutputBufferFull;
+    return OutputState::BufferFull;
 }
 
 bool WaveOut::SetDefaultDevice(const char* deviceId) {

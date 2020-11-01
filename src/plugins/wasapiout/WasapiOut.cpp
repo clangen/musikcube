@@ -311,22 +311,22 @@ void WasapiOut::Drain() {
     }
 }
 
-int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+OutputState WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     Lock lock(this->stateMutex);
 
     if (this->state == StatePaused) {
-        return OutputInvalidState;
+        return OutputState::InvalidState;
     }
 
     if (this->deviceChanged) {
         this->Reset();
         this->deviceChanged = false;
-        return OutputFormatError;
+        return OutputState::FormatError;
     }
 
     if (!this->Configure(buffer)) {
         this->Reset();
-        return OutputFormatError;
+        return OutputState::FormatError;
     }
 
     HRESULT result;
@@ -341,7 +341,7 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     if (availableFrames < framesToWrite) {
         UINT32 delta = framesToWrite - availableFrames;
-        return (delta * 1000) / buffer->SampleRate();
+        return (OutputState) ((delta * 1000) / buffer->SampleRate());
     }
 
     if (availableFrames >= framesToWrite) {
@@ -351,11 +351,11 @@ int WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             memcpy(data, buffer->BufferPointer(), sizeof(float) * samples);
             this->renderClient->ReleaseBuffer(framesToWrite, 0);
             provider->OnBufferProcessed(buffer);
-            return OutputBufferWritten;
+            return OutputState::BufferWritten;
         }
     }
 
-    return OutputBufferFull;
+    return OutputState::BufferFull;
 }
 
 void WasapiOut::Reset() {

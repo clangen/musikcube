@@ -69,7 +69,7 @@ class NoOutput: public IOutput {
         virtual void SetVolume(double volume) { this->volume = volume; }
         virtual double GetVolume() { return this->volume; }
         virtual void Stop() { }
-        virtual int Play(IBuffer *buffer, IBufferProvider *provider) { return OutputInvalidState; }
+        virtual OutputState Play(IBuffer *buffer, IBufferProvider *provider) { return OutputState::InvalidState; }
         virtual void Drain() { }
         virtual double Latency() { return 0.0; }
         virtual const char* Name() { return "NoOutput"; }

@@ -65,7 +65,7 @@ class WasapiOut : public IOutput {
         virtual void SetVolume(double volume) override;
         virtual double GetVolume() override;
         virtual void Stop() override;
-        virtual int Play(IBuffer *buffer, IBufferProvider *provider) override;
+        virtual OutputState Play(IBuffer *buffer, IBufferProvider *provider) override;
         virtual double Latency() override;
         virtual void Drain() override;
         virtual IDeviceList* GetDeviceList() override;

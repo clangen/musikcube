@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "constants.h"
 #include "IPlugin.h"
 #include "IDataStream.h"
 #include "IBuffer.h"
@@ -50,7 +51,7 @@ namespace musik { namespace core { namespace sdk {
             virtual void SetVolume(double volume) = 0;
             virtual double GetVolume() = 0;
             virtual void Stop() = 0;
-            virtual int Play(IBuffer *buffer, IBufferProvider *provider) = 0;
+            virtual OutputState Play(IBuffer *buffer, IBufferProvider *provider) = 0;
             virtual void Drain() = 0;
             virtual double Latency() = 0;
             virtual const char* Name() = 0;

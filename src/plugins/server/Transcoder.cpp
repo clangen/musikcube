@@ -69,7 +69,7 @@ static T* getTypedEncoder(Context& context, const std::string& format) {
 
 static std::string cachePath(Context& context) {
     char buf[4096];
-    context.environment->GetPath(PathType::PathData, buf, sizeof(buf));
+    context.environment->GetPath(PathType::Data, buf, sizeof(buf));
     std::string path = std::string(buf) + "/cache/transcoder/";
 	boost::filesystem::path boostPath(path);
     if (!exists(boostPath)) {

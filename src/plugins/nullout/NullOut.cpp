@@ -119,16 +119,16 @@ IDevice* NullOut::GetDefaultDevice() {
     return nullptr;
 }
 
-int NullOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+OutputState NullOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (this->state == StatePaused) {
-        return OutputInvalidState;
+        return OutputState::InvalidState;
     }
 
     /* order of operations matters, otherwise overflow. */
     int micros = ((buffer->Samples() * 1000) / buffer->SampleRate() * 1000) / buffer->Channels();
     usleep((long)((float) micros / speedMultiplier));
     provider->OnBufferProcessed(buffer);
-    return OutputBufferWritten;
+    return OutputState::BufferWritten;
 }
 
 double NullOut::Latency() {

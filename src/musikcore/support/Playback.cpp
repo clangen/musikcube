@@ -59,11 +59,11 @@ namespace musik {
     namespace core {
         namespace playback {
             void PauseOrResume(ITransport& transport) {
-                int state = transport.GetPlaybackState();
-                if (state == PlaybackPaused || state == PlaybackPrepared) {
+                auto state = transport.GetPlaybackState();
+                if (state == PlaybackState::Paused || state == PlaybackState::Prepared) {
                     transport.Resume();
                 }
-                else if (state == PlaybackPlaying) {
+                else if (state == PlaybackState::Playing) {
                     transport.Pause();
                 }
             }
@@ -115,7 +115,7 @@ namespace musik {
             void SavePlaybackContext(ILibraryPtr library, PlaybackService& playback) {
                 if (Settings()->GetBool(keys::SaveSessionOnExit, true)) {
                     auto prefs = Session();
-                    if (playback.GetPlaybackState() != sdk::PlaybackStopped) {
+                    if (playback.GetPlaybackState() != sdk::PlaybackState::Stopped) {
                         prefs->SetInt(keys::LastPlayQueueIndex, (int)playback.GetIndex());
 
                         /* streams with a negative duration are of indeterminate length,

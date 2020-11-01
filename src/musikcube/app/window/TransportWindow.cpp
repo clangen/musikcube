@@ -450,7 +450,7 @@ bool TransportWindow::MouseEvent(const IMouseHandler::Event& event) {
             return true;
         }
         else if (this->timePos.Contains(event)) {
-            if (playback.GetPlaybackState() != PlaybackStopped) {
+            if (playback.GetPlaybackState() != PlaybackState::Stopped) {
                 double duration = playback.GetDuration();
                 double percent = this->timePos.Percent(event.x);
                 playback.SetPosition(duration * percent);
@@ -503,7 +503,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     if (type == message::RefreshTransport) {
         this->Update((TimeMode) message.UserData1());
 
-        if (transport.GetPlaybackState() != PlaybackStopped) {
+        if (transport.GetPlaybackState() != PlaybackState::Stopped) {
             DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
         }
     }
@@ -520,13 +520,13 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
     this->lastTime = DEFAULT_TIME;
-    this->buffering = playback.GetTransport().GetStreamState() == StreamBuffering;
+    this->buffering = playback.GetTransport().GetStreamState() == StreamState::Buffering;
     this->UpdateReplayGainState();
     DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
 void TransportWindow::OnPlaybackStreamStateChanged(StreamState state) {
-    if (state == StreamBuffering) {
+    if (state == StreamState::Buffering) {
         this->Debounce(message::TransportBuffering, 0, 0, 250);
     }
     else {
@@ -592,16 +592,15 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     auto const state = transport.GetPlaybackState();
-    bool const paused = state == PlaybackPaused;
-    bool const prepared = state == PlaybackPrepared;
-    bool const stopped = state == PlaybackStopped;
+    bool const paused = (state == PlaybackState::Paused);
+    bool const prepared = (state == PlaybackState::Prepared);
+    bool const stopped = (state == PlaybackState::Stopped);
     bool const muted = transport.IsMuted();
     bool const replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
 
     Color const gb = Color::TextActive;
     Color const disabled = Color::TextDisabled;
     Color const bright = Color::TextDefault;
-
     Color volumeAttrs = Color::Default;
 
     if (this->focus == FocusVolume) {
@@ -611,13 +610,13 @@ void TransportWindow::Update(TimeMode timeMode) {
         volumeAttrs = gb;
     }
 
-    Color timerAttrs = (this->focus == FocusTime)
+    Color const timerAttrs = (this->focus == FocusTime)
         ? Color::TextFocused : Color::Default;
 
     /* prepare the "shuffle" label */
 
     std::string shuffleLabel = Strings.SHUFFLE;
-    size_t shuffleWidth = displayCache->Columns(shuffleLabel);
+    size_t const shuffleWidth = displayCache->Columns(shuffleLabel);
 
     /* playing SONG TITLE from ALBUM NAME */
 
@@ -635,7 +634,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     /* draw the "shuffle" label */
     const int shuffleOffset = (int) (cx - shuffleWidth);
     wmove(c, 0, shuffleOffset);
-    Color shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
+    Color const shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
     checked_wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
@@ -643,7 +642,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* volume slider */
 
-    int volumePercent = (int) round(this->transport.Volume() * 100.0f);
+    int const volumePercent = (int) round(this->transport.Volume() * 100.0f);
     int thumbOffset = std::min(10, (volumePercent * 10) / 100);
 
     std::string volume;
@@ -666,15 +665,15 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     /* repeat mode setup */
 
-    RepeatMode mode = this->playback.GetRepeatMode();
+    RepeatMode const mode = this->playback.GetRepeatMode();
     std::string repeatModeLabel;
     Color repeatAttrs = Color::Default;
     switch (mode) {
-        case RepeatList:
+        case RepeatMode::List:
             repeatModeLabel += Strings.REPEAT_LIST;
             repeatAttrs = gb;
             break;
-        case RepeatTrack:
+        case RepeatMode::Track:
             repeatModeLabel += Strings.REPEAT_TRACK;
             repeatAttrs = gb;
             break;
@@ -706,7 +705,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (!this->buffering && timeMode == TimeSmooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
-        double actualTime = playback.GetPosition();
+        double const actualTime = playback.GetPosition();
 
         if (prepared || paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
             smoothedTime = actualTime;
@@ -727,7 +726,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     const std::string replayGain = replayGainEnabled  ? "rg" : "";
 
-    int bottomRowControlsWidth =
+    int const bottomRowControlsWidth =
         displayCache->Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
         (replayGainEnabled ? (u8cols(replayGain) + 4) : 0) +  /* [] brackets */
         u8cols(currentTime) + 1 + /* +1 for space padding */
@@ -735,14 +734,14 @@ void TransportWindow::Update(TimeMode timeMode) {
         1 + displayCache->totalTimeCols + /* +1 for space padding */
         displayCache->Columns(repeatModeLabel);
 
-    int timerTrackWidth =
+    int const timerTrackWidth =
         this->GetContentWidth() -
         bottomRowControlsWidth;
 
     thumbOffset = 0;
 
     if (displayCache->secondsTotal) {
-        int progress = (secondsCurrent * 100) / displayCache->secondsTotal;
+        int const progress = (secondsCurrent * 100) / displayCache->secondsTotal;
         thumbOffset = std::min(timerTrackWidth - 1, (progress * timerTrackWidth) / 100);
     }
 
@@ -760,7 +759,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     OFF(c, volumeAttrs);
 
     if (replayGainEnabled) {
-        auto rgStyle = this->hasReplayGain ? gb : disabled;
+        auto const rgStyle = this->hasReplayGain ? gb : disabled;
         checked_wprintw(c, "[");
         ON(c, rgStyle); checked_wprintw(c, "%s", replayGain.c_str()); OFF(c, rgStyle);
         checked_wprintw(c, "]  ");

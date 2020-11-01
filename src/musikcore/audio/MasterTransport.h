@@ -78,8 +78,8 @@ namespace musik { namespace core { namespace audio {
             Type GetType();
 
         private:
-            void OnStreamEvent(int type, std::string url);
-            void OnPlaybackEvent(int type);
+            void OnStreamEvent(musik::core::sdk::StreamState type, std::string url);
+            void OnPlaybackEvent(musik::core::sdk::PlaybackState type);
             void OnVolumeChanged();
             void OnTimeChanged(double time);
 

@@ -49,7 +49,7 @@ static class MPRISPlugin : public IPlugin {
 
 extern "C" void SetEnvironment(IEnvironment* environment) {
     if (environment) {
-        environment->GetPath(PathLibrary, localBuffer, sizeof(localBuffer));
+        environment->GetPath(PathType::Library, localBuffer, sizeof(localBuffer));
         thumbnailPath = std::string(localBuffer) + "/thumbs/";
     }
 }
@@ -233,7 +233,7 @@ void MPRISRemote::MPRISPrev() {
 void MPRISRemote::MPRISPause() {
     if (playback) {
         auto state = playback->GetPlaybackState();
-        if (state == PlaybackState::PlaybackPlaying) {
+        if (state == PlaybackState::Playing) {
             playback->PauseOrResume();
         }
     }
@@ -254,7 +254,7 @@ void MPRISRemote::MPRISStop() {
 void MPRISRemote::MPRISPlay() {
     if (playback) {
         auto state = playback->GetPlaybackState();
-        if (state != PlaybackState::PlaybackPlaying) {
+        if (state != PlaybackState::Playing) {
             playback->PauseOrResume();
         }
     }
@@ -277,12 +277,12 @@ const char* MPRISRemote::MPRISGetPlaybackStatus() {
     if (playback) {
         auto state = playback->GetPlaybackState();
         switch (state) {
-        case PlaybackState::PlaybackPlaying:
+        case PlaybackState::Playing:
             return "Playing";
-        case PlaybackState::PlaybackPaused:
+        case PlaybackState::Paused:
             return "Paused";
-        case PlaybackState::PlaybackPrepared:
-        case PlaybackState::PlaybackStopped:
+        case PlaybackState::Prepared:
+        case PlaybackState::Stopped:
         default:
             break;
         }
@@ -294,11 +294,11 @@ const char* MPRISRemote::MPRISGetLoopStatus() {
     if (playback) {
         auto state = playback->GetRepeatMode();
         switch (state) {
-        case RepeatMode::RepeatTrack:
+        case RepeatMode::Track:
             return "Track";
-        case RepeatMode::RepeatList:
+        case RepeatMode::List:
             return "Playlist";
-        case RepeatMode::RepeatNone:
+        case RepeatMode::None:
         default:
             break;
         }
@@ -309,13 +309,13 @@ const char* MPRISRemote::MPRISGetLoopStatus() {
 void MPRISRemote::MPRISSetLoopStatus(const char* state) {
     if (playback) {
         if (!strcmp(state, "None")) {
-            playback->SetRepeatMode(RepeatMode::RepeatNone);
+            playback->SetRepeatMode(RepeatMode::None);
         }
         else if (!strcmp(state, "Playlist")) {
-            playback->SetRepeatMode(RepeatMode::RepeatList);
+            playback->SetRepeatMode(RepeatMode::List);
         }
         else if (!strcmp(state, "Track")) {
-            playback->SetRepeatMode(RepeatMode::RepeatTrack);
+            playback->SetRepeatMode(RepeatMode::Track);
         }
     }
 }

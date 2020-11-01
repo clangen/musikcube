@@ -98,7 +98,7 @@ extern "C" DLLEXPORT void SetEnvironment(IEnvironment* environment) {
 
     if (environment) {
         static char buffer[2046];
-        environment->GetPath(PathData, buffer, sizeof(buffer));
+        environment->GetPath(PathType::Data, buffer, sizeof(buffer));
         cachePath = std::string(buffer) + "/cache/httpclient/";
     }
 }

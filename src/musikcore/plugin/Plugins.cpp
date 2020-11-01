@@ -127,11 +127,11 @@ static class Environment: public IEnvironment {
         virtual size_t GetPath(PathType type, char* dst, int size) override {
             std::string path;
             switch (type) {
-                case PathUserHome: path = GetHomeDirectory(); break;
-                case PathData: path = GetDataDirectory(); break;
-                case PathApplication: path = GetApplicationDirectory(); break;
-                case PathPlugins: path = GetPluginDirectory(); break;
-                case PathLibrary: {
+                case PathType::UserHome: path = GetHomeDirectory(); break;
+                case PathType::Data: path = GetDataDirectory(); break;
+                case PathType::Application: path = GetApplicationDirectory(); break;
+                case PathType::Plugins: path = GetPluginDirectory(); break;
+                case PathType::Library: {
                     if (defaultLibrary) {
                         path = GetDataDirectory() + std::to_string(defaultLibrary->Id()) + "/";
                     }

@@ -59,7 +59,7 @@ class PulseOut : public musik::core::sdk::IOutput {
         virtual double Latency() override;
         virtual void Drain() override;
 
-        virtual int Play(
+        virtual musik::core::sdk::OutputState Play(
             musik::core::sdk::IBuffer *buffer,
             musik::core::sdk::IBufferProvider *provider) override;
 

@@ -733,8 +733,8 @@ mcsdk_export void mcsdk_audio_output_stop(mcsdk_audio_output o) {
     OUTPUT(o)->Stop();
 }
 
-mcsdk_export int mcsdk_audio_output_play(mcsdk_audio_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp) {
-    return OUTPUT(o)->Play(BUFFER(ab), BUFFERPROVIDER(abp));
+mcsdk_export mcsdk_audio_output_code mcsdk_audio_output_play(mcsdk_audio_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp) {
+    return (mcsdk_audio_output_code) OUTPUT(o)->Play(BUFFER(ab), BUFFERPROVIDER(abp));
 }
 
 mcsdk_export void mcsdk_audio_output_drain(mcsdk_audio_output o) {
