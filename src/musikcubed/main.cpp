@@ -128,7 +128,7 @@ static void handleCommandLine(int argc, char** argv) {
             stopDaemon();
         }
         else if (command == "--version") {
-            std::cout << "\n  musikcubed version: " << VERSION << "\n\n";
+            std::cout << "\n  musikcubed version: " << VERSION << " " << VERSION_COMMIT_HASH << "\n\n";
         }
         else if (command == "--running") {
             pid_t pid = getDaemonPid();
