@@ -40,6 +40,8 @@
 * fixed some weird edge-casey command bar focus issues.
 * finally renamed `src/core` to `src/musikcore`
 * added a ja_JP locale (trackiss)
+* fixed a bug where on-demand mp3 transcoding wasn't working properly. (other
+  formats were fine)
 * rearranged the settings window to ensure everything fits properly in an 80x24
   terminal
 * fixed some bugs in `MessageQueue` by now requiring explicit `IMessageTarget`

@@ -247,6 +247,7 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
 
             this->Requery();
         }
+        return true;
     }
     else if (Hotkeys::Is(Hotkeys::ContextMenu, key)) {
         if (this->GetFocus() == this->directoryList) {
@@ -265,6 +266,7 @@ bool DirectoryLayout::KeyPress(const std::string& key) {
             index = (index == ListWindow::NO_SELECTION) ? 0 : index;
             this->playback.Play(*tracks.get(), index);
         }
+        return true;
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
         this->queryHash = 0;
