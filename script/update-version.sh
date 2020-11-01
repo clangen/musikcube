@@ -3,6 +3,7 @@
 MAJOR=$1
 MINOR=$2
 PATCH=$3
+COMMIT_HASH=`git rev-parse --short HEAD 2> /dev/null | sed "s/\(.*\)/#\1/"`
 
 if [ -z "$MAJOR" ] || [ -z "$MINOR" ] || [ -z "$PATCH" ]; then
   echo "usage: update-version.sh <major> <minor> <patch>"
@@ -12,6 +13,7 @@ fi
 sed -Ei.bak "s/(\s*)(#define VERSION_MAJOR )(.*)/\1\2${MAJOR}/g" src/musikcore/version.h
 sed -Ei.bak "s/(\s*)(#define VERSION_MINOR )(.*)/\1\2${MINOR}/g" src/musikcore/version.h
 sed -Ei.bak "s/(\s*)(#define VERSION_PATCH )(.*)/\1\2${PATCH}/g" src/musikcore/version.h
+sed -Ei.bak "s/(\s*)(#define VERSION_COMMIT_HASH )(.*)/\1\2\"${COMMIT_HASH}\"/g" src/musikcore/version.h
 sed -Ei.bak "s/(\s*)(#define VERSION )(.*)/\1\2\"${MAJOR}.${MINOR}.${PATCH}\"/g" src/musikcore/version.h
 
 # visual studio resource files are utf16-le, so sed can't operate on them

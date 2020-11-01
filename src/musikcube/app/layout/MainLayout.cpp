@@ -198,7 +198,8 @@ bool MainLayout::KeyPress(const std::string& key) {
         return true;
     }
     else if (key == "M-`") {
-        ToastOverlay::Show(u8fmt(_TSTR("console_version"), VERSION), -1);
+        std::string version = u8fmt("%s %s", VERSION, VERSION_COMMIT_HASH);
+        ToastOverlay::Show(u8fmt(_TSTR("console_version"), version.c_str()), -1);
         return true;
     }
     else if (this->GetLayout()->KeyPress(key)) {
