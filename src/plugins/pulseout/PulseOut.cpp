@@ -348,20 +348,20 @@ double PulseOut::GetVolume() {
     return this->volume;
 }
 
-int PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
+OutputState PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
     int error = 0;
 
     {
         Lock lock(this->stateMutex);
 
         if (this->state == StatePaused) {
-            return OutputInvalidState;
+            return OutputState::InvalidState;
         }
 
         this->OpenDevice(buffer);
 
         if (!this->audioConnection || this->state != StatePlaying) {
-            return OutputInvalidState;
+            return OutputState::InvalidState;
         }
 
         if (!this->volumeUpdated) {
@@ -376,12 +376,12 @@ int PulseOut::Play(IBuffer *buffer, IBufferProvider* provider) {
 
         if (error > 0) {
             this->CloseDevice();
-            return 1000; /* try again in a second */
+            return (OutputState) 1000; /* try again in a second */
         }
     }
 
     provider->OnBufferProcessed(buffer);
-    return OutputBufferWritten;
+    return OutputState::BufferWritten;
 }
 
 double PulseOut::Latency() {
