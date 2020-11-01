@@ -110,7 +110,7 @@ class PlaybackRemote: public IPlaybackRemote, IKeyProcessor {
                 switch (keyCode) {
                     case NX_KEYTYPE_PLAY: {
                         auto state = this->playback->GetPlaybackState();
-                        if (state == PlaybackStopped) {
+                        if (state == PlaybackState::Stopped) {
                             if (this->playback->Count()) {
                                 this->playback->Play(0);
                             }

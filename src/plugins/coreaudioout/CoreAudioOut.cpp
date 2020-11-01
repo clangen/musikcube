@@ -133,17 +133,17 @@ CoreAudioOut::CoreAudioOut() {
     this->bufferCount = 0;
 }
 
-int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+OutputState CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
     if (this->state != StatePlaying) {
-        return OutputInvalidState;
+        return OutputState::InvalidState;
     }
 
     if (this->bufferCount >= BUFFER_COUNT) {
         /* enough buffers are already in the queue. bail, we'll notify the
         caller when there's more data available */
-        return OutputBufferFull;
+        return OutputState::BufferFull;
     }
 
     OSStatus result;
@@ -173,7 +173,7 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (result != 0) {
             std::cerr << "AudioQueueNewOutput failed: " << result << "\n";
-            return OutputInvalidState;
+            return OutputState::InvalidState;
         }
 
         /* after the queue is created, but before it's started, let's make
@@ -207,7 +207,7 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (result != 0) {
             std::cerr << "AudioQueueStart failed: " << result << "\n";
-            return OutputInvalidState;
+            return OutputState::InvalidState;
         }
 
         this->Resume();
@@ -225,7 +225,7 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
     if (result != 0) {
         std::cerr << "AudioQueueAllocateBuffer failed: " << result << "\n";
-        return OutputInvalidState;
+        return OutputState::InvalidState;
     }
 
     audioQueueBuffer->mUserData = (void *) context;
@@ -242,12 +242,12 @@ int CoreAudioOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (result != 0) {
         std::cerr << "AudioQueueEnqueueBuffer failed: " << result << "\n";
         delete context;
-        return OutputInvalidState;
+        return OutputState::InvalidState;
     }
 
     ++bufferCount;
 
-    return OutputBufferWritten;
+    return OutputState::BufferWritten;
 }
 
 CoreAudioOut::~CoreAudioOut() {
