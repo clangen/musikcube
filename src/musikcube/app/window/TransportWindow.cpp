@@ -579,7 +579,7 @@ void TransportWindow::UpdateReplayGainState() {
 void TransportWindow::Update(TimeMode timeMode) {
     this->Clear();
 
-    size_t cx = (size_t) this->GetContentWidth();
+    size_t const cx = (size_t) this->GetContentWidth();
 
     if (cx < MIN_WIDTH || this->GetContentHeight() < MIN_HEIGHT) {
         return;
@@ -591,15 +591,17 @@ void TransportWindow::Update(TimeMode timeMode) {
         return;
     }
 
-    auto state = transport.GetPlaybackState();
-    bool paused = (state == PlaybackPrepared || state == PlaybackPaused);
-    bool stopped = (state == PlaybackStopped);
-    bool muted = transport.IsMuted();
-    bool replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
+    auto const state = transport.GetPlaybackState();
+    bool const paused = state == PlaybackPaused;
+    bool const prepared = state == PlaybackPrepared;
+    bool const stopped = state == PlaybackStopped;
+    bool const muted = transport.IsMuted();
+    bool const replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
 
-    Color gb = Color::TextActive;
-    Color disabled = Color::TextDisabled;
-    Color bright = Color::TextDefault;
+    Color const gb = Color::TextActive;
+    Color const disabled = Color::TextDisabled;
+    Color const bright = Color::TextDefault;
+
     Color volumeAttrs = Color::Default;
 
     if (this->focus == FocusVolume) {
@@ -687,7 +689,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     Color currentTimeAttrs = timerAttrs;
 
     if (paused) { /* blink the track if paused */
-        int64_t now = duration_cast<seconds>(
+        int64_t const now = duration_cast<seconds>(
             system_clock::now().time_since_epoch()).count();
 
         if (now % 2 == 0) {
@@ -706,7 +708,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
         double actualTime = playback.GetPosition();
 
-        if (paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
+        if (prepared || paused || stopped || fabs(smoothedTime - actualTime) > TIME_SLOP) {
             smoothedTime = actualTime;
         }
 
