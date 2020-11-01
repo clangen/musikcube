@@ -283,16 +283,16 @@ static BOOL CALLBACK DSEnumCallback(LPGUID lpGuid, LPCWSTR description, LPCWSTR 
     return 1;
 }
 
-int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
+OutputState DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     Lock lock(this->stateMutex);
 
     if (this->state != StatePlaying) {
-        return OutputInvalidState;
+        return OutputState::InvalidState;
     }
 
     if (!this->Configure(buffer)) {
         this->Reset();
-        return OutputFormatError;
+        return OutputState::FormatError;
     }
 
     unsigned char *dst1 = nullptr, *dst2 = nullptr;
@@ -314,7 +314,7 @@ int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
         if (bufferBytes > availableBytes && this->state == StatePlaying) {
             int samples = (bufferBytes - availableBytes) / sizeof(float) / channels;
-            return ((long long)(samples * 1000) / rate) + 1;
+            return (OutputState) (((long long)(samples * 1000) / rate) + 1);
         }
 
         assert(availableBytes >= bufferBytes);
@@ -354,10 +354,10 @@ int DirectSoundOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         this->firstBufferWritten = true;
 
         provider->OnBufferProcessed(buffer);
-        return OutputBufferWritten;
+        return OutputState::BufferWritten;
     }
 
-    return OutputBufferFull;
+    return OutputState::BufferFull;
 }
 
 void DirectSoundOut::Drain() {
@@ -384,7 +384,7 @@ void DirectSoundOut::Drain() {
     real samples get played! */
     int count = drainCount + 1;
     while (count > 0 && this->state != StateStopped) {
-        if (!this->Play(&buffer, &buffer)) {
+        if ((int) this->Play(&buffer, &buffer) == 0) { /* ??? */
             Sleep(bufferResendDelayMs); /* eh */
         }
         else {

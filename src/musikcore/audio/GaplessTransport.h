@@ -90,8 +90,8 @@ namespace musik { namespace core { namespace audio {
 
             void SetNextCanStart(bool nextCanStart);
 
-            void RaiseStreamEvent(int type, Player* player);
-            void SetPlaybackState(int state);
+            void RaiseStreamEvent(musik::core::sdk::StreamState type, Player* player);
+            void SetPlaybackState(musik::core::sdk::PlaybackState state);
 
             virtual void OnPlayerStarted(Player* player);
             virtual void OnPlayerBuffered(Player* player);

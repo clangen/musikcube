@@ -450,7 +450,7 @@ bool TransportWindow::MouseEvent(const IMouseHandler::Event& event) {
             return true;
         }
         else if (this->timePos.Contains(event)) {
-            if (playback.GetPlaybackState() != PlaybackStopped) {
+            if (playback.GetPlaybackState() != PlaybackState::Stopped) {
                 double duration = playback.GetDuration();
                 double percent = this->timePos.Percent(event.x);
                 playback.SetPosition(duration * percent);
@@ -503,7 +503,7 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     if (type == message::RefreshTransport) {
         this->Update((TimeMode) message.UserData1());
 
-        if (transport.GetPlaybackState() != PlaybackStopped) {
+        if (transport.GetPlaybackState() != PlaybackState::Stopped) {
             DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
         }
     }
@@ -520,13 +520,13 @@ void TransportWindow::ProcessMessage(IMessage &message) {
 void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track) {
     this->currentTrack = track;
     this->lastTime = DEFAULT_TIME;
-    this->buffering = playback.GetTransport().GetStreamState() == StreamBuffering;
+    this->buffering = playback.GetTransport().GetStreamState() == StreamState::Buffering;
     this->UpdateReplayGainState();
     DEBOUNCE_REFRESH(TimeSync, 0);
 }
 
 void TransportWindow::OnPlaybackStreamStateChanged(StreamState state) {
-    if (state == StreamBuffering) {
+    if (state == StreamState::Buffering) {
         this->Debounce(message::TransportBuffering, 0, 0, 250);
     }
     else {
@@ -592,8 +592,8 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     auto state = transport.GetPlaybackState();
-    bool paused = (state == PlaybackPrepared || state == PlaybackPaused);
-    bool stopped = (state == PlaybackStopped);
+    bool paused = (state == PlaybackState::Prepared || state == PlaybackState::Paused);
+    bool stopped = (state == PlaybackState::Stopped);
     bool muted = transport.IsMuted();
     bool replayGainEnabled = (this->replayGainMode != ReplayGainMode::Disabled);
 
@@ -668,11 +668,11 @@ void TransportWindow::Update(TimeMode timeMode) {
     std::string repeatModeLabel;
     Color repeatAttrs = Color::Default;
     switch (mode) {
-        case RepeatList:
+        case RepeatMode::List:
             repeatModeLabel += Strings.REPEAT_LIST;
             repeatAttrs = gb;
             break;
-        case RepeatTrack:
+        case RepeatMode::Track:
             repeatModeLabel += Strings.REPEAT_TRACK;
             repeatAttrs = gb;
             break;

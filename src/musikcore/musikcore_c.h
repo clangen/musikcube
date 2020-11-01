@@ -533,7 +533,7 @@ mcsdk_export void mcsdk_audio_output_resume(mcsdk_audio_output o);
 mcsdk_export void mcsdk_audio_output_set_volume(mcsdk_audio_output o, double volume);
 mcsdk_export double mcsdk_audio_output_get_volume(mcsdk_audio_output o);
 mcsdk_export void mcsdk_audio_output_stop(mcsdk_audio_output o);
-mcsdk_export int mcsdk_audio_output_play(mcsdk_audio_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp);
+mcsdk_export mcsdk_audio_output_code mcsdk_audio_output_play(mcsdk_audio_output o, mcsdk_audio_buffer ab, mcsdk_audio_buffer_provider abp);
 mcsdk_export void mcsdk_audio_output_drain(mcsdk_audio_output o);
 mcsdk_export double mcsdk_audio_output_get_latency(mcsdk_audio_output o);
 mcsdk_export const char* mcsdk_audio_output_get_name(mcsdk_audio_output o);
