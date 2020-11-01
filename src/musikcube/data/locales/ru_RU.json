@@ -16,6 +16,7 @@
         "button_open_url": "открыть ссылку",
         "button_dont_remind_me": "не напоминать",
         "button_remind_me_later": "напомнить позже",
+        "button_dont_show_again": "не показывать снова",
 
         "browse_title_artists": "исполнители",
         "browse_title_albums": "альбомы",
@@ -29,7 +30,7 @@
         "browse_categories_title": "выбрать категорию",
         "browse_title_directory_tracks": "треки из %s",
 
-        "browse_pick_path_overlay_title": "выбрать корневую папку",
+        "browse_pick_path_overlay_title": "выбрать папку с музыкой",
         "browse_pick_path_last_directory": "последняя папка",
         "browse_no_paths_overlay_error_title": "нет настроенных папок",
         "browse_no_paths_overlay_error_message": "вы не настроили папки метаданных.\n\nвы должны добавить хотя бы одну папку на экране настроек перед тем, как начать обзор по папкам.",
@@ -56,7 +57,7 @@
         "hotkeys_delete_binding_message": "хотите сбросить привязку клавиши для '{{key}}' до стандартной '{{default}}'?",
 
         "settings_space_to_add": "обзор (SPACE - добавить)",
-        "settings_backspace_to_remove": "индексированные папки (BACKSPACE - удалить)",
+        "settings_backspace_to_remove": "папки с музыкой (BACKSPACE - удалить)",
         "settings_enable_disable_plugins": "выбор плагинов",
         "settings_color_theme": "цветовая тема: ",
         "settings_hotkey_tester": "привязки клавиш",
@@ -77,6 +78,7 @@
         "settings_needs_restart": "необходимо перезапустить musikcube для применения изменений.",
         "settings_selected_locale": "язык: ",
         "settings_seek_not_scrub": "не воспроизводить при перемотке",
+        "settings_enable_transparency": "прозрачный фон",
         "settings_minimize_to_tray": "минимизировать в трей",
         "settings_start_minimized": "минимизировать при старте",
         "settings_server_setup": "настройка сервера",
@@ -103,7 +105,24 @@
         "settings_server_invalid_settings_title": "недопустимые настройки",
         "settings_server_invalid_settings_message": "недопустимые или пропущенные настройки. пожалуйста, проверьте их и попробуйте снова.",
         "settings_server_use_ipv6": "использовать ipv6",
-        "settings_enable_transparency": "включить поддержку прозрачности",
+        "settings_server_maximum_transcoders": "максимум активных транскодеров:",
+
+        "settings_library_type": "тип фонотеки: ",
+        "settings_library_type_local": "локальная",
+        "settings_library_type_remote": "удалённая",
+        "settings_library_type_remote_hostname": "имя хоста:",
+        "settings_library_type_remote_wss_port": "порт метаданных:",
+        "settings_library_type_remote_http_port": "порт аудио:",
+        "settings_library_type_remote_password": "пароль:",
+        "settings_library_type_overlay_title": "тип фонотеки",
+        "settings_library_type_remote_use_tls": "использовать tls",
+        "settings_library_type_remote_tls_warning_overlay_title": "musikcube и tls",
+        "settings_library_type_remote_tls_warning_overlay_message": "сервер musikcube не поддерживает ssl/tls из коробки.\n\nесли вы хотите использовать ssl/tls, вам необходимо настроить ssl-терминацию с чем-то вроде nginx.\n\nподробности читайте на этой странице вики:\n\n{{link}}",
+        "settings_library_type_remote_library_transcoder_enable": "перекодировать аудио",
+        "settings_library_type_remote_library_transcoder_format": "формат: %s",
+        "settings_library_type_remote_library_transcoder_bitrate": "битрейт: %d",
+        "settings_library_type_remote_library_transcoder_format_overlay_title": "выбрать формат транскодера",
+        "settings_library_type_remote_library_transcoder_bitrate_title": "выбрать битрейт транскодера",
 
         "settings_preamp": "предусиление и нормализация",
         "settings_preamp_label": "коэффициент предусиления (дБ):",
@@ -184,7 +203,9 @@
         "shortcuts_tracks": "треки",
         "shortcuts_play_queue": "очередь",
 
-        "transport_playing_format": "играет $title от $artist из $album",
+        "transport_playing_format": "$state $title от $artist из $album",
+        "transport_playing_format_playing": "играет",
+        "transport_playing_format_buffering": "буферизация",
         "transport_stopped": "воспроизведение остановлено",
         "transport_empty_song": "[песня]",
         "transport_empty_album": "[альбом]",
@@ -234,6 +255,18 @@
         "track_list_sort_play_count_desc": "числу проигрываний [убыв]",
         "track_list_sort_genre": "жанру",
 
+        "library_not_connected": "не удалось подключиться к фонотеке musikcube",
+        "library_not_connected_with_hostname": "не удалось подключиться к %s",
+        "library_error_format": "ошибка: %s",
+        "library_error_format_retrying": "ошибка: %s (повтор попытки...)",
+        "library_error_connection_failed": "сервер офлайн",
+        "library_error_closed_by_server": "отклонено сервером",
+        "library_error_invalid_password": "неверный пароль",
+        "library_error_incompatible_version": "несовместимая версия сервера",
+        "library_error_unknown": "???",
+        "library_configuration_in_settings": "подключение фонотеки можно отрегулировать в настройках",
+        "library_remote_connected_banner": "подключено к %s",
+
         "unknown_category_value": "[неизвестно #%d]"
     },
 
@@ -250,6 +283,8 @@
         "preamp_overlay_width": 40,
         "equalizer_overlay_width": 46,
         "track_search_sort_order_width": 34,
-        "track_list_rate_track_width": 24
+        "track_list_rate_track_width": 24,
+        "transcoder_format_overlay_width": 24,
+        "transcoder_bitrate_overlay_width": 24
     }
 }
