@@ -356,7 +356,8 @@ struct Theme {
 #ifdef WIN32
         bgType = Colors::Theme;
 #endif
-        int backgroundId = (bgType == Colors::BgType::Theme) ? background.Id(mode, -1) : -1;
+        bool transparent = (bgType == Colors::BgType::Inherit);
+        int backgroundId = transparent ? -1 : background.Id(mode, -1);
         int foregroundId = foreground.Id(mode, -1);
 
         /* main */
@@ -408,7 +409,7 @@ struct Theme {
         init_pair(
             Color::Header,
             headerForeground.Id(mode, COLOR_WHITE),
-            headerBackground.Id(mode, -1));
+            transparent ? -1 : headerBackground.Id(mode, -1));
 
         /* footer */
         init_pair(
