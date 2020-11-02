@@ -63,8 +63,6 @@ class mcsdk_context_message_queue: public MessageQueue {
 };
 
 struct mcsdk_context_internal {
-    mcsdk_context_message_queue message_queue;
-    std::thread thread;
     ILibraryPtr library;
     LocalMetadataProxy* metadata;
     PlaybackService* playback;

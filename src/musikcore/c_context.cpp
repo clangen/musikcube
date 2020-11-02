@@ -61,14 +61,6 @@ using namespace musik::core::sdk;
 using namespace musik::core::runtime;
 
 /*
- * globals
- */
-
-static std::recursive_mutex global_mutex;
-static bool environment_initialized = false;
-static mcsdk_context* plugin_context = nullptr;
-
-/*
  * mcsdk_context_message_queue
  */
 
@@ -98,6 +90,16 @@ void mcsdk_context_message_queue::Run() {
         }
     }
 }
+
+/*
+ * globals
+ */
+
+static std::recursive_mutex global_mutex;
+static bool environment_initialized = false;
+static mcsdk_context* plugin_context = nullptr;
+static mcsdk_context_message_queue* message_queue = nullptr;
+static std::thread message_queue_thread;
 
 /*
  * mcsdk_svc_indexer_callback_proxy
@@ -143,6 +145,10 @@ mcsdk_export void mcsdk_env_init() {
         std::locale utf8Locale(locale, new boost::filesystem::detail::utf8_codecvt_facet);
         boost::filesystem::path::imbue(utf8Locale);
         debug::Start();
+        message_queue = new mcsdk_context_message_queue();
+        message_queue_thread = std::thread([]{ /* needs to be last */
+            ::message_queue->Run();
+        });
         environment_initialized = true;
     }
 }
@@ -151,6 +157,10 @@ mcsdk_export void mcsdk_env_release() {
     if (environment_initialized) {
         LibraryFactory::Instance().Shutdown();
         debug::Stop();
+        message_queue->Quit();
+        message_queue_thread.join();
+        delete message_queue;
+        message_queue = nullptr;
         environment_initialized = false;
     }
 }
@@ -171,9 +181,9 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
 
     auto internal = new mcsdk_context_internal();
 
-    LibraryFactory::Initialize(internal->message_queue);
+    LibraryFactory::Initialize(*message_queue);
     internal->library = LibraryFactory::Instance().DefaultLocalLibrary();
-    internal->playback = new PlaybackService(internal->message_queue, internal->library);
+    internal->playback = new PlaybackService(*message_queue, internal->library);
     internal->metadata = new LocalMetadataProxy(internal->library);
     internal->preferences = Preferences::ForComponent(prefs::components::Settings);
 
@@ -201,10 +211,6 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
         mcsdk_set_plugin_context(c);
     }
 
-    internal->thread = std::thread([internal] { /* needs to be last */
-        internal->message_queue.Run();
-    });
-
     *context = c;
 }
 
@@ -222,9 +228,6 @@ mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
     internal->preferences.reset();
 
     delete internal->metadata;
-
-    internal->message_queue.Quit();
-    internal->thread.join();
 
     auto indexer_internal = static_cast<mcsdk_svc_indexer_context_internal*>(c->indexer.opaque);
     delete indexer_internal->callback_proxy;
@@ -248,7 +251,7 @@ mcsdk_export void mcsdk_set_plugin_context(mcsdk_context* context) {
     plugin_context = context;
     if (plugin_context) {
         auto internal = static_cast<mcsdk_context_internal*>(context->internal.opaque);
-        plugin::Init(&internal->message_queue, internal->playback, internal->library);
+        plugin::Init(message_queue, internal->playback, internal->library);
     }
 }
 
