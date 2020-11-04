@@ -39,7 +39,7 @@
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 94
 #define VERSION_PATCH 0
-#define VERSION_COMMIT_HASH "#04e8acc4"
+#define VERSION_COMMIT_HASH "#d85c1002"
 #define VERSION "0.94.0"
 
 namespace musik {
