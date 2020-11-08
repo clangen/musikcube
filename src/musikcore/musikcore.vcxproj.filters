@@ -262,6 +262,9 @@
     <ClCompile Include="net\RawWebSocketClient.cpp">
       <Filter>src\net</Filter>
     </ClCompile>
+    <ClCompile Include="db\SqliteExtensions.cpp">
+      <Filter>src\db</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -641,6 +644,9 @@
     </ClInclude>
     <ClInclude Include="net\RawWebSocketClient.h">
       <Filter>src\net</Filter>
+    </ClInclude>
+    <ClInclude Include="db\SqliteExtensions.h">
+      <Filter>src\db</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

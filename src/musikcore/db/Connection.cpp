@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include <musikcore/db/Connection.h>
+#include <musikcore/db/SqliteExtensions.h>
 #include <sqlite/sqlite3.h>
 
 static std::mutex globalMutex;
@@ -116,6 +117,8 @@ int Connection::LastModifiedRowCount() {
 }
 
 void Connection::Initialize(unsigned int cache) {
+    SqliteExtensions::Register(this->connection);
+
     sqlite3_enable_shared_cache(1);
     sqlite3_busy_timeout(this->connection, 10000);
 
@@ -133,7 +136,7 @@ void Connection::Initialize(unsigned int cache) {
         sqlite3_exec(this->connection,cacheSize.c_str(), nullptr, nullptr, nullptr); // size * 1.5kb = 6Mb cache
     }
 
-    sqlite3_exec(this->connection, "PRAGMA case_sensitive_like=0", nullptr, nullptr, nullptr);   // More speed if case insensitive
+    //sqlite3_exec(this->connection, "PRAGMA case_sensitive_like=0", nullptr, nullptr, nullptr);   // More speed if case insensitive
     sqlite3_exec(this->connection, "PRAGMA count_changes=0", nullptr, nullptr, nullptr);         // If set it counts changes on SQL UPDATE. More speed when not.
     sqlite3_exec(this->connection, "PRAGMA legacy_file_format=OFF", nullptr, nullptr, nullptr);  // No reason to be backwards compatible :)
     sqlite3_exec(this->connection, "PRAGMA temp_store=MEMORY", nullptr, nullptr, nullptr);       // MEMORY, not file. More speed.
