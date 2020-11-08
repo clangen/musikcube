@@ -37,6 +37,7 @@
         "browse_no_subdirectories_toast": "there are no more sub-directories.\n\npress '%s' to play the selection.",
 
         "search_filter_hint": "search",
+        "search_regex_hint": "regex",
 
         "console_list_title": "debug logs",
         "console_version": "musikcube version %s",

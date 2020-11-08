@@ -115,6 +115,9 @@ namespace musik {
                     TrackListPreviousGroup,
                     TrackListPlayFromTop,
 
+                    /* search input */
+                    SearchInputToggleMatchType,
+
                     /* lyrics */
                     LyricsRetry,
 

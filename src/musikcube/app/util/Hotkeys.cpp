@@ -104,6 +104,8 @@ static std::unordered_map<std::string, Id> NAME_TO_ID = {
     { "track_list_previous_group", Id::TrackListPreviousGroup },
     { "track_list_play_from_top", Id::TrackListPlayFromTop },
 
+    { "search_input_toggle_match_type", Id::SearchInputToggleMatchType },
+
     { "lyrics_retry", Id::LyricsRetry },
 
     { "playback_toggle_mute", Id::ToggleMute },
@@ -195,6 +197,8 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::TrackListNextGroup, "]" },
     { Id::TrackListPreviousGroup, "[" },
     { Id::TrackListPlayFromTop, "M-P" },
+
+    { Id::SearchInputToggleMatchType, "M-m" },
 
     { Id::LyricsRetry, "r" },
 

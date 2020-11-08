@@ -88,7 +88,7 @@ CategoryListQuery::CategoryListQuery(
     const std::string& trackField,
     const category::PredicateList predicates,
     const std::string& filter)
-: matchType(MatchType::Regex)
+: matchType(matchType)
 , trackField(trackField)
 , filter(filter) {
     result.reset(new SdkValueList());

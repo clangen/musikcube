@@ -74,6 +74,8 @@ namespace musik {
                 virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
             private:
+                using MatchType = musik::core::library::query::QueryBase::MatchType;
+
                 void InitializeWindows(musik::core::audio::PlaybackService& playback);
                 void OnCategoryEntryActivated(cursespp::ListWindow* sender, size_t index);
                 void Requery();
@@ -85,7 +87,11 @@ namespace musik {
                     cursespp::TextInput* sender,
                     std::string value);
 
+                void ToggleMatchType();
+                void SetMatchType(MatchType matchType);
+
                 musik::core::ILibraryPtr library;
+                MatchType matchType{ MatchType::Substring };
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<CategoryListView> albums;
                 std::shared_ptr<CategoryListView> artists;

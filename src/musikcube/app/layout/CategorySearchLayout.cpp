@@ -106,7 +106,9 @@ void CategorySearchLayout::OnLayout() {
     size_t inputWidth = cx / 2;
     size_t inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, 0, cx / 2, SEARCH_HEIGHT);
-    this->input->SetHint(_TSTR("search_filter_hint"));
+
+    bool inputIsRegex = this->matchType == MatchType::Regex;
+    this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
 
     size_t labelY = SEARCH_HEIGHT;
     size_t categoryWidth = cx / 3;
@@ -134,9 +136,9 @@ void CategorySearchLayout::InitializeWindows(musik::core::audio::PlaybackService
 
 void CategorySearchLayout::Requery() {
     const std::string& value = this->input->GetText();
-    this->albums->Requery(value);
-    this->artists->Requery(value);
-    this->genres->Requery(value);
+    this->albums->Requery(this->matchType, value);
+    this->artists->Requery(this->matchType, value);
+    this->genres->Requery(this->matchType, value);
 }
 
 void CategorySearchLayout::FocusInput() {
@@ -198,6 +200,10 @@ bool CategorySearchLayout::KeyPress(const std::string& key) {
             return true;
         }
     }
+    else if (Hotkeys::Is(Hotkeys::SearchInputToggleMatchType, key)) {
+        this->ToggleMatchType();
+        return true;
+    }
 
     return LayoutBase::KeyPress(key);
 }
@@ -208,6 +214,19 @@ void CategorySearchLayout::ProcessMessage(IMessage &message) {
     }
     else {
         LayoutBase::ProcessMessage(message);
+    }
+}
+
+void CategorySearchLayout::ToggleMatchType() {
+    const bool isRegex = this->matchType == MatchType::Regex;
+    this->SetMatchType(isRegex ? MatchType::Substring : MatchType::Regex);
+}
+
+void CategorySearchLayout::SetMatchType(MatchType matchType) {
+    if (matchType != this->matchType) {
+        this->matchType = matchType;
+        this->Layout();
+        this->Requery();
     }
 }
 
