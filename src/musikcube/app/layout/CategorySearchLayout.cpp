@@ -115,6 +115,7 @@ void CategorySearchLayout::OnLayout() {
 
     bool inputIsRegex = this->matchType == MatchType::Regex;
     this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
+    this->input->SetFocusedFrameColor(inputIsRegex ? Color::FrameImportant : Color::FrameFocused);
 
     size_t labelY = SEARCH_HEIGHT;
     size_t categoryWidth = cx / 3;

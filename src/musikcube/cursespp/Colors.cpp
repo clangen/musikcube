@@ -51,48 +51,50 @@ using namespace boost::filesystem;
 indicies we'll use to store them */
 #define THEME_COLOR_BACKGROUND 16
 #define THEME_COLOR_FOREGROUND 17
-#define THEME_COLOR_FOCUSED_BORDER 18
-#define THEME_COLOR_TEXT_FOCUSED 19
-#define THEME_COLOR_TEXT_ACTIVE 20
-#define THEME_COLOR_TEXT_DISABLED 21
-#define THEME_COLOR_TEXT_HIDDEN 22
-#define THEME_COLOR_TEXT_WARNING 23
-#define THEME_COLOR_TEXT_ERROR 24
-#define THEME_COLOR_OVERLAY_BACKGROUND 25
-#define THEME_COLOR_OVERLAY_FOREGROUND 26
-#define THEME_COLOR_OVERLAY_BORDER 27
-#define THEME_COLOR_OVERLAY_FOCUSED_BORDER 28
-#define THEME_COLOR_OVERLAY_FOCUSED_TEXT 29
-#define THEME_COLOR_SHORTCUTS_BACKGROUND 30
-#define THEME_COLOR_SHORTCUTS_FOREGROUND 31
-#define THEME_COLOR_SHORTCUTS_BACKGROUND_FOCUSED 32
-#define THEME_COLOR_SHORTCUTS_FOREGROUND_FOCUSED 33
-#define THEME_COLOR_BUTTON_BACKGROUND_NORMAL 34
-#define THEME_COLOR_BUTTON_FOREGROUND_NORMAL 35
-#define THEME_COLOR_BUTTON_BACKGROUND_ACTIVE 36
-#define THEME_COLOR_BUTTON_FOREGROUND_ACTIVE 37
-#define THEME_COLOR_BANNER_BACKGROUND 38
-#define THEME_COLOR_BANNER_FOREGROUND 39
-#define THEME_COLOR_LIST_HEADER_BACKGROUND 40
-#define THEME_COLOR_LIST_HEADER_FOREGROUND 41
-#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND 42
-#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND 43
-#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND 44
-#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND 45
-#define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 46
-#define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 47
-#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 48
-#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 49
-#define THEME_COLOR_FOOTER_BACKGROUND 50
-#define THEME_COLOR_FOOTER_FOREGROUND 51
-#define THEME_COLOR_HEADER_BACKGROUND 52
-#define THEME_COLOR_HEADER_FOREGROUND 53
+#define THEME_COLOR_FRAME_FOCUSED 18
+#define THEME_COLOR_FRAME_IMPORTANT 19
+#define THEME_COLOR_TEXT_FOCUSED 20
+#define THEME_COLOR_TEXT_ACTIVE 21
+#define THEME_COLOR_TEXT_DISABLED 22
+#define THEME_COLOR_TEXT_HIDDEN 23
+#define THEME_COLOR_TEXT_WARNING 24
+#define THEME_COLOR_TEXT_ERROR 25
+#define THEME_COLOR_OVERLAY_BACKGROUND 26
+#define THEME_COLOR_OVERLAY_FOREGROUND 27
+#define THEME_COLOR_OVERLAY_BORDER 28
+#define THEME_COLOR_OVERLAY_FOCUSED_FRAME 29
+#define THEME_COLOR_OVERLAY_FOCUSED_TEXT 30
+#define THEME_COLOR_SHORTCUTS_BACKGROUND 31
+#define THEME_COLOR_SHORTCUTS_FOREGROUND 32
+#define THEME_COLOR_SHORTCUTS_BACKGROUND_FOCUSED 33
+#define THEME_COLOR_SHORTCUTS_FOREGROUND_FOCUSED 34
+#define THEME_COLOR_BUTTON_BACKGROUND_NORMAL 35
+#define THEME_COLOR_BUTTON_FOREGROUND_NORMAL 36
+#define THEME_COLOR_BUTTON_BACKGROUND_ACTIVE 37
+#define THEME_COLOR_BUTTON_FOREGROUND_ACTIVE 38
+#define THEME_COLOR_BANNER_BACKGROUND 39
+#define THEME_COLOR_BANNER_FOREGROUND 40
+#define THEME_COLOR_LIST_HEADER_BACKGROUND 41
+#define THEME_COLOR_LIST_HEADER_FOREGROUND 42
+#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_BACKGROUND 43
+#define THEME_COLOR_LIST_HEADER_HIGHLIGHTED_FOREGROUND 44
+#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_BACKGROUND 45
+#define THEME_COLOR_LIST_ITEM_HIGHLIGHTED_FOREGROUND 46
+#define THEME_COLOR_LIST_ITEM_ACTIVE_BACKGROUND 47
+#define THEME_COLOR_LIST_ITEM_ACTIVE_FOREGROUND 48
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND 49
+#define THEME_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND 50
+#define THEME_COLOR_FOOTER_BACKGROUND 51
+#define THEME_COLOR_FOOTER_FOREGROUND 52
+#define THEME_COLOR_HEADER_BACKGROUND 53
+#define THEME_COLOR_HEADER_FOREGROUND 54
 
 /* user-readable names for the color identifiers above. these are
 used as key names in the config files */
 #define JSON_KEY_COLOR_BACKGROUND "background"
 #define JSON_KEY_COLOR_FOREGROUND "foreground"
-#define JSON_KEY_COLOR_FOCUSED_BORDER "focused_border"
+#define JSON_KEY_COLOR_FRAME_FOCUSED "frame_focused"
+#define JSON_KEY_COLOR_FRAME_IMPORTANT "frame_important"
 #define JSON_KEY_COLOR_TEXT_FOCUSED "text_focused"
 #define JSON_KEY_COLOR_TEXT_ACTIVE "text_active"
 #define JSON_KEY_COLOR_TEXT_DISABLED "text_disabled"
@@ -222,7 +224,8 @@ struct Theme {
         /* main */
         background.Set(THEME_COLOR_BACKGROUND, 24, 24, 20, -1);
         foreground.Set(THEME_COLOR_FOREGROUND, 220, 220, 220, COLOR_256_OFFWHITE);
-        focusedBorder.Set(THEME_COLOR_FOCUSED_BORDER, 220, 82, 86, COLOR_256_RED);
+        focusedFrame.Set(THEME_COLOR_FRAME_FOCUSED, 220, 82, 86, COLOR_256_RED);
+        importantFrame.Set(THEME_COLOR_FRAME_IMPORTANT, 102, 217, 238, COLOR_256_BLUE);
 
         /* text */
         textFocused.Set(THEME_COLOR_TEXT_FOCUSED, 220, 82, 86, COLOR_256_RED);
@@ -236,7 +239,7 @@ struct Theme {
         overlayBackground.Set(THEME_COLOR_OVERLAY_BACKGROUND, 66, 66, 56, COLOR_256_MEDIUM_GRAY);
         overlayForeground.Set(THEME_COLOR_OVERLAY_FOREGROUND, 220, 220, 220, COLOR_256_OFFWHITE);
         overlayBorder.Set(THEME_COLOR_OVERLAY_BORDER, 102, 217, 238, COLOR_256_BLUE);
-        overlayFocusedBorder.Set(THEME_COLOR_OVERLAY_FOCUSED_BORDER, 220, 82, 86, COLOR_256_RED);
+        overlayFocusedFrame.Set(THEME_COLOR_OVERLAY_FOCUSED_FRAME, 220, 82, 86, COLOR_256_RED);
         overlayFocusedText.Set(THEME_COLOR_OVERLAY_FOCUSED_TEXT, 220, 82, 86, COLOR_256_RED);
 
         /* shortcut bar */
@@ -299,7 +302,7 @@ struct Theme {
                     /* actually read the theme values! */
                     this->background.Set(colors.value(JSON_KEY_COLOR_BACKGROUND, unset));
                     this->foreground.Set(colors.value(JSON_KEY_COLOR_FOREGROUND, unset));
-                    this->focusedBorder.Set(colors.value(JSON_KEY_COLOR_FOCUSED_BORDER, unset));
+                    this->importantFrame.Set(colors.value(JSON_KEY_COLOR_FRAME_IMPORTANT, unset));
                     this->textFocused.Set(colors.value(JSON_KEY_COLOR_TEXT_FOCUSED, unset));
                     this->textActive.Set(colors.value(JSON_KEY_COLOR_TEXT_ACTIVE, unset));
                     this->textDisabled.Set(colors.value(JSON_KEY_COLOR_TEXT_DISABLED, unset));
@@ -309,7 +312,7 @@ struct Theme {
                     this->overlayBackground.Set(colors.value(JSON_KEY_COLOR_OVERLAY_BACKGROUND, unset));
                     this->overlayForeground.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOREGROUND, unset));
                     this->overlayBorder.Set(colors.value(JSON_KEY_COLOR_OVERLAY_BORDER, unset));
-                    this->overlayFocusedBorder.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOCUSED_BORDER, unset));
+                    this->overlayFocusedFrame.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOCUSED_BORDER, unset));
                     this->overlayFocusedText.Set(colors.value(JSON_KEY_COLOR_OVERLAY_FOCUSED_TEXT, unset));
                     this->shortcutsBackground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_BACKGROUND, unset));
                     this->shortcutsForeground.Set(colors.value(JSON_KEY_COLOR_SHORTCUTS_FOREGROUND, unset));
@@ -335,6 +338,19 @@ struct Theme {
                     this->listActiveForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_FOREGROUND, unset));
                     this->listActiveHighlightedBackground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_BACKGROUND, unset));
                     this->listActiveHighlightedForeground.Set(colors.value(JSON_KEY_COLOR_LIST_ITEM_ACTIVE_HIGHLIGHTED_FOREGROUND, unset));
+
+                    /* these ones require special logic because they were renamed and we
+                    may need to load them by their original names. */
+                    auto keyWithFallback = [](nlohmann::json& json, const std::string& key, const std::string& fallback) -> std::string {
+                        return json.find(key) != json.end() ? key : fallback;
+                    };
+
+                    const std::string focusedFrameKey =
+                        keyWithFallback(colors, JSON_KEY_COLOR_FRAME_FOCUSED, "focused_border");
+
+                    this->focusedFrame.Set(colors.value(focusedFrameKey, unset));
+
+                    /* finalize */
 
                     this->fn = fn;
                     this->name = data.value("name", "unnamed");
@@ -362,8 +378,9 @@ struct Theme {
 
         /* main */
         init_pair(Color::ContentColorDefault, foregroundId, backgroundId);
-        init_pair(Color::FrameColorDefault, foregroundId, backgroundId);
-        init_pair(Color::FrameColorFocused, focusedBorder.Id(mode, COLOR_RED),backgroundId);
+        init_pair(Color::FrameDefault, foregroundId, backgroundId);
+        init_pair(Color::FrameFocused, focusedFrame.Id(mode, COLOR_RED),backgroundId);
+        init_pair(Color::FrameImportant, importantFrame.Id(mode, COLOR_BLUE), backgroundId);
 
         /* text */
         init_pair(Color::TextDefault, foregroundId, backgroundId);
@@ -378,10 +395,10 @@ struct Theme {
         int overlayBgId = overlayBackground.Id(mode, -1);
         init_pair(Color::OverlayFrame, overlayBorder.Id(mode, COLOR_BLUE), overlayBgId);
         init_pair(Color::OverlayContent, overlayForeground.Id(mode, -1), overlayBgId);
-        init_pair(Color::OverlayTextInputFrame, overlayFocusedBorder.Id(mode, COLOR_RED), overlayBgId);
+        init_pair(Color::OverlayTextInputFrame, overlayFocusedFrame.Id(mode, COLOR_RED), overlayBgId);
         init_pair(Color::OverlayTextFocused, overlayFocusedText.Id(mode, COLOR_RED), overlayBgId);
         init_pair(Color::OverlayListFrame, foregroundId, overlayBgId);
-        init_pair(Color::OverlayListFrameFocused, focusedBorder.Id(mode, COLOR_RED), overlayBgId);
+        init_pair(Color::OverlayListFrameFocused, focusedFrame.Id(mode, COLOR_RED), overlayBgId);
 
         /* shortcuts */
         init_pair(
@@ -461,7 +478,8 @@ struct Theme {
     /* main */
     ThemeColor background;
     ThemeColor foreground;
-    ThemeColor focusedBorder;
+    ThemeColor focusedFrame;
+    ThemeColor importantFrame;
 
     /* text */
     ThemeColor textFocused;
@@ -475,7 +493,7 @@ struct Theme {
     ThemeColor overlayBackground;
     ThemeColor overlayForeground;
     ThemeColor overlayBorder;
-    ThemeColor overlayFocusedBorder;
+    ThemeColor overlayFocusedFrame;
     ThemeColor overlayFocusedText;
 
     /* shortcut bar */

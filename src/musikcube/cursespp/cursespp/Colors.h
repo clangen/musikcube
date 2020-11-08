@@ -52,33 +52,34 @@ namespace cursespp {
                 ListItemHeaderHighlighted = 6,
 
                 ContentColorDefault = 7,
-                FrameColorDefault = 8,
-                FrameColorFocused = 9,
+                FrameDefault = 8,
+                FrameFocused = 9,
+                FrameImportant = 10,
 
-                TextDefault = 10,
-                TextDisabled = 11,
-                TextFocused = 12,
-                TextActive = 13,
-                TextWarning = 14,
-                TextError = 15,
-                TextHidden = 16,
+                TextDefault = 11,
+                TextDisabled = 12,
+                TextFocused = 13,
+                TextActive = 14,
+                TextWarning = 15,
+                TextError = 16,
+                TextHidden = 17,
 
-                ButtonDefault = 17,
-                ButtonHighlighted = 18,
+                ButtonDefault = 18,
+                ButtonHighlighted = 19,
 
-                ShortcutRowDefault = 19,
-                ShortcutRowFocused = 20,
+                ShortcutRowDefault = 20,
+                ShortcutRowFocused = 21,
 
-                OverlayFrame = 21,
-                OverlayContent = 22,
-                OverlayTextInputFrame = 23,
-                OverlayTextFocused = 24,
-                OverlayListFrame = 25,
-                OverlayListFrameFocused = 26,
+                OverlayFrame = 22,
+                OverlayContent = 23,
+                OverlayTextInputFrame = 24,
+                OverlayTextFocused = 25,
+                OverlayListFrame = 26,
+                OverlayListFrameFocused = 27,
 
-                Header = 27,
-                Footer = 28,
-                Banner = 29
+                Header = 28,
+                Footer = 29,
+                Banner = 30
             };
 
             Color() {

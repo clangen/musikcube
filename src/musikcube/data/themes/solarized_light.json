@@ -10,9 +10,13 @@
       "hex": "#073642",
       "palette": 235
     },
-    "focused_border": {
+    "frame_focused": {
       "hex": "#dc322f",
       "palette": 160
+    },
+    "frame_important": {
+      "hex": "#268bd2",
+      "palette": 33
     },
     "text_focused": {
       "hex": "#dc322f",
