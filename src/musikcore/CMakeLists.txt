@@ -15,6 +15,7 @@ set(CORE_SOURCES
   ./audio/Visualizer.cpp
   ./db/Connection.cpp
   ./db/ScopedTransaction.cpp
+  ./db/SqliteExtensions.cpp
   ./db/Statement.cpp
   ./i18n/Locale.cpp
   ./io/DataStreamFactory.cpp
