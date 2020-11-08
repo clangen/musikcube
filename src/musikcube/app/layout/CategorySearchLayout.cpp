@@ -88,15 +88,21 @@ CategorySearchLayout::~CategorySearchLayout() {
 
 void CategorySearchLayout::LoadLastSession() {
     auto session = Preferences::ForComponent(components::Session);
+
     const std::string lastFilter = session->GetString(keys::LastCategoryFilter);
     if (lastFilter.size()) {
         this->input->SetText(lastFilter);
     }
+
+    this->matchType = static_cast<MatchType>(session->GetInt(
+        keys::LastCategoryFilterMatchType,
+        static_cast<int>(MatchType::Substring)));
 }
 
 void CategorySearchLayout::SaveSession() {
     auto session = Preferences::ForComponent(components::Session);
     session->SetString(keys::LastCategoryFilter, this->input->GetText().c_str());
+    session->SetInt(keys::LastCategoryFilterMatchType, static_cast<int>(this->matchType));
 }
 
 void CategorySearchLayout::OnLayout() {

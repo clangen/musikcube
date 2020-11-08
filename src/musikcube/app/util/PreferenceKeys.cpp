@@ -51,7 +51,9 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::LastBrowseCategoryId = "LastBrowseCategoryId";
     const std::string keys::LastBrowseDirectoryRoot = "LastBrowseDirectoryRoot";
     const std::string keys::LastCategoryFilter = "LastCategoryFilter";
+    const std::string keys::LastCategoryFilterMatchType = "LastCategoryFilterMatchType";
     const std::string keys::LastTrackFilter = "LastTrackFilter";
+    const std::string keys::LastTrackFilterMatchType = "LastTrackFilterMatchType";
     const std::string keys::TrackSearchSortOrder = "TrackSearchSortOrder";
     const std::string keys::CategoryTrackListSortOrder = "CategoryTrackListSortOrder";
     const std::string keys::RatingPositiveChar = "RatingPositiveChar";
