@@ -61,9 +61,13 @@ using namespace boost::algorithm;
 const std::string SearchTrackListQuery::kQueryName = "SearchTrackListQuery";
 
 SearchTrackListQuery::SearchTrackListQuery(
-    ILibraryPtr library, const std::string& filter, TrackSortType sort)
+    ILibraryPtr library,
+    MatchType matchType,
+    const std::string& filter,
+    TrackSortType sort)
 {
     this->library = library;
+    this->matchType = matchType;
     this->sortType = sort;
     this->filter = filter;
 
@@ -105,11 +109,10 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
         headers.reset(new std::set<size_t>());
     }
 
+    bool useRegex = (matchType == MatchType::Regex);
     bool hasFilter = (this->filter.size() > 0);
-
     std::string lastAlbum;
     size_t index = 0;
-
     std::string query;
 
     if (hasFilter) {
@@ -119,9 +122,11 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
             "WHERE "
                 " tracks.visible=1 AND "
                 + this->orderByPredicate +
-                "(tracks.title LIKE ? OR al.name LIKE ? OR ar.name LIKE ? OR gn.name LIKE ?) "
+                "(tracks.title {{match_type}} ? OR al.name {{match_type}} ? OR ar.name {{match_type}} ? OR gn.name {{match_type}} ?) "
                 " AND tracks.album_id=al.id AND tracks.visual_genre_id=gn.id AND tracks.visual_artist_id=ar.id "
             "ORDER BY " + this->orderBy + " ";
+
+        ReplaceAll(query, "{{match_type}}", useRegex ? "REGEXP" : "LIKE");
     }
     else {
         query =
@@ -139,11 +144,13 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     Statement trackQuery(query.c_str(), db);
 
     if (hasFilter) {
-        std::string filterWithWildcard = "%" + trim_copy(to_lower_copy(filter)) + "%";
-        trackQuery.BindText(0, filterWithWildcard);
-        trackQuery.BindText(1, filterWithWildcard);
-        trackQuery.BindText(2, filterWithWildcard);
-        trackQuery.BindText(3, filterWithWildcard);
+        std::string patternToMatch = useRegex
+            ? filter :  "%" + trim_copy(to_lower_copy(filter)) + "%";
+
+        trackQuery.BindText(0, patternToMatch);
+        trackQuery.BindText(1, patternToMatch);
+        trackQuery.BindText(2, patternToMatch);
+        trackQuery.BindText(3, patternToMatch);
     }
 
     while (trackQuery.Step() == Row) {
@@ -173,7 +180,8 @@ std::string SearchTrackListQuery::SerializeQuery() {
         { "name", kQueryName },
         { "options", {
             { "filter", filter },
-            { "sortType", sortType}
+            { "matchType", matchType },
+            { "sortType", sortType }
         }}
     };
     return FinalizeSerializedQueryWithLimitAndOffset(output);
@@ -194,6 +202,7 @@ std::shared_ptr<SearchTrackListQuery> SearchTrackListQuery::DeserializeQuery(mus
     auto options = nlohmann::json::parse(data)["options"];
     auto result = std::make_shared<SearchTrackListQuery>(
         library,
+        options.value("matchType", MatchType::Substring),
         options["filter"].get<std::string>(),
         options["sortType"].get<TrackSortType>());
     result->ExtractLimitAndOffsetFromDeserializedQuery(options);

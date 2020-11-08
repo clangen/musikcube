@@ -56,35 +56,44 @@ static const std::string kUnfilteredPlaylistsQuery =
 static const std::string kFilteredPlaylistsQuery =
     "SELECT DISTINCT id, name "
     "FROM playlists"
-    "WHERE LOWER(name) LIKE LOWER(?) "
+    "WHERE LOWER(name) {{match_type}} ? "
     "ORDER BY name;";
 
 const std::string CategoryListQuery::kQueryName = "CategoryListQuery";
+
+static std::string getMatchType(CategoryListQuery::MatchType matchType) {
+    return matchType == CategoryListQuery::MatchType::Regex ? "REGEXP" : "LIKE";
+}
 
 CategoryListQuery::CategoryListQuery() {
 }
 
 CategoryListQuery::CategoryListQuery(
-    const std::string& trackField, const std::string& filter)
-: CategoryListQuery(trackField, category::PredicateList(), filter) {
+    MatchType matchType,
+    const std::string& trackField,
+    const std::string& filter)
+: CategoryListQuery(matchType, trackField, category::PredicateList(), filter) {
 }
 
 CategoryListQuery::CategoryListQuery(
+    MatchType matchType,
     const std::string& trackField,
     const category::Predicate predicate,
     const std::string& filter)
-: CategoryListQuery(trackField, category::PredicateList{ predicate }, filter) {
+: CategoryListQuery(matchType, trackField, category::PredicateList{ predicate }, filter) {
 }
 
 CategoryListQuery::CategoryListQuery(
+    MatchType matchType,
     const std::string& trackField,
     const category::PredicateList predicates,
     const std::string& filter)
-: trackField(trackField)
+: matchType(MatchType::Regex)
+, trackField(trackField)
 , filter(filter) {
     result.reset(new SdkValueList());
 
-    if (this->filter.size()) {
+    if (this->filter.size() && this->matchType == MatchType::Substring) {
         /* transform "FilteR" => "%filter%" */
         std::string wild = this->filter;
         std::transform(wild.begin(), wild.end(), wild.begin(), tolower);
@@ -134,6 +143,8 @@ void CategoryListQuery::QueryPlaylist(musik::core::db::Connection& db) {
         ? kFilteredPlaylistsQuery
         : kUnfilteredPlaylistsQuery;
 
+    category::ReplaceAll(query, "{{match_type}}", getMatchType(matchType));
+
     Statement stmt(query.c_str() , db);
 
     if (filtered) {
@@ -157,6 +168,7 @@ void CategoryListQuery::QueryRegular(musik::core::db::Connection &db) {
     if (this->filter.size()) {
         regularFilter = category::REGULAR_FILTER;
         category::ReplaceAll(regularFilter, "{{table}}", prop.first);
+        category::ReplaceAll(regularFilter, "{{match_type}}", getMatchType(matchType));
         args.push_back(category::StringArgument(this->filter));
     }
 
@@ -184,6 +196,7 @@ void CategoryListQuery::QueryExtended(musik::core::db::Connection &db) {
     if (this->filter.size()) {
         extendedFilter = category::EXTENDED_FILTER;
         args.push_back(category::StringArgument(this->filter));
+        category::ReplaceAll(extendedFilter, "{{match_type}}", getMatchType(matchType));
     }
 
     category::ReplaceAll(query, "{{regular_predicates}}", regular);
@@ -242,6 +255,7 @@ std::string CategoryListQuery::SerializeQuery() {
     query["options"] = {
         { "trackField", this->trackField },
         { "filter", this->filter },
+        { "matchType", this->matchType },
         { "outputType", this->outputType },
         { "regularPredicateList", PredicateListToJson(this->regular) },
         { "extendedPredicateList", PredicateListToJson(this->extended) }
@@ -269,6 +283,7 @@ std::shared_ptr<CategoryListQuery> CategoryListQuery::DeserializeQuery(const std
     std::shared_ptr<CategoryListQuery> result(new CategoryListQuery());
     result->trackField = options.value("trackField", "");
     result->filter = options.value("filter", "");
+    result->matchType = options.value("matchType", MatchType::Substring);
     result->outputType = (OutputType)options.value("outputType", OutputType::Regular);
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);

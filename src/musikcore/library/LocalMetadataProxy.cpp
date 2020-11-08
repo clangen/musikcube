@@ -305,6 +305,7 @@ ITrackList* LocalMetadataProxy::QueryTracks(const char* query, int limit, int of
         std::shared_ptr<SearchTrackListQuery> search(
             new SearchTrackListQuery(
                 this->library,
+                SearchTrackListQuery::MatchType::Substring,
                 std::string(query ? query : ""),
                 TrackSortType::Album));
 
@@ -456,6 +457,7 @@ IValueList* LocalMetadataProxy::QueryCategoryWithPredicate(
 
         std::shared_ptr<CategoryListQuery> search(
             new CategoryListQuery(
+                CategoryListQuery::MatchType::Substring,
                 type,
                 { field, predicateId },
                 std::string(filter ? filter : "")));
@@ -480,7 +482,10 @@ IValueList* LocalMetadataProxy::QueryCategoryWithPredicates(
         auto predicateList = toPredicateList(predicates, predicateCount);
 
         auto query = std::make_shared<CategoryListQuery>(
-            type, predicateList, std::string(filter ? filter : ""));
+            CategoryListQuery::MatchType::Substring,
+            type,
+            predicateList,
+            std::string(filter ? filter : ""));
 
         this->library->EnqueueAndWait(query);
 

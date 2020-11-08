@@ -149,7 +149,11 @@ void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-        new SearchTrackListQuery(this->library, filter, sortOrder)));
+        new SearchTrackListQuery(
+            this->library,
+            SearchTrackListQuery::MatchType::Substring,
+            filter,
+            sortOrder)));
 }
 
 void TrackSearchLayout::PlayFromTop() {

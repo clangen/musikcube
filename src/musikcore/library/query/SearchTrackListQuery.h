@@ -45,6 +45,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             SearchTrackListQuery(
                 musik::core::ILibraryPtr library,
+                MatchType matchType,
                 const std::string& filter,
                 TrackSortType sort);
 
@@ -70,6 +71,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
         private:
             musik::core::ILibraryPtr library;
+            MatchType matchType;
             bool parseHeaders;
             std::string orderBy;
             std::string orderByPredicate;

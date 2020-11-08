@@ -109,7 +109,8 @@ void CategoryListView::RequeryWithField(
     this->fieldIdColumn = getFieldIdColumn(fieldName);
     this->selectAfterQuery = selectAfterQuery;
     this->filter = filter;
-    this->activeQuery.reset(new CategoryListQuery(fieldName, filter));
+    this->activeQuery.reset(new CategoryListQuery(
+        CategoryListQuery::MatchType::Substring, fieldName, filter));
     this->library->Enqueue(activeQuery);
 }
 
