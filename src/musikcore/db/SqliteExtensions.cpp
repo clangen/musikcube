@@ -824,7 +824,7 @@ static void likeFunc(
 */
 static void regexpDelete(void* p) {
     std::regex* regex = (std::regex*) p;
-    delete p;
+    delete regex;
 }
 
 /*
