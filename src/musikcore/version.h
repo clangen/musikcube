@@ -37,10 +37,10 @@
 #include <string>
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 94
+#define VERSION_MINOR 95
 #define VERSION_PATCH 0
-#define VERSION_COMMIT_HASH "#d85c1002"
-#define VERSION "0.94.0"
+#define VERSION_COMMIT_HASH "#79637136"
+#define VERSION "0.95.0"
 
 namespace musik {
     namespace cube {

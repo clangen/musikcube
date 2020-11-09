@@ -55,6 +55,8 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                using MatchType = musik::core::library::query::QueryBase::MatchType;
+
                 CategoryListView(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library,
@@ -63,15 +65,28 @@ namespace musik {
                 virtual ~CategoryListView();
 
                 void RequeryWithField(
+                    MatchType matchType,
+                    const std::string& fieldName,
+                    const std::string& filter = "",
+                    const int64_t selectAfterQuery = -1LL);
+
+                void RequeryWithField(
                     const std::string& fieldName,
                     const std::string& filter = "",
                     const int64_t selectAfterQuery = -1LL);
 
                 void Requery(
+                    MatchType matchType,
                     const std::string& filter = "",
                     const int64_t selectAfterQuery = -1LL);
 
+                void Requery(
+                    const std::string& filter,
+                    const int64_t selectAfterQuery);
+
                 void Requery(const int64_t selectAfterQuery);
+
+                void Requery();
 
                 void Reset();
 
@@ -121,6 +136,7 @@ namespace musik {
 
                 std::string fieldName, fieldIdColumn;
                 std::string filter;
+                MatchType matchType{ MatchType::Substring };
                 int64_t selectAfterQuery;
                 musik::core::library::query::CategoryListQuery::Result metadata;
         };

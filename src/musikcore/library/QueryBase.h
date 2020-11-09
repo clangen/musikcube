@@ -50,6 +50,11 @@ namespace musik { namespace core { namespace library { namespace query {
         public sigslot::has_slots<>
     {
         public:
+            enum class MatchType : int {
+                Substring = 1,
+                Regex = 2
+            };
+
             QueryBase()
             : status(IQuery::Idle)
             , options(0)

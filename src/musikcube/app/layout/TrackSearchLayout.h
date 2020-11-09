@@ -70,6 +70,8 @@ namespace musik {
                 virtual void OnLayout();
 
             private:
+                using MatchType = musik::core::library::query::QueryBase::MatchType;
+
                 void SaveSession();
                 void InitializeWindows();
                 void Requery();
@@ -82,8 +84,12 @@ namespace musik {
 
                 void OnEnterPressed(cursespp::TextInput* sender);
 
+                void ToggleMatchType();
+                void SetMatchType(MatchType matchType);
+
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
+                MatchType matchType{ MatchType::Substring };
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextInput> input;

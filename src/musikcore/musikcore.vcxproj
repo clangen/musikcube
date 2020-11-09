@@ -514,6 +514,7 @@
     <ClCompile Include="audio\Visualizer.cpp" />
     <ClCompile Include="c_context.cpp" />
     <ClCompile Include="c_interface_wrappers.cpp" />
+    <ClCompile Include="db\SqliteExtensions.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="i18n\Locale.cpp" />
     <ClCompile Include="io\DataStreamFactory.cpp" />
@@ -595,6 +596,7 @@
     <ClInclude Include="audio\MasterTransport.h" />
     <ClInclude Include="audio\Streams.h" />
     <ClInclude Include="audio\Visualizer.h" />
+    <ClInclude Include="db\SqliteExtensions.h" />
     <ClInclude Include="debug.h" />
     <ClInclude Include="i18n\Locale.h" />
     <ClInclude Include="io\DataStreamFactory.h" />

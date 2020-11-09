@@ -71,10 +71,10 @@ namespace musik { namespace core { namespace library { namespace query {
         };
 
         static const std::string REGULAR_PREDICATE = " tracks.{{fk_id}}=? ";
-        static const std::string REGULAR_FILTER = " AND LOWER({{table}}.name) LIKE ? ";
+        static const std::string REGULAR_FILTER = " AND LOWER({{table}}.name) {{match_type}} ? ";
 
         static const std::string EXTENDED_PREDICATE = " (key=? AND meta_value_id=?) ";
-        static const std::string EXTENDED_FILTER = " AND LOWER(extended_metadata.value) LIKE ?";
+        static const std::string EXTENDED_FILTER = " AND LOWER(extended_metadata.value) {{match_type}} ?";
 
         static const std::string EXTENDED_INNER_JOIN =
             "INNER JOIN ( "
@@ -193,7 +193,7 @@ namespace musik { namespace core { namespace library { namespace query {
         and other supplementary information. */
 
         static const std::string ALBUM_LIST_FILTER =
-            " AND (LOWER(album) like ? OR LOWER(album_artist) like ?) ";
+            " AND (LOWER(album) LIKE ? OR LOWER(album_artist) LIKE ?) ";
 
         static const std::string ALBUM_LIST_QUERY =
             "SELECT DISTINCT "

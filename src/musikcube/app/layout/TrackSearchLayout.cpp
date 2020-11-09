@@ -86,15 +86,21 @@ TrackSearchLayout::~TrackSearchLayout() {
 
 void TrackSearchLayout::LoadLastSession() {
     auto session = Preferences::ForComponent(components::Session);
+
     const std::string lastFilter = session->GetString(keys::LastTrackFilter);
     if (lastFilter.size()) {
         this->input->SetText(lastFilter);
     }
+
+    this->matchType = static_cast<MatchType>(session->GetInt(
+        keys::LastTrackFilterMatchType,
+        static_cast<int>(MatchType::Substring)));
 }
 
 void TrackSearchLayout::SaveSession() {
     auto session = Preferences::ForComponent(components::Session);
     session->SetString(keys::LastTrackFilter, this->input->GetText().c_str());
+    session->SetInt(keys::LastTrackFilterMatchType, static_cast<int>(this->matchType));
 }
 
 void TrackSearchLayout::OnLayout() {
@@ -104,7 +110,10 @@ void TrackSearchLayout::OnLayout() {
     size_t inputWidth = cx / 2;
     size_t inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, y, cx / 2, SEARCH_HEIGHT);
-    this->input->SetHint(_TSTR("search_filter_hint"));
+
+    bool inputIsRegex = this->matchType == MatchType::Regex;
+    this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
+    this->input->SetFocusedFrameColor(inputIsRegex ? Color::FrameImportant : Color::FrameFocused);
 
     this->trackList->MoveAndResize(
         x,
@@ -149,7 +158,8 @@ void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
     this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-        new SearchTrackListQuery(this->library, filter, sortOrder)));
+        new SearchTrackListQuery(
+            this->library, this->matchType, filter, sortOrder)));
 }
 
 void TrackSearchLayout::PlayFromTop() {
@@ -187,6 +197,19 @@ void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
     }
 }
 
+void TrackSearchLayout::ToggleMatchType() {
+    const bool isRegex = this->matchType == MatchType::Regex;
+    this->SetMatchType(isRegex ? MatchType::Substring : MatchType::Regex);
+}
+
+void TrackSearchLayout::SetMatchType(MatchType matchType) {
+    if (matchType != this->matchType) {
+        this->matchType = matchType;
+        this->Layout();
+        this->Requery();
+    }
+}
+
 bool TrackSearchLayout::KeyPress(const std::string& key) {
     if (Hotkeys::Is(Hotkeys::Down, key)) {
         if (this->GetFocus() == this->input) {
@@ -208,6 +231,10 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
                 this->prefs->SetInt(keys::TrackSearchSortOrder, (int)type);
                 this->Requery();
             });
+        return true;
+    }
+    else if (Hotkeys::Is(Hotkeys::SearchInputToggleMatchType, key)) {
+        this->ToggleMatchType();
         return true;
     }
     return LayoutBase::KeyPress(key);

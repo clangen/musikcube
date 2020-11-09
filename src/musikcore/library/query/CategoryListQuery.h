@@ -52,15 +52,18 @@ namespace musik { namespace core { namespace library { namespace query {
             using Result = SdkValueList::Shared;
 
             CategoryListQuery(
+                MatchType matchType,
                 const std::string& trackField,
                 const std::string& filter = "");
 
             CategoryListQuery(
+                MatchType matchType,
                 const std::string& trackField,
                 const category::Predicate predicate,
                 const std::string& filter = "");
 
             CategoryListQuery(
+                MatchType matchType,
                 const std::string& trackField,
                 const category::PredicateList predicate,
                 const std::string& filter = "");
@@ -100,6 +103,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             std::string trackField;
             std::string filter;
+            MatchType matchType;
             OutputType outputType;
             category::PredicateList regular, extended;
             Result result;

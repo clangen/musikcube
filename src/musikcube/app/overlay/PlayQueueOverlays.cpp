@@ -151,8 +151,8 @@ static void queryPlaylists(
     ILibraryPtr library,
     std::function<void(std::shared_ptr<CategoryListQuery>)> callback)
 {
-    std::shared_ptr<CategoryListQuery> query(
-        new CategoryListQuery(Playlists::TABLE_NAME, ""));
+    std::shared_ptr<CategoryListQuery> query(new CategoryListQuery(
+        CategoryListQuery::MatchType::Substring, Playlists::TABLE_NAME, ""));
 
     library->Enqueue(query, [callback, query](auto q) {
         callback(query->GetStatus() == IQuery::Finished

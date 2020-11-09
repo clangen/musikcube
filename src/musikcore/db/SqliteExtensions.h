@@ -34,57 +34,18 @@
 
 #pragma once
 
-#include "TrackListQueryBase.h"
-#include <musikcore/library/query/util/TrackSort.h>
+#include <musikcore/config.h>
+#include <map>
 
-namespace musik { namespace core { namespace library { namespace query {
+struct sqlite3;
 
-    class SearchTrackListQuery : public TrackListQueryBase {
-        public:
-            static const std::string kQueryName;
+namespace musik { namespace core { namespace db {
 
-            SearchTrackListQuery(
-                musik::core::ILibraryPtr library,
-                MatchType matchType,
-                const std::string& filter,
-                TrackSortType sort);
+    namespace SqliteExtensions {
 
-            virtual ~SearchTrackListQuery();
+        int Register(sqlite3* db);
 
-            virtual std::string Name() { return kQueryName; }
+    }
 
-            std::string GetSortDisplayString();
+} } }
 
-            virtual Result GetResult();
-            virtual Headers GetHeaders();
-            virtual size_t GetQueryHash();
-
-            /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
-            static std::shared_ptr<SearchTrackListQuery> DeserializeQuery(
-                musik::core::ILibraryPtr library, const std::string& data);
-
-        protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
-
-        private:
-            musik::core::ILibraryPtr library;
-            MatchType matchType;
-            bool parseHeaders;
-            std::string orderBy;
-            std::string orderByPredicate;
-            std::string displayString;
-            size_t hash;
-
-            /* serialized query fields */
-            std::string filter;
-            TrackSortType sortType;
-
-            /* serialized result fields */
-            Result result;
-            Headers headers;
-    };
-
-} } } }

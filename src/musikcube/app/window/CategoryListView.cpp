@@ -97,6 +97,7 @@ void CategoryListView::OnVisibilityChanged(bool visible) {
 }
 
 void CategoryListView::RequeryWithField(
+    MatchType matchType,
     const std::string& fieldName,
     const std::string& filter,
     const int64_t selectAfterQuery)
@@ -105,24 +106,45 @@ void CategoryListView::RequeryWithField(
         this->activeQuery->Cancel();
     }
 
+    this->matchType = matchType;
     this->fieldName = fieldName;
     this->fieldIdColumn = getFieldIdColumn(fieldName);
     this->selectAfterQuery = selectAfterQuery;
     this->filter = filter;
-    this->activeQuery.reset(new CategoryListQuery(fieldName, filter));
+    this->activeQuery = std::make_shared<CategoryListQuery>(matchType, fieldName, filter);
     this->library->Enqueue(activeQuery);
 }
 
+void CategoryListView::RequeryWithField(
+    const std::string& fieldName,
+    const std::string& filter,
+    const int64_t selectAfterQuery)
+{
+    this->RequeryWithField(this->matchType, fieldName, filter, selectAfterQuery);
+}
+
+void CategoryListView::Requery(
+    MatchType matchType,
+    const std::string& filter,
+    const int64_t selectAfterQuery)
+{
+    this->RequeryWithField(matchType, this->fieldName, filter, selectAfterQuery);
+}
+
 void CategoryListView::Requery(const std::string& filter, const int64_t selectAfterQuery) {
-    this->RequeryWithField(this->fieldName, filter, selectAfterQuery);
+    this->RequeryWithField(this->matchType, this->fieldName, filter, selectAfterQuery);
 }
 
 void CategoryListView::Requery(const int64_t selectAfterQuery) {
-    this->RequeryWithField(this->fieldName, this->filter, selectAfterQuery);
+    this->RequeryWithField(this->matchType, this->fieldName, this->filter, selectAfterQuery);
+}
+
+void CategoryListView::Requery() {
+    this->RequeryWithField(this->matchType, this->fieldName, "", -1LL);
 }
 
 void CategoryListView::Reset() {
-    this->metadata.reset(new SdkValueList()); /* ugh */
+    this->metadata = std::make_shared<SdkValueList>(); /* ugh */
     this->OnAdapterChanged();
 }
 
@@ -166,7 +188,7 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
             this->metadata.reset();
         }
 
-        this->Requery();
+        this->Requery(this->matchType);
     }
 }
 
