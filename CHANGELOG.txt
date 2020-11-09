@@ -1,3 +1,13 @@
+0.95.0
+
+* added support for searching by regex; press `M-m` in track or filter views to
+  toggle between regex and legacy searching. while regex is enabled, the search
+  box will have a blue (instead of red) border.
+* relaxed search to ignore accents. for example: 'À', 'Á`, 'Â`, etc are all
+  considered equivalent to the english 'A', and vice versa.
+
+--------------------------------------------------------------------------------
+
 0.94.0
 
 * added support for remote libraries (i.e connecting to a musikcube app or
