@@ -151,13 +151,28 @@ static void queryPlaylists(
     ILibraryPtr library,
     std::function<void(std::shared_ptr<CategoryListQuery>)> callback)
 {
-    std::shared_ptr<CategoryListQuery> query(new CategoryListQuery(
-        CategoryListQuery::MatchType::Substring, Playlists::TABLE_NAME, ""));
+    auto query = std::make_shared<CategoryListQuery>(
+        CategoryListQuery::MatchType::Substring, Playlists::TABLE_NAME, "");
 
-    library->Enqueue(query, [callback, query](auto q) {
-        callback(query->GetStatus() == IQuery::Finished
-            ? query : std::shared_ptr<CategoryListQuery>());
-    });
+    auto called = std::make_shared<bool>(false);
+
+    /* jump through a couple extra hooks to try to avoid UI flicker; let's
+    wait synchronously for up to 250 milliseconds for the query to return,
+    and return results on the calling thread if possible. this will prevent
+    ui flicker between overlays. */
+    auto completion = [callback, query, called](auto q) {
+        if (!*called) {
+            callback(query->GetStatus() == IQuery::Finished
+                ? query : std::shared_ptr<CategoryListQuery>());
+        }
+    };
+
+    library->EnqueueAndWait(query, 250, completion);
+
+    if (query->GetStatus() == IQuery::Finished) {
+        completion(query);
+        *called = true;
+    }
 }
 
 static void addPlaylistsToAdapter(
