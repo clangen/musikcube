@@ -298,9 +298,9 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
     if (context) {
         /* do everything via loopback to the local library for testing. we do, however,
         go through the motions by serializing the inbound query to a string, then
-        bouncing through the QueryRegister to create a new instance, run the query
+        bouncing through the QueryRegistry to create a new instance, run the query
         locally, serialize the result, then deserialize it again to emulate the entire
-        flow. */
+        round trip. */
 
         auto localLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
         localLibrary->SetMessageQueue(*this->messageQueue);
