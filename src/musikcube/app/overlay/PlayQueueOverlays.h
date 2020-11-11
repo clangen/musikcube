@@ -107,7 +107,7 @@ namespace musik {
                     QueryCallback callback = QueryCallback());
 
             private:
-                PlayQueueOverlays();
+                PlayQueueOverlays() noexcept;
         };
     }
 }
