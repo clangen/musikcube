@@ -207,7 +207,7 @@ bool CategorySearchLayout::KeyPress(const std::string& key) {
             return true;
         }
     }
-    else if (Hotkeys::Is(Hotkeys::SearchInputToggleMatchType, key)) {
+    else if (Hotkeys::Is(Hotkeys::SearchInputToggleMatchType, key) && this->input->IsFocused()) {
         this->ToggleMatchType();
         return true;
     }
