@@ -5,6 +5,8 @@
   box will have a blue (instead of red) border.
 * relaxed search to ignore accents. for example: 'À', 'Á`, 'Â`, etc are all
   considered equivalent to the english 'A', and vice versa.
+* fixed a bug where remote library ports greater than 32767 caused the app to
+  crash.
 
 --------------------------------------------------------------------------------
 

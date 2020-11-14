@@ -124,11 +124,15 @@ void RawWebSocketClient::Connect(const std::string& uri) {
     websocketpp::lib::error_code ec;
     if (mode == Mode::PlainText) {
         PlainTextClient::connection_ptr connection = plainTextClient->get_connection(uri, ec);
-        plainTextClient->connect(connection);
+        if (!ec) {
+            plainTextClient->connect(connection);
+        }
     }
     else if (mode == Mode::TLS) {
         TlsClient::connection_ptr connection = tlsClient->get_connection(uri, ec);
-        tlsClient->connect(connection);
+        if (!ec) {
+            tlsClient->connect(connection);
+        }
     }
 }
 

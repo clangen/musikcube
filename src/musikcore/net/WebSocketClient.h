@@ -95,7 +95,7 @@ namespace musik { namespace core { namespace net {
 
             void Connect(
                 const std::string& host,
-                short port,
+                unsigned short port,
                 const std::string& password,
                 bool useTls);
 

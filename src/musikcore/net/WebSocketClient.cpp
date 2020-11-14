@@ -230,7 +230,7 @@ std::string WebSocketClient::EnqueueQuery(Query query) {
 
 void WebSocketClient::Connect(
     const std::string& host,
-    short port,
+    unsigned short port,
     const std::string& password,
     bool useTls)
 {

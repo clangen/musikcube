@@ -195,8 +195,8 @@ void RemoteLibrarySettingsLayout::LoadPreferences() {
     this->httpTlsCheckbox->CheckChanged.disconnect(this);
 
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    auto const wssPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
-    auto const httpPort = (short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
+    auto const wssPort = (unsigned short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
+    auto const httpPort = (unsigned short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7906);
     auto const password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
     auto const wssTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
     auto const httpTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
