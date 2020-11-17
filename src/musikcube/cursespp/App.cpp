@@ -112,6 +112,126 @@ static bool isLangUtf8() {
 }
 #endif
 
+/* the way curses represents mouse button state is really gross, and makes it
+annoying to process click events with low latency while also supporting double
+clicks and multiple buttons. this structure is used to maintain and manipulate
+state related to mouse buttons, and is used by the main loop of the app to
+generate button click events for Window instances to handle. */
+struct MouseButtonState {
+    bool Update(const MEVENT& rawEvent) {
+        const int state = rawEvent.bstate;
+        const int x = rawEvent.x;
+        const int y = rawEvent.y;
+
+        bool result = false;
+        const int64_t newTime = App::Now();
+
+        const bool isDown =
+            state & BUTTON1_PRESSED ||
+            state & BUTTON2_PRESSED ||
+            state & BUTTON3_PRESSED;
+
+        const bool isUp =
+            state & BUTTON1_RELEASED ||
+            state & BUTTON2_RELEASED ||
+            state & BUTTON3_RELEASED;
+
+        if (!isDown && !isUp) {
+            /* if both of these were false we got an unexpected mouse event. let's
+            go ahead and reset our state and return */
+            Reset();
+            return false;
+        }
+
+        int newButton = 0;
+
+        if (state & BUTTON1_PRESSED || state & BUTTON1_RELEASED) {
+            newButton = 1;
+        }
+        if (state & BUTTON2_PRESSED || state & BUTTON2_RELEASED) {
+            newButton = 2;
+        }
+        if (state & BUTTON3_PRESSED || state & BUTTON3_RELEASED) {
+            newButton = 3;
+        }
+
+        const bool elapsed = newTime - time > 200;
+
+        if ((!elapsed && lastX >= 0 && lastY >= 0) && (std::abs(x - lastX) > 2 || std::abs(y - lastY) > 2)) {
+            /* cursor traveled too far, reset state and return immediately */
+            this->Reset();
+            return false;
+        }
+
+        if (newButton != button || elapsed) {
+            /* if the button changed or there was too much time between state
+            changes, go ahead and reset now */
+            Reset();
+        }
+
+        if (isDown) {
+            if (!this->clicked) {
+                this->clicked = true;
+                this->wasDown = false; /* kludge */
+            }
+            else {
+                this->wasDown = true;
+            }
+            result = true;
+        }
+        else if (clicked && wasDown && !isDown) {
+            this->doubleClicked = true;
+            this->wasDown = true;
+            result = true;
+        }
+
+        this->button = newButton;
+        this->time = newTime;
+        this->lastX = x;
+        this->lastY = y;
+        return result;
+    }
+
+    void Reset() noexcept {
+        button = 0;
+        state = 0;
+        time = 0;
+        lastX = -1;
+        lastY = -1;
+        wasDown = false;
+        clicked = false;
+        doubleClicked = false;
+    }
+
+    mmask_t ToCursesState() noexcept {
+        if (doubleClicked) {
+            switch (button) {
+            case 1: return BUTTON1_DOUBLE_CLICKED;
+            case 2: return BUTTON2_DOUBLE_CLICKED;
+            case 3: return BUTTON3_DOUBLE_CLICKED;
+            default: break;
+            }
+        }
+        else if (clicked) {
+            switch (button) {
+            case 1: return BUTTON1_CLICKED;
+            case 2: return BUTTON2_CLICKED;
+            case 3: return BUTTON3_CLICKED;
+            default: break;
+            }
+        }
+        return 0;
+    }
+
+    bool wasDown{ false };
+    bool clicked{ false };
+    bool doubleClicked{ false };
+    int button;
+    int state;
+    int lastX{ -1 }, lastY{ -1 };
+    int64_t time{ -1 };
+};
+
 App& App::Instance() {
     if (!instance) {
         throw std::runtime_error("app not running!");
@@ -386,7 +506,6 @@ void App::Run(ILayoutPtr layout) {
     }
 #endif
 
-    MEVENT mouseEvent;
     int64_t ch;
     std::string kn;
 
@@ -395,118 +514,8 @@ void App::Run(ILayoutPtr layout) {
 
     this->ChangeLayout(layout);
 
-    struct MouseState {
-        bool Update(mmask_t state, int x, int y) {
-            bool result = false;
-            const int64_t newTime = App::Now();
-
-            const bool isDown =
-                state & BUTTON1_PRESSED ||
-                state & BUTTON2_PRESSED ||
-                state & BUTTON3_PRESSED;
-
-            const bool isUp =
-                state & BUTTON1_RELEASED ||
-                state & BUTTON2_RELEASED ||
-                state & BUTTON3_RELEASED;
-
-            if (!isDown && !isUp) {
-                /* if both of these were false we got an unexpected mouse event. let's
-                go ahead and reset our state and return */
-                Reset();
-                return false;
-            }
-
-            int newButton = 0;
-
-            if (state & BUTTON1_PRESSED || state & BUTTON1_RELEASED) {
-                newButton = 1;
-            }
-            if (state & BUTTON2_PRESSED || state & BUTTON2_RELEASED) {
-                newButton = 2;
-            }
-            if (state & BUTTON3_PRESSED || state & BUTTON3_RELEASED) {
-                newButton = 3;
-            }
-
-            const bool elapsed = newTime - time > 200;
-
-            if ((!elapsed && lastX >= 0 && lastY >= 0) && (std::abs(x - lastX) > 2 || std::abs(y - lastY) > 2)) {
-                /* cursor traveled too far, reset state and return immediately */
-                this->Reset();
-                return false;
-            }
-
-            if (newButton != button || elapsed) {
-                /* if the button changed or there was too much time between state
-                changes, go ahead and reset now */
-                Reset();
-            }
-
-            if (isDown) {
-                if (!this->clicked) {
-                    this->clicked = true;
-                    this->wasDown = false; /* kludge */
-                }
-                else {
-                    this->wasDown = true;
-                }
-                result = true;
-            }
-            else if (clicked && wasDown && !isDown) {
-                this->doubleClicked = true;
-                this->wasDown = true;
-                result = true;
-            }
-
-            this->button = newButton;
-            this->time = newTime;
-            this->lastX = x;
-            this->lastY = y;
-            return result;
-        }
-
-        void Reset() {
-            button = 0;
-            state = 0;
-            time = 0;
-            lastX = -1;
-            lastY = -1;
-            wasDown = false;
-            clicked = false;
-            doubleClicked = false;
-        }
-
-        mmask_t ToCursesState() noexcept {
-            if (doubleClicked) {
-                switch (button) {
-                    case 1: return BUTTON1_DOUBLE_CLICKED;
-                    case 2: return BUTTON2_DOUBLE_CLICKED;
-                    case 3: return BUTTON3_DOUBLE_CLICKED;
-                    default: break;
-                }
-            }
-            else if (clicked) {
-                switch (button) {
-                    case 1: return BUTTON1_CLICKED;
-                    case 2: return BUTTON2_CLICKED;
-                    case 3: return BUTTON3_CLICKED;
-                    default: break;
-                }
-            }
-            return 0;
-        }
-
-        bool wasDown{ false };
-        bool clicked{ false };
-        bool doubleClicked{ false };
-        int button;
-        int state;
-        int lastX{-1}, lastY{-1};
-        int64_t time{ -1 };
-    };
-
-    MouseState mouseState;
+    MEVENT rawMouseEvent;
+    MouseButtonState mouseButtonState;
 
     while (!this->quit && !disconnected) {
         kn = "";
@@ -557,26 +566,23 @@ process:
             }
             else if (this->mouseEnabled && kn == "KEY_MOUSE") {
 #ifdef WIN32
-                if (nc_getmouse(&mouseEvent) == 0) {
+                if (nc_getmouse(&rawMouseEvent) == 0) {
 #else
-                if (getmouse(&mouseEvent) == 0) {
+                if (getmouse(&rawMouseEvent) == 0) {
 #endif
                     auto active = this->state.ActiveLayout();
                     if (active) {
                         using Event = IMouseHandler::Event;
                         auto window = dynamic_cast<IWindow*>(active.get());
-                        Event event(mouseEvent, window);
+                        Event event(rawMouseEvent, window);
                         if (event.MouseWheelDown() || event.MouseWheelUp()) {
                             if (state.focused) {
                                 state.focused->MouseEvent(event);
                             }
                         }
-                        else {
-                            if (mouseState.Update(mouseEvent.bstate, mouseEvent.x, mouseEvent.y)) {
-                                mouseEvent.bstate = mouseState.ToCursesState();
-                                event = Event(mouseEvent, window);
-                                active->MouseEvent(event);
-                            }
+                        else if (mouseButtonState.Update(rawMouseEvent)) {
+                            event.state = mouseButtonState.ToCursesState();
+                            active->MouseEvent(event);
                         }
                     }
                 }
