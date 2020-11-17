@@ -395,10 +395,9 @@ void App::Run(ILayoutPtr layout) {
     mouseinterval(0);
 
     struct MouseState {
-        void Update(mmask_t state) {
-            int64_t newTime = App::Now();
-
-            int newButton = 0;
+        bool Update(mmask_t state) {
+            bool result = false;
+            const int64_t newTime = App::Now();
 
             const bool isDown =
                 state & BUTTON1_PRESSED ||
@@ -412,8 +411,10 @@ void App::Run(ILayoutPtr layout) {
 
             if (!isDown && !isUp) {
                 Reset();
-                return;
+                return false;
             }
+
+            int newButton = 0;
 
             if (state & BUTTON1_PRESSED || state & BUTTON1_RELEASED) {
                 newButton = 1;
@@ -424,23 +425,32 @@ void App::Run(ILayoutPtr layout) {
             if (state & BUTTON3_PRESSED || state & BUTTON3_RELEASED) {
                 newButton = 3;
             }
+
             const bool elapsed = newTime - time > 300;
+
             if (newButton != button || elapsed) {
                 Reset();
             }
-            else {
-                if (wasDown && isUp) {
-                    if (this->clicked) {
-                        this->doubleClicked = true;
-                    }
-                    else {
-                        this->clicked = true;
-                    }
+
+            if (isDown) {
+                if (!this->clicked) {
+                    this->clicked = true;
+                    this->wasDown = false; /* kludge */
                 }
+                else {
+                    this->wasDown = true;
+                }
+                result = true;
             }
+            else if (clicked && wasDown && !isDown) {
+                this->doubleClicked = true;
+                this->wasDown = true;
+                result = true;
+            }
+
             this->button = newButton;
-            this->wasDown = isDown;
             this->time = newTime;
+            return result;
         }
 
         void Reset() {
@@ -450,6 +460,26 @@ void App::Run(ILayoutPtr layout) {
             wasDown = false;
             clicked = false;
             doubleClicked = false;
+        }
+
+        mmask_t ToCursesState() noexcept {
+            if (doubleClicked) {
+                switch (button) {
+                    case 1: return BUTTON1_DOUBLE_CLICKED;
+                    case 2: return BUTTON2_DOUBLE_CLICKED;
+                    case 3: return BUTTON3_DOUBLE_CLICKED;
+                    default: break;
+                }
+            }
+            else if (clicked) {
+                switch (button) {
+                    case 1: return BUTTON1_CLICKED;
+                    case 2: return BUTTON2_CLICKED;
+                    case 3: return BUTTON3_CLICKED;
+                    default: break;
+                }
+            }
+            return 0;
         }
 
         bool wasDown{ false };
@@ -518,7 +548,6 @@ process:
 #else
                 if (getmouse(&mouseEvent) == 0) {
 #endif
-                    mouseState.Update(mouseEvent.bstate);
                     auto active = this->state.ActiveLayout();
                     if (active) {
                         using Event = IMouseHandler::Event;
@@ -530,7 +559,11 @@ process:
                             }
                         }
                         else {
-                            active->MouseEvent(event);
+                            if (mouseState.Update(mouseEvent.bstate)) {
+                                mouseEvent.bstate = mouseState.ToCursesState();
+                                event = Event(mouseEvent, window);
+                                active->MouseEvent(event);
+                            }
                         }
                     }
                 }
