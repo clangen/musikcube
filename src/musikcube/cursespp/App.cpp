@@ -53,7 +53,6 @@
 #endif
 
 #ifndef WIN32
-#include <unistd.h>
 #include <csignal>
 #include <cstdlib>
 #include <locale.h>
@@ -159,8 +158,16 @@ void App::InitCurses() {
     refresh();
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
-    timeout(0);
+    mouseinterval(0);
+
+#ifndef WIN32
+    set_escdelay(20);
+    timeout(IDLE_TIMEOUT_MS);
+#endif
+
+#ifdef WIN32
     nodelay(stdscr, true);
+#endif
 
 #ifdef WIN32
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
@@ -175,8 +182,6 @@ void App::InitCurses() {
             this->SetIcon(this->iconId);
         }
     #endif
-#else
-    set_escdelay(20);
 #endif
 
     Colors::Init(this->colorMode, this->bgType);
@@ -390,12 +395,8 @@ void App::Run(ILayoutPtr layout) {
 
     this->ChangeLayout(layout);
 
-    int sleepTimeMs = 0;
-
-    mouseinterval(0);
-
     struct MouseState {
-        bool Update(mmask_t state) {
+        bool Update(mmask_t state, int x, int y) {
             bool result = false;
             const int64_t newTime = App::Now();
 
@@ -410,6 +411,8 @@ void App::Run(ILayoutPtr layout) {
                 state & BUTTON3_RELEASED;
 
             if (!isDown && !isUp) {
+                /* if both of these were false we got an unexpected mouse event. let's
+                go ahead and reset our state and return */
                 Reset();
                 return false;
             }
@@ -426,9 +429,17 @@ void App::Run(ILayoutPtr layout) {
                 newButton = 3;
             }
 
-            const bool elapsed = newTime - time > 300;
+            const bool elapsed = newTime - time > 200;
+
+            if ((!elapsed && lastX >= 0 && lastY >= 0) && (std::abs(x - lastX) > 2 || std::abs(y - lastY) > 2)) {
+                /* cursor traveled too far, reset state and return immediately */
+                this->Reset();
+                return false;
+            }
 
             if (newButton != button || elapsed) {
+                /* if the button changed or there was too much time between state
+                changes, go ahead and reset now */
                 Reset();
             }
 
@@ -450,6 +461,8 @@ void App::Run(ILayoutPtr layout) {
 
             this->button = newButton;
             this->time = newTime;
+            this->lastX = x;
+            this->lastY = y;
             return result;
         }
 
@@ -457,6 +470,8 @@ void App::Run(ILayoutPtr layout) {
             button = 0;
             state = 0;
             time = 0;
+            lastX = -1;
+            lastY = -1;
             wasDown = false;
             clicked = false;
             doubleClicked = false;
@@ -487,6 +502,7 @@ void App::Run(ILayoutPtr layout) {
         bool doubleClicked{ false };
         int button;
         int state;
+        int lastX{-1}, lastY{-1};
         int64_t time{ -1 };
     };
 
@@ -506,8 +522,10 @@ void App::Run(ILayoutPtr layout) {
             /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
             keypad(c, TRUE);
-            wtimeout(c, 0);
-            nodelay(c, true);
+            wtimeout(c, IDLE_TIMEOUT_MS);
+            #ifdef WIN32
+                nodelay(c, true);
+            #endif
             ch = wgetch(c);
         }
         else {
@@ -515,12 +533,7 @@ void App::Run(ILayoutPtr layout) {
             ch = wgetch(stdscr);
         }
 
-        if (ch == ERR) {
-            sleepTimeMs = IDLE_TIMEOUT_MS;
-        }
-        else {
-            sleepTimeMs = 0;
-
+        if (ch != ERR) {
             kn = key::Read((int) ch);
 
             if (this->keyHook) {
@@ -559,7 +572,7 @@ process:
                             }
                         }
                         else {
-                            if (mouseState.Update(mouseEvent.bstate)) {
+                            if (mouseState.Update(mouseEvent.bstate, mouseEvent.x, mouseEvent.y)) {
                                 mouseEvent.bstate = mouseState.ToCursesState();
                                 event = Event(mouseEvent, window);
                                 active->MouseEvent(event);
@@ -613,10 +626,6 @@ process:
 
         /* always last to avoid flicker. see above. */
         Window::WriteToScreen(this->state.input);
-
-#ifndef WIN32
-        usleep(IDLE_TIMEOUT_MS * 1000);
-#endif
     }
 
     overlays.Clear();
