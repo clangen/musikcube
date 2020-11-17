@@ -116,25 +116,19 @@ static bool isLangUtf8() {
 annoying to process click events with low latency while also supporting double
 clicks and multiple buttons. this structure is used to maintain and manipulate
 state related to mouse buttons, and is used by the main loop of the app to
-generate button click events for Window instances to handle. */
+generate button click events for Window instances to handle. beware: kludge
+and hacks below... */
 struct MouseButtonState {
     bool Update(const MEVENT& rawEvent) {
         const int state = rawEvent.bstate;
         const int x = rawEvent.x;
         const int y = rawEvent.y;
-
         bool result = false;
         const int64_t newTime = App::Now();
 
-        const bool isDown =
-            state & BUTTON1_PRESSED ||
-            state & BUTTON2_PRESSED ||
-            state & BUTTON3_PRESSED;
-
-        const bool isUp =
-            state & BUTTON1_RELEASED ||
-            state & BUTTON2_RELEASED ||
-            state & BUTTON3_RELEASED;
+        /* ugh... */
+        const bool isDown = state & BUTTON1_PRESSED || state & BUTTON2_PRESSED || state & BUTTON3_PRESSED;
+        const bool isUp = state & BUTTON1_RELEASED || state & BUTTON2_RELEASED || state & BUTTON3_RELEASED;
 
         if (!isDown && !isUp) {
             /* if both of these were false we got an unexpected mouse event. let's
@@ -155,7 +149,7 @@ struct MouseButtonState {
             newButton = 3;
         }
 
-        const bool elapsed = newTime - time > 200;
+        const bool elapsed = newTime - time > 300; /* threshold for double click, in milliseconds*/
 
         if ((!elapsed && lastX >= 0 && lastY >= 0) && (std::abs(x - lastX) > 2 || std::abs(y - lastY) > 2)) {
             /* cursor traveled too far, reset state and return immediately */
@@ -170,9 +164,14 @@ struct MouseButtonState {
         }
 
         if (isDown) {
+            /* to improve latency response we treat the leading edge of the first
+            click as the event, and don't wait for a "release" event, because that
+            can take hundreds of milliseconds. we kludge the `wasDown` flag to be
+            false, so the subsequent click (below) can be "correctly" recorded
+            as a double click. */
             if (!this->clicked) {
                 this->clicked = true;
-                this->wasDown = false; /* kludge */
+                this->wasDown = false;
             }
             else {
                 this->wasDown = true;
