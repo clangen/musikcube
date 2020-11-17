@@ -149,12 +149,12 @@ struct MouseButtonState {
             newButton = 3;
         }
 
-        const bool elapsed = newTime - time > 300; /* threshold for double click, in milliseconds*/
+        /* threshold for double click, in milliseconds*/
+        const bool elapsed = newTime - time > 300;
 
         if ((!elapsed && lastX >= 0 && lastY >= 0) && (std::abs(x - lastX) > 2 || std::abs(y - lastY) > 2)) {
-            /* cursor traveled too far, reset state and return immediately */
+            /* cursor traveled too far, reset state and convert back to a single click */
             this->Reset();
-            return false;
         }
 
         if (newButton != button || elapsed) {
