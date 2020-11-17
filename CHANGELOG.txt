@@ -1,3 +1,9 @@
+0.96.0
+
+* improved input latency, especially related to mouse events.
+
+--------------------------------------------------------------------------------
+
 0.95.0
 
 * added support for searching by regex; press `M-m` in track or filter views to
