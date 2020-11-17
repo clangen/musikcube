@@ -53,6 +53,7 @@
 #endif
 
 #ifndef WIN32
+#include <unistd.h>
 #include <csignal>
 #include <cstdlib>
 #include <locale.h>
@@ -158,6 +159,8 @@ void App::InitCurses() {
     refresh();
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
+    timeout(0);
+    nodelay(stdscr, true);
 
 #ifdef WIN32
     PDC_set_function_key(FUNCTION_KEY_SHUT_DOWN, 4);
@@ -387,6 +390,78 @@ void App::Run(ILayoutPtr layout) {
 
     this->ChangeLayout(layout);
 
+    int sleepTimeMs = 0;
+
+    mouseinterval(0);
+
+    struct MouseState {
+        void Update(mmask_t state) {
+            int64_t newTime = App::Now();
+
+            int newButton = 0;
+
+            const bool isDown =
+                state & BUTTON1_PRESSED ||
+                state & BUTTON2_PRESSED ||
+                state & BUTTON3_PRESSED;
+
+            const bool isUp =
+                state & BUTTON1_RELEASED ||
+                state & BUTTON2_RELEASED ||
+                state & BUTTON3_RELEASED;
+
+            if (!isDown && !isUp) {
+                Reset();
+                return;
+            }
+
+            if (state & BUTTON1_PRESSED || state & BUTTON1_RELEASED) {
+                newButton = 1;
+            }
+            if (state & BUTTON2_PRESSED || state & BUTTON2_RELEASED) {
+                newButton = 2;
+            }
+            if (state & BUTTON3_PRESSED || state & BUTTON3_RELEASED) {
+                newButton = 3;
+            }
+            const bool elapsed = newTime - time > 300;
+            if (newButton != button || elapsed) {
+                Reset();
+            }
+            else {
+                if (wasDown && isUp) {
+                    if (this->clicked) {
+                        this->doubleClicked = true;
+                    }
+                    else {
+                        this->clicked = true;
+                    }
+                }
+            }
+            this->button = newButton;
+            this->wasDown = isDown;
+            this->time = newTime;
+        }
+
+        void Reset() {
+            button = 0;
+            state = 0;
+            time = 0;
+            wasDown = false;
+            clicked = false;
+            doubleClicked = false;
+        }
+
+        bool wasDown{ false };
+        bool clicked{ false };
+        bool doubleClicked{ false };
+        int button;
+        int state;
+        int64_t time{ -1 };
+    };
+
+    MouseState mouseState;
+
     while (!this->quit && !disconnected) {
         kn = "";
 
@@ -397,13 +472,12 @@ void App::Run(ILayoutPtr layout) {
             goto process;
         }
 
-        timeout(IDLE_TIMEOUT_MS);
-
         if (this->state.input && this->state.focused->GetContent()) {
             /* if the focused window is an input, allow it to draw a cursor */
             WINDOW *c = this->state.focused->GetContent();
             keypad(c, TRUE);
-            wtimeout(c, IDLE_TIMEOUT_MS);
+            wtimeout(c, 0);
+            nodelay(c, true);
             ch = wgetch(c);
         }
         else {
@@ -411,7 +485,12 @@ void App::Run(ILayoutPtr layout) {
             ch = wgetch(stdscr);
         }
 
-        if (ch != ERR) {
+        if (ch == ERR) {
+            sleepTimeMs = IDLE_TIMEOUT_MS;
+        }
+        else {
+            sleepTimeMs = 0;
+
             kn = key::Read((int) ch);
 
             if (this->keyHook) {
@@ -439,6 +518,7 @@ process:
 #else
                 if (getmouse(&mouseEvent) == 0) {
 #endif
+                    mouseState.Update(mouseEvent.bstate);
                     auto active = this->state.ActiveLayout();
                     if (active) {
                         using Event = IMouseHandler::Event;
@@ -500,6 +580,10 @@ process:
 
         /* always last to avoid flicker. see above. */
         Window::WriteToScreen(this->state.input);
+
+#ifndef WIN32
+        usleep(seconds * 1000);
+#endif
     }
 
     overlays.Clear();
