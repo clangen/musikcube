@@ -615,7 +615,7 @@ process:
         Window::WriteToScreen(this->state.input);
 
 #ifndef WIN32
-        usleep(seconds * 1000);
+        usleep(IDLE_TIMEOUT_MS * 1000);
 #endif
     }
 
