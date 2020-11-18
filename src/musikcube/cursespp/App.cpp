@@ -278,14 +278,10 @@ void App::InitCurses() {
     curs_set(0);
     mousemask(ALL_MOUSE_EVENTS, nullptr);
     mouseinterval(0);
+    timeout(IDLE_TIMEOUT_MS);
 
 #ifndef WIN32
     set_escdelay(20);
-    timeout(IDLE_TIMEOUT_MS);
-#endif
-
-#ifdef WIN32
-    nodelay(stdscr, true);
 #endif
 
 #ifdef WIN32
@@ -531,9 +527,6 @@ void App::Run(ILayoutPtr layout) {
             WINDOW *c = this->state.focused->GetContent();
             keypad(c, TRUE);
             wtimeout(c, IDLE_TIMEOUT_MS);
-            #ifdef WIN32
-                nodelay(c, true);
-            #endif
             ch = wgetch(c);
         }
         else {
