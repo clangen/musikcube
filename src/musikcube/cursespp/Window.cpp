@@ -104,7 +104,8 @@ static inline void DrawCursor(IInput* input) {
                 wtimeout(content, IDLE_TIMEOUT_MS);
                 int currentX = 0, currentY = 0;
                 getyx(content, currentY, currentX);
-                int const targetY = 0, const targetX = (int) input->Position();
+                const int targetY = 0;
+                const int targetX = (int) input->Position();
                 if (currentX != targetX || currentY != targetY) {
                     wmove(content, targetY, targetX);
                 }
