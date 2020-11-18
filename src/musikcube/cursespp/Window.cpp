@@ -55,6 +55,7 @@ static bool drawPending = false;
 static bool freeze = false;
 static Window* top = nullptr;
 static Window* focused = nullptr;
+static bool cursorVisible = false;
 
 static MessageQueue messageQueue;
 static std::shared_ptr<INavigationKeys> keys;
@@ -92,16 +93,29 @@ mention wbkgd() was changed, but it's unclear what exactly happened... */
 
 static inline void DrawCursor(IInput* input) {
     if (input) {
-        Window* inputWindow = dynamic_cast<Window*>(input);
+        const Window* inputWindow = dynamic_cast<Window*>(input);
         if (inputWindow && inputWindow->GetContent()) {
+            if (!cursorVisible) {
+                curs_set(1);
+                cursorVisible = true;
+            }
             WINDOW* content = inputWindow->GetContent();
-            curs_set(1);
-            wtimeout(content, IDLE_TIMEOUT_MS);
-            wmove(content, 0, (int) input->Position());
+            if (content) {
+                wtimeout(content, IDLE_TIMEOUT_MS);
+                int currentX = 0, currentY = 0;
+                getyx(content, currentY, currentX);
+                int const targetY = 0, const targetX = (int) input->Position();
+                if (currentX != targetX || currentY != targetY) {
+                    wmove(content, targetY, targetX);
+                }
+            }
             return;
         }
     }
-    curs_set(0);
+    if (cursorVisible) {
+        curs_set(0);
+        cursorVisible = false;
+    }
 }
 
 static inline void DrawTooSmall() {

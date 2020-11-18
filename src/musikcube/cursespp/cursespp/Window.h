@@ -40,7 +40,7 @@
 #include <musikcore/runtime/IMessageQueue.h>
 
 #ifdef WIN32
-#define IDLE_TIMEOUT_MS 5
+#define IDLE_TIMEOUT_MS 0
 #define REDRAW_DEBOUNCE_MS 100
 #else
 #define IDLE_TIMEOUT_MS 75
