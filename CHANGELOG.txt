@@ -1,6 +1,7 @@
 0.96.0
 
 * improved input latency, especially related to mouse events.
+* fixed milkdrop plugin build
 
 --------------------------------------------------------------------------------
 
