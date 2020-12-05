@@ -1,6 +1,12 @@
 0.96.0
 
 * improved input latency, especially related to mouse events.
+* added support for older versions of libcurl <= 7.2.0
+* added an advanced setting to ignore client/server version mismatches when
+  connecting to remote libraries
+* added the server version to the user facing error that is displayed on
+  remote library version mismatch.
+* added the app version to the bottom of the settings screen.
 * fixed milkdrop plugin build
 
 --------------------------------------------------------------------------------

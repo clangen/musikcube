@@ -128,6 +128,7 @@ namespace musik { namespace cube {
             Text updateDropdown;
             Text themeDropdown;
             Text advancedDropdown;
+            Text appVersion;
 
             using Check = std::shared_ptr<cursespp::Checkbox>;
             Check paletteCheckbox;

@@ -49,6 +49,7 @@
 #include <musikcore/audio/Outputs.h>
 #include <musikcore/support/Messages.h>
 #include <musikcore/sdk/ISchema.h>
+#include <musikcore/version.h>
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
@@ -376,6 +377,8 @@ void SettingsLayout::OnLayout() {
     this->pluginsDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->advancedDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
     this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+
+    this->appVersion->MoveAndResize(0, cy - 1, cx, LABEL_HEIGHT);
 }
 
 void SettingsLayout::InitializeWindows() {
@@ -444,6 +447,12 @@ void SettingsLayout::InitializeWindows() {
 #endif
     CREATE_CHECKBOX(this->saveSessionCheckbox, _TSTR("settings_save_session_on_exit"));
 
+    this->appVersion = std::make_shared<TextLabel>();
+    this->appVersion->SetContentColor(Color::TextDisabled);
+    this->appVersion->SetAlignment(text::AlignCenter);
+    std::string version = u8fmt("%s %s", VERSION, VERSION_COMMIT_HASH);
+    this->appVersion->SetText(u8fmt(_TSTR("console_version"), version.c_str()));
+
     int order = 0;
     this->libraryTypeDropdown->SetFocusOrder(order++);
     this->localLibraryLayout->SetFocusOrder(order++);
@@ -506,6 +515,7 @@ void SettingsLayout::InitializeWindows() {
     this->AddWindow(this->pluginsDropdown);
     this->AddWindow(this->advancedDropdown);
     this->AddWindow(this->updateDropdown);
+    this->AddWindow(this->appVersion);
 }
 
 void SettingsLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
