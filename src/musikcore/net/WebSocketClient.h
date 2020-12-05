@@ -104,6 +104,7 @@ namespace musik { namespace core { namespace net {
 
             State ConnectionState() const;
             ConnectionError LastConnectionError() const;
+            std::string LastServerVersion() const;
             std::string Uri() const;
 
             std::string EnqueueQuery(Query query);
@@ -129,6 +130,7 @@ namespace musik { namespace core { namespace net {
             std::unordered_map<std::string, Query> messageIdToQuery;
             std::atomic<bool> quit{ false };
             ConnectionError connectionError{ ConnectionError::None };
+            std::string serverVersion;
             State state{ State::Disconnected };
             Listener* listener{ nullptr };
             musik::core::runtime::IMessageQueue* messageQueue;

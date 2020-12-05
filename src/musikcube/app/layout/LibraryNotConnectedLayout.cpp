@@ -65,7 +65,11 @@ static inline std::string resolveErrorMessage(MasterLibraryPtr library) {
         auto error = remoteLibrary->WebSocketClient().LastConnectionError();
         auto it = kStateToErrorString.find(error);
         if (it != kStateToErrorString.end()) {
-            return _TSTR(it->second);
+            std::string value = _TSTR(it->second);
+            if (error == WebSocketClient::ConnectionError::IncompatibleVersion) {
+                value += " (" + remoteLibrary->WebSocketClient().LastServerVersion() + ")";
+            }
+            return value;
         }
         return _TSTR("library_error_connection_failed");
     }

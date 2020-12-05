@@ -138,8 +138,8 @@ WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener
             auto ignoreVersionMismatch = prefs->GetInt(
                 core::prefs::keys::RemoteLibraryIgnoreVersionMismatch, false);
 
-            auto appVersion = responseJson["options"]["environment"]["app_version"];
-            if (!ignoreVersionMismatch && (!appVersion.is_string() || appVersion.get<std::string>() != VERSION)) {
+            this->serverVersion = responseJson["options"]["environment"]["app_version"].get<std::string>();
+            if (!ignoreVersionMismatch && this->serverVersion != VERSION) {
                 this->SetDisconnected(ConnectionError::IncompatibleVersion);
             }
             else {
@@ -196,6 +196,11 @@ WebSocketClient::~WebSocketClient() {
 WebSocketClient::ConnectionError WebSocketClient::LastConnectionError() const {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     return this->connectionError;
+}
+
+std::string WebSocketClient::LastServerVersion() const {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    return this->serverVersion;
 }
 
 WebSocketClient::State WebSocketClient::ConnectionState() const {
@@ -257,6 +262,7 @@ void WebSocketClient::Connect(
 
 void WebSocketClient::Reconnect() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+    this->serverVersion = "";
 
     this->Disconnect();
 
