@@ -117,7 +117,7 @@
         "settings_library_type_remote_password": "密码：",
         "settings_library_type_overlay_title": "音乐库类型",
         "settings_library_type_remote_use_tls": "使用 TLS",
-        "settings_library_type_remote_tls_warning_overlay_title": "Musikcube 与 tls",
+        "settings_library_type_remote_tls_warning_overlay_title": "Musikcube 与 TLS",
         "settings_library_type_remote_tls_warning_overlay_message": "Musikcube 服务器默认不支持 SSL/TLS。\n\n如果您想使用 SSL/TLS 则需要用诸如 nginx 的工具设置 SSL 会话终止。\n\n在下列维基页面查看更多信息：\n\n{{link}}",
         "settings_library_type_remote_library_transcoder_enable": "音频转码",
         "settings_library_type_remote_library_transcoder_format": "格式：%s",
