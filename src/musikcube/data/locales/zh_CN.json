@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "strings": {
-        "default_overlay_title": "Musikcube",
+        "default_overlay_title": "musikcube",
 
         "button_ok": "OK",
         "button_yes": "是",
@@ -40,7 +40,7 @@
         "search_regex_hint": "正则表达式",
 
         "console_list_title": "调试日志",
-        "console_version": "Musikcube 版本号 %s",
+        "console_version": "musikcube 版本号 %s",
 
         "hotkeys_title": "快捷键",
         "hotkeys_reset_defaults": "全部重设",
@@ -117,8 +117,8 @@
         "settings_library_type_remote_password": "密码：",
         "settings_library_type_overlay_title": "音乐库类型",
         "settings_library_type_remote_use_tls": "使用 TLS",
-        "settings_library_type_remote_tls_warning_overlay_title": "Musikcube 与 TLS",
-        "settings_library_type_remote_tls_warning_overlay_message": "Musikcube 服务器默认不支持 SSL/TLS。\n\n如果您想使用 SSL/TLS 则需要用诸如 nginx 的工具设置 SSL 会话终止。\n\n在下列维基页面查看更多信息：\n\n{{link}}",
+        "settings_library_type_remote_tls_warning_overlay_title": "musikcube 与 TLS",
+        "settings_library_type_remote_tls_warning_overlay_message": "musikcube 服务器默认不支持 SSL/TLS。\n\n如果您想使用 SSL/TLS 则需要用诸如 nginx 的工具设置 SSL 会话终止。\n\n在下列维基页面查看更多信息：\n\n{{link}}",
         "settings_library_type_remote_library_transcoder_enable": "音频转码",
         "settings_library_type_remote_library_transcoder_format": "格式：%s",
         "settings_library_type_remote_library_transcoder_bitrate": "码率：%d",
@@ -234,7 +234,7 @@
         "lyrics_lookup_failed": "检索歌词失败，按 %s 重试。",
 
         "update_check_dialog_title": "发现新版本！",
-        "update_check_dialog_message": "Musikcube %s 版已经发布。在这里获取更新日志和程序：\n\n%s",
+        "update_check_dialog_message": "musikcube %s 版已经发布。在这里获取更新日志和程序：\n\n%s",
         "update_check_no_updates_title": "更新检查",
         "update_check_no_updates_message": "未发现更新。",
 
