@@ -327,12 +327,20 @@ bool HttpDataStream::Open(const char *rawUri, OpenFlags flags) {
         curl_easy_setopt(this->curlEasy, CURLOPT_FAILONERROR, 1);
         curl_easy_setopt(this->curlEasy, CURLOPT_USERAGENT, "musikcube HttpDataStream");
         curl_easy_setopt(this->curlEasy, CURLOPT_NOPROGRESS, 0);
+
         curl_easy_setopt(this->curlEasy, CURLOPT_WRITEHEADER, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_WRITEDATA, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_XFERINFODATA, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_WRITEFUNCTION, &HttpDataStream::CurlWriteCallback);
         curl_easy_setopt(this->curlEasy, CURLOPT_HEADERFUNCTION, &HttpDataStream::CurlReadHeaderCallback);
+
+        curl_easy_setopt(this->curlEasy, CURLOPT_WRITEDATA, this);
+        curl_easy_setopt(this->curlEasy, CURLOPT_WRITEFUNCTION, &HttpDataStream::CurlWriteCallback);
+
+#if LIBCURL_VERSION_NUM < 0x072000
+        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSDATA, this);
+        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSFUNCTION, &HttpDataStream::LegacyCurlTransferCallback);
+#else
+        curl_easy_setopt(this->curlEasy, CURLOPT_XFERINFODATA, this);
         curl_easy_setopt(this->curlEasy, CURLOPT_XFERINFOFUNCTION, &HttpDataStream::CurlTransferCallback);
+#endif
 
         const int connectionTimeout = prefs->GetInt(kConnectionTimeoutSecondsKey.c_str(), kDefaultConnectionTimeoutSeconds);
         const int readTimeout = prefs->GetInt(kReadTimeoutSecondsKey.c_str(), kDefaultReadTimeoutSeconds);
@@ -579,3 +587,16 @@ int HttpDataStream::CurlTransferCallback(
     }
     return 0; /* ok! */
 }
+
+#if LIBCURL_VERSION_NUM < 0x072000
+int HttpDataStream::LegacyCurlTransferCallback(
+    void *ptr, double downTotal, double downNow, double upTotal, double upNow)
+{
+    return CurlTransferCallback(
+        ptr,
+        (curl_off_t) downTotal,
+        (curl_off_t) downNow,
+        (curl_off_t) upTotal,
+        (curl_off_t) upNow);
+}
+#endif

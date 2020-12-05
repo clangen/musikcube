@@ -91,6 +91,10 @@ class HttpDataStream : public IDataStream {
         static size_t CurlReadHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
         static int CurlTransferCallback(void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
 
+        #if LIBCURL_VERSION_NUM < 0x072000
+        static int LegacyCurlTransferCallback(void *ptr, double downTotal, double downNow, double upTotal, double upNow);
+        #endif
+
         std::string originalUri, httpUri, type;
         size_t length;
         std::string filename;
