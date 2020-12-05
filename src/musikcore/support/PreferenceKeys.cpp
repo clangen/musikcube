@@ -79,6 +79,7 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::RemoteLibraryTranscoderEnabled = "RemoteLibraryTranscoderEnabled";
     const std::string keys::RemoteLibraryTranscoderFormat = "RemoteLibraryTranscoderFormat";
     const std::string keys::RemoteLibraryTranscoderBitrate = "RemoteLibraryTranscoderBitrate";
+    const std::string keys::RemoteLibraryIgnoreVersionMismatch = "RemoteLibraryIgnoreVersionMismatch";
     const std::string keys::AsyncTrackListQueries = "AsyncTrackListQueries";
 
 } } }

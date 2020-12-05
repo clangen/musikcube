@@ -133,8 +133,13 @@ WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener
         auto messageId = responseJson["id"].get<std::string>();
         if (name == "authenticate") {
             this->connection = connection;
+
+            auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
+            auto ignoreVersionMismatch = prefs->GetInt(
+                core::prefs::keys::RemoteLibraryIgnoreVersionMismatch, false);
+
             auto appVersion = responseJson["options"]["environment"]["app_version"];
-            if (!appVersion.is_string() || appVersion.get<std::string>() != VERSION) {
+            if (!ignoreVersionMismatch && (!appVersion.is_string() || appVersion.get<std::string>() != VERSION)) {
                 this->SetDisconnected(ConnectionError::IncompatibleVersion);
             }
             else {
