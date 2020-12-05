@@ -1,6 +1,7 @@
 0.96.0
 
 * improved input latency, especially related to mouse events.
+* updated zh_CN localization (Siheyuan98)
 * added support for older versions of libcurl <= 7.2.0
 * added an advanced setting to ignore client/server version mismatches when
   connecting to remote libraries
