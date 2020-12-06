@@ -35,6 +35,7 @@
 #include "pch.hpp"
 
 #include <musikcore/net/WebSocketClient.h>
+#include <musikcore/support/Common.h>
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/Message.h>
@@ -107,6 +108,14 @@ static inline bool extractRawQueryResult(
     return true;
 }
 
+static inline bool isVersionCompatible(const std::string& str) {
+    auto parts = Split(str, ".");
+    return
+        parts.size() == 3 &&
+        parts[0] == std::to_string(VERSION_MAJOR) &&
+        parts[1] == std::to_string(VERSION_MINOR);
+}
+
 WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener)
 : messageQueue(nullptr) {
     this->SetMessageQueue(messageQueue);
@@ -135,11 +144,11 @@ WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener
             this->connection = connection;
 
             auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
-            auto ignoreVersionMismatch = prefs->GetInt(
+            auto const ignoreVersionMismatch = prefs->GetInt(
                 core::prefs::keys::RemoteLibraryIgnoreVersionMismatch, false);
 
             this->serverVersion = responseJson["options"]["environment"]["app_version"].get<std::string>();
-            if (!ignoreVersionMismatch && this->serverVersion != VERSION) {
+            if (!ignoreVersionMismatch && !isVersionCompatible(this->serverVersion)) {
                 this->SetDisconnected(ConnectionError::IncompatibleVersion);
             }
             else {
@@ -272,11 +281,12 @@ void WebSocketClient::Reconnect() {
     io.restart();
 #endif
 
-    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
-    auto timeout = prefs->GetInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
+    auto const prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    auto const timeout = prefs->GetInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
 
     this->SetState(State::Connecting);
-    this->thread = std::make_shared<std::thread>([&, timeout]() {
+
+    this->thread = std::make_unique<std::thread>([&, timeout]() {
         std::string uri;
 
         {
@@ -285,7 +295,7 @@ void WebSocketClient::Reconnect() {
         }
 
         if (uri.size()) {
-            auto mode = this->useTls
+            const auto mode = this->useTls
                 ? RawWebSocketClient::Mode::TLS
                 : RawWebSocketClient::Mode::PlainText;
             rawClient->SetMode(mode);
@@ -299,12 +309,11 @@ void WebSocketClient::Reconnect() {
 }
 
 void WebSocketClient::Disconnect() {
-    std::shared_ptr<std::thread> oldThread;
+    std::unique_ptr<std::thread> oldThread;
 
     {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-        oldThread = this->thread;
-        this->thread.reset();
+        oldThread = std::unique_ptr<std::thread>(std::move(this->thread));
     }
 
     if (oldThread) {
