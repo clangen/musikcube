@@ -1,8 +1,16 @@
+0.96.1
+
+* additional fixes for older versions of libcurl (< 7.2.0)
+* relax client/server version matching to exclude patch version (e.g. versions
+  0.96.0 and 0.96.1 are considered compatible, but 0.96 and 0.97 are not)
+
+--------------------------------------------------------------------------------
+
 0.96.0
 
 * improved input latency, especially related to mouse events.
 * updated zh_CN localization (Siheyuan98)
-* added support for older versions of libcurl <= 7.2.0
+* added support for older versions of libcurl (< 7.2.0)
 * added an advanced setting to ignore client/server version mismatches when
   connecting to remote libraries
 * added the server version to the user facing error that is displayed on
