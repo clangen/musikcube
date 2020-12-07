@@ -31,9 +31,9 @@ if (${LINK_STATICALLY} MATCHES "true")
     include (ExternalProject)
 
     ExternalProject_Add(libmicrohttpd
-      URL https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-0.9.62.tar.gz
+      URL https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-0.9.71.tar.gz
       BUILD_IN_SOURCE 1
-      CONFIGURE_COMMAND ./configure --enable-https=no --disable-curl --prefix=${CMAKE_CURRENT_SOURCE_DIR}/microhttpd/
+      CONFIGURE_COMMAND ./configure --enable-https=no --disable-curl --prefix=${CMAKE_CURRENT_SOURCE_DIR}/microhttpd/.libs/
       BUILD_COMMAND make
       INSTALL_COMMAND make install
       TEST_COMMAND "")

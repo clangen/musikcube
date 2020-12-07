@@ -3,6 +3,7 @@
 * additional fixes for older versions of libcurl (< 7.2.0)
 * relax client/server version matching to exclude patch version (e.g. versions
   0.96.0 and 0.96.1 are considered compatible, but 0.96 and 0.97 are not)
+* upgraded libmicrohttpd to 0.9.71 on macOS and fixed static build
 
 --------------------------------------------------------------------------------
 
