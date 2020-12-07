@@ -34,16 +34,18 @@
 
 #pragma once
 
-#include <curl/curl.h>
 #include <thread>
 #include <mutex>
+#include <memory>
 #include <musikcore/runtime/IMessageTarget.h>
+#include <musikcore/sdk/HttpClient.h>
 
 namespace musik { namespace cube {
     class UpdateCheck: private musik::core::runtime::IMessageTarget {
         public:
             /* args = updateRequired, version, url */
             using Callback = std::function<void(bool, std::string, std::string)>;
+            using HttpClient = musik::core::sdk::HttpClient<std::stringstream>;
 
             static void ShowUpgradeAvailableOverlay(
                 const std::string& version, const std::string& url, bool silent = true);
@@ -59,17 +61,12 @@ namespace musik { namespace cube {
         private:
             void Reset();
 
-            static size_t CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
-            static int CurlTransferCallback(void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
             virtual void ProcessMessage(musik::core::runtime::IMessage &message);
 
             std::recursive_mutex mutex;
-            std::shared_ptr<std::thread> thread;
-
             Callback callback;
+            std::shared_ptr<HttpClient> httpClient;
             std::string result, latestVersion, updateUrl;
-            bool cancel;
-            CURL* curl;
     };
 
 } }

@@ -34,6 +34,7 @@
 
 #include <stdafx.h>
 #include "UpdateCheck.h"
+
 #include <nlohmann/json.hpp>
 
 #include <cursespp/App.h>
@@ -89,31 +90,7 @@ static inline std::string getUserAgent() {
         PLATFORM.c_str());
 }
 
-size_t UpdateCheck::CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata) {
-    if (ptr && userdata) {
-        UpdateCheck* context = static_cast<UpdateCheck*>(userdata);
-
-        if (context->cancel) {
-            return 0; /* aborts */
-        }
-
-        context->result += std::string(ptr, size * nmemb);
-    }
-    return size * nmemb;
-}
-
-int UpdateCheck::CurlTransferCallback(
-    void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow)
-{
-    UpdateCheck* context = static_cast<UpdateCheck*>(ptr);
-    if (context->cancel) {
-        return -1; /* kill the stream */
-    }
-    return 0; /* ok! */
-}
-
 UpdateCheck::UpdateCheck() {
-    this->curl = nullptr;
     Window::MessageQueue().Register(this);
 }
 
@@ -124,92 +101,57 @@ UpdateCheck::~UpdateCheck() {
 bool UpdateCheck::Run(Callback callback) {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
-    if (this->thread || !callback) {
+    if (!callback) {
         return false;
     }
 
     this->Reset();
-    this->callback = callback;
 
-    this->curl = curl_easy_init();
-    curl_easy_setopt(curl, CURLOPT_URL, UPDATE_CHECK_URL.c_str());
-    curl_easy_setopt(curl, CURLOPT_HEADER, 0);
-    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-    curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
-    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, getUserAgent().c_str());
-    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3000);
-    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 7500);
-    curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 500);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &CurlWriteCallback);
-    curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
-    curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &CurlTransferCallback);
+    this->httpClient = HttpClient::Create(std::stringstream());
+    this->httpClient->Url(UPDATE_CHECK_URL)
+        .UserAgent(getUserAgent())
+        .Mode(HttpClient::Thread::Background)
+        .Run([this](HttpClient* client, int statusCode, CURLcode curlCode) {
+            bool needsUpdate = false;
 
-    this->thread.reset(new std::thread([this] {
-        bool needsUpdate = false;
-
-        if (curl_easy_perform(this->curl) == CURLE_OK) {
             try {
-                json data = json::parse(this->result);
-                auto platform = data[LATEST][PLATFORM];
-                short major = platform[MAJOR];
-                short minor = platform[MINOR];
-                short patch = platform[PATCH];
+                json data = json::parse(client->Stream().str());
+                const auto platform = data[LATEST][PLATFORM];
+                const short major = platform[MAJOR];
+                const short minor = platform[MINOR];
+                const short patch = platform[PATCH];
 
                 this->updateUrl = platform[URL].get<std::string>();
                 this->latestVersion = formattedVersion(major, minor, patch);
 
-                int64_t current = versionCode(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-                int64_t latest = versionCode(major, minor, patch);
+                const int64_t current = versionCode(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+                const int64_t latest = versionCode(major, minor, patch);
                 needsUpdate = latest > current;
             }
             catch (...) {
                 /* malformed. nothing we can do. */
             }
-        }
 
-        cursespp::Window::MessageQueue().Post(
-            Message::Create(this, message::UpdateCheckFinished, needsUpdate));
-    }));
+            cursespp::Window::MessageQueue().Post(
+                Message::Create(this, message::UpdateCheckFinished, needsUpdate));
+        });
 
     return true;
 }
 
 void UpdateCheck::Cancel() {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    if (this->thread) {
-        this->cancel = true;
-        if (this->thread->joinable()) {
-            this->thread->join();
-        }
-        this->Reset();
+    if (this->httpClient) {
+        this->httpClient->Cancel();
+        this->httpClient.reset();
     }
 }
 
 void UpdateCheck::Reset() {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    if (this->curl) {
-        curl_easy_cleanup(this->curl);
-        this->curl = nullptr;
-    }
-
-    this->cancel = false;
+    this->Cancel();
     this->callback = Callback();
     this->result = "";
-
-    if (this->thread && this->thread->joinable()) {
-        this->thread->detach();
-    }
-
-    this->thread.reset();
 }
 
 void UpdateCheck::ProcessMessage(IMessage &message) {
@@ -219,7 +161,7 @@ void UpdateCheck::ProcessMessage(IMessage &message) {
         this->Reset();
 
         if (callback) {
-            bool updateRequired = message.UserData1() != 0;
+            const bool updateRequired = message.UserData1() != 0;
             callback(updateRequired, this->latestVersion, this->updateUrl);
         }
     }
@@ -232,7 +174,7 @@ void UpdateCheck::ShowUpgradeAvailableOverlay(
     std::string prefKey = prefs::keys::LastAcknowledgedUpdateVersion;
     std::string acknowledged = prefs->GetString(prefKey);
     if (!silent || acknowledged != version) {
-        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+        auto const dialog = std::make_shared<DialogOverlay>();
 
         std::string message = u8fmt(
             _TSTR("update_check_dialog_message"),
@@ -267,12 +209,12 @@ void UpdateCheck::ShowUpgradeAvailableOverlay(
 }
 
 void UpdateCheck::ShowNoUpgradeFoundOverlay() {
-        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+    auto const dialog = std::make_shared<DialogOverlay>();
 
-        (*dialog)
-            .SetTitle(_TSTR("update_check_no_updates_title"))
-            .SetMessage(_TSTR("update_check_no_updates_message"))
-            .AddButton("KEY_ENTER", "ENTER", _TSTR("button_close"));
+    (*dialog)
+        .SetTitle(_TSTR("update_check_no_updates_title"))
+        .SetMessage(_TSTR("update_check_no_updates_message"))
+        .AddButton("KEY_ENTER", "ENTER", _TSTR("button_close"));
 
-        App::Overlays().Push(dialog);
+    App::Overlays().Push(dialog);
 }
