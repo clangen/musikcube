@@ -85,6 +85,10 @@ namespace musik { namespace core { namespace sdk {
             static size_t CurlWriteCallback(char *ptr, size_t size, size_t nmemb, void *userdata);
             static int CurlTransferCallback(void *ptr, curl_off_t downTotal, curl_off_t downNow, curl_off_t upTotal, curl_off_t upNow);
             static size_t CurlHeaderCallback(char *buffer, size_t size, size_t nitems, void *userdata);
+#if LIBCURL_VERSION_NUM < 0x072000
+            static int LegacyCurlTransferCallback(void* ptr, double downTotal, double downNow, double upTotal, double upNow);
+#endif
+
             static std::string DefaultUserAgent();
 
             static void ReplaceAll(std::string& input, const std::string& find, const std::string& replace);
@@ -159,6 +163,20 @@ namespace musik { namespace core { namespace sdk {
         }
         return 0; /* ok! */
     }
+
+#if LIBCURL_VERSION_NUM < 0x072000
+    template <typename T>
+    int HttpClient<T>::LegacyCurlTransferCallback(
+        void* ptr, double downTotal, double downNow, double upTotal, double upNow)
+    {
+        return CurlTransferCallback(
+            ptr,
+            (curl_off_t)downTotal,
+            (curl_off_t)downNow,
+            (curl_off_t)upTotal,
+            (curl_off_t)upNow);
+    }
+#endif
 
     template <typename T> /* copied from Common.h for SDK usage. */
     void HttpClient<T>::ReplaceAll(std::string& input, const std::string& find, const std::string& replace) {
@@ -251,10 +269,16 @@ namespace musik { namespace core { namespace sdk {
 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, this);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &CurlWriteCallback);
-        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
-        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &CurlTransferCallback);
         curl_easy_setopt(curl, CURLOPT_HEADERDATA, this);
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &CurlHeaderCallback);
+
+#if LIBCURL_VERSION_NUM < 0x072000
+        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSDATA, this);
+        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSFUNCTION, &LegacyCurlTransferCallback);
+#else
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &CurlTransferCallback);
+#endif
 
 #if 0
         curl_easy_setopt(curl, CURLOPT_PROXY, "http://localhost");
