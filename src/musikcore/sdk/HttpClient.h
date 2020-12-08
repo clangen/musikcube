@@ -111,16 +111,7 @@ namespace musik { namespace core { namespace sdk {
             Thread mode{ Thread::Background };
             HttpMethod method{ HttpMethod::Get };
             CURL* curl;
-
-            static std::mutex instanceMutex;
-            static std::set<std::shared_ptr<HttpClient<T>>> instances;
     };
-
-    template <typename T>
-    std::mutex HttpClient<T>::instanceMutex;
-
-    template <typename T>
-    std::set<std::shared_ptr<HttpClient<T>>> HttpClient<T>::instances;
 
     template <typename T>
     std::string HttpClient<T>::DefaultUserAgent() {
@@ -242,6 +233,9 @@ namespace musik { namespace core { namespace sdk {
     HttpClient<T>& HttpClient<T>::Run(Callback callback) {
         std::unique_lock<std::mutex> lock(this->mutex);
 
+        const std::string userAgent =
+            this->userAgent.size() ? this->userAgent : DefaultUserAgent();
+
         if (this->thread) {
             throw std::runtime_error("already started");
         }
@@ -254,7 +248,7 @@ namespace musik { namespace core { namespace sdk {
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
         curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1);
         curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, DefaultUserAgent().c_str());
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, userAgent.c_str());
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
@@ -273,8 +267,8 @@ namespace musik { namespace core { namespace sdk {
         curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, &CurlHeaderCallback);
 
 #if LIBCURL_VERSION_NUM < 0x072000
-        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSDATA, this);
-        curl_easy_setopt(this->curlEasy, CURLOPT_PROGRESSFUNCTION, &LegacyCurlTransferCallback);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, &LegacyCurlTransferCallback);
 #else
         curl_easy_setopt(curl, CURLOPT_XFERINFODATA, this);
         curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &CurlTransferCallback);
@@ -303,10 +297,8 @@ namespace musik { namespace core { namespace sdk {
         }
 
         if (mode == Thread::Background) {
-            std::unique_lock<std::mutex> lock(instanceMutex);
-            instances.insert(this->shared_from_this());
-
-            this->thread.reset(new std::thread([callback, this] {
+            auto instance = this->shared_from_this(); /* hold a reference so we don't dealloc */
+            this->thread.reset(new std::thread([callback, instance, this] {
                 this->RunOnCurrentThread(callback);
             }));
         }
@@ -319,16 +311,15 @@ namespace musik { namespace core { namespace sdk {
 
     template <typename T>
     void HttpClient<T>::RunOnCurrentThread(Callback callback) {
+        long httpStatus = 0;
         CURLcode curlCode = curl_easy_perform(this->curl);
+        curl_easy_getinfo(this->curl, CURLINFO_RESPONSE_CODE, &httpStatus);
 
         if (this->cancel) {
             if (this->canceledCallback) {
                 this->canceledCallback(this);
             }
         }
-
-        int httpStatus = 0;
-        curl_easy_getinfo(this->curl, CURLINFO_RESPONSE_CODE, &httpStatus);
 
         if (callback) {
             callback(this, httpStatus, curlCode);
@@ -337,11 +328,6 @@ namespace musik { namespace core { namespace sdk {
         if (this->thread) {
             this->thread->detach();
             this->thread.reset();
-        }
-
-        {
-            std::unique_lock<std::mutex> lock(instanceMutex);
-            instances.erase(instances.find(this->shared_from_this()));
         }
     }
 
