@@ -20,20 +20,21 @@ namespace musik { namespace cube {
                 musik::core::audio::PlaybackService& playback,
                 musik::core::ILibraryPtr library);
 
-            virtual void OnLayout() override;
-            virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
-            virtual bool KeyPress(const std::string& kn) override;
-            virtual void OnVisibilityChanged(bool visible) override;
+            void OnLayout() override;
+            void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
+            bool KeyPress(const std::string& kn) override;
+            void OnVisibilityChanged(bool visible) override;
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
         private:
             enum class State: int { NotPlaying, Loading, Loaded, Failed };
 
             void OnTrackChanged(size_t index, musik::core::TrackPtr track);
-            void OnLyricsLoaded(musik::core::TrackPtr track, const std::string& lyrics);
+            void OnLyricsLoaded();
 
             void SetState(State state);
             void LoadLyricsForCurrentTrack();
-            void UpdateAdapter(const std::string& lyrics);
+            void UpdateAdapter();
 
             State state { State::NotPlaying };
             musik::core::ILibraryPtr library;
@@ -43,6 +44,7 @@ namespace musik { namespace cube {
             std::shared_ptr<cursespp::TextLabel> infoText;
             cursespp::ShortcutsWindow* shortcuts;
             int64_t currentTrackId;
+            std::string currentLyrics;
     };
 
 } }

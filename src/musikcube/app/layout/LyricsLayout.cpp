@@ -34,6 +34,7 @@
 
 #include <stdafx.h>
 #include <app/layout/LyricsLayout.h>
+#include <app/util/Messages.h>
 #include <musikcore/i18n/Locale.h>
 #include <musikcore/support/Auddio.h>
 #include <musikcore/support/Common.h>
@@ -87,17 +88,19 @@ void LyricsLayout::OnTrackChanged(size_t index, TrackPtr track) {
     }
 }
 
-void LyricsLayout::OnLyricsLoaded(TrackPtr track, const std::string& lyrics) {
-    if (!track || !lyrics.size()) {
-        return;
-    }
-    this->UpdateAdapter(lyrics);
+void LyricsLayout::OnLyricsLoaded() {
+    this->UpdateAdapter();
     this->listView->ScrollTo(0);
     this->listView->SetSelectedIndex(0);
-    this->listView->SetFrameTitle(u8fmt(
-        _TSTR("lyrics_list_title"),
-        track->GetString("title").c_str(),
-        track->GetString("artist").c_str()));
+
+    auto track = this->playback.GetPlaying();
+    if (track) {
+        this->listView->SetFrameTitle(u8fmt(
+            _TSTR("lyrics_list_title"),
+            track->GetString("title").c_str(),
+            track->GetString("artist").c_str()));
+    }
+
     this->SetState(State::Loaded);
 }
 
@@ -130,27 +133,42 @@ void LyricsLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
+#include <iostream>
+
+void LyricsLayout::ProcessMessage(musik::core::runtime::IMessage &m) {
+    if (m.Type() == message::LyricsLoaded) {
+        if ((State) m.UserData1() == State::Loaded && this->currentLyrics.size()) {
+            this->OnLyricsLoaded();
+        }
+        else {
+            this->SetState((State) m.UserData1());
+        }
+    }
+    else {
+        LayoutBase::ProcessMessage(m);
+    }
+}
+
 void LyricsLayout::LoadLyricsForCurrentTrack() {
     auto track = playback.GetPlaying();
     if (track && track->GetId() != this->currentTrackId) {
         this->currentTrackId = track->GetId();
+        this->currentLyrics = "";
         this->SetState(State::Loading);
         auto trackExternalId = track->GetString("external_id");
         auto lyricsDbQuery = std::make_shared<LyricsQuery>(trackExternalId);
         this->library->Enqueue(lyricsDbQuery, [this, lyricsDbQuery, track](auto q) {
             auto localLyrics = lyricsDbQuery->GetResult();
             if (localLyrics.size()) {
-                this->OnLyricsLoaded(track, localLyrics);
+                this->currentLyrics = localLyrics;
+                this->Post(message::LyricsLoaded, (int64_t) State::Loaded);
             }
             else {
                 auddio::FindLyrics(track, [this](TrackPtr track, std::string remoteLyrics) {
                     if (this->currentTrackId == track->GetId()) {
-                        if (remoteLyrics.size()) {
-                            this->OnLyricsLoaded(track, remoteLyrics);
-                        }
-                        else {
-                            this->SetState(State::Failed);
-                        }
+                        this->currentLyrics = remoteLyrics;
+                        auto state = remoteLyrics.size() ? State::Loaded : State::Failed;
+                        this->Post(message::LyricsLoaded, (int64_t) state);
                     }
                 });
             }
@@ -162,8 +180,8 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
     }
 }
 
-void LyricsLayout::UpdateAdapter(const std::string& lyrics) {
-    std::string fixed = lyrics;
+void LyricsLayout::UpdateAdapter() {
+    std::string fixed = this->currentLyrics;
     ReplaceAll(fixed, "\r\n", "\n");
     ReplaceAll(fixed, "\r", "\n");
     auto items = Split(fixed, "\n");
