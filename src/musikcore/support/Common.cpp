@@ -59,10 +59,10 @@
 // given the #ifdef/#else above, the following is not required.
 // Nor it is the #if FreeBSD below.
 #ifdef __OpenBSD__
-	#include <sys/types.h>
-	#include <sys/sysctl.h>
-	#include <unistd.h>
-	#include <limits.h>
+    #include <sys/types.h>
+    #include <sys/sysctl.h>
+    #include <unistd.h>
+    #include <limits.h>
 #endif
 
 #ifdef __FreeBSD__
@@ -70,36 +70,20 @@
     #include <sys/sysctl.h>
 #endif
 
-static std::string GetHomeDirectory() {
-    std::string directory;
-
-#ifdef WIN32
-    DWORD bufferSize = GetEnvironmentVariable(L"APPDATA", 0, 0);
-    wchar_t *buffer = new wchar_t[bufferSize + 2];
-    GetEnvironmentVariable(L"APPDATA", buffer, bufferSize);
-    directory.assign(u16to8(buffer));
-    delete[] buffer;
-#else
-    directory = std::string(std::getenv("HOME"));
-#endif
-
-    return directory;
-}
-
-static std::string getDataDirectoryRoot() {
-#ifdef WIN32
-    return GetHomeDirectory();
-#else
-    return GetHomeDirectory() + "/.config";
-#endif
-}
-
 static inline void silentDelete(const std::string fn) {
     boost::system::error_code ec;
     boost::filesystem::remove(boost::filesystem::path(fn), ec);
 }
 
 namespace musik { namespace core {
+
+    static std::string getDataDirectoryRoot() {
+    #ifdef WIN32
+        return GetHomeDirectory();
+    #else
+        return GetHomeDirectory() + "/.config";
+    #endif
+    }
 
     std::string GetPluginDirectory() {
         std::string path(GetApplicationDirectory());
@@ -135,26 +119,25 @@ namespace musik { namespace core {
                 size_t bufsize = sizeof(pathbuf);
                 sysctl(mib, 4, pathbuf, &bufsize, nullptr, 0);
             #elif defined  __OpenBSD__
-			    int mib[4];
-			    char **argv;
-			    size_t len = ARG_MAX;
+                int mib[4];
+                char **argv;
+                size_t len = ARG_MAX;
 
-			    mib[0] = CTL_KERN;
-			    mib[1] = KERN_PROC_ARGS;
-			    mib[2] = getpid();
-			    mib[3] = KERN_PROC_ARGV;
+                mib[0] = CTL_KERN;
+                mib[1] = KERN_PROC_ARGS;
+                mib[2] = getpid();
+                mib[3] = KERN_PROC_ARGV;
 
-			    argv = new char*[len];
-			    if (sysctl(mib, 4, argv, &len, nullptr, 0) < 0) abort();
+                argv = new char*[len];
+                if (sysctl(mib, 4, argv, &len, nullptr, 0) < 0) abort();
 
-			    boost::filesystem::path command = boost::filesystem::system_complete(argv[0]);
-			    realpath(command.c_str(), pathbuf);
-			    delete[] argv;
+                boost::filesystem::path command = boost::filesystem::system_complete(argv[0]);
+                realpath(command.c_str(), pathbuf);
+                delete[] argv;
             #else
                 std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
                 readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
-	    #endif
-
+        #endif
             result.assign(pathbuf);
             size_t last = result.find_last_of("/");
             result = result.substr(0, last); /* remove filename component */
@@ -167,13 +150,19 @@ namespace musik { namespace core {
         std::string directory;
 
     #ifdef WIN32
-        DWORD bufferSize = GetEnvironmentVariable(L"USERPROFILE", 0, 0);
-        wchar_t *buffer = new wchar_t[bufferSize + 2];
-        GetEnvironmentVariable(L"USERPROFILE", buffer, bufferSize);
+        DWORD bufferSize = GetEnvironmentVariable(L"APPDATA", 0, 0);
+        wchar_t* buffer = new wchar_t[bufferSize + 2];
+        GetEnvironmentVariable(L"APPDATA", buffer, bufferSize);
         directory.assign(u16to8(buffer));
         delete[] buffer;
     #else
-        directory = std::string(std::getenv("HOME"));
+        const char* result = std::getenv("XDG_CONFIG_HOME");
+        if (result && strlen(result)) {
+            directory = std::string(result);
+        }
+        else {
+            directory = std::string(std::getenv("HOME"));
+        }
     #endif
 
         return directory;
