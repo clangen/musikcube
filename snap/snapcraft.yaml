@@ -79,7 +79,7 @@ parts:
       - libvorbisfile3
 
 apps:
-  app:
+  musikcube:
     desktop: usr/share/applications/musikcube.snap.desktop
     command: bin/desktop-launch $SNAP/usr/share/musikcube/musikcube
     environment:
