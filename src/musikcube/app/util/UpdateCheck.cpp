@@ -107,6 +107,7 @@ bool UpdateCheck::Run(Callback callback) {
 
     this->Reset();
 
+    this->callback = callback;
     this->httpClient = HttpClient::Create(std::stringstream());
     this->httpClient->Url(UPDATE_CHECK_URL)
         .UserAgent(getUserAgent())

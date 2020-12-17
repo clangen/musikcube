@@ -96,7 +96,7 @@ namespace musik { namespace core { namespace sdk {
 
             void RunOnCurrentThread(Callback callback);
 
-            std::mutex mutex;
+            std::recursive_mutex mutex;
             std::shared_ptr<std::thread> thread;
 
             T ostream;
@@ -217,7 +217,7 @@ namespace musik { namespace core { namespace sdk {
 
     template <typename T>
     HttpClient<T>::~HttpClient() {
-        std::unique_lock<std::mutex> lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
         if (this->curl) {
             curl_easy_cleanup(this->curl);
@@ -231,7 +231,7 @@ namespace musik { namespace core { namespace sdk {
 
     template <typename T>
     HttpClient<T>& HttpClient<T>::Run(Callback callback) {
-        std::unique_lock<std::mutex> lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
         const std::string userAgent =
             this->userAgent.size() ? this->userAgent : DefaultUserAgent();
@@ -325,15 +325,21 @@ namespace musik { namespace core { namespace sdk {
             callback(this, httpStatus, curlCode);
         }
 
-        if (this->thread) {
-            this->thread->detach();
+        std::shared_ptr<std::thread> oldThread = this->thread;
+
+        {
+            std::unique_lock<std::recursive_mutex> lock(this->mutex);
             this->thread.reset();
+        }
+
+        if (oldThread) {
+            oldThread->detach();
         }
     }
 
     template <typename T>
     void HttpClient<T>::Wait() {
-        std::unique_lock<std::mutex> lock(this->mutex);
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
 
         if (this->thread && this->thread->joinable()) {
             this->thread->join();
@@ -396,14 +402,8 @@ namespace musik { namespace core { namespace sdk {
 
     template <typename T>
     void HttpClient<T>::Cancel() {
-        std::unique_lock<std::mutex> lock(this->mutex);
-
-        if (this->thread) {
-            this->cancel = true;
-            if (this->thread->joinable()) {
-                this->thread->join();
-            }
-        }
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        this->cancel = true;
     }
 
 } } }
