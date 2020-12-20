@@ -332,7 +332,11 @@ void MainLayout::OnIndexerFinished(int count) {
 }
 
 void MainLayout::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
-    if (prefs->GetBool(cube::prefs::keys::DisableWindowTitleUpdates, false) || !track) {
+    if (prefs->GetBool(cube::prefs::keys::DisableWindowTitleUpdates, false)) {
+        return;
+    }
+
+    if (!track) {
         App::Instance().SetTitle("musikcube");
     }
     else {
