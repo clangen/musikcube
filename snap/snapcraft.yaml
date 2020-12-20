@@ -1,5 +1,5 @@
 name: musikcube # you probably want to 'snapcraft register <name>'
-version: 0.92.3
+version: 0.96.3
 summary: a terminal-based music player, metadata indexer, and server
 description: |
   musikcube is a fully functional terminal-based music player, library, and
