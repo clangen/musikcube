@@ -1,3 +1,13 @@
+0.96.3
+
+* fixed a bug that could cause terminal output to get corrupted when switching
+  songs (@the-eater)
+* fixed a bug that was preventing the update check from displaying a dialog on
+  completion.
+* fixed now playing readout ellipsizing.
+
+--------------------------------------------------------------------------------
+
 0.96.2
 
 * fixed a crash in HttpClient that was only manifesting on some architectures
