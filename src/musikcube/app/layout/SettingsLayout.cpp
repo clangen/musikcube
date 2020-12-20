@@ -124,7 +124,7 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     schema->AddInt(core::prefs::keys::PlaybackTrackQueryTimeoutMs, 5000);
     schema->AddBool(core::prefs::keys::AsyncTrackListQueries, true);
     schema->AddBool(cube::prefs::keys::DisableRatingColumn, false);
-    schema->AddBool(cube::prefs::keys::DisableWindowTitleUpdates, false);
+    schema->AddBool(cube::prefs::keys::DisableWindowTitleUpdates, cube::prefs::defaults::DisableWindowTitleUpdates);
     schema->AddString(cube::prefs::keys::RatingPositiveChar, kFilledStar.c_str());
     schema->AddString(cube::prefs::keys::RatingNegativeChar, kEmptyStar.c_str());
     schema->AddBool(core::prefs::keys::IndexerLogEnabled, false);

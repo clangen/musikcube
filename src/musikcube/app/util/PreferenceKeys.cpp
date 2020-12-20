@@ -63,5 +63,11 @@ namespace musik { namespace cube { namespace prefs {
     const std::string keys::DisableWindowTitleUpdates = "DisableWindowTitleUpdates";
     const std::string keys::AppQuitKey = "AppQuitKey";
 
+    #ifdef WIN32
+    const bool defaults::DisableWindowTitleUpdates = false;
+    #else
+    const bool defaults::DisableWindowTitleUpdates = true;
+    #endif
+
 } } }
 

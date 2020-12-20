@@ -332,7 +332,10 @@ void MainLayout::OnIndexerFinished(int count) {
 }
 
 void MainLayout::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
-    if (prefs->GetBool(cube::prefs::keys::DisableWindowTitleUpdates, false)) {
+    if (prefs->GetBool(
+            cube::prefs::keys::DisableWindowTitleUpdates,
+            cube::prefs::defaults::DisableWindowTitleUpdates))
+    {
         return;
     }
 
