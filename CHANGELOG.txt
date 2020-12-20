@@ -5,6 +5,7 @@
 * fixed a bug that was preventing the update check from displaying a dialog on
   completion.
 * fixed now playing readout ellipsizing.
+* fixed a bug where last.fm scrobbles may get posted twice per track.
 
 --------------------------------------------------------------------------------
 

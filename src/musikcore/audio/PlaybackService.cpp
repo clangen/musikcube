@@ -498,7 +498,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
     this->TrackChanged(this->index, track);
     this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYED);
 
-    if (track && this->GetPlaybackState() == PlaybackState::Playing) {
+    if (track && this->transport->GetStreamState() == StreamState::Playing) {
         /* TODO: maybe consider folding Scrobble() the `MarkTrackAsPlayed` logic?
         needs a bit more thought */
         lastfm::Scrobble(track);
