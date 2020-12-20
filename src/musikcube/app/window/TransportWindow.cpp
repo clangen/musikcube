@@ -280,6 +280,7 @@ static size_t writePlayingFormat(
                 else {
                     value = Strings.PLAYING;
                 }
+                cols = u8len(value);
             }
             if (token->value == "$title") {
                 attr = gb;
