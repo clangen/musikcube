@@ -6,7 +6,8 @@
   completion.
 * fixed now playing readout ellipsizing.
 * fixed a bug where last.fm scrobbles may get posted twice per track.
-
+* added a hotkey to clear the play queue; press 'shift+x' in the play queue
+  window.
 --------------------------------------------------------------------------------
 
 0.96.2

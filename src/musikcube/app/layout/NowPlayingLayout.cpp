@@ -241,6 +241,10 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
         PlayQueueOverlays::ShowDeletePlaylistOverlay(this->library);
         return true;
     }
+    else if (Hotkeys::Is(Hotkeys::PlayQueueClear, key)) {
+        this->playback.Edit().Clear();
+        return true;
+    }
     else if (ProcessEditOperation(key)) {
         return true;
     }

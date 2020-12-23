@@ -101,6 +101,7 @@ namespace musik {
                     PlayQueuePlaylistRename,
                     PlayQueuePlaylistDelete,
                     PlayQueueHotSwap,
+                    PlayQueueClear,
 
                     /* browse -> playlists */
                     BrowsePlaylistsNew,
