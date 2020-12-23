@@ -106,7 +106,7 @@ namespace musik { namespace core { namespace sdk {
             HttpHeaders requestHeaders, responseHeaders;
             HeaderCallback headersCb;
             DecoratorCallback decoratorCb;
-            CanceledCallback canceledCallback;
+            CanceledCallback canceledCb;
             bool cancel;
             Thread mode{ Thread::Background };
             HttpMethod method{ HttpMethod::Get };
@@ -115,7 +115,9 @@ namespace musik { namespace core { namespace sdk {
 
     template <typename T>
     std::string HttpClient<T>::DefaultUserAgent() {
-#ifdef WIN32
+#ifdef _WIN64
+        static const std::string PLATFORM = "win64";
+#elif WIN32
         static const std::string PLATFORM = "win32";
 #elif defined __APPLE__
         static const std::string PLATFORM = "macos";
@@ -316,8 +318,8 @@ namespace musik { namespace core { namespace sdk {
         curl_easy_getinfo(this->curl, CURLINFO_RESPONSE_CODE, &httpStatus);
 
         if (this->cancel) {
-            if (this->canceledCallback) {
-                this->canceledCallback(this);
+            if (this->canceledCb) {
+                this->canceledCb(this);
             }
         }
 

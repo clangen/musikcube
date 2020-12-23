@@ -45,7 +45,9 @@
 namespace musik {
     namespace cube {
         static inline std::string userAgent() {
-#ifdef WIN32
+#ifdef _WIN64
+            static const std::string PLATFORM = "win64";
+#elif WIN32
             static const std::string PLATFORM = "win32";
 #elif defined __APPLE__
             static const std::string PLATFORM = "macos";

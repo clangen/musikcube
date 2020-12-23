@@ -5,9 +5,11 @@
 * fixed a bug that was preventing the update check from displaying a dialog on
   completion.
 * fixed now playing readout ellipsizing.
-* fixed a bug where last.fm scrobbles may get posted twice per track.
-* added a hotkey to clear the play queue; press 'shift+x' in the play queue
+* fixed a bug where `last.fm` scrobbles may get posted twice per track.
+* added a hotkey to clear the play queue; press `shift+x` in the play queue
   window.
+* fixed `HttpClient` user agent to distinguish between `win32` and `win64`
+
 --------------------------------------------------------------------------------
 
 0.96.2

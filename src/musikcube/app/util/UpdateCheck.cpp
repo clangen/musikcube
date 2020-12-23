@@ -61,7 +61,9 @@ static const std::string MINOR = "minor";
 static const std::string PATCH = "patch";
 static const std::string URL = "url";
 
-#ifdef WIN32
+#ifdef _WIN64
+static const std::string PLATFORM = "win64";
+#elif WIN32
 static const std::string PLATFORM = "win32";
 #elif defined __APPLE__
 static const std::string PLATFORM = "macos";
