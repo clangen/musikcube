@@ -80,52 +80,55 @@ namespace musik { namespace core { namespace audio {
             virtual ~PlaybackService();
 
             /* IMessageTarget */
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             /* IPlaybackService */
-            virtual void Play(size_t index) override;
-            virtual bool Next() override;
-            virtual bool Previous() override;
-            virtual void Stop()  override { transport->Stop(); }
-            virtual musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
-            virtual void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
-            virtual void ToggleRepeatMode() override;
-            virtual musik::core::sdk::PlaybackState GetPlaybackState() override;
-            virtual bool IsShuffled() override;
-            virtual void ToggleShuffle() override;
-            virtual size_t GetIndex() override;
-            virtual size_t Count() override;
-            virtual double GetVolume() override;
-            virtual void SetVolume(double vol) override;
-            virtual void PauseOrResume() override;
-            virtual bool IsMuted() override;
-            virtual void ToggleMute() override;
-            virtual double GetPosition() override;
-            virtual void SetPosition(double seconds) override;
-            virtual double GetDuration() override;
-            virtual musik::core::sdk::ITrack* GetTrack(size_t index) override;
-            virtual musik::core::sdk::ITrack* GetPlayingTrack() override;
-            virtual void CopyFrom(const musik::core::sdk::ITrackList* source) override;
-            virtual void Play(const musik::core::sdk::ITrackList* source, size_t index) override;
-            virtual musik::core::sdk::ITrackListEditor* EditPlaylist() override;
-            virtual musik::core::sdk::TimeChangeMode GetTimeChangeMode() override;
-            virtual void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) override;
-            virtual void ReloadOutput() override;
-            virtual musik::core::sdk::ITrackList* Clone() override;
+            void Play(size_t index) override;
+            bool Next() override;
+            bool Previous() override;
+            void Stop()  override { transport->Stop(); }
+            musik::core::sdk::RepeatMode GetRepeatMode()  override { return this->repeatMode; }
+            void SetRepeatMode(musik::core::sdk::RepeatMode mode) override;
+            void ToggleRepeatMode() override;
+            musik::core::sdk::PlaybackState GetPlaybackState() override;
+            bool IsShuffled() override;
+            void ToggleShuffle() override;
+            size_t GetIndex() noexcept override;
+            size_t Count() override;
+            double GetVolume() override;
+            void SetVolume(double vol) override;
+            void PauseOrResume() override;
+            bool IsMuted() override;
+            void ToggleMute() override;
+            double GetPosition() override;
+            void SetPosition(double seconds) override;
+            double GetDuration() override;
+            musik::core::sdk::ITrack* GetTrack(size_t index) override;
+            musik::core::sdk::ITrack* GetPlayingTrack() override;
+            void CopyFrom(const musik::core::sdk::ITrackList* source) override;
+            void Play(const musik::core::sdk::ITrackList* source, size_t index) override;
+            musik::core::sdk::ITrackListEditor* EditPlaylist() override;
+            musik::core::sdk::TimeChangeMode GetTimeChangeMode() noexcept override;
+            void SetTimeChangeMode(musik::core::sdk::TimeChangeMode) noexcept override;
+            void ReloadOutput() override;
+            musik::core::sdk::ITrackList* Clone() override;
 
             /* TODO: include in SDK? */
             virtual bool HotSwap(const TrackList& source, size_t index = 0);
 
             /* app-specific implementation. similar to some SDK methods, but use
             concrete data types with known optimizations */
-            musik::core::audio::ITransport& GetTransport() { return *this->transport.get(); }
             void Play(const musik::core::TrackList& tracks, size_t index);
             void Prepare(size_t index, double position = 0.0f);
             void CopyTo(musik::core::TrackList& target);
             void CopyFrom(const musik::core::TrackList& source);
             musik::core::TrackPtr GetPlaying();
 
-            std::shared_ptr<const musik::core::TrackList> GetTrackList() {
+            musik::core::audio::ITransport& GetTransport() noexcept {
+                return *this->transport.get();
+            }
+
+            std::shared_ptr<const musik::core::TrackList> GetTrackList() noexcept {
                 return std::shared_ptr<const musik::core::TrackList>(
                     &this->playlist, [](const musik::core::TrackList*) {});
             }
@@ -141,14 +144,14 @@ namespace musik { namespace core { namespace audio {
                     virtual ~Editor();
 
                     /* ITrackListEditor */
-                    virtual bool Insert(int64_t id, size_t index) override;
-                    virtual bool Swap(size_t index1, size_t index2) override;
-                    virtual bool Move(size_t from, size_t to) override;
-                    virtual bool Delete(size_t index) override;
-                    virtual void Add(const int64_t id) override;
-                    virtual void Clear() override;
-                    virtual void Shuffle() override;
-                    virtual void Release() override;
+                    bool Insert(int64_t id, size_t index) override;
+                    bool Swap(size_t index1, size_t index2) override;
+                    bool Move(size_t from, size_t to) override;
+                    bool Delete(size_t index) override;
+                    void Add(const int64_t id) override;
+                    void Clear() override;
+                    void Shuffle() override;
+                    void Release() noexcept override;
 
                 private:
                     friend class PlaybackService;

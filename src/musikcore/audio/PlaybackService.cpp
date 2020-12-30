@@ -86,11 +86,13 @@ class StreamMessage: public Message {
             this->uri = uri;
         }
 
-        virtual ~StreamMessage() {
+        std::string GetUri() {
+            return this->uri;
         }
 
-        std::string GetUri() { return this->uri; }
-        int GetEventType() { return (int) this->UserData1(); }
+        int GetEventType() {
+            return static_cast<int>(this->UserData1());
+        }
 
     private:
         std::string uri;
@@ -108,30 +110,28 @@ class StreamMessage: public Message {
     this->messageQueue.Post( \
         musik::core::runtime::IMessagePtr(new StreamMessage(instance, eventType, uri)));
 
-static inline void loadPreferences(
-    std::shared_ptr<ITransport> transport,
-    IPlaybackService& playback,
-    std::shared_ptr<Preferences> prefs)
-{
-    double volume = prefs->GetDouble(keys::Volume, 1.0f);
+static inline void loadPreferences(ITransport& transport, IPlaybackService& playback, Preferences& prefs) {
+    double volume = prefs.GetDouble(keys::Volume, 1.0f);
     volume = std::max(0.0f, std::min(1.0f, (float)volume));
-    transport->SetVolume(volume);
+    transport.SetVolume(volume);
 
-    auto repeatMode = (RepeatMode) prefs->GetInt(keys::RepeatMode, (int) RepeatMode::None);
+    auto repeatMode = static_cast<RepeatMode>(
+        prefs.GetInt(keys::RepeatMode, static_cast<int>(RepeatMode::None)));
+
     repeatMode = (repeatMode > RepeatMode::List || repeatMode < RepeatMode::None) ? RepeatMode::None : repeatMode;
+
     playback.SetRepeatMode(repeatMode);
 
-    auto timeChangeMode = (TimeChangeMode) prefs->GetInt(keys::TimeChangeMode, (int) TimeChangeMode::Scrub);
+    const auto timeChangeMode = static_cast<TimeChangeMode>(
+        prefs.GetInt(keys::TimeChangeMode, static_cast<int>(TimeChangeMode::Scrub)));
+
     playback.SetTimeChangeMode(timeChangeMode);
 }
 
-static inline void savePreferences(
-    IPlaybackService& playback,
-    std::shared_ptr<Preferences> prefs)
-{
-    prefs->SetDouble(keys::Volume, playback.GetVolume());
-    prefs->SetInt(keys::RepeatMode, (int) playback.GetRepeatMode());
-    prefs->SetInt(keys::TimeChangeMode, (int) playback.GetTimeChangeMode());
+static inline void savePreferences(IPlaybackService& playback, Preferences& prefs) {
+    prefs.SetDouble(keys::Volume, playback.GetVolume());
+    prefs.SetInt(keys::RepeatMode, static_cast<int>(playback.GetRepeatMode()));
+    prefs.SetInt(keys::TimeChangeMode, static_cast<int>(playback.GetTimeChangeMode()));
 }
 
 /* internally PlaybackService leverages a message queue for synchronization;
@@ -175,7 +175,7 @@ PlaybackService::PlaybackService(
 PlaybackService::~PlaybackService() {
     playback::SavePlaybackContext(library, *this);
     this->messageQueue.Unregister(this);
-    savePreferences(*this, playbackPrefs);
+    savePreferences(*this, *playbackPrefs);
     this->Stop();
     this->ResetRemotes();
 }
@@ -186,14 +186,14 @@ void PlaybackService::InitRemotes() {
     this->remotes = PluginFactory::Instance()
         .QueryInterface<IPlaybackRemote, Deleter>("GetPlaybackRemote");
 
-    for (auto it = remotes.begin(); it != remotes.end(); it++) {
-        (*it)->SetPlaybackService(this);
+    for (auto it : remotes) {
+        it->SetPlaybackService(this);
     }
 }
 
 void PlaybackService::ResetRemotes() {
-    for (auto it = remotes.begin(); it != remotes.end(); it++) {
-        (*it)->SetPlaybackService(nullptr);
+    for (auto it : remotes) {
+        it->SetPlaybackService(nullptr);
     }
 }
 
@@ -255,11 +255,11 @@ void PlaybackService::SetRepeatMode(RepeatMode mode) {
     }
 }
 
-musik::core::sdk::TimeChangeMode PlaybackService::GetTimeChangeMode() {
+musik::core::sdk::TimeChangeMode PlaybackService::GetTimeChangeMode() noexcept {
     return this->timeChangeMode;
 }
 
-void PlaybackService::SetTimeChangeMode(TimeChangeMode mode) {
+void PlaybackService::SetTimeChangeMode(TimeChangeMode mode) noexcept {
     this->timeChangeMode = mode;
 }
 
@@ -289,7 +289,7 @@ void PlaybackService::ToggleShuffle() {
 
     /* find the new playback index and prefetch the next track */
     if (id != -1) {
-        int index = this->playlist.IndexOf(id);
+        const int index = this->playlist.IndexOf(id);
         if (index != -1) {
             this->index = index;
             POST(this, MESSAGE_PREPARE_NEXT_TRACK, NO_POSITION, 0);
@@ -301,9 +301,9 @@ void PlaybackService::ToggleShuffle() {
 }
 
 void PlaybackService::ProcessMessage(IMessage &message) {
-    int type = message.Type();
+    const int type = message.Type();
     if (type == MESSAGE_LOAD_PLAYBACK_CONTEXT) {
-        loadPreferences(this->transport, *this, playbackPrefs);
+        loadPreferences(*this->transport, *this, *playbackPrefs);
         playback::LoadPlaybackContext(library, *this);
         this->InitRemotes();
     }
@@ -311,8 +311,8 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         this->MarkTrackAsPlayed(message.UserData1()); /* UserData1 is a trackId */
     }
     else if (type == MESSAGE_STREAM_EVENT) {
-        StreamMessage* streamMessage = static_cast<StreamMessage*>(&message);
-        StreamState eventType = (StreamState) streamMessage->GetEventType();
+        StreamMessage* streamMessage = dynamic_cast<StreamMessage*>(&message);
+        const StreamState eventType = static_cast<StreamState>(streamMessage->GetEventType());
 
         if (eventType == StreamState::Buffering || eventType == StreamState::Buffered || eventType == StreamState::Playing) {
             TrackPtr track;
@@ -366,7 +366,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == MESSAGE_PLAYBACK_EVENT) {
-        PlaybackState eventType = (PlaybackState) message.UserData1();
+        const PlaybackState eventType = static_cast<PlaybackState>(message.UserData1());
 
         if (eventType == PlaybackState::Stopped) {
             this->OnTrackChanged(NO_POSITION, TrackPtr());
@@ -385,15 +385,15 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             }
         }
 
-        for (auto it = remotes.begin(); it != remotes.end(); it++) {
-            (*it)->OnPlaybackStateChanged((PlaybackState) eventType);
+        for (auto it : remotes) {
+            it->OnPlaybackStateChanged(static_cast<PlaybackState>(eventType));
         }
 
-        this->PlaybackStateChanged((PlaybackState) eventType);
+        this->PlaybackStateChanged(static_cast<PlaybackState>(eventType));
     }
     else if (type == MESSAGE_PREPARE_NEXT_TRACK) {
         if (transport->GetPlaybackState() != PlaybackState::Stopped) {
-            size_t updatedIndex = (size_t)message.UserData1();
+            const size_t updatedIndex = static_cast<size_t>(message.UserData1());
 
             if (updatedIndex != NO_POSITION) {
                 this->index = updatedIndex;
@@ -404,9 +404,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == MESSAGE_VOLUME_CHANGED) {
-        double volume = transport->Volume();
-        for (auto it = remotes.begin(); it != remotes.end(); it++) {
-            (*it)->OnVolumeChanged(volume);
+        const double volume = transport->Volume();
+        for (auto it : remotes) {
+            it->OnVolumeChanged(volume);
         }
         this->VolumeChanged();
     }
@@ -420,7 +420,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     }
     else if (type == MESSAGE_TIME_CHANGED) {
         this->TimeChanged(transport->Position());
-        double volume = transport->Volume();
+        const double volume = transport->Volume();
         for (auto remote : this->remotes) {
             remote->OnPlaybackTimeChanged(transport->Position());
         }
@@ -428,8 +428,8 @@ void PlaybackService::ProcessMessage(IMessage &message) {
     else if (type == MESSAGE_NOTIFY_EDITED ||
              type == MESSAGE_NOTIFY_RESET)
     {
-        for (auto it = remotes.begin(); it != remotes.end(); it++) {
-            (*it)->OnPlayQueueChanged();
+        for (auto it : remotes) {
+            it->OnPlayQueueChanged();
         }
 
         this->QueueEdited();
@@ -441,9 +441,9 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         }
     }
     else if (type == MESSAGE_RELOAD_OUTPUT) {
-        auto state = this->GetPlaybackState();
-        auto index = this->GetIndex();
-        double time = this->GetPosition();
+        const auto state = this->GetPlaybackState();
+        const auto index = this->GetIndex();
+        const double time = this->GetPosition();
 
         /* we generally have a MasterTransport available, but apps may
         choose to implement their own transport and use it instead, so
@@ -452,9 +452,10 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             dynamic_cast<MasterTransport*>(this->transport.get());
 
         if (masterTransport) {
-            TransportType transportType = (TransportType)
-                playbackPrefs->GetInt(keys::Transport.c_str(),
-                (int)TransportType::Gapless);
+            const TransportType transportType = static_cast<TransportType>(
+                playbackPrefs->GetInt(
+                    keys::Transport.c_str()),
+                    static_cast<int>(TransportType::Gapless));
 
             if (masterTransport->GetType() != transportType) {
                 masterTransport->SwitchTo(transportType);
@@ -466,8 +467,10 @@ void PlaybackService::ProcessMessage(IMessage &message) {
             this->transport->ReloadOutput();
 
             if (index != NO_POSITION) {
-                auto startMode = (state != PlaybackState::Paused && state != PlaybackState::Prepared)
-                    ? ITransport::StartMode::Immediate : ITransport::StartMode::Wait;
+                const auto startMode =
+                    (state != PlaybackState::Paused && state != PlaybackState::Prepared)
+                        ? ITransport::StartMode::Immediate
+                        : ITransport::StartMode::Wait;
 
                 this->PlayAt(index, startMode);
                 if (time > 0.0f) {
@@ -486,10 +489,10 @@ void PlaybackService::ProcessMessage(IMessage &message) {
 }
 
 void PlaybackService::NotifyRemotesModeChanged() {
-    RepeatMode mode = this->repeatMode;
-    bool shuffled = this->IsShuffled();
-    for (auto it = remotes.begin(); it != remotes.end(); it++) {
-        (*it)->OnModeChanged(repeatMode, shuffled);
+    const RepeatMode mode = this->repeatMode;
+    const bool shuffled = this->IsShuffled();
+    for (auto it : remotes) {
+        it->OnModeChanged(repeatMode, shuffled);
     }
 }
 
@@ -506,7 +509,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
         /* we consider a track to be played if (1) it enters the playing state and
         it's less than 10 seconds long, or (2) it enters the playing state, and
         remains playing for > 10 seconds */
-        double duration = this->transport->GetDuration();
+        const double duration = this->transport->GetDuration();
         if (duration > 0 && duration < 10.0) {
             this->MarkTrackAsPlayed(track->GetId());
         }
@@ -515,8 +518,8 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
         }
     }
 
-    for (auto it = remotes.begin(); it != remotes.end(); it++) {
-        (*it)->OnTrackChanged(track.get());
+    for (auto it : remotes) {
+        it->OnTrackChanged(track.get());
     }
 }
 
@@ -578,7 +581,7 @@ size_t PlaybackService::Count() {
 }
 
 void PlaybackService::ToggleRepeatMode() {
-    RepeatMode mode = GetRepeatMode();
+    const RepeatMode mode = GetRepeatMode();
     switch (mode) {
         case RepeatMode::None: SetRepeatMode(RepeatMode::List); break;
         case RepeatMode::List: SetRepeatMode(RepeatMode::Track); break;
@@ -602,7 +605,7 @@ bool PlaybackService::HotSwap(const TrackList& tracks, size_t index) {
     bool found = false;
     auto playingTrack = this->GetPlaying();
     if (playingTrack && tracks.Count() > index) {
-        auto supplantId = tracks.GetId(index);
+        const auto supplantId = tracks.GetId(index);
         const auto playingId = playingTrack->GetId();
 
         /* look at the index hint, see if we can find a matching track without
@@ -744,7 +747,7 @@ void PlaybackService::PlayAt(size_t index, ITransport::StartMode mode) {
     index = std::min(this->Count(), index);
 
     std::string uri = this->UriAtIndex(index);
-    auto gain = this->GainAtIndex(index);
+    const auto gain = this->GainAtIndex(index);
 
     if (uri.size()) {
         transport->Start(uri, gain, mode);
@@ -764,7 +767,7 @@ void PlaybackService::Prepare(size_t index, double position) {
     }
 }
 
-size_t PlaybackService::GetIndex() {
+size_t PlaybackService::GetIndex() noexcept {
     return this->index;
 }
 
@@ -822,7 +825,7 @@ void PlaybackService::SetPosition(double seconds) {
 double PlaybackService::GetDuration() {
     TrackPtr track;
 
-    double duration = this->transport->GetDuration();
+    const double duration = this->transport->GetDuration();
 
     if (duration > 0) {
         return duration;
@@ -830,7 +833,7 @@ double PlaybackService::GetDuration() {
 
     {
         std::unique_lock<std::recursive_mutex> lock(this->playlistMutex);
-        size_t index = this->index;
+        const size_t index = this->index;
         if (index < this->playlist.Count()) {
             track = TrackAtIndexWithTimeout(index);
         }
@@ -916,7 +919,7 @@ ITrackListEditor* PlaybackService::EditPlaylist() {
             virtual ~SdkTrackListEditor() {
             }
 
-            virtual void Release() {
+            virtual void Release() noexcept {
                 delete this;
             }
     };
@@ -1107,7 +1110,7 @@ void PlaybackService::Editor::Shuffle() {
     this->edited = true;
 }
 
-void PlaybackService::Editor::Release() {
+void PlaybackService::Editor::Release() noexcept {
     /* nothing! */
 }
 
@@ -1133,18 +1136,21 @@ ITransport::Gain PlaybackService::GainAtIndex(size_t index) {
 
     ITransport::Gain result;
 
-    float preampDb = (float)playbackPrefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f);
+    const float preampDb = static_cast<float>(
+        playbackPrefs->GetDouble(keys::PreampDecibels.c_str(), 0.0f));
+
     result.preamp = powf(10.0f, (preampDb / 20.0f));
     result.peakValid = false;
 
-    Mode mode = (Mode)playbackPrefs->GetInt(keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+    const Mode mode = static_cast<Mode>(playbackPrefs->GetInt(
+        keys::ReplayGainMode.c_str(), (int) Mode::Disabled));
 
     if (mode != Mode::Disabled && index < this->playlist.Count()) {
         auto track = TrackAtIndexWithTimeout(index);
         if (track) {
-            auto rg = track->GetReplayGain();
-            float gain = (mode == Mode::Album) ? rg.albumGain : rg.trackGain;
-            float peak = (mode == Mode::Album) ? rg.albumPeak : rg.trackPeak;
+            const auto rg = track->GetReplayGain();
+            const float gain = (mode == Mode::Album) ? rg.albumGain : rg.trackGain;
+            const float peak = (mode == Mode::Album) ? rg.albumPeak : rg.trackPeak;
             if (gain != 1.0f) {
                 /* http://wiki.hydrogenaud.io/index.php?title=ReplayGain_2.0_specification#Reduced_gain */
                 result.gain = powf(10.0f, (gain / 20.0f));
