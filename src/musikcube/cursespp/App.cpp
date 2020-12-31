@@ -501,6 +501,7 @@ void App::Run(ILayoutPtr layout) {
     this->state.keyHandler = nullptr;
     int lastWidth = Screen::GetWidth();
     int lastHeight = Screen::GetHeight();
+    bool resized = false;
 
     this->ChangeLayout(layout);
 
@@ -548,6 +549,11 @@ process:
             else if (kn == this->quitKey) { /* ctrl+d quits */
                 this->quit = true;
             }
+#ifdef WIN32
+            else if (kn == "KEY_RESIZE") {
+                resized = true;
+            }
+#endif
             else if (this->mouseEnabled && kn == "KEY_MOUSE") {
 #ifdef WIN32
                 if (nc_getmouse(&rawMouseEvent) == 0) {
@@ -584,7 +590,10 @@ process:
             }
         }
 
-        if (lastWidth != Screen::GetWidth() || lastHeight != Screen::GetHeight()) {
+        resized |= lastWidth != Screen::GetWidth() || lastHeight != Screen::GetHeight();
+
+        if (resized) {
+            resized = false;
             lastWidth = Screen::GetWidth();
             lastHeight = Screen::GetHeight();
 
