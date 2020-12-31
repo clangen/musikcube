@@ -63,18 +63,12 @@ using namespace std::chrono;
 
 static OverlayStack overlays;
 static bool disconnected = false;
-static int64_t resizeAt = 0;
 
 static App* instance = nullptr;
 
 #ifndef WIN32
 static void hangupHandler(int signal) {
     disconnected = true;
-}
-
-static void resizedHandler(int signal) {
-    endwin(); /* required in *nix because? */
-    resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
 }
 
 static std::string getEnvironmentVariable(const std::string& name) {
@@ -254,7 +248,6 @@ App::App(const std::string& title) {
     win32::ConfigureDpiAwareness();
 #else
     setlocale(LC_ALL, "");
-    std::signal(SIGWINCH, resizedHandler);
     std::signal(SIGHUP, hangupHandler);
     std::signal(SIGPIPE, SIG_IGN);
     this->colorMode = Colors::Palette;
@@ -506,6 +499,8 @@ void App::Run(ILayoutPtr layout) {
 
     this->state.input = nullptr;
     this->state.keyHandler = nullptr;
+    int lastWidth = Screen::GetWidth();
+    int lastHeight = Screen::GetHeight();
 
     this->ChangeLayout(layout);
 
@@ -553,9 +548,6 @@ process:
             else if (kn == this->quitKey) { /* ctrl+d quits */
                 this->quit = true;
             }
-            else if (kn == "KEY_RESIZE") {
-                resizeAt = App::Now() + REDRAW_DEBOUNCE_MS;
-            }
             else if (this->mouseEnabled && kn == "KEY_MOUSE") {
 #ifdef WIN32
                 if (nc_getmouse(&rawMouseEvent) == 0) {
@@ -592,9 +584,10 @@ process:
             }
         }
 
-        /* KEY_RESIZE often gets called dozens of times, so we debounce the
-        actual resize until its settled. */
-        if (resizeAt && App::Now() > resizeAt) {
+        if (lastWidth != Screen::GetWidth() || lastHeight != Screen::GetHeight()) {
+            lastWidth = Screen::GetWidth();
+            lastHeight = Screen::GetHeight();
+
             resize_term(0, 0);
 
             Window::InvalidateScreen();
@@ -604,8 +597,6 @@ process:
             }
 
             this->OnResized();
-
-            resizeAt = 0;
         }
 
         this->CheckShowOverlay();
