@@ -63,12 +63,18 @@ using namespace std::chrono;
 
 static OverlayStack overlays;
 static bool disconnected = false;
+static bool resized = false;
 
 static App* instance = nullptr;
 
 #ifndef WIN32
 static void hangupHandler(int signal) {
     disconnected = true;
+}
+
+static void resizedHandler(int signal) {
+    endwin(); /* required in *nix because? */
+    resized = true;
 }
 
 static std::string getEnvironmentVariable(const std::string& name) {
@@ -249,6 +255,7 @@ App::App(const std::string& title) {
 #else
     setlocale(LC_ALL, "");
     std::signal(SIGHUP, hangupHandler);
+    std::signal(SIGWINCH, resizedHandler);
     std::signal(SIGPIPE, SIG_IGN);
     this->colorMode = Colors::Palette;
 #endif
@@ -501,7 +508,6 @@ void App::Run(ILayoutPtr layout) {
     this->state.keyHandler = nullptr;
     int lastWidth = Screen::GetWidth();
     int lastHeight = Screen::GetHeight();
-    bool resized = false;
 
     this->ChangeLayout(layout);
 
