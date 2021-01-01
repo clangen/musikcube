@@ -58,8 +58,13 @@ namespace cursespp {
                 bool MouseWheelUp() const { return MOUSE_WHEEL_UP; }
                 bool MouseWheelDown() const { return MOUSE_WHEEL_DOWN; }
 #else
-                bool MouseWheelUp() const { return false; }
-                bool MouseWheelDown() const { return false; }
+    #if NCURSES_MOUSE_VERSION > 1
+                bool MouseWheelUp() const { return state & BUTTON4_PRESSED; }
+                bool MouseWheelDown() const { return state & BUTTON5_PRESSED; }
+    #else
+                bool MouseWheelUp() const { return state & (BUTTON4_PRESSED | REPORT_MOUSE_POSITION); }
+                bool MouseWheelDown() const { return state & (BUTTON2_PRESSED | REPORT_MOUSE_POSITION); }
+    #endif
 #endif
 
                 int x, y;
