@@ -40,7 +40,7 @@
 #undef MOUSE_MOVED
 #endif
 
-#if defined(WIN32) || defined(__APPLE__) || defined(NO_NCURSESW)
+#if defined(WIN32) || defined(NO_NCURSESW)
     #include <curses.h>
     #include <panel.h>
 #else
