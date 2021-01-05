@@ -53,10 +53,10 @@ namespace musik { namespace core { namespace audio {
 
     class Player : public musik::core::sdk::IBufferProvider {
         public:
-            enum DestroyMode { Drain = 0, NoDrain = 1 };
+            enum class DestroyMode: int { Drain = 0, NoDrain = 1 };
 
             struct Gain {
-                Gain() {
+                Gain() noexcept {
                     this->preamp = this->gain = this->peak = 1.0f;
                     this->peakValid = false;
                 }
@@ -67,13 +67,14 @@ namespace musik { namespace core { namespace audio {
             };
 
             struct EventListener {
-                virtual void OnPlayerBuffered(Player *player) { }
-                virtual void OnPlayerStarted(Player *player) { }
-                virtual void OnPlayerAlmostEnded(Player *player) { }
-                virtual void OnPlayerFinished(Player *player) { }
-                virtual void OnPlayerOpenFailed(Player *player) { }
-                virtual void OnPlayerDestroying(Player *player) { }
-                virtual void OnPlayerMixPoint(Player *player, int id, double time) { }
+                virtual ~EventListener() { }
+                virtual void OnPlayerBuffered(Player* player) { }
+                virtual void OnPlayerStarted(Player* player) { }
+                virtual void OnPlayerAlmostEnded(Player* player) { }
+                virtual void OnPlayerFinished(Player* player) { }
+                virtual void OnPlayerOpenFailed(Player* player) { }
+                virtual void OnPlayerDestroying(Player* player) { }
+                virtual void OnPlayerMixPoint(Player* player, int id, double time) { }
             };
 
             static Player* Create(
@@ -102,7 +103,7 @@ namespace musik { namespace core { namespace audio {
 
             std::string GetUrl() const { return this->url; }
 
-            musik::core::sdk::StreamState GetStreamState() { return this->streamState; }
+            musik::core::sdk::StreamState GetStreamState() noexcept { return this->streamState; }
 
         private:
             friend void playerThreadLoop(Player* player);
@@ -119,7 +120,7 @@ namespace musik { namespace core { namespace audio {
             virtual ~Player();
 
             struct MixPoint {
-                MixPoint(int id, double time) {
+                MixPoint(int id, double time) noexcept {
                     this->id = id;
                     this->time = time;
                 }

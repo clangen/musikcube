@@ -50,25 +50,25 @@ namespace musik { namespace core { namespace audio {
                 NoDelete = 2
             };
 
-            Buffer(Flags flags = NoFlags);
-            Buffer(float* buffer, int samples);
+            Buffer(Flags flags = NoFlags) noexcept;
+            Buffer(float* buffer, int samples) noexcept;
 
             virtual ~Buffer();
 
-            virtual long SampleRate() const override;
-            virtual void SetSampleRate(long sampleRate) override;
-            virtual int Channels() const override;
-            virtual void SetChannels(int channels) override;
-            virtual float* BufferPointer() const override;
-            virtual long Samples() const override;
-            virtual void SetSamples(long samples) override;
-            virtual long Bytes() const override;
-            virtual void Release() override { delete this; }
+            long SampleRate() const noexcept override;
+            void SetSampleRate(long sampleRate) noexcept override;
+            int Channels() const noexcept override;
+            void SetChannels(int channels) noexcept override;
+            float* BufferPointer() const noexcept override;
+            long Samples() const noexcept override;
+            void SetSamples(long samples) override;
+            long Bytes() const noexcept override;
+            void Release() noexcept override { delete this; }
 
-            double Position() const;
-            void SetPosition(double position);
-            void Copy(float* buffer, long samples, long offset = 0);
-            void CopyFormat(Buffer* fromBuffer);
+            double Position() const noexcept;
+            void SetPosition(double position) noexcept;
+            void Copy(float const* buffer, long samples, long offset = 0);
+            void CopyFormat(Buffer* fromBuffer) noexcept;
 
         private:
             void ResizeBuffer();

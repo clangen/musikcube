@@ -60,30 +60,30 @@ namespace musik { namespace core { namespace audio {
 
             void StopImmediately();
 
-            virtual void Start(const std::string& uri, Gain gain, StartMode mode);
-            virtual void PrepareNextTrack(const std::string& uri, Gain gain);
+            void Start(const std::string& uri, Gain gain, StartMode mode) override;
+            void PrepareNextTrack(const std::string& uri, Gain gain) override;
 
-            virtual std::string Uri();
+            std::string Uri() override;
 
-            virtual void Stop();
-            virtual bool Pause();
-            virtual bool Resume();
+            void Stop() override;
+            bool Pause() override;
+            bool Resume() override;
 
-            virtual double Position();
-            virtual void SetPosition(double seconds);
+            double Position() override;
+            void SetPosition(double seconds) override;
 
-            virtual double Volume();
-            virtual void SetVolume(double volume);
+            double Volume() noexcept override;
+            void SetVolume(double volume) override;
 
-            virtual bool IsMuted();
-            virtual void SetMuted(bool muted);
+            bool IsMuted() noexcept override;
+            void SetMuted(bool muted) override;
 
-            virtual double GetDuration();
+            double GetDuration() override;
 
-            virtual void ReloadOutput();
+            void ReloadOutput() override;
 
-            virtual musik::core::sdk::PlaybackState GetPlaybackState();
-            virtual musik::core::sdk::StreamState GetStreamState();
+            musik::core::sdk::PlaybackState GetPlaybackState() override;
+            musik::core::sdk::StreamState GetStreamState() override;
 
         private:
             using Lock = std::unique_lock<std::recursive_mutex>;
@@ -96,7 +96,7 @@ namespace musik { namespace core { namespace audio {
             struct PlayerContext {
                 PlayerContext(
                     CrossfadeTransport& transport,
-                    Crossfader& crossfader);
+                    Crossfader& crossfader) noexcept;
 
                 void Reset();
 
@@ -106,15 +106,15 @@ namespace musik { namespace core { namespace audio {
                     Gain gain,
                     bool startImmediate);
 
-                void TransferTo(PlayerContext& context);
+                void TransferTo(PlayerContext& context) noexcept;
 
                 void Start(double transportVolume);
                 void Stop();
-                void StopIf(Player* player);
+                void StopIf(Player const* player);
                 void Pause();
                 void Resume(double transportVolume);
                 void SetVolume(double volume);
-                bool IsEmpty();
+                bool IsEmpty() noexcept;
 
                 bool startImmediate;
                 bool started;
@@ -125,17 +125,17 @@ namespace musik { namespace core { namespace audio {
                 Crossfader& crossfader;
             };
 
-            void RaiseStreamEvent(musik::core::sdk::StreamState type, Player* player);
+            void RaiseStreamEvent(musik::core::sdk::StreamState type, Player const* player);
             void SetPlaybackState(musik::core::sdk::PlaybackState state);
 
             void OnCrossfaderEmptied();
 
-            virtual void OnPlayerBuffered(Player* player);
-            virtual void OnPlayerStarted(Player* player);
-            virtual void OnPlayerFinished(Player* player);
-            virtual void OnPlayerOpenFailed(Player* player);
-            virtual void OnPlayerMixPoint(Player* player, int id, double time);
-            virtual void OnPlayerDestroying(Player* player);
+            void OnPlayerBuffered(Player* player) override;
+            void OnPlayerStarted(Player* player) override;
+            void OnPlayerFinished(Player* player) override;
+            void OnPlayerOpenFailed(Player* player) override;
+            void OnPlayerMixPoint(Player* player, int id, double time) override;
+            void OnPlayerDestroying(Player* player) override;
 
             musik::core::sdk::PlaybackState playbackState;
             musik::core::sdk::StreamState activePlayerState;

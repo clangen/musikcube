@@ -85,7 +85,7 @@ void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode
 
         musik::debug::info(TAG, "trying to play " + uri);
 
-        bool immediate = mode == StartMode::Immediate;
+        const bool immediate = mode == StartMode::Immediate;
 
         /* in many cases (e.g. the user is skipping through tracks,
         the requested track may already be queued up. use it, if it is */
@@ -113,7 +113,7 @@ void CrossfadeTransport::Start(const std::string& uri, Gain gain, StartMode mode
 }
 
 std::string CrossfadeTransport::Uri() {
-    auto player = this->active.player;
+    auto const player = this->active.player;
     return player ? player->GetUrl() : "";
 }
 
@@ -204,7 +204,7 @@ double CrossfadeTransport::GetDuration() {
     return this->active.player ? this->active.player->GetDuration() : -1.0f;
 }
 
-bool CrossfadeTransport::IsMuted() {
+bool CrossfadeTransport::IsMuted() noexcept {
     return this->muted;
 }
 
@@ -233,12 +233,12 @@ void CrossfadeTransport::SetMuted(bool muted) {
     }
 }
 
-double CrossfadeTransport::Volume() {
+double CrossfadeTransport::Volume() noexcept {
     return this->volume;
 }
 
 void CrossfadeTransport::SetVolume(double volume) {
-    double oldVolume = this->volume;
+    const double oldVolume = this->volume;
     volume = std::max(0.0, std::min(1.0, volume));
 
     {
@@ -258,10 +258,10 @@ void CrossfadeTransport::OnPlayerBuffered(Player* player) {
     {
         Lock lock(this->stateMutex);
 
-        int durationMs = (int)(player->GetDuration() * 1000.0f);
+        const int durationMs = static_cast<int>(player->GetDuration() * 1000.0f);
         double mixpointOffset = 0.0f;
 
-        bool canFade =
+        const bool canFade =
             player->HasCapability(Capability::Prebuffer) &&
             (durationMs > CROSSFADE_DURATION_MS * 4);
 
@@ -270,7 +270,7 @@ void CrossfadeTransport::OnPlayerBuffered(Player* player) {
         if (canFade) {
             mixpointOffset =
                 player->GetDuration() -
-                ((float) CROSSFADE_DURATION_MS / 1000.0f);
+                (static_cast<float>(CROSSFADE_DURATION_MS / 1000.0f));
         }
 
         /* set up a mix point so we're notified when the track is
@@ -389,7 +389,7 @@ void CrossfadeTransport::SetPlaybackState(PlaybackState state) {
     {
         Lock lock(this->stateMutex);
         changed = (this->playbackState != state);
-        this->playbackState = (PlaybackState) state;
+        this->playbackState = static_cast<PlaybackState>(state);
     }
 
     if (changed) {
@@ -397,13 +397,13 @@ void CrossfadeTransport::SetPlaybackState(PlaybackState state) {
     }
 }
 
-void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Player* player) {
+void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Player const* player) {
     bool eventIsFromActivePlayer = false;
     {
         Lock lock(this->stateMutex);
         eventIsFromActivePlayer = (player == active.player);
         if (eventIsFromActivePlayer) {
-            this->activePlayerState = (StreamState)type;
+            this->activePlayerState = static_cast<StreamState>(type);
         }
     }
 
@@ -414,15 +414,16 @@ void CrossfadeTransport::RaiseStreamEvent(musik::core::sdk::StreamState type, Pl
 
 CrossfadeTransport::PlayerContext::PlayerContext(
     CrossfadeTransport& transport,
-    Crossfader& crossfader)
+    Crossfader& crossfader) noexcept
 : transport(transport)
 , crossfader(crossfader)
 , player(nullptr)
 , canFade(false)
-, startImmediate(false) {
+, startImmediate(false)
+, started(false) {
 }
 
-void CrossfadeTransport::PlayerContext::StopIf(Player* player) {
+void CrossfadeTransport::PlayerContext::StopIf(Player const* player) {
     if (player == this->player) {
         this->Stop();
     }
@@ -457,17 +458,26 @@ void CrossfadeTransport::PlayerContext::Reset(
         else {
             /* if we're being started with a new URL and we can't fade,
             drain the current instance! */
-            player->Destroy(url.size() ? Player::NoDrain : Player::Drain);
+            player->Destroy(url.size()
+                ? Player::DestroyMode::NoDrain
+                : Player::DestroyMode::Drain);
         }
     }
 
     this->startImmediate = startImmediate;
     this->canFade = this->started = false;
     this->output = url.size() ? outputs::SelectedOutput() : nullptr;
-    this->player = url.size() ? Player::Create(url, this->output, Player::Drain, listener, gain) : nullptr;
+    this->player = url.size()
+        ? Player::Create(
+            url,
+            this->output,
+            Player::DestroyMode::Drain,
+            listener,
+            gain)
+        : nullptr;
 }
 
-void CrossfadeTransport::PlayerContext::TransferTo(PlayerContext& to) {
+void CrossfadeTransport::PlayerContext::TransferTo(PlayerContext& to) noexcept {
     to.player = player;
     to.output = output;
     to.canFade = canFade;
@@ -539,6 +549,6 @@ void CrossfadeTransport::PlayerContext::SetVolume(double volume) {
     }
 }
 
-bool CrossfadeTransport::PlayerContext::IsEmpty() {
+bool CrossfadeTransport::PlayerContext::IsEmpty() noexcept {
     return !this->player && !this->output;
 }

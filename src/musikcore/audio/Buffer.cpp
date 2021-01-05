@@ -44,7 +44,7 @@
 
 using namespace musik::core::audio;
 
-Buffer::Buffer(Flags flags)
+Buffer::Buffer(Flags flags) noexcept
 : buffer(nullptr)
 , samples(0)
 , internalBufferSize(0)
@@ -54,7 +54,7 @@ Buffer::Buffer(Flags flags)
 , position(0) {
 }
 
-Buffer::Buffer(float* buffer, int samples)
+Buffer::Buffer(float* buffer, int samples) noexcept
 : buffer(buffer)
 , samples(samples)
 , internalBufferSize(samples)
@@ -70,27 +70,27 @@ Buffer::~Buffer() {
     }
 }
 
-long Buffer::SampleRate() const { /* hertz */
+long Buffer::SampleRate() const noexcept { /* hertz */
     return this->sampleRate;
 }
 
-void Buffer::SetSampleRate(long sampleRate) { /* hertz */
+void Buffer::SetSampleRate(long sampleRate) noexcept { /* hertz */
     this->sampleRate = sampleRate;
 }
 
-int Buffer::Channels() const {
+int Buffer::Channels() const noexcept {
     return this->channels;
 }
 
-void Buffer::SetChannels(int channels) {
+void Buffer::SetChannels(int channels) noexcept {
     this->channels = channels;
 }
 
-float* Buffer::BufferPointer() const {
+float* Buffer::BufferPointer() const noexcept {
     return this->buffer;
 }
 
-long Buffer::Samples() const {
+long Buffer::Samples() const noexcept {
     return this->samples;
 }
 
@@ -99,7 +99,7 @@ void Buffer::SetSamples(long samples) {
     this->ResizeBuffer();
 }
 
-void Buffer::CopyFormat(Buffer* fromBuffer) {
+void Buffer::CopyFormat(Buffer* fromBuffer) noexcept {
     this->channels = fromBuffer->Channels();
     this->sampleRate = fromBuffer->SampleRate();
 }
@@ -117,20 +117,20 @@ void Buffer::ResizeBuffer() {
 }
 
 /* logical bytes; backing store may be be larger */
-long Buffer::Bytes() const {
+long Buffer::Bytes() const noexcept {
     return sizeof(float) * this->samples;
 }
 
-double Buffer::Position() const {
+double Buffer::Position() const noexcept {
     return this->position;
 }
 
-void Buffer::SetPosition(double position) {
+void Buffer::SetPosition(double position) noexcept {
     this->position = position;
 }
 
-void Buffer::Copy(float* buffer, long samples, long offset) {
-    long length = offset + samples;
+void Buffer::Copy(float const* buffer, long samples, long offset) {
+    const long length = offset + samples;
     if (length > this->internalBufferSize) {
         float *newBuffer = new float[length];
         CopyFloat(newBuffer, this->buffer, this->internalBufferSize);

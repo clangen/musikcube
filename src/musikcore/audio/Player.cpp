@@ -452,7 +452,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
     }
 
     /* buffers have been written, wait for the output to play them all */
-    if (player->destroyMode == Player::Drain) {
+    if (player->destroyMode == Player::DestroyMode::Drain) {
         player->output->Drain();
     }
 
