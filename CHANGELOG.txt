@@ -1,3 +1,15 @@
+0.96.4
+
+* fixed some difficult-to-reproduce issues that could corrupt layout.
+* optimized app resize logic so its simpler and more performant.
+* fixed issues with terminal emulators on macOS that support REP (e.g. kitty)
+  by linking against the less buggy, homebrew-provided version of ncurses.
+* upgraded to the most recent version of Android Studio tooling for the
+  musikdroid app.
+* ongoing warning cleanups against more modern compilers.
+
+--------------------------------------------------------------------------------
+
 0.96.3
 
 * fixed a bug that could cause terminal output to get corrupted when switching
