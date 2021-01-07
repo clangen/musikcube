@@ -153,7 +153,7 @@ void GaplessTransport::Stop() {
 }
 
 std::string GaplessTransport::Uri() {
-    const auto const player = this->activePlayer;
+    const auto player = this->activePlayer;
     return player ? player->GetUrl() : "";
 }
 
