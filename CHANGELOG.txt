@@ -1,5 +1,6 @@
 0.96.4
 
+* added mouse wheel support to non-Windows platforms.
 * fixed some difficult-to-reproduce issues that could corrupt layout.
 * optimized app resize logic so its simpler and more performant.
 * fixed issues with terminal emulators on macOS that support REP (e.g. kitty)
