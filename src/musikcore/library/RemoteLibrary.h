@@ -64,6 +64,7 @@ namespace musik { namespace core { namespace library {
 
             static ILibraryPtr Create(std::string name, int id, MessageQueue* messageQueue);
 
+            RemoteLibrary(std::string name, int id, MessageQueue* messageQueue);
             RemoteLibrary(const RemoteLibrary&) = delete;
             virtual ~RemoteLibrary();
 
@@ -74,11 +75,11 @@ namespace musik { namespace core { namespace library {
             int Id() override;
             const std::string& Name() override;
             void SetMessageQueue(musik::core::runtime::IMessageQueue& queue) override;
-            musik::core::runtime::IMessageQueue& GetMessageQueue() override { return *messageQueue; }
-            ILibrary::IResourceLocator& GetResourceLocator() override { return *this; }
+            musik::core::runtime::IMessageQueue& GetMessageQueue() noexcept override { return *messageQueue; }
+            ILibrary::IResourceLocator& GetResourceLocator() noexcept override { return *this; }
             bool IsConfigured() override;
             ConnectionState GetConnectionState() const override { return this->connectionState; }
-            Type GetType() const override { return Type::Remote; }
+            Type GetType() const noexcept override { return Type::Remote; }
             void Close() override;
 
             /* IMessageTarget */
@@ -107,8 +108,6 @@ namespace musik { namespace core { namespace library {
 
             using QueryContextPtr = std::shared_ptr<QueryContext>;
             using QueryList = std::list<QueryContextPtr>;
-
-            RemoteLibrary(std::string name, int id, MessageQueue* messageQueue); /* ctor */
 
             void RunQuery(QueryContextPtr context);
             void RunQueryOnLoopback(QueryContextPtr context);

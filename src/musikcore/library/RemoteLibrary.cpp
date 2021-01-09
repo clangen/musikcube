@@ -63,7 +63,6 @@ using namespace std::chrono;
 
 class NullIndexer: public musik::core::IIndexer {
     public:
-        virtual ~NullIndexer() { }
         void AddPath(const std::string& path) noexcept override { }
         void RemovePath(const std::string& path) noexcept override { }
         void GetPaths(std::vector<std::string>& paths) noexcept override { }
@@ -81,18 +80,16 @@ class RemoteLibrary::QueryCompletedMessage: public Message {
             this->context = context;
         }
 
-        virtual ~QueryCompletedMessage() {
+        QueryContextPtr GetContext() noexcept {
+            return this->context;
         }
-
-        QueryContextPtr GetContext() { return this->context; }
 
     private:
         QueryContextPtr context;
 };
 
 ILibraryPtr RemoteLibrary::Create(std::string name, int id, MessageQueue* messageQueue) {
-    ILibraryPtr lib(new RemoteLibrary(name, id, messageQueue));
-    return lib;
+    return std::make_shared<RemoteLibrary>(name, id, messageQueue);
 }
 
 RemoteLibrary::RemoteLibrary(std::string name, int id, MessageQueue* messageQueue)

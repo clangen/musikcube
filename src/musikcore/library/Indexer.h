@@ -49,6 +49,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/asio/io_service.hpp>
 
+#include <thread>
 #include <deque>
 #include <vector>
 #include <atomic>
@@ -72,32 +73,35 @@ namespace musik { namespace core {
             virtual ~Indexer();
 
             /* IIndexer */
-            virtual void AddPath(const std::string& path) override;
-            virtual void RemovePath(const std::string& path) override;
-            virtual void GetPaths(std::vector<std::string>& paths) override;
-            virtual void Schedule(SyncType type) override;
-            virtual void Stop() override;
-            virtual State GetState() override { return this->state; }
+            void AddPath(const std::string& path) override;
+            void RemovePath(const std::string& path) override;
+            void GetPaths(std::vector<std::string>& paths) override;
+            void Schedule(SyncType type) override;
+            void Stop() override;
+
+            State GetState() noexcept override {
+                return this->state;
+            }
 
             /* IIndexerWriter */
-            virtual musik::core::sdk::ITagStore* CreateWriter() override;
-            virtual bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
-            virtual bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
-            virtual int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
-            virtual void CommitProgress(musik::core::sdk::IIndexerSource* source, unsigned updatedTracks) override;
-            virtual int GetLastModifiedTime(musik::core::sdk::IIndexerSource* source, const char* id) override;
+            musik::core::sdk::ITagStore* CreateWriter() override;
+            bool RemoveByUri(musik::core::sdk::IIndexerSource* source, const char* uri) override;
+            bool RemoveByExternalId(musik::core::sdk::IIndexerSource* source, const char* id) override;
+            int RemoveAll(musik::core::sdk::IIndexerSource* source) override;
+            void CommitProgress(musik::core::sdk::IIndexerSource* source, unsigned updatedTracks) override;
+            int GetLastModifiedTime(musik::core::sdk::IIndexerSource* source, const char* id) override;
 
-            virtual bool Save(
+            bool Save(
                 musik::core::sdk::IIndexerSource* source,
                 musik::core::sdk::ITagStore* store,
                 const char* externalId = "") override;
 
             /* IIndexerNotifier */
-            virtual void ScheduleRescan(musik::core::sdk::IIndexerSource* source) override;
+            void ScheduleRescan(musik::core::sdk::IIndexerSource* source) override;
 
         private:
             struct AddRemoveContext {
-                bool add;
+                bool add{ false };
                 std::string path;
             };
 
@@ -150,7 +154,7 @@ namespace musik { namespace core {
                 const boost::filesystem::path& path,
                 const std::string& pathId);
 
-            bool Bail();
+            bool Bail() noexcept;
 
             db::Connection dbConnection;
             std::string libraryPath;
@@ -158,7 +162,7 @@ namespace musik { namespace core {
             std::atomic<State> state;
             boost::mutex stateMutex;
             boost::condition waitCondition;
-            boost::thread *thread;
+            std::unique_ptr<std::thread> thread;
             std::atomic<int> incrementalUrisScanned, totalUrisScanned;
             std::deque<AddRemoveContext> addRemoveQueue;
             std::deque<SyncContext> syncQueue;

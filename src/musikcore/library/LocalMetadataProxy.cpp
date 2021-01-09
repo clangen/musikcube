@@ -90,8 +90,10 @@ static inline PredicateList toPredicateList(IValue** predicates, size_t count) {
     PredicateList predicateList;
     if (predicates && count) {
         for (size_t i = 0; i < count; i++) {
-            IValue* predicate = predicates[i];
-            predicateList.push_back({ getValue(predicate), predicate->GetId() });
+            auto predicate = predicates[i];
+            if (predicate) {
+                predicateList.push_back({ getValue(predicate), predicate->GetId() });
+            }
         }
     }
     return predicateList;
@@ -111,23 +113,20 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
             this->externalIdCount = externalIdCount;
         }
 
-        virtual ~ExternalIdListToTrackListQuery() {
-        }
-
-        virtual std::shared_ptr<TrackList> GetResult() override {
+        std::shared_ptr<TrackList> GetResult() noexcept override {
             return this->result;
         }
 
-        virtual Headers GetHeaders() override {
+        Headers GetHeaders() noexcept override {
             return Headers();
         }
 
-        virtual size_t GetQueryHash() override {
+        size_t GetQueryHash() noexcept override {
             return 0;
         }
 
     protected:
-        virtual bool OnRun(musik::core::db::Connection& db) override {
+         bool OnRun(musik::core::db::Connection& db) override {
             std::string sql = "SELECT id, external_id FROM tracks WHERE external_id IN(";
             for (size_t i = 0; i < externalIdCount; i++) {
                 sql += (i == 0) ? "?" : ",?";
@@ -165,7 +164,7 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
             return true;
         }
 
-        virtual std::string Name() override {
+        std::string Name() override {
             return "ExternalIdListToTrackListQuery";
         }
 
@@ -193,15 +192,12 @@ class RemoveFromPlaylistQuery : public QueryBase {
             this->updated = 0;
         }
 
-        virtual ~RemoveFromPlaylistQuery() {
-        }
-
-        size_t GetResult() {
+        size_t GetResult() noexcept {
             return this->updated;
         }
 
     protected:
-        virtual bool OnRun(musik::core::db::Connection& db) {
+        bool OnRun(musik::core::db::Connection& db) override {
             this->updated = 0;
 
             ScopedTransaction transaction(db);
@@ -213,8 +209,8 @@ class RemoveFromPlaylistQuery : public QueryBase {
                     db);
 
                 for (size_t i = 0; i < count; i++) {
-                    auto id = this->externalIds[i];
-                    auto o = this->sortOrders[i];
+                    const auto id = this->externalIds[i];
+                    const auto o = this->sortOrders[i];
 
                     deleteStmt.ResetAndUnbind();
                     deleteStmt.BindInt64(0, this->playlistId);
@@ -271,7 +267,7 @@ class RemoveFromPlaylistQuery : public QueryBase {
             return true;
         }
 
-        virtual std::string Name() {
+        std::string Name() override {
             return "RemoveFromPlaylistQuery";
         }
 
@@ -292,22 +288,17 @@ LocalMetadataProxy::LocalMetadataProxy(musik::core::ILibraryPtr library)
 
 }
 
-LocalMetadataProxy::~LocalMetadataProxy() {
-
-}
-
-void LocalMetadataProxy::Release() {
+void LocalMetadataProxy::Release() noexcept {
     delete this;
 }
 
 ITrackList* LocalMetadataProxy::QueryTracks(const char* query, int limit, int offset) {
     try {
-        std::shared_ptr<SearchTrackListQuery> search(
-            new SearchTrackListQuery(
-                this->library,
-                SearchTrackListQuery::MatchType::Substring,
-                std::string(query ? query : ""),
-                TrackSortType::Album));
+        auto search = std::make_shared<SearchTrackListQuery>(
+            this->library,
+            SearchTrackListQuery::MatchType::Substring,
+            std::string(query ? query : ""),
+            TrackSortType::Album);
 
         if (limit >= 0) {
             search->SetLimitAndOffset(limit, offset);
@@ -328,12 +319,9 @@ ITrackList* LocalMetadataProxy::QueryTracks(const char* query, int limit, int of
 
 ITrack* LocalMetadataProxy::QueryTrackById(int64_t trackId) {
     try {
-        TrackPtr target(new LibraryTrack(trackId, this->library));
-
-        std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target, this->library));
-
+        const auto target = std::make_shared<LibraryTrack>(trackId, this->library);
+        const auto search = std::make_shared<TrackMetadataQuery>(target, this->library);
         this->library->EnqueueAndWait(search);
-
         if (search->GetStatus() == IQuery::Finished) {
             return search->Result()->GetSdkValue();
         }
@@ -348,13 +336,10 @@ ITrack* LocalMetadataProxy::QueryTrackById(int64_t trackId) {
 ITrack* LocalMetadataProxy::QueryTrackByExternalId(const char* externalId) {
     if (strlen(externalId)) {
         try {
-            TrackPtr target(new LibraryTrack(0, this->library));
+            auto target = std::make_shared<LibraryTrack>(0, this->library);
             target->SetValue("external_id", externalId);
-
-            std::shared_ptr<TrackMetadataQuery> search(new TrackMetadataQuery(target, this->library));
-
+            auto search = std::make_shared<TrackMetadataQuery>(target, this->library);
             this->library->EnqueueAndWait(search);
-
             if (search->GetStatus() == IQuery::Finished) {
                 return search->Result()->GetSdkValue();
             }
@@ -374,15 +359,15 @@ ITrackList* LocalMetadataProxy::QueryTracksByCategory(
         std::shared_ptr<TrackListQueryBase> search;
 
         if (std::string(categoryType) == constants::Playlists::TABLE_NAME) {
-            search.reset(new GetPlaylistQuery(this->library, selectedId));
+            search = std::make_shared<GetPlaylistQuery>(this->library, selectedId);
         }
         else {
             if (categoryType && strlen(categoryType) && selectedId > 0) {
-                search.reset(new CategoryTrackListQuery(
-                    this->library, categoryType, selectedId, filter));
+                search = std::make_shared<CategoryTrackListQuery>(
+                    this->library, categoryType, selectedId, filter);
             }
             else {
-                search.reset(new CategoryTrackListQuery(this->library, filter));
+                search = std::make_shared<CategoryTrackListQuery>(this->library, filter);
             }
         }
 
@@ -453,14 +438,14 @@ IValueList* LocalMetadataProxy::QueryCategoryWithPredicate(
     const char* type, const char* predicateType, int64_t predicateId, const char* filter)
 {
     try {
-        std::string field = predicateType ? predicateType : "";
+        const std::string field = predicateType ? predicateType : "";
+        const category::PredicateList predicates = { { field, predicateId } };
 
-        std::shared_ptr<CategoryListQuery> search(
-            new CategoryListQuery(
-                CategoryListQuery::MatchType::Substring,
-                type,
-                { field, predicateId },
-                std::string(filter ? filter : "")));
+        auto search = std::make_shared<CategoryListQuery>(
+            CategoryListQuery::MatchType::Substring,
+            type,
+            predicates,
+            std::string(filter ? filter : ""));
 
         this->library->EnqueueAndWait(search);
 
@@ -504,10 +489,10 @@ IMapList* LocalMetadataProxy::QueryAlbums(
     const char* categoryIdName, int64_t categoryIdValue, const char* filter)
 {
     try {
-        std::shared_ptr<AlbumListQuery> search(new AlbumListQuery(
+        auto search = std::make_shared<AlbumListQuery>(
             std::string(categoryIdName ? categoryIdName : ""),
             categoryIdValue,
-            std::string(filter ? filter : "")));
+            std::string(filter ? filter : ""));
 
         this->library->EnqueueAndWait(search);
 
@@ -736,10 +721,7 @@ bool LocalMetadataProxy::AppendToPlaylistWithExternalIds(
 bool LocalMetadataProxy::AppendToPlaylistWithTrackList(
     const int64_t playlistId, ITrackList* trackList, int offset)
 {
-    bool result = appendToPlaylist(
-        this->library, playlistId, trackList, offset);
-
-    return result;
+    return appendToPlaylist(this->library, playlistId, trackList, offset);
 }
 
 size_t LocalMetadataProxy::RemoveTracksFromPlaylist(
@@ -788,6 +770,10 @@ ITrackList* LocalMetadataProxy::QueryTracksByExternalId(
 bool LocalMetadataProxy::SendRawQuery(
     const char* query, IAllocator& allocator, char** resultData, int* resultSize)
 {
+    if (!resultData || !resultSize) {
+        return false;
+    }
+
     try {
         nlohmann::json json = nlohmann::json::parse(query);
         auto localLibrary = LibraryFactory::Instance().DefaultLocalLibrary();
@@ -797,7 +783,7 @@ bool LocalMetadataProxy::SendRawQuery(
             localLibrary->EnqueueAndWait(libraryQuery);
             if (libraryQuery->GetStatus() == IQuery::Finished) {
                 std::string result = libraryQuery->SerializeResult();
-                *resultData = (char*) allocator.Allocate(result.size() + 1);
+                *resultData = static_cast<char*>(allocator.Allocate(result.size() + 1));
                 if (*resultData) {
                     *resultSize = (int) result.size() + 1;
                     strncpy(*resultData, result.c_str(), *resultSize);

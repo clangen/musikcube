@@ -43,21 +43,19 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             LocalMetadataProxy(musik::core::ILibraryPtr library);
 
-            virtual ~LocalMetadataProxy();
-
-            virtual musik::core::sdk::ITrackList*
+            musik::core::sdk::ITrackList*
                 QueryTracks(
                     const char* query = "",
                     int limit = -1,
                     int offset = 0) override;
 
-            virtual musik::core::sdk::ITrack*
+            musik::core::sdk::ITrack*
                 QueryTrackById(int64_t trackId) override;
 
-            virtual musik::core::sdk::ITrack*
+            musik::core::sdk::ITrack*
                 QueryTrackByExternalId(const char* externalId) override;
 
-            virtual musik::core::sdk::ITrackList*
+            musik::core::sdk::ITrackList*
                 QueryTracksByCategory(
                     const char* categoryType,
                     int64_t selectedId,
@@ -65,7 +63,7 @@ namespace musik { namespace core { namespace library { namespace query {
                     int limit = -1,
                     int offset = 0) override;
 
-            virtual musik::core::sdk::ITrackList*
+            musik::core::sdk::ITrackList*
                 QueryTracksByCategories(
                     musik::core::sdk::IValue** categories,
                     size_t categoryCount,
@@ -73,91 +71,91 @@ namespace musik { namespace core { namespace library { namespace query {
                     int limit = -1,
                     int offset = 0) override;
 
-            virtual musik::core::sdk::ITrackList* QueryTracksByExternalId(
+            musik::core::sdk::ITrackList* QueryTracksByExternalId(
                 const char** externalIds, size_t externalIdCount) override;
 
-            virtual musik::core::sdk::IValueList* ListCategories() override;
+            musik::core::sdk::IValueList* ListCategories() override;
 
-            virtual musik::core::sdk::IValueList*
+            musik::core::sdk::IValueList*
                 QueryCategory(
                     const char* type,
                     const char* filter = "") override;
 
-            virtual musik::core::sdk::IValueList*
+            musik::core::sdk::IValueList*
                 QueryCategoryWithPredicate(
                     const char* type,
                     const char* predicateType,
                     int64_t predicateId,
                     const char* filter = "") override;
 
-            virtual musik::core::sdk::IValueList*
+            musik::core::sdk::IValueList*
                 QueryCategoryWithPredicates(
                     const char* type,
                     musik::core::sdk::IValue** predicates,
                     size_t predicateCount,
                     const char* filter = "") override;
 
-            virtual musik::core::sdk::IMapList*
+            musik::core::sdk::IMapList*
                 QueryAlbums(const char* filter = "") override;
 
-            virtual musik::core::sdk::IMapList* QueryAlbums(
+            musik::core::sdk::IMapList* QueryAlbums(
                 const char* categoryIdName,
                 int64_t categoryIdValue,
                 const char* filter = "") override;
 
-            virtual int64_t SavePlaylistWithIds(
+            int64_t SavePlaylistWithIds(
                 int64_t* trackIds,
                 size_t trackIdCount,
                 const char* name,
                 const int64_t playlistId = 0) override;
 
-            virtual int64_t SavePlaylistWithExternalIds(
+            int64_t SavePlaylistWithExternalIds(
                 const char** externalIds,
                 size_t externalIdCount,
                 const char* playlistName,
                 const int64_t playlistId = 0) override;
 
-            virtual int64_t SavePlaylistWithTrackList(
+            int64_t SavePlaylistWithTrackList(
                 musik::core::sdk::ITrackList* trackList,
                 const char* playlistName,
                 const int64_t playlistId = 0) override;
 
-            virtual bool RenamePlaylist(
+            bool RenamePlaylist(
                 const int64_t playlistId,
                 const char* name) override;
 
-            virtual bool DeletePlaylist(const int64_t playlistId) override;
+            bool DeletePlaylist(const int64_t playlistId) override;
 
-            virtual bool AppendToPlaylistWithIds(
+            bool AppendToPlaylistWithIds(
                 const int64_t playlistId,
                 const int64_t* trackIds,
                 size_t trackIdCount,
                 int offset = -1) override;
 
-            virtual bool AppendToPlaylistWithExternalIds(
+            bool AppendToPlaylistWithExternalIds(
                 const int64_t playlistId,
                 const char** externalIds,
                 size_t externalIdCount,
                 int offset = -1) override;
 
-            virtual bool AppendToPlaylistWithTrackList(
+            bool AppendToPlaylistWithTrackList(
                 const int64_t playlistId,
                 musik::core::sdk::ITrackList* trackList,
                 int offset = -1) override;
 
-            virtual size_t RemoveTracksFromPlaylist(
+            size_t RemoveTracksFromPlaylist(
                 const int64_t playlistId,
                 const char** externalIds,
                 const int* sortOrders,
                 int count) override;
 
-            virtual bool SendRawQuery(
+            bool SendRawQuery(
                 const char* query,
                 musik::core::sdk::IAllocator& allocator,
                 char** resultData,
                 int* resultSize) override;
 
-            virtual void Release() override;
+            void Release() noexcept override;
 
         private:
             musik::core::ILibraryPtr library;

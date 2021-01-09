@@ -62,14 +62,14 @@
 
 #define STRESS_TEST_DB 0
 
-static const std::string TAG = "Indexer";
-static const size_t TRANSACTION_INTERVAL = 300;
+constexpr const char* TAG = "Indexer";
+constexpr size_t TRANSACTION_INTERVAL = 300;
 static FILE* logFile = nullptr;
 
 #ifdef __arm__
-static const int DEFAULT_MAX_THREADS = 2;
+constexpr int DEFAULT_MAX_THREADS = 2;
 #else
-static const int DEFAULT_MAX_THREADS = 4;
+constexpr int DEFAULT_MAX_THREADS = 4;
 #endif
 
 using namespace musik::core;
@@ -96,7 +96,7 @@ static void openLogFile() {
     }
 }
 
-static void closeLogFile() {
+static void closeLogFile() noexcept {
     if (logFile) {
         fclose(logFile);
         logFile = nullptr;
@@ -157,8 +157,7 @@ void Indexer::Stop() {
 
         this->waitCondition.notify_all();
         this->thread->join();
-        delete this->thread;
-        this->thread = nullptr;
+        this->thread.reset();
     }
 }
 
@@ -171,11 +170,11 @@ void Indexer::Schedule(SyncType type, IIndexerSource* source) {
 
     if (!this->thread) {
         this->state = StateIdle;
-        this->thread = new boost::thread(boost::bind(&Indexer::ThreadLoop, this));
+        this->thread = std::make_unique<std::thread>(std::bind(&Indexer::ThreadLoop, this));
     }
 
-    int sourceId = source ? source->SourceId() : 0;
-    for (SyncContext& context : this->syncQueue) {
+    const int sourceId = source ? source->SourceId() : 0;
+    for (const SyncContext& context : this->syncQueue) {
         if (context.type == type && context.sourceId == sourceId) {
             return;
         }
@@ -233,12 +232,12 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
     this->totalUrisScanned = 0;
 
     /* always remove tracks that no longer have a corresponding source */
-    for (int id : this->GetOrphanedSourceIds()) {
+    for (const auto id : this->GetOrphanedSourceIds()) {
         this->RemoveAllForSourceId(id);
     }
 
     auto type = context.type;
-    auto sourceId = context.sourceId;
+    const auto sourceId = context.sourceId;
     if (type == SyncType::Rebuild) {
         LocalLibrary::InvalidateTrackMetadata(this->dbConnection);
 
@@ -262,7 +261,7 @@ void Indexer::Synchronize(const SyncContext& context, boost::asio::io_service* i
 
     while (stmt.Step() == db::Row) {
         try {
-            int64_t id = stmt.ColumnInt64(0);
+            const int64_t id = stmt.ColumnInt64(0);
             std::string path = stmt.ColumnText(1);
             boost::filesystem::path dir(path);
 
@@ -322,7 +321,7 @@ void Indexer::FinalizeSync(const SyncContext& context) {
     /* remove undesired entries from db (files themselves will remain) */
     musik::debug::info(TAG, "cleanup 1/2");
 
-    auto type = context.type;
+    const auto type = context.type;
 
     if (type != SyncType::Sources) {
         if (!this->Bail()) {
@@ -368,9 +367,8 @@ void Indexer::ReadMetadataFromFile(
     #define APPEND_LOG(x) if (logFile) { fprintf(logFile, "    - [%s] %s\n", x, file.string().c_str()); }
 
     musik::core::IndexerTrack track(0);
-    TagStore* store = nullptr;
 
-    bool needsToBeIndexed = track.NeedsToBeIndexed(file, this->dbConnection);
+    const bool needsToBeIndexed = track.NeedsToBeIndexed(file, this->dbConnection);
 
     /* get cached filesize, parts, size, etc */
     if (needsToBeIndexed) {
@@ -379,14 +377,14 @@ void Indexer::ReadMetadataFromFile(
         bool saveToDb = false;
 
         /* read the tag from the plugin */
-        store = new TagStore(track);
+        TagStore store(track);
         typedef TagReaderList::iterator Iterator;
         Iterator it = this->tagReaders.begin();
         while (it != this->tagReaders.end()) {
             try {
                 if ((*it)->CanRead(track.GetString("extension").c_str())) {
                     APPEND_LOG("can read")
-                    if ((*it)->Read(file.string().c_str(), store)) {
+                    if ((*it)->Read(file.string().c_str(), &store)) {
                         APPEND_LOG("did read")
                         saveToDb = true;
                         break;
@@ -435,10 +433,6 @@ void Indexer::ReadMetadataFromFile(
 
     #undef APPEND_LOG
 
-    if (store) {
-        store->Release();
-    }
-
     this->IncrementTracksScanned();
 }
 
@@ -448,7 +442,9 @@ inline void Indexer::IncrementTracksScanned(int delta) {
     this->incrementalUrisScanned.fetch_add(delta);
     this->totalUrisScanned.fetch_add(delta);
 
-    int interval = prefs->GetInt(prefs::keys::IndexerTransactionInterval, TRANSACTION_INTERVAL);
+    const int interval = prefs->GetInt(
+        prefs::keys::IndexerTransactionInterval, TRANSACTION_INTERVAL);
+
     if (this->incrementalUrisScanned > TRANSACTION_INTERVAL) {
         this->trackTransaction->CommitAndRestart();
         this->Progress(this->totalUrisScanned);
@@ -566,7 +562,7 @@ ScanResult Indexer::SyncSource(
 
                 tracks.BindInt32(0, source->SourceId());
                 while (tracks.Step() == db::Row) {
-                    TrackPtr track(new IndexerTrack(tracks.ColumnInt64(0)));
+                    TrackPtr track = std::make_shared<IndexerTrack>(tracks.ColumnInt64(0));
                     track->SetValue(constants::Track::FILENAME, tracks.ColumnText(1));
 
                     if (logFile) {
@@ -612,16 +608,18 @@ void Indexer::ThreadLoop() {
             return;
         }
 
-        SyncContext context = this->syncQueue.front();
+        const SyncContext context = this->syncQueue.front();
         this->syncQueue.pop_front();
 
         this->state = StateIndexing;
         this->Started();
 
         this->dbConnection.Open(this->dbFilename.c_str(), 0);
-        this->trackTransaction.reset(new db::ScopedTransaction(this->dbConnection));
+        this->trackTransaction = std::make_shared<db::ScopedTransaction>(this->dbConnection);
 
-        int threadCount = prefs->GetInt(prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS);
+        const int threadCount = prefs->GetInt(
+            prefs::keys::IndexerThreadCount, DEFAULT_MAX_THREADS);
+
         if (threadCount > 1) {
             boost::asio::io_service io;
             boost::thread_group threadPool;
@@ -920,11 +918,10 @@ void Indexer::RunAnalyzers() {
         if (query.GetStatus() == IQuery::Finished) {
             PluginVector runningAnalyzers;
 
-            TagStore* store = new TagStore(track);
-            PluginVector::iterator plugin = analyzers.begin();
-            for ( ; plugin != analyzers.end(); ++plugin) {
-                if ((*plugin)->Start(store)) {
-                    runningAnalyzers.push_back(*plugin);
+            TagStore store(track);
+            for (auto plugin : analyzers) {
+                if (plugin->Start(&store)) {
+                    runningAnalyzers.push_back(plugin);
                 }
             }
 
@@ -941,7 +938,7 @@ void Indexer::RunAnalyzers() {
                         while ((buffer = stream->GetNextProcessedOutputBuffer()) && !runningAnalyzers.empty()) {
                             PluginVector::iterator plugin = runningAnalyzers.begin();
                             while(plugin != runningAnalyzers.end()) {
-                                if ((*plugin)->Analyze(store, buffer)) {
+                                if ((*plugin)->Analyze(&store, buffer)) {
                                     ++plugin;
                                 }
                                 else {
@@ -956,7 +953,7 @@ void Indexer::RunAnalyzers() {
                         PluginVector::iterator plugin = analyzers.begin();
 
                         for ( ; plugin != analyzers.end(); ++plugin) {
-                            if ((*plugin)->End(store)) {
+                            if ((*plugin)->End(&store)) {
                                 successPlugins++;
                             }
                         }
@@ -970,10 +967,6 @@ void Indexer::RunAnalyzers() {
                     }
                 }
             }
-
-            if (store) {
-                store->Release();
-            }
         }
 
         if (this->Bail()) {
@@ -985,12 +978,11 @@ void Indexer::RunAnalyzers() {
 }
 
 ITagStore* Indexer::CreateWriter() {
-    std::shared_ptr<Track> track(new IndexerTrack(0));
-    return new TagStore(track);
+    return new TagStore(std::make_shared<IndexerTrack>(0));
 }
 
 bool Indexer::Save(IIndexerSource* source, ITagStore* store, const char* externalId) {
-    if (source->SourceId() == 0) {
+    if (!source || source->SourceId() == 0 || !store) {
         return false;
     }
 
@@ -1013,7 +1005,7 @@ bool Indexer::Save(IIndexerSource* source, ITagStore* store, const char* externa
 }
 
 bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
-    if (source->SourceId() == 0) {
+    if (!source || source->SourceId() == 0) {
         return false;
     }
 
@@ -1032,7 +1024,7 @@ bool Indexer::RemoveByUri(IIndexerSource* source, const char* uri) {
 }
 
 bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
-    if (source->SourceId() == 0) {
+    if (!source || source->SourceId() == 0) {
         return false;
     }
 
@@ -1051,7 +1043,11 @@ bool Indexer::RemoveByExternalId(IIndexerSource* source, const char* id) {
 }
 
 int Indexer::RemoveAll(IIndexerSource* source) {
-    auto id = source->SourceId();
+    if (!source) {
+        return 0;
+    }
+
+    const auto id = source->SourceId();
     return (id != 0) ? this->RemoveAllForSourceId(id) : 0;
 }
 
@@ -1062,7 +1058,8 @@ int Indexer::RemoveAllForSourceId(int sourceId) {
 }
 
 void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
-    if (this->currentSource &&
+    if (source &&
+        this->currentSource &&
         this->currentSource->SourceId() == source->SourceId() &&
         trackTransaction)
     {
@@ -1075,24 +1072,25 @@ void Indexer::CommitProgress(IIndexerSource* source, unsigned updatedTracks) {
 }
 
 int Indexer::GetLastModifiedTime(IIndexerSource* source, const char* externalId) {
-    db::Statement stmt("SELECT filetime FROM tracks t where source_id=? AND external_id=?", dbConnection);
-
-    stmt.BindInt32(0, source->SourceId());
-    stmt.BindText(1, externalId);
-    if (stmt.Step() == db::Row) {
-        return stmt.ColumnInt32(0);
+    if (source && externalId && strlen(externalId)) {
+        db::Statement stmt("SELECT filetime FROM tracks t where source_id=? AND external_id=?", dbConnection);
+        stmt.BindInt32(0, source->SourceId());
+        stmt.BindText(1, externalId);
+        if (stmt.Step() == db::Row) {
+            return stmt.ColumnInt32(0);
+        }
     }
 
     return -1;
 }
 
 void Indexer::ScheduleRescan(IIndexerSource* source) {
-    if (source->SourceId() != 0) {
+    if (source && source->SourceId() != 0) {
         this->Schedule(SyncType::Sources, source);
     }
 }
 
-bool Indexer::Bail() {
+bool Indexer::Bail() noexcept {
     return
         this->state == StateStopping ||
         this->state == StateStopped;

@@ -43,18 +43,18 @@
 
 using namespace musik::core;
 
-static LibraryFactory::IMessageQueue* sMessageQueue = nullptr;
-static std::shared_ptr<LibraryFactory> sInstance;
+static LibraryFactory::IMessageQueue* messageQueue = nullptr;
+static std::shared_ptr<LibraryFactory> instance;
 
 void LibraryFactory::Initialize(IMessageQueue& messageQueue) {
-    sMessageQueue = &messageQueue;
+    ::messageQueue = &messageQueue;
 }
 
 LibraryFactory& LibraryFactory::Instance() {
-    if (!sInstance) {
-        sInstance = std::shared_ptr<LibraryFactory>(new LibraryFactory());
+    if (!instance) {
+        instance = std::shared_ptr<LibraryFactory>(new LibraryFactory());
     }
-    return *sInstance;
+    return *instance;
 };
 
 LibraryFactory::LibraryFactory() {
@@ -67,8 +67,8 @@ LibraryFactory::~LibraryFactory() {
 
 ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::string& name) {
     ILibraryPtr library = (type == ILibrary::Type::Local)
-        ? library::LocalLibrary::Create(name, id, sMessageQueue)
-        : library::RemoteLibrary::Create(name, id, sMessageQueue);
+        ? library::LocalLibrary::Create(name, id, messageQueue)
+        : library::RemoteLibrary::Create(name, id, messageQueue);
 
     if (library) {
         this->libraries.push_back(library);
@@ -80,12 +80,12 @@ ILibraryPtr LibraryFactory::AddLibrary(int id, ILibrary::Type type, const std::s
 }
 
 void LibraryFactory::Shutdown() {
-    if (sInstance) {
-        for (ILibraryPtr library : sInstance->libraries) {
+    if (instance) {
+        for (ILibraryPtr library : instance->libraries) {
             library->Close();
         }
-        sInstance->libraries.clear();
-        sInstance->libraryMap.clear();
+        instance->libraries.clear();
+        instance->libraryMap.clear();
     }
 }
 
@@ -147,9 +147,9 @@ ILibraryPtr LibraryFactory::DefaultLibrary(ILibrary::Type type) {
 
 ILibraryPtr LibraryFactory::GetLibrary(int identifier) {
     if (identifier) {
-        LibraryMap::iterator lib = this->libraryMap.find(identifier);
-        if (lib != this->libraryMap.end()) {
-            return lib->second;
+        LibraryMap::iterator library = this->libraryMap.find(identifier);
+        if (library != this->libraryMap.end()) {
+            return library->second;
         }
     }
     return ILibraryPtr();

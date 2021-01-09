@@ -58,12 +58,12 @@ using namespace std::chrono;
 
 class LocalResourceLocator: public ILibrary::IResourceLocator {
     public:
-        virtual std::string GetTrackUri(
+        std::string GetTrackUri(
             musik::core::sdk::ITrack* track,
             const std::string& defaultUri) override
         {
             char buffer[4096];
-            int size = track->Uri(buffer, sizeof(buffer));
+            const int size = track->Uri(buffer, sizeof(buffer));
             return size > 0 ? std::string(buffer) : defaultUri;
         }
 } sResourceLocator;
@@ -77,10 +77,9 @@ class LocalLibrary::QueryCompletedMessage: public Message {
             this->context = context;
         }
 
-        virtual ~QueryCompletedMessage() {
+        QueryContextPtr GetContext() noexcept {
+            return this->context;
         }
-
-        QueryContextPtr GetContext() { return this->context; }
 
     private:
         QueryContextPtr context;
@@ -217,7 +216,7 @@ int LocalLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback call
                     context->query->GetStatus() == db::IQuery::Running)
                     )
                 {
-                    auto result = this->queueCondition.wait_for(lock, timeoutMs * milliseconds(1));
+                    const auto result = this->queueCondition.wait_for(lock, timeoutMs * milliseconds(1));
                     if (result == std::cv_status::timeout) {
                         break;
                     }
@@ -269,9 +268,7 @@ void LocalLibrary::RunQuery(QueryContextPtr context, bool notify) {
 
         if (notify) {
             if (this->messageQueue) {
-                this->messageQueue->Post(
-                    std::shared_ptr<QueryCompletedMessage>(
-                        new QueryCompletedMessage(this, context)));
+                this->messageQueue->Post(std::make_shared<QueryCompletedMessage>(this, context));
             }
             else {
                 this->QueryCompleted(query.get());
@@ -304,7 +301,7 @@ ILibrary::IResourceLocator& LocalLibrary::GetResourceLocator() {
 
 void LocalLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
-        auto context = static_cast<QueryCompletedMessage*>(&message)->GetContext();
+        auto context = dynamic_cast<QueryCompletedMessage*>(&message)->GetContext();
         auto query = context->query;
 
         this->QueryCompleted(context->query.get());
@@ -557,8 +554,8 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
         if (stmt.Step() != db::Row) {
             /* create the initial version if one doesn't exist */
-            db::Statement stmt("INSERT INTO version VALUES(1)", db);
-            stmt.Step();
+            db::Statement insert("INSERT INTO version VALUES(1)", db);
+            insert.Step();
         }
         else {
             lastVersion = stmt.ColumnInt32(0);
