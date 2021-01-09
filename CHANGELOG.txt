@@ -7,6 +7,8 @@
   by linking against the less buggy, homebrew-provided version of ncurses.
 * upgraded to the most recent version of Android Studio tooling for the
   musikdroid app.
+* fixed a bug where track numbers would not be correct after loading a session
+  where the last viewed content was a playlist.
 * ongoing warning cleanups against more modern compilers.
 
 --------------------------------------------------------------------------------

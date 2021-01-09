@@ -178,6 +178,7 @@ void BrowseLayout::LoadLastSession() {
     const std::string field = session->GetString(keys::LastBrowseCategoryType, "");
     const int64_t id = (int64_t) session->GetDouble(keys::LastBrowseCategoryId, -1.0);
     if (field.size()) {
+        this->SwitchCategory(field);
         this->ScrollTo(field, id);
     }
 }
