@@ -11,9 +11,9 @@ jobs:
       - run: make -j2
       - run: make package
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - run: ./script/copy-artifacts-to-host.sh /root/debs
       - store_artifacts:
           path: /root/debs/
-      - run: ./script/copy-artifacts-to-host.sh
   build_ubuntu_focal:
     docker:
       - image: ubuntu:focal
@@ -25,9 +25,9 @@ jobs:
       - run: make -j2
       - run: make package
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - run: ./script/copy-artifacts-to-host.sh /root/debs
       - store_artifacts:
           path: /root/debs/
-      - run: ./script/copy-artifacts-to-host.sh
   build_ubuntu_groovy:
     docker:
       - image: ubuntu:groovy
@@ -39,9 +39,9 @@ jobs:
       - run: make -j2
       - run: make package
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - run: ./script/copy-artifacts-to-host.sh /root/debs
       - store_artifacts:
           path: /root/debs/
-      - run: ./script/copy-artifacts-to-host.sh
   build_fedora_31:
     docker:
       - image: fedora:31
@@ -52,9 +52,9 @@ jobs:
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - run: ./script/copy-artifacts-to-host.sh /root/rpms
       - store_artifacts:
           path: /root/rpms/
-      - run: ./script/copy-artifacts-to-host.sh
   build_fedora_32:
     docker:
       - image: fedora:32
@@ -65,9 +65,9 @@ jobs:
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - run: ./script/copy-artifacts-to-host.sh /root/rpms
       - store_artifacts:
           path: /root/rpms/
-      - run: ./script/copy-artifacts-to-host.sh
   build_fedora_33:
     docker:
       - image: fedora:33
@@ -78,9 +78,9 @@ jobs:
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - run: ./script/copy-artifacts-to-host.sh /root/rpms
       - store_artifacts:
           path: /root/rpms/
-      - run: ./script/copy-artifacts-to-host.sh
 workflow_filters: &workflow_filters
   filters:
     branches:
