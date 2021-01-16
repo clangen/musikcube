@@ -10,8 +10,8 @@ jobs:
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=bionic -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
+      - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: ./script/copy-artifacts-to-host.sh /root/debs
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_focal:
@@ -24,8 +24,8 @@ jobs:
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=focal -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
+      - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: ./script/copy-artifacts-to-host.sh /root/debs
       - store_artifacts:
           path: /root/debs/
   build_ubuntu_groovy:
@@ -38,8 +38,8 @@ jobs:
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=groovy -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
+      - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - run: ./script/copy-artifacts-to-host.sh /root/debs
       - store_artifacts:
           path: /root/debs/
   build_fedora_31:
@@ -51,8 +51,8 @@ jobs:
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
+      - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: ./script/copy-artifacts-to-host.sh /root/rpms
       - store_artifacts:
           path: /root/rpms/
   build_fedora_32:
@@ -64,8 +64,8 @@ jobs:
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
+      - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: ./script/copy-artifacts-to-host.sh /root/rpms
       - store_artifacts:
           path: /root/rpms/
   build_fedora_33:
@@ -77,8 +77,8 @@ jobs:
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
+      - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
-      - run: ./script/copy-artifacts-to-host.sh /root/rpms
       - store_artifacts:
           path: /root/rpms/
 workflow_filters: &workflow_filters
