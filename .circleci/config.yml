@@ -4,77 +4,83 @@ jobs:
     docker:
       - image: ubuntu:bionic
     steps:
-      - checkout
       - run: apt-get update
-      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y build-essential clang cmake libboost-thread1.65-dev libboost-system1.65-dev libboost-filesystem1.65-dev libboost-date-time1.65-dev libboost-atomic1.65-dev libboost-chrono1.65-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.65-dev libboost-system1.65-dev libboost-filesystem1.65-dev libboost-date-time1.65-dev libboost-atomic1.65-dev libboost-chrono1.65-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - checkout
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=bionic -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
+      - run: ./script/copy-artifacts-to-host.sh
   build_ubuntu_focal:
     docker:
       - image: ubuntu:focal
     steps:
-      - checkout
       - run: apt-get update
-      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - checkout
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=focal -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
+      - run: ./script/copy-artifacts-to-host.sh
   build_ubuntu_groovy:
     docker:
       - image: ubuntu:groovy
     steps:
-      - checkout
       - run: apt-get update
-      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - checkout
       - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=groovy -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
+      - run: ./script/copy-artifacts-to-host.sh
   build_fedora_31:
     docker:
       - image: fedora:31
     steps:
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
       - checkout
-      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
           path: /root/rpms/
+      - run: ./script/copy-artifacts-to-host.sh
   build_fedora_32:
     docker:
       - image: fedora:32
     steps:
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
       - checkout
-      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
           path: /root/rpms/
+      - run: ./script/copy-artifacts-to-host.sh
   build_fedora_33:
     docker:
       - image: fedora:33
     steps:
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
       - checkout
-      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: rpmbuild -ba -vv musikcube.spec
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
           path: /root/rpms/
+      - run: ./script/copy-artifacts-to-host.sh
 workflow_filters: &workflow_filters
   filters:
     branches:
