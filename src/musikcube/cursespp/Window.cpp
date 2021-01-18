@@ -419,7 +419,13 @@ void Window::Redraw() {
         }
 
         if (this->frame) {
+#ifdef __FreeBSD__
+            /* somehow related to curses version, but i don't know how;
+            if we don't do this on FreeBSD we get missing background
+            colors for things like overlays. if we do this on other
+            platforms we get weird repainting artifacts. */
             this->RepaintBackground();
+#endif
             this->OnRedraw();
             this->Invalidate();
             this->isDirty = false;
