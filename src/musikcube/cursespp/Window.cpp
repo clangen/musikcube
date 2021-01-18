@@ -419,6 +419,7 @@ void Window::Redraw() {
         }
 
         if (this->frame) {
+            this->RepaintBackground();
             this->OnRedraw();
             this->Invalidate();
             this->isDirty = false;
