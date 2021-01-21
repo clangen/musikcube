@@ -46,7 +46,7 @@ namespace musik { namespace core { namespace library { namespace query {
             virtual ~LyricsQuery();
 
             /* IQuery */
-            std::string Name() { return kQueryName; }
+            virtual std::string Name() { return kQueryName; }
             virtual std::string GetResult();
 
             /* ISerializableQuery */

@@ -44,7 +44,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
             SetTrackRatingQuery(int64_t trackId, int rating);
             virtual ~SetTrackRatingQuery();
-            std::string Name() { return kQueryName; }
+
+            virtual std::string Name() { return kQueryName; }
 
             /* ISerializableQuery */
             virtual std::string SerializeQuery();

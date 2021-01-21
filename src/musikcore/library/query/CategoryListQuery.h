@@ -70,11 +70,9 @@ namespace musik { namespace core { namespace library { namespace query {
 
             virtual ~CategoryListQuery();
 
-            std::string Name() { return kQueryName; }
-
-            /* IQuery */
             virtual Result GetResult();
             virtual int GetIndexOf(int64_t id);
+            virtual std::string Name() { return kQueryName; }
 
             /* ISerializableQuery */
             virtual std::string SerializeQuery();

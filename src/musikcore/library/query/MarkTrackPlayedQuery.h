@@ -44,7 +44,7 @@ namespace musik { namespace core { namespace library { namespace query {
 
             MarkTrackPlayedQuery(const int64_t trackId);
             virtual ~MarkTrackPlayedQuery();
-            std::string Name() { return "MarkTrackPlayedQuery"; }
+            virtual std::string Name() { return "MarkTrackPlayedQuery"; }
 
             /* ISerializableQuery */
             virtual std::string SerializeQuery();

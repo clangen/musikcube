@@ -59,6 +59,8 @@ class TrackMetadataBatchQuery: public QueryBase {
             return this->result;
         }
 
+        virtual std::string Name() { return kQueryName; }
+
         /* ISerializableQuery */
         virtual std::string SerializeQuery();
         virtual std::string SerializeResult();
@@ -69,7 +71,6 @@ class TrackMetadataBatchQuery: public QueryBase {
 
     protected:
         virtual bool OnRun(musik::core::db::Connection& db);
-        virtual std::string Name() { return kQueryName; }
 
     private:
         musik::core::ILibraryPtr library;
