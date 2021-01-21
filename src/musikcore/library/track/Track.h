@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <musikcore/support/DeleteDefaults.h>
 #include <musikcore/sdk/ITagStore.h>
 #include <musikcore/library/ILibrary.h>
 #include <musikcore/sdk/ITrack.h>
@@ -54,39 +55,37 @@ namespace musik { namespace core {
             typedef std::multimap<std::string, std::string> MetadataMap;
             typedef std::pair<MetadataMap::iterator, MetadataMap::iterator> MetadataIteratorRange;
 
-            virtual ~Track();
-
-            virtual musik::core::ILibraryPtr Library();
-            virtual int LibraryId();
+            virtual musik::core::ILibraryPtr Library() noexcept;
+            virtual int LibraryId() noexcept;
 
             /* ITrack is a ready only interface; we use the ITagStore interface
             for writing. we replicate the interface here, and have TagStore pass
             through to us */
             virtual void SetValue(const char* key, const char* value) = 0;
             virtual void ClearValue(const char* key) = 0;
-            virtual void SetThumbnail(const char *data, long size) = 0;
+            virtual void SetThumbnail(const char* data, long size) = 0;
             virtual bool Contains(const char* key) = 0;
             virtual bool ContainsThumbnail() = 0;
             virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) = 0;
 
             /* IResource */
-            virtual int64_t GetId() override;
-            virtual Class GetClass() override;
-            virtual const char* GetType() override;
+            int64_t GetId() override;
+            Class GetClass() override;
+            const char* GetType() override;
 
             /* IValue */
-            virtual size_t GetValue(char* dst, size_t size) override;
+            size_t GetValue(char* dst, size_t size) override;
 
             /* IMap */
-            virtual void Release() override;
-            virtual int GetString(const char* key, char* dst, int size) override = 0;
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL) override = 0;
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0) override = 0;
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f) override = 0;
+            void Release() noexcept override;
+            int GetString(const char* key, char* dst, int size) override = 0;
+            long long GetInt64(const char* key, long long defaultValue = 0LL) override = 0;
+            int GetInt32(const char* key, unsigned int defaultValue = 0) override = 0;
+            double GetDouble(const char* key, double defaultValue = 0.0f) override = 0;
 
             /* ITrack */
-            virtual void Retain() override;
-            virtual int Uri(char* dst, int size) override = 0;
+            void Retain() noexcept override;
+            int Uri(char* dst, int size) override = 0;
 
             /* implementation specific */
             virtual void SetId(int64_t id) = 0;
@@ -103,21 +102,25 @@ namespace musik { namespace core {
 
     class TagStore : public musik::core::sdk::ITagStore {
         public:
-            TagStore(TrackPtr track);
+            DELETE_CLASS_DEFAULTS(TagStore)
+
+            TagStore(TrackPtr track) noexcept;
             TagStore(Track& track);
+
+            virtual ~TagStore() noexcept { }
 
             template <typename T> T As() {
                 return dynamic_cast<T>(track.get());
             }
 
-            virtual void Retain() override;
-            virtual void Release() override;
-            virtual void SetValue(const char* key, const char* value) override;
-            virtual void ClearValue(const char* key) override;
-            virtual bool Contains(const char* key) override;
-            virtual bool ContainsThumbnail() override;
-            virtual void SetThumbnail(const char *data, long size) override;
-            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
+            void Retain() noexcept override;
+            void Release() noexcept override;
+            void SetValue(const char* key, const char* value) override;
+            void ClearValue(const char* key) override;
+            bool Contains(const char* key) override;
+            bool ContainsThumbnail() override;
+            void SetThumbnail(const char* data, long size) override;
+            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
 
         private:
             TrackPtr track;

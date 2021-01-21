@@ -65,7 +65,9 @@ namespace musik { namespace core { namespace i18n {
             int Dimension(const char* key, int defaultValue);
 
         private:
-            Locale();
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Locale)
+
+            Locale() noexcept;
 
             std::vector<std::string> locales;
             std::shared_ptr<musik::core::Preferences> prefs;

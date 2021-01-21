@@ -41,6 +41,9 @@
 
 #include <boost/filesystem.hpp>
 
+#include <musikcore/support/NarrowCast.h>
+#include <musikcore/support/DeleteDefaults.h>
+
 #ifdef WIN32
     #ifndef WINVER
         #define WIN32_LEAN_AND_MEAN

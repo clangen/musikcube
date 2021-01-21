@@ -45,25 +45,27 @@ namespace musik { namespace core { namespace io {
             using PositionType = musik::core::sdk::PositionType;
             using OpenFlags = musik::core::sdk::OpenFlags;
 
-            LocalFileStream();
-            virtual ~LocalFileStream();
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(LocalFileStream)
 
-            virtual bool Open(const char *filename, OpenFlags flags);
-            virtual bool Close();
-            virtual void Interrupt();
-            virtual void Release();
-            virtual bool Readable() { return (flags & OpenFlags::Read) != 0; }
-            virtual bool Writable() { return (flags & OpenFlags::Write) != 0; }
-            virtual PositionType Read(void* buffer, PositionType readBytes);
-            virtual PositionType Write(void* buffer, PositionType writeBytes);
-            virtual bool SetPosition(PositionType position);
-            virtual PositionType Position();
-            virtual bool Eof();
-            virtual long Length();
-            virtual bool Seekable();
-            virtual const char* Type();
-            virtual const char* Uri();
-            virtual bool CanPrefetch() { return true; }
+            LocalFileStream() noexcept;
+            virtual ~LocalFileStream() noexcept;
+
+            bool Open(const char *filename, OpenFlags flags) override;
+            bool Close() noexcept override;
+            void Interrupt() noexcept override;
+            void Release() noexcept override;
+            bool Readable() noexcept override { return (flags & OpenFlags::Read) != 0; }
+            bool Writable() noexcept override { return (flags & OpenFlags::Write) != 0; }
+            PositionType Read(void* buffer, PositionType readBytes) noexcept override;
+            PositionType Write(void* buffer, PositionType writeBytes) noexcept override;
+            bool SetPosition(PositionType position) noexcept override;
+            PositionType Position() noexcept override;
+            bool Eof() noexcept override;
+            long Length() noexcept override;
+            bool Seekable() noexcept override;
+            const char* Type() noexcept override;
+            const char* Uri() noexcept override;
+            bool CanPrefetch() noexcept override { return true; }
 
         private:
             OpenFlags flags { OpenFlags::None };

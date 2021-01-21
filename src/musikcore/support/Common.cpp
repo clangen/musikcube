@@ -137,7 +137,8 @@ namespace musik { namespace core {
             #else
                 std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
                 readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
-        #endif
+            #endif
+
             result.assign(pathbuf);
             size_t last = result.find_last_of("/");
             result = result.substr(0, last); /* remove filename component */

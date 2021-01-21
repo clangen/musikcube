@@ -31,32 +31,25 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <musikcore/config.h>
-#include <musikcore/sdk/IDataStream.h>
-#include <musikcore/sdk/IDataStreamFactory.h>
-#include <vector>
+#define DELETE_CLASS_DEFAULTS(ClassName) \
+    ClassName() = delete; \
+    ClassName(const ClassName&) = delete; \
+    ClassName(const ClassName&&) = delete; \
+    ClassName& operator=(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&&) = delete;
 
-namespace musik { namespace core { namespace io {
+#define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(ClassName) \
+    ClassName() noexcept = default; \
+    ClassName(const ClassName&) = delete; \
+    ClassName(const ClassName&&) = delete; \
+    ClassName& operator=(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&&) = delete;
 
-    class DataStreamFactory {
-        public:
-            using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>;
-            using OpenFlags = musik::core::sdk::OpenFlags;
-
-            static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlags flags);
-            static musik::core::sdk::IDataStream* OpenDataStream(const char* uri, OpenFlags flags);
-
-        private:
-            typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;
-
-            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DataStreamFactory)
-
-            DataStreamFactory();
-            static DataStreamFactory* Instance();
-
-            DataStreamFactoryVector dataStreamFactories;
-    };
-
-} } }
+#define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(ClassName) \
+    ClassName(const ClassName&) = delete; \
+    ClassName(const ClassName&&) = delete; \
+    ClassName& operator=(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&&) = delete;

@@ -44,6 +44,7 @@
 #include <musikcore/library/query/util/SdkWrappers.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/Statement.h>
+#include <musikcore/support/NarrowCast.h>
 #include <unordered_set>
 #include <map>
 
@@ -53,8 +54,8 @@ using namespace musik::core::library;
 using namespace musik::core::library::query;
 using namespace musik::core::sdk;
 
-static const size_t kDefaultCacheSize = 50;
-static const int64_t kCacheWindowTimeoutMs = 150LL;
+static constexpr size_t kDefaultCacheSize = 50;
+static constexpr int64_t kCacheWindowTimeoutMs = 150LL;
 
 TrackList::TrackList(ILibraryPtr library)
 : library(library)
@@ -70,16 +71,12 @@ TrackList::TrackList(TrackList* other)
 TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)
 : library(library)
 , cacheSize(kDefaultCacheSize) {
-    if (trackIdCount > 0) {
+    if (trackIds != nullptr && trackIdCount > 0) {
         this->ids.insert(this->ids.end(), &trackIds[0], &trackIds[trackIdCount]);
     }
 }
 
-TrackList::~TrackList() {
-
-}
-
-size_t TrackList::Count() const {
+size_t TrackList::Count() const noexcept {
     return ids.size();
 }
 
@@ -88,7 +85,7 @@ void TrackList::Add(const int64_t id) {
 }
 
 bool TrackList::Insert(int64_t id, size_t index) {
-    if (index < (int) this->ids.size()) {
+    if (index < narrow_cast<int>(this->ids.size())) {
         this->ids.insert(this->ids.begin() + index, id);
         return true;
     }
@@ -97,20 +94,20 @@ bool TrackList::Insert(int64_t id, size_t index) {
 }
 
 bool TrackList::Swap(size_t index1, size_t index2) {
-    auto size = this->ids.size();
+    const auto size = this->ids.size();
     if (index1 < size && index2 < size) {
-        auto temp = this->ids[index1];
-        this->ids[index1] = this->ids[index2];
-        this->ids[index2] = temp;
+        auto temp = this->ids.at(index1);
+        this->ids.at(index1) = this->ids.at(index2);
+        this->ids.at(index2) = temp;
         return true;
     }
     return false;
 }
 
 bool TrackList::Move(size_t from, size_t to) {
-    auto size = this->ids.size();
+    const auto size = this->ids.size();
     if (from < size && to < size && from != to) {
-        auto temp = this->ids[from];
+        auto temp = this->ids.at(from);
         this->ids.erase(this->ids.begin() + from);
         this->ids.insert(this->ids.begin() + to, temp);
         return true;
@@ -119,7 +116,7 @@ bool TrackList::Move(size_t from, size_t to) {
 }
 
 bool TrackList::Delete(size_t index) {
-    if (index < (int) this->ids.size()) {
+    if (index < narrow_cast<int>(this->ids.size())) {
         this->ids.erase(this->ids.begin() + index);
         return true;
     }
@@ -153,17 +150,17 @@ TrackPtr TrackList::Get(size_t index, bool async) const {
     auto cached = this->GetFromCache(id);
     if (cached) { return cached; }
 
-    int half = ((int) this->cacheSize - 1) / 2;
-    int remain = (int) this->cacheSize - 1;
-    int from = (int) index - half;
+    const int half = (narrow_cast<int>(this->cacheSize) - 1) / 2;
+    int remain = narrow_cast<int>(this->cacheSize) - 1;
+    const int from = narrow_cast<int>(index) - half;
     remain -= from > 0 ? half : (half + from);
-    int to = (int) index + remain;
+    const int to = narrow_cast<int>(index) + remain;
     this->CacheWindow(std::max(0, from), to, async);
 
     cached = this->GetFromCache(id);
 
     if (async && !cached) {
-        auto loadingTrack = std::make_shared<LibraryTrack>(this->ids[index], this->library);
+        auto loadingTrack = std::make_shared<LibraryTrack>(this->ids.at(index), this->library);
         loadingTrack->SetMetadataState(MetadataState::Loading);
         return loadingTrack;
     }
@@ -218,17 +215,17 @@ void TrackList::Shuffle() {
     std::random_shuffle(this->ids.begin(), this->ids.end());
 }
 
-void TrackList::Clear() {
+void TrackList::Clear() noexcept {
     this->ClearCache();
     this->ids.clear();
 }
 
-void TrackList::ClearCache() {
+void TrackList::ClearCache() noexcept {
     this->cacheList.clear();
     this->cacheMap.clear();
 }
 
-void TrackList::Swap(TrackList& tl) {
+void TrackList::Swap(TrackList& tl) noexcept {
     std::swap(tl.ids, this->ids);
 }
 
@@ -271,7 +268,7 @@ void TrackList::PruneCache() const {
 void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
     std::unordered_set<int64_t> idsNotInCache;
     for (size_t i = from; i <= std::min(to, this->ids.size() - 1); i++) {
-        auto id = this->ids[i];
+        auto id = this->ids.at(i);
         if (this->cacheMap.find(id) == this->cacheMap.end()) {
             if (async && currentWindow.Contains(i)) {
                 continue;
@@ -307,7 +304,8 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
             }
             this->currentWindow.Reset();
             if (this->nextWindow.Valid()) {
-                size_t from = nextWindow.from, to = nextWindow.to;
+                const size_t from = nextWindow.from;
+                const size_t to = nextWindow.to;
                 nextWindow.Reset();
                 this->CacheWindow(from, to, true);
             }
@@ -317,7 +315,7 @@ void TrackList::CacheWindow(size_t from, size_t to, bool async) const {
 
         this->library->EnqueueAndWait(query, kCacheWindowTimeoutMs, completion);
 
-        auto status = query->GetStatus();
+        const auto status = query->GetStatus();
         if (status != IQuery::Idle && status != IQuery::Running) {
             completion(query);
         }
@@ -349,19 +347,16 @@ ITrackList* TrackList::GetSdkValue() {
 
 template <typename T>
 struct NoDeleter {
-    void operator()(T* t) {
+    void operator()(T* t) noexcept {
     }
 };
 
-TrackListEditor::TrackListEditor(std::shared_ptr<TrackList> trackList) {
+TrackListEditor::TrackListEditor(std::shared_ptr<TrackList> trackList) noexcept {
     this->trackList = trackList;
 }
 
 TrackListEditor::TrackListEditor(TrackList& trackList) {
     this->trackList = std::shared_ptr<TrackList>(&trackList, NoDeleter<TrackList>());
-}
-
-TrackListEditor::~TrackListEditor() {
 }
 
 void TrackListEditor::Add(const int64_t id) {

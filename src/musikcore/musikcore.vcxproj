@@ -705,9 +705,11 @@
     <ClInclude Include="sdk\String.h" />
     <ClInclude Include="support\Auddio.h" />
     <ClInclude Include="support\Common.h" />
+    <ClInclude Include="support\DeleteDefaults.h" />
     <ClInclude Include="support\Duration.h" />
     <ClInclude Include="support\LastFm.h" />
     <ClInclude Include="support\Messages.h" />
+    <ClInclude Include="support\NarrowCast.h" />
     <ClInclude Include="support\Playback.h" />
     <ClInclude Include="support\PreferenceKeys.h" />
     <ClInclude Include="support\Preferences.h" />

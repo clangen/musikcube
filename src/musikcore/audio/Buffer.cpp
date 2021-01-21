@@ -100,8 +100,10 @@ void Buffer::SetSamples(long samples) {
 }
 
 void Buffer::CopyFormat(Buffer* fromBuffer) noexcept {
-    this->channels = fromBuffer->Channels();
-    this->sampleRate = fromBuffer->SampleRate();
+    if (fromBuffer) {
+        this->channels = fromBuffer->Channels();
+        this->sampleRate = fromBuffer->SampleRate();
+    }
 }
 
 void Buffer::ResizeBuffer() {

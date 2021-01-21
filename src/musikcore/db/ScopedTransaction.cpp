@@ -49,7 +49,7 @@ ScopedTransaction::~ScopedTransaction() {
     this->End();
 }
 
-void ScopedTransaction::Cancel() {
+void ScopedTransaction::Cancel() noexcept {
     this->canceled = true;
 }
 

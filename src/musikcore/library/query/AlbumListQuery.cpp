@@ -35,8 +35,8 @@
 #include "pch.hpp"
 #include "AlbumListQuery.h"
 
-#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/db/Statement.h>
+#include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
 #include <nlohmann/json.hpp>
 
@@ -45,8 +45,6 @@ using namespace musik::core::db;
 using namespace musik::core::library::query;
 using namespace musik::core::library::query::serialization;
 using namespace musik::core::library::constants;
-
-#define RESET_RESULT(x) x.reset(new MetadataMapList())
 
 const std::string AlbumListQuery::kQueryName = "AlbumListQuery";
 
@@ -74,7 +72,7 @@ AlbumListQuery::AlbumListQuery(
     const category::PredicateList predicates,
     const std::string& filter)
 {
-    RESET_RESULT(result);
+    result = std::make_shared<MetadataMapList>();
 
     if (filter.size()) {
         std::string wild = filter;
@@ -89,7 +87,7 @@ AlbumListQuery::~AlbumListQuery() {
 
 }
 
-MetadataMapListPtr AlbumListQuery::GetResult() {
+MetadataMapListPtr AlbumListQuery::GetResult() noexcept {
     return this->result;
 }
 
@@ -98,7 +96,7 @@ musik::core::sdk::IMapList* AlbumListQuery::GetSdkResult() {
 }
 
 bool AlbumListQuery::OnRun(Connection& db) {
-    RESET_RESULT(result);
+    result = std::make_shared<MetadataMapList>();
 
     category::ArgumentList args;
 
@@ -123,9 +121,9 @@ bool AlbumListQuery::OnRun(Connection& db) {
     Apply(stmt, args);
 
     while (stmt.Step() == Row) {
-        int64_t albumId = stmt.ColumnInt64(0);
+        const int64_t albumId = stmt.ColumnInt64(0);
         std::string albumName = stmt.ColumnText(1);
-        std::shared_ptr<MetadataMap> row(new MetadataMap(albumId, albumName, "album"));
+        auto row = std::make_shared<MetadataMap>(albumId, albumName, "album");
 
         row->Set(constants::Track::ALBUM_ID, stmt.ColumnText(0));
         row->Set(constants::Track::ALBUM, albumName);
@@ -170,7 +168,7 @@ void AlbumListQuery::DeserializeResult(const std::string& data) {
 
 std::shared_ptr<AlbumListQuery> AlbumListQuery::DeserializeQuery(const std::string& data) {
     nlohmann::json options = nlohmann::json::parse(data)["options"];
-    std::shared_ptr<AlbumListQuery> result(new AlbumListQuery());
+    auto result = std::make_shared<AlbumListQuery>();
     result->filter = options.value("filter", "");
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);

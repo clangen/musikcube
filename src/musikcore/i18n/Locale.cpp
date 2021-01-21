@@ -70,7 +70,7 @@ static nlohmann::json loadLocaleData(const std::string& fn) {
     return nlohmann::json();
 }
 
-Locale::Locale() {
+Locale::Locale() noexcept {
     this->prefs = Preferences::ForComponent(components::Settings);
     this->selectedLocale = prefs->GetString(keys::Locale, DEFAULT_LOCALE);
 }
@@ -119,7 +119,7 @@ bool Locale::SetSelectedLocale(const std::string& locale) {
     auto it = std::find_if(
         this->locales.begin(),
         this->locales.end(),
-        [locale](std::string compare) {
+        [locale](std::string compare) noexcept {
             return locale == compare;
         });
 

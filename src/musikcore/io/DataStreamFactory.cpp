@@ -67,13 +67,10 @@ IDataStream* DataStreamFactory::OpenDataStream(const char* uri, OpenFlags flags)
     typedef musik::core::PluginFactory::ReleaseDeleter<IDataStream> StreamDeleter;
 
     if (uri) {
-        DataStreamFactoryVector::iterator it =
-            DataStreamFactory::Instance()->dataStreamFactories.begin();
-
         /* plugins get the first crack at the uri */
-        for (; it != DataStreamFactory::Instance()->dataStreamFactories.end(); it++) {
-            if ((*it)->CanRead(uri)) {
-                IDataStream* dataStream = (*it)->Open(uri, flags);
+        for (const auto factory : DataStreamFactory::Instance()->dataStreamFactories) {
+            if (factory->CanRead(uri)) {
+                IDataStream* dataStream = factory->Open(uri, flags);
 
                 if (dataStream) {
                     return dataStream;

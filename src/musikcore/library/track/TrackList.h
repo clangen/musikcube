@@ -59,14 +59,12 @@ namespace musik { namespace core {
             TrackList(TrackList* other);
             TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount);
 
-            virtual ~TrackList();
-
             /* ITrackList */
-            virtual size_t Count() const;
-            virtual int64_t GetId(size_t index) const;
-            virtual int IndexOf(int64_t id) const;
-            virtual musik::core::sdk::ITrack* GetTrack(size_t index) const;
-            virtual void Release() { /* not used now */ }
+            size_t Count() const noexcept override;
+            int64_t GetId(size_t index) const override;
+            int IndexOf(int64_t id) const override;
+            musik::core::sdk::ITrack* GetTrack(size_t index) const override;
+            void Release() noexcept override { /* not used now */ }
 
             /* TrackListEditor passes through to us */
             void Add(const int64_t id);
@@ -74,14 +72,14 @@ namespace musik { namespace core {
             bool Swap(size_t index1, size_t index2);
             bool Move(size_t from, size_t to);
             bool Delete(size_t index);
-            void Clear();
+            void Clear() noexcept;
             void Shuffle();
 
             /* implementation specific */
             TrackPtr Get(size_t index, bool async = false) const;
             TrackPtr GetWithTimeout(size_t index, size_t timeoutMs) const;
-            void ClearCache();
-            void Swap(TrackList& list);
+            void ClearCache() noexcept;
+            void Swap(TrackList& list) noexcept;
             void CopyFrom(const TrackList& from);
             void CopyTo(TrackList& to);
             void CacheWindow(size_t from, size_t to, bool async) const;
@@ -94,10 +92,10 @@ namespace musik { namespace core {
             struct QueryWindow {
                 size_t from{ 0 };
                 size_t to{ 0 };
-                bool Contains(size_t i) { return to > 0 && i >= from && i <= to; }
-                void Reset() { from = to = 0; }
-                bool Valid() { return to > 0 && to > from; }
-                void Set(size_t from, size_t to) { this->from = from; this->to = to; }
+                bool Contains(size_t i) noexcept { return to > 0 && i >= from && i <= to; }
+                void Reset() noexcept { from = to = 0; }
+                bool Valid() noexcept { return to > 0 && to > from; }
+                void Set(size_t from, size_t to) noexcept { this->from = from; this->to = to; }
             };
 
             typedef std::list<int64_t> CacheList;
@@ -121,19 +119,19 @@ namespace musik { namespace core {
 
     class TrackListEditor : public musik::core::sdk::ITrackListEditor {
         public:
-            TrackListEditor(std::shared_ptr<TrackList> trackList);
+            TrackListEditor(std::shared_ptr<TrackList> trackList) noexcept;
             TrackListEditor(TrackList& trackList);
 
-            virtual ~TrackListEditor();
+            virtual ~TrackListEditor() { }
 
-            virtual void Add(const int64_t id);
-            virtual bool Insert(int64_t id, size_t index);
-            virtual bool Swap(size_t index1, size_t index2);
-            virtual bool Move(size_t from, size_t to);
-            virtual bool Delete(size_t index);
-            virtual void Clear();
-            virtual void Shuffle();
-            virtual void Release() { /* nothing yet */ }
+            void Add(const int64_t id) override;
+            bool Insert(int64_t id, size_t index) override;
+            bool Swap(size_t index1, size_t index2) override;
+            bool Move(size_t from, size_t to) override;
+            bool Delete(size_t index) override;
+            void Clear() override;
+            void Shuffle() override;
+            void Release() noexcept override { /* nothing yet */ }
 
         private:
             std::shared_ptr<TrackList> trackList;

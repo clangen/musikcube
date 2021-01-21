@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include <musikcore/support/DeleteDefaults.h>
 #include <musikcore/library/QueryBase.h>
 #include <musikcore/library/query/util/SdkWrappers.h>
 #include <musikcore/sdk/IValueList.h>
@@ -46,22 +47,24 @@ namespace musik { namespace core { namespace library { namespace query {
 
             using Result = SdkValueList::Shared;
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AllCategoriesQuery)
+
             AllCategoriesQuery();
             virtual ~AllCategoriesQuery();
 
-            std::string Name() { return kQueryName; }
+            std::string Name() override { return kQueryName; }
 
-            virtual Result GetResult();
+            virtual Result GetResult() noexcept;
             musik::core::sdk::IValueList* GetSdkResult();
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<AllCategoriesQuery> DeserializeQuery(const std::string& data);
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             Result result;

@@ -47,12 +47,12 @@ static const std::string TAG = "LocalFileStream";
 using namespace musik::core::io;
 using namespace musik::core::sdk;
 
-LocalFileStream::LocalFileStream()
+LocalFileStream::LocalFileStream() noexcept
 : file(nullptr)
 , filesize(-1) {
 }
 
-LocalFileStream::~LocalFileStream() {
+LocalFileStream::~LocalFileStream() noexcept {
     try {
         this->Close();
     }
@@ -61,7 +61,7 @@ LocalFileStream::~LocalFileStream() {
     }
 }
 
-bool LocalFileStream::Seekable() {
+bool LocalFileStream::Seekable() noexcept {
     return true;
 }
 
@@ -71,7 +71,7 @@ bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
         debug::info(TAG, "opening file: " + std::string(filename));
 
         boost::filesystem::path file(filename);
-        bool exists = boost::filesystem::exists(file);
+        const bool exists = boost::filesystem::exists(file);
 
         if (flags & OpenFlags::Read && !exists) {
             debug::error(TAG, "open with OpenFlags::Read failed because file doesn't exist. " + this->uri);
@@ -84,7 +84,7 @@ bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
         }
 
         boost::system::error_code ec;
-        this->filesize = (long) boost::filesystem::file_size(file, ec);
+        this->filesize = narrow_cast<long>(boost::filesystem::file_size(file, ec));
 
         if (ec && flags & OpenFlags::Write) {
             this->filesize = 0;
@@ -127,11 +127,11 @@ bool LocalFileStream::Open(const char *filename, OpenFlags flags) {
     return false;
 }
 
-void LocalFileStream::Interrupt() {
+void LocalFileStream::Interrupt() noexcept {
 
 }
 
-bool LocalFileStream::Close() {
+bool LocalFileStream::Close() noexcept {
     auto file = this->file.exchange(nullptr);
     if (file) {
         if (fclose(file) == 0) {
@@ -142,34 +142,34 @@ bool LocalFileStream::Close() {
     return false;
 }
 
-void LocalFileStream::Release() {
+void LocalFileStream::Release() noexcept {
     delete this;
 }
 
-PositionType LocalFileStream::Read(void* buffer, PositionType readBytes) {
+PositionType LocalFileStream::Read(void* buffer, PositionType readBytes) noexcept {
     if (!this->file.load()) {
         return 0;
     }
 
-    return (PositionType) fread(buffer, 1, readBytes, this->file);
+    return narrow_cast<PositionType>(fread(buffer, 1, readBytes, this->file));
 }
 
-PositionType LocalFileStream::Write(void* buffer, PositionType writeBytes) {
+PositionType LocalFileStream::Write(void* buffer, PositionType writeBytes) noexcept {
     if (!this->file.load()) {
         return 0;
     }
 
-    long position = ftell(this->file);
-    size_t written = fwrite(buffer, 1, writeBytes, this->file);
+    const long position = ftell(this->file);
+    const size_t written = fwrite(buffer, 1, writeBytes, this->file);
     if (written + position > this->filesize) {
-        this->filesize = (int) written + position;
+        this->filesize = narrow_cast<int>(written) + position;
     }
 
-    return (PositionType) written;
+    return narrow_cast<PositionType>(written);
 }
 
 
-bool LocalFileStream::SetPosition(PositionType position) {
+bool LocalFileStream::SetPosition(PositionType position) noexcept {
     if (!this->file.load()) {
         return false;
     }
@@ -177,7 +177,7 @@ bool LocalFileStream::SetPosition(PositionType position) {
     return fseek(this->file, position, SEEK_SET) == 0;
 }
 
-PositionType LocalFileStream::Position() {
+PositionType LocalFileStream::Position() noexcept {
     if (!this->file.load()) {
         return -1;
     }
@@ -185,18 +185,18 @@ PositionType LocalFileStream::Position() {
     return ftell(this->file);
 }
 
-bool LocalFileStream::Eof() {
+bool LocalFileStream::Eof() noexcept {
     return !this->file.load() || feof(this->file) != 0;
 }
 
-long LocalFileStream::Length() {
+long LocalFileStream::Length() noexcept {
     return this->filesize;
 }
 
-const char* LocalFileStream::Type() {
+const char* LocalFileStream::Type() noexcept {
     return this->extension.c_str();
 }
 
-const char* LocalFileStream::Uri() {
+const char* LocalFileStream::Uri() noexcept {
     return this->uri.c_str();
 }

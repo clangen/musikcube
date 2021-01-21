@@ -38,12 +38,15 @@
 #include <musikcore/library/query/util/CategoryQueryUtil.h>
 #include <musikcore/library/metadata/MetadataMapList.h>
 #include <musikcore/db/Connection.h>
+#include <musikcore/support/DeleteDefaults.h>
 
 namespace musik { namespace core { namespace library { namespace query {
 
     class AlbumListQuery : public musik::core::library::query::QueryBase {
         public:
             static const std::string kQueryName;
+
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AlbumListQuery)
 
             AlbumListQuery(
                 const std::string& filter = "");
@@ -65,19 +68,19 @@ namespace musik { namespace core { namespace library { namespace query {
 
             /* IQuery */
             std::string Name() { return kQueryName; }
-            musik::core::MetadataMapListPtr GetResult();
+            musik::core::MetadataMapListPtr GetResult() noexcept;
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<AlbumListQuery> DeserializeQuery(const std::string& data);
 
             /* AlbumListQuery */
             musik::core::sdk::IMapList* GetSdkResult();
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            bool OnRun(musik::core::db::Connection &db) override;
 
             std::string filter;
             category::PredicateList regular, extended;

@@ -44,21 +44,22 @@ using namespace musik::core::sdk;
 
 class SdkWrapper : public Track {
     public:
-        SdkWrapper(TrackPtr track) {
+        DELETE_CLASS_DEFAULTS(SdkWrapper)
+
+        SdkWrapper(TrackPtr track) noexcept {
             this->track = track;
             this->count = 1;
         }
 
         virtual ~SdkWrapper() {
-
         }
 
-        virtual void Retain() override {
+        void Retain() noexcept override {
             ++this->count;
         }
 
-        virtual void Release() override {
-            int c = this->count.fetch_sub(1);
+        void Release() noexcept override {
+            const int c = this->count.fetch_sub(1);
             if (c == 1) { /* fetched before sub */
                 this->count = 0;
                 this->track.reset();
@@ -66,66 +67,66 @@ class SdkWrapper : public Track {
             }
         }
 
-        virtual int64_t GetId() override {
+        int64_t GetId() override {
             return track->GetId();
         }
 
-        virtual int GetString(const char* key, char* dst, int size) override {
+        int GetString(const char* key, char* dst, int size) override {
             return track->GetString(key, dst, size);
         }
 
-        virtual long long GetInt64(const char* key, long long defaultValue) override {
+        long long GetInt64(const char* key, long long defaultValue) override {
             return track->GetInt64(key, defaultValue);
         }
 
-        virtual int GetInt32(const char* key, unsigned int defaultValue) override {
+        int GetInt32(const char* key, unsigned int defaultValue) override {
             return track->GetInt32(key, defaultValue);
         }
 
-        virtual double GetDouble(const char* key, double defaultValue) override {
+        double GetDouble(const char* key, double defaultValue) override {
             return track->GetDouble(key, defaultValue);
         }
 
-        virtual int Uri(char* dst, int size) override {
+        int Uri(char* dst, int size) override {
             return track->Uri(dst, size);
         }
 
-        virtual IResource::Class GetClass() override {
+        IResource::Class GetClass() override {
             return track->GetClass();
         }
 
-        virtual const char* GetType() override {
+        const char* GetType() override {
             return track->GetType();
         }
 
-        virtual size_t GetValue(char* dst, size_t size) override {
+        size_t GetValue(char* dst, size_t size) override {
             return track->GetValue(dst, size);
         }
 
-        virtual ReplayGain GetReplayGain() override {
+        ReplayGain GetReplayGain() override {
             return track->GetReplayGain();
         }
 
-        virtual MetadataState GetMetadataState() override {
+        MetadataState GetMetadataState() override {
             return track->GetMetadataState();
         }
 
         /* pure virtual methods defined by Track, but not defined in ITrack. therefore,
         these methods cannot be called by the SDK, and should throw. */
         #define NO_IMPL throw std::runtime_error("not implemented");
-        virtual void SetValue(const char* key, const char* value) override { NO_IMPL }
-        virtual void ClearValue(const char* key) override { NO_IMPL }
-        virtual void SetThumbnail(const char *data, long size) override { NO_IMPL }
-        virtual bool Contains(const char* key) override { NO_IMPL }
-        virtual bool ContainsThumbnail() override { NO_IMPL }
-        virtual void SetReplayGain(const ReplayGain& replayGain) override { NO_IMPL }
-        virtual void SetId(int64_t id) override { NO_IMPL }
-        virtual std::string GetString(const char* metakey) override { NO_IMPL }
-        virtual std::string Uri() override { NO_IMPL }
-        virtual MetadataIteratorRange GetValues(const char* metakey) override { NO_IMPL }
-        virtual MetadataIteratorRange GetAllValues() override { NO_IMPL }
-        virtual TrackPtr Copy() override { NO_IMPL }
-        virtual void SetMetadataState(MetadataState state) override { NO_IMPL }
+        void SetValue(const char* key, const char* value) override { NO_IMPL }
+        void ClearValue(const char* key) override { NO_IMPL }
+        void SetThumbnail(const char *data, long size) override { NO_IMPL }
+        bool Contains(const char* key) override { NO_IMPL }
+        bool ContainsThumbnail() override { NO_IMPL }
+        void SetReplayGain(const ReplayGain& replayGain) override { NO_IMPL }
+        void SetId(int64_t id) override { NO_IMPL }
+        std::string GetString(const char* metakey) override { NO_IMPL }
+        std::string Uri() override { NO_IMPL }
+        MetadataIteratorRange GetValues(const char* metakey) override { NO_IMPL }
+        MetadataIteratorRange GetAllValues() override { NO_IMPL }
+        TrackPtr Copy() override { NO_IMPL }
+        void SetMetadataState(MetadataState state) override { NO_IMPL }
         #undef NO_IMPL
 
     private:
@@ -135,27 +136,24 @@ class SdkWrapper : public Track {
 
 /* * * * Track * * * */
 
-Track::~Track() {
-}
-
 int64_t Track::GetId() {
     return 0;
 }
 
-ILibraryPtr Track::Library() {
+ILibraryPtr Track::Library() noexcept {
     static ILibraryPtr nullLibrary;
     return nullLibrary;
 }
 
-int Track::LibraryId() {
+int Track::LibraryId() noexcept{
     return 0;
 }
 
-void Track::Retain() {
+void Track::Retain() noexcept {
     /* nothing. SdkWrapper implements as necessary */
 }
 
-void Track::Release() {
+void Track::Release() noexcept {
     /* same as Retain() */
 }
 
@@ -179,11 +177,11 @@ size_t Track::GetValue(char* dst, size_t count) {
 
 template<typename T>
 struct NoDeleter {
-    void operator()(T* t) {
+    void operator()(T* t) noexcept {
     }
 };
 
-TagStore::TagStore(TrackPtr track) {
+TagStore::TagStore(TrackPtr track) noexcept {
     this->count = 1;
     this->track = track;
 }
@@ -213,8 +211,8 @@ void TagStore::SetThumbnail(const char *data, long size) {
     this->track->SetThumbnail(data, size);
 }
 
-void TagStore::Release() {
-    int c = this->count.fetch_sub(1);
+void TagStore::Release() noexcept {
+    const int c = this->count.fetch_sub(1);
     if (c == 1) { /* fetched before sub */
         this->count = 0;
         this->track.reset();
@@ -226,6 +224,6 @@ void TagStore::SetReplayGain(const ReplayGain& replayGain) {
     this->track->SetReplayGain(replayGain);
 }
 
-void TagStore::Retain() {
+void TagStore::Retain() noexcept {
     ++this->count;
 }

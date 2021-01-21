@@ -133,7 +133,7 @@ namespace musik { namespace core { namespace library {
 
             std::unordered_map<std::string, QueryContextPtr> queriesInFlight;
 
-            std::thread* thread;
+            std::unique_ptr<std::thread> thread;
             std::condition_variable_any queueCondition, syncQueryCondition;
             std::recursive_mutex queueMutex;
             std::atomic<ConnectionState> connectionState{ ConnectionState::Disconnected };

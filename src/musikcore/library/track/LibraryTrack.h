@@ -45,40 +45,40 @@ namespace musik { namespace core {
 
     class LibraryTrack: public Track {
         public:
-            LibraryTrack();
+            LibraryTrack() noexcept;
             LibraryTrack(int64_t id, int libraryId);
             LibraryTrack(int64_t id, musik::core::ILibraryPtr library);
             virtual ~LibraryTrack();
 
-            virtual int LibraryId();
+            int LibraryId() noexcept override;
 
-            virtual int64_t GetId();
-            virtual void SetId(int64_t id) { this->id = id; }
+            int64_t GetId() noexcept override;
+            void SetId(int64_t id) noexcept override { this->id = id; }
 
-            virtual std::string GetString(const char* metakey);
-            virtual std::string Uri();
+            std::string GetString(const char* metakey) override;
+            std::string Uri() override;
 
             /* ITagStore */
-            virtual void SetValue(const char* metakey, const char* value);
-            virtual void ClearValue(const char* metakey);
-            virtual bool Contains(const char* metakey);
-            virtual void SetThumbnail(const char *data, long size);
-            virtual bool ContainsThumbnail();
-            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain);
+            void SetValue(const char* metakey, const char* value) override;
+            void ClearValue(const char* metakey) override;
+            bool Contains(const char* metakey) override;
+            void SetThumbnail(const char* data, long size) override;
+            bool ContainsThumbnail() override;
+            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
 
             /* ITrack */
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
-            virtual int GetString(const char* key, char* dst, int size);
-            virtual int Uri(char* dst, int size);
-            virtual musik::core::sdk::ReplayGain GetReplayGain();
-            virtual musik::core::sdk::MetadataState GetMetadataState();
-            virtual void SetMetadataState(musik::core::sdk::MetadataState state);
+            long long GetInt64(const char* key, long long defaultValue = 0LL) override;
+            int GetInt32(const char* key, unsigned int defaultValue = 0) override;
+            double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            int GetString(const char* key, char* dst, int size) override;
+            int Uri(char* dst, int size) override;
+            musik::core::sdk::ReplayGain GetReplayGain() noexcept override;
+            musik::core::sdk::MetadataState GetMetadataState() noexcept override;
+            void SetMetadataState(musik::core::sdk::MetadataState state) noexcept override;
 
-            virtual MetadataIteratorRange GetValues(const char* metakey);
-            virtual MetadataIteratorRange GetAllValues();
-            virtual TrackPtr Copy();
+            MetadataIteratorRange GetValues(const char* metakey) override;
+            MetadataIteratorRange GetAllValues() noexcept override;
+            TrackPtr Copy() override;
 
         private:
             int64_t id;

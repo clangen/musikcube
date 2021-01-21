@@ -42,7 +42,7 @@ static std::mutex globalMutex;
 
 using namespace musik::core::db;
 
-Connection::Connection()
+Connection::Connection() noexcept
 : connection(nullptr)
 , transactionCounter(0) {
     this->UpdateReferenceCount(true);
@@ -70,7 +70,7 @@ int Connection::Open(const std::string &database, unsigned int options, unsigned
     return error;
 }
 
-int Connection::Close() {
+int Connection::Close() noexcept {
     if (sqlite3_close(this->connection) == SQLITE_OK) {
         this->connection = 0;
         return Okay;
@@ -92,7 +92,7 @@ int Connection::Execute(const char* sql) {
         }
     }
 
-    int error = this->StepStatement(stmt);
+    const int error = this->StepStatement(stmt);
     if (error != SQLITE_OK && error != SQLITE_DONE) {
         sqlite3_finalize(stmt);
         return Error;
@@ -104,16 +104,16 @@ int Connection::Execute(const char* sql) {
     return Okay;
 }
 
-void Connection::Checkpoint() {
+void Connection::Checkpoint() noexcept {
     sqlite3_wal_checkpoint(this->connection, nullptr);
 }
 
-int64_t Connection::LastInsertedId() {
+int64_t Connection::LastInsertedId() noexcept {
     return sqlite3_last_insert_rowid(this->connection);
 }
 
-int Connection::LastModifiedRowCount() {
-    return (int) sqlite3_changes(this->connection);
+int Connection::LastModifiedRowCount() noexcept {
+    return narrow_cast<int>(sqlite3_changes(this->connection));
 }
 
 void Connection::Initialize(unsigned int cache) {
@@ -168,6 +168,6 @@ void Connection::UpdateReferenceCount(bool init) {
     }
 }
 
-int Connection::StepStatement(sqlite3_stmt *stmt) {
+int Connection::StepStatement(sqlite3_stmt *stmt) noexcept {
     return sqlite3_step(stmt);
 }

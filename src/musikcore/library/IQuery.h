@@ -40,6 +40,7 @@
 
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/db/Connection.h>
+#include <musikcore/support/DeleteDefaults.h>
 
 namespace musik { namespace core { namespace db {
 
@@ -53,7 +54,10 @@ namespace musik { namespace core { namespace db {
                 Canceled = 5
             } Status;
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(IQuery)
+
             virtual ~IQuery() { }
+
             virtual int GetStatus() = 0;
             virtual int GetId() = 0;
             virtual int GetOptions() = 0;
@@ -62,7 +66,10 @@ namespace musik { namespace core { namespace db {
 
     class ISerializableQuery: public IQuery {
         public:
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(ISerializableQuery)
+
             virtual ~ISerializableQuery() { }
+
             virtual std::string SerializeQuery() = 0;
             virtual std::string SerializeResult() = 0;
             virtual void DeserializeResult(const std::string& data) = 0;

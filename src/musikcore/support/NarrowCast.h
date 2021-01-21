@@ -31,32 +31,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <musikcore/config.h>
-#include <musikcore/sdk/IDataStream.h>
-#include <musikcore/sdk/IDataStreamFactory.h>
-#include <vector>
+#include <cassert>
 
-namespace musik { namespace core { namespace io {
-
-    class DataStreamFactory {
-        public:
-            using DataStreamPtr = std::shared_ptr<musik::core::sdk::IDataStream>;
-            using OpenFlags = musik::core::sdk::OpenFlags;
-
-            static DataStreamPtr OpenSharedDataStream(const char *uri, OpenFlags flags);
-            static musik::core::sdk::IDataStream* OpenDataStream(const char* uri, OpenFlags flags);
-
-        private:
-            typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;
-
-            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DataStreamFactory)
-
-            DataStreamFactory();
-            static DataStreamFactory* Instance();
-
-            DataStreamFactoryVector dataStreamFactories;
-    };
-
-} } }
+/* https://stackoverflow.com/a/46229281 */
+template<class To, class From>
+To narrow_cast(From v) {
+    To r = static_cast<To>(v);
+    assert(
+        static_cast<From>(r) == v,
+        "narrow_cast used in non-narrowing context");
+    return r;
+}

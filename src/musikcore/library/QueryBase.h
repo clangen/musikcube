@@ -55,14 +55,11 @@ namespace musik { namespace core { namespace library { namespace query {
                 Regex = 2
             };
 
-            QueryBase()
+            QueryBase() noexcept
             : status(IQuery::Idle)
             , options(0)
             , queryId(nextId())
             , cancel(false) {
-            }
-
-            virtual ~QueryBase() {
             }
 
             bool Run(musik::core::db::Connection &db) {
@@ -84,26 +81,26 @@ namespace musik { namespace core { namespace library { namespace query {
                 return false;
             }
 
-            virtual void Cancel() {
+            virtual void Cancel() noexcept {
                 this->cancel = true;
             }
 
-            virtual bool IsCanceled() {
+            virtual bool IsCanceled() noexcept {
                 return cancel;
             }
 
             /* IQuery */
 
-            virtual int GetStatus() {
+            int GetStatus() override {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 return this->status;
             }
 
-            virtual int GetId() {
+            int GetId() noexcept override {
                 return this->queryId;
             }
 
-            virtual int GetOptions() {
+            int GetOptions() override {
                 std::unique_lock<std::mutex> lock(this->stateMutex);
                 return this->options;
             }
@@ -112,19 +109,19 @@ namespace musik { namespace core { namespace library { namespace query {
 
             /* ISerializableQuery */
 
-            virtual std::string SerializeQuery() {
+            std::string SerializeQuery() override {
                 throw std::runtime_error("not implemented");
             }
 
-            virtual std::string SerializeResult() {
+            std::string SerializeResult() override {
                 throw std::runtime_error("not implemented");
             }
 
-            virtual void DeserializeResult(const std::string& data) {
+            void DeserializeResult(const std::string& data) override {
                 throw std::runtime_error("not implemented");
             }
 
-            virtual void Invalidate() {
+            void Invalidate() override {
                 this->SetStatus(IQuery::Failed);
             }
 
@@ -142,7 +139,7 @@ namespace musik { namespace core { namespace library { namespace query {
             virtual bool OnRun(musik::core::db::Connection& db) = 0;
 
         private:
-            static int nextId() {
+            static int nextId() noexcept {
                 static std::atomic<int> next(0);
                 return ++next;
             }
