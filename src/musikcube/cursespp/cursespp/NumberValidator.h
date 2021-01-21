@@ -37,6 +37,7 @@
 
 #include <cursespp/InputOverlay.h>
 #include <musikcore/utfutil.h>
+#include <musikcore/i18n/Locale.h>
 
 namespace cursespp {
 

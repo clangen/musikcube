@@ -105,8 +105,6 @@ namespace musik { namespace core { namespace library { namespace query {
                 return this->options;
             }
 
-            virtual std::string Name() = 0;
-
             /* ISerializableQuery */
 
             std::string SerializeQuery() override {
