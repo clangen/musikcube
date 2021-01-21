@@ -49,6 +49,7 @@
 #include <cursespp/SingleLineEntry.h>
 #include <cursespp/SchemaOverlay.h>
 
+using namespace musik;
 using namespace musik::core;
 using namespace musik::core::sdk;
 using namespace musik::cube;
@@ -92,7 +93,7 @@ static void showNoSchemaDialog(const std::string& name) {
 class PluginListAdapter : public ScrollAdapterBase {
     public:
         PluginListAdapter() {
-            this->prefs = Preferences::ForComponent(prefs::components::Plugins);
+            this->prefs = Preferences::ForComponent(core::prefs::components::Plugins);
             this->Refresh();
         }
 

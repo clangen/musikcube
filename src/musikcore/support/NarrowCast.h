@@ -40,8 +40,6 @@
 template<class To, class From>
 To narrow_cast(From v) {
     To r = static_cast<To>(v);
-    assert(
-        static_cast<From>(r) == v,
-        "narrow_cast used in non-narrowing context");
+    assert(static_cast<From>(r) == v);
     return r;
 }

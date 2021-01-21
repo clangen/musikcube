@@ -43,7 +43,7 @@
 using namespace musik::cube;
 using namespace musik::core;
 
-#define ENSURE_LOADED() { if (!prefs) { loadPreferences(); } }
+#define ENSURE_LOADED() { if (!preferences) { loadPreferences(); } }
 
 using Id = Hotkeys::Id;
 
@@ -236,29 +236,29 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 static std::unordered_map<Id, std::string, EnumHasher> customIdToKey;
 
 /* preferences file */
-static std::shared_ptr<Preferences> prefs;
+static std::shared_ptr<Preferences> preferences;
 
 static void savePreferences() {
     for (const auto& pair : NAME_TO_ID) {
-        prefs->SetString(
+        preferences->SetString(
             pair.first.c_str(),
             Hotkeys::Get(pair.second).c_str());
     }
 
-    prefs->Save();
+    preferences->Save();
 }
 
 static void loadPreferences() {
-    prefs = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
+    preferences = Preferences::ForComponent("hotkeys", Preferences::ModeReadWrite);
 
     try {
-        if (prefs) {
+        if (preferences) {
             std::vector<std::string> names;
-            prefs->GetKeys(names);
+            preferences->GetKeys(names);
             for (auto n : names) {
                 auto it = NAME_TO_ID.find(n);
                 if (it != NAME_TO_ID.end()) {
-                    customIdToKey[it->second] = prefs->GetString(n);
+                    customIdToKey[it->second] = preferences->GetString(n);
                 }
             }
         }
@@ -277,9 +277,7 @@ Hotkeys::Hotkeys() {
 }
 
 bool Hotkeys::Is(Id id, const std::string& kn) {
-    if (!prefs) {
-        loadPreferences();
-    }
+    ENSURE_LOADED()
 
     /* see if the user has specified a custom value for this hotkey. if
     they have, compare it to the custom value. */

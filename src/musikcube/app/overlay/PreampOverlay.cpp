@@ -118,7 +118,7 @@ PreampOverlay::PreampOverlay(IPlaybackService& playback, Callback callback)
 : OverlayBase(), playback(playback)
 {
     this->callback = callback;
-    this->prefs = Preferences::ForComponent(prefs::components::Playback);
+    this->prefs = Preferences::ForComponent(core::prefs::components::Playback);
     this->width = this->height = 0;
 
     this->SetFrameVisible(true);
@@ -212,7 +212,7 @@ void PreampOverlay::Show(IPlaybackService& playback, Callback callback) {
 
 void PreampOverlay::Load() {
     std::string preampDb = strToFloat(
-        prefs->GetDouble(prefs::keys::PreampDecibels.c_str(), 0.0f));
+        prefs->GetDouble(core::prefs::keys::PreampDecibels.c_str(), 0.0f));
 
     if (preampDb.size() > INPUT_LENGTH) {
         preampDb = preampDb.substr(0, INPUT_LENGTH);
@@ -234,7 +234,7 @@ bool PreampOverlay::Save() {
         return false;
     }
 
-    this->prefs->SetDouble(prefs::keys::PreampDecibels.c_str(), preampGain);
+    this->prefs->SetDouble(core::prefs::keys::PreampDecibels.c_str(), preampGain);
     this->prefs->Save();
 
     return true;

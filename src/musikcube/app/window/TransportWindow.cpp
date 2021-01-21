@@ -405,11 +405,11 @@ TransportWindow::FocusTarget TransportWindow::GetFocus() const {
 bool TransportWindow::KeyPress(const std::string& kn) {
     if (this->focus == FocusVolume) {
         if (inc(kn)) {
-            playback::VolumeUp(this->transport);
+            core::playback::VolumeUp(this->transport);
             return true;
         }
         else if (dec(kn)) {
-            playback::VolumeDown(this->transport);
+            core::playback::VolumeDown(this->transport);
             return true;
         }
         else if (kn == "KEY_ENTER") {
@@ -419,11 +419,11 @@ bool TransportWindow::KeyPress(const std::string& kn) {
     }
     else if (this->focus == FocusTime) {
         if (inc(kn)) {
-            playback::SeekForward(this->playback);
+            core::playback::SeekForward(this->playback);
             return true;
         }
         else if (dec(kn)) {
-            playback::SeekBack(this->playback);
+            core::playback::SeekBack(this->playback);
             return true;
         }
     }
@@ -560,10 +560,10 @@ void TransportWindow::OnRedraw() {
 void TransportWindow::UpdateReplayGainState() {
     using Mode = ReplayGainMode;
 
-    auto prefs = Preferences::ForComponent(prefs::components::Playback);
+    auto preferences = Preferences::ForComponent(core::prefs::components::Playback);
 
     this->replayGainMode = (Mode)
-        prefs->GetInt(prefs::keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+        preferences->GetInt(core::prefs::keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
 
     this->hasReplayGain = false;
 
