@@ -90,3 +90,8 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 else()
     target_link_libraries(musikcube ${musikcube_LINK_LIBS} curses panel musikcore)
 endif()
+
+if (ENABLE_PCH MATCHES "true")
+    message(STATUS "[musikcube] enabling precompiled headers")
+    include(./pch.cmake)
+endif()
