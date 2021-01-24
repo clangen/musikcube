@@ -261,7 +261,7 @@ namespace musik { namespace core {
             }
 
             *target = (char*)malloc(sizeof(char) * (fileSize + (nullTerminate ? 1 : 0)));
-            size = fread(*target, sizeof(char), fileSize, file);
+            size = narrow_cast<int>(fread(*target, sizeof(char), fileSize, file));
 
             if (size == fileSize) {
                 if (nullTerminate) {

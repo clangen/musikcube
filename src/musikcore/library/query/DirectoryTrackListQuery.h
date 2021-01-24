@@ -43,27 +43,27 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DirectoryTrackListQuery)
+
             DirectoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& directory,
                 const std::string& filter = "");
 
-            virtual ~DirectoryTrackListQuery();
-
-            virtual std::string Name() { return kQueryName; }
-            virtual Result GetResult() { return this->result; }
-            virtual Headers GetHeaders() { return this->headers; }
-            virtual size_t GetQueryHash() { return this->hash; }
+            std::string Name() { return kQueryName; }
+            Result GetResult() noexcept override { return this->result; }
+            Headers GetHeaders() noexcept override { return this->headers; }
+            size_t GetQueryHash() noexcept override { return this->hash; }
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<DirectoryTrackListQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             musik::core::ILibraryPtr library;

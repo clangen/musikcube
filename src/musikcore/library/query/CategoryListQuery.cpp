@@ -65,9 +65,6 @@ static std::string getMatchType(CategoryListQuery::MatchType matchType) {
     return matchType == CategoryListQuery::MatchType::Regex ? "REGEXP" : "LIKE";
 }
 
-CategoryListQuery::CategoryListQuery() {
-}
-
 CategoryListQuery::CategoryListQuery(
     MatchType matchType,
     const std::string& trackField,
@@ -91,7 +88,7 @@ CategoryListQuery::CategoryListQuery(
 : matchType(matchType)
 , trackField(trackField)
 , filter(filter) {
-    result.reset(new SdkValueList());
+    result = std::make_shared<SdkValueList>();
 
     if (this->filter.size() && this->matchType == MatchType::Substring) {
         /* transform "FilteR" => "%filter%" */
@@ -115,10 +112,7 @@ CategoryListQuery::CategoryListQuery(
     }
 }
 
-CategoryListQuery::~CategoryListQuery() {
-}
-
-CategoryListQuery::Result CategoryListQuery::GetResult() {
+CategoryListQuery::Result CategoryListQuery::GetResult() noexcept {
     return this->result;
 }
 
@@ -137,7 +131,7 @@ int CategoryListQuery::GetIndexOf(int64_t id) {
 }
 
 void CategoryListQuery::QueryPlaylist(musik::core::db::Connection& db) {
-    bool filtered = this->filter.size();
+    const bool filtered = this->filter.size();
 
     std::string query = filtered
         ? kFilteredPlaylistsQuery
@@ -236,7 +230,7 @@ void CategoryListQuery::ProcessResult(musik::core::db::Statement &stmt) {
 }
 
 bool CategoryListQuery::OnRun(Connection& db) {
-    result.reset(new SdkValueList());
+    result = std::make_shared<SdkValueList>();
 
     switch (this->outputType) {
         case OutputType::Playlist: QueryPlaylist(db); break;
@@ -284,7 +278,7 @@ std::shared_ptr<CategoryListQuery> CategoryListQuery::DeserializeQuery(const std
     result->trackField = options.value("trackField", "");
     result->filter = options.value("filter", "");
     result->matchType = options.value("matchType", MatchType::Substring);
-    result->outputType = (OutputType)options.value("outputType", OutputType::Regular);
+    result->outputType = static_cast<OutputType>(options.value("outputType", OutputType::Regular));
     PredicateListFromJson(options["regularPredicateList"], result->regular);
     PredicateListFromJson(options["extendedPredicateList"], result->extended);
     return result;

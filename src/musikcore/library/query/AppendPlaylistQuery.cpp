@@ -70,7 +70,7 @@ AppendPlaylistQuery::AppendPlaylistQuery(
     musik::core::ILibraryPtr library,
     const int64_t playlistId,
     std::shared_ptr<musik::core::TrackList> tracks,
-    const int offset)
+    const int offset) noexcept
 : library(library)
 , sharedTracks(tracks)
 , rawTracks(nullptr)
@@ -83,7 +83,7 @@ AppendPlaylistQuery::AppendPlaylistQuery(
     musik::core::ILibraryPtr library,
     const int64_t playlistId,
     musik::core::sdk::ITrackList *tracks,
-    const int offset)
+    const int offset) noexcept
 : library(library)
 , rawTracks(tracks)
 , playlistId(playlistId)
@@ -94,7 +94,7 @@ AppendPlaylistQuery::AppendPlaylistQuery(
 bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
     this->result = false;
 
-    ITrackList* tracks = sharedTracks ? sharedTracks.get() : rawTracks;
+    const ITrackList* tracks = sharedTracks ? sharedTracks.get() : rawTracks;
 
     if (!tracks || !tracks->Count() || playlistId == 0) {
         this->result = true;
@@ -129,11 +129,14 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
     Statement insertTrack(INSERT_PLAYLIST_TRACK_QUERY.c_str(), db);
 
     for (size_t i = 0; i < tracks->Count(); i++) {
-        auto id = tracks->GetId(i);
-        auto target = TrackPtr(new LibraryTrack(id, this->library));
+        const auto id = tracks->GetId(i);
+        auto target = std::make_shared<LibraryTrack>(id, this->library);
 
-        std::shared_ptr<TrackMetadataQuery> query(
-            new TrackMetadataQuery(target, this->library, TrackMetadataQuery::Type::IdsOnly));
+        std::shared_ptr<TrackMetadataQuery> query = 
+            std::make_shared<TrackMetadataQuery>(
+                target,
+                this->library,
+                TrackMetadataQuery::Type::IdsOnly);
 
         this->library->EnqueueAndWait(query);
 
@@ -167,7 +170,7 @@ void AppendPlaylistQuery::SendPlaylistMutationBroadcast() {
 /* ISerializableQuery */
 
 std::string AppendPlaylistQuery::SerializeQuery() {
-    ITrackList* tracks = rawTracks ? rawTracks : sharedTracks.get();
+    const ITrackList* tracks = rawTracks ? rawTracks : sharedTracks.get();
     nlohmann::json output = {
     { "name", kQueryName },
         { "options", {

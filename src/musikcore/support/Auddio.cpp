@@ -35,6 +35,7 @@
 #include "pch.hpp"
 #include "Auddio.h"
 #include "Common.h"
+#include <musikcore/support/NarrowCast.h>
 #include <musikcore/sdk/HttpClient.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
@@ -56,7 +57,11 @@ static std::shared_ptr<AuddioClient> createClient() {
 static std::string encode(std::string value) {
     static CURL* curl = curl_easy_init();
     if (curl && value.c_str()) {
-        char* encoded = curl_easy_escape(curl, value.c_str(), value.size());
+        char* encoded = curl_easy_escape(
+            curl,
+            value.c_str(),
+            narrow_cast<int>(value.size()));
+
         if (encoded) {
             value = encoded;
             curl_free(encoded);

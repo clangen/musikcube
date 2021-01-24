@@ -208,7 +208,7 @@ void TrackList::CopyTo(TrackList& to) {
 
 int TrackList::IndexOf(int64_t id) const {
     auto it = std::find(this->ids.begin(), this->ids.end(), id);
-    return (it == this->ids.end()) ? -1 : it - this->ids.begin();
+    return narrow_cast<int>((it == this->ids.end()) ? -1 : it - this->ids.begin());
 }
 
 void TrackList::Shuffle() {

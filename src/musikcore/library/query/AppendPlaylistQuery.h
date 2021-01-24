@@ -45,19 +45,19 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
+            DELETE_CLASS_DEFAULTS(AppendPlaylistQuery)
+
             AppendPlaylistQuery(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 std::shared_ptr<musik::core::TrackList> tracks,
-                const int offset = -1);
+                const int offset = -1) noexcept;
 
             AppendPlaylistQuery(
                 musik::core::ILibraryPtr library,
                 const int64_t playlistId,
                 musik::core::sdk::ITrackList *tracks,
-                const int offset = -1);
-
-            virtual ~AppendPlaylistQuery() { }
+                const int offset = -1) noexcept;
 
             std::string Name() override { return kQueryName; }
 

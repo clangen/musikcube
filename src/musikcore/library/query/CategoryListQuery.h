@@ -51,6 +51,8 @@ namespace musik { namespace core { namespace library { namespace query {
 
             using Result = SdkValueList::Shared;
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(CategoryListQuery)
+
             CategoryListQuery(
                 MatchType matchType,
                 const std::string& trackField,
@@ -68,25 +70,21 @@ namespace musik { namespace core { namespace library { namespace query {
                 const category::PredicateList predicate,
                 const std::string& filter = "");
 
-            virtual ~CategoryListQuery();
+            Result GetResult() noexcept;
+            int GetIndexOf(int64_t id);
 
-            virtual Result GetResult();
-            virtual int GetIndexOf(int64_t id);
-            virtual std::string Name() { return kQueryName; }
+            std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<CategoryListQuery> DeserializeQuery(const std::string& data);
 
             musik::core::sdk::IValueList* GetSdkResult();
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
-
-        private:
-            CategoryListQuery();
+            bool OnRun(musik::core::db::Connection &db) override;
 
             enum class OutputType: int {
                 Regular = 1,
