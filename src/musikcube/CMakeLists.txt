@@ -86,7 +86,24 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
     pkg_check_modules(NCURSES REQUIRED ncursesw panelw)
     target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${NCURSES_LIBRARIES} musikcore)
 elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    target_link_libraries(musikcube ${musikcube_LINK_LIBS} ncursesw panelw musikcore)
+    if (${LINK_STATICALLY} MATCHES "true")
+        find_library(
+            NCURSESWLIB
+            NAMES libncursesw.a ncursesw
+            PATHS "/usr/local/opt/ncurses/lib/")
+
+        find_library(
+            PANELWLIB
+            NAMES libpanelw.a panelw
+            PATHS "/usr/local/opt/ncurses/lib/")
+
+        message(STATUS "[musikcube] using libncursesw at " ${NCURSESWLIB})
+        message(STATUS "[musikcube] using libpanelw at " ${PANELWLIB})
+
+        target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${NCURSESWLIB} ${PANELWLIB} musikcore)
+    else()
+        target_link_libraries(musikcube ${musikcube_LINK_LIBS} ncursesw panelw musikcore)
+    endif()
 else()
     target_link_libraries(musikcube ${musikcube_LINK_LIBS} curses panel musikcore)
 endif()
