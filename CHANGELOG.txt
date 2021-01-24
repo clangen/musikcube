@@ -1,3 +1,11 @@
+0.96.5
+
+
+* ensure we statically link against the brew version of ncurses on macOS when
+  building pre-compiled artifacts
+
+--------------------------------------------------------------------------------
+
 0.96.4
 
 * added mouse wheel support to non-Windows platforms.
