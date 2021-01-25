@@ -58,7 +58,7 @@ namespace musik {
 
                 /* IWindow */
                 bool KeyPress(const std::string& kn) override;
-                virtual void OnLayout();
+                void OnLayout() override;
 
             private:
                 void OnEntryActivated(cursespp::ListWindow* w, size_t index);

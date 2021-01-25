@@ -55,24 +55,27 @@ namespace cursespp {
 
             virtual ~ScrollableWindow();
 
+            /* IWindow */
             void Show() override;
             void OnDimensionsChanged() override;
-
             bool KeyPress(const std::string& key) override;
-            bool MouseEvent(const IMouseHandler::Event& event) override;
-
             void Focus() override;
             void Blur() override;
+
+            /* IMouseHandler */
+            bool MouseEvent(const IMouseHandler::Event& event) override;
+
+            /* IScrollable */
+            void ScrollToTop() override;
+            void ScrollToBottom() override;
+            void ScrollUp(int delta = 1) override;
+            void ScrollDown(int delta = 1) override;
+            void PageUp() override;
+            void PageDown() override;
 
             void SetAllowArrowKeyPropagation(bool allow = true);
 
             /* virtual methods we define */
-            virtual void ScrollToTop();
-            virtual void ScrollToBottom();
-            virtual void ScrollUp(int delta = 1);
-            virtual void ScrollDown(int delta = 1);
-            virtual void PageUp();
-            virtual void PageDown();
             virtual void SetAdapter(std::shared_ptr<IScrollAdapter> adapter);
             virtual void OnAdapterChanged();
             virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();

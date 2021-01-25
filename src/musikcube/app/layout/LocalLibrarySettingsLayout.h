@@ -51,9 +51,7 @@ namespace musik { namespace cube {
 
             /* IWindow */
             bool KeyPress(const std::string& key) override;
-
-        protected:
-            virtual void OnLayout();
+            void OnLayout() override;
 
         private:
             void InitializeWindows();

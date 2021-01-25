@@ -63,6 +63,14 @@ namespace cursespp {
             Window(const Window& other) = delete;
             Window& operator=(const Window& other) = delete;
 
+            static bool WriteToScreen(IInput* input);
+            static void InvalidateScreen();
+            static void Freeze();
+            static void Unfreeze();
+            static void SetNavigationKeys(std::shared_ptr<INavigationKeys> keys);
+            static musik::core::runtime::IMessageQueue& MessageQueue();
+
+            /* IWindow */
             void SetParent(IWindow* parent) override;
 
             void Show() override;
@@ -124,16 +132,8 @@ namespace cursespp {
 
             bool HasBadBounds() { return this->badBounds; }
 
-            bool MouseEvent(const IMouseHandler::Event& mouseEvent);
-
-            static bool WriteToScreen(IInput* input);
-            static void InvalidateScreen();
-            static void Freeze();
-            static void Unfreeze();
-
-            static void SetNavigationKeys(std::shared_ptr<INavigationKeys> keys);
-
-            static musik::core::runtime::IMessageQueue& MessageQueue();
+            /* IMouseHandler */
+            bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
         protected:
 

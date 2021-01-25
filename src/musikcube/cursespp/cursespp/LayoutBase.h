@@ -104,12 +104,16 @@ namespace cursespp {
             size_t GetWindowCount() override;
             IWindowPtr GetWindowAt(size_t position) override;
 
-        protected:
+            /* virtual methods we define */
             virtual void OnLayout();
-            virtual IWindowPtr EnsureValidFocusFromNext();
-            virtual IWindowPtr EnsureValidFocusFromPrev();
+
+        protected:
 
             IWindowPtr EnsureValidFocus();
+
+            /* virtual methods we define */
+            virtual IWindowPtr EnsureValidFocusFromNext();
+            virtual IWindowPtr EnsureValidFocusFromPrev();
 
         private:
             void AddFocusable(IWindowPtr window);
