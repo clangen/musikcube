@@ -52,12 +52,13 @@ namespace musik { namespace cube {
 
             LibraryNotConnectedLayout(MasterLibraryPtr library);
 
-            virtual void OnLayout() override;
-            virtual bool KeyPress(const std::string& kn) override;
-            virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
+            /* IWindow */
+            void OnLayout() override;
+            bool KeyPress(const std::string& kn) override;
+            void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
+            void OnVisibilityChanged(bool visible) override;
 
         protected:
-            void OnVisibilityChanged(bool visible) override;
             void OnLibraryStateChanged(musik::core::ILibrary::ConnectionState state);
 
         private:

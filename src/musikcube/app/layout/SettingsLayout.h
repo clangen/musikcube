@@ -76,15 +76,15 @@ namespace musik { namespace cube {
 
             virtual ~SettingsLayout();
 
-            virtual void OnVisibilityChanged(bool visible);
-            virtual void OnAddedToParent(IWindow* parent);
-            virtual void OnRemovedFromParent(IWindow* parent);
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            /* IWindow */
+            void OnVisibilityChanged(bool visible) override;
+            void OnAddedToParent(IWindow* parent) override;
+            void OnRemovedFromParent(IWindow* parent) override;
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            void OnLayout() override;
 
-            virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w);
-
-        protected:
-            virtual void OnLayout();
+            /* ITopLevelLayout */
+            void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
 
         private:
             void InitializeWindows();

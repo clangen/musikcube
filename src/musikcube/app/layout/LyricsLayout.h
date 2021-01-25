@@ -20,6 +20,7 @@ namespace musik { namespace cube {
                 musik::core::audio::PlaybackService& playback,
                 musik::core::ILibraryPtr library);
 
+            /* IWindow */
             void OnLayout() override;
             void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
             bool KeyPress(const std::string& kn) override;

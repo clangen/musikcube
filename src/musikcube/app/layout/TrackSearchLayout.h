@@ -58,16 +58,15 @@ namespace musik {
 
                 virtual ~TrackSearchLayout();
 
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
-
                 void PlayFromTop();
                 void FocusInput();
                 void LoadLastSession();
 
-            protected:
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-                virtual void OnLayout();
+                /* IWindow */
+                void OnVisibilityChanged(bool visible) override;
+                bool KeyPress(const std::string& key) override;
+                void ProcessMessage(musik::core::runtime::IMessage &message) override;
+                void OnLayout() override;
 
             private:
                 using MatchType = musik::core::library::query::QueryBase::MatchType;

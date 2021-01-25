@@ -49,11 +49,10 @@ namespace musik { namespace cube {
         public:
             ConsoleLayout(ConsoleLogger* logger);
 
-            virtual void OnLayout() override;
-            virtual void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
-            virtual bool KeyPress(const std::string& kn) override;
-
-        protected:
+            /* IWindow */
+            void OnLayout() override;
+            void SetShortcutsWindow(cursespp::ShortcutsWindow* w) override;
+            bool KeyPress(const std::string& kn) override;
             void OnVisibilityChanged(bool visible) override;
 
         private:

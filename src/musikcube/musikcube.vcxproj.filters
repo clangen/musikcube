@@ -249,9 +249,6 @@
     <ClInclude Include="app\layout\SettingsLayout.h">
       <Filter>app\layout</Filter>
     </ClInclude>
-    <ClInclude Include="app\layout\ITopLevelLayout.h">
-      <Filter>app\layout</Filter>
-    </ClInclude>
     <ClInclude Include="app\util\PreferenceKeys.h">
       <Filter>app\util</Filter>
     </ClInclude>

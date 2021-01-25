@@ -908,7 +908,6 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e
     <ClInclude Include="app\layout\BrowseLayout.h" />
     <ClInclude Include="app\layout\DirectoryLayout.h" />
     <ClInclude Include="app\layout\HotkeysLayout.h" />
-    <ClInclude Include="app\layout\ITopLevelLayout.h" />
     <ClInclude Include="app\layout\LibraryLayout.h" />
     <ClInclude Include="app\layout\ConsoleLayout.h" />
     <ClInclude Include="app\layout\LibraryNotConnectedLayout.h" />
