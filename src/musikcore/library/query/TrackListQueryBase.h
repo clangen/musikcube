@@ -128,7 +128,7 @@ namespace musik { namespace core { namespace library { namespace query {
                         this->wrapped = wrapped;
                     }
 
-                    virtual void Release() noexcept {
+                    void Release() noexcept override {
                         delete this;
                     }
 
