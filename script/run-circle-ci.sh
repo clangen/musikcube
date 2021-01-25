@@ -13,6 +13,10 @@ if [[ -z "${PW}" ]]; then
   exit
 fi
 
+# pre-process the yml file, and change max processes from 2 to 7
+circleci config process .circleci/config.yml > local-circle-ci.yml
+sed -i 's/-j2/-j7/g' local-circle-ci.yml
+
 ALL_JOBS=(
     "build_ubuntu_bionic"
     "build_ubuntu_focal"
