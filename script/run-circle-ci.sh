@@ -31,7 +31,7 @@ REPO="https://github.com/clangen/musikcube"
 
 for JOB in ${ALL_JOBS[@]}; do
   circleci local execute \
-      -c .circleci/config.yml \
+      -c local-circle-ci.yml \
       -e CIRCLE_BRANCH=${BRANCH} \
       -e CIRCLE_REPOSITORY_URL=${REPO} \
       -e MUSIKCUBE_BUILD_HOST_IP=${IP} \
