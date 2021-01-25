@@ -39,12 +39,14 @@
 #include <musikcore/sdk/IDataStream.h>
 
 extern "C" {
+    #pragma warning(push, 0)
     #include <libavformat/avio.h>
     #include <libavformat/avformat.h>
     #include <libavcodec/avcodec.h>
     #include <libavutil/samplefmt.h>
     #include <libavutil/audio_fifo.h>
     #include <libswresample/swresample.h>
+    #pragma warning(pop)
 }
 
 #include <stddef.h>

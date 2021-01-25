@@ -45,7 +45,9 @@
 #include <set>
 #include <map>
 
+#pragma warning(push, 0)
 #include <boost/algorithm/string.hpp>
+#pragma warning(pop)
 
 using namespace musik::core::sdk;
 

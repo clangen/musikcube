@@ -37,7 +37,10 @@
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IDecoder.h>
 #include <musikcore/sdk/IDataStream.h>
+
+#pragma warning(push, 0)
 #include <libopenmpt/libopenmpt.h>
+#pragma warning(pop)
 
 class OpenMptDecoder: public musik::core::sdk::IDecoder {
     public:

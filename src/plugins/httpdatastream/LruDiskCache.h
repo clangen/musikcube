@@ -38,7 +38,9 @@
 #include <ctime>
 #include <cstdint>
 
+#pragma warning(push, 0)
 #include <boost/filesystem.hpp>
+#pragma warning(pop)
 
 class LruDiskCache {
     public:

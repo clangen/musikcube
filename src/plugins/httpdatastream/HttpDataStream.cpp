@@ -41,9 +41,6 @@
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/ISchema.h>
 
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
-
 #include <iostream>
 #include <algorithm>
 #include <string>
@@ -53,9 +50,14 @@
 #include <chrono>
 #include <atomic>
 
+#pragma warning(push, 0)
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+
 /* meh... */
 #include <../../3rdparty/include/nlohmann/json.hpp>
 #include <../../3rdparty/include/websocketpp/base64/base64.hpp>
+#pragma warning(pop)
 
 #ifdef WIN32
 #include <Windows.h>
