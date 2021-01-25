@@ -35,7 +35,9 @@
 #pragma once
 
 extern "C" {
+    #pragma warning(push, 0)
     #include <microhttpd.h>
+    #pragma warning(pop)
 }
 
 #include "Context.h"

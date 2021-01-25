@@ -40,10 +40,11 @@
 
 #include <musikcore/sdk/ITrack.h>
 
+#pragma warning(push, 0)
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
-
 #include <websocketpp/base64/base64.hpp>
+#pragma warning(pop, 0)
 
 #include <iostream>
 #include <unordered_map>

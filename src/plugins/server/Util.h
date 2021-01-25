@@ -35,7 +35,10 @@
 #pragma once
 
 #include <string>
+
+#pragma warning(push, 0)
 #include <boost/bimap.hpp>
+#pragma warning(pop)
 
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/IValue.h>

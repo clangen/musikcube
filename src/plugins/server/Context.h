@@ -39,8 +39,10 @@
 #include <musikcore/sdk/IPlaybackService.h>
 #include <musikcore/sdk/IEnvironment.h>
 
+#pragma warning(push, 0)
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
+#pragma warning(pop)
 
 class ReadWriteLock {
     typedef boost::shared_mutex Mutex;

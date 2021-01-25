@@ -34,9 +34,12 @@
 
 #include "TranscodingAudioDataStream.h"
 #include "Util.h"
-#include <boost/filesystem.hpp>
 #include <algorithm>
 #include <atomic>
+
+#pragma warning(push, 0)
+#include <boost/filesystem.hpp>
+#pragma warning(pop)
 
 #define BUFFER_SIZE 8192
 #define SAMPLES_PER_BUFFER BUFFER_SIZE / 4 /* sizeof(float) */
