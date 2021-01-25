@@ -63,64 +63,64 @@ namespace cursespp {
             Window(const Window& other) = delete;
             Window& operator=(const Window& other) = delete;
 
-            virtual void SetParent(IWindow* parent);
+            void SetParent(IWindow* parent) override;
 
-            virtual void Show();
-            virtual void Hide();
-            virtual void Redraw();
-            virtual void Invalidate();
+            void Show() override;
+            void Hide() override;
+            void Redraw() override;
+            void Invalidate() override;
 
-            virtual void SetFrameVisible(bool visible);
-            virtual bool IsFrameVisible();
+            void SetFrameVisible(bool visible) override;
+            bool IsFrameVisible() override;
 
-            virtual void Focus();
-            virtual void Blur();
+            void Focus() override;
+            void Blur() override;
 
-            virtual void SetContentColor(Color color);
-            virtual void SetFrameColor(Color color);
-            virtual void SetFocusedContentColor(Color color);
-            virtual void SetFocusedFrameColor(Color color);
+            void SetContentColor(Color color) override;
+            void SetFrameColor(Color color) override;
+            void SetFocusedContentColor(Color color) override;
+            void SetFocusedFrameColor(Color color) override;
 
-            virtual Color GetContentColor() { return this->contentColor; }
-            virtual Color GetFrameColor() { return this->frameColor; }
-            virtual Color GetFocusedContentColor() { return this->focusedContentColor; }
-            virtual Color GetFocusedFrameColor() { return this->focusedFrameColor; }
+            Color GetContentColor() override { return this->contentColor; }
+            Color GetFrameColor() override { return this->frameColor; }
+            Color GetFocusedContentColor() override { return this->focusedContentColor; }
+            Color GetFocusedFrameColor() override { return this->focusedFrameColor; }
 
-            virtual void SetSize(int width, int height);
-            virtual void SetPosition(int x, int y);
-            virtual void MoveAndResize(int x, int y, int width, int height);
+            void SetSize(int width, int height) override;
+            void SetPosition(int x, int y) override;
+            void MoveAndResize(int x, int y, int width, int height) override;
 
-            virtual int GetWidth() const;
-            virtual int GetHeight() const;
-            virtual int GetContentHeight() const;
-            virtual int GetContentWidth() const;
-            virtual int GetX() const;
-            virtual int GetY() const;
-            virtual int GetAbsoluteX() const;
-            virtual int GetAbsoluteY() const;
-            virtual int GetId() const;
+            int GetWidth() const override;
+            int GetHeight() const override;
+            int GetContentHeight() const override;
+            int GetContentWidth() const override;
+            int GetX() const override;
+            int GetY() const override;
+            int GetAbsoluteX() const override;
+            int GetAbsoluteY() const override;
+            int GetId() const override;
 
-            virtual void SetFrameTitle(const std::string& title);
-            virtual std::string GetFrameTitle() const;
+            void SetFrameTitle(const std::string& title) override;
+            std::string GetFrameTitle() const override;
 
-            virtual void BringToTop();
-            virtual void SendToBottom();
+            void BringToTop() override;
+            void SendToBottom() override;
 
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
-            virtual WINDOW* GetFrame() const;
-            virtual WINDOW* GetContent() const;
+            WINDOW* GetFrame() const override;
+            WINDOW* GetContent() const override;
 
-            virtual int GetFocusOrder();
-            virtual void SetFocusOrder(int order = -1);
+            int GetFocusOrder() override;
+            void SetFocusOrder(int order = -1) override;
 
-            virtual bool IsVisible();
-            virtual bool IsFocused();
-            virtual bool IsTop();
+            bool IsVisible() override;
+            bool IsFocused() override;
+            bool IsTop() override;
 
-            virtual IWindow* GetParent() const;
-            virtual void OnParentVisibilityChanged(bool visible);
-            virtual void OnChildVisibilityChanged(bool visible, IWindow* child);
+            IWindow* GetParent() const override;
+            void OnParentVisibilityChanged(bool visible) override;
+            void OnChildVisibilityChanged(bool visible, IWindow* child) override;
 
             bool HasBadBounds() { return this->badBounds; }
 
@@ -145,10 +145,6 @@ namespace cursespp {
 
             static INavigationKeys& NavigationKeys();
 
-            virtual void Create();
-            virtual void Destroy();
-            virtual void DecorateFrame();
-
             void Recreate();
             void Clear();
             void DrawFrameAndTitle();
@@ -159,6 +155,9 @@ namespace cursespp {
 
             bool CheckForBoundsError();
 
+            virtual void Create();
+            virtual void Destroy();
+            virtual void DecorateFrame();
             virtual void OnDimensionsChanged();
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnFocusChanged(bool focused);

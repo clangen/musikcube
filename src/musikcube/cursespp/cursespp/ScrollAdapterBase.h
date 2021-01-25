@@ -52,17 +52,11 @@ namespace cursespp {
             ScrollAdapterBase();
             virtual ~ScrollAdapterBase();
 
-            virtual void SetDisplaySize(size_t width, size_t height);
+            void SetDisplaySize(size_t width, size_t height) override;
+            void DrawPage(ScrollableWindow* window, size_t index, ScrollPosition& result) override;
+
+            /* virtual methods we define */
             virtual size_t GetLineCount();
-
-            virtual void DrawPage(
-                ScrollableWindow* window,
-                size_t index,
-                ScrollPosition& result);
-
-            virtual size_t GetEntryCount() = 0;
-            virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) = 0;
-
             virtual void SetItemDecorator(ItemDecorator decorator) { this->decorator = decorator; }
 
         protected:
@@ -73,8 +67,8 @@ namespace cursespp {
 
             virtual ItemDecorator GetItemDecorator() { return this->decorator; }
 
-            size_t GetWidth() { return this->width; }
-            size_t GetHeight() { return this->height; }
+            size_t GetWidth() noexcept { return this->width; }
+            size_t GetHeight() noexcept { return this->height; }
 
         private:
             size_t width, height;

@@ -56,11 +56,11 @@ namespace cursespp {
                 this->stack = nullptr;
             }
 
-            virtual void SetOverlayStack(OverlayStack* stack) override {
+            void SetOverlayStack(OverlayStack* stack) override {
                 this->stack = stack;
             }
 
-            virtual bool IsTop() override {
+            bool IsTop() override {
                 if (LayoutBase::IsTop()) {
                     return true;
                 }

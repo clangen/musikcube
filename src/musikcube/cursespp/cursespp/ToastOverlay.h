@@ -50,17 +50,18 @@ namespace cursespp {
             ToastOverlay(const ToastOverlay& other) = delete;
             ToastOverlay& operator=(const ToastOverlay& other) = delete;
 
-            virtual void Layout() override;
-            virtual bool KeyPress(const std::string& key) override;
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+            /* IWindow */
+            void Layout() override;
+            bool KeyPress(const std::string& key) override;
+            void ProcessMessage(musik::core::runtime::IMessage& message) override;
+            void OnRedraw() override;
 
         protected:
-            virtual void OnVisibilityChanged(bool visible) override;
+            void OnVisibilityChanged(bool visible) override;
 
         private:
             ToastOverlay(const std::string& text, long durationMs);
 
-            virtual void OnRedraw() override;
             void RecalculateSize();
 
             bool ticking;

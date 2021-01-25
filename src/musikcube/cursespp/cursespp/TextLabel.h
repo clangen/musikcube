@@ -55,21 +55,19 @@ namespace cursespp {
 
             virtual ~TextLabel();
 
-            virtual void SetText(
-                const std::string& value,
-                const text::TextAlign alignment);
+            /* IWindow */
+            void OnRedraw() override;
+            bool KeyPress(const std::string& key) override;
+            bool MouseEvent(const IMouseHandler::Event& event) override;
 
-            virtual void SetText(const std::string& value);
-
-            virtual std::string GetText() { return this->buffer; }
-            virtual size_t Length() { return u8cols(this->buffer); }
-            virtual void SetAlignment(const text::TextAlign alignment);
+            /* virtual methods we define */
             virtual void SetBold(bool bold);
-            virtual bool IsBold() { return this->bold; }
-            virtual void OnRedraw();
-
-            virtual bool KeyPress(const std::string& key);
-            virtual bool MouseEvent(const IMouseHandler::Event& event);
+            virtual bool IsBold() noexcept { return this->bold; }
+            virtual size_t Length() { return u8cols(this->buffer); }
+            virtual void SetText(const std::string& value);
+            virtual void SetText(const std::string& value, const text::TextAlign alignment);
+            virtual std::string GetText() { return this->buffer; }
+            virtual void SetAlignment(const text::TextAlign alignment);
 
         private:
             void ApplyDefaultStyle();

@@ -67,14 +67,14 @@ namespace cursespp {
 
             size_t GetSelectedIndex();
 
-            virtual void Layout() override;
-            virtual bool KeyPress(const std::string& key) override;
+            void Layout() override;
+            bool KeyPress(const std::string& key) override;
 
             void RefreshAdapter();
 
         protected:
-            virtual void OnVisibilityChanged(bool visible) override;
-            virtual void OnDismissed() override;
+            void OnVisibilityChanged(bool visible) override;
+            void OnDismissed() override;
 
         private:
             void OnListEntryActivated(cursespp::ListWindow* sender, size_t index);

@@ -41,15 +41,13 @@ namespace cursespp {
     class SingleLineEntry : public IScrollAdapter::IEntry {
         public:
             SingleLineEntry(const std::string& value);
-            virtual ~SingleLineEntry() { }
 
-            virtual void SetWidth(size_t width);
-            virtual Color GetAttrs(size_t line);
-            virtual size_t GetLineCount();
-            virtual std::string GetLine(size_t line);
+            void SetWidth(size_t width) override;
+            Color GetAttrs(size_t line) override;
+            size_t GetLineCount() override;
+            std::string GetLine(size_t line) override;
 
             void SetAttrs(Color attrs);
-
             std::string GetValue() { return value; }
 
         private:

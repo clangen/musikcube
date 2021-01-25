@@ -58,29 +58,39 @@ namespace cursespp {
 
             virtual ~TextInput();
 
-            virtual void OnRedraw();
+            /* IInput */
+            bool Write(const std::string& key) override;
+            size_t Length() override;
+            size_t Position() override;
+            InputMode GetInputMode() noexcept override { return this->inputMode; }
 
-            virtual bool Write(const std::string& key);
-            virtual size_t Length();
-            virtual size_t Position();
+            /* IWindow */
+            bool KeyPress(const std::string& key) override;
+            void OnRedraw() override;
 
-            virtual void SetInputMode(InputMode inputMode) {
-                this->inputMode = inputMode;
-            };
+            /* IMouseHandler */
+            bool MouseEvent(const IMouseHandler::Event& event) override;
 
-            virtual InputMode GetInputMode() { return this->inputMode; }
-
-            virtual bool KeyPress(const std::string& key);
-            virtual bool MouseEvent(const IMouseHandler::Event& event);
-
-            virtual void SetText(const std::string& value);
-            virtual std::string GetText() { return this->buffer; }
-
+            /* regular methods we define */
             void SetRawKeyBlacklist(const std::vector<std::string>&& blacklist);
             void SetTruncate(bool truncate);
             void SetHint(const std::string& hint);
             void SetEnterEnabled(bool enabled);
-            Style GetStyle() { return style; }
+
+            Style GetStyle() noexcept {
+                return style;
+            }
+
+            /* virtual methods we define */
+            virtual void SetText(const std::string& value);
+
+            virtual std::string GetText() {
+                return this->buffer;
+            }
+
+            virtual void SetInputMode(InputMode inputMode) noexcept {
+                this->inputMode = inputMode;
+            };
 
         private:
             bool OffsetPosition(int delta);

@@ -49,16 +49,17 @@ namespace cursespp {
             SimpleScrollAdapter();
             virtual ~SimpleScrollAdapter();
 
-            virtual void AddEntry(EntryPtr entry);
-            virtual void SetMaxEntries(const size_t size = 500);
-            virtual void Clear();
-
-            virtual size_t GetEntryCount();
-            virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
+            size_t GetEntryCount() override;
+            EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
             void SetSelectable(bool selectable);
             void AddEntry(const std::string& entry);
             std::string StringAt(size_t index);
+
+            /* virtual methods we define */
+            virtual void AddEntry(EntryPtr entry);
+            virtual void SetMaxEntries(const size_t size = 500);
+            virtual void Clear();
 
         private:
             typedef std::deque<EntryPtr> EntryList; /* TODO: this is O(n) lookup */

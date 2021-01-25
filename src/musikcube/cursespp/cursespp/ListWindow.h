@@ -57,39 +57,43 @@ namespace cursespp {
 
             virtual ~ListWindow();
 
-            virtual void ScrollToTop();
-            virtual void ScrollToBottom();
-            virtual void ScrollUp(int delta = 1);
-            virtual void ScrollDown(int delta = 1);
-            virtual void PageUp();
-            virtual void PageDown();
-            virtual void ScrollTo(size_t index);
+            void ScrollToTop() override;
+            void ScrollToBottom() override;
+            void ScrollUp(int delta = 1) override;
+            void ScrollDown(int delta = 1) override;
+            void PageUp() override;
+            void PageDown() override;
+            
+            void Invalidate() override;
+            void OnAdapterChanged() override;
 
-            virtual size_t GetSelectedIndex();
-            virtual void SetSelectedIndex(size_t index);
-            virtual bool IsEntryVisible(size_t index);
-            virtual void Invalidate();
-            virtual void OnAdapterChanged();
+            const IScrollAdapter::ScrollPosition& GetScrollPosition()  override;
 
-            virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
-
-            virtual bool KeyPress(const std::string& key);
-            virtual bool MouseEvent(const IMouseHandler::Event& event);
+            bool KeyPress(const std::string& key)  override;
+            bool MouseEvent(const IMouseHandler::Event& event)  override;
 
             void SetScrollbarVisible(bool visible);
             void SetDecorator(Decorator decorator);
 
+            /* virtual methods we define */
+            virtual void ScrollTo(size_t index);
+            virtual size_t GetSelectedIndex();
+            virtual void SetSelectedIndex(size_t index);
+            virtual bool IsEntryVisible(size_t index);
+
         protected:
+            void OnDimensionsChanged() override;
+            void DecorateFrame() override;
+            IScrollAdapter::ScrollPosition& GetMutableScrollPosition() override;
+
+            /* virtual methods we define */
             virtual void OnSelectionChanged(size_t newIndex, size_t oldIndex);
             virtual bool OnEntryActivated(size_t index);
             virtual bool OnEntryContextMenu(size_t index);
             virtual void OnInvalidated();
-            virtual void OnDimensionsChanged();
-            virtual void DecorateFrame();
-            virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
 
         private:
-            virtual bool IsSelectedItemCompletelyVisible();
+            bool IsSelectedItemCompletelyVisible();
 
             bool showScrollbar;
             IScrollAdapter::ScrollPosition scrollPosition;
