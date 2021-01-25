@@ -36,7 +36,10 @@
 
 #include <musikcore/db/Connection.h>
 #include <musikcore/db/SqliteExtensions.h>
+
+#pragma warning(push, 0)
 #include <sqlite/sqlite3.h>
+#pragma warning(pop)
 
 static std::mutex globalMutex;
 

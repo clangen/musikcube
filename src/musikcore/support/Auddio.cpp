@@ -39,9 +39,12 @@
 #include <musikcore/sdk/HttpClient.h>
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <curl/curl.h>
 #include <sstream>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#include <curl/curl.h>
+#pragma warning(pop)
 
 /* https://api.audd.io/findLyrics/?q=the%20beatles%20sgt%20pepper%20reprise */
 

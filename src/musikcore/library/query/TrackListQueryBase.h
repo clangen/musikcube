@@ -40,7 +40,9 @@
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/library/query/util/Serialization.h>
 
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 namespace musik { namespace core { namespace library { namespace query {
 

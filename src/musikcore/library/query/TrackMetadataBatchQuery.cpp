@@ -39,7 +39,10 @@
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/query/util/TrackQueryFragments.h>
 #include <musikcore/sdk/ReplayGain.h>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using namespace musik::core;
 using namespace musik::core::db;

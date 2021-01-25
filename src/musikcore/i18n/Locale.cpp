@@ -34,7 +34,10 @@
 
 #include "pch.hpp"
 
+#pragma warning(push, 0)
 #include <boost/filesystem.hpp>
+#pragma warning(pop)
+
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/support/Common.h>
 

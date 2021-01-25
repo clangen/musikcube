@@ -38,7 +38,10 @@
 #include <musikcore/db/Statement.h>
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using namespace musik::core;
 using namespace musik::core::db;

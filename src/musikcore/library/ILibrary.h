@@ -35,14 +35,15 @@
 
 #include <string>
 #include <vector>
-#include <sigslot/sigslot.h>
 #include <functional>
+#include <limits>
+
+#include <sigslot/sigslot.h>
 
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/library/IQuery.h>
 #include <musikcore/sdk/ITrack.h>
 #include <musikcore/runtime/IMessageQueue.h>
-#include <limits>
 
 namespace musik { namespace core {
 

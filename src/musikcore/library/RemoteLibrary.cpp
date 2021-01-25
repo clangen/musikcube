@@ -46,8 +46,12 @@
 #include <musikcore/runtime/Message.h>
 #include <musikcore/support/NarrowCast.h>
 #include <musikcore/debug.h>
-#include <nlohmann/json.hpp>
+
 #include <chrono>
+
+#pragma warning(push, 0)
+#include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 static const std::string TAG = "RemoteLibrary";
 

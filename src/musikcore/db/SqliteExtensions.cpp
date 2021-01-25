@@ -33,8 +33,12 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+
+#pragma warning(push, 0)
 #include <sqlite/sqlite3.h>
 #include <musikcore/db/SqliteExtensions.h>
+#pragma warning(pop)
+
 #include <unordered_map>
 #include <regex>
 

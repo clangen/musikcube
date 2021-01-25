@@ -36,7 +36,10 @@
 
 #include <musikcore/db/Statement.h>
 #include <musikcore/db/Connection.h>
+
+#pragma warning(push, 0)
 #include <sqlite/sqlite3.h>
+#pragma warning(pop)
 
 using namespace musik::core::db;
 

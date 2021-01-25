@@ -34,7 +34,10 @@
 
 #include "pch.hpp"
 #include "MarkTrackPlayedQuery.h"
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;

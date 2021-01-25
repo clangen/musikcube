@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include <musikcore/support/Common.h>
 #include <musikcore/config.h>
-#include <utf8/utf8.h>
+
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -44,6 +44,10 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+
+#pragma warning(push, 0)
+#include <utf8/utf8.h>
+#pragma warning(pop)
 
 #ifdef WIN32
     #include <shellapi.h>

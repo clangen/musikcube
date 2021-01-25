@@ -41,10 +41,12 @@
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/db/Statement.h>
 
+#pragma warning(push, 0)
+#include <nlohmann/json.hpp>
+
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
-
-#include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using musik::core::db::Statement;
 using musik::core::db::Row;

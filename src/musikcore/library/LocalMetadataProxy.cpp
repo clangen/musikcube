@@ -57,7 +57,10 @@
 #include <musikcore/support/Common.h>
 #include <vector>
 #include <map>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 #define TAG "LocalMetadataProxy"
 

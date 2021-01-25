@@ -55,10 +55,11 @@
 #include <musikcore/audio/Stream.h>
 
 #include <algorithm>
-
-#include <boost/bind.hpp>
-
 #include <atomic>
+
+#pragma warning(push, 0)
+#include <boost/bind.hpp>
+#pragma warning(pop)
 
 #define STRESS_TEST_DB 0
 

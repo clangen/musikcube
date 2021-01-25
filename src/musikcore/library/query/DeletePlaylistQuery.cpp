@@ -40,7 +40,9 @@
 #include <musikcore/support/Messages.h>
 #include <musikcore/runtime/Message.h>
 
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using namespace musik::core;
 using namespace musik::core::db;

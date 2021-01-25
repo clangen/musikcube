@@ -41,7 +41,10 @@
 #include <musikcore/config.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/sdk/IPreferences.h>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 namespace musik { namespace core {
     class Preferences : public musik::core::sdk::IPreferences {

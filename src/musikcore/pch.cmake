@@ -13,7 +13,9 @@ target_precompile_headers(musikcore
     "$<$<COMPILE_LANGUAGE:CXX>:<boost/filesystem.hpp$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<boost/algorithm/string/case_conv.hpp$<ANGLE-R>>"
     "$<$<COMPILE_LANGUAGE:CXX>:<boost/algorithm/string.hpp$<ANGLE-R>>"
-  
+    "$<$<COMPILE_LANGUAGE:CXX>:<nlohmann/json.hpp$<ANGLE-R>>"
+    "$<$<COMPILE_LANGUAGE:CXX>:<sigslot/sigslot.h$<ANGLE-R>>"
+
   PUBLIC
     "$<$<COMPILE_LANGUAGE:CXX>:config.h>"
     "$<$<COMPILE_LANGUAGE:CXX>:i18n/Locale.h>"

@@ -32,7 +32,12 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+#pragma warning(push, 0)
 #include <curl/curl.h>
+#pragma warning(pop)
+
 #include <functional>
 #include <algorithm>
 #include <thread>

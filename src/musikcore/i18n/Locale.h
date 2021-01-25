@@ -37,8 +37,11 @@
 #include <musikcore/config.h>
 #include <musikcore/support/Preferences.h>
 #include <unordered_map>
+
+#pragma warning(push, 0)
 #include <sigslot/sigslot.h>
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 namespace musik { namespace core { namespace i18n {
 
