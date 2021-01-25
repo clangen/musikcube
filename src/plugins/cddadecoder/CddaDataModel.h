@@ -37,8 +37,6 @@
 #include <thread>
 #include <mutex>
 #include <set>
-#include "ntddcdrm.h"
-#include "devioctl.h"
 
 class CddaDataModel {
     public:
@@ -55,12 +53,12 @@ class CddaDataModel {
 
                 int GetCddbSum();
 
-                int GetNumber() { return this->number; }
-                int GetMinutes() { return this->minutes; }
-                int GetSeconds() { return this->seconds; }
-                int GetFrames() { return this->frames; }
-                Type GetType() { return this->type; }
-                double GetDuration() { return duration; }
+                int GetNumber() noexcept { return this->number; }
+                int GetMinutes() noexcept { return this->minutes; }
+                int GetSeconds() noexcept { return this->seconds; }
+                int GetFrames() noexcept { return this->frames; }
+                Type GetType() noexcept { return this->type; }
+                double GetDuration() noexcept { return duration; }
 
                 std::string GetFilePath();
 
@@ -87,7 +85,7 @@ class CddaDataModel {
                 void AddTrack(DiscTrackPtr track);
                 int GetTrackCount();
                 DiscTrackPtr GetTrackAt(int index);
-                char GetDriveLetter() { return this->driveLetter; }
+                char GetDriveLetter() noexcept { return this->driveLetter; }
 
             private:
                 std::vector<DiscTrackPtr> tracks;

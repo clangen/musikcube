@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.h"
+#include "config.h"
 #include "WaveOut.h"
 #include <string>
 #include <vector>

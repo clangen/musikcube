@@ -540,14 +540,13 @@
     <ClCompile Include="HttpDataStreamFactory.cpp" />
     <ClCompile Include="httpdatastream_plugin.cpp" />
     <ClCompile Include="LruDiskCache.cpp" />
-    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HttpDataStream.h" />
     <ClInclude Include="HttpDataStreamFactory.h" />
     <ClInclude Include="LruDiskCache.h" />
     <ClInclude Include="RingBuffer.h" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

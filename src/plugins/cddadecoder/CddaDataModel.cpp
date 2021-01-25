@@ -32,11 +32,9 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 #include "CddaDataModel.h"
 #include <string>
-#include <Windows.h>
-#include <dbt.h>
 #include <map>
 #include <functional>
 
@@ -167,9 +165,10 @@ void CddaDataModel::WindowThreadProc() {
         }
 
         WINDOW_TO_MODEL.erase(WINDOW_TO_MODEL.find(hwnd));
+
+        DestroyWindow(hwnd);
     }
 
-    DestroyWindow(hwnd);
     UnregisterClass(CLASS_NAME, NULL);
     this->messageWindow = nullptr;
 }

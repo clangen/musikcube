@@ -13,9 +13,6 @@
     <ClCompile Include="httpdatastream_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="HttpDataStream.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -27,9 +24,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>plugin</Filter>
-    </ClInclude>
     <ClInclude Include="HttpDataStreamFactory.h">
       <Filter>plugin</Filter>
     </ClInclude>
@@ -40,6 +34,9 @@
       <Filter>plugin</Filter>
     </ClInclude>
     <ClInclude Include="LruDiskCache.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>

@@ -35,9 +35,16 @@
 #pragma once
 
 #ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#define WINVER 0x0502
-#define _WIN32_WINNT 0x0502
-#define NOMINMAX
-#include <Windows.h>
+    #ifndef WINVER
+        #define WINVER 0x0601
+    #endif
+
+    #ifndef _WIN32_WINNT
+        #define _WIN32_WINNT 0x0601
+    #endif
+
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+
+    #include <windows.h>
 #endif

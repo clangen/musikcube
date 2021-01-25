@@ -32,10 +32,8 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
+#include "config.h"
 #include <musikcore/sdk/IDataStream.h>
-
-#include "ntddcdrm.h"
-#include "devioctl.h"
 #include <string>
 #include <mutex>
 
@@ -52,22 +50,22 @@ class CddaDataStream : public IDataStream {
         CddaDataStream();
         ~CddaDataStream();
 
-        virtual void Release();
-        virtual bool Open(const char *filename, OpenFlags flags);
-        virtual bool Close();
-        virtual void Interrupt();
-        virtual bool Readable() { return true; }
-        virtual bool Writable() { return false; }
-        virtual PositionType Read(void* buffer, PositionType readBytes);
-        virtual PositionType Write(void* buffer, PositionType writeBytes) { return false;  }
-        virtual bool SetPosition(PositionType position);
-        virtual PositionType Position();
-        virtual bool Eof();
-        virtual long Length();
-        virtual bool Seekable();
-        virtual const char* Type();
-        virtual const char* Uri();
-        virtual bool CanPrefetch() { return false; }
+        void Release() override;
+        bool Open(const char* filename, OpenFlags flags) override;
+        bool Close() override;
+        void Interrupt();
+        bool Readable() noexcept override { return true; }
+        bool Writable() noexcept override { return false; }
+        PositionType Read(void* buffer, PositionType readBytes) override;
+        PositionType Write(void* buffer, PositionType writeBytes) noexcept override { return false; }
+        bool SetPosition(PositionType position) override;
+        PositionType Position() override;
+        bool Eof() override;
+        long Length() override;
+        bool Seekable() override;
+        const char* Type() override;
+        const char* Uri() override;
+        bool CanPrefetch() noexcept override { return false; }
 
         int GetChannelCount();
 

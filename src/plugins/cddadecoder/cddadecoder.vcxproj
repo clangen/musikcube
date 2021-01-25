@@ -543,7 +543,6 @@
     <ClCompile Include="cddadecoder_plugin.cpp" />
     <ClCompile Include="CddaDecoderFactory.cpp" />
     <ClCompile Include="CddaIndexerSource.cpp" />
-    <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CddaDataModel.h" />
@@ -555,7 +554,7 @@
     <ClInclude Include="devioctl.h" />
     <ClInclude Include="ntddcdrm.h" />
     <ClInclude Include="ntddstor.h" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

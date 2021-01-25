@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "pch.h"
+#include "config.h"
 #include <musikcore/sdk/IBuffer.h>
 #include <musikcore/sdk/IBufferProvider.h>
 

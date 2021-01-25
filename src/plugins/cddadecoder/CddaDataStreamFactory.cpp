@@ -32,7 +32,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "shlwapi.h"
 #include <string>
 #include "CddaDataStreamFactory.h"
 #include "CddaDataStream.h"

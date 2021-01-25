@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 #include "CddaDecoder.h"
 
 #define CDDA_SAMPLE_RATE 44100

@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 
 #include "HttpDataStream.h"
 #include "LruDiskCache.h"

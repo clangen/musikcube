@@ -45,7 +45,7 @@ class CddaDataStreamFactory : public IDataStreamFactory {
         CddaDataStreamFactory();
         ~CddaDataStreamFactory();
 
-        virtual bool CanRead(const char *uri);
-        virtual IDataStream* Open(const char *uri, OpenFlags flags);
-        virtual void Release();
+        bool CanRead(const char *uri) override;
+        IDataStream* Open(const char *uri, OpenFlags flags) override;
+        void Release() override;
 };

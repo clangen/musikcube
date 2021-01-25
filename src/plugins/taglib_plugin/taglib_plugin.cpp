@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 #include "TaglibMetadataReader.h"
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>

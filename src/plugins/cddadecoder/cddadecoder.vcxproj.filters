@@ -16,9 +16,6 @@
     <ClCompile Include="cddadecoder_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="CddaDecoderFactory.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -39,9 +36,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>plugin</Filter>
-    </ClInclude>
     <ClInclude Include="devioctl.h">
       <Filter>plugin\device</Filter>
     </ClInclude>
@@ -67,6 +61,9 @@
       <Filter>plugin</Filter>
     </ClInclude>
     <ClInclude Include="CddaDataModel.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>
