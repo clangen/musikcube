@@ -104,11 +104,11 @@ void TrackSearchLayout::SaveSession() {
 }
 
 void TrackSearchLayout::OnLayout() {
-    size_t cx = this->GetWidth(), cy = this->GetHeight();
+    int cx = this->GetWidth(), cy = this->GetHeight();
     int x = 0, y = 0;
 
-    size_t inputWidth = cx / 2;
-    size_t inputX = x + ((cx - inputWidth) / 2);
+    int inputWidth = cx / 2;
+    int inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, y, cx / 2, SEARCH_HEIGHT);
 
     bool inputIsRegex = this->matchType == MatchType::Regex;

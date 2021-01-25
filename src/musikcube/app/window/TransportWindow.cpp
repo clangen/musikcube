@@ -729,8 +729,8 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     int const bottomRowControlsWidth =
         displayCache->Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
-        (replayGainEnabled ? (u8cols(replayGain) + 4) : 0) +  /* [] brackets */
-        u8cols(currentTime) + 1 + /* +1 for space padding */
+        (replayGainEnabled ? (narrow_cast<int>(u8cols(replayGain)) + 4) : 0) +  /* [] brackets */
+        narrow_cast<int>(u8cols(currentTime)) + 1 + /* +1 for space padding */
         /* timer track with thumb */
         1 + displayCache->totalTimeCols + /* +1 for space padding */
         displayCache->Columns(repeatModeLabel);

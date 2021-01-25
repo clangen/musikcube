@@ -97,7 +97,7 @@ static std::string formatBandRow(size_t width, const std::string& band, double d
 
     /* TODO: i'm dumb and it's late; we shouldn't need the `+ 1` here, there's
     another calculation error that i'm currently blind to. */
-    int remain = (int) width - (u8cols(leftText) + u8cols(rightText)) + 1;
+    int remain = narrow_cast<int>(width - (u8cols(leftText) + u8cols(rightText)) + 1);
 
     /* pad the area between the left and right text, if necessary */
     return text::Align(leftText, text::AlignLeft, u8cols(leftText) + remain) + rightText;

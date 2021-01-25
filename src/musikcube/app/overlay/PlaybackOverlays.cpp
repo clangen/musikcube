@@ -201,7 +201,7 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playback_overlay_output_device_title"))
         .SetSelectedIndex(selectedIndex)
-        .SetWidth(width)
+        .SetWidth(narrow_cast<int>(width))
         .SetItemSelectedCallback(
             [output, deviceList, callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index == 0) {

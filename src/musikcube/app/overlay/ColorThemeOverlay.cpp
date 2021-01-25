@@ -94,7 +94,7 @@ void ColorThemeOverlay::Show(std::function<void()> callback) {
     for (size_t i = 0; i < themes.size(); i++) {
         adapter->AddEntry(themes.at(i));
         if (themes.at(i) == currentTheme) {
-            selectedIndex = i + 1;
+            selectedIndex = narrow_cast<int>(i) + 1;
         }
     }
 

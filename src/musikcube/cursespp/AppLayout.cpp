@@ -72,8 +72,8 @@ AppLayout::~AppLayout() {
 }
 
 void AppLayout::OnLayout() {
-    size_t cx = Screen::GetWidth() - (paddingL + paddingR);
-    size_t cy = Screen::GetHeight() - (paddingT + paddingB);
+    int cx = Screen::GetWidth() - (paddingL + paddingR);
+    int cy = Screen::GetHeight() - (paddingT + paddingB);
 
 #if ENABLE_DEMO_MODE
     this->hotkey->MoveAndResize(0, cy - 1, cx, 1);
