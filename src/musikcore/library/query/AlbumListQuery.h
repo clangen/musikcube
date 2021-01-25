@@ -67,7 +67,7 @@ namespace musik { namespace core { namespace library { namespace query {
             virtual ~AlbumListQuery();
 
             /* IQuery */
-            std::string Name() { return kQueryName; }
+            std::string Name() override { return kQueryName; }
             musik::core::MetadataMapListPtr GetResult() noexcept;
 
             /* ISerializableQuery */

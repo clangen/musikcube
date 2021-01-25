@@ -50,7 +50,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 const std::string& directory,
                 const std::string& filter = "");
 
-            std::string Name() { return kQueryName; }
+            std::string Name() override { return kQueryName; }
             Result GetResult() noexcept override { return this->result; }
             Headers GetHeaders() noexcept override { return this->headers; }
             size_t GetQueryHash() noexcept override { return this->hash; }
