@@ -61,6 +61,7 @@ namespace cursespp {
             bool KeyPress(const std::string& key) override;
             void Focus() override;
             void Blur() override;
+            void OnRedraw() override;
 
             /* IMouseHandler */
             bool MouseEvent(const IMouseHandler::Event& event) override;
@@ -85,7 +86,6 @@ namespace cursespp {
 
             virtual IScrollAdapter& GetScrollAdapter();
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
-            virtual void OnRedraw();
 
             size_t GetPreviousPageEntryIndex();
             bool IsLastItemVisible();
