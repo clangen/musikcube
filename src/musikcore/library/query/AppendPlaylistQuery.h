@@ -59,6 +59,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 musik::core::sdk::ITrackList *tracks,
                 const int offset = -1) noexcept;
 
+            /* IQuery */
             std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
@@ -69,6 +70,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
+            /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:

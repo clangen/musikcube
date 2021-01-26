@@ -45,12 +45,9 @@ using namespace musik::core::sdk;
 
 const std::string SetTrackRatingQuery::kQueryName = "SetTrackRatingQuery";
 
-SetTrackRatingQuery::SetTrackRatingQuery(int64_t trackId, int rating) {
+SetTrackRatingQuery::SetTrackRatingQuery(int64_t trackId, int rating) noexcept {
     this->trackId = trackId;
     this->rating = std::max(0, std::min(5, rating));
-}
-
-SetTrackRatingQuery::~SetTrackRatingQuery() {
 }
 
 bool SetTrackRatingQuery::OnRun(musik::core::db::Connection &db) {

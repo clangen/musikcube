@@ -60,31 +60,27 @@ const std::string GetPlaylistQuery::kQueryName = "GetPlaylistQuery";
 GetPlaylistQuery::GetPlaylistQuery(ILibraryPtr library, int64_t playlistId) {
     this->library = library;
     this->playlistId = playlistId;
-    this->result.reset(new musik::core::TrackList(library));
-    this->headers.reset(new std::set<size_t>());
+    this->result = std::make_shared<TrackList>(library);
+    this->headers = std::make_shared<std::set<size_t>>();
     this->hash = std::hash<int64_t>()(this->playlistId);
 }
 
-GetPlaylistQuery::~GetPlaylistQuery() {
-
-}
-
-GetPlaylistQuery::Result GetPlaylistQuery::GetResult() {
+GetPlaylistQuery::Result GetPlaylistQuery::GetResult() noexcept {
     return this->result;
 }
 
-GetPlaylistQuery::Headers GetPlaylistQuery::GetHeaders() {
+GetPlaylistQuery::Headers GetPlaylistQuery::GetHeaders() noexcept {
     return this->headers;
 }
 
-size_t GetPlaylistQuery::GetQueryHash() {
+size_t GetPlaylistQuery::GetQueryHash() noexcept {
     return this->hash;
 }
 
 bool GetPlaylistQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new musik::core::TrackList(this->library));
-        headers.reset(new std::set<size_t>());
+        this->result = std::make_shared<TrackList>(library);
+        this->headers = std::make_shared<std::set<size_t>>();
     }
 
     std::string query =

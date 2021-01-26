@@ -58,9 +58,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 this->offset = 0;
             }
 
-            virtual ~TrackListQueryBase() { };
-
-            virtual std::string Name() = 0;
+            /* virtual methods we define */
             virtual Result GetResult() = 0;
             virtual Headers GetHeaders() = 0;
             virtual size_t GetQueryHash() = 0;
@@ -126,6 +124,9 @@ namespace musik { namespace core { namespace library { namespace query {
                 public:
                     WrappedTrackList(Result wrapped) noexcept {
                         this->wrapped = wrapped;
+                    }
+
+                    virtual ~WrappedTrackList() {
                     }
 
                     void Release() noexcept override {

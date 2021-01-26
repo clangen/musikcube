@@ -88,21 +88,23 @@ namespace musik { namespace core { namespace library { namespace query {
                 const std::string& categoryType,
                 int64_t categoryId);
 
-            virtual std::string Name() { return kQueryName; }
+            DELETE_CLASS_DEFAULTS(SavePlaylistQuery)
 
-            virtual ~SavePlaylistQuery();
+            int64_t GetPlaylistId() const noexcept;
 
-            int64_t GetPlaylistId() const;
+            /* IQuery */
+            std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<SavePlaylistQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            /* QueryBase */
+            bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             SavePlaylistQuery(
@@ -147,13 +149,15 @@ namespace musik { namespace core { namespace library { namespace query {
             void SendPlaylistMutationBroadcast();
 
             struct TrackListWrapper {
-                TrackListWrapper();
-                TrackListWrapper(std::shared_ptr<musik::core::TrackList> shared);
+                DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackListWrapper)
 
-                bool Exists();
+                TrackListWrapper() noexcept;
+                TrackListWrapper(std::shared_ptr<musik::core::TrackList> shared) noexcept;
+
+                bool Exists() noexcept;
                 size_t Count();
                 TrackPtr Get(musik::core::ILibraryPtr library, size_t index);
-                musik::core::sdk::ITrackList* Get();
+                musik::core::sdk::ITrackList* Get() noexcept;
 
                 std::shared_ptr<musik::core::TrackList> sharedTracks;
                 musik::core::sdk::ITrackList* rawTracks;

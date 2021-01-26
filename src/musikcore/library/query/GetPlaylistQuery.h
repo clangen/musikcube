@@ -46,27 +46,30 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
+            DELETE_CLASS_DEFAULTS(GetPlaylistQuery)
+
             GetPlaylistQuery(
                 musik::core::ILibraryPtr library,
                 int64_t playlistId);
 
-            virtual ~GetPlaylistQuery();
+            /* IQuery */
+            std::string Name() override { return kQueryName; }
 
-            virtual std::string Name() { return kQueryName; }
-
-            virtual Result GetResult();
-            virtual Headers GetHeaders();
-            virtual size_t GetQueryHash();
+            /* TrackListQueryBase */
+            Result GetResult() noexcept override;
+            Headers GetHeaders() noexcept override;
+            size_t GetQueryHash() noexcept override;
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<GetPlaylistQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            /* QueryBase */
+            bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             musik::core::ILibraryPtr library;

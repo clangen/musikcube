@@ -46,8 +46,9 @@ namespace musik {
                 HotkeysAdapter();
                 virtual ~HotkeysAdapter();
 
-                virtual size_t GetEntryCount();
-                virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
+                /* ScrollAdapterBase */
+                size_t GetEntryCount() override;
+                EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
         };
     }
 }

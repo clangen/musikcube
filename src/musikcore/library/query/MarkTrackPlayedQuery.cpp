@@ -45,11 +45,8 @@ using namespace musik::core::sdk;
 
 const std::string MarkTrackPlayedQuery::kQueryName = "MarkTrackPlayedQuery";
 
-MarkTrackPlayedQuery::MarkTrackPlayedQuery(const int64_t trackId) {
+MarkTrackPlayedQuery::MarkTrackPlayedQuery(const int64_t trackId) noexcept {
     this->trackId = trackId;
-}
-
-MarkTrackPlayedQuery::~MarkTrackPlayedQuery() {
 }
 
 bool MarkTrackPlayedQuery::OnRun(musik::core::db::Connection &db) {

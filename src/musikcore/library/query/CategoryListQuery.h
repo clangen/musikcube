@@ -72,7 +72,9 @@ namespace musik { namespace core { namespace library { namespace query {
 
             Result GetResult() noexcept;
             int GetIndexOf(int64_t id);
+            musik::core::sdk::IValueList* GetSdkResult();
 
+            /* IQuery */
             std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
@@ -81,9 +83,8 @@ namespace musik { namespace core { namespace library { namespace query {
             void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<CategoryListQuery> DeserializeQuery(const std::string& data);
 
-            musik::core::sdk::IValueList* GetSdkResult();
-
         protected:
+            /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
             enum class OutputType: int {

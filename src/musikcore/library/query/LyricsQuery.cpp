@@ -51,10 +51,6 @@ LyricsQuery::LyricsQuery(const std::string& trackExternalId) {
     this->trackExternalId = trackExternalId;
 }
 
-LyricsQuery::~LyricsQuery() {
-
-}
-
 std::string LyricsQuery::GetResult() {
     return this->result;
 }

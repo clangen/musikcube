@@ -80,6 +80,7 @@ namespace musik { namespace core { namespace library { namespace query {
             musik::core::sdk::IMapList* GetSdkResult();
 
         protected:
+            /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
             std::string filter;

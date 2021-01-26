@@ -50,12 +50,12 @@ namespace musik { namespace core { namespace library { namespace query {
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(AllCategoriesQuery)
 
             AllCategoriesQuery();
-            virtual ~AllCategoriesQuery();
-
-            std::string Name() override { return kQueryName; }
 
             virtual Result GetResult() noexcept;
             musik::core::sdk::IValueList* GetSdkResult();
+
+            /* IQuery */
+            std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
             std::string SerializeQuery() override;
@@ -64,6 +64,7 @@ namespace musik { namespace core { namespace library { namespace query {
             static std::shared_ptr<AllCategoriesQuery> DeserializeQuery(const std::string& data);
 
         protected:
+            /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:

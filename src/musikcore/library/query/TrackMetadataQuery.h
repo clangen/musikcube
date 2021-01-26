@@ -46,31 +46,32 @@ class TrackMetadataQuery : public QueryBase {
 
         enum class Type: int { Full = 0, IdsOnly = 1 };
 
+        DELETE_CLASS_DEFAULTS(TrackMetadataQuery)
+
         TrackMetadataQuery(
             musik::core::TrackPtr target,
             musik::core::ILibraryPtr library,
-            Type type = Type::Full);
-
-        virtual ~TrackMetadataQuery() { }
+            Type type = Type::Full) noexcept;
 
         TrackPtr Result() {
             return this->result;
         }
 
-        virtual std::string Name() {
+        /* IQuery */
+        std::string Name() override {
             return kQueryName;
         }
 
         /* ISerializableQuery */
-        virtual std::string SerializeQuery();
-        virtual std::string SerializeResult();
-        virtual void DeserializeResult(const std::string& data);
-
+        std::string SerializeQuery() override;
+        std::string SerializeResult() override;
+        void DeserializeResult(const std::string& data) override;
         static std::shared_ptr<TrackMetadataQuery> DeserializeQuery(
             musik::core::ILibraryPtr library, const std::string& data);
 
     protected:
-        virtual bool OnRun(musik::core::db::Connection& db);
+        /* QueryBase */
+        bool OnRun(musik::core::db::Connection& db) override;
 
     private:
         Type type;

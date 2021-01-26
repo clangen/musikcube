@@ -48,29 +48,29 @@ class TrackMetadataBatchQuery: public QueryBase {
 
         using IdToTrackMap = std::unordered_map<int64_t, TrackPtr>;
 
+        DELETE_CLASS_DEFAULTS(TrackMetadataBatchQuery)
+
         TrackMetadataBatchQuery(
             std::unordered_set<int64_t> trackIds,
             musik::core::ILibraryPtr library);
 
-        virtual ~TrackMetadataBatchQuery() {
-        }
-
-        const IdToTrackMap& Result() {
+        const IdToTrackMap& Result() noexcept {
             return this->result;
         }
 
-        virtual std::string Name() { return kQueryName; }
+        /* IQuery */
+        std::string Name() override { return kQueryName; }
 
         /* ISerializableQuery */
-        virtual std::string SerializeQuery();
-        virtual std::string SerializeResult();
-        virtual void DeserializeResult(const std::string& data);
-
+        std::string SerializeQuery() override;
+        std::string SerializeResult() override;
+        void DeserializeResult(const std::string& data) override;
         static std::shared_ptr<TrackMetadataBatchQuery> DeserializeQuery(
             musik::core::ILibraryPtr library, const std::string& data);
 
     protected:
-        virtual bool OnRun(musik::core::db::Connection& db);
+        /* QueryBase */
+        bool OnRun(musik::core::db::Connection& db) override;
 
     private:
         musik::core::ILibraryPtr library;

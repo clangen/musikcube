@@ -57,12 +57,14 @@ namespace musik { namespace core { namespace library { namespace query {
                 return new PersistedPlayQueueQuery(library, playback, Type::Restore);
             }
 
-            virtual ~PersistedPlayQueueQuery();
+            DELETE_CLASS_DEFAULTS(PersistedPlayQueueQuery)
 
-            virtual std::string Name() { return kQueryName; }
+            /* IQuery */
+            std::string Name() override { return kQueryName; }
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            /* QueryBase */
+            bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             enum class Type { Save, Restore };
@@ -70,7 +72,7 @@ namespace musik { namespace core { namespace library { namespace query {
             PersistedPlayQueueQuery(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback,
-                Type type);
+                Type type) noexcept;
 
             musik::core::ILibraryPtr library;
             musik::core::audio::PlaybackService& playback;

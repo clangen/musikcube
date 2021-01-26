@@ -56,9 +56,6 @@ AllCategoriesQuery::AllCategoriesQuery() {
     this->result = std::make_shared<SdkValueList>();
 }
 
-AllCategoriesQuery::~AllCategoriesQuery() {
-}
-
 AllCategoriesQuery::Result AllCategoriesQuery::GetResult() noexcept {
     return this->result;
 }

@@ -49,9 +49,6 @@ namespace musik {
                 DirectoryAdapter();
                 virtual ~DirectoryAdapter();
 
-                virtual size_t GetEntryCount();
-                virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
-
                 size_t Select(cursespp::ListWindow* window);
                 std::string GetParentPath();
                 std::string GetCurrentPath();
@@ -64,6 +61,10 @@ namespace musik {
                 size_t IndexOf(const std::string& leaf);
                 void SetDotfilesVisible(bool visible);
                 void Refresh();
+
+                /* ScrollAdapterBase */
+                size_t GetEntryCount() override;
+                EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
             private:
                 bool ShowParentPath();

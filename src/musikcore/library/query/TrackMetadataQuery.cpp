@@ -53,7 +53,7 @@ using namespace musik::core::sdk;
 
 const std::string TrackMetadataQuery::kQueryName = "TrackMetadataQuery";
 
-TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Type type) {
+TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Type type) noexcept {
     this->result = target;
     this->library = library;
     this->type = type;
@@ -62,7 +62,7 @@ TrackMetadataQuery::TrackMetadataQuery(TrackPtr target, ILibraryPtr library, Typ
 bool TrackMetadataQuery::OnRun(Connection& db) {
     result->SetMetadataState(MetadataState::Loading);
 
-    bool queryById = this->result->GetId() != 0;
+    const bool queryById = this->result->GetId() != 0;
 
     std::string query;
 
@@ -80,7 +80,7 @@ bool TrackMetadataQuery::OnRun(Connection& db) {
     Statement trackQuery(query.c_str(), db);
 
     if (queryById) {
-        trackQuery.BindInt64(0, (int64_t) this->result->GetId());
+        trackQuery.BindInt64(0, this->result->GetId());
     }
     else {
         const std::string& externalId = this->result->GetString("external_id");

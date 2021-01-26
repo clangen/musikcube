@@ -75,8 +75,10 @@ namespace musik { namespace core { namespace library { namespace query {
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
+            /* IQuery */
             std::string Name() override { return kQueryName; }
 
+            /* TrackListQueryBase */
             Result GetResult() noexcept override;
             Headers GetHeaders() noexcept override;
             size_t GetQueryHash() noexcept override;
@@ -89,6 +91,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
+            /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:

@@ -50,7 +50,10 @@ namespace musik { namespace core { namespace library { namespace query {
                 const std::string& directory,
                 const std::string& filter = "");
 
+            /* IQuery */
             std::string Name() override { return kQueryName; }
+
+            /* TrackListQueryBase */
             Result GetResult() noexcept override { return this->result; }
             Headers GetHeaders() noexcept override { return this->headers; }
             size_t GetQueryHash() noexcept override { return this->hash; }
@@ -63,6 +66,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
+            /* QueryBase */
             bool OnRun(musik::core::db::Connection &db) override;
 
         private:

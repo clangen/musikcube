@@ -55,24 +55,20 @@ NowPlayingTrackListQuery::NowPlayingTrackListQuery(
     ILibraryPtr library, musik::core::audio::PlaybackService& playback)
 : library(library)
 , playback(playback) {
-    this->result.reset(new musik::core::TrackList(library));
-    this->headers.reset(new std::set<size_t>());
+    this->result = std::make_shared<TrackList>(library);
+    this->headers = std::make_shared<std::set<size_t>>();
     this->hash = 0;
 }
 
-NowPlayingTrackListQuery::~NowPlayingTrackListQuery() {
-
-}
-
-NowPlayingTrackListQuery::Result NowPlayingTrackListQuery::GetResult() {
+NowPlayingTrackListQuery::Result NowPlayingTrackListQuery::GetResult() noexcept {
     return this->result;
 }
 
-NowPlayingTrackListQuery::Headers NowPlayingTrackListQuery::GetHeaders() {
+NowPlayingTrackListQuery::Headers NowPlayingTrackListQuery::GetHeaders() noexcept {
     return this->headers;
 }
 
-size_t NowPlayingTrackListQuery::GetQueryHash() {
+size_t NowPlayingTrackListQuery::GetQueryHash() noexcept {
     if (this->hash == 0) {
         this->hash = std::hash<std::string>()(this->Name());
     }
@@ -82,8 +78,8 @@ size_t NowPlayingTrackListQuery::GetQueryHash() {
 
 bool NowPlayingTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new musik::core::TrackList(this->library));
-        headers.reset(new std::set<size_t>());
+        this->result = std::make_shared<TrackList>(library);
+        this->headers = std::make_shared<std::set<size_t>>();
     }
 
     this->playback.CopyTo(*result);
