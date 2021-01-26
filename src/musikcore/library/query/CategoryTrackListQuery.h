@@ -81,10 +81,8 @@ namespace musik { namespace core { namespace library { namespace query {
             /* TrackListQueryBase */
             Result GetResult() noexcept override;
             Headers GetHeaders() noexcept override;
+            Durations GetDurations() noexcept override;
             size_t GetQueryHash() noexcept override;
-            Durations GetDurations() noexcept override { 
-                return std::make_shared<std::map<size_t, size_t>>();
-            }
 
             /* ISerializableQuery */
             std::string SerializeQuery() override;
@@ -116,6 +114,7 @@ namespace musik { namespace core { namespace library { namespace query {
             /* serialized result fields */
             Result result;
             Headers headers;
+            Durations durations;
 
             /* serialized query fields */
             std::string filter;

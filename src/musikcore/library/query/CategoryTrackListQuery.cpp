@@ -97,6 +97,7 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     this->library = library;
     this->result = std::make_shared<TrackList>(library);
     this->headers = std::make_shared<std::set<size_t>>();
+    this->durations = std::make_shared<std::map<size_t, size_t>>();
     this->hash = category::Hash(predicates);
     this->sortType = sortType;
 
@@ -126,6 +127,10 @@ CategoryTrackListQuery::Headers CategoryTrackListQuery::GetHeaders() noexcept {
 
 size_t CategoryTrackListQuery::GetQueryHash() noexcept {
     return this->hash;
+}
+
+ CategoryTrackListQuery::Durations CategoryTrackListQuery::GetDurations() noexcept {
+    return this->durations;
 }
 
 void CategoryTrackListQuery::PlaylistQuery(musik::core::db::Connection &db) {
@@ -171,17 +176,32 @@ void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuer
     std::string lastAlbum;
     size_t index = 0;
 
+    size_t lastHeaderIndex = 0;
+    size_t runningDuration = 0;
+
     while (trackQuery.Step() == Row) {
         const int64_t id = trackQuery.ColumnInt64(0);
-        std::string album = trackQuery.ColumnText(1);
+        std::string album = trackQuery.ColumnText(2);
 
+        runningDuration += trackQuery.ColumnInt32(1);
         if (this->parseHeaders && album != lastAlbum) {
             headers->insert(index);
+
+            if (!headers->empty()) {
+                (*durations)[lastHeaderIndex] = runningDuration;
+                lastHeaderIndex = index;
+                runningDuration = 0;
+            }
+
             lastAlbum = album;
         }
 
         result->Add(id);
         ++index;
+    }
+
+    if (this->parseHeaders && !headers->empty()) {
+        (*durations)[lastHeaderIndex] = runningDuration;
     }
 }
 
