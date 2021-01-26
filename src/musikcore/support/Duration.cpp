@@ -42,7 +42,29 @@ static std::string formatDuration(N seconds) {
     N mins = (seconds / 60);
     N secs = seconds - (mins * 60);
     char buffer[128];
-    snprintf(buffer, sizeof(buffer), "%d:%02d", narrow_cast<int>(mins), narrow_cast<int>(secs));
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "%d:%02d",
+        narrow_cast<int>(mins),
+        narrow_cast<int>(secs));
+    return std::string(buffer);
+}
+
+template <typename N>
+static std::string formatDurationWithHours(N seconds) {
+    N hours = (seconds / 3600);
+    seconds -= hours * 3600;
+    N mins = (seconds / 60);
+    N secs = seconds - (mins * 60);
+    char buffer[128];
+    snprintf(
+        buffer,
+        sizeof(buffer),
+        "%d:%02d:%02d",
+        narrow_cast<int>(hours),
+        narrow_cast<int>(mins),
+        narrow_cast<int>(secs));
     return std::string(buffer);
 }
 
@@ -67,6 +89,13 @@ namespace musik { namespace core { namespace duration {
         }
 
         return "0:00";
+    }
+
+    std::string DurationWithHours(size_t seconds) {
+        if (seconds < 3600) {
+            return formatDuration(seconds);
+        }
+        return formatDurationWithHours(seconds);
     }
 
 } } }

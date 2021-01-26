@@ -503,7 +503,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
 
             auto duration = this->parent.headers.DurationFromAdapterIndex(rawIndex);
             if (duration > 0) {
-                album += " - " + core::duration::Duration(duration);
+                album += " - " + core::duration::DurationWithHours(duration);
             }
 
             album = text::Ellipsize(album, this->GetWidth());

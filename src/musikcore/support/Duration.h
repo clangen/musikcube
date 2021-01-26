@@ -42,5 +42,6 @@ namespace musik { namespace core { namespace duration {
     std::string Duration(int seconds);
     std::string Duration(size_t seconds);
     std::string Duration(double seconds);
+    std::string DurationWithHours(size_t seconds);
 
 } } }
