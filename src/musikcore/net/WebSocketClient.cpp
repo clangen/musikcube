@@ -171,8 +171,14 @@ WebSocketClient::WebSocketClient(IMessageQueue* messageQueue, Listener* listener
                     std::string rawResult;
                     if (extractRawQueryResult(responseJson, rawResult)) {
                         if (query) {
-                            query->DeserializeResult(rawResult);
-                            this->listener->OnClientQuerySucceeded(this, messageId, query);
+                            try {
+                                query->DeserializeResult(rawResult);
+                                this->listener->OnClientQuerySucceeded(this, messageId, query);
+                            }
+                            catch (...) {
+                                this->listener->OnClientQueryFailed(
+                                    this, messageId, query, QueryError::ParseFailed);
+                            }
                         }
                         else {
                             this->listener->OnClientQueryFailed(

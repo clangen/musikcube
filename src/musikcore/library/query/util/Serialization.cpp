@@ -237,6 +237,20 @@ namespace musik { namespace core { namespace library { namespace query {
             return output;
         }
 
+        nlohmann::json DurationMapToJsonMap(const std::map<size_t, size_t>& input) {
+            nlohmann::json output;
+            for (auto kv : input) {
+                output[std::to_string(kv.first)] = kv.second;
+            }
+            return output;
+        }
+
+        void JsonMapToDuration(const nlohmann::json& input, std::map<size_t, size_t>& output) {
+            for (const auto& item : input.items()) {
+                output[std::stoi(item.key())] = item.value().get<size_t>();
+            }
+        }
+
     }
 
 } } } }

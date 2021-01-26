@@ -103,6 +103,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 nlohmann::json output = {
                     { "result", {
                         { "headers", *this->GetHeaders() },
+                        { "durations", serialization::DurationMapToJsonMap(*this->GetDurations()) },
                         { "trackList", serialization::TrackListToJson(*this->GetResult(), true) }
                     }}
                 };
@@ -110,13 +111,13 @@ namespace musik { namespace core { namespace library { namespace query {
             }
 
             void DeserializeTrackListAndHeaders(
-                nlohmann::json &result,
+                nlohmann::json& result,
                 ILibraryPtr library,
-                Result tracks,
-                Headers headers)
+                TrackListQueryBase* query)
             {
-                serialization::TrackListFromJson(result["trackList"], *tracks, library, true);
-                serialization::JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *headers);
+                serialization::JsonArrayToSet<std::set<size_t>, size_t>(result["headers"], *query->GetHeaders());
+                serialization::JsonMapToDuration(result["durations"], *query->GetDurations());
+                serialization::TrackListFromJson(result["trackList"], *query->GetResult(), library, true);
             }
 
         private:

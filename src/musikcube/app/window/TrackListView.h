@@ -63,8 +63,9 @@ namespace musik {
                 sigslot::signal1<musik::core::library::query::TrackListQueryBase*> Requeried;
 
                 /* types */
-                typedef std::function<cursespp::Color(TrackPtr, size_t)> RowDecorator;
-                typedef std::shared_ptr<std::set<size_t> > Headers;
+                using RowDecorator = std::function<cursespp::Color(TrackPtr, size_t)>;
+                using Headers = TrackListQueryBase::Headers;
+                using Durations = TrackListQueryBase::Durations;
 
                 /* ctor, dtor */
                 TrackListView(
@@ -118,10 +119,8 @@ namespace musik {
                         TrackListEntry(const std::string& str, int index, RowType type)
                             : cursespp::SingleLineEntry(str), index(index), type(type) { }
 
-                        virtual ~TrackListEntry() { }
-
-                        RowType GetType() { return type; }
-                        int GetIndex() { return index; }
+                        RowType GetType() noexcept { return type; }
+                        int GetIndex() noexcept { return index; }
 
                     private:
                         RowType type;
@@ -132,10 +131,8 @@ namespace musik {
                 class Adapter : public cursespp::ScrollAdapterBase {
                     public:
                         Adapter(TrackListView &parent);
-                        virtual ~Adapter() { }
-
-                        virtual size_t GetEntryCount();
-                        virtual EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index);
+                        size_t GetEntryCount() override;
+                        EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
                     private:
                         TrackListView &parent;
@@ -143,16 +140,18 @@ namespace musik {
                 };
 
             private:
-                /* class to help with header offset calculation */
+                /* class to help with header offset calculation. this thing is really gross and
+                should probably be refactored at some point. */
                 class HeaderCalculator {
                     public:
                         static const size_t NO_INDEX = (size_t) -1;
 
-                        void Set(Headers rawOffsets);
+                        void Set(Headers rawOffsets, Durations durations);
                         void Reset();
+                        bool HeaderAt(size_t index);
                         size_t AdapterToTrackListIndex(size_t index);
                         size_t TrackListToAdapterIndex(size_t index);
-                        bool HeaderAt(size_t index);
+                        size_t DurationFromAdapterIndex(size_t index);
                         size_t NextHeaderIndex(size_t selectedIndex);
                         size_t PrevHeaderIndex(size_t selectedIndex);
                         size_t Count();
@@ -162,6 +161,7 @@ namespace musik {
 
                         Headers absoluteOffsets;
                         Headers rawOffsets;
+                        Durations durations;
                 };
 
                 void OnTrackChanged(size_t index, musik::core::TrackPtr track);

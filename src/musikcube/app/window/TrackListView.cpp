@@ -131,12 +131,12 @@ void TrackListView::OnTrackListWindowCached(const musik::core::TrackList* track,
 void TrackListView::OnQueryCompleted(IQuery* query) {
     if (this->query && query == this->query.get()) {
         if (this->query->GetStatus() == IQuery::Finished) {
-            bool hadTracks = this->tracks && this->tracks->Count() > 0;
-            bool prevQuerySame = this->lastQueryHash == this->query->GetQueryHash();
+            const bool hadTracks = this->tracks && this->tracks->Count() > 0;
+            const bool prevQuerySame = this->lastQueryHash == this->query->GetQueryHash();
 
             this->SetTrackListAndUpateEventHandlers(this->query->GetResult());
             this->AdjustTrackListCacheWindowSize();
-            this->headers.Set(this->query->GetHeaders());
+            this->headers.Set(this->query->GetHeaders(), this->query->GetDurations());
             this->lastQueryHash = this->query->GetQueryHash();
 
             /* update our internal state */
@@ -389,11 +389,12 @@ TrackListView::Adapter::Adapter(TrackListView &parent)
 
 /* * * * TrackListView::HeaderCalculator * * * */
 
-void TrackListView::HeaderCalculator::Set(Headers rawOffsets) {
+void TrackListView::HeaderCalculator::Set(Headers rawOffsets, Durations durations) {
     this->rawOffsets = rawOffsets;
+    this->durations = durations;
     this->absoluteOffsets.reset();
     if (rawOffsets) {
-        this->absoluteOffsets.reset(new std::set<size_t>());
+        this->absoluteOffsets = std::make_shared<std::set<size_t>>();
         size_t i = 0;
         for (auto val : (*this->rawOffsets)) {
             this->absoluteOffsets->insert(val + i);
@@ -409,6 +410,16 @@ void TrackListView::HeaderCalculator::Reset() {
 
 size_t TrackListView::HeaderCalculator::AdapterToTrackListIndex(size_t index) {
     return this->ApplyHeaderOffset(index, this->absoluteOffsets, -1);
+}
+
+size_t TrackListView::HeaderCalculator::DurationFromAdapterIndex(size_t index) {
+    /* ugh, HeaderCalculator should probably be re-thought, but this is especially ugly */
+    const auto adjustedIndex = this->ApplyHeaderOffset(index + 1, this->absoluteOffsets, -1);
+    auto it = this->durations->find(adjustedIndex);
+    if (it != this->durations->end()) {
+        return it->second;
+    }
+    return 0;
 }
 
 size_t TrackListView::HeaderCalculator::TrackListToAdapterIndex(size_t index) {
@@ -490,6 +501,11 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
                 album = _TSTR("tracklist_unknown_album");
             }
 
+            auto duration = this->parent.headers.DurationFromAdapterIndex(rawIndex);
+            if (duration > 0) {
+                album += " - " + core::duration::Duration(duration);
+            }
+
             album = text::Ellipsize(album, this->GetWidth());
 
             auto entry = std::make_shared<TrackListEntry>(
@@ -503,7 +519,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
         }
     }
 
-    size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
+    const size_t trackIndex = this->parent.headers.AdapterToTrackListIndex(rawIndex);
     TrackPtr track = parent.tracks->Get(trackIndex, sGetAsync);
 
     Color attrs = Color::Default;

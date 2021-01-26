@@ -193,7 +193,7 @@ std::string SearchTrackListQuery::SerializeResult() {
 void SearchTrackListQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     nlohmann::json result = nlohmann::json::parse(data)["result"];
-    this->DeserializeTrackListAndHeaders(result, this->library, this->result, this->headers);
+    this->DeserializeTrackListAndHeaders(result, this->library, this);
     this->SetStatus(IQuery::Finished);
 }
 

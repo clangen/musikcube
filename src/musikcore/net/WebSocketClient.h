@@ -65,6 +65,7 @@ namespace musik { namespace core { namespace net {
                 Disconnected = 2,
                 AuthFailed = 3,
                 QueryNotFound = 4,
+                ParseFailed = 5,
             };
 
             enum class ConnectionError : int {

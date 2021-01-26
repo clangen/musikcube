@@ -34,16 +34,26 @@
 
 #include "pch.hpp"
 #include "Duration.h"
+#include "NarrowCast.h"
 #include <cmath>
+
+template <typename N>
+static std::string formatDuration(N seconds) {
+    N mins = (seconds / 60);
+    N secs = seconds - (mins * 60);
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer), "%d:%02d", narrow_cast<int>(mins), narrow_cast<int>(secs));
+    return std::string(buffer);
+}
 
 namespace musik { namespace core { namespace duration {
 
     std::string Duration(int seconds) {
-        int mins = (seconds / 60);
-        int secs = seconds - (mins * 60);
-        char buffer[128];
-        snprintf(buffer, sizeof(buffer), "%d:%02d", mins, secs);
-        return std::string(buffer);
+        return formatDuration(seconds);
+    }
+
+    std::string Duration(size_t seconds) {
+        return formatDuration(seconds);
     }
 
     std::string Duration(double seconds) {

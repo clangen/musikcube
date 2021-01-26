@@ -99,6 +99,12 @@ namespace musik { namespace core { namespace library { namespace query {
             }
         }
 
+        nlohmann::json DurationMapToJsonMap(
+            const std::map<size_t, size_t>& input);
+
+        void JsonMapToDuration(
+            const nlohmann::json& input,
+            std::map<size_t, size_t>& output);
     }
 
 } } } }
