@@ -82,6 +82,7 @@ SearchTrackListQuery::SearchTrackListQuery(
     this->orderBy = kTrackListSortOrderBy.find(sort)->second;
     this->result = std::make_shared<TrackList>(library);
     this->headers = std::make_shared<std::set<size_t>>();
+    this->durations = std::make_shared<std::map<size_t, size_t>>();
     this->hash = 0;
 }
 
@@ -91,6 +92,10 @@ SearchTrackListQuery::Result SearchTrackListQuery::GetResult() noexcept {
 
 SearchTrackListQuery::Headers SearchTrackListQuery::GetHeaders() noexcept {
     return this->headers;
+}
+
+SearchTrackListQuery::Durations SearchTrackListQuery::GetDurations() noexcept {
+    return this->durations;
 }
 
 size_t SearchTrackListQuery::GetQueryHash() noexcept {
@@ -106,17 +111,16 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     if (result) {
         this->result = std::make_shared<TrackList>(library);
         this->headers = std::make_shared<std::set<size_t>>();
+        this->durations = std::make_shared<std::map<size_t, size_t>>();
     }
 
     const bool useRegex = (matchType == MatchType::Regex);
     const bool hasFilter = (this->filter.size() > 0);
-    std::string lastAlbum;
-    size_t index = 0;
     std::string query;
 
     if (hasFilter) {
         query =
-            "SELECT DISTINCT tracks.id, al.name "
+            "SELECT DISTINCT tracks.id, tracks.duration, al.name "
             "FROM tracks, albums al, artists ar, genres gn "
             "WHERE "
                 " tracks.visible=1 AND "
@@ -129,7 +133,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     }
     else {
         query =
-            "SELECT DISTINCT tracks.id, al.name "
+            "SELECT DISTINCT tracks.id, tracks.duration, al.name "
             "FROM tracks, albums al, artists ar, genres gn "
             "WHERE "
                 " tracks.visible=1 AND "
@@ -152,21 +156,37 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
         trackQuery.BindText(3, patternToMatch);
     }
 
+    std::string lastAlbum;
+    size_t index = 0;
+    size_t lastHeaderIndex = 0;
+    size_t runningDuration = 0;
+
     while (trackQuery.Step() == Row) {
         const int64_t id = trackQuery.ColumnInt64(0);
-        std::string album = trackQuery.ColumnText(1);
+        runningDuration += trackQuery.ColumnInt32(1);
+        std::string album = trackQuery.ColumnText(2);
 
         if (!album.size()) {
             album = _TSTR("tracklist_unknown_album");
         }
 
         if (this->parseHeaders && album != lastAlbum) {
+            if (!headers->empty()) {
+                (*durations)[lastHeaderIndex] = runningDuration;
+                lastHeaderIndex = index;
+                runningDuration = 0;
+            }
+
             headers->insert(index);
             lastAlbum = album;
         }
 
         result->Add(id);
         ++index;
+    }
+
+    if (this->parseHeaders && !headers->empty()) {
+        (*durations)[lastHeaderIndex] = runningDuration;
     }
 
     return true;

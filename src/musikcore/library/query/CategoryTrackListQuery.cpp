@@ -129,7 +129,7 @@ size_t CategoryTrackListQuery::GetQueryHash() noexcept {
     return this->hash;
 }
 
- CategoryTrackListQuery::Durations CategoryTrackListQuery::GetDurations() noexcept {
+CategoryTrackListQuery::Durations CategoryTrackListQuery::GetDurations() noexcept {
     return this->durations;
 }
 
@@ -175,15 +175,14 @@ void CategoryTrackListQuery::RegularQuery(musik::core::db::Connection &db) {
 void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuery) {
     std::string lastAlbum;
     size_t index = 0;
-
     size_t lastHeaderIndex = 0;
     size_t runningDuration = 0;
 
     while (trackQuery.Step() == Row) {
         const int64_t id = trackQuery.ColumnInt64(0);
+        runningDuration += trackQuery.ColumnInt32(1);
         std::string album = trackQuery.ColumnText(2);
 
-        runningDuration += trackQuery.ColumnInt32(1);
         if (this->parseHeaders && album != lastAlbum) {
             if (!headers->empty()) {
                 (*durations)[lastHeaderIndex] = runningDuration;
