@@ -57,7 +57,10 @@ namespace musik { namespace core { namespace library { namespace query {
             Result GetResult() noexcept override { return this->result; }
             Headers GetHeaders() noexcept override { return this->headers; }
             size_t GetQueryHash() noexcept override { return this->hash; }
-
+            Durations GetDurations() noexcept override { 
+                return std::make_shared<std::map<size_t, size_t>>();
+            }
+        
             /* ISerializableQuery */
             std::string SerializeQuery() override;
             std::string SerializeResult() override;

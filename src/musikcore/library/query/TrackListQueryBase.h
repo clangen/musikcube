@@ -49,7 +49,8 @@ namespace musik { namespace core { namespace library { namespace query {
     class TrackListQueryBase : public musik::core::library::query::QueryBase {
         public:
             typedef std::shared_ptr<musik::core::TrackList> Result;
-            typedef std::shared_ptr<std::set<size_t> > Headers;
+            typedef std::shared_ptr<std::set<size_t>> Headers;
+            typedef std::shared_ptr<std::map<size_t, size_t>> Durations;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackListQueryBase)
 
@@ -61,6 +62,7 @@ namespace musik { namespace core { namespace library { namespace query {
             /* virtual methods we define */
             virtual Result GetResult() = 0;
             virtual Headers GetHeaders() = 0;
+            virtual Durations GetDurations() = 0;
             virtual size_t GetQueryHash() = 0;
 
             virtual void SetLimitAndOffset(int limit, int offset = 0) noexcept {

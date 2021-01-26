@@ -124,6 +124,10 @@ class ExternalIdListToTrackListQuery : public TrackListQueryBase {
             return Headers();
         }
 
+        Durations GetDurations() noexcept override {
+            return Durations();
+        }
+
         size_t GetQueryHash() noexcept override {
             return 0;
         }
