@@ -41,8 +41,10 @@
 #include <musikcore/sdk/IPlaybackRemote.h>
 #include <musikcore/sdk/IPlugin.h>
 
+#pragma warning(push, 0)
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+#pragma warning(pop)
 
 #include <thread>
 

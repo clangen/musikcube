@@ -72,15 +72,15 @@ AppLayout::~AppLayout() {
 }
 
 void AppLayout::OnLayout() {
-    size_t cx = Screen::GetWidth() - (paddingL + paddingR);
-    size_t cy = Screen::GetHeight() - (paddingT + paddingB);
+    const int cx = Screen::GetWidth() - (paddingL + paddingR);
+    const int cy = Screen::GetHeight() - (paddingT + paddingB);
 
 #if ENABLE_DEMO_MODE
     this->hotkey->MoveAndResize(0, cy - 1, cx, 1);
     --cy;
 #endif
 
-    int mainCyOffset = this->autoHideCommandBar ? 0 : 1;
+    const int mainCyOffset = this->autoHideCommandBar ? 0 : 1;
 
     if (this->layout) {
         this->layout->MoveAndResize(paddingL, paddingT, cx, cy - mainCyOffset);
@@ -106,7 +106,7 @@ void AppLayout::OnLayout() {
 }
 
 void AppLayout::Initialize() {
-    this->shortcuts.reset(new ShortcutsWindow());
+    this->shortcuts = std::make_shared<ShortcutsWindow>();
     this->AddWindow(this->shortcuts);
 
 #if ENABLE_DEMO_MODE
@@ -225,7 +225,7 @@ void AppLayout::FocusShortcuts() {
 bool AppLayout::KeyPress(const std::string& key) {
     /* otherwise, see if the user is monkeying around with the
     shortcut bar focus... */
-    auto shortcutsFocused = this->shortcuts->IsFocused();
+    const auto shortcutsFocused = this->shortcuts->IsFocused();
     if (key == "^["  ||
         (key == "KEY_ENTER" && shortcutsFocused) ||
         (key == "KEY_UP" && shortcutsFocused))

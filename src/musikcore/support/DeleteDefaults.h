@@ -34,9 +34,22 @@
 
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#define WINVER 0x0502
-#define _WIN32_WINNT 0x0502
-#define NOMINMAX
+#define DELETE_CLASS_DEFAULTS(ClassName) \
+    ClassName() = delete; \
+    ClassName(const ClassName&) = delete; \
+    ClassName(const ClassName&&) = delete; \
+    ClassName& operator=(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&&) = delete;
 
-#include <Windows.h>
+#define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS_WITH_DEFAULT_CTOR(ClassName) \
+    ClassName() noexcept = default; \
+    ClassName(const ClassName&) = delete; \
+    ClassName(const ClassName&&) = delete; \
+    ClassName& operator=(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&&) = delete;
+
+#define DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(ClassName) \
+    ClassName(const ClassName&) = delete; \
+    ClassName(const ClassName&&) = delete; \
+    ClassName& operator=(const ClassName&) = delete; \
+    ClassName& operator=(const ClassName&&) = delete;

@@ -46,36 +46,35 @@ namespace musik { namespace core { namespace audio {
         public:
             using Type = musik::core::sdk::TransportType;
 
-            MasterTransport();
-            virtual ~MasterTransport();
+            MasterTransport() noexcept;
 
-            virtual void Start(const std::string& uri, Gain gain, StartMode mode);
-            virtual void PrepareNextTrack(const std::string& uri, Gain gain);
+            void Start(const std::string& uri, Gain gain, StartMode mode) override;
+            void PrepareNextTrack(const std::string& uri, Gain gain) override;
 
-            virtual std::string Uri();
+            std::string Uri() override;
 
-            virtual void Stop();
-            virtual bool Pause();
-            virtual bool Resume();
+            void Stop() override;
+            bool Pause() override;
+            bool Resume() override;
 
-            virtual double Position();
-            virtual void SetPosition(double seconds);
+            double Position() override;
+            void SetPosition(double seconds) override;
 
-            virtual double Volume();
-            virtual void SetVolume(double volume);
+            double Volume() override;
+            void SetVolume(double volume) override;
 
-            virtual double GetDuration();
+            double GetDuration() override;
 
-            virtual bool IsMuted();
-            virtual void SetMuted(bool muted);
+            bool IsMuted() override;
+            void SetMuted(bool muted) override;
 
-            virtual void ReloadOutput();
+            void ReloadOutput() override;
 
-            virtual musik::core::sdk::PlaybackState GetPlaybackState();
-            virtual musik::core::sdk::StreamState GetStreamState();
+            musik::core::sdk::PlaybackState GetPlaybackState() override;
+            musik::core::sdk::StreamState GetStreamState() override;
 
             void SwitchTo(Type type);
-            Type GetType();
+            Type GetType() noexcept;
 
         private:
             void OnStreamEvent(musik::core::sdk::StreamState type, std::string url);

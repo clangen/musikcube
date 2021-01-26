@@ -46,9 +46,11 @@
 #include <musikcore/library/LocalMetadataProxy.h>
 #include <musikcore/support/PreferenceKeys.h>
 
+#pragma warning(push, 0)
 #include <boost/locale.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
 #include <boost/filesystem.hpp>
+#pragma warning(pop)
 
 #include <thread>
 

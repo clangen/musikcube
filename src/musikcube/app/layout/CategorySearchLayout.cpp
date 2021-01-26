@@ -106,22 +106,22 @@ void CategorySearchLayout::SaveSession() {
 }
 
 void CategorySearchLayout::OnLayout() {
-    size_t cx = this->GetWidth(), cy = this->GetHeight();
-    size_t x = 0, y = 0;
+    int cx = this->GetWidth(), cy = this->GetHeight();
+    int x = 0, y = 0;
 
-    size_t inputWidth = cx / 2;
-    size_t inputX = x + ((cx - inputWidth) / 2);
+    int inputWidth = cx / 2;
+    int inputX = x + ((cx - inputWidth) / 2);
     this->input->MoveAndResize(inputX, 0, cx / 2, SEARCH_HEIGHT);
 
     bool inputIsRegex = this->matchType == MatchType::Regex;
     this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
     this->input->SetFocusedFrameColor(inputIsRegex ? Color::FrameImportant : Color::FrameFocused);
 
-    size_t labelY = SEARCH_HEIGHT;
-    size_t categoryWidth = cx / 3;
-    size_t categoryY = labelY;
-    size_t categoryHeight = cy - SEARCH_HEIGHT;
-    size_t lastCategoryWidth = cx - (categoryWidth * 2);
+    int labelY = SEARCH_HEIGHT;
+    int categoryWidth = cx / 3;
+    int categoryY = labelY;
+    int categoryHeight = cy - SEARCH_HEIGHT;
+    int lastCategoryWidth = cx - (categoryWidth * 2);
 
     this->albums->MoveAndResize(0, categoryY, categoryWidth, categoryHeight);
     this->artists->MoveAndResize(categoryWidth, categoryY, categoryWidth, categoryHeight);

@@ -64,7 +64,7 @@ static std::unordered_map<std::string, int64_t> metadataIdCache;
 static std::unordered_map<int, int64_t> thumbnailIdCache; /* albumId:thumbnailId */
 
 /* http://stackoverflow.com/a/2351171 */
-static size_t hash32(const char* str) {
+static size_t hash32(const char* str) noexcept {
     unsigned int h;
     unsigned char *p;
     h = 0;
@@ -183,7 +183,7 @@ void IndexerTrack::SetThumbnail(const char *data, long size) {
 
 int64_t IndexerTrack::GetThumbnailId() {
     std::string key = this->GetString("album") + "-" + this->GetString("album_artist");
-    size_t id = hash32(key.c_str());
+    const size_t id = hash32(key.c_str());
     auto it = thumbnailIdCache.find((int) id);
     if (it != thumbnailIdCache.end()) {
         return it->second;
@@ -267,8 +267,8 @@ bool IndexerTrack::NeedsToBeIndexed(
             this->SetValue("extension", file.leaf().string().substr(lastDot + 1).c_str());
         }
 
-        size_t fileSize = (size_t) boost::filesystem::file_size(file);
-        size_t fileTime = (size_t) boost::filesystem::last_write_time(file);
+        const size_t fileSize = (size_t) boost::filesystem::file_size(file);
+        const size_t fileTime = (size_t) boost::filesystem::last_write_time(file);
 
         this->SetValue("filesize", std::to_string(fileSize).c_str());
         this->SetValue("filetime", std::to_string(fileTime).c_str());
@@ -280,12 +280,12 @@ bool IndexerTrack::NeedsToBeIndexed(
 
         stmt.BindText(0, this->GetString("filename"));
 
-        bool fileDifferent = true;
+        const bool fileDifferent = true;
 
         if (stmt.Step() == db::Row) {
             this->trackId = stmt.ColumnInt64(0);
-            int dbFileSize = stmt.ColumnInt32(2);
-            int dbFileTime = stmt.ColumnInt32(3);
+            const int dbFileSize = stmt.ColumnInt32(2);
+            const int dbFileTime = stmt.ColumnInt32(3);
 
             if (fileSize == dbFileSize && fileTime == dbFileTime) {
                 return false;
@@ -309,7 +309,7 @@ static int64_t writeToTracksTable(
         return 0;
     }
 
-    int sourceId = track.GetInt32("source_id", 0);
+    const int sourceId = track.GetInt32("source_id", 0);
 
     /* if there's no ID specified, but we have an external ID, let's
     see if we can find the corresponding ID. this can happen when
@@ -436,7 +436,7 @@ int64_t IndexerTrack::SaveThumbnail(db::Connection& connection, const std::strin
     int64_t thumbnailId = 0;
 
     if (this->internalMetadata->thumbnailData) {
-        int64_t sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
+        const int64_t sum = Checksum(this->internalMetadata->thumbnailData, this->internalMetadata->thumbnailSize);
 
         db::Statement thumbs("SELECT id FROM thumbnails WHERE filesize=? AND checksum=?", connection);
         thumbs.BindInt32(0, this->internalMetadata->thumbnailSize);
@@ -588,9 +588,9 @@ void IndexerTrack::ProcessNonStandardMetadata(db::Connection& connection) {
 }
 
 static std::string createTrackExternalId(IndexerTrack& track) {
-    size_t hash1 = (size_t) hash32(track.GetString("filename").c_str());
+    size_t hash1 = hash32(track.GetString("filename").c_str());
 
-    size_t hash2 = (size_t) hash32(
+    size_t hash2 = hash32(
         (track.GetString("title") +
         track.GetString("album") +
         track.GetString("artist") +
@@ -821,9 +821,9 @@ bool IndexerTrack::Save(db::Connection &dbConnection, std::string libraryDirecto
         thumbnailId = this->GetThumbnailId();
     }
 
-    int64_t albumId = this->SaveAlbum(dbConnection, thumbnailId);
-    int64_t genreId = this->SaveGenre(dbConnection);
-    int64_t artistId = this->SaveArtist(dbConnection);
+    const int64_t albumId = this->SaveAlbum(dbConnection, thumbnailId);
+    const int64_t genreId = this->SaveGenre(dbConnection);
+    const int64_t artistId = this->SaveArtist(dbConnection);
     int64_t albumArtistId = this->SaveSingleValueField(dbConnection, "album_artist", "artists");
 
     /* ensure we have a correct source id */

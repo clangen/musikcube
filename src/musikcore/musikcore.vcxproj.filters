@@ -648,5 +648,11 @@
     <ClInclude Include="db\SqliteExtensions.h">
       <Filter>src\db</Filter>
     </ClInclude>
+    <ClInclude Include="support\NarrowCast.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="support\DeleteDefaults.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

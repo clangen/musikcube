@@ -49,6 +49,8 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
+            DELETE_CLASS_DEFAULTS(CategoryTrackListQuery)
+
             CategoryTrackListQuery(
                 musik::core::ILibraryPtr library,
                 const std::string& filter = "",
@@ -73,23 +75,24 @@ namespace musik { namespace core { namespace library { namespace query {
                 const std::string& filter = "",
                 TrackSortType sortType = TrackSortType::Album);
 
-            virtual ~CategoryTrackListQuery();
+            /* IQuery */
+            std::string Name() override { return kQueryName; }
 
-            virtual std::string Name() { return kQueryName; }
-
-            virtual Result GetResult();
-            virtual Headers GetHeaders();
-            virtual size_t GetQueryHash();
+            /* TrackListQueryBase */
+            Result GetResult() noexcept override;
+            Headers GetHeaders() noexcept override;
+            size_t GetQueryHash() noexcept override;
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<CategoryTrackListQuery> DeserializeQuery(
                 musik::core::ILibraryPtr library, const std::string& data);
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            /* QueryBase */
+            bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             enum class Type: int { Playlist = 0, Regular = 1 };

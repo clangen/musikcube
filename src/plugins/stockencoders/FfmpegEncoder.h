@@ -45,11 +45,13 @@
 #include <string>
 
 extern "C" {
+    #pragma warning(push, 0)
     #include <libavcodec/avcodec.h>
     #include <libavformat/avio.h>
     #include <libavformat/avformat.h>
     #include <libavutil/audio_fifo.h>
     #include <libswresample/swresample.h>
+    #pragma warning(pop)
 }
 
 class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {

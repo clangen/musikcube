@@ -60,14 +60,14 @@ namespace musik {
 
                 virtual ~DirectoryLayout();
 
-                virtual void OnVisibilityChanged(bool visible);
-                virtual bool KeyPress(const std::string& key);
                 void SetDirectory(const std::string& directory);
                 void PlayFromTop();
                 std::string GetDirectory();
 
-            protected:
-                virtual void OnLayout();
+                /* IWindow */
+                virtual void OnVisibilityChanged(bool visible) override;
+                virtual void OnLayout() override;
+                virtual bool KeyPress(const std::string& key) override;
 
             private:
                 void InitializeWindows();

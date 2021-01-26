@@ -42,12 +42,15 @@
 #include <musikcore/library/IIndexer.h>
 #include <musikcore/support/Preferences.h>
 
+
+#pragma warning(push, 0)
 #include <sigslot/sigslot.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/asio/io_service.hpp>
+#pragma warning(pop)
 
 #include <thread>
 #include <deque>

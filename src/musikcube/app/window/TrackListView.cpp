@@ -237,8 +237,8 @@ void TrackListView::SetTrackListAndUpateEventHandlers(std::shared_ptr<TrackList>
     if (this->tracks) {
         this->tracks->WindowCached.connect(this, &TrackListView::OnTrackListWindowCached);
     }
-    sGetAsync = Preferences::ForComponent(prefs::components::Settings)->GetBool(
-        prefs::keys::AsyncTrackListQueries, true);
+    sGetAsync = Preferences::ForComponent(core::prefs::components::Settings)->GetBool(
+        core::prefs::keys::AsyncTrackListQueries, true);
 }
 
 void TrackListView::ProcessMessage(IMessage &message) {
@@ -493,7 +493,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
             album = text::Ellipsize(album, this->GetWidth());
 
             auto entry = std::make_shared<TrackListEntry>(
-                album, trackIndex, RowType::Separator);
+                album, narrow_cast<int>(trackIndex), RowType::Separator);
 
             entry->SetAttrs(selected
                 ? Color::ListItemHeaderHighlighted
@@ -541,7 +541,9 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
     std::string text = parent.renderer(
         track, rawIndex, this->GetWidth(), parent.trackNumType);
 
-    auto entry = std::make_shared<TrackListEntry>(text, trackIndex, RowType::Track);
+    auto entry = std::make_shared<TrackListEntry>(
+        text, narrow_cast<int>(trackIndex), RowType::Track);
+
     entry->SetAttrs(attrs);
 
     return entry;

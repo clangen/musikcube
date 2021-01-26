@@ -47,8 +47,12 @@ namespace musik { namespace core { namespace runtime {
 
     class MessageQueue : public IMessageQueue {
         public:
-            MessageQueue();
-            virtual ~MessageQueue();
+            MessageQueue(const MessageQueue&) = delete;
+            MessageQueue(const MessageQueue&&) = delete;
+            MessageQueue& operator=(const MessageQueue&) = delete;
+            MessageQueue& operator=(const MessageQueue&&) = delete;
+
+            MessageQueue() noexcept;
 
             void Post(IMessagePtr message, int64_t delayMs = 0) override;
             void Broadcast(IMessagePtr message, int64_t messageMs = 0) override;
@@ -63,7 +67,7 @@ namespace musik { namespace core { namespace runtime {
             void Dispatch() override;
 
         protected:
-            int64_t GetNextMessageTime() {
+            int64_t GetNextMessageTime() noexcept {
                 return nextMessageTime.load();
             }
 
@@ -71,6 +75,7 @@ namespace musik { namespace core { namespace runtime {
             typedef std::weak_ptr<IMessageTarget> IWeakMessageTarget;
 
             void Enqueue(IMessagePtr message, int64_t delayMs);
+            void Dispatch(IMessage* message);
 
             struct EnqueuedMessage {
                 IMessagePtr message;
@@ -91,8 +96,6 @@ namespace musik { namespace core { namespace runtime {
             std::set<IMessageTarget*> targets;
             std::condition_variable_any waitForDispatch;
             std::atomic<int64_t> nextMessageTime;
-
-            void Dispatch(IMessagePtr message);
     };
 
 } } }

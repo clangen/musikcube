@@ -39,7 +39,10 @@
 #include <musikcore/library/track/LibraryTrack.h>
 #include <musikcore/library/query/util/TrackQueryFragments.h>
 #include <musikcore/sdk/ReplayGain.h>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using namespace musik::core;
 using namespace musik::core::db;
@@ -58,7 +61,7 @@ TrackMetadataBatchQuery::TrackMetadataBatchQuery(std::unordered_set<int64_t> tra
 bool TrackMetadataBatchQuery::OnRun(Connection& db) {
     std::string idList;
     size_t i = 0;
-    for (int64_t id : this->trackIds) {
+    for (const int64_t id : this->trackIds) {
         idList += std::to_string(id);
         if (i < this->trackIds.size() - 1) {
             idList += ",";
@@ -108,7 +111,7 @@ std::string TrackMetadataBatchQuery::SerializeResult() {
 void TrackMetadataBatchQuery::DeserializeResult(const std::string& data) {
     this->SetStatus(IQuery::Failed);
     auto input = nlohmann::json::parse(data)["result"];
-    for (auto& kv : input.items()) {
+    for (const auto& kv : input.items()) {
         int64_t id = std::atoll(kv.key().c_str());
         auto track = std::make_shared<LibraryTrack>(id, this->library);
         TrackFromJson(kv.value(), track, false);
@@ -122,7 +125,6 @@ std::shared_ptr<TrackMetadataBatchQuery> TrackMetadataBatchQuery::DeserializeQue
 {
     using SetType = std::unordered_set <int64_t>;
     auto json = nlohmann::json::parse(data);
-    auto parsedTrack = std::make_shared<LibraryTrack>(-1LL, library);
     SetType trackIds;
     JsonArrayToSet<SetType, int64_t>(json["options"]["trackIds"], trackIds);
     return std::make_shared<TrackMetadataBatchQuery>(trackIds, library);

@@ -34,7 +34,10 @@
 
 #pragma once
 
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
+
 #include "CategoryQueryUtil.h"
 #include <musikcore/library/metadata/MetadataMapList.h>
 #include <musikcore/library/query/util/SdkWrappers.h>

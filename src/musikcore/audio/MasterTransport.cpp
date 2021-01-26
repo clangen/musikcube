@@ -46,22 +46,20 @@ using namespace musik::core;
 using namespace musik::core::prefs;
 using namespace musik::core::sdk;
 
-MasterTransport::MasterTransport()
+MasterTransport::MasterTransport() noexcept
 : prefs(Preferences::ForComponent(components::Playback)) {
-    this->type = (Type) this->prefs->GetInt(keys::Transport, (int) Type::Gapless);
+    this->type = static_cast<Type>(this->prefs->GetInt(
+        keys::Transport, static_cast<int>(Type::Gapless)));
+
     this->SwitchTo(this->type);
-}
-
-MasterTransport::~MasterTransport() {
-
 }
 
 void MasterTransport::SwitchTo(Type type) {
     if (!this->transport || this->type != type) {
         this->type = type;
-        this->prefs->SetInt(keys::Transport, (int) this->type);
+        this->prefs->SetInt(keys::Transport, static_cast<int>(this->type));
 
-        double volume = this->transport ? this->transport->Volume() : -1;
+        const double volume = this->transport ? this->transport->Volume() : -1;
 
         switch (this->type) {
             case Type::Gapless:
@@ -69,15 +67,14 @@ void MasterTransport::SwitchTo(Type type) {
                     /* hacky -- we know it's a crossfade transport, stop it
                     immediately without fading out so we don't block the UI
                     for a second or so. */
-                    static_cast<CrossfadeTransport*>
-                        (this->transport.get())->StopImmediately();
+                    dynamic_cast<CrossfadeTransport*>(this->transport.get())->StopImmediately();
                 }
 
-                this->transport.reset(new GaplessTransport());
+                this->transport = std::make_shared<GaplessTransport>();
                 break;
 
             case Type::Crossfade:
-                this->transport.reset(new CrossfadeTransport());
+                this->transport = std::make_shared<CrossfadeTransport>();
                 break;
         }
 
@@ -99,7 +96,7 @@ void MasterTransport::SwitchTo(Type type) {
     }
 }
 
-MasterTransport::Type MasterTransport::GetType() {
+MasterTransport::Type MasterTransport::GetType() noexcept {
     return this->type;
 }
 

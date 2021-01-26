@@ -47,15 +47,11 @@ const std::string PersistedPlayQueueQuery::kQueryName = "PersistedPlayQueueQuery
 PersistedPlayQueueQuery::PersistedPlayQueueQuery(
     musik::core::ILibraryPtr library,
     musik::core::audio::PlaybackService& playback,
-    Type type)
+    Type type) noexcept
 : library(library)
 , playback(playback)
 , type(type)
 {
-
-}
-
-PersistedPlayQueueQuery::~PersistedPlayQueueQuery() {
 
 }
 

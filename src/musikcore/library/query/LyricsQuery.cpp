@@ -34,7 +34,10 @@
 
 #include "pch.hpp"
 #include "LyricsQuery.h"
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using namespace musik::core::db;
 using namespace musik::core::library::query;
@@ -46,10 +49,6 @@ const std::string LyricsQuery::kQueryName = "LyricsQuery";
 
 LyricsQuery::LyricsQuery(const std::string& trackExternalId) {
     this->trackExternalId = trackExternalId;
-}
-
-LyricsQuery::~LyricsQuery() {
-
 }
 
 std::string LyricsQuery::GetResult() {

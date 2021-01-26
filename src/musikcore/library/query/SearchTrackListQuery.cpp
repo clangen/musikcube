@@ -41,10 +41,12 @@
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/db/Statement.h>
 
+#pragma warning(push, 0)
+#include <nlohmann/json.hpp>
+
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
-
-#include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -78,23 +80,20 @@ SearchTrackListQuery::SearchTrackListQuery(
     this->parseHeaders = kTrackSortTypeWithAlbumGrouping.find(sort) != kTrackSortTypeWithAlbumGrouping.end();
     this->displayString = _TSTR(kTrackListOrderByToDisplayKey.find(sort)->second);
     this->orderBy = kTrackListSortOrderBy.find(sort)->second;
-    this->result.reset(new musik::core::TrackList(library));
-    this->headers.reset(new std::set<size_t>());
+    this->result = std::make_shared<TrackList>(library);
+    this->headers = std::make_shared<std::set<size_t>>();
     this->hash = 0;
 }
 
-SearchTrackListQuery::~SearchTrackListQuery() {
-}
-
-SearchTrackListQuery::Result SearchTrackListQuery::GetResult() {
+SearchTrackListQuery::Result SearchTrackListQuery::GetResult() noexcept {
     return this->result;
 }
 
-SearchTrackListQuery::Headers SearchTrackListQuery::GetHeaders() {
+SearchTrackListQuery::Headers SearchTrackListQuery::GetHeaders() noexcept {
     return this->headers;
 }
 
-size_t SearchTrackListQuery::GetQueryHash() {
+size_t SearchTrackListQuery::GetQueryHash() noexcept {
     this->hash = std::hash<std::string>()(this->filter);
     return this->hash;
 }
@@ -105,12 +104,12 @@ std::string SearchTrackListQuery::GetSortDisplayString() {
 
 bool SearchTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new musik::core::TrackList(this->library));
-        headers.reset(new std::set<size_t>());
+        this->result = std::make_shared<TrackList>(library);
+        this->headers = std::make_shared<std::set<size_t>>();
     }
 
-    bool useRegex = (matchType == MatchType::Regex);
-    bool hasFilter = (this->filter.size() > 0);
+    const bool useRegex = (matchType == MatchType::Regex);
+    const bool hasFilter = (this->filter.size() > 0);
     std::string lastAlbum;
     size_t index = 0;
     std::string query;
@@ -154,7 +153,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     }
 
     while (trackQuery.Step() == Row) {
-        int64_t id = trackQuery.ColumnInt64(0);
+        const int64_t id = trackQuery.ColumnInt64(0);
         std::string album = trackQuery.ColumnText(1);
 
         if (!album.size()) {

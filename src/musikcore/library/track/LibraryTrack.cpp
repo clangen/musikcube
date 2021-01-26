@@ -40,7 +40,7 @@
 using namespace musik::core;
 using namespace musik::core::sdk;
 
-LibraryTrack::LibraryTrack()
+LibraryTrack::LibraryTrack() noexcept
 : id(0)
 , libraryId(0)
 , gain(nullptr)
@@ -158,15 +158,15 @@ void LibraryTrack::SetReplayGain(const ReplayGain& replayGain) {
     *this->gain = replayGain;
 }
 
-MetadataState LibraryTrack::GetMetadataState() {
+MetadataState LibraryTrack::GetMetadataState() noexcept {
     return this->state;
 }
 
-void LibraryTrack::SetMetadataState(musik::core::sdk::MetadataState state) {
+void LibraryTrack::SetMetadataState(musik::core::sdk::MetadataState state) noexcept {
     this->state = state;
 }
 
-ReplayGain LibraryTrack::GetReplayGain() {
+ReplayGain LibraryTrack::GetReplayGain() noexcept {
     if (this->gain) {
         return *gain;
     }
@@ -195,22 +195,20 @@ Track::MetadataIteratorRange LibraryTrack::GetValues(const char* metakey) {
     return this->metadata.equal_range(metakey);
 }
 
-Track::MetadataIteratorRange LibraryTrack::GetAllValues() {
+Track::MetadataIteratorRange LibraryTrack::GetAllValues() noexcept {
     return Track::MetadataIteratorRange(
         this->metadata.begin(),
         this->metadata.end());
-
-    return Track::MetadataIteratorRange();
 }
 
-int64_t LibraryTrack::GetId() {
+int64_t LibraryTrack::GetId() noexcept {
     return this->id;
 }
 
-int LibraryTrack::LibraryId() {
+int LibraryTrack::LibraryId() noexcept {
     return this->libraryId;
 }
 
 TrackPtr LibraryTrack::Copy() {
-    return TrackPtr(new LibraryTrack(this->id, this->libraryId));
+    return std::make_shared<LibraryTrack>(this->id, this->libraryId);
 }

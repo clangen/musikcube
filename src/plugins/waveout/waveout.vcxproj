@@ -579,13 +579,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp" />
     <ClCompile Include="WaveOut.cpp" />
     <ClCompile Include="WaveOutBuffer.cpp" />
     <ClCompile Include="waveout_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="config.h" />
     <ClInclude Include="WaveOut.h" />
     <ClInclude Include="WaveOutBuffer.h" />
   </ItemGroup>

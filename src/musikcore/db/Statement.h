@@ -45,33 +45,33 @@ namespace musik { namespace core { namespace db {
 
     class Statement {
         public:
-            Statement(const char* sql, Connection &connection);
-            Statement(const Statement&) = delete;
-            virtual ~Statement();
+            DELETE_CLASS_DEFAULTS(Statement)
 
-            void BindInt32(int position, int bindInt);
-            void BindInt64(int position, int64_t bindInt);
-            void BindFloat(int position, float bindFloat);
+            Statement(const char* sql, Connection &connection) noexcept;
+            virtual ~Statement() noexcept;
+
+            void BindInt32(int position, int bindInt) noexcept;
+            void BindInt64(int position, int64_t bindInt) noexcept;
+            void BindFloat(int position, float bindFloat) noexcept;
             void BindText(int position, const std::string& bindText);
-            void BindNull(int position);
+            void BindNull(int position) noexcept;
 
-            const int ColumnInt32(int column);
-            const int64_t ColumnInt64(int column);
-            const float ColumnFloat(int column);
-            const char* ColumnText(int column);
-            const wchar_t* ColumnTextW(int column);
-            const bool IsNull(int column);
+            const int ColumnInt32(int column) noexcept;
+            const int64_t ColumnInt64(int column) noexcept;
+            const float ColumnFloat(int column) noexcept;
+            const char* ColumnText(int column) noexcept;
+            const bool IsNull(int column) noexcept;
 
             int Step();
 
-            void Reset();
-            void Unbind();
-            void ResetAndUnbind();
+            void Reset() noexcept;
+            void Unbind() noexcept;
+            void ResetAndUnbind() noexcept;
 
         private:
             friend class Connection;
 
-            Statement(Connection &connection);
+            Statement(Connection &connection) noexcept;
 
             sqlite3_stmt *stmt;
             Connection *connection;

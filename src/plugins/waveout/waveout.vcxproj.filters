@@ -11,9 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="WaveOut.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -25,13 +22,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
-      <Filter>plugin</Filter>
-    </ClInclude>
     <ClInclude Include="WaveOut.h">
       <Filter>plugin</Filter>
     </ClInclude>
     <ClInclude Include="WaveOutBuffer.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>

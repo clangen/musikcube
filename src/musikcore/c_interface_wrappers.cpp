@@ -101,7 +101,7 @@ using namespace musik::core::audio;
 #define DEVICE(x) static_cast<IDevice*>(x.opaque)
 #define DEVICELIST(x) static_cast<IDeviceList*>(x.opaque)
 #define OUTPUT(x) static_cast<IOutput*>(x.opaque)
-#define AUDIOSTREAM(x) static_cast<IStream*>(x.opaque)
+#define AUDIOSTREAM(x) static_cast<musik::core::audio::IStream*>(x.opaque)
 #define PLAYER(x) static_cast<mcsdk_player_context_internal*>(x.opaque)
 #define INDEXER(x) static_cast<mcsdk_svc_indexer_context_internal*>(x.opaque)->indexer
 #define LIBRARY(x) static_cast<ILibrary*>(x.opaque)

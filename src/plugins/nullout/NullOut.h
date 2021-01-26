@@ -31,9 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include "pch.h"
+#include "config.h"
 
 #include <musikcore/sdk/IOutput.h>
 
@@ -45,21 +46,21 @@ class NullOut : public IOutput {
         ~NullOut();
 
         /* IPlugin */
-        virtual const char* Name() override { return "Null"; };
-        virtual void Release() override;
+        const char* Name() override { return "Null"; };
+        void Release() override;
 
         /* IOutput */
-        virtual void Pause() override;
-        virtual void Resume() override;
-        virtual void SetVolume(double volume) override;
-        virtual double GetVolume() override;
-        virtual void Stop() override;
-        virtual OutputState Play(IBuffer *buffer, IBufferProvider *provider) override;
-        virtual double Latency() override;
-        virtual void Drain() override;
-        virtual IDeviceList* GetDeviceList() override;
-        virtual bool SetDefaultDevice(const char* deviceId) override;
-        virtual IDevice* GetDefaultDevice() override;
+        void Pause() override;
+        void Resume() override;
+        void SetVolume(double volume) override;
+        double GetVolume() override;
+        void Stop() override;
+        OutputState Play(IBuffer *buffer, IBufferProvider *provider) override;
+        double Latency() override;
+        void Drain() override;
+        IDeviceList* GetDeviceList() override;
+        bool SetDefaultDevice(const char* deviceId) override;
+        IDevice* GetDefaultDevice() override;
 
     private:
         enum State {

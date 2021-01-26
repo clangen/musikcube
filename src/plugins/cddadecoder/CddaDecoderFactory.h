@@ -42,7 +42,7 @@ class CddaDecoderFactory : public IDecoderFactory {
 public:
     CddaDecoderFactory();
     ~CddaDecoderFactory();
-    virtual IDecoder* CreateDecoder();
-    virtual void Release();
-    virtual bool CanHandle(const char* type) const;
+    IDecoder* CreateDecoder() override;
+    void Release() override;
+    bool CanHandle(const char* type) const override;
 };

@@ -251,12 +251,9 @@ SavePlaylistQuery::SavePlaylistQuery(musik::core::ILibraryPtr library) {
     this->categoryId = -1;
 }
 
-SavePlaylistQuery::~SavePlaylistQuery() {
-}
-
 /* METHODS */
 
-int64_t SavePlaylistQuery::GetPlaylistId() const {
+int64_t SavePlaylistQuery::GetPlaylistId() const noexcept {
     return playlistId;
 }
 
@@ -300,8 +297,7 @@ bool SavePlaylistQuery::AddTracksToPlaylist(
 bool SavePlaylistQuery::AddCategoryTracksToPlaylist(
     musik::core::db::Connection &db, int64_t playlistId)
 {
-    auto query = std::shared_ptr<CategoryTrackListQuery>(
-        new CategoryTrackListQuery(library, categoryType, categoryId));
+    auto query = std::make_shared<CategoryTrackListQuery>(library, categoryType, categoryId);
 
     this->library->EnqueueAndWait(query);
 
@@ -378,7 +374,7 @@ bool SavePlaylistQuery::ReplacePlaylist(musik::core::db::Connection &db) {
 bool SavePlaylistQuery::AppendToPlaylist(musik::core::db::Connection& db) {
     ScopedTransaction transaction(db);
 
-    bool result = this->tracks.Exists()
+    const bool result = this->tracks.Exists()
         ? this->AddTracksToPlaylist(db, this->playlistId, this->tracks)
         : this->AddCategoryTracksToPlaylist(db, this->playlistId);
 
@@ -426,18 +422,18 @@ void SavePlaylistQuery::SendPlaylistMutationBroadcast() {
 
 /* SUPPORTING TYPES */
 
-SavePlaylistQuery::TrackListWrapper::TrackListWrapper() {
+SavePlaylistQuery::TrackListWrapper::TrackListWrapper() noexcept {
     this->rawTracks = nullptr;
 }
 
 SavePlaylistQuery::TrackListWrapper::TrackListWrapper(
-    std::shared_ptr<musik::core::TrackList> shared)
+    std::shared_ptr<musik::core::TrackList> shared) noexcept
 {
     this->rawTracks = nullptr;
     this->sharedTracks = shared;
 }
 
-bool SavePlaylistQuery::TrackListWrapper::Exists() {
+bool SavePlaylistQuery::TrackListWrapper::Exists() noexcept {
     return this->sharedTracks || this->rawTracks;
 }
 
@@ -458,8 +454,8 @@ TrackPtr SavePlaylistQuery::TrackListWrapper::Get(
 
     TrackPtr result = std::make_shared<LibraryTrack>(rawTracks->GetId(index), library);
     if (rawTracks) {
-        std::shared_ptr<TrackMetadataQuery> query(
-            new TrackMetadataQuery(result, library, TrackMetadataQuery::Type::IdsOnly));
+        auto query = std::make_shared<TrackMetadataQuery>(
+            result, library, TrackMetadataQuery::Type::IdsOnly);
 
         library->EnqueueAndWait(query);
     }
@@ -467,7 +463,7 @@ TrackPtr SavePlaylistQuery::TrackListWrapper::Get(
     return result;
 }
 
-ITrackList* SavePlaylistQuery::TrackListWrapper::Get() {
+ITrackList* SavePlaylistQuery::TrackListWrapper::Get() noexcept {
     if (sharedTracks) {
         return sharedTracks.get();
     }

@@ -62,12 +62,12 @@ namespace cursespp {
             void RemoveAll();
             void SetActive(const std::string& key);
 
-            virtual bool KeyPress(const std::string& key) override;
-            virtual bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
+            bool KeyPress(const std::string& key) override;
+            bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
         protected:
-            virtual void OnRedraw() override;
-            virtual void OnFocusChanged(bool focused) override;
+            void OnRedraw() override;
+            void OnFocusChanged(bool focused) override;
 
         private:
             size_t CalculateLeftPadding();

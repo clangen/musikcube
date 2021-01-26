@@ -68,7 +68,7 @@ static int getIntFromTextInput(TextInput& input, int defaultValue = -1) {
 static inline int longestStringLength(const std::vector<std::string>&& keys) {
     int max = 0;
     for (auto& str: keys) {
-        size_t len = u8cols(_TSTR(str));
+        int len = narrow_cast<int>(u8cols(_TSTR(str)));
         max = len > max ? len : max;
     }
     return max;
@@ -94,7 +94,8 @@ void RemoteLibrarySettingsLayout::OnLayout() {
         "settings_library_type_remote_password"
      });
 
-    const int checkboxWidth = u8cols(_TSTR("settings_library_type_remote_use_tls")) + 4;
+    const int checkboxWidth = narrow_cast<int>(
+        u8cols(_TSTR("settings_library_type_remote_use_tls")) + 4);
 
     int const cx = this->GetWidth();
     int const inputWidth = std::min((int) 32, (int) (cx - labelWidth - 1));
@@ -111,16 +112,22 @@ void RemoteLibrarySettingsLayout::OnLayout() {
     this->pwInput->MoveAndResize(labelWidth + 1, y++, inputWidth, 1);
 
     this->transcoderCheckbox->MoveAndResize(
-        0, y,
-        u8cols(this->transcoderCheckbox->GetText()) + 4, 1);
+        0,
+        y,
+        narrow_cast<int>(u8cols(this->transcoderCheckbox->GetText())) + 4,
+        1);
 
     this->transcoderFormatDropdown->MoveAndResize(
-        R(this->transcoderCheckbox) + 1, y,
-        u8cols(this->transcoderFormatDropdown->GetText()), 1);
+        R(this->transcoderCheckbox) + 1,
+        y,
+        narrow_cast<int>(u8cols(this->transcoderFormatDropdown->GetText())),
+        1);
 
     this->transcoderBitrateDropdown->MoveAndResize(
-        R(this->transcoderFormatDropdown) + 1, y,
-        u8cols(this->transcoderBitrateDropdown->GetText()), 1);
+        R(this->transcoderFormatDropdown) + 1,
+        y,
+        narrow_cast<int>(u8cols(this->transcoderBitrateDropdown->GetText())),
+        1);
 }
 
 void RemoteLibrarySettingsLayout::OnTlsCheckboxChanged(cursespp::Checkbox* cb, bool checked) {

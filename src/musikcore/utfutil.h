@@ -2,12 +2,19 @@
 
 #include <string>
 #include <wchar.h>
-#include <utf8/utf8.h>
+
 #include <algorithm>
 #include <memory>
 
-#ifdef WIN32
-#include <wcwidth.h>
+#pragma warning(push, 0)
+    #include <utf8/utf8.h>
+    #ifdef WIN32
+        #include <wcwidth.h>
+    #endif
+#pragma warning(pop)
+
+#ifdef max
+#undef max
 #endif
 
 inline std::wstring u8to16(const std::string& u8) {

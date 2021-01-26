@@ -22,6 +22,7 @@ bin32
 bin64
 ipch
 build
+local-circle-ci.yml
 CPack*
 _CPack*
 *.snap

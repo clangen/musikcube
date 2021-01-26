@@ -11,9 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="directsoundout_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -22,9 +19,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
-      <Filter>plugin</Filter>
-    </ClInclude>
     <ClInclude Include="DirectSoundOut.h">
       <Filter>plugin</Filter>
     </ClInclude>

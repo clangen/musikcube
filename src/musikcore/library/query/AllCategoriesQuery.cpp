@@ -33,10 +33,15 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+
 #include "AllCategoriesQuery.h"
+
 #include <musikcore/library/query/util/Serialization.h>
 #include <musikcore/db/Statement.h>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -48,13 +53,10 @@ using namespace musik::core::library::query::serialization;
 const std::string AllCategoriesQuery::kQueryName = "AllCategoriesQuery";
 
 AllCategoriesQuery::AllCategoriesQuery() {
-    this->result.reset(new SdkValueList());
+    this->result = std::make_shared<SdkValueList>();
 }
 
-AllCategoriesQuery::~AllCategoriesQuery() {
-}
-
-AllCategoriesQuery::Result AllCategoriesQuery::GetResult() {
+AllCategoriesQuery::Result AllCategoriesQuery::GetResult() noexcept {
     return this->result;
 }
 
@@ -63,7 +65,7 @@ musik::core::sdk::IValueList* AllCategoriesQuery::GetSdkResult() {
 }
 
 bool AllCategoriesQuery::OnRun(Connection& db) {
-    this->result.reset(new SdkValueList());
+    this->result = std::make_shared<SdkValueList>();
     Statement stmt("SELECT DISTINCT name FROM meta_keys ORDER BY name", db);
 
     this->result->Add(std::make_shared<SdkValue>("album", 0, "category"));

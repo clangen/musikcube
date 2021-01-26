@@ -66,9 +66,10 @@ namespace musik {
                 void Start();
                 void Stop();
 
-                virtual bool KeyPress(const std::string& key) override;
-                virtual void OnLayout() override;
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message) override;
+                /* IWindow */
+                bool KeyPress(const std::string& key) override;
+                void OnLayout() override;
+                void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             private:
                 void OnIndexerStarted();

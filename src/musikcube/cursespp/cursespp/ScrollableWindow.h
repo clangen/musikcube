@@ -55,28 +55,30 @@ namespace cursespp {
 
             virtual ~ScrollableWindow();
 
-            virtual void SetAdapter(std::shared_ptr<IScrollAdapter> adapter);
+            /* IWindow */
+            void Show() override;
+            void OnDimensionsChanged() override;
+            bool KeyPress(const std::string& key) override;
+            void Focus() override;
+            void Blur() override;
+            void OnRedraw() override;
 
-            virtual void Show();
-            virtual void OnDimensionsChanged();
+            /* IMouseHandler */
+            bool MouseEvent(const IMouseHandler::Event& event) override;
 
-            virtual bool KeyPress(const std::string& key);
-            virtual bool MouseEvent(const IMouseHandler::Event& event);
-
-            virtual void ScrollToTop();
-            virtual void ScrollToBottom();
-            virtual void ScrollUp(int delta = 1);
-            virtual void ScrollDown(int delta = 1);
-            virtual void PageUp();
-            virtual void PageDown();
-
-            virtual void Focus();
-            virtual void Blur();
-
-            virtual void OnAdapterChanged();
+            /* IScrollable */
+            void ScrollToTop() override;
+            void ScrollToBottom() override;
+            void ScrollUp(int delta = 1) override;
+            void ScrollDown(int delta = 1) override;
+            void PageUp() override;
+            void PageDown() override;
 
             void SetAllowArrowKeyPropagation(bool allow = true);
 
+            /* virtual methods we define */
+            virtual void SetAdapter(std::shared_ptr<IScrollAdapter> adapter);
+            virtual void OnAdapterChanged();
             virtual const IScrollAdapter::ScrollPosition& GetScrollPosition();
 
         protected:
@@ -84,7 +86,6 @@ namespace cursespp {
 
             virtual IScrollAdapter& GetScrollAdapter();
             virtual IScrollAdapter::ScrollPosition& GetMutableScrollPosition();
-            virtual void OnRedraw();
 
             size_t GetPreviousPageEntryIndex();
             bool IsLastItemVisible();

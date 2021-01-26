@@ -1,3 +1,9 @@
+#ifdef __FreeBSD__
+    #ifdef EV_ERROR
+        #undef EV_ERROR
+    #endif
+#endif
+
 #include <iostream>
 #include <fstream>
 #include <csignal>

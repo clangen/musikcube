@@ -41,7 +41,10 @@
 #include <musikcore/config.h>
 #include <musikcore/db/Connection.h>
 #include <musikcore/sdk/IPreferences.h>
+
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 namespace musik { namespace core {
     class Preferences : public musik::core::sdk::IPreferences {
@@ -69,28 +72,28 @@ namespace musik { namespace core {
             /* IPreferences (for plugin use) */
             virtual void Release() override;
 
-            virtual bool GetBool(const char* key, bool defaultValue = false) override;
-            virtual int GetInt(const char* key, int defaultValue = 0) override;
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f) override;
-            virtual int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "") override;
+            bool GetBool(const char* key, bool defaultValue = false) override;
+            int GetInt(const char* key, int defaultValue = 0) override;
+            double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            int GetString(const char* key, char* dst, size_t size, const char* defaultValue = "") override;
 
-            virtual void SetBool(const char* key, bool value) override;
-            virtual void SetInt(const char* key, int value) override;
-            virtual void SetDouble(const char* key, double value) override;
-            virtual void SetString(const char* key, const char* value) override;
+            void SetBool(const char* key, bool value) override;
+            void SetInt(const char* key, int value) override;
+            void SetDouble(const char* key, double value) override;
+            void SetString(const char* key, const char* value) override;
 
-            virtual void Save() override;
+            void Save() override;
 
             /* easier interface for internal use */
-            virtual bool GetBool(const std::string& key, bool defaultValue = false);
-            virtual int GetInt(const std::string& key, int defaultValue = 0);
-            virtual double GetDouble(const std::string& key, double defaultValue = 0.0f);
-            virtual std::string GetString(const std::string& key, const std::string& defaultValue = "");
+            bool GetBool(const std::string& key, bool defaultValue = false);
+            int GetInt(const std::string& key, int defaultValue = 0);
+            double GetDouble(const std::string& key, double defaultValue = 0.0f);
+            std::string GetString(const std::string& key, const std::string& defaultValue = "");
 
-            virtual void SetBool(const std::string& key, bool value);
-            virtual void SetInt(const std::string& key, int value);
-            virtual void SetDouble(const std::string& key, double value);
-            virtual void SetString(const std::string& key, const char* value);
+            void SetBool(const std::string& key, bool value);
+            void SetInt(const std::string& key, int value);
+            void SetDouble(const std::string& key, double value);
+            void SetString(const std::string& key, const char* value);
 
             void GetKeys(std::vector<std::string>& target);
             bool HasKey(const std::string& key);

@@ -84,7 +84,7 @@ IStreamPtr Stream::Create(int samplesPerChannel, double bufferLengthSeconds, Str
     return IStreamPtr(new Stream(samplesPerChannel, bufferLengthSeconds, options));
 }
 
-IStream* Stream::CreateUnmanaged(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
+musik::core::audio::IStream* Stream::CreateUnmanaged(int samplesPerChannel, double bufferLengthSeconds, StreamFlags options) {
     return new Stream(samplesPerChannel, bufferLengthSeconds, options);
 }
 

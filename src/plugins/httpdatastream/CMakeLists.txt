@@ -1,5 +1,4 @@
 set (httpdatastream_SOURCES
-  stdafx.cpp
   httpdatastream_plugin.cpp
   HttpDataStream.cpp
   HttpDataStreamFactory.cpp

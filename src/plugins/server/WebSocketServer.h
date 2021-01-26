@@ -38,14 +38,15 @@
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/ITrack.h>
 
+#pragma warning(push, 0)
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/extensions/permessage_deflate/enabled.hpp>
 #include <websocketpp/server.hpp>
+#include <nlohmann/json.hpp>
+#pragma warning(pop, 0)
 
 #include <mutex>
 #include <condition_variable>
-
-#include <nlohmann/json.hpp>
 
 class WebSocketServer {
     public:

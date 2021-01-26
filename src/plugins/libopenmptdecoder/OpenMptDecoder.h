@@ -37,19 +37,22 @@
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IDecoder.h>
 #include <musikcore/sdk/IDataStream.h>
+
+#pragma warning(push, 0)
 #include <libopenmpt/libopenmpt.h>
+#pragma warning(pop)
 
 class OpenMptDecoder: public musik::core::sdk::IDecoder {
     public:
         OpenMptDecoder();
         ~OpenMptDecoder();
 
-        virtual void Release() override;
-        virtual double SetPosition(double seconds) override;
-        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
-        virtual double GetDuration() override;
-        virtual bool Open(musik::core::sdk::IDataStream *stream) override;
-        virtual bool Exhausted() override;
+        void Release() override;
+        double SetPosition(double seconds) override;
+        bool GetBuffer(musik::core::sdk::IBuffer* buffer) override;
+        double GetDuration() override;
+        bool Open(musik::core::sdk::IDataStream* stream) override;
+        bool Exhausted() override;
 
         musik::core::sdk::IDataStream* Stream() { return this->stream; }
 

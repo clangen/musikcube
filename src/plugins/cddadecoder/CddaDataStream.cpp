@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 #include "CddaDataStream.h"
 #include <algorithm>
 #include <string>

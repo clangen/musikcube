@@ -42,18 +42,22 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
-            SetTrackRatingQuery(int64_t trackId, int rating);
-            virtual ~SetTrackRatingQuery();
-            std::string Name() { return kQueryName; }
+            DELETE_CLASS_DEFAULTS(SetTrackRatingQuery)
+
+            SetTrackRatingQuery(int64_t trackId, int rating) noexcept;
+
+            /* IQuery */
+            std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<SetTrackRatingQuery> DeserializeQuery(const std::string& data);
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            /* QueryBase */
+            bool OnRun(musik::core::db::Connection &db) override;
 
             int64_t trackId;
             int rating;

@@ -41,10 +41,11 @@
 #include <musikcore/library/LocalLibraryConstants.h>
 #include <musikcore/library/query/util/Serialization.h>
 
+#pragma warning(push, 0)
+#include <nlohmann/json.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string.hpp>
-
-#include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using musik::core::db::Statement;
 using musik::core::db::Row;
@@ -94,8 +95,8 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     TrackSortType sortType)
 {
     this->library = library;
-    this->result.reset(new musik::core::TrackList(library));
-    this->headers.reset(new std::set<size_t>());
+    this->result = std::make_shared<TrackList>(library);
+    this->headers = std::make_shared<std::set<size_t>>();
     this->hash = category::Hash(predicates);
     this->sortType = sortType;
 
@@ -106,12 +107,8 @@ CategoryTrackListQuery::CategoryTrackListQuery(
     this->parseHeaders = kTrackSortTypeWithAlbumGrouping.find(sortType) != kTrackSortTypeWithAlbumGrouping.end();
 }
 
-CategoryTrackListQuery::~CategoryTrackListQuery() {
-
-}
-
 void CategoryTrackListQuery::ScanPredicateListsForQueryType() {
-    if (this->extended.size() == 1 && this->extended[0].first == Playlists::TABLE_NAME) {
+    if (this->extended.size() == 1 && this->extended.at(0).first == Playlists::TABLE_NAME) {
         this->type = Type::Playlist;
     }
     else {
@@ -119,22 +116,22 @@ void CategoryTrackListQuery::ScanPredicateListsForQueryType() {
     }
 }
 
-CategoryTrackListQuery::Result CategoryTrackListQuery::GetResult() {
+CategoryTrackListQuery::Result CategoryTrackListQuery::GetResult() noexcept {
     return this->result;
 }
 
-CategoryTrackListQuery::Headers CategoryTrackListQuery::GetHeaders() {
+CategoryTrackListQuery::Headers CategoryTrackListQuery::GetHeaders() noexcept {
     return this->headers;
 }
 
-size_t CategoryTrackListQuery::GetQueryHash() {
+size_t CategoryTrackListQuery::GetQueryHash() noexcept {
     return this->hash;
 }
 
 void CategoryTrackListQuery::PlaylistQuery(musik::core::db::Connection &db) {
     /* playlists are a special case. we already have a query for this, so
     delegate to that. */
-    GetPlaylistQuery query(this->library, this->extended[0].second);
+    GetPlaylistQuery query(this->library, this->extended.at(0).second);
     query.Run(db);
     this->result = query.GetResult();
 }
@@ -175,7 +172,7 @@ void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuer
     size_t index = 0;
 
     while (trackQuery.Step() == Row) {
-        int64_t id = trackQuery.ColumnInt64(0);
+        const int64_t id = trackQuery.ColumnInt64(0);
         std::string album = trackQuery.ColumnText(1);
 
         if (this->parseHeaders && album != lastAlbum) {
@@ -190,8 +187,8 @@ void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuer
 
 bool CategoryTrackListQuery::OnRun(Connection& db) {
     if (result) {
-        result.reset(new musik::core::TrackList(this->library));
-        headers.reset(new std::set<size_t>());
+        result = std::make_shared<TrackList>(library);
+        headers = std::make_shared<std::set<size_t>>();
     }
 
     switch (this->type) {

@@ -11,9 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="nullout_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -22,10 +19,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h">
+    <ClInclude Include="NullOut.h">
       <Filter>plugin</Filter>
     </ClInclude>
-    <ClInclude Include="NullOut.h">
+    <ClInclude Include="config.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>

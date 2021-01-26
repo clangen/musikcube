@@ -91,7 +91,7 @@ static void showNeedsRestart(Callback cb = Callback()) {
 static std::vector<std::string> allLocales;
 
 void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> callback) {
-    auto locale = i18n::Locale::Instance();
+    auto& locale = i18n::Locale::Instance();
 
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;

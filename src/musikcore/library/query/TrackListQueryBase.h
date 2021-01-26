@@ -40,7 +40,9 @@
 #include <musikcore/library/track/TrackList.h>
 #include <musikcore/library/query/util/Serialization.h>
 
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 namespace musik { namespace core { namespace library { namespace query {
 
@@ -49,18 +51,19 @@ namespace musik { namespace core { namespace library { namespace query {
             typedef std::shared_ptr<musik::core::TrackList> Result;
             typedef std::shared_ptr<std::set<size_t> > Headers;
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackListQueryBase)
+
             TrackListQueryBase() {
                 this->limit = -1;
                 this->offset = 0;
             }
 
-            virtual ~TrackListQueryBase() { };
-            virtual std::string Name() = 0;
+            /* virtual methods we define */
             virtual Result GetResult() = 0;
             virtual Headers GetHeaders() = 0;
             virtual size_t GetQueryHash() = 0;
 
-            virtual void SetLimitAndOffset(int limit, int offset = 0) {
+            virtual void SetLimitAndOffset(int limit, int offset = 0) noexcept {
                 this->limit = limit;
                 this->offset = offset;
             }
@@ -89,7 +92,7 @@ namespace musik { namespace core { namespace library { namespace query {
                 return output.dump();
             }
 
-            void ExtractLimitAndOffsetFromDeserializedQuery(nlohmann::json& options) {
+            void ExtractLimitAndOffsetFromDeserializedQuery(const nlohmann::json& options) {
                 this->limit = options.value("limit", -1);
                 this->offset = options.value("offset", 0);
             }
@@ -119,27 +122,30 @@ namespace musik { namespace core { namespace library { namespace query {
 
             class WrappedTrackList : public musik::core::sdk::ITrackList {
                 public:
-                    WrappedTrackList(Result wrapped) {
+                    WrappedTrackList(Result wrapped) noexcept {
                         this->wrapped = wrapped;
                     }
 
-                    virtual void Release() {
+                    virtual ~WrappedTrackList() {
+                    }
+
+                    void Release() noexcept override {
                         delete this;
                     }
 
-                    virtual size_t Count() const {
+                    size_t Count() const override {
                         return this->wrapped->Count();
                     }
 
-                    virtual int64_t GetId(size_t index) const {
+                    int64_t GetId(size_t index) const override {
                         return this->wrapped->GetId(index);
                     }
 
-                    virtual int IndexOf(int64_t id) const {
+                    int IndexOf(int64_t id) const override {
                         return this->wrapped->IndexOf(id);
                     }
 
-                    virtual musik::core::sdk::ITrack* GetTrack(size_t index) const {
+                    musik::core::sdk::ITrack* GetTrack(size_t index) const override  {
                         return this->wrapped->GetTrack(index);
                     }
 

@@ -33,14 +33,20 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+
 #include "LastFm.h"
-#include <curl/curl.h>
+
 #include <musikcore/support/Preferences.h>
 #include <musikcore/sdk/HttpClient.h>
 #include <musikcore/support/PreferenceKeys.h>
-#include <nlohmann/json.hpp>
+
 #include <sstream>
 #include <map>
+
+#pragma warning(push, 0)
+#include <curl/curl.h>
+#include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 extern "C" {
     #include <md5.h>

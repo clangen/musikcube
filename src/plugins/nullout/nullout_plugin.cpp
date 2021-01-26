@@ -32,30 +32,24 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.h"
+#include "config.h"
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>
 #include <musikcore/sdk/ISchema.h>
 #include "NullOut.h"
 
-#ifdef WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-
 class NullPlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-        virtual const char* Name() { return "Null IOutput"; }
-        virtual const char* Version() { return "0.2.0"; }
-        virtual const char* Author() { return "clangen"; }
-        virtual const char* Guid() { return "0d45a986-24f1-4253-9fc2-b432353a1eea"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() noexcept override { delete this; }
+        const char* Name() override  { return "Null IOutput"; }
+        const char* Version() override  { return "0.2.0"; }
+        const char* Author() override  { return "clangen"; }
+        const char* Guid() override { return "0d45a986-24f1-4253-9fc2-b432353a1eea"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override  { }
+        int SdkVersion() override  { return musik::core::sdk::SdkVersion; }
 };
 
 #ifdef WIN32

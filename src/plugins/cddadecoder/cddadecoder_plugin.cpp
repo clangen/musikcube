@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 
 #include "CddaDecoderFactory.h"
 #include "CddaDataStreamFactory.h"
@@ -50,15 +50,15 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID reserved) {
 }
 
 class CddaDecoderPlugin : public musik::core::sdk::IPlugin {
-    virtual void Release() { delete this; };
-    virtual const char* Name() { return PLUGIN_NAME; }
-    virtual const char* Version() { return "0.5.0"; }
-    virtual const char* Author() { return "Björn Olievier, clangen"; }
-    virtual const char* Guid() { return "0862b76d-67cd-4e54-b5d1-6a2c8e5101a4"; }
-    virtual bool Configurable() { return false; }
-    virtual void Configure() { }
-    virtual void Reload() { }
-    virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+    void Release() noexcept override { delete this; };
+    const char* Name() override { return PLUGIN_NAME; }
+    const char* Version() override { return "0.5.0"; }
+    const char* Author() override { return "Björn Olievier, clangen"; }
+    const char* Guid() override { return "0862b76d-67cd-4e54-b5d1-6a2c8e5101a4"; }
+    bool Configurable() noexcept override { return false; }
+    void Configure() override { }
+    void Reload() override { }
+    int SdkVersion() override { return musik::core::sdk::SdkVersion; }
 };
 
 extern "C" __declspec(dllexport) musik::core::sdk::IPlugin* GetPlugin() {

@@ -44,9 +44,14 @@
 #include <musikcore/library/LibraryFactory.h>
 #include <musikcore/library/QueryRegistry.h>
 #include <musikcore/runtime/Message.h>
+#include <musikcore/support/NarrowCast.h>
 #include <musikcore/debug.h>
-#include <nlohmann/json.hpp>
+
 #include <chrono>
+
+#pragma warning(push, 0)
+#include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 static const std::string TAG = "RemoteLibrary";
 
@@ -99,7 +104,7 @@ RemoteLibrary::RemoteLibrary(std::string name, int id, MessageQueue* messageQueu
 , messageQueue(messageQueue)
 , wsc(messageQueue, this) {
     this->identifier = std::to_string(id);
-    this->thread = new std::thread(std::bind(&RemoteLibrary::ThreadProc, this));
+    this->thread = std::make_unique<std::thread>(std::bind(&RemoteLibrary::ThreadProc, this));
     this->ReloadConnectionFromPreferences();
     if (this->messageQueue) {
         this->messageQueue->Register(this);
@@ -124,13 +129,12 @@ const std::string& RemoteLibrary::Name() {
 void RemoteLibrary::Close() {
     this->wsc.Disconnect();
 
-    std::thread* thread = nullptr;
+    std::unique_ptr<std::thread> thread;
 
     {
         std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
         if (this->thread) {
-            thread = this->thread;
-            this->thread = nullptr;
+            thread = std::unique_ptr<std::thread>(std::move(this->thread));
             this->queryQueue.clear();
             this->exit = true;
         }
@@ -140,7 +144,6 @@ void RemoteLibrary::Close() {
         this->queueCondition.notify_all();
         this->syncQueryCondition.notify_all();
         thread->join();
-        delete thread;
     }
 }
 
@@ -165,7 +168,7 @@ bool RemoteLibrary::IsQueryInFlight(Query query) {
             return true;
         }
     }
-    for (auto queryContext : this->queryQueue) {
+    for (const auto& queryContext : this->queryQueue) {
         if (queryContext->query == query) {
             return true;
         }
@@ -210,7 +213,7 @@ int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback cal
                     break;
                 }
                 else {
-                    auto result = this->syncQueryCondition.wait_for(lock, timeoutMs * milliseconds(1));
+                    const auto result = this->syncQueryCondition.wait_for(lock, timeoutMs * milliseconds(1));
                     if (result == std::cv_status::timeout) {
                         break;
                     }
@@ -226,7 +229,7 @@ int RemoteLibrary::EnqueueAndWait(QueryPtr query, size_t timeoutMs, Callback cal
 
 RemoteLibrary::QueryContextPtr RemoteLibrary::GetNextQuery() {
     std::unique_lock<std::recursive_mutex> lock(this->queueMutex);
-    while (!this->queryQueue.size() && !this->exit) {
+    while (this->queryQueue.empty() && !this->exit) {
         this->queueCondition.wait(lock);
     }
     if (this->exit) {
@@ -325,7 +328,7 @@ void RemoteLibrary::RunQueryOnLoopback(QueryContextPtr context) {
 void RemoteLibrary::RunQueryOnWebSocketClient(QueryContextPtr context) {
     if (context->query) {
         const std::string messageId = wsc.EnqueueQuery(context->query);
-        if (messageId.size()) {
+        if (!messageId.empty()) {
             queriesInFlight[messageId] = context;
         }
         else {
@@ -353,8 +356,10 @@ musik::core::IIndexer* RemoteLibrary::Indexer() {
 
 void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
     if (message.Type() == MESSAGE_QUERY_COMPLETED) {
-        auto context = static_cast<QueryCompletedMessage*>(&message)->GetContext();
-        this->NotifyQueryCompleted(context);
+        auto context = dynamic_cast<QueryCompletedMessage*>(&message)->GetContext();
+        if (context) {
+            this->NotifyQueryCompleted(context);
+        }
     }
     else if (message.Type() == MESSAGE_RECONNECT_SOCKET) {
         if (this->wsc.ConnectionState() == Client::State::Disconnected) {
@@ -362,7 +367,7 @@ void RemoteLibrary::ProcessMessage(musik::core::runtime::IMessage &message) {
         }
     }
     else if (message.Type() == MESSAGE_UPDATE_CONNECTION_STATE) {
-        auto updatedState = (ConnectionState)message.UserData1();
+        const auto updatedState = static_cast<ConnectionState>(message.UserData1());
         this->connectionState = updatedState;
         this->ConnectionStateChanged(this->connectionState);
     }
@@ -384,7 +389,7 @@ void RemoteLibrary::OnClientStateChanged(Client* client, State newState, State o
 
     if (this->messageQueue) {
         const auto reason = this->wsc.LastConnectionError();
-        bool attemptReconnect =
+        const bool attemptReconnect =
             newState == State::Disconnected &&
             reason != WebSocketClient::ConnectionError::InvalidPassword &&
             reason != WebSocketClient::ConnectionError::IncompatibleVersion;
@@ -414,20 +419,20 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
 
     char buffer[4096];
     buffer[0] = 0;
-    int size = track->Uri(buffer, sizeof(buffer));
+    const int size = track->Uri(buffer, sizeof(buffer));
     if (size) {
         std::string originalUri = buffer;
-        std::string::size_type lastDot = originalUri.find_last_of(".");
+        const std::string::size_type lastDot = originalUri.find_last_of(".");
         if (lastDot != std::string::npos) {
-            type = originalUri.substr(lastDot).c_str();
+            type = originalUri.substr(lastDot);
         }
     }
 
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    auto port = (unsigned short) prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7905);
+    const auto port = narrow_cast<unsigned short>(prefs->GetInt(core::prefs::keys::RemoteLibraryHttpPort, 7905));
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
-    auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
+    const auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryHttpTls, false);
 
     const std::string scheme = useTls ? "https://" : "http://";
 
@@ -436,7 +441,7 @@ std::string RemoteLibrary::GetTrackUri(musik::core::sdk::ITrack* track, const st
     if (prefs->GetBool(core::prefs::keys::RemoteLibraryTranscoderEnabled)) {
         auto const bitrate = prefs->GetInt(core::prefs::keys::RemoteLibraryTranscoderBitrate);
         auto const format = prefs->GetString(core::prefs::keys::RemoteLibraryTranscoderFormat);
-        if (bitrate > 0 && bitrate < 9999 && format.size()) {
+        if (bitrate > 0 && bitrate < 9999 && !format.empty()) {
             uri += "?bitrate=" + std::to_string(bitrate) + "&format=" + format;
             type = "." + format;
         }
@@ -461,8 +466,8 @@ const net::WebSocketClient& RemoteLibrary::WebSocketClient() const {
 void RemoteLibrary::ReloadConnectionFromPreferences() {
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
     auto host = prefs->GetString(core::prefs::keys::RemoteLibraryHostname, "127.0.0.1");
-    auto port = (unsigned short) prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905);
+    const auto port = narrow_cast<unsigned short>(prefs->GetInt(core::prefs::keys::RemoteLibraryWssPort, 7905));
     auto password = prefs->GetString(core::prefs::keys::RemoteLibraryPassword, "");
-    auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
+    const auto useTls = prefs->GetBool(core::prefs::keys::RemoteLibraryWssTls, false);
     this->wsc.Connect(host, port, password, useTls);
 }

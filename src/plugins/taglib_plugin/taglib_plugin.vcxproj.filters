@@ -10,9 +10,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>plugin</Filter>
-    </ClCompile>
     <ClCompile Include="taglib_plugin.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
@@ -327,9 +324,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>plugin</Filter>
-    </ClInclude>
     <ClInclude Include="taglib-1.11\taglib\audioproperties.h">
       <Filter>taglib-1.11</Filter>
     </ClInclude>
@@ -667,6 +661,9 @@
       <Filter>taglib-1.11</Filter>
     </ClInclude>
     <ClInclude Include="TaglibMetadataReader.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
       <Filter>plugin</Filter>
     </ClInclude>
   </ItemGroup>

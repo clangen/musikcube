@@ -200,43 +200,48 @@ void musik::debug::Stop() {
     backends.clear();
 }
 
-static void enqueue(debug_level level, const std::string& tag, const std::string& string) {
-    std::unique_lock<std::recursive_mutex> lock(mutex);
+static void enqueue(debug_level level, const std::string& tag, const std::string& string) noexcept {
+    try {
+        std::unique_lock<std::recursive_mutex> lock(mutex);
 
-    if (queue) {
-        queue->push(new log_queue::log_entry(level, tag, string));
+        if (queue) {
+            queue->push(new log_queue::log_entry(level, tag, string));
+        }
+    }
+    catch (...) {
+        fprintf(stderr, "[%d] [%s] %s", static_cast<int>(level), tag.c_str(), string.c_str());
     }
 }
 
-void musik::debug::verbose(const std::string& tag, const std::string& string) {
+void musik::debug::verbose(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::verbose, tag, string);
 }
 
-void musik::debug::v(const std::string& tag, const std::string& string) {
+void musik::debug::v(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::verbose, tag, string);
 }
 
-void musik::debug::info(const std::string& tag, const std::string& string) {
+void musik::debug::info(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::info, tag, string);
 }
 
-void musik::debug::i(const std::string& tag, const std::string& string) {
+void musik::debug::i(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::info, tag, string);
 }
 
-void musik::debug::warning(const std::string& tag, const std::string& string) {
+void musik::debug::warning(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::warning, tag, string);
 }
 
-void musik::debug::w(const std::string& tag, const std::string& string) {
+void musik::debug::w(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::warning, tag, string);
 }
 
-void musik::debug::error(const std::string& tag, const std::string& string) {
+void musik::debug::error(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::error, tag, string);
 }
 
-void musik::debug::e(const std::string& tag, const std::string& string) {
+void musik::debug::e(const std::string& tag, const std::string& string) noexcept {
     enqueue(debug_level::error, tag, string);
 }
 

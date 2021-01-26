@@ -201,7 +201,7 @@ void PlaybackOverlays::ShowOutputDeviceOverlay(std::function<void()> callback) {
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("playback_overlay_output_device_title"))
         .SetSelectedIndex(selectedIndex)
-        .SetWidth(width)
+        .SetWidth(narrow_cast<int>(width))
         .SetItemSelectedCallback(
             [output, deviceList, callback](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
                 if (index == 0) {
@@ -269,10 +269,10 @@ void PlaybackOverlays::ShowReplayGainOverlay(std::function<void()> callback) {
     adapter->AddEntry(_TSTR("settings_replay_gain_mode_album"));
     adapter->SetSelectable(true);
 
-    auto prefs = Preferences::ForComponent(prefs::components::Playback);
+    auto prefs = Preferences::ForComponent(core::prefs::components::Playback);
 
     auto selectedIndex = prefs->GetInt(
-        prefs::keys::ReplayGainMode.c_str(),
+        core::prefs::keys::ReplayGainMode.c_str(),
         (int) ReplayGainMode::Disabled);
 
     std::shared_ptr<ListOverlay> dialog(new ListOverlay());
@@ -282,7 +282,7 @@ void PlaybackOverlays::ShowReplayGainOverlay(std::function<void()> callback) {
         .SetSelectedIndex((size_t) selectedIndex)
         .SetItemSelectedCallback(
             [callback, selectedIndex, prefs](ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                prefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) index);
+                prefs->SetInt(core::prefs::keys::ReplayGainMode.c_str(), (int) index);
                 prefs->Save();
                 if (selectedIndex != index && callback) {
                     callback();

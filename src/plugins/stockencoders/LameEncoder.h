@@ -34,7 +34,10 @@
 
 #include <musikcore/sdk/IStreamingEncoder.h>
 #include <musikcore/sdk/DataBuffer.h>
+
+#pragma warning(push, 0)
 #include <lame/lame.h>
+#pragma warning(pop)
 
 class LameEncoder: public musik::core::sdk::IStreamingEncoder {
     using IBuffer = musik::core::sdk::IBuffer;

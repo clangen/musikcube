@@ -32,4 +32,14 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#pragma once
+
+#include <cassert>
+
+/* https://stackoverflow.com/a/46229281 */
+template<class To, class From>
+To narrow_cast(From v) {
+    To r = static_cast<To>(v);
+    assert(static_cast<From>(r) == v);
+    return r;
+}

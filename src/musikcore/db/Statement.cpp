@@ -36,44 +36,45 @@
 
 #include <musikcore/db/Statement.h>
 #include <musikcore/db/Connection.h>
+
+#pragma warning(push, 0)
 #include <sqlite/sqlite3.h>
+#pragma warning(pop)
 
 using namespace musik::core::db;
 
-Statement::Statement(const char* sql, Connection &connection)
+Statement::Statement(const char* sql, Connection &connection) noexcept
 : connection(&connection)
 , stmt(nullptr)
 , modifiedRows(0) {
     std::unique_lock<std::mutex> lock(connection.mutex);
-
-    sqlite3_prepare_v2(
-        this->connection->connection, sql, -1, &this->stmt, nullptr);
+    sqlite3_prepare_v2(this->connection->connection, sql, -1, &this->stmt, nullptr);
 }
 
-Statement::Statement(Connection &connection)
+Statement::Statement(Connection &connection) noexcept
 : connection(&connection)
 , stmt(nullptr) {
 }
 
-Statement::~Statement() {
+Statement::~Statement() noexcept {
     sqlite3_finalize(this->stmt);
 }
 
-void Statement::Reset() {
+void Statement::Reset() noexcept {
     sqlite3_reset(this->stmt);
 }
 
-void Statement::Unbind() {
+void Statement::Unbind() noexcept {
     sqlite3_clear_bindings(this->stmt);
 }
 
-void Statement::ResetAndUnbind() {
+void Statement::ResetAndUnbind() noexcept {
     sqlite3_reset(this->stmt);
     sqlite3_clear_bindings(this->stmt);
 }
 
 int Statement::Step() {
-    int result = this->connection->StepStatement(this->stmt);
+    const int result = this->connection->StepStatement(this->stmt);
 
     if (result == SQLITE_OK) {
         this->modifiedRows = this->connection->LastModifiedRowCount();
@@ -82,15 +83,15 @@ int Statement::Step() {
     return result;
 }
 
-void Statement::BindInt32(int position, int bindInt) {
+void Statement::BindInt32(int position, int bindInt) noexcept {
     sqlite3_bind_int(this->stmt, position + 1, bindInt);
 }
 
-void Statement::BindInt64(int position, int64_t bindInt) {
-    sqlite3_bind_int64(this->stmt, position + 1, (sqlite3_int64) bindInt);
+void Statement::BindInt64(int position, int64_t bindInt) noexcept {
+    sqlite3_bind_int64(this->stmt, position + 1, static_cast<sqlite3_int64>(bindInt));
 }
 
-void Statement::BindFloat(int position, float bindFloat) {
+void Statement::BindFloat(int position, float bindFloat) noexcept {
     sqlite3_bind_double(this->stmt, position + 1, bindFloat);
 }
 
@@ -109,32 +110,27 @@ void Statement::BindText(int position, const std::string& bindText) {
         SQLITE_TRANSIENT);
 }
 
-void Statement::BindNull(int position) {
+void Statement::BindNull(int position) noexcept {
     sqlite3_bind_null(this->stmt, position + 1);
 }
 
-const int Statement::ColumnInt32(int column) {
+const int Statement::ColumnInt32(int column) noexcept {
     return sqlite3_column_int(this->stmt, column);
 }
 
-const int64_t Statement::ColumnInt64(int column) {
+const int64_t Statement::ColumnInt64(int column) noexcept {
     return sqlite3_column_int64(this->stmt, column);
 }
 
-const float Statement::ColumnFloat(int column) {
-    return (float) sqlite3_column_double(this->stmt, column);
+const float Statement::ColumnFloat(int column) noexcept {
+    return static_cast<float>(sqlite3_column_double(this->stmt, column));
 }
 
-const char* Statement::ColumnText(int column) {
-    const char* text = (char*) sqlite3_column_text(this->stmt, column);
+const char* Statement::ColumnText(int column) noexcept {
+    const char* text = reinterpret_cast<const char*>(sqlite3_column_text(this->stmt, column));
     return text ? text : "";
 }
 
-const wchar_t* Statement::ColumnTextW(int column) {
-    const wchar_t* text = (wchar_t*) sqlite3_column_text16(this->stmt, column);
-    return text ? text : L"";
-}
-
-const bool Statement::IsNull(int column) {
+const bool Statement::IsNull(int column) noexcept {
     return sqlite3_column_type(this->stmt, column) == SQLITE_NULL;
 }

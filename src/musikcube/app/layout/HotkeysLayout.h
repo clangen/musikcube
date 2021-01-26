@@ -52,13 +52,13 @@ namespace musik {
 
                 ~HotkeysLayout();
 
-                virtual void SetShortcutsWindow(
-                    cursespp::ShortcutsWindow* shortcuts);
+                /* ITopLevelLayout */
+                void SetShortcutsWindow(
+                    cursespp::ShortcutsWindow* shortcuts) override;
 
-                virtual bool KeyPress(const std::string& kn);
-
-            protected:
-                virtual void OnLayout();
+                /* IWindow */
+                bool KeyPress(const std::string& kn) override;
+                void OnLayout() override;
 
             private:
                 void OnEntryActivated(cursespp::ListWindow* w, size_t index);

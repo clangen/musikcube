@@ -35,7 +35,7 @@
 #include "pch.hpp"
 #include <musikcore/support/Common.h>
 #include <musikcore/config.h>
-#include <utf8/utf8.h>
+
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -44,6 +44,10 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+
+#pragma warning(push, 0)
+#include <utf8/utf8.h>
+#pragma warning(pop)
 
 #ifdef WIN32
     #include <shellapi.h>
@@ -137,7 +141,8 @@ namespace musik { namespace core {
             #else
                 std::string pathToProc = u8fmt("/proc/%d/exe", (int) getpid());
                 readlink(pathToProc.c_str(), pathbuf, PATH_MAX);
-        #endif
+            #endif
+
             result.assign(pathbuf);
             size_t last = result.find_last_of("/");
             result = result.substr(0, last); /* remove filename component */
@@ -260,7 +265,7 @@ namespace musik { namespace core {
             }
 
             *target = (char*)malloc(sizeof(char) * (fileSize + (nullTerminate ? 1 : 0)));
-            size = fread(*target, sizeof(char), fileSize, file);
+            size = narrow_cast<int>(fread(*target, sizeof(char), fileSize, file));
 
             if (size == fileSize) {
                 if (nullTerminate) {

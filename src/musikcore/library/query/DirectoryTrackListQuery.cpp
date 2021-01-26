@@ -58,18 +58,14 @@ DirectoryTrackListQuery::DirectoryTrackListQuery(
     this->library = library;
     this->directory = directory;
     this->filter = filter;
-    this->result.reset(new musik::core::TrackList(library));
-    this->headers.reset(new std::set<size_t>());
+    this->result = std::make_shared<TrackList>(library);
+    this->headers = std::make_shared<std::set<size_t>>();
     this->hash = std::hash<std::string>()(directory + "-" + filter);
 }
 
-DirectoryTrackListQuery::~DirectoryTrackListQuery() {
-
-}
-
 bool DirectoryTrackListQuery::OnRun(Connection& db) {
-    result.reset(new musik::core::TrackList(this->library));
-    headers.reset(new std::set<size_t>());
+    this->result = std::make_shared<TrackList>(library);
+    this->headers = std::make_shared<std::set<size_t>>();
 
     std::string query =
         " SELECT t.id, al.name "
@@ -87,7 +83,7 @@ bool DirectoryTrackListQuery::OnRun(Connection& db) {
     std::string lastAlbum;
     size_t index = 0;
     while (select.Step() == db::Row) {
-        int64_t id = select.ColumnInt64(0);
+        const int64_t id = select.ColumnInt64(0);
         std::string album = select.ColumnText(1);
 
         if (!album.size()) {

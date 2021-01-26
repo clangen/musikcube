@@ -45,19 +45,23 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
+            DELETE_CLASS_DEFAULTS(NowPlayingTrackListQuery)
+
             NowPlayingTrackListQuery(
                 musik::core::ILibraryPtr library,
                 musik::core::audio::PlaybackService& playback);
 
-            virtual ~NowPlayingTrackListQuery();
+            /* IQuery */
+            std::string Name() override { return kQueryName; }
 
-            virtual std::string Name() { return kQueryName; }
-            virtual Result GetResult();
-            virtual Headers GetHeaders();
-            virtual size_t GetQueryHash();
+            /* TrackListQueryBase */
+            Result GetResult() noexcept override;
+            Headers GetHeaders() noexcept override;
+            size_t GetQueryHash() noexcept override;
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            /* QueryBase */
+            bool OnRun(musik::core::db::Connection &db) override;
 
         private:
             musik::core::ILibraryPtr library;

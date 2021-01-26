@@ -43,33 +43,33 @@ namespace musik { namespace core {
     class IndexerTrack: public Track {
         public:
             IndexerTrack(int64_t trackId);
-            virtual ~IndexerTrack(void);
+            virtual ~IndexerTrack();
 
             /* ITagStore */
-            virtual void SetValue(const char* metakey, const char* value);
-            virtual void ClearValue(const char* metakey);
-            virtual bool Contains(const char* metakey);
-            virtual void SetThumbnail(const char *data, long size);
-            virtual bool ContainsThumbnail();
-            virtual void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain);
+            void SetValue(const char* metakey, const char* value) override;
+            void ClearValue(const char* metakey) override;
+            bool Contains(const char* metakey) override;
+            void SetThumbnail(const char *data, long size) override;
+            bool ContainsThumbnail() override;
+            void SetReplayGain(const musik::core::sdk::ReplayGain& replayGain) override;
 
             /* ITrack */
-            virtual std::string GetString(const char* metakey);
-            virtual int GetString(const char* key, char* dst, int size);
-            virtual long long GetInt64(const char* key, long long defaultValue = 0LL);
-            virtual int GetInt32(const char* key, unsigned int defaultValue = 0);
-            virtual double GetDouble(const char* key, double defaultValue = 0.0f);
-            virtual std::string Uri();
-            virtual int Uri(char* dst, int size);
-            virtual musik::core::sdk::ReplayGain GetReplayGain();
-            virtual musik::core::sdk::MetadataState GetMetadataState();
+            std::string GetString(const char* metakey) override;
+            int GetString(const char* key, char* dst, int size) override;
+            long long GetInt64(const char* key, long long defaultValue = 0LL) override;
+            int GetInt32(const char* key, unsigned int defaultValue = 0) override;
+            double GetDouble(const char* key, double defaultValue = 0.0f) override;
+            std::string Uri() override;
+            int Uri(char* dst, int size) override;
+            musik::core::sdk::ReplayGain GetReplayGain() override;
+            musik::core::sdk::MetadataState GetMetadataState() override;
 
-            virtual MetadataIteratorRange GetValues(const char* metakey);
-            virtual MetadataIteratorRange GetAllValues();
-            virtual TrackPtr Copy();
-            virtual int64_t GetId();
-            virtual void SetId(int64_t trackId) { this->trackId = trackId; }
-            virtual void SetMetadataState(musik::core::sdk::MetadataState state);
+            MetadataIteratorRange GetValues(const char* metakey) override;
+            MetadataIteratorRange GetAllValues() override;
+            TrackPtr Copy() override;
+            int64_t GetId() override;
+            void SetId(int64_t trackId) noexcept override { this->trackId = trackId; }
+            void SetMetadataState(musik::core::sdk::MetadataState state)  override;
 
             bool NeedsToBeIndexed(
                 const boost::filesystem::path &file,

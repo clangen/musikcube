@@ -38,8 +38,10 @@
 #include "FfmpegDecoder.h"
 
 extern "C" {
+    #pragma warning(push, 0)
     #include <libavformat/avformat.h>
     #include <libavcodec/avcodec.h>
+    #pragma warning(pop)
 }
 
 #include <algorithm>

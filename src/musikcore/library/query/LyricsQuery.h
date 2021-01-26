@@ -42,21 +42,24 @@ namespace musik { namespace core { namespace library { namespace query {
         public:
             static const std::string kQueryName;
 
+            DELETE_CLASS_DEFAULTS(LyricsQuery)
+
             LyricsQuery(const std::string& trackExternalId);
-            virtual ~LyricsQuery();
+
+            std::string GetResult();
 
             /* IQuery */
-            std::string Name() { return kQueryName; }
-            virtual std::string GetResult();
+            std::string Name() override { return kQueryName; }
 
             /* ISerializableQuery */
-            virtual std::string SerializeQuery();
-            virtual std::string SerializeResult();
-            virtual void DeserializeResult(const std::string& data);
+            std::string SerializeQuery() override;
+            std::string SerializeResult() override;
+            void DeserializeResult(const std::string& data) override;
             static std::shared_ptr<LyricsQuery> DeserializeQuery(const std::string& data);
 
         protected:
-            virtual bool OnRun(musik::core::db::Connection &db);
+            /* QueryBase */
+            bool OnRun(musik::core::db::Connection &db) override;
 
             std::string trackExternalId;
             std::string result;

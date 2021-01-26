@@ -55,60 +55,65 @@ namespace cursespp {
             sigslot::signal1<FocusDirection> FocusWrapped;
 
             LayoutBase(IWindow* parent = NULL);
-            virtual ~LayoutBase();
+            ~LayoutBase() override;
 
             /* IWindow */
-            virtual void Show();
-            virtual void Hide();
-            virtual void Invalidate();
-            virtual void OnParentVisibilityChanged(bool visible);
-            virtual void OnChildVisibilityChanged(bool visible, IWindow* child);
-            virtual void Focus();
+            void Show() override;
+            void Hide() override;
+            void Invalidate() override;
+            void OnParentVisibilityChanged(bool visible) override;
+            void OnChildVisibilityChanged(bool visible, IWindow* child) override;
+            void Focus() override;
 
             /* IOrderable */
-            virtual void BringToTop();
-            virtual void SendToBottom();
+            void BringToTop() override;
+            void SendToBottom() override;
 
             /* ILayout */
-            virtual IWindowPtr FocusNext();
-            virtual IWindowPtr FocusPrev();
+            IWindowPtr FocusNext() override;
+            IWindowPtr FocusPrev() override;
 
-            virtual IWindowPtr GetFocus();
-            virtual bool SetFocus(IWindowPtr window);
+            IWindowPtr GetFocus() override;
+            bool SetFocus(IWindowPtr window) override;
 
-            virtual int GetFocusIndex();
-            virtual void SetFocusIndex(int index, bool applyFocus = true);
+            int GetFocusIndex() override;
+            void SetFocusIndex(int index, bool applyFocus = true) override;
 
-            virtual int GetFocusableCount();
-            virtual IWindowPtr GetFocusableAt(int index);
+            int GetFocusableCount() override;
+            IWindowPtr GetFocusableAt(int index) override;
 
-            virtual FocusMode GetFocusMode() const;
-            virtual void SetFocusMode(FocusMode mode);
+            FocusMode GetFocusMode() const override;
+            void SetFocusMode(FocusMode mode) override;
 
-            virtual IWindowPtr FocusFirst();
-            virtual IWindowPtr FocusLast();
+            IWindowPtr FocusFirst() override;
+            IWindowPtr FocusLast() override;
 
-            virtual void Layout();
+            void OnVisibilityChanged(bool visible) override;
+
+            void Layout() override;
 
             /* IKeyHandler */
-            virtual bool KeyPress(const std::string& key);
+            bool KeyPress(const std::string& key) override;
 
             /* IMouseHandler */
-            virtual bool MouseEvent(const IMouseHandler::Event& mouseEvent);
+            bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
             /* IWindowGroup */
-            virtual bool AddWindow(IWindowPtr window);
-            virtual bool RemoveWindow(IWindowPtr window);
-            virtual size_t GetWindowCount();
-            virtual IWindowPtr GetWindowAt(size_t position);
+            bool AddWindow(IWindowPtr window) override;
+            bool RemoveWindow(IWindowPtr window) override;
+            size_t GetWindowCount() override;
+            IWindowPtr GetWindowAt(size_t position) override;
+
+            /* virtual methods we define */
+            virtual void OnLayout();
 
         protected:
-            virtual void OnVisibilityChanged(bool visible);
-            virtual void OnLayout();
-            virtual IWindowPtr EnsureValidFocusFromNext();
-            virtual IWindowPtr EnsureValidFocusFromPrev();
 
             IWindowPtr EnsureValidFocus();
+
+            /* virtual methods we define */
+            virtual IWindowPtr EnsureValidFocusFromNext();
+            virtual IWindowPtr EnsureValidFocusFromPrev();
 
         private:
             void AddFocusable(IWindowPtr window);

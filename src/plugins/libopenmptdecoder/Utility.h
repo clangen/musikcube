@@ -35,8 +35,12 @@
 #pragma once
 
 #include <string>
-#include <libopenmpt/libopenmpt.h>
+
 #include <musikcore/sdk/ISchema.h>
+
+#pragma warning(push, 0)
+#include <libopenmpt/libopenmpt.h>
+#pragma warning(pop)
 
 static const std::string PLUGIN_NAME = "libopenmpt";
 static const std::string EXTERNAL_ID_PREFIX = "libopenmpt";

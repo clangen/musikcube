@@ -66,7 +66,7 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-static size_t MAX_CATEGORY_WIDTH = 40;
+static int MAX_CATEGORY_WIDTH = 40;
 static int MIN_LIST_TITLE_HEIGHT = 26;
 
 #define DEFAULT_CATEGORY constants::Track::ARTIST
@@ -127,10 +127,10 @@ BrowseLayout::~BrowseLayout() {
 }
 
 void BrowseLayout::OnLayout() {
-    size_t cx = this->GetWidth(), cy = this->GetHeight();
-    size_t x = 0, y = 0;
+    int cx = this->GetWidth(), cy = this->GetHeight();
+    int x = 0, y = 0;
 
-    size_t categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
+    int categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
 
     this->categoryList->MoveAndResize(x, y, categoryWidth, cy);
 

@@ -45,9 +45,9 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <string>
 
 #include <sigslot/sigslot.h>
-#include <string>
 
 namespace musik { namespace core { namespace library {
 

@@ -32,15 +32,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 
 #include "HttpDataStreamFactory.h"
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>
 
+#pragma warning(push, 0)
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/detail/utf8_codecvt_facet.hpp>
+#pragma warning(pop)
 
 #ifdef WIN32
     BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {

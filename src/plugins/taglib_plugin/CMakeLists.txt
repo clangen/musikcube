@@ -1,5 +1,4 @@
 set (taglibreader_SOURCES
-  stdafx.cpp
   taglib_plugin.cpp
   TaglibMetadataReader.cpp
 )

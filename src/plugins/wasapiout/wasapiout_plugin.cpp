@@ -32,8 +32,6 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.h"
-
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>
 #include <musikcore/sdk/IPreferences.h>

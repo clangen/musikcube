@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include "stdafx.h"
+#include "config.h"
 #include <mutex>
 
 class RingBuffer {

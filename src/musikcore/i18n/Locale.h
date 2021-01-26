@@ -37,8 +37,11 @@
 #include <musikcore/config.h>
 #include <musikcore/support/Preferences.h>
 #include <unordered_map>
+
+#pragma warning(push, 0)
 #include <sigslot/sigslot.h>
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 namespace musik { namespace core { namespace i18n {
 
@@ -65,7 +68,9 @@ namespace musik { namespace core { namespace i18n {
             int Dimension(const char* key, int defaultValue);
 
         private:
-            Locale();
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Locale)
+
+            Locale() noexcept;
 
             std::vector<std::string> locales;
             std::shared_ptr<musik::core::Preferences> prefs;

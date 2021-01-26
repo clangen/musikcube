@@ -41,12 +41,11 @@ namespace cursespp {
     class MultiLineEntry : public IScrollAdapter::IEntry {
         public:
             MultiLineEntry(const std::string& value, Color attrs = Color::Default);
-            virtual ~MultiLineEntry() { }
 
-            virtual size_t GetLineCount();
-            virtual std::string GetLine(size_t line);
-            virtual void SetWidth(size_t width);
-            virtual Color GetAttrs(size_t line);
+            size_t GetLineCount() override;
+            std::string GetLine(size_t line) override;
+            void SetWidth(size_t width) override;
+            Color GetAttrs(size_t line) override;
 
         private:
             std::string value;

@@ -38,9 +38,13 @@
 #include "Constants.h"
 #include "Util.h"
 #include <musikcore/sdk/IBlockingEncoder.h>
-#include <boost/filesystem.hpp>
+
 #include <thread>
 #include <set>
+
+#pragma warning(push, 0)
+#include <boost/filesystem.hpp>
+#pragma warning(pop)
 
 using namespace musik::core::sdk;
 using namespace boost::filesystem;

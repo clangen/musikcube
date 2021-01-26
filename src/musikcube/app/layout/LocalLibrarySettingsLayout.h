@@ -44,16 +44,14 @@ namespace musik { namespace cube {
     class LocalLibrarySettingsLayout: public cursespp::LayoutBase {
         public:
             LocalLibrarySettingsLayout();
-
             virtual ~LocalLibrarySettingsLayout();
-
-            virtual bool KeyPress(const std::string& key);
 
             void ToggleShowDotFiles();
             void LoadPreferences();
 
-        protected:
-            virtual void OnLayout();
+            /* IWindow */
+            bool KeyPress(const std::string& key) override;
+            void OnLayout() override;
 
         private:
             void InitializeWindows();

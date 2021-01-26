@@ -43,12 +43,12 @@ namespace musik { namespace core { namespace db {
 
     class ScopedTransaction {
         public:
-            ScopedTransaction(Connection &connection);
-            ScopedTransaction(const ScopedTransaction&) = delete;
+            DELETE_CLASS_DEFAULTS(ScopedTransaction)
 
+            ScopedTransaction(Connection &connection);
             ~ScopedTransaction();
 
-            void Cancel();
+            void Cancel() noexcept;
             void CommitAndRestart();
 
         private:

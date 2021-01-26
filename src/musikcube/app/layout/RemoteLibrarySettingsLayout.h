@@ -51,8 +51,8 @@ namespace musik { namespace cube {
             void LoadPreferences();
             void SavePreferences();
 
-        protected:
-            virtual void OnLayout();
+            /* IWindow */
+            void OnLayout() override;
 
         private:
             void InitializeWindows();

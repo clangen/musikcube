@@ -37,9 +37,6 @@
 #include <musikcore/sdk/IDecoder.h>
 #include "CddaDataStream.h"
 
-#include "ntddcdrm.h"
-#include "devioctl.h"
-
 using namespace musik::core::sdk;
 
 class CddaDecoder : public IDecoder {
@@ -47,12 +44,12 @@ class CddaDecoder : public IDecoder {
         CddaDecoder();
         ~CddaDecoder();
 
-        virtual bool Open(IDataStream* data) override;
-        virtual void Release() override;
-        virtual double SetPosition(double seconds) override;
-        virtual double GetDuration() override;
-        virtual bool GetBuffer(IBuffer *buffer) override;
-        virtual bool Exhausted() override { return this->exhausted; }
+        bool Open(IDataStream* data) override;
+        void Release() override;
+        double SetPosition(double seconds) override;
+        double GetDuration() override;
+        bool GetBuffer(IBuffer *buffer) override;
+        bool Exhausted() noexcept override { return this->exhausted; }
 
     private:
         CddaDataStream* data;

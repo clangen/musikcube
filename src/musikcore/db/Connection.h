@@ -55,25 +55,26 @@ namespace musik { namespace core { namespace db {
 
     class Connection {
         public:
-            Connection();
-            Connection(const Connection&) = delete;
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(Connection)
+
+            Connection() noexcept;
             ~Connection();
 
             int Open(const std::string &database, unsigned int options = 0, unsigned int cache = 0);
-            int Close();
+            int Close() noexcept;
             int Execute(const char* sql);
 
-            int64_t LastInsertedId();
+            int64_t LastInsertedId() noexcept;
 
-            int LastModifiedRowCount();
+            int LastModifiedRowCount() noexcept;
 
             void Interrupt();
-            void Checkpoint();
+            void Checkpoint() noexcept;
 
         private:
             void Initialize(unsigned int cache);
             void UpdateReferenceCount(bool init);
-            int StepStatement(sqlite3_stmt *stmt);
+            int StepStatement(sqlite3_stmt *stmt) noexcept;
 
             friend class Statement;
             friend class ScopedTransaction;

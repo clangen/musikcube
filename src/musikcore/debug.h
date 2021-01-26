@@ -84,13 +84,13 @@ namespace musik {
             static void Start(std::vector<IBackend*> backends = { new SimpleFileBackend() });
             static void Stop();
 
-            static void verbose(const std::string& tag, const std::string& string);
-            static void v(const std::string& tag, const std::string& string);
-            static void info(const std::string& tag, const std::string& string);
-            static void i(const std::string& tag, const std::string& string);
-            static void warning(const std::string& tag, const std::string& string);
-            static void w(const std::string& tag, const std::string& string);
-            static void error(const std::string& tag, const std::string& string);
-            static void e(const std::string& tag, const std::string& string);
+            static void verbose(const std::string& tag, const std::string& string) noexcept;
+            static void v(const std::string& tag, const std::string& string) noexcept;
+            static void info(const std::string& tag, const std::string& string) noexcept;
+            static void i(const std::string& tag, const std::string& string) noexcept;
+            static void warning(const std::string& tag, const std::string& string) noexcept;
+            static void w(const std::string& tag, const std::string& string) noexcept;
+            static void error(const std::string& tag, const std::string& string) noexcept;
+            static void e(const std::string& tag, const std::string& string) noexcept;
     };
 }

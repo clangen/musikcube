@@ -43,7 +43,7 @@ using namespace musik::core::runtime;
 
 using LockT = std::unique_lock<std::mutex>;
 
-MessageQueue::MessageQueue() {
+MessageQueue::MessageQueue() noexcept {
     this->nextMessageTime.store(1);
 }
 
@@ -57,7 +57,7 @@ void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
                 system_clock::now().time_since_epoch());
 
             if (timeoutMillis >= 0) {
-                auto timeoutDuration = milliseconds(timeoutMillis);
+                const auto timeoutDuration = milliseconds(timeoutMillis);
                 if (waitTime > timeoutDuration) {
                     waitTime = timeoutDuration;
                 }
@@ -80,15 +80,11 @@ void MessageQueue::WaitAndDispatch(int64_t timeoutMillis) {
     this->Dispatch();
 }
 
-MessageQueue::~MessageQueue() {
-
-}
-
 void MessageQueue::Dispatch() {
-    milliseconds now = duration_cast<milliseconds>(
+    const milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
-    int64_t nextTime = nextMessageTime.load();
+    const int64_t nextTime = nextMessageTime.load();
 
     if (nextTime > now.count() || nextTime < 0) {
         return; /* short circuit before any iteration. */
@@ -131,7 +127,7 @@ void MessageQueue::Dispatch() {
 
     Iterator it = this->dispatch.begin();
     while (it != this->dispatch.end()) {
-        this->Dispatch((*it)->message);
+        this->Dispatch((*it)->message.get());
         delete *it;
         it++;
     }
@@ -246,7 +242,7 @@ void MessageQueue::Post(IMessagePtr message, int64_t delayMs) {
 void MessageQueue::Enqueue(IMessagePtr message, int64_t delayMs) {
     delayMs = std::max((int64_t) 0, delayMs);
 
-    milliseconds now = duration_cast<milliseconds>(
+    const milliseconds now = duration_cast<milliseconds>(
         system_clock::now().time_since_epoch());
 
     EnqueuedMessage *m = new EnqueuedMessage();
@@ -286,7 +282,7 @@ void MessageQueue::Debounce(IMessagePtr message, int64_t delayMs) {
     Post(message, delayMs);
 }
 
-void MessageQueue::Dispatch(IMessagePtr message) {
+void MessageQueue::Dispatch(IMessage* message) {
     if (message->Target()) {
         message->Target()->ProcessMessage(*message);
     }

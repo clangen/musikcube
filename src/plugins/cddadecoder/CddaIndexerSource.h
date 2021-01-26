@@ -47,27 +47,27 @@ class CddaIndexerSource :
         ~CddaIndexerSource();
 
         /* IIndexerSource */
-        virtual void Release();
-        virtual void OnBeforeScan();
-        virtual void OnAfterScan();
-        virtual int SourceId();
+        void Release() override;
+        void OnBeforeScan() override;
+        void OnAfterScan() override;
+        int SourceId() override;
 
-        virtual musik::core::sdk::ScanResult Scan(
+        musik::core::sdk::ScanResult Scan(
             musik::core::sdk::IIndexerWriter* indexer,
             const char** indexerPaths,
-            unsigned indexerPathsCount);
+            unsigned indexerPathsCount) override;
 
-        virtual void ScanTrack(
+        void ScanTrack(
             musik::core::sdk::IIndexerWriter* indexer,
             musik::core::sdk::ITagStore* tagStore,
-            const char* externalId);
+            const char* externalId) override;
 
-        virtual void Interrupt();
-        virtual bool HasStableIds() { return true; }
-        virtual bool NeedsTrackScan() { return true; }
+        void Interrupt() override;
+        bool HasStableIds() noexcept override { return true; }
+        bool NeedsTrackScan() noexcept override { return true; }
 
         /* CddaDataModel::EventListener */
-        virtual void OnAudioDiscInsertedOrRemoved();
+        void OnAudioDiscInsertedOrRemoved() override;
 
     private:
         void RefreshModel();

@@ -51,6 +51,8 @@ namespace musik { namespace core { namespace io {
         private:
             typedef std::vector<std::shared_ptr<musik::core::sdk::IDataStreamFactory> > DataStreamFactoryVector;
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(DataStreamFactory)
+
             DataStreamFactory();
             static DataStreamFactory* Instance();
 

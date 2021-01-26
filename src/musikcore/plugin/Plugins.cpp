@@ -55,6 +55,7 @@
 #include <musikcore/sdk/IIndexerNotifier.h>
 #include <musikcore/sdk/IEnvironment.h>
 
+using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library::query;
@@ -71,7 +72,7 @@ static const std::string SUPEREQ_PLUGIN_GUID = "6f0ed53b-0f13-4220-9b0a-ca496b64
 
 static IMessageQueue* messageQueue = nullptr;
 static ILibraryPtr defaultLibrary;
-static IPlaybackService* playback = nullptr;
+static IPlaybackService* playbackService = nullptr;
 static LocalMetadataProxy* metadataProxy = nullptr;
 static std::shared_ptr<Preferences> playbackPrefs;
 
@@ -192,8 +193,8 @@ static class Environment: public IEnvironment {
                 std::string currentDeviceId = currentDevice ? currentDevice->Id() : "";
                 if (newName != currentName || newDeviceId != currentDeviceId) {
                     outputs::SelectOutput(output);
-                    if (::playback) {
-                        playback->ReloadOutput();
+                    if (::playbackService) {
+                        playbackService->ReloadOutput();
                     }
                 }
                 saveEnvironment();
@@ -213,8 +214,8 @@ static class Environment: public IEnvironment {
                 auto currentType = GetTransportType();
                 if (currentType != type) {
                     ::playbackPrefs->SetInt(prefs::keys::Transport.c_str(), (int) type);
-                    if (::playback) {
-                        ::playback->ReloadOutput();
+                    if (::playbackService) {
+                        ::playbackService->ReloadOutput();
                     }
                     saveEnvironment();
                 }
@@ -339,8 +340,8 @@ static class Environment: public IEnvironment {
         }
 
         virtual void ReloadPlaybackOutput() override {
-            if (playback) {
-                playback->ReloadOutput();
+            if (playbackService) {
+                playbackService->ReloadOutput();
             }
         }
 
@@ -352,7 +353,7 @@ static class Environment: public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void Init(IMessageQueue* messageQueue, IPlaybackService* playback, ILibraryPtr library) {
+    void Init(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
         /* preferences */
         Preferences::LoadPluginPreferences();
 
@@ -367,7 +368,7 @@ namespace musik { namespace core { namespace plugin {
         delete metadataProxy;
         ::messageQueue = messageQueue;
         ::defaultLibrary = library;
-        ::playback = playback;
+        ::playbackService = playbackService;
         ::playbackPrefs = Preferences::ForComponent(prefs::components::Playback);
 
         /* even if the local client is connected to a remote server, the metadata proxy
@@ -417,7 +418,7 @@ namespace musik { namespace core { namespace plugin {
         ::messageQueue = nullptr;
         ::metadataProxy = nullptr;
         ::defaultLibrary.reset();
-        ::playback = nullptr;
+        ::playbackService = nullptr;
         ::playbackPrefs.reset();
 
         /* indexer */

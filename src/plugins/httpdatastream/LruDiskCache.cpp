@@ -32,14 +32,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "stdafx.h"
+#include "config.h"
 
 #include "LruDiskCache.h"
 
 #include <algorithm>
 
+#pragma warning(push, 0)
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#pragma warning(pop)
 
 const std::string PREFIX = "musikcube";
 const std::string TEMP_EXTENSION = ".tmp";

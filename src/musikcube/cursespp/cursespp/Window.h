@@ -63,77 +63,77 @@ namespace cursespp {
             Window(const Window& other) = delete;
             Window& operator=(const Window& other) = delete;
 
-            virtual void SetParent(IWindow* parent);
-
-            virtual void Show();
-            virtual void Hide();
-            virtual void Redraw();
-            virtual void Invalidate();
-
-            virtual void SetFrameVisible(bool visible);
-            virtual bool IsFrameVisible();
-
-            virtual void Focus();
-            virtual void Blur();
-
-            virtual void SetContentColor(Color color);
-            virtual void SetFrameColor(Color color);
-            virtual void SetFocusedContentColor(Color color);
-            virtual void SetFocusedFrameColor(Color color);
-
-            virtual Color GetContentColor() { return this->contentColor; }
-            virtual Color GetFrameColor() { return this->frameColor; }
-            virtual Color GetFocusedContentColor() { return this->focusedContentColor; }
-            virtual Color GetFocusedFrameColor() { return this->focusedFrameColor; }
-
-            virtual void SetSize(int width, int height);
-            virtual void SetPosition(int x, int y);
-            virtual void MoveAndResize(int x, int y, int width, int height);
-
-            virtual int GetWidth() const;
-            virtual int GetHeight() const;
-            virtual int GetContentHeight() const;
-            virtual int GetContentWidth() const;
-            virtual int GetX() const;
-            virtual int GetY() const;
-            virtual int GetAbsoluteX() const;
-            virtual int GetAbsoluteY() const;
-            virtual int GetId() const;
-
-            virtual void SetFrameTitle(const std::string& title);
-            virtual std::string GetFrameTitle() const;
-
-            virtual void BringToTop();
-            virtual void SendToBottom();
-
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-
-            virtual WINDOW* GetFrame() const;
-            virtual WINDOW* GetContent() const;
-
-            virtual int GetFocusOrder();
-            virtual void SetFocusOrder(int order = -1);
-
-            virtual bool IsVisible();
-            virtual bool IsFocused();
-            virtual bool IsTop();
-
-            virtual IWindow* GetParent() const;
-            virtual void OnParentVisibilityChanged(bool visible);
-            virtual void OnChildVisibilityChanged(bool visible, IWindow* child);
-
-            bool HasBadBounds() { return this->badBounds; }
-
-            bool MouseEvent(const IMouseHandler::Event& mouseEvent);
-
             static bool WriteToScreen(IInput* input);
             static void InvalidateScreen();
             static void Freeze();
             static void Unfreeze();
-
             static void SetNavigationKeys(std::shared_ptr<INavigationKeys> keys);
-
             static musik::core::runtime::IMessageQueue& MessageQueue();
+
+            /* IWindow */
+            void SetParent(IWindow* parent) override;
+
+            void Show() override;
+            void Hide() override;
+            void Redraw() override;
+            void Invalidate() override;
+
+            void SetFrameVisible(bool visible) override;
+            bool IsFrameVisible() override;
+
+            void Focus() override;
+            void Blur() override;
+
+            void SetContentColor(Color color) override;
+            void SetFrameColor(Color color) override;
+            void SetFocusedContentColor(Color color) override;
+            void SetFocusedFrameColor(Color color) override;
+
+            Color GetContentColor() override { return this->contentColor; }
+            Color GetFrameColor() override { return this->frameColor; }
+            Color GetFocusedContentColor() override { return this->focusedContentColor; }
+            Color GetFocusedFrameColor() override { return this->focusedFrameColor; }
+
+            void SetSize(int width, int height) override;
+            void SetPosition(int x, int y) override;
+            void MoveAndResize(int x, int y, int width, int height) override;
+
+            int GetWidth() const override;
+            int GetHeight() const override;
+            int GetContentHeight() const override;
+            int GetContentWidth() const override;
+            int GetX() const override;
+            int GetY() const override;
+            int GetAbsoluteX() const override;
+            int GetAbsoluteY() const override;
+            int GetId() const override;
+
+            void SetFrameTitle(const std::string& title) override;
+            std::string GetFrameTitle() const override;
+
+            void BringToTop() override;
+            void SendToBottom() override;
+
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
+
+            WINDOW* GetFrame() const override;
+            WINDOW* GetContent() const override;
+
+            int GetFocusOrder() override;
+            void SetFocusOrder(int order = -1) override;
+
+            bool IsVisible() override;
+            bool IsFocused() override;
+            bool IsTop() override;
+
+            IWindow* GetParent() const override;
+            void OnParentVisibilityChanged(bool visible) override;
+            void OnChildVisibilityChanged(bool visible, IWindow* child) override;
+
+            bool HasBadBounds() { return this->badBounds; }
+
+            /* IMouseHandler */
+            bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
         protected:
 
@@ -145,10 +145,6 @@ namespace cursespp {
 
             static INavigationKeys& NavigationKeys();
 
-            virtual void Create();
-            virtual void Destroy();
-            virtual void DecorateFrame();
-
             void Recreate();
             void Clear();
             void DrawFrameAndTitle();
@@ -159,6 +155,9 @@ namespace cursespp {
 
             bool CheckForBoundsError();
 
+            virtual void Create();
+            virtual void Destroy();
+            virtual void DecorateFrame();
             virtual void OnDimensionsChanged();
             virtual void OnVisibilityChanged(bool visible);
             virtual void OnFocusChanged(bool focused);

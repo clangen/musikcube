@@ -31,9 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////////////
-#pragma once
 
-#include "pch.h"
+#pragma once
 
 #include <deque>
 #include <memory>

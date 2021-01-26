@@ -40,7 +40,9 @@
 #include <musikcore/support/Messages.h>
 #include <musikcore/runtime/Message.h>
 
+#pragma warning(push, 0)
 #include <nlohmann/json.hpp>
+#pragma warning(pop)
 
 using namespace musik::core;
 using namespace musik::core::db;
@@ -55,12 +57,9 @@ static std::string DELETE_PLAYLIST_TRACKS_QUERY =
 static std::string DELETE_PLAYLIST_QUERY =
     "DELETE FROM playlists WHERE id=?;";
 
-DeletePlaylistQuery::DeletePlaylistQuery(musik::core::ILibraryPtr library, int64_t playlistId) {
+DeletePlaylistQuery::DeletePlaylistQuery(musik::core::ILibraryPtr library, int64_t playlistId) noexcept {
     this->library = library;
     this->playlistId = playlistId;
-}
-
-DeletePlaylistQuery::~DeletePlaylistQuery() {
 }
 
 bool DeletePlaylistQuery::OnRun(musik::core::db::Connection &db) {

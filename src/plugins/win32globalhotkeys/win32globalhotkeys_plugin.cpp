@@ -32,7 +32,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////
 
-#include "pch.h"
+#include "config.h"
 
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>
