@@ -184,7 +184,7 @@ void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuer
         std::string album = trackQuery.ColumnText(2);
 
         if (this->parseHeaders && album != lastAlbum) {
-            if (!headers->empty()) {
+            if (!headers->empty()) { /* @copypaste */
                 (*durations)[lastHeaderIndex] = runningDuration;
                 lastHeaderIndex = index;
                 runningDuration = 0;

@@ -60,15 +60,17 @@ DirectoryTrackListQuery::DirectoryTrackListQuery(
     this->filter = filter;
     this->result = std::make_shared<TrackList>(library);
     this->headers = std::make_shared<std::set<size_t>>();
+    this->durations = std::make_shared<std::map<size_t, size_t>>();
     this->hash = std::hash<std::string>()(directory + "-" + filter);
 }
 
 bool DirectoryTrackListQuery::OnRun(Connection& db) {
     this->result = std::make_shared<TrackList>(library);
     this->headers = std::make_shared<std::set<size_t>>();
+    this->durations = std::make_shared<std::map<size_t, size_t>>();
 
     std::string query =
-        " SELECT t.id, al.name "
+        " SELECT t.id, t.duration, al.name "
         " FROM tracks t, albums al, artists ar, genres gn "
         " WHERE t.visible=1 AND directory_id IN ("
         "   SELECT id FROM directories WHERE name LIKE ?)"
@@ -81,22 +83,34 @@ bool DirectoryTrackListQuery::OnRun(Connection& db) {
     select.BindText(0, this->directory + "%");
 
     std::string lastAlbum;
+    size_t lastHeaderIndex = 0;
+    size_t runningDuration = 0;
     size_t index = 0;
     while (select.Step() == db::Row) {
         const int64_t id = select.ColumnInt64(0);
-        std::string album = select.ColumnText(1);
+        runningDuration += select.ColumnInt32(1);
+        std::string album = select.ColumnText(2);
 
         if (!album.size()) {
             album = _TSTR("tracklist_unknown_album");
         }
 
         if (album != lastAlbum) {
+            if (!headers->empty()) { /* @copypaste */
+                (*durations)[lastHeaderIndex] = runningDuration;
+                lastHeaderIndex = index;
+                runningDuration = 0;
+            }
             headers->insert(index);
             lastAlbum = album;
         }
 
         result->Add(id);
         ++index;
+    }
+
+    if (!headers->empty()) {
+        (*durations)[lastHeaderIndex] = runningDuration;
     }
 
     return true;

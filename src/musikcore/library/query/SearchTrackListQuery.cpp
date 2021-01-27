@@ -171,7 +171,7 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
         }
 
         if (this->parseHeaders && album != lastAlbum) {
-            if (!headers->empty()) {
+            if (!headers->empty()) { /* @copypaste */
                 (*durations)[lastHeaderIndex] = runningDuration;
                 lastHeaderIndex = index;
                 runningDuration = 0;
