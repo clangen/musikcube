@@ -35,20 +35,14 @@
 #include "pch.hpp"
 #include "Duration.h"
 #include "NarrowCast.h"
+#include "utfutil.h"
 #include <cmath>
 
 template <typename N>
 static std::string formatDuration(N seconds) {
     N mins = (seconds / 60);
     N secs = seconds - (mins * 60);
-    char buffer[128];
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "%d:%02d",
-        narrow_cast<int>(mins),
-        narrow_cast<int>(secs));
-    return std::string(buffer);
+    return u8fmt("%d:%02d", narrow_cast<int>(mins), narrow_cast<int>(secs));
 }
 
 template <typename N>
@@ -57,15 +51,7 @@ static std::string formatDurationWithHours(N seconds) {
     seconds -= hours * 3600;
     N mins = (seconds / 60);
     N secs = seconds - (mins * 60);
-    char buffer[128];
-    snprintf(
-        buffer,
-        sizeof(buffer),
-        "%d:%02d:%02d",
-        narrow_cast<int>(hours),
-        narrow_cast<int>(mins),
-        narrow_cast<int>(secs));
-    return std::string(buffer);
+    return u8fmt("%d:%02d:%02d", narrow_cast<int>(hours), narrow_cast<int>(mins), narrow_cast<int>(secs));
 }
 
 namespace musik { namespace core { namespace duration {
