@@ -145,7 +145,7 @@ void NowPlayingLayout::OnVisibilityChanged(bool visible) {
         this->RequeryTrackList();
     }
     else {
-        this->trackListView->Clear();
+        this->trackListView->Reset();
     }
 }
 

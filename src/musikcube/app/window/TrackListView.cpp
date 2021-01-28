@@ -74,7 +74,7 @@ we assume he's not paying attention, and will automatically scroll
 the view to the playing track if it's invisible. */
 static const milliseconds AUTO_SCROLL_COOLDOWN = milliseconds(60000LL);
 
-static inline milliseconds now() {
+static inline milliseconds now() noexcept {
     return duration_cast<milliseconds>(system_clock::now().time_since_epoch());
 }
 
@@ -87,18 +87,13 @@ TrackListView::TrackListView(
     this->library = library;
     this->library->QueryCompleted.connect(this, &TrackListView::OnQueryCompleted);
     this->playback.TrackChanged.connect(this, &TrackListView::OnTrackChanged);
-    this->adapter = new Adapter(*this);
+    this->adapter = std::make_unique<Adapter>(*this);
     this->lastQueryHash = 0;
     this->lastChanged = now();
     this->decorator = decorator;
     this->trackNumType = TrackRowRenderers::TrackNumType::Metadata;
     this->renderer = TrackRowRenderers::Get(TrackRowRenderers::Type::AlbumSort);
     this->playing = playback.GetPlaying();
-}
-
-TrackListView::~TrackListView() {
-    delete this->adapter;
-    this->adapter = nullptr;
 }
 
 void TrackListView::Requery(std::shared_ptr<TrackListQueryBase> query) {
@@ -158,7 +153,7 @@ void TrackListView::OnQueryCompleted(IQuery* query) {
     }
 }
 
-std::shared_ptr<TrackList> TrackListView::GetTrackList() {
+std::shared_ptr<TrackList> TrackListView::GetTrackList() noexcept {
     return this->tracks;
 }
 
@@ -173,9 +168,9 @@ void TrackListView::SetTrackList(std::shared_ptr<TrackList> trackList) {
     this->OnAdapterChanged();
 }
 
-void TrackListView::Clear() {
+void TrackListView::Reset() {
     this->query.reset();
-    this->tracks.reset(new TrackList(this->library));
+    this->tracks = std::make_shared<TrackList>(this->library);
     this->headers.Reset();
     this->OnAdapterChanged();
 }
@@ -186,15 +181,15 @@ void TrackListView::InvalidateData() {
 }
 
 TrackPtr TrackListView::GetSelectedTrack() {
-    auto i = this->GetSelectedTrackIndex();
+    const auto i = this->GetSelectedTrackIndex();
     return (i == ListWindow::NO_SELECTION) ? TrackPtr() : this->tracks->Get(i);
 }
 
 size_t TrackListView::GetSelectedTrackIndex() {
-    auto i = this->GetSelectedIndex();
+    const auto i = this->GetSelectedIndex();
     if (i != ListWindow::NO_SELECTION) {
         auto entry = adapter->GetEntry(this, i);
-        return static_cast<TrackListEntry*>(entry.get())->GetIndex();
+        return dynamic_cast<TrackListEntry*>(entry.get())->GetIndex();
     }
     return ListWindow::NO_SELECTION;
 }
@@ -203,7 +198,7 @@ size_t TrackListView::TrackIndexToAdapterIndex(size_t index) {
     return this->headers.TrackListToAdapterIndex(index);
 }
 
-size_t TrackListView::TrackCount() {
+size_t TrackListView::TrackCount() noexcept {
     return this->tracks ? this->tracks->Count() : 0;
 }
 
@@ -213,10 +208,10 @@ size_t TrackListView::EntryCount() {
 
 void TrackListView::ScrollToPlaying() {
     if (this->playing && this->tracks) {
-        int64_t id = this->playing->GetId();
+        const int64_t id = this->playing->GetId();
         for (size_t i = 0; i < this->tracks->Count(); i++) {
             if (this->tracks->GetId(i) == id) {
-                size_t rawIndex = headers.TrackListToAdapterIndex(i);
+                const size_t rawIndex = headers.TrackListToAdapterIndex(i);
                 this->SetSelectedIndex(rawIndex);
 
                 if (!this->IsEntryVisible(rawIndex)) {
@@ -254,7 +249,7 @@ void TrackListView::ProcessMessage(IMessage &message) {
 }
 
 void TrackListView::AdjustTrackListCacheWindowSize() {
-    auto height = this->GetHeight();
+    const auto height = this->GetHeight();
     if (tracks && height > 0) {
         tracks->SetCacheWindowSize(this->GetHeight());
     }
@@ -331,7 +326,7 @@ bool TrackListView::KeyPress(const std::string& key) {
         handled = true;
     }
     else if (Hotkeys::Is(Hotkeys::TrackListNextGroup, key)) {
-        size_t next = this->headers.NextHeaderIndex(this->GetSelectedIndex());
+        const size_t next = this->headers.NextHeaderIndex(this->GetSelectedIndex());
         if (next != HeaderCalculator::NO_INDEX) {
             this->SetSelectedIndex(next);
             if (!IsEntryVisible(next)) {
@@ -341,7 +336,7 @@ bool TrackListView::KeyPress(const std::string& key) {
         handled = true;
     }
     else if (Hotkeys::Is(Hotkeys::TrackListPreviousGroup, key)) {
-        size_t prev = this->headers.PrevHeaderIndex(this->GetSelectedIndex());
+        const size_t prev = this->headers.PrevHeaderIndex(this->GetSelectedIndex());
         if (prev != HeaderCalculator::NO_INDEX) {
             this->SetSelectedIndex(prev);
             if (!IsEntryVisible(prev)) {
@@ -379,7 +374,7 @@ void TrackListView::OnTrackChanged(size_t index, musik::core::TrackPtr track) {
     }
 }
 
-IScrollAdapter& TrackListView::GetScrollAdapter() {
+IScrollAdapter& TrackListView::GetScrollAdapter() noexcept {
     return *this->adapter;
 }
 
@@ -403,7 +398,7 @@ void TrackListView::HeaderCalculator::Set(Headers rawOffsets, Durations duration
     }
 }
 
-void TrackListView::HeaderCalculator::Reset() {
+void TrackListView::HeaderCalculator::Reset() noexcept {
     this->absoluteOffsets.reset();
     this->rawOffsets.reset();
 }
@@ -415,7 +410,7 @@ size_t TrackListView::HeaderCalculator::AdapterToTrackListIndex(size_t index) {
 size_t TrackListView::HeaderCalculator::DurationFromAdapterIndex(size_t index) {
     /* ugh, HeaderCalculator should probably be re-thought, but this is especially ugly */
     const auto adjustedIndex = this->ApplyHeaderOffset(index + 1, this->absoluteOffsets, -1);
-    auto it = this->durations->find(adjustedIndex);
+    const auto it = this->durations->find(adjustedIndex);
     if (it != this->durations->end()) {
         return it->second;
     }
@@ -441,7 +436,7 @@ size_t TrackListView::HeaderCalculator::ApplyHeaderOffset(size_t index, Headers 
     return result;
 }
 
-size_t TrackListView::HeaderCalculator::Count() {
+size_t TrackListView::HeaderCalculator::Count() noexcept {
     return this->absoluteOffsets ? this->absoluteOffsets->size() : 0;
 }
 
@@ -450,7 +445,7 @@ bool TrackListView::HeaderCalculator::HeaderAt(size_t index) {
         this->absoluteOffsets->find(index) != this->absoluteOffsets->end();
 }
 
-size_t TrackListView::HeaderCalculator::NextHeaderIndex(size_t selectedIndex) {
+size_t TrackListView::HeaderCalculator::NextHeaderIndex(size_t selectedIndex) noexcept {
     size_t result = NO_INDEX;
     if (this->absoluteOffsets) {
         for (auto val : (*this->absoluteOffsets)) {
@@ -463,7 +458,7 @@ size_t TrackListView::HeaderCalculator::NextHeaderIndex(size_t selectedIndex) {
     return result;
 }
 
-size_t TrackListView::HeaderCalculator::PrevHeaderIndex(size_t selectedIndex) {
+size_t TrackListView::HeaderCalculator::PrevHeaderIndex(size_t selectedIndex) noexcept {
     size_t result = 0;
     if (this->absoluteOffsets) {
         for (auto val : (*this->absoluteOffsets)) {
@@ -501,7 +496,7 @@ IScrollAdapter::EntryPtr TrackListView::Adapter::GetEntry(cursespp::ScrollableWi
                 album = _TSTR("tracklist_unknown_album");
             }
 
-            auto duration = this->parent.headers.DurationFromAdapterIndex(rawIndex);
+            const auto duration = this->parent.headers.DurationFromAdapterIndex(rawIndex);
             if (duration > 0) {
                 album += " - " + core::duration::DurationWithHours(duration);
             }

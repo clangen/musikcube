@@ -73,39 +73,38 @@ namespace musik {
                     musik::core::ILibraryPtr library,
                     RowDecorator decorator = RowDecorator());
 
-                virtual ~TrackListView();
-
                 /* IWindow */
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-                virtual bool KeyPress(const std::string& key);
+                void ProcessMessage(musik::core::runtime::IMessage &message) override;
+                bool KeyPress(const std::string& key) override;
 
                 /* regular methods */
-                std::shared_ptr<musik::core::TrackList> GetTrackList();
+                std::shared_ptr<musik::core::TrackList> GetTrackList() noexcept;
                 void SetTrackList(std::shared_ptr<musik::core::TrackList> trackList);
                 musik::core::TrackPtr GetSelectedTrack();
                 size_t GetSelectedTrackIndex();
                 size_t TrackIndexToAdapterIndex(size_t index);
-                void Clear();
-                size_t TrackCount();
+                size_t TrackCount() noexcept;
                 size_t EntryCount();
                 void InvalidateData();
 
                 void SetTrackNumType(TrackRowRenderers::TrackNumType type);
                 void SetRowRenderer(TrackRowRenderers::Renderer renderer);
 
+                void Reset();
                 void Requery(std::shared_ptr<TrackListQueryBase> query);
 
             protected:
-                virtual cursespp::IScrollAdapter& GetScrollAdapter();
+                /* IScrollableWindow */
+                cursespp::IScrollAdapter& GetScrollAdapter() noexcept override;
+                bool OnEntryActivated(size_t index) override;
+                bool OnEntryContextMenu(size_t index) override;
+                void OnDimensionsChanged() override;
+
+                void OnTrackListWindowCached(
+                    const musik::core::TrackList* track, size_t from, size_t to);
 
                 void SetTrackListAndUpateEventHandlers(
                     std::shared_ptr<musik::core::TrackList> trackList);
-
-                virtual bool OnEntryActivated(size_t index);
-                virtual bool OnEntryContextMenu(size_t index);
-                virtual void OnDimensionsChanged();
-                virtual void OnTrackListWindowCached(
-                    const musik::core::TrackList* track, size_t from, size_t to);
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();
@@ -147,14 +146,14 @@ namespace musik {
                         static const size_t NO_INDEX = (size_t) -1;
 
                         void Set(Headers rawOffsets, Durations durations);
-                        void Reset();
+                        void Reset() noexcept;
                         bool HeaderAt(size_t index);
                         size_t AdapterToTrackListIndex(size_t index);
                         size_t TrackListToAdapterIndex(size_t index);
                         size_t DurationFromAdapterIndex(size_t index);
-                        size_t NextHeaderIndex(size_t selectedIndex);
-                        size_t PrevHeaderIndex(size_t selectedIndex);
-                        size_t Count();
+                        size_t NextHeaderIndex(size_t selectedIndex) noexcept;
+                        size_t PrevHeaderIndex(size_t selectedIndex) noexcept;
+                        size_t Count() noexcept;
 
                     private:
                         size_t ApplyHeaderOffset(size_t index, Headers offsets, int delta);
@@ -174,7 +173,7 @@ namespace musik {
                 std::shared_ptr<TrackListQueryBase> query;
                 std::shared_ptr<musik::core::TrackList> tracks;
                 HeaderCalculator headers;
-                Adapter* adapter;
+                std::unique_ptr<Adapter> adapter;
                 musik::core::audio::PlaybackService& playback;
                 musik::core::TrackPtr playing;
                 musik::core::ILibraryPtr library;

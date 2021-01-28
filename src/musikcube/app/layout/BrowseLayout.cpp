@@ -257,7 +257,7 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
                     sortOrder)));
         }
         else {
-            this->trackList->Clear();
+            this->trackList->Reset();
         }
 
         this->ShowModifiedLabel(false);
