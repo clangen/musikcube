@@ -54,20 +54,20 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                DELETE_CLASS_DEFAULTS(DirectoryLayout)
+
                 DirectoryLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
-
-                virtual ~DirectoryLayout();
 
                 void SetDirectory(const std::string& directory);
                 void PlayFromTop();
                 std::string GetDirectory();
 
                 /* IWindow */
-                virtual void OnVisibilityChanged(bool visible) override;
-                virtual void OnLayout() override;
-                virtual bool KeyPress(const std::string& key) override;
+                void OnVisibilityChanged(bool visible) override;
+                void OnLayout() override;
+                bool KeyPress(const std::string& key) override;
 
             private:
                 void InitializeWindows();

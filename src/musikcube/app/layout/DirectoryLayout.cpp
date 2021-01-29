@@ -55,8 +55,8 @@ using namespace musik::core::library;
 using namespace musik::cube;
 using namespace cursespp;
 
-static int MAX_CATEGORY_WIDTH = 40;
-static int MIN_LIST_TITLE_HEIGHT = 26;
+constexpr int kMaxCategoryWidth = 40;
+constexpr int kMinListTitleHeight = 26;
 
 DirectoryLayout::DirectoryLayout(
     musik::core::audio::PlaybackService& playback,
@@ -71,15 +71,12 @@ DirectoryLayout::DirectoryLayout(
     this->library->Indexer()->Finished.connect(this, &DirectoryLayout::OnIndexerProgress);
 }
 
-DirectoryLayout::~DirectoryLayout() {
-}
-
 void DirectoryLayout::OnLayout() {
     int cx = this->GetWidth(), cy = this->GetHeight();
     int x = 0, y = 0;
 
     if (this->hasSubdirectories) {
-        int directoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
+        int directoryWidth = std::min(kMaxCategoryWidth, cx / 4);
         this->directoryList->Show();
         this->directoryList->MoveAndResize(x, y, directoryWidth, cy);
         this->trackList->MoveAndResize(x + directoryWidth, y, cx - directoryWidth, cy);

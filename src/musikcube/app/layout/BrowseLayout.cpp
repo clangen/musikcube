@@ -66,8 +66,8 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-static int MAX_CATEGORY_WIDTH = 40;
-static int MIN_LIST_TITLE_HEIGHT = 26;
+static int kMaxCategoryWidth = 40;
+static int kMinListTitleHeight = 26;
 
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
@@ -100,7 +100,8 @@ static inline std::string getTitleForCategory(const std::string& fieldName) {
 
 static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
     return (TrackSortType)prefs->GetInt(
-        keys::CategoryTrackListSortOrder, (int) TrackSortType::Album);
+        keys::CategoryTrackListSortOrder,
+        static_cast<int>(TrackSortType::Album));
 }
 
 BrowseLayout::BrowseLayout(
@@ -127,10 +128,12 @@ BrowseLayout::~BrowseLayout() {
 }
 
 void BrowseLayout::OnLayout() {
-    int cx = this->GetWidth(), cy = this->GetHeight();
-    int x = 0, y = 0;
+    const int cx = this->GetWidth();
+    const int x = 0;
+    int cy = this->GetHeight();
+    int y = 0;
 
-    int categoryWidth = std::min(MAX_CATEGORY_WIDTH, cx / 4);
+    const int categoryWidth = std::min(kMaxCategoryWidth, cx / 4);
 
     this->categoryList->MoveAndResize(x, y, categoryWidth, cy);
 
@@ -151,13 +154,13 @@ void BrowseLayout::OnLayout() {
 }
 
 void BrowseLayout::InitializeWindows() {
-    this->categoryList.reset(new CategoryListView(this->playback, this->library, DEFAULT_CATEGORY));
+    this->categoryList = std::make_shared<CategoryListView>(this->playback, this->library, DEFAULT_CATEGORY);
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
-    this->trackList.reset(new TrackListView(this->playback, this->library));
+    this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
     this->trackList->Requeried.connect(this, &BrowseLayout::OnRequeried);
 
-    this->modifiedLabel.reset(new TextLabel());
+    this->modifiedLabel = std::make_shared<TextLabel>();
     this->modifiedLabel->SetText(getModifiedText(), text::AlignCenter);
     this->modifiedLabel->SetContentColor(Color::Banner);
     this->modifiedLabel->Hide();
@@ -176,7 +179,7 @@ void BrowseLayout::InitializeWindows() {
 void BrowseLayout::LoadLastSession() {
     auto session = Preferences::ForComponent(components::Session);
     const std::string field = session->GetString(keys::LastBrowseCategoryType, "");
-    const int64_t id = (int64_t) session->GetDouble(keys::LastBrowseCategoryId, -1.0);
+    const int64_t id = static_cast<int64_t>(session->GetDouble(keys::LastBrowseCategoryId, -1.0));
     if (field.size()) {
         this->SwitchCategory(field);
         this->ScrollTo(field, id);
@@ -186,7 +189,7 @@ void BrowseLayout::LoadLastSession() {
 void BrowseLayout::SaveSession() {
     auto session = Preferences::ForComponent(components::Session);
     const std::string type = this->categoryList->GetFieldName().c_str();
-    const double id = (double)this->categoryList->GetSelectedId();
+    const double id = static_cast<double>(this->categoryList->GetSelectedId());
     session->SetString(keys::LastBrowseCategoryType, type.c_str());
     session->SetDouble(keys::LastBrowseCategoryId, id);
 }
@@ -194,7 +197,7 @@ void BrowseLayout::SaveSession() {
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     switch (message.Type()) {
         case cube::message::IndexerProgress: {
-            int64_t id = this->categoryList->GetSelectedId();
+            const int64_t id = this->categoryList->GetSelectedId();
             auto filter = this->categoryList->GetFilter();
             this->categoryList->Requery(filter, id);
             break;
@@ -213,11 +216,14 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
         case core::message::PlaylistDeleted:
         case core::message::PlaylistRenamed: {
             if (this->IsPlaylist()) {
-                auto lastId = this->categoryList->GetSelectedId();
+                const auto lastId = this->categoryList->GetSelectedId();
                 this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
             }
             break;
         }
+
+        default:
+            break;
     }
 
     LayoutBase::ProcessMessage(message);
@@ -244,17 +250,17 @@ void BrowseLayout::OnRequeried(TrackListQueryBase* query) {
 
 void BrowseLayout::RequeryTrackList(ListWindow *view) {
     if (view == this->categoryList.get()) {
-        int64_t selectedId = this->categoryList->GetSelectedId();
+        const int64_t selectedId = this->categoryList->GetSelectedId();
         if (selectedId != -1) {
-            TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
+            const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
             auto column = this->categoryList->GetFieldName();
-            this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-                new CategoryTrackListQuery(
+            this->trackList->Requery(
+                std::make_shared<CategoryTrackListQuery>(
                     this->library,
                     column,
                     selectedId,
                     "",
-                    sortOrder)));
+                    sortOrder));
         }
         else {
             this->trackList->Reset();
@@ -312,7 +318,7 @@ bool BrowseLayout::KeyPress(const std::string& key) {
             getDefaultTrackSort(this->prefs),
             kTrackListOrderByToDisplayKey,
             [this](TrackSortType type) {
-                this->prefs->SetInt(keys::CategoryTrackListSortOrder, (int)type);
+                this->prefs->SetInt(keys::CategoryTrackListSortOrder, static_cast<int>(type));
                 this->RequeryTrackList(this->categoryList.get());
             });
         return true;
@@ -346,15 +352,16 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
         }
         else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsSave, key)) {
             this->ShowModifiedLabel(false);
-            auto tracks = this->trackList->GetTrackList().get();
-            this->library->Enqueue(SavePlaylistQuery::Replace(
-                this->library,
-                this->categoryList->GetSelectedId(),
-                std::shared_ptr<TrackList>(new TrackList(tracks))));
+            auto tracks = this->trackList->GetTrackList();
+            this->library->Enqueue(
+                SavePlaylistQuery::Replace(
+                    this->library,
+                    this->categoryList->GetSelectedId(),
+                    std::make_shared<TrackList>(tracks)));
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsRename, key)) {
-            auto id = this->categoryList->GetSelectedId();
+            const auto id = this->categoryList->GetSelectedId();
             if (id != -1) {
                 PlayQueueOverlays::ShowRenamePlaylistOverlay(
                     library, id, this->categoryList->GetSelectedValue(),
@@ -366,7 +373,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
         }
         else if (Hotkeys::Is(Hotkeys::BrowsePlaylistsDelete, key)) {
             if (this->GetFocus() == this->categoryList) {
-                auto id = this->categoryList->GetSelectedId();
+                const auto id = this->categoryList->GetSelectedId();
                 if (id != -1) {
                     PlayQueueOverlays::ShowConfirmDeletePlaylistOverlay(
                         library, this->categoryList->GetSelectedValue(), id,
@@ -393,7 +400,7 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
 
     std::shared_ptr<TrackList> tracks = this->trackList->GetTrackList();
     if (tracks && EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
-        size_t selected = this->trackList->GetSelectedTrackIndex();
+        const size_t selected = this->trackList->GetSelectedTrackIndex();
         size_t to = -1;
         bool modified = this->playlistModified;
 

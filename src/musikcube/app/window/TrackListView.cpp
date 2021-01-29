@@ -475,7 +475,7 @@ size_t TrackListView::HeaderCalculator::PrevHeaderIndex(size_t selectedIndex) no
 
 /* * * * TrackListView::Adapter * * * */
 
-size_t TrackListView::Adapter::GetEntryCount() {
+size_t TrackListView::Adapter::GetEntryCount() noexcept {
     return parent.tracks ? parent.tracks->Count() + parent.headers.Count() : 0;
 }
 

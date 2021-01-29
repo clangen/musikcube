@@ -130,7 +130,7 @@ namespace musik {
                 class Adapter : public cursespp::ScrollAdapterBase {
                     public:
                         Adapter(TrackListView &parent);
-                        size_t GetEntryCount() override;
+                        size_t GetEntryCount() noexcept override;
                         EntryPtr GetEntry(cursespp::ScrollableWindow* window, size_t index) override;
 
                     private:

@@ -57,6 +57,7 @@ namespace musik { namespace core {
 
             TrackList(ILibraryPtr library);
             TrackList(TrackList* other);
+            TrackList(std::shared_ptr<TrackList> other);
             TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount);
 
             /* ITrackList */

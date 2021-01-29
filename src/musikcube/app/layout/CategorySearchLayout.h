@@ -56,6 +56,8 @@ namespace musik {
             public:
                 sigslot::signal3<CategorySearchLayout*, std::string, int64_t> SearchResultSelected;
 
+                DELETE_CLASS_DEFAULTS(CategorySearchLayout)
+
                 CategorySearchLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
@@ -75,6 +77,14 @@ namespace musik {
                 using MatchType = musik::core::library::query::QueryBase::MatchType;
 
                 void InitializeWindows(musik::core::audio::PlaybackService& playback);
+
+                void CreateCategoryView(
+                    std::shared_ptr<CategoryListView>& view,
+                    musik::core::audio::PlaybackService& playback,
+                    const std::string& title,
+                    const std::string& type,
+                    int order);
+
                 void OnCategoryEntryActivated(cursespp::ListWindow* sender, size_t index);
                 void Requery();
                 void SaveSession();

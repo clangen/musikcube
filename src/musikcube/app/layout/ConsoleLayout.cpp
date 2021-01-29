@@ -63,8 +63,8 @@ ConsoleLayout::ConsoleLayout(ConsoleLogger* logger)
 
 void ConsoleLayout::OnLayout() {
     LayoutBase::OnLayout();
-    int cx = this->GetContentWidth();
-    int cy = this->GetContentHeight();
+    const int cx = this->GetContentWidth();
+    const int cy = this->GetContentHeight();
     this->listView->MoveAndResize(0, 0, cx, cy);
 }
 

@@ -68,6 +68,12 @@ TrackList::TrackList(TrackList* other)
 , cacheSize(kDefaultCacheSize) {
 }
 
+TrackList::TrackList(std::shared_ptr<TrackList> other)
+    : ids(other->ids)
+    , library(other->library)
+    , cacheSize(kDefaultCacheSize) {
+}
+
 TrackList::TrackList(ILibraryPtr library, const int64_t* trackIds, size_t trackIdCount)
 : library(library)
 , cacheSize(kDefaultCacheSize) {

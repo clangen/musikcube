@@ -69,6 +69,8 @@ namespace musik { namespace cube {
         public:
             using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(SettingsLayout)
+
             SettingsLayout(
                 cursespp::App& app,
                 MasterLibraryPtr library,
@@ -90,6 +92,7 @@ namespace musik { namespace cube {
             void InitializeWindows();
             void LoadPreferences();
             void UpdateServerAvailability();
+            void CreateCheckbox(std::shared_ptr<cursespp::Checkbox>& cb, const std::string& caption);
 
             void OnCheckboxChanged(cursespp::Checkbox* checkbox, bool checked);
 

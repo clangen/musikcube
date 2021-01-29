@@ -87,19 +87,14 @@ using namespace cursespp;
 #define ENABLE_MINIMIZE_TO_TRAY
 #endif
 
-#define LABEL_HEIGHT 1
-#define INPUT_HEIGHT 3
-#define HOTKEY_INPUT_WIDTH 20
+constexpr int kLabelHeight = 1;
+constexpr int kInputHeight = 3;
+constexpr int kHotkeyInputWidth = 20;
 
 #define TOP(w) w->GetY()
 #define BOTTOM(w) (w->GetY() + w->GetHeight())
 #define LEFT(w) w->GetX()
 #define RIGHT(w) (w->GetX() + w->GetWidth())
-
-#define CREATE_CHECKBOX(checkbox, caption) \
-    checkbox.reset(new cursespp::Checkbox()); \
-    checkbox->SetText(caption); \
-    checkbox->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 
 #ifdef __arm__
 static const int DEFAULT_MAX_INDEXER_THREADS = 2;
@@ -158,7 +153,7 @@ static TransportType getTransportType() {
 
 static void setTransportType(TransportType type) {
     auto playback = Preferences::ForComponent(core::prefs::components::Playback);
-    playback->SetInt(core::prefs::keys::Transport, (int) type);
+    playback->SetInt(core::prefs::keys::Transport, static_cast<int>(type));
 }
 
 SettingsLayout::SettingsLayout(
@@ -282,7 +277,7 @@ void SettingsLayout::OnHotkeyDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnServerDropdownActivate(cursespp::TextLabel* label) {
-    ServerOverlay::Show([this]() { /* nothing, for now */ });
+    ServerOverlay::Show([this]() noexcept { });
 }
 
 void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
@@ -294,8 +289,8 @@ void SettingsLayout::OnAdvancedSettingsActivate(cursespp::TextLabel* label) {
             auto prefs = this->prefs;
             namespace keys = cube::prefs::keys;
             this->app.SetMinimizeToTray(prefs->GetBool(keys::MinimizeToTray, false));
-            bool autoHideCommandBar = prefs->GetBool(keys::AutoHideCommandBar, false);
-            ((AppLayout*) this->app.GetLayout().get())->SetAutoHideCommandBar(autoHideCommandBar);
+            const bool autoHideCommandBar = prefs->GetBool(keys::AutoHideCommandBar, false);
+            dynamic_cast<AppLayout*>(this->app.GetLayout().get())->SetAutoHideCommandBar(autoHideCommandBar);
             updateDefaultRatingSymbols();
         });
 }
@@ -316,11 +311,12 @@ void SettingsLayout::OnThemeDropdownActivate(cursespp::TextLabel* label) {
 }
 
 void SettingsLayout::OnLayout() {
-    int x = this->GetX(), y = this->GetY();
-    int cx = this->GetWidth(), cy = this->GetHeight();
+    const int x = this->GetX();
+    int y = this->GetY();
+    const int cx = this->GetWidth(), cy = this->GetHeight();
 
     /* top row (library config) */
-    this->libraryTypeDropdown->MoveAndResize(1, 1, cx - 1, LABEL_HEIGHT);
+    this->libraryTypeDropdown->MoveAndResize(1, 1, cx - 1, kLabelHeight);
     std::shared_ptr<LayoutBase> libraryLayout;
     static const int kLibraryTypePadding = 3;
     if (this->library->GetType() == ILibrary::Type::Local) {
@@ -345,107 +341,113 @@ void SettingsLayout::OnLayout() {
     libraryLayout->Show();
 
     /* bottom row (dropdowns, checkboxes) */
-    int columnCx = (cx - 5) / 2; /* 3 = left + right + middle padding */
-    int column1 = 1;
-    int column2 = columnCx + 3;
+    const int columnCx = (cx - 5) / 2; /* 3 = left + right + middle padding */
+    const int column1 = 1;
+    const int column2 = columnCx + 3;
 
     y = BOTTOM(libraryLayout) + 1;
-    this->localeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->replayGainDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->transportDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
-    this->lastFmDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->localeDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
+    this->outputDriverDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
+    this->outputDeviceDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
+    this->replayGainDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
+    this->transportDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
+    this->lastFmDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
 #ifdef ENABLE_COLOR_THEME_SELECTION
-    this->themeDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->themeDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
 #endif
-    this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+    this->hotkeyDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
 
     if (serverAvailable) {
-        this->serverDropdown->MoveAndResize(column1, y++, columnCx, LABEL_HEIGHT);
+        this->serverDropdown->MoveAndResize(column1, y++, columnCx, kLabelHeight);
     }
 
     y = BOTTOM(libraryLayout) + 1;
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
-    this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->enableTransparencyCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->paletteCheckbox->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+    this->enableTransparencyCheckbox->MoveAndResize(column2, y++, columnCx, kLabelHeight);
 #endif
-    this->dotfileCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->removeCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->saveSessionCheckbox->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->pluginsDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->advancedDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
-    this->updateDropdown->MoveAndResize(column2, y++, columnCx, LABEL_HEIGHT);
+    this->dotfileCheckbox->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+    this->syncOnStartupCheckbox->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+    this->removeCheckbox->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+    this->saveSessionCheckbox->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+    this->pluginsDropdown->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+    this->advancedDropdown->MoveAndResize(column2, y++, columnCx, kLabelHeight);
+    this->updateDropdown->MoveAndResize(column2, y++, columnCx, kLabelHeight);
 
-    this->appVersion->MoveAndResize(0, cy - 1, cx, LABEL_HEIGHT);
+    this->appVersion->MoveAndResize(0, cy - 1, cx, kLabelHeight);
+}
+
+void SettingsLayout::CreateCheckbox(std::shared_ptr<Checkbox>& cb, const std::string& caption) {
+    cb = std::make_shared<Checkbox>();
+    cb->SetText(caption);
+    cb->CheckChanged.connect(this, &SettingsLayout::OnCheckboxChanged);
 }
 
 void SettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
-    this->libraryTypeDropdown.reset(new TextLabel());
+    this->libraryTypeDropdown = std::make_shared<TextLabel>();
     this->libraryTypeDropdown->Activated.connect(this, &SettingsLayout::OnLibraryTypeDropdownActivated);
 
-    this->localLibraryLayout.reset(new LocalLibrarySettingsLayout());
-    this->remoteLibraryLayout.reset(new RemoteLibrarySettingsLayout());
+    this->localLibraryLayout = std::make_shared<LocalLibrarySettingsLayout>();
+    this->remoteLibraryLayout = std::make_shared<RemoteLibrarySettingsLayout>();
 
-    this->localeDropdown.reset(new TextLabel());
+    this->localeDropdown = std::make_shared<TextLabel>();
     this->localeDropdown->Activated.connect(this, &SettingsLayout::OnLocaleDropdownActivate);
 
-    this->outputDriverDropdown.reset(new TextLabel());
+    this->outputDriverDropdown = std::make_shared<TextLabel>();
     this->outputDriverDropdown->Activated.connect(this, &SettingsLayout::OnOutputDriverDropdownActivated);
 
-    this->outputDeviceDropdown.reset(new TextLabel());
+    this->outputDeviceDropdown = std::make_shared<TextLabel>();
     this->outputDeviceDropdown->Activated.connect(this, &SettingsLayout::OnOutputDeviceDropdownActivated);
 
-    this->replayGainDropdown.reset(new TextLabel());
+    this->replayGainDropdown = std::make_shared<TextLabel>();
     this->replayGainDropdown->Activated.connect(this, &SettingsLayout::OnReplayGainDropdownActivated);
 
-    this->transportDropdown.reset(new TextLabel());
+    this->transportDropdown = std::make_shared<TextLabel>();
     this->transportDropdown->Activated.connect(this, &SettingsLayout::OnTransportDropdownActivate);
 
-    this->lastFmDropdown.reset(new TextLabel());
+    this->lastFmDropdown = std::make_shared<TextLabel>();
     this->lastFmDropdown->SetText(arrow + _TSTR("settings_last_fm"));
     this->lastFmDropdown->Activated.connect(this, &SettingsLayout::OnLastFmDropdownActivate);
 
 #ifdef ENABLE_COLOR_THEME_SELECTION
-    this->themeDropdown.reset(new TextLabel());
+    this->themeDropdown = std::make_shared<TextLabel>();
     this->themeDropdown->SetText(arrow + _TSTR("settings_color_theme") + _TSTR("settings_default_theme_name"));
     this->themeDropdown->Activated.connect(this, &SettingsLayout::OnThemeDropdownActivate);
 #endif
 
-    this->hotkeyDropdown.reset(new TextLabel());
+    this->hotkeyDropdown = std::make_shared<TextLabel>();
     this->hotkeyDropdown->SetText(arrow + _TSTR("settings_hotkey_tester"));
     this->hotkeyDropdown->Activated.connect(this, &SettingsLayout::OnHotkeyDropdownActivate);
 
-    this->pluginsDropdown.reset(new TextLabel());
+    this->pluginsDropdown = std::make_shared<TextLabel>();
     this->pluginsDropdown->SetText(arrow + _TSTR("settings_enable_disable_plugins"));
     this->pluginsDropdown->Activated.connect(this, &SettingsLayout::OnPluginsDropdownActivate);
 
     if (this->serverAvailable) {
-        this->serverDropdown.reset(new TextLabel());
+        this->serverDropdown = std::make_shared<TextLabel>();
         this->serverDropdown->SetText(arrow + _TSTR("settings_server_setup"));
         this->serverDropdown->Activated.connect(this, &SettingsLayout::OnServerDropdownActivate);
     }
 
-    this->updateDropdown.reset(new TextLabel());
+    this->updateDropdown = std::make_shared<TextLabel>();
     this->updateDropdown->SetText(arrow + _TSTR("settings_check_for_updates"));
     this->updateDropdown->Activated.connect(this, &SettingsLayout::OnUpdateDropdownActivate);
 
-    this->advancedDropdown.reset(new TextLabel());
+    this->advancedDropdown = std::make_shared<TextLabel>();
     this->advancedDropdown->SetText(arrow + _TSTR("settings_advanced_settings"));
     this->advancedDropdown->Activated.connect(this, &SettingsLayout::OnAdvancedSettingsActivate);
 
-    CREATE_CHECKBOX(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
-    CREATE_CHECKBOX(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
-    CREATE_CHECKBOX(this->removeCheckbox, _TSTR("settings_remove_missing"));
+    this->CreateCheckbox(this->dotfileCheckbox, _TSTR("settings_show_dotfiles"));
+    this->CreateCheckbox(this->syncOnStartupCheckbox, _TSTR("settings_sync_on_startup"));
+    this->CreateCheckbox(this->removeCheckbox, _TSTR("settings_remove_missing"));
 
 #ifdef ENABLE_UNIX_TERMINAL_OPTIONS
-    CREATE_CHECKBOX(this->paletteCheckbox, _TSTR("settings_degrade_256"));
-    CREATE_CHECKBOX(this->enableTransparencyCheckbox, _TSTR("settings_enable_transparency"));
+    this->CreateCheckbox(this->paletteCheckbox, _TSTR("settings_degrade_256"));
+    this->CreateCheckbox(this->enableTransparencyCheckbox, _TSTR("settings_enable_transparency"));
 #endif
-    CREATE_CHECKBOX(this->saveSessionCheckbox, _TSTR("settings_save_session_on_exit"));
+    this->CreateCheckbox(this->saveSessionCheckbox, _TSTR("settings_save_session_on_exit"));
 
     this->appVersion = std::make_shared<TextLabel>();
     this->appVersion->SetContentColor(Color::TextDisabled);
@@ -577,7 +579,7 @@ void SettingsLayout::LoadPreferences() {
     this->localeDropdown->SetText(arrow + _TSTR("settings_selected_locale") + i18n::Locale::Instance().GetSelectedLocale());
 
     /* color theme */
-    bool disableCustomColors = this->prefs->GetBool(cube::prefs::keys::DisableCustomColors);
+    const bool disableCustomColors = this->prefs->GetBool(cube::prefs::keys::DisableCustomColors);
     std::string colorTheme = this->prefs->GetString(cube::prefs::keys::ColorTheme);
 
     if (colorTheme == "" && !disableCustomColors) {
@@ -624,12 +626,16 @@ void SettingsLayout::LoadPreferences() {
     this->transportDropdown->SetText(arrow + _TSTR("settings_transport_type") + transportName);
 
     /* library type */
-    std::string libraryType =
-        (ILibrary::Type) prefs->GetInt(core::prefs::keys::LibraryType, (int) ILibrary::Type::Local) == ILibrary::Type::Local
-            ? _TSTR("settings_library_type_local")
-            : _TSTR("settings_library_type_remote");
+    const auto libraryType = static_cast<ILibrary::Type>(
+        prefs->GetInt(
+            core::prefs::keys::LibraryType,
+            static_cast<int>(ILibrary::Type::Local)));
 
-    this->libraryTypeDropdown->SetText(arrow + _TSTR("settings_library_type") + libraryType);
+    std::string libraryTypeLabel = libraryType == ILibrary::Type::Local
+        ? _TSTR("settings_library_type_local")
+        : _TSTR("settings_library_type_remote");
+
+    this->libraryTypeDropdown->SetText(arrow + _TSTR("settings_library_type") + libraryTypeLabel);
 
     this->localLibraryLayout->LoadPreferences();
     this->remoteLibraryLayout->LoadPreferences();

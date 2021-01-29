@@ -59,21 +59,13 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-#define SEARCH_HEIGHT 3
-#define REQUERY_INTERVAL_MS 300
+constexpr int kSearchHeight = 3;
+constexpr int kRequeryIntervalMs = 300;
 
 #define IS_CATEGORY(x) \
     x == this->albums || \
     x == this->artists || \
     x == this->genres
-
-#define CREATE_CATEGORY(view, title, type, order) \
-    view.reset(new CategoryListView(playback, this->library, type)); \
-    view->EntryActivated.connect(this, &CategorySearchLayout::OnCategoryEntryActivated); \
-    view->SetFrameTitle(title); \
-    view->SetAllowArrowKeyPropagation(); \
-    this->AddWindow(view); \
-    view->SetFocusOrder(order);
 
 CategorySearchLayout::CategorySearchLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase() {
@@ -106,39 +98,53 @@ void CategorySearchLayout::SaveSession() {
 }
 
 void CategorySearchLayout::OnLayout() {
-    int cx = this->GetWidth(), cy = this->GetHeight();
-    int x = 0, y = 0;
+    const int cx = this->GetWidth(), cy = this->GetHeight();
+    constexpr int x = 0, y = 0;
 
-    int inputWidth = cx / 2;
-    int inputX = x + ((cx - inputWidth) / 2);
-    this->input->MoveAndResize(inputX, 0, cx / 2, SEARCH_HEIGHT);
+    const int inputWidth = cx / 2;
+    const int inputX = x + ((cx - inputWidth) / 2);
+    this->input->MoveAndResize(inputX, 0, cx / 2, kSearchHeight);
 
-    bool inputIsRegex = this->matchType == MatchType::Regex;
+    const bool inputIsRegex = this->matchType == MatchType::Regex;
     this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
     this->input->SetFocusedFrameColor(inputIsRegex ? Color::FrameImportant : Color::FrameFocused);
 
-    int labelY = SEARCH_HEIGHT;
-    int categoryWidth = cx / 3;
-    int categoryY = labelY;
-    int categoryHeight = cy - SEARCH_HEIGHT;
-    int lastCategoryWidth = cx - (categoryWidth * 2);
+    constexpr int labelY = kSearchHeight;
+    const int categoryWidth = cx / 3;
+    constexpr int categoryY = labelY;
+    const int categoryHeight = cy - kSearchHeight;
+    const int lastCategoryWidth = cx - (categoryWidth * 2);
 
     this->albums->MoveAndResize(0, categoryY, categoryWidth, categoryHeight);
     this->artists->MoveAndResize(categoryWidth, categoryY, categoryWidth, categoryHeight);
     this->genres->MoveAndResize(categoryWidth * 2, categoryY, lastCategoryWidth, categoryHeight);
 }
 
+void CategorySearchLayout::CreateCategoryView(
+    std::shared_ptr<CategoryListView>& view,
+    musik::core::audio::PlaybackService& playback,
+    const std::string& title,
+    const std::string& type,
+    int order)
+{
+    view = std::make_shared<CategoryListView>(playback, library, type);
+    view->EntryActivated.connect(this, &CategorySearchLayout::OnCategoryEntryActivated);
+    view->SetFrameTitle(_TSTR(title));
+    view->SetAllowArrowKeyPropagation();
+    view->SetFocusOrder(order);
+    this->AddWindow(view);
+}
+
 void CategorySearchLayout::InitializeWindows(musik::core::audio::PlaybackService& playback) {
-    this->input.reset(new cursespp::TextInput());
+    this->input = std::make_shared<TextInput>();
     this->input->TextChanged.connect(this, &CategorySearchLayout::OnInputChanged);
     this->input->EnterPressed.connect(this, &CategorySearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
-
     this->AddWindow(this->input);
 
-    CREATE_CATEGORY(this->albums, _TSTR("browse_title_albums"), constants::Track::ALBUM, 1);
-    CREATE_CATEGORY(this->artists, _TSTR("browse_title_artists"), constants::Track::ARTIST, 2);
-    CREATE_CATEGORY(this->genres, _TSTR("browse_title_genres"), constants::Track::GENRE, 3);
+    this->CreateCategoryView(this->albums, playback, "browse_title_albums", constants::Track::ALBUM, 1);
+    this->CreateCategoryView(this->artists, playback, "browse_title_artists", constants::Track::ARTIST, 2);
+    this->CreateCategoryView(this->genres, playback, "browse_title_genres", constants::Track::GENRE, 3);
 }
 
 void CategorySearchLayout::Requery() {
@@ -154,7 +160,7 @@ void CategorySearchLayout::FocusInput() {
 
 void CategorySearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
-        Debounce(message::RequeryCategoryList, 0, 0, REQUERY_INTERVAL_MS);
+        Debounce(message::RequeryCategoryList, 0, 0, kRequeryIntervalMs);
     }
 }
 
@@ -178,13 +184,9 @@ void CategorySearchLayout::OnVisibilityChanged(bool visible) {
     }
 }
 
-void CategorySearchLayout::OnCategoryEntryActivated(
-    cursespp::ListWindow* listWindow, size_t index)
-{
-    CategoryListView* category =
-        static_cast<CategoryListView*>(listWindow);
-
-    if ((int) index >= 0) {
+void CategorySearchLayout::OnCategoryEntryActivated(cursespp::ListWindow* listWindow, size_t index) {
+    CategoryListView* category = dynamic_cast<CategoryListView*>(listWindow);
+    if (category && narrow_cast<int>(index) >= 0) {
         this->SearchResultSelected(
             this,
             category->GetFieldName(),
