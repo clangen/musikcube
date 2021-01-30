@@ -75,7 +75,7 @@ static const std::string PLATFORM = "openbsd";
 static const std::string PLATFORM = "linux";
 #endif
 
-static inline int64_t versionCode(short major, short minor, short patch) {
+constexpr int64_t versionCode(short major, short minor, short patch) noexcept {
     int64_t version = major;
     version = (version << 16) | minor;
     version = (version << 16) | patch;

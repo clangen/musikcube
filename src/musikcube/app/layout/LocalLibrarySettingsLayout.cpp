@@ -66,22 +66,19 @@ LocalLibrarySettingsLayout::LocalLibrarySettingsLayout()
 : LayoutBase()
 , library(LibraryFactory::Instance().DefaultLocalLibrary())
 , indexer(library->Indexer()) {
-    this->browseAdapter.reset(new DirectoryAdapter());
-    this->addedPathsAdapter.reset(new SimpleScrollAdapter());
+    this->browseAdapter = std::make_shared<DirectoryAdapter>();
+    this->addedPathsAdapter = std::make_shared<SimpleScrollAdapter>();
     this->SetFocusMode(FocusModeTerminating);
     this->InitializeWindows();
 }
 
-LocalLibrarySettingsLayout::~LocalLibrarySettingsLayout() {
-}
-
 void LocalLibrarySettingsLayout::OnLayout() {
-    int cx = this->GetWidth();
-    int leftX = 0;
-    int leftWidth = cx / 3; /* 1/3 width */
-    int rightX = leftWidth;
-    int rightWidth = cx - rightX; /* remainder (~2/3) */
-    int pathsHeight = this->GetHeight() - 1;
+    const int cx = this->GetWidth();
+    const int leftX = 0;
+    const int leftWidth = cx / 3; /* 1/3 width */
+    const int rightX = leftWidth;
+    const int rightWidth = cx - rightX; /* remainder (~2/3) */
+    const int pathsHeight = this->GetHeight() - 1;
     this->browseList->MoveAndResize(leftX, 1, leftWidth, pathsHeight);
     this->addedPathsList->MoveAndResize(rightX, 1, rightWidth, pathsHeight);
 }
@@ -94,7 +91,7 @@ void LocalLibrarySettingsLayout::LoadPreferences() {
 
     for (size_t i = 0; i < paths.size(); i++) {
         auto v = paths.at(i);
-        auto e = EntryPtr(new SingleLineEntry(v));
+        auto e = std::make_shared<SingleLineEntry>(v);
         this->addedPathsAdapter->AddEntry(e);
     }
 
@@ -110,8 +107,8 @@ Color LocalLibrarySettingsLayout::ListItemDecorator(
     if (scrollable == this->addedPathsList.get() ||
         scrollable == this->browseList.get())
     {
-         ListWindow* lw = static_cast<ListWindow*>(scrollable);
-         if (lw->GetSelectedIndex() == index) {
+         ListWindow* lw = dynamic_cast<ListWindow*>(scrollable);
+         if (lw && lw->GetSelectedIndex() == index) {
              return Color::ListItemHighlighted;
          }
     }
@@ -121,10 +118,10 @@ Color LocalLibrarySettingsLayout::ListItemDecorator(
 void LocalLibrarySettingsLayout::InitializeWindows() {
     this->SetFrameVisible(false);
 
-    this->addedPathsList.reset(new cursespp::ListWindow(this->addedPathsAdapter));
+    this->addedPathsList = std::make_shared<ListWindow>(this->addedPathsAdapter);
     this->addedPathsList->SetFrameTitle(_TSTR("settings_backspace_to_remove"));
 
-    this->browseList.reset(new cursespp::ListWindow(this->browseAdapter));
+    this->browseList = std::make_shared<ListWindow>(this->browseAdapter);
     this->browseList->SetFrameTitle(_TSTR("settings_space_to_add"));
 
     ScrollAdapterBase::ItemDecorator decorator =
@@ -173,7 +170,7 @@ void LocalLibrarySettingsLayout::RemoveSelectedDirectory() {
     std::vector<std::string> paths;
     this->indexer->GetPaths(paths);
 
-    size_t index = this->addedPathsList->GetSelectedIndex();
+    const size_t index = this->addedPathsList->GetSelectedIndex();
     if (index != ListWindow::NO_SELECTION) {
         this->indexer->RemovePath(paths.at(index));
         this->LoadPreferences();

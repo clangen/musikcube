@@ -48,9 +48,9 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
-                HotkeysLayout();
+                DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(HotkeysLayout)
 
-                ~HotkeysLayout();
+                HotkeysLayout();
 
                 /* ITopLevelLayout */
                 void SetShortcutsWindow(

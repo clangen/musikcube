@@ -53,7 +53,7 @@ using Entry = IScrollAdapter::EntryPtr;
 using Callback = std::function<void()>;
 
 static std::string formattedTime() {
-    char buffer[128];
+    char buffer[128] = { 0 };
     time_t rawtime;
     struct tm* timeinfo;
     time(&rawtime);
@@ -63,7 +63,7 @@ static std::string formattedTime() {
 }
 
 static void confirmResetHotkeys(Callback cb) {
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+    auto dialog = std::make_shared<DialogOverlay>();
 
     (*dialog)
         .SetTitle(_TSTR("hotkeys_reset_all_title"))
@@ -89,7 +89,7 @@ static void checkConflictAndSave(Hotkeys::Id id, const std::string& key, Callbac
     }
 
     if (existing.size()) {
-        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+        auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("hotkeys_conflict_message");
         ReplaceAll(message, "{{hotkey}}", key);
@@ -122,7 +122,7 @@ static void backupAndShowDialog() {
     std::string out = dir + "hotkeys-" + formattedTime() + ".json";
 
     if (CopyFile(in, out)) {
-        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+        auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("hotkeys_backup_success_message");
         ReplaceAll(message, "{{path}}", out);
@@ -135,7 +135,7 @@ static void backupAndShowDialog() {
         App::Overlays().Push(dialog);
     }
     else {
-        std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+        auto dialog = std::make_shared<DialogOverlay>();
 
         std::string message = _TSTR("hotkeys_backup_failure_message");
         ReplaceAll(message, "{{path}}", dir);
@@ -150,7 +150,7 @@ static void backupAndShowDialog() {
 }
 
 static void showDeleteOverlay(Hotkeys::Id id, Callback cb) {
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+    auto dialog = std::make_shared<DialogOverlay>();
 
     std::string message = _TSTR("hotkeys_delete_binding_message");
     ReplaceAll(message, "{{key}}", Hotkeys::Name(id));
@@ -191,12 +191,9 @@ HotkeysLayout::HotkeysLayout() {
     this->listWindow->SetFocusOrder(0);
 }
 
-HotkeysLayout::~HotkeysLayout() {
-}
-
 void HotkeysLayout::OnEntryActivated(cursespp::ListWindow* list, size_t index) {
-    Hotkeys::Id id = static_cast<Hotkeys::Id>(index);
-    auto shortcuts = this->shortcuts;
+    const Hotkeys::Id id = static_cast<Hotkeys::Id>(index);
+    const auto shortcuts = this->shortcuts;
 
     ReassignHotkeyOverlay::Show(id, [this, list, id](std::string key) {
         checkConflictAndSave(id, key, [this, list]() {
@@ -237,13 +234,13 @@ void HotkeysLayout::SetShortcutsWindow(ShortcutsWindow* shortcuts) {
 }
 
 bool HotkeysLayout::KeyPress(const std::string& kn) {
-    auto refresh = [this]() {
+    const auto refresh = [this]() {
         this->listWindow->OnAdapterChanged();
         this->SetShortcutsWindow(this->shortcuts);
     };
 
     if (kn == "KEY_DC") {
-        auto index = this->listWindow->GetSelectedIndex();
+        const auto index = this->listWindow->GetSelectedIndex();
         if (index != ListWindow::NO_SELECTION) {
             showDeleteOverlay(static_cast<Hotkeys::Id>(index), refresh);
             return true;

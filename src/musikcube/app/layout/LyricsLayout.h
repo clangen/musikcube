@@ -16,6 +16,8 @@ namespace musik { namespace cube {
         public sigslot::has_slots<>
     {
         public:
+            DELETE_CLASS_DEFAULTS(LyricsLayout)
+
             LyricsLayout(
                 musik::core::audio::PlaybackService& playback,
                 musik::core::ILibraryPtr library);

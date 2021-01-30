@@ -43,8 +43,9 @@
 namespace musik { namespace cube {
     class LocalLibrarySettingsLayout: public cursespp::LayoutBase {
         public:
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(LocalLibrarySettingsLayout)
+
             LocalLibrarySettingsLayout();
-            virtual ~LocalLibrarySettingsLayout();
 
             void ToggleShowDotFiles();
             void LoadPreferences();

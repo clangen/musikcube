@@ -52,11 +52,11 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                DELETE_CLASS_DEFAULTS(NowPlayingLayout)
+
                 NowPlayingLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
-
-                virtual ~NowPlayingLayout();
 
                 /* IWindow */
                 void OnVisibilityChanged(bool visible) override;

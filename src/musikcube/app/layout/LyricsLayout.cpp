@@ -76,8 +76,8 @@ LyricsLayout::LyricsLayout(PlaybackService& playback, ILibraryPtr library)
 
 void LyricsLayout::OnLayout() {
     LayoutBase::OnLayout();
-    int cx = this->GetContentWidth();
-    int cy = this->GetContentHeight();
+    const int cx = this->GetContentWidth();
+    const int cy = this->GetContentHeight();
     this->listView->MoveAndResize(0, 0, cx, cy);
     this->infoText->MoveAndResize(1, cy / 2, cx - 2, 1);
 }
@@ -137,11 +137,12 @@ void LyricsLayout::OnVisibilityChanged(bool visible) {
 
 void LyricsLayout::ProcessMessage(musik::core::runtime::IMessage &m) {
     if (m.Type() == message::LyricsLoaded) {
-        if ((State) m.UserData1() == State::Loaded && this->currentLyrics.size()) {
+        const auto state = static_cast<State>(m.UserData1());
+        if (state == State::Loaded && this->currentLyrics.size()) {
             this->OnLyricsLoaded();
         }
         else {
-            this->SetState((State) m.UserData1());
+            this->SetState(state);
         }
     }
     else {
@@ -155,20 +156,20 @@ void LyricsLayout::LoadLyricsForCurrentTrack() {
         this->currentTrackId = track->GetId();
         this->currentLyrics = "";
         this->SetState(State::Loading);
-        auto trackExternalId = track->GetString("external_id");
+        const auto trackExternalId = track->GetString("external_id");
         auto lyricsDbQuery = std::make_shared<LyricsQuery>(trackExternalId);
         this->library->Enqueue(lyricsDbQuery, [this, lyricsDbQuery, track](auto q) {
             auto localLyrics = lyricsDbQuery->GetResult();
             if (localLyrics.size()) {
                 this->currentLyrics = localLyrics;
-                this->Post(message::LyricsLoaded, (int64_t) State::Loaded);
+                this->Post(message::LyricsLoaded, static_cast<int64_t>(State::Loaded));
             }
             else {
                 auddio::FindLyrics(track, [this](TrackPtr track, std::string remoteLyrics) {
                     if (this->currentTrackId == track->GetId()) {
                         this->currentLyrics = remoteLyrics;
-                        auto state = remoteLyrics.size() ? State::Loaded : State::Failed;
-                        this->Post(message::LyricsLoaded, (int64_t) state);
+                        const auto state = remoteLyrics.size() ? State::Loaded : State::Failed;
+                        this->Post(message::LyricsLoaded, static_cast<int64_t>(state));
                     }
                 });
             }

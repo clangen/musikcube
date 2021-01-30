@@ -52,6 +52,8 @@ namespace musik { namespace cube {
 
             static void ShowNoUpgradeFoundOverlay();
 
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(UpdateCheck)
+
             UpdateCheck();
             ~UpdateCheck();
 
@@ -61,7 +63,8 @@ namespace musik { namespace cube {
         private:
             void Reset();
 
-            virtual void ProcessMessage(musik::core::runtime::IMessage &message);
+            /* IMessageHandler */
+            void ProcessMessage(musik::core::runtime::IMessage &message) override;
 
             std::recursive_mutex mutex;
             Callback callback;

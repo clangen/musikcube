@@ -87,11 +87,11 @@ static inline milliseconds now() noexcept {
         system_clock::now().time_since_epoch());
 }
 
-static inline bool lastOperationExpired() {
+static inline bool lastOperationExpired() noexcept {
     return now() > lastOperationExpiry;
 }
 
-static inline void touchOperationExpiry() {
+static inline void touchOperationExpiry() noexcept {
     lastOperationExpiry = now() + duration_cast<milliseconds>(Seconds(60));
 }
 
@@ -393,7 +393,7 @@ static void showAddCategorySelectionToPlaylistOverlay(
         if (!lastOperationExpired() && lastPlaylistId >= 0) {
             const int index = findPlaylistIndex(result, lastPlaylistId);
             if (index >= 0) {
-                selectedIndex = (size_t) index + 1; /* +1 offsets "new..." */
+                selectedIndex = narrow_cast<size_t>(index) + 1; /* +1 offsets "new..." */
             }
         }
 
@@ -440,7 +440,7 @@ static void showAddTrackToPlaylistOverlay(
         if (!lastOperationExpired() && lastPlaylistId >= 0) {
             const int index = findPlaylistIndex(result, lastPlaylistId);
             if (index >= 0) {
-                selectedIndex = (size_t) index + 1; /* +1 offsets "new..." */
+                selectedIndex = narrow_cast<size_t>(index) + 1; /* +1 offsets "new..." */
             }
         }
 

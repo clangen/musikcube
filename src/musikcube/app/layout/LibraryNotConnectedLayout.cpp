@@ -62,8 +62,8 @@ static inline std::string resolveErrorMessage(MasterLibraryPtr library) {
 
     auto remoteLibrary = dynamic_cast<const RemoteLibrary*>(library->Wrapped().get());
     if (remoteLibrary) {
-        auto error = remoteLibrary->WebSocketClient().LastConnectionError();
-        auto it = kStateToErrorString.find(error);
+        const auto error = remoteLibrary->WebSocketClient().LastConnectionError();
+        const auto it = kStateToErrorString.find(error);
         if (it != kStateToErrorString.end()) {
             std::string value = _TSTR(it->second);
             if (error == WebSocketClient::ConnectionError::IncompatibleVersion) {
@@ -110,8 +110,8 @@ LibraryNotConnectedLayout::LibraryNotConnectedLayout(MasterLibraryPtr library)
 
 void LibraryNotConnectedLayout::OnLayout() {
     LayoutBase::OnLayout();
-    int cx = this->GetContentWidth();
-    int cy = this->GetContentHeight();
+    const int cx = this->GetContentWidth();
+    const int cy = this->GetContentHeight();
     this->messageText->MoveAndResize(1, (cy / 2) - 2, cx - 2, 1);
     this->errorText->MoveAndResize(1, (cy / 2) - 1, cx - 2, 1);
     this->helpText->MoveAndResize(1, (cy / 2) + 1, cx - 2, 1);

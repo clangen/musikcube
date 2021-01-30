@@ -55,6 +55,8 @@ namespace musik {
             public:
                 using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
 
+                DELETE_CLASS_DEFAULTS(MainLayout)
+
                 MainLayout(
                     cursespp::App& app,
                     ConsoleLogger* logger,

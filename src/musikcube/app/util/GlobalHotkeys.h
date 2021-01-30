@@ -43,6 +43,8 @@ namespace musik {
     namespace cube {
         class GlobalHotkeys {
             public:
+                DELETE_CLASS_DEFAULTS(GlobalHotkeys)
+
                 GlobalHotkeys(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);

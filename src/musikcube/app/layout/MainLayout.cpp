@@ -121,7 +121,7 @@ MainLayout::MainLayout(
     this->settingsLayout = std::make_shared<SettingsLayout>(app, library, playback);
     this->hotkeysLayout = std::make_shared<HotkeysLayout>();
 
-    this->topBanner.reset(new TextLabel());
+    this->topBanner = std::make_shared<TextLabel>();
     this->topBanner->SetContentColor(Color::Header);
     this->topBanner->Hide();
     this->AddWindow(this->topBanner);
@@ -139,7 +139,7 @@ MainLayout::~MainLayout() {
 }
 
 bool MainLayout::ShowTopBanner() {
-    auto libraryType = this->library->GetType();
+    const auto libraryType = this->library->GetType();
     if (libraryType == ILibrary::Type::Local) {
         return this->library->Indexer()->GetState() == IIndexer::StateIndexing;
     }
@@ -150,7 +150,7 @@ bool MainLayout::ShowTopBanner() {
 }
 
 void MainLayout::UpdateTopBannerText() {
-    auto libraryType = this->library->GetType();
+    const auto libraryType = this->library->GetType();
     if (libraryType == ILibrary::Type::Local) {
         updateSyncingText(this->topBanner.get(), this->syncUpdateCount);
     }
@@ -161,9 +161,9 @@ void MainLayout::UpdateTopBannerText() {
 
 void MainLayout::OnLayout() {
     if (this->ShowTopBanner()) {
-        size_t cx = this->GetContentWidth();
+        const int cx = this->GetContentWidth();
         this->SetPadding(1, 0, 0, 0);
-        this->topBanner->MoveAndResize(0, 0, (int) cx, 1);
+        this->topBanner->MoveAndResize(0, 0, cx, 1);
         this->topBanner->Show();
         this->UpdateTopBannerText();
     }
@@ -217,7 +217,7 @@ void MainLayout::Stop() {
 }
 
 void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
-    int type = message.Type();
+    const int type = message.Type();
 
     if (type == message::JumpToConsole) {
         this->SetLayout(consoleLayout);
@@ -245,7 +245,7 @@ void MainLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
         this->Layout();
     }
     else if (type == message::IndexerProgress) {
-        this->syncUpdateCount = (int) message.UserData1();
+        this->syncUpdateCount = narrow_cast<int>(message.UserData1());
         this->UpdateTopBannerText();
         if (!topBanner->IsVisible()) {
             this->Layout();
@@ -280,7 +280,7 @@ void MainLayout::SwitchToPlayQueue() {
 void MainLayout::SwitchToLibraryLayout() {
     if (IsLibraryConnected()) {
         if (!this->libraryLayout) {
-            this->libraryLayout.reset(new LibraryLayout(playback, library));
+            this->libraryLayout = std::make_shared<LibraryLayout>(playback, library);
         }
         this->SetLayout(libraryLayout);
     }

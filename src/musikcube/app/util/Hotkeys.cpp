@@ -50,7 +50,7 @@ using Id = Hotkeys::Id;
 /* sigh: http://stackoverflow.com/a/24847480 */
 struct EnumHasher {
     template <typename T>
-    std::size_t operator()(T t) const {
+    std::size_t operator()(T t) const noexcept {
         return static_cast<std::size_t>(t);
     }
 };
@@ -256,7 +256,7 @@ static void loadPreferences() {
             std::vector<std::string> names;
             preferences->GetKeys(names);
             for (auto n : names) {
-                auto it = NAME_TO_ID.find(n);
+                const auto it = NAME_TO_ID.find(n);
                 if (it != NAME_TO_ID.end()) {
                     customIdToKey[it->second] = preferences->GetString(n);
                 }
@@ -273,21 +273,18 @@ static void loadPreferences() {
     }
 }
 
-Hotkeys::Hotkeys() {
-}
-
 bool Hotkeys::Is(Id id, const std::string& kn) {
     ENSURE_LOADED()
 
     /* see if the user has specified a custom value for this hotkey. if
     they have, compare it to the custom value. */
-    auto custom = customIdToKey.find(id);
+    const auto custom = customIdToKey.find(id);
     if (custom != customIdToKey.end()) {
         return (custom->second == kn);
     }
 
     /* otherwise, let's compare against the default key */
-    auto it = ID_TO_DEFAULT.find(id);
+    const auto it = ID_TO_DEFAULT.find(id);
     if (it != ID_TO_DEFAULT.end() && it->second == kn) {
         return true;
     }
@@ -297,7 +294,7 @@ bool Hotkeys::Is(Id id, const std::string& kn) {
 
 template <typename T>
 std::string find(Id id, T& map) {
-    auto it = map.find(id);
+    const auto it = map.find(id);
     if (it != map.end()) {
         return it->second;
     }
@@ -365,31 +362,31 @@ std::string Hotkeys::Name(Id id) {
 
 class NavigationKeysImpl : public cursespp::INavigationKeys {
     public:
-        virtual bool Up(const std::string& key) override { return Up() == key; }
-        virtual bool Down(const std::string& key) override { return Down() == key; }
-        virtual bool Left(const std::string& key) override { return Left() == key; }
-        virtual bool Right(const std::string& key) override { return Right() == key; }
-        virtual bool PageUp(const std::string& key) override { return PageUp() == key; }
-        virtual bool PageDown(const std::string& key) override { return PageDown() == key; }
-        virtual bool Home(const std::string& key) override { return Home() == key; }
-        virtual bool End(const std::string& key) override { return End() == key; }
-        virtual bool Next(const std::string& key) override { return Next() == key; }
-        virtual bool Prev(const std::string& key) override { return Prev() == key; }
-        virtual bool Mode(const std::string& key) override { return Mode() == key; }
+        bool Up(const std::string& key) override { return Up() == key; }
+        bool Down(const std::string& key) override { return Down() == key; }
+        bool Left(const std::string& key) override { return Left() == key; }
+        bool Right(const std::string& key) override { return Right() == key; }
+        bool PageUp(const std::string& key) override { return PageUp() == key; }
+        bool PageDown(const std::string& key) override { return PageDown() == key; }
+        bool Home(const std::string& key) override { return Home() == key; }
+        bool End(const std::string& key) override { return End() == key; }
+        bool Next(const std::string& key) override { return Next() == key; }
+        bool Prev(const std::string& key) override { return Prev() == key; }
+        bool Mode(const std::string& key) override { return Mode() == key; }
 
-        virtual std::string Up() override { return Hotkeys::Get(Hotkeys::Up); }
-        virtual std::string Down() override { return Hotkeys::Get(Hotkeys::Down); }
-        virtual std::string Left() override { return Hotkeys::Get(Hotkeys::Left); }
-        virtual std::string Right() override { return Hotkeys::Get(Hotkeys::Right); }
-        virtual std::string PageUp() override { return Hotkeys::Get(Hotkeys::PageUp); }
-        virtual std::string PageDown() override { return Hotkeys::Get(Hotkeys::PageDown); }
-        virtual std::string Home() override { return Hotkeys::Get(Hotkeys::Home); }
-        virtual std::string End() override { return Hotkeys::Get(Hotkeys::End); }
-        virtual std::string Next() override { return "KEY_TAB"; }
-        virtual std::string Prev() override { return "KEY_BTAB"; }
-        virtual std::string Mode() override { return "^["; }
+        std::string Up() override { return Hotkeys::Get(Hotkeys::Up); }
+        std::string Down() override { return Hotkeys::Get(Hotkeys::Down); }
+        std::string Left() override { return Hotkeys::Get(Hotkeys::Left); }
+        std::string Right() override { return Hotkeys::Get(Hotkeys::Right); }
+        std::string PageUp() override { return Hotkeys::Get(Hotkeys::PageUp); }
+        std::string PageDown() override { return Hotkeys::Get(Hotkeys::PageDown); }
+        std::string Home() override { return Hotkeys::Get(Hotkeys::Home); }
+        std::string End() override { return Hotkeys::Get(Hotkeys::End); }
+        std::string Next() override { return "KEY_TAB"; }
+        std::string Prev() override { return "KEY_BTAB"; }
+        std::string Mode() override { return "^["; }
 };
 
 std::shared_ptr<cursespp::INavigationKeys> Hotkeys::NavigationKeys() {
-    return std::shared_ptr<cursespp::INavigationKeys>(new NavigationKeysImpl());
+    return std::make_shared<NavigationKeysImpl>();
 }

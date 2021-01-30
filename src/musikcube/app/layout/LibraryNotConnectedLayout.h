@@ -50,6 +50,8 @@ namespace musik { namespace cube {
         public:
             using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
 
+            DELETE_CLASS_DEFAULTS(LibraryNotConnectedLayout)
+
             LibraryNotConnectedLayout(MasterLibraryPtr library);
 
             /* IWindow */

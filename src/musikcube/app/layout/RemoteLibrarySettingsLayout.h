@@ -44,8 +44,9 @@
 namespace musik { namespace cube {
     class RemoteLibrarySettingsLayout: public cursespp::LayoutBase, public sigslot::has_slots<>  {
         public:
-            RemoteLibrarySettingsLayout();
+            DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(RemoteLibrarySettingsLayout)
 
+            RemoteLibrarySettingsLayout();
             virtual ~RemoteLibrarySettingsLayout();
 
             void LoadPreferences();

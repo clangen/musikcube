@@ -53,20 +53,26 @@
 
 #include "LibraryLayout.h"
 
+using namespace musik;
+using namespace musik::core;
+using namespace musik::core::audio;
+using namespace musik::core::library;
 using namespace musik::core::library::constants;
+using namespace musik::cube;
 using namespace musik::core::runtime;
+using namespace cursespp;
+
+namespace keys = musik::cube::prefs::keys;
+namespace components = musik::core::prefs::components;
 
 #define SHOULD_REFOCUS(target) \
     (this->visibleLayout == target) && \
     (this->shortcuts && !this->shortcuts->IsFocused())
 
-using namespace musik;
-using namespace musik::core;
-using namespace musik::core::audio;
-using namespace musik::core::library;
-using namespace musik::cube;
-using namespace musik::core::runtime;
-using namespace cursespp;
+#define REMEMBER(key, value) { \
+    auto prefs = Preferences::ForComponent(components::Session); \
+    prefs->SetString(key, value.c_str()); this->prefs->Save(); \
+}
 
 namespace type {
     const std::string CategoryFilter = "CategoryFilter";
@@ -75,14 +81,6 @@ namespace type {
     const std::string Directory = "Directory";
     const std::string NowPlaying = "NowPlaying";
 };
-
-namespace keys = musik::cube::prefs::keys;
-namespace components = musik::core::prefs::components;
-
-#define REMEMBER(key, value) { \
-    auto prefs = Preferences::ForComponent(components::Session); \
-    prefs->SetString(key, value.c_str()); this->prefs->Save(); \
-}
 
 LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, ILibraryPtr library)
 : LayoutBase()
@@ -94,19 +92,16 @@ LibraryLayout::LibraryLayout(musik::core::audio::PlaybackService& playback, ILib
     this->InitializeWindows();
 }
 
-LibraryLayout::~LibraryLayout() {
-}
-
 void LibraryLayout::OnLayout() {
-    bool autoHideCommandBar = this->prefs->GetBool(keys::AutoHideCommandBar, false);
-    int x = 0, y = 0;
-    int cx = this->GetWidth(), cy = this->GetHeight();
+    const bool autoHideCommandBar = this->prefs->GetBool(keys::AutoHideCommandBar, false);
+    const int x = 0, y = 0;
+    const int cx = this->GetWidth(), cy = this->GetHeight();
 #ifdef WIN32
-    int transportCy = 3;
+    const int transportCy = 3;
 #else
-    int transportCy = (autoHideCommandBar ? 2 : 3);
+    const int transportCy = (autoHideCommandBar ? 2 : 3);
 #endif
-    int mainHeight = cy - transportCy;
+    const int mainHeight = cy - transportCy;
     this->transportView->MoveAndResize(1, mainHeight, cx - 2, transportCy);
     if (this->visibleLayout) {
         this->visibleLayout->MoveAndResize(x, y, cx, mainHeight);
@@ -200,13 +195,13 @@ void LibraryLayout::ShowDirectories(const std::string& directory) {
 }
 
 void LibraryLayout::InitializeWindows() {
-    this->browseLayout.reset(new BrowseLayout(this->playback, this->library));
-    this->directoryLayout.reset(new DirectoryLayout(this->playback, this->library));
-    this->nowPlayingLayout.reset(new NowPlayingLayout(this->playback, this->library));
-    this->categorySearchLayout.reset(new CategorySearchLayout(this->playback, this->library));
+    this->browseLayout = std::make_shared<BrowseLayout>(this->playback, this->library);
+    this->directoryLayout = std::make_shared<DirectoryLayout>(this->playback, this->library);
+    this->nowPlayingLayout = std::make_shared<NowPlayingLayout>(this->playback, this->library);
+    this->categorySearchLayout = std::make_shared<CategorySearchLayout>(this->playback, this->library);
     this->categorySearchLayout->SearchResultSelected.connect(this, &LibraryLayout::OnCategorySearchResultSelected);
-    this->trackSearchLayout.reset(new TrackSearchLayout(this->playback, this->library));
-    this->transportView.reset(new TransportWindow(this->library, this->playback));
+    this->trackSearchLayout = std::make_shared<TrackSearchLayout>(this->playback, this->library);
+    this->transportView = std::make_shared<TransportWindow>(this->library, this->playback);
 
     this->AddWindow(this->transportView);
     this->LoadLastSession();
@@ -376,30 +371,33 @@ bool LibraryLayout::SetFocus(cursespp::IWindowPtr window) {
 void LibraryLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
     switch (message.Type()) {
         case message::JumpToCategory: {
-            static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
-                { cube::message::category::Album, constants::Track::ALBUM },
-                { cube::message::category::Artist, constants::Track::ARTIST },
-                { cube::message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
-                { cube::message::category::Genre, constants::Track::GENRE }
-            };
+                static std::map<int, const char*> JUMP_TYPE_TO_COLUMN = {
+                    { cube::message::category::Album, constants::Track::ALBUM },
+                    { cube::message::category::Artist, constants::Track::ARTIST },
+                    { cube::message::category::AlbumArtist, constants::Track::ALBUM_ARTIST },
+                    { cube::message::category::Genre, constants::Track::GENRE }
+                };
 
-            auto type = JUMP_TYPE_TO_COLUMN[(int)message.UserData1()];
-            auto id = message.UserData2();
-            this->OnCategorySearchResultSelected(nullptr, type, id);
-        }
-        break;
+                auto type = JUMP_TYPE_TO_COLUMN[(int)message.UserData1()];
+                const auto id = message.UserData2();
+                this->OnCategorySearchResultSelected(nullptr, type, id);
+            }
+            break;
 
         case core::message::PlaylistModified:
         case core::message::PlaylistCreated:
         case core::message::PlaylistRenamed:
         case core::message::PlaylistDeleted: {
-            MessageQueue().Post(Message::Create(
-                this->browseLayout.get(),
-                message.Type(),
-                message.UserData1(),
-                message.UserData2()));
-        }
-        break;
+                MessageQueue().Post(Message::Create(
+                    this->browseLayout.get(),
+                    message.Type(),
+                    message.UserData1(),
+                    message.UserData2()));
+            }
+            break;
+
+        default:
+            break;
     }
 
     LayoutBase::ProcessMessage(message);

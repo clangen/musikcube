@@ -62,19 +62,19 @@ using namespace std::chrono;
 using Callback = std::function<void()>;
 
 static const std::string kTlsInfoUrl = "https://github.com/clangen/musikcube/wiki/ssl-server-setup";
-static const int64_t kTlsWarningCooldownMs = 20000;
+constexpr int64_t kTlsWarningCooldownMs = 20000;
 int64_t lastTlsWarningTime = 0;
 
 static const std::vector<std::string> kTranscoderFormats = { "mp3", "opus", "ogg", "flac", "aac" };
 static const std::string kDefaultTranscoderFormat = "ogg";
-static const int kDefaultTranscoderFormatOverlayWidth = 24;
+constexpr int kDefaultTranscoderFormatOverlayWidth = 24;
 
 static const std::vector<int> kTranscoderBitrates = { 64, 96, 128, 192, 256, 320 };
-static const int kDefaultTranscoderBitrate = 192;
-static const int kDefaultTranscoderBitrateOverlayWidth = 24;
+constexpr int kDefaultTranscoderBitrate = 192;
+constexpr int kDefaultTranscoderBitrateOverlayWidth = 24;
 
 static void showNeedsRestart(Callback cb = Callback()) {
-    std::shared_ptr<DialogOverlay> dialog(new DialogOverlay());
+    auto dialog = std::make_shared<DialogOverlay>();
 
     (*dialog)
         .SetTitle(_TSTR("default_overlay_title"))
@@ -99,18 +99,18 @@ void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> call
     std::string currentLocale = locale.GetSelectedLocale();
     allLocales = locale.GetLocales();
 
-    std::shared_ptr<Adapter> adapter(new Adapter());
+    auto adapter = std::make_shared<Adapter>();
     adapter->SetSelectable(true);
 
     int selectedIndex = 0;
     for (size_t i = 0; i < allLocales.size(); i++) {
         adapter->AddEntry(allLocales[i]);
         if (allLocales[i] == currentLocale) {
-            selectedIndex = (int)i;
+            selectedIndex = narrow_cast<int>(i);
         }
     }
 
-    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+    auto dialog = std::make_shared<ListOverlay>();
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("locale_overlay_select_title"))
@@ -130,20 +130,20 @@ void musik::cube::SettingsOverlays::ShowLocaleOverlay(std::function<void()> call
 void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()> callback) {
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
 
-    const auto libraryType = (ILibrary::Type) prefs->GetInt(
-        core::prefs::keys::LibraryType, (int) ILibrary::Type::Local);
+    const auto libraryType = static_cast<ILibrary::Type>(prefs->GetInt(
+        core::prefs::keys::LibraryType, (int) ILibrary::Type::Local));
 
     using Adapter = cursespp::SimpleScrollAdapter;
     using ListOverlay = cursespp::ListOverlay;
 
-    std::shared_ptr<Adapter> adapter(new Adapter());
+    auto adapter = std::make_shared<Adapter>();
     adapter->SetSelectable(true);
     adapter->AddEntry(_TSTR("settings_library_type_local"));
     adapter->AddEntry(_TSTR("settings_library_type_remote"));
 
-    int selectedIndex = libraryType == ILibrary::Type::Local ? 0 : 1;
+    const int selectedIndex = libraryType == ILibrary::Type::Local ? 0 : 1;
 
-    std::shared_ptr<ListOverlay> dialog(new ListOverlay());
+    auto dialog = std::make_shared<ListOverlay>();
 
     dialog->SetAdapter(adapter)
         .SetTitle(_TSTR("settings_library_type_overlay_title"))
@@ -151,8 +151,8 @@ void musik::cube::SettingsOverlays::ShowLibraryTypeOverlay(std::function<void()>
         .SetItemSelectedCallback(
             [prefs, callback]
             (ListOverlay* overlay, IScrollAdapterPtr adapter, size_t index) {
-                auto updatedType = index == 0 ? ILibrary::Type::Local : ILibrary::Type::Remote;
-                prefs->SetInt(core::prefs::keys::LibraryType, (int)updatedType);
+                const auto updatedType = index == 0 ? ILibrary::Type::Local : ILibrary::Type::Remote;
+                prefs->SetInt(core::prefs::keys::LibraryType, narrow_cast<int>(updatedType));
                 callback();
             });
 
@@ -232,7 +232,7 @@ void musik::cube::SettingsOverlays::CheckShowTlsWarningDialog() {
 void musik::cube::SettingsOverlays::ShowTranscoderBitrateOverlay(std::function<void()> callback) {
     auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
 
-    int currentBitrate = prefs->GetInt(
+    const int currentBitrate = prefs->GetInt(
         core::prefs::keys::RemoteLibraryTranscoderBitrate,
         kDefaultTranscoderBitrate);
 

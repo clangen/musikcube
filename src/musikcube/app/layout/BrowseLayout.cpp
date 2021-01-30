@@ -72,7 +72,7 @@ static int kMinListTitleHeight = 26;
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
 
-static std::set<std::string> EDIT_KEYS;
+static std::set<std::string> kEditKeys;
 
 static std::map <std::string, std::string> FIELD_TO_TITLE {
     std::make_pair(constants::Track::ARTIST, "browse_title_artists"),
@@ -110,7 +110,7 @@ BrowseLayout::BrowseLayout(
 : LayoutBase()
 , playlistModified(false)
 , playback(playback) {
-    EDIT_KEYS = {
+    kEditKeys = {
         Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
         Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
         Hotkeys::Get(Hotkeys::PlayQueueDelete)
@@ -390,7 +390,7 @@ bool BrowseLayout::ProcessPlaylistOperation(const std::string& key) {
 }
 
 bool BrowseLayout::ProcessEditOperation(const std::string& key) {
-    if (this->GetFocus() != this->trackList || EDIT_KEYS.find(key) == EDIT_KEYS.end()) {
+    if (this->GetFocus() != this->trackList || kEditKeys.find(key) == kEditKeys.end()) {
         return false;
     }
 
@@ -399,7 +399,7 @@ bool BrowseLayout::ProcessEditOperation(const std::string& key) {
     }
 
     std::shared_ptr<TrackList> tracks = this->trackList->GetTrackList();
-    if (tracks && EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
+    if (tracks && kEditKeys.find(key) != kEditKeys.end()) {
         const size_t selected = this->trackList->GetSelectedTrackIndex();
         size_t to = -1;
         bool modified = this->playlistModified;

@@ -62,7 +62,7 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-static std::set<std::string> EDIT_KEYS;
+static std::set<std::string> kEditKeys;
 
 static std::string formatWithAlbum(TrackPtr track, size_t index, size_t width);
 
@@ -82,21 +82,18 @@ NowPlayingLayout::NowPlayingLayout(
     this->trackListView->SetRowRenderer(
         TrackRowRenderers::Get(TrackRowRenderers::Type::NowPlaying));
 
-    EDIT_KEYS = {
+    kEditKeys = {
         Hotkeys::Get(Hotkeys::PlayQueueMoveUp),
         Hotkeys::Get(Hotkeys::PlayQueueMoveDown),
         Hotkeys::Get(Hotkeys::PlayQueueDelete)
     };
 }
 
-NowPlayingLayout::~NowPlayingLayout() {
-}
-
 Color NowPlayingLayout::RowDecorator(musik::core::TrackPtr track, size_t index) {
-    bool selected = index == trackListView->GetSelectedIndex();
+    const bool selected = index == trackListView->GetSelectedIndex();
 
     Color attrs = selected ? Color::ListItemHighlighted : Color::Default;
-    size_t playingIndex = playback.GetIndex();
+    const size_t playingIndex = playback.GetIndex();
 
     if (index == playingIndex) {
         TrackPtr playing = playback.GetPlaying();
@@ -128,10 +125,14 @@ void NowPlayingLayout::OnLayout() {
 }
 
 void NowPlayingLayout::InitializeWindows() {
-    this->trackListView.reset(new TrackListView(
+    this->trackListView = std::make_shared<TrackListView>(
         this->playback,
         this->library,
-        std::bind(&NowPlayingLayout::RowDecorator, this, std::placeholders::_1, std::placeholders::_2)));
+        std::bind(
+            &NowPlayingLayout::RowDecorator,
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2));
 
     this->trackListView->SetFrameTitle(_TSTR("playqueue_title"));
     this->trackListView->Requeried.connect(this, &NowPlayingLayout::OnTrackListRequeried);
@@ -162,14 +163,14 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::library::query::TrackLi
     if (playback.Count()) {
         /* regular logic (i.e, no edit operation) */
         if (this->reselectIndex == -1) {
-            size_t index = playback.GetIndex();
+            const size_t index = playback.GetIndex();
 
             if (index == ListWindow::NO_SELECTION) { /* not playing? */
                 this->trackListView->ScrollTo(0);
                 this->trackListView->SetSelectedIndex(0);
             }
             else { /* playing... */
-                size_t scrollToIndex = index == 0 ? index : index - 1;
+                const size_t scrollToIndex = index == 0 ? index : index - 1;
                 if (!this->trackListView->IsEntryVisible(scrollToIndex)) {
                     this->trackListView->ScrollTo(scrollToIndex);
                 }
@@ -184,10 +185,10 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::library::query::TrackLi
             /* ensure the correct index is selected, and that it's properly
             scrolled into view */
             this->reselectIndex = std::min((int) this->trackListView->TrackCount() - 1, this->reselectIndex);
-            this->trackListView->SetSelectedIndex((size_t)this->reselectIndex);
+            this->trackListView->SetSelectedIndex(narrow_cast<size_t>(this->reselectIndex));
 
-            if (!this->trackListView->IsEntryVisible((size_t) this->reselectIndex)) {
-                this->trackListView->ScrollTo((size_t)this->reselectIndex);
+            if (!this->trackListView->IsEntryVisible(narrow_cast<size_t>(this->reselectIndex))) {
+                this->trackListView->ScrollTo(narrow_cast<size_t>(this->reselectIndex));
             }
 
             this->reselectIndex = -1;
@@ -195,7 +196,7 @@ void NowPlayingLayout::OnTrackListRequeried(musik::core::library::query::TrackLi
 
         /* if after a bunch of monkeying around there's still nothing
         selected, but we have contents, let's just select the first item */
-        auto sel = this->trackListView->GetSelectedIndex();
+        const auto sel = this->trackListView->GetSelectedIndex();
         if (sel == ListWindow::NO_SELECTION || sel >= this->trackListView->TrackCount()) {
             this->trackListView->SetSelectedIndex(0);
             this->trackListView->ScrollTo(0);
@@ -213,9 +214,7 @@ void NowPlayingLayout::RequeryTrackList() {
 }
 
 void NowPlayingLayout::OnPlaylistSelected(int64_t playlistId) {
-    auto query = std::shared_ptr<GetPlaylistQuery>(
-        new GetPlaylistQuery(library, playlistId));
-
+    auto query = std::make_shared<GetPlaylistQuery>(library, playlistId);
     this->lastPlaylistQueryId = query->GetId();
     this->trackListView->Requery(query);
 }
@@ -253,30 +252,30 @@ bool NowPlayingLayout::KeyPress(const std::string& key) {
 }
 
 bool NowPlayingLayout::ProcessEditOperation(const std::string& key) {
-    if (EDIT_KEYS.find(key) != EDIT_KEYS.end()) {
+    if (kEditKeys.find(key) != kEditKeys.end()) {
         if (!playback.IsShuffled()) {
-            size_t selected = this->trackListView->GetSelectedIndex();
+            const size_t selected = this->trackListView->GetSelectedIndex();
             this->reselectIndex = -1;
 
             {
                 PlaybackService::Editor editor = this->playback.Edit();
                 if (Hotkeys::Is(Hotkeys::PlayQueueMoveUp, key)) {
                     if (selected > 0) {
-                        size_t to = selected - 1;
+                        const size_t to = selected - 1;
                         editor.Move(selected, to);
-                        reselectIndex = (int)to;
+                        reselectIndex = narrow_cast<int>(to);
                     }
                 }
                 else if (Hotkeys::Is(Hotkeys::PlayQueueMoveDown, key)) {
                     if (selected < this->playback.Count() - 1) {
-                        size_t to = selected + 1;
+                        const size_t to = selected + 1;
                         editor.Move(selected, to);
-                        reselectIndex = (int)to;
+                        reselectIndex = narrow_cast<int>(to);
                     }
                 }
                 else if (Hotkeys::Is(Hotkeys::PlayQueueDelete, key)) {
                     editor.Delete(selected);
-                    reselectIndex = (int)selected;
+                    reselectIndex = narrow_cast<int>(selected);
                 }
             }
 

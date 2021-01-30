@@ -147,7 +147,7 @@ namespace musik {
                 static std::shared_ptr<cursespp::INavigationKeys> NavigationKeys();
 
             private:
-                Hotkeys();
+                DELETE_CLASS_DEFAULTS(Hotkeys)
         };
     }
 }

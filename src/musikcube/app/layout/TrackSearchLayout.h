@@ -52,6 +52,8 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(TrackSearchLayout)
+
                 TrackSearchLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);

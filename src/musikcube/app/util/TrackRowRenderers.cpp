@@ -53,10 +53,10 @@ using namespace cursespp;
 
 #define DIGITS(x) (x > 9 ? (int) log10((double) x) + 1 : 1)
 
-static const bool kEnableSkeletonRows = true;
+constexpr bool kEnableSkeletonRows = true;
+constexpr int kDurationColWidth = 5; /* 00:00 */
+constexpr int kRatingBreakpointWidth = 90;
 static const std::string kSkeletonChar = "-"; // "░";
-static const int kDurationColWidth = 5; /* 00:00 */
-static const int kRatingBreakpointWidth = 90;
 
 /* this method does a couple things slower than it probably should, but it
 shouldn't cause any issues. TODO: make this better? does it matter? */
@@ -81,9 +81,9 @@ static std::string placeholder(int width) {
 }
 
 namespace AlbumSort {
-    static const int kTrackColWidth = 3;
-    static const int kArtistColWidth = 17;
-    static const int kRatingColumnWidth = 5;
+    constexpr int kTrackColWidth = 3;
+    constexpr int kArtistColWidth = 17;
+    constexpr int kRatingColumnWidth = 5;
 
     static std::string skeleton(TrackPtr track, size_t width) {
         auto const id = track->GetId();
@@ -94,16 +94,19 @@ namespace AlbumSort {
         std::string artist = text::Align(placeholder(1 + (id % (kArtistColWidth - 2))), text::AlignLeft, kArtistColWidth);
 
         int titleWidth =
-            (int) width -
-            (int) kTrackColWidth -
+            narrow_cast<int>(width) -
+            narrow_cast<int>(kTrackColWidth) -
             kDurationColWidth -
             kArtistColWidth -
-            (int) u8len(rating) -
+            narrow_cast<int>(u8len(rating)) -
             (3 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
 
-        std::string title = text::Align(placeholder(1 + (id % ((int64_t) titleWidth - 2))), text::AlignLeft, (int) titleWidth);
+        std::string title = text::Align(placeholder(
+            1 + (id % (static_cast<int64_t>(titleWidth) - 2))),
+            text::AlignLeft,
+            narrow_cast<int>(titleWidth));
 
         return u8fmt(
             "%s   %s%s   %s   %s",
@@ -148,11 +151,11 @@ namespace AlbumSort {
         int titleWidth = 0;
 
         titleWidth =
-            (int) width -
-            (int) trackColWidth -
+            narrow_cast<int>(width) -
+            narrow_cast<int>(trackColWidth) -
             kDurationColWidth -
             kArtistColWidth -
-            (int) u8len(rating) -
+            narrow_cast<int>(u8len(rating)) -
             (3 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
@@ -160,7 +163,7 @@ namespace AlbumSort {
         std::string title = text::Align(
             track->GetString(constants::Track::TITLE),
             text::AlignLeft,
-            (int) titleWidth);
+            narrow_cast<int>(titleWidth));
 
         return u8fmt(
             "%s   %s%s   %s   %s",
@@ -173,9 +176,9 @@ namespace AlbumSort {
 }
 
 namespace NowPlaying {
-    static const int kTrackColWidth = 3;
-    static const int kArtistColWidth = 14;
-    static const int kAlbumColWidth = 14;
+    constexpr int kTrackColWidth = 3;
+    constexpr int kArtistColWidth = 14;
+    constexpr int kAlbumColWidth = 14;
 
     static std::string skeleton(TrackPtr track, size_t width) {
         auto const id = track->GetId();
@@ -187,17 +190,20 @@ namespace NowPlaying {
         std::string artist = text::Align(placeholder(1 + (id % (kArtistColWidth - 2))), text::AlignLeft, kArtistColWidth);
 
         int titleWidth =
-            (int)width -
-            (int)kTrackColWidth -
+            narrow_cast<int>(width) -
+            narrow_cast<int>(kTrackColWidth) -
             kDurationColWidth -
             kAlbumColWidth -
             kArtistColWidth -
-            (int)u8len(rating) -
+            narrow_cast<int>(u8len(rating)) -
             (4 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);
 
-        std::string title = text::Align(placeholder(1 + (id % ((int64_t) titleWidth - 2))), text::AlignLeft, (int) titleWidth);
+        std::string title = text::Align(placeholder(
+            1 + (id % (static_cast<int64_t>(titleWidth) - 2))), 
+            text::AlignLeft, 
+            narrow_cast<int>(titleWidth));
 
         return u8fmt(
             "%s   %s%s   %s   %s   %s",
@@ -234,12 +240,12 @@ namespace NowPlaying {
             kArtistColWidth);
 
         int titleWidth =
-            (int) width -
-            (int) trackColWidth -
+            narrow_cast<int>(width) -
+            narrow_cast<int>(trackColWidth) -
             kDurationColWidth -
             kAlbumColWidth -
             kArtistColWidth -
-            (int) u8cols(rating) -
+            narrow_cast<int>(u8cols(rating)) -
             (4 * 3); /* 3 = spacing */
 
         titleWidth = std::max(0, titleWidth);

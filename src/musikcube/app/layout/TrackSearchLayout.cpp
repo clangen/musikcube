@@ -62,8 +62,8 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-#define SEARCH_HEIGHT 3
-#define REQUERY_INTERVAL_MS 300
+constexpr int kSearchHeight = 3;
+constexpr int kRequeryIntervalMs = 300;
 
 static TrackSortType getDefaultTrackSort(std::shared_ptr<musik::core::Preferences> prefs) {
     return (TrackSortType) prefs->GetInt(
@@ -104,32 +104,32 @@ void TrackSearchLayout::SaveSession() {
 }
 
 void TrackSearchLayout::OnLayout() {
-    int cx = this->GetWidth(), cy = this->GetHeight();
-    int x = 0, y = 0;
+    const int cx = this->GetWidth(), cy = this->GetHeight();
+    const int x = 0, y = 0;
 
-    int inputWidth = cx / 2;
-    int inputX = x + ((cx - inputWidth) / 2);
-    this->input->MoveAndResize(inputX, y, cx / 2, SEARCH_HEIGHT);
+    const int inputWidth = cx / 2;
+    const int inputX = x + ((cx - inputWidth) / 2);
+    this->input->MoveAndResize(inputX, y, cx / 2, kSearchHeight);
 
-    bool inputIsRegex = this->matchType == MatchType::Regex;
+    const bool inputIsRegex = this->matchType == MatchType::Regex;
     this->input->SetHint(_TSTR(inputIsRegex ? "search_regex_hint" : "search_filter_hint"));
     this->input->SetFocusedFrameColor(inputIsRegex ? Color::FrameImportant : Color::FrameFocused);
 
     this->trackList->MoveAndResize(
         x,
-        y + SEARCH_HEIGHT,
+        y + kSearchHeight,
         this->GetWidth(),
-        this->GetHeight() - SEARCH_HEIGHT);
+        this->GetHeight() - kSearchHeight);
 }
 
 void TrackSearchLayout::InitializeWindows() {
-    this->input.reset(new cursespp::TextInput());
+    this->input = std::make_shared<TextInput>();
     this->input->TextChanged.connect(this, &TrackSearchLayout::OnInputChanged);
     this->input->EnterPressed.connect(this, &TrackSearchLayout::OnEnterPressed);
     this->input->SetFocusOrder(0);
     this->AddWindow(this->input);
 
-    this->trackList.reset(new TrackListView(this->playback, this->library));
+    this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
     this->trackList->Requeried.connect(this, &TrackSearchLayout::OnRequeried);
@@ -157,9 +157,12 @@ void TrackSearchLayout::FocusInput() {
 void TrackSearchLayout::Requery() {
     const std::string& filter = this->input->GetText();
     const TrackSortType sortOrder = getDefaultTrackSort(this->prefs);
-    this->trackList->Requery(std::shared_ptr<TrackListQueryBase>(
-        new SearchTrackListQuery(
-            this->library, this->matchType, filter, sortOrder)));
+    this->trackList->Requery(
+        std::make_shared<SearchTrackListQuery>(
+            this->library,
+            this->matchType,
+            filter,
+            sortOrder));
 }
 
 void TrackSearchLayout::PlayFromTop() {
@@ -186,7 +189,7 @@ void TrackSearchLayout::OnRequeried(TrackListQueryBase* query) {
 
 void TrackSearchLayout::OnInputChanged(cursespp::TextInput* sender, std::string value) {
     if (this->IsVisible()) {
-        Debounce(message::RequeryTrackList, 0, 0, REQUERY_INTERVAL_MS);
+        Debounce(message::RequeryTrackList, 0, 0, kRequeryIntervalMs);
     }
 }
 

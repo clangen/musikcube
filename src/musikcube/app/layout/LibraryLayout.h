@@ -57,11 +57,11 @@ namespace musik {
             public sigslot::has_slots<>
         {
             public:
+                DELETE_CLASS_DEFAULTS(LibraryLayout)
+
                 LibraryLayout(
                     musik::core::audio::PlaybackService& playback,
                     musik::core::ILibraryPtr library);
-
-                virtual ~LibraryLayout();
 
                 cursespp::IWindowPtr FocusNext() override;
                 cursespp::IWindowPtr FocusPrev() override;
