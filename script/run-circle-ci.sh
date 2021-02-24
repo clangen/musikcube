@@ -53,6 +53,7 @@ for JOB in ${ALL_JOBS[@]}; do
       -e MUSIKCUBE_BUILD_HOST_IP=${IP} \
       -e MUSIKCUBE_BUILD_HOST_PORT=${PORT} \
       -e MUSIKCUBE_BUILD_HOST_PW=${PW} \
+      -e MUSIKCUBE_BUILD_JOB_COUNT=${JOB_COUNT} \
       --job ${JOB}
 done
 

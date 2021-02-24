@@ -50,7 +50,7 @@ jobs:
       - checkout
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
-      - run: rpmbuild -ba -vv musikcube.spec
+      - run: ./script/run-rpm-build.sh
       - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
@@ -63,7 +63,7 @@ jobs:
       - checkout
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
-      - run: rpmbuild -ba -vv musikcube.spec
+      - run: ./script/run-rpm-build.sh
       - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
@@ -76,7 +76,7 @@ jobs:
       - checkout
       - run: dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
-      - run: rpmbuild -ba -vv musikcube.spec
+      - run: ./script/run-rpm-build.sh
       - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
