@@ -1,21 +1,37 @@
 #!/bin/bash
 
 IP=$1
-PW=$2
+PORT=$2
+PW=$3
+JOB_COUNT=$4
 
 if [[ -z "${IP}" ]]; then
-  echo "no file ip address specified."
+  echo "no ip address specified."
+  echo "invoke with 'run-circle-ci.sh <ip> <port> <pw> <job_count>'"
+  exit
+fi
+
+if [[ -z "${PORT}" ]]; then
+  echo "no file port address specified."
+  echo "invoke with 'run-circle-ci.sh <ip> <port> <pw> <job_count>'"
   exit
 fi
 
 if [[ -z "${PW}" ]]; then
   echo "no scp password address specified."
+  echo "invoke with 'run-circle-ci.sh <ip> <port> <pw> <job_count>'"
+  exit
+fi
+
+if [[ -z "${JOB_COUNT}" ]]; then
+  echo "no job count specified."
+  echo "invoke with 'run-circle-ci.sh <ip> <port> <pw> <job_count>'"
   exit
 fi
 
 # pre-process the yml file, and change max processes from 2 to 7
 circleci config process .circleci/config.yml > local-circle-ci.yml
-sed -i 's/-j2/-j7/g' local-circle-ci.yml
+sed -i "s/-j2/-j${JOB_COUNT}/g" local-circle-ci.yml
 
 ALL_JOBS=(
     "build_ubuntu_bionic"
@@ -35,6 +51,7 @@ for JOB in ${ALL_JOBS[@]}; do
       -e CIRCLE_BRANCH=${BRANCH} \
       -e CIRCLE_REPOSITORY_URL=${REPO} \
       -e MUSIKCUBE_BUILD_HOST_IP=${IP} \
+      -e MUSIKCUBE_BUILD_HOST_PORT=${PORT} \
       -e MUSIKCUBE_BUILD_HOST_PW=${PW} \
       --job ${JOB}
 done
