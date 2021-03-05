@@ -35,6 +35,11 @@
 #pragma once
 
 #include <musikcore/sdk/IOutput.h>
+#include <pipewire/pipewire.h>
+#include <atomic>
+#include <thread>
+#include <mutex>
+#include <unordered_set>
 
 using namespace musik::core::sdk;
 
@@ -61,12 +66,27 @@ class PipeWireOut : public IOutput {
         IDevice* GetDefaultDevice() override;
 
     private:
-        enum State {
-            StateStopped,
-            StatePaused,
-            StatePlaying
+        bool StartPipeWire(IBuffer* buffer);
+        void StopPipeWire();
+
+        struct BufferState {
+            BufferState(IBuffer* buffer, IBufferProvider* provider) {
+                this->buffer = buffer; this->provider = provider;
+            }
+            IBuffer* buffer;
+            IBufferProvider* provider;
         };
 
-        State state;
-        double volume;
+        enum class State {
+            Stopped, Paused, Playing
+        };
+
+        std::unordered_set<BufferState*> buffers;
+        std::recursive_mutex mutex;
+        std::atomic<bool> initialized { false };
+        std::atomic<State> state { State::Stopped };
+        double volume { 1.0 };
+        pw_thread_loop* pwThreadLoop { nullptr };
+        pw_stream* pwStream { nullptr };
+
 };
