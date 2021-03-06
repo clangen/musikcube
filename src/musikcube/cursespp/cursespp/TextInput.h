@@ -60,9 +60,12 @@ namespace cursespp {
 
             /* IInput */
             bool Write(const std::string& key) override;
-            size_t Length() override;
+            size_t Length() noexcept override;
             size_t Position() override;
-            InputMode GetInputMode() noexcept override { return this->inputMode; }
+
+            InputMode GetInputMode() noexcept override {
+                return this->inputMode;
+            }
 
             /* IWindow */
             bool KeyPress(const std::string& key) override;
@@ -73,9 +76,9 @@ namespace cursespp {
 
             /* regular methods we define */
             void SetRawKeyBlacklist(const std::vector<std::string>&& blacklist);
-            void SetTruncate(bool truncate);
+            void SetTruncate(bool truncate) noexcept;
             void SetHint(const std::string& hint);
-            void SetEnterEnabled(bool enabled);
+            void SetEnterEnabled(bool enabled) noexcept;
 
             Style GetStyle() noexcept {
                 return style;

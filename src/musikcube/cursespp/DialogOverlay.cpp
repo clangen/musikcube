@@ -198,16 +198,16 @@ void DialogOverlay::RecalculateSize() {
     /* ensure the overlay doesn't exceed the height of the screen,
     or things may get crashy. normally this will be done for us automatically
     in Window, but because we're free-floating we need to do it manually here. */
-    int top = this->GetY();
-    int bottom = top + this->height + VERTICAL_PADDING;
-    int screenHeight = Screen::GetHeight();
+    const int top = this->GetY();
+    const int bottom = top + this->height + VERTICAL_PADDING;
+    const int screenHeight = Screen::GetHeight();
     if (bottom > screenHeight) {
         this->height = screenHeight - top - VERTICAL_PADDING;
     }
 
-    int left = this->GetX();
-    int right = left + this->width + HORIZONTAL_PADDING;
-    int screenWidth = Screen::GetWidth();
+    const int left = this->GetX();
+    const int right = left + this->width + HORIZONTAL_PADDING;
+    const int screenWidth = Screen::GetWidth();
     if (right > screenWidth) {
         this->width = screenWidth - left - HORIZONTAL_PADDING;
     }
