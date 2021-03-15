@@ -71,7 +71,7 @@ void PipeWireOut::OnStreamProcess(void* data) {
 
 	struct spa_buffer* spaBuffer = pwBuffer->buffer;
     auto& outBufferData = spaBuffer->datas[0];
-    void* outBufferPtr = outBufferData.data;
+    char* outBufferPtr = (char*) outBufferData.data;
     uint32_t outBufferRemaining = outBufferData.maxsize;
     int channelCount = 2;
 
@@ -82,7 +82,7 @@ void PipeWireOut::OnStreamProcess(void* data) {
         BufferContext* inputBufferContext = nullptr;
         uint32_t inBufferSize = 0;
         uint32_t inBufferRemaining = 0;
-        void* inBufferPtr;
+        char* inBufferPtr;
         uint32_t bytesToCopy = 0;
 
         std::cerr << "[PipeWire] " << outBufferRemaining << " bytes still need to be filled...\n";
@@ -103,7 +103,7 @@ void PipeWireOut::OnStreamProcess(void* data) {
             channelCount = inputBufferContext->buffer->Channels();
             inBufferSize = (uint32_t) inputBufferContext->buffer->Bytes();
             inBufferRemaining = inputBufferContext->remaining;
-            inBufferPtr = inputBufferContext->buffer->BufferPointer();
+            inBufferPtr = (char*) inputBufferContext->buffer->BufferPointer();
 
             if (outBufferRemaining >= inBufferRemaining) {
                 self->buffers.pop_front();
@@ -133,7 +133,7 @@ void PipeWireOut::OnStreamProcess(void* data) {
     outBufferData.chunk->offset = 0;
     outBufferData.chunk->stride = frameSize;
     outBufferData.chunk->size = outBufferData.maxsize;
-    pwBuffer->size = outBufferData.maxsize;
+    pwBuffer->size = outBufferData.maxsize / frameSize;
 
     pw_stream_queue_buffer(self->pwStream, pwBuffer);
 
