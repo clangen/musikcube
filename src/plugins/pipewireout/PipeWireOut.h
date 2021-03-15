@@ -39,7 +39,7 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
-#include <unordered_set>
+#include <deque>
 
 using namespace musik::core::sdk;
 
@@ -69,8 +69,19 @@ class PipeWireOut : public IOutput {
         bool StartPipeWire(IBuffer* buffer);
         void StopPipeWire();
 
-        struct BufferState {
-            BufferState(IBuffer* buffer, IBufferProvider* provider) {
+        static void OnStreamStateChanged(
+            void* userdata,
+            enum pw_stream_state old,
+            enum pw_stream_state state,
+            const char* error);
+
+        static void OnStreamProcess(void* userdata);
+
+        struct BufferContext {
+            BufferContext() {
+                this->buffer = nullptr; this->provider = nullptr;
+            }
+            BufferContext(IBuffer* buffer, IBufferProvider* provider) {
                 this->buffer = buffer; this->provider = provider;
             }
             IBuffer* buffer;
@@ -81,12 +92,12 @@ class PipeWireOut : public IOutput {
             Stopped, Paused, Playing
         };
 
-        std::unordered_set<BufferState*> buffers;
+        std::deque<BufferContext*> buffers;
         std::recursive_mutex mutex;
         std::atomic<bool> initialized { false };
         std::atomic<State> state { State::Stopped };
         double volume { 1.0 };
+        pw_stream_events pwStreamEvents;
         pw_thread_loop* pwThreadLoop { nullptr };
         pw_stream* pwStream { nullptr };
-
 };

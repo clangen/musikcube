@@ -42,6 +42,8 @@
 #include <unistd.h>
 #include <iostream>
 
+constexpr size_t MAX_BUFFERS = 16;
+
 static IPreferences* prefs = nullptr;
 
 extern "C" void SetPreferences(IPreferences* prefs) {
@@ -53,26 +55,70 @@ extern "C" musik::core::sdk::ISchema* GetSchema() {
     return schema;
 }
 
-static void onStreamStageChanged(
-    void *data,
-    pw_stream_state old,
-    pw_stream_state state,
-    const char *error)
-{
+void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
     std::cerr << "[PipeWire] state changed from " << old << " to " << state << "\n";
 }
 
-static void onStreamProcess(void *userdata) {
-    std::cerr << "clclcl onProcess\n";
+void PipeWireOut::OnStreamProcess(void* data) {
+    PipeWireOut* output = static_cast<PipeWireOut*>(data);
+
+	struct pw_buffer* pwBuffer;
+
+	if ((pwBuffer = pw_stream_dequeue_buffer(output->pwStream)) == nullptr) {
+        std::cerr << "[PipeWire] no more output buffers available to fill\n";
+		return;
+	}
+
+    BufferContext* outputBufferContext = nullptr;
+
+    {
+        std::unique_lock<std::recursive_mutex> lock(output->mutex);
+        if (output->buffers.empty()) {
+            std::cerr << "[PipeWire] no more input buffers available\n";
+            return;
+        }
+        outputBufferContext = output->buffers.front();
+        output->buffers.pop_front();
+    }
+
+	struct spa_buffer* spaBuffer = pwBuffer->buffer;
+    auto& outBufferData = spaBuffer->datas[0];
+    void* outBufferPtr = outBufferData.data;
+    uint32_t outBufferSize = outBufferData.maxsize;
+    void* inBufferPtr = outputBufferContext->buffer->BufferPointer() ;
+    uint32_t inBufferSize = (uint32_t) outputBufferContext->buffer->Bytes();
+    uint32_t frameSize = sizeof(float) * outputBufferContext->buffer->Channels();
+
+    std::cerr << "[PipeWire] onProcess " << inBufferSize << " vs " << outBufferSize << "\n";
+
+    /* TODO: assumes dest size >= src size. need to do additional book keeping in
+    BufferContext to store offset if target isn't large enough, then push the
+    struct back */
+
+    if (inBufferSize > outBufferSize) {
+        std::cerr << "[PipeWire] onProcess output buffer too small\n";
+        exit(0);
+    }
+
+    memcpy(outBufferPtr, inBufferPtr, inBufferSize);
+    outBufferData.chunk->offset = 0;
+    outBufferData.chunk->stride = frameSize;
+    outBufferData.chunk->size = inBufferSize;
+    pwBuffer->size = inBufferSize / frameSize;
+
+    outputBufferContext->provider->OnBufferProcessed(outputBufferContext->buffer);
+
+    delete outputBufferContext;
+
+    pw_stream_queue_buffer(output->pwStream, pwBuffer);
 }
 
-static const struct pw_stream_events streamEvents = {
-    PW_VERSION_STREAM_EVENTS,
-    .process = onStreamProcess,
-    .state_changed = onStreamStageChanged
-};
-
 PipeWireOut::PipeWireOut() {
+    this->pwStreamEvents = {
+        PW_VERSION_STREAM_EVENTS,
+    };
+    this->pwStreamEvents.state_changed = PipeWireOut::OnStreamStateChanged;
+    this->pwStreamEvents.process = OnStreamProcess;
 }
 
 PipeWireOut::~PipeWireOut() {
@@ -158,24 +204,31 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 PW_KEY_MEDIA_CATEGORY, "Playback",
                 PW_KEY_MEDIA_ROLE, "Music",
                 NULL),
-            &streamEvents,
+            &this->pwStreamEvents,
             this);
 
         if (this->pwStream) {
             uint8_t intBuffer[1024];
 
-            spa_pod_builder builder = 
+            spa_pod_builder builder =
                 SPA_POD_BUILDER_INIT(intBuffer, sizeof(intBuffer));
 
             const spa_pod *params[1];
 
-            spa_audio_info_raw audioInfo = SPA_AUDIO_INFO_RAW_INIT(
-                .format = SPA_AUDIO_FORMAT_F32,
-                .channels = (uint32_t) buffer->Channels(),
-                .rate = (uint32_t) buffer->SampleRate());
+            spa_audio_info_raw audioInfo;
+            spa_zero(audioInfo);
+            audioInfo.flags = 0;
+            audioInfo.format = SPA_AUDIO_FORMAT_F32;
+            audioInfo.channels = (uint32_t) buffer->Channels();
+            audioInfo.rate = (uint32_t) buffer->SampleRate();
 
             params[0] = spa_format_audio_raw_build(
                 &builder, SPA_PARAM_EnumFormat, &audioInfo);
+
+            if (!params[0]) {
+                std::cerr << "[PipeWire] failed to create audio format\n";
+                goto cleanup;
+            }
 
             result = pw_stream_connect(
                 this->pwStream,
@@ -211,18 +264,18 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
     }
 
-    // std::cerr << "clclcl here\n";
-
-    /* TODO: if buffer format changes, drain, then update the params! */
-
-    if (this->state == State::Paused) {
+    if (this->state != State::Playing) {
         return OutputState::InvalidState;
     }
 
-    /* order of operations matters, otherwise overflow. */
-    int micros = ((buffer->Samples() * 1000) / buffer->SampleRate() * 1000) / buffer->Channels();
-    usleep((long)((float) micros));
-    provider->OnBufferProcessed(buffer);
+    {
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        if (this->buffers.size() >= MAX_BUFFERS) {
+            return OutputState::BufferFull;
+        }
+        this->buffers.push_back(new BufferContext(buffer, provider));
+    }
+
     return OutputState::BufferWritten;
 }
 
