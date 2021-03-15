@@ -39,6 +39,7 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <deque>
 
 using namespace musik::core::sdk;
@@ -79,13 +80,18 @@ class PipeWireOut : public IOutput {
 
         struct BufferContext {
             BufferContext() {
-                this->buffer = nullptr; this->provider = nullptr;
             }
             BufferContext(IBuffer* buffer, IBufferProvider* provider) {
                 this->buffer = buffer; this->provider = provider;
+                this->remaining = (uint32_t) buffer->Bytes();
             }
-            IBuffer* buffer;
-            IBufferProvider* provider;
+            void Release() {
+                this->provider->OnBufferProcessed(this->buffer);
+                delete this;
+            }
+            IBuffer* buffer{nullptr};
+            IBufferProvider* provider{nullptr};
+            uint32_t remaining{0};
         };
 
         enum class State {
@@ -94,10 +100,11 @@ class PipeWireOut : public IOutput {
 
         std::deque<BufferContext*> buffers;
         std::recursive_mutex mutex;
-        std::atomic<bool> initialized { false };
-        std::atomic<State> state { State::Stopped };
-        double volume { 1.0 };
+        std::atomic<bool> initialized{false};
+        std::atomic<State> state{State::Stopped};
+        double volume{1.0};
         pw_stream_events pwStreamEvents;
-        pw_thread_loop* pwThreadLoop { nullptr };
-        pw_stream* pwStream { nullptr };
+        pw_thread_loop* pwThreadLoop {nullptr};
+        pw_stream* pwStream {nullptr};
+        std::condition_variable_any bufferCondition;
 };

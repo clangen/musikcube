@@ -60,57 +60,84 @@ void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enu
 }
 
 void PipeWireOut::OnStreamProcess(void* data) {
-    PipeWireOut* output = static_cast<PipeWireOut*>(data);
+    PipeWireOut* self = static_cast<PipeWireOut*>(data);
 
 	struct pw_buffer* pwBuffer;
 
-	if ((pwBuffer = pw_stream_dequeue_buffer(output->pwStream)) == nullptr) {
+	if ((pwBuffer = pw_stream_dequeue_buffer(self->pwStream)) == nullptr) {
         std::cerr << "[PipeWire] no more output buffers available to fill\n";
 		return;
 	}
 
-    BufferContext* outputBufferContext = nullptr;
-
-    {
-        std::unique_lock<std::recursive_mutex> lock(output->mutex);
-        if (output->buffers.empty()) {
-            std::cerr << "[PipeWire] no more input buffers available\n";
-            return;
-        }
-        outputBufferContext = output->buffers.front();
-        output->buffers.pop_front();
-    }
-
 	struct spa_buffer* spaBuffer = pwBuffer->buffer;
     auto& outBufferData = spaBuffer->datas[0];
     void* outBufferPtr = outBufferData.data;
-    uint32_t outBufferSize = outBufferData.maxsize;
-    void* inBufferPtr = outputBufferContext->buffer->BufferPointer() ;
-    uint32_t inBufferSize = (uint32_t) outputBufferContext->buffer->Bytes();
-    uint32_t frameSize = sizeof(float) * outputBufferContext->buffer->Channels();
+    uint32_t outBufferRemaining = outBufferData.maxsize;
+    int channelCount = 2;
 
-    std::cerr << "[PipeWire] onProcess " << inBufferSize << " vs " << outBufferSize << "\n";
+    size_t D_PROCESSED = 0;
+    size_t D_RELEASED = 0;
 
-    /* TODO: assumes dest size >= src size. need to do additional book keeping in
-    BufferContext to store offset if target isn't large enough, then push the
-    struct back */
+    while (outBufferRemaining > 0) {
+        BufferContext* inputBufferContext = nullptr;
+        uint32_t inBufferSize = 0;
+        uint32_t inBufferRemaining = 0;
+        void* inBufferPtr;
+        uint32_t bytesToCopy = 0;
 
-    if (inBufferSize > outBufferSize) {
-        std::cerr << "[PipeWire] onProcess output buffer too small\n";
-        exit(0);
+        std::cerr << "[PipeWire] " << outBufferRemaining << " bytes still need to be filled...\n";
+
+        {
+            std::unique_lock<std::recursive_mutex> lock(self->mutex);
+            while (self->buffers.empty()) {
+                self->bufferCondition.wait(lock);
+            }
+
+            if (self->state != State::Playing) {
+                std::cerr << "[PipeWire] not playing, so buffers will not be filled.\n";
+                return;
+            }
+
+            inputBufferContext = self->buffers.front();
+
+            channelCount = inputBufferContext->buffer->Channels();
+            inBufferSize = (uint32_t) inputBufferContext->buffer->Bytes();
+            inBufferRemaining = inputBufferContext->remaining;
+            inBufferPtr = inputBufferContext->buffer->BufferPointer();
+
+            if (outBufferRemaining >= inBufferRemaining) {
+                self->buffers.pop_front();
+            }
+
+            bytesToCopy = std::min(outBufferRemaining, inBufferRemaining);
+
+            std::cerr << "[PipeWire] popped buffer #" << D_PROCESSED++ << ". Will fill with " << bytesToCopy << " bytes\n";
+        }
+
+        inBufferPtr += (inBufferSize - inBufferRemaining);
+
+        memcpy(outBufferPtr, inBufferPtr, bytesToCopy);
+        inputBufferContext->remaining -= bytesToCopy;
+        outBufferRemaining -= bytesToCopy;
+        outBufferPtr += bytesToCopy;
+
+        if (inputBufferContext->remaining == 0) {
+            std::cerr << "[PipeWire] released buffer #" << D_RELEASED++ << "\n";
+            inputBufferContext->Release();
+        }
     }
 
-    memcpy(outBufferPtr, inBufferPtr, inBufferSize);
+    std::cerr << "[PipeWire] adding PW buffer to queue\n";
+
+    uint32_t frameSize = sizeof(float) * channelCount;
     outBufferData.chunk->offset = 0;
     outBufferData.chunk->stride = frameSize;
-    outBufferData.chunk->size = inBufferSize;
-    pwBuffer->size = inBufferSize / frameSize;
+    outBufferData.chunk->size = outBufferData.maxsize;
+    pwBuffer->size = outBufferData.maxsize;
 
-    outputBufferContext->provider->OnBufferProcessed(outputBufferContext->buffer);
+    pw_stream_queue_buffer(self->pwStream, pwBuffer);
 
-    delete outputBufferContext;
-
-    pw_stream_queue_buffer(output->pwStream, pwBuffer);
+    // exit(0);
 }
 
 PipeWireOut::PipeWireOut() {
@@ -274,6 +301,7 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
             return OutputState::BufferFull;
         }
         this->buffers.push_back(new BufferContext(buffer, provider));
+        this->bufferCondition.notify_all();
     }
 
     return OutputState::BufferWritten;
