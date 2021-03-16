@@ -180,6 +180,7 @@ void PipeWireOut::Resume() {
 
 void PipeWireOut::SetVolume(double volume) {
     //pw_stream_set_control(stream->stream, SPA_PROP_channelVolumes, stream->volume.channels, stream->volume.values, 0);
+    /* CAL TODO */
     this->volume = volume;
 }
 
@@ -192,17 +193,21 @@ void PipeWireOut::Stop() {
 }
 
 void PipeWireOut::Drain() {
+    /* CAL TODO */
 }
 
 IDeviceList* PipeWireOut::GetDeviceList() {
+    /* CAL TODO */
     return nullptr;
 }
 
 bool PipeWireOut::SetDefaultDevice(const char* deviceId) {
+    /* CAL TODO */
     return false;
 }
 
 IDevice* PipeWireOut::GetDefaultDevice() {
+    /* CAL TODO */
     return nullptr;
 }
 
@@ -214,7 +219,6 @@ void PipeWireOut::StopPipeWire() {
         this->state = State::Shutdown;
         this->bufferCondition.notify_all();
     }
-
 
     if (this->pwThreadLoop) {
         pw_thread_loop_stop(this->pwThreadLoop);
@@ -323,6 +327,8 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         }
     }
 
+    /* CAL TODO: re-init stream if buffer format changes */
+
     if (this->state != State::Playing) {
         return OutputState::InvalidState;
     }
@@ -340,5 +346,6 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 }
 
 double PipeWireOut::Latency() {
+    /* CAL TODO */
     return 0.0;
 }
