@@ -41,7 +41,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <deque>
-#include <iostream>
 
 using namespace musik::core::sdk;
 
@@ -88,14 +87,10 @@ class PipeWireOut : public IOutput {
                 this->remaining = (uint32_t) buffer->Bytes();
             }
             void Advance(int count) {
-                static int consumed = 0;
-                consumed += count;
-
                 bool release = count >= remaining;
                 this->remaining -= count;
                 this->readPtr += count;
                 if (release) {
-                    // std::cerr << "[PipeWire] released BufferContext. Total consumed= " << consumed / sizeof(float) / buffer->SampleRate() / buffer->Channels() << "sec\n";
                     this->provider->OnBufferProcessed(this->buffer);
                     delete this;
                 }

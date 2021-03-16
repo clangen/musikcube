@@ -89,7 +89,7 @@ void PipeWireOut::OnStreamProcess(void* data) {
 
         {
             std::unique_lock<std::recursive_mutex> lock(self->mutex);
-            while (self->buffers.empty()) {
+            while (self->buffers.empty() && self->state == State::Playing) {
                 self->bufferCondition.wait(lock);
             }
 
@@ -113,33 +113,14 @@ void PipeWireOut::OnStreamProcess(void* data) {
 
         //std::cerr << "[PipeWire] popped buffer #" << D_PROCESSED++ << ". Will fill with " << bytesToCopy << " bytes.\n";
         memcpy(outBufferPtr, inContext->readPtr, bytesToCopy);
-        //memset(outBufferPtr, 345345345, bytesToCopy);
         inContext->Advance(bytesToCopy); /* will auto release if empty */
         outBufferRemaining -= bytesToCopy;
         outBufferPtr += bytesToCopy;
     }
 
-    //std::cerr << "[PipeWire] adding PW buffer to queue\n";
-
-    // std::cerr << "[PipeWire] input\n" <<
-    //     "  pwBuffer->size: " << pwBuffer->size << "\n" <<
-    //     "  data.maxsize: " << outBufferData.maxsize << "\n" <<
-    //     "  data.chunk->offset: " << outBufferData.chunk->offset << "\n" <<
-    //     "  data.chunk->stride: " << outBufferData.chunk->stride << "\n" <<
-    //     "  data.chunk->size: " << outBufferData.chunk->size << "\n";
-
-    uint32_t stride = SAMPLE_SIZE_BYTES * channelCount;
     outBufferData.chunk->offset = 0;
-    outBufferData.chunk->stride = stride;
+    outBufferData.chunk->stride = SAMPLE_SIZE_BYTES * channelCount;
     outBufferData.chunk->size = outBufferData.maxsize;
-    pwBuffer->size = outBufferData.maxsize / stride;
-
-    // std::cerr << "[PipeWire] output\n" <<
-    //     "  pwBuffer->size: " << pwBuffer->size << "\n" <<
-    //     "  data.maxsize: " << outBufferData.maxsize << "\n" <<
-    //     "  data.chunk->offset: " << outBufferData.chunk->offset << "\n" <<
-    //     "  data.chunk->stride: " << outBufferData.chunk->stride << "\n" <<
-    //     "  data.chunk->size: " << outBufferData.chunk->size << "\n";
 
     pw_stream_queue_buffer(self->pwStream, pwBuffer);
 }
@@ -153,6 +134,7 @@ PipeWireOut::PipeWireOut() {
 }
 
 PipeWireOut::~PipeWireOut() {
+    this->StopPipeWire();
 }
 
 void PipeWireOut::Release() {
@@ -161,10 +143,18 @@ void PipeWireOut::Release() {
 
 void PipeWireOut::Pause() {
     this->state = State::Paused;
+    {
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        this->bufferCondition.notify_all();
+    }
 }
 
 void PipeWireOut::Resume() {
     this->state = State::Playing;
+    {
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        this->bufferCondition.notify_all();
+    }
 }
 
 void PipeWireOut::SetVolume(double volume) {
@@ -200,6 +190,10 @@ void PipeWireOut::StopPipeWire() {
 
     if (this->pwThreadLoop) {
         pw_thread_loop_stop(this->pwThreadLoop);
+
+        this->state = State::Stopped;
+        this->bufferCondition.notify_all();
+
         pw_thread_loop_destroy(this->pwThreadLoop);
         this->pwThreadLoop = nullptr;
     }
@@ -242,15 +236,13 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
         if (this->pwStream) {
             uint8_t builderBuffer[4096];
             spa_pod_builder builder = SPA_POD_BUILDER_INIT(builderBuffer, sizeof(builderBuffer));
-            const spa_pod *params[1];
+            const spa_pod *params[2];
 
             spa_audio_info_raw audioInfo;
             spa_zero(audioInfo);
             audioInfo.format = SPA_AUDIO_FORMAT_F32;
             audioInfo.channels = (uint32_t) buffer->Channels();
             audioInfo.rate = (uint32_t) buffer->SampleRate();
-            audioInfo.position[0] = SPA_AUDIO_CHANNEL_FL;
-            audioInfo.position[1] = SPA_AUDIO_CHANNEL_FR;
 
             params[0] = spa_format_audio_raw_build(&builder, SPA_PARAM_EnumFormat, &audioInfo);
 
@@ -259,12 +251,12 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 goto cleanup;
             }
 
-            // params[1] = (spa_pod*) spa_pod_builder_add_object(
-            //     &builder,
-            //     SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
-            //     SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(MAX_BUFFERS),
-            //     SPA_PARAM_BUFFERS_size, SPA_POD_Int(SAMPLES_PER_BUFFER * SAMPLE_SIZE_BYTES * buffer->Channels()),
-            //     SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
+            params[1] = (spa_pod*) spa_pod_builder_add_object(
+                &builder,
+                SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
+                SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(MAX_BUFFERS),
+                SPA_PARAM_BUFFERS_size, SPA_POD_Int(SAMPLES_PER_BUFFER * SAMPLE_SIZE_BYTES * buffer->Channels()),
+                SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
 
             pw_stream_flags streamFlags = (pw_stream_flags)(
                 PW_STREAM_FLAG_AUTOCONNECT |
@@ -276,7 +268,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 PW_ID_ANY,
                 streamFlags,
                 params,
-                1);
+                2);
 
             if (result == 0) {
                 pw_thread_loop_unlock(this->pwThreadLoop);
