@@ -42,6 +42,8 @@
 #include <unistd.h>
 #include <iostream>
 
+constexpr size_t SAMPLES_PER_BUFFER = 2048;
+constexpr size_t SAMPLE_SIZE_BYTES = sizeof(float);
 constexpr size_t MAX_BUFFERS = 16;
 
 static IPreferences* prefs = nullptr;
@@ -75,17 +77,15 @@ void PipeWireOut::OnStreamProcess(void* data) {
     uint32_t outBufferRemaining = outBufferData.maxsize;
     int channelCount = 2;
 
-    size_t D_PROCESSED = 0;
-    size_t D_RELEASED = 0;
+    static size_t D_PROCESSED = 0;
 
     while (outBufferRemaining > 0) {
-        BufferContext* inputBufferContext = nullptr;
+        BufferContext* inContext = nullptr;
         uint32_t inBufferSize = 0;
         uint32_t inBufferRemaining = 0;
-        char* inBufferPtr;
         uint32_t bytesToCopy = 0;
 
-        std::cerr << "[PipeWire] " << outBufferRemaining << " bytes still need to be filled...\n";
+        //std::cerr << "[PipeWire] " << outBufferRemaining << " bytes still need to be filled...\n";
 
         {
             std::unique_lock<std::recursive_mutex> lock(self->mutex);
@@ -94,50 +94,54 @@ void PipeWireOut::OnStreamProcess(void* data) {
             }
 
             if (self->state != State::Playing) {
-                std::cerr << "[PipeWire] not playing, so buffers will not be filled.\n";
+                //std::cerr << "[PipeWire] not playing, so buffers will not be filled.\n";
                 return;
             }
 
-            inputBufferContext = self->buffers.front();
+            inContext = self->buffers.front();
 
-            channelCount = inputBufferContext->buffer->Channels();
-            inBufferSize = (uint32_t) inputBufferContext->buffer->Bytes();
-            inBufferRemaining = inputBufferContext->remaining;
-            inBufferPtr = (char*) inputBufferContext->buffer->BufferPointer();
+            channelCount = inContext->buffer->Channels();
+            inBufferSize = (uint32_t) inContext->buffer->Bytes();
+            inBufferRemaining = inContext->remaining;
 
             if (outBufferRemaining >= inBufferRemaining) {
                 self->buffers.pop_front();
             }
 
             bytesToCopy = std::min(outBufferRemaining, inBufferRemaining);
-
-            std::cerr << "[PipeWire] popped buffer #" << D_PROCESSED++ << ". Will fill with " << bytesToCopy << " bytes\n";
         }
 
-        inBufferPtr += (inBufferSize - inBufferRemaining);
-
-        memcpy(outBufferPtr, inBufferPtr, bytesToCopy);
-        inputBufferContext->remaining -= bytesToCopy;
+        //std::cerr << "[PipeWire] popped buffer #" << D_PROCESSED++ << ". Will fill with " << bytesToCopy << " bytes.\n";
+        memcpy(outBufferPtr, inContext->readPtr, bytesToCopy);
+        //memset(outBufferPtr, 345345345, bytesToCopy);
+        inContext->Advance(bytesToCopy); /* will auto release if empty */
         outBufferRemaining -= bytesToCopy;
         outBufferPtr += bytesToCopy;
-
-        if (inputBufferContext->remaining == 0) {
-            std::cerr << "[PipeWire] released buffer #" << D_RELEASED++ << "\n";
-            inputBufferContext->Release();
-        }
     }
 
-    std::cerr << "[PipeWire] adding PW buffer to queue\n";
+    //std::cerr << "[PipeWire] adding PW buffer to queue\n";
 
-    uint32_t frameSize = sizeof(float) * channelCount;
+    // std::cerr << "[PipeWire] input\n" <<
+    //     "  pwBuffer->size: " << pwBuffer->size << "\n" <<
+    //     "  data.maxsize: " << outBufferData.maxsize << "\n" <<
+    //     "  data.chunk->offset: " << outBufferData.chunk->offset << "\n" <<
+    //     "  data.chunk->stride: " << outBufferData.chunk->stride << "\n" <<
+    //     "  data.chunk->size: " << outBufferData.chunk->size << "\n";
+
+    uint32_t stride = SAMPLE_SIZE_BYTES * channelCount;
     outBufferData.chunk->offset = 0;
-    outBufferData.chunk->stride = frameSize;
+    outBufferData.chunk->stride = stride;
     outBufferData.chunk->size = outBufferData.maxsize;
-    pwBuffer->size = outBufferData.maxsize / frameSize;
+    pwBuffer->size = outBufferData.maxsize / stride;
+
+    // std::cerr << "[PipeWire] output\n" <<
+    //     "  pwBuffer->size: " << pwBuffer->size << "\n" <<
+    //     "  data.maxsize: " << outBufferData.maxsize << "\n" <<
+    //     "  data.chunk->offset: " << outBufferData.chunk->offset << "\n" <<
+    //     "  data.chunk->stride: " << outBufferData.chunk->stride << "\n" <<
+    //     "  data.chunk->size: " << outBufferData.chunk->size << "\n";
 
     pw_stream_queue_buffer(self->pwStream, pwBuffer);
-
-    // exit(0);
 }
 
 PipeWireOut::PipeWireOut() {
@@ -164,6 +168,7 @@ void PipeWireOut::Resume() {
 }
 
 void PipeWireOut::SetVolume(double volume) {
+    //pw_stream_set_control(stream->stream, SPA_PROP_channelVolumes, stream->volume.channels, stream->volume.values, 0);
     this->volume = volume;
 }
 
@@ -235,33 +240,41 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
             this);
 
         if (this->pwStream) {
-            uint8_t intBuffer[1024];
-
-            spa_pod_builder builder =
-                SPA_POD_BUILDER_INIT(intBuffer, sizeof(intBuffer));
-
+            uint8_t builderBuffer[4096];
+            spa_pod_builder builder = SPA_POD_BUILDER_INIT(builderBuffer, sizeof(builderBuffer));
             const spa_pod *params[1];
 
             spa_audio_info_raw audioInfo;
             spa_zero(audioInfo);
-            audioInfo.flags = 0;
             audioInfo.format = SPA_AUDIO_FORMAT_F32;
             audioInfo.channels = (uint32_t) buffer->Channels();
             audioInfo.rate = (uint32_t) buffer->SampleRate();
+            audioInfo.position[0] = SPA_AUDIO_CHANNEL_FL;
+            audioInfo.position[1] = SPA_AUDIO_CHANNEL_FR;
 
-            params[0] = spa_format_audio_raw_build(
-                &builder, SPA_PARAM_EnumFormat, &audioInfo);
+            params[0] = spa_format_audio_raw_build(&builder, SPA_PARAM_EnumFormat, &audioInfo);
 
             if (!params[0]) {
                 std::cerr << "[PipeWire] failed to create audio format\n";
                 goto cleanup;
             }
 
+            // params[1] = (spa_pod*) spa_pod_builder_add_object(
+            //     &builder,
+            //     SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
+            //     SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(MAX_BUFFERS),
+            //     SPA_PARAM_BUFFERS_size, SPA_POD_Int(SAMPLES_PER_BUFFER * SAMPLE_SIZE_BYTES * buffer->Channels()),
+            //     SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
+
+            pw_stream_flags streamFlags = (pw_stream_flags)(
+                PW_STREAM_FLAG_AUTOCONNECT |
+                PW_STREAM_FLAG_MAP_BUFFERS);
+
             result = pw_stream_connect(
                 this->pwStream,
                 PW_DIRECTION_OUTPUT,
                 PW_ID_ANY,
-                (pw_stream_flags)(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS),
+                streamFlags,
                 params,
                 1);
 
