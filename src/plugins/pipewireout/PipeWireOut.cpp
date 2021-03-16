@@ -151,13 +151,30 @@ void PipeWireOut::Pause() {
         std::unique_lock<std::recursive_mutex> lock(this->mutex);
         this->bufferCondition.notify_all();
     }
+
+    {
+        if (this->pwThreadLoop && this->pwStream) {
+            pw_thread_loop_lock(this->pwThreadLoop);
+            pw_stream_set_active(this->pwStream, false);
+            pw_thread_loop_unlock(this->pwThreadLoop);
+        }
+    }
 }
 
 void PipeWireOut::Resume() {
     this->state = State::Playing;
+
     {
         std::unique_lock<std::recursive_mutex> lock(this->mutex);
         this->bufferCondition.notify_all();
+    }
+
+    {
+        if (this->pwThreadLoop && this->pwStream) {
+            pw_thread_loop_lock(this->pwThreadLoop);
+            pw_stream_set_active(this->pwStream, true);
+            pw_thread_loop_unlock(this->pwThreadLoop);
+        }
     }
 }
 
