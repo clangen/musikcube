@@ -102,7 +102,7 @@ class PipeWireOut : public IOutput {
         };
 
         enum class State {
-            Stopped, Paused, Playing
+            Stopped, Paused, Playing, Shutdown
         };
 
         std::deque<BufferContext*> buffers;

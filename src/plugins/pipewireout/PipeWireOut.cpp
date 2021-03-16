@@ -89,12 +89,16 @@ void PipeWireOut::OnStreamProcess(void* data) {
 
         {
             std::unique_lock<std::recursive_mutex> lock(self->mutex);
-            while (self->buffers.empty() && self->state == State::Playing) {
+            while (self->buffers.empty() && self->state != State::Shutdown) {
+                std::cerr << "[PipeWire] waiting for data...\n";
                 self->bufferCondition.wait(lock);
+                if (self->state == State::Shutdown) {
+                    break;
+                }
             }
 
-            if (self->state != State::Playing) {
-                //std::cerr << "[PipeWire] not playing, so buffers will not be filled.\n";
+            if (self->state == State::Shutdown) {
+                std::cerr << "[PipeWire] shutdown detected, so buffers will not be filled.\n";
                 return;
             }
 
@@ -186,24 +190,30 @@ IDevice* PipeWireOut::GetDefaultDevice() {
 }
 
 void PipeWireOut::StopPipeWire() {
-    std::unique_lock<std::recursive_mutex> lock(this->mutex);
+    std::cerr << "[PipeWire] shutdown started...\n";
+
+    {
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        this->state = State::Shutdown;
+        this->bufferCondition.notify_all();
+    }
+
 
     if (this->pwThreadLoop) {
         pw_thread_loop_stop(this->pwThreadLoop);
 
-        this->state = State::Stopped;
-        this->bufferCondition.notify_all();
+        if (this->pwStream) {
+            pw_stream_destroy(this->pwStream);
+            this->pwStream = nullptr;
+        }
 
         pw_thread_loop_destroy(this->pwThreadLoop);
         this->pwThreadLoop = nullptr;
     }
 
-    if (this->pwStream) {
-        pw_stream_destroy(this->pwStream);
-        this->pwStream = nullptr;
-    }
-
     this->initialized = false;
+
+    std::cerr << "[PipeWire] shutdown complete.\n";
 }
 
 bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
