@@ -39,8 +39,8 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
-#include <condition_variable>
 #include <deque>
+#include <condition_variable>
 
 using namespace musik::core::sdk;
 
@@ -69,6 +69,7 @@ class PipeWireOut : public IOutput {
     private:
         bool StartPipeWire(IBuffer* buffer);
         void StopPipeWire();
+        void DiscardInputBuffers();
 
         static void OnStreamStateChanged(
             void* userdata,
@@ -78,10 +79,10 @@ class PipeWireOut : public IOutput {
 
         static void OnStreamProcess(void* userdata);
 
-        struct BufferContext {
-            BufferContext() {
-            }
-            BufferContext(IBuffer* buffer, IBufferProvider* provider) {
+        static void OnDrained(void* userdata);
+
+        struct InBufferContext {
+            InBufferContext(IBuffer* buffer, IBufferProvider* provider) {
                 this->buffer = buffer; this->provider = provider;
                 this->readPtr = (char*) buffer->BufferPointer();
                 this->remaining = (uint32_t) buffer->Bytes();
@@ -95,23 +96,72 @@ class PipeWireOut : public IOutput {
                     delete this;
                 }
             }
+            void Discard() {
+                this->provider->OnBufferProcessed(this->buffer);
+                delete this;
+            }
             IBuffer* buffer{nullptr};
             IBufferProvider* provider{nullptr};
             uint32_t remaining{0};
             char* readPtr;
         };
 
+        struct OutBufferContext {
+            void Initialize(pw_buffer* buffer) {
+                this->buffer = buffer;
+                if (buffer) {
+                    struct spa_buffer* spaBuffer = buffer->buffer;
+                    this->writePtr = (char*) spaBuffer->datas[0].data;
+                    this->remaining = spaBuffer->datas[0].maxsize;
+                    this->total = this->remaining;
+                }
+                else {
+                    this->Reset();
+                }
+            }
+            void Reset() {
+                this->buffer = nullptr;
+                this->writePtr = nullptr;
+                this->remaining = 0;
+                this->total = 0;
+            }
+            void Advance(int count) {
+                this->remaining -= count;
+                this->writePtr += count;
+            }
+            void Finalize(pw_stream* stream, uint32_t stride) {
+                if (this->Valid()) {
+                    spa_data& data = this->buffer->buffer->datas[0];
+                    data.chunk->offset = 0;
+                    data.chunk->stride = stride;
+                    data.chunk->size = this->total - this->remaining;
+                    pw_stream_queue_buffer(stream, this->buffer);
+                    this->Reset();
+                }
+            }
+            bool Valid() {
+                return this->buffer != nullptr;
+            }
+            pw_buffer* buffer{nullptr};
+            uint32_t remaining{0};
+            uint32_t total{0};
+            char* writePtr{nullptr};
+        };
+
         enum class State {
             Stopped, Paused, Playing, Shutdown
         };
 
-        std::deque<BufferContext*> buffers;
+        std::deque<InBufferContext*> buffers;
         std::recursive_mutex mutex;
         std::atomic<bool> initialized{false};
         std::atomic<State> state{State::Stopped};
+        std::condition_variable_any bufferCondition, drainCondition;
         double volume{1.0};
         pw_stream_events pwStreamEvents;
         pw_thread_loop* pwThreadLoop {nullptr};
-        pw_stream* pwStream {nullptr};
-        std::condition_variable_any bufferCondition;
+        pw_stream* pwStream{nullptr};
+        OutBufferContext outBufferContext;
+        long channelCount{0};
+        long sampleRate{0};
 };
