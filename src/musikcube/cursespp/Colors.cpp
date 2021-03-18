@@ -379,7 +379,7 @@ struct Theme {
         /* main */
         init_pair(Color::ContentColorDefault, foregroundId, backgroundId);
         init_pair(Color::FrameDefault, foregroundId, backgroundId);
-        init_pair(Color::FrameFocused, focusedFrame.Id(mode, COLOR_RED),backgroundId);
+        init_pair(Color::FrameFocused, focusedFrame.Id(mode, COLOR_RED), backgroundId);
         init_pair(Color::FrameImportant, importantFrame.Id(mode, COLOR_BLUE), backgroundId);
 
         /* text */
