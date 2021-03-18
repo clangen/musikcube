@@ -296,7 +296,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
         if (this->pwStream) {
             uint8_t builderBuffer[4096];
             spa_pod_builder builder = SPA_POD_BUILDER_INIT(builderBuffer, sizeof(builderBuffer));
-            const spa_pod *params[2];
+            const spa_pod *params[1];
 
             this->channelCount = buffer->Channels();
             this->sampleRate = buffer->SampleRate();
@@ -314,12 +314,12 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 goto cleanup;
             }
 
-            params[1] = (spa_pod*) spa_pod_builder_add_object(
-                &builder,
-                SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
-                SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(MAX_BUFFERS),
-                SPA_PARAM_BUFFERS_size, SPA_POD_Int(SAMPLES_PER_BUFFER * SAMPLE_SIZE_BYTES * buffer->Channels()),
-                SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
+            // params[1] = (spa_pod*) spa_pod_builder_add_object(
+            //     &builder,
+            //     SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
+            //     SPA_PARAM_BUFFERS_buffers, SPA_POD_Int(MAX_BUFFERS),
+            //     SPA_PARAM_BUFFERS_size, SPA_POD_Int(SAMPLES_PER_BUFFER * SAMPLE_SIZE_BYTES * buffer->Channels()),
+            //     SPA_PARAM_BUFFERS_stride, SPA_POD_Int(SAMPLE_SIZE_BYTES * audioInfo.channels));
 
             pw_stream_flags streamFlags = (pw_stream_flags)(
                 PW_STREAM_FLAG_AUTOCONNECT |
@@ -331,7 +331,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
                 PW_ID_ANY,
                 streamFlags,
                 params,
-                2);
+                1);
 
             if (result == 0) {
                 pw_thread_loop_unlock(this->pwThreadLoop);
