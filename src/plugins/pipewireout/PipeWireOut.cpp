@@ -38,6 +38,7 @@
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/ISchema.h>
 #include <spa/param/audio/format-utils.h>
+#include <spa/param/props.h>
 #include <spa/utils/result.h>
 #include <unistd.h>
 #include <iostream>
@@ -48,6 +49,8 @@ constexpr size_t SAMPLE_SIZE_BYTES = sizeof(float);
 constexpr size_t MAX_BUFFERS = 16;
 
 static IPreferences* prefs = nullptr;
+
+/* CAL TODO: use IDebug instead of stderr */
 
 extern "C" void SetPreferences(IPreferences* prefs) {
     ::prefs = prefs;
@@ -158,12 +161,27 @@ void PipeWireOut::Resume() {
 }
 
 void PipeWireOut::SetVolume(double volume) {
-    //pw_stream_set_control(stream->stream, SPA_PROP_channelVolumes, stream->volume.channels, stream->volume.values, 0);
-    /* CAL TODO */
-    this->volume = volume;
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
+    if (this->pwThreadLoop && this->pwStream) {
+        pw_thread_loop_lock(this->pwThreadLoop);
+        float* channelVolumes = new float[this->channelCount];
+        for (long i = 0; i < this->channelCount; i++) {
+            channelVolumes[i] = volume;
+        }
+        pw_stream_set_control(
+            this->pwStream,
+            SPA_PROP_channelVolumes,
+            this->channelCount,
+            channelVolumes,
+            0);
+        delete[] channelVolumes;
+        pw_thread_loop_unlock(this->pwThreadLoop);
+    }
+    this->volume = volume;    
 }
 
 double PipeWireOut::GetVolume() {
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
     return this->volume;
 }
 
@@ -339,6 +357,7 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         if (!this->StartPipeWire(buffer)) {
             return OutputState::InvalidState;
         }
+        this->SetVolume(this->volume);
     }
 
     if (this->channelCount != buffer->Channels() || this->sampleRate != buffer->SampleRate()) {
@@ -368,6 +387,7 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 }
 
 double PipeWireOut::Latency() {
-    /* CAL TODO */
+    /* CAL TODO: i see how to set latency, but not a good way to query
+    PipeWire to see what it actually is */
     return 0.0;
 }
