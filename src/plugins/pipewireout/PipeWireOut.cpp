@@ -90,8 +90,23 @@ void PipeWireOut::OnCoreError(void* userdata, uint32_t id, int seq, int res, con
 void PipeWireOut::OnRegistryGlobal(void *userdata, uint32_t id, uint32_t permissions, const char *type, uint32_t version, const struct spa_dict *props) {
     auto context = static_cast<DeviceListContext*>(userdata);
     if (std::string(type) == "PipeWire:Interface:Device") {
+        std::string formattedName = "unknown device";
+        if (props) {
+            auto dict = pw_properties_new_dict(props);
+            auto name = pw_properties_get(dict, "device.nick");
+            if (!name || !strlen(name)) name = pw_properties_get(dict, "alsa.card_name");
+            if (!name || !strlen(name)) name = pw_properties_get(dict, "api.alsa.card.name");
+            if (!name || !strlen(name)) name = "unknown device";
+            auto addr = pw_properties_get(dict, "object.path");
+            if (!addr || !strlen(addr)) addr = pw_properties_get(dict, "device.bus-path");
+            formattedName = name;
+            if (addr && strlen(addr)) {
+                formattedName += " (" + std::string(addr) + ")";
+            }
+            pw_properties_free(dict);
+        }
         std::cerr << "[PipeWire] object with id changed from " << id <<  "\n";
-        context->instance->deviceList.Add(std::to_string(id), "TODO FIXME");
+        context->instance->deviceList.Add(std::to_string(id), formattedName);
     }
 }
 
