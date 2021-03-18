@@ -40,6 +40,7 @@
 #include <thread>
 #include <mutex>
 #include <deque>
+#include <vector>
 #include <condition_variable>
 
 using namespace musik::core::sdk;
@@ -70,6 +71,28 @@ class PipeWireOut : public IOutput {
         bool StartPipeWire(IBuffer* buffer);
         void StopPipeWire();
         void DiscardInputBuffers();
+        void RefreshDeviceList();
+
+        static void OnCoreDone(
+            void* userdata,
+            uint32_t id,
+            int seq);
+
+        static void OnCoreError(
+            void *userdata,
+            uint32_t id,
+            int seq,
+            int res,
+            const char *message
+        );
+
+        static void OnRegistryGlobal(
+            void *userdata,
+            uint32_t id,
+			uint32_t permissions,
+            const char *type,
+            uint32_t version,
+			const struct spa_dict *props);
 
         static void OnStreamStateChanged(
             void* userdata,
@@ -148,6 +171,91 @@ class PipeWireOut : public IOutput {
             char* writePtr{nullptr};
         };
 
+        class Device: public musik::core::sdk::IDevice {
+            public:
+                Device(const std::string& id, const std::string& name) {
+                    this->id = id;
+                    this->name = name;
+                }
+                void Release() override {
+                    delete this;
+                }
+                const char* Name() const override {
+                    return name.c_str();
+                }
+                const char* Id() const override {
+                    return id.c_str();
+                }
+                Device* Clone() {
+                    return new Device(this->id, this->name);
+                }
+            private:
+                std::string id, name;
+        };
+
+        class DeviceList: public musik::core::sdk::IDeviceList {
+            public:
+                void Release() override {
+                    delete this;
+                }
+                size_t Count() const override {
+                    return devices.size();
+                }
+                const Device* At(size_t index) const override {
+                    return &devices.at(index);
+                }
+                void Add(const std::string& id, const std::string& name) {
+                    devices.push_back(Device(id, name));
+                }
+                Device* Default() {
+                    return this->devices.empty() ? nullptr : this->devices.at(0).Clone();
+                }
+                void Reset() {
+                    this->devices.clear();
+                }
+                DeviceList* Clone() {
+                    auto result = new DeviceList();
+                    result->devices = this->devices;
+                    return result;
+                }
+            private:
+                std::vector<Device> devices;
+        };
+
+        struct DeviceListContext {
+            DeviceListContext(PipeWireOut* instance) {
+                this->instance = instance;
+                this->coreEvents = { PW_VERSION_CORE_EVENTS };
+                this->coreEvents.done = PipeWireOut::OnCoreDone;
+                this->coreEvents.error = PipeWireOut::OnCoreError;
+                spa_zero(this->coreListener);
+                this->registryEvents = { PW_VERSION_REGISTRY_EVENTS };
+                this->registryEvents.global = PipeWireOut::OnRegistryGlobal;
+                spa_zero(this->registryListener);
+            }
+            ~DeviceListContext() {
+                if (this->registry) {
+                    pw_proxy_destroy(reinterpret_cast<pw_proxy*>(this->registry));
+                }
+                if (this->context) {
+                    pw_context_destroy(this->context);
+                }
+                if (this->loop) {
+                    pw_main_loop_destroy(this->loop);
+                }
+            }
+            pw_main_loop* loop{nullptr};
+            pw_context* context{nullptr};
+            pw_core* core{nullptr};
+            spa_hook coreListener;
+            pw_core_events coreEvents;
+            pw_registry* registry{nullptr};
+            spa_hook registryListener;
+            pw_registry_events registryEvents;
+            int eventId{0};
+            PipeWireOut* instance{nullptr};
+        };
+
         enum class State {
             Stopped, Paused, Playing, Shutdown
         };
@@ -164,4 +272,5 @@ class PipeWireOut : public IOutput {
         OutBufferContext outBufferContext;
         long channelCount{0};
         long sampleRate{0};
+        DeviceList deviceList;
 };

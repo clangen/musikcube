@@ -48,6 +48,8 @@ constexpr size_t SAMPLES_PER_BUFFER = 2048;
 constexpr size_t SAMPLE_SIZE_BYTES = sizeof(float);
 constexpr size_t MAX_BUFFERS = 16;
 
+static std::atomic<bool> pipeWireInitialized(false);
+
 static IPreferences* prefs = nullptr;
 
 /* CAL TODO: use IDebug instead of stderr */
@@ -63,6 +65,27 @@ extern "C" musik::core::sdk::ISchema* GetSchema() {
 
 void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
     std::cerr << "[PipeWire] state changed from " << old << " to " << state << "\n";
+}
+
+void PipeWireOut::OnCoreDone(void* userdata, uint32_t id, int seq) {
+    auto context = static_cast<DeviceListContext*>(userdata);
+    if (seq == context->eventId) {
+        std::cerr << "[PipeWire] device refresh finished\n";
+        pw_main_loop_quit(context->loop);
+    }
+}
+
+void PipeWireOut::OnCoreError(void* userdata, uint32_t id, int seq, int res, const char *message) {
+    auto context = static_cast<DeviceListContext*>(userdata);
+    pw_main_loop_quit(context->loop);
+}
+
+void PipeWireOut::OnRegistryGlobal(void *userdata, uint32_t id, uint32_t permissions, const char *type, uint32_t version, const struct spa_dict *props) {
+    auto context = static_cast<DeviceListContext*>(userdata);
+    if (std::string(type) == "PipeWire:Interface:Device") {
+        std::cerr << "[PipeWire] object with id changed from " << id <<  "\n";
+        context->instance->deviceList.Add(std::to_string(id), "TODO FIXME");
+    }
 }
 
 void PipeWireOut::OnDrained(void* data) {
@@ -177,7 +200,7 @@ void PipeWireOut::SetVolume(double volume) {
         delete[] channelVolumes;
         pw_thread_loop_unlock(this->pwThreadLoop);
     }
-    this->volume = volume;    
+    this->volume = volume;
 }
 
 double PipeWireOut::GetVolume() {
@@ -220,8 +243,9 @@ void PipeWireOut::Drain() {
 }
 
 IDeviceList* PipeWireOut::GetDeviceList() {
-    /* CAL TODO */
-    return nullptr;
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
+    this->RefreshDeviceList();
+    return this->deviceList.Clone();
 }
 
 bool PipeWireOut::SetDefaultDevice(const char* deviceId) {
@@ -230,8 +254,8 @@ bool PipeWireOut::SetDefaultDevice(const char* deviceId) {
 }
 
 IDevice* PipeWireOut::GetDefaultDevice() {
-    /* CAL TODO */
-    return nullptr;
+    std::unique_lock<std::recursive_mutex> lock(this->mutex);
+    return this->deviceList.Default();
 }
 
 void PipeWireOut::StopPipeWire() {
@@ -268,8 +292,6 @@ void PipeWireOut::StopPipeWire() {
 
 bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
-
-    pw_init(nullptr, nullptr);
 
     this->pwThreadLoop = pw_thread_loop_new("musikcube", nullptr);
     if (this->pwThreadLoop) {
@@ -354,6 +376,12 @@ cleanup:
 
 OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
     if (!this->initialized) {
+        std::unique_lock<std::recursive_mutex> lock(this->mutex);
+        if (!pipeWireInitialized) {
+            pw_init(nullptr, nullptr);
+            pipeWireInitialized = true;
+        }
+        this->RefreshDeviceList();
         if (!this->StartPipeWire(buffer)) {
             return OutputState::InvalidState;
         }
@@ -390,4 +418,63 @@ double PipeWireOut::Latency() {
     /* CAL TODO: i see how to set latency, but not a good way to query
     PipeWire to see what it actually is */
     return 0.0;
+}
+
+void PipeWireOut::RefreshDeviceList() {
+    /* https://github.com/PipeWire/pipewire/blob/master/src/tools/pw-dump.c */
+
+    if (!pipeWireInitialized) {
+        pw_init(nullptr, nullptr);
+        pipeWireInitialized = true;
+    }
+
+    DeviceListContext deviceListContext(this);
+
+    deviceListContext.loop = pw_main_loop_new(nullptr);
+    if (!deviceListContext.loop) {
+        std::cerr << "[PipeWire] RefreshDeviceList: could not create main loop.\n";
+        return;
+    }
+
+    auto loop = pw_main_loop_get_loop(deviceListContext.loop);
+    if (!loop) {
+        std::cerr << "[PipeWire] RefreshDeviceList: could not resolve loop from main_loop??\n";
+        return;
+    }
+
+    deviceListContext.context = pw_context_new(loop, nullptr, 0);
+    if (!deviceListContext.context) {
+        std::cerr << "[PipeWire] RefreshDeviceList: could not create context.\n";
+        return;
+    }
+
+    deviceListContext.core = pw_context_connect(deviceListContext.context, nullptr, 0);
+    if (deviceListContext.core == nullptr) {
+        std::cerr << "[PipeWire] RefreshDeviceList: could not connect to core.\n";
+        return;
+    }
+
+    pw_core_add_listener(
+        deviceListContext.core,
+        &deviceListContext.coreListener,
+        &deviceListContext.coreEvents,
+        &deviceListContext);
+
+    deviceListContext.registry = pw_core_get_registry(
+        deviceListContext.core, PW_VERSION_REGISTRY, 0);
+
+    if (deviceListContext.registry) {
+        pw_registry_add_listener(
+            deviceListContext.registry,
+            &deviceListContext.registryListener,
+            &deviceListContext.registryEvents,
+            &deviceListContext);
+
+        deviceListContext.eventId = pw_core_sync(
+            deviceListContext.core, PW_ID_CORE, 0);
+
+        this->deviceList.Reset();
+
+        pw_main_loop_run(deviceListContext.loop);
+    }
 }
