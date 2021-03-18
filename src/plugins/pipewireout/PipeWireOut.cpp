@@ -47,6 +47,7 @@
 constexpr size_t SAMPLES_PER_BUFFER = 2048;
 constexpr size_t SAMPLE_SIZE_BYTES = sizeof(float);
 constexpr size_t MAX_BUFFERS = 16;
+constexpr const char* PREF_DEVICE_ID = "device_id";
 
 static std::atomic<bool> pipeWireInitialized(false);
 
@@ -56,11 +57,17 @@ static IPreferences* prefs = nullptr;
 
 extern "C" void SetPreferences(IPreferences* prefs) {
     ::prefs = prefs;
+    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
+    prefs->Save();
 }
 
 extern "C" musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
     return schema;
+}
+
+static std::string getDeviceId() {
+    return getPreferenceString<std::string>(prefs, PREF_DEVICE_ID, "");
 }
 
 void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
@@ -249,13 +256,16 @@ IDeviceList* PipeWireOut::GetDeviceList() {
 }
 
 bool PipeWireOut::SetDefaultDevice(const char* deviceId) {
-    /* CAL TODO */
-    return false;
+    if (getDeviceId() != deviceId) {
+        setDefaultDevice<IPreferences, Device, IOutput>(prefs, this, PREF_DEVICE_ID, deviceId);
+    }
+    return true;
 }
 
 IDevice* PipeWireOut::GetDefaultDevice() {
     std::unique_lock<std::recursive_mutex> lock(this->mutex);
-    return this->deviceList.Default();
+    this->RefreshDeviceList();
+    return this->deviceList.ResolveDevice(getDeviceId());
 }
 
 void PipeWireOut::StopPipeWire() {
@@ -350,7 +360,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
             result = pw_stream_connect(
                 this->pwStream,
                 PW_DIRECTION_OUTPUT,
-                PW_ID_ANY,
+                this->deviceList.ResolveId(getDeviceId()),
                 streamFlags,
                 params,
                 1);

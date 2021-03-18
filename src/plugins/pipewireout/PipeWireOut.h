@@ -213,6 +213,27 @@ class PipeWireOut : public IOutput {
                 void Reset() {
                     this->devices.clear();
                 }
+                uint32_t ResolveId(const std::string& id) {
+                    for (auto device: this->devices) {
+                        if (device.Id() == id) {
+                            try {
+                                return (uint32_t) std::stoi(id);
+                            }
+                            catch(...) {
+                                /* return default below... */
+                            }
+                        }
+                    }
+                    return PW_ID_ANY;
+                }
+                Device* ResolveDevice(const std::string& id) {
+                    for (auto device: this->devices) {
+                        if (device.Id() == id) {
+                            return device.Clone();
+                        }
+                    }
+                    return nullptr;
+                }
                 DeviceList* Clone() {
                     auto result = new DeviceList();
                     result->devices = this->devices;
