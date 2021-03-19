@@ -73,10 +73,10 @@ Crossfader::Crossfader(ITransport& transport)
 }
 
 Crossfader::~Crossfader() {
-    this->messageQueue.Unregister(this);
     this->quit = true;
     this->messageQueue.Post(Message::Create(this, MESSAGE_QUIT, 0, 0));
     this->thread->join();
+    this->messageQueue.Unregister(this);
 }
 
 void Crossfader::Fade(
