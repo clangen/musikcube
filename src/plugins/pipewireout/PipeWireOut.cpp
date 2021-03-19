@@ -37,13 +37,15 @@
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/ISchema.h>
+#include <musikcore/sdk/IDebug.h>
+#include <musikcore/sdk/String.h>
 #include <spa/param/audio/format-utils.h>
 #include <spa/param/props.h>
 #include <spa/utils/result.h>
 #include <unistd.h>
-#include <iostream>
 #include <chrono>
 
+constexpr const char* TAG = "PipeWireOut";
 constexpr size_t SAMPLES_PER_BUFFER = 2048;
 constexpr size_t SAMPLE_SIZE_BYTES = sizeof(float);
 constexpr size_t MAX_BUFFERS = 16;
@@ -52,8 +54,11 @@ constexpr const char* PREF_DEVICE_ID = "device_id";
 static std::atomic<bool> pipeWireInitialized(false);
 
 static IPreferences* prefs = nullptr;
+static IDebug* debug = nullptr;
 
-/* CAL TODO: use IDebug instead of stderr */
+extern "C" void SetDebug(IDebug* debug) {
+    ::debug = debug;
+}
 
 extern "C" void SetPreferences(IPreferences* prefs) {
     ::prefs = prefs;
@@ -71,13 +76,13 @@ static std::string getDeviceId() {
 }
 
 void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
-    std::cerr << "[PipeWire] state changed from " << old << " to " << state << "\n";
+    ::debug->Info(TAG, str::format("state changed from %d to %d", old, state).c_str());
 }
 
 void PipeWireOut::OnCoreDone(void* userdata, uint32_t id, int seq) {
     auto context = static_cast<DeviceListContext*>(userdata);
     if (seq == context->eventId) {
-        std::cerr << "[PipeWire] device refresh finished\n";
+        ::debug->Info(TAG, "device refresh finished");
         pw_main_loop_quit(context->loop);
     }
 }
@@ -105,13 +110,13 @@ void PipeWireOut::OnRegistryGlobal(void *userdata, uint32_t id, uint32_t permiss
             }
             pw_properties_free(dict);
         }
-        std::cerr << "[PipeWire] object with id changed from " << id <<  "\n";
+        ::debug->Info(TAG, str::format("detected PipeWire:Interface:Device with id=%d", id).c_str());
         context->instance->deviceList.Add(std::to_string(id), formattedName);
     }
 }
 
 void PipeWireOut::OnDrained(void* data) {
-    std::cerr << "[PipeWire] drained\n";
+    ::debug->Info(TAG, "drained");
     PipeWireOut* self = static_cast<PipeWireOut*>(data);
     self->drainCondition.notify_all();
 }
@@ -284,7 +289,7 @@ IDevice* PipeWireOut::GetDefaultDevice() {
 }
 
 void PipeWireOut::StopPipeWire() {
-    std::cerr << "[PipeWire] shutdown started...\n";
+    ::debug->Info(TAG, "shutdown started");
 
     this->Stop();
 
@@ -312,7 +317,7 @@ void PipeWireOut::StopPipeWire() {
     this->channelCount = 0;
     this->sampleRate = 0;
 
-    std::cerr << "[PipeWire] shutdown complete.\n";
+    ::debug->Info(TAG, "shutdown complete");
 }
 
 bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
@@ -323,7 +328,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
         int result;
 
         if ((result = pw_thread_loop_start(this->pwThreadLoop)) != 0) {
-            std::cerr << "[PipeWire] error starting thread loop: " << spa_strerror(result) << "\n";
+            ::debug->Error(TAG, str::format("error starting thread loop: %s", spa_strerror(result)).c_str());
             goto cleanup;
         };
 
@@ -357,7 +362,10 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
             params[0] = spa_format_audio_raw_build(&builder, SPA_PARAM_EnumFormat, &audioInfo);
 
             if (!params[0]) {
-                std::cerr << "[PipeWire] failed to create audio format\n";
+                ::debug->Error(TAG, str::format(
+                    "failed to create audio format. channels=%d, rate=%d",
+                    this->channelCount,
+                    this->sampleRate).c_str());
                 goto cleanup;
             }
 
@@ -382,19 +390,21 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
 
             if (result == 0) {
                 pw_thread_loop_unlock(this->pwThreadLoop);
-                std::cerr << "[PipeWire] stream created and connected\n";
+                ::debug->Info(TAG, "new stream created and connected successfully");
                 this->initialized = true;
                 return true;
             }
             else {
-                std::cerr << "[PipeWire] error starting stream: " << spa_strerror(result) << "\n";
+                ::debug->Error(TAG, str::format(
+                    "error starting stream: %s",
+                    spa_strerror(result)).c_str());
             }
         }
     }
 
 cleanup:
     pw_thread_loop_unlock(this->pwThreadLoop);
-    std::cerr << "[PipeWire] stream not initialized.\n";
+    ::debug->Error(TAG, "stream not initialized");
     this->StopPipeWire();
     return false;
 }
@@ -457,25 +467,25 @@ void PipeWireOut::RefreshDeviceList() {
 
     deviceListContext.loop = pw_main_loop_new(nullptr);
     if (!deviceListContext.loop) {
-        std::cerr << "[PipeWire] RefreshDeviceList: could not create main loop.\n";
+        ::debug->Error(TAG, "RefreshDeviceList() could not create main loop");
         return;
     }
 
     auto loop = pw_main_loop_get_loop(deviceListContext.loop);
     if (!loop) {
-        std::cerr << "[PipeWire] RefreshDeviceList: could not resolve loop from main_loop??\n";
+        ::debug->Error(TAG, "RefreshDeviceList() could not resolve loop from main_loop??");
         return;
     }
 
     deviceListContext.context = pw_context_new(loop, nullptr, 0);
     if (!deviceListContext.context) {
-        std::cerr << "[PipeWire] RefreshDeviceList: could not create context.\n";
+        ::debug->Error(TAG, "RefreshDeviceList() could not create context");
         return;
     }
 
     deviceListContext.core = pw_context_connect(deviceListContext.context, nullptr, 0);
     if (deviceListContext.core == nullptr) {
-        std::cerr << "[PipeWire] RefreshDeviceList: could not connect to core.\n";
+        ::debug->Error(TAG, "RefreshDeviceList() could not connect to core");
         return;
     }
 
