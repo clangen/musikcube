@@ -87,9 +87,9 @@ static class Plugin : public IPlugin {
 
         virtual void Release() { }
 #if defined(ENABLE_FFMPEG) || defined(WIN32)
-        virtual const char* Name() { return "Stock Encoders (MP3 + ffmpeg)"; }
+        virtual const char* Name() { return "Stock Encoders (lame + ffmpeg)"; }
 #else
-        virtual const char* Name() { return "Stock Encoders (MP3)"; }
+        virtual const char* Name() { return "Stock Encoders (lame)"; }
 #endif
         virtual const char* Version() { return "0.7.0"; }
         virtual const char* Author() { return "clangen"; }
