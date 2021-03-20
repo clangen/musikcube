@@ -35,10 +35,10 @@
 #pragma once
 
 #ifdef WIN32
-#define FFMPEG_ENABLED
+#define ENABLE_FFMPEG
 #endif
 
-#ifdef FFMPEG_ENABLED
+#ifdef ENABLE_FFMPEG
 
 #include <musikcore/sdk/IBlockingEncoder.h>
 #include <musikcore/sdk/DataBuffer.h>
@@ -98,4 +98,4 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         int inputSampleRate;
 };
 
-#endif // FFMPEG_ENABLED
+#endif // ENABLE_FFMPEG

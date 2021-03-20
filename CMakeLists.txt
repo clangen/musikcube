@@ -120,7 +120,7 @@ else()
   add_subdirectory(src/plugins/libopenmptdecoder)
 endif()
 
-if (${FFMPEG_ENABLED} MATCHES "false")
+if (${ENABLE_FFMPEG} MATCHES "false")
   message(STATUS "[ffmpeg] enabled = false")
   add_subdirectory(src/plugins/m4adecoder)
   add_subdirectory(src/plugins/oggdecoder)
@@ -299,7 +299,7 @@ if (GENERATE_DEB MATCHES "1")
 
     set(DEPENDENCIES "libboost-thread${DEB_BOOST_VERSION}, libboost-system${DEB_BOOST_VERSION}, libboost-chrono${DEB_BOOST_VERSION}, libboost-filesystem${DEB_BOOST_VERSION}, libboost-date-time${DEB_BOOST_VERSION}, libmicrohttpd${DEB_MICROHTTPD_VERSION}, libcurl${DEB_LIBCURL_VERSION}, libogg0, libvorbis0a, libvorbisfile3, libncursesw${DEB_NCURSES_VERSION}, libasound2, libpulse0, pulseaudio, libmp3lame0, libev4, libopenmpt0, libssl1.1")
 
-    if (${FFMPEG_ENABLED} MATCHES "false")
+    if (${ENABLE_FFMPEG} MATCHES "false")
       set(DEPENDENCIES "${DEPENDENCIES}, libflac8, libfaad2")
     else()
       set(DEPENDENCIES "${DEPENDENCIES}, libavcodec-extra, libavutil${DEB_AVUTIL_VERSION}, libavformat${DEB_AVFORMAT_VERSION}, libswresample${DEB_SWRESAMPLE_VERSION}")

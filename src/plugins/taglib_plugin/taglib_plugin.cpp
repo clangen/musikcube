@@ -52,7 +52,7 @@
 class TaglibPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Release() { delete this; }
-#if defined(FFMPEG_ENABLED) || defined(WIN32)
+#if defined(ENABLE_FFMPEG) || defined(WIN32)
         virtual const char* Name() { return "Taglib 1.11 ITagReader (+ffmpeg)"; }
 #else
         virtual const char* Name() { return "Taglib 1.11 ITagReader"; }

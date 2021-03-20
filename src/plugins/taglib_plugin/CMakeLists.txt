@@ -3,11 +3,11 @@ set (taglibreader_SOURCES
   TaglibMetadataReader.cpp
 )
 
-if (${FFMPEG_ENABLED} MATCHES "false")
-  message(STATUS "[taglibmetadatareader] *not* defining FFMPEG_ENABLED")
+if (${ENABLE_FFMPEG} MATCHES "false")
+  message(STATUS "[taglibmetadatareader] *not* defining ENABLE_FFMPEG")
 else()
-  message(STATUS "[taglibmetadatareader] defining FFMPEG_ENABLED")
-  add_definitions(-DFFMPEG_ENABLED)
+  message(STATUS "[taglibmetadatareader] defining ENABLE_FFMPEG")
+  add_definitions(-DENABLE_FFMPEG)
 endif()
 
 add_library(taglibreader SHARED ${taglibreader_SOURCES})

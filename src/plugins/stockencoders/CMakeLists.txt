@@ -6,11 +6,11 @@ set (stockencoders_SOURCES
 
 add_library(stockencoders SHARED ${stockencoders_SOURCES})
 
-if (${FFMPEG_ENABLED} MATCHES "false")
-  message(STATUS "[stockencoders] *not* defining FFMPEG_ENABLED")
+if (${ENABLE_FFMPEG} MATCHES "false")
+  message(STATUS "[stockencoders] *not* defining ENABLE_FFMPEG")
 else()
-  message(STATUS "[stockencoders] defining FFMPEG_ENABLED")
-  add_definitions(-DFFMPEG_ENABLED)
+  message(STATUS "[stockencoders] defining ENABLE_FFMPEG")
+  add_definitions(-DENABLE_FFMPEG)
   # fedora (and probably other RPM-based distros) put ffmpeg includes here...
   include_directories("/usr/include/ffmpeg")
   include_directories("/usr/local/include/ffmpeg")
