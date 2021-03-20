@@ -123,6 +123,14 @@ static class Debug: public IDebug {
         }
 } debugger;
 
+static class NullDebug: public IDebug { /* used during shutdown */
+    public:
+        void Verbose(const char* tag, const char* message) override {}
+        void Info(const char* tag, const char* message) override {}
+        void Warning(const char* tag, const char* message) override {}
+        void Error(const char* tag, const char* message) override {}
+} nullDebugger;
+
 static class Environment: public IEnvironment {
     public:
         virtual size_t GetPath(PathType type, char* dst, int size) override {
@@ -439,7 +447,7 @@ namespace musik { namespace core { namespace plugin {
         PluginFactory::Instance().QueryFunction<SetDebug>(
             "SetDebug",
             [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
-                func(nullptr);
+                func(&nullDebugger);
             });
     }
 

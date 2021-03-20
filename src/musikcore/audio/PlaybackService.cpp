@@ -454,8 +454,8 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         if (masterTransport) {
             const TransportType transportType = static_cast<TransportType>(
                 playbackPrefs->GetInt(
-                    keys::Transport.c_str()),
-                    static_cast<int>(TransportType::Gapless));
+                    keys::Transport,
+                    static_cast<int>(TransportType::Gapless)));
 
             if (masterTransport->GetType() != transportType) {
                 masterTransport->SwitchTo(transportType);

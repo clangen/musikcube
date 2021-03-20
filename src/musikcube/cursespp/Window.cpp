@@ -419,11 +419,10 @@ void Window::Redraw() {
         }
 
         if (this->frame) {
-#ifdef __FreeBSD__
-            /* somehow related to curses version, but i don't know how;
-            if we don't do this on FreeBSD we get missing background
-            colors for things like overlays. if we do this on other
-            platforms we get weird repainting artifacts. */
+#if defined(__FreeBSD__) || (NCURSES_VERSION_PATCH >= 20200301)
+            /* but depending on curses version we'll get redraw artifacts if we do or don't
+            repaint the background. the changelog mentions changes to wbkgd() and wbkgrnd()
+            at revision 20200301, but it's unclear if this is the actual root cause or not. */
             this->RepaintBackground();
 #endif
             this->OnRedraw();

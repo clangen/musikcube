@@ -5,6 +5,7 @@
 #include <musikcore/sdk/IPlugin.h>
 #include <mutex>
 #include <thread>
+#include <memory>
 
 extern "C" {
     #include <systemd/sd-bus.h>

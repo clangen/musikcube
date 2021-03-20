@@ -62,7 +62,7 @@ static IEnvironment* environment = nullptr;
 
 static std::set<std::string> supportedFormats = {
     ".mp3",
-#ifdef FFMPEG_ENABLED
+#ifdef ENABLE_FFMPEG
     "audio/mpeg",
     ".ogg",
     "audio/ogg",
@@ -86,10 +86,10 @@ static class Plugin : public IPlugin {
         }
 
         virtual void Release() { }
-#if defined(FFMPEG_ENABLED) || defined(WIN32)
-        virtual const char* Name() { return "Stock Encoders (MP3 + ffmpeg)"; }
+#if defined(ENABLE_FFMPEG) || defined(WIN32)
+        virtual const char* Name() { return "Stock Encoders (lame + ffmpeg)"; }
 #else
-        virtual const char* Name() { return "Stock Encoders (MP3)"; }
+        virtual const char* Name() { return "Stock Encoders (lame)"; }
 #endif
         virtual const char* Version() { return "0.7.0"; }
         virtual const char* Author() { return "clangen"; }
@@ -116,7 +116,7 @@ static class EncoderFactory: public IEncoderFactory {
             if (isMp3(lowerType)) {
                 return new LameEncoder();
             }
-#ifdef FFMPEG_ENABLED
+#ifdef ENABLE_FFMPEG
             else if (supportedFormats.find(lowerType) != supportedFormats.end()) {
                 return new FfmpegEncoder(lowerType);
             }

@@ -33,43 +33,31 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "config.h"
-#include "TaglibMetadataReader.h"
+
 #include <musikcore/sdk/constants.h>
 #include <musikcore/sdk/IPlugin.h>
+#include <musikcore/sdk/ISchema.h>
+#include "PipeWireOut.h"
 
-#ifdef WIN32
-    #define DLLEXPORT __declspec(dllexport)
-#else
-    #define DLLEXPORT
-#endif
-
-#ifdef WIN32
-    BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
-        return TRUE;
-    }
-#endif
-
-class TaglibPlugin : public musik::core::sdk::IPlugin {
+class PipeWirePlugin : public musik::core::sdk::IPlugin {
     public:
-        virtual void Release() { delete this; }
-#if defined(ENABLE_FFMPEG) || defined(WIN32)
-        virtual const char* Name() { return "Taglib 1.11 ITagReader (+ffmpeg)"; }
-#else
-        virtual const char* Name() { return "Taglib 1.11 ITagReader"; }
-#endif
-        virtual const char* Version() { return "0.6.0"; }
-        virtual const char* Author() { return "Daniel Önnerby, clangen"; }
-        virtual const char* Guid() { return "c77ea7a4-5d57-4f17-8521-aba8eeadeda7"; }
-        virtual bool Configurable() { return false; }
-        virtual void Configure() { }
-        virtual void Reload() { }
-        virtual int SdkVersion() { return musik::core::sdk::SdkVersion; }
+        void Release() noexcept override { delete this; }
+        const char* Name() override  { return "PipeWire IOutput"; }
+        const char* Version() override  { return "0.1.0"; }
+        const char* Author() override  { return "clangen"; }
+        const char* Guid() override { return "ab79e0f2-53d8-4774-ad00-266a30c50427"; }
+        bool Configurable() override { return false; }
+        void Configure() override { }
+        void Reload() override  { }
+        int SdkVersion() override  { return musik::core::sdk::SdkVersion; }
 };
 
-extern "C" DLLEXPORT musik::core::sdk::ITagReader* GetTagReader() {
-    return new TaglibMetadataReader();
+extern "C" musik::core::sdk::IPlugin* GetPlugin() {
+    return new PipeWirePlugin();
 }
 
-extern "C" DLLEXPORT musik::core::sdk::IPlugin* GetPlugin() {
-    return new TaglibPlugin();
+extern "C" musik::core::sdk::IOutput* GetAudioOutput() {
+    return new PipeWireOut();
 }
+
+extern "C" musik::core::sdk::ISchema* GetSchema();
