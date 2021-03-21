@@ -288,7 +288,7 @@ class PipeWireOut : public IOutput {
         std::condition_variable_any bufferCondition, drainCondition;
         double volume{1.0};
         pw_stream_events pwStreamEvents;
-        pw_thread_loop* pwThreadLoop {nullptr};
+        pw_thread_loop* pwThreadLoop{nullptr};
         pw_stream* pwStream{nullptr};
         OutBufferContext outBufferContext;
         long channelCount{0};
