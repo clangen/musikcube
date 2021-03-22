@@ -100,37 +100,37 @@ int main(int argc, char* argv[]) {
     boost::filesystem::path::imbue(utf8Locale);
 
     /* ensure we have the correct locale loaded */
-    musik::core::i18n::Locale::Instance().Initialize(musik::core::GetApplicationDirectory() + "/locales/");
+    core::i18n::Locale::Instance().Initialize(core::GetApplicationDirectory() + "/locales/");
 
 #ifdef WIN32
-    AddDllDirectory(u8to16(musik::core::GetPluginDirectory()).c_str());
+    AddDllDirectory(u8to16(core::GetPluginDirectory()).c_str());
     #ifdef __PDCURSES__
         PDC_set_resize_limits(MIN_HEIGHT, 1000, MIN_WIDTH, 1000);
         resize_term(26, 100); /* must be before app init */
     #endif
 #endif
 
-    std::string errorFn = musik::core::GetDataDirectory() + "stderr.txt";
+    std::string errorFn = core::GetDataDirectory() + "stderr.txt";
     freopen(errorFn.c_str(), "w", stderr);
 
-    auto fileLogger = new musik::debug::SimpleFileBackend();
+    auto fileLogger = new debug::SimpleFileBackend();
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
-    musik::debug::Start({ fileLogger, consoleLogger });
+    debug::Start({ fileLogger, consoleLogger });
+
+    plugin::Init();
 
     LibraryFactory::Initialize(Window::MessageQueue());
-    auto library = std::make_shared<musik::core::library::MasterLibrary>();
+    auto library = std::make_shared<library::MasterLibrary>();
 
     {
-        auto prefs = Preferences::ForComponent(
-            musik::core::prefs::components::Settings);
+        auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
 
         PlaybackService playback(Window::MessageQueue(), library);
 
         GlobalHotkeys globalHotkeys(playback, library);
         Window::SetNavigationKeys(Hotkeys::NavigationKeys());
 
-        musik::core::plugin::Init(
-            &Window::MessageQueue(), &playback, library);
+        plugin::Start(&Window::MessageQueue(), &playback, library);
 
 #ifdef WIN32
         auto font = GetApplicationDirectory() + "fonts/SourceCodePro-Medium.ttf";
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
         app.SetQuitKey(prefs->GetString(keys::AppQuitKey, "^D"));
 
         /* fire up the indexer if configured to run on startup */
-        if (prefs->GetBool(musik::core::prefs::keys::SyncOnStartup, true)) {
+        if (prefs->GetBool(core::prefs::keys::SyncOnStartup, true)) {
             library->Indexer()->Schedule(IIndexer::SyncType::All);
         }
 
@@ -214,12 +214,12 @@ int main(int argc, char* argv[]) {
         library->Indexer()->Stop();
     }
 
-    musik::core::audio::vis::HideSelectedVisualizer();
-    musik::core::plugin::Deinit();
+    audio::vis::HideSelectedVisualizer();
+    plugin::Deinit();
 
     LibraryFactory::Instance().Shutdown();
 
-    musik::debug::Stop();
+    debug::Stop();
 
     return 0;
 }

@@ -282,6 +282,8 @@ int main(int argc, char** argv) {
 
     srand((unsigned int) time(0));
 
+    plugin::Init();
+
     EvMessageQueue messageQueue;
     LibraryFactory::Initialize(messageQueue);
     auto library = LibraryFactory::Instance().DefaultLocalLibrary();
@@ -289,7 +291,7 @@ int main(int argc, char** argv) {
     {
         PlaybackService playback(messageQueue, library);
 
-        plugin::Init(&messageQueue, &playback, library);
+        plugin::Start(&messageQueue, &playback, library);
 
         auto prefs = Preferences::ForComponent(prefs::components::Settings);
         if (prefs->GetBool(prefs::keys::SyncOnStartup, true)) {

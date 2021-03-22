@@ -361,7 +361,7 @@ static class Environment: public IEnvironment {
 
 namespace musik { namespace core { namespace plugin {
 
-    void Init(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
+    void Init() {
         /* preferences */
         Preferences::LoadPluginPreferences();
 
@@ -371,7 +371,9 @@ namespace musik { namespace core { namespace plugin {
             [](musik::core::sdk::IPlugin* plugin, SetDebug func) {
             func(&debugger);
         });
+    }
 
+    void Start(IMessageQueue* messageQueue, IPlaybackService* playbackService, ILibraryPtr library) {
         /* metadata proxies */
         delete metadataProxy;
         ::messageQueue = messageQueue;

@@ -289,7 +289,7 @@ IDevice* PipeWireOut::GetDefaultDevice() {
 }
 
 void PipeWireOut::StopPipeWire() {
-    if (::debug) ::debug->Info(TAG, "shutdown started");
+    ::debug->Info(TAG, "shutdown started");
 
     this->Stop();
 
@@ -317,7 +317,7 @@ void PipeWireOut::StopPipeWire() {
     this->channelCount = 0;
     this->sampleRate = 0;
 
-    if (::debug) ::debug->Info(TAG, "shutdown complete");
+    ::debug->Info(TAG, "shutdown complete");
 }
 
 bool PipeWireOut::StartPipeWire(IBuffer* buffer) {

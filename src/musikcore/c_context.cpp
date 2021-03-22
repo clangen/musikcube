@@ -178,6 +178,8 @@ mcsdk_export void mcsdk_context_init(mcsdk_context** context) {
         mcsdk_env_init();
     }
 
+    plugin::Init();
+
     auto c = new mcsdk_context();
     memset(c, 0, sizeof(mcsdk_context));
 
@@ -253,7 +255,7 @@ mcsdk_export void mcsdk_set_plugin_context(mcsdk_context* context) {
     plugin_context = context;
     if (plugin_context) {
         auto internal = static_cast<mcsdk_context_internal*>(context->internal.opaque);
-        plugin::Init(message_queue, internal->playback, internal->library);
+        plugin::Start(message_queue, internal->playback, internal->library);
     }
 }
 
