@@ -106,19 +106,19 @@ static void getEqualizerPluginAndPrefs(
 
 static class Debug: public IDebug {
     public:
-        virtual void Verbose(const char* tag, const char* message) override {
+        void Verbose(const char* tag, const char* message) override {
             musik::debug::verbose(tag, message);
         }
 
-        virtual void Info(const char* tag, const char* message) override {
+        void Info(const char* tag, const char* message) override {
             musik::debug::info(tag, message);
         }
 
-        virtual void Warning(const char* tag, const char* message) override {
+        void Warning(const char* tag, const char* message) override {
             musik::debug::warning(tag, message);
         }
 
-        virtual void Error(const char* tag, const char* message) override {
+        void Error(const char* tag, const char* message) override {
             musik::debug::error(tag, message);
         }
 } debugger;
@@ -133,7 +133,7 @@ static class NullDebug: public IDebug { /* used during shutdown */
 
 static class Environment: public IEnvironment {
     public:
-        virtual size_t GetPath(PathType type, char* dst, int size) override {
+        size_t GetPath(PathType type, char* dst, int size) override {
             std::string path;
             switch (type) {
                 case PathType::UserHome: path = GetHomeDirectory(); break;
@@ -150,27 +150,27 @@ static class Environment: public IEnvironment {
             return CopyString(path, dst, size);
         }
 
-        virtual IDataStream* GetDataStream(const char* uri, OpenFlags flags) override {
+        IDataStream* GetDataStream(const char* uri, OpenFlags flags) override {
             return DataStreamFactory::OpenDataStream(uri, flags);
         }
 
-        virtual IDecoder* GetDecoder(IDataStream* stream) override {
+        IDecoder* GetDecoder(IDataStream* stream) override {
             return streams::GetDecoderForDataStream(stream);
         }
 
-        virtual IEncoder* GetEncoder(const char* type) override {
+        IEncoder* GetEncoder(const char* type) override {
             return streams::GetEncoderForType(type);
         }
 
-        virtual IDebug* GetDebug() override {
+        IDebug* GetDebug() override {
             return &debugger;
         }
 
-        virtual IPreferences* GetPreferences(const char* name) override {
+        IPreferences* GetPreferences(const char* name) override {
             return Preferences::Unmanaged(name ? name : std::string());
         }
 
-        virtual IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) override {
+        IBuffer* GetBuffer(size_t samples, size_t rate = 44100, size_t channels = 2) override {
             musik::core::audio::Buffer* buffer = new Buffer();
             buffer->SetChannels(2);
             buffer->SetSampleRate((long) rate);
@@ -178,19 +178,19 @@ static class Environment: public IEnvironment {
             return buffer;
         }
 
-        virtual size_t GetOutputCount() override {
+        size_t GetOutputCount() override {
             return outputs::GetOutputCount();
         }
 
-        virtual IOutput* GetOutputAtIndex(size_t index) override {
+        IOutput* GetOutputAtIndex(size_t index) override {
             return outputs::GetUnmanagedOutput(index);
         }
 
-        virtual IOutput* GetOutputWithName(const char* name) override {
+        IOutput* GetOutputWithName(const char* name) override {
             return outputs::GetUnmanagedOutput(name ? name : "");
         }
 
-        virtual void SetDefaultOutput(IOutput* output) override {
+        void SetDefaultOutput(IOutput* output) override {
             if (output) {
                 auto current = outputs::SelectedOutput();
                 std::string newName = output->Name();
@@ -209,7 +209,7 @@ static class Environment: public IEnvironment {
             }
         }
 
-        virtual TransportType GetTransportType() override {
+        TransportType GetTransportType() override {
             if (::playbackPrefs) {
                 return (TransportType) ::playbackPrefs->GetInt(
                     prefs::keys::Transport.c_str(), (int) TransportType::Gapless);
@@ -217,7 +217,7 @@ static class Environment: public IEnvironment {
             return TransportType::Gapless;
         }
 
-        virtual void SetTransportType(TransportType type) override {
+        void SetTransportType(TransportType type) override {
             if (::playbackPrefs) {
                 auto currentType = GetTransportType();
                 if (currentType != type) {
@@ -230,23 +230,23 @@ static class Environment: public IEnvironment {
             }
         }
 
-        virtual IOutput* GetDefaultOutput() override {
+        IOutput* GetDefaultOutput() override {
             return outputs::GetUnmanagedSelectedOutput();
         }
 
-        virtual void ReindexMetadata() override {
+        void ReindexMetadata() override {
             if (::defaultLibrary) {
                 ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Local);
             }
         }
 
-        virtual void RebuildMetadata() override {
+        void RebuildMetadata() override {
             if (::defaultLibrary) {
                 ::defaultLibrary->Indexer()->Schedule(IIndexer::SyncType::Rebuild);
             }
         }
 
-        virtual ReplayGainMode GetReplayGainMode() override {
+        ReplayGainMode GetReplayGainMode() override {
             if (::playbackPrefs) {
                 return (ReplayGainMode) ::playbackPrefs->GetInt(
                     prefs::keys::ReplayGainMode.c_str(),
@@ -255,14 +255,14 @@ static class Environment: public IEnvironment {
             return ReplayGainMode::Disabled;
         }
 
-        virtual void SetReplayGainMode(ReplayGainMode mode) override {
+        void SetReplayGainMode(ReplayGainMode mode) override {
             if (::playbackPrefs) {
                 ::playbackPrefs->SetInt(prefs::keys::ReplayGainMode.c_str(), (int) mode);
                 saveEnvironment();
             }
         }
 
-        virtual float GetPreampGain() override {
+        float GetPreampGain() override {
             if (::playbackPrefs) {
                 return (float) ::playbackPrefs->GetDouble(
                     prefs::keys::PreampDecibels.c_str(), 0.0f);
@@ -270,7 +270,7 @@ static class Environment: public IEnvironment {
             return 1.0f;
         }
 
-        virtual void SetPreampGain(float gain) override {
+        void SetPreampGain(float gain) override {
             if (::playbackPrefs) {
                 if (gain > 20.0f) { gain = 20.0f; }
                 if (gain < -20.0f) { gain = -20.0f; }
@@ -279,7 +279,7 @@ static class Environment: public IEnvironment {
             }
         }
 
-        virtual bool GetEqualizerBandValues(double target[], size_t count) override {
+        bool GetEqualizerBandValues(double target[], size_t count) override {
             if (count != EqualizerBandCount) {
                 return false;
             }
@@ -299,7 +299,7 @@ static class Environment: public IEnvironment {
             return false;
         }
 
-        virtual bool SetEqualizerBandValues(double values[], size_t count) override {
+        bool SetEqualizerBandValues(double values[], size_t count) override {
             if (count != EqualizerBandCount) {
                 return false;
             }
@@ -320,7 +320,7 @@ static class Environment: public IEnvironment {
             return false;
         }
 
-        virtual bool GetEqualizerEnabled() override {
+        bool GetEqualizerEnabled() override {
             std::shared_ptr<IPlugin> plugin;
             std::shared_ptr<Preferences> prefs;
             getEqualizerPluginAndPrefs(plugin, prefs);
@@ -332,8 +332,7 @@ static class Environment: public IEnvironment {
             return false;
         }
 
-
-        virtual void SetEqualizerEnabled(bool enabled) override {
+        void SetEqualizerEnabled(bool enabled) override {
             std::shared_ptr<IPlugin> plugin;
             std::shared_ptr<Preferences> prefs;
             getEqualizerPluginAndPrefs(plugin, prefs);
@@ -347,13 +346,13 @@ static class Environment: public IEnvironment {
             }
         }
 
-        virtual void ReloadPlaybackOutput() override {
+        void ReloadPlaybackOutput() override {
             if (playbackService) {
                 playbackService->ReloadOutput();
             }
         }
 
-        virtual const char* GetAppVersion() override {
+        const char* GetAppVersion() override {
             return VERSION;
         }
 
