@@ -195,7 +195,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
 #endif
 
     { Id::TrackListRateTrack, "r" },
-    { Id::TrackListChangeSortOrder, "^S" },
+    { Id::TrackListChangeSortOrder, "M-s" },
     { Id::TrackListNextGroup, "]" },
     { Id::TrackListPreviousGroup, "[" },
     { Id::TrackListPlayFromTop, "M-P" },
