@@ -62,6 +62,17 @@ if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
   endif()
 endif()
 
+# we default to using a bundled version of taglib because the latest release
+# is from 2016, and the upstream git repo is hundreds of commits ahead and
+# has a number of important bugfixes.
+if (NOT DEFINED ENABLE_BUNDLED_TAGLIB)
+  message(STATUS "[build] ENABLE_BUNDLED_TAGLIB not defined, setting to 'true'")
+  set(ENABLE_BUNDLED_TAGLIB "true")
+else()
+  message(STATUS "[build] ENABLE_BUNDLED_TAGLIB specified as '${ENABLE_BUNDLED_TAGLIB}'")
+endif()
+
+
 message(STATUS "[build] link libraries are: ${musikcube_LINK_LIBS}")
 
 include_directories (
@@ -94,11 +105,6 @@ if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
 elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD" )
   add_definitions (-DNO_NCURSESW)
 endif()
-
-# we use a bundled version of taglib because the latest release is from 2016,
-# and the upstream git repo is hundreds of commits ahead and has a number of
-# important bugfixes.
-set(USE_BUNDLED_TAGLIB "true")
 
 add_subdirectory(src/musikcore)
 add_subdirectory(src/core_c_demo)
@@ -305,7 +311,7 @@ if (GENERATE_DEB MATCHES "1")
       set(DEPENDENCIES "${DEPENDENCIES}, libavcodec-extra, libavutil${DEB_AVUTIL_VERSION}, libavformat${DEB_AVFORMAT_VERSION}, libswresample${DEB_SWRESAMPLE_VERSION}")
     endif()
 
-    if (NOT ${USE_BUNDLED_TAGLIB} MATCHES "true")
+    if (${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
       set(DEPENDENCIES "${DEPENDENCIES}, libtag1v5")
     endif()
 

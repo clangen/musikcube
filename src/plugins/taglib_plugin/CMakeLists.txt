@@ -11,26 +11,25 @@ else()
 endif()
 
 add_library(taglibreader SHARED ${taglibreader_SOURCES})
+  
+if (NOT ${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
+  message(STATUS "[taglibmetadatareader] using bundled taglib = true")
 
-message(STATUS "[taglibmetadatareader] using bundled taglib = ${USE_BUNDLED_TAGLIB}")
+  include(ExternalProject)
 
-if (${USE_BUNDLED_TAGLIB} MATCHES "true")
-  if (${USE_BUNDLED_TAGLIB} MATCHES "true")
-    include(ExternalProject)
+  ExternalProject_Add(taglib
+    SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
+    BUILD_IN_SOURCE 0
+    DOWNLOAD_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
+    INSTALL_COMMAND make install)
 
-    ExternalProject_Add(taglib
-      SOURCE_DIR "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11"
-      BUILD_IN_SOURCE 0
-      DOWNLOAD_COMMAND ""
-      UPDATE_COMMAND ""
-      CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:PATH=${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/"
-      INSTALL_COMMAND make install)
-
-    include_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
-  endif()
+  include_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
   add_dependencies(taglibreader taglib)
   target_link_libraries(taglibreader ${BOOST_LINK_LIBS} "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a" z)
   message(STATUS "[taglibmetadatareader] using ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a")
 else()
+  message(STATUS "[taglibmetadatareader] using bundled taglib = false")
   target_link_libraries(taglibreader ${BOOST_LINK_LIBS} tag z)
 endif()
