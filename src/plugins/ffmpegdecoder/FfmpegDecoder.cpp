@@ -471,9 +471,10 @@ bool FfmpegDecoder::RefillFifoQueue() {
     int fifoSize = av_audio_fifo_size(this->outputFifo);
     while (!readFailed && fifoSize < this->preferredFrameSize) {
         AVPacket packet;
-        av_init_packet(&packet);
-        packet.data = nullptr;
-        packet.size = 0;
+        memset(&packet, 0, sizeof(AVPacket));
+        packet.pts = AV_NOPTS_VALUE;
+        packet.dts = AV_NOPTS_VALUE;
+        packet.pos = -1;
         int error = av_read_frame(this->formatContext, &packet);
         if (error >= 0) {
             sentAtLeastOnePacket = this->ReadSendAndReceivePacket(&packet);

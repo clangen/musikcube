@@ -565,9 +565,10 @@ int FfmpegEncoder::SendReceiveAndWriteFrame(AVFrame* frame) {
         error = 0;
         while (error >= 0) {
             AVPacket outputPacket;
-            av_init_packet(&outputPacket);
-            outputPacket.data = nullptr;
-            outputPacket.size = 0;
+            memset(&outputPacket, 0, sizeof(AVPacket));
+            outputPacket.pts = AV_NOPTS_VALUE;
+            outputPacket.dts = AV_NOPTS_VALUE;
+            outputPacket.pos = -1;
             error = avcodec_receive_packet(this->outputContext, &outputPacket);
             if (error >= 0) {
                 error = av_write_frame(this->outputFormatContext, &outputPacket);
