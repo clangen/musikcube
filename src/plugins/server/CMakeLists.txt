@@ -23,6 +23,8 @@ set (server_LINK_LIBS ${BOOST_LINK_LIBS})
 
 include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/include")
 
+ensure_library_exists(microhttpd)
+
 if (${LINK_STATICALLY} MATCHES "true")
   # libmicrohttpd on macOS now depends on `gnutls`. when we build statically,
   # we also need to build libmicrohttpd ourselves and disable TLS to avoid this

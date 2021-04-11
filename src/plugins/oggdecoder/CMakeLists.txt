@@ -5,6 +5,13 @@ set (oggdecoder_SOURCES
     stdafx.cpp
 )
 
+ensure_library_exists(ogg)
+ensure_library_exists(libogg.a)
+ensure_library_exists(vorbis)
+ensure_library_exists(libvorbis.a)
+ensure_library_exists(vorbisfile)
+ensure_library_exists(libvorbisfile.a)
+
 add_library(oggdecoder SHARED ${oggdecoder_SOURCES})
 
 # prefer static libraries on mac to make redist easier

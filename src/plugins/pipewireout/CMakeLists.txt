@@ -3,6 +3,8 @@ set (pipewireout_SOURCES
   PipeWireOut.cpp
 )
 
+ensure_library_exists(pipewire-0.3)
+
 message(STATUS "[pipewireout] plugin enabled")
 
 include_directories("/usr/include/spa-0.2")

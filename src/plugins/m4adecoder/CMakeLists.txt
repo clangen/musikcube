@@ -16,6 +16,9 @@ include_directories(
   "${CMAKE_CURRENT_SOURCE_DIR}/mp4ff"
 )
 
+ensure_library_exists(faad)
+ensure_library_exists(libfaad.a)
+
 add_library(m4adecoder SHARED ${m4adecoder_SOURCES})
 
 # prefer static libraries on mac to make redist easier

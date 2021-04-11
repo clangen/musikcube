@@ -10,6 +10,11 @@ set (ffmpegdecoder_SOURCES
 include_directories("/usr/include/ffmpeg")
 include_directories("/usr/local/include/ffmpeg")
 
+ensure_library_exists(avcodec)
+ensure_library_exists(avutil)
+ensure_library_exists(avformat)
+ensure_library_exists(swresample)
+
 # note: static linking is a no-go (too many dependencies). sorry macOS.
 add_library(ffmpegdecoder SHARED ${ffmpegdecoder_SOURCES})
 target_link_libraries(ffmpegdecoder ${musikcube_LINK_LIBS} avcodec avutil avformat swresample)

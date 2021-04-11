@@ -5,6 +5,9 @@ set (flacdecoder_SOURCES
   FlacDecoder.cpp
 )
 
+ensure_library_exists(FLAC)
+ensure_library_exists(libFLAC.a)
+
 add_library(flacdecoder SHARED ${flacdecoder_SOURCES})
 
 # prefer static libraries on mac to make redist easier

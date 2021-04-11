@@ -6,14 +6,23 @@ set (stockencoders_SOURCES
 
 add_library(stockencoders SHARED ${stockencoders_SOURCES})
 
+ensure_library_exists(mp3lame)
+
 if (${ENABLE_FFMPEG} MATCHES "false")
   message(STATUS "[stockencoders] *not* defining ENABLE_FFMPEG")
 else()
   message(STATUS "[stockencoders] defining ENABLE_FFMPEG")
   add_definitions(-DENABLE_FFMPEG)
+  
   # fedora (and probably other RPM-based distros) put ffmpeg includes here...
   include_directories("/usr/include/ffmpeg")
   include_directories("/usr/local/include/ffmpeg")
+
+  ensure_library_exists(avcodec)
+  ensure_library_exists(avutil)
+  ensure_library_exists(avformat)
+  ensure_library_exists(swresample)
+  
   # note: static linking is a no-go (too many dependencies). sorry macOS.
   target_link_libraries(stockencoders avcodec avutil avformat swresample)
 endif()

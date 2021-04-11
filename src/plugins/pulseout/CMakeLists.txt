@@ -4,9 +4,7 @@ set (pulseout_SOURCES
   PulseOut.cpp
 )
 
-add_definitions( 
-  -D_DEBUG
-)
+ensure_library_exists(pulse)
 
-add_library( pulseout SHARED ${pulseout_SOURCES} )
-target_link_libraries( pulseout ${musikcube_LINK_LIBS} pulse)
+add_library(pulseout SHARED ${pulseout_SOURCES})
+target_link_libraries(pulseout ${musikcube_LINK_LIBS} pulse)

@@ -2,6 +2,9 @@ set (DAEMON_SRCS
   ./main.cpp
 )
 
+ensure_library_exists(ev)
+ensure_library_exists(libev.a)
+
 set(musikcube_INSTALL_DIR ${HOMEBREW_PREFIX})
 if (NOT DEFINED musikcube_INSTALL_DIR)
 	set(musikcube_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})

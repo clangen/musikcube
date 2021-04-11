@@ -13,10 +13,10 @@ set (musikcube_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/.cmake)
 include(CMakeToolsHelpers OPTIONAL)
+include(CheckDependencies)
 include(CheckAtomic)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wno-unused-result -Wno-deprecated-declarations")
-
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -g -frtti -fexceptions")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 
@@ -24,6 +24,27 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -fsanitize=address,undefined")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -frtti -fexceptions")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O2")
+
+# our include directories
+include_directories (
+  "${musikcube_SOURCE_DIR}/src"
+  "${musikcube_SOURCE_DIR}/src/musikcore"
+  "${musikcube_SOURCE_DIR}/src/musikcube"
+  "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
+  "${musikcube_SOURCE_DIR}/src/3rdparty/include")
+
+# our library directories
+link_directories ("${musikcube_SOURCE_DIR}/bin/plugins")
+
+# custom include/library directories for BSDs
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+  link_directories ("/usr/local/lib")
+  link_directories ("/usr/local/opt/openssl/lib")
+  link_directories ("/usr/local/opt/ncurses/lib")
+  include_directories("/usr/local/include")
+  include_directories("/usr/local/opt/openssl/include")
+  include_directories("/usr/local/opt/ncurses/include")
+endif ()
 
 if (${LINK_STATICALLY} MATCHES "true")
   set(Boost_USE_STATIC_LIBS ON)
@@ -45,8 +66,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/Mo
 set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 
-link_directories ("${musikcube_SOURCE_DIR}/bin/plugins")
-
+ensure_library_exists(curl)
+ensure_library_exists(pthread)
+ensure_library_exists(ssl)
+ensure_library_exists(crypto)
+ensure_library_exists(z)
 set(COMMON_LINK_LIBS ${BOOST_LINK_LIBS} curl pthread ssl crypto)
 
 if (CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
@@ -72,15 +96,7 @@ else()
   message(STATUS "[build] ENABLE_BUNDLED_TAGLIB specified as '${ENABLE_BUNDLED_TAGLIB}'")
 endif()
 
-
 message(STATUS "[build] link libraries are: ${musikcube_LINK_LIBS}")
-
-include_directories (
-  "${musikcube_SOURCE_DIR}/src"
-  "${musikcube_SOURCE_DIR}/src/musikcore"
-  "${musikcube_SOURCE_DIR}/src/musikcube"
-  "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
-  "${musikcube_SOURCE_DIR}/src/3rdparty/include")
 
 # ensure the binaries can find libmusikcore.so, which lives in the
 # same directory.
@@ -88,17 +104,6 @@ if (NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 endif()
-
-# "/usr/local" doesn't seem to be included by default on macOS 10.12+
-# "/opt/local" is the default installation location for MacPorts
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
-  link_directories ("/usr/local/lib")
-  link_directories ("/usr/local/opt/openssl/lib")
-  link_directories ("/usr/local/opt/ncurses/lib")
-  include_directories("/usr/local/include")
-  include_directories("/usr/local/opt/openssl/include")
-  include_directories("/usr/local/opt/ncurses/include")
-endif ()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
   add_definitions (-DNO_NCURSESW)
