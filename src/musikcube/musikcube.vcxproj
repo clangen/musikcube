@@ -319,6 +319,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
     <ClCompile>
@@ -362,6 +365,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Con|Win32'">
     <ClCompile>
@@ -405,6 +411,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -446,6 +455,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|x64'">
     <ClCompile>
@@ -487,6 +499,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-Con|x64'">
     <ClCompile>
@@ -528,6 +543,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -577,6 +595,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|Win32'">
     <ClCompile>
@@ -626,6 +647,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-Con|Win32'">
     <ClCompile>
@@ -675,6 +699,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win32\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -723,6 +750,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-DLL|x64'">
     <ClCompile>
@@ -771,6 +801,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-Con|x64'">
     <ClCompile>
@@ -819,6 +852,9 @@ xcopy "$(SolutionDir)src\3rdparty\bin\win64\dll\openssl\*" "$(TargetDir)" /Y /e
 if not exist "$(TargetDir)fonts" mkdir "$(TargetDir)fonts"
 xcopy "$(SolutionDir)src\3rdparty\bin\win\font\*.ttf" "$(TargetDir)fonts\" /Y /e</Command>
     </PostBuildEvent>
+    <Manifest>
+      <AdditionalManifestFiles>win32api.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="app\layout\BrowseLayout.cpp" />
