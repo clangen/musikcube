@@ -101,23 +101,30 @@ static int64_t seekCallback(void* opaque, int64_t offset, int whence) {
         switch (whence) {
             case AVSEEK_SIZE:
                 return stream->Length();
-                break;
             case SEEK_SET: {
                 if (offset >= stream->Length()) {
+                    debug->Error(TAG, "SEEK_SET requested offset beyond EOF");
                     return AVERROR(EINVAL);
                 }
-                stream->SetPosition((PositionType) offset);
+                if (!stream->SetPosition((PositionType) offset)) {
+                    debug->Error(TAG, "SEEK_SET failed");
+                }
                 break;
             }
             case SEEK_CUR: {
                 if (stream->Position() + offset >= stream->Length()) {
+                    debug->Error(TAG, "SEEK_CUR requested offset beyond EOF");
                     return AVERROR(EINVAL);
                 }
-                stream->SetPosition(stream->Position() + (PositionType) offset);
+                if (!stream->SetPosition(stream->Position() + (PositionType) offset)) {
+                    debug->Error(TAG, "SEEK_CUR failed");
+                }
                 break;
             }
             case SEEK_END:
-                stream->SetPosition(stream->Length() - 1);
+                if (!stream->SetPosition(stream->Length() - 1)) {
+                    debug->Error(TAG, "SEEK_END failed");
+                }
                 break;
             default:
                 debug->Error(TAG, "unknown seek type!");
@@ -174,7 +181,8 @@ double FfmpegDecoder::SetPosition(double seconds) {
     if (this->ioContext && this->formatContext && this->codecContext) {
         AVStream* stream = this->formatContext->streams[this->streamId];
         AVRational timeBase = stream->time_base;
-        int64_t seekTime = stream->start_time + av_rescale((int64_t) seconds, timeBase.den, timeBase.num);
+        int64_t seekTime = stream->start_time != AV_NOPTS_VALUE ? stream->start_time : 0;
+        seekTime += av_rescale((int64_t) seconds, timeBase.den, timeBase.num);
         if (av_seek_frame(this->formatContext, this->streamId, seekTime, AVSEEK_FLAG_ANY) >= 0) {
             return seconds;
         }
