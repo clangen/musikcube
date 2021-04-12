@@ -64,6 +64,11 @@ static std::string getAvError(int errnum) {
 }
 
 static void logAvError(const std::string& method, int errnum) {
+#ifndef ENABLE_LOG_AVERROR_EOF
+    if (errnum == AVERROR_EOF) {
+        return; /* these are generally legit; no need to pollute the log */
+    }
+#endif
     if (errnum != 0) {
         std::string err = method + "() failed: " + getAvError(errnum);
         ::debug->Warning(TAG, err.c_str());
