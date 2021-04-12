@@ -109,6 +109,10 @@ namespace musik {
                             playback.Prepare(index, time);
                             playback.QueueEdited(); /* hack to get the play queue view to scroll
                                 to the track we just prepared. */
+
+                            if (Settings()->GetBool(keys::ResumePlaybackOnStartup, false)) {
+                                playback.GetTransport().Resume();
+                            }
                         }
                     });
                 }

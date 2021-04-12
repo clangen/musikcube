@@ -46,6 +46,7 @@ namespace musik { namespace core { namespace prefs {
     const std::string keys::AutoSyncIntervalMillis = "AutoSyncIntervalMillis";
     const std::string keys::RemoveMissingFiles = "RemoveMissingFiles";
     const std::string keys::SyncOnStartup = "SyncOnStartup";
+    const std::string keys::ResumePlaybackOnStartup = "ResumePlaybackOnStartup";
     const std::string keys::Volume = "Volume";
     const std::string keys::RepeatMode = "RepeatMode";
     const std::string keys::TimeChangeMode = "TimeChangeMode";

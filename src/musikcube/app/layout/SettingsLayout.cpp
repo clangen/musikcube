@@ -126,6 +126,7 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     schema->AddInt(core::prefs::keys::IndexerThreadCount, DEFAULT_MAX_INDEXER_THREADS);
     schema->AddInt(core::prefs::keys::IndexerTransactionInterval, 300);
     schema->AddString(core::prefs::keys::AuddioApiToken, "");
+    schema->AddBool(core::prefs::keys::ResumePlaybackOnStartup, false);
     return schema;
 }
 
