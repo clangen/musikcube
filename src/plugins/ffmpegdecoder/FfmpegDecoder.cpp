@@ -495,7 +495,7 @@ bool FfmpegDecoder::RefillFifoQueue() {
             invalid. this can be observed when playing wav files that have
             album art metadata, but may happen in other cases. if we detect
             an invalid packet, simply discard it and get the next one */
-            if (packet.pts == AV_NOPTS_VALUE && packet.dts == AV_NOPTS_VALUE) {
+            if (packet.pos == -1 && packet.duration <= 1) {
                 logError("invalid packet detected, discarding.");
             }
             else {
