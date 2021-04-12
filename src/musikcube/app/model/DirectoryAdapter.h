@@ -60,6 +60,8 @@ namespace musik {
                 void SetAllowEscapeRoot(bool allowEscape);
                 size_t IndexOf(const std::string& leaf);
                 void SetDotfilesVisible(bool visible);
+                void SetShowRootDirectory(bool showRootDirectory);
+                bool IsAtRoot();
                 void Refresh();
 
                 /* ScrollAdapterBase */
@@ -68,11 +70,14 @@ namespace musik {
 
             private:
                 bool ShowParentPath();
+                bool ShowCurrentDirectory();
+                bool IsCurrentDirectory(size_t index);
+                size_t GetHeaderCount();
 
                 boost::filesystem::path dir, rootDir;
                 std::vector<std::string> subdirs;
                 std::stack<size_t> selectedIndexStack;
-                bool showDotfiles, allowEscapeRoot;
+                bool showDotfiles, allowEscapeRoot, showRootDirectory;
         };
     }
 }

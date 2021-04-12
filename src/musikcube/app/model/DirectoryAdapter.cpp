@@ -131,34 +131,44 @@ static std::string normalizePath(boost::filesystem::path path) {
 
 DirectoryAdapter::DirectoryAdapter() {
     this->showDotfiles = false;
+    this->showRootDirectory = false;
     this->dir = musik::core::GetHomeDirectory();
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
 
 DirectoryAdapter::~DirectoryAdapter() {
-
 }
 
 void DirectoryAdapter::SetAllowEscapeRoot(bool allow) {
     this->allowEscapeRoot = allow;
 }
 
+void DirectoryAdapter::SetShowRootDirectory(bool show) {
+    if (show != this->showRootDirectory) {
+        this->showRootDirectory = show;
+        this->Refresh();
+    }
+}
+
 size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
     bool hasParent = this->ShowParentPath();
     size_t selectedIndex = NO_INDEX;
     size_t initialIndex = window->GetSelectedIndex();
-
+    bool selectParent = false;
+    if (this->IsCurrentDirectory(initialIndex)) {
+        return initialIndex;
+    }
     if (hasParent && initialIndex == 0) {
         if (selectedIndexStack.size()) {
             selectedIndex = this->selectedIndexStack.top();
             this->selectedIndexStack.pop();
         }
-
         this->dir = this->dir.parent_path();
     }
     else {
         selectedIndexStack.push(initialIndex);
-        this->dir /= this->subdirs[hasParent ? initialIndex - 1 : initialIndex];
+        initialIndex -= this->GetHeaderCount();
+        this->dir /= this->subdirs[initialIndex];
     }
 
 #ifdef WIN32
@@ -177,13 +187,12 @@ size_t DirectoryAdapter::Select(cursespp::ListWindow* window) {
 
 void DirectoryAdapter::SetRootDirectory(const std::string& directory) {
     if (directory.size()) {
-        dir = rootDir = directory;
+        dir = rootDir = musik::core::NormalizeDir(directory);
     }
     else {
         dir = musik::core::GetHomeDirectory();
-        rootDir = boost::filesystem::path();
+        rootDir = path();
     }
-
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
 
@@ -192,8 +201,10 @@ std::string DirectoryAdapter::GetFullPathAt(size_t index) {
     if (hasParent && index == 0) {
         return "";
     }
-
-    index = (hasParent ? index - 1 : index);
+    if (this->IsCurrentDirectory(index)) {
+        return this->dir.string();
+    }
+    index -= this->GetHeaderCount();
     return normalizePath((dir / this->subdirs[index]).string());
 }
 
@@ -201,23 +212,23 @@ std::string DirectoryAdapter::GetLeafAt(size_t index) {
     if (this->ShowParentPath() && index == 0) {
         return "..";
     }
-
+    if (this->IsCurrentDirectory(index)) {
+        return ".";
+    }
     return this->subdirs[index];
 }
 
 size_t DirectoryAdapter::IndexOf(const std::string& leaf) {
    for (size_t i = 0; i < this->subdirs.size(); i++) {
         if (this->subdirs[i] == leaf) {
-            return i;
+            return i + this->GetHeaderCount();
         }
     }
-
-   return NO_INDEX;
+    return NO_INDEX;
 }
 
 size_t DirectoryAdapter::GetEntryCount() {
-    size_t count = subdirs.size();
-    return this->ShowParentPath() ? count + 1 : count;
+    return this->GetHeaderCount() + subdirs.size();
 }
 
 void DirectoryAdapter::SetDotfilesVisible(bool visible) {
@@ -251,14 +262,23 @@ void DirectoryAdapter::Refresh() {
     buildDirectoryList(dir, subdirs, showDotfiles);
 }
 
+bool DirectoryAdapter::IsAtRoot() {
+    return normalizePath(this->dir) == normalizePath(this->rootDir);
+}
+
 bool DirectoryAdapter::ShowParentPath() {
-    if (normalizePath(this->dir) == normalizePath(this->rootDir)
-        && !this->allowEscapeRoot)
-    {
+    if (this->IsAtRoot() && !this->allowEscapeRoot) {
         return false;
     }
-
     return dir.has_parent_path();
+}
+
+bool DirectoryAdapter::ShowCurrentDirectory() {
+    return this->showRootDirectory && this->IsAtRoot();
+}
+
+size_t DirectoryAdapter::GetHeaderCount() {
+    return (this->ShowParentPath() ? 1 : 0) + (this->ShowCurrentDirectory() ? 1 : 0);
 }
 
 bool DirectoryAdapter::HasSubDirectories(size_t index) {
@@ -266,8 +286,10 @@ bool DirectoryAdapter::HasSubDirectories(size_t index) {
     if (index == 0 && hasParent) {
         return true;
     }
-
-    index = hasParent ? index - 1 : index;
+    if (this->IsCurrentDirectory(index)) {
+        return !this->subdirs.empty();
+    }
+    index -= this->GetHeaderCount();
     return hasSubdirectories(this->dir / this->subdirs[index], this->showDotfiles);
 }
 
@@ -275,14 +297,27 @@ bool DirectoryAdapter::HasSubDirectories() {
     return hasSubdirectories(this->dir, this->showDotfiles);
 }
 
+bool DirectoryAdapter::IsCurrentDirectory(size_t index) {
+    if (!this->showRootDirectory) {
+        return false;
+    }
+    auto const showParent = this->ShowParentPath();
+    return !showParent && index == 0;
+}
+
 IScrollAdapter::EntryPtr DirectoryAdapter::GetEntry(cursespp::ScrollableWindow* window, size_t index) {
     if (this->ShowParentPath()) {
         if (index == 0) {
             return IScrollAdapter::EntryPtr(new SingleLineEntry(".."));
         }
-        --index;
     }
-
+    else if (this->ShowCurrentDirectory()) {
+        if (IsCurrentDirectory(index)) {
+            const auto dir = u8fmt("[%s]", + this->rootDir.branch_path().leaf().string().c_str());
+            return IScrollAdapter::EntryPtr(new SingleLineEntry(dir));
+        }
+    }
+    index -= this->GetHeaderCount();
     auto text = text::Ellipsize(this->subdirs[index], this->GetWidth());
     return IScrollAdapter::EntryPtr(new SingleLineEntry(text));
 }

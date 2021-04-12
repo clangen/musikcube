@@ -100,6 +100,7 @@ void DirectoryLayout::InitializeWindows() {
     this->adapter = std::make_shared<DirectoryAdapter>();
     this->adapter->SetAllowEscapeRoot(false);
     this->adapter->SetItemDecorator(decorator);
+    this->adapter->SetShowRootDirectory(true);
 
     this->directoryList.reset(new ListWindow());
     this->directoryList->SetFrameTitle(_TSTR("browse_title_directory"));
