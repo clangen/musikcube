@@ -489,13 +489,24 @@ bool FfmpegDecoder::RefillFifoQueue() {
         packet.dts = AV_NOPTS_VALUE;
         packet.pos = -1;
         int error = av_read_frame(this->formatContext, &packet);
+
         if (error >= 0) {
-            sentAtLeastOnePacket = this->ReadSendAndReceivePacket(&packet);
+            /* note that sometimes decoders seem to return packets that are
+            invalid. this can be observed when playing wav files that have
+            album art metadata, but may happen in other cases. if we detect
+            an invalid packet, simply discard it and get the next one */
+            if (packet.pts == AV_NOPTS_VALUE && packet.dts == AV_NOPTS_VALUE) {
+                logError("invalid packet detected, discarding.");
+            }
+            else {
+                sentAtLeastOnePacket = this->ReadSendAndReceivePacket(&packet);
+            }
         }
         else {
             logAvError("av_read_frame", error);
             readFailed = true;
         }
+
         av_packet_unref(&packet);
         fifoSize = av_audio_fifo_size(this->outputFifo);
     }
