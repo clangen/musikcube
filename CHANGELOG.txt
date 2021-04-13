@@ -1,5 +1,35 @@
-0.96.5
+0.96.6
 
+* fixed some drawing issues with overlays/dialogs with certain versions of
+  ncurses.
+* added category-level (e.g. album, artist, etc) durations in browse and
+  search views.
+* upgraded the Windows builds to use ffmpeg 4.4, and removed usages of some
+  deprecated APIs in FfmpegDecoder and FfmpegEncoder.
+* fixed bugs where .wav files with embedded album art would play loud static
+  for a second or two before the correct audio.
+* added the ability to automatically resume playback on startup via new
+  "advanced" setting called "ResumePlaybackOnStartup".
+* fixed various minor bugs while browsing by directory.
+* fixed bug where files with "long" filenames on Windows were not properly
+  supported.
+* updated default "change sort order" hotkey to ensure it doesn't conflict with
+  some common terminal emulator defaults in UNIX environments.
+* removed snap support. the default sandboxing rules were causing more problems
+  than it was worth; even though it was possible to work around them, users were
+  still getting confused.
+* added an initial PipeWire output plugin; included by default on Ubuntu 21.04
+  and Feodra 34.
+* fixed some build issues where opting out of bundled TagLib didn't work
+  properly.
+* updated CMake build scripts to fail fast if required libraries are not found.
+* updated error logging to exclude ffmpeg end-of-file warning, it was just
+  polluting things.
+* ongoing warning cleanups against more modern compilers.
+
+--------------------------------------------------------------------------------
+
+0.96.5
 
 * ensure we statically link against the brew version of ncurses on macOS when
   building pre-compiled artifacts
