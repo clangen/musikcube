@@ -19,7 +19,7 @@ A cross-platform, terminal-based audio engine, library, player and server writte
 %autosetup -n %{name}-%{version}
 
 %build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=%{_prefix} -DCMAKE_BUILD_TYPE=Release -DENABLE_PCH=true .
+cmake -DCMAKE_INSTALL_PREFIX:PATH=%{_prefix} -DCMAKE_BUILD_TYPE=Release -DENABLE_PCH=true -DENABLE_PIPEWIRE=$ENABLE_PIPEWIRE .
 make -j2
 
 %install

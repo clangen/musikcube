@@ -62,7 +62,7 @@ jobs:
     steps:
       - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
       - checkout
-      - run: dnf builddep -y musikcube.spec
+      - run: ENABLE_PIPEWIRE=true dnf builddep -y musikcube.spec
       - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
       - run: ./script/run-rpm-build.sh
       - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
@@ -85,6 +85,19 @@ jobs:
   build_fedora_33:
     docker:
       - image: fedora:33
+    steps:
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
+      - checkout
+      - run: dnf builddep -y musikcube.spec
+      - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
+      - run: ./script/run-rpm-build.sh
+      - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
+      - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - store_artifacts:
+          path: /root/rpms/
+  build_fedora_34:
+    docker:
+      - image: fedora:34
     steps:
       - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
       - checkout
