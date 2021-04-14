@@ -31,9 +31,15 @@ if [ $OS == "Linux" ]; then
   fi
   if [ -f "/etc/fedora-release" ]; then
     DISTRO=`cat /etc/fedora-release`
-    echo "detected ${DISTRO}"
+    VERSION=$(cat /etc/fedora-release | awk '{ print $3 }')
+    echo "detected ${DISTRO} (version=${VERSION})"
     sudo dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
     sudo dnf install gcc-c++ make cmake boost-devel libogg-devel libvorbis-devel ffmpeg-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel openssl-devel taglib-devel systemd-devel libopenmpt-devel
+    case $VERSION in
+      "34")
+      sudo dnf install pipewire-devel pipewire-utils pipewire-libs
+      ;;
+    esac
   fi
   if [ -f "/etc/arch-release" ] || [ -f "/etc/manjaro-release" ]; then
     sudo pacman -S libogg libvorbis libmicrohttpd ffmpeg lame cmake ncurses boost pulseaudio libpulse alsa-lib curl libev taglib libopenmpt
