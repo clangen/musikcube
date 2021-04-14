@@ -134,7 +134,7 @@ namespace cursespp {
             void OnParentVisibilityChanged(bool visible) override;
             void OnChildVisibilityChanged(bool visible, IWindow* child) override;
 
-            bool HasBadBounds() { return this->badBounds; }
+            bool HasBadBounds() noexcept { return this->badBounds; }
 
             /* IMouseHandler */
             bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
