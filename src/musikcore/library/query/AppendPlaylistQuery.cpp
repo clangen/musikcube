@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2020 musikcube team
+// Copyright (c) 2004-2021 musikcube team
 //
 // All rights reserved.
 //
@@ -135,7 +135,7 @@ bool AppendPlaylistQuery::OnRun(musik::core::db::Connection &db) {
         const auto id = tracks->GetId(i);
         auto target = std::make_shared<LibraryTrack>(id, this->library);
 
-        std::shared_ptr<TrackMetadataQuery> query = 
+        std::shared_ptr<TrackMetadataQuery> query =
             std::make_shared<TrackMetadataQuery>(
                 target,
                 this->library,

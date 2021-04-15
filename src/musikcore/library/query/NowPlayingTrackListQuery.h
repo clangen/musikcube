@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2020 musikcube team
+// Copyright (c) 2004-2021 musikcube team
 //
 // All rights reserved.
 //
@@ -58,7 +58,7 @@ namespace musik { namespace core { namespace library { namespace query {
             Result GetResult() noexcept override;
             Headers GetHeaders() noexcept override;
             size_t GetQueryHash() noexcept override;
-            Durations GetDurations() noexcept override { 
+            Durations GetDurations() noexcept override {
                 return std::make_shared<std::map<size_t, size_t>>();
             }
 

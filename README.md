@@ -95,7 +95,7 @@ musikcube would not be possible without the following excellent free, open sourc
 # license
 
 ```
-Copyright (c) 2004-2019 musikcube team
+Copyright (c) 2004-2021 musikcube team
 
 All rights reserved.
 

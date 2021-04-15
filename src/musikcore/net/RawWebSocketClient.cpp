@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2020 musikcube team
+// Copyright (c) 2004-2021 musikcube team
 //
 // All rights reserved.
 //
@@ -40,7 +40,7 @@ using namespace musik::core;
 using namespace musik::core::net;
 
 static inline RawWebSocketClient::SslContext createSslContext() {
-    RawWebSocketClient::SslContext ctx = 
+    RawWebSocketClient::SslContext ctx =
         std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
 
     try {
@@ -58,7 +58,7 @@ static inline RawWebSocketClient::SslContext createSslContext() {
 
 RawWebSocketClient::RawWebSocketClient(boost::asio::io_service& io) {
     websocketpp::lib::error_code ec;
-    
+
     plainTextClient = std::make_unique<PlainTextClient>();
     plainTextClient->clear_access_channels(websocketpp::log::alevel::all);
     plainTextClient->init_asio(&io, ec);

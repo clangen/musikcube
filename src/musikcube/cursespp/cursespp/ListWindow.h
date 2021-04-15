@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2020 musikcube team
+// Copyright (c) 2004-2021 musikcube team
 //
 // All rights reserved.
 //
@@ -63,7 +63,7 @@ namespace cursespp {
             void ScrollDown(int delta = 1) override;
             void PageUp() override;
             void PageDown() override;
-            
+
             void Invalidate() override;
             void OnAdapterChanged() override;
 

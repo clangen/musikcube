@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2004-2020 musikcube team
+// Copyright (c) 2004-2021 musikcube team
 //
 // All rights reserved.
 //
@@ -201,8 +201,8 @@ namespace NowPlaying {
         titleWidth = std::max(0, titleWidth);
 
         std::string title = text::Align(placeholder(
-            1 + (id % (static_cast<int64_t>(titleWidth) - 2))), 
-            text::AlignLeft, 
+            1 + (id % (static_cast<int64_t>(titleWidth) - 2))),
+            text::AlignLeft,
             narrow_cast<int>(titleWidth));
 
         return u8fmt(
