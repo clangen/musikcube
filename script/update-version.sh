@@ -33,11 +33,8 @@ sed -Ei.bak "s/(\s*)(set \(musikcube_VERSION_PATCH )(.*)/\1\2${PATCH}\)/g" CMake
 
 sed -Ei.bak "s/(\s*)(%define version )(.*)/\1\2${MAJOR}.${MINOR}.${PATCH}/g" musikcube.spec
 
-sed -Ei.bak "s/(\s*)(version: )(.*)/\1\2${MAJOR}.${MINOR}.${PATCH}/g" snap/snapcraft.yaml
-
 # ugh. there's a way to tell sed not to backup, but it's different on gnu and
 # bsd sed variants. this is easier than trying to switch the args dynamically.
 rm src/musikcore/version.h.bak
 rm CMakeLists.txt.bak
 rm musikcube.spec.bak
-rm snap/snapcraft.yaml.bak
