@@ -37,9 +37,13 @@ ALL_JOBS=(
     "build_ubuntu_bionic"
     "build_ubuntu_focal"
     "build_ubuntu_groovy"
-    "build_fedora_33"
-    "build_fedora_32"
+    "build_ubuntu_hirsute"
     "build_fedora_31"
+    "build_fedora_32"
+    "build_fedora_33"
+    "build_fedora_34"
+    "build_mint_ulyssa"
+    "build_debian_buster"
 )
 
 BRANCH="clangen/local-circle-ci"
