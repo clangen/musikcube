@@ -13,6 +13,7 @@
 * fixed various minor bugs while browsing by directory.
 * fixed bug where files with "long" filenames on Windows were not properly
   supported.
+* added de_DE translation (dertuxmalwieder)
 * updated default "change sort order" hotkey to ensure it doesn't conflict with
   some common terminal emulator defaults in UNIX environments.
 * removed snap support. the default sandboxing rules were causing more problems
