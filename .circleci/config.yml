@@ -122,6 +122,20 @@ jobs:
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
+  build_debian_buster:
+    docker:
+      - image: debian:buster
+    steps:
+      - run: apt-get update
+      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.67-dev libboost-system1.67-dev libboost-filesystem1.67-dev libboost-date-time1.67-dev libboost-atomic1.67-dev libboost-chrono1.67-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
+      - checkout
+      - run: cmake -DENABLE_PCH=true -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=debian -DDEB_DISTRO=buster -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2
+      - run: make package
+      - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
+      - store_artifacts:
+          path: /root/debs/
 workflow_filters: &workflow_filters
   filters:
     branches:
@@ -141,3 +155,4 @@ workflows:
       - build_fedora_33: *workflow_filters
       - build_fedora_34: *workflow_filters
       - build_mint_ulyssa: *workflow_filters
+      - build_debian_buster: *workflow_filters
