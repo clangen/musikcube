@@ -7,6 +7,7 @@ import android.content.SharedPreferences
 import android.content.res.Resources
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.util.Base64
 import android.util.Log
@@ -104,7 +105,7 @@ fun AppCompatActivity.enableUpNavigation() {
 }
 
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
-    val title = this.intent.getStringExtra(Shared.Extra.TITLE_OVERRIDE)
+    val title = this.intent.getStringExtra(Shared.Extra.TITLE_OVERRIDE) ?: ""
     this.title = if (title.isNotEmpty()) title else defaultTitle
 }
 
@@ -347,7 +348,7 @@ fun showErrorSnackbar(view: View, stringId: Int, buttonText: String? = null, but
     showErrorSnackbar(view, Application.instance.getString(stringId), buttonText, buttonCb)
 
 fun AppCompatActivity.showErrorSnackbar(stringId: Int, buttonText: String? = null, buttonCb: ((View) -> Unit)? = null) =
-    showErrorSnackbar(this.findViewById<View>(android.R.id.content), stringId, buttonText, buttonCb)
+    showErrorSnackbar(this.findViewById(android.R.id.content), stringId, buttonText, buttonCb)
 
 /*
  *
@@ -415,7 +416,7 @@ fun DialogFragment.showKeyboard() =
 
 fun DialogFragment.hideKeyboard() {
     val fragmentActivity = activity!! /* keep it in the closure so it doesn't get gc'd */
-    Handler().postDelayed({
+    Handler(Looper.getMainLooper()).postDelayed({
         hideKeyboard(
             fragmentActivity,
             fragmentActivity.findViewById(android.R.id.content))

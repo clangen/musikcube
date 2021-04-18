@@ -43,6 +43,7 @@ import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import org.json.JSONArray
 import javax.inject.Inject
+import kotlin.math.roundToLong
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
 
 class MainMetadataView : FrameLayout {
@@ -123,7 +124,7 @@ class MainMetadataView : FrameLayout {
                 volumeWithArt.visibility = View.GONE
             }
             else {
-                val volume = getString(R.string.status_volume, Math.round(playback.volume * 100))
+                val volume = getString(R.string.status_volume, (playback.volume * 100).roundToLong())
                 this.volume.visibility = View.VISIBLE
                 this.volumeWithArt.visibility = View.VISIBLE
                 this.volume.text = volume

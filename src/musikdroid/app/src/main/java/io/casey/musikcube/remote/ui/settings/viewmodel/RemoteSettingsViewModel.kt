@@ -4,8 +4,6 @@ import io.casey.musikcube.remote.R
 import io.casey.musikcube.remote.service.websocket.model.*
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.functions.BiFunction
-import io.reactivex.functions.Function3
 import io.reactivex.rxkotlin.subscribeBy
 import kotlin.math.max
 
@@ -98,7 +96,7 @@ class RemoteSettingsViewModel(private val environment: IEnvironment): BaseRemote
             Observable.zip<Boolean, Boolean, Boolean>(
                     gainQuery,
                     transportQuery,
-                    BiFunction { b1, b2 -> b1 && b2 })
+                    { b1, b2 -> b1 && b2 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = { success ->
@@ -129,7 +127,7 @@ class RemoteSettingsViewModel(private val environment: IEnvironment): BaseRemote
                     gainQuery,
                     outputQuery,
                     transportQuery,
-                    Function3 { b1, b2, b3 -> b1 && b2 && b3 })
+                        { b1, b2, b3 -> b1 && b2 && b3 })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = { success ->
@@ -156,12 +154,12 @@ class RemoteSettingsViewModel(private val environment: IEnvironment): BaseRemote
                 gainQuery,
                 outputsQuery,
                 transportQuery,
-                Function3 { gainSettings, outputs, transportType ->
-                    this.gain = gainSettings
-                    this.outputs = outputs
-                    this.transportType = transportType
-                    true
-                })
+                    { gainSettings, outputs, transportType ->
+                        this.gain = gainSettings
+                        this.outputs = outputs
+                        this.transportType = transportType
+                        true
+                    })
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeBy(
                     onNext = { state = State.Ready },

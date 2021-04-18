@@ -40,7 +40,7 @@ class RemoteEqActivity: BaseActivity() {
         this.enabledCb = findViewById(R.id.enabled_checkbox)
         initListeners()
 
-        viewModel = createViewModel()!!
+        viewModel = createViewModel()
 
         updateFromViewModelState()
     }
@@ -51,7 +51,7 @@ class RemoteEqActivity: BaseActivity() {
         viewModel.attach(data.provider)
     }
 
-    override fun <T : ViewModel<*>> createViewModel(): T? {
+    override fun <T : ViewModel<*>> createViewModel(): T {
         @Suppress("unchecked_cast")
         return RemoteEqViewModel() as T
     }

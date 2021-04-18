@@ -8,7 +8,7 @@ import org.json.JSONObject
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
-class SocketMessage private constructor(val name: String, val id: String, val type: SocketMessage.Type, options: JSONObject?) {
+class SocketMessage private constructor(val name: String, val id: String, val type: Type, options: JSONObject?) {
     enum class Type constructor(val rawType: String) {
         Request("request"),
         Response("response"),

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
@@ -34,7 +35,7 @@ import io.reactivex.disposables.CompositeDisposable
 
 open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
     private val mixins = MixinSet()
-    protected val handler = Handler()
+    protected val handler = Handler(Looper.getMainLooper())
     protected lateinit var prefs: SharedPreferences
     protected val component: ViewComponent =
         DaggerViewComponent.builder()
@@ -172,7 +173,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
         toolbar?.collapseActionViewIfExpanded() ?: false
 
     override fun <T: ViewModel<*>> createViewModel(): T? = null
-    @Suppress protected fun <T: ViewModel<*>> getViewModel(): T? = mixin(ViewModelMixin::class.java)?.get<T>() as T
+    @Suppress protected fun <T: ViewModel<*>> getViewModel(): T = mixin(ViewModelMixin::class.java)?.get() as T
     protected fun <T: IMixin> mixin(mixin: T): T = mixins.add(mixin)
     protected fun <T: IMixin> mixin(cls: Class<out T>): T? = mixins.get(cls)
 

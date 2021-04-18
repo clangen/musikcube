@@ -57,7 +57,7 @@ abstract class ViewModel<T>(protected val runner: Runner? = null): Runner.TaskCa
     }
 
     open fun createSubject(): Subject<T> {
-        return PublishSubject.create<T>()
+        return PublishSubject.create()
     }
 
     override fun onTaskError(name: String?, id: Long, task: Task<*, *>?, error: Throwable?) {

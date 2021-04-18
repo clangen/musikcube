@@ -2,7 +2,6 @@ package io.casey.musikcube.remote.service.playback.impl.player
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.net.Uri
 import com.danikula.videocache.CacheListener
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource
@@ -13,7 +12,7 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.Util
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
@@ -39,8 +38,12 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     init {
         val userAgent = Util.getUserAgent(context, "musikdroid")
 
-        val httpFactory: DataSource.Factory = DefaultHttpDataSourceFactory(
-            userAgent, null, TIMEOUT, TIMEOUT, true)
+        val httpFactory: DataSource.Factory = DefaultHttpDataSource.Factory().apply {
+            setUserAgent(userAgent)
+            setConnectTimeoutMs(TIMEOUT)
+            setReadTimeoutMs(TIMEOUT)
+            setAllowCrossProtocolRedirects(true)
+        }
 
         this.sourceFactory = DefaultDataSourceFactory(context, null, httpFactory)
 
@@ -52,17 +55,18 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
         if (!dead()) {
             removeAllAndReset()
+            val proxyUri = streamProxy.getProxyUrl(uri)
 
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = streamProxy.getProxyUrl(uri)
+            this.proxyUri = proxyUri
             this.initialOffsetMs = offsetMs
 
             addCacheListener()
 
             this.source = ProgressiveMediaSource
                 .Factory(sourceFactory)
-                .createMediaSource(Uri.parse(proxyUri))
+                .createMediaSource(MediaItem.fromUri(proxyUri))
 
             addPlayer(this, this.source!!)
 
@@ -76,14 +80,16 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         if (!dead()) {
             removePending()
 
+            val proxyUri = streamProxy.getProxyUrl(uri)
+
             this.metadata = metadata
             this.originalUri = uri
-            this.proxyUri = streamProxy.getProxyUrl(uri)
+            this.proxyUri = proxyUri
             this.prefetch = true
 
             this.source = ProgressiveMediaSource
                 .Factory(sourceFactory)
-                .createMediaSource(Uri.parse(proxyUri))
+                .createMediaSource(MediaItem.fromUri(proxyUri))
 
             addCacheListener()
             addPlayer(this, source!!)
@@ -115,7 +121,8 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             State.Error -> {
                 gaplessPlayer?.playWhenReady = lastPosition == -1L
                 source?.let {
-                    gaplessPlayer?.prepare(it)
+                    gaplessPlayer?.setMediaSource(it)
+                    gaplessPlayer?.prepare()
                     state = State.Preparing
                 } ?: run {
                     state = State.Error
@@ -362,7 +369,8 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             all.add(wrapper)
 
             if (dcms.size == 1) {
-                gaplessPlayer?.prepare(dcms)
+                gaplessPlayer?.setMediaSource(dcms)
+                gaplessPlayer?.prepare()
             }
         }
 

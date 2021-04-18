@@ -1,6 +1,7 @@
 package io.casey.musikcube.remote.service.playback.impl.remote
 
 import android.os.Handler
+import android.os.Looper
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.injection.DaggerServiceComponent
 import io.casey.musikcube.remote.service.playback.IPlaybackService
@@ -42,35 +43,35 @@ class RemotePlaybackService : IPlaybackService {
      * and estimate.
      */
     private class EstimatedPosition {
-        internal var lastTime = 0.0
-        internal var pauseTime = 0.0
-        internal var trackId: Long = -1
-        internal var queryTime: Long = 0
+        var lastTime = 0.0
+        var pauseTime = 0.0
+        var trackId: Long = -1
+        var queryTime: Long = 0
 
-        internal fun get(track: JSONObject?): Double {
+        fun get(track: JSONObject?): Double {
             if (track != null && track.optLong(Metadata.Track.ID, -1L) == trackId && trackId != -1L) {
                 return if (pauseTime != 0.0) pauseTime else estimatedTime()
             }
             return 0.0
         }
 
-        internal fun update(message: SocketMessage) {
+        fun update(message: SocketMessage) {
             queryTime = System.nanoTime()
             lastTime = message.getDoubleOption(Messages.Key.PLAYING_CURRENT_TIME, 0.0)
             trackId = message.getLongOption(Messages.Key.ID, -1)
         }
 
-        internal fun pause() {
+        fun pause() {
             pauseTime = estimatedTime()
         }
 
-        internal fun resume() {
+        fun resume() {
             lastTime = pauseTime
             queryTime = System.nanoTime()
             pauseTime = 0.0
         }
 
-        internal fun update(time: Double, id: Long) {
+        fun update(time: Double, id: Long) {
             queryTime = System.nanoTime()
             lastTime = time
             trackId = id
@@ -80,14 +81,14 @@ class RemotePlaybackService : IPlaybackService {
             }
         }
 
-        internal fun reset() {
+        fun reset() {
             pauseTime = 0.0
             lastTime = pauseTime
             queryTime = System.nanoTime()
             trackId = -1
         }
 
-        internal fun estimatedTime(): Double {
+        fun estimatedTime(): Double {
             val diff = System.nanoTime() - queryTime
             val seconds = diff.toDouble() / NANOSECONDS_PER_SECOND
             return lastTime + seconds
@@ -97,52 +98,36 @@ class RemotePlaybackService : IPlaybackService {
     @Inject lateinit var wss: WebSocketService
     @Inject lateinit var metadataProxy: IMetadataProxy
 
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
     private val listeners = HashSet<() -> Unit>()
     private val estimatedTime = EstimatedPosition()
 
     override var state = PlaybackState.Stopped
-        private set(value) {
-            field = value
-        }
+        private set
 
     override val currentTime: Double
         get() = estimatedTime.get(track)
 
     override var repeatMode: RepeatMode = RepeatMode.None
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var shuffled: Boolean = false
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var muted: Boolean = false
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var volume: Double = 0.0
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var queueCount: Int = 0
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var queuePosition: Int = 0
-        private set(value) {
-            field = value
-        }
+        private set
 
     override var duration: Double = 0.0
-        private set(value) {
-            field = value
-        }
+        private set
 
     private var track: JSONObject = JSONObject()
 
@@ -401,7 +386,7 @@ class RemotePlaybackService : IPlaybackService {
         }
     }
 
-    override val queryContext: QueryContext?
+    override val queryContext: QueryContext
         get() = QueryContext(Messages.Request.QueryPlayQueueTracks)
 
     override val playlistQueryFactory: ITrackListQueryFactory = object : ITrackListQueryFactory {

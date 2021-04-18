@@ -66,7 +66,7 @@ class BrowseFragmentAdapter(private val context: Context,
         return fragment.pushTo(this.containerId)
     }
 
-    override fun getPageTitle(position: Int): CharSequence? =
+    override fun getPageTitle(position: Int): CharSequence =
         context.getString(when (position) {
             0 -> R.string.button_artists
             1 -> R.string.button_albums

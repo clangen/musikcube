@@ -6,7 +6,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.view.*
+import android.os.Looper
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -35,7 +39,7 @@ import io.casey.musikcube.remote.ui.shared.util.Duration
 import io.casey.musikcube.remote.ui.shared.util.UpdateCheck
 
 class MainActivity : BaseActivity() {
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
     private var updateCheck: UpdateCheck = UpdateCheck()
     private var seekbarValue = -1
     private var blink = 0

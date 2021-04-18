@@ -48,7 +48,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(message, client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<IAlbum>> { socketMessage -> toAlbumList(socketMessage) }
+            .flatMap { socketMessage -> toAlbumList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -61,7 +61,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(message, client)
             .observeOn(Schedulers.computation())
-            .flatMap<Int> { socketMessage -> toCount(socketMessage) }
+            .flatMap { socketMessage -> toCount(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -77,7 +77,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(builder.build(), client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<ITrack>> { socketMessage -> toTrackList(socketMessage) }
+            .flatMap { socketMessage -> toTrackList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -108,7 +108,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(message, client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<String>> { socketMessage -> toStringList(socketMessage) }
+            .flatMap { socketMessage -> toStringList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -125,7 +125,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Int> { socketMessage -> toCount(socketMessage) }
+            .flatMap { socketMessage -> toCount(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -140,7 +140,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<List<String>> { socketMessage -> toStringList(socketMessage) }
+            .flatMap { socketMessage -> toStringList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -161,7 +161,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(builder.build(), client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<ITrack>> { socketMessage -> toTrackList(socketMessage) }
+            .flatMap { socketMessage -> toTrackList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -173,7 +173,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Int> { socketMessage -> toCount(socketMessage) }
+            .flatMap { socketMessage -> toCount(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -192,7 +192,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(builder.build(), client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<ITrack>> { socketMessage -> toTrackList(socketMessage) }
+            .flatMap { socketMessage -> toTrackList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -205,7 +205,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -216,7 +216,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         @Suppress("unused")
         service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeBy(onError = { })
     }
@@ -234,7 +234,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(builder.build(), client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<String>> { socketMessage -> toStringList(socketMessage) }
+            .flatMap { socketMessage -> toStringList(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -246,7 +246,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(message, client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<ICategoryValue>> { socketMessage ->
+            .flatMap { socketMessage ->
                 toCategoryList(socketMessage, Metadata.Category.PLAYLISTS)
             }
             .flatMap { values ->
@@ -266,7 +266,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
 
         return service.observe(message, client)
             .observeOn(Schedulers.computation())
-            .flatMap<List<ICategoryValue>> { socketMessage -> toCategoryList(socketMessage, type) }
+            .flatMap { socketMessage -> toCategoryList(socketMessage, type) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -282,7 +282,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .flatMap { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -305,7 +305,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .flatMap { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -324,7 +324,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .flatMap { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -343,7 +343,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Long> { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
+            .flatMap { socketMessage -> extractId(socketMessage, Messages.Key.PLAYLIST_ID) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -356,7 +356,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -376,7 +376,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -395,7 +395,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -414,7 +414,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Int> { socketMessage -> toCount(socketMessage) }
+            .flatMap { socketMessage -> toCount(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -430,7 +430,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -441,7 +441,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -451,7 +451,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<IOutputs> { socketMessage -> toOutputs(socketMessage) }
+            .flatMap { socketMessage -> toOutputs(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -463,7 +463,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -487,7 +487,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -513,7 +513,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -531,7 +531,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<TransportType> { socketMessage ->
+            .flatMap { socketMessage ->
                 Observable.just(TransportType.find(
                     socketMessage.getStringOption(Messages.Key.TYPE,
                     TransportType.Gapless.rawValue)))
@@ -546,7 +546,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 
@@ -580,7 +580,7 @@ class RemoteMetadataProxy(private val service: WebSocketService) : IMetadataProx
             .build()
 
         return service.observe(message, client)
-            .flatMap<Boolean> { socketMessage -> isSuccessful(socketMessage) }
+            .flatMap { socketMessage -> isSuccessful(socketMessage) }
             .observeOn(AndroidSchedulers.mainThread())
     }
 

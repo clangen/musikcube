@@ -37,7 +37,7 @@ class EditPlaylistActivity: BaseActivity() {
         playlistName = extras.getString(EXTRA_PLAYLIST_NAME, "-")
         title = getString(R.string.playlist_edit_activity, playlistName)
         setContentView(R.layout.edit_playlist_activity)
-        viewModel = getViewModel()!!
+        viewModel = getViewModel()
         viewModel.attach(data.provider)
         val recycler = findViewById<RecyclerView>(R.id.recycler_view)
         val touchHelper = ItemTouchHelper(touchHelperCallback)
@@ -80,7 +80,7 @@ class EditPlaylistActivity: BaseActivity() {
         ))
     }
 
-    override fun <T: ViewModel<*>> createViewModel(): T? {
+    override fun <T: ViewModel<*>> createViewModel(): T {
         @Suppress("unchecked_cast")
         return EditPlaylistViewModel(extras.getLong(EXTRA_PLAYLIST_ID, -1L)) as T
     }

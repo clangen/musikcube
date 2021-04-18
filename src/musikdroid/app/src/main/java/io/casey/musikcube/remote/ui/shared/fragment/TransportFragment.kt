@@ -18,6 +18,7 @@ import io.casey.musikcube.remote.ui.shared.extension.topOfStack
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.ui.shared.view.InterceptTouchFrameLayout
 import me.zhanghai.android.materialprogressbar.MaterialProgressBar
+import kotlin.math.abs
 
 class TransportFragment: BaseFragment() {
     private lateinit var rootView: View
@@ -34,7 +35,7 @@ class TransportFragment: BaseFragment() {
     var modelChangedListener: ((TransportFragment) -> Unit)? = null
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View
     {
         this.rootView = inflater.inflate(R.layout.transport_fragment, container, false)
         progress = this.rootView.findViewById(R.id.progress)
@@ -240,8 +241,8 @@ class TransportFragment: BaseFragment() {
                 MotionEvent.ACTION_MOVE -> {
                     val x = ev.x.toInt()
                     val y = ev.y.toInt()
-                    totalDx += Math.abs(lastX - x)
-                    totalDy += Math.abs(lastY - y)
+                    totalDx += abs(lastX - x)
+                    totalDy += abs(lastY - y)
                     lastX = x
                     lastY = y
                 }

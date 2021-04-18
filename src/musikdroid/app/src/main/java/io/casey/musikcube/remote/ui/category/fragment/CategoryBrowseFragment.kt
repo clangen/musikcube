@@ -212,7 +212,7 @@ class CategoryBrowseFragment: BaseFragment(), IFilterable, ITitleProvider, ITran
             if (intent == null) {
                 throw IllegalArgumentException("invalid intent")
             }
-            return create(intent.getBundleExtra(Category.Extra.FRAGMENT_ARGUMENTS))
+            return create(intent.getBundleExtra(Category.Extra.FRAGMENT_ARGUMENTS) ?: Bundle())
         }
 
         fun create(arguments: Bundle): CategoryBrowseFragment =

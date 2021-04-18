@@ -43,8 +43,8 @@ class GaplessHeaderService {
         thread.start()
 
         handler = object : Handler(thread.looper) {
-            override fun handleMessage(msg: Message?) {
-                if (msg?.what == MESSAGE_PROCESS) {
+            override fun handleMessage(msg: Message) {
+                if (msg.what == MESSAGE_PROCESS) {
                     db.dao().queryByState(GaplessTrack.DOWNLOADED).forEach { process(it) }
                 }
             }

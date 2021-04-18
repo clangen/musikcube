@@ -81,7 +81,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         if (pendingCode == request) {
             if (result == Activity.RESULT_OK && data != null) {
                 val playlistId = data.getLongExtra(Category.Extra.ID, -1L)
-                val playlistName = data.getStringExtra(Category.Extra.NAME)
+                val playlistName = data.getStringExtra(Category.Extra.NAME) ?: ""
                 if (playlistId != -1L) {
                     completion?.invoke(playlistId, playlistName)
                 }
@@ -90,7 +90,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             completion = null
         }
         else if (result == Activity.RESULT_OK && request == REQUEST_EDIT_PLAYLIST && data != null) {
-            val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME)
+            val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
             val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
 
             showSnackbar(

@@ -59,7 +59,7 @@ class RemoteSettingsActivity: BaseActivity() {
         environmentTextView = findViewById(R.id.environment_information)
         initListeners()
 
-        viewModel = getViewModel()!!
+        viewModel = getViewModel()
     }
 
     override fun onResume() {
@@ -87,7 +87,7 @@ class RemoteSettingsActivity: BaseActivity() {
         return super.onPrepareOptionsMenu(menu)
     }
 
-    override fun <T : ViewModel<*>> createViewModel(): T? {
+    override fun <T : ViewModel<*>> createViewModel(): T {
         @Suppress("unchecked_cast")
         return RemoteSettingsViewModel(data.wss.environment) as T
     }

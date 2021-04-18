@@ -29,7 +29,7 @@ class GlideModule : AppGlideModule() {
                 if (serverHost == requestHost) {
                     val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
                     val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
-                    request = req.newBuilder().addHeader("Authorization", "Basic " + encoded).build()
+                    request = req.newBuilder().addHeader("Authorization", "Basic $encoded").build()
                 } else if (canInterceptArtwork(req)) {
                     request = interceptArtwork(req)
                 }

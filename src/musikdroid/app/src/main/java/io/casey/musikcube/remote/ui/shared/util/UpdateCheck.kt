@@ -120,7 +120,7 @@ class UpdateCheck {
         }
 
         private val USER_AGENT by lazy {
-            "musikdroid ${VERSION}"
+            "musikdroid $VERSION"
         }
     }
 }

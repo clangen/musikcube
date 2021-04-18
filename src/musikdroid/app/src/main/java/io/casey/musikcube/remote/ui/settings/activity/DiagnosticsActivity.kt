@@ -2,6 +2,7 @@ package io.casey.musikcube.remote.ui.settings.activity
 
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.widget.TextView
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.R
@@ -15,7 +16,7 @@ class DiagnosticsActivity: BaseActivity() {
     private lateinit var wakeRuntime: TextView
     private lateinit var wakeAcquired: TextView
     private lateinit var serviceState: TextView
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

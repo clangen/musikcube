@@ -8,9 +8,11 @@ import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.reactivex.Observable
 import org.json.JSONObject
 import javax.inject.Inject
+import kotlin.math.min
 
 class IdListTrackListQueryFactory(private val idList: List<String>): ITrackListQueryFactory {
-    @Inject protected lateinit var metadataProxy: IMetadataProxy
+    @Inject
+    protected lateinit var metadataProxy: IMetadataProxy
 
     init {
         DaggerDataComponent.builder()
@@ -22,7 +24,7 @@ class IdListTrackListQueryFactory(private val idList: List<String>): ITrackListQ
 
     override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? {
         val window = mutableSetOf<String>()
-        val max = Math.min(limit, idList.size)
+        val max = min(limit, idList.size)
 
         for (i in 0 until max) {
             window.add(idList[offset + i])
@@ -30,7 +32,7 @@ class IdListTrackListQueryFactory(private val idList: List<String>): ITrackListQ
 
         val missing = RemoteTrack(JSONObject())
         return metadataProxy.getTracks(window)
-            .flatMap{ it ->
+            .flatMap{
                 val result = mutableListOf<ITrack>()
                 for (i in 0 until max) {
                     result.add(it[idList[offset + i]] ?: missing)

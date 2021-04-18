@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.service.playback.impl.streaming
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.database.ContentObserver
@@ -28,6 +29,7 @@ import io.reactivex.rxkotlin.subscribeBy
 import org.json.JSONObject
 import java.util.*
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 class StreamingPlaybackService(context: Context) : IPlaybackService {
     @Inject lateinit var metadataProxy: IMetadataProxy
@@ -39,7 +41,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     private var lastSystemVolume: Int = 0
     private var pausedByTransientLoss = false
     private val random = Random()
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
 
     private val trackMetadataCache = object : LinkedHashMap<Int, ITrack>() {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, ITrack>): Boolean {
@@ -48,13 +50,13 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
     }
 
     private class PlaybackContext {
-        internal var queueCount: Int = 0
-        internal var currentPlayer: PlayerWrapper? = null
-        internal var nextPlayer: PlayerWrapper? = null
-        internal var currentMetadata: ITrack? = null
-        internal var nextMetadata: ITrack? = null
-        internal var currentIndex = -1
-        internal var nextIndex = -1
+        var queueCount: Int = 0
+        var currentPlayer: PlayerWrapper? = null
+        var nextPlayer: PlayerWrapper? = null
+        var currentMetadata: ITrack? = null
+        var nextMetadata: ITrack? = null
+        var currentIndex = -1
+        var nextIndex = -1
 
         fun stopPlaybackAndReset() {
             reset(currentPlayer)
@@ -190,10 +192,10 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     resetPlayContextAndQueryFactory()
 
                     snapshotQueryFactory = object: ITrackListQueryFactory {
-                        override fun count(): Observable<Int>? =
+                        override fun count(): Observable<Int> =
                             metadataProxy.getPlayQueueTracksCount(type)
 
-                        override fun page(offset: Int, limit: Int): Observable<List<ITrack>>? =
+                        override fun page(offset: Int, limit: Int): Observable<List<ITrack>> =
                             metadataProxy.getPlayQueueTracks(limit, offset, type)
 
                         override fun offline(): Boolean = false
@@ -432,7 +434,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
             PlayerWrapper.setVolume(current)
         }
         else {
-            val actual = Math.round(current * maxSystemVolume)
+            val actual = (current * maxSystemVolume).roundToInt()
             lastSystemVolume = actual
             audioManager?.setStreamVolume(AudioManager.STREAM_MUSIC, actual, 0)
         }
@@ -704,6 +706,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         }
     }
 
+    @SuppressLint("CheckResult")
     private fun loadQueueAndPlay(newParams: QueryContext, startIndex: Int, offsetMs: Int = 0) {
         state = PlaybackState.Buffering
 
@@ -721,7 +724,6 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
 
         val countMessage = playlistQueryFactory.count() ?: return
 
-        @Suppress("unused")
         countMessage
             .concatMap { count ->
                 getCurrentAndNextTrackMessages(playContext, count)
@@ -767,6 +769,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
         handler.postDelayed(pauseServiceSleepRunnable, PAUSED_SERVICE_SLEEP_DELAY_MS.toLong())
     }
 
+    @SuppressLint("CheckResult")
     private fun precacheTrackMetadata(start: Int, count: Int) {
         val originalParams = queryContext
         val query = playlistQueryFactory.page(start, count)
@@ -779,7 +782,7 @@ class StreamingPlaybackService(context: Context) : IPlaybackService {
                     { response ->
                         if (originalParams === this.queryContext) {
                             response.forEachIndexed { i, track ->
-                                trackMetadataCache.put(start + i, track)
+                                trackMetadataCache[start + i] = track
                             }
                         }
                     },

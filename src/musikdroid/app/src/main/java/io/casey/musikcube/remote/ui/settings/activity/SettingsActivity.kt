@@ -318,7 +318,7 @@ class SettingsActivity : BaseActivity() {
             }
             else {
                 showSnackbar(
-                    findViewById<View>(android.R.id.content),
+                    findViewById(android.R.id.content),
                     R.string.snackbar_saved_connection_preset)
             }
         }

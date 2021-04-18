@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -37,7 +38,7 @@ class TrackDownloadActivity: BaseActivity() {
     private var outputFilename: String = ""
     private lateinit var spinner: MaterialProgressBar
     private lateinit var progress: MaterialProgressBar
-    private val handler = Handler()
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

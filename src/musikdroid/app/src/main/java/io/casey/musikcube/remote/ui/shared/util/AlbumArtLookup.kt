@@ -165,7 +165,7 @@ object AlbumArtLookup {
                 val images = mutableListOf<Pair<Size, String>>()
 
                 try {
-                    val json = JSONObject(response.body()?.string())
+                    val json = JSONObject(response.body()?.string() ?: "{}")
                     val imagesJson = json.getJSONObject("album").getJSONArray("image")
                     for (i in 0 until imagesJson.length()) {
                         val imageJson = imagesJson.getJSONObject(i)

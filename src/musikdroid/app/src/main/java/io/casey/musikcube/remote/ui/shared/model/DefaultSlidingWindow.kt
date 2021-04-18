@@ -6,6 +6,7 @@ import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.reactivex.rxkotlin.subscribeBy
+import kotlin.math.max
 
 class DefaultSlidingWindow(
         private val recyclerView: FastScrollRecyclerView,
@@ -41,7 +42,7 @@ class DefaultSlidingWindow(
 
                         loadedListener?.onReloaded(count)
                     },
-                    onError = { _ ->
+                    onError = {
                         Log.d("DefaultSlidingWindow", "message send failed, likely canceled")
                     })
 
@@ -92,7 +93,7 @@ class DefaultSlidingWindow(
             return  /* already in flight */
         }
 
-        val offset = Math.max(0, index - 10) /* snag a couple before */
+        val offset = max(0, index - 10) /* snag a couple before */
         val limit = windowSize
 
         val pageRequest = queryFactory.page(offset, limit)
@@ -119,7 +120,7 @@ class DefaultSlidingWindow(
                     notifyAdapterChanged()
                     notifyMetadataLoaded(offset, i)
                 },
-                onError = { _ ->
+                onError = {
                     Log.d("DefaultSlidingWindow", "message send failed, likely canceled")
                 })
         }
