@@ -7,7 +7,7 @@ if [ $OS == "Linux" ]; then
     echo "detected ${DISTRO}"
     case $DISTRO in
       "hirsute")
-        sudo apt-get install build-essential clang cmake libboost-thread1.74-dev libboost-system1.74-dev libboost-filesystem1.74-dev libboost-date-time1.74-dev libboost-atomic1.74-dev libboost-chrono1.74-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev libspa-0.2-dev libpipewire-0.3-dev pipewire pipewire-bin pipewire-audio-client-libraries
+        sudo apt-get install build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev libspa-0.2-dev libpipewire-0.3-dev pipewire pipewire-bin pipewire-audio-client-libraries
 	;;
       "focal" | "groovy" | "ulyssa")
         sudo apt-get install build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev
