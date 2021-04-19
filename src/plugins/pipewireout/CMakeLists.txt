@@ -7,10 +7,8 @@ ensure_library_exists(pipewire-0.3)
 
 message(STATUS "[pipewireout] plugin enabled")
 
-include_directories("/usr/include/spa-0.2")
-include_directories("/usr/local/include/spa-0.2")
-include_directories("/usr/include/pipewire-0.3")
-include_directories("/usr/local/include/pipewire-0.3")
+find_package(PkgConfig)
+pkg_check_modules(PIPEWIRE REQUIRED IMPORTED_TARGET libpipewire-0.3)
 
 add_library(pipewireout SHARED ${pipewireout_SOURCES})
-target_link_libraries(pipewireout ${musikcube_LINK_LIBS} pipewire-0.3)
+target_link_libraries(pipewireout ${musikcube_LINK_LIBS} PkgConfig::PIPEWIRE)
