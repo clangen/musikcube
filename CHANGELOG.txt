@@ -1,3 +1,8 @@
+0.96.7
+
+* re-compile for Windows; Windows Defender was unhappy with the original
+  binaries.
+
 0.96.6
 
 * fixed some drawing issues with overlays/dialogs with certain versions of
