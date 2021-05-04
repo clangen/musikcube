@@ -77,6 +77,7 @@ TrackSearchLayout::TrackSearchLayout(
 , playback(playback)
 , library(library) {
     this->prefs = Preferences::ForComponent(components::Settings);
+    this->library->Indexer()->Finished.connect(this, &TrackSearchLayout::OnIndexerFinished);
     this->InitializeWindows();
 }
 
@@ -120,6 +121,10 @@ void TrackSearchLayout::OnLayout() {
         y + kSearchHeight,
         this->GetWidth(),
         this->GetHeight() - kSearchHeight);
+}
+
+void TrackSearchLayout::OnIndexerFinished(int totalUrisScanned){
+        this->Requery();
 }
 
 void TrackSearchLayout::InitializeWindows() {
