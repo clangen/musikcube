@@ -76,6 +76,7 @@ namespace musik {
                 void SaveSession();
                 void InitializeWindows();
                 void Requery();
+                void OnIndexerFinished(int);
 
                 void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
 
