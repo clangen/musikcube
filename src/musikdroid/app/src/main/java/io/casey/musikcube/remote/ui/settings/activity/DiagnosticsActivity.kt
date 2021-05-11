@@ -50,10 +50,10 @@ class DiagnosticsActivity: BaseActivity() {
             Duration.formatWithHours(SystemService.wakeLockTime))
         wakeAcquired.text = getString(
             R.string.diagnostics_wakelock_acquired,
-            SystemService.isWakeLockActive.toString().toLowerCase())
+            SystemService.isWakeLockActive.toString().lowercase())
         serviceState.text = getString(
             R.string.diagnostics_system_service,
-            SystemService.state.toString().toLowerCase())
+            SystemService.state.toString().lowercase())
     }
 
     private val refreshRunnable = object: Runnable {

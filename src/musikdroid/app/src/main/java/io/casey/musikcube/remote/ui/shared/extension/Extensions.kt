@@ -456,7 +456,7 @@ fun createHttpClient(context: Context): OkHttpClient {
 
 fun InputStream.toFile(path: String, progress: ((Long) -> Unit)? = null): Boolean {
     try {
-        File(path).parentFile.mkdirs()
+        File(path).parentFile?.mkdirs()
         File(path).delete()
         FileOutputStream(path, false).use { out ->
             val reader = BufferedInputStream(this)
