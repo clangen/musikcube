@@ -17,12 +17,12 @@ include_directories(
 )
 
 ensure_library_exists(faad)
-ensure_library_exists(libfaad.a)
 
 add_library(m4adecoder SHARED ${m4adecoder_SOURCES})
 
 # prefer static libraries on mac to make redist easier
 if (${LINK_STATICALLY} MATCHES "true")
+  ensure_library_exists(libfaad.a)
   find_library(FAADLIB NAMES libfaad.a faad)
   target_link_libraries(m4adecoder ${musikcube_LINK_LIBS} ${FAADLIB})
 else()
