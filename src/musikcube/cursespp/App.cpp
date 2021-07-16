@@ -243,6 +243,16 @@ App::App(const std::string& title) {
         throw std::runtime_error("app instance already running!");
     }
 
+#ifndef WIN32
+    if (!isLangUtf8()) {
+        std::cout << "\n\nThis application requires a UTF-8 compatible LANG environment "
+        "variable to be set in the controlling terminal. Setting to C.UTF-8. Depending on "
+        "your environment, you may see corrupted output. If that'st he case, try to set "
+        "LANG=C.UTF-8 before starting musikcube.\n\n\n\n";
+        setenv("LANG", "C.UTF-8", 1);
+    }
+#endif
+
     instance = this; /* only one instance. */
     this->quit = false;
     this->minWidth = this->minHeight = 0;
@@ -491,12 +501,6 @@ bool App::Running(const std::string& uniqueId, const std::string& title) {
 void App::Run(ILayoutPtr layout) {
 #ifdef WIN32
     if (App::Running(this->uniqueId, this->appTitle)) {
-        return;
-    }
-#else
-    if (!isLangUtf8()) {
-        std::cout << "\n\nThis application requires a UTF-8 compatible LANG environment "
-        "variable to be set in the controlling terminal. Exiting.\n\n\n";
         return;
     }
 #endif
