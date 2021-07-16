@@ -391,6 +391,7 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
             if (result == 0) {
                 pw_thread_loop_unlock(this->pwThreadLoop);
                 ::debug->Info(TAG, "new stream created and connected successfully");
+                this->SetVolume(this->volume);
                 this->initialized = true;
                 return true;
             }
@@ -420,7 +421,6 @@ OutputState PipeWireOut::Play(IBuffer *buffer, IBufferProvider *provider) {
         if (!this->StartPipeWire(buffer)) {
             return OutputState::InvalidState;
         }
-        this->SetVolume(this->volume);
     }
 
     if (this->channelCount != buffer->Channels() || this->sampleRate != buffer->SampleRate()) {
