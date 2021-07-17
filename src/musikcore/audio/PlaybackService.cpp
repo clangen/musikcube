@@ -308,6 +308,7 @@ void PlaybackService::ProcessMessage(IMessage &message) {
         this->InitRemotes();
     }
     else if (type == MESSAGE_MARK_TRACK_PLAYED) {
+        lastfm::Scrobble(this->playingTrack);
         this->MarkTrackAsPlayed(message.UserData1()); /* UserData1 is a trackId */
     }
     else if (type == MESSAGE_STREAM_EVENT) {
@@ -502,15 +503,12 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
     this->messageQueue.Remove(this, MESSAGE_MARK_TRACK_PLAYED);
 
     if (track && this->transport->GetStreamState() == StreamState::Playing) {
-        /* TODO: maybe consider folding Scrobble() the `MarkTrackAsPlayed` logic?
-        needs a bit more thought */
-        lastfm::Scrobble(track);
-
         /* we consider a track to be played if (1) it enters the playing state and
         it's less than 10 seconds long, or (2) it enters the playing state, and
         remains playing for > 25% of its duration seconds */
         const double duration = this->transport->GetDuration();
         if (duration > 0 && duration < 10.0) {
+            lastfm::Scrobble(track);
             this->MarkTrackAsPlayed(track->GetId());
         }
         else {
