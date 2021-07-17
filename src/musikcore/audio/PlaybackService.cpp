@@ -514,7 +514,7 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
             this->MarkTrackAsPlayed(track->GetId());
         }
         else {
-            const int64_t delay = (int64_t)(duration * 0.25f);
+            const int64_t delay = (int64_t)(duration * 0.25f) * 1000LL;
             POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYED, track->GetId(), 0, delay);
         }
     }
