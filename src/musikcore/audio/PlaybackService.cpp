@@ -508,13 +508,14 @@ void PlaybackService::OnTrackChanged(size_t pos, TrackPtr track) {
 
         /* we consider a track to be played if (1) it enters the playing state and
         it's less than 10 seconds long, or (2) it enters the playing state, and
-        remains playing for > 10 seconds */
+        remains playing for > 25% of its duration seconds */
         const double duration = this->transport->GetDuration();
         if (duration > 0 && duration < 10.0) {
             this->MarkTrackAsPlayed(track->GetId());
         }
         else {
-            POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYED, track->GetId(), 0, 10000LL);
+            const int64_t delay = (int64_t)(duration * 0.25f);
+            POST_DELAYED(this, MESSAGE_MARK_TRACK_PLAYED, track->GetId(), 0, delay);
         }
     }
 
