@@ -128,7 +128,6 @@ bool LyricsLayout::KeyPress(const std::string& kn) {
 void LyricsLayout::OnVisibilityChanged(bool visible) {
     LayoutBase::OnVisibilityChanged(visible);
     if (visible) {
-        this->SetState(this->state);
         this->LoadLyricsForCurrentTrack();
         this->FocusFirst();
     }

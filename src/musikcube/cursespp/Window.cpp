@@ -327,7 +327,9 @@ void Window::MoveAndResize(int x, int y, int width, int height) {
         this->lastAbsoluteY = absY;
         this->width = width;
         this->height = height;
-        this->RecreateForUpdatedDimensions();
+        if (this->isVisibleInParent) {
+            this->RecreateForUpdatedDimensions();
+        }
     }
     else {
         this->DestroyIfBadBounds();
@@ -616,7 +618,7 @@ void Window::Show() {
             }
         }
         else {
-            this->Create();
+            this->RecreateForUpdatedDimensions();
             this->isVisibleInParent = true;
         }
 
