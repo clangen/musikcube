@@ -181,7 +181,7 @@ bool MainLayout::KeyPress(const std::string& key) {
         this->SetLayout(consoleLayout);
         return true;
     }
-    else if (auddio::Available() && Hotkeys::Is(Hotkeys::NavigateLyrics, key)) {
+    else if (Hotkeys::Is(Hotkeys::NavigateLyrics, key)) {
         this->Broadcast(message::JumpToLyrics);
         return true;
     }
