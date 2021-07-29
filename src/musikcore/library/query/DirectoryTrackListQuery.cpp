@@ -84,11 +84,13 @@ bool DirectoryTrackListQuery::OnRun(Connection& db) {
 
     std::string lastAlbum;
     size_t lastHeaderIndex = 0;
+    size_t trackDuration = 0;
     size_t runningDuration = 0;
     size_t index = 0;
+
     while (select.Step() == db::Row) {
         const int64_t id = select.ColumnInt64(0);
-        runningDuration += select.ColumnInt32(1);
+        trackDuration = select.ColumnInt32(1);
         std::string album = select.ColumnText(2);
 
         if (!album.size()) {
@@ -104,6 +106,8 @@ bool DirectoryTrackListQuery::OnRun(Connection& db) {
             headers->insert(index);
             lastAlbum = album;
         }
+
+        runningDuration += trackDuration;
 
         result->Add(id);
         ++index;
