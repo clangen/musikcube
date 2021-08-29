@@ -176,11 +176,12 @@ void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuer
     std::string lastAlbum;
     size_t index = 0;
     size_t lastHeaderIndex = 0;
+    size_t trackDuration = 0;
     size_t runningDuration = 0;
 
     while (trackQuery.Step() == Row) {
         const int64_t id = trackQuery.ColumnInt64(0);
-        runningDuration += trackQuery.ColumnInt32(1);
+        trackDuration = trackQuery.ColumnInt32(1);
         std::string album = trackQuery.ColumnText(2);
 
         if (this->parseHeaders && album != lastAlbum) {
@@ -193,6 +194,8 @@ void CategoryTrackListQuery::ProcessResult(musik::core::db::Statement& trackQuer
             headers->insert(index);
             lastAlbum = album;
         }
+
+        runningDuration += trackDuration;
 
         result->Add(id);
         ++index;

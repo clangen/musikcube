@@ -159,11 +159,12 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
     std::string lastAlbum;
     size_t index = 0;
     size_t lastHeaderIndex = 0;
+    size_t trackDuration = 0;
     size_t runningDuration = 0;
 
     while (trackQuery.Step() == Row) {
         const int64_t id = trackQuery.ColumnInt64(0);
-        runningDuration += trackQuery.ColumnInt32(1);
+        trackDuration = trackQuery.ColumnInt32(1);
         std::string album = trackQuery.ColumnText(2);
 
         if (!album.size()) {
@@ -180,6 +181,8 @@ bool SearchTrackListQuery::OnRun(Connection& db) {
             headers->insert(index);
             lastAlbum = album;
         }
+
+        runningDuration += trackDuration;
 
         result->Add(id);
         ++index;
