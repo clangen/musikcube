@@ -269,7 +269,7 @@ bool TaglibMetadataReader::Read(const char* uri, ITagStore *track) {
     std::string path(uri);
     std::string extension;
 
-    std::string::size_type lastDot = path.find_last_of(".");
+    const std::string::size_type lastDot = path.find_last_of(".");
     if (lastDot != std::string::npos) {
         extension = path.substr(lastDot + 1).c_str();
     }
@@ -332,7 +332,7 @@ bool TaglibMetadataReader::ReadGeneric(
 
             /* aif files are similar to wav files, but for some reason taglib
             doesn't seem to expose non-id3v2 tags */
-            auto aifFile = dynamic_cast<TagLib::RIFF::AIFF::File*>(file.file());
+            const auto aifFile = dynamic_cast<TagLib::RIFF::AIFF::File*>(file.file());
             if (aifFile) {
                 if (aifFile->hasID3v2Tag()) {
                     this->ReadID3V2(aifFile->tag(), target);
@@ -341,7 +341,7 @@ bool TaglibMetadataReader::ReadGeneric(
 
             /* taglib hides certain properties (like album artist) in the XiphComment's
             field list. if we're dealing with a straight-up Xiph tag, process it now */
-            auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
+            const auto xiphTag = dynamic_cast<TagLib::Ogg::XiphComment*>(tag);
             if (xiphTag) {
                 this->ReadFromMap(xiphTag->fieldListMap(), target);
                 this->ExtractReplayGain(xiphTag->fieldListMap(), target);
@@ -355,6 +355,18 @@ bool TaglibMetadataReader::ReadGeneric(
                 /* flac files may have more than one type of tag embedded. see if there's
                 see if there's a xiph comment burried deep. */
                 auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
+                if (flacFile) {
+                    auto pictures = flacFile->pictureList();
+                    for (auto picture : pictures) {
+                        if (picture->type() == TagLib::FLAC::Picture::FrontCover) {
+                            auto byteVector = picture->data();
+                            if (byteVector.size()) {
+                                target->SetThumbnail(byteVector.data(), byteVector.size());
+                            }
+                            break;
+                        }
+                    }
+                }
                 if (flacFile && flacFile->hasXiphComment()) {
                     this->ReadFromMap(flacFile->xiphComment()->fieldListMap(), target);
                     this->ExtractReplayGain(flacFile->xiphComment()->fieldListMap(), target);
@@ -365,7 +377,7 @@ bool TaglibMetadataReader::ReadGeneric(
                 NOT exposed a map with normalized keys, so we have to do special property
                 handling here... */
                 if (!handled) {
-                    auto mp4File = dynamic_cast<TagLib::MP4::File*>(file.file());
+                    const auto mp4File = dynamic_cast<TagLib::MP4::File*>(file.file());
                     if (mp4File && mp4File->hasMP4Tag()) {
                         auto mp4TagMap = static_cast<TagLib::MP4::Tag*>(tag)->itemListMap();
                         this->ExtractValueForKey(mp4TagMap, "aART", "album_artist", target);
@@ -376,7 +388,7 @@ bool TaglibMetadataReader::ReadGeneric(
                 }
 
                 if (!handled) {
-                    auto wvFile = dynamic_cast<TagLib::WavPack::File*>(file.file());
+                    const auto wvFile = dynamic_cast<TagLib::WavPack::File*>(file.file());
                     if (wvFile && wvFile->hasAPETag()) {
                         this->ReadFromMap(wvFile->properties(), target);
                         this->ExtractReplayGain(wvFile->properties(), target);
@@ -728,7 +740,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
                     /* there can be multiple pictures, apparently. let's just use
                     the first one. */
 
-                    TagLib::ID3v2::AttachedPictureFrame *picture =
+                    const TagLib::ID3v2::AttachedPictureFrame *picture =
                         static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
 
                     TagLib::ByteVector pictureData = picture->picture();
@@ -823,8 +835,8 @@ void TaglibMetadataReader::SetAudioProperties(
 {
     if (audioProperties) {
         std::string duration = std::to_string(audioProperties->length());
-        int bitrate = audioProperties->bitrate();
-        int channels = audioProperties->channels();
+        const int bitrate = audioProperties->bitrate();
+        const int channels = audioProperties->channels();
 
         this->SetTagValue("duration", duration, track);
 
