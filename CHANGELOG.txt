@@ -1,3 +1,20 @@
+0.96.8
+
+* ensure TrackSearchLayout refreshes during metadata indexing (@ravensiris)
+* fixed album duration calculation fencepost error (@PythonTryHard)
+* added Spanish (es_ES) translation (@orestescm76)
+* added support for Android Studio 4.2
+* updated CMake scripts to be compatible with Homebrew installations that
+  are rooted outside of /usr/local
+* ensure static libraries are only resolved with necessary (@t123yh)
+* fixed OpenBSD build
+* fixed a PipeWire bug where volume may not get set properly.
+* updated Scrobble logic to only post if at least 25% of the active track
+  has been played.
+* fixed a bug where user may be unable to nativate to the lyrics view
+* fixed a low-level bug that could prevent layout update events from
+  propagating up the view hierarchy.
+
 0.96.7
 
 * re-compile for Windows; Windows Defender was unhappy with the original
