@@ -251,6 +251,10 @@ void FfmpegDecoder::Reset() {
         av_audio_fifo_free(this->outputFifo);
         this->outputFifo = nullptr;
     }
+    if (this->resampler) {
+        swr_free(&this->resampler);
+        this->resampler = nullptr;
+    }
     this->streamId = -1;
 }
 
@@ -478,9 +482,6 @@ bool FfmpegDecoder::DrainResamplerToFifoQueue() {
             break;
         }
     }
-
-    swr_free(&this->resampler);
-    this->resampler = nullptr;
 
     return true;
 }
