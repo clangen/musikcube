@@ -52,6 +52,8 @@ using namespace musik::core::sdk;
 static const char* TAG = "ffmpegdecoder";
 static IDebug* debug = nullptr;
 
+#define RESOLVE_SAMPLE_RATE() this->preferredSampleRate > 0 ? this->preferredSampleRate : this->rate
+
 extern "C" DLLEXPORT void SetDebug(IDebug* debug) {
     ::debug = debug;
 }
@@ -149,6 +151,7 @@ FfmpegDecoder::FfmpegDecoder() {
     this->bufferSize = AV_INPUT_BUFFER_PADDING_SIZE + BUFFER_SIZE;
     this->buffer = new unsigned char[this->bufferSize];
     this->outputFifo = nullptr;
+    this->preferredSampleRate = -1;
 }
 
 FfmpegDecoder::~FfmpegDecoder() {
@@ -192,7 +195,7 @@ double FfmpegDecoder::SetPosition(double seconds) {
 
 bool FfmpegDecoder::GetBuffer(IBuffer *buffer) {
     if (this->ioContext) {
-        buffer->SetSampleRate((long) this->rate);
+        buffer->SetSampleRate((long) RESOLVE_SAMPLE_RATE());
         buffer->SetChannels((long) this->channels);
         buffer->SetSamples(0);
 
@@ -256,7 +259,7 @@ bool FfmpegDecoder::InitializeResampler(IBuffer* buffer) {
         this->resampler,
         this->codecContext->channel_layout,
         AV_SAMPLE_FMT_FLT,
-        (int) this->rate,
+        (int) RESOLVE_SAMPLE_RATE(),
         this->codecContext->channel_layout,
         this->codecContext->sample_fmt,
         this->codecContext->sample_rate,
@@ -404,7 +407,7 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
             this->resampledFrame = this->AllocFrame(
                 this->resampledFrame,
                 AV_SAMPLE_FMT_FLT,
-                this->rate,
+                RESOLVE_SAMPLE_RATE(),
                 this->decodedFrame->nb_samples);
 
             error = swr_convert_frame(

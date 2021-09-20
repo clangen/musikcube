@@ -70,6 +70,7 @@ class WasapiOut : public IOutput {
         IDeviceList* GetDeviceList() override;
         bool SetDefaultDevice(const char* deviceId) override;
         IDevice* GetDefaultDevice() override;
+        int GetDefaultSampleRate() override;
 
         void OnDeviceChanged() { this->deviceChanged = true; }
 
@@ -81,6 +82,7 @@ class WasapiOut : public IOutput {
         };
 
         bool Configure(IBuffer *buffer);
+        bool InitializeAudioClient();
         void Reset();
         IMMDevice* GetPreferredDevice();
 

@@ -64,7 +64,7 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         double GetDuration() override;
         bool Open(musik::core::sdk::IDataStream *stream) override;
         bool Exhausted() override;
-        void SetPreferredSampleRate(int rate) override { }
+        void SetPreferredSampleRate(int rate) override { this->preferredSampleRate = rate; }
 
         IDataStream* Stream() { return this->stream; }
 
@@ -87,6 +87,7 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         AVFrame* resampledFrame;
         SwrContext* resampler;
         unsigned char* buffer;
+        int preferredSampleRate { -1 };
         int bufferSize;
         int rate, channels;
         int streamId;

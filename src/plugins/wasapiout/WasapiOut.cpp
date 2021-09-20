@@ -514,19 +514,33 @@ found_or_done:
     return result;
 }
 
-bool WasapiOut::Configure(IBuffer *buffer) {
-    HRESULT result;
+int WasapiOut::GetDefaultSampleRate() {
+    int result = -1;
+    this->InitializeAudioClient();
+    if (this->audioClient) {
+        WAVEFORMATEX* deviceFormat = nullptr;
+        audioClient->GetMixFormat(&deviceFormat);
+        if (deviceFormat) {
+            result = deviceFormat->nSamplesPerSec;
+            CoTaskMemFree(deviceFormat);
+        }
+    }
+    return result;
+}
+
+bool WasapiOut::InitializeAudioClient() {
+    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+
+    HRESULT result = S_FALSE;
 
     if (!this->audioClient) {
         if (!this->enumerator) {
-            CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-
             result = CoCreateInstance(
                 __uuidof(MMDeviceEnumerator),
                 NULL,
                 CLSCTX_ALL,
                 __uuidof(IMMDeviceEnumerator),
-                (void**) &this->enumerator);
+                (void**)&this->enumerator);
 
             if (result != S_OK) {
                 return false;
@@ -542,37 +556,43 @@ bool WasapiOut::Configure(IBuffer *buffer) {
         }
     }
 
-    if (waveFormat.Format.nChannels == buffer->Channels() &&
+    if (!this->device) {
+        bool preferredDeviceOk = false;
+
+        IMMDevice* preferredDevice = this->GetPreferredDevice();
+        if (preferredDevice) {
+            if ((result = preferredDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**)&this->audioClient)) == S_OK) {
+                preferredDeviceOk = true;
+                this->device = preferredDevice;
+            }
+        }
+
+        if (!preferredDeviceOk) {
+            if (preferredDevice) {
+                preferredDevice->Release();
+            }
+
+            if ((result = this->enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &this->device)) != S_OK) {
+                return false;
+            }
+        }
+
+        if ((result = this->device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**)&this->audioClient)) != S_OK) {
+            return false;
+        }
+    }
+}
+
+bool WasapiOut::Configure(IBuffer *buffer) {
+    if (this->audioClient &&
+        waveFormat.Format.nChannels == buffer->Channels() &&
         waveFormat.Format.nSamplesPerSec == buffer->SampleRate())
     {
         return true;
     }
 
-    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-
-    bool preferredDeviceOk = false;
-
-    IMMDevice* preferredDevice = this->GetPreferredDevice();
-    if (preferredDevice) {
-        if ((result = preferredDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**) &this->audioClient)) == S_OK) {
-            preferredDeviceOk = true;
-            this->device = preferredDevice;
-        }
-    }
-
-    if (!preferredDeviceOk) {
-        if (preferredDevice) {
-            preferredDevice->Release();
-        }
-
-        if ((result = this->enumerator->GetDefaultAudioEndpoint(eRender, eMultimedia, &this->device)) != S_OK) {
-            return false;
-        }
-    }
-
-    if ((result = this->device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void**) &this->audioClient)) != S_OK) {
-        return false;
-    }
+    this->Reset();
+    this->InitializeAudioClient();
 
     DWORD speakerConfig = 0;
     switch (buffer->Channels()) {
@@ -604,6 +624,8 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     wf.Format.nAvgBytesPerSec = wf.Format.nSamplesPerSec * wf.Format.nBlockAlign;
     wf.dwChannelMask = speakerConfig;
     wf.SubFormat = KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+
+    HRESULT result = S_FALSE;
 
     DWORD streamFlags = 0;
     if (this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, (WAVEFORMATEX *) &wf, 0) != S_OK) {
