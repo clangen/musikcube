@@ -296,7 +296,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
         gain = player->gain.peak;
     }
 
-    if (player->stream->OpenStream(player->url)) {
+    if (player->stream->OpenStream(player->url, player->output.get())) {
         for (Listener* l : player->Listeners()) {
             player->streamState = StreamState::Buffered;
             l->OnPlayerBuffered(player);

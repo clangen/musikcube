@@ -118,7 +118,7 @@ int Stream::GetCapabilities() {
     return this->capabilities;
 }
 
-bool Stream::OpenStream(std::string uri) {
+bool Stream::OpenStream(std::string uri, IOutput* output) {
     musik::debug::info(TAG, "opening " + uri);
 
     /* use our file stream abstraction to open the data at the
@@ -133,6 +133,15 @@ bool Stream::OpenStream(std::string uri) {
     this->decoder = streams::GetDecoderForDataStream(this->dataStream);
 
     if (this->decoder) {
+        /* if the output has a default/preferred sample rate, let the decoder know
+        before sending samples. this way the decoder can resample the audio itself
+        if it likes. */
+        if (output) {
+            int defaultOutputSampleRate = output->GetDefaultSampleRate();
+            if (defaultOutputSampleRate > 0) {
+                this->decoder->SetPreferredSampleRate(defaultOutputSampleRate);
+            }
+        }
         if (this->dataStream->CanPrefetch()) {
             this->capabilities |= (int) musik::core::sdk::Capability::Prebuffer;
             this->RefillInternalBuffers();

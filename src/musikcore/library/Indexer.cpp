@@ -930,7 +930,7 @@ void Indexer::RunAnalyzers() {
                 audio::IStreamPtr stream = audio::Stream::Create(2048, 2.0, StreamFlags::NoDSP);
 
                 if (stream) {
-                    if (stream->OpenStream(track->Uri())) {
+                    if (stream->OpenStream(track->Uri(), nullptr)) {
 
                         /* decode the stream quickly, passing to all analyzers */
 

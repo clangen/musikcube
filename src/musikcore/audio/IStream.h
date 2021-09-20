@@ -39,6 +39,7 @@
 #include <musikcore/sdk/IDecoder.h>
 #include <musikcore/sdk/IDSP.h>
 #include <musikcore/sdk/IDecoderFactory.h>
+#include <musikcore/sdk/IOutput.h>
 
 #include <list>
 
@@ -50,7 +51,7 @@ namespace musik { namespace core { namespace audio {
             virtual void OnBufferProcessedByPlayer(musik::core::sdk::IBuffer* buffer) = 0;
             virtual double SetPosition(double seconds) = 0;
             virtual double GetDuration() = 0;
-            virtual bool OpenStream(std::string uri) = 0;
+            virtual bool OpenStream(std::string uri, musik::core::sdk::IOutput* output) = 0;
             virtual void Interrupt() = 0;
             virtual int GetCapabilities() = 0;
             virtual bool Eof() = 0;

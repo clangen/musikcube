@@ -993,7 +993,7 @@ mcsdk_export double mcsdk_audio_stream_get_duration(mcsdk_audio_stream as) {
 }
 
 mcsdk_export bool mcsdk_audio_stream_open_uri(mcsdk_audio_stream as, const char* uri) {
-    return AUDIOSTREAM(as)->OpenStream(uri);
+    return AUDIOSTREAM(as)->OpenStream(uri, nullptr); /* TODO: fixme; should pass output if available */
 }
 
 mcsdk_export void mcsdk_audio_stream_interrupt(mcsdk_audio_stream as) {

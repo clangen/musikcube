@@ -39,6 +39,8 @@
 #include <musikcore/audio/Buffer.h>
 #include <musikcore/audio/IStream.h>
 #include <musikcore/sdk/IDecoder.h>
+#include <musikcore/sdk/IOutput.h>
+
 #include <musikcore/sdk/IDSP.h>
 #include <musikcore/sdk/constants.h>
 
@@ -73,15 +75,15 @@ namespace musik { namespace core { namespace audio {
         public:
             virtual ~Stream();
 
-            virtual IBuffer* GetNextProcessedOutputBuffer() override;
-            virtual void OnBufferProcessedByPlayer(IBuffer* buffer) override;
-            virtual double SetPosition(double seconds) override;
-            virtual double GetDuration() override;
-            virtual bool OpenStream(std::string uri) override;
-            virtual void Interrupt() override;
-            virtual int GetCapabilities() override;
-            virtual bool Eof() override { return this->done; }
-            virtual void Release() override { delete this; }
+            IBuffer* GetNextProcessedOutputBuffer() override;
+            void OnBufferProcessedByPlayer(IBuffer* buffer) override;
+            double SetPosition(double seconds) override;
+            double GetDuration() override;
+            bool OpenStream(std::string uri, musik::core::sdk::IOutput* output) override;
+            void Interrupt() override;
+            int GetCapabilities() override;
+            bool Eof() override { return this->done; }
+            void Release() override { delete this; }
 
         private:
             bool GetNextBufferFromDecoder();
