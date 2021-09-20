@@ -1,5 +1,8 @@
 0.96.8
 
+* updated `FfmpegDecoder` to perform resampling internally when `WasapiOutput`
+  is in use; it's internal resampler seems to be much higher quality than the
+  one used by WASAPI by default.
 * ensure TrackSearchLayout refreshes during metadata indexing (@ravensiris)
 * fixed album duration calculation fencepost error (@PythonTryHard)
 * added Spanish (es_ES) translation (@orestescm76)
