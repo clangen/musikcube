@@ -50,13 +50,16 @@ using namespace musik::core::sdk;
 #endif
 
 #define PREF_MULTIPLIER "playback_speed_multiplier"
+#define PREF_DEFAULT_SAMPLE_RATE "default_sample_rate"
 
+static int defaultSampleRate = 48000;
 static float speedMultiplier = 1.0f;
 static IPreferences* prefs = nullptr;
 
 static void reloadMultiplier() {
     if (::prefs) {
-        ::speedMultiplier = (float)prefs->GetDouble(PREF_MULTIPLIER, 1.0f);
+        ::speedMultiplier = (float)prefs->GetDouble(PREF_MULTIPLIER, speedMultiplier);
+        ::defaultSampleRate = prefs->GetInt(PREF_DEFAULT_SAMPLE_RATE, defaultSampleRate);
     }
 }
 
@@ -67,6 +70,7 @@ extern "C" DLLEXPORT void SetPreferences(IPreferences* prefs) {
 extern "C" DLLEXPORT musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
     schema->AddDouble(PREF_MULTIPLIER, 1.0, 2, 0.25, 1000.0);
+    schema->AddInt(PREF_DEFAULT_SAMPLE_RATE, defaultSampleRate, 4096, 192000);
     return schema;
 }
 
@@ -133,4 +137,8 @@ OutputState NullOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 
 double NullOut::Latency() {
     return 0.0;
+}
+
+int NullOut::GetDefaultSampleRate() {
+    return defaultSampleRate;
 }

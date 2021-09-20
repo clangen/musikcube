@@ -449,8 +449,12 @@ bool FfmpegDecoder::DrainResamplerToFifoQueue() {
         return false;
     }
 
-    int64_t bufferedFrames = swr_get_delay(
-        this->resampler, this->codecContext->sample_rate);
+    const int64_t targetRate =
+        RESOLVE_SAMPLE_RATE() > this->codecContext->sample_rate
+            ? RESOLVE_SAMPLE_RATE()
+            : this->codecContext->sample_rate;
+
+    int64_t bufferedFrames = swr_get_delay(this->resampler, targetRate);
 
     while (bufferedFrames > 0) {
         this->resampledFrame = this->AllocFrame(
