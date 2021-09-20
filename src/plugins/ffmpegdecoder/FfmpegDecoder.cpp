@@ -429,6 +429,10 @@ bool FfmpegDecoder::ReadSendAndReceivePacket(AVPacket* packet) {
                     return false;
                 }
 
+                /* there may still be pending data in the resampler, go ahead
+                and write to the fifo right now so it doesn't back up */
+                this->DrainResamplerToFifoQueue();
+
                 decodedAtLeastOneFrame = true;
             }
         }
