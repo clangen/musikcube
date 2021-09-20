@@ -50,6 +50,7 @@ class CddaDecoder : public IDecoder {
         double GetDuration() override;
         bool GetBuffer(IBuffer *buffer) override;
         bool Exhausted() noexcept override { return this->exhausted; }
+        void SetPreferredSampleRate(int rate) override { }
 
     private:
         CddaDataStream* data;

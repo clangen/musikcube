@@ -50,21 +50,22 @@ class SndioOut : public IOutput {
         ~SndioOut();
 
         /* IPlugin */
-        virtual const char* Name() override { return "sndio"; };
-        virtual void Release() override;
+        const char* Name() override { return "sndio"; };
+        void Release() override;
 
         /* IOutput */
-        virtual void Pause() override;
-        virtual void Resume() override;
-        virtual void SetVolume(double volume) override;
-        virtual double GetVolume() override;
-        virtual void Stop() override;
-        virtual musik::core::sdk::OutputState Play(IBuffer *buffer, IBufferProvider *provider) override;
-        virtual double Latency() override;
-        virtual void Drain() override;
-        virtual IDeviceList* GetDeviceList() override;
-        virtual bool SetDefaultDevice(const char* deviceId) override;
-        virtual IDevice* GetDefaultDevice() override;
+        void Pause() override;
+        void Resume() override;
+        void SetVolume(double volume) override;
+        double GetVolume() override;
+        void Stop() override;
+        musik::core::sdk::OutputState Play(IBuffer *buffer, IBufferProvider *provider) override;
+        double Latency() override;
+        void Drain() override;
+        IDeviceList* GetDeviceList() override;
+        bool SetDefaultDevice(const char* deviceId) override;
+        IDevice* GetDefaultDevice() override;
+        int GetDefaultSampleRate() override { return -1; }
 
     private:
         enum class Command: int {

@@ -51,25 +51,26 @@ class AlsaOut : public musik::core::sdk::IOutput {
         virtual ~AlsaOut();
 
         /* IPlugin */
-        virtual const char* Name() override { return "AlsaOut"; }
+        const char* Name() override { return "AlsaOut"; }
 
         /* IOutput */
-        virtual void Release() override;
-        virtual void Pause() override ;
-        virtual void Resume() override;
-        virtual void SetVolume(double volume) override;
-        virtual double GetVolume() override;
-        virtual void Stop() override;
-        virtual double Latency() override;
-        virtual void Drain() override;
+        void Release() override;
+        void Pause() override ;
+        void Resume() override;
+        void SetVolume(double volume) override;
+        double GetVolume() override;
+        void Stop() override;
+        double Latency() override;
+        void Drain() override;
 
-        virtual musik::core::sdk::OutputState Play(
+        musik::core::sdk::OutputState Play(
             musik::core::sdk::IBuffer *buffer,
             musik::core::sdk::IBufferProvider *provider) override;
 
-        virtual musik::core::sdk::IDeviceList* GetDeviceList() override;
-        virtual bool SetDefaultDevice(const char* deviceId) override;
-        virtual musik::core::sdk::IDevice* GetDefaultDevice() override;
+        musik::core::sdk::IDeviceList* GetDeviceList() override;
+        bool SetDefaultDevice(const char* deviceId) override;
+        musik::core::sdk::IDevice* GetDefaultDevice() override;
+        int GetDefaultSampleRate() override { return -1; }
 
     private:
         struct BufferContext {

@@ -58,12 +58,13 @@ class FfmpegDecoder: public musik::core::sdk::IDecoder {
         FfmpegDecoder();
         ~FfmpegDecoder();
 
-        virtual void Release() override;
-        virtual double SetPosition(double seconds) override;
-        virtual bool GetBuffer(IBuffer *buffer) override;
-        virtual double GetDuration() override;
-        virtual bool Open(musik::core::sdk::IDataStream *stream) override;
-        virtual bool Exhausted() override;
+        void Release() override;
+        double SetPosition(double seconds) override;
+        bool GetBuffer(IBuffer *buffer) override;
+        double GetDuration() override;
+        bool Open(musik::core::sdk::IDataStream *stream) override;
+        bool Exhausted() override;
+        void SetPreferredSampleRate(int rate) override { }
 
         IDataStream* Stream() { return this->stream; }
 

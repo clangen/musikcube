@@ -45,12 +45,13 @@ class OggDecoder : public IDecoder {
         OggDecoder();
         ~OggDecoder();
 
-        virtual void Release() override;
-        virtual double SetPosition(double second) override;
-        virtual bool GetBuffer(IBuffer *buffer) override;
-        virtual double GetDuration() override;
-        virtual bool Open(musik::core::sdk::IDataStream *fileStream) override;
-        virtual bool Exhausted() override { return this->exhausted; }
+        void Release() override;
+        double SetPosition(double second) override;
+        bool GetBuffer(IBuffer *buffer) override;
+        double GetDuration() override;
+        bool Open(musik::core::sdk::IDataStream *fileStream) override;
+        bool Exhausted() override { return this->exhausted; }
+        void SetPreferredSampleRate(int rate) override { }
 
         /* libvorbis callbacks */
         static size_t OggRead(void *buffer, size_t nofParts, size_t partSize, void *datasource);

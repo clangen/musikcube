@@ -44,11 +44,12 @@ class Mpg123Decoder : public musik::core::sdk::IDecoder {
         Mpg123Decoder();
         virtual ~Mpg123Decoder();
 
-        virtual bool Open(musik::core::sdk::IDataStream *dataStream);
-        virtual double SetPosition(double seconds);
-        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer);
-        virtual void Destroy();
-        virtual double GetDuration();
+        bool Open(musik::core::sdk::IDataStream *dataStream) override;
+        double SetPosition(double seconds) override;
+        bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
+        void Destroy() override;
+        double GetDuration() override;
+        void SetPreferredSampleRate(int rate) override { }
 
     private:
         bool Feed();

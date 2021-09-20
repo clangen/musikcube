@@ -53,6 +53,7 @@ class OpenMptDecoder: public musik::core::sdk::IDecoder {
         double GetDuration() override;
         bool Open(musik::core::sdk::IDataStream* stream) override;
         bool Exhausted() override;
+        void SetPreferredSampleRate(int rate) override { }
 
         musik::core::sdk::IDataStream* Stream() { return this->stream; }
 

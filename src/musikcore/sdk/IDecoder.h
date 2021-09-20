@@ -47,6 +47,7 @@ namespace musik { namespace core { namespace sdk {
             virtual double GetDuration() = 0;
             virtual bool Open(IDataStream *stream) = 0;
             virtual bool Exhausted() = 0;
+            virtual void SetPreferredSampleRate(int rate) = 0;
     };
 
 } } }

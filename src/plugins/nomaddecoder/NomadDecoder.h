@@ -46,12 +46,13 @@ class NomadDecoder : public musik::core::sdk::IDecoder {
         NomadDecoder();
         ~NomadDecoder();
 
-        virtual bool Open(musik::core::sdk::IDataStream *dataStream) override;
-        virtual double SetPosition(double seconds) override;
-        virtual bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
-        virtual double GetDuration() override;
-        virtual void Release() override;
-        virtual bool Exhausted() override { return this->exhausted; }
+        bool Open(musik::core::sdk::IDataStream *dataStream) override;
+        double SetPosition(double seconds) override;
+        bool GetBuffer(musik::core::sdk::IBuffer *buffer) override;
+        double GetDuration() override;
+        void Release() override;
+        bool Exhausted() override { return this->exhausted; }
+        void SetPreferredSampleRate(int rate) override { }
 
     private:
         size_t GetId3v2HeaderLength(musik::core::sdk::IDataStream *stream);

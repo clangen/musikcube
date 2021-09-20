@@ -63,19 +63,20 @@ static const std::string defaultOutput = "PulseAudio";
 
 class NoOutput: public IOutput {
     public:
-        virtual void Release() { delete this; }
-        virtual void Pause() { }
-        virtual void Resume() { }
-        virtual void SetVolume(double volume) { this->volume = volume; }
-        virtual double GetVolume() { return this->volume; }
-        virtual void Stop() { }
-        virtual OutputState Play(IBuffer *buffer, IBufferProvider *provider) { return OutputState::InvalidState; }
-        virtual void Drain() { }
-        virtual double Latency() { return 0.0; }
-        virtual const char* Name() { return "NoOutput"; }
-        virtual IDeviceList* GetDeviceList() { return nullptr; }
-        virtual bool SetDefaultDevice(const char* deviceId) { return false; }
-        virtual IDevice* GetDefaultDevice() { return nullptr; }
+        void Release() override { delete this; }
+        void Pause() override { }
+        void Resume() override { }
+        void SetVolume(double volume) override { this->volume = volume; }
+        double GetVolume() override { return this->volume; }
+        void Stop() override { }
+        OutputState Play(IBuffer *buffer, IBufferProvider *provider) override { return OutputState::InvalidState; }
+        void Drain() override { }
+        double Latency() override { return 0.0; }
+        const char* Name() override { return "NoOutput"; }
+        IDeviceList* GetDeviceList() override { return nullptr; }
+        bool SetDefaultDevice(const char* deviceId) override { return false; }
+        IDevice* GetDefaultDevice() override { return nullptr; }
+        int GetDefaultSampleRate() override { return -1; }
     private:
         double volume{ 1.0f };
 };

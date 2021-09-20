@@ -61,6 +61,7 @@ class NullOut : public IOutput {
         IDeviceList* GetDeviceList() override;
         bool SetDefaultDevice(const char* deviceId) override;
         IDevice* GetDefaultDevice() override;
+        int GetDefaultSampleRate() override { return -1; }
 
     private:
         enum State {
