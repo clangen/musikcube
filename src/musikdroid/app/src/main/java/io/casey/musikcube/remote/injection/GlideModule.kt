@@ -11,6 +11,7 @@ import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.module.AppGlideModule
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import java.io.InputStream
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.canIntercept as canInterceptArtwork
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.intercept as interceptArtwork
@@ -25,7 +26,7 @@ class GlideModule : AppGlideModule() {
             var request: Request? = chain.request()
             request?.let { req ->
                 val serverHost = prefs.getString(Prefs.Key.ADDRESS, "")
-                val requestHost = req.url().host()
+                val requestHost = req.url.host
                 if (serverHost == requestHost) {
                     val userPass = "default:" + prefs.getString(Prefs.Key.PASSWORD, Prefs.Default.PASSWORD)!!
                     val encoded = Base64.encodeToString(userPass.toByteArray(), Base64.NO_WRAP)
@@ -45,7 +46,7 @@ class GlideModule : AppGlideModule() {
             .request(chain.request())
             .code(404)
             .protocol(Protocol.HTTP_1_1)
-            .body(ResponseBody.create(MediaType.parse("application/json"), "{ }"))
+            .body(ResponseBody.create("application/json".toMediaTypeOrNull(), "{ }"))
             .message("not found")
             .build()
     }

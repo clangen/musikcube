@@ -120,12 +120,12 @@ object AlbumArtLookup {
     }
 
     fun canIntercept(request: Request): Boolean {
-        return request.url().host() == "ws.audioscrobbler.com" &&
-            request.url().queryParameter("method") == "album.getinfo"
+        return request.url.host == "ws.audioscrobbler.com" &&
+            request.url.queryParameter("method") == "album.getinfo"
     }
 
     fun intercept(req: Request): Request? {
-        val url = req.url()
+        val url = req.url
 
         var imageUrl = urlCache[url.toString()] ?: ""
         val desiredSize = Size.from(url.queryParameter("size"))
@@ -165,7 +165,7 @@ object AlbumArtLookup {
                 val images = mutableListOf<Pair<Size, String>>()
 
                 try {
-                    val json = JSONObject(response.body()?.string() ?: "{}")
+                    val json = JSONObject(response.body?.string() ?: "{}")
                     val imagesJson = json.getJSONObject("album").getJSONArray("image")
                     for (i in 0 until imagesJson.length()) {
                         val imageJson = imagesJson.getJSONObject(i)

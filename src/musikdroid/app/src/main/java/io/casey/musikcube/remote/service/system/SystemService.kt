@@ -325,7 +325,10 @@ class SystemService : Service() {
 
     private fun updateNotification(track: ITrack?, state: PlaybackState) {
         val contentIntent = PendingIntent.getActivity(
-            applicationContext, 1, MainActivity.getStartIntent(this), 0)
+            applicationContext,
+            1,
+            MainActivity.getStartIntent(this),
+            PendingIntent.FLAG_IMMUTABLE)
 
         val title = fallback(track?.title, "-")
         val artist = fallback(track?.artist, "-")
@@ -388,7 +391,8 @@ class SystemService : Service() {
     private fun action(icon: Int, title: String, intentAction: String): NotifAction {
         val intent = Intent(applicationContext, SystemService::class.java)
         intent.action = intentAction
-        val pendingIntent = PendingIntent.getService(applicationContext, 1, intent, 0)
+        val pendingIntent = PendingIntent.getService(
+            applicationContext, 1, intent, PendingIntent.FLAG_IMMUTABLE)
         return NotifAction.Builder(icon, title, pendingIntent).build()
     }
 

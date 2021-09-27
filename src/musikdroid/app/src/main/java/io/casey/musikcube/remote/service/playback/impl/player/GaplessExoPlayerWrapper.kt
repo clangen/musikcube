@@ -227,10 +227,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         }
     }
 
-    private var eventListener = object : Player.EventListener {
-        override fun onTimelineChanged(timeline: Timeline, manifest: Any?, reason: Int) {
-        }
-
+    private var eventListener = object : Player.Listener {
         override fun onTracksChanged(trackGroups: TrackGroupArray, trackSelections: TrackSelectionArray) {
         }
 
@@ -281,7 +278,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             }
         }
 
-        override fun onPlayerError(error: ExoPlaybackException) {
+        override fun onPlayerError(error: PlaybackException) {
             Preconditions.throwIfNotOnMainThread()
 
             lastPosition = gaplessPlayer?.currentPosition ?: 0

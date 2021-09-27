@@ -80,9 +80,9 @@ class GaplessHeaderService {
                 newState = GaplessTrack.DOWNLOADED
             }
 
-            if (res?.code() == 206) {
+            if (res?.code == 206) {
                 try {
-                    val bytes = res.body()?.bytes()
+                    val bytes = res.body?.bytes()
                     if (bytes?.isNotEmpty() == true) {
                         RandomAccessFile(fn, "rw").use {
                             it.seek(0)

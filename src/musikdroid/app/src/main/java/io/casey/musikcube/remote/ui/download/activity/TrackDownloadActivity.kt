@@ -80,6 +80,7 @@ class TrackDownloadActivity: BaseActivity() {
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults: IntArray)
     {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
             if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 download()
@@ -127,7 +128,7 @@ class TrackDownloadActivity: BaseActivity() {
         var success = false
 
         try {
-            response.body()?.let {
+            response.body?.let {
                 val total = it.contentLength()
                 var lastPercent = 0
 
@@ -228,7 +229,7 @@ class TrackDownloadActivity: BaseActivity() {
 
         /* in some cases the server may request a filename override, so we try to honor that
         here if possible */
-        val filenameOverrideHeaders = response.headers().values(HTTP_HEADER_FILENAME_OVERRIDE)
+        val filenameOverrideHeaders = response.headers.values(HTTP_HEADER_FILENAME_OVERRIDE)
         if (filenameOverrideHeaders.isNotEmpty()) {
             filename = filenameOverrideHeaders[0]
         }
@@ -240,7 +241,7 @@ class TrackDownloadActivity: BaseActivity() {
         so we'll use that if it's available. otherwise we'll try to parse it from the filename.
         if both of those fail we'll just use 'mp3' */
         var extension = intent.extras?.getString(EXTRA_EXTENSION, "mp3")
-        val fileExtensionHeaders = response.headers().values(HTTP_HEADER_FILE_EXTENSION)
+        val fileExtensionHeaders = response.headers.values(HTTP_HEADER_FILE_EXTENSION)
         if (fileExtensionHeaders.isNotEmpty()) {
             extension = fileExtensionHeaders[0]
         }
@@ -251,7 +252,7 @@ class TrackDownloadActivity: BaseActivity() {
 
     class ConfirmCancelDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-            AlertDialog.Builder(activity!!)
+            AlertDialog.Builder(requireActivity())
                 .setTitle(R.string.download_cancel_title)
                 .setMessage(R.string.download_cancel_message)
                 .setNegativeButton(R.string.button_no, null)
@@ -270,7 +271,7 @@ class TrackDownloadActivity: BaseActivity() {
 
     class RetryDialog: DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-            AlertDialog.Builder(activity!!)
+            AlertDialog.Builder(requireActivity())
                 .setTitle(R.string.download_failed_title)
                 .setMessage(R.string.download_failed_message)
                 .setNegativeButton(R.string.button_no) { _, _ ->

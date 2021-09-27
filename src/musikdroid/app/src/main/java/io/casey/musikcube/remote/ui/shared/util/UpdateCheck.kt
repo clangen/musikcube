@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.ui.shared.util
 
+import android.annotation.SuppressLint
 import android.util.Log
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.util.Preconditions
@@ -47,6 +48,7 @@ private fun toStringVersion(major: Long, minor: Long, patch: Long): String {
 }
 
 class UpdateCheck {
+    @SuppressLint("CheckResult")
     fun run(callback: (Boolean, String, String) -> Unit) {
         Preconditions.throwIfNotOnMainThread()
 
@@ -54,10 +56,11 @@ class UpdateCheck {
             callback(LAST_RESULT.required, LAST_RESULT.version, LAST_RESULT.url)
         }
         else {
-            @Suppress Single.fromCallable {
+            @Suppress
+            Single.fromCallable {
                 val request = Request.Builder().url(UPDATE_CHECK_URL).build()
                 val response = HTTP_CLIENT.newCall(request).execute()
-                val json = response.body()?.string() ?: ""
+                val json = response.body?.string() ?: ""
                 response.close()
                 JSONObject(json)
             }
