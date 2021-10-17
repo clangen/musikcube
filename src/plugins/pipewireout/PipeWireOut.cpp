@@ -404,6 +404,10 @@ bool PipeWireOut::StartPipeWire(IBuffer* buffer) {
     }
 
 cleanup:
+    if (this->pwStream) {
+        pw_stream_destroy(this->pwStream);
+        this->pwStream = nullptr;
+    }
     pw_thread_loop_unlock(this->pwThreadLoop);
     ::debug->Error(TAG, "stream not initialized");
     this->StopPipeWire();
