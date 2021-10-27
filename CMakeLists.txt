@@ -124,10 +124,8 @@ endif()
 add_subdirectory(src/musikcore)
 add_subdirectory(src/core_c_demo)
 add_subdirectory(src/musikcube)
-add_subdirectory(src/musikcubed)
 add_subdirectory(src/plugins/taglib_plugin)
 add_subdirectory(src/plugins/nullout)
-add_subdirectory(src/plugins/server)
 add_subdirectory(src/plugins/httpdatastream)
 add_subdirectory(src/plugins/stockencoders)
 add_subdirectory(src/plugins/supereqdsp)
@@ -155,8 +153,20 @@ else()
 endif()
 
 
-add_dependencies(musikcube musikcore taglibreader nullout server httpdatastream stockencoders)
-add_dependencies(musikcubed musikcube)
+if (${ENABLE_LIBMICROHTTP} MATCHES "false")
+  message(STATUS "[libmicrohttp] enabled = false")
+else()
+  message(STATUS "[libmicrohttp] enabled = true")
+  add_subdirectory(src/plugins/server)
+  add_dependencies(musikcube libmicrohttp server)
+
+  add_subdirectory(src/musikcubed)
+  add_dependencies(musikcubed musikcube)
+  list(APPEND BINARIES musikcubed)
+endif()
+
+add_dependencies(musikcube musikcore taglibreader nullout httpdatastream stockencoders)
+list(APPEND BINARIES musikcube)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
   if (${ENABLE_ALSA} MATCHES "true")
@@ -240,38 +250,23 @@ else()
 endif()
 
 # executable and shell script for musikcube
-install(
-  FILES bin/musikcube
-  DESTINATION share/musikcube
-  PERMISSIONS
-    OWNER_EXECUTE OWNER_READ OWNER_WRITE
-    GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    WORLD_EXECUTE WORLD_READ)
+foreach(BIN ${BINARIES})
+  install(
+    FILES bin/${BIN}
+    DESTINATION share/${BIN}
+    PERMISSIONS
+      OWNER_EXECUTE OWNER_READ OWNER_WRITE
+      GROUP_EXECUTE GROUP_READ GROUP_WRITE
+      WORLD_EXECUTE WORLD_READ)
 
-install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/src/musikcube/musikcube"
-  DESTINATION bin/
-  PERMISSIONS
-    OWNER_EXECUTE OWNER_READ OWNER_WRITE
-    GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    WORLD_EXECUTE WORLD_READ)
-
-# executable and shell script for daemon
-install(
-  FILES bin/musikcubed
-  DESTINATION share/musikcube
-  PERMISSIONS
-    OWNER_EXECUTE OWNER_READ OWNER_WRITE
-    GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    WORLD_EXECUTE WORLD_READ)
-
-install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/src/musikcubed/musikcubed"
-  DESTINATION bin/
-  PERMISSIONS
-    OWNER_EXECUTE OWNER_READ OWNER_WRITE
-    GROUP_EXECUTE GROUP_READ GROUP_WRITE
-    WORLD_EXECUTE WORLD_READ)
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/src/musikcube/${BIN}"
+    DESTINATION bin/
+    PERMISSIONS
+      OWNER_EXECUTE OWNER_READ OWNER_WRITE
+      GROUP_EXECUTE GROUP_READ GROUP_WRITE
+      WORLD_EXECUTE WORLD_READ)
+endforeach()
 
 # deb generation
 if (GENERATE_DEB MATCHES "1")
@@ -343,7 +338,7 @@ endif()
 # run `cmake .` again to pick up build plugin build artifacts that we need
 # to file glob in. these won't be picked up on the initial build because
 # they don't yet exist!
-add_custom_target(postbuild ALL DEPENDS musikcube musikcubed)
+add_custom_target(postbuild ALL DEPENDS ${BINARIES})
 add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)
 
 # strip binaries in release mode
