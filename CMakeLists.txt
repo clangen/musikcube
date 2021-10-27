@@ -154,21 +154,6 @@ else()
   add_dependencies(musikcube ffmpegdecoder)
 endif()
 
-# systemd / MPRIS detection
-
-if (NOT ENABLE_MPRIS MATCHES "false")
-  find_library(LIB_SYSTEMD NAMES systemd)
-  if (NOT LIB_SYSTEMD MATCHES "LIB_SYSTEMD-NOTFOUND")
-    message(STATUS "[mpris] systemd found at " ${LIB_SYSTEMD})
-    message(STATUS "[mpris] setting ENABLE_MPRIS=true")
-    set(ENABLE_MPRIS "true")
-  else()
-    message(STATUS "[mpris] systemd *not* found. MPRIS plugin not enabled")
-    set(ENABLE_MPRIS "false")
-  endif()
-endif()
-
-#end systemd / MPRIS detection
 
 add_dependencies(musikcube musikcore taglibreader nullout server httpdatastream stockencoders)
 add_dependencies(musikcubed musikcube)
