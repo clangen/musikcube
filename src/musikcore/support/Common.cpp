@@ -81,14 +81,6 @@ static inline void silentDelete(const std::string fn) {
 
 namespace musik { namespace core {
 
-    static std::string getDataDirectoryRoot() {
-    #ifdef WIN32
-        return GetHomeDirectory();
-    #else
-        return GetHomeDirectory() + "/.config";
-    #endif
-    }
-
     std::string GetPluginDirectory() {
         std::string path(GetApplicationDirectory());
         path.append("/plugins/");
@@ -166,7 +158,7 @@ namespace musik { namespace core {
             directory = std::string(result);
         }
         else {
-            directory = std::string(std::getenv("HOME"));
+            directory = std::string(std::getenv("HOME")) + std::string("/.config/");
         }
     #endif
 
@@ -174,7 +166,7 @@ namespace musik { namespace core {
     }
 
     std::string GetDataDirectory(bool create) {
-        std::string directory = getDataDirectoryRoot() + std::string("/musikcube/");
+        std::string directory = GetHomeDirectory() + std::string("/musikcube/");
 
         if (create) {
             try {
