@@ -28,20 +28,6 @@ jobs:
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
-  build_ubuntu_groovy:
-    docker:
-      - image: ubuntu:groovy
-    steps:
-      - run: apt-get update
-      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
-      - checkout
-      - run: cmake -DENABLE_PCH=true -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=groovy -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make -j2
-      - run: make package
-      - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
-      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - store_artifacts:
-          path: /root/debs/
   build_ubuntu_hirsute:
     docker:
       - image: ubuntu:hirsute
@@ -56,19 +42,20 @@ jobs:
       - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
           path: /root/debs/
-  build_fedora_31:
+  build_ubuntu_impish:
     docker:
-      - image: fedora:31
+      - image: ubuntu:impish
     steps:
-      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
+      - run: apt-get update
+      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.74-dev libboost-system1.74-dev libboost-filesystem1.74-dev libboost-date-time1.74-dev libboost-atomic1.74-dev libboost-chrono1.74-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev libpipewire-0.3-dev libspa-0.2-dev
       - checkout
-      - run: ENABLE_PIPEWIRE=true dnf builddep -y musikcube.spec
-      - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
-      - run: ./script/run-rpm-build.sh
-      - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
-      - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - run: cmake -DENABLE_PCH=true -DENABLE_PIPEWIRE=true -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=impish -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: make -j2
+      - run: make package
+      - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
+      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
       - store_artifacts:
-          path: /root/rpms/
+          path: /root/debs/
   build_fedora_32:
     docker:
       - image: fedora:32
@@ -108,14 +95,27 @@ jobs:
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
           path: /root/rpms/
-  build_mint_ulyssa: # based on ubuntu focal
+  build_fedora_35:
     docker:
-      - image: linuxmintd/mint20.1-amd64
+      - image: fedora:35
+    steps:
+      - run: dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm git openssh-clients sshpass rpm-build rpmdevtools 'dnf-command(builddep)'
+      - checkout
+      - run: dnf builddep -y musikcube.spec
+      - run: mkdir -p /root/rpmbuild/SOURCES && spectool -g -R musikcube.spec
+      - run: ./script/run-rpm-build.sh
+      - run: ./script/copy-artifacts-to-host.sh /root/rpmbuild/RPMS/x86_64/*.rpm
+      - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
+      - store_artifacts:
+          path: /root/rpms/
+  build_mint_uma: # based on ubuntu focal
+    docker:
+      - image: linuxmintd/mint20.2-amd64
     steps:
       - run: apt-get update
       - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
       - checkout
-      - run: cmake -DENABLE_PCH=true -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=mint -DDEB_DISTRO=ulyssa -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: cmake -DENABLE_PCH=true -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=mint -DDEB_DISTRO=uma -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
       - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
@@ -148,11 +148,11 @@ workflows:
     jobs:
       - build_ubuntu_bionic: *workflow_filters
       - build_ubuntu_focal: *workflow_filters
-      - build_ubuntu_groovy: *workflow_filters
       - build_ubuntu_hirsute: *workflow_filters
-      - build_fedora_31: *workflow_filters
+      - build_ubuntu_impish: *workflow_filters
       - build_fedora_32: *workflow_filters
       - build_fedora_33: *workflow_filters
       - build_fedora_34: *workflow_filters
-      - build_mint_ulyssa: *workflow_filters
+      - build_fedora_35: *workflow_filters
+      - build_mint_uma: *workflow_filters
       - build_debian_buster: *workflow_filters

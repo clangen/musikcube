@@ -6,9 +6,12 @@ if [ $OS == "Linux" ]; then
     DISTRO=`lsb_release -cs`
     echo "detected ${DISTRO}"
     case $DISTRO in
+      "impish")
+        sudo apt-get install build-essential clang cmake libboost-thread1.74-dev libboost-system1.74-dev libboost-filesystem1.74-dev libboost-date-time1.74-dev libboost-atomic1.74-dev libboost-chrono1.74-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev libspa-0.2-dev libpipewire-0.3-dev pipewire pipewire-bin pipewire-audio-client-libraries
+	      ;;
       "hirsute")
-        sudo apt-get install build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev libspa-0.2-dev libpipewire-0.3-dev pipewire pipewire-bin pipewire-audio-client-libraries
-	;;
+        sudo apt-get install build-essential clang cmake libboost-thread1.74-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev libspa-0.2-dev libpipewire-0.3-dev pipewire pipewire-bin pipewire-audio-client-libraries
+	      ;;
       "focal" | "groovy" | "ulyssa")
         sudo apt-get install build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncurses-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libtag1-dev libsystemd-dev libavcodec-extra libopenmpt-dev libssl-dev
         ;;
@@ -36,7 +39,7 @@ if [ $OS == "Linux" ]; then
     sudo dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm rpm-build rpmdevtools 'dnf-command(builddep)'
     sudo dnf install gcc-c++ make cmake boost-devel libogg-devel libvorbis-devel ffmpeg-devel ncurses-devel zlib-devel alsa-lib-devel pulseaudio-libs-devel libcurl-devel libmicrohttpd-devel lame-devel libev-devel openssl-devel taglib-devel systemd-devel libopenmpt-devel
     case $VERSION in
-      "34")
+      "34" | "35")
       sudo dnf install pipewire-devel pipewire-utils pipewire-libs
       ;;
     esac
