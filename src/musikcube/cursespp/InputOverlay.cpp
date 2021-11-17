@@ -203,7 +203,7 @@ void InputOverlay::Redraw() {
     if (this->title.size()) {
         wmove(c, 0, 1);
         wattron(c, A_BOLD);
-        checked_wprintw(c, text::Align(this->title, text::AlignCenter, this->width - 4).c_str());
+        checked_wprintw(c, "%s", text::Align(this->title, text::AlignCenter, this->width - 4).c_str());
         wattroff(c, A_BOLD);
     }
 }
