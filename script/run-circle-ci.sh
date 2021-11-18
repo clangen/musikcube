@@ -42,7 +42,7 @@ ALL_JOBS=(
     "build_fedora_33"
     "build_fedora_34"
     "build_fedora_35"
-    "build_mint_ulyssa"
+    "build_mint_uma"
     "build_debian_buster"
 )
 
