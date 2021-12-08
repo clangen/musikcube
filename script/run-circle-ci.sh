@@ -44,6 +44,7 @@ ALL_JOBS=(
     "build_fedora_35"
     "build_mint_uma"
     "build_debian_buster"
+    "build_debian_bullseye"
 )
 
 BRANCH="clangen/local-circle-ci"
