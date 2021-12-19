@@ -18,6 +18,8 @@
 * fixed a bug where user may be unable to nativate to the lyrics view
 * fixed a low-level bug that could prevent layout update events from
   propagating up the view hierarchy.
+* fixed a bug where the notification tray icon was not drawing properly on
+  windows builds.
 
 0.96.7
 
