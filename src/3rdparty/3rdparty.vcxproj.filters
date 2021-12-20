@@ -25,7 +25,7 @@
     <ClCompile Include="src\sqlite\sqlite3.c">
       <Filter>src\sqlite</Filter>
     </ClCompile>
-    <ClCompile Include="src\wcwidth.c">
+    <ClCompile Include="src\wcwidth.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\kiss_fft.c">
@@ -439,6 +439,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="include\md5.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\wcwidth-emoji.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

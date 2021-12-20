@@ -69,6 +69,7 @@ set(CORE_SOURCES
   ../3rdparty/src/kiss_fft.c
   ../3rdparty/src/kiss_fftr.c
   ../3rdparty/src/md5.c
+  ../3rdparty/src/wcwidth.cpp
 )
 
 include_directories(

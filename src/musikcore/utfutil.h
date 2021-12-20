@@ -8,9 +8,7 @@
 
 #pragma warning(push, 0)
     #include <utf8/utf8.h>
-    #ifdef WIN32
-        #include <wcwidth.h>
-    #endif
+    #include <wcwidth.h>
 #pragma warning(pop)
 
 #ifdef max
@@ -31,11 +29,7 @@ inline std::string u16to8(const std::wstring& u16) {
 
 static inline size_t u8cols(const std::string& str) {
     std::wstring wstr = u8to16(str);
-#ifdef WIN32
     int result = std::max(0, mk_wcswidth(wstr.c_str(), wstr.size()));
-#else
-    int result = std::max(0, wcswidth(wstr.c_str(), wstr.size()));
-#endif
     return (result > 0) ? result : str.size();
 }
 
