@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <memory>
 #include <ctime>
 #include <cstdint>
 
