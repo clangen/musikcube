@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.service.system
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.*
 import android.graphics.Bitmap
@@ -37,6 +38,10 @@ import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
 import androidx.core.app.NotificationCompat.Action as NotifAction
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
+import android.app.NotificationManager
+
+private fun log(format: String, vararg params: Any?) =
+    Log.d("musikdroid.Service", String.format(format, *params))
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,
@@ -65,7 +70,7 @@ class SystemService : Service() {
     private val sessionData = SessionMetadata()
 
     override fun onCreate() {
-        Log.d(TAG, "onCreate")
+        log("onCreate")
 
         state = State.Sleeping
 
@@ -93,7 +98,7 @@ class SystemService : Service() {
     }
 
     override fun onDestroy() {
-        Log.d(TAG, "onDestroy")
+        log("onDestroy")
 
         state = State.Dead
         super.onDestroy()
@@ -105,7 +110,7 @@ class SystemService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "onStartCommand")
+        log("onStartCommand")
 
         if (intent != null && intent.action != null) {
             when (intent.action) {
@@ -126,7 +131,7 @@ class SystemService : Service() {
     override fun onBind(intent: Intent): IBinder? = null
 
     private fun wakeupNow() {
-        Log.d(TAG, "SystemService WAKE_UP")
+        log("SystemService WAKE_UP")
 
         val sleeping = playback == null || wakeLock == null
 
@@ -141,13 +146,13 @@ class SystemService : Service() {
         }
 
         checkInitMediaSession()
-        updateMediaSessionPlaybackState()
+        updateNotificationAndSessionDebouncer.call()
 
         state = State.Active
     }
 
     private fun shutdownNow() {
-        Log.d(TAG, "SystemService SHUT_DOWN")
+        log("SystemService SHUT_DOWN")
 
         deinitMediaSession()
 
@@ -160,12 +165,13 @@ class SystemService : Service() {
     }
 
     private fun sleepNow() {
-        Log.d(TAG, "SystemService SLEEP")
+        log("SystemService SLEEP")
         releaseWakeLock()
         playback?.disconnect(playbackListener)
         state = State.Sleeping
     }
 
+    @SuppressLint("WakelockTimeout")
     private fun acquireWakeLock() {
         if (wakeLock == null) {
             wakeLock = powerManager.newWakeLock(
@@ -189,12 +195,14 @@ class SystemService : Service() {
     }
 
     private fun checkInitMediaSession() {
+        log("checkInitMediaSession: isActive=${mediaSession?.isActive}")
         if (mediaSession == null || mediaSession?.isActive != true) {
             deinitMediaSession()
 
             val receiver = ComponentName(
                 packageName, MediaButtonReceiver::class.java.name)
 
+            log("checkInitMediaSession: creating new session")
             mediaSession = MediaSessionCompat(
                 this, SESSION_TAG, receiver, null)
                 .apply {
@@ -205,6 +213,7 @@ class SystemService : Service() {
     }
 
     private fun deinitMediaSession() {
+        log("deinitMediaSession: destroying session")
         mediaSession?.release()
         mediaSession = null
     }
@@ -219,44 +228,15 @@ class SystemService : Service() {
             unregisterReceiver(headsetUnpluggedReceiver)
         }
         catch (ex: Exception) {
-            Log.e(TAG, "unable to unregister headset (un)plugged BroadcastReceiver")
+            log("unregisterReceivers: unable to unregister headset (un)plugged BroadcastReceiver")
         }
-
-    private fun updateMediaSessionPlaybackState() {
-        mediaSession?.let { session ->
-            var mediaSessionState = PlaybackStateCompat.STATE_STOPPED
-            var duration = 0
-            var playing: ITrack? = null
-
-            playback?.let { pb ->
-                mediaSessionState = when (pb.state) {
-                    PlaybackState.Playing -> PlaybackStateCompat.STATE_PLAYING
-                    PlaybackState.Buffering -> PlaybackStateCompat.STATE_BUFFERING
-                    /* HACK: if we return STATE_PAUSED, the playback controls will disappear
-                    from the lock screen! wtf? we don't want that, so we return
-                    STATE_BUFFERING instead, which seems to keep the play controls visible,
-                    and also display the "PLAY" button like the user expects. sigh */
-                    PlaybackState.Paused -> PlaybackStateCompat.STATE_BUFFERING
-                    PlaybackState.Stopped -> PlaybackStateCompat.STATE_STOPPED
-                }
-                playing = pb.playingTrack
-                duration = (pb.duration * 1000).toInt()
-            }
-
-            updateMediaSession(playing, duration)
-            updateNotification(playing, playback?.state ?: PlaybackState.Stopped)
-
-            session.setPlaybackState(PlaybackStateCompat.Builder()
-                .setState(mediaSessionState, 0, 0f)
-                .setActions(MEDIA_SESSION_ACTIONS)
-                .build())
-        }
-    }
 
     private fun downloadAlbumArtIfNecessary(track: ITrack, duration: Int) {
         if (!albumArt.same(track) || (albumArt.request == null && albumArt.bitmap == null)) {
+            log("downloadAlbumArtIfNecessary: detected different different track")
+
             if (track.artist.isNotBlank() && track.album.isNotBlank()) {
-                Log.d(TAG, "downloading album art")
+                log("downloadAlbumArtIfNecessary: metadata available, attempting to download artwork")
 
                 val url = getAlbumArtUrl(track, Size.Mega)
 
@@ -273,13 +253,18 @@ class SystemService : Service() {
                             /* make sure the instance's current request is the same as this request. it's
                             possible we had another download request come in before this one finished */
                             if (albumArt.request == request) {
+                                log("downloadAlbumArtIfNecessary: artwork downloaded")
                                 albumArt.bitmap = bitmap
                                 albumArt.request = null
                                 updateMediaSession(track, duration)
                             }
+                            else {
+                                log("downloadAlbumArtIfNecessary: artwork downloaded, but request does not match!")
+                            }
                         }
 
                         override fun onLoadFailed(errorDrawable: Drawable?) {
+                            log("downloadAlbumArtIfNecessary: artwork failed to download. albumArt.request=${albumArt.request}, request=$request")
                             if (albumArt.request == request) {
                                 albumArt.request = null
                             }
@@ -288,7 +273,7 @@ class SystemService : Service() {
             }
         }
         else {
-            Log.d(TAG, "downloadAlbumArt already in flight")
+            log("downloadAlbumArtIfNecessary: downloadAlbumArt already in flight")
         }
     }
 
@@ -301,18 +286,10 @@ class SystemService : Service() {
         }
 
         if (!sessionData.matches(track, currentImage)) {
+            log("updateMediaSession: stale data detected, updating")
             sessionData.update(track, currentImage, duration)
-            mediaSessionDebouncer.call()
-        }
-    }
 
-    /* some versions of the OS seem to have problems if we update the lockscreen
-    artwork more quickly than twice a second. this can happen if we just loaded
-    a new track but don't have artwork yet, but artwork comes back right away.
-    this debouncer ensures we wait at least half a second between updates */
-    private val mediaSessionDebouncer = object: Debouncer<Unit>(500) {
-        override fun onDebounced(last: Unit?) {
-            val track = sessionData.track
+            log("updateMediaSession: updating with title=${track?.title}, album=${track?.album}, artist=${track?.artist}")
             mediaSession?.setMetadata(MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, track?.artist ?: "-")
                 .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, track?.album ?: "-")
@@ -321,18 +298,73 @@ class SystemService : Service() {
                 .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, sessionData.bitmap)
                 .build())
         }
+        else {
+            log("updateMediaSession: data up to date, not updating")
+        }
     }
 
+    /* Updating either MediaSession or the NotificationCompat.MediaStyle too quickly (or from different
+    threads) can spin it into a weird, unsynchronized state. Let's ensure we debounce updates to
+    these system-provided APIs. */
+    private val updateNotificationAndSessionDebouncer = object: Debouncer<Unit>(NOTIFICATION_DEBOUNCE_MS) {
+        override fun onDebounced(last: Unit?) {
+            mediaSession?.let { session ->
+                var mediaSessionState = PlaybackStateCompat.STATE_STOPPED
+                var duration = 0
+                var playing: ITrack? = null
+
+                playback?.let { pb ->
+                    mediaSessionState = when (pb.state) {
+                        PlaybackState.Playing -> PlaybackStateCompat.STATE_PLAYING
+                        PlaybackState.Buffering -> PlaybackStateCompat.STATE_BUFFERING
+                        /* HACK: if we return STATE_PAUSED, the playback controls will disappear
+                        from the lock screen! wtf? we don't want that, so we return
+                        STATE_BUFFERING instead, which seems to keep the play controls visible,
+                        and also display the "PLAY" button like the user expects. sigh */
+                        PlaybackState.Paused -> PlaybackStateCompat.STATE_BUFFERING
+                        PlaybackState.Stopped -> PlaybackStateCompat.STATE_STOPPED
+                    }
+                    playing = pb.playingTrack
+                    duration = (pb.duration * 1000).toInt()
+                }
+
+                updateMediaSession(playing, duration)
+                updateNotification(playing, playback?.state ?: PlaybackState.Stopped)
+
+                session.setPlaybackState(PlaybackStateCompat.Builder()
+                    .setState(mediaSessionState, 0, 0f)
+                    .setActions(MEDIA_SESSION_ACTIONS)
+                    .build())
+            }
+        }
+    }
+
+    @SuppressLint("UnspecifiedImmutableFlag")
+    private fun getPendingActivityIntentCompat(intent: Intent) =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.getActivity(applicationContext, 1, intent, PendingIntent.FLAG_IMMUTABLE)
+        }
+        else {
+            PendingIntent.getActivity(applicationContext, 1, intent, 0)
+        }
+
+    @SuppressLint("UnspecifiedImmutableFlag")
+    private fun getPendingServiceIntentCompat(intent: Intent) =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.getService(applicationContext, 1, intent, PendingIntent.FLAG_IMMUTABLE)
+        }
+        else {
+            PendingIntent.getService(applicationContext, 1, intent, 0)
+        }
+
     private fun updateNotification(track: ITrack?, state: PlaybackState) {
-        val contentIntent = PendingIntent.getActivity(
-            applicationContext,
-            1,
-            MainActivity.getStartIntent(this),
-            PendingIntent.FLAG_IMMUTABLE)
+        val contentIntent = getPendingActivityIntentCompat(MainActivity.getStartIntent(this))
 
         val title = fallback(track?.title, "-")
         val artist = fallback(track?.artist, "-")
         val album = fallback(track?.album, "-")
+
+        log("updateNotification: state=$state title=$title, album=$album, artist=$artist")
 
         val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
@@ -385,15 +417,13 @@ class SystemService : Service() {
             }
         }
 
+        notificationManager.cancel(NOTIFICATION_ID)
         startForeground(NOTIFICATION_ID, notification.build())
     }
 
     private fun action(icon: Int, title: String, intentAction: String): NotifAction {
-        val intent = Intent(applicationContext, SystemService::class.java)
-        intent.action = intentAction
-        val pendingIntent = PendingIntent.getService(
-            applicationContext, 1, intent, PendingIntent.FLAG_IMMUTABLE)
-        return NotifAction.Builder(icon, title, pendingIntent).build()
+        val intent = Intent(applicationContext, SystemService::class.java).apply { action = intentAction }
+        return NotifAction.Builder(icon, title, getPendingServiceIntentCompat(intent)).build()
     }
 
     private fun handlePlaybackAction(action: String?): Boolean {
@@ -540,7 +570,7 @@ class SystemService : Service() {
         if (playback?.state == PlaybackState.Playing) {
             headsetDoublePauseHack = false
         }
-        updateMediaSessionPlaybackState()
+        updateNotificationAndSessionDebouncer.call()
     }
 
     private val headsetUnpluggedReceiver = object : BroadcastReceiver() {
@@ -572,6 +602,7 @@ class SystemService : Service() {
         var track: ITrack? = null
 
         fun reset(t: ITrack? = null) {
+            log("AlbumArt.reset()")
             bitmap = null
             request = null
             target = null
@@ -594,19 +625,28 @@ class SystemService : Service() {
         }
 
         fun matches(otherTrack: ITrack?, otherBitmap: Bitmap?): Boolean {
-            return (track != null && otherTrack != null) &&
+            log("updateMediaSession.matches(): " +
+                    "track=$track, " +
+                    "otherTrack=$otherTrack " +
+                    "otherTrack.externalId=${otherTrack?.externalId} " +
+                    "track.externalId=${track?.externalId} " +
+                    "otherBitmap=$otherBitmap " +
+                    "bitmap=$bitmap")
+            val result = (track != null && otherTrack != null) &&
                 otherTrack.externalId == track?.externalId &&
                 bitmap === otherBitmap
+            log("updateMediaSession.matches(): result=$result")
+            return result
         }
     }
 
     companion object {
-        private const val TAG = "SystemService"
         private const val SESSION_TAG = "musikdroid.SystemService"
         private const val NOTIFICATION_ID = 0xdeadbeef.toInt()
         private const val NOTIFICATION_CHANNEL = "musikdroid"
         private const val HEADSET_HOOK_DEBOUNCE_MS = 500L
         private const val HEADSET_DOUBLE_PAUSE_HACK_DEBOUNCE_MS = 3500L
+        private const val NOTIFICATION_DEBOUNCE_MS = 750L
         private const val ACTION_NOTIFICATION_PLAY = "io.casey.musikcube.remote.NOTIFICATION_PLAY"
         private const val ACTION_NOTIFICATION_PAUSE = "io.casey.musikcube.remote.NOTIFICATION_PAUSE"
         private const val ACTION_NOTIFICATION_NEXT = "io.casey.musikcube.remote.NOTIFICATION_NEXT"
