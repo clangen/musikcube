@@ -20,6 +20,7 @@
   propagating up the view hierarchy.
 * fixed a bug where the notification tray icon was not drawing properly on
   windows builds.
+* fixed musikdroid notification falling out of sync with the currently playing track.
 
 0.96.7
 
