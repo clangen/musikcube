@@ -359,6 +359,8 @@ OutputState WasapiOut::Play(IBuffer *buffer, IBufferProvider *provider) {
 }
 
 void WasapiOut::Reset() {
+    Lock lock(this->stateMutex);
+
     if (this->simpleAudioVolume) {
         this->simpleAudioVolume->Release();
     }
@@ -516,6 +518,7 @@ found_or_done:
 
 int WasapiOut::GetDefaultSampleRate() {
     int result = -1;
+    Lock lock(this->stateMutex);
     this->InitializeAudioClient();
     if (this->audioClient) {
         WAVEFORMATEX* deviceFormat = nullptr;
@@ -529,6 +532,8 @@ int WasapiOut::GetDefaultSampleRate() {
 }
 
 bool WasapiOut::InitializeAudioClient() {
+    /* assumes stateMutex is locked */
+
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
     HRESULT result = S_FALSE;
@@ -584,6 +589,7 @@ bool WasapiOut::InitializeAudioClient() {
 }
 
 bool WasapiOut::Configure(IBuffer *buffer) {
+    /* assumes stateMutex is locked */
     if (this->audioClient &&
         waveFormat.Format.nChannels == buffer->Channels() &&
         waveFormat.Format.nSamplesPerSec == buffer->SampleRate())
