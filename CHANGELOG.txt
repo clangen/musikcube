@@ -1,6 +1,7 @@
 0.96.10
 
 * fixed race condition in WasapiOut that caused the app to crash.
+* fixed `-rpath` for macOS build.
 
 0.96.9
 

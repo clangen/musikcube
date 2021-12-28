@@ -111,8 +111,18 @@ message(STATUS "[build] link libraries are: ${musikcube_LINK_LIBS}")
 # ensure the binaries can find libmusikcore.so, which lives in the
 # same directory.
 if (NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  # in Linux/BSD distributions we can specify the magic "$ORIGIN" value for
+  # the rpath for the dymamic linker to search the executable's directory
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+else()
+  # from what i can tell, the macos dynamic linker does not support relative
+  # rpath values, so the aboslute path to libmusikcube.dylib needs to be baked
+  # in using these special flags. additionally, the rpath value specified here
+  # is not applied to the binaries until the user runs `make install`.
+  set(CMAKE_MACOSX_RPATH ON)
+  set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/share/musikcube/")
 endif()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)

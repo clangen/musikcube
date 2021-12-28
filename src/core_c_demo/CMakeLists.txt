@@ -9,6 +9,4 @@ endif()
 
 add_executable(core_c_demo ${CORE_C_DEMO_SRCS})
 
-set_target_properties(core_c_demo PROPERTIES LINK_FLAGS "-Wl,-rpath,$ORIGIN")
-
 target_link_libraries(core_c_demo ${musikcube_LINK_LIBS} musikcore)

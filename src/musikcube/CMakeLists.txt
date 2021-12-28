@@ -79,8 +79,6 @@ configure_file("musikcube.in" "musikcube" @ONLY)
 add_executable(musikcube ${CUBE_SRCS})
 add_definitions(-DNCURSES_WIDECHAR)
 
-set_target_properties(musikcube PROPERTIES LINK_FLAGS "-Wl,-rpath,$ORIGIN")
-
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     if (${LINK_STATICALLY} MATCHES "true")
         find_library(
