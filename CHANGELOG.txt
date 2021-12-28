@@ -1,3 +1,7 @@
+0.96.9
+
+* fixed `-rpath` to use `$ORIGIN` instead of `./` to appease `Feodra 35`.
+
 0.96.8
 
 * updated `FfmpegDecoder` to perform resampling internally when `WasapiOutput`
