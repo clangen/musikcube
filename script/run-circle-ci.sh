@@ -47,7 +47,7 @@ ALL_JOBS=(
     "build_debian_bullseye"
 )
 
-BRANCH="clangen/local-circle-ci"
+BRANCH="master"
 REPO="https://github.com/clangen/musikcube"
 
 for JOB in ${ALL_JOBS[@]}; do
