@@ -122,7 +122,12 @@ else()
   # is not applied to the binaries until the user runs `make install`.
   set(CMAKE_MACOSX_RPATH ON)
   set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/share/musikcube/")
+  if (NOT DEFINED RPATH_PREFIX)
+    message(STATUS "[macos build] RPATH_PREFIX not specified, will not apply one")
+  else()
+    message(STATUS "[macos build] using RPATH: ${RPATH_PREFIX}/share/musikcube")
+    set(CMAKE_INSTALL_RPATH "${RPATH_PREFIX}/share/musikcube/")
+  endif()
 endif()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
