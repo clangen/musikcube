@@ -193,7 +193,7 @@ void InputOverlay::RecalculateSize() {
     this->x = (Screen::GetWidth() / 2) - (this->width / 2);
 }
 
-void InputOverlay::Redraw() {
+void InputOverlay::OnRedraw() {
     if (!this->IsVisible() || this->width <= 0 || this->height <= 0) {
         return;
     }

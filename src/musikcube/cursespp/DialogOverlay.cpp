@@ -213,7 +213,7 @@ void DialogOverlay::RecalculateSize() {
     }
 }
 
-void DialogOverlay::Redraw() {
+void DialogOverlay::OnRedraw() {
     if (!this->IsVisible() || this->width <= 0 || this->height <= 0) {
         return;
     }

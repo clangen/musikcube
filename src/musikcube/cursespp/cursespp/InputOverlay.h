@@ -63,6 +63,7 @@ namespace cursespp {
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
+            virtual void OnRedraw();
 
         protected:
             virtual void OnVisibilityChanged(bool visible);
@@ -70,7 +71,6 @@ namespace cursespp {
             virtual void OnInputKeyPress(TextInput* input, std::string key);
 
         private:
-            void Redraw();
             void RecalculateSize();
 
             std::string title, text;

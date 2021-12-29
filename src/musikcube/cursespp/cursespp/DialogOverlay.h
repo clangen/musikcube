@@ -69,12 +69,12 @@ namespace cursespp {
 
             virtual void Layout();
             virtual bool KeyPress(const std::string& key);
+            virtual void OnRedraw();
 
         protected:
             virtual void OnDismissed();
 
         private:
-            void Redraw();
             void RecalculateSize();
             bool ProcessKey(const std::string& key);
 
