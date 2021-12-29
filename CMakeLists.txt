@@ -108,26 +108,16 @@ endif()
 
 message(STATUS "[build] link libraries are: ${musikcube_LINK_LIBS}")
 
-# ensure the binaries can find libmusikcore.so, which lives in the
-# same directory.
+# ensure the binaries can find libmusikcore.so, which lives in the same directory.
 if (NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
   # in Linux/BSD distributions we can specify the magic "$ORIGIN" value for
   # the rpath for the dymamic linker to search the executable's directory
   set(CMAKE_INSTALL_RPATH "$ORIGIN")
   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-else()
-  # from what i can tell, the macos dynamic linker does not support relative
-  # rpath values, so the aboslute path to libmusikcube.dylib needs to be baked
-  # in using these special flags. additionally, the rpath value specified here
-  # is not applied to the binaries until the user runs `make install`.
-  set(CMAKE_MACOSX_RPATH ON)
-  set(CMAKE_BUILD_RPATH_USE_ORIGIN ON)
-  if (NOT DEFINED RPATH_PREFIX)
-    message(STATUS "[macos build] RPATH_PREFIX not specified, will not apply one")
-  else()
-    message(STATUS "[macos build] using RPATH: ${RPATH_PREFIX}/share/musikcube")
-    set(CMAKE_INSTALL_RPATH "${RPATH_PREFIX}/share/musikcube/")
-  endif()
+
+  # note: macOS does not use $ORIGIN, and uses @executable_path/ insetad. we
+  # add a custom post build step at the bottom of this file to add this value
+  # to macOS binaries.
 endif()
 
 if (EXISTS "/etc/arch-release" OR EXISTS "/etc/manjaro-release" OR NO_NCURSESW)
@@ -388,4 +378,10 @@ if (CMAKE_BUILD_TYPE MATCHES Release)
   else()
     message(STATUS "[build] DISABLE_STRIP=true, *NOT* stripping binaries.")
   endif()
+endif()
+
+# ensure the binaries can find libmusikcore.so, which lives in the same directory.
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND ${CMAKE_INSTALL_NAME_TOOL} -add_rpath "@executable_path/" bin/musikcube)
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND ${CMAKE_INSTALL_NAME_TOOL} -add_rpath "@executable_path/" bin/musikcubed)
 endif()
