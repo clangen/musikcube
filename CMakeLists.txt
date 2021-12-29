@@ -382,6 +382,5 @@ endif()
 
 # ensure the binaries can find libmusikcore.so, which lives in the same directory.
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  add_custom_command(TARGET postbuild POST_BUILD COMMAND ${CMAKE_INSTALL_NAME_TOOL} -add_rpath "@executable_path/" bin/musikcube)
-  add_custom_command(TARGET postbuild POST_BUILD COMMAND ${CMAKE_INSTALL_NAME_TOOL} -add_rpath "@executable_path/" bin/musikcubed)
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/patch-macos-rpath.sh")
 endif()
