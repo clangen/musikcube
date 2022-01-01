@@ -331,9 +331,6 @@ void App::SetResizeHandler(ResizeHandler handler) {
 }
 
 void App::SetColorMode(Colors::Mode mode) {
-#if defined(PDCURSES_WINCON)
-    mode = Colors::Basic;
-#endif
     this->colorMode = mode;
     if (this->initialized) {
         Colors::Init(this->colorMode, this->bgType);

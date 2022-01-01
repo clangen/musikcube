@@ -79,10 +79,6 @@ using namespace cursespp;
 #define ENABLE_UNIX_TERMINAL_OPTIONS
 #endif
 
-#ifdef PDCURSES_WINCON
-#undef ENABLE_COLOR_THEME_SELECTION
-#endif
-
 #ifdef WIN32
 #define ENABLE_MINIMIZE_TO_TRAY
 #endif
