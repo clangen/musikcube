@@ -47,7 +47,7 @@
 #define PREF_DEVICE_ID "device_id"
 #define PREF_ENDPOINT_ROUTING "enable_audio_endpoint_routing"
 #define PREF_BUFFER_LENGTH_SECONDS "buffer_length_seconds"
-#define PREF_DISABLE_INTERNAL_RESAMPLER "disable_internal_resampler"
+#define PREF_ALLOW_DECODER_RESAMPLING "allow_decoder_resampling"
 
 /* NOTE! device init and deinit logic was stolen and modified from
 QMMP's WASAPI output plugin! http://qmmp.ylsoftware.com/ */
@@ -105,17 +105,13 @@ class WasapiDeviceList : public musik::core::sdk::IDeviceList {
 
 extern "C" __declspec(dllexport) void SetPreferences(musik::core::sdk::IPreferences* prefs) {
     ::prefs = prefs;
-    prefs->GetString(PREF_DEVICE_ID, nullptr, 0, "");
-    prefs->GetBool(PREF_ENDPOINT_ROUTING, false);
-    prefs->GetBool(PREF_DISABLE_INTERNAL_RESAMPLER, true);
-    prefs->Save();
 }
 
 extern "C" __declspec(dllexport) musik::core::sdk::ISchema* GetSchema() {
     auto schema = new TSchema<>();
     schema->AddBool(PREF_ENDPOINT_ROUTING, false);
     schema->AddDouble(PREF_BUFFER_LENGTH_SECONDS, 1.0, 2, 0.25, 5.0);
-    schema->AddBool(PREF_DISABLE_INTERNAL_RESAMPLER, true);
+    schema->AddBool(PREF_ALLOW_DECODER_RESAMPLING, false);
     return schema;
 }
 
@@ -123,8 +119,8 @@ static bool audioRoutingEnabled() {
     return ::prefs && prefs->GetBool(PREF_ENDPOINT_ROUTING, false);
 }
 
-static bool disableInternalResampler() {
-    return ::prefs && prefs->GetBool(PREF_DISABLE_INTERNAL_RESAMPLER, true);
+static bool allowDecoderResampling() {
+    return ::prefs && prefs->GetBool(PREF_ALLOW_DECODER_RESAMPLING, false);
 }
 
 class NotificationClient : public IMMNotificationClient {
@@ -526,19 +522,15 @@ found_or_done:
 int WasapiOut::GetDefaultSampleRate() {
     int result = -1;
     Lock lock(this->stateMutex);
-    if (!disableInternalResampler()) {
-        /* if our internal sampler is not disabled, we'll let WASAPI take care of
-        resampling; return -1 here to have audio delivered in its native bitrate,
-        and don't allow decoders to resample. */
-        return -1;
-    }
-    this->InitializeAudioClient();
-    if (this->audioClient) {
-        WAVEFORMATEX* deviceFormat = nullptr;
-        audioClient->GetMixFormat(&deviceFormat);
-        if (deviceFormat) {
-            result = deviceFormat->nSamplesPerSec;
-            CoTaskMemFree(deviceFormat);
+    if (allowDecoderResampling()) {
+        this->InitializeAudioClient();
+        if (this->audioClient) {
+            WAVEFORMATEX* deviceFormat = nullptr;
+            audioClient->GetMixFormat(&deviceFormat);
+            if (deviceFormat) {
+                result = deviceFormat->nSamplesPerSec;
+                CoTaskMemFree(deviceFormat);
+            }
         }
     }
     return result;
@@ -599,6 +591,8 @@ bool WasapiOut::InitializeAudioClient() {
             return false;
         }
     }
+
+    return true;
 }
 
 bool WasapiOut::Configure(IBuffer *buffer) {
@@ -632,6 +626,8 @@ bool WasapiOut::Configure(IBuffer *buffer) {
             break;
     }
 
+    WAVEFORMATEX unusedWaveFormat = { 0 };
+
     WAVEFORMATEXTENSIBLE &wf = this->waveFormat;
     wf.Format.cbSize = sizeof(WAVEFORMATEXTENSIBLE);
     wf.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
@@ -647,8 +643,8 @@ bool WasapiOut::Configure(IBuffer *buffer) {
     HRESULT result = S_FALSE;
 
     DWORD streamFlags = 0;
-    if (this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, (WAVEFORMATEX *) &wf, 0) != S_OK) {
-        streamFlags |= AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM;
+    if ((result = this->audioClient->IsFormatSupported(AUDCLNT_SHAREMODE_SHARED, (WAVEFORMATEX *) &wf, (WAVEFORMATEX**)&unusedWaveFormat)) != S_OK) {
+        streamFlags |= (AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY);
     }
 
     double bufferLengthSeconds = ::prefs->GetDouble(PREF_BUFFER_LENGTH_SECONDS, 1.0);
