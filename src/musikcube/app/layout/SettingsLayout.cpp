@@ -75,7 +75,7 @@ using namespace cursespp;
 
 #define ENABLE_COLOR_THEME_SELECTION
 
-#ifndef WIN32
+#if !defined(WIN32) || defined(PDCURSES_WINCON)
 #define ENABLE_UNIX_TERMINAL_OPTIONS
 #endif
 

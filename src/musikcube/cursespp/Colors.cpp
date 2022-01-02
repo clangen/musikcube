@@ -369,7 +369,7 @@ struct Theme {
     /* initializes all of the color pairs from the specified colors, then applies them
     to the current session! */
     void Apply(Colors::Mode mode, Colors::BgType bgType) {
-#ifdef WIN32
+#if defined(WIN32) && !defined(PDCURSES_WINCON)
         bgType = Colors::Theme;
 #endif
         bool transparent = (bgType == Colors::BgType::Inherit);
