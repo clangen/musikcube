@@ -76,7 +76,7 @@ static std::string getDeviceId() {
 }
 
 void PipeWireOut::OnStreamStateChanged(void* data, enum pw_stream_state old, enum pw_stream_state state, const char* error) {
-    ::debug->Info(TAG, str::format("state changed from %d to %d", old, state).c_str());
+    ::debug->Info(TAG, str::format("state changed from %d to %d. (%s)", old, state, error ? error : "no additional context").c_str());
 }
 
 void PipeWireOut::OnCoreDone(void* userdata, uint32_t id, int seq) {
