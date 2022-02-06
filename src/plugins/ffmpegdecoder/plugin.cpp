@@ -85,8 +85,6 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
             CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 #endif
 
-            av_register_all();
-
             typeToCodecId = {
                 { ".mp3", AV_CODEC_ID_MP3 },
                 { "audio/mpeg", AV_CODEC_ID_MP3 },
@@ -117,13 +115,13 @@ class FfmpegDecoderFactory : public musik::core::sdk::IDecoderFactory {
                 ".wav", ".wave", ".aif", ".aiff"
             };
 
-            AVCodec* codec = av_codec_next(nullptr);
-            while (codec != nullptr) {
+            void* iterator = nullptr;
+            const AVCodec* codec = nullptr;
+            while ((codec = av_codec_iterate(&iterator))) {
                 const AVCodecDescriptor* descriptor = avcodec_descriptor_get(codec->id);
                 if (descriptor != nullptr && descriptor->type == AVMEDIA_TYPE_AUDIO) {
                     supported.insert(descriptor->id);
                 }
-                codec = av_codec_next(codec);
             }
         }
 
