@@ -314,7 +314,7 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
 
             if (this->formatContext->iformat) {
                 if (avformat_open_input(&this->formatContext, "", nullptr, nullptr) == 0) {
-                    const AVCodec* codec = nullptr;
+                    resolved_avcodec_type* codec = nullptr;
                     if (avformat_find_stream_info(this->formatContext, nullptr) >= 0) {
                         this->streamId = av_find_best_stream(
                             this->formatContext,

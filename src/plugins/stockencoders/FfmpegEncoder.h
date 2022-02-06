@@ -47,12 +47,19 @@
 extern "C" {
     #pragma warning(push, 0)
     #include <libavcodec/avcodec.h>
+    #include <libavcodec/version.h>
     #include <libavformat/avio.h>
     #include <libavformat/avformat.h>
     #include <libavutil/audio_fifo.h>
     #include <libswresample/swresample.h>
     #pragma warning(pop)
 }
+
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+using resolved_avcodec_type = const AVCodec;
+#else
+using resolved_avcodec_type = AVCodec;
+#endif
 
 class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
     using IBuffer = musik::core::sdk::IBuffer;
@@ -84,7 +91,7 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         IDataStream* out;
         int readBufferSize;
         AVAudioFifo* outputFifo;
-        const AVCodec* outputCodec;
+        resolved_avcodec_type* outputCodec;
         AVCodecContext* outputContext;
         AVFormatContext* outputFormatContext;
         AVIOContext* ioContext;

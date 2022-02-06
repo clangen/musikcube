@@ -43,6 +43,7 @@ extern "C" {
     #include <libavformat/avio.h>
     #include <libavformat/avformat.h>
     #include <libavcodec/avcodec.h>
+    #include <libavcodec/version.h>
     #include <libavutil/samplefmt.h>
     #include <libavutil/audio_fifo.h>
     #include <libswresample/swresample.h>
@@ -50,6 +51,12 @@ extern "C" {
 }
 
 #include <stddef.h>
+
+#if LIBAVCODEC_VERSION_MAJOR >= 59
+using resolved_avcodec_type = const AVCodec;
+#else
+using resolved_avcodec_type = AVCodec;
+#endif
 
 using namespace musik::core::sdk;
 
