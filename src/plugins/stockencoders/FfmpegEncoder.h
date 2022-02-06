@@ -56,9 +56,9 @@ extern "C" {
 }
 
 #if LIBAVCODEC_VERSION_MAJOR >= 59
-using resolved_avcodec_type = const AVCodec;
+using AVCodecCompat = const AVCodec;
 #else
-using resolved_avcodec_type = AVCodec;
+using AVCodecCompat = AVCodec;
 #endif
 
 class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
@@ -91,7 +91,7 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         IDataStream* out;
         int readBufferSize;
         AVAudioFifo* outputFifo;
-        resolved_avcodec_type* outputCodec;
+        AVCodecCompat* outputCodec;
         AVCodecContext* outputContext;
         AVFormatContext* outputFormatContext;
         AVIOContext* ioContext;

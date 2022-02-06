@@ -53,9 +53,9 @@ extern "C" {
 #include <stddef.h>
 
 #if LIBAVCODEC_VERSION_MAJOR >= 59
-using resolved_avcodec_type = const AVCodec;
+using AVCodecCompat = const AVCodec;
 #else
-using resolved_avcodec_type = AVCodec;
+using AVCodecCompat = AVCodec;
 #endif
 
 using namespace musik::core::sdk;
