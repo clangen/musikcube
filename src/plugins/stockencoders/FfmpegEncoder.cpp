@@ -89,7 +89,7 @@ static void logError(const std::string& message) {
     }
 }
 
-static AVSampleFormat resolveSampleFormat(AVCodec *codec) {
+static AVSampleFormat resolveSampleFormat(const AVCodec *codec) {
     if (!codec->sample_fmts) {
         return AV_SAMPLE_FMT_NONE;
     }
@@ -105,7 +105,7 @@ static AVSampleFormat resolveSampleFormat(AVCodec *codec) {
     return codec->sample_fmts[0];
 }
 
-static int resolveSampleRate(AVCodec* codec, int preferredSampleRate) {
+static int resolveSampleRate(const AVCodec* codec, int preferredSampleRate) {
     const int *p;
     int highestRate = 0;
     if (!codec->supported_samplerates) {

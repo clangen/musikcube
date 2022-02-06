@@ -84,7 +84,7 @@ class FfmpegEncoder : public musik::core::sdk::IBlockingEncoder {
         IDataStream* out;
         int readBufferSize;
         AVAudioFifo* outputFifo;
-        AVCodec* outputCodec;
+        const AVCodec* outputCodec;
         AVCodecContext* outputContext;
         AVFormatContext* outputFormatContext;
         AVIOContext* ioContext;
