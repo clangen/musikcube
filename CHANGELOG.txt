@@ -1,6 +1,7 @@
 0.96.10
 
 * added support for ffmpeg5 libraries.
+* upgraded to ffmpeg5 for Windows builds.
 * fixed race condition in WasapiOut that caused the app to crash.
 * fixed `-rpath` for macOS build.
 
