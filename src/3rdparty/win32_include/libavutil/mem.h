@@ -31,7 +31,6 @@
 #include <stdint.h>
 
 #include "attributes.h"
-#include "error.h"
 #include "avutil.h"
 #include "version.h"
 
@@ -238,14 +237,15 @@ av_alloc_size(1, 2) void *av_malloc_array(size_t nmemb, size_t size);
  * @see av_mallocz()
  * @see av_malloc_array()
  */
-av_alloc_size(1, 2) void *av_mallocz_array(size_t nmemb, size_t size);
+void *av_calloc(size_t nmemb, size_t size) av_malloc_attrib av_alloc_size(1, 2);
 
+#if FF_API_AV_MALLOCZ_ARRAY
 /**
- * Non-inlined equivalent of av_mallocz_array().
- *
- * Created for symmetry with the calloc() C function.
+ * @deprecated use av_calloc()
  */
-void *av_calloc(size_t nmemb, size_t size) av_malloc_attrib;
+attribute_deprecated
+void *av_mallocz_array(size_t nmemb, size_t size) av_malloc_attrib av_alloc_size(1, 2);
+#endif
 
 /**
  * Allocate, reallocate, or free a block of memory.
@@ -672,16 +672,7 @@ void *av_dynarray2_add(void **tab_ptr, int *nb_ptr, size_t elem_size,
  * @param[out] r   Pointer to the result of the operation
  * @return 0 on success, AVERROR(EINVAL) on overflow
  */
-static inline int av_size_mult(size_t a, size_t b, size_t *r)
-{
-    size_t t = a * b;
-    /* Hack inspired from glibc: don't try the division if nelem and elsize
-     * are both less than sqrt(SIZE_MAX). */
-    if ((a | b) >= ((size_t)1 << (sizeof(size_t) * 4)) && a && t / a != b)
-        return AVERROR(EINVAL);
-    *r = t;
-    return 0;
-}
+int av_size_mult(size_t a, size_t b, size_t *r);
 
 /**
  * Set the maximum size that may be allocated in one block.

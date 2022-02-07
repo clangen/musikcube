@@ -49,11 +49,14 @@ enum AVTXType {
      * float. Length is the frame size, not the window size (which is 2x frame)
      * For forward transforms, the stride specifies the spacing between each
      * sample in the output array in bytes. The input must be a flat array.
+     *
      * For inverse transforms, the stride specifies the spacing between each
      * sample in the input array in bytes. The output will be a flat array.
      * Stride must be a non-zero multiple of sizeof(float).
+     *
      * NOTE: the inverse transform is half-length, meaning the output will not
-     * contain redundant data. This is what most codecs work with.
+     * contain redundant data. This is what most codecs work with. To do a full
+     * inverse transform, set the AV_TX_FULL_IMDCT flag on init.
      */
     AV_TX_FLOAT_MDCT = 1,
 
@@ -93,7 +96,7 @@ enum AVTXType {
  * @param stride the input or output stride in bytes
  *
  * The out and in arrays must be aligned to the maximum required by the CPU
- * architecture.
+ * architecture unless the AV_TX_UNALIGNED flag was set in av_tx_init().
  * The stride must follow the constraints the transform type has specified.
  */
 typedef void (*av_tx_fn)(AVTXContext *s, void *out, void *in, ptrdiff_t stride);
@@ -108,6 +111,20 @@ enum AVTXFlags {
      * transform types.
      */
     AV_TX_INPLACE = 1ULL << 0,
+
+    /**
+     * Relaxes alignment requirement for the in and out arrays of av_tx_fn().
+     * May be slower with certain transform types.
+     */
+    AV_TX_UNALIGNED = 1ULL << 1,
+
+    /**
+     * Performs a full inverse MDCT rather than leaving out samples that can be
+     * derived through symmetry. Requires an output array of 'len' floats,
+     * rather than the usual 'len/2' floats.
+     * Ignored for all transforms but inverse MDCTs.
+     */
+    AV_TX_FULL_IMDCT = 1ULL << 2,
 };
 
 /**

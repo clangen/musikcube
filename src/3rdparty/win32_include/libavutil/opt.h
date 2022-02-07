@@ -33,7 +33,6 @@
 #include "log.h"
 #include "pixfmt.h"
 #include "samplefmt.h"
-#include "version.h"
 
 /**
  * @defgroup avoptions AVOptions
@@ -648,19 +647,6 @@ const AVOption *av_opt_next(const void *obj, const AVOption *prev);
  */
 void *av_opt_child_next(void *obj, void *prev);
 
-#if FF_API_CHILD_CLASS_NEXT
-/**
- * Iterate over potential AVOptions-enabled children of parent.
- *
- * @param prev result of a previous call to this function or NULL
- * @return AVClass corresponding to next potential child or NULL
- *
- * @deprecated use av_opt_child_class_iterate
- */
-attribute_deprecated
-const AVClass *av_opt_child_class_next(const AVClass *parent, const AVClass *prev);
-#endif
-
 /**
  * Iterate over potential AVOptions-enabled children of parent.
  *
@@ -804,8 +790,15 @@ int av_opt_query_ranges(AVOptionRanges **, void *obj, const char *key, int flags
 /**
  * Copy options from src object into dest object.
  *
+ * The underlying AVClass of both src and dest must coincide. The guarantee
+ * below does not apply if this is not fulfilled.
+ *
  * Options that require memory allocation (e.g. string or binary) are malloc'ed in dest object.
  * Original memory allocated for such options is freed unless both src and dest options points to the same memory.
+ *
+ * Even on error it is guaranteed that allocated options from src and dest
+ * no longer alias each other afterwards; in particular calling av_opt_free()
+ * on both src and dest is safe afterwards if dest has been memdup'ed from src.
  *
  * @param dest Object to copy from
  * @param src  Object to copy into

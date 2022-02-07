@@ -22,6 +22,7 @@
 #define AVCODEC_CODEC_ID_H
 
 #include "libavutil/avutil.h"
+#include "libavutil/samplefmt.h"
 
 /**
  * @addtogroup lavc_core
@@ -246,8 +247,7 @@ enum AVCodecID {
     AV_CODEC_ID_MSP2,
     AV_CODEC_ID_VVC,
 #define AV_CODEC_ID_H266 AV_CODEC_ID_VVC
-
-    AV_CODEC_ID_Y41P = 0x8000,
+    AV_CODEC_ID_Y41P,
     AV_CODEC_ID_AVRP,
     AV_CODEC_ID_012V,
     AV_CODEC_ID_AVUI,
@@ -307,6 +307,7 @@ enum AVCodecID {
     AV_CODEC_ID_CRI,
     AV_CODEC_ID_SIMBIOSIS_IMX,
     AV_CODEC_ID_SGA_VIDEO,
+    AV_CODEC_ID_GEM,
 
     /* various PCM "codecs" */
     AV_CODEC_ID_FIRST_AUDIO = 0x10000,     ///< A dummy id pointing at the start of audio codecs
@@ -341,8 +342,7 @@ enum AVCodecID {
     AV_CODEC_ID_PCM_S24LE_PLANAR,
     AV_CODEC_ID_PCM_S32LE_PLANAR,
     AV_CODEC_ID_PCM_S16BE_PLANAR,
-
-    AV_CODEC_ID_PCM_S64LE = 0x10800,
+    AV_CODEC_ID_PCM_S64LE,
     AV_CODEC_ID_PCM_S64BE,
     AV_CODEC_ID_PCM_F16LE,
     AV_CODEC_ID_PCM_F24LE,
@@ -381,8 +381,7 @@ enum AVCodecID {
     AV_CODEC_ID_ADPCM_G722,
     AV_CODEC_ID_ADPCM_IMA_APC,
     AV_CODEC_ID_ADPCM_VIMA,
-
-    AV_CODEC_ID_ADPCM_AFC = 0x11800,
+    AV_CODEC_ID_ADPCM_AFC,
     AV_CODEC_ID_ADPCM_IMA_OKI,
     AV_CODEC_ID_ADPCM_DTK,
     AV_CODEC_ID_ADPCM_IMA_RAD,
@@ -401,6 +400,7 @@ enum AVCodecID {
     AV_CODEC_ID_ADPCM_IMA_MTF,
     AV_CODEC_ID_ADPCM_IMA_CUNNING,
     AV_CODEC_ID_ADPCM_IMA_MOFLEX,
+    AV_CODEC_ID_ADPCM_IMA_ACORN,
 
     /* AMR */
     AV_CODEC_ID_AMR_NB = 0x12000,
@@ -415,8 +415,7 @@ enum AVCodecID {
     AV_CODEC_ID_INTERPLAY_DPCM,
     AV_CODEC_ID_XAN_DPCM,
     AV_CODEC_ID_SOL_DPCM,
-
-    AV_CODEC_ID_SDX2_DPCM = 0x14800,
+    AV_CODEC_ID_SDX2_DPCM,
     AV_CODEC_ID_GREMLIN_DPCM,
     AV_CODEC_ID_DERF_DPCM,
 
@@ -489,8 +488,7 @@ enum AVCodecID {
     AV_CODEC_ID_ON2AVC,
     AV_CODEC_ID_DSS_SP,
     AV_CODEC_ID_CODEC2,
-
-    AV_CODEC_ID_FFWAVESYNTH = 0x15800,
+    AV_CODEC_ID_FFWAVESYNTH,
     AV_CODEC_ID_SONIC,
     AV_CODEC_ID_SONIC_LS,
     AV_CODEC_ID_EVRC,
@@ -517,6 +515,7 @@ enum AVCodecID {
     AV_CODEC_ID_SIREN,
     AV_CODEC_ID_HCA,
     AV_CODEC_ID_FASTAUDIO,
+    AV_CODEC_ID_MSNSIREN,
 
     /* subtitle codecs */
     AV_CODEC_ID_FIRST_SUBTITLE = 0x17000,          ///< A dummy ID pointing at the start of subtitle codecs.
@@ -529,8 +528,7 @@ enum AVCodecID {
     AV_CODEC_ID_HDMV_PGS_SUBTITLE,
     AV_CODEC_ID_DVB_TELETEXT,
     AV_CODEC_ID_SRT,
-
-    AV_CODEC_ID_MICRODVD   = 0x17800,
+    AV_CODEC_ID_MICRODVD,
     AV_CODEC_ID_EIA_608,
     AV_CODEC_ID_JACOSUB,
     AV_CODEC_ID_SAMI,
@@ -554,7 +552,7 @@ enum AVCodecID {
 
     AV_CODEC_ID_SCTE_35, ///< Contain timestamp estimated through PCR of program stream.
     AV_CODEC_ID_EPG,
-    AV_CODEC_ID_BINTEXT    = 0x18800,
+    AV_CODEC_ID_BINTEXT,
     AV_CODEC_ID_XBIN,
     AV_CODEC_ID_IDF,
     AV_CODEC_ID_OTF,
@@ -584,6 +582,45 @@ enum AVMediaType avcodec_get_type(enum AVCodecID codec_id);
  * @return  a static string identifying the codec; never NULL
  */
 const char *avcodec_get_name(enum AVCodecID id);
+
+/**
+ * Return codec bits per sample.
+ *
+ * @param[in] codec_id the codec
+ * @return Number of bits per sample or zero if unknown for the given codec.
+ */
+int av_get_bits_per_sample(enum AVCodecID codec_id);
+
+/**
+ * Return codec bits per sample.
+ * Only return non-zero if the bits per sample is exactly correct, not an
+ * approximation.
+ *
+ * @param[in] codec_id the codec
+ * @return Number of bits per sample or zero if unknown for the given codec.
+ */
+int av_get_exact_bits_per_sample(enum AVCodecID codec_id);
+
+/**
+ * Return a name for the specified profile, if available.
+ *
+ * @param codec_id the ID of the codec to which the requested profile belongs
+ * @param profile the profile value for which a name is requested
+ * @return A name for the profile if found, NULL otherwise.
+ *
+ * @note unlike av_get_profile_name(), which searches a list of profiles
+ *       supported by a specific decoder or encoder implementation, this
+ *       function searches the list of profiles from the AVCodecDescriptor
+ */
+const char *avcodec_profile_name(enum AVCodecID codec_id, int profile);
+
+/**
+ * Return the PCM codec associated with a sample format.
+ * @param be  endianness, 0 for little, 1 for big,
+ *            -1 (or anything else) for native
+ * @return  AV_CODEC_ID_PCM_* or AV_CODEC_ID_NONE
+ */
+enum AVCodecID av_get_pcm_codec(enum AVSampleFormat fmt, int be);
 
 /**
  * @}
