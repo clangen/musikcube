@@ -79,46 +79,36 @@ configure_file("musikcube.in" "musikcube" @ONLY)
 add_executable(musikcube ${CUBE_SRCS})
 add_definitions(-DNCURSES_WIDECHAR)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    if (${BUILD_STANDALONE} MATCHES "true")
-        find_library(
-            NCURSESWLIB
-            NAMES libncursesw.a ncursesw
-            PATHS ${VENDOR_LINK_DIRECTORIES})
-
-        find_library(
-            PANELWLIB
-            NAMES libpanelw.a panelw
-            PATHS ${VENDOR_LINK_DIRECTORIES})
-
-        message(STATUS "[musikcube] using libncursesw at " ${NCURSESWLIB})
-        message(STATUS "[musikcube] using libpanelw at " ${PANELWLIB})
-
-        target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${NCURSESWLIB} ${PANELWLIB} musikcore)
-    else()
-        target_link_libraries(musikcube ${musikcube_LINK_LIBS} ncursesw panelw musikcore)
-    endif()
-else()
-    find_package(PkgConfig)
-    if (${NCURSES_DISABLE_LIB_SUFFIXES} MATCHES "true")
-      # pkg_check_modules fails on some systems, including OpenBSD.
-      # pkg_check_modules(NCURSES REQUIRED ncurses panel)
-      ensure_library_exists(ncurses)
-      ensure_library_exists(panel)
-      set(NCURSES_LIBRARIES ncurses panel)
-      message(STATUS "[ncurses] using library names without 'w' prefix")
-    else()
-      # pkg_check_modules fails on some systems, including OpenBSD.
-      # pkg_check_modules(NCURSES REQUIRED ncursesw panelw)
-      ensure_library_exists(ncursesw)
-      ensure_library_exists(panelw)
-      set(NCURSES_LIBRARIES ncursesw panelw)
-      message(STATUS "[ncurses] using library names with 'w' prefix")
-    endif()
-    target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${NCURSES_LIBRARIES} musikcore)
+if (${BUILD_STANDALONE} MATCHES "true")
+  target_include_directories(musikcube BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 endif()
+
+# figure out if we have a "w" suffix or not...
+if (${NCURSES_DISABLE_LIB_SUFFIXES} MATCHES "true")
+    message(STATUS "[ncurses] using library names *WITHOUT* 'w' prefix")
+    set(CURSES_LIBRARY_NAME ncurses)
+    set(PANEL_LIBRARY_NAME panel)
+else()
+    message(STATUS "[ncurses] using library names with 'w' prefix")
+    set(CURSES_LIBRARY_NAME ncursesw)
+    set(PANEL_LIBRARY_NAME panelw)
+endif()
+
+if (${BUILD_STANDALONE} MATCHES "true")
+    find_library(LIBNCURSES NAMES ${CURSES_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+    find_library(LIBPANEL NAMES ${PANEL_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+else()
+    find_library(LIBNCURSES NAMES ${CURSES_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES})
+    find_library(LIBPANEL NAMES ${PANEL_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES})
+endif()
+
+message(STATUS "[musikcube] using libncurses at: " ${LIBNCURSES})
+message(STATUS "[musikcube] using libpanel at: " ${LIBPANEL})
+message(STATUS "[musikcube] using libtinfo at: " ${LIBTINFO})
+target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${LIBNCURSES} ${LIBPANEL} musikcore)
 
 if (ENABLE_PCH MATCHES "true")
     message(STATUS "[musikcube] enabling precompiled headers")
     include(./pch.cmake)
 endif()
+

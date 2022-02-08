@@ -3,7 +3,7 @@ set (sndioout_SOURCES
   SndioOut.cpp
 )
 
-ensure_library_exists(sndio)
-
 add_library(sndioout SHARED ${sndioout_SOURCES})
-target_link_libraries(sndioout sndio)
+
+find_library(LIBSNDIO sndio)
+target_link_libraries(sndioout ${LIBSNDIO})

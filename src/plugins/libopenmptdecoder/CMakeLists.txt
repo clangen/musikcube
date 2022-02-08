@@ -6,8 +6,6 @@ set (openmptdecoder_SOURCES
   Utility.cpp
 )
 
-ensure_library_exists(openmpt)
-
 add_library(openmptdecoder SHARED ${openmptdecoder_SOURCES})
 
 find_library(OPENMPTLIB NAMES openmpt)

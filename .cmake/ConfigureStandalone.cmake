@@ -14,7 +14,8 @@ if (${BUILD_STANDALONE} MATCHES "true")
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/lame-bin/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/libmicrohttpd-bin/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/zlib-bin/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/curl-bin/include")
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/curl-bin/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/ncurses-bin/include")
 
   list(
     APPEND
@@ -23,7 +24,8 @@ if (${BUILD_STANDALONE} MATCHES "true")
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/lame-bin/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/libmicrohttpd-bin/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/zlib-bin/lib"
-    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/curl-bin/lib")
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/curl-bin/lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/vendor/ncurses-bin/lib")
 else()
     message(STATUS "[standalone-build] *NOT* enabled!")
 endif()

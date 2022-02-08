@@ -4,7 +4,7 @@ set (pulseout_SOURCES
   PulseOut.cpp
 )
 
-ensure_library_exists(pulse)
-
 add_library(pulseout SHARED ${pulseout_SOURCES})
-target_link_libraries(pulseout pulse)
+
+find_library(LIBPULSE pulse)
+target_link_libraries(pulseout ${LIBPULSE})

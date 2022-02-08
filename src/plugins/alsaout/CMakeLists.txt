@@ -3,8 +3,8 @@ set (alsaout_SOURCES
   AlsaOut.cpp
 )
 
-ensure_library_exists(asound)
-
 add_library(alsaout SHARED ${alsaout_SOURCES})
-target_link_libraries(alsaout asound)
+
+find_library(LIBASOUND asound)
+target_link_libraries(alsaout ${LIBASOUND})
 

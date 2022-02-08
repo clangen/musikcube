@@ -6,6 +6,8 @@ set (taglibreader_SOURCES
 add_library(taglibreader SHARED ${taglibreader_SOURCES})
 include_directories(${Boost_INCLUDE_DIRS})
 
+find_library(LIBZ z)
+
 if (NOT ${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
   message(STATUS "[taglibmetadatareader] using bundled taglib = true")
 
@@ -21,10 +23,10 @@ if (NOT ${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
 
   include_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
   add_dependencies(taglibreader taglib)
-  target_link_libraries(taglibreader ${Boost_LIBRARIES} "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a" z)
-  message(STATUS "[taglibmetadatareader] using ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a")
+  set(LIBTAG "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a")
 else()
-  message(STATUS "[taglibmetadatareader] using bundled taglib = false")
-  ensure_library_exists(tag)
-  target_link_libraries(taglibreader ${Boost_LIBRARIES} tag z)
+  find_library(LIBTAG tag)
 endif()
+
+message(STATUS "[taglibmetadatareader] using ${LIBTAG}")
+target_link_libraries(taglibreader ${Boost_LIBRARIES} ${LIBTAG} ${LIBZ})

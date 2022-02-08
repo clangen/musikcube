@@ -5,7 +5,7 @@ if [ -z "$DIR" ]; then
   DIR=`pwd`
 fi
 echo "[strip] resolved directory: ${DIR}"
-strip "$DIR/bin/musikcube"
-strip "$DIR/bin/musikcubed"
-find "$DIR/bin/" -name "*.so" -exec strip "{}" \; 2> /dev/null
+strip "$DIR/bin/*" 2> /dev/null
+strip "$DIR/bin/lib/*" 2> /dev/null
+strip "$DIR/bin/plugin/*" 2> /dev/null
 echo "[strip] finished"

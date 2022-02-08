@@ -3,8 +3,6 @@ set (pipewireout_SOURCES
   PipeWireOut.cpp
 )
 
-ensure_library_exists(pipewire-0.3)
-
 message(STATUS "[pipewireout] plugin enabled")
 
 find_package(PkgConfig)

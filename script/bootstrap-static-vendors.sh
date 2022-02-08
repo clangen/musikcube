@@ -9,8 +9,25 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/homebrew/opt/openssl/lib/pkgconfig/"
 fi
 
+NCURSES_TERMINFO=
+if [[ "$PLATFORM" == 'Linux' ]]; then
+    NCURSES_TERMINFO="--with-terminfo-dirs=/etc/terminfo:/lib/terminfo:/usr/share/terminfo"
+fi
+
 export CFLAGS="-fPIC"
 export CXXFLAGS="-fPIC"
+
+#
+# ncurses
+#
+https://ftp.gnu.org/pub/gnu/ncurses/ncurses-6.3.tar.gz
+tar xvfz ncurses-6.3.tar.gz
+cd ncurses-6.3
+./configure --enable-pc-files --enable-sigwinch --enable-symlinks --enable-widec --with-shared --with-cxx-shared --with-gpm=no --without-ada ${NCURSES_TERMINFO} --prefix=`pwd`/output
+make -j8 || exit $?
+make install
+mv output ../ncurses-bin
+cd ..
 
 #
 # boost
