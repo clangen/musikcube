@@ -3,15 +3,9 @@ set (taglibreader_SOURCES
   TaglibMetadataReader.cpp
 )
 
-if (${ENABLE_FFMPEG} MATCHES "false")
-  message(STATUS "[taglibmetadatareader] *not* defining ENABLE_FFMPEG")
-else()
-  message(STATUS "[taglibmetadatareader] defining ENABLE_FFMPEG")
-  add_definitions(-DENABLE_FFMPEG)
-endif()
-
 add_library(taglibreader SHARED ${taglibreader_SOURCES})
-  
+include_directories(${Boost_INCLUDE_DIRS})
+
 if (NOT ${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
   message(STATUS "[taglibmetadatareader] using bundled taglib = true")
 
@@ -27,10 +21,10 @@ if (NOT ${ENABLE_BUNDLED_TAGLIB} MATCHES "false")
 
   include_directories("${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/include")
   add_dependencies(taglibreader taglib)
-  target_link_libraries(taglibreader ${BOOST_LINK_LIBS} "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a" z)
+  target_link_libraries(taglibreader ${Boost_LIBRARIES} "${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a" z)
   message(STATUS "[taglibmetadatareader] using ${musikcube_SOURCE_DIR}/src/plugins/taglib_plugin/taglib-1.11/stage/lib/libtag.a")
 else()
   message(STATUS "[taglibmetadatareader] using bundled taglib = false")
   ensure_library_exists(tag)
-  target_link_libraries(taglibreader ${BOOST_LINK_LIBS} tag z)
+  target_link_libraries(taglibreader ${Boost_LIBRARIES} tag z)
 endif()

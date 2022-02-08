@@ -52,11 +52,7 @@
 class TaglibPlugin : public musik::core::sdk::IPlugin {
     public:
         virtual void Release() { delete this; }
-#if defined(ENABLE_FFMPEG) || defined(WIN32)
         virtual const char* Name() { return "Taglib 1.11 ITagReader (+ffmpeg)"; }
-#else
-        virtual const char* Name() { return "Taglib 1.11 ITagReader"; }
-#endif
         virtual const char* Version() { return "0.6.0"; }
         virtual const char* Author() { return "Daniel Önnerby, clangen"; }
         virtual const char* Guid() { return "c77ea7a4-5d57-4f17-8521-aba8eeadeda7"; }

@@ -34,8 +34,6 @@
 
 #include "FfmpegEncoder.h"
 
-#ifdef ENABLE_FFMPEG
-
 #include "shared.h"
 #include <algorithm>
 #include <random>
@@ -633,5 +631,3 @@ AVFrame* FfmpegEncoder::ReallocFrame(
     }
     return original;
 }
-
-#endif // ENABLE_FFMPEG

@@ -92,10 +92,6 @@
 #include <algorithm>
 #include <string.h>
 
-#ifdef WIN32
-#define ENABLE_FFMPEG
-#endif
-
 using namespace musik::core::sdk;
 
 namespace str {
@@ -243,7 +239,6 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
     if (extension && strlen(extension)) {
         std::string ext(str::lower(extension[0] == '.' ? &extension[1] : extension));
         return
-#ifdef ENABLE_FFMPEG
             ext.compare("opus") == 0 ||
             ext.compare("wv") == 0 ||
             ext.compare("wma") == 0 ||
@@ -255,7 +250,6 @@ bool TaglibMetadataReader::CanRead(const char *extension) {
             ext.compare("wave") == 0 ||
             ext.compare("aif") == 0 ||
             ext.compare("aiff") == 0 ||
-#endif
             ext.compare("mp3") == 0 ||
             ext.compare("ogg") == 0 ||
             ext.compare("m4a") == 0 ||
