@@ -201,19 +201,6 @@ make install
 cd ..
 
 #
-# libmp3lame
-#
-
-wget https://phoenixnap.dl.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz
-tar xvfz lame-3.100.tar.gz
-cd lame-3.100/
-./configure --enable-shared --enable-static --prefix=`pwd`/output
-make -j8 || exit $?
-make install
-mv output ../lame-bin
-cd ..
-
-#
 # libmicrohttpd
 #
 
@@ -224,19 +211,6 @@ cd libmicrohttpd-0.9.75
 make -j8 || exit $?
 make install
 mv output ../libmicrohttpd-bin
-cd ..
-
-#
-# libz
-#
-
-wget https://zlib.net/zlib-1.2.11.tar.gz
-tar xvfz zlib-1.2.11.tar.gz
-cd zlib-1.2.11
-./configure --prefix=`pwd`/output
-make -j8 || exit $?
-make install
-mv output ../zlib-bin
 cd ..
 
 #

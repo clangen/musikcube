@@ -3,9 +3,9 @@ set (ffmpegdecoder_SOURCES
     FfmpegDecoder.cpp)
 
 add_library(ffmpegdecoder SHARED ${ffmpegdecoder_SOURCES})
-target_include_directories(ffmpegdecoder PRIVATE BEFORE ${VENDOR_INCLUDE_DIRECTORIES})
 
 if (${BUILD_STANDALONE} MATCHES "true")
+    target_include_directories(ffmpegdecoder PRIVATE BEFORE ${VENDOR_INCLUDE_DIRECTORIES})
     find_library(AVCODEC NAMES avcodec-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
     find_library(AVUTIL NAMES avutil-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
     find_library(AVFORMAT NAMES avformat-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)

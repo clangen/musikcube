@@ -21,14 +21,15 @@ include(ConfigureRpath)
 include(ConfigureStandalone)
 include(ConfigureBsdPaths)
 include(AddDarwinSystemLibs)
+include(AddLinuxSystemLibs)
 include(ConfigureCurses)
 include(ConfigureTaglib)
 include(ConfigureCompilerFlags)
 
 message(STATUS "[vendor-link-directories] ${VENDOR_LINK_DIRECTORIES}")
 message(STATUS "[vendor-include-directories] ${VENDOR_INCLUDE_DIRECTORIES}")
+message(STATUS "[os-system-libs] ${DEFAULT_OS_SYSTEM_LIBS}")
 
-# our include directories
 include_directories(
   "${musikcube_SOURCE_DIR}/src"
   "${musikcube_SOURCE_DIR}/src/musikcore"
@@ -36,7 +37,6 @@ include_directories(
   "${musikcube_SOURCE_DIR}/src/musikcube/cursespp"
   "${musikcube_SOURCE_DIR}/src/3rdparty/include")
 
-# our library directories
 link_directories("${musikcube_SOURCE_DIR}/bin/plugins")
 
 find_package(Boost 1.55.0 REQUIRED system filesystem thread)
@@ -44,22 +44,18 @@ include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "[boost] libs: " ${Boost_LIBRARIES})
 message(STATUS "[boost] includes: " ${Boost_INCLUDE_DIRS})
 
-find_library(LIBCURL NAMES curl PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+if (${BUILD_STANDALONE} MATCHES "true")
+  target_include_directories(musikcube BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
+  find_library(LIBCURL NAMES curl PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+else()
+  find_library(LIBCURL NAMES curl)
+endif()
+
 find_library(LIBSSL NAMES ssl)
 find_library(LIBCRYPTO NAMES crypto)
 find_library(LIBZ NAMES z)
 
 set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${Boost_LIBRARIES} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ})
-
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  find_library(LIBDL NAMES dl)
-  set (musikcube_LINK_LIBS ${musikcube_LINK_LIBS} ${LIBDL})
-endif()
-
-if (NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
-  find_library(LIBPTHREAD NAMES libpthread.a)
-  set (musikcube_LINK_LIBS ${musikcube_LINK_LIBS} ${LIBPTHREAD})
-endif()
 
 if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
   if(NOT HAVE_CXX_ATOMICS64_WITHOUT_LIB)
