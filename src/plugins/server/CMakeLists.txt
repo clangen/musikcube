@@ -16,14 +16,19 @@ include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/include")
 include_directories(${Boost_INCLUDE_DIRS})
 
 if (${LINK_STATICALLY} MATCHES "true")
-  find_library(LIBMICROHTTPD NAMES libmicrohttpd.a)
-  find_library(LIBZ NAMES libz.a)
-  target_link_libraries(server ${server_LINK_LIBS} ${LIBZ} ${LIBMICROHTTPD})
+  # unclear why NO_DEFAULT_PATH NO_CACHE is required; we want to use our vendor'd version,
+  # but without NO_CACHE we always get the brew one. other deps are fine.
+  find_library(LIBMICROHTTPD NAMES libmicrohttpd.a PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH NO_CACHE)
+  find_library(LIBZ NAMES libz.a PATHS ${VENDOR_LINK_DIRECTORIES})
 else()
-  ensure_library_exists(microhttpd)
-  set(EXTRA_LIBS "")
-  if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    set(EXTRA_LIBS "gnutls")
+  if (APPLE)
+    find_library(LIBGNUTLS NAMES gnuatls)
+    set(EXTRA_LIBS "${LIBGNUTLS}")
   endif()
-  target_link_libraries(server ${server_LINK_LIBS} microhttpd z ${EXTRA_LIBS})
+  find_library(LIBMICROHTTPD NAMES microhttpd)
+  find_library(LIBZ NAMES z)
 endif()
+
+message(STATUS "[server] using " ${LIBMICROHTTPD} ", " ${LIBZ})
+
+target_link_libraries(server ${server_LINK_LIBS} ${LIBZ} ${LIBMICROHTTPD} ${EXTRA_LIBS})

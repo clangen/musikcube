@@ -9,19 +9,10 @@ if (${LINK_STATICALLY} MATCHES "true")
   set(Boost_USE_STATIC_LIBS ON)
 
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/ffmpeg-bin/include")
-  link_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/ffmpeg-bin/lib")
-
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/lame-bin/include")
-  link_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/lame-bin/lib")
-
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/libmicrohttpd-bin/include")
-  link_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/libmicrohttpd-bin/lib")
-
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/zlib-bin/include")
-  link_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/zlib-bin/lib")
-
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/curl-bin/include")
-  link_directories("${CMAKE_CURRENT_SOURCE_DIR}/vendor/curl-bin/lib")
 
   list(
     APPEND
