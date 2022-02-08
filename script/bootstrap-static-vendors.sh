@@ -215,9 +215,9 @@ wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-0.9.75.tar.gz
 tar xvfz libmicrohttpd-0.9.75.tar.gz
 cd libmicrohttpd-0.9.75
 ./configure --enable-shared --enable-static --with-pic --enable-https=no --disable-curl --prefix=`pwd`/output
-mv output ../libmicrohttpd-bin
 make
 make install
+mv output ../libmicrohttpd-bin
 cd ..
 
 #
