@@ -233,3 +233,42 @@ make install
 mv output ../zlib-bin
 cd ..
 
+#
+# curl
+#
+
+wget https://curl.se/download/curl-7.81.0.tar.gz
+tar xvfz curl-7.81.0.tar.gz
+cd curl-7.81.0
+./configure \
+    --enable-shared \
+    --enable-static \
+    --with-pic \
+    --with-openssl \
+    --enable-optimize \
+    --enable-http \
+    --enable-proxy \
+    --enable-ipv6 \
+    --disable-rtsp \
+    --disable-ftp \
+    --disable-ftps \
+    --disable-gopher \
+    --disable-gophers \
+    --disable-pop3 \
+    --disable-pop3s \
+    --disable-smb \
+    --disable-smbs \
+    --disable-smtp \
+    --disable-telnet \
+    --disable-tftp \
+    --disable-hsts \
+    --disable-imap \
+    --disable-mqtt \
+    --disable-dict \
+    --without-brotli \
+    --without-libidn2 \
+    --prefix=`pwd`/output
+make
+make install
+mv output ../curl-bin
+cd ..
