@@ -12,7 +12,7 @@ SCRIPTDIR=`dirname "$0"`
 rm -rf bin/
 
 ${SCRIPTDIR}/clean-nix.sh
-cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true .
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true .
 make -j7
 
 DIRNAME="musikcube_macos_$VERSION"

@@ -1,7 +1,7 @@
 #cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr .
 #cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=/usr .
 #cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=i386|amd64|armhf -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=eoan -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-#cmake -DCMAKE_BUILD_TYPE=Release -DLINK_STATICALLY=true .
+#cmake -DCMAKE_BUILD_TYPE=Release - -DBUILD_STANDALONE=true .
 
 cmake_minimum_required(VERSION 3.0)
 
@@ -18,7 +18,7 @@ include(CMakeToolsHelpers OPTIONAL)
 include(CheckDependencies)
 include(CheckAtomic)
 include(ConfigureRpath)
-include(ConfigureStaticPaths) # highest priority lib paths
+include(ConfigureStandalone)
 include(ConfigureBsdPaths)
 include(AddDarwinSystemLibs)
 include(ConfigureCurses)
@@ -26,6 +26,7 @@ include(ConfigureTaglib)
 include(ConfigureCompilerFlags)
 
 message(STATUS "[vendor-link-directories] ${VENDOR_LINK_DIRECTORIES}")
+message(STATUS "[vendor-include-directories] ${VENDOR_INCLUDE_DIRECTORIES}")
 
 # our include directories
 include_directories(
@@ -43,10 +44,10 @@ include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "[boost] libs: " ${Boost_LIBRARIES})
 message(STATUS "[boost] includes: " ${Boost_INCLUDE_DIRS})
 
-find_library(LIBCURL NAMES libcurl.a PATHS ${VENDOR_LINK_DIRECTORIES})
-find_library(LIBSSL NAMES libssl.a PATHS ${VENDOR_LINK_DIRECTORIES})
-find_library(LIBCRYPTO NAMES libcrypto.a PATHS ${VENDOR_LINK_DIRECTORIES})
-find_library(LIBZ NAMES libz.a PATHS ${VENDOR_LINK_DIRECTORIES})
+find_library(LIBCURL NAMES curl PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+find_library(LIBSSL NAMES ssl)
+find_library(LIBCRYPTO NAMES crypto)
+find_library(LIBZ NAMES z)
 
 set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${Boost_LIBRARIES} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ})
 

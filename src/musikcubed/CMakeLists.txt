@@ -12,7 +12,7 @@ endif()
 configure_file("musikcubed.in" "musikcubed" @ONLY)
 add_executable(musikcubed ${DAEMON_SRCS})
 
-if (${LINK_STATICALLY} MATCHES "true")
+if (${BUILD_STANDALONE} MATCHES "true")
     find_library(EVLIB NAMES libev.a ev)
     target_link_libraries(musikcubed ${musikcube_LINK_LIBS} ${EVLIB} musikcore)
 else()

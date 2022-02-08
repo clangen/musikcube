@@ -1,36 +1,25 @@
 set (stockencoders_SOURCES
   main.cpp
   LameEncoder.cpp
-  FfmpegEncoder.cpp
-)
+  FfmpegEncoder.cpp)
 
 add_library(stockencoders SHARED ${stockencoders_SOURCES})
+target_include_directories(stockencoders BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 
-ensure_library_exists(mp3lame)
-
-if (${LINK_STATICALLY} MATCHES "true")
-  find_library(AVCODEC NAMES libavcodec-musikcube.a PATHS ${VENDOR_LINK_DIRECTORIES})
-  find_library(AVUTIL NAMES libavutil-musikcube.a PATHS ${VENDOR_LINK_DIRECTORIES})
-  find_library(AVFORMAT NAMES libavformat-musikcube.a PATHS ${VENDOR_LINK_DIRECTORIES})
-  find_library(SWRESAMPLE NAMES libswresample-musikcube.a PATHS ${VENDOR_LINK_DIRECTORIES})
-  target_link_libraries(stockencoders ${AVCODEC} ${AVUTIL} ${AVFORMAT} ${SWRESAMPLE})
+if (${BUILD_STANDALONE} MATCHES "true")
+  find_library(AVCODEC NAMES avcodec-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+  find_library(AVUTIL NAMES avutil-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+  find_library(AVFORMAT NAMES avformat-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+  find_library(SWRESAMPLE NAMES swresample-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
 else()
   # fedora (and probably other RPM-based distros) put ffmpeg includes here...
   include_directories("/usr/include/ffmpeg")
   include_directories("/usr/local/include/ffmpeg")
-  ensure_library_exists(avcodec)
-  ensure_library_exists(avutil)
-  ensure_library_exists(avformat)
-  ensure_library_exists(swresample)
-  target_link_libraries(stockencoders ${musikcube_LINK_LIBS} avcodec avutil avformat swresample)
+  find_library(AVCODEC NAMES avcodec)
+  find_library(AVUTIL NAMES avutil)
+  find_library(AVFORMAT NAMES avformat)
+  find_library(SWRESAMPLE NAMES swresample)
 endif()
 
-# prefer static libraries on mac to make redist easier
-if (${LINK_STATICALLY} MATCHES "true")
-  find_library(MP3LAMELIB NAMES libmp3lame.a)
-  target_link_libraries(stockencoders ${MP3LAMELIB})
-else()
-  target_link_libraries(stockencoders mp3lame)
-endif()
-
-target_link_libraries(stockencoders ${musikcube_LINK_LIBS})
+find_library(MP3LAME NAMES mp3lame)
+target_link_libraries(stockencoders ${AVCODEC} ${AVUTIL} ${AVFORMAT} ${SWRESAMPLE} ${MP3LAME})

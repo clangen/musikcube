@@ -80,7 +80,7 @@ add_executable(musikcube ${CUBE_SRCS})
 add_definitions(-DNCURSES_WIDECHAR)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    if (${LINK_STATICALLY} MATCHES "true")
+    if (${BUILD_STANDALONE} MATCHES "true")
         find_library(
             NCURSESWLIB
             NAMES libncursesw.a ncursesw
