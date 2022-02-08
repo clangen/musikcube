@@ -7,15 +7,21 @@ add_custom_command(TARGET postbuild POST_BUILD COMMAND cmake .)
 # strip binaries in release mode
 if (CMAKE_BUILD_TYPE MATCHES Release)
   if ((NOT DEFINED DISABLE_STRIP) OR (NOT ${DISABLE_STRIP} MATCHES "true"))
-    message(STATUS "[build] binary stripping enabled for ${CMAKE_CURRENT_SOURCE_DIR}")
+    message(STATUS "[post-build] binary stripping enabled for ${CMAKE_CURRENT_SOURCE_DIR}")
     add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/strip-nix.sh" ${CMAKE_CURRENT_SOURCE_DIR})
   else()
-    message(STATUS "[build] DISABLE_STRIP=true, *NOT* stripping binaries.")
+    message(STATUS "[post-build] DISABLE_STRIP=true, *NOT* stripping binaries.")
   endif()
 endif()
 
 # ensure the binaries can find libmusikcore.so, which lives in the same directory.
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  message(STATUS "[post-build] patching macOS rpath...")
   add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/patch-macos-rpath.sh")
 endif()
 
+# copy boost and ffmpeg libraries (which can't be statically linked) to bin/
+if (${LINK_STATICALLY} MATCHES "true")
+  message(STATUS "[post-build] copying boost and ffmpeg libs...")
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/stage-static-vendor-libraries.sh")
+endif()
