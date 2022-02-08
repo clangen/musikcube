@@ -5,7 +5,7 @@ function(ensure_library_exists libname)
         find_library(
             __TEMP_ENSURE_LIBRARY
             NAMES ${libname}
-            PATHS ${CURRENT_LINK_DIR})
+            PATHS ${CURRENT_LINK_DIR} ${VENDOR_LINK_DIRECTORIES})
         if(NOT __TEMP_ENSURE_LIBRARY)
             #message(STATUS "[check-dependencies] ${libname} not found")
         else()

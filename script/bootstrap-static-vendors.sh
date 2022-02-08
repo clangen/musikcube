@@ -4,6 +4,11 @@ rm -rf vendor
 mkdir vendor
 cd vendor
 
+PLATFORM=$(uname)
+if [[ "$PLATFORM" == 'Darwin' ]]; then
+    export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/homebrew/opt/openssl/lib/pkgconfig/"
+fi
+
 export CFLAGS="-fPIC"
 export CXXFLAGS="-fPIC"
 
@@ -11,11 +16,12 @@ export CXXFLAGS="-fPIC"
 # boost
 #
 
-wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78_0.tar.bz2
-tar xvfj boost_1_78_0.tar.bz2
-cd boost_1_78_0/
+wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_76_0.tar.bz2
+tar xvfj boost_1_76_0.tar.bz2
+cd boost_1_76_0/
 ./bootstrap.sh
-./b2 -d+2 cxxflags="-fPIC" --prefix=../boost-bin/ install
+./b2 headers
+./b2 -d -j8 -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags="-fPIC -std=c++14 -stdlib=libc++" --prefix=../boost-bin/ install || exit $?
 cd ..
 
 #
@@ -190,7 +196,7 @@ cd ffmpeg-5.0
     --enable-encoder=wmav2 \
     --disable-pthreads \
     --build-suffix=-musikcube || exit $?
-make || exit $?
+make -j8 || exit $?
 make install
 cd ..
 
@@ -202,7 +208,7 @@ wget https://phoenixnap.dl.sourceforge.net/project/lame/lame/3.100/lame-3.100.ta
 tar xvfz lame-3.100.tar.gz
 cd lame-3.100/
 ./configure --enable-shared --enable-static --prefix=`pwd`/output
-make
+make -j8 || exit $?
 make install
 mv output ../lame-bin
 cd ..
@@ -215,7 +221,7 @@ wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-0.9.75.tar.gz
 tar xvfz libmicrohttpd-0.9.75.tar.gz
 cd libmicrohttpd-0.9.75
 ./configure --enable-shared --enable-static --with-pic --enable-https=no --disable-curl --prefix=`pwd`/output
-make
+make -j8 || exit $?
 make install
 mv output ../libmicrohttpd-bin
 cd ..
@@ -228,7 +234,7 @@ wget https://zlib.net/zlib-1.2.11.tar.gz
 tar xvfz zlib-1.2.11.tar.gz
 cd zlib-1.2.11
 ./configure --prefix=`pwd`/output
-make
+make -j8 || exit $?
 make install
 mv output ../zlib-bin
 cd ..
@@ -265,10 +271,12 @@ cd curl-7.81.0
     --disable-imap \
     --disable-mqtt \
     --disable-dict \
+    --disable-ldap \
     --without-brotli \
     --without-libidn2 \
+    --without-nghttp2 \
     --prefix=`pwd`/output
-make
+make -j8 || exit $?
 make install
 mv output ../curl-bin
 cd ..

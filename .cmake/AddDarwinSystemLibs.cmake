@@ -1,0 +1,9 @@
+if (APPLE)
+  find_library(CORE_FOUNDATION_LIBRARY CoreFoundation)
+  find_library(SYSTEM_CONFIGURATION_LIBRARY SystemConfiguration)
+  list(
+    APPEND
+    DEFAULT_OS_SYSTEM_LIBS
+    ${CORE_FOUNDATION_LIBRARY}
+    ${SYSTEM_CONFIGURATION_LIBRARY})
+endif()
