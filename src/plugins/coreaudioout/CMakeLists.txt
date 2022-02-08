@@ -14,4 +14,4 @@ IF(APPLE)
 ENDIF (APPLE)
 
 add_library(coreaudioout SHARED ${coreaudioout_SOURCES})
-target_link_libraries(coreaudioout ${musikcube_LINK_LIBS} ${FRAMEWORK_LIBS})
+target_link_libraries(coreaudioout ${FRAMEWORK_LIBS})

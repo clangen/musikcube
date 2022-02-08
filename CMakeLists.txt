@@ -63,7 +63,7 @@ if(NOT HAVE_CXX_ATOMICS_WITHOUT_LIB)
   endif()
 endif()
 
-message(STATUS "[build] link libraries are: ${musikcube_LINK_LIBS}")
+message(STATUS "[build] musikcube_LINK_LIBS: ${musikcube_LINK_LIBS}")
 
 add_subdirectory(src/musikcore)
 add_subdirectory(src/core_c_demo)

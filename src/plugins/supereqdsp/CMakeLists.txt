@@ -6,4 +6,4 @@ set (nullout_SOURCES
 )
 
 add_library(supereqdsp SHARED ${nullout_SOURCES})
-target_link_libraries(supereqdsp ${musikcube_LINK_LIBS})
+target_link_libraries(supereqdsp)

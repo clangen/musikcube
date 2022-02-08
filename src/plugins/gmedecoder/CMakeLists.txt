@@ -129,4 +129,4 @@ set (gmedecoder_SOURCES
 add_definitions(-DHAVE_STDINT_H)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/gme")
 add_library(gmedecoder SHARED ${gmedecoder_SOURCES})
-target_link_libraries(gmedecoder ${musikcube_LINK_LIBS})
+target_link_libraries(gmedecoder)
