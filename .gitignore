@@ -42,3 +42,4 @@ src/musikbox/musikbox
 src/musikcube/musikcube
 src/musikcubed/musikcubed
 taglib-prefix
+vendor
