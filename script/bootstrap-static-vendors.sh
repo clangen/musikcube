@@ -15,7 +15,7 @@ wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_78
 tar xvfj boost_1_78_0.tar.bz2
 cd boost_1_78_0/
 ./bootstrap.sh
-./b2 -d+2 link=static cxxflags="-fPIC" --prefix=../boost-bin/ install
+./b2 -d+2 cxxflags="-fPIC" --prefix=../boost-bin/ install
 cd ..
 
 #
