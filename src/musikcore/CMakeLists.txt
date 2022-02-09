@@ -84,10 +84,7 @@ add_library(musikcore SHARED ${CORE_SOURCES})
 
 set_target_properties(musikcore PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${musikcube_SOURCE_DIR}/bin)
 target_link_libraries(musikcore ${musikcube_LINK_LIBS})
-
-if (${BUILD_STANDALONE} MATCHES "true")
-    target_include_directories(musikcore BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
-endif()
+target_include_directories(musikcore BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 
 if (ENABLE_PCH MATCHES "true")
     message(STATUS "[musikcore] enabling precompiled headers")

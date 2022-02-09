@@ -17,6 +17,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin" OR CMAKE_SYSTEM_NAME MATCHES "FreeBSD" OR
     "${BSD_PATH_PREFIX}/include"
     "${BSD_PATH_PREFIX}/opt/openssl/include"
     "${BSD_PATH_PREFIX}/opt/ncurses/include")
+
   list(
     APPEND
     VENDOR_LINK_DIRECTORIES

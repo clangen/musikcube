@@ -9,4 +9,5 @@ endif()
 
 add_executable(core_c_demo ${CORE_C_DEMO_SRCS})
 
+target_include_directories(core_c_demo BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 target_link_libraries(core_c_demo ${musikcube_LINK_LIBS} musikcore)

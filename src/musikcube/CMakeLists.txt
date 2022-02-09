@@ -66,8 +66,7 @@ set (CUBE_SRCS
     ./cursespp/TextInput.cpp
     ./cursespp/TextLabel.cpp
     ./cursespp/ToastOverlay.cpp
-    ./cursespp/Window.cpp
-)
+    ./cursespp/Window.cpp)
 
 set(musikcube_INSTALL_DIR ${HOMEBREW_PREFIX})
 if (NOT DEFINED musikcube_INSTALL_DIR)
@@ -79,9 +78,7 @@ configure_file("musikcube.in" "musikcube" @ONLY)
 add_executable(musikcube ${CUBE_SRCS})
 add_definitions(-DNCURSES_WIDECHAR)
 
-if (${BUILD_STANDALONE} MATCHES "true")
-  target_include_directories(musikcube BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
-endif()
+target_include_directories(musikcube BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 
 # figure out if we have a "w" suffix or not...
 if (${NCURSES_DISABLE_LIB_SUFFIXES} MATCHES "true")
@@ -94,9 +91,12 @@ else()
     set(PANEL_LIBRARY_NAME panelw)
 endif()
 
-find_library(LIBNCURSES NAMES ${CURSES_LIBRARY_NAME})
-find_library(LIBPANEL NAMES ${PANEL_LIBRARY_NAME})
-find_library(LIBTINFO NAMES tinfo)
+find_library(LIBNCURSES NAMES ${CURSES_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES})
+find_library(LIBPANEL NAMES ${PANEL_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES})
+
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    find_library(LIBTINFO NAMES tinfo)
+endif()
 
 message(STATUS "[musikcube] using libncurses at: " ${LIBNCURSES})
 message(STATUS "[musikcube] using libpanel at: " ${LIBPANEL})
