@@ -1,39 +1,161 @@
 #!/bin/bash
 
+set -x
+
 rm -rf vendor
 mkdir vendor
 cd vendor
 
-PLATFORM=$(uname)
-if [[ "$PLATFORM" == 'Darwin' ]]; then
-    export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/opt/homebrew/opt/openssl/lib/pkgconfig/"
-fi
+#
+# vars
+#
 
 export CFLAGS="-fPIC"
 export CXXFLAGS="-fPIC"
+
+ARCH=$(uname -m)
+BOOST_VERSION="1_76_0"
+OPENSSL_VERSION="1.1.1m"
+OPENSSL_LIB_PATH="$(pwd)/openssl-${OPENSSL_VERSION}/output/lib"
+CURL_VERSION="7.81.0"
+LIBMICROHTTPD_VERSION="0.9.75"
+FFMPEG_VERSION="5.0"
+LAME_VERSION="3.100"
+
+#
+# download deps
+#
+
+wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_${BOOST_VERSION}.tar.bz2
+wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+wget https://curl.se/download/${CURL_VERSION}.tar.gz
+wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
+wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
+wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-${LAME_VERSION}.tar.gz
 
 #
 # boost
 #
 
-wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_1_76_0.tar.bz2
-tar xvfj boost_1_76_0.tar.bz2
-cd boost_1_76_0/
+tar xvfj boost_${BOOST_VERSION}.tar.bz2
+cd boost_${BOOST_VERSION}
 ./bootstrap.sh
 ./b2 headers
 ./b2 -d -j8 -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags="-fPIC -std=c++14 -stdlib=libc++" --prefix=../boost-bin/ install || exit $?
 cd ..
 
 #
+# openssl
+#
+
+rm -rf openssl-bin
+tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
+cd openssl-${OPENSSL_VERSION}
+perl ./Configure --prefix=`pwd`/output no-ssl3 no-ssl3-method no-zlib "darwin64-${ARCH}-cc"
+make
+make install
+mkdir ../openssl-bin
+cp -rfp output/* ../openssl-bin
+cd ..
+
+if [ $OS == "Darwin" ]; then
+    cd openssl-bin/lib
+    install_name_tool -id "@rpath/libcrypto.1.1.dylib" libcrypto.1.1.dylib
+    install_name_tool -id "@rpath/libcrypto.dylib" libcrypto.dylib
+    install_name_tool -id "@rpath/libssl.1.1.dylib" libssl.1.1.dylib
+    install_name_tool -id "@rpath/libssl.dylib" libssl.dylib
+    install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libssl.1.1.dylib
+    install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.dylib" libssl.dylib
+    cd ../../
+fi
+
+#
+# curl
+#
+
+rm -rf curl-${CURL_VERSION}
+rm -rf curl-bin
+tar xvfz curl-${CURL_VERSION}.tar.gz
+cd curl-${CURL_VERSION}
+./configure --enable-shared \
+    --enable-static \
+    --with-pic \
+    --with-openssl="../openssl-bin/" \
+    --enable-optimize \
+    --enable-http \
+    --enable-proxy \
+    --enable-ipv6 \
+    --disable-rtsp \
+    --disable-ftp \
+    --disable-ftps \
+    --disable-gopher \
+    --disable-gophers \
+    --disable-pop3 \
+    --disable-pop3s \
+    --disable-smb \
+    --disable-smbs \
+    --disable-smtp \
+    --disable-telnet \
+    --disable-tftp \
+    --disable-hsts \
+    --disable-imap \
+    --disable-mqtt \
+    --disable-dict \
+    --disable-ldap \
+    --without-brotli \
+    --without-libidn2 \
+    --without-nghttp2 \
+    --prefix=`pwd`/output/
+make -j8
+make install
+mkdir ../curl-bin
+cp -rfp output/* ../curl-bin
+cd ..
+
+if [ $OS == "Darwin" ]; then
+    cd curl-bin/lib
+    install_name_tool -id "@rpath/libcurl.dylib" libcurl.dylib
+    install_name_tool -id "@rpath/libcurl.4.dylib" libcurl.4.dylib
+    install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.dylib
+    install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.4.dylib
+    install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.dylib
+    install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.4.dylib
+    cd ../../
+fi
+
+#
+# libmicrohttpd
+#
+
+rm -rf libmicrohttpd-${LIBMICROHTTPD_VERSION}
+rm -rf libmicrohttpd-bin
+tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
+cd libmicrohttpd-${LIBMICROHTTPD_VERSION}
+./configure --enable-shared --enable-static --with-pic --enable-https=no --disable-curl --prefix=`pwd`/output
+make -j8 || exit $?
+make install
+mkdir ../libmicrohttpd-bin
+cp -rfp output/* ../libmicrohttpd-bin/
+cd ..
+
+if [ $OS == "Darwin" ]; then
+    cd libmicrohttpd-bin/lib/
+    install_name_tool -id "@rpath/libmicrohttpd.dylib" libmicrohttpd.dylib
+    install_name_tool -id "@rpath/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
+    cd ../../
+fi
+
+#
 # ffmpeg
 #
 
-wget https://ffmpeg.org/releases/ffmpeg-5.0.tar.bz2
-tar xvfj ffmpeg-5.0.tar.bz2
-cd ffmpeg-5.0
+rm -rf ffmpeg-${FFMPEG_VERSION} ffmpeg-bin
+tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
+cd ffmpeg-${FFMPEG_VERSION}
 ./configure \
     --pkg-config-flags="--static" \
-    --prefix="../ffmpeg-bin/" \
+    --prefix="@rpath" \
+    --enable-rpath \
     --disable-asm \
     --enable-pic \
     --enable-static \
@@ -66,6 +188,14 @@ cd ffmpeg-5.0
     --disable-videotoolbox \
     --disable-audiotoolbox \
     --disable-filters \
+    --disable-libxcb \
+    --disable-libxcb-shm \
+    --disable-libxcb-xfixes \
+    --disable-libxcb-shape \
+    --disable-sdl2 \
+    --disable-securetransport \
+    --disable-vaapi \
+    --disable-xlib \
     --enable-demuxer=aac \
     --enable-demuxer=ac3 \
     --enable-demuxer=aiff \
@@ -165,7 +295,6 @@ cd ffmpeg-5.0
     --enable-decoder=pcm_u24le \
     --enable-decoder=pcm_u32be \
     --enable-decoder=pcm_u32le \
-    --enable-decoder=pcm_zork \
     --enable-decoder=dsd_lsbf \
     --enable-decoder=dsd_msbf \
     --enable-decoder=dsd_lsbf_planar \
@@ -195,62 +324,32 @@ cd ffmpeg-5.0
     --enable-encoder=wmav1 \
     --enable-encoder=wmav2 \
     --disable-pthreads \
-    --build-suffix=-musikcube || exit $?
-make -j8 || exit $?
+    --build-suffix=-musikcube
+make -j8
 make install
+mkdir ../ffmpeg-bin
+cp -rfp \@rpath/* ../ffmpeg-bin
 cd ..
 
 #
-# libmicrohttpd
+# lame
 #
 
-wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-0.9.75.tar.gz
-tar xvfz libmicrohttpd-0.9.75.tar.gz
-cd libmicrohttpd-0.9.75
-./configure --enable-shared --enable-static --with-pic --enable-https=no --disable-curl --prefix=`pwd`/output
-make -j8 || exit $?
+rm -rf lame-${LAME_VERSION} lame-bin
+tar xvfz lame-${LAME_VERSION}.tar.gz
+cd lame-${LAME_VERSION}
+# https://sourceforge.net/p/lame/mailman/message/36081038/
+perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
+./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=$(pwd)/output
+make -j8
 make install
-mv output ../libmicrohttpd-bin
+mkdir ../lame-bin
+cp -rfp output/* ../lame-bin
 cd ..
 
-#
-# curl
-#
-
-wget https://curl.se/download/curl-7.81.0.tar.gz
-tar xvfz curl-7.81.0.tar.gz
-cd curl-7.81.0
-./configure \
-    --enable-shared \
-    --enable-static \
-    --with-pic \
-    --with-openssl \
-    --enable-optimize \
-    --enable-http \
-    --enable-proxy \
-    --enable-ipv6 \
-    --disable-rtsp \
-    --disable-ftp \
-    --disable-ftps \
-    --disable-gopher \
-    --disable-gophers \
-    --disable-pop3 \
-    --disable-pop3s \
-    --disable-smb \
-    --disable-smbs \
-    --disable-smtp \
-    --disable-telnet \
-    --disable-tftp \
-    --disable-hsts \
-    --disable-imap \
-    --disable-mqtt \
-    --disable-dict \
-    --disable-ldap \
-    --without-brotli \
-    --without-libidn2 \
-    --without-nghttp2 \
-    --prefix=`pwd`/output
-make -j8 || exit $?
-make install
-mv output ../curl-bin
-cd ..
+if [ $OS == "Darwin" ]; then
+    cd lame-bin/lib/
+    install_name_tool -id "@rpath/libmp3lame.dylib" libmp3lame.dylib
+    install_name_tool -id "@rpath/libmp3lame.0.dylib" libmp3lame.0.dylib
+    cd ../../
+fi

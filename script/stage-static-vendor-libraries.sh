@@ -9,16 +9,38 @@ popd
 
 PLATFORM=$(uname)
 if [[ "$PLATFORM" == 'Darwin' ]]; then
-    echo "[stage-static-vendor-libraries] no-op on darwin. not required."
-    exit 0
+    echo "[stage-static-vendor-libraries] staging macOS .dylib files..."
+
+    cp vendor/ffmpeg-bin/lib/libavcodec-musikcube.59.dylib ./bin/lib
+    cp vendor/ffmpeg-bin/lib/libavformat-musikcube.59.dylib ./bin/lib
+    cp vendor/ffmpeg-bin/lib/libavutil-musikcube.57.dylib ./bin/lib
+    cp vendor/ffmpeg-bin/lib/libswresample-musikcube.4.dylib ./bin/lib
+
+    cp vendor/boost-bin/lib/libboost_atomic.dylib ./bin/lib
+    cp vendor/boost-bin/lib/libboost_chrono.dylib ./bin/lib
+    cp vendor/boost-bin/lib/libboost_date_time.dylib ./bin/lib
+    cp vendor/boost-bin/lib/libboost_filesystem.dylib ./bin/lib
+    cp vendor/boost-bin/lib/libboost_system.dylib ./bin/lib
+    cp vendor/boost-bin/lib/libboost_thread.dylib ./bin/lib
+
+    cp vendor/openssl-bin/lib/libcrypto.dylib ./bin/lib
+    cp vendor/openssl-bin/lib/libssl.dylib ./bin/lib
+
+    cp vendor/curl-bin/lib/libcurl.dylib ./bin/lib
+
+    cp vendor/libmicrohttpd-bin/lib/libmicrohttpd.dylib ./bin/lib
+
 elif [[ "$PLATFORM" == 'Linux' ]]; then
-    echo "[stage-static-vendor-libraries] staging linux libraries..."
+    echo "[stage-static-vendor-libraries] staging Linux .so files..."
+
     cp vendor/boost-bin/lib/libboost_filesystem.so.1.78.0 ./bin/lib/
     cp vendor/boost-bin/lib/libboost_thread.so.1.78.0 ./bin/lib/
+
     cp vendor/ffmpeg-bin/lib/libavcodec-musikcube.so.59 ./bin/lib/
     cp vendor/ffmpeg-bin/lib/libavformat-musikcube.so.59 ./bin/lib/
     cp vendor/ffmpeg-bin/lib/libavutil-musikcube.so.57 ./bin/lib/
     cp vendor/ffmpeg-bin/lib/libswresample-musikcube.so.4 ./bin/lib/
+
     cp vendor/curl-bin/lib/libcurl.so.4 ./bin/lib/
 
     cp /lib/x86_64-linux-gnu/libssl.so.1.1 ./bin/lib/

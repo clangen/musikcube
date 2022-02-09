@@ -45,8 +45,12 @@ message(STATUS "[boost] includes: " ${Boost_INCLUDE_DIRS})
 
 if (${BUILD_STANDALONE} MATCHES "true")
   find_library(LIBCURL NAMES curl PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+  find_library(LIBSSL NAMES ssl PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+  find_library(LIBCRYPTO NAMES crypto PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
 else()
   find_library(LIBCURL NAMES curl)
+  find_library(LIBSSL NAMES ssl)
+  find_library(LIBCRYPTO NAMES crypto)
 endif()
 
 find_library(LIBSSL NAMES ssl PATHS ${VENDOR_LINK_DIRECTORIES})
