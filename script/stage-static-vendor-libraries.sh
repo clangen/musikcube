@@ -20,8 +20,6 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/ffmpeg-bin/lib/libavutil-musikcube.so.57 ./bin/lib/
     cp vendor/ffmpeg-bin/lib/libswresample-musikcube.so.4 ./bin/lib/
     cp vendor/curl-bin/lib/libcurl.so.4 ./bin/lib/
-    cp vendor/ncurses-bin/lib/libncursesw.so.6 ./bin/lib
-    cp vendor/ncurses-bin/lib/libpanelw.so.6 ./bin/lib
 
     cp /lib/x86_64-linux-gnu/libssl.so.1.1 ./bin/lib/
     cp /lib/x86_64-linux-gnu/libcrypto.so.1.1 ./bin/lib/
@@ -32,6 +30,9 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp /lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
     cp /lib/x86_64-linux-gnu/libvorbisfile.so.3 ./bin/lib
     cp /lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
+    cp /lib/x86_64-linux-gnu/libncursesw.so.6 ./bin/lib
+    cp /lib/x86_64-linux-gnu/libpanelw.so.6 ./bin/lib
+    cp /lib/x86_64-linux-gnu/libtinfo.so.6 ./bin/lib
 
     chmod -x ./bin/lib/*
 fi
