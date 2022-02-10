@@ -171,12 +171,67 @@ function build_libmicrohttpd() {
 # ffmpeg
 #
 
+function stage_opus_ogg_vorbis() {
+    if [ $OS == "Darwin" ]; then
+        # instead of building opus, ogg and vorbis from source we snag them
+        # from brew, update their dylib ids with @rpath, re-sign them, then create
+        # new pkg-config files to point towards this directory. that way ffmpeg
+        # will pick them up automatically.
+
+        rm -rf opus-ogg-vorbis
+        mkdir opus-ogg-vorbis
+        cd opus-ogg-vorbis
+        export PKG_CONFIG_PATH=$(pwd)
+
+        # create pkg-config files to point towards this dir
+        cp /opt/homebrew/opt/opus/lib/pkgconfig/opus.pc .
+        cp /opt/homebrew/opt/libogg/lib/pkgconfig/ogg.pc .
+        cp /opt/homebrew/opt/libvorbis/lib/pkgconfig/vorbis.pc .
+        cp /opt/homebrew/opt/libvorbis/lib/pkgconfig/vorbisenc.pc .
+        chmod 644 *.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" opus.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" ogg.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" vorbis.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" vorbisenc.pc
+        rm *.bak
+
+        # copy libs, update their ids, then resign
+        LIBOPUS="/opt/homebrew/opt/opus/lib/libopus.0.dylib"
+        LIBOGG="/opt/homebrew/opt/libogg/lib/libogg.0.dylib"
+        LIBVORBIS="/opt/homebrew/opt/libvorbis/lib/libvorbis.0.dylib"
+        LIBVORBISENC="/opt/homebrew/opt/libvorbis/lib/libvorbisenc.2.dylib"
+        cp ${LIBOPUS} ${LIBOGG} ${LIBVORBIS} ${LIBVORBISENC} .
+        chmod 755 *.dylib
+        install_name_tool -id "@rpath/libopus.0.dylib" ./libopus.0.dylib
+        install_name_tool -id "@rpath/libogg.0.dylib" ./libogg.0.dylib
+        install_name_tool -id "@rpath/libvorbis.0.dylib" ./libvorbis.0.dylib
+        install_name_tool -id "@rpath/libvorbisenc.2.dylib" ./libvorbisenc.2.dylib
+        codesign --remove-signature ./libopus.0.dylib
+        codesign --remove-signature ./libogg.0.dylib
+        codesign --remove-signature ./libvorbis.0.dylib
+        codesign --remove-signature ./libvorbisenc.2.dylib
+        codesign --sign=- ./libopus.0.dylib
+        codesign --sign=- ./libogg.0.dylib
+        codesign --sign=- ./libvorbis.0.dylib
+        codesign --sign=- ./libvorbisenc.2.dylib
+
+        # these links are required for pkg-config to be happy
+        ln -s libopus.0.dylib libopus.dylib
+        ln -s libogg.0.dylib libogg.dylib
+        ln -s libvorbis.0.dylib libvorbis.dylib
+        ln -s libvorbisenc.2.dylib libvorbisenc.dylib
+
+        cd ..
+    fi
+}
+
 function build_ffmpeg() {
     rm -rf ffmpeg-${FFMPEG_VERSION} ffmpeg-bin
+    mkdir -p ffmpeg-bin/lib
+
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
-        --pkg-config-flags="--static" \
         --prefix="@rpath" \
         --enable-rpath \
         --disable-asm \
@@ -219,6 +274,8 @@ function build_ffmpeg() {
         --disable-securetransport \
         --disable-vaapi \
         --disable-xlib \
+        --enable-libopus \
+        --enable-libvorbis \
         --enable-demuxer=aac \
         --enable-demuxer=ac3 \
         --enable-demuxer=aiff \
@@ -347,10 +404,7 @@ function build_ffmpeg() {
         --enable-encoder=wavpack \
         --enable-encoder=wmav1 \
         --enable-encoder=wmav2 \
-        --enable-encoder=vorbis \
-        --enable-libopus \
-        --enable-libvorbis \
-        --disable-pthreads \
+        --enable-encoder=libvorbis \
         --build-suffix=-musikcube
     make -j8
     make install
@@ -359,14 +413,15 @@ function build_ffmpeg() {
     cd ..
 
     if [ $OS == "Darwin" ]; then
-        LIBOPUS="/opt/homebrew/opt/opus/lib/libopus.0.dylib"
         cd ffmpeg-bin/lib/
-        cp ${LIBOPUS} .
-        codesign --remove-signature  ./libopus.0.dylib
-        chmod 755 ./libopus.0.dylib
-        install_name_tool -id "@rpath/libopus.0.dylib" ./libopus.0.dylib
         install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavcodec-musikcube.59.dylib
         install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavformat-musikcube.59.dylib
         cd ../../
     fi
 }
@@ -397,10 +452,12 @@ function build_lame() {
 }
 
 cd vendor
-#fetch_packages
-#build_boost
-#build_openssl
-#build_curl
-#build_libmicrohttpd
+clean
+fetch_packages
+build_boost
+build_openssl
+build_curl
+build_libmicrohttpd
+stage_opus_ogg_vorbis
 build_ffmpeg
-#build_lame
+build_lame
