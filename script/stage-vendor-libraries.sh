@@ -65,6 +65,13 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp /lib/x86_64-linux-gnu/libpanelw.so.6 ./bin/lib
     cp /lib/x86_64-linux-gnu/libtinfo.so.6 ./bin/lib
     cp /lib/x86_64-linux-gnu/libopus.so.0 ./bin/lib
+    cp /lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
+    cp /lib/x86_64-linux-gnu/libvorbisenc.so.2 ./bin/lib
+    cp /lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
+
+    # update the RPATH so libraries in libs/ can discover each other,
+    # and plugins can discover themselves, and libs/ (but not the
+    # other way around)
 
     FILES="./bin/lib/*"
     for f in $FILES
