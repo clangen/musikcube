@@ -12,6 +12,8 @@ fi
 OS=$(uname)
 ARCH=$(uname -m)
 OS_ARCH="${OS}-${ARCH}"
+OUTNAME="musikcube_${OS_ARCH}_$VERSION"
+OUTDIR="dist/$OUTNAME"
 SCRIPTDIR=`dirname "$0"`
 
 DLL_EXT="so"
@@ -24,14 +26,19 @@ if [ $OS == "Linux" ]; then
   OS_SPECIFIC_BUILD_FLAGS="-DENABLE_PIPEWIRE=true"
 fi
 
-# ${SCRIPTDIR}/clean-nix.sh
-# rm -rf bin/ 2> /dev/null
+printf "\n"
+read -p ' clean and rebuild [y]? ' CLEAN
+if [[ $CLEAN == 'n' || $CLEAN == 'N' ]]; then
+  printf "\n\n\n     ***** SKIPPING REBUILD *****\n\n\n"
+else
+  printf "\n\n\n     ***** REBUILDING NOW *****\n\n\n"
 
-# cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_PCH=true -DBUILD_STANDALONE=true ${OS_SPECIFIC_BUILD_FLAGS} .
-# make -j8
+  ${SCRIPTDIR}/clean-nix.sh
+  rm -rf bin/ 2> /dev/null
 
-OUTNAME="musikcube_${OS_ARCH}_$VERSION"
-OUTDIR="dist/$OUTNAME"
+  cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_PCH=true -DBUILD_STANDALONE=true ${OS_SPECIFIC_BUILD_FLAGS} .
+  make -j8
+fi
 
 rm -rf $OUTDIR
 rm dist/$OUTNAME* 2> /dev/null
