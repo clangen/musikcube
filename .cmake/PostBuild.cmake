@@ -21,7 +21,9 @@ if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
 endif()
 
 # copy boost and ffmpeg libraries (which can't be statically linked) to bin/
+# note this step also ensures libraries we depend upon have their rpath values
+# so libraries are resolved to the local directory.
 if (${BUILD_STANDALONE} MATCHES "true")
   message(STATUS "[post-build] copying boost and ffmpeg libs...")
-  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/stage-static-vendor-libraries.sh")
+  add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/stage-vendor-libraries.sh")
 endif()
