@@ -26,9 +26,9 @@ LAME_VERSION="3.100"
 # download deps
 #
 
-wget https://boostorg.jfrog.io/artifactory/main/release/1.78.0/source/boost_${BOOST_VERSION}.tar.bz2
+wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_${BOOST_VERSION}.tar.bz2
 wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
-wget https://curl.se/download/${CURL_VERSION}.tar.gz
+wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
 wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
 wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
 wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-${LAME_VERSION}.tar.gz
@@ -37,21 +37,31 @@ wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-${LAME_VERSI
 # boost
 #
 
+BOOST_CXX_FLAGS="-fPIC"
+if [ $OS == "Darwin" ]; then
+    BOOST_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++"
+fi
+
 tar xvfj boost_${BOOST_VERSION}.tar.bz2
 cd boost_${BOOST_VERSION}
 ./bootstrap.sh
 ./b2 headers
-./b2 -d -j8 -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags="-fPIC -std=c++14 -stdlib=libc++" --prefix=../boost-bin/ install || exit $?
+./b2 -d -j8 -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags=${BOOST_CXX_FLAGS} --prefix=../boost-bin/ install || exit $?
 cd ..
 
 #
 # openssl
 #
 
+OPENSSL_TYPE="linux-${ARCH}"
+if [ $OS == "Darwin" ]; then
+    OPENSSL_TYPE="darwin64-${ARCH}-cc"
+fi
+
 rm -rf openssl-bin
 tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
 cd openssl-${OPENSSL_VERSION}
-perl ./Configure --prefix=`pwd`/output no-ssl3 no-ssl3-method no-zlib "darwin64-${ARCH}-cc"
+perl ./Configure --prefix=`pwd`/output no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE}
 make
 make install
 mkdir ../openssl-bin
