@@ -24,6 +24,6 @@ endif()
 # note this step also ensures libraries we depend upon have their rpath values
 # so libraries are resolved to the local directory.
 if (${BUILD_STANDALONE} MATCHES "true")
-  message(STATUS "[post-build] copying boost and ffmpeg libs...")
+  message(STATUS "[post-build] copying vendor'd libs...")
   add_custom_command(TARGET postbuild POST_BUILD COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/script/stage-vendor-libraries.sh")
 endif()

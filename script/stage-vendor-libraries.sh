@@ -59,6 +59,7 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp /lib/x86_64-linux-gnu/libncursesw.so.6 ./bin/lib
     cp /lib/x86_64-linux-gnu/libpanelw.so.6 ./bin/lib
     cp /lib/x86_64-linux-gnu/libtinfo.so.6 ./bin/lib
+    cp /lib/x86_64-linux-gnu/libopus.so.0 ./bin/lib
 
     FILES="./bin/lib/*"
     for f in $FILES
