@@ -15,6 +15,7 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/ffmpeg-bin/lib/libavformat-musikcube.59.dylib ./bin/lib
     cp vendor/ffmpeg-bin/lib/libavutil-musikcube.57.dylib ./bin/lib
     cp vendor/ffmpeg-bin/lib/libswresample-musikcube.4.dylib ./bin/lib
+    cp vendor/ffmpeg-bin/lib/libopus.0.dylib ./bin/lib
 
     cp vendor/boost-bin/lib/libboost_atomic.dylib ./bin/lib
     cp vendor/boost-bin/lib/libboost_chrono.dylib ./bin/lib

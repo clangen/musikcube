@@ -9,6 +9,7 @@ set -x
 export CFLAGS="-fPIC"
 export CXXFLAGS="-fPIC"
 
+OS=$(uname)
 ARCH=$(uname -m)
 BOOST_VERSION="1_76_0"
 OPENSSL_VERSION="1.1.1m"
@@ -356,6 +357,18 @@ function build_ffmpeg() {
     mkdir ../ffmpeg-bin
     cp -rfp \@rpath/* ../ffmpeg-bin
     cd ..
+
+    if [ $OS == "Darwin" ]; then
+        LIBOPUS="/opt/homebrew/opt/opus/lib/libopus.0.dylib"
+        cd ffmpeg-bin/lib/
+        cp ${LIBOPUS} .
+        codesign --remove-signature  ./libopus.0.dylib
+        chmod 755 ./libopus.0.dylib
+        install_name_tool -id "@rpath/libopus.0.dylib" ./libopus.0.dylib
+        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavformat-musikcube.59.dylib
+        cd ../../
+    fi
 }
 
 #
@@ -384,10 +397,10 @@ function build_lame() {
 }
 
 cd vendor
-fetch_packages
-build_boost
-build_openssl
-build_curl
-build_libmicrohttpd
+#fetch_packages
+#build_boost
+#build_openssl
+#build_curl
+#build_libmicrohttpd
 build_ffmpeg
-build_lame
+#build_lame
