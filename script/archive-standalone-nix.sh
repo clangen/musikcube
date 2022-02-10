@@ -67,3 +67,7 @@ cd dist
 tar cvf $OUTNAME.tar $OUTNAME
 bzip2 $OUTNAME.tar
 cd ..
+
+printf "\n\n\n     ***** DONE *****\n\n\n"
+ls -al dist/$OUTNAME.tar.bz2
+printf "\n\n"
