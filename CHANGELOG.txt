@@ -8,6 +8,7 @@
 * fixed dialog background rendering in certain versions of ncurses.
 * fixed duration calculation for float-encoded wav files.
 * added additional PipeWire output debugging.
+* rewrote build system and packaging scripts.
 
 0.96.10
 
