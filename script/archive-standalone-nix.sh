@@ -40,6 +40,8 @@ else
   make -j8 || exit $?
 fi
 
+./script/stage-vendor-libraries.sh || exit $?
+
 rm -rf $OUTDIR
 rm dist/$OUTNAME* 2> /dev/null
 

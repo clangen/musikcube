@@ -49,7 +49,7 @@ function build_boost() {
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
-    ./bootstrap.sh
+    ./bootstrap.sh --without-libraries=python,mpi,log
     ./b2 headers
     ./b2 -d -j8 -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags=${BOOST_CXX_FLAGS} --prefix=../boost-bin/ install || exit $?
     cd ..

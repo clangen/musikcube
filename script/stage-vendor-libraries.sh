@@ -43,7 +43,11 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/ffmpeg-bin/lib/libavutil-musikcube.so.57 ./bin/lib
     cp vendor/ffmpeg-bin/lib/libswresample-musikcube.so.4 ./bin/lib
 
+    cp vendor/boost-bin/lib/libboost_atomic.so.1.76.0 ./bin/lib
+    cp vendor/boost-bin/lib/libboost_chrono.so.1.76.0 ./bin/lib
+    cp vendor/boost-bin/lib/libboost_date_time.so.1.76.0 ./bin/lib
     cp vendor/boost-bin/lib/libboost_filesystem.so.1.76.0 ./bin/lib
+    cp vendor/boost-bin/lib/libboost_system.so.1.76.0 ./bin/lib
     cp vendor/boost-bin/lib/libboost_thread.so.1.76.0 ./bin/lib
 
     cp vendor/openssl-bin/lib/libcrypto.so.1.1 ./bin/lib
@@ -55,19 +59,19 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
 
     cp vendor/libmicrohttpd-bin/lib/libmicrohttpd.so.12 ./bin/lib
 
-    cp /lib/x86_64-linux-gnu/libz.so.1 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libopenmpt.so.0 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libmpg123.so.0 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libvorbisfile.so.3 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
     cp /lib/x86_64-linux-gnu/libncursesw.so.6 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libpanelw.so.6 ./bin/lib
     cp /lib/x86_64-linux-gnu/libtinfo.so.6 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libopus.so.0 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libvorbisenc.so.2 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libpanelw.so.6 ./bin/lib
+
+    cp /usr/lib/x86_64-linux-gnu/libopenmpt.so.0 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libmpg123.so.0 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libvorbisfile.so.3 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libopus.so.0 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libvorbisenc.so.2 ./bin/lib
+    cp /usr/lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
 
     # update the RPATH so libraries in libs/ can discover each other,
     # and plugins can discover themselves, and libs/ (but not the
