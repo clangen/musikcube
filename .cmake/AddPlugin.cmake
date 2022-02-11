@@ -1,0 +1,6 @@
+function(add_plugin plugin_name)
+    message(STATUS "[add-plugin] adding '${plugin_name}' to musikcube and musikcubed targets")
+    add_subdirectory("src/plugins/${plugin_name}")
+    add_dependencies(musikcube plugin_name)
+    add_dependencies(musikcubed plugin_name)
+endfunction(add_plugin)
