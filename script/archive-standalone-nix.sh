@@ -11,14 +11,16 @@ fi
 
 OS=$(uname)
 
+JOBS="-j8"
 FRIENDLY_OS_NAME="linux"
 if [ $OS == "Darwin" ]; then
   FRIENDLY_OS_NAME="macos"
+  JOBS="-j$(sysctl -n hw.ncpu)"
 fi
 
 ARCH=$(uname -m)
-OS_ARCH="${FRIENDLY_OS_NAME}-${ARCH}"
-OUTNAME="musikcube_${OS_ARCH}_$VERSION"
+OS_ARCH="${FRIENDLY_OS_NAME}_${ARCH}"
+OUTNAME="musikcube_standalone_${OS_ARCH}_$VERSION"
 OUTDIR="dist/$OUTNAME"
 SCRIPTDIR=`dirname "$0"`
 
@@ -36,14 +38,15 @@ printf "\n"
 read -p ' clean and rebuild [y]? ' CLEAN
 if [[ $CLEAN == 'n' || $CLEAN == 'N' ]]; then
   printf "\n\n\n     ***** SKIPPING REBUILD *****\n\n\n"
+  sleep 3
 else
   printf "\n\n\n     ***** REBUILDING NOW *****\n\n\n"
-
+  sleep 3
   ${SCRIPTDIR}/clean-nix.sh
   rm -rf bin/ 2> /dev/null
   ./script/stage-vendor-libraries.sh || exit $?
   cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true ${OS_SPECIFIC_BUILD_FLAGS} . || exit $?
-  make -j8 || exit $?
+  make ${JOBS} || exit $?
 fi
 
 rm -rf $OUTDIR
