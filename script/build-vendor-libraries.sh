@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+# set -x
 
 #
 # vars
@@ -18,6 +18,11 @@ CURL_VERSION="7.81.0"
 LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.0"
 LAME_VERSION="3.100"
+
+JOBS="-j8"
+if [ $OS == "Darwin" ]; then
+    JOBS="-j$(sysctl -n hw.ncpu)"
+fi
 
 function clean() {
     rm -rf vendor
@@ -51,7 +56,7 @@ function build_boost() {
     cd boost_${BOOST_VERSION}
     ./bootstrap.sh --without-libraries=python,mpi,log
     ./b2 headers
-    ./b2 -d -j8 -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags=${BOOST_CXX_FLAGS} --prefix=../boost-bin/ install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags=${BOOST_CXX_FLAGS} --prefix=../boost-bin/ install || exit $?
     cd ..
 }
 
@@ -125,7 +130,7 @@ function build_curl() {
         --without-libidn2 \
         --without-nghttp2 \
         --prefix=`pwd`/output/
-    make -j8
+    make ${JOBS} || exit $?
     make install
     mkdir ../curl-bin
     cp -rfp output/* ../curl-bin
@@ -183,11 +188,13 @@ function stage_opus_ogg_vorbis() {
         cd opus-ogg-vorbis
         export PKG_CONFIG_PATH=$(pwd)
 
+        BREW=$(brew --prefix)
+
         # create pkg-config files to point towards this dir
-        cp /opt/homebrew/opt/opus/lib/pkgconfig/opus.pc .
-        cp /opt/homebrew/opt/libogg/lib/pkgconfig/ogg.pc .
-        cp /opt/homebrew/opt/libvorbis/lib/pkgconfig/vorbis.pc .
-        cp /opt/homebrew/opt/libvorbis/lib/pkgconfig/vorbisenc.pc .
+        cp $BREW/opt/opus/lib/pkgconfig/opus.pc .
+        cp $BREW/opt/libogg/lib/pkgconfig/ogg.pc .
+        cp $BREW/opt/libvorbis/lib/pkgconfig/vorbis.pc .
+        cp $BREW/opt/libvorbis/lib/pkgconfig/vorbisenc.pc .
         chmod 644 *.pc
         perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" opus.pc
         perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" ogg.pc
@@ -196,10 +203,10 @@ function stage_opus_ogg_vorbis() {
         rm *.bak
 
         # copy libs, update their ids, then resign
-        LIBOPUS="/opt/homebrew/opt/opus/lib/libopus.0.dylib"
-        LIBOGG="/opt/homebrew/opt/libogg/lib/libogg.0.dylib"
-        LIBVORBIS="/opt/homebrew/opt/libvorbis/lib/libvorbis.0.dylib"
-        LIBVORBISENC="/opt/homebrew/opt/libvorbis/lib/libvorbisenc.2.dylib"
+        LIBOPUS="$BREW/opt/opus/lib/libopus.0.dylib"
+        LIBOGG="$BREW/opt/libogg/lib/libogg.0.dylib"
+        LIBVORBIS="$BREW/opt/libvorbis/lib/libvorbis.0.dylib"
+        LIBVORBISENC="$BREW/opt/libvorbis/lib/libvorbisenc.2.dylib"
         cp ${LIBOPUS} ${LIBOGG} ${LIBVORBIS} ${LIBVORBISENC} .
         chmod 755 *.dylib
         install_name_tool -id "@rpath/libopus.0.dylib" ./libopus.0.dylib
@@ -406,7 +413,7 @@ function build_ffmpeg() {
         --enable-encoder=wmav2 \
         --enable-encoder=libvorbis \
         --build-suffix=-musikcube
-    make -j8
+    make ${JOBS} || exit $?
     make install
     mkdir ../ffmpeg-bin
     cp -rfp \@rpath/* ../ffmpeg-bin
@@ -437,7 +444,7 @@ function build_lame() {
     # https://sourceforge.net/p/lame/mailman/message/36081038/
     perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
     ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=$(pwd)/output
-    make -j8
+    make ${JOBS} || exit $?
     make install
     mkdir ../lame-bin
     cp -rfp output/* ../lame-bin
