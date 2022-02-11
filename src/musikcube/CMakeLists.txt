@@ -91,16 +91,21 @@ else()
     set(PANEL_LIBRARY_NAME panelw)
 endif()
 
+if (APPLE)
+    message(STATUS "[ncurses] detected Darwin, linking statically")
+    set(CURSES_LIBRARY_NAME "lib${CURSES_LIBRARY_NAME}.a")
+    set(PANEL_LIBRARY_NAME "lib${PANEL_LIBRARY_NAME}.a")
+else()
+    message(STATUS "[ncurses] not Darwin! will attempt to link against libtinfo")
+    find_library(LIBTINFO NAMES tinfo)
+    message(STATUS "[musikcube] using libtinfo at: " ${LIBTINFO})
+endif()
+
 find_library(LIBNCURSES NAMES ${CURSES_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES})
 find_library(LIBPANEL NAMES ${PANEL_LIBRARY_NAME} PATHS ${VENDOR_LINK_DIRECTORIES})
 
-if (NOT CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    find_library(LIBTINFO NAMES tinfo)
-endif()
-
 message(STATUS "[musikcube] using libncurses at: " ${LIBNCURSES})
 message(STATUS "[musikcube] using libpanel at: " ${LIBPANEL})
-message(STATUS "[musikcube] using libpanel at: " ${LIBTINFO})
 target_link_libraries(musikcube ${musikcube_LINK_LIBS} ${LIBNCURSES} ${LIBPANEL} ${LIBTINFO} musikcore)
 
 if (ENABLE_PCH MATCHES "true")
