@@ -10,8 +10,14 @@ if [ -z "$VERSION" ]; then
 fi
 
 OS=$(uname)
+
+FRIENDLY_OS_NAME="linux"
+if [ $OS == "Darwin" ]; then
+  FRIENDLY_OS_NAME="macos"
+fi
+
 ARCH=$(uname -m)
-OS_ARCH="${OS}-${ARCH}"
+OS_ARCH="${FRIENDLY_OS_NAME}-${ARCH}"
 OUTNAME="musikcube_${OS_ARCH}_$VERSION"
 OUTDIR="dist/$OUTNAME"
 SCRIPTDIR=`dirname "$0"`
