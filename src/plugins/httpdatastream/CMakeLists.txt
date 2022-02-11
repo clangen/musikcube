@@ -7,4 +7,4 @@ set (httpdatastream_SOURCES
 add_library(httpdatastream SHARED ${httpdatastream_SOURCES})
 
 target_include_directories(httpdatastream BEFORE PUBLIC ${Boost_INCLUDE_DIRS})
-target_link_libraries(httpdatastream ${LIBCURL})
+target_link_libraries(httpdatastream ${Boost_LIBRARIES} ${LIBCURL})
