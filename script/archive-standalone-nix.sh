@@ -35,12 +35,10 @@ else
 
   ${SCRIPTDIR}/clean-nix.sh
   rm -rf bin/ 2> /dev/null
-
+  ./script/stage-vendor-libraries.sh || exit $?
   cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true ${OS_SPECIFIC_BUILD_FLAGS} . || exit $?
   make -j8 || exit $?
 fi
-
-./script/stage-vendor-libraries.sh || exit $?
 
 rm -rf $OUTDIR
 rm dist/$OUTNAME* 2> /dev/null

@@ -451,7 +451,9 @@ function build_lame() {
     fi
 }
 
+mkdir vendor
 cd vendor
+
 clean
 fetch_packages
 build_boost
