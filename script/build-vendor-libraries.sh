@@ -458,10 +458,9 @@ function build_lame() {
     fi
 }
 
+clean
 mkdir vendor
 cd vendor
-
-clean
 fetch_packages
 build_boost
 build_openssl

@@ -34,7 +34,6 @@ circleci config process .circleci/config.yml > local-circle-ci.yml
 sed -i "s/-j2/-j${JOB_COUNT}/g" local-circle-ci.yml
 
 ALL_JOBS=(
-    "build_ubuntu_bionic"
     "build_ubuntu_focal"
     "build_ubuntu_hirsute"
     "build_ubuntu_impish"
@@ -42,7 +41,7 @@ ALL_JOBS=(
     "build_fedora_33"
     "build_fedora_34"
     "build_fedora_35"
-    "build_mint_uma"
+    "build_mint_una"
     "build_debian_buster"
     "build_debian_bullseye"
 )

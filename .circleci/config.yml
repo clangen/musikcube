@@ -1,19 +1,5 @@
 version: 2.0
 jobs:
-  build_ubuntu_bionic:
-    docker:
-      - image: ubuntu:bionic
-    steps:
-      - run: apt-get update
-      - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.65-dev libboost-system1.65-dev libboost-filesystem1.65-dev libboost-date-time1.65-dev libboost-atomic1.65-dev libboost-chrono1.65-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
-      - checkout
-      - run: cmake -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=ubuntu -DDEB_DISTRO=bionic -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
-      - run: make -j2
-      - run: make package
-      - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
-      - run: mkdir -p /root/debs && mv /root/project/*.deb /root/debs/
-      - store_artifacts:
-          path: /root/debs/
   build_ubuntu_focal:
     docker:
       - image: ubuntu:focal
@@ -108,14 +94,14 @@ jobs:
       - run: mkdir -p /root/rpms && mv /root/rpmbuild/RPMS/x86_64/*.rpm /root/rpms/
       - store_artifacts:
           path: /root/rpms/
-  build_mint_uma: # based on ubuntu focal
+  build_mint_una: # based on ubuntu focal
     docker:
-      - image: linuxmintd/mint20.2-amd64
+      - image: linuxmintd/mint20.3-amd64
     steps:
       - run: apt-get update
       - run: DEBIAN_FRONTEND="noninteractive" TZ="America/Los_Angeles" apt-get install -y git ssh sshpass build-essential clang cmake libboost-thread1.71-dev libboost-system1.71-dev libboost-filesystem1.71-dev libboost-date-time1.71-dev libboost-atomic1.71-dev libboost-chrono1.71-dev libogg-dev libvorbis-dev libavutil-dev libavformat-dev libswresample-dev libncursesw5-dev libasound2-dev libpulse-dev pulseaudio libmicrohttpd-dev libmp3lame-dev libcurl4-openssl-dev libev-dev libssl-dev libtag1-dev libsystemd-dev
       - checkout
-      - run: cmake -DENABLE_PCH=true -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=mint -DDEB_DISTRO=uma -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
+      - run: cmake -DENABLE_PCH=true -DGENERATE_DEB=1 -DDEB_ARCHITECTURE=amd64 -DDEB_PLATFORM=mint -DDEB_DISTRO=una -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .
       - run: make -j2
       - run: make package
       - run: ./script/copy-artifacts-to-host.sh /root/project/*.deb
@@ -160,7 +146,6 @@ workflows:
   version: 2
   build_and_package:
     jobs:
-      - build_ubuntu_bionic: *workflow_filters
       - build_ubuntu_focal: *workflow_filters
       - build_ubuntu_hirsute: *workflow_filters
       - build_ubuntu_impish: *workflow_filters
@@ -168,6 +153,6 @@ workflows:
       - build_fedora_33: *workflow_filters
       - build_fedora_34: *workflow_filters
       - build_fedora_35: *workflow_filters
-      - build_mint_uma: *workflow_filters
+      - build_mint_una: *workflow_filters
       - build_debian_buster: *workflow_filters
       - build_debian_bullseye: *workflow_filters
