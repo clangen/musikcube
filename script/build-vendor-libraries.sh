@@ -13,7 +13,6 @@ OS=$(uname)
 ARCH=$(uname -m)
 BOOST_VERSION="1_76_0"
 OPENSSL_VERSION="1.1.1m"
-OPENSSL_LIB_PATH="$(pwd)/openssl-${OPENSSL_VERSION}/output/lib"
 CURL_VERSION="7.81.0"
 LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.0"
@@ -79,17 +78,6 @@ function build_openssl() {
     mkdir ../openssl-bin
     cp -rfp output/* ../openssl-bin
     cd ..
-
-    if [ $OS == "Darwin" ]; then
-        cd openssl-bin/lib
-        install_name_tool -id "@rpath/libcrypto.1.1.dylib" libcrypto.1.1.dylib
-        install_name_tool -id "@rpath/libcrypto.dylib" libcrypto.dylib
-        install_name_tool -id "@rpath/libssl.1.1.dylib" libssl.1.1.dylib
-        install_name_tool -id "@rpath/libssl.dylib" libssl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libssl.1.1.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.dylib" libssl.dylib
-        cd ../../
-    fi
 }
 
 #
@@ -137,17 +125,6 @@ function build_curl() {
     mkdir ../curl-bin
     cp -rfp output/* ../curl-bin
     cd ..
-
-    if [ $OS == "Darwin" ]; then
-        cd curl-bin/lib
-        install_name_tool -id "@rpath/libcurl.dylib" libcurl.dylib
-        install_name_tool -id "@rpath/libcurl.4.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.4.dylib
-        cd ../../
-    fi
 }
 
 #
@@ -165,13 +142,6 @@ function build_libmicrohttpd() {
     mkdir ../libmicrohttpd-bin
     cp -rfp output/* ../libmicrohttpd-bin/
     cd ..
-
-    if [ $OS == "Darwin" ]; then
-        cd libmicrohttpd-bin/lib/
-        install_name_tool -id "@rpath/libmicrohttpd.dylib" libmicrohttpd.dylib
-        install_name_tool -id "@rpath/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
-        cd ../../
-    fi
 }
 
 #
@@ -420,19 +390,6 @@ function build_ffmpeg() {
     mkdir ../ffmpeg-bin
     cp -rfp \@rpath/* ../ffmpeg-bin
     cd ..
-
-    if [ $OS == "Darwin" ]; then
-        cd ffmpeg-bin/lib/
-        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavformat-musikcube.59.dylib
-        cd ../../
-    fi
 }
 
 #
@@ -451,8 +408,50 @@ function build_lame() {
     mkdir ../lame-bin
     cp -rfp output/* ../lame-bin
     cd ..
+}
 
+#
+# macOS dylib rpaths
+#
+
+function patch_dylib_rpaths() {
     if [ $OS == "Darwin" ]; then
+        OPENSSL_LIB_PATH="$(pwd)/openssl-${OPENSSL_VERSION}/output/lib"
+
+        cd openssl-bin/lib
+        install_name_tool -id "@rpath/libcrypto.1.1.dylib" libcrypto.1.1.dylib
+        install_name_tool -id "@rpath/libcrypto.dylib" libcrypto.dylib
+        install_name_tool -id "@rpath/libssl.1.1.dylib" libssl.1.1.dylib
+        install_name_tool -id "@rpath/libssl.dylib" libssl.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libssl.1.1.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.dylib" libssl.dylib
+        cd ../../
+
+        cd curl-bin/lib
+        install_name_tool -id "@rpath/libcurl.dylib" libcurl.dylib
+        install_name_tool -id "@rpath/libcurl.4.dylib" libcurl.4.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.4.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.4.dylib
+        cd ../../
+
+        cd ffmpeg-bin/lib/
+        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavformat-musikcube.59.dylib
+        cd ../../
+
+        cd libmicrohttpd-bin/lib/
+        install_name_tool -id "@rpath/libmicrohttpd.dylib" libmicrohttpd.dylib
+        install_name_tool -id "@rpath/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
+        cd ../../
+
         cd lame-bin/lib/
         install_name_tool -id "@rpath/libmp3lame.dylib" libmp3lame.dylib
         install_name_tool -id "@rpath/libmp3lame.0.dylib" libmp3lame.0.dylib
@@ -471,3 +470,4 @@ build_libmicrohttpd
 stage_opus_ogg_vorbis
 build_ffmpeg
 build_lame
+patch_dylib_rpaths

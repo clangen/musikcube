@@ -2,6 +2,8 @@
 
 # set -x
 
+# https://scriptingosx.com/2021/07/notarize-a-command-line-tool-with-notarytool/
+
 VERSION=$1
 
 if [[ -z "${VERSION}" ]]; then
