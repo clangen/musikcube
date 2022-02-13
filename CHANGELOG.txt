@@ -1,3 +1,7 @@
+0.96.12
+
+* macOS only release that fixes standalone binaries.
+
 0.96.11
 
 * added support for ffmpeg5 libraries.
