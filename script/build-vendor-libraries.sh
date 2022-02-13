@@ -126,6 +126,8 @@ function build_curl() {
         --disable-mqtt \
         --disable-dict \
         --disable-ldap \
+        --without-librtmp \
+        --without-zstd \
         --without-brotli \
         --without-libidn2 \
         --without-nghttp2 \
