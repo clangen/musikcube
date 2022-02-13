@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf bin/lib/ 2> /dev/null
+
 mkdir -p bin/lib/
 mkdir -p bin/plugins/
 pushd bin/plugins
@@ -28,17 +30,14 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/boost-bin/lib/libboost_system.dylib ./bin/lib
     cp vendor/boost-bin/lib/libboost_thread.dylib ./bin/lib
 
-    cp vendor/openssl-bin/lib/libcrypto.dylib ./bin/lib
-    cp vendor/openssl-bin/lib/libssl.dylib ./bin/lib
+    cp vendor/openssl-bin/lib/libcrypto.1.1.dylib ./bin/lib
+    cp vendor/openssl-bin/lib/libssl.1.1.dylib ./bin/lib
 
-    cp vendor/curl-bin/lib/libcurl.dylib ./bin/lib
+    cp vendor/curl-bin/lib/libcurl.4.dylib ./bin/lib
 
-    cp vendor/libmicrohttpd-bin/lib/libmicrohttpd.dylib ./bin/lib
+    cp vendor/libmicrohttpd-bin/lib/libmicrohttpd.12.dylib ./bin/lib
 
-    cd bin/lib/
-    ln -s libcrypto.dylib libcrypto.1.1.dylib
-    ln -s libssl.dylib libssl.1.1.dylib
-    cd ../../
+    cp vendor/lame-bin/lib/libmp3lame.0.dylib ./bin/lib
 
 elif [[ "$PLATFORM" == 'Linux' ]]; then
     echo "[stage-static-vendor-libraries] staging Linux .so files..."

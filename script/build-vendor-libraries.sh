@@ -9,6 +9,8 @@
 export CFLAGS="-fPIC"
 export CXXFLAGS="-fPIC"
 
+RPATH="@rpath"
+
 OS=$(uname)
 ARCH=$(uname -m)
 BOOST_VERSION="1_76_0"
@@ -148,70 +150,14 @@ function build_libmicrohttpd() {
 # ffmpeg
 #
 
-function stage_opus_ogg_vorbis() {
-    if [ $OS == "Darwin" ]; then
-        # instead of building opus, ogg and vorbis from source we snag them
-        # from brew, update their dylib ids with @rpath, re-sign them, then create
-        # new pkg-config files to point towards this directory. that way ffmpeg
-        # will pick them up automatically.
-
-        rm -rf opus-ogg-vorbis
-        mkdir opus-ogg-vorbis
-        cd opus-ogg-vorbis
-        export PKG_CONFIG_PATH=$(pwd)
-
-        BREW=$(brew --prefix)
-
-        # create pkg-config files to point towards this dir
-        cp $BREW/opt/opus/lib/pkgconfig/opus.pc .
-        cp $BREW/opt/libogg/lib/pkgconfig/ogg.pc .
-        cp $BREW/opt/libvorbis/lib/pkgconfig/vorbis.pc .
-        cp $BREW/opt/libvorbis/lib/pkgconfig/vorbisenc.pc .
-        chmod 644 *.pc
-        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" opus.pc
-        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" ogg.pc
-        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" vorbis.pc
-        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" vorbisenc.pc
-        rm *.bak
-
-        # copy libs, update their ids, then resign
-        LIBOPUS="$BREW/opt/opus/lib/libopus.0.dylib"
-        LIBOGG="$BREW/opt/libogg/lib/libogg.0.dylib"
-        LIBVORBIS="$BREW/opt/libvorbis/lib/libvorbis.0.dylib"
-        LIBVORBISENC="$BREW/opt/libvorbis/lib/libvorbisenc.2.dylib"
-        cp ${LIBOPUS} ${LIBOGG} ${LIBVORBIS} ${LIBVORBISENC} .
-        chmod 755 *.dylib
-        install_name_tool -id "@rpath/libopus.0.dylib" ./libopus.0.dylib
-        install_name_tool -id "@rpath/libogg.0.dylib" ./libogg.0.dylib
-        install_name_tool -id "@rpath/libvorbis.0.dylib" ./libvorbis.0.dylib
-        install_name_tool -id "@rpath/libvorbisenc.2.dylib" ./libvorbisenc.2.dylib
-        codesign --remove-signature ./libopus.0.dylib
-        codesign --remove-signature ./libogg.0.dylib
-        codesign --remove-signature ./libvorbis.0.dylib
-        codesign --remove-signature ./libvorbisenc.2.dylib
-        codesign --sign=- ./libopus.0.dylib
-        codesign --sign=- ./libogg.0.dylib
-        codesign --sign=- ./libvorbis.0.dylib
-        codesign --sign=- ./libvorbisenc.2.dylib
-
-        # these links are required for pkg-config to be happy
-        ln -s libopus.0.dylib libopus.dylib
-        ln -s libogg.0.dylib libogg.dylib
-        ln -s libvorbis.0.dylib libvorbis.dylib
-        ln -s libvorbisenc.2.dylib libvorbisenc.dylib
-
-        cd ..
-    fi
-}
-
 function build_ffmpeg() {
-    rm -rf ffmpeg-${FFMPEG_VERSION} ffmpeg-bin
+    rm -rf ffmpeg-${FFMPEG_VERSION}
+    rm -rf ffmpeg-bin
     mkdir -p ffmpeg-bin/lib
-
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
-        --prefix="@rpath" \
+        --prefix="$(pwd)/output/" \
         --enable-rpath \
         --disable-asm \
         --enable-pic \
@@ -388,7 +334,7 @@ function build_ffmpeg() {
     make ${JOBS} || exit $?
     make install
     mkdir ../ffmpeg-bin
-    cp -rfp \@rpath/* ../ffmpeg-bin
+    cp -rfp output/* ../ffmpeg-bin
     cd ..
 }
 
@@ -414,47 +360,140 @@ function build_lame() {
 # macOS dylib rpaths
 #
 
+function stage_opus_ogg_vorbis() {
+    if [ $OS == "Darwin" ]; then
+        # instead of building opus, ogg and vorbis from source we snag them
+        # from brew, update their dylib ids with @rpath, re-sign them, then create
+        # new pkg-config files to point towards this directory. that way ffmpeg
+        # will pick them up automatically.
+
+        rm -rf opus-ogg-vorbis
+        mkdir opus-ogg-vorbis
+        cd opus-ogg-vorbis
+        export PKG_CONFIG_PATH=$(pwd)
+
+        BREW=$(brew --prefix)
+
+        # create pkg-config files to point towards this dir
+        cp $BREW/opt/opus/lib/pkgconfig/opus.pc .
+        cp $BREW/opt/libogg/lib/pkgconfig/ogg.pc .
+        cp $BREW/opt/libvorbis/lib/pkgconfig/vorbis.pc .
+        cp $BREW/opt/libvorbis/lib/pkgconfig/vorbisenc.pc .
+        chmod 644 *.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" opus.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" ogg.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" vorbis.pc
+        perl -i.bak -0pe "s|libdir.*\n|libdir=$(pwd)\n|" vorbisenc.pc
+        rm *.bak
+
+        # copy libs, update their ids, then resign
+        LIBOPUS="$BREW/opt/opus/lib/libopus.0.dylib"
+        LIBOGG="$BREW/opt/libogg/lib/libogg.0.dylib"
+        LIBVORBIS="$BREW/opt/libvorbis/lib/libvorbis.0.dylib"
+        LIBVORBISENC="$BREW/opt/libvorbis/lib/libvorbisenc.2.dylib"
+
+        cp ${LIBOPUS} ${LIBOGG} ${LIBVORBIS} ${LIBVORBISENC} .
+        chmod 755 *.dylib
+
+        install_name_tool -id "$RPATH/libopus.0.dylib" ./libopus.0.dylib
+        codesign --remove-signature ./libopus.0.dylib
+        codesign --sign=- ./libopus.0.dylib
+        ln -s libopus.0.dylib libopus.dylib
+
+        install_name_tool -id "$RPATH/libogg.0.dylib" ./libogg.0.dylib
+        codesign --remove-signature ./libogg.0.dylib
+        codesign --sign=- ./libogg.0.dylib
+        ln -s libogg.0.dylib libogg.dylib
+
+        install_name_tool -id "$RPATH/libvorbis.0.dylib" ./libvorbis.0.dylib
+        install_name_tool -change "${LIBOGG}" "$RPATH/libogg.0.dylib" ./libvorbis.0.dylib
+        ln -s libvorbis.0.dylib libvorbis.dylib
+
+        install_name_tool -id "$RPATH/libvorbisenc.2.dylib" ./libvorbisenc.2.dylib
+        install_name_tool -change "${LIBOGG}" "$RPATH/libogg.0.dylib" ./libvorbisenc.2.dylib
+        install_name_tool -change "${LIBVORBIS}" "$RPATH/libvorbis.0.dylib" ./libvorbisenc.2.dylib
+        # odd man out... not sure why this is this way...
+        LIBVORBIS_CELLAR="$BREW/Cellar/libvorbis/1.3.7/lib/libvorbis.0.dylib"
+        install_name_tool -change "${LIBVORBIS_CELLAR}" "$RPATH/libvorbis.0.dylib" ./libvorbisenc.2.dylib
+        #end weird hack
+        ln -s libvorbisenc.2.dylib libvorbisenc.dylib
+
+        codesign --remove-signature ./libvorbis.0.dylib
+        codesign --remove-signature ./libvorbisenc.2.dylib
+        codesign --sign=- ./libvorbis.0.dylib
+        codesign --sign=- ./libvorbisenc.2.dylib
+
+        cd ..
+    fi
+}
+
 function patch_dylib_rpaths() {
     if [ $OS == "Darwin" ]; then
         OPENSSL_LIB_PATH="$(pwd)/openssl-${OPENSSL_VERSION}/output/lib"
+        FFMPEG_LIB_PATH="$(pwd)/ffmpeg-${FFMPEG_VERSION}/output/lib"
+
+        cd ffmpeg-bin/lib
+        install_name_tool -id "$RPATH/libavutil-musikcube.57.dylib" libavutil-musikcube.57.dylib
+        rm libavutil-musikcube.dylib
+        ln -s libavutil-musikcube.57.dylib libavutil-musikcube.dylib
+
+        install_name_tool -id "$RPATH/libavformat-musikcube.59.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "$FFMPEG_LIB_PATH/libswresample-musikcube.4.dylib" "$RPATH/libswresample-musikcube.4.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "$FFMPEG_LIB_PATH/libavcodec-musikcube.59.dylib" "$RPATH/libavcodec-musikcube.59.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "$FFMPEG_LIB_PATH/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBOPUS}" "$RPATH/libopus.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "$RPATH/libogg.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "$RPATH/libvorbis.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "$RPATH/libvorbisenc.2.dylib" libavformat-musikcube.59.dylib
+        rm libavformat-musikcube.dylib
+        ln -s libavformat-musikcube.59.dylib libavformat-musikcube.dylib
+
+        install_name_tool -id "$RPATH/libavcodec-musikcube.59.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "$FFMPEG_LIB_PATH/libswresample-musikcube.4.dylib" "$RPATH/libswresample-musikcube.4.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "$FFMPEG_LIB_PATH/libavcodec-musikcube.59.dylib" "$RPATH/libavcodec-musikcube.59.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "$FFMPEG_LIB_PATH/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOPUS}" "$RPATH/libopus.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "$RPATH/libogg.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "$RPATH/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "$RPATH/libvorbisenc.2.dylib" libavcodec-musikcube.59.dylib
+        rm libavcodec-musikcube.dylib
+        ln -s libavcodec-musikcube.59.dylib libavcodec-musikcube.dylib
+
+        install_name_tool -id "$RPATH/libswresample-musikcube.4.dylib" libswresample-musikcube.4.dylib
+        install_name_tool -change "$FFMPEG_LIB_PATH/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libswresample-musikcube.4.dylib
+        rm libswresample-musikcube.dylib
+        ln -s libswresample-musikcube.4.dylib libswresample-musikcube.dylib
+        cd ../../
 
         cd openssl-bin/lib
-        install_name_tool -id "@rpath/libcrypto.1.1.dylib" libcrypto.1.1.dylib
-        install_name_tool -id "@rpath/libcrypto.dylib" libcrypto.dylib
-        install_name_tool -id "@rpath/libssl.1.1.dylib" libssl.1.1.dylib
-        install_name_tool -id "@rpath/libssl.dylib" libssl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libssl.1.1.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.dylib" libssl.dylib
+        install_name_tool -id "$RPATH/libcrypto.1.1.dylib" libcrypto.1.1.dylib
+        rm libcrypto.dylib
+        ln -s libcrypto.1.1.dylib libcrypto.dylib
+
+        install_name_tool -id "$RPATH/libssl.1.1.dylib" libssl.1.1.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$RPATH/libcrypto.1.1.dylib" libssl.1.1.dylib
+        rm libssl.dylib
+        ln -s libssl.1.1.dylib libssl.dylib
         cd ../../
 
         cd curl-bin/lib
-        install_name_tool -id "@rpath/libcurl.dylib" libcurl.dylib
-        install_name_tool -id "@rpath/libcurl.4.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.4.dylib
-        cd ../../
-
-        cd ffmpeg-bin/lib/
-        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -id "$RPATH/libcurl.4.dylib" libcurl.4.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$RPATH/libcrypto.1.1.dylib" libcurl.4.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "$RPATH/libssl.1.1.dylib" libcurl.4.dylib
+        rm libcurl.dylib
+        ln -s libcurl.4.dylib libcurl.dylib
         cd ../../
 
         cd libmicrohttpd-bin/lib/
-        install_name_tool -id "@rpath/libmicrohttpd.dylib" libmicrohttpd.dylib
-        install_name_tool -id "@rpath/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
+        install_name_tool -id "$RPATH/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
+        rm libmicrohttpd.dylib
+        ln -s libmicrohttpd.12.dylib libmicrohttpd.dylib
         cd ../../
 
         cd lame-bin/lib/
-        install_name_tool -id "@rpath/libmp3lame.dylib" libmp3lame.dylib
-        install_name_tool -id "@rpath/libmp3lame.0.dylib" libmp3lame.0.dylib
+        install_name_tool -id "$RPATH/libmp3lame.0.dylib" libmp3lame.0.dylib
+        rm libmp3lame.dylib
+        ln -s libmp3lame.0.dylib libmp3lame.dylib
         cd ../../
     fi
 }

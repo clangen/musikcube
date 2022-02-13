@@ -14,7 +14,7 @@ target_include_directories(server BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/3r
 target_include_directories(server BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 
 if (${BUILD_STANDALONE} MATCHES "true")
-  find_library(LIBMICROHTTPD NAMES microhttpd PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH NO_CACHE)
+  find_vendor_library(LIBMICROHTTPD microhttpd)
 else()
   if (APPLE)
     find_library(LIBGNUTLS NAMES gnutls)

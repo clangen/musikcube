@@ -5,11 +5,11 @@ set (ffmpegdecoder_SOURCES
 add_library(ffmpegdecoder SHARED ${ffmpegdecoder_SOURCES})
 
 if (${BUILD_STANDALONE} MATCHES "true")
-    target_include_directories(ffmpegdecoder PRIVATE BEFORE ${VENDOR_INCLUDE_DIRECTORIES})
-    find_library(AVCODEC NAMES avcodec-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
-    find_library(AVUTIL NAMES avutil-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
-    find_library(AVFORMAT NAMES avformat-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
-    find_library(SWRESAMPLE NAMES swresample-musikcube PATHS ${VENDOR_LINK_DIRECTORIES} NO_DEFAULT_PATH)
+    add_vendor_includes(ffmpegdecoder)
+    find_vendor_library(AVCODEC avcodec-musikcube)
+    find_vendor_library(AVUTIL avutil-musikcube)
+    find_vendor_library(AVFORMAT avformat-musikcube)
+    find_vendor_library(SWRESAMPLE swresample-musikcube)
 else()
     # fedora (and probably other RPM-based distros) put ffmpeg includes here...
     include_directories("/usr/include/ffmpeg")
