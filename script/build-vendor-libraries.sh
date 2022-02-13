@@ -9,6 +9,8 @@
 export CFLAGS="-fPIC"
 export CXXFLAGS="-fPIC"
 
+EXE_LIBS="@executable_path/lib"
+
 OS=$(uname)
 ARCH=$(uname -m)
 BOOST_VERSION="1_76_0"
@@ -181,10 +183,10 @@ function stage_opus_ogg_vorbis() {
         LIBVORBISENC="$BREW/opt/libvorbis/lib/libvorbisenc.2.dylib"
         cp ${LIBOPUS} ${LIBOGG} ${LIBVORBIS} ${LIBVORBISENC} .
         chmod 755 *.dylib
-        install_name_tool -id "@rpath/libopus.0.dylib" ./libopus.0.dylib
-        install_name_tool -id "@rpath/libogg.0.dylib" ./libogg.0.dylib
-        install_name_tool -id "@rpath/libvorbis.0.dylib" ./libvorbis.0.dylib
-        install_name_tool -id "@rpath/libvorbisenc.2.dylib" ./libvorbisenc.2.dylib
+        install_name_tool -id "$EXE_LIBS/libopus.0.dylib" ./libopus.0.dylib
+        install_name_tool -id "$EXE_LIBS/libogg.0.dylib" ./libogg.0.dylib
+        install_name_tool -id "$EXE_LIBS/libvorbis.0.dylib" ./libvorbis.0.dylib
+        install_name_tool -id "$EXE_LIBS/libvorbisenc.2.dylib" ./libvorbisenc.2.dylib
         codesign --remove-signature ./libopus.0.dylib
         codesign --remove-signature ./libogg.0.dylib
         codesign --remove-signature ./libvorbis.0.dylib
@@ -211,7 +213,7 @@ function build_ffmpeg() {
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
-        --prefix="@rpath" \
+        --prefix="$EXE_LIBS" \
         --enable-rpath \
         --disable-asm \
         --enable-pic \
@@ -388,7 +390,7 @@ function build_ffmpeg() {
     make ${JOBS} || exit $?
     make install
     mkdir ../ffmpeg-bin
-    cp -rfp \@rpath/* ../ffmpeg-bin
+    cp -rfp $EXE_LIBS/* ../ffmpeg-bin
     cd ..
 }
 
@@ -417,57 +419,58 @@ function build_lame() {
 function patch_dylib_rpaths() {
     if [ $OS == "Darwin" ]; then
         OPENSSL_LIB_PATH="$(pwd)/openssl-${OPENSSL_VERSION}/output/lib"
+        LIBS="@executable_path/lib"
 
         cd openssl-bin/lib
-        install_name_tool -id "@rpath/libcrypto.1.1.dylib" libcrypto.1.1.dylib
-        install_name_tool -id "@rpath/libcrypto.dylib" libcrypto.dylib
-        install_name_tool -id "@rpath/libssl.1.1.dylib" libssl.1.1.dylib
-        install_name_tool -id "@rpath/libssl.dylib" libssl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libssl.1.1.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.dylib" libssl.dylib
+        install_name_tool -id "$EXE_LIBS/libcrypto.1.1.dylib" libcrypto.1.1.dylib
+        install_name_tool -id "$EXE_LIBS/libcrypto.dylib" libcrypto.dylib
+        install_name_tool -id "$EXE_LIBS/libssl.1.1.dylib" libssl.1.1.dylib
+        install_name_tool -id "$EXE_LIBS/libssl.dylib" libssl.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$EXE_LIBS/libcrypto.1.1.dylib" libssl.1.1.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$EXE_LIBS/libcrypto.dylib" libssl.dylib
         cd ../../
 
         cd curl-bin/lib
-        install_name_tool -id "@rpath/libcurl.dylib" libcurl.dylib
-        install_name_tool -id "@rpath/libcurl.4.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "@rpath/libcrypto.1.1.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "@rpath/libssl.1.1.dylib" libcurl.4.dylib
+        install_name_tool -id "$EXE_LIBS/libcurl.dylib" libcurl.dylib
+        install_name_tool -id "$EXE_LIBS/libcurl.4.dylib" libcurl.4.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$EXE_LIBS/libcrypto.1.1.dylib" libcurl.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$EXE_LIBS/libcrypto.1.1.dylib" libcurl.4.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "$EXE_LIBS/libssl.1.1.dylib" libcurl.dylib
+        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "$EXE_LIBS/libssl.1.1.dylib" libcurl.4.dylib
         cd ../../
 
         cd ffmpeg-bin/lib/
-        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBOPUS}" "@rpath/libopus.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBOGG}" "@rpath/libogg.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBIS}" "@rpath/libvorbis.0.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "${LIBVORBISENC}" "@rpath/libvorbisenc.2.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBOPUS}" "$EXE_LIBS/libopus.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOPUS}" "$EXE_LIBS/libopus.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "$EXE_LIBS/libogg.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBOGG}" "$EXE_LIBS/libogg.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "$EXE_LIBS/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBIS}" "$EXE_LIBS/libvorbis.0.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "$EXE_LIBS/libvorbisenc.2.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "${LIBVORBISENC}" "$EXE_LIBS/libvorbisenc.2.dylib" libavformat-musikcube.59.dylib
         cd ../../
 
         cd libmicrohttpd-bin/lib/
-        install_name_tool -id "@rpath/libmicrohttpd.dylib" libmicrohttpd.dylib
-        install_name_tool -id "@rpath/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
+        install_name_tool -id "$EXE_LIBS/libmicrohttpd.dylib" libmicrohttpd.dylib
+        install_name_tool -id "$EXE_LIBS/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
         cd ../../
 
         cd lame-bin/lib/
-        install_name_tool -id "@rpath/libmp3lame.dylib" libmp3lame.dylib
-        install_name_tool -id "@rpath/libmp3lame.0.dylib" libmp3lame.0.dylib
+        install_name_tool -id "$EXE_LIBS/libmp3lame.dylib" libmp3lame.dylib
+        install_name_tool -id "$EXE_LIBS/libmp3lame.0.dylib" libmp3lame.0.dylib
         cd ../../
     fi
 }
 
-clean
-mkdir vendor
+# clean
+# mkdir vendor
 cd vendor
-fetch_packages
-build_boost
-build_openssl
-build_curl
-build_libmicrohttpd
-stage_opus_ogg_vorbis
+# fetch_packages
+# build_boost
+# build_openssl
+# build_curl
+# build_libmicrohttpd
+# stage_opus_ogg_vorbis
 build_ffmpeg
-build_lame
+# build_lame
 patch_dylib_rpaths

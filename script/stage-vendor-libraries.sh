@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf bin/lib/ 2> /dev/null
+
 mkdir -p bin/lib/
 mkdir -p bin/plugins/
 pushd bin/plugins
