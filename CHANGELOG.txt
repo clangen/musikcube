@@ -1,6 +1,6 @@
-0.96.12
+0.96.13
 
-* macOS only release that fixes standalone binaries.
+* macOS and Linux only release that fixes standalone binaries.
 
 0.96.11
 
