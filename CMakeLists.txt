@@ -54,8 +54,6 @@ else()
   find_library(LIBCRYPTO NAMES crypto)
 endif()
 
-find_library(LIBSSL NAMES ssl PATHS ${VENDOR_LINK_DIRECTORIES})
-find_library(LIBCRYPTO NAMES crypto PATHS ${VENDOR_LINK_DIRECTORIES})
 find_library(LIBZ NAMES z)
 
 set(musikcube_LINK_LIBS ${DEFAULT_OS_SYSTEM_LIBS} ${Boost_LIBRARIES} ${LIBCURL} ${LIBSSL} ${LIBCRYPTO} ${LIBZ})

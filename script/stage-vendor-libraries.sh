@@ -35,6 +35,11 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
 
     cp vendor/libmicrohttpd-bin/lib/libmicrohttpd.dylib ./bin/lib
 
+    cd bin/lib/
+    ln -s libcrypto.dylib libcrypto.1.1.dylib
+    ln -s libssl.dylib libssl.1.1.dylib
+    cd ../../
+
 elif [[ "$PLATFORM" == 'Linux' ]]; then
     echo "[stage-static-vendor-libraries] staging Linux .so files..."
 

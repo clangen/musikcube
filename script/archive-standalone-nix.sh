@@ -38,6 +38,7 @@ printf "\n"
 read -p ' clean and rebuild [y]? ' CLEAN
 if [[ $CLEAN == 'n' || $CLEAN == 'N' ]]; then
   printf "\n\n\n     ***** SKIPPING REBUILD *****\n\n\n"
+  ./script/stage-vendor-libraries.sh || exit $?
   sleep 3
 else
   printf "\n\n\n     ***** REBUILDING NOW *****\n\n\n"
