@@ -51,4 +51,4 @@ popd
 
 ditto -c -k --keepParent $DIR $ARCHIVE
 
-# xcrun notarytool submit $ARCHIVE --keychain-profile "$KEYCHAIN_PROFILE" --wait
+xcrun notarytool submit $ARCHIVE --keychain-profile "$KEYCHAIN_PROFILE" --wait
