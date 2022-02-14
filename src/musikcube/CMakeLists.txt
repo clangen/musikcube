@@ -78,6 +78,11 @@ configure_file("musikcube.in" "musikcube" @ONLY)
 add_executable(musikcube ${CUBE_SRCS})
 add_definitions(-DNCURSES_WIDECHAR)
 
+if (${BUILD_STANDALONE} MATCHES "true")
+    # ensures the curses app uses our local copy of `terminfo`
+    add_definitions(-DBUILD_STANDALONE)
+endif()
+
 target_include_directories(musikcube BEFORE PRIVATE ${VENDOR_INCLUDE_DIRECTORIES})
 
 # figure out if we have a "w" suffix or not...
