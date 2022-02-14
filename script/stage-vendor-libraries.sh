@@ -40,7 +40,7 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/lame-bin/lib/libmp3lame.0.dylib ./bin/lib
 
     mkdir -p ./bin/share/terminfo
-    cp -rfp /opt/homebrew/Cellar/ncurses/6.3/share/terminfo/* ./bin/share/terminfo
+    cp -rfp $(brew --prefix)/Cellar/ncurses/6.3/share/terminfo/* ./bin/share/terminfo
 
 elif [[ "$PLATFORM" == 'Linux' ]]; then
     echo "[stage-static-vendor-libraries] staging Linux .so files..."
