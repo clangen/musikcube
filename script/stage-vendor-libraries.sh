@@ -80,6 +80,9 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp /usr/lib/x86_64-linux-gnu/libvorbisenc.so.2 ./bin/lib
     cp /usr/lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
 
+    mkdir -p ./bin/share/terminfo
+    cp -rfp /lib/terminfo/* ./bin/share/terminfo
+
     # update the RPATH so libraries in libs/ can discover each other,
     # and plugins can discover themselves, and libs/ (but not the
     # other way around)
