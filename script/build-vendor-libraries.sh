@@ -13,6 +13,7 @@ RPATH="@rpath"
 
 OS=$(uname)
 ARCH=$(uname -m)
+BOOST_VERSION_URL_PATH="1.76.0"
 BOOST_VERSION="1_76_0"
 OPENSSL_VERSION="1.1.1m"
 CURL_VERSION="7.81.0"
@@ -35,7 +36,7 @@ function clean() {
 #
 
 function fetch_packages() {
-    wget https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_${BOOST_VERSION}.tar.bz2
+    wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION_URL_PATH}/source/boost_${BOOST_VERSION}.tar.bz2
     wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
     wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
     wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
@@ -55,9 +56,9 @@ function build_boost() {
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
-    ./bootstrap.sh --without-libraries=python,mpi,log
+    ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread
     ./b2 headers
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared,static cxxflags=${BOOST_CXX_FLAGS} --prefix=../boost-bin/ install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} --prefix=../boost-bin/ install || exit $?
     cd ..
 }
 
@@ -92,7 +93,6 @@ function build_curl() {
     tar xvfz curl-${CURL_VERSION}.tar.gz
     cd curl-${CURL_VERSION}
     ./configure --enable-shared \
-        --enable-static \
         --with-pic \
         --with-openssl="../openssl-bin/" \
         --enable-optimize \
@@ -138,7 +138,7 @@ function build_libmicrohttpd() {
     rm -rf libmicrohttpd-bin
     tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     cd libmicrohttpd-${LIBMICROHTTPD_VERSION}
-    ./configure --enable-shared --enable-static --with-pic --enable-https=no --disable-curl --prefix=`pwd`/output
+    ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=`pwd`/output
     make -j8 || exit $?
     make install
     mkdir ../libmicrohttpd-bin
@@ -161,7 +161,6 @@ function build_ffmpeg() {
         --enable-rpath \
         --disable-asm \
         --enable-pic \
-        --enable-static \
         --enable-shared \
         --disable-everything \
         --disable-programs \
