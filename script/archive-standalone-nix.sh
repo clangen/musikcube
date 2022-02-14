@@ -57,6 +57,7 @@ mkdir -p $OUTDIR/lib
 mkdir -p $OUTDIR/plugins
 mkdir -p $OUTDIR/locales
 mkdir -p $OUTDIR/themes
+mkdir -p $OUTDIR/share/terminfo
 
 cp bin/musikcube $OUTDIR
 cp bin/musikcubed $OUTDIR
@@ -65,11 +66,7 @@ cp bin/lib/* $OUTDIR/lib
 cp bin/plugins/*.${DLL_EXT} $OUTDIR/plugins
 cp bin/locales/*.json $OUTDIR/locales
 cp bin/themes/*.json $OUTDIR/themes
-
-if [ $OS == "Darwin" ]; then
-  mkdir -p $OUTDIR/share/terminfo
-  cp -rfp bin/share/terminfo/* $OUTDIR/share/terminfo/
-fi
+cp -rfp bin/share/terminfo/* $OUTDIR/share/terminfo/
 
 strip $OUTDIR/musikcube
 strip $OUTDIR/musikcubed
