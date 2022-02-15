@@ -20,8 +20,9 @@ CURL_VERSION="7.81.0"
 LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.0"
 LAME_VERSION="3.100"
+LIBOPENMPT_VERSION="0.6.1"
 
-OUTDIR=$(realpath $(pwd)/vendor/bin)
+OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
 
 JOBS="-j8"
@@ -45,6 +46,7 @@ function fetch_packages() {
     wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
     wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-${LAME_VERSION}.tar.gz
+    wget https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
 }
 
 #
@@ -344,6 +346,36 @@ function build_lame() {
 }
 
 #
+# libopenmpt
+#
+
+function build_libopenmpt() {
+    rm -rf libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
+    tar xvfz libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
+    cd libopenmpt-${LIBOPENMPT_VERSION}+release.autotools
+    ./configure \
+        --disable-dependency-tracking \
+        --enable-shared \
+        --disable-openmpt123 \
+        --disable-examples \
+        --disable-tests \
+        --disable-doxygen-doc \
+        --disable-doxygen-html \
+        --without-mpg123 \
+        --without-ogg \
+        --without-vorbis \
+        --without-vorbisfile \
+        --without-portaudio \
+        --without-portaudiocpp \
+        --without-sndfile \
+        --without-flac \
+        --prefix=${OUTDIR}
+    make ${JOBS} || exit $?
+    make install
+    cd ..
+}
+
+#
 # macOS dylib rpaths
 #
 
@@ -476,6 +508,11 @@ function patch_dylib_rpaths() {
         rm libmp3lame.dylib
         ln -s libmp3lame.0.dylib libmp3lame.dylib
 
+        # libopenmpt
+        install_name_tool -id "$RPATH/libopenmpt.0.dylib" libopenmpt.0.dylib
+        rm libopenmpt.dylib
+        ln -s libopenmpt.0.dylib libopenmpt.dylib
+
         cd ../../
     fi
 }
@@ -491,4 +528,5 @@ build_libmicrohttpd
 stage_opus_ogg_vorbis
 build_ffmpeg
 build_lame
+build_libopenmpt
 patch_dylib_rpaths
