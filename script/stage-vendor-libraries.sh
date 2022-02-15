@@ -66,19 +66,17 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
 
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
 
+    cp vendor/bin/lib/libopenmpt.so.0 ./bin/lib
+
     cp /lib/x86_64-linux-gnu/libncursesw.so.6 ./bin/lib
     cp /lib/x86_64-linux-gnu/libtinfo.so.6 ./bin/lib
     cp /usr/lib/x86_64-linux-gnu/libpanelw.so.6 ./bin/lib
 
-    cp /usr/lib/x86_64-linux-gnu/libopenmpt.so.0 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libmpg123.so.0 ./bin/lib
     cp /usr/lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libvorbisfile.so.3 ./bin/lib
     cp /usr/lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
     cp /usr/lib/x86_64-linux-gnu/libopus.so.0 ./bin/lib
     cp /usr/lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
     cp /usr/lib/x86_64-linux-gnu/libvorbisenc.so.2 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
 
     mkdir -p ./bin/share/terminfo
     cp -rfp /lib/terminfo/* ./bin/share/terminfo
