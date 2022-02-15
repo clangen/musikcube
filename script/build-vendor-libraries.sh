@@ -21,6 +21,9 @@ LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.0"
 LAME_VERSION="3.100"
 
+OUTDIR=$(realpath $(pwd)/vendor/bin)
+LIBDIR="$OUTDIR/lib"
+
 JOBS="-j8"
 if [ $OS == "Darwin" ]; then
     JOBS="-j$(sysctl -n hw.ncpu)"
@@ -58,7 +61,7 @@ function build_boost() {
     cd boost_${BOOST_VERSION}
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread
     ./b2 headers
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} --prefix=../boost-bin/ install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 
@@ -72,14 +75,11 @@ function build_openssl() {
         OPENSSL_TYPE="darwin64-${ARCH}-cc"
     fi
 
-    rm -rf openssl-bin
     tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
     cd openssl-${OPENSSL_VERSION}
-    perl ./Configure --prefix=`pwd`/output no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE}
+    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE}
     make
     make install
-    mkdir ../openssl-bin
-    cp -rfp output/* ../openssl-bin
     cd ..
 }
 
@@ -89,12 +89,11 @@ function build_openssl() {
 
 function build_curl() {
     rm -rf curl-${CURL_VERSION}
-    rm -rf curl-bin
     tar xvfz curl-${CURL_VERSION}.tar.gz
     cd curl-${CURL_VERSION}
     ./configure --enable-shared \
         --with-pic \
-        --with-openssl="../openssl-bin/" \
+        --with-openssl="${OUTDIR}" \
         --enable-optimize \
         --enable-http \
         --enable-proxy \
@@ -121,11 +120,9 @@ function build_curl() {
         --without-brotli \
         --without-libidn2 \
         --without-nghttp2 \
-        --prefix=`pwd`/output/
+        --prefix=${OUTDIR}
     make ${JOBS} || exit $?
     make install
-    mkdir ../curl-bin
-    cp -rfp output/* ../curl-bin
     cd ..
 }
 
@@ -135,14 +132,11 @@ function build_curl() {
 
 function build_libmicrohttpd() {
     rm -rf libmicrohttpd-${LIBMICROHTTPD_VERSION}
-    rm -rf libmicrohttpd-bin
     tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     cd libmicrohttpd-${LIBMICROHTTPD_VERSION}
-    ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=`pwd`/output
+    ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=${OUTDIR}
     make -j8 || exit $?
     make install
-    mkdir ../libmicrohttpd-bin
-    cp -rfp output/* ../libmicrohttpd-bin/
     cd ..
 }
 
@@ -152,12 +146,10 @@ function build_libmicrohttpd() {
 
 function build_ffmpeg() {
     rm -rf ffmpeg-${FFMPEG_VERSION}
-    rm -rf ffmpeg-bin
-    mkdir -p ffmpeg-bin/lib
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
-        --prefix="$(pwd)/output/" \
+        --prefix=${OUTDIR} \
         --enable-rpath \
         --disable-asm \
         --enable-pic \
@@ -332,8 +324,6 @@ function build_ffmpeg() {
         --build-suffix=-musikcube
     make ${JOBS} || exit $?
     make install
-    mkdir ../ffmpeg-bin
-    cp -rfp output/* ../ffmpeg-bin
     cd ..
 }
 
@@ -342,16 +332,14 @@ function build_ffmpeg() {
 #
 
 function build_lame() {
-    rm -rf lame-${LAME_VERSION} lame-bin
+    rm -rf lame-${LAME_VERSION}
     tar xvfz lame-${LAME_VERSION}.tar.gz
     cd lame-${LAME_VERSION}
     # https://sourceforge.net/p/lame/mailman/message/36081038/
     perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
-    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=$(pwd)/output
+    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=${OUTDIR}
     make ${JOBS} || exit $?
     make install
-    mkdir ../lame-bin
-    cp -rfp output/* ../lame-bin
     cd ..
 }
 
@@ -366,9 +354,8 @@ function stage_opus_ogg_vorbis() {
         # new pkg-config files to point towards this directory. that way ffmpeg
         # will pick them up automatically.
 
-        rm -rf opus-ogg-vorbis
-        mkdir opus-ogg-vorbis
-        cd opus-ogg-vorbis
+        mkdir -p bin/lib/
+        cd bin/lib/
         export PKG_CONFIG_PATH=$(pwd)
 
         BREW=$(brew --prefix)
@@ -422,24 +409,23 @@ function stage_opus_ogg_vorbis() {
         codesign --sign=- ./libvorbis.0.dylib
         codesign --sign=- ./libvorbisenc.2.dylib
 
-        cd ..
+        cd ../..
     fi
 }
 
 function patch_dylib_rpaths() {
     if [ $OS == "Darwin" ]; then
-        OPENSSL_LIB_PATH="$(pwd)/openssl-${OPENSSL_VERSION}/output/lib"
-        FFMPEG_LIB_PATH="$(pwd)/ffmpeg-${FFMPEG_VERSION}/output/lib"
+        cd bin/lib
 
-        cd ffmpeg-bin/lib
         install_name_tool -id "$RPATH/libavutil-musikcube.57.dylib" libavutil-musikcube.57.dylib
         rm libavutil-musikcube.dylib
         ln -s libavutil-musikcube.57.dylib libavutil-musikcube.dylib
 
+        # ffmpeg
         install_name_tool -id "$RPATH/libavformat-musikcube.59.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "$FFMPEG_LIB_PATH/libswresample-musikcube.4.dylib" "$RPATH/libswresample-musikcube.4.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "$FFMPEG_LIB_PATH/libavcodec-musikcube.59.dylib" "$RPATH/libavcodec-musikcube.59.dylib" libavformat-musikcube.59.dylib
-        install_name_tool -change "$FFMPEG_LIB_PATH/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "$LIBDIR/libswresample-musikcube.4.dylib" "$RPATH/libswresample-musikcube.4.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "$LIBDIR/libavcodec-musikcube.59.dylib" "$RPATH/libavcodec-musikcube.59.dylib" libavformat-musikcube.59.dylib
+        install_name_tool -change "$LIBDIR/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libavformat-musikcube.59.dylib
         install_name_tool -change "${LIBOPUS}" "$RPATH/libopus.0.dylib" libavformat-musikcube.59.dylib
         install_name_tool -change "${LIBOGG}" "$RPATH/libogg.0.dylib" libavformat-musikcube.59.dylib
         install_name_tool -change "${LIBVORBIS}" "$RPATH/libvorbis.0.dylib" libavformat-musikcube.59.dylib
@@ -448,9 +434,9 @@ function patch_dylib_rpaths() {
         ln -s libavformat-musikcube.59.dylib libavformat-musikcube.dylib
 
         install_name_tool -id "$RPATH/libavcodec-musikcube.59.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "$FFMPEG_LIB_PATH/libswresample-musikcube.4.dylib" "$RPATH/libswresample-musikcube.4.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "$FFMPEG_LIB_PATH/libavcodec-musikcube.59.dylib" "$RPATH/libavcodec-musikcube.59.dylib" libavcodec-musikcube.59.dylib
-        install_name_tool -change "$FFMPEG_LIB_PATH/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "$LIBDIR/libswresample-musikcube.4.dylib" "$RPATH/libswresample-musikcube.4.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "$LIBDIR/libavcodec-musikcube.59.dylib" "$RPATH/libavcodec-musikcube.59.dylib" libavcodec-musikcube.59.dylib
+        install_name_tool -change "$LIBDIR/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libavcodec-musikcube.59.dylib
         install_name_tool -change "${LIBOPUS}" "$RPATH/libopus.0.dylib" libavcodec-musikcube.59.dylib
         install_name_tool -change "${LIBOGG}" "$RPATH/libogg.0.dylib" libavcodec-musikcube.59.dylib
         install_name_tool -change "${LIBVORBIS}" "$RPATH/libvorbis.0.dylib" libavcodec-musikcube.59.dylib
@@ -462,37 +448,34 @@ function patch_dylib_rpaths() {
         install_name_tool -change "$FFMPEG_LIB_PATH/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libswresample-musikcube.4.dylib
         rm libswresample-musikcube.dylib
         ln -s libswresample-musikcube.4.dylib libswresample-musikcube.dylib
-        cd ../../
 
-        cd openssl-bin/lib
+        # openssl
         install_name_tool -id "$RPATH/libcrypto.1.1.dylib" libcrypto.1.1.dylib
         rm libcrypto.dylib
         ln -s libcrypto.1.1.dylib libcrypto.dylib
 
         install_name_tool -id "$RPATH/libssl.1.1.dylib" libssl.1.1.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$RPATH/libcrypto.1.1.dylib" libssl.1.1.dylib
+        install_name_tool -change "${LIBDIR}/libcrypto.1.1.dylib" "$RPATH/libcrypto.1.1.dylib" libssl.1.1.dylib
         rm libssl.dylib
         ln -s libssl.1.1.dylib libssl.dylib
-        cd ../../
 
-        cd curl-bin/lib
+        # curl
         install_name_tool -id "$RPATH/libcurl.4.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libcrypto.1.1.dylib" "$RPATH/libcrypto.1.1.dylib" libcurl.4.dylib
-        install_name_tool -change "${OPENSSL_LIB_PATH}/libssl.1.1.dylib" "$RPATH/libssl.1.1.dylib" libcurl.4.dylib
+        install_name_tool -change "${LIBDIR}/libcrypto.1.1.dylib" "$RPATH/libcrypto.1.1.dylib" libcurl.4.dylib
+        install_name_tool -change "${LIBDIR}/libssl.1.1.dylib" "$RPATH/libssl.1.1.dylib" libcurl.4.dylib
         rm libcurl.dylib
         ln -s libcurl.4.dylib libcurl.dylib
-        cd ../../
 
-        cd libmicrohttpd-bin/lib/
+        # libmicrohttpd
         install_name_tool -id "$RPATH/libmicrohttpd.12.dylib" libmicrohttpd.12.dylib
         rm libmicrohttpd.dylib
         ln -s libmicrohttpd.12.dylib libmicrohttpd.dylib
-        cd ../../
 
-        cd lame-bin/lib/
+        # lame
         install_name_tool -id "$RPATH/libmp3lame.0.dylib" libmp3lame.0.dylib
         rm libmp3lame.dylib
         ln -s libmp3lame.0.dylib libmp3lame.dylib
+
         cd ../../
     fi
 }
