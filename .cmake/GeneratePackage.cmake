@@ -1,5 +1,10 @@
 if (${GENERATE_DEB} MATCHES "true" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
   if (${BUILD_STANDALONE} MATCHES "true")
+    set(RPM_ARCH "32bit")
+    if (${DEB_ARCHITECTURE} MATCHES "amd64")
+      set(RPM_ARCH "64bit")
+    endif()
+    message(STATUS "[generate-package] RPM_ARCH=${RPM_ARCH}")
     set(CPACK_PACKAGE_FILE_NAME "musikcube_standalone_${musikcube_VERSION}_${DEB_ARCHITECTURE}")
   else()
     set(DEB_BOOST_VERSION "1.55.0")
@@ -73,6 +78,19 @@ if (${GENERATE_DEB} MATCHES "true" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
   set(CPACK_RPM_PACKAGE_ARCHITECTURE, ${DEB_ARCHITECTURE})
   set(CPACK_RPM_PACKAGE_URL "https://www.musikcube.com")
   set(CPACK_RPM_PACKAGE_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
+  set(CPAKE_RPM_PACKAGE_PROVIDES
+    "libboost_atomic.so.1.76.0()(${RPM_ARCH})"
+    "libboost_chrono.so.1.76.0()(${RPM_ARCH})"
+    "libboost_date_time.so.1.76.0()(${RPM_ARCH})"
+    "libboost_filesystem.so.1.76.0()(${RPM_ARCH})"
+    "libboost_system.so.1.76.0()(${RPM_ARCH})"
+    "libboost_thread.so.1.76.0()(${RPM_ARCH})"
+    "libmusikcore.so()(${RPM_ARCH})"
+    "libncursesw.so.6(NCURSESW6_5.1.20000708)(${RPM_ARCH})"
+    "libncursesw.so.6(NCURSESW6_5.3.20021019)(${RPM_ARCH})"
+    "libncursesw.so.6(NCURSESW6_5.7.20081102)(${RPM_ARCH})"
+    "libpanelw.so.6(NCURSESW6_5.1.20000708)(${RPM_ARCH})"
+    "libtinfo.so.6(NCURSES6_TINFO_5.0.19991023)(${RPM_ARCH})")
 
   include(CPack)
 endif()

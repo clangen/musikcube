@@ -87,5 +87,5 @@ add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder")
 
 include(AddOsSpecificPlugins)
 include(InstallFiles)
-include(GenerateDeb)
+include(GeneratePackage)
 include(PostBuild)
