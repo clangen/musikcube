@@ -73,7 +73,7 @@ if (${GENERATE_DEB} MATCHES "true" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
   set(CPACK_RPM_PACKAGE_ARCHITECTURE, ${DEB_ARCHITECTURE})
   set(CPACK_RPM_PACKAGE_URL "https://www.musikcube.com")
   set(CPACK_RPM_PACKAGE_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
-  set(CPACK_RPM_REQUIRES_EXCLUDE_FROM "libboost_.*" "libmusikcore.so" "libncursesw.*" "libpanelw.*" "libtinfo.*")
+  set(CPACK_RPM_REQUIRES_EXCLUDE_FROM "^/.*$")
 
   include(CPack)
 endif()
