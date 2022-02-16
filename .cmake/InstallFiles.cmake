@@ -1,11 +1,18 @@
 # plugin dynamic libraries
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+if (APPLE)
   file(GLOB plugins "bin/plugins/*.dylib")
   install(FILES ${plugins} DESTINATION share/musikcube/plugins)
 else ()
   file(GLOB plugins "bin/plugins/*.so")
   install(FILES ${plugins} DESTINATION share/musikcube/plugins)
 endif ()
+
+if (${BUILD_STANDALONE} MATCHES "true")
+  file(GLOB libraries "bin/lib/*")
+  install(FILES ${libraries} DESTINATION share/musikcube/lib)
+  file(GLOB_RECURSE share "bin/share/*")
+  install(FILES ${share} DESTINATION share/musikcube/share)
+endif()
 
 # sdk header files
 file(GLOB sdk_headers "src/musikcore/sdk/*.h")
@@ -33,7 +40,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif()
 
 # libmusikcore shared library
-if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+if (APPLE)
   install(FILES "bin/libmusikcore.dylib" DESTINATION share/musikcube)
 else()
   install(FILES "bin/libmusikcore.so" DESTINATION share/musikcube)
