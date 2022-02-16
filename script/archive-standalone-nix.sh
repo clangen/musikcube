@@ -82,6 +82,7 @@ cd ../../
 if [ $OS == "Linux" ]; then
   cpack
   mv *.deb dist/$VERSION/
+  mv *.rpm dist/$VERSION/
 fi
 
 printf "\n\n\n     ***** DONE *****\n\n\n"

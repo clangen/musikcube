@@ -55,14 +55,24 @@ if (${GENERATE_DEB} MATCHES "true" AND CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     set(CPACK_PACKAGE_FILE_NAME "musikcube_${musikcube_VERSION}_${DEB_PLATFORM}_${DEB_DISTRO}_${DEB_ARCHITECTURE}")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS ${DEPENDENCIES})
+
+    set(CPACK_RPM_PACKAGE_REQUIRES "boost, libogg, libvorbis, ffmpeg-libs, ncurses, zlib, alsa-lib, pulseaudio-libs, openssl, libcurl, libmicrohttpd, lame, libev, taglib, libopenmpt")
   endif()
 
-  set(CPACK_GENERATOR "DEB")
+  set(CPACK_GENERATOR "DEB" "RPM")
+
   set(CPACK_PACKAGE_DESCRIPTION "musikcube, a terminal-based music player and library")
   set(CPACK_PACKAGE_VERSION_MAJOR "${musikcube_VERSION_MAJOR}")
   set(CPACK_PACKAGE_VERSION_MINOR "${musikcube_VERSION_MINOR}")
   set(CPACK_PACKAGE_VERSION_PATCH "${musikcube_VERSION_PATCH}")
+
   set(CPACK_DEBIAN_PACKAGE_MAINTAINER "casey langen")
   set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${DEB_ARCHITECTURE})
+
+  set(CPACK_RPM_PACKAGE_LICENSE "BSD-3-Clause")
+  set(CPACK_RPM_PACKAGE_ARCHITECTURE, ${DEB_ARCHITECTURE})
+  set(CPACK_RPM_PACKAGE_URL "https://www.musikcube.com")
+  set(CPACK_RPM_PACKAGE_VERSION "${musikcube_VERSION_MAJOR}.${musikcube_VERSION_MINOR}.${musikcube_VERSION_PATCH}")
+
   include(CPack)
 endif()
