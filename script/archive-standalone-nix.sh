@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -x
+set -x
 
 VERSION=$1
 
@@ -21,7 +21,7 @@ fi
 ARCH=$(uname -m)
 OS_ARCH="${FRIENDLY_OS_NAME}_${ARCH}"
 OUTNAME="musikcube_standalone_${OS_ARCH}_$VERSION"
-OUTDIR="dist/$OUTNAME"
+OUTDIR="dist/$VERSION/$OUTNAME"
 SCRIPTDIR=`dirname "$0"`
 
 DLL_EXT="so"
@@ -31,7 +31,7 @@ fi
 
 OS_SPECIFIC_BUILD_FLAGS=""
 if [ $OS == "Linux" ]; then
-  OS_SPECIFIC_BUILD_FLAGS="-DENABLE_PIPEWIRE=true"
+  OS_SPECIFIC_BUILD_FLAGS="-DENABLE_PIPEWIRE=true -DGENERATE_DEB=true -DDEB_ARCHITECTURE=$ARCH -DCMAKE_INSTALL_PREFIX=/usr"
 fi
 
 printf "\n"
@@ -50,8 +50,7 @@ else
   make ${JOBS} || exit $?
 fi
 
-rm -rf $OUTDIR
-rm dist/$OUTNAME* 2> /dev/null
+rm -rf dist/$VERSION 2> /dev/null
 
 mkdir -p $OUTDIR/lib
 mkdir -p $OUTDIR/plugins
@@ -75,11 +74,16 @@ strip $OUTDIR/lib/*
 strip $OUTDIR/libmusikcore.${DLL_EXT}
 strip $OUTDIR/plugins/*.${DLL_EXT}
 
-cd dist
+cd dist/$VERSION/
 tar cvf $OUTNAME.tar $OUTNAME
 bzip2 $OUTNAME.tar
-cd ..
+cd ../../
+
+if [ $OS == "Linux" ]; then
+  cpack
+  mv *.deb dist/$VERSION/
+fi
 
 printf "\n\n\n     ***** DONE *****\n\n\n"
-ls -al dist/$OUTNAME.tar.bz2
+ls -al dist/$VERSION
 printf "\n\n"
