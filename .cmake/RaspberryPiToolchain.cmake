@@ -2,9 +2,11 @@ set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
 set(CROSS_COMPILE_SYSROOT /build/rpi/sysroot)
+set(CROSS_COMPILE_PKG_CONFIG_PATH "${CROSS_COMPILE_SYSROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig")
+set(CROSS_COMPILE_STAGING /build/rpi/staging)
 
 set(CMAKE_SYSROOT ${CROSS_COMPILE_SYSROOT})
-set(CMAKE_STAGING_PREFIX /build/rpi/staging)
+set(CMAKE_STAGING_PREFIX ${CROSS_COMPILE_STAGING})
 
 set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
 set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)
