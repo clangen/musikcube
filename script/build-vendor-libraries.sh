@@ -181,12 +181,13 @@ function build_ffmpeg() {
       export PKG_CONFIG_PATH="${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     fi
 
+    # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
     rm -rf ffmpeg-${FFMPEG_VERSION}
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
         --prefix=${OUTDIR} \
-        --pkg-config="pkg-config" \ # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
+        --pkg-config="pkg-config" \
         --enable-rpath \
         --disable-asm \
         --enable-pic \
