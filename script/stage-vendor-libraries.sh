@@ -32,6 +32,7 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libcurl.4.dylib ./bin/lib
     cp vendor/bin/lib/libmicrohttpd.12.dylib ./bin/lib
     cp vendor/bin/lib/libmp3lame.0.dylib ./bin/lib
+    cp vendor/bin/lib/libopenmpt.0.dylib ./bin/lib
 
     mkdir -p ./bin/share/terminfo
     cp -rfp $(brew --prefix)/Cellar/ncurses/6.3/share/terminfo/* ./bin/share/terminfo
