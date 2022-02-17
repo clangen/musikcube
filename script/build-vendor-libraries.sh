@@ -76,14 +76,26 @@ function clean() {
 # download deps
 #
 
+function copy_or_download {
+    fn=$1
+    url=$2
+    if [[ -f "/tmp/$fn" ]]; then
+        cp "/tmp/$fn" .
+    else
+        wget "$url/$fn" /tmp/
+        cp "/tmp/$fn" .
+    fi
+}
+
 function fetch_packages() {
-    wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION_URL_PATH}/source/boost_${BOOST_VERSION}.tar.bz2
-    wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
-    wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
-    wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
-    wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
-    wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-${LAME_VERSION}.tar.gz
-    wget https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
+    # no trailing slash on url dirs!
+    copy_or_download https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION_URL_PATH}/source boost_${BOOST_VERSION}.tar.bz2
+    copy_or_download https://www.openssl.org/source openssl-${OPENSSL_VERSION}.tar.gz
+    copy_or_download https://curl.se/download curl-${CURL_VERSION}.tar.gz
+    copy_or_download https://ftp.gnu.org/gnu/libmicrohttpd libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
+    copy_or_download https://ffmpeg.org/releases ffmpeg-${FFMPEG_VERSION}.tar.bz2
+    copy_or_download https://downloads.sourceforge.net/project/lame/lame/3.100 lame-${LAME_VERSION}.tar.gz
+    copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
 }
 
 #
