@@ -12,6 +12,7 @@ fi
 OS=$(uname)
 
 JOBS="-j8"
+
 FRIENDLY_OS_NAME="linux"
 if [ $OS == "Darwin" ]; then
   FRIENDLY_OS_NAME="macos"
@@ -19,6 +20,10 @@ if [ $OS == "Darwin" ]; then
 fi
 
 ARCH=$(uname -m)
+if [ -n $CROSSCOMPILE ]; then
+  ARCH=$CROSSCOMPILE
+fi
+
 OS_ARCH="${FRIENDLY_OS_NAME}_${ARCH}"
 OUTNAME="musikcube_standalone_${OS_ARCH}_$VERSION"
 OUTDIR="dist/$VERSION/$OUTNAME"
@@ -39,17 +44,12 @@ if [ $OS == "Linux" ]; then
   fi
 fi
 
-rm vendor
 if [ $CROSSCOMPILE == "rpi" ]; then
-  ln -s ../vendor-rpi/ ./vendor
   CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain.cmake"
-  # ignore a bunch of ABI change warnings. https://stackoverflow.com/questions/48149323
-  CFLAGS="$CFLAGS -Wno-psabi"
-  CXXFLAGS="$CXXFLAGS -Wno-psabi"
-else
-  ln -s ../vendor-$ARCH/ ./vendor
 fi
 
+rm vendor
+ln -s ../vendor-$ARCH/ ./vendor
 printf "\nsetup symlink:\n"
 ls -ald vendor
 
