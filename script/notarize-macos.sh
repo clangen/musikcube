@@ -38,8 +38,8 @@ if [[ -z "${KEYCHAIN_PROFILE}" ]]; then
 fi
 
 ARCH=$(uname -m)
-DIR="./dist/musikcube_standalone_macos_${ARCH}_${VERSION}"
-ARCHIVE="./dist/musikcube_standalone_macos_${ARCH}_${VERSION}.zip"
+DIR="./dist/${VERSION}/musikcube_standalone_macos_${ARCH}_${VERSION}"
+ARCHIVE="./dist/${VERSION}/musikcube_standalone_macos_${ARCH}_${VERSION}.zip"
 
 pushd $DIR
 codesign --force --timestamp --options=runtime --sign $CERT_ID musikcube
