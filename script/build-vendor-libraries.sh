@@ -38,10 +38,9 @@ fi
 # update cross-compile vars, if specified.
 if [ $CROSSCOMPILE == "arm" ]; then
     ARM_ROOT="/build/rpi/sysroot"
-    export CFLAGS="$CFLAGS -I${ARM_ROOT}/usr/include"
+    export CPPFLAGS="-I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
     export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
-    export PKG_CONFIG_PATH="${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     OPENSSL_TYPE="linux-generic32"
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
@@ -94,8 +93,8 @@ function build_boost() {
         rm ~/user-config.jam f2> /dev/null
     fi
 
-    ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread
-    ./b2 headers
+    ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread || exit $?
+    ./b2 headers || exit $?
     ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" linkflags="${LDFLAGS}" --prefix=${OUTDIR} install || exit $?
     cd ..
 }
@@ -107,9 +106,9 @@ function build_boost() {
 function build_openssl() {
     tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
     cd openssl-${OPENSSL_VERSION}
-    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX}
+    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
     make
-    make install_sw # no docs!
+    make install
     cd ..
 }
 
@@ -151,7 +150,7 @@ function build_curl() {
         --without-libidn2 \
         --without-nghttp2 \
          ${GENERIC_CONFIGURE_FLAGS} \
-        --prefix=${OUTDIR}
+        --prefix=${OUTDIR} || exit $?
     make ${JOBS} || exit $?
     make install
     cd ..
@@ -176,6 +175,12 @@ function build_libmicrohttpd() {
 #
 
 function build_ffmpeg() {
+    # todo see if we can fix this hack...
+    OLD_PKG_CONFIG_PATH=${PKG_CONFIG_PATH}
+    if [ $CROSSCOMPILE == "arm" ]; then
+      export PKG_CONFIG_PATH="${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+    fi
+
     rm -rf ffmpeg-${FFMPEG_VERSION}
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
     cd ffmpeg-${FFMPEG_VERSION}
@@ -354,9 +359,10 @@ function build_ffmpeg() {
         --enable-encoder=wmav2 \
         --enable-encoder=libvorbis \
          ${FFMPEG_CONFIGURE_FLAGS} \
-        --build-suffix=-musikcube
+        --build-suffix=-musikcube || exit $?
     make ${JOBS} || exit $?
     make install
+    export PKG_CONFIG_PATH=${OLD_PKG_CONFIG_PATH}
     cd ..
 }
 
@@ -370,7 +376,7 @@ function build_lame() {
     cd lame-${LAME_VERSION}
     # https://sourceforge.net/p/lame/mailman/message/36081038/
     perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
-    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS}
+    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS} || exit $?
     make ${JOBS} || exit $?
     make install
     cd ..
@@ -401,7 +407,7 @@ function build_libopenmpt() {
         --without-sndfile \
         --without-flac \
          ${GENERIC_CONFIGURE_FLAGS} \
-        --prefix=${OUTDIR}
+        --prefix=${OUTDIR} || exit $?
     make ${JOBS} || exit $?
     make install
     cd ..
