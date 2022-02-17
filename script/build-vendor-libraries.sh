@@ -536,7 +536,7 @@ function patch_dylib_rpaths() {
         ln -s libavcodec-musikcube.59.dylib libavcodec-musikcube.dylib
 
         install_name_tool -id "$RPATH/libswresample-musikcube.4.dylib" libswresample-musikcube.4.dylib
-        install_name_tool -change "$FFMPEG_LIB_PATH/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libswresample-musikcube.4.dylib
+        install_name_tool -change "$LIBDIR/libavutil-musikcube.57.dylib" "$RPATH/libavutil-musikcube.57.dylib" libswresample-musikcube.4.dylib
         rm libswresample-musikcube.dylib
         ln -s libswresample-musikcube.4.dylib libswresample-musikcube.dylib
 

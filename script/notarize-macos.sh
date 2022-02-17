@@ -42,8 +42,11 @@ DIR="./dist/${VERSION}/musikcube_standalone_macos_${ARCH}_${VERSION}"
 ARCHIVE="./dist/${VERSION}/musikcube_standalone_macos_${ARCH}_${VERSION}.zip"
 
 pushd $DIR
-codesign --force --timestamp --options=runtime --sign $CERT_ID musikcube
-codesign --force --timestamp --options=runtime --sign $CERT_ID musikcubed
+codesign --remove-signature musikcube musikcubed libmusikcore.dylib
+codesign --remove-signature lib/*.dylib
+codesign --remove-signature plugins/*.dylib
+
+codesign --force --timestamp --options=runtime --sign $CERT_ID musikcube musikcubed
 codesign --force --timestamp --sign $CERT_ID libmusikcore.dylib
 codesign --force --timestamp --sign $CERT_ID lib/*.dylib
 codesign --force --timestamp --sign $CERT_ID plugins/*.dylib
