@@ -73,7 +73,7 @@ else
   make ${JOBS} || exit $?
 fi
 
-rm -rf dist/$VERSION 2> /dev/null
+rm -rf dist/$VERSION/*${OS_ARCH}_$VERSION* 2> /dev/null
 
 mkdir -p $OUTDIR/lib
 mkdir -p $OUTDIR/plugins
