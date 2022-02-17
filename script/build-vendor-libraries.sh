@@ -82,7 +82,7 @@ function copy_or_download {
     if [[ -f "/tmp/$fn" ]]; then
         cp "/tmp/$fn" .
     else
-        wget "$url/$fn" /tmp/
+        wget -P /tmp/ "$url/$fn"
         cp "/tmp/$fn" .
     fi
 }
