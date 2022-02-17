@@ -84,7 +84,7 @@ function copy_or_download {
     if [[ -f "$wget_cache/$fn" ]]; then
         cp "$wget_cache/$fn" .
     else
-        wget -P $wget_cache "$url/$fn" || exit $?
+        wget -P $wget_cache "$url_path/$fn" || exit $?
         cp "$wget_cache/$fn" .  || exit $?
     fi
 }
