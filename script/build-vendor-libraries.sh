@@ -35,21 +35,22 @@ if [ $OS == "Darwin" ]; then
     OPENSSL_TYPE="darwin64-${ARCH}-cc"
 fi
 
-# check cross-compile flags
-GENERIC_CONFIGURE_FLAGS=
-BOOST_TOOLSET=
+# update cross-compile vars, if specified.
 if [ $CROSSCOMPILE == "arm" ]; then
     ARM_ROOT="/build/rpi/sysroot"
     export CFLAGS="$CFLAGS -I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
     export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
+    export PKG_CONFIG_PATH="{$ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     OPENSSL_TYPE="linux-generic32"
-    FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
+    FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
     BOOST_TOOLSET="toolset=gcc-arm"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
-    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n  BOOST_TOOLSET=${BOOST_TOOLSET}\n\n\n"
+    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
+    printf "  BOOST_TOOLSET=${BOOST_TOOLSET}\n  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
+    printf "  FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n  PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n\n"
     sleep 3
 fi
 
@@ -180,6 +181,7 @@ function build_ffmpeg() {
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
         --prefix=${OUTDIR} \
+        --pkg-config="pkg-config" # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
         --enable-rpath \
         --disable-asm \
         --enable-pic \
