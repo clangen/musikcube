@@ -69,21 +69,25 @@ function fetch_packages() {
 #
 
 function build_boost() {
-    BOOST_CXX_FLAGS="-fPIC"
+    BOOST_CXX_FLAGS="${CXXFLAGS}"
     if [ $OS == "Darwin" ]; then
-        BOOST_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++"
+        BOOST_CXX_FLAGS="${CXXFLAGS} -std=c++14 -stdlib=libc++"
     fi
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
 
     if [ $CROSSCOMPILE == "arm" ]; then
-        echo "using gcc : arm : arm-none-linux-gnueabi-g++ ;" >> user-config.jam
+        printf "creating ~/user-config.jam with arm compiler"
+        echo "using gcc : arm : arm-linux-gnueabihf-g++ ;" > ~/user-config.jam
+    else
+        printf "removing ~/user-config.jam"
+        rm ~/user-config.jam f2> /dev/null
     fi
 
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread
     ./b2 headers
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} --prefix=${OUTDIR} install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} linkflags=${LDFLAGS} --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 
