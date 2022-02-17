@@ -23,6 +23,7 @@ OS_ARCH="${FRIENDLY_OS_NAME}_${ARCH}"
 OUTNAME="musikcube_standalone_${OS_ARCH}_$VERSION"
 OUTDIR="dist/$VERSION/$OUTNAME"
 SCRIPTDIR=`dirname "$0"`
+CMAKE_TOOLCHAIN=""
 
 DLL_EXT="so"
 if [ $OS == "Darwin" ]; then
@@ -35,8 +36,9 @@ if [ $OS == "Linux" ]; then
 fi
 
 rm vendor
-if [[ $CROSSCOMPILE == "arm" ]]; then
+if [[ $CROSSCOMPILE == "rpi" ]]; then
   ln -s ../vendor-arm/ ./vendor
+  CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain.cmake"
 else
   ln -s ../vendor-$ARCH/ ./vendor
 fi
@@ -56,7 +58,7 @@ else
   ${SCRIPTDIR}/clean-nix.sh
   rm -rf bin/ 2> /dev/null
   ./script/stage-vendor-libraries.sh || exit $?
-  cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true ${OS_SPECIFIC_BUILD_FLAGS} . || exit $?
+  cmake ${CMAKE_TOOLCHAIN} -DCMAKE_BUILD_TYPE=Release -DBUILD_STANDALONE=true ${OS_SPECIFIC_BUILD_FLAGS} . || exit $?
   make ${JOBS} || exit $?
 fi
 

@@ -6,7 +6,7 @@
 # have no external dependencies except for each other, libc, libc++ and libz.
 #
 # this script can also be configured to cross-compile the aforementioned dependencies
-# for use with arm architectures, simply set the CROSSCOMPILE=arm to do so.
+# for use with raspberry pi; simply set the CROSSCOMPILE=rpi to do so.
 #
 # the script will create a "vendor" subdirectory in the current path, and stage
 # all final files in "vendor/lib".
@@ -48,7 +48,7 @@ if [ $OS == "Darwin" ]; then
 fi
 
 # update cross-compile vars, if specified.
-if [ $CROSSCOMPILE == "arm" ]; then
+if [ $CROSSCOMPILE == "rpi" ]; then
     ARM_ROOT="/build/rpi/sysroot"
     export CPPFLAGS="-I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
@@ -98,7 +98,7 @@ function build_boost() {
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
 
-    if [ $CROSSCOMPILE == "arm" ]; then
+    if [ $CROSSCOMPILE == "rpi" ]; then
         printf "creating ~/user-config.jam with arm compiler\n"
         echo "using gcc : arm : arm-linux-gnueabihf-g++ ;" > ~/user-config.jam
     else
