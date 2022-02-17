@@ -77,13 +77,15 @@ function clean() {
 #
 
 function copy_or_download {
-    url=$1
+    url_path=$1
     fn=$2
-    if [[ -f "/tmp/$fn" ]]; then
-        cp "/tmp/$fn" .
+    wget_cache="/tmp/musikcube_build_wget_cache"
+    mkdir -p wget_cache 2> /dev/null
+    if [[ -f "$wget_cache/$fn" ]]; then
+        cp "$wget_cache/$fn" .
     else
-        wget -P /tmp/ "$url/$fn"
-        cp "/tmp/$fn" .
+        wget -P $wget_cache "$url/$fn" || exit $?
+        cp "$wget_cache/$fn" .  || exit $?
     fi
 }
 
