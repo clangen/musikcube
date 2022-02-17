@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# this script is used to download and build all non-system-provided dependencies
+# used by musikcube. they are configured with only the features that are strictly
+# necessary for the app to function, and processed in stage in such a way that they
+# have no external dependencies except for each other, libc, libc++ and libz.
+#
+# this script can also be configured to cross-compile the aforementioned dependencies
+# for use with arm architectures, simply set the CROSSCOMPILE=arm to do so.
+#
+# the script will create a "vendor" subdirectory in the current path, and stage
+# all final files in "vendor/lib".
+#
+# dependencies: boost, openssl, curl, libmicrohttpd, ffmpeg, lame, libopenmpt
+
 # set -x
 
 #
@@ -21,7 +34,6 @@ LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.0"
 LAME_VERSION="3.100"
 LIBOPENMPT_VERSION="0.6.1"
-
 OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
 
@@ -46,6 +58,7 @@ if [ $CROSSCOMPILE == "arm" ]; then
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
     BOOST_TOOLSET="toolset=gcc-arm"
+    PKG_CONFIG_PATH="${OUTDIR}:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
     printf "  BOOST_TOOLSET=${BOOST_TOOLSET}\n  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
@@ -108,7 +121,7 @@ function build_openssl() {
     cd openssl-${OPENSSL_VERSION}
     perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
     make
-    make install
+    make install_sw
     cd ..
 }
 
@@ -175,12 +188,6 @@ function build_libmicrohttpd() {
 #
 
 function build_ffmpeg() {
-    # todo see if we can fix this hack...
-    OLD_PKG_CONFIG_PATH=${PKG_CONFIG_PATH}
-    if [ $CROSSCOMPILE == "arm" ]; then
-      export PKG_CONFIG_PATH="${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
-    fi
-
     # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
     rm -rf ffmpeg-${FFMPEG_VERSION}
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
@@ -363,7 +370,6 @@ function build_ffmpeg() {
         --build-suffix=-musikcube || exit $?
     make ${JOBS} || exit $?
     make install
-    export PKG_CONFIG_PATH=${OLD_PKG_CONFIG_PATH}
     cd ..
 }
 
