@@ -41,7 +41,7 @@ if [ $CROSSCOMPILE == "arm" ]; then
     export CFLAGS="$CFLAGS -I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
     export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
-    export PKG_CONFIG_PATH="{$ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+    export PKG_CONFIG_PATH="${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     OPENSSL_TYPE="linux-generic32"
     OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
