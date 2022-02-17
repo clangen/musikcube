@@ -1,5 +1,18 @@
 #!/bin/bash
 
+# this script is used to download and build all non-system-provided dependencies
+# used by musikcube. they are configured with only the features that are strictly
+# necessary for the app to function, and processed in stage in such a way that they
+# have no external dependencies except for each other, libc, libc++ and libz.
+#
+# this script can also be configured to cross-compile the aforementioned dependencies
+# for use with raspberry pi; simply set the CROSSCOMPILE=rpi to do so.
+#
+# the script will create a "vendor" subdirectory in the current path, and stage
+# all final files in "vendor/lib".
+#
+# dependencies: boost, openssl, curl, libmicrohttpd, ffmpeg, lame, libopenmpt
+
 # set -x
 
 #
@@ -21,13 +34,36 @@ LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.0"
 LAME_VERSION="3.100"
 LIBOPENMPT_VERSION="0.6.1"
-
 OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
 
 JOBS="-j8"
-if [ $OS == "Darwin" ]; then
+if [[ $OS == "Darwin" ]]; then
     JOBS="-j$(sysctl -n hw.ncpu)"
+fi
+
+OPENSSL_TYPE="linux-${ARCH}"
+if [[ $OS == "Darwin" ]]; then
+    OPENSSL_TYPE="darwin64-${ARCH}-cc"
+fi
+
+# update cross-compile vars, if specified.
+if [[ $CROSSCOMPILE == "rpi" ]]; then
+    ARM_ROOT="/build/rpi/sysroot"
+    export CPPFLAGS="-I${ARM_ROOT}/usr/include"
+    export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
+    export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
+    OPENSSL_TYPE="linux-generic32"
+    OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
+    GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
+    FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
+    BOOST_TOOLSET="toolset=gcc-arm"
+    PKG_CONFIG_PATH="${OUTDIR}:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+    printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
+    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
+    printf "  BOOST_TOOLSET=${BOOST_TOOLSET}\n  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
+    printf "  FFMPEG_CONFIGURE_FLAGS=${FFMPEG_CONFIGURE_FLAGS}\n  PKG_CONFIG_PATH=${PKG_CONFIG_PATH}\n\n"
+    sleep 3
 fi
 
 function clean() {
@@ -39,14 +75,28 @@ function clean() {
 # download deps
 #
 
+function copy_or_download {
+    url_path=$1
+    fn=$2
+    wget_cache="/tmp/musikcube_build_wget_cache"
+    mkdir -p wget_cache 2> /dev/null
+    if [[ -f "$wget_cache/$fn" ]]; then
+        cp "$wget_cache/$fn" .
+    else
+        wget -P $wget_cache "$url_path/$fn" || exit $?
+        cp "$wget_cache/$fn" .  || exit $?
+    fi
+}
+
 function fetch_packages() {
-    wget https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION_URL_PATH}/source/boost_${BOOST_VERSION}.tar.bz2
-    wget https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
-    wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
-    wget https://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
-    wget https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
-    wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-${LAME_VERSION}.tar.gz
-    wget https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
+    # no trailing slash on url dirs!
+    copy_or_download https://boostorg.jfrog.io/artifactory/main/release/${BOOST_VERSION_URL_PATH}/source boost_${BOOST_VERSION}.tar.bz2
+    copy_or_download https://www.openssl.org/source openssl-${OPENSSL_VERSION}.tar.gz
+    copy_or_download https://curl.se/download curl-${CURL_VERSION}.tar.gz
+    copy_or_download https://ftp.gnu.org/gnu/libmicrohttpd libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
+    copy_or_download https://ffmpeg.org/releases ffmpeg-${FFMPEG_VERSION}.tar.bz2
+    copy_or_download https://downloads.sourceforge.net/project/lame/lame/3.100 lame-${LAME_VERSION}.tar.gz
+    copy_or_download https://lib.openmpt.org/files/libopenmpt/src libopenmpt-${LIBOPENMPT_VERSION}+release.autotools.tar.gz
 }
 
 #
@@ -55,15 +105,24 @@ function fetch_packages() {
 
 function build_boost() {
     BOOST_CXX_FLAGS="-fPIC"
-    if [ $OS == "Darwin" ]; then
+    if [[ $OS == "Darwin" ]]; then
         BOOST_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++"
     fi
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
-    ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread
-    ./b2 headers
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} --prefix=${OUTDIR} install || exit $?
+
+    if [[ $CROSSCOMPILE == "rpi" ]]; then
+        printf "creating ~/user-config.jam with arm compiler\n"
+        echo "using gcc : arm : arm-linux-gnueabihf-g++ ;" > ~/user-config.jam
+    else
+        printf "removing ~/user-config.jam\n"
+        rm ~/user-config.jam 2> /dev/null
+    fi
+
+    ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread || exit $?
+    ./b2 headers || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 
@@ -72,16 +131,11 @@ function build_boost() {
 #
 
 function build_openssl() {
-    OPENSSL_TYPE="linux-${ARCH}"
-    if [ $OS == "Darwin" ]; then
-        OPENSSL_TYPE="darwin64-${ARCH}-cc"
-    fi
-
     tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
     cd openssl-${OPENSSL_VERSION}
-    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE}
+    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX} || exit $?
     make
-    make install
+    make install_sw
     cd ..
 }
 
@@ -122,7 +176,8 @@ function build_curl() {
         --without-brotli \
         --without-libidn2 \
         --without-nghttp2 \
-        --prefix=${OUTDIR}
+         ${GENERIC_CONFIGURE_FLAGS} \
+        --prefix=${OUTDIR} || exit $?
     make ${JOBS} || exit $?
     make install
     cd ..
@@ -136,7 +191,7 @@ function build_libmicrohttpd() {
     rm -rf libmicrohttpd-${LIBMICROHTTPD_VERSION}
     tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     cd libmicrohttpd-${LIBMICROHTTPD_VERSION}
-    ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=${OUTDIR}
+    ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS}
     make -j8 || exit $?
     make install
     cd ..
@@ -147,11 +202,13 @@ function build_libmicrohttpd() {
 #
 
 function build_ffmpeg() {
+    # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
     rm -rf ffmpeg-${FFMPEG_VERSION}
     tar xvfj ffmpeg-${FFMPEG_VERSION}.tar.bz2
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
         --prefix=${OUTDIR} \
+        --pkg-config="pkg-config" \
         --enable-rpath \
         --disable-asm \
         --enable-pic \
@@ -323,7 +380,8 @@ function build_ffmpeg() {
         --enable-encoder=wmav1 \
         --enable-encoder=wmav2 \
         --enable-encoder=libvorbis \
-        --build-suffix=-musikcube
+         ${FFMPEG_CONFIGURE_FLAGS} \
+        --build-suffix=-musikcube || exit $?
     make ${JOBS} || exit $?
     make install
     cd ..
@@ -339,7 +397,7 @@ function build_lame() {
     cd lame-${LAME_VERSION}
     # https://sourceforge.net/p/lame/mailman/message/36081038/
     perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
-    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=${OUTDIR}
+    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS} || exit $?
     make ${JOBS} || exit $?
     make install
     cd ..
@@ -369,7 +427,8 @@ function build_libopenmpt() {
         --without-portaudiocpp \
         --without-sndfile \
         --without-flac \
-        --prefix=${OUTDIR}
+         ${GENERIC_CONFIGURE_FLAGS} \
+        --prefix=${OUTDIR} || exit $?
     make ${JOBS} || exit $?
     make install
     cd ..
@@ -380,7 +439,7 @@ function build_libopenmpt() {
 #
 
 function stage_opus_ogg_vorbis() {
-    if [ $OS == "Darwin" ]; then
+    if [[ $OS == "Darwin" ]]; then
         # instead of building opus, ogg and vorbis from source we snag them
         # from brew, update their dylib ids with @rpath, re-sign them, then create
         # new pkg-config files to point towards this directory. that way ffmpeg
@@ -446,7 +505,7 @@ function stage_opus_ogg_vorbis() {
 }
 
 function patch_dylib_rpaths() {
-    if [ $OS == "Darwin" ]; then
+    if [[ $OS == "Darwin" ]]; then
         cd bin/lib
 
         install_name_tool -id "$RPATH/libavutil-musikcube.57.dylib" libavutil-musikcube.57.dylib

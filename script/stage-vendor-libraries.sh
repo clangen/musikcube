@@ -17,26 +17,20 @@ if [[ "$PLATFORM" == 'Darwin' ]]; then
     cp vendor/bin/lib/libavformat-musikcube.59.dylib ./bin/lib
     cp vendor/bin/lib/libavutil-musikcube.57.dylib ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.4.dylib ./bin/lib
-
     cp vendor/bin/lib/libopus.0.dylib ./bin/lib
     cp vendor/bin/lib/libogg.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbis.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbisenc.2.dylib ./bin/lib
-
     cp vendor/bin/lib/libboost_atomic.dylib ./bin/lib
     cp vendor/bin/lib/libboost_chrono.dylib ./bin/lib
     cp vendor/bin/lib/libboost_date_time.dylib ./bin/lib
     cp vendor/bin/lib/libboost_filesystem.dylib ./bin/lib
     cp vendor/bin/lib/libboost_system.dylib ./bin/lib
     cp vendor/bin/lib/libboost_thread.dylib ./bin/lib
-
     cp vendor/bin/lib/libcrypto.1.1.dylib ./bin/lib
     cp vendor/bin/lib/libssl.1.1.dylib ./bin/lib
-
     cp vendor/bin/lib/libcurl.4.dylib ./bin/lib
-
     cp vendor/bin/lib/libmicrohttpd.12.dylib ./bin/lib
-
     cp vendor/bin/lib/libmp3lame.0.dylib ./bin/lib
 
     mkdir -p ./bin/share/terminfo
@@ -49,34 +43,34 @@ elif [[ "$PLATFORM" == 'Linux' ]]; then
     cp vendor/bin/lib/libavformat-musikcube.so.59 ./bin/lib
     cp vendor/bin/lib/libavutil-musikcube.so.57 ./bin/lib
     cp vendor/bin/lib/libswresample-musikcube.so.4 ./bin/lib
-
     cp vendor/bin/lib/libboost_atomic.so.1.76.0 ./bin/lib
     cp vendor/bin/lib/libboost_chrono.so.1.76.0 ./bin/lib
     cp vendor/bin/lib/libboost_date_time.so.1.76.0 ./bin/lib
     cp vendor/bin/lib/libboost_filesystem.so.1.76.0 ./bin/lib
     cp vendor/bin/lib/libboost_system.so.1.76.0 ./bin/lib
     cp vendor/bin/lib/libboost_thread.so.1.76.0 ./bin/lib
-
     cp vendor/bin/lib/libcrypto.so.1.1 ./bin/lib
     cp vendor/bin/lib/libssl.so.1.1 ./bin/lib
-
     cp vendor/bin/lib/libcurl.so.4 ./bin/lib
-
     cp vendor/bin/lib/libmp3lame.so.0 ./bin/lib
-
     cp vendor/bin/lib/libmicrohttpd.so.12 ./bin/lib
-
     cp vendor/bin/lib/libopenmpt.so.0 ./bin/lib
 
-    cp /lib/x86_64-linux-gnu/libncursesw.so.6 ./bin/lib
-    cp /lib/x86_64-linux-gnu/libtinfo.so.6 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libpanelw.so.6 ./bin/lib
+    SYSTEM_ROOT=""
+    SYSTEM_TYPE="x86_64-linux-gnu"
+    if [[ $CROSSCOMPILE == "rpi" ]]; then
+        SYSTEM_ROOT="/build/rpi/sysroot"
+        SYSTEM_TYPE="arm-linux-gnueabihf"
+    fi
 
-    cp /usr/lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libogg.so.0 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libopus.so.0 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libvorbis.so.0 ./bin/lib
-    cp /usr/lib/x86_64-linux-gnu/libvorbisenc.so.2 ./bin/lib
+    cp $SYSTEM_ROOT/lib/$SYSTEM_TYPE/libncursesw.so.6 ./bin/lib
+    cp $SYSTEM_ROOT/lib/$SYSTEM_TYPE/libtinfo.so.6 ./bin/lib
+    cp $SYSTEM_ROOT/usr/lib/$SYSTEM_TYPE/libpanelw.so.6 ./bin/lib
+    cp $SYSTEM_ROOT/usr/lib/$SYSTEM_TYPE/libvorbis.so.0 ./bin/lib
+    cp $SYSTEM_ROOT/usr/lib/$SYSTEM_TYPE/libogg.so.0 ./bin/lib
+    cp $SYSTEM_ROOT/usr/lib/$SYSTEM_TYPE/libopus.so.0 ./bin/lib
+    cp $SYSTEM_ROOT/usr/lib/$SYSTEM_TYPE/libvorbis.so.0 ./bin/lib
+    cp $SYSTEM_ROOT/usr/lib/$SYSTEM_TYPE/libvorbisenc.so.2 ./bin/lib
 
     mkdir -p ./bin/share/terminfo
     cp -rfp /lib/terminfo/* ./bin/share/terminfo
