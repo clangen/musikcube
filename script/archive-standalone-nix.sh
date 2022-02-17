@@ -20,8 +20,12 @@ if [ $OS == "Darwin" ]; then
 fi
 
 ARCH=$(uname -m)
+DEB_ARCH=$ARCH
 if [ -n $CROSSCOMPILE ]; then
   ARCH=$CROSSCOMPILE
+  DEB_ARCH="armhf"
+elif [ $ARCH == "x86_64"]; then
+  DEB_ARCH="amd64"
 fi
 
 OS_ARCH="${FRIENDLY_OS_NAME}_${ARCH}"
@@ -37,7 +41,7 @@ fi
 
 OS_SPECIFIC_BUILD_FLAGS=""
 if [ $OS == "Linux" ]; then
-  OS_SPECIFIC_BUILD_FLAGS="-DGENERATE_DEB=true -DDEB_ARCHITECTURE=amd64 -DCMAKE_INSTALL_PREFIX=/usr"
+  OS_SPECIFIC_BUILD_FLAGS="-DGENERATE_DEB=true -DDEB_ARCHITECTURE=${DEB_ARCH} -DCMAKE_INSTALL_PREFIX=/usr"
   if [ -z $CROSSCOMPILE ]; then
     # for now we don't support pipewire when cross compiling...
     OS_SPECIFIC_BUILD_FLAGS="$OS_SPECIFIC_BUILD_FLAGS -DENABLE_PIPEWIRE=true"
