@@ -30,18 +30,26 @@ if [ $OS == "Darwin" ]; then
     JOBS="-j$(sysctl -n hw.ncpu)"
 fi
 
+OPENSSL_TYPE="linux-${ARCH}"
+if [ $OS == "Darwin" ]; then
+    OPENSSL_TYPE="darwin64-${ARCH}-cc"
+fi
+
 # check cross-compile flags
-CONFIGURE_FLAGS=
+GENERIC_CONFIGURE_FLAGS=
 BOOST_TOOLSET=
 if [ $CROSSCOMPILE == "arm" ]; then
     ARM_ROOT="/build/rpi/sysroot"
     export CFLAGS="$CFLAGS -I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
     export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
-    CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
+    OPENSSL_TYPE="linux-generic32"
+    FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
+    OPENSSL_CROSSCOMPILE_PREFIX="--cross-compile-prefix=arm-linux-gnueabihf-"
+    GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     BOOST_TOOLSET="toolset=gcc-arm"
-    printf "\n\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
-    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  CONFIGURE_FLAGS=${CONFIGURE_FLAGS}\n  BOOST_TOOLSET=${BOOST_TOOLSET}\n\n\n"
+    printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
+    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n  BOOST_TOOLSET=${BOOST_TOOLSET}\n\n\n"
     sleep 3
 fi
 
@@ -69,25 +77,25 @@ function fetch_packages() {
 #
 
 function build_boost() {
-    BOOST_CXX_FLAGS="${CXXFLAGS}"
+    BOOST_CXX_FLAGS="-fPIC"
     if [ $OS == "Darwin" ]; then
-        BOOST_CXX_FLAGS="${CXXFLAGS} -std=c++14 -stdlib=libc++"
+        BOOST_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++"
     fi
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
 
     if [ $CROSSCOMPILE == "arm" ]; then
-        printf "creating ~/user-config.jam with arm compiler"
+        printf "creating ~/user-config.jam with arm compiler\n"
         echo "using gcc : arm : arm-linux-gnueabihf-g++ ;" > ~/user-config.jam
     else
-        printf "removing ~/user-config.jam"
+        printf "removing ~/user-config.jam\n"
         rm ~/user-config.jam f2> /dev/null
     fi
 
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread
     ./b2 headers
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} linkflags=${LDFLAGS} --prefix=${OUTDIR} install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" linkflags="${LDFLAGS}" --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 
@@ -96,16 +104,11 @@ function build_boost() {
 #
 
 function build_openssl() {
-    OPENSSL_TYPE="linux-${ARCH}"
-    if [ $OS == "Darwin" ]; then
-        OPENSSL_TYPE="darwin64-${ARCH}-cc"
-    fi
-
     tar xvfz openssl-${OPENSSL_VERSION}.tar.gz
     cd openssl-${OPENSSL_VERSION}
-    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${CONFIGURE_FLAGS}
+    perl ./Configure --prefix=${OUTDIR} no-ssl3 no-ssl3-method no-zlib ${OPENSSL_TYPE} ${OPENSSL_CROSSCOMPILE_PREFIX}
     make
-    make install
+    make install_sw # no docs!
     cd ..
 }
 
@@ -146,7 +149,7 @@ function build_curl() {
         --without-brotli \
         --without-libidn2 \
         --without-nghttp2 \
-         ${CONFIGURE_FLAGS} \
+         ${GENERIC_CONFIGURE_FLAGS} \
         --prefix=${OUTDIR}
     make ${JOBS} || exit $?
     make install
@@ -161,7 +164,7 @@ function build_libmicrohttpd() {
     rm -rf libmicrohttpd-${LIBMICROHTTPD_VERSION}
     tar xvfz libmicrohttpd-${LIBMICROHTTPD_VERSION}.tar.gz
     cd libmicrohttpd-${LIBMICROHTTPD_VERSION}
-    ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=${OUTDIR} ${CONFIGURE_FLAGS}
+    ./configure --enable-shared --with-pic --enable-https=no --disable-curl --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS}
     make -j8 || exit $?
     make install
     cd ..
@@ -348,7 +351,7 @@ function build_ffmpeg() {
         --enable-encoder=wmav1 \
         --enable-encoder=wmav2 \
         --enable-encoder=libvorbis \
-         ${CONFIGURE_FLAGS} \
+         ${FFMPEG_CONFIGURE_FLAGS} \
         --build-suffix=-musikcube
     make ${JOBS} || exit $?
     make install
@@ -365,7 +368,7 @@ function build_lame() {
     cd lame-${LAME_VERSION}
     # https://sourceforge.net/p/lame/mailman/message/36081038/
     perl -i.bak -0pe "s|lame_init_old\n||" include/libmp3lame.sym
-    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=${OUTDIR} ${CONFIGURE_FLAGS}
+    ./configure --disable-dependency-tracking --disable-debug --enable-nasm --prefix=${OUTDIR} ${GENERIC_CONFIGURE_FLAGS}
     make ${JOBS} || exit $?
     make install
     cd ..
@@ -395,7 +398,7 @@ function build_libopenmpt() {
         --without-portaudiocpp \
         --without-sndfile \
         --without-flac \
-         ${CONFIGURE_FLAGS} \
+         ${GENERIC_CONFIGURE_FLAGS} \
         --prefix=${OUTDIR}
     make ${JOBS} || exit $?
     make install
