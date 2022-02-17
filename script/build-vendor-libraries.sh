@@ -186,7 +186,7 @@ function build_ffmpeg() {
     cd ffmpeg-${FFMPEG_VERSION}
     ./configure \
         --prefix=${OUTDIR} \
-        --pkg-config="pkg-config" # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
+        --pkg-config="pkg-config" \ # fix for cross-compile: https://github.com/NixOS/nixpkgs/pull/76915/files
         --enable-rpath \
         --disable-asm \
         --enable-pic \
