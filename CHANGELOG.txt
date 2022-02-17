@@ -1,3 +1,12 @@
+0.96.14
+
+* no functional changes to the app
+* continued re-architecture of build and app packing infrastructure
+  to support "standalone"/"portable" builds for non-Windows platforms.
+  these changes allow us to build a much smaller set of binaries for
+  distribution that are more universally compatible across different
+  versions of macOS and Linux distributions.
+
 0.96.13
 
 * macOS and Linux only release that fixes standalone binaries.
