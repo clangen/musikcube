@@ -38,17 +38,17 @@ OUTDIR="$(pwd)/vendor/bin"
 LIBDIR="$OUTDIR/lib"
 
 JOBS="-j8"
-if [ $OS == "Darwin" ]; then
+if [[ $OS == "Darwin" ]]; then
     JOBS="-j$(sysctl -n hw.ncpu)"
 fi
 
 OPENSSL_TYPE="linux-${ARCH}"
-if [ $OS == "Darwin" ]; then
+if [[ $OS == "Darwin" ]]; then
     OPENSSL_TYPE="darwin64-${ARCH}-cc"
 fi
 
 # update cross-compile vars, if specified.
-if [ $CROSSCOMPILE == "rpi" ]; then
+if [[ $CROSSCOMPILE == "rpi" ]]; then
     ARM_ROOT="/build/rpi/sysroot"
     export CPPFLAGS="-I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
@@ -92,19 +92,19 @@ function fetch_packages() {
 
 function build_boost() {
     BOOST_CXX_FLAGS="-fPIC"
-    if [ $OS == "Darwin" ]; then
+    if [[ $OS == "Darwin" ]]; then
         BOOST_CXX_FLAGS="-fPIC -std=c++14 -stdlib=libc++"
     fi
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
 
-    if [ $CROSSCOMPILE == "rpi" ]; then
+    if [[ $CROSSCOMPILE == "rpi" ]]; then
         printf "creating ~/user-config.jam with arm compiler\n"
         echo "using gcc : arm : arm-linux-gnueabihf-g++ ;" > ~/user-config.jam
     else
         printf "removing ~/user-config.jam\n"
-        rm ~/user-config.jam f2> /dev/null
+        rm ~/user-config.jam 2> /dev/null
     fi
 
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread || exit $?
@@ -426,7 +426,7 @@ function build_libopenmpt() {
 #
 
 function stage_opus_ogg_vorbis() {
-    if [ $OS == "Darwin" ]; then
+    if [[ $OS == "Darwin" ]]; then
         # instead of building opus, ogg and vorbis from source we snag them
         # from brew, update their dylib ids with @rpath, re-sign them, then create
         # new pkg-config files to point towards this directory. that way ffmpeg
@@ -492,7 +492,7 @@ function stage_opus_ogg_vorbis() {
 }
 
 function patch_dylib_rpaths() {
-    if [ $OS == "Darwin" ]; then
+    if [[ $OS == "Darwin" ]]; then
         cd bin/lib
 
         install_name_tool -id "$RPATH/libavutil-musikcube.57.dylib" libavutil-musikcube.57.dylib
