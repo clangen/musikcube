@@ -32,13 +32,20 @@ fi
 
 OS_SPECIFIC_BUILD_FLAGS=""
 if [ $OS == "Linux" ]; then
-  OS_SPECIFIC_BUILD_FLAGS="-DENABLE_PIPEWIRE=true -DGENERATE_DEB=true -DDEB_ARCHITECTURE=amd64 -DCMAKE_INSTALL_PREFIX=/usr"
+  OS_SPECIFIC_BUILD_FLAGS="-DGENERATE_DEB=true -DDEB_ARCHITECTURE=amd64 -DCMAKE_INSTALL_PREFIX=/usr"
+  if [ -z $CROSSCOMPILE ]; then
+    # for now we don't support pipewire when cross compiling...
+    OS_SPECIFIC_BUILD_FLAGS="$OS_SPECIFIC_BUILD_FLAGS -DENABLE_PIPEWIRE=true"
+  fi
 fi
 
 rm vendor
-if [[ $CROSSCOMPILE == "rpi" ]]; then
+if [ $CROSSCOMPILE == "rpi" ]; then
   ln -s ../vendor-rpi/ ./vendor
   CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain.cmake"
+  # ignore a bunch of ABI change warnings. https://stackoverflow.com/questions/48149323
+  CFLAGS="$CFLAGS -Wno-psabi"
+  CXXFLAGS="$CXXFLAGS -Wno-psabi"
 else
   ln -s ../vendor-$ARCH/ ./vendor
 fi
