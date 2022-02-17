@@ -77,8 +77,8 @@ function clean() {
 #
 
 function copy_or_download {
-    fn=$1
-    url=$2
+    url=$1
+    fn=$2
     if [[ -f "/tmp/$fn" ]]; then
         cp "/tmp/$fn" .
     else
