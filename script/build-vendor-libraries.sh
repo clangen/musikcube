@@ -32,14 +32,16 @@ fi
 
 # check cross-compile flags
 CONFIGURE_FLAGS=
+BOOST_TOOLSET=
 if [ $CROSSCOMPILE == "arm" ]; then
-    ARM_ROOT="/build/rpi/sysroot/"
+    ARM_ROOT="/build/rpi/sysroot"
     export CFLAGS="$CFLAGS -I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
-    export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L/${ARM_ROOT}/lib/arm-linux-gnueabihf/"
+    export LDFLAGS="$LDFLAGS --sysroot=${ARM_ROOT} -L${ARM_ROOT}/lib/arm-linux-gnueabihf/"
     CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
+    BOOST_TOOLSET="toolset=gcc-arm"
     printf "\n\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
-    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  CONFIGURE_FLAGS=${CONFIGURE_FLAGS}\n\n\n"
+    printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  CONFIGURE_FLAGS=${CONFIGURE_FLAGS}\n  BOOST_TOOLSET=${BOOST_TOOLSET}\n\n\n"
     sleep 3
 fi
 
@@ -74,9 +76,14 @@ function build_boost() {
 
     tar xvfj boost_${BOOST_VERSION}.tar.bz2
     cd boost_${BOOST_VERSION}
+
+    if [ $CROSSCOMPILE == "arm" ]; then
+        echo "using gcc : arm : arm-none-linux-gnueabi-g++ ;" >> user-config.jam
+    fi
+
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread
     ./b2 headers
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} --prefix=${OUTDIR} install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags=${BOOST_CXX_FLAGS} --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 
