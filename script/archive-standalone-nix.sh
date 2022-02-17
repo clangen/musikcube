@@ -37,7 +37,7 @@ fi
 
 rm vendor
 if [[ $CROSSCOMPILE == "rpi" ]]; then
-  ln -s ../vendor-arm/ ./vendor
+  ln -s ../vendor-rpi/ ./vendor
   CMAKE_TOOLCHAIN="-DCMAKE_TOOLCHAIN_FILE=.cmake/RaspberryPiToolchain.cmake"
 else
   ln -s ../vendor-$ARCH/ ./vendor
