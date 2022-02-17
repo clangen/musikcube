@@ -58,7 +58,6 @@ if [[ $CROSSCOMPILE == "rpi" ]]; then
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
     BOOST_TOOLSET="toolset=gcc-arm"
-    BOOST_LINKFLAGS='linkflags="${LDFLAGS}"'
     PKG_CONFIG_PATH="${OUTDIR}:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
@@ -123,7 +122,7 @@ function build_boost() {
 
     ./bootstrap.sh --with-libraries=atomic,chrono,date_time,filesystem,system,thread || exit $?
     ./b2 headers || exit $?
-    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" ${BOOST_LINKFLAGS} --prefix=${OUTDIR} install || exit $?
+    ./b2 -d ${JOBS} -sNO_LZMA=1 -sNO_ZSTD=1 ${BOOST_TOOLSET} threading=multi link=shared cxxflags="${BOOST_CXX_FLAGS}" --prefix=${OUTDIR} install || exit $?
     cd ..
 }
 
