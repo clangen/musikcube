@@ -34,8 +34,18 @@ if [ $OS == "Linux" ]; then
   OS_SPECIFIC_BUILD_FLAGS="-DENABLE_PIPEWIRE=true -DGENERATE_DEB=true -DDEB_ARCHITECTURE=amd64 -DCMAKE_INSTALL_PREFIX=/usr"
 fi
 
+rm vendor
+if [[ $CROSSCOMPILE == "arm" ]]; then
+  ln -s ../vendor-arm/ ./vendor
+else
+  ln -s ../vendor-$ARCH/ ./vendor
+fi
+
+printf "\nsetup symlink:\n"
+ls -ald vendor
+
 printf "\n"
-read -p ' clean and rebuild [y]? ' CLEAN
+read -p 'clean and rebuild [y]? ' CLEAN
 if [[ $CLEAN == 'n' || $CLEAN == 'N' ]]; then
   printf "\n\n\n     ***** SKIPPING REBUILD *****\n\n\n"
   ./script/stage-vendor-libraries.sh || exit $?
