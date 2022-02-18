@@ -42,6 +42,8 @@ const validLibraries = mac
       'libdl.so.2',
       'libgcc_s.so.1',
       'libm.so.6',
+      'libpthread.so.0',
+      'librt.so.1',
       'libstdc++.so.6',
       'libz.so.1',
       'linux-vdso.so.1',
