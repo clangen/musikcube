@@ -90,6 +90,10 @@ cp bin/locales/*.json $OUTDIR/locales
 cp bin/themes/*.json $OUTDIR/themes
 cp -rfp bin/share/terminfo/* $OUTDIR/share/terminfo/
 
+printf "\n\n\n     ***** SCANNING DEPENDENCIES *****\n\n\n"
+sleep 1
+node ./script/scan-standalone dist/$VERSION/$OUTNAME || exit $?
+
 strip $OUTDIR/musikcube
 strip $OUTDIR/musikcubed
 strip $OUTDIR/libmusikcore.${DLL_EXT}
