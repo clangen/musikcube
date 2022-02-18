@@ -7,6 +7,11 @@ const mac = process.platform === 'darwin';
 
 const filetype = mac ? '.dylib' : '.so';
 
+/* these libraries will always have dynamic dependencies, so ignore */
+const ignoredLibraries = mac ? new Set([]) : new Set([]);
+
+/* we assume these dependencies will always be available on the user's
+target machine. */
 const validLibraries = mac
   ? new Set([
       '/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit',
@@ -47,7 +52,9 @@ if (!path) {
 
 const ls = async (leaf) => {
   const output = await readdir(`${path}/${leaf}`);
-  const files = output.filter((fn) => fn.indexOf(filetype) !== -1);
+  const files = output
+    .filter((fn) => fn.indexOf(filetype) !== -1)
+    .filter((fn) => !ignoredLibraries.has(fn));
   return files;
 };
 
