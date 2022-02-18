@@ -1,3 +1,4 @@
+const { exit } = require('process');
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const readdir = promisify(require('fs').readdir);
@@ -36,8 +37,13 @@ const validLibraries = mac
     ]);
 
 let errors = 0;
-//const path = 'dist/0.96.14/musikcube_standalone_linux_x86_64_0.96.14';
-const path = 'dist/0.96.14/musikcube_standalone_macos_x86_64_0.96.14';
+
+const path = process.argv[2];
+
+if (!path) {
+  console.log('\n\nusage: node scan-standalone.js <path>\n\n');
+  process.exit(1);
+}
 
 const ls = async (leaf) => {
   const output = await readdir(`${path}/${leaf}`);
@@ -83,8 +89,8 @@ const ldd = async (fn) => {
   if (!problems.length) {
     console.log(`${fn}: ok`);
   } else {
-    console.log(`${fn}: potential problems found`);
-    problems.forEach((line) => console.log(`  * ${line}`));
+    console.error(`${fn}: potential problems found`);
+    problems.forEach((line) => console.error(`  * ${line}`));
     ++errors;
   }
 };
