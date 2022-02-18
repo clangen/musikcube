@@ -7,7 +7,14 @@ const mac = process.platform === 'darwin';
 const filetype = mac ? '.dylib' : '.so';
 
 /* these libraries will always have dynamic dependencies, so ignore */
-const ignoredLibraries = mac ? new Set([]) : new Set([]);
+const ignoredLibraries = mac
+  ? new Set([])
+  : new Set([
+      'libalsaout.so',
+      'libmpris.so',
+      'libpipewireout.so',
+      'libpulseout.so',
+    ]);
 
 /* we assume these dependencies will always be available on the user's
 target machine. */
