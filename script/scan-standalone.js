@@ -37,7 +37,9 @@ const validLibraries = mac
       '/usr/lib/libz.1.dylib',
     ])
   : new Set([
+      '/lib/ld-linux-armhf.so.3',
       '/lib64/ld-linux-x86-64.so.2',
+      '/usr/lib/arm-linux-gnueabihf/libarmmem-${PLATFORM}.so',
       'libc.so.6',
       'libdl.so.2',
       'libgcc_s.so.1',
