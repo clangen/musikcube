@@ -2,27 +2,50 @@ const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const readdir = promisify(require('fs').readdir);
 
-const validLibraries = new Set([
-  'linux-vdso.so.1',
-  'libstdc++.so.6',
-  'libm.so.6',
-  'libgcc_s.so.1',
-  'libc.so.6',
-  'libz.so.1',
-  'libdl.so.2',
-  '/lib64/ld-linux-x86-64.so.2',
-]);
+const mac = process.platform === 'darwin';
+
+const filetype = mac ? '.dylib' : '.so';
+
+const validLibraries = mac
+  ? new Set([
+      '/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit',
+      '/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices',
+      '/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox',
+      '/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon',
+      '/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio',
+      '/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation',
+      '/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics',
+      '/System/Library/Frameworks/CoreMedia.framework/Versions/A/CoreMedia',
+      '/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo',
+      '/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation',
+      '/System/Library/Frameworks/SystemConfiguration.framework/Versions/A/SystemConfiguration',
+      '/usr/lib/libc++.1.dylib',
+      '/usr/lib/libobjc.A.dylib',
+      '/usr/lib/libSystem.B.dylib',
+      '/usr/lib/libz.1.dylib',
+    ])
+  : new Set([
+      '/lib64/ld-linux-x86-64.so.2',
+      'libc.so.6',
+      'libdl.so.2',
+      'libgcc_s.so.1',
+      'libm.so.6',
+      'libstdc++.so.6',
+      'libz.so.1',
+      'linux-vdso.so.1',
+    ]);
 
 let errors = 0;
-const path = 'dist/0.96.14/musikcube_standalone_linux_x86_64_0.96.14';
+//const path = 'dist/0.96.14/musikcube_standalone_linux_x86_64_0.96.14';
+const path = 'dist/0.96.14/musikcube_standalone_macos_x86_64_0.96.14';
 
-async function ls(leaf) {
+const ls = async (leaf) => {
   const output = await readdir(`${path}/${leaf}`);
-  const files = output.filter((fn) => fn.indexOf('.so') !== -1);
+  const files = output.filter((fn) => fn.indexOf(filetype) !== -1);
   return files;
-}
+};
 
-async function ldd(fn) {
+const lddLinux = async (fn) => {
   const output = await exec(`ldd ${path}/${fn}`);
   const problems = output.stdout
     .split('\n')
@@ -31,10 +54,32 @@ async function ldd(fn) {
     .filter((line) => !!line && line.indexOf(path) === -1)
     .filter((line) => line !== 'statically linked')
     /* libraries are formatted as "<name> [=> <path>] <(offset)>". if there's
-      a fat arrow, just grab everything to the left of it. then, if there's
-      still an offset, strip that as well */
+    a fat arrow, just grab everything to the left of it. then, if there's
+    still an offset, strip that as well */
     .map((line) => line.split(' => ')[0].split(' ')[0].trim())
     .filter((line) => !validLibraries.has(line));
+  return problems;
+};
+
+const lddMac = async (fn) => {
+  const output = await exec(`otool -L ${path}/${fn}`);
+  const problems = output.stdout
+    .split('\n')
+    .map((line) => line.trim())
+    /* we want all of the libraries we compile ourself to be prefixed
+    with the value `@rpath/`. */
+    .filter((line) => !!line && line.indexOf('@rpath/') === -1)
+    /* the first line of output is the path to the library, exclude it */
+    .slice(1)
+    /* libraries are formatted as "<name> (compatibility ...)", so split
+    and take the name */
+    .map((line) => line.split(' (compatibility')[0].trim())
+    .filter((line) => !validLibraries.has(line));
+  return problems;
+};
+
+const ldd = async (fn) => {
+  const problems = mac ? await lddMac(fn) : await lddLinux(fn);
   if (!problems.length) {
     console.log(`${fn}: ok`);
   } else {
@@ -42,17 +87,17 @@ async function ldd(fn) {
     problems.forEach((line) => console.log(`  * ${line}`));
     ++errors;
   }
-}
+};
 
-async function lddDir(leaf) {
+const lddDir = async (leaf) => {
   const files = await ls(leaf);
   await Promise.allSettled(files.map((fn) => ldd(`${leaf}/${fn}`)));
-}
+};
 
 const main = async () => {
   await ldd('musikcube');
   await ldd('musikcubed');
-  await ldd('libmusikcore.so');
+  await ldd(`libmusikcore${filetype}`);
   await lddDir('plugins');
   await lddDir('lib');
 
