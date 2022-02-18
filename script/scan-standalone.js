@@ -1,4 +1,3 @@
-const { exit } = require('process');
 const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const readdir = promisify(require('fs').readdir);
