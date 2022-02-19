@@ -58,9 +58,10 @@ if (${BUILD_STANDALONE} MATCHES "true")
   find_vendor_library(LIBSSL ssl)
   find_vendor_library(LIBCRYPTO crypto)
 else()
-  find_library(LIBCURL NAMES curl)
-  find_library(LIBSSL NAMES ssl)
-  find_library(LIBCRYPTO NAMES crypto)
+  # need VENDOR_LINK_DIRECTORIES here for Darwin.
+  find_library(LIBCURL NAMES curl PATHS ${VENDOR_LINK_DIRECTORIES})
+  find_library(LIBSSL NAMES ssl PATHS ${VENDOR_LINK_DIRECTORIES})
+  find_library(LIBCRYPTO NAMES crypto PATHS ${VENDOR_LINK_DIRECTORIES})
 endif()
 
 find_library(LIBZ NAMES z)
