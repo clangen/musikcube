@@ -23,13 +23,9 @@ if (!mac) {
 /* these are the libraries we'll scan, and update linked libraries from 
 absolute paths to "@rpath/filename" */
 const libraries = [
-  'libavcodec-musikcube.59.18.100.dylib',
   'libavcodec-musikcube.59.dylib',
-  'libavformat-musikcube.59.16.100.dylib',
   'libavformat-musikcube.59.dylib',
-  'libavutil-musikcube.57.17.100.dylib',
   'libavutil-musikcube.57.dylib',
-  'libswresample-musikcube.4.3.100.dylib',
   'libswresample-musikcube.4.dylib',
   'libcrypto.1.1.dylib',
   'libssl.1.1.dylib',
@@ -45,13 +41,9 @@ const libraries = [
 
 /* after updating libraries, re-establish symlinks */
 const symlinks = [
-  ['libavcodec-musikcube.59.18.100.dylib', 'libavcodec-musikcube.59.dylib'],
   ['libavcodec-musikcube.59.dylib', 'libavcodec-musikcube.dylib'],
-  ['libavformat-musikcube.59.16.100.dylib', 'libavformat-musikcube.59.dylib'],
   ['libavformat-musikcube.59.dylib', 'libavformat-musikcube.dylib'],
-  ['libavutil-musikcube.57.17.100.dylib', 'libavutil-musikcube.57.dylib'],
   ['libavutil-musikcube.57.dylib', 'libavutil-musikcube.dylib'],
-  ['libswresample-musikcube.4.3.100.dylib', 'libswresample-musikcube.4.dylib'],
   ['libswresample-musikcube.4.dylib', 'libswresample-musikcube.dylib'],
   ['libcrypto.1.1.dylib', 'libcrypto.dylib'],
   ['libssl.1.1.dylib', 'libssl.dylib'],
