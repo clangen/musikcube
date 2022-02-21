@@ -10,13 +10,14 @@ ln -s ../lib/
 popd
 
 PLATFORM=$(uname)
+
 if [[ "$PLATFORM" == 'Darwin' ]]; then
     echo "[stage-static-vendor-libraries] staging macOS .dylib files..."
 
-    cp vendor/bin/lib/libavcodec-musikcube.59.dylib ./bin/lib
-    cp vendor/bin/lib/libavformat-musikcube.59.dylib ./bin/lib
-    cp vendor/bin/lib/libavutil-musikcube.57.dylib ./bin/lib
-    cp vendor/bin/lib/libswresample-musikcube.4.dylib ./bin/lib
+    cp vendor/bin/lib/libavcodec-musikcube*.dylib ./bin/lib
+    cp vendor/bin/lib/libavformat-musikcube*.dylib ./bin/lib
+    cp vendor/bin/lib/libavutil-musikcube*.dylib ./bin/lib
+    cp vendor/bin/lib/libswresample-musikcube*.dylib ./bin/lib
     cp vendor/bin/lib/libopus.0.dylib ./bin/lib
     cp vendor/bin/lib/libogg.0.dylib ./bin/lib
     cp vendor/bin/lib/libvorbis.0.dylib ./bin/lib
