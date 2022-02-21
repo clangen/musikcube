@@ -460,7 +460,6 @@ function delete_unused_libraries() {
     cd bin/lib/
     rm *.a 2> /dev/null
     rm *.la 2> /dev/null
-    find . -type l -delete
     if [[ $OS == "Darwin" ]]; then
       mv libavcodec-musikcube.59.18.100.dylib libavcodec-musikcube.59.dylib
       mv libavformat-musikcube.59.16.100.dylib libavformat-musikcube.59.dylib
