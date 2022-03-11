@@ -58,7 +58,7 @@ namespace cursespp {
             /* IWindow */
             void OnRedraw() override;
             bool KeyPress(const std::string& key) override;
-            bool MouseEvent(const IMouseHandler::Event& event) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& event) override;
 
             /* virtual methods we define */
             virtual void SetBold(bool bold);

@@ -140,7 +140,9 @@ bool ScrollableWindow::KeyPress(const std::string& key) {
     return false;
 }
 
-bool ScrollableWindow::MouseEvent(const IMouseHandler::Event& event) {
+bool ScrollableWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
+    const bool result = Window::ProcessMouseEvent(event);
+
     if (event.Button1Clicked()) {
         this->FocusInParent();
         return true;
@@ -153,7 +155,8 @@ bool ScrollableWindow::MouseEvent(const IMouseHandler::Event& event) {
         this->PageUp();
         return true;
     }
-    return false;
+
+    return result;
 }
 
 

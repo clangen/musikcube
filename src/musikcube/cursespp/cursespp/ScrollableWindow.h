@@ -64,7 +64,7 @@ namespace cursespp {
             void OnRedraw() override;
 
             /* IMouseHandler */
-            bool MouseEvent(const IMouseHandler::Event& event) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& event) override;
 
             /* IScrollable */
             void ScrollToTop() override;

@@ -50,12 +50,16 @@ namespace cursespp {
 
             virtual ~Checkbox();
 
-            virtual void SetText(const std::string& value);
-            virtual std::string GetText();
             virtual void SetChecked(bool checked);
             virtual bool IsChecked() { return this->checked; }
-            virtual bool KeyPress(const std::string& key);
-            virtual bool MouseEvent(const IMouseHandler::Event& event);
+
+            /* TextLabel */
+            virtual void SetText(const std::string& value) override;
+            virtual std::string GetText() override;
+
+            /* Window */
+            bool KeyPress(const std::string& key) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& event) override;
 
         private:
             bool checked;

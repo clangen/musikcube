@@ -311,9 +311,9 @@ bool ListWindow::KeyPress(const std::string& key) {
     return ScrollableWindow::KeyPress(key);
 }
 
-bool ListWindow::MouseEvent(const IMouseHandler::Event& event) {
+bool ListWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
     /* CAL TODO: this method assumes each row is a single cell tall. */
-    bool result = ScrollableWindow::MouseEvent(event);
+    bool result = ScrollableWindow::ProcessMouseEvent(event);
 
     auto first = this->scrollPosition.firstVisibleEntryIndex;
 

@@ -72,6 +72,6 @@ namespace cursespp {
             };
 
             virtual ~IMouseHandler() { }
-            virtual bool MouseEvent(const Event& mouseEvent) = 0;
+            virtual bool ProcessMouseEvent(const Event& mouseEvent) = 0;
     };
 }

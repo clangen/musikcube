@@ -574,12 +574,12 @@ process:
                         Event event(rawMouseEvent, window);
                         if (event.MouseWheelDown() || event.MouseWheelUp()) {
                             if (state.focused) {
-                                state.focused->MouseEvent(event);
+                                state.focused->ProcessMouseEvent(event);
                             }
                         }
                         else if (mouseButtonState.Update(rawMouseEvent)) {
                             event.state = mouseButtonState.ToCursesState();
-                            active->MouseEvent(event);
+                            active->ProcessMouseEvent(event);
                         }
                     }
                 }

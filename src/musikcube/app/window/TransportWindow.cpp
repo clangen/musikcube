@@ -431,7 +431,7 @@ bool TransportWindow::KeyPress(const std::string& kn) {
     return false;
 }
 
-bool TransportWindow::MouseEvent(const IMouseHandler::Event& event) {
+bool TransportWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
     if (event.Button1Clicked()) {
         if (this->shufflePos.Contains(event)) {
             this->playback.ToggleShuffle();
@@ -466,7 +466,7 @@ bool TransportWindow::MouseEvent(const IMouseHandler::Event& event) {
             }
         }
     }
-    return false;
+    return Window::ProcessMouseEvent(event);
 }
 
 bool TransportWindow::FocusNext() {

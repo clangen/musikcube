@@ -63,7 +63,7 @@ namespace cursespp {
             void SetActive(const std::string& key);
 
             bool KeyPress(const std::string& key) override;
-            bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
         protected:
             void OnRedraw() override;

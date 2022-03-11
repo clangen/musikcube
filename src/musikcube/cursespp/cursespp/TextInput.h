@@ -72,7 +72,7 @@ namespace cursespp {
             void OnRedraw() override;
 
             /* IMouseHandler */
-            bool MouseEvent(const IMouseHandler::Event& event) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& event) override;
 
             /* regular methods we define */
             void SetRawKeyBlacklist(const std::vector<std::string>&& blacklist);

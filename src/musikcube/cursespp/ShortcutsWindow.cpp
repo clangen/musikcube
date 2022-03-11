@@ -148,7 +148,7 @@ bool ShortcutsWindow::KeyPress(const std::string& key) {
     return false;
 }
 
-bool ShortcutsWindow::MouseEvent(const IMouseHandler::Event& mouseEvent) {
+bool ShortcutsWindow::ProcessMouseEvent(const IMouseHandler::Event& mouseEvent) {
     if (mouseEvent.Button1Clicked()) {
         for (auto entry : this->entries) {
             auto& pos = entry->position;
@@ -167,7 +167,7 @@ bool ShortcutsWindow::MouseEvent(const IMouseHandler::Event& mouseEvent) {
             }
         }
     }
-    return false;
+    return Window::ProcessMouseEvent(mouseEvent);
 }
 
 void ShortcutsWindow::OnFocusChanged(bool focused) {

@@ -96,7 +96,7 @@ namespace cursespp {
             bool KeyPress(const std::string& key) override;
 
             /* IMouseHandler */
-            bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
             /* IWindowGroup */
             bool AddWindow(IWindowPtr window) override;

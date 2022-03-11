@@ -38,6 +38,7 @@
 #include <cursespp/IWindow.h>
 #include <cursespp/INavigationKeys.h>
 #include <musikcore/runtime/IMessageQueue.h>
+#include <sigslot/sigslot.h>
 
 #ifdef WIN32
     #if defined(PDCURSES_WINCON) || defined(_CONSOLE)
@@ -60,6 +61,8 @@ namespace cursespp {
             creating your own messages within this range. */
             static const int kFirstReservedMessageId;
             static const int kLastReservedMessageId;
+
+            sigslot::signal2<IWindow*, const IMouseHandler::Event*> MouseEvent;
 
             Window(IWindow* parent = nullptr);
             virtual ~Window();
@@ -137,7 +140,7 @@ namespace cursespp {
             bool HasBadBounds() noexcept { return this->badBounds; }
 
             /* IMouseHandler */
-            bool MouseEvent(const IMouseHandler::Event& mouseEvent) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
         protected:
 

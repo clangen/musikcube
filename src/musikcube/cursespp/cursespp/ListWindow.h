@@ -67,10 +67,10 @@ namespace cursespp {
             void Invalidate() override;
             void OnAdapterChanged() override;
 
-            const IScrollAdapter::ScrollPosition& GetScrollPosition()  override;
+            const IScrollAdapter::ScrollPosition& GetScrollPosition() override;
 
-            bool KeyPress(const std::string& key)  override;
-            bool MouseEvent(const IMouseHandler::Event& event)  override;
+            bool KeyPress(const std::string& key) override;
+            bool ProcessMouseEvent(const IMouseHandler::Event& event) override;
 
             void SetScrollbarVisible(bool visible);
             void SetDecorator(Decorator decorator);

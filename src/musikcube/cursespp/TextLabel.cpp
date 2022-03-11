@@ -128,11 +128,11 @@ bool TextLabel::KeyPress(const std::string& key) {
     return false;
 }
 
-bool TextLabel::MouseEvent(const IMouseHandler::Event& event) {
+bool TextLabel::ProcessMouseEvent(const IMouseHandler::Event& event) {
     if (event.Button1Clicked()) {
         this->FocusInParent();
         this->Activated(this);
         return true;
     }
-    return false;
+    return Window::ProcessMouseEvent(event);
 }

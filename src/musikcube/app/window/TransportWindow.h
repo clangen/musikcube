@@ -64,11 +64,11 @@ namespace musik {
 
                 virtual ~TransportWindow();
 
-                virtual void ProcessMessage(musik::core::runtime::IMessage &message);
-                virtual void OnFocusChanged(bool focused);
-                virtual void OnRedraw();
-                virtual bool KeyPress(const std::string& key);
-                virtual bool MouseEvent(const IMouseHandler::Event& mouseEvent);
+                void ProcessMessage(musik::core::runtime::IMessage &message) override;
+                void OnFocusChanged(bool focused) override;
+                void OnRedraw() override;
+                bool KeyPress(const std::string& key) override;
+                bool ProcessMouseEvent(const IMouseHandler::Event& mouseEvent) override;
 
                 void SetFocus(FocusTarget target);
                 FocusTarget GetFocus() const;

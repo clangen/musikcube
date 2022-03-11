@@ -967,7 +967,8 @@ void Window::SetNavigationKeys(std::shared_ptr<INavigationKeys> keys) {
     ::keys = keys;
 }
 
-bool Window::MouseEvent(const IMouseHandler::Event& mouseEvent) {
+bool Window::ProcessMouseEvent(const IMouseHandler::Event& mouseEvent) {
+    this->MouseEvent(this, &mouseEvent);
     return false;
 }
 
