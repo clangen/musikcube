@@ -1,3 +1,11 @@
+0.97.1
+
+* added the ability to use `libelogind` or `basu` instead of `libsystemd` for
+  the `mpris` plugin (@robertgzr)
+* some warning cleanups when using wsprintw (@trofi)
+
+--------------------------------------------------------------------------------
+
 0.97.0
 
 * no functional changes to the app
@@ -7,9 +15,13 @@
   distribution that are more universally compatible across different
   versions of macOS and Linux distributions.
 
+--------------------------------------------------------------------------------
+
 0.96.13
 
 * macOS and Linux only release that fixes standalone binaries.
+
+--------------------------------------------------------------------------------
 
 0.96.11
 
@@ -23,14 +35,20 @@
 * added additional PipeWire output debugging.
 * rewrote build system and packaging scripts.
 
+--------------------------------------------------------------------------------
+
 0.96.10
 
 * fixed `-rpath` for macOS build.
 * fixed race condition in WasapiOut that caused the app to crash.
 
+--------------------------------------------------------------------------------
+
 0.96.9
 
 * fixed `-rpath` to use `$ORIGIN` instead of `./` to appease `Feodra 35`.
+
+--------------------------------------------------------------------------------
 
 0.96.8
 
@@ -58,10 +76,14 @@
 
 0.96.7
 
+--------------------------------------------------------------------------------
+
 * re-compile for Windows; Windows Defender was unhappy with the original
   binaries.
 
 0.96.6
+
+--------------------------------------------------------------------------------
 
 * fixed some drawing issues with overlays/dialogs with certain versions of
   ncurses.

@@ -115,6 +115,6 @@ void ToastOverlay::OnRedraw() {
 
      for (int i = 0; i < (int) this->titleLines.size(); i++) {
          wmove(c, i, 1);
-         checked_wprintw(c, text::Ellipsize(this->titleLines[i], this->width - 4).c_str());
+         checked_wprintw(c, "%s", text::Ellipsize(this->titleLines[i], this->width - 4).c_str());
      }
 }

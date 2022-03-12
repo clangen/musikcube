@@ -226,7 +226,7 @@ void DialogOverlay::OnRedraw() {
     if (this->title.size()) {
         wmove(c, currentY, currentX);
         wattron(c, A_BOLD);
-        checked_wprintw(c, text::Ellipsize(this->title, this->width - 4).c_str());
+        checked_wprintw(c, "%s", text::Ellipsize(this->title, this->width - 4).c_str());
         wattroff(c, A_BOLD);
         currentY += 2;
     }
@@ -234,7 +234,7 @@ void DialogOverlay::OnRedraw() {
     if (this->message.size()) {
         for (size_t i = 0; i < messageLines.size(); i++) {
             wmove(c, currentY, currentX);
-            checked_wprintw(c, this->messageLines.at(i).c_str());
+            checked_wprintw(c, "%s", this->messageLines.at(i).c_str());
             ++currentY;
         }
     }

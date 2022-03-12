@@ -2,8 +2,22 @@ set (mpris_SOURCES
   mpris.cpp
   dbus.cpp)
 
-find_package(PkgConfig)
-pkg_check_modules (SYSTEMD REQUIRED libsystemd)
+if (USE_ELOGIND MATCHES "true")
+  set(SDBUS "libelogind >= 239.3")
+elseif (USE_BASU MATCHES "true")
+  set(SDBUS "basu")
+else()
+  set(SDBUS "libsystemd")
+endif()
 
-add_library(mpris SHARED ${mpris_SOURCES})
-target_link_libraries(mpris systemd)
+find_package(PkgConfig)
+pkg_check_modules(SDBUS IMPORTED_TARGET ${SDBUS})
+
+if (SDBUS_LINK_LIBRARIES STREQUAL "")
+  message(STATUS "[mpris] plugin enabled. using " ${SDBUS_LINK_LIBRARIES})
+  add_library(mpris SHARED ${mpris_SOURCES})
+  target_link_libraries(mpris PkgConfig::SDBUS)
+else()
+  set_property(GLOBAL PROPERTY DISABLE_mpris "true")
+  message(STATUS "[mpris] plugin *not* enabled. setting 'DISABLE_mpris=true'")
+endif()

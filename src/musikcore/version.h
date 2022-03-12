@@ -38,9 +38,9 @@
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 97
-#define VERSION_PATCH 0
-#define VERSION_COMMIT_HASH "#5496aba9"
-#define VERSION "0.97.0"
+#define VERSION_PATCH 1
+#define VERSION_COMMIT_HASH "#0199dba0"
+#define VERSION "0.97.1"
 
 namespace musik {
     namespace cube {
