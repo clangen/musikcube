@@ -79,21 +79,21 @@ namespace musik {
                 void RestoreFocus();
 
             private:
-                enum TimeMode {
-                    TimeLast = 0,
-                    TimeSmooth = 1,
-                    TimeSync = 2
+                enum class TimeMode: int {
+                    Last = 0,
+                    Smooth = 1,
+                    Sync = 2
                 };
 
                 /* a little structure used to make mouse event handling a bit
                 less verbose. */
                 struct Position {
-                    Position();
-                    Position(int x, int y, int width);
-                    void Set(int x, int width);
-                    double Percent(int x);
-                    bool Contains(const IMouseHandler::Event& event);
-
+                    Position() noexcept;
+                    Position(int x, int y, int width) noexcept;
+                    void Set(int x, int width) noexcept;
+                    void Set(int x, int y, int width) noexcept;
+                    double Percent(int x) noexcept;
+                    bool Contains(const IMouseHandler::Event& event) noexcept;
                     int x, y, width;
                 };
 
@@ -115,7 +115,7 @@ namespace musik {
 
                 size_t WritePlayingFormat(WINDOW* w, size_t width);
 
-                void Update(TimeMode mode = TimeSmooth);
+                void Update(TimeMode mode = TimeMode::Smooth);
 
                 void OnPlaybackServiceTrackChanged(size_t index, musik::core::TrackPtr track);
                 void OnPlaybackModeChanged();
@@ -127,7 +127,7 @@ namespace musik {
 
                 bool paused;
                 bool hasReplayGain;
-                Position shufflePos, repeatPos, volumePos, timeBarPos;
+                Position shufflePos, repeatPos, volumePos, currentTimePos, timeBarPos;
                 std::map<std::string, Position> metadataFieldToPosition;
                 musik::core::sdk::ReplayGainMode replayGainMode;
                 musik::core::ILibraryPtr library;

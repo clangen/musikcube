@@ -91,7 +91,7 @@ struct Token {
     enum Type { Normal, Placeholder };
 
     static std::unique_ptr<Token> New(const std::string& value, Type type) {
-        return std::unique_ptr<Token>(new Token(value, type));
+        return std::make_unique<Token>(value, type);
     }
 
     Token(const std::string& value, Type type) {
@@ -113,11 +113,11 @@ void tokenize(const std::string& format, TokenList& tokens) {
     size_t i = 0;
     size_t start = 0;
     while (i < format.size()) {
-        char c = format[i];
+        const char c = format[i];
         if ((type == Token::Placeholder && c == ' ') ||
             (type == Token::Normal && c == '$')) {
             /* escape $ with $$ */
-            if (c == '$' && i < format.size() - 1 && format[i + 1] == '$') {
+            if (c == '$' && i < format.size() - 1 && format.at(i + 1) == '$') {
                 i++;
             }
             else {
@@ -206,21 +206,21 @@ void TransportWindow::DisplayCache::Update(ITransport& transport, TrackPtr track
         if (this->track) {
             title = this->track->GetString(constants::Track::TITLE);
             title = title.size() ? title : Strings.EMPTY_SONG;
-            titleCols = (int) u8cols(title);
+            titleCols = narrow_cast<int>(u8cols(title));
 
             album = this->track->GetString(constants::Track::ALBUM);
             album = album.size() ? album : Strings.EMPTY_ALBUM;
-            albumCols = (int) u8cols(album);
+            albumCols = narrow_cast<int>(u8cols(album));
 
             artist = this->track->GetString(constants::Track::ARTIST);
             artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
-            artistCols = (int) u8cols(artist);
+            artistCols = narrow_cast<int>(u8cols(artist));
         }
     }
 
     /* we check duration even if the track is the same because
     looping params may have changed. */
-    auto updatedTotal = (int)transport.GetDuration();
+    auto updatedTotal = static_cast<int>(transport.GetDuration());
     if (updatedTotal != secondsTotal) {
         secondsTotal = updatedTotal;
         if (secondsTotal <= 0 && secondsTotal != INT_MIN) {
@@ -246,23 +246,33 @@ void TransportWindow::DisplayCache::Update(ITransport& transport, TrackPtr track
 
 /* ~~~~~~~~~~ TransportWindow::Position ~~~~~~~~~~ */
 
-TransportWindow::Position::Position() {
+TransportWindow::Position::Position() noexcept {
     this->x = this->y = this->width = 0;
 }
-TransportWindow::Position::Position(int x, int y, int width) {
+
+TransportWindow::Position::Position(int x, int y, int width) noexcept {
     this->x = x;
     this->y = y;
     this->width = width;
 }
-void TransportWindow::Position::Set(int x, int width) {
+
+void TransportWindow::Position::Set(int x, int width) noexcept {
     this->x = x;
     this->width = width;
 }
-double TransportWindow::Position::Percent(int x) {
+
+void TransportWindow::Position::Set(int x, int y, int width) noexcept {
+    this->x = x;
+    this->y = y;
+    this->width = width;
+}
+
+double TransportWindow::Position::Percent(int x) noexcept {
     return std::max(0.0, std::min(1.0,
         double(x - this->x) / double(this->width - 1)));
 }
-bool TransportWindow::Position::Contains(const IMouseHandler::Event& event) {
+
+bool TransportWindow::Position::Contains(const IMouseHandler::Event& event) noexcept {
     return event.y == this->y &&
         event.x >= this->x &&
         event.x < this->x + this->width;
@@ -415,7 +425,7 @@ void TransportWindow::SetFocus(FocusTarget target) {
             this->Focus();
         }
 
-        DEBOUNCE_REFRESH(TimeSync, 0);
+        DEBOUNCE_REFRESH(TimeMode::Sync, 0);
     }
 }
 
@@ -454,7 +464,14 @@ bool TransportWindow::KeyPress(const std::string& kn) {
 
 bool TransportWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
     if (event.Button1Clicked()) {
-        if (this->shufflePos.Contains(event)) {
+        if (this->currentTimePos.Contains(event)) {
+            const auto state = this->playback.GetPlaybackState();
+            if (state == PlaybackState::Playing || state == PlaybackState::Paused) {
+                this->playback.PauseOrResume();
+            }
+            return true;
+        }
+        else if (this->shufflePos.Contains(event)) {
             this->playback.ToggleShuffle();
             return true;
         }
@@ -499,9 +516,7 @@ bool TransportWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
     }
     else if (event.Button3Clicked()) {
         if (this->volumePos.Contains(event)) {
-            if (!playback.IsMuted()) {
-                playback.ToggleMute();
-            }
+            playback.ToggleMute();
         }
     }
     return Window::ProcessMouseEvent(event);
@@ -540,10 +555,10 @@ void TransportWindow::ProcessMessage(IMessage &message) {
     const int type = message.Type();
 
     if (type == message::RefreshTransport) {
-        this->Update((TimeMode) message.UserData1());
+        this->Update(static_cast<TimeMode>(message.UserData1()));
 
         if (transport.GetPlaybackState() != PlaybackState::Stopped) {
-            DEBOUNCE_REFRESH(TimeSmooth, REFRESH_INTERVAL_MS)
+            DEBOUNCE_REFRESH(TimeMode::Smooth, REFRESH_INTERVAL_MS)
         }
     }
     else if (type == message::TransportBuffering) {
@@ -561,7 +576,7 @@ void TransportWindow::OnPlaybackServiceTrackChanged(size_t index, TrackPtr track
     this->lastTime = DEFAULT_TIME;
     this->buffering = playback.GetTransport().GetStreamState() == StreamState::Buffering;
     this->UpdateReplayGainState();
-    DEBOUNCE_REFRESH(TimeSync, 0);
+    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
 void TransportWindow::OnPlaybackStreamStateChanged(StreamState state) {
@@ -576,19 +591,19 @@ void TransportWindow::OnPlaybackStreamStateChanged(StreamState state) {
 }
 
 void TransportWindow::OnPlaybackModeChanged() {
-    DEBOUNCE_REFRESH(TimeSync, 0);
+    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
-    DEBOUNCE_REFRESH(TimeSync, 0);
+    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
 void TransportWindow::OnTransportTimeChanged(double time) {
-    DEBOUNCE_REFRESH(TimeSync, 0);
+    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
 void TransportWindow::OnPlaybackShuffled(bool shuffled) {
-    DEBOUNCE_REFRESH(TimeSync, 0);
+    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
 void TransportWindow::OnRedraw() {
@@ -600,14 +615,16 @@ void TransportWindow::UpdateReplayGainState() {
 
     auto preferences = Preferences::ForComponent(core::prefs::components::Playback);
 
-    this->replayGainMode = (Mode)
-        preferences->GetInt(core::prefs::keys::ReplayGainMode.c_str(), (int) Mode::Disabled);
+    this->replayGainMode = static_cast<Mode>(
+        preferences->GetInt(
+            core::prefs::keys::ReplayGainMode.c_str(),
+            static_cast<int>(Mode::Disabled)));
 
     this->hasReplayGain = false;
 
     if (this->replayGainMode != Mode::Disabled) {
         if (this->currentTrack) {
-            ReplayGain gain = this->currentTrack->GetReplayGain();
+            const ReplayGain gain = this->currentTrack->GetReplayGain();
             this->hasReplayGain =
                 gain.albumGain != 1.0f || gain.albumPeak != 1.0f ||
                 gain.trackGain != 1.0f || gain.albumPeak != 1.0f;
@@ -618,7 +635,7 @@ void TransportWindow::UpdateReplayGainState() {
 void TransportWindow::Update(TimeMode timeMode) {
     this->Clear();
 
-    size_t const cx = (size_t) this->GetContentWidth();
+    size_t const cx = narrow_cast<size_t>(this->GetContentWidth());
 
     if (cx < MIN_WIDTH || this->GetContentHeight() < MIN_HEIGHT) {
         return;
@@ -671,34 +688,34 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     /* draw the "shuffle" label */
-    const int shuffleOffset = (int) (cx - shuffleWidth);
+    const int shuffleOffset = narrow_cast<int>(cx - shuffleWidth);
     wmove(c, 0, shuffleOffset);
     Color const shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
     checked_wprintw(c, shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
-    this->shufflePos.Set(shuffleOffset, (int) shuffleWidth);
+    this->shufflePos.Set(shuffleOffset, narrow_cast<int>(shuffleWidth));
 
     /* volume slider */
 
-    int const volumePercent = (int) round(this->transport.Volume() * 100.0f);
+    int const volumePercent = static_cast<int>(round(this->transport.Volume() * 100.0f));
     int thumbOffset = std::min(10, (volumePercent * 10) / 100);
 
     std::string volume;
 
     if (muted) {
         volume = Strings.MUTED;
-        this->volumePos.Set(0, (int) u8cols(Strings.MUTED));
+        this->volumePos.Set(0, narrow_cast<int>(u8cols(Strings.MUTED)));
     }
     else {
         volume = Strings.VOLUME;
-        this->volumePos.Set((int) u8cols(Strings.VOLUME), 11);
+        this->volumePos.Set(narrow_cast<int>(u8cols(Strings.VOLUME)), 11);
 
         for (int i = 0; i < 11; i++) {
             volume += (i == thumbOffset) ? "■" : "─";
         }
 
-        volume += u8fmt(" %d", (int)std::round(this->transport.Volume() * 100));
+        volume += u8fmt(" %d", static_cast<int>(std::round(this->transport.Volume() * 100)));
         volume += replayGainEnabled ? "%% " : "%%  ";
     }
 
@@ -740,9 +757,9 @@ void TransportWindow::Update(TimeMode timeMode) {
     mitigate jumping around. basically: draw the time as one second more than the
     last time we displayed, unless they are more than few seconds apart. note this
     only works if REFRESH_INTERVAL_MS is 1000. */
-    int secondsCurrent = (int) round(this->lastTime); /* mode == TimeLast */
+    int secondsCurrent = static_cast<int>(round(this->lastTime)); /* mode == TimeLast */
 
-    if (!this->buffering && timeMode == TimeSmooth) {
+    if (!this->buffering && timeMode == TimeMode::Smooth) {
         double smoothedTime = this->lastTime += 1.0f; /* 1000 millis */
         double const actualTime = playback.GetPosition();
 
@@ -753,11 +770,11 @@ void TransportWindow::Update(TimeMode timeMode) {
         this->lastTime = smoothedTime;
         /* end time smoothing */
 
-        secondsCurrent = (int) round(smoothedTime);
+        secondsCurrent = static_cast<int>(round(smoothedTime));
     }
     else {
         this->lastTime = std::max(0.0, playback.GetPosition());
-        secondsCurrent = (int) round(this->lastTime);
+        secondsCurrent = static_cast<int>(round(this->lastTime));
     }
 
     const std::string currentTime =
@@ -804,18 +821,19 @@ void TransportWindow::Update(TimeMode timeMode) {
         checked_wprintw(c, "]  ");
     }
 
+    currentTimePos.Set(getcurx(c), 1, u8cols(currentTime));
     ON(c, currentTimeAttrs); /* blink if paused */
     checked_wprintw(c, "%s ", currentTime.c_str());
     OFF(c, currentTimeAttrs);
 
     ON(c, timerAttrs);
-    this->timeBarPos.Set(getcurx(c), (int) u8cols(timerTrack));
+    this->timeBarPos.Set(getcurx(c), narrow_cast<int>(u8cols(timerTrack)));
     checked_waddstr(c, timerTrack.c_str()); /* may be a very long string */
     checked_wprintw(c, " %s", displayCache.totalTime.c_str());
     OFF(c, timerAttrs);
 
     ON(c, repeatAttrs);
-    this->repeatPos.Set(getcurx(c), (int) u8cols(repeatModeLabel));
+    this->repeatPos.Set(getcurx(c), narrow_cast<int>(u8cols(repeatModeLabel)));
     checked_wprintw(c, repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
 
