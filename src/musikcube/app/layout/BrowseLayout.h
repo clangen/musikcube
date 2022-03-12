@@ -45,6 +45,8 @@
 
 #include <sigslot/sigslot.h>
 
+#include <functional>
+
 namespace musik {
     namespace cube {
         class BrowseLayout :
@@ -53,6 +55,8 @@ namespace musik {
         {
             public:
                 DELETE_CLASS_DEFAULTS(BrowseLayout)
+
+                using HeaderClickHandler = std::function<void()>;
 
                 BrowseLayout(
                     musik::core::audio::PlaybackService& playback,
@@ -67,6 +71,8 @@ namespace musik {
                 void ScrollTo(const std::string& fieldType, int64_t fieldId);
                 void SwitchCategory(const std::string& fieldName);
                 void PlayFromTop();
+
+                void SetOnHeaderClicked(HeaderClickHandler handler);
 
                 void LoadLastSession();
 
@@ -87,6 +93,9 @@ namespace musik {
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
 
+                void OnCategoryWindowMouseEvent(
+                    cursespp::IWindow* window, const cursespp::IMouseHandler::Event* mouseEvent);
+
                 void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
 
                 bool IsPlaylist();
@@ -101,6 +110,7 @@ namespace musik {
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextLabel> modifiedLabel;
+                HeaderClickHandler headerClickHandler;
         };
     }
 }

@@ -155,6 +155,7 @@ void BrowseLayout::OnLayout() {
 
 void BrowseLayout::InitializeWindows() {
     this->categoryList = std::make_shared<CategoryListView>(this->playback, this->library, DEFAULT_CATEGORY);
+    this->categoryList->MouseEvent.connect(this, &BrowseLayout::OnCategoryWindowMouseEvent);
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
@@ -270,6 +271,18 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
     }
 }
 
+void BrowseLayout::OnCategoryWindowMouseEvent(IWindow* window, const IMouseHandler::Event* mouseEvent) {
+    if (mouseEvent->y == -1) {
+        auto title = this->categoryList->GetFrameTitle();
+        /* the title will be in the format "- title -". this check is kludgy. */
+        if (mouseEvent->x > 0 && mouseEvent->x < u8cols(title) + 3) {
+            if (this->headerClickHandler) {
+                this->headerClickHandler();
+            }
+        }
+    }
+}
+
 void BrowseLayout::OnCategoryViewSelectionChanged(
     ListWindow *view, size_t newIndex, size_t oldIndex)
 {
@@ -299,6 +312,10 @@ void BrowseLayout::SwitchCategory(const std::string& fieldName) {
 
 void BrowseLayout::PlayFromTop() {
     playback::PlayFromTop(*this->trackList, this->playback);
+}
+
+void BrowseLayout::SetOnHeaderClicked(HeaderClickHandler handler) {
+    this->headerClickHandler = handler;
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {

@@ -196,6 +196,8 @@ void LibraryLayout::ShowDirectories(const std::string& directory) {
 
 void LibraryLayout::InitializeWindows() {
     this->browseLayout = std::make_shared<BrowseLayout>(this->playback, this->library);
+    this->browseLayout->SetOnHeaderClicked([this]() { this->ShowCategoryChooser(); });
+
     this->directoryLayout = std::make_shared<DirectoryLayout>(this->playback, this->library);
     this->nowPlayingLayout = std::make_shared<NowPlayingLayout>(this->playback, this->library);
     this->categorySearchLayout = std::make_shared<CategorySearchLayout>(this->playback, this->library);
@@ -413,6 +415,19 @@ void LibraryLayout::ShowDirectoryChooser() {
         });
 }
 
+void LibraryLayout::ShowCategoryChooser() {
+    BrowseOverlays::ShowCategoryChooser(
+        this->library,
+        [this](std::string category, std::string type) {
+            if (type == MagicConstants::DirectoryCategoryType) {
+                this->ShowDirectoryChooser();
+            }
+            else {
+                this->ShowBrowse(category);
+            }
+        });
+}
+
 bool LibraryLayout::KeyPress(const std::string& key) {
     if (this->visibleLayout == this->browseLayout ||
         this->visibleLayout == this->directoryLayout)
@@ -438,16 +453,7 @@ bool LibraryLayout::KeyPress(const std::string& key) {
             return true;
         }
         else if (Hotkeys::Is(Hotkeys::NavigateLibraryBrowseChooseCategory, key)) {
-            BrowseOverlays::ShowCategoryChooser(
-                this->library,
-                [this](std::string category, std::string type) {
-                    if (type == MagicConstants::DirectoryCategoryType) {
-                        this->ShowDirectoryChooser();
-                    }
-                    else {
-                        this->ShowBrowse(category);
-                    }
-                });
+            this->ShowCategoryChooser();
             return true;
         }
     }

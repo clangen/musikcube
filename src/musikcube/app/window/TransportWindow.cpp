@@ -49,6 +49,7 @@
 
 #include <app/util/Hotkeys.h>
 #include <app/util/Messages.h>
+#include <app/overlay/PlayQueueOverlays.h>
 
 #include <limits.h>
 
@@ -80,6 +81,11 @@ using namespace cursespp;
 
 #define ON(w, a) if (a != Color::Default) { wattron(w, a); }
 #define OFF(w, a) if (a != Color::Default) { wattroff(w, a); }
+
+static const std::string kStateToken = "$state";
+static const std::string kTitleToken = "$title";
+static const std::string kArtistToken = "$artist";
+static const std::string kAlbumToken = "$album";
 
 struct Token {
     enum Type { Normal, Placeholder };
@@ -163,116 +169,129 @@ static struct StringCache {
     }
 } Strings;
 
-/* a really boring class that contains a cache of currently playing
-information so we don't have to look it up every time we update the
-view (every second) */
-struct musik::cube::TransportDisplayCache {
-    TrackPtr track;
-    std::string title, album, artist, totalTime;
-    int secondsTotal;
-    int titleCols, albumCols, artistCols, totalTimeCols;
-    std::map<std::string, size_t> stringToColumns;
+/* ~~~~~~~~~~ TransportWindow::DisplayCache ~~~~~~~~~~ */
 
-    void Reset() {
-        track.reset();
-        title = album = artist = "";
-        titleCols = albumCols = artistCols;
-        secondsTotal = 0;
-        totalTime = "0:00";
-        totalTimeCols = 4;
+void TransportWindow::DisplayCache::Reset() {
+    track.reset();
+    title = album = artist = "";
+    titleCols = albumCols = artistCols;
+    secondsTotal = 0;
+    totalTime = "0:00";
+    totalTimeCols = 4;
+}
+
+size_t TransportWindow::DisplayCache::Columns(const std::string& str) {
+    auto it = stringToColumns.find(str);
+    if (it == stringToColumns.end()) {
+        stringToColumns[str] = u8cols(str);
     }
+    return stringToColumns[str];
+}
 
-    size_t Columns(const std::string& str) {
-        auto it = stringToColumns.find(str);
-        if (it == stringToColumns.end()) {
-            stringToColumns[str] = u8cols(str);
+std::string TransportWindow::DisplayCache::CurrentTime(int secondsCurrent) {
+    if (secondsTotal != INT_MIN) {
+        secondsCurrent = std::max(0, std::min(secondsCurrent, secondsTotal));
+    }
+    return musik::core::duration::Duration(secondsCurrent);
+}
+
+void TransportWindow::DisplayCache::Update(ITransport& transport, TrackPtr track) {
+    /* some params don't update regularly at all, so we can safely
+    cache them as long as the track hasn't actually changed. */
+    if (this->track != track) {
+        this->Reset();
+
+        this->track = track;
+
+        if (this->track) {
+            title = this->track->GetString(constants::Track::TITLE);
+            title = title.size() ? title : Strings.EMPTY_SONG;
+            titleCols = (int) u8cols(title);
+
+            album = this->track->GetString(constants::Track::ALBUM);
+            album = album.size() ? album : Strings.EMPTY_ALBUM;
+            albumCols = (int) u8cols(album);
+
+            artist = this->track->GetString(constants::Track::ARTIST);
+            artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
+            artistCols = (int) u8cols(artist);
         }
-        return stringToColumns[str];
     }
 
-    std::string CurrentTime(int secondsCurrent) {
-        if (secondsTotal != INT_MIN) {
-            secondsCurrent = std::max(0, std::min(secondsCurrent, secondsTotal));
-        }
-        return musik::core::duration::Duration(secondsCurrent);
-    }
-
-    void Update(ITransport& transport, TrackPtr track) {
-        /* some params don't update regularly at all, so we can safely
-        cache them as long as the track hasn't actually changed. */
-        if (this->track != track) {
-            this->Reset();
-
-            this->track = track;
-
+    /* we check duration even if the track is the same because
+    looping params may have changed. */
+    auto updatedTotal = (int)transport.GetDuration();
+    if (updatedTotal != secondsTotal) {
+        secondsTotal = updatedTotal;
+        if (secondsTotal <= 0 && secondsTotal != INT_MIN) {
             if (this->track) {
-                title = this->track->GetString(constants::Track::TITLE);
-                title = title.size() ? title : Strings.EMPTY_SONG;
-                titleCols = (int) u8cols(title);
-
-                album = this->track->GetString(constants::Track::ALBUM);
-                album = album.size() ? album : Strings.EMPTY_ALBUM;
-                albumCols = (int) u8cols(album);
-
-                artist = this->track->GetString(constants::Track::ARTIST);
-                artist = artist.size() ? artist : Strings.EMPTY_ARTIST;
-                artistCols = (int) u8cols(artist);
-            }
-        }
-
-        /* we check duration even if the track is the same because
-        looping params may have changed. */
-        auto updatedTotal = (int)transport.GetDuration();
-        if (updatedTotal != secondsTotal) {
-            secondsTotal = updatedTotal;
-            if (secondsTotal <= 0 && secondsTotal != INT_MIN) {
-                if (this->track) {
-                    std::string duration =
-                        this->track->GetString(constants::Track::DURATION);
-                    if (duration.size()) {
-                        secondsTotal = std::stoi(duration);
-                    }
+                std::string duration =
+                    this->track->GetString(constants::Track::DURATION);
+                if (duration.size()) {
+                    secondsTotal = std::stoi(duration);
                 }
             }
-
-            if (secondsTotal >= 0) {
-                totalTime = musik::core::duration::Duration(secondsTotal);
-            }
-            else {
-                totalTime = "∞";
-            }
-
-            totalTimeCols = (int) u8cols(totalTime);
         }
+
+        if (secondsTotal >= 0) {
+            totalTime = musik::core::duration::Duration(secondsTotal);
+        }
+        else {
+            totalTime = "∞";
+        }
+
+        totalTimeCols = (int) u8cols(totalTime);
     }
-};
+}
+
+/* ~~~~~~~~~~ TransportWindow::Position ~~~~~~~~~~ */
+
+TransportWindow::Position::Position() {
+    this->x = this->y = this->width = 0;
+}
+TransportWindow::Position::Position(int x, int y, int width) {
+    this->x = x;
+    this->y = y;
+    this->width = width;
+}
+void TransportWindow::Position::Set(int x, int width) {
+    this->x = x;
+    this->width = width;
+}
+double TransportWindow::Position::Percent(int x) {
+    return std::max(0.0, std::min(1.0,
+        double(x - this->x) / double(this->width - 1)));
+}
+bool TransportWindow::Position::Contains(const IMouseHandler::Event& event) {
+    return event.y == this->y &&
+        event.x >= this->x &&
+        event.x < this->x + this->width;
+}
 
 /* writes the colorized formatted string to the specified window. accounts for
 utf8 characters and ellipsizing */
-static size_t writePlayingFormat(
-    WINDOW *w,
-    TransportDisplayCache& displayCache,
-    bool buffering,
-    size_t width)
-{
+size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width) {
+    this->metadataFieldToPosition.clear();
+
     TokenList tokens;
     tokenize(Strings.PLAYING_FORMAT, tokens);
 
-    Color dim = Color::TextDisabled;
-    Color gb = Color::TextActive;
-    Color warn = Color::TextWarning;
+    int x = 0, y = 0;
+    const Color dim = Color::TextDisabled;
+    const Color gb = Color::TextActive;
+    const Color warn = Color::TextWarning;
     size_t remaining = width;
 
     auto it = tokens.begin();
     while (it != tokens.end() && remaining > 0) {
-        Token *token = it->get();
+        const Token *token = it->get();
 
         Color attr = dim;
         std::string value;
         size_t cols = 0;
 
         if (token->type == Token::Placeholder) {
-            if (token->value == "$state") {
+            if (token->value == kStateToken) {
                 if (buffering) {
                     attr = warn;
                     value = Strings.BUFFERING;
@@ -282,17 +301,17 @@ static size_t writePlayingFormat(
                 }
                 cols = u8len(value);
             }
-            if (token->value == "$title") {
+            if (token->value == kTitleToken) {
                 attr = gb;
                 value = displayCache.title;
                 cols = displayCache.titleCols;
             }
-            else if (token->value == "$album") {
+            else if (token->value == kAlbumToken) {
                 attr = gb;
                 value = displayCache.album;
                 cols = displayCache.albumCols;
             }
-            else if (token->value == "$artist") {
+            else if (token->value == kArtistToken) {
                 attr = gb;
                 value = displayCache.artist;
                 cols = displayCache.artistCols;
@@ -330,6 +349,9 @@ static size_t writePlayingFormat(
             percentSignIndex = value.find("%", percentSignIndex + 2);
         }
 
+        getyx(w, y, x);
+        metadataFieldToPosition[token->value] = Position(x, y, cols);
+
         ON(w, attr);
         checked_wprintw(w, value.c_str());
         OFF(w, attr);
@@ -355,7 +377,6 @@ TransportWindow::TransportWindow(
 : Window(nullptr)
 , library(library)
 , replayGainMode(ReplayGainMode::Disabled)
-, displayCache(new TransportDisplayCache())
 , playback(playback)
 , transport(playback.GetTransport())
 , focus(FocusNone)
@@ -373,7 +394,7 @@ TransportWindow::TransportWindow(
     this->shufflePos.y = 0;
     this->repeatPos.y = 1;
     this->volumePos.y = 1;
-    this->timePos.y = 1;
+    this->timeBarPos.y = 1;
     this->currentTrack = playback.GetPlaying();
     this->UpdateReplayGainState();
 }
@@ -384,7 +405,7 @@ TransportWindow::~TransportWindow() {
 
 void TransportWindow::SetFocus(FocusTarget target) {
     if (target != this->focus) {
-        auto last = this->focus;
+        const auto last = this->focus;
         this->focus = target;
 
         if (this->focus == FocusNone) {
@@ -450,13 +471,30 @@ bool TransportWindow::ProcessMouseEvent(const IMouseHandler::Event& event) {
             }
             return true;
         }
-        else if (this->timePos.Contains(event)) {
+        else if (this->timeBarPos.Contains(event)) {
             if (playback.GetPlaybackState() != PlaybackState::Stopped) {
-                double duration = playback.GetDuration();
-                double percent = this->timePos.Percent(event.x);
+                const double duration = playback.GetDuration();
+                const double percent = this->timeBarPos.Percent(event.x);
                 playback.SetPosition(duration * percent);
             }
             return true;
+        }
+
+        for (auto entry : this->metadataFieldToPosition) {
+            if (entry.second.Contains(event)) {
+                const auto track = this->currentTrack;
+                if (track) {
+                    const auto type = entry.first;
+                    if (type == kTitleToken || type == kAlbumToken || type == kArtistToken) {
+                        PlayQueueOverlays::ShowAddTrackOverlay(
+                            this->MessageQueue(),
+                            this->library,
+                            this->playback,
+                            track);
+                    }
+                }
+                break;
+            }
         }
     }
     else if (event.Button3Clicked()) {
@@ -617,19 +655,19 @@ void TransportWindow::Update(TimeMode timeMode) {
     /* prepare the "shuffle" label */
 
     std::string shuffleLabel = Strings.SHUFFLE;
-    size_t const shuffleWidth = displayCache->Columns(shuffleLabel);
+    size_t const shuffleWidth = displayCache.Columns(shuffleLabel);
 
     /* playing SONG TITLE from ALBUM NAME */
 
     if (stopped && !this->buffering) {
         ON(c, disabled);
         checked_wprintw(c, Strings.STOPPED.c_str());
-        displayCache->Reset();
+        displayCache.Reset();
         OFF(c, disabled);
     }
     else {
-        displayCache->Update(transport, this->currentTrack);
-        writePlayingFormat(c, *this->displayCache, this->buffering, cx - shuffleWidth);
+        displayCache.Update(transport, this->currentTrack);
+        this->WritePlayingFormat(c, cx - shuffleWidth);
     }
 
     /* draw the "shuffle" label */
@@ -723,17 +761,17 @@ void TransportWindow::Update(TimeMode timeMode) {
     }
 
     const std::string currentTime =
-        displayCache->CurrentTime(secondsCurrent);
+        displayCache.CurrentTime(secondsCurrent);
 
     const std::string replayGain = replayGainEnabled  ? "rg" : "";
 
     int const bottomRowControlsWidth =
-        displayCache->Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
+        displayCache.Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
         (replayGainEnabled ? (narrow_cast<int>(u8cols(replayGain)) + 4) : 0) +  /* [] brackets */
         narrow_cast<int>(u8cols(currentTime)) + 1 + /* +1 for space padding */
         /* timer track with thumb */
-        1 + displayCache->totalTimeCols + /* +1 for space padding */
-        displayCache->Columns(repeatModeLabel);
+        1 + displayCache.totalTimeCols + /* +1 for space padding */
+        displayCache.Columns(repeatModeLabel);
 
     int const timerTrackWidth =
         this->GetContentWidth() -
@@ -741,8 +779,8 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     thumbOffset = 0;
 
-    if (displayCache->secondsTotal) {
-        int const progress = (secondsCurrent * 100) / displayCache->secondsTotal;
+    if (displayCache.secondsTotal) {
+        int const progress = (secondsCurrent * 100) / displayCache.secondsTotal;
         thumbOffset = std::min(timerTrackWidth - 1, (progress * timerTrackWidth) / 100);
     }
 
@@ -771,9 +809,9 @@ void TransportWindow::Update(TimeMode timeMode) {
     OFF(c, currentTimeAttrs);
 
     ON(c, timerAttrs);
-    this->timePos.Set(getcurx(c), (int) u8cols(timerTrack));
+    this->timeBarPos.Set(getcurx(c), (int) u8cols(timerTrack));
     checked_waddstr(c, timerTrack.c_str()); /* may be a very long string */
-    checked_wprintw(c, " %s", displayCache->totalTime.c_str());
+    checked_wprintw(c, " %s", displayCache.totalTime.c_str());
     OFF(c, timerAttrs);
 
     ON(c, repeatAttrs);

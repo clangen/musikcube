@@ -88,29 +88,32 @@ namespace musik {
                 /* a little structure used to make mouse event handling a bit
                 less verbose. */
                 struct Position {
-                    Position() {
-                        this->x = this->y = this->width = 0;
-                    }
-                    Position(int x, int y, int width) {
-                        this->x = x;
-                        this->y = y;
-                        this->width = width;
-                    }
-                    void Set(int x, int width) {
-                        this->x = x;
-                        this->width = width;
-                    }
-                    double Percent(int x) {
-                        return std::max(0.0, std::min(1.0,
-                            double(x - this->x) / double(this->width - 1)));
-                    }
-                    bool Contains(const IMouseHandler::Event& event) {
-                        return event.y == this->y &&
-                            event.x >= this->x &&
-                            event.x < this->x + this->width;
-                    }
+                    Position();
+                    Position(int x, int y, int width);
+                    void Set(int x, int width);
+                    double Percent(int x);
+                    bool Contains(const IMouseHandler::Event& event);
+
                     int x, y, width;
                 };
+
+                /* the transport updates at least once a second, and displays computed
+                values. this cache just holds those computed values so they don't
+                need to be recalculated constantly. */
+                struct DisplayCache {
+                    void Reset();
+                    size_t Columns(const std::string& str);
+                    std::string CurrentTime(int secondsCurrent);
+                    void Update(musik::core::audio::ITransport& transport, musik::core::TrackPtr track);
+
+                    musik::core::TrackPtr track;
+                    std::string title, album, artist, totalTime;
+                    int secondsTotal;
+                    int titleCols, albumCols, artistCols, totalTimeCols;
+                    std::map<std::string, size_t> stringToColumns;
+                };
+
+                size_t WritePlayingFormat(WINDOW* w, size_t width);
 
                 void Update(TimeMode mode = TimeSmooth);
 
@@ -124,14 +127,15 @@ namespace musik {
 
                 bool paused;
                 bool hasReplayGain;
-                Position shufflePos, repeatPos, volumePos, timePos;
+                Position shufflePos, repeatPos, volumePos, timeBarPos;
+                std::map<std::string, Position> metadataFieldToPosition;
                 musik::core::sdk::ReplayGainMode replayGainMode;
                 musik::core::ILibraryPtr library;
                 musik::core::audio::ITransport& transport;
                 musik::core::audio::PlaybackService& playback;
                 musik::core::TrackPtr currentTrack;
                 FocusTarget focus, lastFocus;
-                std::unique_ptr<TransportDisplayCache> displayCache;
+                DisplayCache displayCache;
                 bool buffering{ false };
                 double lastTime;
         };

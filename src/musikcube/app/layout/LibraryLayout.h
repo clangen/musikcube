@@ -96,6 +96,7 @@ namespace musik {
                 void ShowNowPlaying();
                 void ShowBrowse(const std::string& category = "");
                 void ShowCategorySearch();
+                void ShowCategoryChooser();
                 void ShowTrackSearch();
                 void ShowDirectoryChooser();
                 void ShowDirectories(const std::string& directory = "");
