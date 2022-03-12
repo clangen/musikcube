@@ -93,8 +93,8 @@ namespace musik {
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
 
-                void OnCategoryWindowMouseEvent(
-                    cursespp::IWindow* window, const cursespp::IMouseHandler::Event* mouseEvent);
+                void OnWindowMouseEvent(
+                    cursespp::Window* window, const cursespp::IMouseHandler::Event* mouseEvent);
 
                 void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
 
@@ -102,6 +102,7 @@ namespace musik {
                 bool ProcessEditOperation(const std::string& key);
                 bool ProcessPlaylistOperation(const std::string& key);
                 void ShowModifiedLabel(bool show);
+                void ShowTrackSortOverlay();
 
                 bool playlistModified;
                 musik::core::audio::PlaybackService& playback;
@@ -110,7 +111,7 @@ namespace musik {
                 std::shared_ptr<CategoryListView> categoryList;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextLabel> modifiedLabel;
-                HeaderClickHandler headerClickHandler;
+                HeaderClickHandler categoryListHeaderClickHandler;
         };
     }
 }

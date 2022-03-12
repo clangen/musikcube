@@ -80,6 +80,10 @@ namespace musik {
 
                 void OnRequeried(musik::core::library::query::TrackListQueryBase* query);
 
+                void OnWindowMouseEvent(
+                    cursespp::Window* window,
+                    const cursespp::IMouseHandler::Event* mouseEvent);
+
                 void OnInputChanged(
                     cursespp::TextInput* sender,
                     std::string value);
@@ -88,6 +92,7 @@ namespace musik {
 
                 void ToggleMatchType();
                 void SetMatchType(MatchType matchType);
+                void ShowTrackSortOverlay();
 
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;

@@ -62,7 +62,7 @@ namespace cursespp {
             static const int kFirstReservedMessageId;
             static const int kLastReservedMessageId;
 
-            sigslot::signal2<IWindow*, const IMouseHandler::Event*> MouseEvent;
+            sigslot::signal2<Window*, const IMouseHandler::Event*> MouseEvent;
 
             Window(IWindow* parent = nullptr);
             virtual ~Window();

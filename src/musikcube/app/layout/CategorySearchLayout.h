@@ -85,9 +85,9 @@ namespace musik {
                     const std::string& type,
                     int order);
 
-                void OnCategoryEntryActivated(cursespp::ListWindow* sender, size_t index);
-                void Requery();
-                void SaveSession();
+                void OnCategoryEntryActivated(
+                    cursespp::ListWindow* sender,
+                    size_t index);
 
                 void OnEnterPressed(cursespp::TextInput* sender);
 
@@ -95,6 +95,8 @@ namespace musik {
                     cursespp::TextInput* sender,
                     std::string value);
 
+                void Requery();
+                void SaveSession();
                 void ToggleMatchType();
                 void SetMatchType(MatchType matchType);
 

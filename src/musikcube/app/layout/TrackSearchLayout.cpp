@@ -135,6 +135,7 @@ void TrackSearchLayout::InitializeWindows() {
     this->AddWindow(this->input);
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
+    this->trackList->MouseEvent.connect(this, &TrackSearchLayout::OnWindowMouseEvent);
     this->trackList->SetFocusOrder(1);
     this->trackList->SetAllowArrowKeyPropagation();
     this->trackList->Requeried.connect(this, &TrackSearchLayout::OnRequeried);
@@ -205,6 +206,26 @@ void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
     }
 }
 
+void TrackSearchLayout::OnWindowMouseEvent(Window* window, const IMouseHandler::Event* mouseEvent) {
+    if (window == this->trackList.get() && mouseEvent->y == -1) {
+        auto title = window->GetFrameTitle();
+        /* the title will be in the format "- title -". this check is kludgy. */
+        if (mouseEvent->x > 0 && mouseEvent->x < u8cols(title) + 3) {
+            this->ShowTrackSortOverlay();
+        }
+    }
+}
+
+void TrackSearchLayout::ShowTrackSortOverlay() {
+    TrackOverlays::ShowTrackSearchSortOverlay(
+        getDefaultTrackSort(this->prefs),
+        kTrackListOrderByToDisplayKey,
+        [this](TrackSortType type) {
+            this->prefs->SetInt(keys::TrackSearchSortOrder, (int)type);
+            this->Requery();
+        });
+}
+
 void TrackSearchLayout::ToggleMatchType() {
     const bool isRegex = this->matchType == MatchType::Regex;
     this->SetMatchType(isRegex ? MatchType::Substring : MatchType::Regex);
@@ -232,13 +253,7 @@ bool TrackSearchLayout::KeyPress(const std::string& key) {
         }
     }
     else if (Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key)) {
-        TrackOverlays::ShowTrackSearchSortOverlay(
-            getDefaultTrackSort(this->prefs),
-            kTrackListOrderByToDisplayKey,
-            [this](TrackSortType type) {
-                this->prefs->SetInt(keys::TrackSearchSortOrder, (int)type);
-                this->Requery();
-            });
+        this->ShowTrackSortOverlay();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::SearchInputToggleMatchType, key) && this->input->IsFocused()) {

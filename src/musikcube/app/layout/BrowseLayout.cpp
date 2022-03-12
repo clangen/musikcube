@@ -155,10 +155,11 @@ void BrowseLayout::OnLayout() {
 
 void BrowseLayout::InitializeWindows() {
     this->categoryList = std::make_shared<CategoryListView>(this->playback, this->library, DEFAULT_CATEGORY);
-    this->categoryList->MouseEvent.connect(this, &BrowseLayout::OnCategoryWindowMouseEvent);
+    this->categoryList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
+    this->trackList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
     this->trackList->Requeried.connect(this, &BrowseLayout::OnRequeried);
 
     this->modifiedLabel = std::make_shared<TextLabel>();
@@ -271,13 +272,18 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
     }
 }
 
-void BrowseLayout::OnCategoryWindowMouseEvent(IWindow* window, const IMouseHandler::Event* mouseEvent) {
+void BrowseLayout::OnWindowMouseEvent(Window* window, const IMouseHandler::Event* mouseEvent) {
     if (mouseEvent->y == -1) {
-        auto title = this->categoryList->GetFrameTitle();
+        auto title = window->GetFrameTitle();
         /* the title will be in the format "- title -". this check is kludgy. */
         if (mouseEvent->x > 0 && mouseEvent->x < u8cols(title) + 3) {
-            if (this->headerClickHandler) {
-                this->headerClickHandler();
+            if (window == this->categoryList.get()) {
+                if (this->categoryListHeaderClickHandler) {
+                    this->categoryListHeaderClickHandler();
+                }
+            }
+            else if (window == this->trackList.get()) {
+                this->ShowTrackSortOverlay();
             }
         }
     }
@@ -315,7 +321,17 @@ void BrowseLayout::PlayFromTop() {
 }
 
 void BrowseLayout::SetOnHeaderClicked(HeaderClickHandler handler) {
-    this->headerClickHandler = handler;
+    this->categoryListHeaderClickHandler = handler;
+}
+
+void BrowseLayout::ShowTrackSortOverlay() {
+    TrackOverlays::ShowTrackSearchSortOverlay(
+        getDefaultTrackSort(this->prefs),
+        kTrackListOrderByToDisplayKey,
+        [this](TrackSortType type) {
+            this->prefs->SetInt(keys::CategoryTrackListSortOrder, static_cast<int>(type));
+            this->RequeryTrackList(this->categoryList.get());
+        });
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {
@@ -331,13 +347,7 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         }
     }
     else if (Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key)) {
-        TrackOverlays::ShowTrackSearchSortOverlay(
-            getDefaultTrackSort(this->prefs),
-            kTrackListOrderByToDisplayKey,
-            [this](TrackSortType type) {
-                this->prefs->SetInt(keys::CategoryTrackListSortOrder, static_cast<int>(type));
-                this->RequeryTrackList(this->categoryList.get());
-            });
+        this->ShowTrackSortOverlay();
         return true;
     }
     else if (Hotkeys::Is(Hotkeys::ViewRefresh, key)) {
