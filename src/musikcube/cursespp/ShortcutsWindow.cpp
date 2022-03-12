@@ -236,7 +236,7 @@ void ShortcutsWindow::OnRedraw() {
         }
 
         wattron(c, keyAttrs);
-        checked_wprintw(c, key.c_str());
+        checked_wprintw(c, "%s", key.c_str());
         wattroff(c, keyAttrs);
 
         remaining -= len;
@@ -252,7 +252,7 @@ void ShortcutsWindow::OnRedraw() {
             len = remaining;
         }
 
-        checked_wprintw(c, value.c_str());
+        checked_wprintw(c, "%s", value.c_str());
         remaining -= len;
     }
 }

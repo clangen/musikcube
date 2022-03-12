@@ -363,7 +363,7 @@ size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width) {
         metadataFieldToPosition[token->value] = Position(x, y, cols);
 
         ON(w, attr);
-        checked_wprintw(w, value.c_str());
+        checked_wprintw(w, "%s", value.c_str());
         OFF(w, attr);
 
         remaining -= cols;
@@ -678,7 +678,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     if (stopped && !this->buffering) {
         ON(c, disabled);
-        checked_wprintw(c, Strings.STOPPED.c_str());
+        checked_wprintw(c, "%s", Strings.STOPPED.c_str());
         displayCache.Reset();
         OFF(c, disabled);
     }
@@ -692,7 +692,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     wmove(c, 0, shuffleOffset);
     Color const shuffleAttrs = this->playback.IsShuffled() ? gb : disabled;
     ON(c, shuffleAttrs);
-    checked_wprintw(c, shuffleLabel.c_str());
+    checked_wprintw(c, "%s", shuffleLabel.c_str());
     OFF(c, shuffleAttrs);
     this->shufflePos.Set(shuffleOffset, narrow_cast<int>(shuffleWidth));
 
@@ -811,7 +811,7 @@ void TransportWindow::Update(TimeMode timeMode) {
     wmove(c, 1, 0); /* move cursor to the second line */
 
     ON(c, volumeAttrs);
-    checked_wprintw(c, volume.c_str());
+    checked_wprintw(c, "%s", volume.c_str());
     OFF(c, volumeAttrs);
 
     if (replayGainEnabled) {
@@ -834,7 +834,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     ON(c, repeatAttrs);
     this->repeatPos.Set(getcurx(c), narrow_cast<int>(u8cols(repeatModeLabel)));
-    checked_wprintw(c, repeatModeLabel.c_str());
+    checked_wprintw(c, "%s", repeatModeLabel.c_str());
     OFF(c, repeatAttrs);
 
     this->Invalidate();
