@@ -49,6 +49,7 @@
 #include <app/util/Playback.h>
 #include <app/util/PreferenceKeys.h>
 #include <app/util/Messages.h>
+#include <app/util/WindowUtil.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/overlay/TrackOverlays.h>
 
@@ -273,18 +274,14 @@ void BrowseLayout::RequeryTrackList(ListWindow *view) {
 }
 
 void BrowseLayout::OnWindowMouseEvent(Window* window, const IMouseHandler::Event* mouseEvent) {
-    if (mouseEvent->y == -1) {
-        auto title = window->GetFrameTitle();
-        /* the title will be in the format "- title -". this check is kludgy. */
-        if (mouseEvent->x > 0 && mouseEvent->x < u8cols(title) + 3) {
-            if (window == this->categoryList.get()) {
-                if (this->categoryListHeaderClickHandler) {
-                    this->categoryListHeaderClickHandler();
-                }
+    if (windowutil::WasHeaderClicked(window, mouseEvent)) {
+        if (window == this->categoryList.get()) {
+            if (this->categoryListHeaderClickHandler) {
+                this->categoryListHeaderClickHandler();
             }
-            else if (window == this->trackList.get()) {
-                this->ShowTrackSortOverlay();
-            }
+        }
+        else if (window == this->trackList.get()) {
+            this->ShowTrackSortOverlay();
         }
     }
 }

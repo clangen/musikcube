@@ -39,6 +39,7 @@ set (CUBE_SRCS
     ./app/util/Rating.cpp
     ./app/util/TrackRowRenderers.cpp
     ./app/util/UpdateCheck.cpp
+    ./app/util/WindowUtil.cpp
     ./app/window/CategoryListView.cpp
     ./app/window/TrackListView.cpp
     ./app/window/TransportWindow.cpp

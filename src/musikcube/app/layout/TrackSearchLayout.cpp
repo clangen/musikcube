@@ -45,6 +45,7 @@
 #include <app/util/Messages.h>
 #include <app/util/Playback.h>
 #include <app/util/PreferenceKeys.h>
+#include <app/util/WindowUtil.h>
 #include <app/overlay/PlayQueueOverlays.h>
 #include <app/overlay/TrackOverlays.h>
 
@@ -207,12 +208,8 @@ void TrackSearchLayout::OnEnterPressed(cursespp::TextInput* sender) {
 }
 
 void TrackSearchLayout::OnWindowMouseEvent(Window* window, const IMouseHandler::Event* mouseEvent) {
-    if (window == this->trackList.get() && mouseEvent->y == -1) {
-        auto title = window->GetFrameTitle();
-        /* the title will be in the format "- title -". this check is kludgy. */
-        if (mouseEvent->x > 0 && mouseEvent->x < u8cols(title) + 3) {
-            this->ShowTrackSortOverlay();
-        }
+    if (windowutil::WasHeaderClicked(window, mouseEvent)) {
+        this->ShowTrackSortOverlay();
     }
 }
 
