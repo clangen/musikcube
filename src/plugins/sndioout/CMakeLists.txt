@@ -3,7 +3,11 @@ set (sndioout_SOURCES
   SndioOut.cpp
 )
 
-add_library(sndioout SHARED ${sndioout_SOURCES})
-
 find_library(LIBSNDIO sndio)
-target_link_libraries(sndioout ${LIBSNDIO})
+
+if ("${LIBSNDIO}" STREQUAL "LIBSNDIO-NOTFOUND")
+  disable_plugin(sndioout)
+else()
+  add_library(sndioout SHARED ${sndioout_SOURCES})
+  target_link_libraries(sndioout ${LIBSNDIO})
+endif()

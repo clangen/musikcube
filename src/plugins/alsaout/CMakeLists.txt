@@ -3,8 +3,11 @@ set (alsaout_SOURCES
   AlsaOut.cpp
 )
 
-add_library(alsaout SHARED ${alsaout_SOURCES})
-
 find_library(LIBASOUND asound)
-target_link_libraries(alsaout ${LIBASOUND})
 
+if ("${LIBASOUND}" STREQUAL "LIBASOUND-NOTFOUND")
+  disable_plugin(alsaout)
+else()
+  add_library(alsaout SHARED ${alsaout_SOURCES})
+  target_link_libraries(alsaout ${LIBASOUND})
+endif()

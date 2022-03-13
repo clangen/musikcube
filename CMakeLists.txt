@@ -14,6 +14,7 @@ set (LIBRARY_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin/plugins)
 set (EXECUTABLE_OUTPUT_PATH ${musikcube_SOURCE_DIR}/bin)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/.cmake)
+include(Colors)
 include(CMakeToolsHelpers OPTIONAL)
 include(CheckAtomic)
 include(AddPlugin)
@@ -85,16 +86,30 @@ add_subdirectory(src/musikcubed)
 add_dependencies(musikcube musikcore)
 add_dependencies(musikcubed musikcore)
 
+# tag readers
 add_plugin("src/plugins/taglib_plugin" "taglibreader")
+# outputs
 add_plugin("src/plugins/nullout" "nullout")
+add_plugin("src/plugins/alsaout" "alsaout")
+add_plugin("src/plugins/pulseout" "pulseout")
+add_plugin("src/plugins/pipewireout" "pipewireout")
+add_plugin("src/plugins/sndioout" "sndioout")
+add_plugin("src/plugins/coreaudioout" "coreaudioout")
+# remotes
 add_plugin("src/plugins/server" "server")
+add_plugin("src/plugins/mpris" "mpris")
+add_plugin("src/plugins/macosmediakeys" "macosmediakeys")
+# streams
 add_plugin("src/plugins/httpdatastream" "httpdatastream")
-add_plugin("src/plugins/stockencoders" "stockencoders")
-add_plugin("src/plugins/supereqdsp" "supereqdsp")
-add_plugin("src/plugins/gmedecoder" "gmedecoder")
+# decoders
 add_plugin("src/plugins/ffmpegdecoder" "ffmpegdecoder")
+add_plugin("src/plugins/libopenmptdecoder" "openmptdecoder")
+add_plugin("src/plugins/gmedecoder" "gmedecoder")
+# encoders
+add_plugin("src/plugins/stockencoders" "stockencoders")
+# dsps
+add_plugin("src/plugins/supereqdsp" "supereqdsp")
 
-include(AddOsSpecificPlugins)
 include(InstallFiles)
 include(GeneratePackage)
 include(PostBuild)

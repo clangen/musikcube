@@ -4,7 +4,11 @@ set (pulseout_SOURCES
   PulseOut.cpp
 )
 
-add_library(pulseout SHARED ${pulseout_SOURCES})
-
 find_library(LIBPULSE pulse)
-target_link_libraries(pulseout ${LIBPULSE})
+
+if ("${LIBPULSE}" STREQUAL "LIBPULSE-NOTFOUND")
+  disable_plugin(pulseout)
+else()
+  add_library(pulseout SHARED ${pulseout_SOURCES})
+  target_link_libraries(pulseout ${LIBPULSE})
+endif()

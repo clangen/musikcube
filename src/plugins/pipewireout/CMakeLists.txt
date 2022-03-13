@@ -3,10 +3,12 @@ set (pipewireout_SOURCES
   PipeWireOut.cpp
 )
 
-message(STATUS "[pipewireout] plugin enabled")
-
 find_package(PkgConfig)
-pkg_check_modules(PIPEWIRE REQUIRED IMPORTED_TARGET libpipewire-0.3)
+pkg_check_modules(PIPEWIRE IMPORTED_TARGET libpipewire-0.3)
 
-add_library(pipewireout SHARED ${pipewireout_SOURCES})
-target_link_libraries(pipewireout PkgConfig::PIPEWIRE)
+if (NOT DEFINED PIPEWIRE_LINK_LIBRARIES)
+  disable_plugin(pipewireout)
+else()
+  add_library(pipewireout SHARED ${pipewireout_SOURCES})
+  target_link_libraries(pipewireout PkgConfig::PIPEWIRE)
+endif()
