@@ -1,5 +1,5 @@
 if (${BUILD_STANDALONE} MATCHES "true")
-  message(STATUS "[standalone-build] ENABLED!")
+  message(STATUS "${BoldGreen}[standalone-build] ENABLED!${ColorReset}")
 
   set(BOOST_ROOT "/build/musikcube/vendor/bin")
   set(BOOST_INCLUDEDIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/bin/include")
@@ -18,5 +18,5 @@ if (${BUILD_STANDALONE} MATCHES "true")
     "${CMAKE_CURRENT_SOURCE_DIR}/vendor/bin/lib")
 
 else()
-    message(STATUS "[standalone-build] *NOT* enabled!")
+  message(STATUS "${BoldGreen}[standalone-build] *NOT* enabled!${ColorReset}")
 endif()
