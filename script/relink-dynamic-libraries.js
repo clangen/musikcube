@@ -11,6 +11,7 @@ const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const fs = require('fs');
 const rm = promisify(fs.rm);
+const unlink = promisify(fs.unlink);
 const symlink = promisify(fs.symlink);
 
 const mac = process.platform === 'darwin';
@@ -104,10 +105,13 @@ const relink = async (fn) => {
 const rebuildSymlinks = async () => {
   for (let i = 0; i < symlinks.length; i++) {
     const [src, dst] = symlinks[i];
-    if (fs.existsSync(`${path}/${dst}`)) {
-      console.log('removing symlink:', `${path}/${dst}`);
+    console.log('removing symlink:', `${path}/${dst}`);
+    try {
       await rm(`${path}/${dst}`);
-    }
+    } catch (e) {}
+    try {
+      await unlink(`${path}/${dst}`);
+    } catch (e) {}
     console.log('creating symlink:', src, dst);
     await symlink(src, `${path}/${dst}`);
   }
