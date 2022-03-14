@@ -1,8 +1,16 @@
 0.97.1
 
+* added the ability to click the browse and tracklist headers to change filter
+  options
+* added the ability to click transport metadata to display a context menu with
+  a list of actions for the current track/artist/album
 * added the ability to use `libelogind` or `basu` instead of `libsystemd` for
   the `mpris` plugin (@robertgzr)
 * some warning cleanups when using wsprintw (@trofi)
+* further improvements to build system to remove OS-specific conditionals in
+  favor of library detection
+* added color output to various important cmake messages, making it much easier
+  to spot check configuration issues.
 
 --------------------------------------------------------------------------------
 
