@@ -792,7 +792,7 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     int const timerTrackWidth =
         this->GetContentWidth() -
-        bottomRowControlsWidth;
+        bottomRowControlsWidth - 1; /* this  `- 1` is a hack i don't know why we need it please send help */
 
     thumbOffset = 0;
 
