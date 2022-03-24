@@ -28,6 +28,13 @@ include(ConfigureTaglib)
 include(ConfigureCompilerFlags)
 include(FindVendorLibrary)
 
+find_program(CCACHE_FOUND ccache)
+if (CCACHE_FOUND)
+  message(STATUS "${BoldGreen}[ccache] ccache enabled!${ColorReset}")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
 if (CROSS_COMPILE_SYSROOT)
   message(STATUS "[cross-compile] enabled, rooted at: ${CROSS_COMPILE_SYSROOT}")
   set(CMAKE_FIND_ROOT_PATH ${CROSS_COMPILE_SYSROOT} ${musikcube_SOURCE_DIR}/vendor)
