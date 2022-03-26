@@ -52,6 +52,7 @@ set(CORE_SOURCES
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp
   ./library/track/TrackList.cpp
+  ./net/PiggyWebSocketClient.cpp
   ./net/RawWebSocketClient.cpp
   ./net/WebSocketClient.cpp
   ./plugin/PluginFactory.cpp
