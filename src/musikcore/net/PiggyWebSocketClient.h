@@ -98,7 +98,7 @@ namespace musik { namespace core { namespace net {
 
             ClientPtr rawClient;
             Connection connection;
-            const std::string& sessionId;
+            std::string sessionId;
             boost::asio::io_service io;
             std::unique_ptr<std::thread> thread;
             mutable std::recursive_mutex mutex;
