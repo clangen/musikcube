@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
     freopen(errorFn.c_str(), "w", stderr);
 
     auto piggyClient = std::make_shared<PiggyWebSocketClient>(&Window::MessageQueue());
-    piggyClient->Connect("192.168.1.27");
+    piggyClient->Connect("localhost");
     auto piggyLogger = new PiggyDebugBackend(piggyClient);
 
     auto fileLogger = new debug::SimpleFileBackend();

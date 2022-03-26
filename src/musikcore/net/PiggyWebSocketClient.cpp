@@ -77,6 +77,7 @@ PiggyWebSocketClient::PiggyWebSocketClient(IMessageQueue* messageQueue)
     rawClient->SetMode(RawWebSocketClient::Mode::PlainText);
 
     rawClient->SetOpenHandler([this](Connection connection) {
+        this->connection = connection;
         this->SetState(State::Connected);
     });
 
