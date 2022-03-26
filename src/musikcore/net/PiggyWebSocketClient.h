@@ -61,7 +61,6 @@ namespace musik { namespace core { namespace net {
             enum class State: int {
                 Disconnected = 0,
                 Connecting = 1,
-                Authenticating = 2,
                 Connected = 3,
                 Disconnecting = 4,
             };

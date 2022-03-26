@@ -77,8 +77,7 @@ PiggyWebSocketClient::PiggyWebSocketClient(IMessageQueue* messageQueue)
     rawClient->SetMode(RawWebSocketClient::Mode::PlainText);
 
     rawClient->SetOpenHandler([this](Connection connection) {
-        this->SetState(State::Authenticating);
-        /* initialize session */
+        this->SetState(State::Connected);
     });
 
     rawClient->SetFailHandler([this](Connection connection) {
