@@ -58,6 +58,8 @@
 #include <musikcore/support/PreferenceKeys.h>
 #include <musikcore/sdk/constants.h>
 #include <musikcore/support/Common.h>
+#include <musikcore/net/PiggyWebSocketClient.h>
+#include <musikcore/support/PiggyDebugBackend.h>
 
 #include <boost/locale.hpp>
 #include <boost/filesystem/path.hpp>
@@ -72,6 +74,7 @@
 using namespace musik;
 using namespace musik::core;
 using namespace musik::core::audio;
+using namespace musik::core::net;
 using namespace musik::cube;
 using namespace cursespp;
 
@@ -113,9 +116,13 @@ int main(int argc, char* argv[]) {
     std::string errorFn = core::GetDataDirectory() + "stderr.txt";
     freopen(errorFn.c_str(), "w", stderr);
 
+    auto piggyClient = std::make_shared<PiggyWebSocketClient>(&Window::MessageQueue());
+    piggyClient->Connect("172.31.16.1");
+    auto piggyLogger = new PiggyDebugBackend(piggyClient);
+
     auto fileLogger = new debug::SimpleFileBackend();
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
-    debug::Start({ fileLogger, consoleLogger });
+    debug::Start({ fileLogger, consoleLogger, piggyLogger });
 
     plugin::Init();
 

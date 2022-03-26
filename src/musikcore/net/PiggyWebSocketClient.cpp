@@ -36,8 +36,6 @@
 
 #include <musikcore/net/PiggyWebSocketClient.h>
 #include <musikcore/support/Common.h>
-#include <musikcore/support/PreferenceKeys.h>
-#include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/Message.h>
 #include <musikcore/version.h>
 
@@ -50,43 +48,33 @@ using ClientMessage = PiggyWebSocketClient::ClientMessage;
 using Connection = PiggyWebSocketClient::Connection;
 using Message = PiggyWebSocketClient::Message;
 
+static const int64_t kLatencyTimeoutMs = 30000;
+static const int64_t kPingIntervalMs = 10000;
+static const int kPingMessage = 6000;
 static const bool kDisableOfflineQueue = true;
 static std::atomic<int> nextMessageId(0);
 
-static inline std::string generateMessageId() {
-    return "integrated-websocket-client-" + std::to_string(nextMessageId.fetch_add(1));
+static inline std::string generateSessionId() {
+    return "musikcube-" + std::to_string(nextMessageId.fetch_add(1));
 }
 
-// static inline std::string createPingRequest() {
-//     const nlohmann::json authRequestJson = {
-//         { "name", "ping" },
-//         { "type" , "request" },
-//         { "id", generateMessageId() },
-//         { "device_id", "remote-random-device" },
-//         { "options", nlohmann::json() }
-//     };
-//     return authRequestJson.dump();
-// }
+static inline std::string createPingJson(const std::string& sessionId) {
+    const nlohmann::json authRequestJson = {
+        { "name", "ping" },
+        { "sessionId", sessionId },
+        { "data", nlohmann::json() }
+    };
+    return authRequestJson.dump();
+}
 
-// static inline bool extractRawQueryResult(
-//     nlohmann::json& responseJson, std::string& rawResult)
-// {
-//     if (responseJson["name"].get<std::string>() != "send_raw_query") {
-//         return false;
-//     }
-//     rawResult = responseJson["options"]["raw_query_data"].get<std::string>();
-//     return true;
-// }
-
-PiggyWebSocketClient::PiggyWebSocketClient(IMessageQueue* messageQueue, Listener* listener)
-: messageQueue(nullptr) {
+PiggyWebSocketClient::PiggyWebSocketClient(IMessageQueue* messageQueue)
+: messageQueue(nullptr)
+, sessionId(generateSessionId()) {
     this->SetMessageQueue(messageQueue);
 
     rawClient = std::make_unique<RawWebSocketClient>(io);
 
-    this->listener = listener;
-
-    rawClient->SetMode(RawWebSocketClient::Mode::TLS);
+    rawClient->SetMode(RawWebSocketClient::Mode::PlainText);
 
     rawClient->SetOpenHandler([this](Connection connection) {
         this->SetState(State::Authenticating);
@@ -138,28 +126,24 @@ void PiggyWebSocketClient::SetDisconnected(ConnectionError errorCode) {
     this->SetState(State::Disconnected);
 }
 
-std::string PiggyWebSocketClient::EnqueueMessage(Message message) {
+void PiggyWebSocketClient::EnqueueMessage(Message message) {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    if (kDisableOfflineQueue && this->state != State::Connected) {
-        return "";
-    }
     if (!message) {
-        return "";
+        return;
     }
-    auto messageId = generateMessageId();
-    messageIdToMessage[messageId] = message;
+    (*message)["sessionId"] = this->sessionId;
+    if (this->state != State::Connected) {
+        if (!kDisableOfflineQueue) {
+            this->pendingMessages.push_back(message);
+        }
+        return;
+    }
     if (this->state == State::Connected) {
         this->rawClient->Send(this->connection, message->dump());
     }
-    return messageId;
 }
 
-void PiggyWebSocketClient::Connect(
-    const std::string& host,
-    unsigned short port,
-    const std::string& password,
-    bool useTls)
-{
+void PiggyWebSocketClient::Connect(const std::string& host, unsigned short port, bool useTls) {
     auto newUri = "ws://" + host + ":" + std::to_string(port);
     if (newUri != this->uri ||
         useTls != this->useTls ||
@@ -185,12 +169,9 @@ void PiggyWebSocketClient::Reconnect() {
     io.restart();
 #endif
 
-    auto const prefs = Preferences::ForComponent(core::prefs::components::Settings);
-    auto const timeout = prefs->GetInt(core::prefs::keys::RemoteLibraryLatencyTimeoutMs, 5000);
-
     this->SetState(State::Connecting);
 
-    this->thread = std::make_unique<std::thread>([&, timeout]() {
+    this->thread = std::make_unique<std::thread>([&]() {
         std::string uri;
 
         {
@@ -203,7 +184,7 @@ void PiggyWebSocketClient::Reconnect() {
                 ? RawWebSocketClient::Mode::TLS
                 : RawWebSocketClient::Mode::PlainText;
             rawClient->SetMode(mode);
-            rawClient->SetPongTimeout(timeout);
+            rawClient->SetPongTimeout(kLatencyTimeoutMs);
             rawClient->Connect(uri);
             rawClient->Run();
         }
@@ -228,27 +209,17 @@ void PiggyWebSocketClient::Disconnect() {
 
 void PiggyWebSocketClient::InvalidatePendingMessages() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-
-    // for (auto& kv : this->messageIdToMessage) {
-    //     this->listener->OnClientQueryFailed(
-    //         this, kv.first, kv.second, QueryError::Disconnected);
-    // }
-
-    this->messageIdToMessage.clear();
+    this->pendingMessages.clear();
 }
 
 void PiggyWebSocketClient::SendPendingMessages() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
 
-    // for (auto& kv : this->messageIdToMessage) {
-    //     auto messageId = kv.first;
-    //     auto query = kv.second;
-    //     if (query) {
-    //         this->rawClient->Send(
-    //             this->connection,
-    //             createSendRawQueryRequest(query->SerializeQuery(), messageId));
-    //     }
-    // }
+    for (auto& message : this->pendingMessages) {
+        this->rawClient->Send(this->connection, message->dump());
+    }
+
+    this->pendingMessages.clear();
 }
 
 void PiggyWebSocketClient::SetState(State state) {
@@ -270,7 +241,7 @@ void PiggyWebSocketClient::SetState(State state) {
         }
 
         this->state = state;
-        this->listener->OnClientStateChanged(this, state, oldState);
+        this->StateChanged(this, state, oldState);
     }
 }
 
@@ -284,17 +255,17 @@ void PiggyWebSocketClient::SetMessageQueue(IMessageQueue* messageQueue) {
     this->messageQueue = messageQueue;
     if (this->messageQueue) {
         this->messageQueue->Register(this);
-        // this->messageQueue->Post(Message::Create(this, kPingMessage), kPingIntervalMs);
+        this->messageQueue->Post(runtime::Message::Create(this, kPingMessage), kPingIntervalMs);
     }
 }
 
 /* IMessageTarget */
 void PiggyWebSocketClient::ProcessMessage(IMessage& message) {
-    // if (message.Type() == kPingMessage) {
-    //     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    //     if (this->state == State::Connected) {
-    //         this->rawClient->Send(this->connection, createPingRequest());
-    //     }
-    //     this->messageQueue->Post(Message::Create(this, kPingMessage), kPingIntervalMs);
-    // }
+    if (message.Type() == kPingMessage) {
+        std::unique_lock<decltype(this->mutex)> lock(this->mutex);
+        if (this->state == State::Connected) {
+            this->rawClient->Send(this->connection, createPingJson(this->sessionId));
+        }
+        this->messageQueue->Post(runtime::Message::Create(this, kPingMessage), kPingIntervalMs);
+    }
 }

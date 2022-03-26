@@ -63,6 +63,7 @@ set(CORE_SOURCES
   ./support/Duration.cpp
   ./support/Common.cpp
   ./support/LastFm.cpp
+  ./support/PiggyDebugBackend.cpp
   ./support/Playback.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp

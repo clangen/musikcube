@@ -38,8 +38,10 @@
 #include <musikcore/net/RawWebSocketClient.h>
 #include <musikcore/runtime/IMessageQueue.h>
 
+#include <sigslot/sigslot.h>
+
 #include <thread>
-#include <unordered_map>
+#include <deque>
 #include <atomic>
 #include <memory>
 
@@ -66,36 +68,21 @@ namespace musik { namespace core { namespace net {
 
             enum class ConnectionError : int {
                 None = 0,
-                InvalidPassword = 1,
-                IncompatibleVersion = 2,
-                ConnectionFailed = 3,
-                ClosedByServer = 4,
+                ConnectionFailed = 1,
+                ClosedByServer = 2,
             };
 
-            class Listener {
-                public:
-                    using Client = PiggyWebSocketClient;
-                    using State = Client::State;
-                    virtual void OnClientStateChanged(Client* client, State newState, State oldState) = 0;
-            };
+            sigslot::signal3<PiggyWebSocketClient*, State, State> StateChanged;
 
-            PiggyWebSocketClient(
-                musik::core::runtime::IMessageQueue* messageQueue,
-                Listener* listener);
-
+            PiggyWebSocketClient(musik::core::runtime::IMessageQueue* messageQueue);
             PiggyWebSocketClient(const PiggyWebSocketClient&) = delete;
             virtual ~PiggyWebSocketClient();
 
-            void Connect(
-                const std::string& host,
-                unsigned short port,
-                const std::string& password,
-                bool useTls);
-
+            void Connect(const std::string& host, unsigned short port = 8347, bool useTls = false);
             void Reconnect();
             void Disconnect();
 
-            std::string EnqueueMessage(Message message);
+            void EnqueueMessage(Message message);
 
             State ConnectionState() const;
             ConnectionError LastConnectionError() const;
@@ -112,16 +99,16 @@ namespace musik { namespace core { namespace net {
 
             ClientPtr rawClient;
             Connection connection;
+            const std::string& sessionId;
             boost::asio::io_service io;
             std::unique_ptr<std::thread> thread;
             mutable std::recursive_mutex mutex;
             bool useTls{ false };
             std::string uri;
-            std::unordered_map<std::string, Message> messageIdToMessage;
+            std::deque<Message> pendingMessages;
             std::atomic<bool> quit{ false };
             ConnectionError connectionError{ ConnectionError::None };
             State state{ State::Disconnected };
-            Listener* listener{ nullptr };
             musik::core::runtime::IMessageQueue* messageQueue;
     };
 
