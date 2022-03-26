@@ -34,6 +34,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "pch.hpp"
+#include <time.h>
 #include "PiggyDebugBackend.h"
 
 using namespace musik;
@@ -46,7 +47,7 @@ static inline std::shared_ptr<nlohmann::json> createMessage(
         { "data", {
             { "type", "console" },
             { "level", level },
-            { "timestamp", 0 },
+            { "timestamp", (unsigned long) time(nullptr) },
             { "tag", tag },
             { "data", nlohmann::json::array({message}) }
         } }

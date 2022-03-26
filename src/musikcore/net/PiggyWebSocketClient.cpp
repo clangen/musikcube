@@ -34,6 +34,8 @@
 
 #include "pch.hpp"
 
+#include <time.h>
+
 #include <musikcore/net/PiggyWebSocketClient.h>
 #include <musikcore/support/Common.h>
 #include <musikcore/runtime/Message.h>
@@ -48,23 +50,14 @@ using ClientMessage = PiggyWebSocketClient::ClientMessage;
 using Connection = PiggyWebSocketClient::Connection;
 using Message = PiggyWebSocketClient::Message;
 
-static const int64_t kLatencyTimeoutMs = 30000;
-static const int64_t kPingIntervalMs = 10000;
-static const int kPingMessage = 6000;
+static const int64_t kLatencyTimeoutMs = INT_MAX;
+static const int64_t kReconnectIntervalMs = 10000;
+static const int kReconnectMessage = 0xdeadbeef;
 static const bool kDisableOfflineQueue = false;
-static std::atomic<int> nextMessageId(0);
+static const size_t kMaxOfflineQueueCount = 200;
 
 static inline std::string generateSessionId() {
-    return "musikcube-" + std::to_string(nextMessageId.fetch_add(1));
-}
-
-static inline std::string createPingJson(const std::string& sessionId) {
-    const nlohmann::json authRequestJson = {
-        { "name", "ping" },
-        { "sessionId", sessionId },
-        { "data", nlohmann::json() }
-    };
-    return authRequestJson.dump();
+    return "musikcube-" + std::to_string((unsigned long) time(nullptr));
 }
 
 PiggyWebSocketClient::PiggyWebSocketClient(IMessageQueue* messageQueue)
@@ -135,6 +128,9 @@ void PiggyWebSocketClient::EnqueueMessage(Message message) {
     if (this->state != State::Connected) {
         if (!kDisableOfflineQueue) {
             this->pendingMessages.push_back(message);
+            while (this->pendingMessages.size() > kMaxOfflineQueueCount) {
+                this->pendingMessages.pop_front();
+            }
         }
         return;
     }
@@ -255,17 +251,17 @@ void PiggyWebSocketClient::SetMessageQueue(IMessageQueue* messageQueue) {
     this->messageQueue = messageQueue;
     if (this->messageQueue) {
         this->messageQueue->Register(this);
-        this->messageQueue->Post(runtime::Message::Create(this, kPingMessage), kPingIntervalMs);
+        this->messageQueue->Post(runtime::Message::Create(this, kReconnectMessage), kReconnectIntervalMs);
     }
 }
 
 /* IMessageTarget */
 void PiggyWebSocketClient::ProcessMessage(IMessage& message) {
-    if (message.Type() == kPingMessage) {
+    if (message.Type() == kReconnectMessage) {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-        if (this->state == State::Connected) {
-            this->rawClient->Send(this->connection, createPingJson(this->sessionId));
+        if (this->state == State::Disconnected) {
+            this->Reconnect();
         }
-        this->messageQueue->Post(runtime::Message::Create(this, kPingMessage), kPingIntervalMs);
+        this->messageQueue->Post(runtime::Message::Create(this, kReconnectMessage), kReconnectIntervalMs);
     }
 }
