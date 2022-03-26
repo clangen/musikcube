@@ -51,7 +51,7 @@ using Message = PiggyWebSocketClient::Message;
 static const int64_t kLatencyTimeoutMs = 30000;
 static const int64_t kPingIntervalMs = 10000;
 static const int kPingMessage = 6000;
-static const bool kDisableOfflineQueue = true;
+static const bool kDisableOfflineQueue = false;
 static std::atomic<int> nextMessageId(0);
 
 static inline std::string generateSessionId() {
@@ -143,7 +143,7 @@ void PiggyWebSocketClient::EnqueueMessage(Message message) {
 }
 
 void PiggyWebSocketClient::Connect(const std::string& host, unsigned short port, bool useTls) {
-    auto newUri = "ws://" + host + ":" + std::to_string(port);
+    auto newUri = "ws://" + host + ":" + std::to_string(port) + "?deviceId=musikcube&type=native";
     if (newUri != this->uri ||
         useTls != this->useTls ||
         this->state != State::Connected)

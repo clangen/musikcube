@@ -38,6 +38,22 @@
 
 using namespace musik;
 
+static inline std::shared_ptr<nlohmann::json> createMessage(
+    const std::string& level, const std::string& tag, const std::string message)
+{
+    const nlohmann::json json = {
+        { "name", "/eventLog/send" },
+        { "data", {
+            { "type", "console" },
+            { "level", level },
+            { "timestamp", 0 },
+            { "tag", tag },
+            { "data", nlohmann::json::array({message}) }
+        } }
+    };
+    return std::make_shared<nlohmann::json>(json);
+}
+
 PiggyDebugBackend::PiggyDebugBackend(Client client): client(client) {
 }
 
@@ -45,14 +61,18 @@ PiggyDebugBackend::~PiggyDebugBackend() {
 }
 
 void PiggyDebugBackend::verbose(const std::string& tag, const std::string& string) {
+    client->EnqueueMessage(createMessage("verbose", tag, string));
 }
 
 void PiggyDebugBackend::info(const std::string& tag, const std::string& string) {
+    client->EnqueueMessage(createMessage("info", tag, string));
 }
 
 void PiggyDebugBackend::warning(const std::string& tag, const std::string& string) {
+    client->EnqueueMessage(createMessage("warn", tag, string));
 }
 
 void PiggyDebugBackend::error(const std::string& tag, const std::string& string) {
+    client->EnqueueMessage(createMessage("error", tag, string));
 }
 
