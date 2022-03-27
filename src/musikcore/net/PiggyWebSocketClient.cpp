@@ -203,11 +203,6 @@ void PiggyWebSocketClient::Disconnect() {
     }
 }
 
-void PiggyWebSocketClient::InvalidatePendingMessages() {
-    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-    this->pendingMessages.clear();
-}
-
 void PiggyWebSocketClient::SendPendingMessages() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
 
@@ -226,7 +221,6 @@ void PiggyWebSocketClient::SetState(State state) {
         switch (state) {
             case State::Disconnected:
                 this->connection.reset();
-                this->InvalidatePendingMessages();
                 break;
             case State::Connected:
                 this->connectionError = ConnectionError::None;

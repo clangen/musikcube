@@ -93,7 +93,6 @@ namespace musik { namespace core { namespace net {
         private:
             void SetState(State state);
             void SetDisconnected(ConnectionError errorCode);
-            void InvalidatePendingMessages();
             void SendPendingMessages();
 
             ClientPtr rawClient;
