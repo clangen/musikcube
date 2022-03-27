@@ -351,14 +351,6 @@ size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width) {
             }
         }
 
-        /* any % in the value string might be parsed by wprintw, so replace it */
-        std::size_t percentSignIndex = value.find("%");
-        while (percentSignIndex != std::string::npos) {
-            value.replace(percentSignIndex, 1, "%%");
-            /* we replaced one % with 2 of them, so we need to skip ahead 2 chars */
-            percentSignIndex = value.find("%", percentSignIndex + 2);
-        }
-
         getyx(w, y, x);
         metadataFieldToPosition[token->value] = Position(x, y, cols);
 
@@ -716,7 +708,7 @@ void TransportWindow::Update(TimeMode timeMode) {
         }
 
         volume += u8fmt(" %d", static_cast<int>(std::round(this->transport.Volume() * 100)));
-        volume += replayGainEnabled ? "%% " : "%%  ";
+        volume += replayGainEnabled ? "% " : "%  ";
     }
 
     /* repeat mode setup */
