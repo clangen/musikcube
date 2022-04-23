@@ -42,9 +42,9 @@ fi
 OS_SPECIFIC_BUILD_FLAGS=""
 if [[ $OS == "Linux" ]]; then
   OS_SPECIFIC_BUILD_FLAGS="-DGENERATE_DEB=true -DDEB_ARCHITECTURE=${DEB_ARCH} -DCMAKE_INSTALL_PREFIX=/usr"
-  if [[ -z $CROSSCOMPILE ]]; then
+  if [[ $CROSSCOMPILE == "rpi" ]]; then
     # for now we don't support pipewire when cross compiling...
-    OS_SPECIFIC_BUILD_FLAGS="$OS_SPECIFIC_BUILD_FLAGS -DENABLE_PIPEWIRE=true"
+    OS_SPECIFIC_BUILD_FLAGS="$OS_SPECIFIC_BUILD_FLAGS -DENABLE_PIPEWIRE=false"
   fi
 fi
 
