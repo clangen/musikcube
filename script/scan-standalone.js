@@ -14,6 +14,7 @@ const ignoredLibraries = mac
       'libmpris.so',
       'libpipewireout.so',
       'libpulseout.so',
+      'libsndioout.so',
     ]);
 
 /* we assume these dependencies will always be available on the user's
