@@ -551,6 +551,7 @@
     <ClCompile Include="library\track\LibraryTrack.cpp" />
     <ClCompile Include="library\track\Track.cpp" />
     <ClCompile Include="library\track\TrackList.cpp" />
+    <ClCompile Include="net\PiggyWebSocketClient.cpp" />
     <ClCompile Include="net\RawWebSocketClient.cpp" />
     <ClCompile Include="net\WebSocketClient.cpp" />
     <ClCompile Include="pch.cpp">
@@ -581,6 +582,7 @@
     <ClCompile Include="support\Common.cpp" />
     <ClCompile Include="support\Duration.cpp" />
     <ClCompile Include="support\LastFm.cpp" />
+    <ClCompile Include="support\PiggyDebugBackend.cpp" />
     <ClCompile Include="support\Playback.cpp" />
     <ClCompile Include="support\PreferenceKeys.cpp" />
     <ClCompile Include="support\Preferences.cpp" />
@@ -643,6 +645,7 @@
     <ClInclude Include="library\track\Track.h" />
     <ClInclude Include="library\track\TrackList.h" />
     <ClInclude Include="musikcore_c.h" />
+    <ClInclude Include="net\PiggyWebSocketClient.h" />
     <ClInclude Include="net\RawWebSocketClient.h" />
     <ClInclude Include="net\WebSocketClient.h" />
     <ClInclude Include="pch.hpp" />
@@ -710,6 +713,7 @@
     <ClInclude Include="support\LastFm.h" />
     <ClInclude Include="support\Messages.h" />
     <ClInclude Include="support\NarrowCast.h" />
+    <ClInclude Include="support\PiggyDebugBackend.h" />
     <ClInclude Include="support\Playback.h" />
     <ClInclude Include="support\PreferenceKeys.h" />
     <ClInclude Include="support\Preferences.h" />

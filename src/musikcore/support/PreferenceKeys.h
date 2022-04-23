@@ -86,6 +86,8 @@ namespace musik { namespace core { namespace prefs {
         extern const std::string RemoteLibraryTranscoderBitrate;
         extern const std::string RemoteLibraryIgnoreVersionMismatch;
         extern const std::string AsyncTrackListQueries;
+        extern const std::string PiggyEnabled;
+        extern const std::string PiggyHostname;
     }
 
 } } }

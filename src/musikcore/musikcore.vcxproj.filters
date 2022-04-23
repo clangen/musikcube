@@ -265,6 +265,12 @@
     <ClCompile Include="db\SqliteExtensions.cpp">
       <Filter>src\db</Filter>
     </ClCompile>
+    <ClCompile Include="net\PiggyWebSocketClient.cpp">
+      <Filter>src\net</Filter>
+    </ClCompile>
+    <ClCompile Include="support\PiggyDebugBackend.cpp">
+      <Filter>src\support</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -652,6 +658,12 @@
       <Filter>src\support</Filter>
     </ClInclude>
     <ClInclude Include="support\DeleteDefaults.h">
+      <Filter>src\support</Filter>
+    </ClInclude>
+    <ClInclude Include="net\PiggyWebSocketClient.h">
+      <Filter>src\net</Filter>
+    </ClInclude>
+    <ClInclude Include="support\PiggyDebugBackend.h">
       <Filter>src\support</Filter>
     </ClInclude>
   </ItemGroup>

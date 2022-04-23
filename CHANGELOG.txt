@@ -6,11 +6,13 @@
   a list of actions for the current track/artist/album
 * added the ability to use `libelogind` or `basu` instead of `libsystemd` for
   the `mpris` plugin (@robertgzr)
-* some warning cleanups when using wsprintw (@trofi)
+* some warning cleanups when using `wsprintw` (@trofi)
 * further improvements to build system to remove OS-specific conditionals in
   favor of library detection
 * added color output to various important cmake messages, making it much easier
   to spot check configuration issues.
+* added support for the `piggy` debug tool to help with log collection and
+  remote app monitoring. disabled by default.
 
 --------------------------------------------------------------------------------
 

@@ -52,6 +52,7 @@ set(CORE_SOURCES
   ./library/track/LibraryTrack.cpp
   ./library/track/Track.cpp
   ./library/track/TrackList.cpp
+  ./net/PiggyWebSocketClient.cpp
   ./net/RawWebSocketClient.cpp
   ./net/WebSocketClient.cpp
   ./plugin/PluginFactory.cpp
@@ -62,6 +63,7 @@ set(CORE_SOURCES
   ./support/Duration.cpp
   ./support/Common.cpp
   ./support/LastFm.cpp
+  ./support/PiggyDebugBackend.cpp
   ./support/Playback.cpp
   ./support/Preferences.cpp
   ./support/PreferenceKeys.cpp

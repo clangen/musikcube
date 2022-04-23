@@ -118,13 +118,16 @@ void PluginFactory::LoadPlugins() {
                                 descriptor->plugin = plugin;
                                 descriptor->nativeHandle = dll;
                                 this->plugins.push_back(descriptor);
+                                musik::debug::info(TAG, "loaded: " + filename);
                             }
                             else {
+                                musik::debug::error(TAG, "plugin with invalid version: " + filename);
                                 FreeLibrary(dll);
                             }
                         }
                         else {
-                            /* otherwise, free nad move on */
+                            /* otherwise, free and move on */
+                            musik::debug::error(TAG, "plugin entry point not found: " + filename);
                             FreeLibrary(dll);
                         }
                     }
