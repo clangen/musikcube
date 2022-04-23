@@ -21,11 +21,11 @@
 0.97.0
 
 * no functional changes to the app
-* finished re-architecture of build and app packing infrastructure
-  to support "standalone"/"portable" builds for non-Windows platforms.
-  these changes allow us to build a much smaller set of binaries for
-  distribution that are more universally compatible across different
-  versions of macOS and Linux distributions.
+* finished re-architecture of build and app packing infrastructure to support
+  "standalone"/"portable" builds for non-Windows platforms. these changes allow
+  us to build a much smaller set of binaries for distribution that are more
+  universally compatible across different versions of macOS and Linux
+  distributions.
 
 --------------------------------------------------------------------------------
 
@@ -40,8 +40,8 @@
 * added support for ffmpeg5 libraries.
 * upgraded to ffmpeg5 for Windows builds.
 * fixed WasapiOut to use high-quality, built-in resampler.
-* added `allow_decoder_resampling` to WasapiOut to disable the high-
-  quality, built-in resampler and rely on plugin resampling instead.
+* added `allow_decoder_resampling` to WasapiOut to disable the high-quality,
+  built-in resampler and rely on plugin resampling instead.
 * fixed dialog background rendering in certain versions of ncurses.
 * fixed duration calculation for float-encoded wav files.
 * added additional PipeWire output debugging.
