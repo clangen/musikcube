@@ -123,6 +123,8 @@ static inline std::shared_ptr<ISchema> AdvancedSettingsSchema() {
     schema->AddInt(core::prefs::keys::IndexerTransactionInterval, 300);
     schema->AddString(core::prefs::keys::AuddioApiToken, "");
     schema->AddBool(core::prefs::keys::ResumePlaybackOnStartup, false);
+    schema->AddBool(core::prefs::keys::PiggyEnabled, false);
+    schema->AddString(core::prefs::keys::PiggyHostname, "localhost");
     return schema;
 }
 

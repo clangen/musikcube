@@ -116,13 +116,21 @@ int main(int argc, char* argv[]) {
     std::string errorFn = core::GetDataDirectory() + "stderr.txt";
     freopen(errorFn.c_str(), "w", stderr);
 
-    auto piggyClient = std::make_shared<PiggyWebSocketClient>(&Window::MessageQueue());
-    piggyClient->Connect("localhost");
-    auto piggyLogger = new PiggyDebugBackend(piggyClient);
+    auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
 
-    auto fileLogger = new debug::SimpleFileBackend();
     auto consoleLogger = new ConsoleLogger(Window::MessageQueue());
-    debug::Start({ fileLogger, consoleLogger, piggyLogger });
+
+    std::vector<debug::IBackend*> debuggerBackends = { 
+        new debug::SimpleFileBackend(), consoleLogger
+    };
+
+    if (prefs->GetBool(core::prefs::keys::PiggyEnabled, false)) {
+        auto piggyClient = std::make_shared<PiggyWebSocketClient>(&Window::MessageQueue());
+        piggyClient->Connect(prefs->GetString(core::prefs::keys::PiggyHostname, "localhost"));
+        debuggerBackends.push_back(new PiggyDebugBackend(piggyClient));
+    }
+
+    debug::Start(debuggerBackends);
 
     plugin::Init();
 
@@ -138,8 +146,6 @@ int main(int argc, char* argv[]) {
 #endif
 
     {
-        auto prefs = Preferences::ForComponent(core::prefs::components::Settings);
-
         PlaybackService playback(Window::MessageQueue(), library);
 
         GlobalHotkeys globalHotkeys(playback, library);
