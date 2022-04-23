@@ -462,9 +462,20 @@ function delete_unused_libraries() {
     rm *.la 2> /dev/null
     if [[ $OS == "Darwin" ]]; then
       mv libavcodec-musikcube.59.18.100.dylib libavcodec-musikcube.59.dylib
+      rm libavcodec-musikcube.dylib
+      ln -s libavcodec-musikcube.59.dylib libavcodec-musikcube.dylib
+
       mv libavformat-musikcube.59.16.100.dylib libavformat-musikcube.59.dylib
+      rm libavformat-musikcube.dylib
+      ln -s libavformat-musikcube.59.dylib libavformat-musikcube.dylib
+
       mv libavutil-musikcube.57.17.100.dylib libavutil-musikcube.57.dylib
+      rm libavutil-musikcube.dylib
+      ln -s libavutil-musikcube.57.dylib libavutil-musikcube.dylib
+
       mv libswresample-musikcube.4.3.100.dylib libswresample-musikcube.4.dylib
+      rm libswresample-musikcube.dylib
+      ln -s libswresample-musikcube.4.dylib libswresample-musikcube.dylib
     fi
     cd ../../
 }
