@@ -36,15 +36,17 @@
 
 #include <musikcore/support/Preferences.h>
 #include <musikcore/support/Common.h>
+#include <musikcore/debug.h>
 #include <musikcore/plugin/PluginFactory.h>
-
 #include <unordered_map>
 
 using nlohmann::json;
+using namespace musik;
 using namespace musik::core;
 
-static std::unordered_map<std::string, std::weak_ptr<Preferences> > componentCache;
-static std::unordered_map<std::string, std::shared_ptr<Preferences> > pluginCache;
+static const char* TAG = "Preferences";
+static std::unordered_map<std::string, std::weak_ptr<Preferences>> componentCache;
+static std::unordered_map<std::string, std::shared_ptr<Preferences>> pluginCache;
 static std::mutex cacheMutex;
 
 #define CACHE_KEY(name, mode) u8fmt("%s-%d", name.c_str(), mode)
@@ -278,7 +280,7 @@ void Preferences::Load() {
             this->json = json::parse(str);
         }
         catch (...) {
-            std::cerr << "error loading " << this->component << ".json";
+            debug::error(TAG, u8fmt("error loading %s.json", component.c_str()).c_str());
             this->json = json::parse("{ }");
         }
     }

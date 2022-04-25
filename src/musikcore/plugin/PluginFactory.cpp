@@ -41,6 +41,7 @@
 #include <musikcore/support/Common.h>
 #include <musikcore/config.h>
 #include <musikcore/debug.h>
+#include <musikcore/utfutil.h>
 #include <iostream>
 
 static const std::string TAG = "PluginFactory";
@@ -146,8 +147,6 @@ void PluginFactory::LoadPlugins() {
                         dll = dlopen(filename.c_str(), openFlags);
                     }
                     catch (...) {
-                        std::cerr << "exception while loading plugin " << filename << std::endl;
-
                         musik::debug::error(TAG, "exception while loading plugin " + filename);
                         continue;
                     }
@@ -155,12 +154,7 @@ void PluginFactory::LoadPlugins() {
                     if (!dll) {
                         char *err = dlerror();
 
-                        std::cerr << "exception while loading plugin " << filename << " " << err << std::endl;
-
-                        musik::debug::error(
-                            TAG,
-                            "could not load shared library " + filename +
-                            " error: " + std::string(err));
+                        musik::debug::error(TAG, u8fmt("exception while loading plugin %s: %s", filename.c_str(), err).c_str());
                     }
                     else {
                         CallGetPlugin getPluginCall;

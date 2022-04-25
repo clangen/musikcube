@@ -39,6 +39,7 @@
 #include "TranscodingAudioDataStream.h"
 
 #include <musikcore/sdk/ITrack.h>
+#include <musikcore/sdk/String.h>
 
 #pragma warning(push, 0)
 #include <boost/filesystem.hpp>
@@ -46,7 +47,6 @@
 #include <websocketpp/base64/base64.hpp>
 #pragma warning(pop, 0)
 
-#include <iostream>
 #include <unordered_map>
 #include <string>
 #include <cstdlib>
@@ -61,8 +61,10 @@
 #include <vector>
 
 #define HTTP_416_DISABLED true
+#define ENABLE_DEBUG 1
 
 static const char* ENVIRONMENT_DISABLE_HTTP_SERVER_AUTH = "MUSIKCUBE_DISABLE_HTTP_SERVER_AUTH";
+static const char* TAG = "HttpServer";
 
 using namespace musik::core::sdk;
 
@@ -154,10 +156,6 @@ static ssize_t fileReadCallback(void *cls, uint64_t pos, char *buf, size_t max) 
 static void fileFreeCallback(void *cls) {
     Range* range = static_cast<Range*>(cls);
     if (range->file) {
-#ifdef ENABLE_DEBUG
-        std::cerr << "******** REQUEST CLOSE: " << range->file << " ********\n\n";
-#endif
-
         range->file->Close(); /* lazy destroy */
         range->file = nullptr;
     }
@@ -367,11 +365,11 @@ MHD_Result HttpServer::HandleRequest(
     size_t *upload_data_size,
     void **con_cls)
 {
-#ifdef ENABLE_DEBUG
-    std::cerr << "******** REQUEST START ********\n";
-#endif
+    auto server = static_cast<HttpServer*>(cls);
 
-    HttpServer* server = static_cast<HttpServer*>(cls);
+#ifdef ENABLE_DEBUG
+    server->context.debug->Info(TAG, str::format("new request: %s", url).c_str());
+#endif
 
     struct MHD_Response* response = nullptr;
     int ret = MHD_NO;
@@ -383,9 +381,8 @@ MHD_Result HttpServer::HandleRequest(
                 status = 401; /* unauthorized */
                 static const char* error = "unauthorized";
                 response = MHD_create_response_from_buffer(strlen(error), (void*)error, MHD_RESPMEM_PERSISTENT);
-
 #ifdef ENABLE_DEBUG
-                std::cerr << "unauthorized\n";
+                server->context.debug->Warning(TAG, "unauthorized request, returning a 401");
 #endif
             }
             else {
@@ -416,16 +413,12 @@ MHD_Result HttpServer::HandleRequest(
 
     if (response) {
 #ifdef ENABLE_DEBUG
-        std::cerr << "returning with http code: " << status << std::endl;
+        server->context.debug->Info(TAG, str::format("return http %d", status).c_str());
 #endif
 
         ret = MHD_queue_response(connection, status, response);
         MHD_destroy_response(response);
     }
-
-#ifdef ENABLE_DEBUG
-    std::cerr << "*******************************\n\n";
-#endif
 
     return (MHD_Result) ret;
 }
@@ -454,11 +447,6 @@ int HttpServer::HandleAudioTrackRequest(
     if (byExternalId) {
         std::string externalId = urlDecode(pathParts.at(2));
         track = server->context.metadataProxy->QueryTrackByExternalId(externalId.c_str());
-
-#ifdef ENABLE_DEBUG
-        std::cerr << "externalId: " << externalId << "\n";
-        std::cerr << "title: " << GetMetadataString(track, "title") << std::endl;
-#endif
     }
     else if (pathParts.at(1) == fragment::id) {
         uint64_t id = std::stoull(urlDecode(pathParts.at(2)));
@@ -473,7 +461,7 @@ int HttpServer::HandleAudioTrackRequest(
 
         track->Release();
 
-        std::string format = "";
+        std::string format;
 
         if (bitrate != 0) {
             format = getStringUrlParam(connection, "format", "mp3");
@@ -486,23 +474,17 @@ int HttpServer::HandleAudioTrackRequest(
         const char* rangeVal = MHD_lookup_connection_value(
             connection, MHD_HEADER_KIND, "Range");
 
-#ifdef ENABLE_DEBUG
-        if (rangeVal) {
-            std::cerr << "range header: " << rangeVal << "\n";
-        }
-#endif
-
         Range* range = parseRange(file, rangeVal);
-
-#ifdef ENABLE_DEBUG
-        std::cerr << "potential response header : " << range->HeaderValue() << std::endl;
-#endif
 
         /* ehh... */
         bool isOnDemandTranscoder = !!dynamic_cast<TranscodingAudioDataStream*>(file);
 
 #ifdef ENABLE_DEBUG
-        std::cerr << "on demand? " << isOnDemandTranscoder << std::endl;
+        server->context.debug->Info(TAG, str::format(
+            "range request: %s, resolved range: %s, isOnDemandTranscoder=%s",
+            rangeVal ? rangeVal : "[unspecified]",
+            range ? range->HeaderValue().c_str() : "[unresolved]",
+            isOnDemandTranscoder ? "true" : "false").c_str());
 #endif
 
         /* gotta be careful with request ranges if we're transcoding. don't
@@ -512,7 +494,7 @@ int HttpServer::HandleAudioTrackRequest(
                 delete range;
 
 #ifdef ENABLE_DEBUG
-                std::cerr << "removing range header, seek requested with ondemand transcoder\n";
+                server->context.debug->Info(TAG, "removing range header, seek requested with ondemand transcoder");
 #endif
 
                 if (HTTP_416_DISABLED) {
@@ -561,8 +543,7 @@ int HttpServer::HandleAudioTrackRequest(
                 &fileFreeCallback);
 
 #ifdef ENABLE_DEBUG
-            std::cerr << "response length: " << ((length == 0) ? 0 : length + 1) << "\n";
-            std::cerr << "id: " << file << "\n";
+            server->context.debug->Info(TAG, str::format("response length=%d", ((length == 0) ? 0 : length + 1)).c_str());
 #endif
 
             if (response) {
@@ -606,7 +587,7 @@ int HttpServer::HandleAudioTrackRequest(
                         status = MHD_HTTP_PARTIAL_CONTENT;
 #ifdef ENABLE_DEBUG
                         if (rangeVal) {
-                            std::cerr << "actual range header: " << range->HeaderValue() << "\n";
+                            server->context.debug->Info(TAG, str::format("range header: %s", range->HeaderValue().c_str()).c_str());
                         }
 #endif
                     }

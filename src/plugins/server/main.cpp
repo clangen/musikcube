@@ -210,3 +210,8 @@ extern "C" DLL_EXPORT void SetMetadataProxy(musik::core::sdk::IMetadataProxy* me
     context.metadataProxy = metadataProxy;
     remote.CheckRunningStatus();
 }
+
+extern "C" DLL_EXPORT void SetDebug(musik::core::sdk::IDebug*  debug) {
+    auto wl = context.lock.Write();
+    context.debug = debug;
+}

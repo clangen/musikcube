@@ -47,6 +47,8 @@ using namespace musik::core;
 
 using Id = Hotkeys::Id;
 
+static const char* TAG = "Hotkeys";
+
 /* sigh: http://stackoverflow.com/a/24847480 */
 struct EnumHasher {
     template <typename T>
@@ -268,7 +270,7 @@ static void loadPreferences() {
         savePreferences();
     }
     catch (...) {
-        std::cerr << "failed to load hotkeys.json! default hotkeys selected.";
+        musik::debug::error(TAG, "failed to load hotkeys.json! default hotkeys selected.");
         customIdToKey.clear();
     }
 }

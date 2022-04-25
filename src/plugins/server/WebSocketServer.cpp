@@ -35,8 +35,6 @@
 #include "WebSocketServer.h"
 #include "Constants.h"
 
-#include <iostream>
-
 #include <musikcore/sdk/constants.h>
 
 using websocketpp::lib::placeholders::_1;
@@ -47,6 +45,7 @@ using namespace nlohmann;
 using namespace musik::core::sdk;
 
 static int nextId = 0;
+static const char* TAG = "WebSocketServer";
 
 /* UTILITY METHODS */
 
@@ -195,13 +194,14 @@ void WebSocketServer::ThreadProc() {
         wss->run();
     }
     catch (websocketpp::exception const & e) {
-        std::cerr << e.what() << std::endl;
+        this->context.debug->Error(TAG, str::format("[ThreadProc] websocketpp::exception: %s", e.what()).c_str());
     }
     catch (std::exception& e) {
-        std::cerr << "ThreadProc failed: " << e.what() << std::endl;
+        this->context.debug->Error(TAG, str::format("[ThreadProc] sttd::exception: %s", e.what()).c_str());
     }
     catch (...) {
-        std::cerr << "unknown exception" << std::endl;
+        this->context.debug->Error(TAG, "[ThreadProc] unknown/unexpected exception");
+
     }
 
     this->wss.reset();
@@ -534,7 +534,7 @@ void WebSocketServer::Broadcast(const std::string& name, json& options) {
         }
     }
     catch (...) {
-        std::cerr << "broadcast failed (stale connection?)\n";
+        this->context.debug->Error(TAG, "broadcast failed (stale connection?)");
     }
 }
 
@@ -1655,11 +1655,11 @@ void WebSocketServer::OnMessage(server* s, connection_hdl hdl, message_ptr msg) 
         }
     }
     catch (std::exception& e) {
-        std::cerr << "OnMessage failed: " << e.what() << std::endl;
+        this->context.debug->Error(TAG, str::format("OnMessage failed: %s", e.what()).c_str());
         this->RespondWithInvalidRequest(hdl, value::invalid, value::invalid);
     }
     catch (...) {
-        std::cerr << "message parse failed: " << msg->get_payload() << "\n";
+        this->context.debug->Error(TAG, str::format("message parse failed: %s", msg->get_payload().c_str()).c_str());
         this->RespondWithInvalidRequest(hdl, value::invalid, value::invalid);
     }
 }

@@ -38,6 +38,7 @@
 #include <musikcore/sdk/IPreferences.h>
 #include <musikcore/sdk/IPlaybackService.h>
 #include <musikcore/sdk/IEnvironment.h>
+#include <musikcore/sdk/IDebug.h>
 
 #pragma warning(push, 0)
 #include <boost/thread/shared_mutex.hpp>
@@ -69,11 +70,13 @@ struct Context {
         this->metadataProxy = nullptr;
         this->prefs = nullptr;
         this->playback = nullptr;
+        this->debug = nullptr;
     }
 
     musik::core::sdk::IMetadataProxy* metadataProxy;
     musik::core::sdk::IPreferences* prefs;
     musik::core::sdk::IPlaybackService* playback;
     musik::core::sdk::IEnvironment* environment;
+    musik::core::sdk::IDebug* debug;
     ReadWriteLock lock;
 };

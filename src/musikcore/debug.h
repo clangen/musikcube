@@ -38,6 +38,7 @@
 #include <vector>
 #include <fstream>
 #include <memory>
+#include "utfutil.h"
 
 namespace musik {
     class debug {
