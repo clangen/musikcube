@@ -49,6 +49,9 @@ using ClientPtr = PiggyWebSocketClient::ClientPtr;
 using ClientMessage = PiggyWebSocketClient::ClientMessage;
 using Connection = PiggyWebSocketClient::Connection;
 using Message = PiggyWebSocketClient::Message;
+using MessageQueue = PiggyWebSocketClient::MessageQueue;
+
+static std::shared_ptr<PiggyWebSocketClient> instance;
 
 static const int64_t kLatencyTimeoutMs = INT_MAX;
 static const int64_t kReconnectIntervalMs = 10000;
@@ -60,7 +63,15 @@ static inline std::string generateSessionId() {
     return "musikcube-" + std::to_string((unsigned long) time(nullptr));
 }
 
-PiggyWebSocketClient::PiggyWebSocketClient(IMessageQueue* messageQueue)
+std::shared_ptr<PiggyWebSocketClient> PiggyWebSocketClient::Instance(MessageQueue* messageQueue) {
+    if (!instance) {
+        instance = std::shared_ptr<PiggyWebSocketClient>(new PiggyWebSocketClient(messageQueue));
+    }
+    instance->SetMessageQueue(messageQueue);
+    return instance;
+}
+
+PiggyWebSocketClient::PiggyWebSocketClient(MessageQueue* messageQueue)
 : messageQueue(nullptr)
 , sessionId(generateSessionId()) {
     this->SetMessageQueue(messageQueue);
@@ -235,7 +246,7 @@ void PiggyWebSocketClient::SetState(State state) {
     }
 }
 
-void PiggyWebSocketClient::SetMessageQueue(IMessageQueue* messageQueue) {
+void PiggyWebSocketClient::SetMessageQueue(MessageQueue* messageQueue) {
     if (messageQueue == this->messageQueue) {
         return;
     }

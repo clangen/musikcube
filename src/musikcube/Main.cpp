@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     };
 
     if (prefs->GetBool(core::prefs::keys::PiggyEnabled, false)) {
-        auto piggyClient = std::make_shared<PiggyWebSocketClient>(&Window::MessageQueue());
+        auto piggyClient = PiggyWebSocketClient::Instance(&Window::MessageQueue());
         piggyClient->Connect(prefs->GetString(core::prefs::keys::PiggyHostname, "localhost"));
         debuggerBackends.push_back(new PiggyDebugBackend(piggyClient));
     }

@@ -43,6 +43,7 @@
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/IMessageTarget.h>
 #include <musikcore/library/MasterLibrary.h>
+#include <musikcore/net/PiggyWebSocketClient.h>
 
 #include <app/util/ConsoleLogger.h>
 #include <app/util/UpdateCheck.h>
