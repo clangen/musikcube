@@ -168,7 +168,11 @@ void PiggyWebSocketClient::Connect(const std::string& host, unsigned short port,
 void PiggyWebSocketClient::Reconnect() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
 
+    /* Disconnect() will reset the internal URI to implicitly disable auto-reconnect;
+    go ahead and cache it, disconnect, then restore it. */
+    auto originalUri = this->uri;
     this->Disconnect();
+    this->uri = originalUri;
 
 #if BOOST_VERSION < 106600
     io.reset();
@@ -206,11 +210,14 @@ void PiggyWebSocketClient::Disconnect() {
     {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
         oldThread = std::unique_ptr<std::thread>(std::move(this->thread));
+        this->uri = "";
     }
 
     if (oldThread) {
         io.stop();
-        oldThread->join();
+        if (oldThread->joinable() && oldThread->native_handle()) {
+            oldThread->join();
+        }
     }
 }
 
@@ -247,6 +254,7 @@ void PiggyWebSocketClient::SetState(State state) {
 }
 
 void PiggyWebSocketClient::SetMessageQueue(MessageQueue* messageQueue) {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     if (messageQueue == this->messageQueue) {
         return;
     }
@@ -264,7 +272,7 @@ void PiggyWebSocketClient::SetMessageQueue(MessageQueue* messageQueue) {
 void PiggyWebSocketClient::ProcessMessage(IMessage& message) {
     if (message.Type() == kReconnectMessage) {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-        if (this->state == State::Disconnected) {
+        if (this->state == State::Disconnected && this->uri.length()) {
             this->Reconnect();
         }
         this->messageQueue->Post(runtime::Message::Create(this, kReconnectMessage), kReconnectIntervalMs);

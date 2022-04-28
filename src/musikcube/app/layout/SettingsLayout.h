@@ -49,6 +49,7 @@
 #include <musikcore/audio/PlaybackService.h>
 #include <musikcore/audio/MasterTransport.h>
 #include <musikcore/library/MasterLibrary.h>
+#include <musikcore/net/PiggyWebSocketClient.h>
 #include <musikcore/support/Preferences.h>
 
 #include <app/window/TrackListView.h>
@@ -68,6 +69,7 @@ namespace musik { namespace cube {
     {
         public:
             using MasterLibraryPtr = std::shared_ptr<musik::core::library::MasterLibrary>;
+            using PiggyWebSocketClient = musik::core::net::PiggyWebSocketClient;
 
             DELETE_COPY_AND_ASSIGNMENT_DEFAULTS(SettingsLayout)
 
@@ -110,6 +112,11 @@ namespace musik { namespace cube {
             void OnLastFmDropdownActivate(cursespp::TextLabel* label);
             void OnAdvancedSettingsActivate(cursespp::TextLabel* label);
 
+            void OnPiggyClientStateChange(
+                PiggyWebSocketClient* client,
+                PiggyWebSocketClient::State newState,
+                PiggyWebSocketClient::State oldState);
+
             cursespp::App& app;
             MasterLibraryPtr library;
             musik::core::IIndexer* indexer;
@@ -143,8 +150,10 @@ namespace musik { namespace cube {
 
             std::shared_ptr<LocalLibrarySettingsLayout> localLibraryLayout;
             std::shared_ptr<RemoteLibrarySettingsLayout> remoteLibraryLayout;
+            std::shared_ptr<PiggyWebSocketClient> piggyClient;
 
             UpdateCheck updateCheck;
             bool serverAvailable = false;
+            bool piggyAvailable = false;
     };
 } }

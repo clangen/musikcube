@@ -70,6 +70,7 @@ using namespace musik::core;
 using namespace musik::core::audio;
 using namespace musik::core::library::constants;
 using namespace musik::core::sdk;
+using namespace musik::core::net;
 using namespace musik::cube;
 using namespace cursespp;
 
@@ -165,12 +166,26 @@ SettingsLayout::SettingsLayout(
 , indexer(library->Indexer())
 , playback(playback) {
     this->prefs = Preferences::ForComponent(core::prefs::components::Settings);
+    this->piggyClient = PiggyWebSocketClient::Instance(&MessageQueue());
+    this->piggyClient->StateChanged.connect(this, &SettingsLayout::OnPiggyClientStateChange);
     this->UpdateServerAvailability();
     this->InitializeWindows();
 }
 
 SettingsLayout::~SettingsLayout() {
     updateCheck.Cancel();
+}
+
+void SettingsLayout::OnPiggyClientStateChange(
+    PiggyWebSocketClient* client,
+    PiggyWebSocketClient::State newState,
+    PiggyWebSocketClient::State oldState)
+{
+    /* trigger a redraw on the main thread */
+    using State = PiggyWebSocketClient::State;
+    if (newState == State::Connected || newState == State::Disconnected) {
+        this->Post(core::message::EnvironmentUpdated);
+    }
 }
 
 void SettingsLayout::OnCheckboxChanged(cursespp::Checkbox* cb, bool checked) {
@@ -451,8 +466,6 @@ void SettingsLayout::InitializeWindows() {
     this->appVersion = std::make_shared<TextLabel>();
     this->appVersion->SetContentColor(Color::TextDisabled);
     this->appVersion->SetAlignment(text::AlignCenter);
-    std::string version = u8fmt("%s %s", VERSION, VERSION_COMMIT_HASH);
-    this->appVersion->SetText(u8fmt(_TSTR("console_version"), version.c_str()));
 
     int order = 0;
     this->libraryTypeDropdown->SetFocusOrder(order++);
@@ -639,9 +652,23 @@ void SettingsLayout::LoadPreferences() {
     this->localLibraryLayout->LoadPreferences();
     this->remoteLibraryLayout->LoadPreferences();
 
+    /* version, status */
+    std::string piggyStatus = "";
+    if (this->piggyAvailable) {
+        if (this->piggyClient->ConnectionState() == PiggyWebSocketClient::State::Connected) {
+            piggyStatus = " (oo)";
+        }
+        else {
+            piggyStatus = " (..)";
+        }
+    }
+    std::string version = u8fmt("%s %s%s", VERSION, VERSION_COMMIT_HASH, piggyStatus.c_str());
+    this->appVersion->SetText(u8fmt(_TSTR("console_version"), version.c_str()));
+
     this->Layout();
 }
 
 void SettingsLayout::UpdateServerAvailability() {
     this->serverAvailable = !!ServerOverlay::FindServerPlugin().get();
+    this->piggyAvailable = this->prefs->GetBool(core::prefs::keys::PiggyEnabled, false);
 }
