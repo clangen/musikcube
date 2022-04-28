@@ -182,7 +182,7 @@ void musik::debug::Start(std::vector<musik::debug::IBackend*> backends) {
     info("LOG SESSION", "---------- START ----------");
 }
 
-void musik::debug::Stop() {
+void musik::debug::Shutdown() {
     std::unique_lock<std::recursive_mutex> lock(mutex);
 
     cancel = true;

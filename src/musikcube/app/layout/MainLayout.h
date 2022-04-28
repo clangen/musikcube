@@ -67,7 +67,7 @@ namespace musik {
                 virtual ~MainLayout();
 
                 void Start();
-                void Stop();
+                void Shutdown();
 
                 /* IWindow */
                 bool KeyPress(const std::string& key) override;

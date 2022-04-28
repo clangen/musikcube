@@ -226,21 +226,20 @@ int main(int argc, char* argv[]) {
         app.Run(mainLayout);
 
         /* done with the app */
-        mainLayout->Stop();
+        mainLayout->Shutdown();
 
 #ifdef WIN32
         win32::HideMainWindow();
 #endif
 
-        library->Indexer()->Stop();
+        library->Indexer()->Shutdown();
     }
 
-    audio::vis::HideSelectedVisualizer();
-    plugin::Deinit();
-
+    PiggyWebSocketClient::Shutdown();
     LibraryFactory::Instance().Shutdown();
-
-    debug::Stop();
+    vis::Shutdown();
+    plugin::Shutdown();
+    debug::Shutdown();
 
     return 0;
 }

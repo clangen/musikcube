@@ -1243,7 +1243,7 @@ mcsdk_export void mcsdk_svc_indexer_schedule(mcsdk_svc_indexer in, mcsdk_svc_ind
 }
 
 mcsdk_export void mcsdk_svc_indexer_stop(mcsdk_svc_indexer in) {
-    INDEXER(in)->Stop();
+    INDEXER(in)->Shutdown();
 }
 
 mcsdk_export mcsdk_svc_indexer_state mcsdk_svc_indexer_get_state(mcsdk_svc_indexer in) {

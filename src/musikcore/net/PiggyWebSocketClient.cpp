@@ -51,6 +51,7 @@ using Connection = PiggyWebSocketClient::Connection;
 using Message = PiggyWebSocketClient::Message;
 using MessageQueue = PiggyWebSocketClient::MessageQueue;
 
+std::recursive_mutex instanceMutex;
 static std::shared_ptr<PiggyWebSocketClient> instance;
 
 static const int64_t kLatencyTimeoutMs = INT_MAX;
@@ -64,11 +65,17 @@ static inline std::string generateSessionId() {
 }
 
 std::shared_ptr<PiggyWebSocketClient> PiggyWebSocketClient::Instance(MessageQueue* messageQueue) {
+    std::unique_lock<decltype(instanceMutex)> lock(instanceMutex);
     if (!instance) {
         instance = std::shared_ptr<PiggyWebSocketClient>(new PiggyWebSocketClient(messageQueue));
     }
     instance->SetMessageQueue(messageQueue);
     return instance;
+}
+
+void PiggyWebSocketClient::Shutdown() {
+    std::unique_lock<decltype(instanceMutex)> lock(instanceMutex);
+    instance.reset();
 }
 
 PiggyWebSocketClient::PiggyWebSocketClient(MessageQueue* messageQueue)
@@ -215,9 +222,7 @@ void PiggyWebSocketClient::Disconnect() {
 
     if (oldThread) {
         io.stop();
-        if (oldThread->joinable() && oldThread->native_handle()) {
-            oldThread->join();
-        }
+        oldThread->join();
     }
 }
 

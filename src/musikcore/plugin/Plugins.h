@@ -50,6 +50,6 @@ namespace musik { namespace core { namespace plugin {
 
     musik::core::sdk::IEnvironment& Environment();
 
-    void Deinit();
+    void Shutdown();
 
 } } }

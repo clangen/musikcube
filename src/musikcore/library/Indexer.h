@@ -80,7 +80,7 @@ namespace musik { namespace core {
             void RemovePath(const std::string& path) override;
             void GetPaths(std::vector<std::string>& paths) override;
             void Schedule(SyncType type) override;
-            void Stop() override;
+            void Shutdown() override;
 
             State GetState() noexcept override {
                 return this->state;
