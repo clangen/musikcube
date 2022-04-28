@@ -212,7 +212,7 @@ void MainLayout::Start() {
     MessageQueue().RegisterForBroadcasts(this->shared_from_this());
 }
 
-void MainLayout::Stop() {
+void MainLayout::Shutdown() {
     MessageQueue().UnregisterForBroadcasts(this);
 }
 

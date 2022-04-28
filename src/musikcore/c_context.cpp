@@ -158,7 +158,7 @@ mcsdk_export void mcsdk_env_init() {
 mcsdk_export void mcsdk_env_release() {
     if (environment_initialized) {
         LibraryFactory::Instance().Shutdown();
-        debug::Stop();
+        debug::Shutdown();
         message_queue->Quit();
         message_queue_thread.join();
         delete message_queue;
@@ -227,7 +227,7 @@ mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
     delete internal->playback;
 
     internal->playback = nullptr;
-    internal->library->Indexer()->Stop();
+    internal->library->Indexer()->Shutdown();
     internal->library.reset();
     internal->preferences.reset();
 
@@ -250,7 +250,7 @@ mcsdk_export void mcsdk_context_release(mcsdk_context** context) {
 
 mcsdk_export void mcsdk_set_plugin_context(mcsdk_context* context) {
     if (plugin_context && plugin_context != context) {
-        plugin::Deinit();
+        plugin::Shutdown();
     }
     plugin_context = context;
     if (plugin_context) {

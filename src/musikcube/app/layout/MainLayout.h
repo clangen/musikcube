@@ -43,6 +43,7 @@
 #include <musikcore/support/Preferences.h>
 #include <musikcore/runtime/IMessageTarget.h>
 #include <musikcore/library/MasterLibrary.h>
+#include <musikcore/net/PiggyWebSocketClient.h>
 
 #include <app/util/ConsoleLogger.h>
 #include <app/util/UpdateCheck.h>
@@ -66,7 +67,7 @@ namespace musik {
                 virtual ~MainLayout();
 
                 void Start();
-                void Stop();
+                void Shutdown();
 
                 /* IWindow */
                 bool KeyPress(const std::string& key) override;

@@ -102,6 +102,10 @@ namespace musik {
                     }
                 }
 
+                void Shutdown() {
+                    HideSelectedVisualizer();
+                }
+
                 ISpectrumVisualizer* SpectrumVisualizer() {
                     return spectrumVisualizer;
                 }

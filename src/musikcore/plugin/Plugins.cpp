@@ -412,7 +412,7 @@ namespace musik { namespace core { namespace plugin {
         return environment;
     }
 
-    void Deinit() {
+    void Shutdown() {
         /* preferences */
         Preferences::SavePluginPreferences();
 

@@ -57,6 +57,7 @@ namespace musik { namespace core { namespace net {
             using ClientMessage = websocketpp::config::asio_client::message_type::ptr;
             using Connection = websocketpp::connection_hdl;
             using Message = std::shared_ptr<nlohmann::json>;
+            using MessageQueue = musik::core::runtime::IMessageQueue;
 
             enum class State: int {
                 Disconnected = 0,
@@ -73,7 +74,9 @@ namespace musik { namespace core { namespace net {
 
             sigslot::signal3<PiggyWebSocketClient*, State, State> StateChanged;
 
-            PiggyWebSocketClient(musik::core::runtime::IMessageQueue* messageQueue);
+            static std::shared_ptr<PiggyWebSocketClient> Instance(MessageQueue* messageQueue);
+            static void Shutdown();
+
             PiggyWebSocketClient(const PiggyWebSocketClient&) = delete;
             virtual ~PiggyWebSocketClient();
 
@@ -87,8 +90,11 @@ namespace musik { namespace core { namespace net {
             ConnectionError LastConnectionError() const;
             std::string Uri() const;
 
-            void SetMessageQueue(musik::core::runtime::IMessageQueue* messageQueue);
+            void SetMessageQueue(MessageQueue* messageQueue);
             void ProcessMessage(musik::core::runtime::IMessage& message) override;
+
+        protected:
+            PiggyWebSocketClient(MessageQueue* messageQueue);
 
         private:
             void SetState(State state);
@@ -107,7 +113,7 @@ namespace musik { namespace core { namespace net {
             std::atomic<bool> quit{ false };
             ConnectionError connectionError{ ConnectionError::None };
             State state{ State::Disconnected };
-            musik::core::runtime::IMessageQueue* messageQueue;
+            MessageQueue* messageQueue;
     };
 
 } } }

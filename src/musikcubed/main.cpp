@@ -298,10 +298,10 @@ int main(int argc, char** argv) {
 
         messageQueue.Run();
 
-        library->Indexer()->Stop();
+        library->Indexer()->Shutdown();
     }
 
-    plugin::Deinit();
+    plugin::Shutdown();
 
     remove(getLockfileFn().c_str());
 }

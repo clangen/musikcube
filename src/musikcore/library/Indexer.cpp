@@ -140,10 +140,10 @@ Indexer::Indexer(const std::string& libraryPath, const std::string& dbFilename)
 
 Indexer::~Indexer() {
     closeLogFile();
-    this->Stop();
+    this->Shutdown();
 }
 
-void Indexer::Stop() {
+void Indexer::Shutdown() {
     if (this->thread) {
         {
             boost::mutex::scoped_lock lock(this->stateMutex);

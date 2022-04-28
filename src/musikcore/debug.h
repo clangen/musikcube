@@ -83,7 +83,7 @@ namespace musik {
             };
 
             static void Start(std::vector<IBackend*> backends = { new SimpleFileBackend() });
-            static void Stop();
+            static void Shutdown();
 
             static void verbose(const std::string& tag, const std::string& string) noexcept;
             static void v(const std::string& tag, const std::string& string) noexcept;

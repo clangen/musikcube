@@ -49,6 +49,10 @@ using ClientPtr = PiggyWebSocketClient::ClientPtr;
 using ClientMessage = PiggyWebSocketClient::ClientMessage;
 using Connection = PiggyWebSocketClient::Connection;
 using Message = PiggyWebSocketClient::Message;
+using MessageQueue = PiggyWebSocketClient::MessageQueue;
+
+std::recursive_mutex instanceMutex;
+static std::shared_ptr<PiggyWebSocketClient> instance;
 
 static const int64_t kLatencyTimeoutMs = INT_MAX;
 static const int64_t kReconnectIntervalMs = 10000;
@@ -60,7 +64,21 @@ static inline std::string generateSessionId() {
     return "musikcube-" + std::to_string((unsigned long) time(nullptr));
 }
 
-PiggyWebSocketClient::PiggyWebSocketClient(IMessageQueue* messageQueue)
+std::shared_ptr<PiggyWebSocketClient> PiggyWebSocketClient::Instance(MessageQueue* messageQueue) {
+    std::unique_lock<decltype(instanceMutex)> lock(instanceMutex);
+    if (!instance) {
+        instance = std::shared_ptr<PiggyWebSocketClient>(new PiggyWebSocketClient(messageQueue));
+    }
+    instance->SetMessageQueue(messageQueue);
+    return instance;
+}
+
+void PiggyWebSocketClient::Shutdown() {
+    std::unique_lock<decltype(instanceMutex)> lock(instanceMutex);
+    instance.reset();
+}
+
+PiggyWebSocketClient::PiggyWebSocketClient(MessageQueue* messageQueue)
 : messageQueue(nullptr)
 , sessionId(generateSessionId()) {
     this->SetMessageQueue(messageQueue);
@@ -157,7 +175,11 @@ void PiggyWebSocketClient::Connect(const std::string& host, unsigned short port,
 void PiggyWebSocketClient::Reconnect() {
     std::unique_lock<decltype(this->mutex)> lock(this->mutex);
 
+    /* Disconnect() will reset the internal URI to implicitly disable auto-reconnect;
+    go ahead and cache it, disconnect, then restore it. */
+    auto originalUri = this->uri;
     this->Disconnect();
+    this->uri = originalUri;
 
 #if BOOST_VERSION < 106600
     io.reset();
@@ -195,6 +217,7 @@ void PiggyWebSocketClient::Disconnect() {
     {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
         oldThread = std::unique_ptr<std::thread>(std::move(this->thread));
+        this->uri = "";
     }
 
     if (oldThread) {
@@ -235,7 +258,8 @@ void PiggyWebSocketClient::SetState(State state) {
     }
 }
 
-void PiggyWebSocketClient::SetMessageQueue(IMessageQueue* messageQueue) {
+void PiggyWebSocketClient::SetMessageQueue(MessageQueue* messageQueue) {
+    std::unique_lock<decltype(this->mutex)> lock(this->mutex);
     if (messageQueue == this->messageQueue) {
         return;
     }
@@ -253,7 +277,7 @@ void PiggyWebSocketClient::SetMessageQueue(IMessageQueue* messageQueue) {
 void PiggyWebSocketClient::ProcessMessage(IMessage& message) {
     if (message.Type() == kReconnectMessage) {
         std::unique_lock<decltype(this->mutex)> lock(this->mutex);
-        if (this->state == State::Disconnected) {
+        if (this->state == State::Disconnected && this->uri.length()) {
             this->Reconnect();
         }
         this->messageQueue->Post(runtime::Message::Create(this, kReconnectMessage), kReconnectIntervalMs);
