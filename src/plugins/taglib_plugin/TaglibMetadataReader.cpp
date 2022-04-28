@@ -460,7 +460,7 @@ void TaglibMetadataReader::ReadBasicData(const T* tag, const char* uri, ITagStor
         }
 
         this->SetTagValue("album", tag->album(), target);
-        this->SetSlashSeparatedValues("artist", tag->artist(), target);
+        this->SetTagValue("artist", tag->artist(), target);
         this->SetTagValue("genre", tag->genre(), target);
         this->SetTagValue("comment", tag->comment(), target);
 
@@ -638,7 +638,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
             this->SetTagValues("org.writer", allTags["TOLY"], track);
             this->SetSlashSeparatedValues("publisher", allTags["TPUB"], track);
             this->SetTagValues("mood", allTags["TMOO"], track);
-            this->SetSlashSeparatedValues("org.artist", allTags["TOPE"], track);
+            this->SetTagValues("org.artist", allTags["TOPE"], track);
             this->SetTagValues("language", allTags["TLAN"], track);
             this->SetTagValues("lyrics", allTags["USLT"], track);
             this->SetTagValues("disc", allTags["TPOS"], track);
@@ -696,8 +696,8 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
 
             /* artists */
 
-            this->SetSlashSeparatedValues("artist", allTags["TPE1"], track);
-            this->SetSlashSeparatedValues("album_artist", allTags["TPE2"], track);
+            this->SetTagValues("artist", allTags["TPE1"], track);
+            this->SetTagValues("album_artist", allTags["TPE2"], track);
             this->SetSlashSeparatedValues("conductor", allTags["TPE3"], track);
             this->SetSlashSeparatedValues("interpreted", allTags["TPE4"], track);
 
@@ -707,7 +707,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
 
             TagLib::ID3v2::FrameList::Iterator it = comments.begin();
             for (; it != comments.end(); ++it) {
-                TagLib::ID3v2::CommentsFrame *comment
+                const TagLib::ID3v2::CommentsFrame *comment
                     = dynamic_cast<TagLib::ID3v2::CommentsFrame*> (*it);
 
                 TagLib::String temp = comment->description();
@@ -738,7 +738,7 @@ bool TaglibMetadataReader::ReadID3V2(TagLib::ID3v2::Tag *id3v2, ITagStore *track
                         static_cast<TagLib::ID3v2::AttachedPictureFrame*>(pictures.front());
 
                     TagLib::ByteVector pictureData = picture->picture();
-                    long long size = pictureData.size();
+                    const long long size = pictureData.size();
 
                     if (size > 32) {    /* noticed that some id3tags have like a 4-8 byte size with no thumbnail */
                         track->SetThumbnail(pictureData.data(), size);
@@ -800,7 +800,7 @@ void TaglibMetadataReader::SetTagValues(
 void TaglibMetadataReader::SetSlashSeparatedValues(
     const char* key, TagLib::String tagString, ITagStore *track)
 {
-    if(!tagString.isEmpty()) {
+    if (!tagString.isEmpty()) {
         std::string value(tagString.to8Bit(true));
         std::vector<std::string> splitValues = str::split(value, "/");
         std::vector<std::string>::iterator it = splitValues.begin();
@@ -815,7 +815,7 @@ void TaglibMetadataReader::SetSlashSeparatedValues(
     const TagLib::ID3v2::FrameList &frame,
     ITagStore *track)
 {
-    if(!frame.isEmpty()) {
+    if (!frame.isEmpty()) {
         TagLib::ID3v2::FrameList::ConstIterator value = frame.begin();
         for ( ; value != frame.end(); ++value) {
             TagLib::String tagString = (*value)->toString();
