@@ -13,8 +13,8 @@
   to spot check configuration issues.
 * added support for the `piggy` debug tool to help with log collection and
   remote app monitoring. disabled by default.
-* updated Linux/macOS dependencies for standalone builds: boost 1.79.0,
-  openssl 1.1.1n, curl 7.82.0, ffmpeg 5.0.1, libopenmtp 0.6.2
+* updated Linux/macOS dependencies for standalone *nix builds: boost 1.79.0,
+  openssl 3.0.2, curl 7.83.0, ffmpeg 5.0.1, libopenmtp 0.6.2
 
 --------------------------------------------------------------------------------
 

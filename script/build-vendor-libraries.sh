@@ -29,8 +29,8 @@ ARCH=$(uname -m)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 BOOST_VERSION_URL_PATH="1.79.0"
 BOOST_VERSION="1_79_0"
-OPENSSL_VERSION="1.1.1n"
-CURL_VERSION="7.82.0"
+OPENSSL_VERSION="3.0.2"
+CURL_VERSION="7.83.0"
 LIBMICROHTTPD_VERSION="0.9.75"
 FFMPEG_VERSION="5.0.1"
 LAME_VERSION="3.100"
@@ -138,6 +138,11 @@ function build_openssl() {
     make
     make install_sw
     cd ..
+    if [ -d "bin/lib64" ]; then
+        mv bin/lib64/pkgconfig/* bin/lib/pkgconfig/
+        mv bin/lib64/* bin/lib/
+        rm -rf bin/lib64
+    fi
 }
 
 #
