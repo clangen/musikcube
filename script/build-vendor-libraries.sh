@@ -59,7 +59,7 @@ if [[ $CROSSCOMPILE == "rpi" ]]; then
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
     BOOST_TOOLSET="toolset=gcc-arm"
-    PKG_CONFIG_PATH="${OUTDIR}:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+    PKG_CONFIG_PATH="${OUTDIR}:${LIBDIR}:${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
     printf "  BOOST_TOOLSET=${BOOST_TOOLSET}\n  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
@@ -142,6 +142,9 @@ function build_openssl() {
         mv bin/lib64/pkgconfig/* bin/lib/pkgconfig/
         mv bin/lib64/* bin/lib/
         rm -rf bin/lib64
+        perl -i.bak -0pe "s|lib64|lib|" bin/lib/pkgconfig/libcrypto.pc
+        perl -i.bak -0pe "s|lib64|lib|" bin/lib/pkgconfig/libssl.pc
+        perl -i.bak -0pe "s|lib64|lib|" bin/lib/pkgconfig/open.pc
     fi
 }
 
