@@ -50,6 +50,7 @@ fi
 
 # update cross-compile vars, if specified.
 if [[ $CROSSCOMPILE == "rpi" ]]; then
+    OPENSSL_VERSION="1.1.1n"
     ARM_ROOT="/build/rpi/sysroot"
     export CPPFLAGS="-I${ARM_ROOT}/usr/include"
     export CXXFLAGS="$CXXFLAGS -I${ARM_ROOT}/usr/include"
@@ -59,7 +60,7 @@ if [[ $CROSSCOMPILE == "rpi" ]]; then
     GENERIC_CONFIGURE_FLAGS="--build=x86_64-pc-linux-gnu --host=arm-linux-gnueabihf --with-sysroot=${ARM_ROOT}"
     FFMPEG_CONFIGURE_FLAGS="--arch=${ARCH} --target-os=linux --cross-prefix=arm-linux-gnueabihf-"
     BOOST_TOOLSET="toolset=gcc-arm"
-    PKG_CONFIG_PATH="${OUTDIR}:${LIBDIR}:${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
+    PKG_CONFIG_PATH="${LIBDIR}/pkgconfig/:${ARM_ROOT}/usr/lib/arm-linux-gnueabihf/pkgconfig/"
     printf "\n\ndetected CROSSCOMPILE=${CROSSCOMPILE}\n"
     printf "  CFLAGS=${CFLAGS}\n  CXXFLAGS=${CXXFLAGS}\n  LDFLAGS=${LDFLAGS}\n  GENERIC_CONFIGURE_FLAGS=${GENERIC_CONFIGURE_FLAGS}\n"
     printf "  BOOST_TOOLSET=${BOOST_TOOLSET}\n  OPENSSL_TYPE=${OPENSSL_TYPE}\n  OPENSSL_CROSSCOMPILE_PREFIX=${OPENSSL_CROSSCOMPILE_PREFIX}\n"
