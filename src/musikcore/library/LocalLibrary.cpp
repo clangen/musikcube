@@ -52,7 +52,7 @@ using namespace musik::core::library;
 using namespace musik::core::runtime;
 using namespace std::chrono;
 
-#define DATABASE_VERSION 9
+#define DATABASE_VERSION 10
 #define VERBOSE_LOGGING 0
 #define MESSAGE_QUERY_COMPLETED 5000
 
@@ -405,6 +405,10 @@ static void upgradeV8ToV9(db::Connection& db) {
     db.Execute("ALTER TABLE tracks ADD COLUMN date_updated REAL DEFAULT null");
 }
 
+static void upgradeV9ToV10(db::Connection& db) {
+    db.Execute("UPDATE tracks set disc=1 where disc is null or disc like \"\"");
+}
+
 static void setVersion(db::Connection& db, int version) {
     db.Execute("DELETE FROM version");
     db::Statement stmt("INSERT INTO version VALUES(?)", db);
@@ -648,6 +652,10 @@ void LocalLibrary::CreateDatabase(db::Connection &db){
 
     if (lastVersion >= 1 && lastVersion < 9) {
         upgradeV8ToV9(db);
+    }
+
+    if (lastVersion >= 1 && lastVersion < 10) {
+        upgradeV9ToV10(db);
     }
 
     /* ensure our version is set correctly */

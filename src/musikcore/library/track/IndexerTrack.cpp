@@ -298,6 +298,15 @@ bool IndexerTrack::NeedsToBeIndexed(
     return true;
 }
 
+static int stringToInt(const std::string& str, const int defaultValue) {
+    try {
+        return std::stoi(str, 0, 10);
+    }
+    catch (...) {
+        return defaultValue;
+    }
+}
+
 static int64_t writeToTracksTable(
     db::Connection &dbConnection,
     IndexerTrack& track)
@@ -344,8 +353,8 @@ static int64_t writeToTracksTable(
 
     db::Statement stmt(query.c_str(), dbConnection);
 
-    stmt.BindText(0, track.GetString("track"));
-    stmt.BindText(1, track.GetString("disc"));
+    stmt.BindInt32(0, stringToInt(track.GetString("track"), 1));
+    stmt.BindInt32(1, stringToInt(track.GetString("disc"), 1));
     stmt.BindText(2, track.GetString("bpm"));
     stmt.BindInt32(3, track.GetInt32("duration"));
     stmt.BindInt32(4, track.GetInt32("filesize"));
