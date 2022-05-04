@@ -4,6 +4,8 @@
   options
 * added the ability to click transport metadata to display a context menu with
   a list of actions for the current track/artist/album
+* fixed a bug that could cause tracks to sort incorrectly if some tracks in
+  the album have a disc number specified and others don't.
 * added the ability to use `libelogind` or `basu` instead of `libsystemd` for
   the `mpris` plugin (@robertgzr)
 * some warning cleanups when using `wsprintw` (@trofi)
@@ -13,6 +15,7 @@
   to spot check configuration issues.
 * added support for the `piggy` debug tool to help with log collection and
   remote app monitoring. disabled by default.
+* updated Windows build to use Visual Studio 2022
 * updated Linux/macOS dependencies for standalone *nix builds: boost 1.79.0,
   openssl 3.0.2 (1.1.1n for rpi), curl 7.83.0, ffmpeg 5.0.1, libopenmtp 0.6.2
 
