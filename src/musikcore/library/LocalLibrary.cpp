@@ -53,7 +53,7 @@ using namespace musik::core::runtime;
 using namespace std::chrono;
 
 #define DATABASE_VERSION 10
-#define VERBOSE_LOGGING 0
+#define VERBOSE_LOGGING 1
 #define MESSAGE_QUERY_COMPLETED 5000
 
 class LocalResourceLocator: public ILibrary::IResourceLocator {
