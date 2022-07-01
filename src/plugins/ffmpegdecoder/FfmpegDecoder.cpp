@@ -36,6 +36,7 @@
 #include <musikcore/sdk/IDebug.h>
 #include <algorithm>
 #include <string>
+#include <unordered_set>
 
 #ifdef WIN32
 #define DLLEXPORT __declspec(dllexport)
@@ -51,6 +52,8 @@ using namespace musik::core::sdk;
 
 static const char* TAG = "ffmpegdecoder";
 static IDebug* debug = nullptr;
+
+static std::unordered_set<AVCodecID> ignoreInvalidPacketCodecs = { AV_CODEC_ID_APE };
 
 #define RESOLVE_SAMPLE_RATE() this->preferredSampleRate > 0 ? this->preferredSampleRate : this->rate
 
@@ -359,17 +362,20 @@ bool FfmpegDecoder::Open(musik::core::sdk::IDataStream *stream) {
                                 this->codecContext->channel_layout =
                                     av_get_default_channel_layout(this->codecContext->channels);
                             }
+
+                            this->preferredFrameSize = this->codecContext->frame_size
+                                ? this->codecContext->frame_size
+                                : DEFAULT_FRAME_SIZE;
+
+                            this->disableInvalidPacketDetection =
+                                ignoreInvalidPacketCodecs.find(this->codecContext->codec_id) !=
+                                ignoreInvalidPacketCodecs.end();
                         }
 
                         auto stream = this->formatContext->streams[this->streamId];
                         this->rate = stream->codecpar->sample_rate;
                         this->channels = stream->codecpar->channels;
                         this->duration = (double) this->formatContext->duration / (double) AV_TIME_BASE;
-
-                        this->preferredFrameSize = this->codecContext->frame_size
-                            ? this->codecContext->frame_size
-                            : DEFAULT_FRAME_SIZE;
-
                         this->outputFifo = av_audio_fifo_alloc(AV_SAMPLE_FMT_FLT, channels, 1);
 
                         if (!this->outputFifo) {
@@ -506,8 +512,15 @@ bool FfmpegDecoder::RefillFifoQueue() {
             /* note that sometimes decoders seem to return packets that are
             invalid. this can be observed when playing wav files that have
             album art metadata, but may happen in other cases. if we detect
-            an invalid packet, simply discard it and get the next one */
-            if (packet.pos == -1 && packet.duration <= 1) {
+            an invalid packet, simply discard it and get the next one. to make
+            things worse, some decoders (e.g. APE) always return packets in this
+            state. we're missing something, somewhere during codec init probably,
+            but after hours of messing around I can't figure it out. if you
+            are reading this comment and have any ideas, please let me know. */
+            if (packet.pos == -1 &&
+                packet.duration <= 1 &&
+                !this->disableInvalidPacketDetection)
+            {
                 logError("invalid packet detected, discarding.");
             }
             else {
