@@ -8,6 +8,7 @@
   the album have a disc number specified and others don't.
 * added the ability to use `libelogind` or `basu` instead of `libsystemd` for
   the `mpris` plugin (@robertgzr)
+* fixed ape decoding.
 * some warning cleanups when using `wsprintw` (@trofi)
 * further improvements to build system to remove OS-specific conditionals in
   favor of library detection
