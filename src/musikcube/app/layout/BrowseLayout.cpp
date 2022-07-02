@@ -67,9 +67,20 @@ using namespace cursespp;
 namespace keys = musik::cube::prefs::keys;
 namespace components = musik::core::prefs::components;
 
-static int kMaxCategoryWidth = 40;
-static int kMinListTitleHeight = 26;
+constexpr int kMaxCategoryWidth = 40;
+constexpr int kMinListTitleHeight = 26;
 constexpr int kRequeryIntervalMs = 300;
+
+#if 1
+constexpr auto kFilterStyle = TextInput::StyleBox;
+constexpr int kFilterHeight = 3;
+constexpr int kFilterPadding = 0;
+#else
+constexpr auto kFilterStyle = TextInput::StyleLine;
+constexpr int kFilterHeight = 1;
+constexpr int kFilterPadding = 1;
+#endif
+
 
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
@@ -138,13 +149,17 @@ void BrowseLayout::OnLayout() {
 
     const int categoryWidth = std::min(kMaxCategoryWidth, cx / 4);
 
-    const int categoryListBottomMargin = showFilter ? 1 : 0;
+    const int categoryListBottomMargin = showFilter ? kFilterHeight : 0;
     this->categoryList->MoveAndResize(x, y, categoryWidth, cy - categoryListBottomMargin);
 
     if (showFilter) {
         bool refocusFilter = !this->categoryListFilter->IsVisible();
         this->categoryListFilter->Show();
-        this->categoryListFilter->MoveAndResize(x + 1, cy - 1, categoryWidth - 2, 1);
+        this->categoryListFilter->MoveAndResize(
+            x + kFilterPadding,
+            cy - kFilterHeight,
+            categoryWidth - (2 * kFilterPadding),
+            kFilterHeight);
         if (refocusFilter) {
             /* needs to be done during a subsequent tick in the event loop, as the
             widget isn't yet visible so can't receive focus. */
@@ -178,7 +193,7 @@ void BrowseLayout::InitializeWindows() {
     this->categoryList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
-    this->categoryListFilter = std::make_shared<TextInput>(TextInput::StyleLine);
+    this->categoryListFilter = std::make_shared<TextInput>(kFilterStyle);
     this->categoryListFilter->TextChanged.connect(this, &BrowseLayout::OnCategoryFilterChanged);
     this->categoryListFilter->EnterPressed.connect(this, &BrowseLayout::OnCategoryFilterEnterPressed);
     this->categoryListFilter->SetHint(_TSTR("search_filter_hint"));
