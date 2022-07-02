@@ -129,6 +129,7 @@ BrowseLayout::~BrowseLayout() {
 }
 
 void BrowseLayout::OnLayout() {
+    const bool showFilter = this->showCategoryListFilter;
     const int cx = this->GetWidth();
     const int x = 0;
     int cy = this->GetHeight();
@@ -136,7 +137,22 @@ void BrowseLayout::OnLayout() {
 
     const int categoryWidth = std::min(kMaxCategoryWidth, cx / 4);
 
-    this->categoryList->MoveAndResize(x, y, categoryWidth, cy);
+    const int categoryListBottomMargin = showFilter ? 1 : 0;
+    this->categoryList->MoveAndResize(x, y, categoryWidth, cy - categoryListBottomMargin);
+
+    if (showFilter) {
+        bool refocusFilter = !this->categoryListFilter->IsVisible();
+        this->categoryListFilter->Show();
+        this->categoryListFilter->MoveAndResize(x + 1, cy - 1, categoryWidth - 2, 1);
+        if (refocusFilter) {
+            /* needs to be done during a subsequent tick in the event loop, as the
+            widget isn't yet visible so can't receive focus. */
+            this->Post(cube::message::FocusBrowseFilter);
+        }
+    }
+    else {
+        this->categoryListFilter->Hide();
+    }
 
     if (this->playlistModified) {
         this->modifiedLabel->Show();
@@ -151,13 +167,17 @@ void BrowseLayout::OnLayout() {
     this->trackList->MoveAndResize(x + categoryWidth, y, cx - categoryWidth, cy);
 
     this->categoryList->SetFocusOrder(0);
-    this->trackList->SetFocusOrder(1);
+	this->categoryListFilter->SetFocusOrder(1);
+    this->trackList->SetFocusOrder(2);
 }
 
 void BrowseLayout::InitializeWindows() {
     this->categoryList = std::make_shared<CategoryListView>(this->playback, this->library, DEFAULT_CATEGORY);
     this->categoryList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
+
+    this->categoryListFilter = std::make_shared<TextInput>(TextInput::StyleLine);
+    this->categoryListFilter->SetHint("filter");
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
     this->trackList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
@@ -169,6 +189,7 @@ void BrowseLayout::InitializeWindows() {
     this->modifiedLabel->Hide();
 
     this->AddWindow(this->categoryList);
+    this->AddWindow(this->categoryListFilter);
     this->AddWindow(this->trackList);
     this->AddWindow(this->modifiedLabel);
 
@@ -222,6 +243,11 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
                 const auto lastId = this->categoryList->GetSelectedId();
                 this->categoryList->Requery(this->categoryList->GetFilter(), lastId);
             }
+            break;
+        }
+
+        case cube::message::FocusBrowseFilter: {
+            this->SetFocus(this->categoryListFilter);
             break;
         }
 
@@ -332,7 +358,16 @@ void BrowseLayout::ShowTrackSortOverlay() {
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {
-    if (key == "KEY_ENTER") {
+    if (key == "^[" && this->showCategoryListFilter) {
+        if (this->GetFocus() == this->categoryList ||
+            this->GetFocus() == this->categoryListFilter)
+        {
+            this->showCategoryListFilter = false;
+            this->Layout();
+            return true;
+        }
+    }
+    else if (key == "KEY_ENTER") {
         /* if the tracklist is NOT focused (i.e. the focus is on a
         category window), start playback from the top. */
         if (this->GetFocus() != this->trackList) {
@@ -343,6 +378,15 @@ bool BrowseLayout::KeyPress(const std::string& key) {
             }
         }
     }
+	else if (Hotkeys::Is(Hotkeys::BrowseCategoryFilter, key)) {
+        if (this->GetFocus() == this->categoryList ||
+            this->GetFocus() == this->categoryListFilter)
+        {
+            this->showCategoryListFilter = !this->showCategoryListFilter;
+            this->Layout();
+            return true;
+        }
+	}
     else if (Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key)) {
         this->ShowTrackSortOverlay();
         return true;

@@ -103,6 +103,9 @@ namespace musik {
                     PlayQueueHotSwap,
                     PlayQueueClear,
 
+                    /* browse */
+                    BrowseCategoryFilter,
+
                     /* browse -> playlists */
                     BrowsePlaylistsNew,
                     BrowsePlaylistsSave,

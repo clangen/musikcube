@@ -69,6 +69,7 @@ namespace musik {
             static const int UpdateEqualizer        = First + 18;
             static const int DebugLog               = First + 19;
             static const int LyricsLoaded           = First + 20;
+            static const int FocusBrowseFilter      = First + 21;
 
         }
     }
