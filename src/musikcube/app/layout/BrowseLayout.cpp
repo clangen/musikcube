@@ -181,7 +181,7 @@ void BrowseLayout::InitializeWindows() {
     this->categoryListFilter = std::make_shared<TextInput>(TextInput::StyleLine);
     this->categoryListFilter->TextChanged.connect(this, &BrowseLayout::OnCategoryFilterChanged);
     this->categoryListFilter->EnterPressed.connect(this, &BrowseLayout::OnCategoryFilterEnterPressed);
-    this->categoryListFilter->SetHint("filter");
+    this->categoryListFilter->SetHint(_TSTR("search_filter_hint"));
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
     this->trackList->MouseEvent.connect(this, &BrowseLayout::OnWindowMouseEvent);
