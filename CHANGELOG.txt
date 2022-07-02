@@ -4,6 +4,8 @@
   options
 * added the ability to click transport metadata to display a context menu with
   a list of actions for the current track/artist/album
+* added the ability to search/filter in browse view; focus the category list
+  and press `Shift+F`.
 * fixed a bug that could cause tracks to sort incorrectly if some tracks in
   the album have a disc number specified and others don't.
 * added the ability to use `libelogind` or `basu` instead of `libsystemd` for

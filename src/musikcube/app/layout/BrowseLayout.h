@@ -36,6 +36,7 @@
 
 #include <cursespp/LayoutBase.h>
 #include <cursespp/TextLabel.h>
+#include <cursespp/TextInput.h>
 
 #include <app/window/CategoryListView.h>
 #include <app/window/TrackListView.h>
@@ -93,6 +94,11 @@ namespace musik {
                 void OnCategoryViewInvalidated(
                     cursespp::ListWindow *view, size_t selectedIndex);
 
+                void OnCategoryFilterChanged(
+                    cursespp::TextInput* sender, std::string value);
+
+                void OnCategoryFilterEnterPressed(cursespp::TextInput* sender);
+
                 void OnWindowMouseEvent(
                     cursespp::Window* window, const cursespp::IMouseHandler::Event* mouseEvent);
 
@@ -104,11 +110,14 @@ namespace musik {
                 void ShowModifiedLabel(bool show);
                 void ShowTrackSortOverlay();
 
-                bool playlistModified;
+                bool playlistModified{ false };
+                bool showCategoryListFilter{ false };
+                std::string currentFilter;
                 musik::core::audio::PlaybackService& playback;
                 musik::core::ILibraryPtr library;
                 std::shared_ptr<musik::core::Preferences> prefs;
                 std::shared_ptr<CategoryListView> categoryList;
+                std::shared_ptr<cursespp::TextInput> categoryListFilter;
                 std::shared_ptr<TrackListView> trackList;
                 std::shared_ptr<cursespp::TextLabel> modifiedLabel;
                 HeaderClickHandler categoryListHeaderClickHandler;
