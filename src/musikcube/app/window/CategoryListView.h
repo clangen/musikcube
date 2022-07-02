@@ -82,7 +82,7 @@ namespace musik {
 
                 void Requery(
                     const std::string& filter,
-                    const int64_t selectAfterQuery);
+                    const int64_t selectAfterQuery = -1LL);
 
                 void Requery(const int64_t selectAfterQuery);
 
@@ -107,7 +107,6 @@ namespace musik {
 
                 void OnQueryCompleted(musik::core::db::IQuery* query);
                 void ShowContextMenu();
-
                 class Adapter : public cursespp::ScrollAdapterBase {
                 public:
                     Adapter(CategoryListView &parent);

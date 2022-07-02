@@ -189,7 +189,7 @@ static std::unordered_map<Id, std::string, EnumHasher> ID_TO_DEFAULT = {
     { Id::PlayQueueHotSwap, "M-a" },
     { Id::PlayQueueClear, "X" },
 
-    { Id::BrowseCategoryFilter, "M-f" },
+    { Id::BrowseCategoryFilter, "F" },
 
     { Id::BrowsePlaylistsSave, "M-s" },
     { Id::BrowsePlaylistsNew, "M-n" },

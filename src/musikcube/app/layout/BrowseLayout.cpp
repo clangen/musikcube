@@ -69,6 +69,7 @@ namespace components = musik::core::prefs::components;
 
 static int kMaxCategoryWidth = 40;
 static int kMinListTitleHeight = 26;
+constexpr int kRequeryIntervalMs = 300;
 
 #define DEFAULT_CATEGORY constants::Track::ARTIST
 #define DEFAULT_CATEGORY_NAME FIELD_TO_TITLE[DEFAULT_CATEGORY]
@@ -151,6 +152,7 @@ void BrowseLayout::OnLayout() {
         }
     }
     else {
+        this->categoryListFilter->SetText("");
         this->categoryListFilter->Hide();
     }
 
@@ -177,6 +179,8 @@ void BrowseLayout::InitializeWindows() {
     this->categoryList->SetFrameTitle(_TSTR(DEFAULT_CATEGORY_NAME));
 
     this->categoryListFilter = std::make_shared<TextInput>(TextInput::StyleLine);
+    this->categoryListFilter->TextChanged.connect(this, &BrowseLayout::OnCategoryFilterChanged);
+    this->categoryListFilter->EnterPressed.connect(this, &BrowseLayout::OnCategoryFilterEnterPressed);
     this->categoryListFilter->SetHint("filter");
 
     this->trackList = std::make_shared<TrackListView>(this->playback, this->library);
@@ -251,6 +255,11 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
             break;
         }
 
+        case cube::message::RequeryCategoryList: {
+            this->categoryList->Requery(this->currentFilter);
+            break;
+        }
+
         default:
             break;
     }
@@ -310,6 +319,15 @@ void BrowseLayout::OnWindowMouseEvent(Window* window, const IMouseHandler::Event
             this->ShowTrackSortOverlay();
         }
     }
+}
+
+void BrowseLayout::OnCategoryFilterChanged(TextInput* sender, std::string value) {
+    this->currentFilter = value;
+    this->Debounce(cube::message::RequeryCategoryList, 0, 0, kRequeryIntervalMs);
+}
+
+void BrowseLayout::OnCategoryFilterEnterPressed(cursespp::TextInput* sender) {
+    this->SetFocus(this->categoryList);
 }
 
 void BrowseLayout::OnCategoryViewSelectionChanged(
@@ -382,8 +400,15 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         if (this->GetFocus() == this->categoryList ||
             this->GetFocus() == this->categoryListFilter)
         {
-            this->showCategoryListFilter = !this->showCategoryListFilter;
-            this->Layout();
+            /* if the filter is visible but the list is focused, focus the filter */
+            if (this->GetFocus() == this->categoryList && this->showCategoryListFilter) {
+                this->SetFocus(this->categoryListFilter);
+            }
+            /* otherwise, toggle the filter visibility */
+            else {
+                this->showCategoryListFilter = !this->showCategoryListFilter;
+                this->Layout();
+            }
             return true;
         }
 	}

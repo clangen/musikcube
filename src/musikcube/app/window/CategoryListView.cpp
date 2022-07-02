@@ -140,7 +140,7 @@ void CategoryListView::Requery(const int64_t selectAfterQuery) {
 }
 
 void CategoryListView::Requery() {
-    this->RequeryWithField(this->matchType, this->fieldName, "", -1LL);
+    this->RequeryWithField(this->matchType, this->fieldName, this->filter, -1LL);
 }
 
 void CategoryListView::Reset() {
@@ -188,7 +188,7 @@ void CategoryListView::SetFieldName(const std::string& fieldName) {
             this->metadata.reset();
         }
 
-        this->Requery(this->matchType);
+        this->Requery(this->matchType, this->filter);
     }
 }
 
