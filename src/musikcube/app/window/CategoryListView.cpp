@@ -266,6 +266,9 @@ void CategoryListView::OnQueryCompleted(IQuery* query) {
         int selectedIndex = -1;
         if (this->selectAfterQuery != -1LL) {
             selectedIndex = active->GetIndexOf(this->selectAfterQuery);
+            if (selectedIndex == -1) {
+                selectedIndex = 0;
+            }
         }
 
         if (this->activeQuery &&

@@ -153,7 +153,7 @@ void BrowseLayout::OnLayout() {
     this->categoryList->MoveAndResize(x, y, categoryWidth, cy - categoryListBottomMargin);
 
     if (showFilter) {
-        bool refocusFilter = !this->categoryListFilter->IsVisible();
+        const bool refocusFilter = !this->categoryListFilter->IsVisible();
         this->categoryListFilter->Show();
         this->categoryListFilter->MoveAndResize(
             x + kFilterPadding,
@@ -227,6 +227,13 @@ void BrowseLayout::LoadLastSession() {
         this->SwitchCategory(field);
         this->ScrollTo(field, id);
     }
+    this->showCategoryListFilter = session->GetBool(keys::LastBrowseFilterVisible, false);
+    if (this->showCategoryListFilter) {
+        const std::string filter = session->GetString(keys::LastBrowseFilter);
+        if (filter != this->currentFilter) {
+            this->categoryListFilter->SetText(filter);
+        }
+    }
 }
 
 void BrowseLayout::SaveSession() {
@@ -235,6 +242,8 @@ void BrowseLayout::SaveSession() {
     const double id = static_cast<double>(this->categoryList->GetSelectedId());
     session->SetString(keys::LastBrowseCategoryType, type.c_str());
     session->SetDouble(keys::LastBrowseCategoryId, id);
+    session->SetBool(keys::LastBrowseFilterVisible, this->showCategoryListFilter);
+    session->SetString(keys::LastBrowseFilter, this->currentFilter.c_str());
 }
 
 void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
@@ -271,7 +280,7 @@ void BrowseLayout::ProcessMessage(musik::core::runtime::IMessage &message) {
         }
 
         case cube::message::RequeryCategoryList: {
-            this->categoryList->Requery(this->currentFilter);
+            this->categoryList->Requery(this->currentFilter, 0);
             break;
         }
 
@@ -391,16 +400,7 @@ void BrowseLayout::ShowTrackSortOverlay() {
 }
 
 bool BrowseLayout::KeyPress(const std::string& key) {
-    if (key == "^[" && this->showCategoryListFilter) {
-        if (this->GetFocus() == this->categoryList ||
-            this->GetFocus() == this->categoryListFilter)
-        {
-            this->showCategoryListFilter = false;
-            this->Layout();
-            return true;
-        }
-    }
-    else if (key == "KEY_ENTER") {
+    if (key == "KEY_ENTER") {
         /* if the tracklist is NOT focused (i.e. the focus is on a
         category window), start playback from the top. */
         if (this->GetFocus() != this->trackList) {
@@ -412,21 +412,10 @@ bool BrowseLayout::KeyPress(const std::string& key) {
         }
     }
 	else if (Hotkeys::Is(Hotkeys::BrowseCategoryFilter, key)) {
-        if (this->GetFocus() == this->categoryList ||
-            this->GetFocus() == this->categoryListFilter)
-        {
-            /* if the filter is visible but the list is focused, focus the filter */
-            if (this->GetFocus() == this->categoryList && this->showCategoryListFilter) {
-                this->SetFocus(this->categoryListFilter);
-            }
-            /* otherwise, toggle the filter visibility */
-            else {
-                this->showCategoryListFilter = !this->showCategoryListFilter;
-                this->Layout();
-            }
-            return true;
-        }
-	}
+        this->showCategoryListFilter = !this->showCategoryListFilter;
+        this->Layout();
+        return true;
+    }
     else if (Hotkeys::Is(Hotkeys::TrackListChangeSortOrder, key)) {
         this->ShowTrackSortOverlay();
         return true;

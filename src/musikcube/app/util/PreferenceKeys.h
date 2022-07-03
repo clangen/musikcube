@@ -52,6 +52,8 @@ namespace musik { namespace cube { namespace prefs {
         extern const std::string LastBrowseCategoryType;
         extern const std::string LastBrowseCategoryId;
         extern const std::string LastBrowseDirectoryRoot;
+        extern const std::string LastBrowseFilterVisible;
+        extern const std::string LastBrowseFilter;
         extern const std::string LastCategoryFilter;
         extern const std::string LastCategoryFilterMatchType;
         extern const std::string LastTrackFilter;
