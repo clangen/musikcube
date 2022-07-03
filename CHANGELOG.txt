@@ -1,4 +1,4 @@
-0.97.1
+0.98
 
 * added the ability to click the browse and tracklist headers to change filter
   options
