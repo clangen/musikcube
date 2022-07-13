@@ -774,8 +774,9 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     const std::string replayGain = replayGainEnabled  ? "rg" : "";
 
+    int const escapedPercentSignWidth = (muted ? 0 : 1); /* 1 for escaped percent sign when not muted */
     int const bottomRowControlsWidth =
-        displayCache.Columns(volume) - (muted ? 0 : 1) + /* -1 for escaped percent sign when not muted */
+        displayCache.Columns(volume) - escapedPercentSignWidth +
         (replayGainEnabled ? (narrow_cast<int>(u8cols(replayGain)) + 4) : 0) +  /* [] brackets */
         narrow_cast<int>(u8cols(currentTime)) + 1 + /* +1 for space padding */
         /* timer track with thumb */
@@ -784,7 +785,8 @@ void TransportWindow::Update(TimeMode timeMode) {
 
     int const timerTrackWidth =
         this->GetContentWidth() -
-        bottomRowControlsWidth - 1; /* this  `- 1` is a hack i don't know why we need it please send help */
+        bottomRowControlsWidth -
+        escapedPercentSignWidth;
 
     thumbOffset = 0;
 
