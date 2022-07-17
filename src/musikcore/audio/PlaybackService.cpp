@@ -936,9 +936,6 @@ void PlaybackService::OnStreamEvent(StreamState eventType, std::string uri) {
 
 void PlaybackService::OnPlaybackEvent(PlaybackState eventType) {
     POST(this, MESSAGE_PLAYBACK_EVENT, (int64_t) eventType, 0);
-    if (eventType == PlaybackState::Paused || eventType == PlaybackState::Playing) {
-        this->PlaybackStateChanged(static_cast<PlaybackState>(eventType));
-    }
 }
 
 void PlaybackService::OnVolumeChanged() {
