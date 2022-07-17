@@ -58,7 +58,6 @@ namespace musik { namespace core { namespace audio {
             /* our unique events */
             sigslot::signal2<size_t, musik::core::TrackPtr> TrackChanged;
             sigslot::signal0<> ModeChanged;
-            sigslot::signal0<> PlayPauseChanged;
             sigslot::signal1<bool> Shuffled;
             sigslot::signal0<> QueueEdited;
 

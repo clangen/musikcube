@@ -391,8 +391,8 @@ TransportWindow::TransportWindow(
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
+    this->playback.PlaybackStateChanged.connect(this, &TransportWindow::OnPlaybackStateChanged);
     this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
-    this->playback.PlayPauseChanged.connect(this, &TransportWindow::OnPlayPauseChanged);
     this->playback.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
     this->playback.StreamStateChanged.connect(this, &TransportWindow::OnPlaybackStreamStateChanged);
@@ -595,7 +595,7 @@ void TransportWindow::OnTransportVolumeChanged() {
     DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
-void TransportWindow::OnPlayPauseChanged() {
+void TransportWindow::OnPlaybackStateChanged(PlaybackState state) {
     DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 

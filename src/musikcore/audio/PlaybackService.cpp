@@ -787,7 +787,6 @@ void PlaybackService::PauseOrResume() {
     else if (state == PlaybackState::Playing) {
         transport->Pause();
     }
-    this->PlayPauseChanged();
 }
 
 bool PlaybackService::IsMuted() {
@@ -938,7 +937,7 @@ void PlaybackService::OnStreamEvent(StreamState eventType, std::string uri) {
 void PlaybackService::OnPlaybackEvent(PlaybackState eventType) {
     POST(this, MESSAGE_PLAYBACK_EVENT, (int64_t) eventType, 0);
     if (eventType == PlaybackState::Paused || eventType == PlaybackState::Playing) {
-        this->PlayPauseChanged();
+        this->PlaybackStateChanged(static_cast<PlaybackState>(eventType));
     }
 }
 
