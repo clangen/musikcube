@@ -140,6 +140,7 @@ void tokenize(const std::string& format, TokenList& tokens) {
 static struct StringCache {
     std::string PLAYING_FORMAT;
     std::string PLAYING;
+    std::string PAUSED;
     std::string BUFFERING;
     std::string STOPPED;
     std::string EMPTY_SONG;
@@ -155,6 +156,7 @@ static struct StringCache {
     void Initialize() {
         PLAYING_FORMAT = _TSTR("transport_playing_format");
         PLAYING = _TSTR("transport_playing_format_playing");
+        PAUSED = _TSTR("transport_playing_format_paused");
         BUFFERING = _TSTR("transport_playing_format_buffering");
         STOPPED = _TSTR("transport_stopped");
         EMPTY_SONG = _TSTR("transport_empty_song");
@@ -307,7 +309,9 @@ size_t TransportWindow::WritePlayingFormat(WINDOW *w, size_t width) {
                     value = Strings.BUFFERING;
                 }
                 else {
-                    value = Strings.PLAYING;
+                    auto const state = transport.GetPlaybackState();
+                    bool const paused = (state != PlaybackState::Playing);
+                    value = paused ? Strings.PAUSED : Strings.PLAYING;
                 }
                 cols = u8len(value);
             }
@@ -387,6 +391,7 @@ TransportWindow::TransportWindow(
     this->SetFrameVisible(false);
     this->playback.TrackChanged.connect(this, &TransportWindow::OnPlaybackServiceTrackChanged);
     this->playback.ModeChanged.connect(this, &TransportWindow::OnPlaybackModeChanged);
+    this->playback.PlaybackStateChanged.connect(this, &TransportWindow::OnPlaybackStateChanged);
     this->playback.Shuffled.connect(this, &TransportWindow::OnPlaybackShuffled);
     this->playback.VolumeChanged.connect(this, &TransportWindow::OnTransportVolumeChanged);
     this->playback.TimeChanged.connect(this, &TransportWindow::OnTransportTimeChanged);
@@ -587,6 +592,10 @@ void TransportWindow::OnPlaybackModeChanged() {
 }
 
 void TransportWindow::OnTransportVolumeChanged() {
+    DEBOUNCE_REFRESH(TimeMode::Sync, 0);
+}
+
+void TransportWindow::OnPlaybackStateChanged(PlaybackState state) {
     DEBOUNCE_REFRESH(TimeMode::Sync, 0);
 }
 
