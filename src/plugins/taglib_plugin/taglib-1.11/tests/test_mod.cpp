@@ -47,7 +47,7 @@ static const String newComment(
   "This line is ok.");
 
 static const String commentAfter(
-  "This line will be trun\n"
+  "This line will be turn\n"
   "This line is ok.\n"
   "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 

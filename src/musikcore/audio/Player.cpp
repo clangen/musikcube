@@ -384,7 +384,7 @@ void musik::core::audio::playerThreadLoop(Player* player) {
                     specific callback time because its internal buffer is full. */
                     if ((int) playResult >= 0) {
                         /* if there is no visualizer active, we can introduce an
-                        artifical delay of 25% of the buffer size to ease CPU load */
+                        artificial delay of 25% of the buffer size to ease CPU load */
                         auto visualizer = vis::SelectedVisualizer();
                         if (!visualizer || !visualizer->Visible()) {
                             sleepMs = std::max(

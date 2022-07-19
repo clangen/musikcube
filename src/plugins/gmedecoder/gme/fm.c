@@ -379,7 +379,7 @@ static const UINT32 lfo_samples_per_step[8] = {108, 77, 71, 67, 62, 44, 8, 5};
    5.9 dB = 0, 1, 2, 3, 4, 5, 6, 7, 8....63, 63, 62, 61, 60, 59,.....2,1,0
    1.4 dB = 0, 0, 0, 0, 1, 1, 1, 1, 2,...15, 15, 15, 15, 14, 14,.....0,0,0
 
-  (1.4 dB is loosing precision as you can see)
+  (1.4 dB is losing precision as you can see)
 
   It's implemented as generator from 0..126 with step 2 then a shift
   right N times, where N is:
@@ -595,7 +595,7 @@ typedef struct
 
 	UINT32	fc;			/* fnum,blk:adjusted to sample rate */
 	UINT8	kcode;		/* key code:                        */
-	UINT32	block_fnum;	/* current blk/fnum value for this slot (can be different betweeen slots of one channel in 3slot mode) */
+	UINT32	block_fnum;	/* current blk/fnum value for this slot (can be different between slots of one channel in 3slot mode) */
 	UINT8	Muted;
 } FM_CH;
 
@@ -624,7 +624,7 @@ typedef struct
 	INT32		TBC;				/* timer b counter      */
 	/* local time tables */
 	INT32		dt_tab[8][32];		/* DeTune table         */
-	/* Extention Timer and IRQ handler */
+	/* Extension Timer and IRQ handler */
 	const ssg_callbacks *SSG;
 } FM_ST;
 
@@ -640,7 +640,7 @@ typedef struct
 	UINT32  fc[3];			/* fnum3,blk3: calculated */
 	UINT8	fn_h;			/* freq3 latch */
 	UINT8	kcode[3];		/* key code */
-	UINT32	block_fnum[3];	/* current fnum value for this slot (can be different betweeen slots of one channel in 3slot mode) */
+	UINT32	block_fnum[3];	/* current fnum value for this slot (can be different between slots of one channel in 3slot mode) */
 } FM_3SLOT;
 
 /* OPN/A/B common state */
@@ -1083,7 +1083,7 @@ INLINE void advance_lfo(FM_OPN *OPN)
 
 		/* update AM when LFO output changes */
 
-		/* actually I can't optimize is this way without rewritting chan_calc()
+		/* actually I can't optimize is this way without rewriting chan_calc()
         to use chip->lfo_am instead of global lfo_am */
 		{
 
@@ -1667,7 +1667,7 @@ static void FMCloseTable( void )
 }
 
 
-/* CSM Key Controll */
+/* CSM Key Control */
 INLINE void CSMKeyControll(UINT8 type, FM_CH *CH)
 {
 	/* all key on then off (only for operators which were OFF!) */
@@ -1740,15 +1740,15 @@ static void FMsave_state_st(const device_config *device,FM_ST *ST)
 
 
 /* prescaler set (and make time tables) */
-static void OPNSetPres(FM_OPN *OPN, int pres, int timer_prescaler, int SSGpres)
+static void OPNSetPres(FM_OPN *OPN, int press, int timer_prescaler, int SSGpres)
 {
 	int i;
 
 	/* frequency base */
-	OPN->ST.freqbase = (OPN->ST.rate) ? ((double)OPN->ST.clock / OPN->ST.rate) / pres : 0;
+	OPN->ST.freqbase = (OPN->ST.rate) ? ((double)OPN->ST.clock / OPN->ST.rate) / press : 0;
 
 #if 0
-	OPN->ST.rate = (double)OPN->ST.clock / pres;
+	OPN->ST.rate = (double)OPN->ST.clock / press;
 	OPN->ST.freqbase = 1.0;
 #endif
 
@@ -1942,7 +1942,7 @@ static void OPNWriteReg(FM_OPN *OPN, int r, int v)
 
         Important is that when switch to Attack phase occurs, the phase counter
         of that operator will be zeroed-out (as in normal KEY-ON) but not always.
-        (I havent found the rule for that - perhaps only when the output level is low)
+        (I haven't found the rule for that - perhaps only when the output level is low)
 
         The difference (when compared to normal Envelope Generator mode) is
         that the resolution in Decay and Sustain phases is 4 times lower;
@@ -1964,7 +1964,7 @@ static void OPNWriteReg(FM_OPN *OPN, int r, int v)
             0 -6 = -6dB in non-inverted EG output
             96-6 = -90dB in inverted EG output
         Which means that EG compares its level to SL as usual, and that the
-        output is simply inverted afterall.
+        output is simply inverted after all.
 
 
         The Yamaha's manuals say that AR should be set to 0x1f (max speed).
@@ -2220,7 +2220,7 @@ void ym2203_reset_chip(void *chip)
 	FM_STATUS_RESET(&OPN->ST, 0xff);
 
 	reset_channels( &OPN->ST , F2203->CH , 3 );
-	/* reset OPerator paramater */
+	/* reset OPerator parameter */
 	for(i = 0xb2 ; i >= 0x30 ; i-- ) OPNWriteReg(OPN,i,0);
 	for(i = 0x26 ; i >= 0x20 ; i-- ) OPNWriteReg(OPN,i,0);
 }
@@ -3285,7 +3285,7 @@ void ym2608_update_one(void *chip, FMSAMPLE **buffer, int length)
 	FM_CH	*cch[6];
 	INT32 *out_fm = OPN->out_fm;
 
-	/* set bufer */
+	/* set buffer */
 	bufL = buffer[0];
 	bufR = buffer[1];
 
@@ -3486,7 +3486,7 @@ void * ym2608_init(void *param, int clock, int rate, const ssg_callbacks *ssg)
 	F2608->deltaT.status_change_which_chip = F2608;
 	F2608->deltaT.status_change_EOS_bit = 0x04;	/* status flag: set bit2 on End Of Sample */
 	F2608->deltaT.status_change_BRDY_bit = 0x08;	/* status flag: set bit3 on BRDY */
-	F2608->deltaT.status_change_ZERO_bit = 0x10;	/* status flag: set bit4 if silence continues for more than 290 miliseconds while recording the ADPCM */
+	F2608->deltaT.status_change_ZERO_bit = 0x10;	/* status flag: set bit4 if silence continues for more than 290 milliseconds while recording the ADPCM */
 
 	/* ADPCM Rhythm */
 	F2608->pcmbuf   = (UINT8*)YM2608_ADPCM_ROM;
@@ -3543,7 +3543,7 @@ void ym2608_reset_chip(void *chip)
 	FM_STATUS_RESET(&OPN->ST, 0xff);
 
 	reset_channels( &OPN->ST , F2608->CH , 6 );
-	/* reset OPerator paramater */
+	/* reset OPerator parameter */
 	for(i = 0xb6 ; i >= 0xb4 ; i-- )
 	{
 		OPNWriteReg(OPN,i      ,0xc0);
@@ -3721,9 +3721,9 @@ UINT8 ym2608_read(void *chip,int a)
 			if(addr == 0x0f)
 			{
 #ifdef _DEBUG
-				logerror("YM2608 A/D convertion is accessed but not implemented !\n");
+				logerror("YM2608 A/D conversion is accessed but not implemented !\n");
 #endif
-				ret = 0x80; /* 2's complement PCM data - result from A/D convertion */
+				ret = 0x80; /* 2's complement PCM data - result from A/D conversion */
 			}
 		}
 		break;
@@ -3753,7 +3753,7 @@ int ym2608_timer_over(void *chip,int c)
 		{	/* Timer A */
 			/* timer update */
 			TimerAOver( &(F2608->OPN.ST) );
-			/* CSM mode key,TL controll */
+			/* CSM mode key,TL control */
 			if( F2608->OPN.ST.mode & 0x80 )
 			{	/* CSM mode total level latch and auto key on */
 				CSMKeyControll( F2608->OPN.type, &(F2608->CH[2]) );
@@ -4250,7 +4250,7 @@ void ym2610_reset_chip(void *chip)
 	FM_STATUS_RESET(&OPN->ST, 0xff);
 
 	reset_channels( &OPN->ST , F2610->CH , 6 );
-	/* reset OPerator paramater */
+	/* reset OPerator parameter */
 	for(i = 0xb6 ; i >= 0xb4 ; i-- )
 	{
 		OPNWriteReg(OPN,i      ,0xc0);
@@ -4286,7 +4286,7 @@ void ym2610_reset_chip(void *chip)
 	/* DELTA-T unit */
 	DELTAT->freqbase = OPN->ST.freqbase;
 	DELTAT->output_pointer = OPN->out_delta;
-	DELTAT->portshift = 8;		/* allways 8bits shift */
+	DELTAT->portshift = 8;		/* always 8bits shift */
 	DELTAT->output_range = 1<<23;
 	YM_DELTAT_ADPCM_Reset(DELTAT,OUTD_CENTER,YM_DELTAT_EMULATION_MODE_YM2610);
 }
@@ -4436,7 +4436,7 @@ int ym2610_timer_over(void *chip,int c)
 	{	/* Timer A */
 		/* timer update */
 		TimerAOver( &(F2610->OPN.ST) );
-		/* CSM mode key,TL controll */
+		/* CSM mode key,TL control */
 		if( F2610->OPN.ST.mode & 0x80 )
 		{	/* CSM mode total level latch and auto key on */
 			CSMKeyControll( F2610->OPN.type, &(F2610->CH[2]) );

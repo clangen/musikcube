@@ -110,7 +110,7 @@ void SMP::op_buswrite(uint16_t addr, uint8_t data) {
       sfm_last[ 3 ] = 0;
     }
 
-    //0->1 transistion resets timers
+    //0->1 transition resets timers
     if(timer2.enable == false && (data & 0x04)) {
       timer2.stage2_ticks = 0;
       timer2.stage3_ticks = 0;

@@ -255,7 +255,7 @@ bool AppLayout::KeyPress(const std::string& key) {
     }
 
     /* the child layout didn't handle it directly, so let's walk
-    up the parent hierarhcy to see if there's someone who can. */
+    up the parent hierarchy to see if there's someone who can. */
     auto focus = this->layout->GetFocus().get();
     while (focus != nullptr && focus != this) {
         auto asKeyHandler = dynamic_cast<IKeyHandler*>(focus);

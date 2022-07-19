@@ -33,10 +33,10 @@
 // Enable platform-specific optimizations.
 //#define BLARGG_NONPORTABLE 1
 
-// Use faster sample rate convertor for SPC music.
+// Use faster sample rate converter for SPC music.
 //#define GME_SPC_FAST_RESAMPLER 1
 
-// Use faster sample rate convertor for VGM and GYM music.
+// Use faster sample rate converter for VGM and GYM music.
 //#define GME_VGM_FAST_RESAMPLER 1
 
 // Use faster, significantly lower quality sound synthesis for classic emulators.

@@ -226,7 +226,7 @@ value:   START, REC, MEMDAT, REPEAT, SPOFF, x,x,RESET   meaning:
 		if( DELTAT->portstate&0x20 ) /* do we access external memory? */
 		{
 			DELTAT->now_addr = DELTAT->start << 1;
-			DELTAT->memread = 2;	/* two dummy reads needed before accesing external memory via register $08*/
+			DELTAT->memread = 2;	/* two dummy reads needed before accessing external memory via register $08*/
 
 			/* if yes, then let's check if ADPCM memory is mapped and big enough */
 			if(DELTAT->memory == 0)

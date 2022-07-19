@@ -154,7 +154,7 @@ typedef struct _STORAGE_HOTPLUG_INFO {
 // output - STORAGE_DEVICE_NUMBER structure
 //          The values in the STORAGE_DEVICE_NUMBER structure are guaranteed
 //          to remain unchanged until the system is rebooted.  They are not
-//          guaranteed to be persistant across boots.
+//          guaranteed to be persistent across boots.
 //
 
 typedef struct _STORAGE_DEVICE_NUMBER {
@@ -548,7 +548,7 @@ typedef struct _STORAGE_DEVICE_DESCRIPTOR {
     BOOLEAN RemovableMedia;
 
     //
-    // Flag indicating whether the device can support mulitple outstanding
+    // Flag indicating whether the device can support multiple outstanding
     // commands.  The actual synchronization in this case is the responsibility
     // of the port driver.
     //
@@ -727,7 +727,7 @@ typedef struct _STORAGE_MEDIA_SERIAL_NUMBER_DATA {
 
     //
     // the following data is binary, and is not guaranteed
-    // to be NULL terminated.  this is an excercise for the
+    // to be NULL terminated.  this is an exercise for the
     // caller.
     //
 

@@ -347,7 +347,7 @@ bool TaglibMetadataReader::ReadGeneric(
                 bool handled = false;
 
                 /* flac files may have more than one type of tag embedded. see if there's
-                see if there's a xiph comment burried deep. */
+                see if there's a xiph comment buried deep. */
                 auto flacFile = dynamic_cast<TagLib::FLAC::File*>(file.file());
                 if (flacFile) {
                     auto pictures = flacFile->pictureList();

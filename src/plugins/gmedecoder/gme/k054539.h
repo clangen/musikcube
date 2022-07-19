@@ -46,7 +46,7 @@ void k054539_init_flags(void *, int flags);
     Note that the eight PCM channels of a K054539 do not have separate
     volume controls. Considering the global attenuation equation may not
     be entirely accurate, k054539_set_gain() provides means to control
-    channel gain. It can be called anywhere but preferrably from
+    channel gain. It can be called anywhere but preferably from
     DRIVER_INIT().
 
     Parameters:

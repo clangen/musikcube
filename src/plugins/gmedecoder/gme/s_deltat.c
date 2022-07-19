@@ -26,7 +26,7 @@ typedef struct {
 		Int32 level32;
 		Uint8 key;
 		Uint8 level;
-		Uint8 granuality;
+		Uint8 granularity;
 		Uint8 pad4_3;
 		Uint8 regs[0x10];
 	} common;
@@ -150,7 +150,7 @@ static void sndwrite(YMDELTATPCMSOUND *sndp, Uint32 a, Uint32 v)
 			break;
 		case 0x02:  /* Start Address L */
 		case 0x03:  /* Start Address H */
-			sndp->common.granuality = (v & 2) ? 1 : 4;
+			sndp->common.granularity = (v & 2) ? 1 : 4;
 			sndp->common.start = ((sndp->common.regs[3] << 8) + sndp->common.regs[2]) << (sndp->memshift + 1);
 			sndp->common.mem = sndp->common.start;
 			break;
@@ -189,7 +189,7 @@ static void sndreset(YMDELTATPCMSOUND *sndp, Uint32 clock, Uint32 freq)
 	sndp->common.cps = DivFix(clock, 72 * freq, CPS_SHIFT);
 	sndp->romrambuf  = (sndp->common.regs[1] & 1) ? sndp->rombuf  : sndp->rambuf;
 	sndp->romrammask = (sndp->common.regs[1] & 1) ? sndp->rommask : sndp->rammask;
-	sndp->common.granuality = 4;
+	sndp->common.granularity = 4;
 }
 
 static void sndvolume(YMDELTATPCMSOUND *sndp, Int32 volume)

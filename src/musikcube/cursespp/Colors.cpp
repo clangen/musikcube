@@ -48,7 +48,7 @@ using namespace nlohmann;
 using namespace boost::filesystem;
 
 /* if the terminal supports custom colors, these are the palette
-indicies we'll use to store them */
+indices we'll use to store them */
 #define THEME_COLOR_BACKGROUND 16
 #define THEME_COLOR_FOREGROUND 17
 #define THEME_COLOR_FRAME_FOCUSED 18

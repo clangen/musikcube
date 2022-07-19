@@ -107,7 +107,7 @@ typedef struct
 
 	UINT32		csm_req;				/* CSM  KEY ON / KEY OFF sequence request */
 
-	UINT32		irq_enable;				/* IRQ enable for timer B (bit 3) and timer A (bit 2); bit 7 - CSM mode (keyon to all slots, everytime timer A overflows) */
+	UINT32		irq_enable;				/* IRQ enable for timer B (bit 3) and timer A (bit 2); bit 7 - CSM mode (keyon to all slots, every time timer A overflows) */
 	UINT32		status;					/* chip status (BUSY, IRQ Flags) */
 	UINT8		connect[8];				/* channels connections */
 
@@ -415,7 +415,7 @@ static const UINT16 phaseinc_rom[768]={
 
     Here are just 256 samples out of much longer data.
 
-    It does NOT repeat every 256 samples on real chip and I wasnt able to find
+    It does NOT repeat every 256 samples on real chip and I wasn't able to find
     the point where it repeats (even in strings as long as 131072 samples).
 
     I only put it here because its better than nothing and perhaps
@@ -1399,7 +1399,7 @@ Two LSBs of the 'rate' above are the value 'x' (the shape type).
 (eg. '11 2' means that 'rate' is 11*4+2=46)
 
 NOTE: A 'sample' in the description below is actually 3 output samples,
-thats because the Envelope Generator clock is equal to internal_clock/3.
+that's because the Envelope Generator clock is equal to internal_clock/3.
 
 Single '-' (minus) character in the diagrams below represents one sample
 on the output; this is for rates 11 x (11 0, 11 1, 11 2 and 11 3)
@@ -1831,7 +1831,7 @@ INLINE void advance(YM2151 *PSG)
     * the sound played is the same as after normal KEY ON.
     */
 
-	if (PSG->csm_req)			/* CSM KEYON/KEYOFF seqeunce request */
+	if (PSG->csm_req)			/* CSM KEYON/KEYOFF sequence request */
 	{
 		if (PSG->csm_req==2)	/* KEY ON */
 		{

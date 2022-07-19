@@ -107,7 +107,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         EnterPlaylistNameDialog.showForCreate(activity, this)
 
     fun createPlaylist(playlistName: String) {
-        @Suppress("ununsed")
+        @Suppress("unused")
         provider.createPlaylist(playlistName).subscribeBy(
             onNext = { id ->
                 if (id > 0L) {

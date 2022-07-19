@@ -47,7 +47,7 @@ namespace TagLib {
      * split between a collection of frames (which are in turn split into fields
      * (Structure, <a href="id3v2-structure.html#4">4</a>)
      * (<a href="id3v2-frames.html">Frames</a>).  This class provides an API for
-     * gathering information about and modifying ID3v2 frames.  Funtionallity
+     * gathering information about and modifying ID3v2 frames.  Functionality
      * specific to a given frame type is handed in one of the many subclasses.
      */
 

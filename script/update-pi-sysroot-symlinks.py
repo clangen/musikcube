@@ -2,7 +2,7 @@
 import sys
 import os
 
-# Take a sysroot directory and turn all the abolute symlinks and turn them into
+# Take a sysroot directory and turn all the absolute symlinks into
 # relative ones such that the sysroot is usable within another system.
 
 if len(sys.argv) != 2:

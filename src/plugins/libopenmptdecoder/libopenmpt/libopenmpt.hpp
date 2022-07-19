@@ -28,7 +28,7 @@
  *
  * \section libopenmpt_cpp_error Error Handling
  *
- * libopenmpt C++ uses C++ exception handling for errror reporting.
+ * libopenmpt C++ uses C++ exception handling for error reporting.
  *
  * Unless otherwise noted, any libopenmpt function may throw exceptions and
  * all exceptions thrown by libopenmpt itself are derived from
@@ -207,7 +207,7 @@ static const char license          LIBOPENMPT_ATTR_DEPRECATED [] = "license";
           -  "source_revision": original source code revision
           -  "source_is_modified": "1" if the original source has been modified
           -  "source_has_mixed_revisions": "1" if the original source has been compiled from different various revision
-          -  "source_is_package": "1" if the original source has been obtained from a source pacakge instead of source code version control
+          -  "source_is_package": "1" if the original source has been obtained from a source package instead of source code version control
           -  "build": information about the current build (e.g. the build date or compiler used)
           -  "build_compiler": information about the compiler used to build libopenmpt
           -  "credits": all contributors
@@ -265,7 +265,7 @@ LIBOPENMPT_CXX_API double could_open_probability( std::istream & stream, double 
 */
 LIBOPENMPT_ATTR_DEPRECATED LIBOPENMPT_CXX_API double could_open_propability( std::istream & stream, double effort = 1.0, std::ostream & log = std::clog );
 
-//! Get recommended header size for successfull format probing
+//! Get recommended header size for successful format probing
 /*!
   \sa openmpt::probe_file_header()
   \since 0.3.0

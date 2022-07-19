@@ -683,7 +683,7 @@ static int patternCompare(
 
 /*
 ** Implementation of the like() SQL function.  This function implements
-** the build-in LIKE operator.  The first argument to the function is the
+** the built-in LIKE operator.  The first argument to the function is the
 ** pattern and the second argument is the string.  So, the SQL statements:
 **
 **       A LIKE B
