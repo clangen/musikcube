@@ -1,4 +1,10 @@
-0.98
+0.98.1
+
+* fixed album art extraction for xiph comments.
+
+--------------------------------------------------------------------------------
+
+0.98.0
 
 * added the ability to click the browse and tracklist headers to change filter
   options
