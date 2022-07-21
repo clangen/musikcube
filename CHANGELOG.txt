@@ -1,6 +1,7 @@
 0.98.1
 
 * fixed album art extraction for xiph comments.
+* fixed PulseAudio compile issue
 
 --------------------------------------------------------------------------------
 
