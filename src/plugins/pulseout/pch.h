@@ -37,5 +37,3 @@
 
 #include <musikcore/config.h>
 #include <iostream>
-
-#include <alsa/asoundlib.h>

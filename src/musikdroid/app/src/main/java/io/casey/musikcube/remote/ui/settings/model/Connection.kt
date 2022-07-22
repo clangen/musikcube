@@ -32,16 +32,14 @@ class Connection : Parcelable {
             return name.isNotBlank() && hostname.isNotEmpty() && httpPort > 0 && wssPort > 0
         }
 
-    override fun writeToParcel(parcel: Parcel?, flags: Int) {
-        if (parcel != null) {
-            parcel.writeString(name)
-            parcel.writeString(hostname)
-            parcel.writeString(password)
-            parcel.writeInt(httpPort)
-            parcel.writeInt(wssPort)
-            parcel.writeInt(if (ssl) 1 else 0)
-            parcel.writeInt(if (noValidate) 1 else 0)
-        }
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(name)
+        parcel.writeString(hostname)
+        parcel.writeString(password)
+        parcel.writeInt(httpPort)
+        parcel.writeInt(wssPort)
+        parcel.writeInt(if (ssl) 1 else 0)
+        parcel.writeInt(if (noValidate) 1 else 0)
     }
 
     override fun describeContents(): Int {

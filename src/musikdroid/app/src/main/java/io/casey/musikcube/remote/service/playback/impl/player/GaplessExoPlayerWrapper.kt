@@ -9,10 +9,7 @@ import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.source.TrackGroupArray
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray
-import com.google.android.exoplayer2.upstream.DataSource
-import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
+import com.google.android.exoplayer2.upstream.*
 import com.google.android.exoplayer2.util.Util
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.service.playback.PlayerWrapper
@@ -37,16 +34,13 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
     init {
         val userAgent = Util.getUserAgent(context, "musikdroid")
-
         val httpFactory: DataSource.Factory = DefaultHttpDataSource.Factory().apply {
             setUserAgent(userAgent)
             setConnectTimeoutMs(TIMEOUT)
             setReadTimeoutMs(TIMEOUT)
             setAllowCrossProtocolRedirects(true)
         }
-
-        this.sourceFactory = DefaultDataSourceFactory(context, null, httpFactory)
-
+        this.sourceFactory = DefaultDataSource.Factory(context, httpFactory)
         this.transcoding = prefs.getInt(Prefs.Key.TRANSCODER_BITRATE_INDEX, 0) != 0
     }
 
@@ -144,7 +138,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
 
             this.lastPosition = -1
             if (gaplessPlayer?.playbackState != Player.STATE_IDLE) {
-                if (gaplessPlayer?.isCurrentWindowSeekable == true) {
+                if (gaplessPlayer?.isCurrentMediaItemSeekable == true) {
                     var offset = millis.toLong()
                     val isInitialSeek = initialOffsetMs > 0 && (millis == initialOffsetMs)
 
@@ -228,19 +222,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     }
 
     private var eventListener = object : Player.Listener {
-        override fun onTracksChanged(trackGroups: TrackGroupArray, trackSelections: TrackSelectionArray) {
-        }
-
-        override fun onLoadingChanged(isLoading: Boolean) {
-        }
-
-        override fun onSeekProcessed() {
-        }
-
-        override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-        }
-
-        override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+        override fun onPlaybackStateChanged(playbackState: Int) {
             Preconditions.throwIfNotOnMainThread()
 
             if (playbackState == Player.STATE_BUFFERING) {
@@ -293,11 +275,13 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             }
         }
 
-        override fun onPositionDiscontinuity(type: Int) {
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo,type: Int)
+        {
             /* window index corresponds to the position of the current song in
             the queue. the current song should always be 0! if it's not, then
             that means we advanced to the next one... */
-            if (gaplessPlayer?.currentWindowIndex ?: 0 != 0) {
+            if ((gaplessPlayer?.currentMediaItemIndex ?: 0) != 0) {
                 promoteNext()
                 state = State.Finished
             }
@@ -316,7 +300,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
         private val context: Context by lazy { Application.instance }
         private var all = mutableListOf<GaplessExoPlayerWrapper>()
         private lateinit var dcms: ConcatenatingMediaSource
-        private var gaplessPlayer: SimpleExoPlayer? = null
+        private var gaplessPlayer: ExoPlayer? = null
 
         private fun promoteNext() {
             if (all.size > 0) {
@@ -337,7 +321,7 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
             all.clear()
             gaplessPlayer?.stop()
             gaplessPlayer?.release()
-            gaplessPlayer = SimpleExoPlayer.Builder(context)
+            gaplessPlayer = ExoPlayer.Builder(context)
                 .setBandwidthMeter(DefaultBandwidthMeter.Builder(context).build())
                 .build()
             dcms = ConcatenatingMediaSource()
