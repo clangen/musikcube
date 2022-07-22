@@ -17,7 +17,6 @@ import io.casey.musikcube.remote.service.websocket.model.ITrackListQueryFactory
 import io.casey.musikcube.remote.service.websocket.model.impl.remote.RemoteTrack
 import io.reactivex.Observable
 import org.json.JSONObject
-import java.util.*
 import javax.inject.Inject
 
 class RemotePlaybackService : IPlaybackService {

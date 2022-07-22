@@ -6,6 +6,7 @@ import android.content.*
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
+import android.os.*
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -35,8 +36,6 @@ import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
 import androidx.core.app.NotificationCompat.Action as NotifAction
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
-import android.app.NotificationManager
-import android.os.*
 
 const val ENABLE_LOGGING = false
 
