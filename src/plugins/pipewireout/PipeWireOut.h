@@ -135,8 +135,8 @@ class PipeWireOut : public IOutput {
                 this->buffer = buffer;
                 if (buffer) {
                     struct spa_buffer* spaBuffer = buffer->buffer;
-                    this->writePtr = (char*) spaBuffer->datas[0].data;
-                    this->remaining = spaBuffer->datas[0].maxsize;
+                    this->writePtr = (char*) spaBuffer->data[0].data;
+                    this->remaining = spaBuffer->data[0].maxsize;
                     this->total = this->remaining;
                 }
                 else {
@@ -155,7 +155,7 @@ class PipeWireOut : public IOutput {
             }
             void Finalize(pw_stream* stream, uint32_t stride) {
                 if (this->Valid()) {
-                    spa_data& data = this->buffer->buffer->datas[0];
+                    spa_data& data = this->buffer->buffer->data[0];
                     data.chunk->offset = 0;
                     data.chunk->stride = stride;
                     data.chunk->size = this->total - this->remaining;

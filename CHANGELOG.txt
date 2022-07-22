@@ -699,7 +699,7 @@ sdk:
 FreeBSD only release.
 
 musikcube:
-* *finally* fixed the FreeBSD scrollbar crasher. yeesh.
+* *finally* fixed the FreeBSD scrollbar crash. yeesh.
 * fixed a bug in the `sndio` output plugin that may cause the first few buffers
 of audio data to be discarded when manually changing tracks.
 
@@ -1581,7 +1581,7 @@ win32 only release:
 
 user-facing:
 
-* added new `musikdroid` android remote control! super userful with a Raspberry
+* added new `musikdroid` android remote control! super useful with a Raspberry
   Pi. run musikbox in the background and control it from your phone.
 * added a new `websocket_remote` plugin that allows any client capable of
   communciating with websockets the ability to control playback and query

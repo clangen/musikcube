@@ -52,7 +52,7 @@ namespace win32cpp {
 ///
 ///When performing graphics operations on a Window's DC, changes are drawn
 ///directly to screen; this leads to flickering. MemoryDC creates an offscreen
-///buffer that "accumulates" changes, which are copied to a desination DC
+///buffer that "accumulates" changes, which are copied to a destination DC
 ///when all drawing has finished.
 ///
 ///MemoryDC is constructed with an HDC and a Rect as parameters, and provides

@@ -20,7 +20,7 @@ import kotlin.math.min
 
 /**
  * When MP3 files are transcoded on-demand, the required metadata for gapless playback isn't
- * available yet. So, once we know the transocded files have been downloaded, we run this
+ * available yet. So, once we know the transcoded files have been downloaded, we run this
  * service to fetch and replace the first few bytes of the file, which should ensure the
  * required header is present, and subsequent plays are gapless.
  */

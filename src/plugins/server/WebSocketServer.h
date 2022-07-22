@@ -140,7 +140,7 @@ class WebSocketServer {
 
         void RespondWithSendRawQuery(connection_hdl connection, json& request);
         void RespondWithSetVolume(connection_hdl connection, json& request);
-        void RespondWithPlaybackOverview(connection_hdl connection, json& reuest);
+        void RespondWithPlaybackOverview(connection_hdl connection, json& request);
         bool RespondWithTracks(connection_hdl connection, json& request, ITrackList* tracks, int limit, int offset);
         void RespondWithQueryTracks(connection_hdl connection, json& request);
         void RespondWithQueryTracksByExternalIds(connection_hdl connection, json& request);

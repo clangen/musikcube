@@ -98,7 +98,7 @@ ILibraryPtr LibraryFactory::CreateLibrary(const std::string& name, ILibrary::Typ
     new unique identifier for this one... */
 
     int existingId = -1;
-    int nextId = 0; /* we start at 1 becuase we always have. */
+    int nextId = 0; /* we start at 1 because we always have. */
     for (size_t i = 0; i < libraries.size(); i++) {
         std::string n = libraries.at(i);
         int id = prefs->GetInt(name);
