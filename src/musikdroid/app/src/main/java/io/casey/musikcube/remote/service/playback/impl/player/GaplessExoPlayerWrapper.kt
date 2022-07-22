@@ -228,9 +228,6 @@ class GaplessExoPlayerWrapper : PlayerWrapper() {
     }
 
     private var eventListener = object : Player.Listener {
-        override fun onTracksChanged(trackGroups: TrackGroupArray, trackSelections: TrackSelectionArray) {
-        }
-
         override fun onLoadingChanged(isLoading: Boolean) {
         }
 
