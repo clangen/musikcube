@@ -223,7 +223,7 @@ LIBOPENMPT_API void openmpt_free_string( const char * str );
  *        -  "source_revision": original source code revision
  *        -  "source_is_modified": "1" if the original source has been modified
  *        -  "source_has_mixed_revisions": "1" if the original source has been compiled from different various revision
- *        -  "source_is_package": "1" if the original source has been obtained from a source package instead of source code version control
+ *        -  "source_is_package": "1" if the original source has been obtained from a source pacakge instead of source code version control
  *        -  "build": information about the current build (e.g. the build date or compiler used)
  *        -  "build_compiler": information about the compiler used to build libopenmpt
  *        -  "credits": all contributors
@@ -550,7 +550,7 @@ LIBOPENMPT_API LIBOPENMPT_DEPRECATED double openmpt_could_open_propability( open
  */
 LIBOPENMPT_API double openmpt_could_open_probability2( openmpt_stream_callbacks stream_callbacks, void * stream, double effort, openmpt_log_func logfunc, void * loguser, openmpt_error_func errfunc, void * erruser, int * error, const char * * error_message );
 
-/*! \brief Get recommended header size for successful format probing
+/*! \brief Get recommended header size for successfull format probing
  *
  * \sa openmpt_probe_file_header()
  * \sa openmpt_probe_file_header_without_filesize()
@@ -613,7 +613,7 @@ LIBOPENMPT_API int openmpt_probe_file_header( uint64_t flags, const void * data,
  * \param erruser Error function user context. Used to pass any user-defined data associated with this module to the logging function.
  * \param error Pointer to an integer where an error may get stored. May be NULL.
  * \param error_message Pointer to a string pointer where an error message may get stored. May be NULL.
- * \remarks It is recommended to use openmpt_probe_file_header() and provide the actual file's size as a parameter if at all possible. libopenmpt can provide more accurate answers if the filesize is known.
+ * \remarks It is recommended to use openmpt_probe_file_header() and provide the acutal file's size as a parameter if at all possible. libopenmpt can provide more accurate answers if the filesize is known.
  * \remarks It is recommended to provide openmpt_probe_file_header_get_recommended_size() bytes of data for data and size. If the file is smaller, only provide the filesize amount and set size to the file's size. 
  * \remarks openmpt_could_open_probability2() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt_probe_file_header() though, if possible.
  * \retval OPENMPT_PROBE_FILE_HEADER_RESULT_SUCCESS The file will most likely be supported by libopenmpt.

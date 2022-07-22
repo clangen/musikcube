@@ -186,7 +186,7 @@ class interactive {
 	  \param factor The new pitch factor in range ]0.0, 4.0] - 1.0 means unmodified pitch.
 	  \throws openmpt::exception Throws an exception derived from openmpt::exception if the factor is outside the specified range.
 	  \remarks Modifying the pitch without applying the the same tempo factor using openmpt::ext::interactive::set_tempo_factor may cause rhythmic samples (e.g. drum loops) to go out of sync.
-	  \remarks To shift the pitch by `n` semitones, the parameter can be calculated as follows: `pow( 2.0, n / 12.0 )`
+	  \remarks To shift the pich by `n` semitones, the parameter can be calculated as follows: `pow( 2.0, n / 12.0 )`
 	  \sa openmpt::ext::interactive::get_pitch_factor
 	*/
 	virtual void set_pitch_factor( double factor ) = 0;

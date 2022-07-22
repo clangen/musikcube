@@ -636,7 +636,7 @@ INLINE void advance(YM2413 *chip)
 			case EG_DMP:		/* dump phase */
 			/*dump phase is performed by both operators in each channel*/
 			/*when CARRIER envelope gets down to zero level,
-            **  phases in BOTH operators are reset (at the same time ?)
+            **  phases in BOTH opearators are reset (at the same time ?)
             */
 				if ( !(chip->eg_cnt & ((1<<op->eg_sh_dp)-1) ) )
 				{

@@ -552,7 +552,7 @@ static unsigned int sin_tab[SIN_LEN * 4];
     The whole table takes: 64 * 210 = 13440 samples.
 
     When AM = 1 data is used directly
-    When AM = 0 data is divided by 4 before being used (losing precision is important)
+    When AM = 0 data is divided by 4 before being used (loosing precision is important)
 */
 
 #define LFO_AM_TAB_ELEMENTS 210
@@ -2123,8 +2123,8 @@ static unsigned char OPLRead(FM_OPL *OPL,int a)
 	case 0x1a: /* PCM-DATA    */
 		if(OPL->type&OPL_TYPE_ADPCM)
 		{
-			/*logerror("Y8950 A/D conversion is accessed but not implemented !\n");*/
-			return 0x80; /* 2's complement PCM data - result from A/D conversion */
+			/*logerror("Y8950 A/D convertion is accessed but not implemented !\n");*/
+			return 0x80; /* 2's complement PCM data - result from A/D convertion */
 		}
 		return 0;
 	}
@@ -2133,7 +2133,7 @@ static unsigned char OPLRead(FM_OPL *OPL,int a)
 	return 0xff;
 }
 
-/* CSM Key Control */
+/* CSM Key Controll */
 INLINE void CSMKeyControll(OPL_CH *CH)
 {
 	FM_KEYON (&CH->SLOT[SLOT1], 4);
@@ -2155,7 +2155,7 @@ static int OPLTimerOver(FM_OPL *OPL,int c)
 	else
 	{	/* Timer A */
 		OPL_STATUS_SET(OPL,0x40);
-		/* CSM mode key,TL control */
+		/* CSM mode key,TL controll */
 		if( OPL->mode & 0x80 )
 		{	/* CSM mode total level latch and auto key on */
 			int ch;

@@ -189,7 +189,7 @@ typedef struct openmpt_module_ext_interface_interactive {
 	 * \param factor The new pitch factor in range ]0.0, 4.0] - 1.0 means unmodified pitch.
 	 * \return 1 on success, 0 on failure.
 	 * \remarks Modifying the pitch without applying the the same tempo factor using openmpt_module_ext_interface_interactive::set_tempo_factor may cause rhythmic samples (e.g. drum loops) to go out of sync.
-	 * \remarks To shift the pitch by `n` semitones, the parameter can be calculated as follows: `pow( 2.0, n / 12.0 )`
+	 * \remarks To shift the pich by `n` semitones, the parameter can be calculated as follows: `pow( 2.0, n / 12.0 )`
 	 * \sa openmpt_module_ext_interface_interactive::get_pitch_factor
 	 */
 	int ( * set_pitch_factor ) ( openmpt_module_ext * mod_ext, double factor );

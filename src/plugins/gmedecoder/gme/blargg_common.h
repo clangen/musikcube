@@ -107,7 +107,7 @@ we strip it out unless BLARGG_LEGACY is true. */
 
 /* BOOST::int8_t, BOOST::int32_t, etc.
 I used BOOST since I originally was going to allow use of the boost library
-for providing the definitions. If I'm defining them, they must be scoped or
+for prividing the definitions. If I'm defining them, they must be scoped or
 else they could conflict with the standard ones at global scope. Even if
 HAVE_STDINT_H isn't defined, I can't assume the typedefs won't exist at
 global scope already. */

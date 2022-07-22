@@ -72,11 +72,11 @@ namespace TagLib {
 
     /*!
      * Used to specify if when saving files, if values between different tag
-     * types should be synchronized.
+     * types should be syncronized.
      */
     enum DuplicateTags {
-      Duplicate,     //<! Synchronize values between different tag types
-      DoNotDuplicate //<! Do not synchronize values between different tag types
+      Duplicate,     //<! Syncronize values between different tag types
+      DoNotDuplicate //<! Do not syncronize values between different tag types
     };
 
     /*!

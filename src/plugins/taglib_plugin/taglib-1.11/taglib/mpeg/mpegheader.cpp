@@ -251,7 +251,7 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
     { 11025, 12000, 8000,  0 }  // Version 2.5
   };
 
-  // The sample rate index is encoded as two bits in the 3rd byte, i.e. xxxx11xx
+  // The sample rate index is encoded as two bits in the 3nd byte, i.e. xxxx11xx
 
   const int samplerateIndex = (static_cast<unsigned char>(data[2]) >> 2) & 0x03;
 
@@ -261,7 +261,7 @@ void MPEG::Header::parse(File *file, long offset, bool checkLength)
     return;
   }
 
-  // The channel mode is encoded as a 2 bit value at the end of the 3rd byte,
+  // The channel mode is encoded as a 2 bit value at the end of the 3nd byte,
   // i.e. xxxxxx11
 
   d->channelMode = static_cast<ChannelMode>((static_cast<unsigned char>(data[3]) >> 6) & 0x03);

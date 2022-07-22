@@ -25,7 +25,7 @@ extern "C" {
 #define FM_INTERNAL_TIMER 1
 
 /* --- speedup optimize --- */
-/* busy flag emulation , The definition of FM_GET_TIME_NOW() is necessary. */
+/* busy flag enulation , The definition of FM_GET_TIME_NOW() is necessary. */
 //#define FM_BUSY_FLAG_SUPPORT 1
 
 
@@ -44,7 +44,7 @@ typedef unsigned char  FMSAMPLE;
 /* int n          = chip number                  */
 /* int c          = Channel 0=TimerA,1=TimerB    */
 /* int count      = timer count (0=stop)         */
-/* double stepTime = step time of one count (sec.)*/
+/* doube stepTime = step time of one count (sec.)*/
 
 /* FM_IRQHHANDLER : IRQ level changing sense     */
 /* int n       = chip number                     */

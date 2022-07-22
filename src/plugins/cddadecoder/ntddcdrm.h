@@ -503,7 +503,7 @@ typedef struct _CDROM_AUDIO_CONTROL {
 
 //
 // Volume control - Volume takes a value between 1 and 0xFF.
-// SCSI-II CDROM audio supports up to 4 audio ports with
+// SCSI-II CDROM audio suppports up to 4 audio ports with
 // Independent volume control.
 //
 

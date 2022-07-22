@@ -15,7 +15,7 @@
 **
 ** 2006~2009  Eke-Eke (Genesis Plus GX):
 ** Huge thanks to Nemesis, lot of those fixes came from his tests on Sega Genesis hardware
-** More information at http://gendev.spritesmind.net/forum/viewtopic.php?t=386
+** More informations at http://gendev.spritesmind.net/forum/viewtopic.php?t=386
 **
 **  TODO:
 **
@@ -26,7 +26,7 @@
 **
 **  - fixed LFO implementation:
 **      .added support for CH3 special mode: fixes various sound effects (birds in Warlock, bug sound in Aladdin...)
-**      .modified LFO behavior when switched off (AM/PM current level is held) and on (LFO step is reset): fixes intro in Spider-Man & Venom : Separation Anxiety
+**      .modified LFO behavior when switched off (AM/PM current level is held) and on (LFO step is reseted): fixes intro in Spider-Man & Venom : Separation Anxiety
 **      .improved LFO timing accuracy: now updated AFTER sample output, like EG/PG updates, and without any precision loss anymore.
 **  - improved internal timers emulation
 **  - adjusted lowest EG rates increment values
@@ -385,7 +385,7 @@ static const UINT32 lfo_samples_per_step[8] = {108, 77, 71, 67, 62, 44, 8, 5};
    5.9 dB = 0, 1, 2, 3, 4, 5, 6, 7, 8....63, 63, 62, 61, 60, 59,.....2,1,0
    1.4 dB = 0, 0, 0, 0, 1, 1, 1, 1, 2,...15, 15, 15, 15, 14, 14,.....0,0,0
 
-  (1.4 dB is losing precision as you can see)
+  (1.4 dB is loosing precision as you can see)
 
   It's implemented as generator from 0..126 with step 2 then a shift
   right N times, where N is:
@@ -597,7 +597,7 @@ typedef struct
 
 	UINT32	fc;			/* fnum,blk:adjusted to sample rate */
 	UINT8	kcode;		/* key code:                        */
-	UINT32	block_fnum;	/* current blk/fnum value for this slot (can be different between slots of one channel in 3slot mode) */
+	UINT32	block_fnum;	/* current blk/fnum value for this slot (can be different betweeen slots of one channel in 3slot mode) */
 	UINT8	Muted;
 } FM_CH;
 
@@ -625,7 +625,7 @@ typedef struct
 	INT32		TBC;				/* timer b counter      */
 	/* local time tables */
 	INT32		dt_tab[8][32];		/* DeTune table         */
-	/* Extension Timer and IRQ handler */
+	/* Extention Timer and IRQ handler */
 } FM_ST;
 
 
@@ -640,7 +640,7 @@ typedef struct
 	UINT32  fc[3];			/* fnum3,blk3: calculated */
 	UINT8	fn_h;			/* freq3 latch */
 	UINT8	kcode[3];		/* key code */
-	UINT32	block_fnum[3];	/* current fnum value for this slot (can be different between slots of one channel in 3slot mode) */
+	UINT32	block_fnum[3];	/* current fnum value for this slot (can be different betweeen slots of one channel in 3slot mode) */
 	UINT8   key_csm;        /* CSM mode Key-ON flag */
 } FM_3SLOT;
 
@@ -1693,7 +1693,7 @@ static void FMCloseTable( void )
 }
 
 
-/* CSM Key Control */
+/* CSM Key Controll */
 INLINE void CSMKeyControll(FM_OPN *OPN, FM_CH *CH)
 {
 	/* all key ON (verified by Nemesis on real hardware) */
@@ -1910,7 +1910,7 @@ static void OPNWriteReg(FM_OPN *OPN, int r, int v)
 
         Important is that when switch to Attack phase occurs, the phase counter
         of that operator will be zeroed-out (as in normal KEY-ON) but not always.
-        (I haven't found the rule for that - perhaps only when the output level is low)
+        (I havent found the rule for that - perhaps only when the output level is low)
 
         The difference (when compared to normal Envelope Generator mode) is
         that the resolution in Decay and Sustain phases is 4 times lower;
@@ -1932,7 +1932,7 @@ static void OPNWriteReg(FM_OPN *OPN, int r, int v)
             0 -6 = -6dB in non-inverted EG output
             96-6 = -90dB in inverted EG output
         Which means that EG compares its level to SL as usual, and that the
-        output is simply inverted after all.
+        output is simply inverted afterall.
 
 
         The Yamaha's manuals say that AR should be set to 0x1f (max speed).
@@ -2051,10 +2051,10 @@ static void init_timetables(FM_OPN *OPN, double freqbase)
 }
 
 /* prescaler set (and make time tables) */
-static void OPNSetPres(FM_OPN *OPN, int press, int timer_prescaler, int SSGpres)
+static void OPNSetPres(FM_OPN *OPN, int pres, int timer_prescaler, int SSGpres)
 {
 	/* frequency base */
-	OPN->ST.freqbase = (OPN->ST.rate) ? ((double)OPN->ST.clock / OPN->ST.rate) / press : 0;
+	OPN->ST.freqbase = (OPN->ST.rate) ? ((double)OPN->ST.clock / OPN->ST.rate) / pres : 0;
 	if ( fabs( OPN->ST.freqbase - 1.0 ) < 0.0001 )
 		OPN->ST.freqbase = 1.0;
 
@@ -2221,7 +2221,7 @@ void ym2612_update_one(void *chip, FMSAMPLE **buffer, int length)
 	FM_CH	*cch[6];
 	int lt,rt;
 
-	/* set buffer */
+	/* set bufer */
 	bufL = buffer[0];
 	bufR = buffer[1];
 
@@ -2380,7 +2380,7 @@ void ym2612_update_one(void *chip, FMSAMPLE **buffer, int length)
 		bufL[i] = F2612->WaveL;
 		bufR[i] = F2612->WaveR;
 
-		/* CSM mode: if CSM Key ON has occurred, CSM Key OFF need to be sent       */
+		/* CSM mode: if CSM Key ON has occured, CSM Key OFF need to be sent       */
 		/* only if Timer A does not overflow again (i.e CSM Key ON not set again) */
 		OPN->SL3.key_csm <<= 1;
 
@@ -2602,7 +2602,7 @@ int ym2612_timer_over(void *chip,int c)
 	{	/* Timer A */
 		/* timer update */
 		TimerAOver( &(F2612->OPN.ST) );
-		/* CSM mode key,TL control */
+		/* CSM mode key,TL controll */
 		if ((F2612->OPN.ST.mode & 0xc0) == 0x80)
 		{	/* CSM mode total level latch and auto key on */
 			CSMKeyControll( &F2612->OPN, &(F2612->CH[2]) );

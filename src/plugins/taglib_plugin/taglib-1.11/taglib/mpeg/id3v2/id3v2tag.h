@@ -393,7 +393,7 @@ namespace TagLib {
       void setTextFrame(const ByteVector &id, const String &value);
 
       /*!
-       * Downgrade frames from ID3v2.4 (used internally and by default) to ID3v2.3
+       * Dowgrade frames from ID3v2.4 (used internally and by default) to ID3v2.3
        */
       void downgradeFrames(FrameList *existingFrames, FrameList *newFrames) const;
 
