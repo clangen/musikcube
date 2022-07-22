@@ -6,9 +6,6 @@ import android.content.*
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.media.AudioManager
-import android.os.Build
-import android.os.IBinder
-import android.os.PowerManager
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -39,9 +36,15 @@ import io.casey.musikcube.remote.util.Debouncer
 import androidx.core.app.NotificationCompat.Action as NotifAction
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
 import android.app.NotificationManager
+import android.os.*
 
-private fun log(format: String, vararg params: Any?) =
-    Log.d("musikdroid.Service", String.format(format, *params))
+const val ENABLE_LOGGING = false
+
+private fun log(format: String, vararg params: Any?) {
+    if (ENABLE_LOGGING) {
+        Log.d("musikdroid.Service", String.format(format, *params))
+    }
+}
 
 /**
  * a service used to interact with all of the system media-related components -- notifications,
@@ -66,6 +69,7 @@ class SystemService : Service() {
     private lateinit var powerManager: PowerManager
     private lateinit var prefs: SharedPreferences
 
+    private val handler = Handler(Looper.getMainLooper())
     private val albumArt = AlbumArt()
     private val sessionData = SessionMetadata()
 
@@ -285,7 +289,7 @@ class SystemService : Service() {
             currentImage = albumArt.bitmap
         }
 
-        if (!sessionData.matches(track, currentImage)) {
+        if (!sessionData.matches(track, currentImage, duration)) {
             log("updateMediaSession: stale data detected, updating")
             sessionData.update(track, currentImage, duration)
 
@@ -311,30 +315,52 @@ class SystemService : Service() {
             mediaSession?.let { session ->
                 var mediaSessionState = PlaybackStateCompat.STATE_STOPPED
                 var duration = 0
+                var position = 0L
+                var bufferPosition = 0L
                 var playing: ITrack? = null
 
                 playback?.let { pb ->
                     mediaSessionState = when (pb.state) {
                         PlaybackState.Playing -> PlaybackStateCompat.STATE_PLAYING
                         PlaybackState.Buffering -> PlaybackStateCompat.STATE_BUFFERING
-                        /* HACK: if we return STATE_PAUSED, the playback controls will disappear
-                        from the lock screen! wtf? we don't want that, so we return
-                        STATE_BUFFERING instead, which seems to keep the play controls visible,
-                        and also display the "PLAY" button like the user expects. sigh */
-                        PlaybackState.Paused -> PlaybackStateCompat.STATE_BUFFERING
+                        PlaybackState.Paused -> PlaybackStateCompat.STATE_PAUSED
                         PlaybackState.Stopped -> PlaybackStateCompat.STATE_STOPPED
                     }
                     playing = pb.playingTrack
                     duration = (pb.duration * 1000).toInt()
+                    position = (pb.currentTime * 1000).toLong()
+                    bufferPosition = (pb.bufferedTime * 1000).toLong()
                 }
 
                 updateMediaSession(playing, duration)
                 updateNotification(playing, playback?.state ?: PlaybackState.Stopped)
 
                 session.setPlaybackState(PlaybackStateCompat.Builder()
-                    .setState(mediaSessionState, 0, 0f)
+                    .setState(mediaSessionState, position, 1f)
+                    .setBufferedPosition(bufferPosition)
                     .setActions(MEDIA_SESSION_ACTIONS)
                     .build())
+            }
+        }
+    }
+
+    private fun scheduleNotificationTimeUpdate() {
+        handler.removeCallbacks(updateTimeRunnable)
+        handler.postDelayed(updateTimeRunnable, NOTIFICATION_PLAYHEAD_SYNC_MS)
+    }
+
+    private val updateTimeRunnable = object: Runnable {
+        override fun run() {
+            playback?.let { pb ->
+                when (pb.state) {
+                    PlaybackState.Playing,
+                    PlaybackState.Buffering,
+                    PlaybackState.Paused -> {
+                        updateNotificationAndSessionDebouncer.call()
+                        scheduleNotificationTimeUpdate()
+                    }
+                    PlaybackState.Stopped -> Unit
+                }
             }
         }
     }
@@ -570,6 +596,7 @@ class SystemService : Service() {
         if (playback?.state == PlaybackState.Playing) {
             headsetDoublePauseHack = false
         }
+        scheduleNotificationTimeUpdate()
         updateNotificationAndSessionDebouncer.call()
     }
 
@@ -624,17 +651,20 @@ class SystemService : Service() {
             duration = otherDuration
         }
 
-        fun matches(otherTrack: ITrack?, otherBitmap: Bitmap?): Boolean {
+        fun matches(otherTrack: ITrack?, otherBitmap: Bitmap?, otherDuration: Int): Boolean {
             log("updateMediaSession.matches(): " +
                     "track=$track, " +
                     "otherTrack=$otherTrack " +
                     "otherTrack.externalId=${otherTrack?.externalId} " +
                     "track.externalId=${track?.externalId} " +
                     "otherBitmap=$otherBitmap " +
-                    "bitmap=$bitmap")
+                    "bitmap=$bitmap" +
+                    "otherDuration=$otherDuration " +
+                    "duration=$duration")
             val result = (track != null && otherTrack != null) &&
                 otherTrack.externalId == track?.externalId &&
-                bitmap === otherBitmap
+                bitmap === otherBitmap &&
+                duration == otherDuration
             log("updateMediaSession.matches(): result=$result")
             return result
         }
@@ -647,6 +677,7 @@ class SystemService : Service() {
         private const val HEADSET_HOOK_DEBOUNCE_MS = 500L
         private const val HEADSET_DOUBLE_PAUSE_HACK_DEBOUNCE_MS = 3500L
         private const val NOTIFICATION_DEBOUNCE_MS = 750L
+        private const val NOTIFICATION_PLAYHEAD_SYNC_MS = 10000L
         private const val ACTION_NOTIFICATION_PLAY = "io.casey.musikcube.remote.NOTIFICATION_PLAY"
         private const val ACTION_NOTIFICATION_PAUSE = "io.casey.musikcube.remote.NOTIFICATION_PAUSE"
         private const val ACTION_NOTIFICATION_NEXT = "io.casey.musikcube.remote.NOTIFICATION_NEXT"
@@ -677,8 +708,7 @@ class SystemService : Service() {
             PlaybackStateCompat.ACTION_PLAY_PAUSE or
             PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
             PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-            PlaybackStateCompat.ACTION_FAST_FORWARD or
-            PlaybackStateCompat.ACTION_REWIND
+            PlaybackStateCompat.ACTION_STOP
 
         private var wakeLockAcquireTime = -1L
         private var totalWakeLockTime = 0L
