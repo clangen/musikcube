@@ -353,13 +353,14 @@ class SystemService : Service() {
         override fun run() {
             playback?.let { pb ->
                 when (pb.state) {
-                    PlaybackState.Playing,
-                    PlaybackState.Buffering,
-                    PlaybackState.Paused -> {
+                    PlaybackState.Playing -> {
                         updateNotificationAndSessionDebouncer.call()
                         scheduleNotificationTimeUpdate()
                     }
-                    PlaybackState.Stopped -> Unit
+                    PlaybackState.Buffering,
+                    PlaybackState.Paused,
+                    PlaybackState.Stopped -> {
+                    }
                 }
             }
         }
