@@ -13,9 +13,12 @@ import io.casey.musikcube.remote.service.gapless.db.GaplessDb
 import io.casey.musikcube.remote.service.gapless.db.GaplessTrack
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.util.NetworkUtil
+import okhttp3.OkHttpClient
 import java.io.File
+import java.net.URL
 import java.util.*
 import javax.inject.Inject
+
 
 class StreamProxy(private val context: Context) {
     @Inject lateinit var gaplessDb: GaplessDb
