@@ -62,7 +62,7 @@ fun SharedPreferences.getString(key: String): String? =
 fun Toolbar.setTitleFromIntent(defaultTitle: String) {
     val extras = (context as? AppCompatActivity)?.intent?.extras ?: Bundle()
     val title = extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
-    this.title = if (title.isNotEmpty()) title else defaultTitle
+    this.title = title.ifEmpty { defaultTitle }
 }
 
 fun Toolbar.collapseActionViewIfExpanded(): Boolean {
@@ -106,7 +106,7 @@ fun AppCompatActivity.enableUpNavigation() {
 
 fun AppCompatActivity.setTitleFromIntent(defaultTitle: String) {
     val title = this.intent.getStringExtra(Shared.Extra.TITLE_OVERRIDE) ?: ""
-    this.title = if (title.isNotEmpty()) title else defaultTitle
+    this.title = title.ifEmpty { defaultTitle }
 }
 
 fun BaseFragment.addFilterAction(menu: Menu, filterable: IFilterable?): Boolean {
@@ -311,7 +311,7 @@ fun BaseFragment.setupDefaultRecyclerView(
 
 fun BaseFragment.getTitleOverride(defaultTitle: String): String {
     val title = this.extras.getString(Shared.Extra.TITLE_OVERRIDE) ?: ""
-    return if (title.isNotEmpty()) title else defaultTitle
+    return title.ifEmpty { defaultTitle }
 }
 
 /*

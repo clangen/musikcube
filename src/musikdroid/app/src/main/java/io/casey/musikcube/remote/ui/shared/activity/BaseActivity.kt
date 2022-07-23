@@ -163,12 +163,11 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
 
     private val top: Fragment?
         get() {
-            return when {
-                fm.backStackEntryCount == 0 ->
+            return when (fm.backStackEntryCount) {
+                0 ->
                     fm.findFragmentByTag(BrowseFragment.TAG)
                 else -> fm.findFragmentByTag(
                     fm.getBackStackEntryAt(fm.backStackEntryCount - 1).name)
-
             }
         }
 

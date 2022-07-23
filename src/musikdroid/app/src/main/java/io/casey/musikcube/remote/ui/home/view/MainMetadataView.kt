@@ -131,12 +131,12 @@ class MainMetadataView : FrameLayout {
                 this.volumeWithArt.text = volume
             }
 
-            this.title.text = if (title.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
-            this.artist.text = if (artist.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_artist) else artist
-            this.album.text = if (album.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_album) else album
+            this.title.text = title.ifEmpty { getString(if (buffering) R.string.buffering else R.string.unknown_title) }
+            this.artist.text = artist.ifEmpty { getString(if (buffering) R.string.buffering else R.string.unknown_artist) }
+            this.album.text = album.ifEmpty { getString(if (buffering) R.string.buffering else R.string.unknown_album) }
 
             this.rebindAlbumArtistWithArtTextView(playback)
-            this.titleWithArt.text = if (title.isEmpty()) getString(if (buffering) R.string.buffering else R.string.unknown_title) else title
+            this.titleWithArt.text = title.ifEmpty { getString(if (buffering) R.string.buffering else R.string.unknown_title) }
             this.buffering.visibility = if (buffering) View.VISIBLE else View.GONE
 
             if (artist.isEmpty() || album.isEmpty()) {
