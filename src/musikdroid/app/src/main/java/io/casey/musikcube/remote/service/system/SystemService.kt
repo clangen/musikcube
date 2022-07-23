@@ -32,10 +32,10 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.fallback
+import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup
 import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
 import androidx.core.app.NotificationCompat.Action as NotifAction
-import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup.getUrl as getAlbumArtUrl
 
 const val ENABLE_LOGGING = false
 
@@ -241,7 +241,7 @@ class SystemService : Service() {
             if (track.artist.isNotBlank() && track.album.isNotBlank()) {
                 log("downloadAlbumArtIfNecessary: metadata available, attempting to download artwork")
 
-                val url = getAlbumArtUrl(track, Size.Mega)
+                val url = AlbumArtLookup.getUrl(track, Size.Mega)
 
                 val request = GlideApp.with(applicationContext)
                     .asBitmap()
