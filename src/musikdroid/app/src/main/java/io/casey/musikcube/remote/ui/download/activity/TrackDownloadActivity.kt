@@ -96,8 +96,9 @@ class TrackDownloadActivity: BaseActivity() {
         cancel()
     }
 
-    override fun onBackPressed() {
+    override fun onInterceptBackButton(): Boolean {
         confirmCancelDialog()
+        return true
     }
 
     private fun cancel() {

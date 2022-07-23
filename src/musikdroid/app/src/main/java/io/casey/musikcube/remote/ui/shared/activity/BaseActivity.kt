@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -29,7 +30,7 @@ import io.casey.musikcube.remote.ui.shared.mixin.RunnerMixin
 import io.casey.musikcube.remote.ui.shared.mixin.ViewModelMixin
 import io.reactivex.disposables.CompositeDisposable
 
-abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.TaskCallbacks {
+abstract class BaseActivity: AppCompatActivity(), ViewModel.Provider, Runner.TaskCallbacks {
     protected var disposables = CompositeDisposable()
         private set
 
@@ -55,6 +56,7 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         prefs = getSharedPreferences(Prefs.NAME, Context.MODE_PRIVATE)
         volumeControlStream = AudioManager.STREAM_MUSIC
         mixins.onCreate(savedInstanceState ?: Bundle())
+        onBackPressedDispatcher.addCallback(this, backHandler)
     }
 
     override fun onStart() {
@@ -97,18 +99,41 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         mixins.onDestroy()
     }
 
-    override fun onBackPressed() {
+    override fun onNavigateUp(): Boolean {
+        if (!navigateBack()) {
+            finish()
+        }
+        return true
+    }
+
+    private fun navigateBack(): Boolean {
         (top as? IBackHandler)?.let {
-            if (it.onBackPressed()) {
-                return
+            if (it.onInterceptBackButton()) {
+                return true
             }
         }
 
-        when {
-            fm.backStackEntryCount > 1 -> fm.popBackStack()
-            else -> super.onBackPressed()
+        if (onInterceptBackButton()) {
+            return true
+        }
+
+        if (fm.backStackEntryCount >= 1) {
+            fm.popBackStack()
+            return true
+        }
+
+        return false
+    }
+
+    private val backHandler = object: OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (!navigateBack()) {
+                finish()
+            }
         }
     }
+
+    protected open fun onInterceptBackButton(): Boolean = false
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (mixin(PlaybackMixin::class.java)?.onKeyDown(keyCode) == true) {

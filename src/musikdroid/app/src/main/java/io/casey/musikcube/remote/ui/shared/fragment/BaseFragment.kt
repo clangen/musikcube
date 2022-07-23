@@ -169,7 +169,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
         }
     }
 
-    override fun onBackPressed(): Boolean =
+    override fun onInterceptBackButton(): Boolean =
         toolbar?.collapseActionViewIfExpanded() ?: false
 
     override fun <T: ViewModel<*>> createViewModel(): T? = null

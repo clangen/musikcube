@@ -19,6 +19,7 @@ import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
@@ -276,9 +277,9 @@ inline fun <reified T: BaseFragment> T.withTitleOverride(activity: AppCompatActi
 
 fun BaseFragment.initToolbarIfNecessary(view: View, showFilter: Boolean = true) {
     view.findViewById<Toolbar>(R.id.toolbar)?.let {
-        it.navigationIcon = appCompatActivity.getDrawable(R.drawable.ic_back)
+        it.navigationIcon = AppCompatResources.getDrawable(appCompatActivity, R.drawable.ic_back)
         it.setNavigationOnClickListener {
-            appCompatActivity.onBackPressed()
+            appCompatActivity.onNavigateUp()
         }
         if (showFilter) {
             this.addFilterAction(it.menu, this as? IFilterable)
