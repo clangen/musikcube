@@ -97,7 +97,6 @@ abstract class BaseActivity : AppCompatActivity(), ViewModel.Provider, Runner.Ta
         mixins.onDestroy()
     }
 
-
     override fun onBackPressed() {
         (top as? IBackHandler)?.let {
             if (it.onBackPressed()) {

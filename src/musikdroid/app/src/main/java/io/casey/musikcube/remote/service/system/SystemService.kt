@@ -564,6 +564,10 @@ class SystemService : Service() {
             return false
         }
 
+        override fun onSeekTo(pos: Long) {
+            playback?.seekTo(pos.toDouble() / 1000.0)
+        }
+
         override fun onPlay() {
             playback?.let {
                 when (it.queueCount == 0) {
@@ -711,7 +715,8 @@ class SystemService : Service() {
             PlaybackStateCompat.ACTION_PLAY_PAUSE or
             PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
             PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-            PlaybackStateCompat.ACTION_STOP
+            PlaybackStateCompat.ACTION_STOP or
+            PlaybackStateCompat.ACTION_SEEK_TO
 
         private var wakeLockAcquireTime = -1L
         private var totalWakeLockTime = 0L
