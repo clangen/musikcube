@@ -116,16 +116,16 @@ class EditPlaylistActivity: BaseActivity() {
             ItemTouchHelper.LEFT)
     {
         override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
-            val from = viewHolder.adapterPosition
-            val to = target.adapterPosition
+            val from = viewHolder.bindingAdapterPosition
+            val to = target.bindingAdapterPosition
             viewModel.move(from, to)
             adapter.notifyItemMoved(from, to)
             return true
         }
 
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-            viewModel.remove(viewHolder.adapterPosition)
-            adapter.notifyItemRemoved(viewHolder.adapterPosition)
+            viewModel.remove(viewHolder.bindingAdapterPosition)
+            adapter.notifyItemRemoved(viewHolder.bindingAdapterPosition)
         }
     }
 

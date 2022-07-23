@@ -10,7 +10,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import com.uacf.taskrunner.Task
@@ -28,6 +27,7 @@ import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
 import io.casey.musikcube.remote.util.getParcelableCompat
 import io.casey.musikcube.remote.util.getParcelableExtraCompat
+import io.casey.musikcube.remote.util.launcher
 import java.util.*
 import javax.inject.Inject
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults
@@ -215,7 +215,7 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
-    private val connectionsActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult ->
+    private val connectionsActivityLauncher = launcher { activityResult ->
         if (activityResult.resultCode == RESULT_OK && activityResult.data != null) {
             activityResult.data?.let { data ->
                 val connection = data.getParcelableExtraCompat<Connection>(ConnectionsActivity.EXTRA_SELECTED_CONNECTION)
@@ -227,7 +227,6 @@ class SettingsActivity : BaseActivity() {
                     sslCheckbox.setCheckWithoutEvent(connection.ssl, sslCheckChanged)
                     certCheckbox.setCheckWithoutEvent(connection.noValidate, certValidationChanged)
                 }
-
             }
         }
     }

@@ -1,5 +1,6 @@
 package io.casey.musikcube.remote.ui.shared.mixin
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.content.DialogInterface
@@ -29,8 +30,10 @@ import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
 import io.casey.musikcube.remote.ui.shared.fragment.BaseDialogFragment
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.tracks.activity.EditPlaylistActivity
+import io.casey.musikcube.remote.util.getSerializableCompat
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
+import java.io.Serializable
 import javax.inject.Inject
 
 class ItemContextMenuMixin(private val activity: AppCompatActivity,
@@ -106,6 +109,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
     fun createPlaylist() =
         EnterPlaylistNameDialog.showForCreate(activity, this)
 
+    @SuppressLint("CheckResult")
     fun createPlaylist(playlistName: String) {
         @Suppress("unused")
         provider.createPlaylist(playlistName).subscribeBy(
@@ -123,8 +127,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             })
     }
 
+    @SuppressLint("CheckResult")
     fun renamePlaylist(newName: String, id: Long) {
-        @Suppress("unused")
         provider.renamePlaylist(id, newName).subscribeBy(
             onNext = { success ->
                 if (success) {
@@ -159,10 +163,10 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         Navigate.toTracks(Metadata.Category.PLAYLISTS, playlistId, playlistName, activity, fragment)
     }
 
+    @SuppressLint("CheckResult")
     private fun addWithErrorHandler(playlistId: Long, playlistName: String, observable: Observable<Boolean>) {
         val error = R.string.playlist_edit_add_error
 
-        @Suppress("unused")
         observable.subscribeBy(
             onNext = { success ->
                 if (success) {
@@ -340,8 +344,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
     }
 
+    @SuppressLint("CheckResult")
     private fun deletePlaylistConfirmed(playlistId: Long, playlistName: String) {
-        @Suppress("unused")
         if (playlistId != -1L) {
             provider.deletePlaylist(playlistId).subscribeBy(
                 onNext = { success ->
@@ -359,8 +363,8 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         }
     }
 
+    @SuppressLint("CheckResult")
     private fun removeFromPlaylistConfirmed(playlistId: Long, playlistName: String, externalId: String, position: Int) {
-        @Suppress("unused")
         provider
             .removeTracksFromPlaylist(playlistId, listOf(externalId), listOf(position))
             .subscribeBy(
@@ -392,7 +396,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             val trackExternalId = args.getString(EXTRA_TRACK_EXTERNAL_ID, "")
             val trackPosition = args.getInt(EXTRA_TRACK_POSITION, -1)
 
-            return AlertDialog.Builder(activity!!)
+            return AlertDialog.Builder(requireActivity())
                 .setTitle(R.string.playlist_confirm_delete_title)
                 .setMessage(getString(R.string.playlist_confirm_delete_message, trackTitle))
                 .setNegativeButton(R.string.button_no, null)
@@ -440,7 +444,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
             val args = this.arguments ?: Bundle()
             val playlistName = args.getString(EXTRA_PLAYLIST_NAME, "") ?: ""
 
-            val dlg = AlertDialog.Builder(activity!!)
+            val dlg = AlertDialog.Builder(requireActivity())
                 .setTitle(R.string.playlist_confirm_delete_title)
                 .setMessage(getString(R.string.playlist_confirm_delete_message, playlistName))
                 .setNegativeButton(R.string.button_no, null)
@@ -485,7 +489,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
             val args = arguments ?: Bundle()
             val editText = EditText(activity)
-            val action = args.getSerializable(EXTRA_ACTION)
+            val action = args.getSerializableCompat<Serializable>(EXTRA_ACTION)
             val name = args.getString(EXTRA_NAME, "")
             val id = args.getLong(EXTRA_ID, -1)
 
@@ -499,7 +503,7 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
             editText.requestFocus()
 
-            val activity = this.activity!!
+            val activity = requireActivity()
 
             val dlg = AlertDialog.Builder(activity)
                 .setTitle(R.string.playlist_name_title)
