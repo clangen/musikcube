@@ -12,12 +12,12 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdkVersion 33
+    compileSdk 33
 
     defaultConfig {
         applicationId "io.casey.musikcube.remote"
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdk 33
         versionCode 111
         versionName "0.98.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
