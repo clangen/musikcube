@@ -35,6 +35,7 @@ import io.casey.musikcube.remote.ui.shared.extension.fallback
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup
 import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
+import io.casey.musikcube.remote.util.getParcelableExtraCompat
 import androidx.core.app.NotificationCompat.Action as NotifAction
 
 const val ENABLE_LOGGING = false
@@ -511,7 +512,9 @@ class SystemService : Service() {
     private val mediaSessionCallback = object : MediaSessionCompat.Callback() {
         override fun onMediaButtonEvent(mediaButtonEvent: Intent?): Boolean {
             if (Intent.ACTION_MEDIA_BUTTON == mediaButtonEvent?.action) {
-                val event = mediaButtonEvent.getParcelableExtra<KeyEvent>(Intent.EXTRA_KEY_EVENT) ?: return super.onMediaButtonEvent(mediaButtonEvent)
+                val event =
+                    mediaButtonEvent.getParcelableExtraCompat<KeyEvent>(Intent.EXTRA_KEY_EVENT) ?:
+                    return super.onMediaButtonEvent(mediaButtonEvent)
 
                 val keycode = event.keyCode
                 val action = event.action

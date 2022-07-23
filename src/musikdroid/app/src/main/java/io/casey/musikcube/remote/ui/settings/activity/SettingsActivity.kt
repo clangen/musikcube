@@ -10,6 +10,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import com.uacf.taskrunner.Task
@@ -25,6 +26,8 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
+import io.casey.musikcube.remote.util.getParcelableCompat
+import io.casey.musikcube.remote.util.getParcelableExtraCompat
 import java.util.*
 import javax.inject.Inject
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults
@@ -81,26 +84,6 @@ class SettingsActivity : BaseActivity() {
         }
 
         return super.onOptionsItemSelected(item)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == CONNECTIONS_REQUEST_CODE && resultCode == RESULT_OK) {
-            if (data != null) {
-                val connection = data.getParcelableExtra<Connection>(
-                        ConnectionsActivity.EXTRA_SELECTED_CONNECTION)
-
-                if (connection != null) {
-                    addressText.setText(connection.hostname)
-                    passwordText.setText(connection.password)
-                    portText.setText(connection.wssPort.toString())
-                    httpPortText.setText(connection.httpPort.toString())
-                    sslCheckbox.setCheckWithoutEvent(connection.ssl, sslCheckChanged)
-                    certCheckbox.setCheckWithoutEvent(connection.noValidate, certValidationChanged)
-                }
-            }
-        }
-
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override val transitionType: Transition
@@ -219,18 +202,33 @@ class SettingsActivity : BaseActivity() {
     }
 
     private fun bindListeners() {
-        findViewById<View>(R.id.button_save_as).setOnClickListener{
+        findViewById<View>(R.id.button_save_as).setOnClickListener {
             showSaveAsDialog()
         }
 
-        findViewById<View>(R.id.button_load).setOnClickListener{
-            startActivityForResult(
-                ConnectionsActivity.getStartIntent(this),
-                CONNECTIONS_REQUEST_CODE)
+        findViewById<View>(R.id.button_load).setOnClickListener {
+            connectionsActivityLauncher.launch(ConnectionsActivity.getStartIntent(this))
         }
 
         findViewById<View>(R.id.button_diagnostics).setOnClickListener {
             startActivity(Intent(this, DiagnosticsActivity::class.java))
+        }
+    }
+
+    private val connectionsActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { activityResult ->
+        if (activityResult.resultCode == RESULT_OK && activityResult.data != null) {
+            activityResult.data?.let { data ->
+                val connection = data.getParcelableExtraCompat<Connection>(ConnectionsActivity.EXTRA_SELECTED_CONNECTION)
+                if (connection != null) {
+                    addressText.setText(connection.hostname)
+                    passwordText.setText(connection.password)
+                    portText.setText(connection.wssPort.toString())
+                    httpPortText.setText(connection.httpPort.toString())
+                    sslCheckbox.setCheckWithoutEvent(connection.ssl, sslCheckChanged)
+                    certCheckbox.setCheckWithoutEvent(connection.noValidate, certValidationChanged)
+                }
+
+            }
         }
     }
 
@@ -413,13 +411,10 @@ class SettingsActivity : BaseActivity() {
                 .setMessage(R.string.settings_confirm_overwrite_message)
                 .setNegativeButton(R.string.button_no, null)
                 .setPositiveButton(R.string.button_yes) { _, _ ->
-                    when (val connection = arguments?.getParcelable<Connection>(EXTRA_CONNECTION)) {
-                        null -> throw IllegalArgumentException("invalid connection")
-                        else -> {
-                            val db = (activity as SettingsActivity).connectionsDb
-                            val saveAs = SaveAsTask(db, connection, true)
-                            (activity as SettingsActivity).runner.run(SaveAsTask.nameFor(connection), saveAs)
-                        }
+                    arguments?.getParcelableCompat<Connection>(EXTRA_CONNECTION)?.let { connection ->
+                        val db = (activity as SettingsActivity).connectionsDb
+                        val saveAs = SaveAsTask(db, connection, true)
+                        (activity as SettingsActivity).runner.run(SaveAsTask.nameFor(connection), saveAs)
                     }
                 }
                 .create()
@@ -484,8 +479,6 @@ class SettingsActivity : BaseActivity() {
     }
 
     companion object {
-        const val CONNECTIONS_REQUEST_CODE = 1000
-
         fun getStartIntent(context: Context): Intent {
             return Intent(context, SettingsActivity::class.java)
         }

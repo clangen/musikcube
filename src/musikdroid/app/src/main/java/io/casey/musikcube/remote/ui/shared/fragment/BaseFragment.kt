@@ -173,7 +173,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
         toolbar?.collapseActionViewIfExpanded() ?: false
 
     override fun <T: ViewModel<*>> createViewModel(): T? = null
-    @Suppress protected fun <T: ViewModel<*>> getViewModel(): T = mixin(ViewModelMixin::class.java)?.get() as T
+    @Suppress("unused") protected fun <T: ViewModel<*>> getViewModel(): T = mixin(ViewModelMixin::class.java)?.get() as T
     protected fun <T: IMixin> mixin(mixin: T): T = mixins.add(mixin)
     protected fun <T: IMixin> mixin(cls: Class<out T>): T? = mixins.get(cls)
 
@@ -188,7 +188,7 @@ open class BaseFragment: Fragment(), ViewModel.Provider, IBackHandler {
             if (arguments == null) {
                 arguments = Bundle()
             }
-            return arguments!!
+            return requireArguments()
         }
 
     val appCompatActivity: AppCompatActivity
