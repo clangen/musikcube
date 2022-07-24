@@ -1002,8 +1002,6 @@ static void adjust_font_size( const int font_size_change)
     if( IsZoomed( PDC_hWnd))
     {
         RECT client_rect;
-        HDC hdc;
-
         GetClientRect( PDC_hWnd, &client_rect);
         PDC_n_rows = client_rect.bottom / PDC_cyChar;
         PDC_n_cols = client_rect.right / PDC_cxChar;
@@ -1011,10 +1009,8 @@ static void adjust_font_size( const int font_size_change)
         PDC_resize_screen( PDC_n_rows, PDC_n_cols);
         add_key_to_queue( KEY_RESIZE);
         SP->resized = TRUE;
-        hdc = GetDC (PDC_hWnd) ;
         GetClientRect( PDC_hWnd, &client_rect);
-        InvalidateRect(PDC_hWnd, &client_rect, TRUE);
-        ReleaseDC( PDC_hWnd, hdc) ;
+        InvalidateRect(PDC_hWnd, &client_rect, FALSE);
     }
     else
     {
@@ -1273,37 +1269,92 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
     prev_wParam = wParam;
 }
 
+/* to prevent flicker during repaint, we'll draw everything to a
+dynamically allocated backing buffer, then blit it back to the
+window's device context in one go. */
+struct BACK_BUFFER {
+    HBITMAP memory_bitmap;
+    HDC memory_dc, window_dc;
+    HANDLE original_object;
+    RECT rect;
+    bool is_rect_valid;
+} backBuffer;
+
+static void PrepareBackBuffer(HDC hdc, RECT rect)
+{
+    memset(&backBuffer, 0, sizeof(backBuffer));
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+    backBuffer.rect = rect;
+    backBuffer.window_dc = hdc;
+    backBuffer.memory_dc = CreateCompatibleDC(hdc);
+    backBuffer.memory_bitmap = CreateCompatibleBitmap(hdc, width, height);
+    backBuffer.original_object =
+        SelectObject(backBuffer.memory_dc, backBuffer.memory_bitmap);
+    backBuffer.is_rect_valid = width > 0 && height > 0;
+}
+
+static void BlitBackBuffer()
+{
+    if (backBuffer.is_rect_valid)
+    {
+        const RECT* r = &backBuffer.rect;
+        int width = r->right - r->left;
+        int height = r->bottom - r->top;
+        BitBlt(
+            backBuffer.window_dc,
+            r->left, r->top,
+            width, height,
+            backBuffer.memory_dc,
+            0, 0,
+            SRCCOPY);
+    }
+    SelectObject(backBuffer.memory_dc, backBuffer.original_object);
+    DeleteObject(backBuffer.memory_bitmap);
+    DeleteObject(backBuffer.memory_dc);
+    memset(&backBuffer, 0, sizeof(backBuffer));
+}
+
 static void HandlePaint( HWND hwnd )
 {
     PAINTSTRUCT ps;
-    HDC hdc;
+    HDC windowDC, memoryDC;
+    RECT clientRect;
 
 /*  printf( "In HandlePaint: %ld %ld, %ld %ld\n",
                rect.left, rect.top, rect.right, rect.bottom); */
 
-    hdc = BeginPaint( hwnd, &ps);
-    RECT rect = ps.rcPaint;
+    windowDC = BeginPaint( hwnd, &ps);
+    GetClientRect(hwnd, &clientRect);
 
-    /* paint the background black. */
-    const HBRUSH hOldBrush =
-        SelectObject(hdc, GetStockObject(BLACK_BRUSH));
-    Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
-    SelectObject(hdc, hOldBrush);
-
-    if( curscr && curscr->_y)
+    PrepareBackBuffer(windowDC, clientRect);
+    memoryDC = backBuffer.memory_dc;
     {
-        int i, x1, n_chars;
+        /* paint the background black. */
+        const HBRUSH hOldBrush =
+            SelectObject(memoryDC, GetStockObject(BLACK_BRUSH));
+        Rectangle(memoryDC,
+            clientRect.left, clientRect.top,
+            clientRect.right, clientRect.bottom);
+        SelectObject(memoryDC, hOldBrush);
 
-        x1 = rect.left / PDC_cxChar;
-        n_chars = rect.right / PDC_cxChar - x1 + 1;
-        if( n_chars > SP->cols - x1)
-            n_chars = SP->cols - x1;
-        if( n_chars > 0)
-        for( i = rect.top / PDC_cyChar; i <= rect.bottom / PDC_cyChar; i++)
-             if( i < SP->lines && curscr->_y[i])
-                 PDC_transform_line_given_hdc( hdc, i, x1,
-                                               n_chars, curscr->_y[i] + x1);
+        /* paint all the rows */
+        if (curscr && curscr->_y)
+        {
+            int i, x1, n_chars;
+
+            x1 = clientRect.left / PDC_cxChar;
+            n_chars = clientRect.right / PDC_cxChar - x1 + 1;
+            if (n_chars > SP->cols - x1)
+                n_chars = SP->cols - x1;
+            if (n_chars > 0)
+                for (i = clientRect.top / PDC_cyChar; i <= clientRect.bottom / PDC_cyChar; i++)
+                    if (i < SP->lines && curscr->_y[i])
+                        PDC_transform_line_given_hdc(memoryDC, i, x1,
+                            n_chars, curscr->_y[i] + x1);
+        }
     }
+    BlitBackBuffer();
     EndPaint( hwnd, &ps );
 }
 
@@ -1818,7 +1869,7 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         return 0 ;
 
     case WM_ERASEBKGND:      /* no need to erase background;  it'll */
-        return( 0);         /* all get painted over anyway */
+        return 1;         /* all get painted over anyway */
 
       /* The WM_PAINT routine is sort of "borrowed" from doupdate( ) from */
       /* refresh.c.  I'm not entirely sure that this is what ought to be  */
@@ -2039,14 +2090,14 @@ INLINE int set_up_window( void)
     {
         ATOM rval;
 
-        wndclass.style         = CS_VREDRAW ;
+        wndclass.style         = CS_VREDRAW | CS_HREDRAW;
         wndclass.lpfnWndProc   = WndProc ;
         wndclass.cbClsExtra    = 0 ;
         wndclass.cbWndExtra    = 0 ;
         wndclass.hInstance     = hInstance ;
         wndclass.hIcon         = icon;
         wndclass.hCursor       = LoadCursor (NULL, IDC_ARROW) ;
-        wndclass.hbrBackground = (HBRUSH) GetStockObject (WHITE_BRUSH) ;
+        wndclass.hbrBackground = (HBRUSH) GetStockObject (BLACK_BRUSH) ;
         wndclass.lpszMenuName  = NULL ;
         wndclass.lpszClassName = AppName ;
 
