@@ -1,10 +1,12 @@
 package io.casey.musikcube.remote.ui.shared.extension
 
+import android.app.Activity
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.res.Resources
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -397,9 +399,16 @@ fun AppCompatActivity.getColorCompat(resourceId: Int): Int =
  *
  */
 
-fun showKeyboard(context: Context) {
+@Suppress("deprecation")
+fun showKeyboard(context: Activity) {
     val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+    if (Build.VERSION.SDK_INT >= 31) {
+        val view = context.currentFocus ?: context.findViewById(android.R.id.content)
+        imm.showSoftInput(view , 0)
+    }
+    else {
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY)
+    }
 }
 
 fun hideKeyboard(context: Context, view: View) {
@@ -413,10 +422,10 @@ fun AppCompatActivity.hideKeyboard(view: View? = null) {
 }
 
 fun DialogFragment.showKeyboard() =
-    showKeyboard(activity!!)
+    showKeyboard(requireActivity())
 
 fun DialogFragment.hideKeyboard() {
-    val fragmentActivity = activity!! /* keep it in the closure so it doesn't get gc'd */
+    val fragmentActivity = requireActivity() /* keep it in the closure so it doesn't get gc'd */
     Handler(Looper.getMainLooper()).postDelayed({
         hideKeyboard(
             fragmentActivity,

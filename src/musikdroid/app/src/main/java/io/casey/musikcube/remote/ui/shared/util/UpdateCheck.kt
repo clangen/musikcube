@@ -3,8 +3,8 @@ package io.casey.musikcube.remote.ui.shared.util
 import android.annotation.SuppressLint
 import android.util.Log
 import io.casey.musikcube.remote.Application
+import io.casey.musikcube.remote.ui.shared.extension.getPackageInfoCompat
 import io.casey.musikcube.remote.util.Preconditions
-import io.casey.musikcube.remote.util.getPackageInfoCompat
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
