@@ -6,8 +6,6 @@
 #include <process.h>
 #endif
 
-extern CRITICAL_SECTION PDC_cs;
-
 static volatile int _beep_count = 0;
 
 static void beep_thread(LPVOID lpParameter)
@@ -32,14 +30,30 @@ void PDC_beep(void)
 void PDC_napms(int ms)     /* 'ms' = milli,  _not_ microseconds! */
 {
     /* RR: keep GUI window responsive while PDCurses sleeps */
+    MSG msg;
+    DWORD curr_ms = GetTickCount( );
+    const DWORD milliseconds_sleep_limit = ms + curr_ms;
+    extern bool PDC_bDone;
 
     PDC_LOG(("PDC_napms() - called: ms=%d\n", ms));
 
-    if( ms)
+    /* Pump all pending messages from WIN32 to the window handler */
+    while( !PDC_bDone && curr_ms < milliseconds_sleep_limit )
     {
-        LeaveCriticalSection(&PDC_cs);
-        Sleep(ms);
-        EnterCriticalSection(&PDC_cs);
+        const DWORD max_sleep_ms = 50;      /* check msgs 20 times/second */
+        DWORD sleep_millisecs;
+
+        while( PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) )
+        {
+           TranslateMessage(&msg);
+           DispatchMessage(&msg);
+        }
+        curr_ms = GetTickCount( );
+        sleep_millisecs = milliseconds_sleep_limit - curr_ms;
+        if( sleep_millisecs > max_sleep_ms)
+            sleep_millisecs = max_sleep_ms;
+        Sleep( sleep_millisecs);
+        curr_ms += sleep_millisecs;
     }
 }
 

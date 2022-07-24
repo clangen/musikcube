@@ -112,6 +112,12 @@ static bool isLangUtf8() {
 }
 #endif
 
+#ifdef WIN32
+static void pdcWinguiResizeCallback() {
+    App::Instance().NotifyResized();
+}
+#endif
+
 /* the way curses represents mouse button state is really gross, and makes it
 annoying to process click events with low latency while also supporting double
 clicks and multiple buttons. this structure is used to maintain and manipulate
@@ -299,6 +305,7 @@ void App::InitCurses() {
     #ifdef PDCURSES_WINGUI
         /* needs to happen after initscr() */
         PDC_set_default_menu_visibility(0);
+        PDC_set_window_resized_callback(&pdcWinguiResizeCallback);
         PDC_set_title(this->appTitle.c_str());
         win32::InterceptWndProc();
         win32::SetAppTitle(this->appTitle);
@@ -596,22 +603,13 @@ process:
             }
         }
 
-        resized |= lastWidth != Screen::GetWidth() || lastHeight != Screen::GetHeight();
-
+        resized |= 
+            lastWidth != Screen::GetWidth() ||
+            lastHeight != Screen::GetHeight();
         if (resized) {
-            resized = false;
             lastWidth = Screen::GetWidth();
             lastHeight = Screen::GetHeight();
-
-            resize_term(0, 0);
-
-            Window::InvalidateScreen();
-
-            if (this->resizeHandler) {
-                this->resizeHandler();
-            }
-
-            this->OnResized();
+            this->NotifyResized();
         }
 
         this->CheckShowOverlay();
@@ -633,6 +631,16 @@ process:
     }
 
     overlays.Clear();
+}
+
+void App::NotifyResized() {
+    resized = false;
+    resize_term(0, 0);
+    Window::InvalidateScreen();
+    if (this->resizeHandler) {
+        this->resizeHandler();
+    }
+    this->OnResized();
 }
 
 void App::UpdateFocusedWindow(IWindowPtr window) {

@@ -60,20 +60,17 @@ int PDC_curs_set(int visibility)
 void PDC_set_title(const char *title)
 {
     extern HWND PDC_hWnd;
-    extern CRITICAL_SECTION PDC_cs;
 #ifdef PDC_WIDE
     wchar_t wtitle[512];
 #endif
     PDC_LOG(("PDC_set_title() - called:<%s>\n", title));
 
-    LeaveCriticalSection(&PDC_cs);
 #ifdef PDC_WIDE
     PDC_mbstowcs(wtitle, title, 511);
     SetWindowTextW( PDC_hWnd, wtitle);
 #else
     SetWindowTextA( PDC_hWnd, title);
 #endif
-    EnterCriticalSection(&PDC_cs);
 }
 
         /* If SP->termattrs & A_BLINK is on, then text with the A_BLINK  */

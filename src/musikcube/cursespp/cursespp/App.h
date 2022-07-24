@@ -69,6 +69,7 @@ namespace cursespp {
             void SetQuitKey(const std::string& kn);
             void Minimize();
             void Restore();
+            void NotifyResized();
 
 #ifdef WIN32
             static bool Running(const std::string& uniqueId, const std::string& title);

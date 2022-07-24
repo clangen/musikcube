@@ -4,7 +4,6 @@
 #include <tchar.h>
 #include <stdint.h>
 #include <assert.h>
-#include <process.h>
 #include "pdccolor.h"
 #ifdef WIN32_LEAN_AND_MEAN
    #ifdef PDC_WIDE
@@ -67,7 +66,7 @@ cube of 16 million colors. */
 int PDC_show_ctrl_alts = 0;
 
 /* RR: Removed statis on next line */
-/*bool PDC_bDone = FALSE;*/
+bool PDC_bDone = FALSE;
 static HWND originally_focussed_window;
 
 int debug_printf( const char *format, ...)
@@ -105,8 +104,6 @@ int debug_printf( const char *format, ...)
 HWND PDC_hWnd;
 static int PDC_argc = 0;
 static char **PDC_argv = NULL;
-uint32_t winthr_id = 0;
-CRITICAL_SECTION PDC_cs;
 
 static void final_cleanup( void)
 {
@@ -143,7 +140,7 @@ void PDC_scr_close(void)
 {
     PDC_LOG(("PDC_scr_close() - called\n"));
     final_cleanup( );
-    /*PDC_bDone = TRUE;*/
+    PDC_bDone = TRUE;
 }
 
 /* NOTE that PDC_scr_free( ) is called only from delscreen( ),    */
@@ -985,35 +982,6 @@ INLINE int set_default_sizes_from_registry( const int n_cols, const int n_rows,
     return( rval != ERROR_SUCCESS);
 }
 
-/* If the window is maximized,  there will usually be a fractional
-character width at the right and bottom edges.  The following code fills
-that in with a black brush.  It takes the "paint rectangle",  the area
-passed with a WM_PAINT message that specifies what chunk of the client
-area needs to be redrawn.
-
-    If the window is _not_ maximized,  this shouldn't happen;  the window
-width/height should always be an integral multiple of the character
-width/height,  with no slivers at the right and bottom edges. */
-
-static void fix_up_edges( const HDC hdc, const RECT *rect)
-{
-    const int x = PDC_n_cols * PDC_cxChar;
-    const int y = PDC_n_rows * PDC_cyChar;
-
-    if( rect->right >= x || rect->bottom >= y)
-    {
-        const HBRUSH hOldBrush =
-                      SelectObject( hdc, GetStockObject( BLACK_BRUSH));
-
-        SelectObject( hdc, GetStockObject( NULL_PEN));
-        if( rect->right >= x)
-           Rectangle( hdc, x, rect->top, rect->right + 1, rect->bottom + 1);
-        if( rect->bottom >= y)
-           Rectangle( hdc, rect->left, y, rect->right + 1, rect->bottom + 1);
-        SelectObject( hdc, hOldBrush);
-    }
-}
-
 static void adjust_font_size( const int font_size_change)
 {
     extern int PDC_font_size;
@@ -1045,7 +1013,7 @@ static void adjust_font_size( const int font_size_change)
         SP->resized = TRUE;
         hdc = GetDC (PDC_hWnd) ;
         GetClientRect( PDC_hWnd, &client_rect);
-        fix_up_edges( hdc, &client_rect);
+        InvalidateRect(PDC_hWnd, &client_rect, TRUE);
         ReleaseDC( PDC_hWnd, hdc) ;
     }
     else
@@ -1149,7 +1117,7 @@ static int keep_size_within_bounds( int *lines, int *cols)
 }
 
 INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
-                                     int *xloc, int *yloc)
+                                     int *xloc, int *yloc, int *menu_shown)
 {
     TCHAR data[100];
     DWORD size_out = sizeof( data);
@@ -1170,18 +1138,15 @@ INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
         {
             extern int PDC_font_size;
             int x = -1, y = -1, bytes_read = 0;
-            int minl = 0, maxl = 0, minc = 0, maxc = 0;
 
             my_stscanf( data, _T( "%dx%d,%d,%d,%d,%d;%d,%d,%d,%d:%n"),
                              &x, &y, &PDC_font_size,
-                             xloc, yloc, &menu_shown,
-                             &minl, &maxl,
-                             &minc, &maxc,
+                             xloc, yloc, menu_shown,
+                             &min_lines, &max_lines,
+                             &min_cols, &max_cols,
                              &bytes_read);
             if( bytes_read > 0 && data[bytes_read - 1] == ':')
                my_tcscpy( PDC_font_name, data + bytes_read);
-            if ( !resize_limits_set)
-                PDC_set_resize_limits(minl, maxl, minc, maxc);
             if( n_cols)
                 *n_cols = x;
             if( n_rows)
@@ -1234,6 +1199,12 @@ INLINE void HandleSizing( WPARAM wParam, LPARAM lParam )
         rect->left = rect->right - rounded_width;
 }
 
+typedef void(*resize_callback_fnptr)();
+static resize_callback_fnptr resize_callback = NULL;
+void PDC_set_window_resized_callback(resize_callback_fnptr callback) {
+    resize_callback = callback;
+}
+
 static void HandleSize( const WPARAM wParam, const LPARAM lParam)
 {
     static WPARAM prev_wParam = (WPARAM)-99;
@@ -1244,11 +1215,12 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
     debug_printf( "WM_SIZE: wParam %x %d %d %d\n", (unsigned)wParam,
                   n_xpixels, n_ypixels, SP->resized);
 
-    if( wParam == SIZE_MINIMIZED )
+    if ( wParam == SIZE_MINIMIZED )
     {
         prev_wParam = SIZE_MINIMIZED;
         return;
     }
+
     new_n_rows = n_ypixels / PDC_cyChar;
     new_n_cols = n_xpixels / PDC_cxChar;
     debug_printf( "Size was %d x %d; will be %d x %d\n",
@@ -1273,6 +1245,9 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
             /* don't add a key when the window is initialized */
             add_key_to_queue( KEY_RESIZE);
             SP->resized = TRUE;
+            if (resize_callback) {
+                resize_callback();
+            }
         }
     }
 
@@ -1298,20 +1273,22 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
     prev_wParam = wParam;
 }
 
-
 static void HandlePaint( HWND hwnd )
 {
     PAINTSTRUCT ps;
     HDC hdc;
-    RECT rect;
 
-    GetUpdateRect( hwnd, &rect, FALSE);
 /*  printf( "In HandlePaint: %ld %ld, %ld %ld\n",
                rect.left, rect.top, rect.right, rect.bottom); */
 
     hdc = BeginPaint( hwnd, &ps);
+    RECT rect = ps.rcPaint;
 
-    fix_up_edges( hdc, &rect);
+    /* paint the background black. */
+    const HBRUSH hOldBrush =
+        SelectObject(hdc, GetStockObject(BLACK_BRUSH));
+    Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom);
+    SelectObject(hdc, hOldBrush);
 
     if( curscr && curscr->_y)
     {
@@ -1554,7 +1531,6 @@ int PDC_get_mouse_event_from_queue( void)
 
     if( !n_mouse_queue)
         return( -1);
-    EnterCriticalSection(&PDC_cs);
     memset(&SP->mouse_status, 0, sizeof(MOUSE_STATUS));
     if( mouse_queue->action == BUTTON_MOVED)
     {
@@ -1585,7 +1561,6 @@ int PDC_get_mouse_event_from_queue( void)
         SP->mouse_status.button[i] |= mouse_queue->button_flags;
     n_mouse_queue--;
     memmove( mouse_queue, mouse_queue + 1, n_mouse_queue * sizeof( PDC_mouse_event));
-    LeaveCriticalSection(&PDC_cs);
     return( 0);
 }
 
@@ -1718,6 +1693,11 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     static bool ignore_resize = FALSE;
     int button = -1, action = -1;
 
+    PDC_hWnd = hwnd;
+    if( !hwnd)
+        debug_printf( "Null hWnd: msg %u, wParam %x, lParam %lx\n",
+                     message, wParam, lParam);
+
     switch (message)
     {
     case WM_SIZING:
@@ -1727,16 +1707,12 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     case WM_SIZE:
                 /* If ignore_resize = 1,  don't bother resizing; */
                 /* the final window size has yet to be set       */
-        if( ignore_resize == FALSE) {
-            EnterCriticalSection(&PDC_cs);
-            HandleSize( wParam, lParam);
-            LeaveCriticalSection(&PDC_cs);
-        }
+        if( ignore_resize == FALSE)
+           HandleSize( wParam, lParam);
         return 0 ;
 
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        EnterCriticalSection(&PDC_cs);
         {
             static int mouse_wheel_vertical_loc = 0;
             static int mouse_wheel_horizontal_loc = 0;
@@ -1778,18 +1754,14 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
                 }
             }
         }
-        LeaveCriticalSection(&PDC_cs);
         return 0;
 
     case WM_MOUSEMOVE:
         {
         const int mouse_x = LOWORD( lParam) / PDC_cxChar;
         const int mouse_y = HIWORD( lParam) / PDC_cyChar;
-
-        EnterCriticalSection(&PDC_cs);
         if( add_mouse( 0, BUTTON_MOVED, mouse_x, mouse_y))
             modified_key_to_return = 0;
-        LeaveCriticalSection(&PDC_cs);
         }
         return 0;
 
@@ -1852,14 +1824,11 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
       /* refresh.c.  I'm not entirely sure that this is what ought to be  */
       /* done,  though it does appear to work correctly.                  */
     case WM_PAINT:
-        EnterCriticalSection(&PDC_cs);
         HandlePaint( hwnd );
-        LeaveCriticalSection(&PDC_cs);
         return 0;
 
     case WM_KEYUP:
     case WM_SYSKEYUP:
-        EnterCriticalSection(&PDC_cs);
         if( wParam == VK_MENU && numpad_unicode_value)
         {
             modified_key_to_return = numpad_unicode_value;
@@ -1870,14 +1839,11 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         {
             add_key_to_queue( modified_key_to_return );
             modified_key_to_return = 0;
-            LeaveCriticalSection(&PDC_cs);
             return 0;
         }
-        LeaveCriticalSection(&PDC_cs);
         return DefWindowProc(hwnd, message, wParam, lParam);
 
     case WM_CHAR:       /* _Don't_ add Shift-Tab;  it's handled elsewhere */
-        EnterCriticalSection(&PDC_cs);
         if( wParam == 3 && !SP->raw_inp)     /* Ctrl-C hit */
             exit( 0);
         if( wParam != 9 || !(GetKeyState( VK_SHIFT) & 0x8000))
@@ -1885,16 +1851,13 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
                add_key_to_queue( (int)wParam );
         key_already_handled = FALSE;
         last_key_handled = 0;
-        LeaveCriticalSection(&PDC_cs);
         return 0;
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
         if( wParam < 225 && wParam > 0 )
         {
-            EnterCriticalSection(&PDC_cs);
             HandleSyskeyDown( wParam, lParam, &modified_key_to_return );
-            LeaveCriticalSection(&PDC_cs);
             return 0;
         }
         return DefWindowProc(hwnd, message, wParam, lParam);
@@ -1903,7 +1866,6 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         return 0 ;
 
     case WM_TIMER:
-        EnterCriticalSection(&PDC_cs);
         if( wParam != TIMER_ID_FOR_BLINKING)
         {
             KillTimer( PDC_hWnd, (int)wParam);
@@ -1914,11 +1876,9 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
             /* blink the blinking text */
             HandleTimer( wParam );
         }
-        LeaveCriticalSection(&PDC_cs);
         return 0;
 
     case WM_CLOSE:
-        EnterCriticalSection(&PDC_cs);
         if( !PDC_get_function_key( FUNCTION_KEY_SHUT_DOWN))
         {
             final_cleanup( );
@@ -1927,49 +1887,38 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         }
         else
             add_key_to_queue( PDC_get_function_key( FUNCTION_KEY_SHUT_DOWN));
-
-        LeaveCriticalSection(&PDC_cs);
-        return( 0);
+        return 0;
 
     case WM_COMMAND:
     case WM_SYSCOMMAND:
         if( wParam == WM_EXIT_GRACELESSLY)
         {
-            EnterCriticalSection(&PDC_cs);
             final_cleanup( );
-            /*PDC_bDone = TRUE;*/
+            PDC_bDone = TRUE;
             exit( 0);
         }
         else if( wParam == WM_ENLARGE_FONT || wParam == WM_SHRINK_FONT)
         {
-            EnterCriticalSection(&PDC_cs);
             adjust_font_size( (wParam == WM_ENLARGE_FONT) ? 1 : -1);
-            LeaveCriticalSection(&PDC_cs);
             return( 0);
         }
         else if( wParam == WM_CHOOSE_FONT)
         {
-            EnterCriticalSection(&PDC_cs);
             if( PDC_choose_a_new_font( ))
                 adjust_font_size( 0);
-            LeaveCriticalSection(&PDC_cs);
             return( 0);
         }
         else if( wParam == WM_TOGGLE_MENU)
         {
-            EnterCriticalSection(&PDC_cs);
             HandleMenuToggle( &ignore_resize);
-            LeaveCriticalSection(&PDC_cs);
             return 0;
         }
         return DefWindowProc(hwnd, message, wParam, lParam);
 
     case WM_DESTROY:
-        EnterCriticalSection(&PDC_cs);
         PDC_LOG(("WM_DESTROY\n"));
         PostQuitMessage (0) ;
-        /*PDC_bDone = TRUE;*/
-        LeaveCriticalSection(&PDC_cs);
+        PDC_bDone = TRUE;
         return 0 ;
 
     default:
@@ -1977,17 +1926,13 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     }
 
     /* mouse button handling code */
-    assert( button != -1);
-    EnterCriticalSection(&PDC_cs);
-
-    add_mouse( button, action, LOWORD( lParam) / PDC_cxChar, HIWORD( lParam) / PDC_cyChar);
-    if( action == BUTTON_PRESSED)
-       SetCapture( hwnd);
+    assert(button != -1);
+    add_mouse(button, action, LOWORD(lParam) / PDC_cxChar, HIWORD(lParam) / PDC_cyChar);
+    if (action == BUTTON_PRESSED)
+        SetCapture(hwnd);
     else
-       ReleaseCapture( );
-    SetTimer( hwnd, 0, SP->mouse_wait, NULL);
-
-    LeaveCriticalSection(&PDC_cs);
+        ReleaseCapture();
+    SetTimer(hwnd, 0, SP->mouse_wait, NULL);
     return 0;
 }
 
@@ -2046,79 +1991,6 @@ static void clip_or_center_window_to_monitor( HWND hwnd)
 }
 #endif
 
-struct PDC_WININFO {
-    HANDLE hInstance;
-    int xsize;
-    int ysize;
-    DWORD window_style;
-    DWORD window_ex_style;
-    int xloc;
-    int yloc;
-    TCHAR WindowTitle[MAX_PATH];
-};
-
-static const TCHAR *AppName = _T( "Curses_App");
-static HANDLE winthr_ready;
-
-/* Thread that creates and manages the WinGUI window.
-   The return type (and declared type of winthr_id) is uint32_t instead of
-   DWORD to avoid compiler warnings. */
-
-static uint32_t WINAPI window_thread(LPVOID lpParameter)
-{
-    MSG msg;
-    HMENU hMenu;
-    struct PDC_WININFO *winfo = (struct PDC_WININFO *) lpParameter;
-    BOOL rval;
-
-    PDC_hWnd = CreateWindowEx(winfo->window_ex_style, AppName,
-                    winfo->WindowTitle, winfo->window_style,
-                    winfo->xloc, winfo->yloc,
-                    winfo->xsize, winfo->ysize,
-                    NULL, (menu_shown ? set_menu( ) : NULL),
-                    winfo->hInstance, NULL) ;
-
-    if( !PDC_hWnd)
-    {
-        const DWORD last_error = GetLastError( );
-
-        debug_printf( "CreateWindow failed; GetLastError = %ld", last_error);
-        return( 2);
-    }
-
-    hMenu = GetSystemMenu( PDC_hWnd, FALSE);
-    AppendMenu( hMenu, MF_STRING | (menu_shown ? MF_CHECKED : MF_UNCHECKED), WM_TOGGLE_MENU, _T( "Menu"));
-    AppendMenu( hMenu, MF_STRING, WM_CHOOSE_FONT, _T( "Choose Font"));
-
-    debug_printf( "menu set\n");
-
-    ShowWindow (PDC_hWnd,
-                    (winfo->window_style & WS_MAXIMIZE) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
-    debug_printf( "window shown\n");
-    UpdateWindow (PDC_hWnd) ;
-    debug_printf( "window updated\n");
-    SetTimer( PDC_hWnd, TIMER_ID_FOR_BLINKING, 500, NULL);
-    debug_printf( "timer set\n");
-
-#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
-    /* if the window is off-screen, move it on screen. */
-    clip_or_center_window_to_monitor( PDC_hWnd);
-#endif
-
-    SetEvent(winthr_ready);
-
-    while ((rval = GetMessage(&msg, NULL, 0, 0)) == TRUE) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
-    if (rval == -1) {
-        debug_printf("GetMessage() error: GetLastError = %lu\n", GetLastError());
-        return 1;
-    }
-    return 0;
-}
-
 /* By default,  the user cannot resize the window.  This is because
 many apps don't handle KEY_RESIZE,  and one can get odd behavior
 in such cases.  There are two ways around this.  If you call
@@ -2143,33 +2015,29 @@ INLINE int set_up_window( void)
 {
     /* create the dialog window  */
     WNDCLASS   wndclass ;
+    HMENU hMenu;
     HANDLE hInstance = GetModuleHandle( NULL);
     int n_default_columns = 80;
     int n_default_rows = 25;
-    struct PDC_WININFO winfo;
+    int xsize, ysize, window_style;
+    int xloc = CW_USEDEFAULT;
+    int yloc = CW_USEDEFAULT;
+    TCHAR WindowTitle[MAX_PATH];
+    const TCHAR *AppName = _T( "Curses_App");
     HICON icon;
-    /*static bool wndclass_has_been_registered = FALSE;*/
-    HANDLE winthr_h;
-    HANDLE hWait[2];
-    DWORD winthr_status;
+    static bool wndclass_has_been_registered = FALSE;
 
     if( !hInstance)
         debug_printf( "No instance: %d\n", GetLastError( ));
-
-    winfo.hInstance = hInstance;
-    winfo.xloc = CW_USEDEFAULT;
-    winfo.yloc = CW_USEDEFAULT;
-
     originally_focussed_window = GetForegroundWindow( );
     debug_printf( "hInstance %x\nOriginal window %x\n", hInstance, originally_focussed_window);
-    /*if( !wndclass_has_been_registered)*/
+    /* set the window icon from the icon in the process */
+    icon = get_app_icon(hInstance);
+    if( !icon )
+       icon = LoadIcon( NULL, IDI_APPLICATION);
+    if( !wndclass_has_been_registered)
     {
         ATOM rval;
-
-        /* set the window icon from the icon in the process */
-        icon = get_app_icon(hInstance);
-        if( !icon )
-           icon = LoadIcon( NULL, IDI_APPLICATION);
 
         wndclass.style         = CS_VREDRAW ;
         wndclass.lpfnWndProc   = WndProc ;
@@ -2190,12 +2058,12 @@ INLINE int set_up_window( void)
             debug_printf( "RegisterClass failed: GetLastError = %lx\n", last_error);
             return( -1);
         }
-        /*wndclass_has_been_registered = TRUE;*/
+        wndclass_has_been_registered = TRUE;
     }
 
-    get_app_name( winfo.WindowTitle, MAX_PATH, TRUE);
+    get_app_name( WindowTitle, MAX_PATH, TRUE);
 #ifdef PDC_WIDE
-    debug_printf( "WindowTitle = '%ls'\n", winfo.WindowTitle);
+    debug_printf( "WindowTitle = '%ls'\n", WindowTitle);
 #endif
 
     if( PDC_n_rows > 2 && PDC_n_cols > 2)
@@ -2205,7 +2073,7 @@ INLINE int set_up_window( void)
     }
 
     get_default_sizes_from_registry( &n_default_columns, &n_default_rows,
-                     &winfo.xloc, &winfo.yloc, &menu_shown);
+                     &xloc, &yloc, &menu_shown);
 
     if( ttytype[1])
         PDC_set_resize_limits( (unsigned char)ttytype[0],
@@ -2213,55 +2081,61 @@ INLINE int set_up_window( void)
                                (unsigned char)ttytype[2],
                                (unsigned char)ttytype[3]);
     debug_printf( "Size %d x %d,  loc %d x %d;  menu %d\n",
-               n_default_columns, n_default_rows, winfo.xloc, winfo.yloc, menu_shown);
+               n_default_columns, n_default_rows, xloc, yloc, menu_shown);
     get_character_sizes( NULL, &PDC_cxChar, &PDC_cyChar);
 
     if( min_lines != max_lines || min_cols != max_cols)
-        winfo.window_style = ((n_default_columns == -1) ?
+        window_style = ((n_default_columns == -1) ?
                     WS_MAXIMIZE | WS_OVERLAPPEDWINDOW : WS_OVERLAPPEDWINDOW);
     else  /* fixed-size window:  looks "normal",  but w/o a maximize box */
-        winfo.window_style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+        window_style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
 
-    winfo.window_ex_style = WS_EX_CLIENTEDGE;
+    DWORD window_ex_style = WS_EX_CLIENTEDGE;
 
     if( n_default_columns == -1)
-        winfo.xsize = winfo.ysize = CW_USEDEFAULT;
+        xsize = ysize = CW_USEDEFAULT;
     else
     {
         keep_size_within_bounds( &n_default_rows, &n_default_columns);
-        winfo.xsize = PDC_cxChar * n_default_columns;
-        winfo.ysize = PDC_cyChar * n_default_rows;
-        adjust_window_size( &winfo.xsize, &winfo.ysize, winfo.window_style,
-                                        winfo.window_ex_style);
+        xsize = PDC_cxChar * n_default_columns;
+        ysize = PDC_cyChar * n_default_rows;
+        adjust_window_size( &xsize, &ysize, window_style, menu_shown);
     }
 
-    InitializeCriticalSection(&PDC_cs);
-    winthr_ready = CreateEvent(NULL, FALSE, FALSE, NULL);
-    winthr_h = (HANDLE) _beginthreadex(NULL, 0, window_thread, &winfo, 0, &winthr_id);
-    if (winthr_h == (HANDLE) 0) {
-        debug_printf("_beginthreadex() failed: %s\n", strerror(errno));
-        DeleteCriticalSection(&PDC_cs);
-        CloseHandle(winthr_ready);
-        CloseHandle(winthr_h);
-        return -1;
+    PDC_hWnd = CreateWindowEx( window_ex_style,
+                    AppName, WindowTitle,
+                    window_style,
+                    xloc, yloc,
+                    xsize, ysize,
+                    NULL, (menu_shown ? set_menu( ) : NULL),
+                    hInstance, NULL) ;
+
+    if( !PDC_hWnd)
+    {
+        const DWORD last_error = GetLastError( );
+
+        debug_printf( "CreateWindow failed; GetLastError = %ld", last_error);
+        return( -2);
     }
 
-    hWait[0] = winthr_ready;
-    hWait[1] = winthr_h;
-    WaitForMultipleObjects(2, hWait, FALSE, INFINITE);
-    CloseHandle(winthr_ready);
-    if (!GetExitCodeThread(winthr_h, &winthr_status)) {
-        debug_printf("GetExitCodeThread() failed: GetLastError = %lu\n", GetLastError());
-        DeleteCriticalSection(&PDC_cs);
-        CloseHandle(winthr_h);
-        return -1;
-    }
-    CloseHandle(winthr_h);
-    if (winthr_status != STILL_ACTIVE) {
-        debug_printf("Premature window_thread termination: exit code = %lu\n", winthr_status);
-        DeleteCriticalSection(&PDC_cs);
-        return winthr_status;
-    }
+    hMenu = GetSystemMenu( PDC_hWnd, FALSE);
+    AppendMenu( hMenu, MF_STRING | (menu_shown ? MF_CHECKED : MF_UNCHECKED), WM_TOGGLE_MENU, _T( "Menu"));
+    AppendMenu( hMenu, MF_STRING, WM_CHOOSE_FONT, _T( "Choose Font"));
+
+    debug_printf( "menu set\n");
+
+    ShowWindow (PDC_hWnd,
+                    (n_default_columns == -1) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
+    debug_printf( "window shown\n");
+    UpdateWindow (PDC_hWnd) ;
+    debug_printf( "window updated\n");
+    SetTimer( PDC_hWnd, TIMER_ID_FOR_BLINKING, 500, NULL);
+    debug_printf( "timer set\n");
+
+#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
+    /* if the window is off-screen, move it on screen. */
+    clip_or_center_window_to_monitor( PDC_hWnd);
+#endif
 
     return( 0);
 }
@@ -2321,8 +2195,6 @@ int PDC_scr_open(void)
     while( !PDC_get_rows( ))     /* wait for screen to be drawn and */
       ;                          /* actual size to be determined    */
 
-    EnterCriticalSection(&PDC_cs);
-
     debug_printf( "Back from PDC_get_rows\n");
     SP->lines = PDC_get_rows();
     SP->cols = PDC_get_columns();
@@ -2371,19 +2243,11 @@ int PDC_resize_screen( int nlines, int ncols)
 
         if( new_width != client_rect.right || new_height != client_rect.bottom)
         {                    /* check to make sure size actually changed */
-            DWORD thr_id = GetCurrentThreadId();
             add_resize_key = 0;
-
-            if (thr_id != winthr_id)
-                LeaveCriticalSection(&PDC_cs);
-
             SetWindowPos( PDC_hWnd, 0, 0, 0,
                    new_width + (rect.right - rect.left) - client_rect.right,
                    new_height + (rect.bottom - rect.top) - client_rect.bottom,
                   SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW);
-
-            if (thr_id != winthr_id)
-                EnterCriticalSection(&PDC_cs);
         }
     }
     return OK;
