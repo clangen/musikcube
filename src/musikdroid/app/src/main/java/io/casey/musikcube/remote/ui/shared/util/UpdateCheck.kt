@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.util.Log
 import io.casey.musikcube.remote.Application
 import io.casey.musikcube.remote.util.Preconditions
+import io.casey.musikcube.remote.util.getPackageInfoCompat
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -119,7 +120,7 @@ class UpdateCheck {
 
         private val VERSION by lazy {
             val context = Application.instance
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            context.packageManager.getPackageInfoCompat(context.packageName).versionName
         }
 
         private val USER_AGENT by lazy {
