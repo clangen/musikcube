@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -58,6 +59,7 @@ int wclrtoeol(WINDOW *win)
     PDC_LOG(("wclrtoeol() - called: Row: %d Col: %d\n",
              win->_cury, win->_curx));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -71,10 +73,7 @@ int wclrtoeol(WINDOW *win)
     for (minx = x, ptr = &win->_y[y][x]; minx < win->_maxx; minx++, ptr++)
         *ptr = blank;
 
-    if (x < win->_firstch[y] || win->_firstch[y] == _NO_CHANGE)
-        win->_firstch[y] = x;
-
-    win->_lastch[y] = win->_maxx - 1;
+    PDC_mark_cells_as_changed( win, y, x, win->_maxx - 1);
 
     PDC_sync(win);
     return OK;
@@ -93,6 +92,7 @@ int wclrtobot(WINDOW *win)
 
     PDC_LOG(("wclrtobot() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -144,6 +144,7 @@ int wclear(WINDOW *win)
 {
     PDC_LOG(("wclear() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 

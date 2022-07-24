@@ -241,6 +241,7 @@ bool wenclose(const WINDOW *win, int y, int x)
 {
     PDC_LOG(("wenclose() - called: %p %d %d\n", win, y, x));
 
+    assert( win);
     return (win && y >= win->_begy && y < win->_begy + win->_maxy
                 && x >= win->_begx && x < win->_begx + win->_maxx);
 }
@@ -251,6 +252,9 @@ bool wmouse_trafo(const WINDOW *win, int *y, int *x, bool to_screen)
 
     PDC_LOG(("wmouse_trafo() - called\n"));
 
+    assert( win);
+    assert( x);
+    assert( y);
     if (!win || !y || !x)
         return FALSE;
 
@@ -300,17 +304,17 @@ mmask_t mousemask(mmask_t mask, mmask_t *oldmask)
     if (oldmask)
         *oldmask = SP->_trap_mbe;
 
-    /* The ncurses interface doesn't work with our move events, so
-       filter them here */
+    /* The ncurses interface doesn't work with our move events
+       when using 32-bit mmask_ts,  so filter them here */
 
+#if !defined( PDC_LONG_MMASK)
     mask &= ~(BUTTON1_MOVED | BUTTON2_MOVED | BUTTON3_MOVED);
+#endif
 
     mouse_set(mask);
 
     return SP->_trap_mbe;
 }
-
-#define BITS_PER_BUTTON       5
 
 int nc_getmouse(MEVENT *event)
 {
@@ -338,7 +342,7 @@ int nc_getmouse(MEVENT *event)
     {
         if (Mouse_status.changes & (1 << i))
         {
-            const int shf = i * BITS_PER_BUTTON;
+            const int shf = i * PDC_BITS_PER_BUTTON;
             const short button = Mouse_status.button[i] & BUTTON_ACTION_MASK;
 
             if (button == BUTTON_RELEASED)
@@ -361,7 +365,7 @@ int nc_getmouse(MEVENT *event)
                      /* 'Moves' (i.e.,  button is pressed) and 'position reports' */
                      /* (mouse moved with no button down) are all reported as     */
                      /* 'position reports' in NCurses,  which lacks 'move' events. */
-    if( (MOUSE_MOVED || MOUSE_POS_REPORT) && (SP->_trap_mbe & REPORT_MOUSE_POSITION))
+    if( MOUSE_MOVED && (SP->_trap_mbe & REPORT_MOUSE_POSITION))
         bstate |= REPORT_MOUSE_POSITION;
 
     for( i = 0; i < 3; i++)
@@ -388,6 +392,7 @@ int ungetmouse(MEVENT *event)
 
     PDC_LOG(("ungetmouse() - called\n"));
 
+    assert( event);
     if (!event || ungot)
         return ERR;
 
@@ -401,7 +406,7 @@ int ungetmouse(MEVENT *event)
 
     for (i = 0; i < 3; i++)
     {
-        int shf = i * 5;
+        int shf = i * PDC_BITS_PER_BUTTON;
         short button = 0;
 
         if (bstate & ((BUTTON1_RELEASED | BUTTON1_PRESSED |

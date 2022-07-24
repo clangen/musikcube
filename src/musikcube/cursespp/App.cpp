@@ -120,7 +120,7 @@ generate button click events for Window instances to handle. beware: kludge
 and hacks below... */
 struct MouseButtonState {
     bool Update(const MEVENT& rawEvent) {
-        const int state = rawEvent.bstate;
+        const mmask_t state = rawEvent.bstate;
         const int x = rawEvent.x;
         const int y = rawEvent.y;
         bool result = false;
@@ -300,7 +300,6 @@ void App::InitCurses() {
         /* needs to happen after initscr() */
         PDC_set_default_menu_visibility(0);
         PDC_set_title(this->appTitle.c_str());
-        PDC_set_color_intensify_enabled(false);
         win32::InterceptWndProc();
         win32::SetAppTitle(this->appTitle);
         if (this->iconId) {

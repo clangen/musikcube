@@ -186,7 +186,28 @@ Only 32 are used in ncurses.  So caution is advised. */
 #define CENTERED_SQUARE                   CHOOSE( 0xfe,  0x25a0,  TBD)
 #define NON_BREAKING_SPACE                CHOOSE( 0xff,  0x00a0, 0xa0)
 
+#ifdef NOT_CURRENTLY_IMPLEMENTED
+/* The following four characters are not currently implemented. However,
+they would enable rounded box corners when Unicode is available.
+(Otherwise,  the 'traditional' unrounded corner character is used.) */
 
+#define BOX_URROUNDED                     CHOOSE( 0xbf,  0x256e,   12)
+#define BOX_LLROUNDED                     CHOOSE( 0xc0,  0x2570,   14)
+#define BOX_LRROUNDED                     CHOOSE( 0xd9,  0x256f,   11)
+#define BOX_ULROUNDED                     CHOOSE( 0xda,  0x256d,   13)
+#endif         /* #ifdef NOT_CURRENTLY_IMPLEMENTED */
+
+#define BOX_T_URCORNER                    CHOOSE( 0xbf,  0x2513,   12)
+#define BOX_T_LRCORNER                    CHOOSE( 0xd9,  0x251b,   11)
+#define BOX_T_ULCORNER                    CHOOSE( 0xda,  0x250f,   13)
+#define BOX_T_LLCORNER                    CHOOSE( 0xc0,  0x2517,   14)
+#define BOX_T_BTEE                        CHOOSE( 0xc1,  0x253b,   23)
+#define BOX_T_TTEE                        CHOOSE( 0xc2,  0x252f,   24)
+#define BOX_T_LTEE                        CHOOSE( 0xc3,  0x2523,   21)
+#define BOX_T_RTEE                        CHOOSE( 0xb4,  0x252b,   22)
+#define BOX_T_HLINE                       CHOOSE( 0xc4,  0x2501,   18)
+#define BOX_T_VLINE                       CHOOSE( 0xb3,  0x2503,   25)
+#define BOX_T_PLUS                        CHOOSE( 0xc5,  0x254b,   15)
 
       /* It says at http://unicode.org/charts/PDF/U2300.pdf */
       /* that '...the scan line numbers here refer to old,  */
@@ -194,9 +215,9 @@ Only 32 are used in ncurses.  So caution is advised. */
       /* nine scan lines per fixed-size character glyph.    */
       /* Even-numbered scan lines are unified with box      */
       /* drawing graphics."                                 */
-      /*  The utility of these is questionable;  they'd     */
-      /* work Just Fine in wingdi (_if_ the appropriate     */
-      /* glyphs are available),  but not elsewhere.         */
+      /*  The utility of these is questionable;  they       */
+      /* work Just Fine in wide-character builds if the     */
+      /* glyphs are available,  but not elsewhere.          */
 #define HORIZ_SCAN_LINE_1                 CHOOSE( 0x2d,  0x23ba,   16)
 #define HORIZ_SCAN_LINE_3                 CHOOSE( 0x2d,  0x23bb,   17)
 #define HORIZ_SCAN_LINE_7                 CHOOSE( 0x2d,  0x23bc,   19)
@@ -210,8 +231,10 @@ Only 32 are used in ncurses.  So caution is advised. */
 
 chtype acs_map[128] =
 {
-   A(0), A(1), A(2), A(3), A(4), A(5), A(6), A(7), A(8),
-   A(9), A(10),
+   BOX_T_LRCORNER, BOX_T_URCORNER, BOX_T_ULCORNER,             /* 0 1 2 */
+   BOX_T_LLCORNER, BOX_T_PLUS,                                 /* 3 4 */
+   BOX_T_LTEE, BOX_T_RTEE, BOX_T_BTEE, BOX_T_TTEE,             /* 5 6 7 8 */
+   BOX_T_HLINE, BOX_T_VLINE,                                   /* 9 10 */
    CLUB, HEART, SPADE, SMILE, REV_SMILE,                      /* 11 12 13 14 15 */
    MEDIUM_BULLET, WHITE_BULLET, PILCROW, SECTION_SIGN,        /* 16 17 18 19 */
    A_ORDINAL, O_ORDINAL, LOWERCASE_PHI,                       /* 20 21 22 */

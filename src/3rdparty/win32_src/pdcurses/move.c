@@ -56,6 +56,8 @@ int mvcur(int oldrow, int oldcol, int newrow, int newcol)
              oldrow, oldcol, newrow, newcol));
 
     assert( SP);
+    INTENTIONALLY_UNUSED_PARAMETER( oldrow);
+    INTENTIONALLY_UNUSED_PARAMETER( oldcol);
     if (!SP || newrow < 0 || newrow >= LINES || newcol < 0 || newcol >= COLS)
         return ERR;
 

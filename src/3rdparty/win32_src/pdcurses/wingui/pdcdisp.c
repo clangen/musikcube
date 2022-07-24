@@ -326,6 +326,7 @@ int PDC_choose_a_new_font( void)
     CHOOSEFONT cf;
     int rval;
     extern HWND PDC_hWnd;
+    extern CRITICAL_SECTION PDC_cs;
 
     lf.lfHeight = -PDC_font_size;
     debug_printf( "In PDC_choose_a_new_font: %d\n", lf.lfHeight);
@@ -334,16 +335,19 @@ int PDC_choose_a_new_font( void)
     cf.Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS | CF_FIXEDPITCHONLY | CF_SELECTSCRIPT;
     cf.hwndOwner = PDC_hWnd;
     cf.lpLogFont = &lf;
+    LeaveCriticalSection(&PDC_cs);
     rval = ChooseFont( &cf);
-    if( rval)
+    EnterCriticalSection(&PDC_cs);
+    if( rval) {
 #ifdef PDC_WIDE
         wcscpy( PDC_font_name, lf.lfFaceName);
 #else
         strcpy( PDC_font_name, lf.lfFaceName);
 #endif
+        PDC_font_size = -lf.lfHeight;
+        debug_printf( "output size: %d\n", lf.lfHeight);
+    }
     debug_printf( "rval %d; %ld\n", rval, CommDlgExtendedError( ));
-    debug_printf( "output size: %d\n", lf.lfHeight);
-    PDC_font_size = -lf.lfHeight;
     return( rval);
 }
 
@@ -371,7 +375,7 @@ static bool character_is_in_font( chtype ichar)
     int i;
     WCRANGE *wptr = PDC_unicode_range_data->ranges;
 
-    if( (ichar & A_ALTCHARSET) && (ichar & A_CHARTEXT) < 0x80)
+    if( _is_altcharset( ichar))
        ichar = acs_map[ichar & 0x7f];
     ichar &= A_CHARTEXT;
     if( ichar > MAX_UNICODE)  /* assume combining chars won't be */
@@ -468,7 +472,7 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
 
     while( len)
     {
-        const attr_t attrib = (attr_t)( *srcp >> PDC_REAL_ATTR_SHIFT);
+        const attr_t attrib = (attr_t)( *srcp & ~A_CHARTEXT);
         const int color = (int)(( *srcp & A_COLOR) >> PDC_COLOR_SHIFT);
         attr_t new_font_attrib = (*srcp & (A_BOLD | A_ITALIC));
         RECT clip_rect;
@@ -484,7 +488,7 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
                   && (in_font == character_is_in_font( srcp[i])
                               || (srcp[i] & A_CHARTEXT) == MAX_UNICODE)
 #endif
-                  && attrib == (attr_t)( srcp[i] >> PDC_REAL_ATTR_SHIFT); i++)
+                  && attrib == (attr_t)( srcp[i] & ~A_CHARTEXT); i++)
         {
             chtype ch = srcp[i] & A_CHARTEXT;
 
@@ -520,7 +524,7 @@ void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
                 }
             }
 #endif
-            if( (srcp[i] & A_ALTCHARSET) && ch < 0x80)
+            if( _is_altcharset( srcp[i]))
                 ch = acs_map[ch & 0x7f];
             else if( ch < 32)
                ch = starting_ascii_to_unicode[ch];

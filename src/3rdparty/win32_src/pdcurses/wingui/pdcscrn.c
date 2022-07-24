@@ -4,6 +4,7 @@
 #include <tchar.h>
 #include <stdint.h>
 #include <assert.h>
+#include <process.h>
 #include "pdccolor.h"
 #ifdef WIN32_LEAN_AND_MEAN
    #ifdef PDC_WIDE
@@ -18,7 +19,7 @@ static int menu_shown = 1;
 static int min_lines = 25, max_lines = 25;
 static int min_cols = 80, max_cols = 80;
 
-#if defined( CHTYPE_64) && defined( PDC_WIDE)
+#if !defined( CHTYPE_32) && defined( PDC_WIDE)
     #define USING_COMBINING_CHARACTER_SCHEME
     int PDC_expand_combined_characters( const cchar_t c, cchar_t *added);  /* addch.c */
 #endif
@@ -37,9 +38,10 @@ functions.        */
 static int add_mouse( int button, const int action, const int x, const int y);
 static int keep_size_within_bounds( int *lines, int *cols);
 INLINE int set_default_sizes_from_registry( const int n_cols, const int n_rows,
-               const int xloc, const int yloc, const int menu_shown);
+               const int xloc, const int yloc);
 void PDC_transform_line_given_hdc( const HDC hdc, const int lineno,
                              int x, int len, const chtype *srcp);
+int PDC_get_mouse_event_from_queue( void);     /* pdcscrn.c */
 
 /* We have a 'base' standard palette of 256 colors,  plus a true-color
 cube of 16 million colors. */
@@ -60,13 +62,12 @@ cube of 16 million colors. */
    #define PDC_MAX_MOUSE_BUTTONS 3
 #endif
 
-#define VERTICAL_WHEEL_EVENT      PDC_MAX_MOUSE_BUTTONS
-#define HORIZONTAL_WHEEL_EVENT   (PDC_MAX_MOUSE_BUTTONS + 1)
+#define WHEEL_EVENT      PDC_MAX_MOUSE_BUTTONS
 
 int PDC_show_ctrl_alts = 0;
 
 /* RR: Removed statis on next line */
-bool PDC_bDone = FALSE;
+/*bool PDC_bDone = FALSE;*/
 static HWND originally_focussed_window;
 
 int debug_printf( const char *format, ...)
@@ -95,7 +96,6 @@ int debug_printf( const char *format, ...)
             {
                 printf( "Opening '%s' failed\n", output_filename);
                 exit( 0);
-                debugging = FALSE;       /* don't bother trying again */
             }
         }
     }
@@ -105,6 +105,8 @@ int debug_printf( const char *format, ...)
 HWND PDC_hWnd;
 static int PDC_argc = 0;
 static char **PDC_argv = NULL;
+uint32_t winthr_id = 0;
+CRITICAL_SECTION PDC_cs;
 
 static void final_cleanup( void)
 {
@@ -115,7 +117,7 @@ static void final_cleanup( void)
 
         GetWindowRect( PDC_hWnd, &rect);
         set_default_sizes_from_registry( SP->cols, SP->lines,
-                  rect.left, rect.top, menu_shown);
+                  rect.left, rect.top);
     }
     PDC_LOG(( "final_cleanup: freeing fonts\n"));
     PDC_transform_line( 0, 0, 0, NULL);  /* free any fonts */
@@ -141,7 +143,7 @@ void PDC_scr_close(void)
 {
     PDC_LOG(("PDC_scr_close() - called\n"));
     final_cleanup( );
-    PDC_bDone = TRUE;
+    /*PDC_bDone = TRUE;*/
 }
 
 /* NOTE that PDC_scr_free( ) is called only from delscreen( ),    */
@@ -157,15 +159,6 @@ int PDC_choose_a_new_font( void);                     /* pdcdisp.c */
 
 #define KEY_QUEUE_SIZE    30
 
-       /* By default,  the PDC_shutdown_key[] array contains 0       */
-       /* (i.e., there's no key that's supposed to be returned for   */
-       /* exit handling), and 22 = Ctrl-V (i.e.,  hit Ctrl-V to      */
-       /* paste text from the clipboard into the key queue);  then   */
-       /* Ctl-= (enlarge font) and Ctl-Minus (decrease font);  then  */
-       /* Ctl-, (select font from dialog).                           */
-
-static int PDC_shutdown_key[PDC_MAX_FUNCTION_KEYS] = { 0, 22, CTL_EQUAL, CTL_MINUS,
-                                 CTL_COMMA };
 int PDC_n_rows, PDC_n_cols;
 int PDC_cxChar, PDC_cyChar, PDC_key_queue_low = 0, PDC_key_queue_high = 0;
 int PDC_key_queue[KEY_QUEUE_SIZE];
@@ -213,13 +206,13 @@ static void add_key_to_queue( const int new_key)
         }
     }
     unicode_radix = 10;
-    if( new_key && new_key == PDC_shutdown_key[FUNCTION_KEY_ABORT])
+    if( new_key && new_key == PDC_get_function_key( FUNCTION_KEY_ABORT))
         exit( -1);
-    else if( new_key && new_key == PDC_shutdown_key[FUNCTION_KEY_ENLARGE_FONT])
+    else if( new_key && new_key == PDC_get_function_key( FUNCTION_KEY_ENLARGE_FONT))
         adjust_font_size( 1);
-    else if( new_key && new_key == PDC_shutdown_key[FUNCTION_KEY_SHRINK_FONT])
+    else if( new_key && new_key == PDC_get_function_key( FUNCTION_KEY_SHRINK_FONT))
         adjust_font_size( -1);
-    else if( new_key && new_key == PDC_shutdown_key[FUNCTION_KEY_CHOOSE_FONT])
+    else if( new_key && new_key == PDC_get_function_key( FUNCTION_KEY_CHOOSE_FONT))
     {
         if( PDC_choose_a_new_font( ))
             adjust_font_size( 0);
@@ -251,7 +244,7 @@ static const KPTAB kptab[] =
     {0,          0,         0,           0,          0   }, /* 0  */
     {0,          0,         0,           0,          0   }, /* 1   VK_LBUTTON */
     {0,          0,         0,           0,          0   }, /* 2   VK_RBUTTON */
-    {CTL_PAUSE,  'a',       'b',         'c',        0   }, /* 3   VK_CANCEL  */
+    {KEY_PAUSE,  'a',       'b',         'c',        0   }, /* 3   VK_CANCEL  */
     {0,          0,         0,           0,          0   }, /* 4   VK_MBUTTON */
     {0,          0,         0,           0,          0   }, /* 5   */
     {0,          0,         0,           0,          0   }, /* 6   */
@@ -267,7 +260,7 @@ static const KPTAB kptab[] =
     {0,          0,         0,           0,          0   }, /* 16  VK_SHIFT   HANDLED SEPARATELY */
     {0,          0,         0,           0,          0   }, /* 17  VK_CONTROL HANDLED SEPARATELY */
     {0,          0,         0,           0,          0   }, /* 18  VK_MENU    HANDLED SEPARATELY */
-    {KEY_PAUSE,  KEY_SPAUSE,CTL_PAUSE,   0,          0   }, /* 19  VK_PAUSE   */
+    {KEY_PAUSE,  KEY_PAUSE, KEY_PAUSE,   0,          0   }, /* 19  VK_PAUSE   */
     {0,          0,         0,           0,          0   }, /* 20  VK_CAPITAL HANDLED SEPARATELY */
     {0,          0,         0,           0,          0   }, /* 21  VK_HANGUL  */
     {0,          0,         0,           0,          0   }, /* 22  */
@@ -292,20 +285,20 @@ static const KPTAB kptab[] =
     {0,          0,         0,           0,          0   }, /* 41  VK_SELECT  */
     {0,          0,         0,           0,          0   }, /* 42  VK_PRINT   */
     {0,          0,         0,           0,          0   }, /* 43  VK_EXECUTE */
-    {KEY_PRINTSCREEN, 0,    0,       ALT_PRINTSCREEN, 0  }, /* 44  VK_SNAPSHOT*/
+    {KEY_PRINTSCREEN, 0,    0,       KEY_PRINTSCREEN, 0  }, /* 44  VK_SNAPSHOT*/
     {PAD0,       0x30,      CTL_PAD0,    ALT_PAD0,   11  }, /* 45  VK_INSERT  */
     {PADSTOP,    0x2E,      CTL_PADSTOP, ALT_PADSTOP,12  }, /* 46  VK_DELETE  */
     {0,          0,         0,           0,          0   }, /* 47  VK_HELP    */
-    {0x30,       0x29,      CTL_0,       ALT_0,      0   }, /* 48  */
-    {0x31,       0x21,      CTL_1,       ALT_1,      0   }, /* 49  */
-    {0x32,       0x40,      CTL_2,       ALT_2,      0   }, /* 50  */
-    {0x33,       0x23,      CTL_3,       ALT_3,      0   }, /* 51  */
-    {0x34,       0x24,      CTL_4,       ALT_4,      0   }, /* 52  */
-    {0x35,       0x25,      CTL_5,       ALT_5,      0   }, /* 53  */
-    {0x36,       0x5E,      CTL_6,       ALT_6,      0   }, /* 54  */
-    {0x37,       0x26,      CTL_7,       ALT_7,      0   }, /* 55  */
-    {0x38,       0x2A,      CTL_8,       ALT_8,      0   }, /* 56  */
-    {0x39,       0x28,      CTL_9,       ALT_9,      0   }, /* 57  */
+    {0x30,       0x29,      '0',         ALT_0,      0   }, /* 48  */
+    {0x31,       0x21,      '1',         ALT_1,      0   }, /* 49  */
+    {0x32,       0x40,      '2',         ALT_2,      0   }, /* 50  */
+    {0x33,       0x23,      '3',         ALT_3,      0   }, /* 51  */
+    {0x34,       0x24,      '4',         ALT_4,      0   }, /* 52  */
+    {0x35,       0x25,      '5',         ALT_5,      0   }, /* 53  */
+    {0x36,       0x5E,      '6',         ALT_6,      0   }, /* 54  */
+    {0x37,       0x26,      '7',         ALT_7,      0   }, /* 55  */
+    {0x38,       0x2A,      '8',         ALT_8,      0   }, /* 56  */
+    {0x39,       0x28,      '9',         ALT_9,      0   }, /* 57  */
     {0,          0,         0,           0,          0   }, /* 58  */
     {0,          0,         0,           0,          0   }, /* 59  */
     {0,          0,         0,           0,          0   }, /* 60  */
@@ -341,7 +334,7 @@ static const KPTAB kptab[] =
     {0x7A,       0x5A,      0x1A,        ALT_Z,      0   }, /* 90  */
     {0,          0,         0,           0,          0   }, /* 91  VK_LWIN    */
     {0,          0,         0,           0,          0   }, /* 92  VK_RWIN    */
-    {KEY_APPS,   KEY_SAPPS, CTL_APPS,    ALT_APPS,   13  }, /* 93  VK_APPS    */
+    {KEY_APPS,   KEY_APPS,  KEY_APPS,    KEY_APPS,   13  }, /* 93  VK_APPS    */
     {0,          0,         0,           0,          0   }, /* 94  */
     {0,          0,         0,           0,          0   }, /* 95  */
     {0x30,       0,         CTL_PAD0,    ALT_PAD0,   0   }, /* 96  VK_NUMPAD0 */
@@ -375,18 +368,18 @@ static const KPTAB kptab[] =
 
     /* 124 through 218 */
 
-    {0, 0, 0, 0, 0},  /* 124 VK_F13 */
-    {0, 0, 0, 0, 0},  /* 125 VK_F14 */
-    {0, 0, 0, 0, 0},  /* 126 VK_F15 */
-    {0, 0, 0, 0, 0},  /* 127 VK_F16 */
-    {0, 0, 0, 0, 0},  /* 128 VK_F17 */
-    {0, 0, 0, 0, 0},  /* 129 VK_F18 */
-    {0, 0, 0, 0, 0},  /* 130 VK_F19 */
-    {0, 0, 0, 0, 0},  /* 131 VK_F20 */
-    {0, 0, 0, 0, 0},  /* 132 VK_F21 */
-    {0, 0, 0, 0, 0},  /* 133 VK_F22 */
-    {0, 0, 0, 0, 0},  /* 134 VK_F23 */
-    {0, 0, 0, 0, 0},  /* 135 VK_F24 */
+    {0,       0,      0,        0,       0   },  /* 7c 124 VK_F13 */
+    {0,       0,      0,        0,       0   },  /* 7d 125 VK_F14 */
+    {0,       0,      0,        0,       0   },  /* 7e 126 VK_F15 */
+    {0,       0,      0,        0,       0   },  /* 7f 127 VK_F16 */
+    {0,       0,      0,        0,       0   },  /* 80 128 VK_F17 */
+    {0,       0,      0,        0,       0   },  /* 81 129 VK_F18 */
+    {0,       0,      0,        0,       0   },  /* 82 130 VK_F19 */
+    {0,       0,      0,        0,       0   },  /* 83 131 VK_F20 */
+    {0,       0,      0,        0,       0   },  /* 84 132 VK_F21 */
+    {0,       0,      0,        0,       0   },  /* 85 133 VK_F22 */
+    {0,       0,      0,        0,       0   },  /* 86 134 VK_F23 */
+    {0,       0,      0,        0,       0   },  /* 87 135 VK_F24 */
     {0, 0, 0, 0, 0},  /* 136 unassigned */
     {0, 0, 0, 0, 0},  /* 137 unassigned */
     {0, 0, 0, 0, 0},  /* 138 unassigned */
@@ -396,7 +389,7 @@ static const KPTAB kptab[] =
     {0, 0, 0, 0, 0},  /* 142 unassigned */
     {0, 0, 0, 0, 0},  /* 143 unassigned */
     {0, 0, 0, 0, 0},  /* 144 VK_NUMLOCK */
-    {KEY_SCROLLLOCK, 0, 0, ALT_SCROLLLOCK, 0},    /* 145 VKSCROLL */
+    {KEY_SCROLLLOCK, 0, 0, KEY_SCROLLLOCK, 0},    /* 145 VKSCROLL */
     {0, 0, 0, 0, 0},  /* 146 OEM specific */
     {0, 0, 0, 0, 0},  /* 147 OEM specific */
     {0, 0, 0, 0, 0},  /* 148 OEM specific */
@@ -437,13 +430,13 @@ static const KPTAB kptab[] =
     {0, 0, 0, 0, 31},  /* 183 VK_LAUNCH_APP2         */
     {0, 0, 0, 0, 0},  /* 184 Reserved */
     {0, 0, 0, 0, 0},  /* 185 Reserved */
-    {';', ':', CTL_SEMICOLON, ALT_SEMICOLON, 0},  /* 186 VK_OEM_1      */
-    {'=', '+', CTL_EQUAL,     ALT_EQUAL,     0},  /* 187 VK_OEM_PLUS   */
-    {',', '<', CTL_COMMA,     ALT_COMMA,     0},  /* 188 VK_OEM_COMMA  */
-    {'-', '_', CTL_MINUS,     ALT_MINUS,     0},  /* 189 VK_OEM_MINUS  */
-    {'.', '>', CTL_STOP,      ALT_STOP,      0},  /* 190 VK_OEM_PERIOD */
-    {'/', '?', CTL_FSLASH,    ALT_FSLASH,    0},  /* 191 VK_OEM_2      */
-    {'`', '~', CTL_BQUOTE,    ALT_BQUOTE,    0},  /* 192 VK_OEM_3      */
+    {';', ':', ';',           ALT_SEMICOLON, 0},  /* 186 VK_OEM_1      */
+    {'=', '+', '=',           ALT_EQUAL,     0},  /* 187 VK_OEM_PLUS   */
+    {',', '<', ',',           ALT_COMMA,     0},  /* 188 VK_OEM_COMMA  */
+    {'-', '_', '-',           ALT_MINUS,     0},  /* 189 VK_OEM_MINUS  */
+    {'.', '>', '.',           ALT_STOP,      0},  /* 190 VK_OEM_PERIOD */
+    {'/', '?', '/',           ALT_FSLASH,    0},  /* 191 VK_OEM_2      */
+    {'`', '~', '`',           ALT_BQUOTE,    0},  /* 192 VK_OEM_3      */
     {0, 0, 0, 0, 0},  /* 193 */
     {0, 0, 0, 0, 0},  /* 194 */
     {0, 0, 0, 0, 0},  /* 195 */
@@ -476,83 +469,104 @@ static const KPTAB kptab[] =
     {'\'',       '"',       0x27,        ALT_FQUOTE, 0   }, /* 222 VK_OEM_7 */
     {0,          0,         0,           0,          0   }, /* 223 VK_OEM_8 */
     {0,          0,         0,           0,          0   }, /* 224 */
-    {0,          0,         0,           0,          0   }  /* 225 */
+    {0,          0,         0,           0,          0   }, /* 225 */
+    {0,          0,         0,           0,          0   }, /* 226 E2 VK_OEM_102 */
+    {0,          0,         0,           0,          0   }, /* 227 E3 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 228 E4 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 229 E5 VK_PROCESSKEY */
+    {0,          0,         0,           0,          0   }, /* 230 E6 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 231 E7 VK_PACKET */
+    {0,          0,         0,           0,          0   }, /* 232 E8 Unassigned */
+    {0,          0,         0,           0,          0   }, /* 233 E9 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 234 EA OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 235 EB OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 236 EC OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 237 ED OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 238 EE OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 239 EF OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 240 F0 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 241 F1 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 242 F2 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 243 F3 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 244 F4 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 245 F5 OEM-specific */
+    {0,          0,         0,           0,          0   }, /* 246 F6 VK_ATTN */
+    {0,          0,         0,           0,          0   }, /* 247 F7 VK_CRSEL */
+    {0,          0,         0,           0,          0   }, /* 248 F8 VK_EXSEL */
+    {0,          0,         0,           0,          0   }, /* 249 F9 VK_EREOF */
+    {0,          0,         0,           0,          0   }, /* 250 FA VK_PLAY */
+    {0,          0,         0,           0,          0   }, /* 251 FB VK_ZOOM */
+    {0,          0,         0,           0,          0   }, /* 252 FC VK_NONAME */
+    {0,          0,         0,           0,          0   }, /* 253 FD VK_PA1 */
+    {0,          0,         0,           0,          0   }  /* 254 FE VK_OEM_CLEAR */
 };
 /* End of kptab[] */
 
 static const KPTAB ext_kptab[] =
 {
-   {0,          0,              0,              0,          }, /*  0  MUST BE EMPTY */
-   {PADENTER,   SHF_PADENTER,   CTL_PADENTER,   ALT_PADENTER}, /*  1  13 */
-   {PADSLASH,   SHF_PADSLASH,   CTL_PADSLASH,   ALT_PADSLASH}, /*  2 111 */
-   {KEY_PPAGE,  KEY_SPREVIOUS,  CTL_PGUP,       ALT_PGUP    }, /*  3  33 */
-   {KEY_NPAGE,  KEY_SNEXT,      CTL_PGDN,       ALT_PGDN    }, /*  4  34 */
-   {KEY_END,    KEY_SEND,       CTL_END,        ALT_END     }, /*  5  35 */
-   {KEY_HOME,   KEY_SHOME,      CTL_HOME,       ALT_HOME    }, /*  6  36 */
-   {KEY_LEFT,   KEY_SLEFT,      CTL_LEFT,       ALT_LEFT    }, /*  7  37 */
-   {KEY_UP,     KEY_SUP,        CTL_UP,         ALT_UP      }, /*  8  38 */
-   {KEY_RIGHT,  KEY_SRIGHT,     CTL_RIGHT,      ALT_RIGHT   }, /*  9  39 */
-   {KEY_DOWN,   KEY_SDOWN,      CTL_DOWN,       ALT_DOWN    }, /* 10  40 */
-   {KEY_IC,     KEY_SIC,        CTL_INS,        ALT_INS     }, /* 11  45 */
-   {KEY_DC,     KEY_SDC,        CTL_DEL,        ALT_DEL     }, /* 12  46 */
-   {KEY_APPS,   KEY_SAPPS     , CTL_APPS,       ALT_APPS    }, /* 13  93  VK_APPS    */
-   {KEY_BROWSER_BACK, KEY_SBROWSER_BACK, KEY_CBROWSER_BACK, KEY_ABROWSER_BACK, }, /* 14 166 VK_BROWSER_BACK        */
-   {KEY_BROWSER_FWD,  KEY_SBROWSER_FWD,  KEY_CBROWSER_FWD,  KEY_ABROWSER_FWD,  }, /* 15 167 VK_BROWSER_FORWARD     */
-   {KEY_BROWSER_REF,  KEY_SBROWSER_REF,  KEY_CBROWSER_REF,  KEY_ABROWSER_REF,  }, /* 16 168 VK_BROWSER_REFRESH     */
-   {KEY_BROWSER_STOP, KEY_SBROWSER_STOP, KEY_CBROWSER_STOP, KEY_ABROWSER_STOP, }, /* 17 169 VK_BROWSER_STOP        */
-   {KEY_SEARCH,       KEY_SSEARCH,       KEY_CSEARCH,       KEY_ASEARCH,       }, /* 18 170 VK_BROWSER_SEARCH      */
-   {KEY_FAVORITES,    KEY_SFAVORITES,    KEY_CFAVORITES,    KEY_AFAVORITES,    }, /* 19 171 VK_BROWSER_FAVORITES   */
-   {KEY_BROWSER_HOME, KEY_SBROWSER_HOME, KEY_CBROWSER_HOME, KEY_ABROWSER_HOME, }, /* 20 172 VK_BROWSER_HOME        */
-   {KEY_VOLUME_MUTE,  KEY_SVOLUME_MUTE,  KEY_CVOLUME_MUTE,  KEY_AVOLUME_MUTE,  }, /* 21 173 VK_VOLUME_MUTE         */
-   {KEY_VOLUME_DOWN,  KEY_SVOLUME_DOWN,  KEY_CVOLUME_DOWN,  KEY_AVOLUME_DOWN,  }, /* 22 174 VK_VOLUME_DOWN         */
-   {KEY_VOLUME_UP,    KEY_SVOLUME_UP,    KEY_CVOLUME_UP,    KEY_AVOLUME_UP,    }, /* 23 175 VK_VOLUME_UP           */
-   {KEY_NEXT_TRACK,   KEY_SNEXT_TRACK,   KEY_CNEXT_TRACK,   KEY_ANEXT_TRACK,   }, /* 24 176 VK_MEDIA_NEXT_TRACK    */
-   {KEY_PREV_TRACK,   KEY_SPREV_TRACK,   KEY_CPREV_TRACK,   KEY_APREV_TRACK,   }, /* 25 177 VK_MEDIA_PREV_TRACK    */
-   {KEY_MEDIA_STOP,   KEY_SMEDIA_STOP,   KEY_CMEDIA_STOP,   KEY_AMEDIA_STOP,   }, /* 26 178 VK_MEDIA_STOP          */
-   {KEY_PLAY_PAUSE,   KEY_SPLAY_PAUSE,   KEY_CPLAY_PAUSE,   KEY_APLAY_PAUSE,   }, /* 27 179 VK_MEDIA_PLAY_PAUSE    */
-   {KEY_LAUNCH_MAIL,  KEY_SLAUNCH_MAIL,  KEY_CLAUNCH_MAIL,  KEY_ALAUNCH_MAIL,  }, /* 28 180 VK_LAUNCH_MAIL         */
-   {KEY_MEDIA_SELECT, KEY_SMEDIA_SELECT, KEY_CMEDIA_SELECT, KEY_AMEDIA_SELECT, }, /* 29 181 VK_LAUNCH_MEDIA_SELECT */
-   {KEY_LAUNCH_APP1,  KEY_SLAUNCH_APP1,  KEY_CLAUNCH_APP1,  KEY_ALAUNCH_APP1,  }, /* 30 182 VK_LAUNCH_APP1         */
-   {KEY_LAUNCH_APP2,  KEY_SLAUNCH_APP2,  KEY_CLAUNCH_APP2,  KEY_ALAUNCH_APP2,  }, /* 31 183 VK_LAUNCH_APP2         */
+   {0,          0,              0,              0,            0}, /*  0  MUST BE EMPTY */
+   {PADENTER,   SHF_PADENTER,   CTL_PADENTER,   ALT_PADENTER, 0}, /*  1  13 */
+   {PADSLASH,   SHF_PADSLASH,   CTL_PADSLASH,   ALT_PADSLASH, 0}, /*  2 111 */
+   {KEY_PPAGE,  KEY_SPREVIOUS,  CTL_PGUP,       ALT_PGUP,     0}, /*  3  33 */
+   {KEY_NPAGE,  KEY_SNEXT,      CTL_PGDN,       ALT_PGDN,     0}, /*  4  34 */
+   {KEY_END,    KEY_SEND,       CTL_END,        ALT_END,      0}, /*  5  35 */
+   {KEY_HOME,   KEY_SHOME,      CTL_HOME,       ALT_HOME,     0}, /*  6  36 */
+   {KEY_LEFT,   KEY_SLEFT,      CTL_LEFT,       ALT_LEFT,     0}, /*  7  37 */
+   {KEY_UP,     KEY_SUP,        CTL_UP,         ALT_UP,       0}, /*  8  38 */
+   {KEY_RIGHT,  KEY_SRIGHT,     CTL_RIGHT,      ALT_RIGHT,    0}, /*  9  39 */
+   {KEY_DOWN,   KEY_SDOWN,      CTL_DOWN,       ALT_DOWN,     0}, /* 10  40 */
+   {KEY_IC,     KEY_SIC,        CTL_INS,        ALT_INS,      0}, /* 11  45 */
+   {KEY_DC,     KEY_SDC,        CTL_DEL,        ALT_DEL,      0}, /* 12  46 */
+   {KEY_APPS,   KEY_APPS,       KEY_APPS,       KEY_APPS,     0}, /* 13  93  VK_APPS    */
+   {KEY_BROWSER_BACK, KEY_BROWSER_BACK, KEY_BROWSER_BACK, KEY_BROWSER_BACK, 0}, /* 14 166 VK_BROWSER_BACK        */
+   {KEY_BROWSER_FWD,  KEY_BROWSER_FWD,  KEY_BROWSER_FWD,  KEY_BROWSER_FWD,  0}, /* 15 167 VK_BROWSER_FORWARD     */
+   {KEY_BROWSER_REF,  KEY_BROWSER_REF,  KEY_BROWSER_REF,  KEY_BROWSER_REF,  0}, /* 16 168 VK_BROWSER_REFRESH     */
+   {KEY_BROWSER_STOP, KEY_BROWSER_STOP, KEY_BROWSER_STOP, KEY_BROWSER_STOP, 0}, /* 17 169 VK_BROWSER_STOP        */
+   {KEY_SEARCH,       KEY_SEARCH,       KEY_SEARCH,       KEY_SEARCH,       0}, /* 18 170 VK_BROWSER_SEARCH      */
+   {KEY_FAVORITES,    KEY_FAVORITES,    KEY_FAVORITES,    KEY_FAVORITES,    0}, /* 19 171 VK_BROWSER_FAVORITES   */
+   {KEY_BROWSER_HOME, KEY_BROWSER_HOME, KEY_BROWSER_HOME, KEY_BROWSER_HOME, 0}, /* 20 172 VK_BROWSER_HOME        */
+   {KEY_VOLUME_MUTE,  KEY_VOLUME_MUTE,  KEY_VOLUME_MUTE,  KEY_VOLUME_MUTE,  0}, /* 21 173 VK_VOLUME_MUTE         */
+   {KEY_VOLUME_DOWN,  KEY_VOLUME_DOWN,  KEY_VOLUME_DOWN,  KEY_VOLUME_DOWN,  0}, /* 22 174 VK_VOLUME_DOWN         */
+   {KEY_VOLUME_UP,    KEY_VOLUME_UP,    KEY_VOLUME_UP,    KEY_VOLUME_UP,    0}, /* 23 175 VK_VOLUME_UP           */
+   {KEY_NEXT_TRACK,   KEY_NEXT_TRACK,   KEY_NEXT_TRACK,   KEY_NEXT_TRACK,   0}, /* 24 176 VK_MEDIA_NEXT_TRACK    */
+   {KEY_PREV_TRACK,   KEY_PREV_TRACK,   KEY_PREV_TRACK,   KEY_PREV_TRACK,   0}, /* 25 177 VK_MEDIA_PREV_TRACK    */
+   {KEY_MEDIA_STOP,   KEY_MEDIA_STOP,   KEY_MEDIA_STOP,   KEY_MEDIA_STOP,   0}, /* 26 178 VK_MEDIA_STOP          */
+   {KEY_PLAY_PAUSE,   KEY_PLAY_PAUSE,   KEY_PLAY_PAUSE,   KEY_PLAY_PAUSE,   0}, /* 27 179 VK_MEDIA_PLAY_PAUSE    */
+   {KEY_LAUNCH_MAIL,  KEY_LAUNCH_MAIL,  KEY_LAUNCH_MAIL,  KEY_LAUNCH_MAIL,  0}, /* 28 180 VK_LAUNCH_MAIL         */
+   {KEY_MEDIA_SELECT, KEY_MEDIA_SELECT, KEY_MEDIA_SELECT, KEY_MEDIA_SELECT, 0}, /* 29 181 VK_LAUNCH_MEDIA_SELECT */
+   {KEY_LAUNCH_APP1,  KEY_LAUNCH_APP1,  KEY_LAUNCH_APP1,  KEY_LAUNCH_APP1,  0}, /* 30 182 VK_LAUNCH_APP1         */
+   {KEY_LAUNCH_APP2,  KEY_LAUNCH_APP2,  KEY_LAUNCH_APP2,  KEY_LAUNCH_APP2,  0}, /* 31 183 VK_LAUNCH_APP2         */
 };
 
 
 HFONT PDC_get_font_handle( const int is_bold);            /* pdcdisp.c */
 
-/* Mouse handling is done as follows:
+/* Mouse handling is done as follows.  Windows (*) gives us a
+sequence of "raw" mouse events,  which are :
 
-   What we want is a setup wherein,  if the user presses and releases a
-mouse button within SP->mouse_wait milliseconds,  there will be a
-KEY_MOUSE issued through getch( ) and the "button state" for that button
-will be set to BUTTON_CLICKED.
+      button pressed
+      button released
+      wheel up/down/left/right
+      mouse moved
 
-   If the user presses and releases the button,  and it takes _longer_
-than SP->mouse_wait milliseconds,  then there should be a KEY_MOUSE
-issued with the "button state" set to BUTTON_PRESSED.  Then,  later,
-another KEY_MOUSE with a BUTTON_RELEASED.
+   We need to provide a sequence of "combined" mouse events,
+in which presses and releases get combined into clicks,
+double-clicks, and triple-clicks if the "raw" events are within
+SP->mouse_wait milliseconds of each other and the mouse doesn't
+move in between.  add_mouse( ) takes the "raw" events and figures
+out what "combined" events should be emitted.
 
-   To accomplish this:  when a message such as WM_LBUTTONDOWN,
-WM_RBUTTONDOWN,  or WM_MBUTTONDOWN is issued (and more recently WM_XBUTTONDOWN
-for five-button mice),  we set up a timer with a period of SP->mouse_wait
-milliseconds.  There are then two possibilities. The user will release the
-button quickly (so it's a "click") or they won't (and it's a "press/release").
+   If the raw event is a press or release,  we also set a timer to
+trigger in SP->mouse_wait milliseconds.  When that timer event is
+triggered,  it calls add_mouse( -1, -1, -1, -1), meaning "synthesize
+all events and pass them to add_mouse_event_to_queue( )". Basically,  if
+we hit the timeout _or_ the mouse is moved, we can send combined events
+to add_mouse_event_to_queue( ).  A corresponding KEY_MOUSE event will
+be added to the key queue.
 
-   In the first case,  we'll get the WM_xBUTTONUP message before the
-WM_TIMER one.  We'll kill the timer and set up the BUTTON_CLICKED state. (*)
-
-   In the second case,  we'll get the WM_TIMER message first,  so we'll
-set the BUTTON_PRESSED state and kill the timer.  Eventually,  the user
-will get around to letting go of the mouse button,  and we'll get that
-WM_xBUTTONUP message.  At that time,  we'll set the BUTTON_RELEASED state
-and add the second KEY_MOUSE to the key queue.
-
-   Also,  note that if there is already a KEY_MOUSE to the queue,  there's
-no point in adding another one.  At least at present,  the actual mouse
-events aren't queued anyway.  So if there was,  say,  a click and then a
-release without getch( ) being called in between,  you'd then have two
-KEY_MOUSEs on the queue,  but would have lost all information about what
-the first one actually was.  Hence the code near the end of this function
-to ensure there isn't already a KEY_MOUSE in the queue.
+   A mouse move is simply ignored if it's within the current
+character cell.  (Note that ncurses does provide 'mouse move' events
+even if the mouse has only moved within the character cell.)
 
    Also,  a note about wheel handling.  Pre-Vista,  you could just say
 "the wheel went up" or "the wheel went down".  Vista introduced the possibility
@@ -563,132 +577,12 @@ is that whereas before,  each movement would be 120 units (the default),
 you might now get a series of 40-unit moves and should emit a wheel up/down
 event on every third move.
 
-   (*) Things are actually slightly more complicated than this.  In general,
-it'll just be a plain old BUTTON_CLICKED state.  But if there was another
-BUTTON_CLICKED within the last 2 * SP->mouse_wait milliseconds,  then this
-must be a _double_ click,  so we set the BUTTON_DOUBLE_CLICKED state.  And
-if,  within that time frame,  there was a double or triple click,  then we
-set the BUTTON_TRIPLE_CLICKED state.  There isn't a "quad" or higher state,
-so if you quadruple-click the mouse,  with each click separated by less
-than 2 * SP->mouse_wait milliseconds,  then the messages sent will be
-BUTTON_CLICKED,  BUTTON_DOUBLE_CLICKED,  BUTTON_TRIPLE_CLICKED,  and
-then another BUTTON_TRIPLE_CLICKED.                                     */
-
-static bool mouse_key_already_in_queue( void)
-{
-    int i = PDC_key_queue_low;
-
-    while( i != PDC_key_queue_high)
-    {
-        if( PDC_key_queue[i] == KEY_MOUSE)
-        {
-            debug_printf( "Mouse key already in queue\n");
-            return( TRUE);
-        }
-        i = (i + 1) % KEY_QUEUE_SIZE;
-    }
-    return( FALSE);
-}
-
-static int set_mouse( const int button_index, const int button_state,
-                           const int x, const int y)
-{
-    int n_key_mouse_to_add = 1;
-    POINT pt;
-
-                  /* If there is already a KEY_MOUSE in the queue,  we   */
-                  /* don't really want to add another one.  See above.   */
-    if( mouse_key_already_in_queue( ))
-        return( -1);
-    pt.x = x;
-    pt.y = y;
-    memset(&SP->mouse_status, 0, sizeof(MOUSE_STATUS));
-    if( button_state == BUTTON_MOVED)
-    {
-        if( button_index < 0)
-            SP->mouse_status.changes = PDC_MOUSE_POSITION;
-         else
-            SP->mouse_status.changes = PDC_MOUSE_MOVED | (1 << button_index);
-    }
-    else
-    {
-        if( button_index < PDC_MAX_MOUSE_BUTTONS)
-        {
-            SP->mouse_status.button[button_index] = (short)button_state;
-            if( button_index < 3)
-               SP->mouse_status.changes = (1 << button_index);
-            else
-               SP->mouse_status.changes = (0x40 << button_index);
-        }
-        else                      /* actually a wheel mouse movement */
-        {                         /* button_state = number of units moved */
-            static int mouse_wheel_vertical_loc = 0;
-            static int mouse_wheel_horizontal_loc = 0;
-            const int mouse_wheel_sensitivity = 120;
-
-            n_key_mouse_to_add = 0;
-            if( button_index == VERTICAL_WHEEL_EVENT)
-            {
-                mouse_wheel_vertical_loc += button_state;
-                while( mouse_wheel_vertical_loc > mouse_wheel_sensitivity / 2)
-                {
-                    n_key_mouse_to_add++;
-                    mouse_wheel_vertical_loc -= mouse_wheel_sensitivity;
-                    SP->mouse_status.changes |= PDC_MOUSE_WHEEL_UP;
-                }
-                while( mouse_wheel_vertical_loc < -mouse_wheel_sensitivity / 2)
-                {
-                    n_key_mouse_to_add++;
-                    mouse_wheel_vertical_loc += mouse_wheel_sensitivity;
-                    SP->mouse_status.changes |= PDC_MOUSE_WHEEL_DOWN;
-                }
-             }
-             else       /* must be a horizontal event: */
-            {
-                mouse_wheel_horizontal_loc += button_state;
-                while( mouse_wheel_horizontal_loc > mouse_wheel_sensitivity / 2)
-                {
-                    n_key_mouse_to_add++;
-                    mouse_wheel_horizontal_loc -= mouse_wheel_sensitivity;
-                    SP->mouse_status.changes |= PDC_MOUSE_WHEEL_RIGHT;
-                }
-                while( mouse_wheel_horizontal_loc < -mouse_wheel_sensitivity / 2)
-                {
-                    n_key_mouse_to_add++;
-                    mouse_wheel_horizontal_loc += mouse_wheel_sensitivity;
-                    SP->mouse_status.changes |= PDC_MOUSE_WHEEL_LEFT;
-                }
-             }
-        }
-    }
-    SP->mouse_status.x = pt.x;
-    SP->mouse_status.y = pt.y;
-    {
-        int i, button_flags = 0;
-
-        if( GetKeyState( VK_MENU) & 0x8000)
-            button_flags |= PDC_BUTTON_ALT;
-
-        if( GetKeyState( VK_SHIFT) & 0x8000)
-            button_flags |= PDC_BUTTON_SHIFT;
-
-        if( GetKeyState( VK_CONTROL) & 0x8000)
-            button_flags |= PDC_BUTTON_CONTROL;
-
-        for (i = 0; i < PDC_MAX_MOUSE_BUTTONS; i++)
-            SP->mouse_status.button[i] |= button_flags;
-    }
-                  /* If the window is maximized,  the click may occur just */
-                  /* outside the "real" screen area.  If so,  we again     */
-                  /* don't want to add a key to the queue:                 */
-    if( SP->mouse_status.x >= PDC_n_cols || SP->mouse_status.y >= PDC_n_rows)
-        n_key_mouse_to_add = 0;
-                  /* OK,  there isn't a KEY_MOUSE already in the queue.   */
-                  /* So we'll add one (or zero or more,  for wheel mice): */
-    while( n_key_mouse_to_add--)
-        add_key_to_queue( KEY_MOUSE);
-    return( 0);
-}
+   (*) This is not necessarily Windows-specific.  The same logic should
+apply in any system where a timer can be set.  Or a "timer" could be
+synthesized by storing the time of the last mouse event,  comparing
+it to the current time,  and saying that if SP->mouse_wait milliseconds
+have elapsed,  it's time to call add_mouse( -1, -1, -1, -1) to force
+all mouse events to be output.            */
 
       /* The following should be #defined in 'winuser.h',  but such is */
       /* not always the case.  The following fixes the exceptions:     */
@@ -1029,6 +923,7 @@ static void get_app_name( TCHAR *buff, const size_t buff_size, const bool includ
 static BOOL CALLBACK get_app_icon_callback(HMODULE hModule, LPCTSTR lpszType,
                                            LPTSTR lpszName, LONG_PTR lParam)
 {
+    INTENTIONALLY_UNUSED_PARAMETER( lpszType);
     *((HICON *) lParam) = LoadIcon(hModule, lpszName);
     return FALSE; /* stop enumeration after first icon */
 }
@@ -1054,7 +949,7 @@ for,  say,  Testcurs,  while having different settings for,  say,  Firework
 or Rain or one's own programs.  */
 
 INLINE int set_default_sizes_from_registry( const int n_cols, const int n_rows,
-               const int xloc, const int yloc, const int menu_shown)
+               const int xloc, const int yloc)
 {
     DWORD is_new_key;
     HKEY hNewKey;
@@ -1212,8 +1107,8 @@ void PDC_set_resize_limits( const int new_min_lines, const int new_max_lines,
       /* one on each side.  Vertically,  we need two frame heights,  plus room */
       /* for the application title and the menu.  */
 
-static void adjust_window_size( int *xpixels, int *ypixels, int window_style,
-               const int menu_shown)
+static void adjust_window_size( int *xpixels, int *ypixels, DWORD window_style,
+                                     DWORD window_ex_style)
 {
     RECT rect;
 
@@ -1221,7 +1116,7 @@ static void adjust_window_size( int *xpixels, int *ypixels, int window_style,
     rect.right = *xpixels;
     rect.bottom = *ypixels;
 /*  printf( "Adjusting to %d, %d\n", *xpixels, *ypixels); */
-    AdjustWindowRect( &rect, window_style, menu_shown);
+    AdjustWindowRectEx( &rect, window_style, menu_shown, window_ex_style);
     *xpixels = rect.right - rect.left;
     *ypixels = rect.bottom - rect.top;
 }
@@ -1254,7 +1149,7 @@ static int keep_size_within_bounds( int *lines, int *cols)
 }
 
 INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
-                                     int *xloc, int *yloc, int *menu_shown)
+                                     int *xloc, int *yloc)
 {
     TCHAR data[100];
     DWORD size_out = sizeof( data);
@@ -1279,7 +1174,7 @@ INLINE int get_default_sizes_from_registry( int *n_cols, int *n_rows,
 
             my_stscanf( data, _T( "%dx%d,%d,%d,%d,%d;%d,%d,%d,%d:%n"),
                              &x, &y, &PDC_font_size,
-                             xloc, yloc, menu_shown,
+                             xloc, yloc, &menu_shown,
                              &minl, &maxl,
                              &minc, &maxc,
                              &bytes_read);
@@ -1339,22 +1234,6 @@ INLINE void HandleSizing( WPARAM wParam, LPARAM lParam )
         rect->left = rect->right - rounded_width;
 }
 
-/* Under Wine,  it appears that the code to force the window size to be
-an integral number of columns and rows doesn't work.  This is because
-WM_SIZING messages aren't sent (this is apparently fixed as of Wine 1.7.18,
-though I've not tried it yet;  I'm still on Wine 1.6,  the stable branch.)
-You can therefore end up in a loop where the code keeps trying to resize a
-window that isn't actually resizing.  So,  _when running in Wine only_,
-we want that code not to be executed... which means having to figure out:
-are we running under Wine?  Which means that when PDCurses/WinGUI is
-initialized,  we set the following 'wine_version' pointer.  One could
-actually call wine_version(),  if not NULL,  to get the current Wine
-version.      */
-
-typedef const char *(CDECL *wine_version_func)(void);
-
-static wine_version_func wine_version;
-
 static void HandleSize( const WPARAM wParam, const LPARAM lParam)
 {
     static WPARAM prev_wParam = (WPARAM)-99;
@@ -1364,9 +1243,6 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
 
     debug_printf( "WM_SIZE: wParam %x %d %d %d\n", (unsigned)wParam,
                   n_xpixels, n_ypixels, SP->resized);
-/*  if( wine_version)
-        printf( "Wine version: %s\n", wine_version( ));  */
-
 
     if( wParam == SIZE_MINIMIZED )
     {
@@ -1399,8 +1275,6 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
             SP->resized = TRUE;
         }
     }
-    else if( wine_version)
-        return;
 
     add_resize_key = 1;
     if( wParam == SIZE_RESTORED &&
@@ -1410,7 +1284,8 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
         int new_ypixels = PDC_cyChar * PDC_n_rows;
 
         adjust_window_size( &new_xpixels, &new_ypixels,
-                            GetWindowLong( PDC_hWnd, GWL_STYLE), menu_shown);
+                            GetWindowLong( PDC_hWnd, GWL_STYLE),
+                            GetWindowLong( PDC_hWnd, GWL_EXSTYLE));
         debug_printf( "Irregular size\n");
         SetWindowPos( PDC_hWnd, 0, 0, 0,
                       new_xpixels, new_ypixels,
@@ -1423,13 +1298,6 @@ static void HandleSize( const WPARAM wParam, const LPARAM lParam)
     prev_wParam = wParam;
 }
 
-static int HandleMouseMove( WPARAM wParam, LPARAM lParam)
-{
-    const int mouse_x = LOWORD( lParam) / PDC_cxChar;
-    const int mouse_y = HIWORD( lParam) / PDC_cyChar;
-
-    return( add_mouse( 0, BUTTON_MOVED, mouse_x, mouse_y) != -1);
-}
 
 static void HandlePaint( HWND hwnd )
 {
@@ -1473,7 +1341,6 @@ static void HandleSyskeyDown( const WPARAM wParam, const LPARAM lParam,
     const int alt_pressed = (GetKeyState( VK_MENU) & 0x8000);
     const int extended = ((lParam & 0x01000000) != 0);
     const int repeated = (int)( lParam >> 30) & 1;
-    const KPTAB *kptr = kptab + wParam;
     int key = 0;
     static int repeat_count;
 
@@ -1507,8 +1374,14 @@ static void HandleSyskeyDown( const WPARAM wParam, const LPARAM lParam,
 
     if( !key)           /* it's not a shift, ctl, alt handled above */
     {
+        const KPTAB *kptr = kptab + wParam;
+
+        assert( wParam < sizeof( kptab) / sizeof( kptab[0]));
         if( extended && kptr->extended != 999)
+        {
+            assert( kptr->extended < sizeof( ext_kptab) / sizeof( ext_kptab[0]));
             kptr = ext_kptab + kptr->extended;
+        }
 
         if( alt_pressed)
             key = kptr->alt;
@@ -1539,6 +1412,14 @@ static void HandleSyskeyDown( const WPARAM wParam, const LPARAM lParam,
                     key_already_handled = TRUE;
                 }
             }
+
+    if( key > ' ' && key < KEY_MIN && ctrl_pressed && !alt_pressed)
+       add_key_to_queue( key);
+    else if( shift_pressed)
+    {
+       if( (key >= '0' && key <= '9') || key == '.')
+          add_key_to_queue( key);      /* Shift-numpad cases */
+    }
     SP->key_modifiers = 0;
     /* Save the key modifiers if required. Do this first to allow to
        detect e.g. a pressed CTRL key after a hit of NUMLOCK. */
@@ -1559,74 +1440,34 @@ static void HandleSyskeyDown( const WPARAM wParam, const LPARAM lParam,
         SP->key_modifiers |= PDC_KEY_MODIFIER_REPEAT;
 }
 
-/* Blinking text is supposed to blink twice a second.  Therefore,
-HandleTimer( ) is called every .5 seconds.
-
-   In truth,  it's not so much 'blinking' as 'changing certain types of
-text' that happens.  If text is really blinking (i.e.,  PDC_set_blink(TRUE)
-has been called),  we need to flip that text.  Or if text _was_ blinking
-and we've just called PDC_set_blink(FALSE),  all that text has to be
-redrawn in 'standout' mode.  Also,  if PDC_set_line_color() has been
-called,  all text with left/right/under/over/strikeout lines needs to
-be redrawn.
-
-   Also,  if we've switched from rendering bold text using a bold
-font to showing it in intensified color,  or vice versa,  then all
-bold text needs to be redrawn.
-
-   So.  After determining which attributes require redrawing (if any),
-we run through all of 'curscr' and look for text with those attributes
-set.  If we find such text,  we run it through PDC_transform_line.
-(To speed matters up slightly,  we skip over text at the start and end
-of each line that lacks the desired attributes. We could conceivably
-get more clever;  as it stands,  if the very first and very last
-characters are blinking,  we redraw the entire line,  even though
-everything in between may not require it.  But it would probably be a
-lot of code for little benefit.)
-
-   Note that by default,  we'll usually find that the line color hasn't
-changed and the 'blink mode' is still FALSE.  In that case,  attr_to_seek
-will be zero and the only thing we'll do here is to blink the cursor. */
-
 static void HandleTimer( const WPARAM wParam )
 {
     int i;           /* see WndProc() notes */
-    static attr_t prev_termattrs;
-    static int prev_line_color = -1;
-    chtype attr_to_seek = 0;
 
-    if( prev_line_color != SP->line_color)
-        attr_to_seek = A_ALL_LINES;
-    if( (SP->termattrs | prev_termattrs) & A_BLINK)
-        attr_to_seek |= A_BLINK;
-    if( (SP->termattrs ^ prev_termattrs) & A_BOLD)
-        attr_to_seek |= A_BOLD;
-    prev_line_color = SP->line_color;
-    prev_termattrs = SP->termattrs;
+    INTENTIONALLY_UNUSED_PARAMETER( wParam);
     PDC_blink_state ^= 1;
-    if( attr_to_seek)
+    if( SP->termattrs & A_BLINK)
     {
         for( i = 0; i < SP->lines; i++)
         {
             if( curscr->_y[i])
             {
-                int j = 0, n_chars;
+                int j = 0;
                 chtype *line = curscr->_y[i];
 
                 /* skip over starting text that isn't blinking: */
-                while( j < SP->cols && !(*line & attr_to_seek))
+                while( j < SP->cols)
                 {
-                    j++;
-                    line++;
+                    int k;
+
+                    while( j < SP->cols && !(line[j] & A_BLINK))
+                        j++;
+                    k = j;
+                    while( j < SP->cols && (line[j] & A_BLINK))
+                        j++;
+                    if( k != j)
+                        PDC_transform_line( i, k, j - k, line + k);
                 }
-                n_chars = SP->cols - j;
-                /* then skip over text at the end that's not blinking: */
-                while( n_chars && !(line[n_chars - 1] & attr_to_seek))
-                {
-                    n_chars--;
-                }
-                if( n_chars)
-                    PDC_transform_line( i, j, n_chars, line);
             }
 /*          else
                 MessageBox( 0, "NULL _y[] found\n", "PDCurses", MB_OK);  */
@@ -1657,7 +1498,7 @@ static HMENU set_menu( void)
 
 INLINE void HandleMenuToggle( bool *ptr_ignore_resize)
 {
-    const bool is_zoomed = IsZoomed( PDC_hWnd);
+    const BOOL is_zoomed = IsZoomed( PDC_hWnd);
     HMENU hMenu;
 
     menu_shown ^= 1;
@@ -1670,9 +1511,8 @@ INLINE void HandleMenuToggle( bool *ptr_ignore_resize)
     if( !menu_shown)
     {
         hMenu = GetMenu( PDC_hWnd);   /* destroy existing menu */
+        SetMenu( PDC_hWnd, NULL);
         DestroyMenu( hMenu);
-        hMenu = CreateMenu( );        /* then set an empty menu */
-        SetMenu( PDC_hWnd, hMenu);
     }
     else
     {
@@ -1688,45 +1528,124 @@ INLINE void HandleMenuToggle( bool *ptr_ignore_resize)
     InvalidateRect( PDC_hWnd, NULL, FALSE);
 }
 
-INLINE uint64_t milliseconds_since_1970( void)
-{
-   FILETIME ft;
-   const uint64_t jd_1601 = 2305813;  /* actually 2305813.5 */
-   const uint64_t jd_1970 = 2440587;  /* actually 2440587.5 */
-   const uint64_t ten_million = 10000000;
-   const uint64_t diff = (jd_1970 - jd_1601) * ten_million * 86400;
-   uint64_t decimicroseconds_since_1970;   /* i.e.,  time in units of 1e-7 seconds */
-
-   GetSystemTimeAsFileTime( &ft);
-   decimicroseconds_since_1970 = ((uint64_t)ft.dwLowDateTime |
-                                ((uint64_t)ft.dwHighDateTime << 32)) - diff;
-   return( decimicroseconds_since_1970 / 10000);
-}
-
 typedef struct
 {
    int x, y;
    int button, action;
+   int button_flags;    /* Alt, shift, ctrl */
 } PDC_mouse_event;
+
+/* As "combined" mouse events (i.e.,  clicks and double- and triple-clicks
+along with the usual mouse moves,  button presses and releases,  and wheel
+movements) occur,  we add them to a queue.  They are removed for each
+KEY_MOUSE event from getch( ),  and SP->mouse_status is set to reflect
+what the mouse was doing at that event.
+
+Seven queued mouse events is possibly overkill.       */
+
+#define MAX_MOUSE_QUEUE       7
+
+static PDC_mouse_event mouse_queue[MAX_MOUSE_QUEUE];
+static int n_mouse_queue = 0;
+
+int PDC_get_mouse_event_from_queue( void)
+{
+    size_t i;
+
+    if( !n_mouse_queue)
+        return( -1);
+    EnterCriticalSection(&PDC_cs);
+    memset(&SP->mouse_status, 0, sizeof(MOUSE_STATUS));
+    if( mouse_queue->action == BUTTON_MOVED)
+    {
+        if( mouse_queue->button < 0)
+            SP->mouse_status.changes = PDC_MOUSE_MOVED;
+        else
+        {
+            SP->mouse_status.changes = PDC_MOUSE_MOVED | (1 << mouse_queue->button);
+            SP->mouse_status.button[mouse_queue->button] = BUTTON_MOVED;
+        }
+    }
+    else
+    {
+        if( mouse_queue->button < PDC_MAX_MOUSE_BUTTONS)
+        {
+            SP->mouse_status.button[mouse_queue->button] = (short)mouse_queue->action;
+            if( mouse_queue->button < 3)
+               SP->mouse_status.changes = (1 << mouse_queue->button);
+            else
+               SP->mouse_status.changes = (0x40 << mouse_queue->button);
+        }
+        else if( mouse_queue->button == WHEEL_EVENT)
+             SP->mouse_status.changes |= mouse_queue->action;
+    }
+    SP->mouse_status.x = mouse_queue->x;
+    SP->mouse_status.y = mouse_queue->y;
+    for (i = 0; i < PDC_MAX_MOUSE_BUTTONS; i++)
+        SP->mouse_status.button[i] |= mouse_queue->button_flags;
+    n_mouse_queue--;
+    memmove( mouse_queue, mouse_queue + 1, n_mouse_queue * sizeof( PDC_mouse_event));
+    LeaveCriticalSection(&PDC_cs);
+    return( 0);
+}
+
+static void add_mouse_event_to_queue( const int button, const int action,
+            const int x, const int y)
+{
+    if( x < PDC_n_cols && y < PDC_n_rows && n_mouse_queue < MAX_MOUSE_QUEUE)
+    {
+        int button_flags = 0;
+
+        mouse_queue[n_mouse_queue].button = button;
+        mouse_queue[n_mouse_queue].action = action;
+        mouse_queue[n_mouse_queue].x = x;
+        mouse_queue[n_mouse_queue].y = y;
+        if( GetKeyState( VK_MENU) & 0x8000)
+            button_flags |= PDC_BUTTON_ALT;
+
+        if( GetKeyState( VK_SHIFT) & 0x8000)
+            button_flags |= PDC_BUTTON_SHIFT;
+
+        if( GetKeyState( VK_CONTROL) & 0x8000)
+            button_flags |= PDC_BUTTON_CONTROL;
+        mouse_queue[n_mouse_queue].button_flags = button_flags;
+        n_mouse_queue++;
+        add_key_to_queue( KEY_MOUSE);
+    }
+}
+
+/* 'button_count' is zero if a button hasn't been pressed;  one if it
+has been;  two if pressed/released (clicked);  three if clicked and
+pressed again... all the way up to six if it's been triple-clicked. */
 
 static int add_mouse( int button, const int action, const int x, const int y)
 {
-   static int n = 0;
-   static PDC_mouse_event e[10];
-   static uint64_t prev_t = 0;
-   const uint64_t curr_t = milliseconds_since_1970( );
-   const int timing_slop = 20;
-   bool within_timeout = (curr_t < prev_t + SP->mouse_wait + timing_slop);
-   static int mouse_state = 0;
+   bool flush_events_to_queue = (button == -1 || action == BUTTON_MOVED);
+   static int mouse_state = 0, button_count[PDC_MAX_MOUSE_BUTTONS];
    static int prev_x, prev_y = -1;
    const bool actually_moved = (x != prev_x || y != prev_y);
+   size_t i;
 
-   if( action == BUTTON_MOVED && mouse_key_already_in_queue( ))
-       return( 0);
-   if( action == BUTTON_PRESSED)
-       mouse_state |= (1 << button);
-   else if( action == BUTTON_RELEASED)
+   if( action == BUTTON_RELEASED)
+   {
        mouse_state &= ~(1 << button);
+       if( !button_count[button - 1])   /* a release with no matching press */
+       {
+           add_mouse_event_to_queue( button - 1, BUTTON_RELEASED, x, y);
+           return( 0);
+       }
+       else if( button_count[button - 1] & 1)
+       {
+           button_count[button - 1]++;
+           if( button_count[button - 1] == 6)    /* triple-click completed */
+               flush_events_to_queue = TRUE;
+       }
+   }
+   else if( action == BUTTON_PRESSED && !(button_count[button - 1] & 1))
+   {
+      mouse_state |= (1 << button);
+      button_count[button - 1]++;
+   }
    if( button >= 0)
    {
       prev_x = x;
@@ -1734,73 +1653,34 @@ static int add_mouse( int button, const int action, const int x, const int y)
    }
    if( action == BUTTON_MOVED)
    {
-       int i;
-       bool report_this_move = FALSE;
-
        if( !actually_moved)     /* have to move to a new character cell, */
            return( -1);         /* not just a new pixel */
        button = -1;        /* assume no buttons down */
-       for( i = 0; i < 9; i++)
+       for( i = 0; i < PDC_MAX_MOUSE_BUTTONS; i++)
            if( (mouse_state >> i) & 1)
-               button = i;
+               button = (int)i;
        if( button == -1 && !(SP->_trap_mbe & REPORT_MOUSE_POSITION))
            return( -1);
-       if(        (button == 1 && (SP->_trap_mbe & BUTTON1_MOVED))
-               || (button == 2 && (SP->_trap_mbe & BUTTON2_MOVED))
-               || (button == 3 && (SP->_trap_mbe & BUTTON3_MOVED)))
-           report_this_move = TRUE;
-       else if( SP->_trap_mbe & REPORT_MOUSE_POSITION)
-           {
-           report_this_move = TRUE;
-           button = 0;
-           }
-       debug_printf( "Move button %d, (%d %d) : %d\n", button, x, y, report_this_move);
-       if( !report_this_move)
-           return( -1);
    }
 
-   if( !within_timeout || action == BUTTON_MOVED)
-       while( n && !set_mouse( e->button - 1, e->action, e->x, e->y))
-       {
-           n--;
-           memmove( e, e + 1, n * sizeof( PDC_mouse_event));
-       }
+   if( flush_events_to_queue)
+       for( i = 0; i < PDC_MAX_MOUSE_BUTTONS; i++)
+           if( button_count[i])
+           {
+               const int events[4] = { 0, BUTTON_CLICKED,
+                           BUTTON_DOUBLE_CLICKED, BUTTON_TRIPLE_CLICKED };
+
+               assert( button_count[i] > 0 && button_count[i] < 7);
+               if( button_count[i] >= 2)
+                  add_mouse_event_to_queue( (int)i, events[button_count[i] / 2], prev_x, prev_y);
+               if( button_count[i] & 1)
+                  add_mouse_event_to_queue( (int)i, BUTTON_PRESSED, prev_x, prev_y);
+               button_count[i] = 0;
+           }
    if( action == BUTTON_MOVED)
-       if( !set_mouse( button - 1, action, x, y))
-           return( n);
-   if( button < 0 && action != BUTTON_MOVED)
-       return( n);         /* we're just checking for timed-out events */
-   debug_printf( "Button %d, act %d, dt %ld : n %d\n", button, action,
-                  (long)( curr_t - prev_t), n);
-   e[n].button = button;
-   e[n].action = action;
-   e[n].x = x;
-   e[n].y = y;
-   if( n)
-   {
-       int merged_act = 0;
-
-       do
-       {
-           if( e[n - 1].button == e[n].button)
-           {
-               if( e[n - 1].action == BUTTON_PRESSED && e[n].action == BUTTON_RELEASED)
-                   merged_act = BUTTON_CLICKED;
-               else if( e[n - 1].action == BUTTON_CLICKED && e[n].action == BUTTON_CLICKED)
-                   merged_act = BUTTON_DOUBLE_CLICKED;
-               else if( e[n - 1].action == BUTTON_DOUBLE_CLICKED && e[n].action == BUTTON_CLICKED)
-                   merged_act = BUTTON_TRIPLE_CLICKED;
-               if( merged_act)
-               {
-                   n--;
-                   e[n].action = merged_act;
-               }
-           }
-       }  while( n && merged_act);
-   }
-   prev_t = curr_t;
-   n++;
-   return( n);
+      add_mouse_event_to_queue( button - 1, action, x, y);
+   debug_printf( "Button %d, act %d\n", button, action);
+   return( 0);
 }
 
 /* Note that there are two types of WM_TIMER timer messages.  One type
@@ -1838,11 +1718,6 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     static bool ignore_resize = FALSE;
     int button = -1, action = -1;
 
-    PDC_hWnd = hwnd;
-    if( !hwnd)
-        debug_printf( "Null hWnd: msg %u, wParam %x, lParam %lx\n",
-                     message, wParam, lParam);
-
     switch (message)
     {
     case WM_SIZING:
@@ -1852,30 +1727,71 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
     case WM_SIZE:
                 /* If ignore_resize = 1,  don't bother resizing; */
                 /* the final window size has yet to be set       */
-        if( ignore_resize == FALSE)
-           HandleSize( wParam, lParam);
+        if( ignore_resize == FALSE) {
+            EnterCriticalSection(&PDC_cs);
+            HandleSize( wParam, lParam);
+            LeaveCriticalSection(&PDC_cs);
+        }
         return 0 ;
 
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
+        EnterCriticalSection(&PDC_cs);
         {
+            static int mouse_wheel_vertical_loc = 0;
+            static int mouse_wheel_horizontal_loc = 0;
+            const int mouse_wheel_sensitivity = 120;
             POINT pt;
 
             pt.x = LOWORD( lParam);
             pt.y = HIWORD( lParam);
             ScreenToClient( hwnd, &pt);
-            debug_printf( "Mouse wheel: %u %x %lx\n", message, wParam, lParam);
+            pt.x /= PDC_cxChar;
+            pt.y /= PDC_cyChar;
             modified_key_to_return = 0;
-            set_mouse( (message == WM_MOUSEWHEEL)
-                      ? VERTICAL_WHEEL_EVENT : HORIZONTAL_WHEEL_EVENT,
-                      (short)( HIWORD(wParam)), pt.x / PDC_cxChar, pt.y / PDC_cyChar);
+            if( message == WM_MOUSEWHEEL)      /* i.e.,  vertical */
+            {
+                mouse_wheel_vertical_loc += (short)HIWORD( wParam);
+                while( mouse_wheel_vertical_loc > mouse_wheel_sensitivity / 2)
+                {
+                    mouse_wheel_vertical_loc -= mouse_wheel_sensitivity;
+                    add_mouse_event_to_queue( WHEEL_EVENT, PDC_MOUSE_WHEEL_UP, pt.x, pt.y);
+                }
+                while( mouse_wheel_vertical_loc < -mouse_wheel_sensitivity / 2)
+                {
+                    mouse_wheel_vertical_loc += mouse_wheel_sensitivity;
+                    add_mouse_event_to_queue( WHEEL_EVENT, PDC_MOUSE_WHEEL_DOWN, pt.x, pt.y);
+                }
+            }
+            else       /* must be a horizontal event: */
+            {
+                mouse_wheel_horizontal_loc += (short)HIWORD( wParam);
+                while( mouse_wheel_horizontal_loc > mouse_wheel_sensitivity / 2)
+                {
+                    mouse_wheel_horizontal_loc -= mouse_wheel_sensitivity;
+                    add_mouse_event_to_queue( WHEEL_EVENT, PDC_MOUSE_WHEEL_RIGHT, pt.x, pt.y);
+                }
+                while( mouse_wheel_horizontal_loc < -mouse_wheel_sensitivity / 2)
+                {
+                    mouse_wheel_horizontal_loc += mouse_wheel_sensitivity;
+                    add_mouse_event_to_queue( WHEEL_EVENT, PDC_MOUSE_WHEEL_LEFT, pt.x, pt.y);
+                }
+            }
         }
-        break;
+        LeaveCriticalSection(&PDC_cs);
+        return 0;
 
     case WM_MOUSEMOVE:
-        if( HandleMouseMove( wParam, lParam))
+        {
+        const int mouse_x = LOWORD( lParam) / PDC_cxChar;
+        const int mouse_y = HIWORD( lParam) / PDC_cyChar;
+
+        EnterCriticalSection(&PDC_cs);
+        if( add_mouse( 0, BUTTON_MOVED, mouse_x, mouse_y))
             modified_key_to_return = 0;
-        break;
+        LeaveCriticalSection(&PDC_cs);
+        }
+        return 0;
 
     case WM_LBUTTONDOWN:
         button = 1;
@@ -1936,11 +1852,14 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
       /* refresh.c.  I'm not entirely sure that this is what ought to be  */
       /* done,  though it does appear to work correctly.                  */
     case WM_PAINT:
+        EnterCriticalSection(&PDC_cs);
         HandlePaint( hwnd );
-        break;
+        LeaveCriticalSection(&PDC_cs);
+        return 0;
 
     case WM_KEYUP:
     case WM_SYSKEYUP:
+        EnterCriticalSection(&PDC_cs);
         if( wParam == VK_MENU && numpad_unicode_value)
         {
             modified_key_to_return = numpad_unicode_value;
@@ -1951,10 +1870,14 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
         {
             add_key_to_queue( modified_key_to_return );
             modified_key_to_return = 0;
+            LeaveCriticalSection(&PDC_cs);
+            return 0;
         }
-        break;
+        LeaveCriticalSection(&PDC_cs);
+        return DefWindowProc(hwnd, message, wParam, lParam);
 
     case WM_CHAR:       /* _Don't_ add Shift-Tab;  it's handled elsewhere */
+        EnterCriticalSection(&PDC_cs);
         if( wParam == 3 && !SP->raw_inp)     /* Ctrl-C hit */
             exit( 0);
         if( wParam != 9 || !(GetKeyState( VK_SHIFT) & 0x8000))
@@ -1962,128 +1885,110 @@ static LRESULT ALIGN_STACK CALLBACK WndProc (const HWND hwnd,
                add_key_to_queue( (int)wParam );
         key_already_handled = FALSE;
         last_key_handled = 0;
-        break;
+        LeaveCriticalSection(&PDC_cs);
+        return 0;
 
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
         if( wParam < 225 && wParam > 0 )
         {
+            EnterCriticalSection(&PDC_cs);
             HandleSyskeyDown( wParam, lParam, &modified_key_to_return );
+            LeaveCriticalSection(&PDC_cs);
+            return 0;
         }
-        return 0 ;
+        return DefWindowProc(hwnd, message, wParam, lParam);
 
     case WM_SYSCHAR:
         return 0 ;
 
     case WM_TIMER:
+        EnterCriticalSection(&PDC_cs);
         if( wParam != TIMER_ID_FOR_BLINKING)
         {
             KillTimer( PDC_hWnd, (int)wParam);
-#if 0 /* checkme */
-            within_timeout = FALSE;
-#endif
+            add_mouse( -1, -1, -1, -1);
         }
         else if( SP && curscr && curscr->_y)
         {
             /* blink the blinking text */
             HandleTimer( wParam );
         }
-        break;
+        LeaveCriticalSection(&PDC_cs);
+        return 0;
 
     case WM_CLOSE:
+        EnterCriticalSection(&PDC_cs);
+        if( !PDC_get_function_key( FUNCTION_KEY_SHUT_DOWN))
         {
-            if( !PDC_shutdown_key[FUNCTION_KEY_SHUT_DOWN])
-            {
-                final_cleanup( );
-                PDC_bDone = TRUE;
-                exit( 0);
-            }
-            else
-                add_key_to_queue( PDC_shutdown_key[FUNCTION_KEY_SHUT_DOWN]);
+            final_cleanup( );
+            /*PDC_bDone = TRUE;*/
+            exit( 0);
         }
+        else
+            add_key_to_queue( PDC_get_function_key( FUNCTION_KEY_SHUT_DOWN));
+
+        LeaveCriticalSection(&PDC_cs);
         return( 0);
 
     case WM_COMMAND:
     case WM_SYSCOMMAND:
         if( wParam == WM_EXIT_GRACELESSLY)
         {
+            EnterCriticalSection(&PDC_cs);
             final_cleanup( );
-            PDC_bDone = TRUE;
+            /*PDC_bDone = TRUE;*/
             exit( 0);
         }
         else if( wParam == WM_ENLARGE_FONT || wParam == WM_SHRINK_FONT)
         {
+            EnterCriticalSection(&PDC_cs);
             adjust_font_size( (wParam == WM_ENLARGE_FONT) ? 1 : -1);
+            LeaveCriticalSection(&PDC_cs);
             return( 0);
         }
         else if( wParam == WM_CHOOSE_FONT)
         {
+            EnterCriticalSection(&PDC_cs);
             if( PDC_choose_a_new_font( ))
                 adjust_font_size( 0);
+            LeaveCriticalSection(&PDC_cs);
             return( 0);
         }
         else if( wParam == WM_TOGGLE_MENU)
         {
+            EnterCriticalSection(&PDC_cs);
             HandleMenuToggle( &ignore_resize);
+            LeaveCriticalSection(&PDC_cs);
+            return 0;
         }
-        break;
+        return DefWindowProc(hwnd, message, wParam, lParam);
 
     case WM_DESTROY:
+        EnterCriticalSection(&PDC_cs);
         PDC_LOG(("WM_DESTROY\n"));
         PostQuitMessage (0) ;
-        PDC_bDone = TRUE;
+        /*PDC_bDone = TRUE;*/
+        LeaveCriticalSection(&PDC_cs);
         return 0 ;
+
+    default:
+        return DefWindowProc( hwnd, message, wParam, lParam) ;
     }
-    if( button != -1)
-    {
-        add_mouse( button, action, LOWORD( lParam) / PDC_cxChar, HIWORD( lParam) / PDC_cyChar);
-        if( action == BUTTON_PRESSED)
-           SetCapture( hwnd);
-        else
-           ReleaseCapture( );
-#if 0 /* checkme */
-        SetTimer( hwnd, 0, SP->mouse_wait, NULL);
-#endif
-    }
+
+    /* mouse button handling code */
+    assert( button != -1);
+    EnterCriticalSection(&PDC_cs);
+
+    add_mouse( button, action, LOWORD( lParam) / PDC_cxChar, HIWORD( lParam) / PDC_cyChar);
+    if( action == BUTTON_PRESSED)
+       SetCapture( hwnd);
     else
-       add_mouse( -1, -1, -1, -1);
-    return DefWindowProc( hwnd, message, wParam, lParam) ;
-}
+       ReleaseCapture( );
+    SetTimer( hwnd, 0, SP->mouse_wait, NULL);
 
-      /* Default behaviour is that,  when one clicks on the 'close' button, */
-      /* exit( 0) is called,  just as in the SDL and X11 versions.  But if  */
-      /* one wishes,  one can call PDC_set_shutdown_key to cause those      */
-      /* buttons to put a specified character into the input queue.  It's   */
-      /* then the application's problem to exit gracefully,  perhaps with   */
-      /* messages such as 'are you sure' and so forth.                      */
-      /*   If you've set a shutdown key,  there's always a risk that the    */
-      /* program will get stuck in a loop and never process said key.  So   */
-      /* when the key is set,  a 'Kill' item is appended to the system menu */
-      /* so that the user still has some way to terminate the app,  albeit  */
-      /* with extreme prejudice (i.e.,  click on 'Kill' and exit is called  */
-      /* and the app exits gracelessly.)                                    */
-
-int PDC_set_function_key( const unsigned function, const int new_key)
-{
-    int old_key = -1;
-
-    if( function < PDC_MAX_FUNCTION_KEYS)
-    {
-         old_key = PDC_shutdown_key[function];
-         PDC_shutdown_key[function] = new_key;
-    }
-
-    if( function == FUNCTION_KEY_SHUT_DOWN)
-        if( (new_key && !old_key) || (old_key && !new_key))
-        {
-            HMENU hMenu = GetSystemMenu( PDC_hWnd, FALSE);
-
-            if( new_key)
-                AppendMenu( hMenu, MF_STRING, WM_EXIT_GRACELESSLY, _T( "Kill"));
-            else
-                RemoveMenu( hMenu, WM_EXIT_GRACELESSLY, MF_BYCOMMAND);
-        }
-    return( old_key);
+    LeaveCriticalSection(&PDC_cs);
+    return 0;
 }
 
 /* Used to define whether or not the Font/Paste menu is visible by default.
@@ -2141,6 +2046,79 @@ static void clip_or_center_window_to_monitor( HWND hwnd)
 }
 #endif
 
+struct PDC_WININFO {
+    HANDLE hInstance;
+    int xsize;
+    int ysize;
+    DWORD window_style;
+    DWORD window_ex_style;
+    int xloc;
+    int yloc;
+    TCHAR WindowTitle[MAX_PATH];
+};
+
+static const TCHAR *AppName = _T( "Curses_App");
+static HANDLE winthr_ready;
+
+/* Thread that creates and manages the WinGUI window.
+   The return type (and declared type of winthr_id) is uint32_t instead of
+   DWORD to avoid compiler warnings. */
+
+static uint32_t WINAPI window_thread(LPVOID lpParameter)
+{
+    MSG msg;
+    HMENU hMenu;
+    struct PDC_WININFO *winfo = (struct PDC_WININFO *) lpParameter;
+    BOOL rval;
+
+    PDC_hWnd = CreateWindowEx(winfo->window_ex_style, AppName,
+                    winfo->WindowTitle, winfo->window_style,
+                    winfo->xloc, winfo->yloc,
+                    winfo->xsize, winfo->ysize,
+                    NULL, (menu_shown ? set_menu( ) : NULL),
+                    winfo->hInstance, NULL) ;
+
+    if( !PDC_hWnd)
+    {
+        const DWORD last_error = GetLastError( );
+
+        debug_printf( "CreateWindow failed; GetLastError = %ld", last_error);
+        return( 2);
+    }
+
+    hMenu = GetSystemMenu( PDC_hWnd, FALSE);
+    AppendMenu( hMenu, MF_STRING | (menu_shown ? MF_CHECKED : MF_UNCHECKED), WM_TOGGLE_MENU, _T( "Menu"));
+    AppendMenu( hMenu, MF_STRING, WM_CHOOSE_FONT, _T( "Choose Font"));
+
+    debug_printf( "menu set\n");
+
+    ShowWindow (PDC_hWnd,
+                    (winfo->window_style & WS_MAXIMIZE) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
+    debug_printf( "window shown\n");
+    UpdateWindow (PDC_hWnd) ;
+    debug_printf( "window updated\n");
+    SetTimer( PDC_hWnd, TIMER_ID_FOR_BLINKING, 500, NULL);
+    debug_printf( "timer set\n");
+
+#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
+    /* if the window is off-screen, move it on screen. */
+    clip_or_center_window_to_monitor( PDC_hWnd);
+#endif
+
+    SetEvent(winthr_ready);
+
+    while ((rval = GetMessage(&msg, NULL, 0, 0)) == TRUE) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    if (rval == -1) {
+        debug_printf("GetMessage() error: GetLastError = %lu\n", GetLastError());
+        return 1;
+    }
+    return 0;
+}
+
 /* By default,  the user cannot resize the window.  This is because
 many apps don't handle KEY_RESIZE,  and one can get odd behavior
 in such cases.  There are two ways around this.  If you call
@@ -2165,29 +2143,33 @@ INLINE int set_up_window( void)
 {
     /* create the dialog window  */
     WNDCLASS   wndclass ;
-    HMENU hMenu;
     HANDLE hInstance = GetModuleHandle( NULL);
     int n_default_columns = 80;
     int n_default_rows = 25;
-    int xsize, ysize, window_style;
-    int xloc = CW_USEDEFAULT;
-    int yloc = CW_USEDEFAULT;
-    TCHAR WindowTitle[MAX_PATH];
-    const TCHAR *AppName = _T( "Curses_App");
+    struct PDC_WININFO winfo;
     HICON icon;
-    static bool wndclass_has_been_registered = FALSE;
+    /*static bool wndclass_has_been_registered = FALSE;*/
+    HANDLE winthr_h;
+    HANDLE hWait[2];
+    DWORD winthr_status;
 
     if( !hInstance)
         debug_printf( "No instance: %d\n", GetLastError( ));
+
+    winfo.hInstance = hInstance;
+    winfo.xloc = CW_USEDEFAULT;
+    winfo.yloc = CW_USEDEFAULT;
+
     originally_focussed_window = GetForegroundWindow( );
     debug_printf( "hInstance %x\nOriginal window %x\n", hInstance, originally_focussed_window);
-    /* set the window icon from the icon in the process */
-    icon = get_app_icon(hInstance);
-    if( !icon )
-       icon = LoadIcon( NULL, IDI_APPLICATION);
-    if( !wndclass_has_been_registered)
+    /*if( !wndclass_has_been_registered)*/
     {
         ATOM rval;
+
+        /* set the window icon from the icon in the process */
+        icon = get_app_icon(hInstance);
+        if( !icon )
+           icon = LoadIcon( NULL, IDI_APPLICATION);
 
         wndclass.style         = CS_VREDRAW ;
         wndclass.lpfnWndProc   = WndProc ;
@@ -2208,12 +2190,12 @@ INLINE int set_up_window( void)
             debug_printf( "RegisterClass failed: GetLastError = %lx\n", last_error);
             return( -1);
         }
-        wndclass_has_been_registered = TRUE;
+        /*wndclass_has_been_registered = TRUE;*/
     }
 
-    get_app_name( WindowTitle, MAX_PATH, TRUE);
+    get_app_name( winfo.WindowTitle, MAX_PATH, TRUE);
 #ifdef PDC_WIDE
-    debug_printf( "WindowTitle = '%ls'\n", WindowTitle);
+    debug_printf( "WindowTitle = '%ls'\n", winfo.WindowTitle);
 #endif
 
     if( PDC_n_rows > 2 && PDC_n_cols > 2)
@@ -2222,8 +2204,8 @@ INLINE int set_up_window( void)
         n_default_rows    = PDC_n_rows;
     }
 
-    get_default_sizes_from_registry( &n_default_columns, &n_default_rows, &xloc, &yloc,
-                     &menu_shown);
+    get_default_sizes_from_registry( &n_default_columns, &n_default_rows,
+                     &winfo.xloc, &winfo.yloc, &menu_shown);
 
     if( ttytype[1])
         PDC_set_resize_limits( (unsigned char)ttytype[0],
@@ -2231,57 +2213,55 @@ INLINE int set_up_window( void)
                                (unsigned char)ttytype[2],
                                (unsigned char)ttytype[3]);
     debug_printf( "Size %d x %d,  loc %d x %d;  menu %d\n",
-               n_default_columns, n_default_rows, xloc, yloc, menu_shown);
+               n_default_columns, n_default_rows, winfo.xloc, winfo.yloc, menu_shown);
     get_character_sizes( NULL, &PDC_cxChar, &PDC_cyChar);
 
     if( min_lines != max_lines || min_cols != max_cols)
-        window_style = ((n_default_columns == -1) ?
+        winfo.window_style = ((n_default_columns == -1) ?
                     WS_MAXIMIZE | WS_OVERLAPPEDWINDOW : WS_OVERLAPPEDWINDOW);
     else  /* fixed-size window:  looks "normal",  but w/o a maximize box */
-        window_style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+        winfo.window_style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+
+    winfo.window_ex_style = WS_EX_CLIENTEDGE;
 
     if( n_default_columns == -1)
-        xsize = ysize = CW_USEDEFAULT;
+        winfo.xsize = winfo.ysize = CW_USEDEFAULT;
     else
     {
         keep_size_within_bounds( &n_default_rows, &n_default_columns);
-        xsize = PDC_cxChar * n_default_columns;
-        ysize = PDC_cyChar * n_default_rows;
-        adjust_window_size( &xsize, &ysize, window_style, menu_shown);
+        winfo.xsize = PDC_cxChar * n_default_columns;
+        winfo.ysize = PDC_cyChar * n_default_rows;
+        adjust_window_size( &winfo.xsize, &winfo.ysize, winfo.window_style,
+                                        winfo.window_ex_style);
     }
 
-    PDC_hWnd = CreateWindow( AppName, WindowTitle, window_style,
-                    xloc, yloc,
-                    xsize, ysize,
-                    NULL, (menu_shown ? set_menu( ) : NULL),
-                    hInstance, NULL) ;
-
-    if( !PDC_hWnd)
-    {
-        const DWORD last_error = GetLastError( );
-
-        debug_printf( "CreateWindow failed; GetLastError = %ld", last_error);
-        return( -2);
+    InitializeCriticalSection(&PDC_cs);
+    winthr_ready = CreateEvent(NULL, FALSE, FALSE, NULL);
+    winthr_h = (HANDLE) _beginthreadex(NULL, 0, window_thread, &winfo, 0, &winthr_id);
+    if (winthr_h == (HANDLE) 0) {
+        debug_printf("_beginthreadex() failed: %s\n", strerror(errno));
+        DeleteCriticalSection(&PDC_cs);
+        CloseHandle(winthr_ready);
+        CloseHandle(winthr_h);
+        return -1;
     }
 
-    hMenu = GetSystemMenu( PDC_hWnd, FALSE);
-    AppendMenu( hMenu, MF_STRING | (menu_shown ? MF_CHECKED : MF_UNCHECKED), WM_TOGGLE_MENU, _T( "Menu"));
-    AppendMenu( hMenu, MF_STRING, WM_CHOOSE_FONT, _T( "Choose Font"));
-
-    debug_printf( "menu set\n");
-
-    ShowWindow (PDC_hWnd,
-                    (n_default_columns == -1) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
-    debug_printf( "window shown\n");
-    UpdateWindow (PDC_hWnd) ;
-    debug_printf( "window updated\n");
-    SetTimer( PDC_hWnd, TIMER_ID_FOR_BLINKING, 500, NULL);
-    debug_printf( "timer set\n");
-
-#if defined( MONITOR_DEFAULTTONEAREST) && WINVER >= 0x0410
-    /* if the window is off-screen, move it on screen. */
-    clip_or_center_window_to_monitor( PDC_hWnd);
-#endif
+    hWait[0] = winthr_ready;
+    hWait[1] = winthr_h;
+    WaitForMultipleObjects(2, hWait, FALSE, INFINITE);
+    CloseHandle(winthr_ready);
+    if (!GetExitCodeThread(winthr_h, &winthr_status)) {
+        debug_printf("GetExitCodeThread() failed: GetLastError = %lu\n", GetLastError());
+        DeleteCriticalSection(&PDC_cs);
+        CloseHandle(winthr_h);
+        return -1;
+    }
+    CloseHandle(winthr_h);
+    if (winthr_status != STILL_ACTIVE) {
+        debug_printf("Premature window_thread termination: exit code = %lu\n", winthr_status);
+        DeleteCriticalSection(&PDC_cs);
+        return winthr_status;
+    }
 
     return( 0);
 }
@@ -2301,11 +2281,6 @@ INLINE int set_up_window( void)
 
 int PDC_scr_open(void)
 {
-    HMODULE hntdll = GetModuleHandle( _T("ntdll.dll"));
-
-    if( hntdll)
-        wine_version = (wine_version_func)GetProcAddress(hntdll, "wine_get_version");
-
     PDC_LOG(("PDC_scr_open() - called\n"));
     COLORS = N_COLORS;  /* should give this a try and see if it works! */
     if (!SP || PDC_init_palette( ))
@@ -2346,6 +2321,8 @@ int PDC_scr_open(void)
     while( !PDC_get_rows( ))     /* wait for screen to be drawn and */
       ;                          /* actual size to be determined    */
 
+    EnterCriticalSection(&PDC_cs);
+
     debug_printf( "Back from PDC_get_rows\n");
     SP->lines = PDC_get_rows();
     SP->cols = PDC_get_columns();
@@ -2362,6 +2339,7 @@ int PDC_scr_open(void)
     }
 
 /*  PDC_reset_prog_mode();   doesn't do anything anyway */
+    PDC_set_function_key( FUNCTION_KEY_COPY, 0);
     debug_printf( "...we're done\n");
     return OK;
 }
@@ -2393,11 +2371,19 @@ int PDC_resize_screen( int nlines, int ncols)
 
         if( new_width != client_rect.right || new_height != client_rect.bottom)
         {                    /* check to make sure size actually changed */
+            DWORD thr_id = GetCurrentThreadId();
             add_resize_key = 0;
+
+            if (thr_id != winthr_id)
+                LeaveCriticalSection(&PDC_cs);
+
             SetWindowPos( PDC_hWnd, 0, 0, 0,
                    new_width + (rect.right - rect.left) - client_rect.right,
                    new_height + (rect.bottom - rect.top) - client_rect.bottom,
                   SWP_NOMOVE | SWP_NOZORDER | SWP_SHOWWINDOW);
+
+            if (thr_id != winthr_id)
+                EnterCriticalSection(&PDC_cs);
         }
     }
     return OK;
@@ -2421,21 +2407,12 @@ void PDC_reset_shell_mode(void)
 
 void PDC_restore_screen_mode(int i)
 {
+   INTENTIONALLY_UNUSED_PARAMETER( i);
 }
 
 void PDC_save_screen_mode(int i)
 {
-}
-
-/* NOTE:  as with PDC_init_color() (see below),  this function has to
-redraw all text with color attribute 'pair' to match the newly-set
-foreground and background colors.  The loops to go through every character
-in curscr,  looking for those that need to be redrawn and ignoring
-those at the front and start of each line,  are very similar. */
-
-static int get_pair( const chtype ch)
-{
-   return( (int)( (ch & A_COLOR) >> PDC_COLOR_SHIFT));
+   INTENTIONALLY_UNUSED_PARAMETER( i);
 }
 
 bool PDC_can_change_color(void)
@@ -2454,63 +2431,16 @@ int PDC_color_content( int color, int *red, int *green, int *blue)
     return OK;
 }
 
-/* We have an odd problem when changing colors with PDC_init_color().  On
-palette-based systems,  you just change the palette and the hardware takes
-care of the rest.  Here,  though,  we actually need to redraw any text that's
-drawn in the specified color.  So we gotta look at each character and see if
-either the foreground or background matches the index that we're changing.
-Then, that text gets redrawn.  For speed/simplicity,  the code looks for the
-first and last character in each line that would be affected, then draws those
-in between (frequently,  this will be zero characters, i.e., no text on that
-particular line happens to use the color index in question.)  See similar code
-above for PDC_init_pair(),  to handle basically the same problem. */
-
-static int color_used_for_this_char( const chtype c, const int idx)
-{
-    const int color = get_pair( c);
-    int fg, bg;
-    int rval;
-
-    extended_pair_content( color, &fg, &bg);
-    rval = (fg == idx || bg == idx);
-    return( rval);
-}
-
 int PDC_init_color( int color, int red, int green, int blue)
 {
     const COLORREF new_rgb = RGB(DIVROUND(red * 255, 1000),
                                  DIVROUND(green * 255, 1000),
                                  DIVROUND(blue * 255, 1000));
 
-    if( !PDC_set_palette_entry( color, new_rgb))
-    {
-        /* Possibly go through curscr and redraw everything with that color! */
-        if( curscr && curscr->_y)
-        {
-            int i;
-
-            for( i = 0; i < SP->lines; i++)
-                if( curscr->_y[i])
-                {
-                    int j = 0, n_chars;
-                    chtype *line = curscr->_y[i];
-
-             /* skip over starting text that isn't of the desired color: */
-                    while( j < SP->cols
-                                 && !color_used_for_this_char( *line, color))
-                    {
-                        j++;
-                        line++;
-                    }
-                    n_chars = SP->cols - j;
-            /* then skip over text at the end that's not the right color: */
-                    while( n_chars &&
-                         !color_used_for_this_char( line[n_chars - 1], color))
-                        n_chars--;
-                    if( n_chars)
-                        PDC_transform_line( i, j, n_chars, line);
-                }
-        }
-    }
+    PDC_set_palette_entry( color, new_rgb);
     return OK;
+}
+
+void PDC_free_platform_dependent_memory( void)
+{
 }

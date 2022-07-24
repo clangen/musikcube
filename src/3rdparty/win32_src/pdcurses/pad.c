@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -77,9 +78,6 @@ pad
 
 /* save values for pechochar() */
 
-static int save_pminrow, save_pmincol;
-static int save_sminrow, save_smincol, save_smaxrow, save_smaxcol;
-
 WINDOW *newpad(int nlines, int ncols)
 {
     WINDOW *win;
@@ -100,12 +98,12 @@ WINDOW *newpad(int nlines, int ncols)
     /* save default values in case pechochar() is the first call to
        prefresh(). */
 
-    save_pminrow = 0;
-    save_pmincol = 0;
-    save_sminrow = 0;
-    save_smincol = 0;
-    save_smaxrow = min(LINES, nlines) - 1;
-    save_smaxcol = min(COLS, ncols) - 1;
+    win->_pminrow = 0;
+    win->_pmincol = 0;
+    win->_sminrow = 0;
+    win->_smincol = 0;
+    win->_smaxrow = min(LINES, nlines) - 1;
+    win->_smaxcol = min(COLS, ncols) - 1;
 
     return win;
 }
@@ -118,6 +116,7 @@ WINDOW *subpad(WINDOW *orig, int nlines, int ncols, int begy, int begx)
     PDC_LOG(("subpad() - called: lines=%d cols=%d begy=%d begx=%d\n",
              nlines, ncols, begy, begx));
 
+    assert( orig);
     if (!orig || !(orig->_flags & _PAD))
         return (WINDOW *)NULL;
 
@@ -155,12 +154,12 @@ WINDOW *subpad(WINDOW *orig, int nlines, int ncols, int begy, int begx)
     /* save default values in case pechochar() is the first call
        to prefresh(). */
 
-    save_pminrow = 0;
-    save_pmincol = 0;
-    save_sminrow = 0;
-    save_smincol = 0;
-    save_smaxrow = min(LINES, nlines) - 1;
-    save_smaxcol = min(COLS, ncols) - 1;
+    win->_pminrow = 0;
+    win->_pmincol = 0;
+    win->_sminrow = 0;
+    win->_smincol = 0;
+    win->_smaxrow = min(LINES, nlines) - 1;
+    win->_smaxcol = min(COLS, ncols) - 1;
 
     return win;
 }
@@ -179,13 +178,12 @@ int prefresh(WINDOW *win, int py, int px, int sy1, int sx1, int sy2, int sx2)
 int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
 {
     int num_cols;
-    int sline = sy1;
-    int pline = py;
+    int sline;
+    int pline;
 
     PDC_LOG(("pnoutrefresh() - called\n"));
 
-    if (!w || !(w->_flags & (_PAD|_SUBPAD)) || (sy2 >= LINES) || (sx2 >= COLS))
-        return ERR;
+    assert( w);
 
     if (py < 0)
         py = 0;
@@ -196,8 +194,13 @@ int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
     if (sx1 < 0)
         sx1 = 0;
 
-    if (sy2 < sy1 || sx2 < sx1)
+    if ((!w || !(w->_flags & (_PAD|_SUBPAD)) ||
+        (sy2 >= LINES) || (sx2 >= COLS)) ||
+        (sy2 < sy1) || (sx2 < sx1))
         return ERR;
+
+    sline = sy1;
+    pline = py;
 
     num_cols = min((sx2 - sx1 + 1), (w->_maxx - px));
 
@@ -208,15 +211,8 @@ int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
             memcpy(curscr->_y[sline] + sx1, w->_y[pline] + px,
                    num_cols * sizeof(chtype));
 
-            if ((curscr->_firstch[sline] == _NO_CHANGE)
-                || (curscr->_firstch[sline] > sx1))
-                curscr->_firstch[sline] = sx1;
-
-            if (sx2 > curscr->_lastch[sline])
-                curscr->_lastch[sline] = sx2;
-
-            w->_firstch[pline] = _NO_CHANGE; /* updated now */
-            w->_lastch[pline] = _NO_CHANGE;  /* updated now */
+            PDC_mark_cells_as_changed( curscr, sline, sx1, sx2);
+            PDC_set_changed_cells_range( w, pline, _NO_CHANGE, _NO_CHANGE);
         }
 
         sline++;
@@ -240,30 +236,51 @@ int pnoutrefresh(WINDOW *w, int py, int px, int sy1, int sx1, int sy2, int sx2)
         curscr->_curx = (w->_curx - px) + sx1;
     }
 
+    w->_pminrow = py;
+    w->_pmincol = px;
+    w->_sminrow = sy1;
+    w->_smincol = sx1;
+    w->_smaxrow = sy2;
+    w->_smaxcol = sx2;
     return OK;
+}
+
+int PDC_pnoutrefresh_with_stored_params( WINDOW *pad)
+{
+    return prefresh(pad, pad->_pminrow, pad->_pmincol, pad->_sminrow,
+                    pad->_smincol, pad->_smaxrow, pad->_smaxcol);
 }
 
 int pechochar(WINDOW *pad, chtype ch)
 {
+    int rval;
+
     PDC_LOG(("pechochar() - called\n"));
 
     if (waddch(pad, ch) == ERR)
         return ERR;
 
-    return prefresh(pad, save_pminrow, save_pmincol, save_sminrow,
-                    save_smincol, save_smaxrow, save_smaxcol);
+    rval = PDC_pnoutrefresh_with_stored_params( pad);
+    if( rval == OK)
+        doupdate( );
+    return( rval);
 }
 
 #ifdef PDC_WIDE
 int pecho_wchar(WINDOW *pad, const cchar_t *wch)
 {
+    int rval;
+
     PDC_LOG(("pecho_wchar() - called\n"));
 
+    assert( wch);
     if (!wch || (waddch(pad, *wch) == ERR))
         return ERR;
 
-    return prefresh(pad, save_pminrow, save_pmincol, save_sminrow,
-                    save_smincol, save_smaxrow, save_smaxcol);
+    rval = PDC_pnoutrefresh_with_stored_params( pad);
+    if( rval == OK)
+        doupdate( );
+    return( rval);
 }
 #endif
 
@@ -271,6 +288,7 @@ bool is_pad(const WINDOW *pad)
 {
     PDC_LOG(("is_pad() - called\n"));
 
+    assert( pad);
     if (!pad)
         return FALSE;
 

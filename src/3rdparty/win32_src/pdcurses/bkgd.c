@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -72,6 +73,7 @@ int wbkgd(WINDOW *win, chtype ch)
 
     PDC_LOG(("wbkgd() - called\n"));
 
+    assert( win);
     if (!win)
         return ERR;
 
@@ -172,6 +174,7 @@ chtype getbkgd(WINDOW *win)
 {
     PDC_LOG(("getbkgd() - called\n"));
 
+    assert( win);
     return win ? win->_bkgd : (chtype)ERR;
 }
 
@@ -180,6 +183,7 @@ int wbkgrnd(WINDOW *win, const cchar_t *wch)
 {
     PDC_LOG(("wbkgrnd() - called\n"));
 
+    assert( wch);
     return wch ? wbkgd(win, *wch) : ERR;
 }
 
@@ -209,6 +213,8 @@ int wgetbkgrnd(WINDOW *win, cchar_t *wch)
 {
     PDC_LOG(("wgetbkgrnd() - called\n"));
 
+    assert( win);
+    assert( wch);
     if (!win || !wch)
         return ERR;
 

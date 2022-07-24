@@ -1,6 +1,7 @@
 /* PDCurses */
 
 #include <curspriv.h>
+#include <assert.h>
 
 /*man-start**************************************************************
 
@@ -69,11 +70,13 @@ addchstr
 
 int waddchnstr(WINDOW *win, const chtype *ch, int n)
 {
-    int y, x, maxx, minx;
+    int y, x;
     chtype *ptr;
 
     PDC_LOG(("waddchnstr() - called: win=%p n=%d\n", win, n));
 
+    assert( win);
+    assert( ch);
     if (!win || !ch || !n || n < -1)
         return ERR;
 
@@ -84,30 +87,14 @@ int waddchnstr(WINDOW *win, const chtype *ch, int n)
     if (n == -1 || n > win->_maxx - x)
         n = win->_maxx - x;
 
-    minx = win->_firstch[y];
-    maxx = win->_lastch[y];
-
     for (; n && *ch; n--, x++, ptr++, ch++)
     {
         if (*ptr != *ch)
         {
-            if (x < minx || minx == _NO_CHANGE)
-                minx = x;
-
-            if (x > maxx)
-                maxx = x;
-
-            PDC_LOG(("y %d x %d minx %d maxx %d *ptr %x *ch"
-                     " %x firstch: %d lastch: %d\n",
-                     y, x, minx, maxx, *ptr, *ch,
-                     win->_firstch[y], win->_lastch[y]));
-
+            PDC_mark_cell_as_changed( win, y, x);
             *ptr = *ch;
         }
     }
-
-    win->_firstch[y] = minx;
-    win->_lastch[y] = maxx;
 
     return OK;
 }

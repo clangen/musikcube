@@ -1,9 +1,10 @@
 /*----------------------------------------------------------------------*
- *                              PDCurses                                *
+ *                              PDCursesMod                             *
  *----------------------------------------------------------------------*/
 
 #ifndef __PDCURSES__
 #define __PDCURSES__ 1
+#define __PDCURSESMOD__ 1
 
 /*man-start**************************************************************
 
@@ -13,6 +14,7 @@ Define before inclusion (only those needed):
     PDC_RGB         if you want to use RGB color definitions
                     (Red = 1, Green = 2, Blue = 4) instead of BGR
     PDC_WIDE        if building / built with wide-character support
+    PDC_FORCE_UTF8  if forcing use of UTF8 (implies PDC_WIDE)
     PDC_DLL_BUILD   if building / built as a Windows DLL
     PDC_NCMOUSE     to use the ncurses mouse API instead
                     of PDCurses' traditional mouse API
@@ -23,18 +25,24 @@ Defined by this header:
     PDC_BUILD       API build version
     PDC_VER_MAJOR   major version number
     PDC_VER_MINOR   minor version number
+    PDC_VER_CHANGE  version change number
+    PDC_VER_YEAR    year of version
+    PDC_VER_MONTH   month of version
+    PDC_VER_DAY     day of month of version
     PDC_VERDOT      version string
 
 **man-end****************************************************************/
 
 #define PDCURSES        1
 #define PDC_BUILD (PDC_VER_MAJOR*1000 + PDC_VER_MINOR *100 + PDC_VER_CHANGE)
+         /* NOTE : For version changes that are not backward compatible, */
+         /* the 'endwin_*' #defines below should be updated.             */
 #define PDC_VER_MAJOR    4
-#define PDC_VER_MINOR    1
-#define PDC_VER_CHANGE   99
-#define PDC_VER_YEAR   2020
-#define PDC_VER_MONTH    05
-#define PDC_VER_DAY      20
+#define PDC_VER_MINOR    3
+#define PDC_VER_CHANGE   3
+#define PDC_VER_YEAR   2022
+#define PDC_VER_MONTH    07
+#define PDC_VER_DAY      24
 
 #define PDC_STRINGIZE( x) #x
 #define PDC_stringize( x) PDC_STRINGIZE( x)
@@ -43,7 +51,9 @@ Defined by this header:
                    PDC_stringize( PDC_VER_MINOR) "." \
                    PDC_stringize( PDC_VER_CHANGE)
 
-#define CHTYPE_LONG     1      /* chtype >= 32 bits */
+#define PDC_VER_YMD PDC_stringize( PDC_VER_YEAR) "-" \
+                    PDC_stringize( PDC_VER_MONTH) "-" \
+                    PDC_stringize( PDC_VER_DAY)
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 # define PDC_99         1
@@ -58,6 +68,10 @@ Defined by this header:
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+
+#if defined( PDC_FORCE_UTF8) && !defined( PDC_WIDE)
+   #define PDC_WIDE
+#endif
 
 #ifdef PDC_WIDE
 # include <wchar.h>
@@ -79,6 +93,8 @@ extern "C"
    #define uint64_t unsigned __int64
    #define uint32_t unsigned long
    #define uint16_t unsigned short
+   #define int32_t  long
+   #define int16_t  short
 #else
    #include <stdint.h>
 #endif
@@ -104,15 +120,14 @@ extern "C"
 #if !defined(PDC_PP98) && !defined(__bool_true_false_are_defined)
 typedef unsigned char bool;
 #endif
-   
+
 #if defined( CHTYPE_32)
-   #if defined( CHTYPE_64)
-       #error CHTYPE cannot be both CHTYPE_32 and CHTYPE_64
-   #endif
    typedef uint32_t chtype;       /* chtypes will be 32 bits */
+   typedef uint32_t mmask_t;
 #else
-   #define CHTYPE_64
    typedef uint64_t chtype;       /* chtypes will be 64 bits */
+   typedef uint64_t mmask_t;
+   #define PDC_LONG_MMASK
    #ifdef PDC_WIDE
       #define USING_COMBINING_CHARACTER_SCHEME
    #endif
@@ -140,7 +155,9 @@ enum PDC_port
     PDC_PORT_SDL1 = 5,
     PDC_PORT_SDL2 = 6,
     PDC_PORT_VT = 7,
-    PDC_PORT_DOSVGA = 8
+    PDC_PORT_DOSVGA = 8,
+    PDC_PORT_PLAN9 = 9,
+    PDC_PORT_LINUX_FB = 10
 };
 
 /* Use this structure with PDC_get_version() for run-time info about the
@@ -175,12 +192,6 @@ enum
 
 #define PDC_MAX_MOUSE_BUTTONS          9
 
-#if _LP64
-typedef unsigned int mmask_t;
-#else
-typedef unsigned long mmask_t;
-#endif
-
 typedef struct
 {
     int x;           /* absolute column, 0 based, measured in characters */
@@ -214,21 +225,21 @@ typedef struct
  *                                10 <- button 2 has changed   1
  *                               100 <- button 3 has changed   2
  *                              1000 <- mouse has moved        3
- *                             10000 <- mouse position report  4
+ * (Not actually used!)        10000 <- mouse position report  4
  *                            100000 <- mouse wheel up         5
  *                           1000000 <- mouse wheel down       6
  *                          10000000 <- mouse wheel left       7
  *                         100000000 <- mouse wheel right      8
- *                        1000000000 <- button 4 has changed   9
- * (NOTE: buttons 6 to   10000000000 <- button 5 has changed  10
- * 9 aren't implemented 100000000000 <- button 6 has changed  11
- * in any flavor of    1000000000000 <- button 7 has changed  12
- * PDCurses yet!)     10000000000000 <- button 8 has changed  13
+ * (Buttons 4 and up are  1000000000 <- button 4 has changed   9
+ * PDCursesMod-only,     10000000000 <- button 5 has changed  10
+ * and only 4 & 5 are   100000000000 <- button 6 has changed  11
+ * currently used)     1000000000000 <- button 7 has changed  12
+ *                    10000000000000 <- button 8 has changed  13
  *                   100000000000000 <- button 9 has changed  14
  */
 
 #define PDC_MOUSE_MOVED         0x0008
-#define PDC_MOUSE_POSITION      0x0010
+#define PDC_MOUSE_UNUSED_BIT    0x0010
 #define PDC_MOUSE_WHEEL_UP      0x0020
 #define PDC_MOUSE_WHEEL_DOWN    0x0040
 #define PDC_MOUSE_WHEEL_LEFT    0x0080
@@ -236,7 +247,6 @@ typedef struct
 
 #define A_BUTTON_CHANGED        (Mouse_status.changes & 7)
 #define MOUSE_MOVED             (Mouse_status.changes & PDC_MOUSE_MOVED)
-#define MOUSE_POS_REPORT        (Mouse_status.changes & PDC_MOUSE_POSITION)
 #define BUTTON_CHANGED(x)       (Mouse_status.changes & (1 << ((x) - ((x)<4 ? 1 : -5))))
 #define BUTTON_STATUS(x)        (Mouse_status.button[(x) - 1])
 #define MOUSE_WHEEL_UP          (Mouse_status.changes & PDC_MOUSE_WHEEL_UP)
@@ -246,26 +256,39 @@ typedef struct
 
 /* mouse bit-masks */
 
-#define BUTTON1_RELEASED        0x00000001L
-#define BUTTON1_PRESSED         0x00000002L
-#define BUTTON1_CLICKED         0x00000004L
-#define BUTTON1_DOUBLE_CLICKED  0x00000008L
-#define BUTTON1_TRIPLE_CLICKED  0x00000010L
-#define BUTTON1_MOVED           0x00000010L /* PDCurses */
+#define BUTTON1_RELEASED        (mmask_t)0x01
+#define BUTTON1_PRESSED         (mmask_t)0x02
+#define BUTTON1_CLICKED         (mmask_t)0x04
+#define BUTTON1_DOUBLE_CLICKED  (mmask_t)0x08
+#define BUTTON1_TRIPLE_CLICKED  (mmask_t)0x10
 
-#define BUTTON2_RELEASED        0x00000020L
-#define BUTTON2_PRESSED         0x00000040L
-#define BUTTON2_CLICKED         0x00000080L
-#define BUTTON2_DOUBLE_CLICKED  0x00000100L
-#define BUTTON2_TRIPLE_CLICKED  0x00000200L
-#define BUTTON2_MOVED           0x00000200L /* PDCurses */
+/* With the "traditional" 32-bit mmask_t,  mouse move and triple-clicks
+share the same bit and can't be distinguished.  64-bit mmask_ts allow us
+to make the distinction,  and will allow other events to be added later. */
 
-#define BUTTON3_RELEASED        0x00000400L
-#define BUTTON3_PRESSED         0x00000800L
-#define BUTTON3_CLICKED         0x00001000L
-#define BUTTON3_DOUBLE_CLICKED  0x00002000L
-#define BUTTON3_TRIPLE_CLICKED  0x00004000L
-#define BUTTON3_MOVED           0x00004000L /* PDCurses */
+#ifdef PDC_LONG_MMASK
+   #define BUTTON1_MOVED           (mmask_t)0x20      /* PDCurses */
+   #define PDC_BITS_PER_BUTTON     6
+#else
+   #define BUTTON1_MOVED           (mmask_t)0x10      /* PDCurses */
+   #define PDC_BITS_PER_BUTTON     5
+#endif
+
+#define PDC_SHIFTED_BUTTON( button, n)  ((mmask_t)(button) << (((n) - 1) * PDC_BITS_PER_BUTTON))
+
+#define BUTTON2_RELEASED       PDC_SHIFTED_BUTTON( BUTTON1_RELEASED,       2)
+#define BUTTON2_PRESSED        PDC_SHIFTED_BUTTON( BUTTON1_PRESSED,        2)
+#define BUTTON2_CLICKED        PDC_SHIFTED_BUTTON( BUTTON1_CLICKED,        2)
+#define BUTTON2_DOUBLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_DOUBLE_CLICKED, 2)
+#define BUTTON2_TRIPLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_TRIPLE_CLICKED, 2)
+#define BUTTON2_MOVED          PDC_SHIFTED_BUTTON( BUTTON1_MOVED,          2)
+
+#define BUTTON3_RELEASED       PDC_SHIFTED_BUTTON( BUTTON1_RELEASED,       3)
+#define BUTTON3_PRESSED        PDC_SHIFTED_BUTTON( BUTTON1_PRESSED,        3)
+#define BUTTON3_CLICKED        PDC_SHIFTED_BUTTON( BUTTON1_CLICKED,        3)
+#define BUTTON3_DOUBLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_DOUBLE_CLICKED, 3)
+#define BUTTON3_TRIPLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_TRIPLE_CLICKED, 3)
+#define BUTTON3_MOVED          PDC_SHIFTED_BUTTON( BUTTON1_MOVED,          3)
 
 /* For the ncurses-compatible functions only, BUTTON4_PRESSED and
    BUTTON5_PRESSED are returned for mouse scroll wheel up and down;
@@ -273,25 +296,27 @@ typedef struct
    as described above for WinGUI,  and perhaps to be extended to
    other PDCurses flavors  */
 
-#define BUTTON4_RELEASED        0x00008000L
-#define BUTTON4_PRESSED         0x00010000L
-#define BUTTON4_CLICKED         0x00020000L
-#define BUTTON4_DOUBLE_CLICKED  0x00040000L
-#define BUTTON4_TRIPLE_CLICKED  0x00080000L
+#define BUTTON4_RELEASED       PDC_SHIFTED_BUTTON( BUTTON1_RELEASED,       4)
+#define BUTTON4_PRESSED        PDC_SHIFTED_BUTTON( BUTTON1_PRESSED,        4)
+#define BUTTON4_CLICKED        PDC_SHIFTED_BUTTON( BUTTON1_CLICKED,        4)
+#define BUTTON4_DOUBLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_DOUBLE_CLICKED, 4)
+#define BUTTON4_TRIPLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_TRIPLE_CLICKED, 4)
+#define BUTTON4_MOVED          PDC_SHIFTED_BUTTON( BUTTON1_MOVED,          4)
 
-#define BUTTON5_RELEASED        0x00100000L
-#define BUTTON5_PRESSED         0x00200000L
-#define BUTTON5_CLICKED         0x00400000L
-#define BUTTON5_DOUBLE_CLICKED  0x00800000L
-#define BUTTON5_TRIPLE_CLICKED  0x01000000L
+#define BUTTON5_RELEASED       PDC_SHIFTED_BUTTON( BUTTON1_RELEASED,       5)
+#define BUTTON5_PRESSED        PDC_SHIFTED_BUTTON( BUTTON1_PRESSED,        5)
+#define BUTTON5_CLICKED        PDC_SHIFTED_BUTTON( BUTTON1_CLICKED,        5)
+#define BUTTON5_DOUBLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_DOUBLE_CLICKED, 5)
+#define BUTTON5_TRIPLE_CLICKED PDC_SHIFTED_BUTTON( BUTTON1_TRIPLE_CLICKED, 5)
+#define BUTTON5_MOVED          PDC_SHIFTED_BUTTON( BUTTON1_MOVED,          5)
 
-#define MOUSE_WHEEL_SCROLL      0x02000000L /* PDCurses */
-#define BUTTON_MODIFIER_SHIFT   0x04000000L /* PDCurses */
-#define BUTTON_MODIFIER_CONTROL 0x08000000L /* PDCurses */
-#define BUTTON_MODIFIER_ALT     0x10000000L /* PDCurses */
+#define MOUSE_WHEEL_SCROLL      PDC_SHIFTED_BUTTON( BUTTON1_RELEASED,       6)
+#define BUTTON_MODIFIER_SHIFT   (MOUSE_WHEEL_SCROLL << 1)
+#define BUTTON_MODIFIER_CONTROL (MOUSE_WHEEL_SCROLL << 2)
+#define BUTTON_MODIFIER_ALT     (MOUSE_WHEEL_SCROLL << 3)
+#define REPORT_MOUSE_POSITION   (MOUSE_WHEEL_SCROLL << 4)
 
-#define ALL_MOUSE_EVENTS        0x1fffffffL
-#define REPORT_MOUSE_POSITION   0x20000000L
+#define ALL_MOUSE_EVENTS        (REPORT_MOUSE_POSITION - 1)
 
 /* ncurses mouse interface */
 
@@ -350,15 +375,10 @@ typedef struct _win       /* definition of a window */
     int   _delayms;       /* milliseconds of delay for getch() */
     int   _parx, _pary;   /* coords relative to parent (0,0) */
     struct _win *_parent; /* subwin's pointer to parent win */
+    int   _pminrow, _pmincol;    /* saved position used only for pads */
+    int   _sminrow, _smaxrow;    /* saved position used only for pads */
+    int   _smincol, _smaxcol;    /* saved position used only for pads */
 } WINDOW;
-
-/* Color pair structure */
-
-typedef struct
-{
-    int f;                /* foreground color */
-    int b;                /* background color */
-} PDC_PAIR;
 
 /* Avoid using the SCREEN struct directly -- use the corresponding
    functions if possible. This struct may eventually be made private. */
@@ -402,8 +422,8 @@ typedef struct
                                       on last key press */
     bool  return_key_modifiers;    /* TRUE if modifier keys are
                                       returned as "real" keys */
-    bool  key_code;                /* TRUE if last key is a special key;
-                                      used internally by get_wch() */
+    bool  in_endwin;               /* if we're in endwin(),  we should use
+                                      only signal-safe code */
     MOUSE_STATUS mouse_status;     /* last returned mouse status */
     short line_color;     /* color of line attributes - default -1 */
     attr_t termattrs;     /* attribute capabilities */
@@ -419,7 +439,7 @@ typedef struct
     int  *c_ungch;        /* array of ungotten chars */
     int   c_ungind;       /* ungetch() push index */
     int   c_ungmax;       /* allocated size of ungetch() buffer */
-    PDC_PAIR *atrtab;     /* table of color pairs */
+    void *atrtab;         /* table of color pairs */
 } SCREEN;
 
 /*----------------------------------------------------------------------
@@ -455,34 +475,51 @@ PDCEX  char         ttytype[];    /* terminal name/description */
 Text Attributes
 ===============
 
-If CHTYPE_32 is #defined,  PDCurses uses a 32-bit integer for its chtype:
+By default,  PDCurses uses 64-bit integers for its chtype.  All chtypes
+have bits devoted to character data,  attribute data,  and color pair data.
+There are three configurations supported :
 
+Default, 64-bit chtype,  both wide- and 8-bit character builds:
+-------------------------------------------------------------------------------
+|63|62|..|53|52|..|34|33|32|31|30|29|28|..|22|21|20|19|18|17|16|..| 3| 2| 1| 0|
+-------------------------------------------------------------------------------
+  unused    |color pair |        modifiers      |         character eg 'a'
+
+   21 character bits (0-20),  enough for full Unicode coverage
+   12 attribute bits (21-32)
+   20 color pair bits (33-52),  enough for 1048576 color pairs
+   11 currently unused bits (53-63)
+
+32-bit chtypes with wide characters (CHTYPE_32 and PDC_WIDE are #defined):
     +--------------------------------------------------------------------+
     |31|30|29|28|27|26|25|24|23|22|21|20|19|18|17|16|15|14|13|..| 2| 1| 0|
     +--------------------------------------------------------------------+
           color pair        |     modifiers         |   character eg 'a'
+   16 character bits (0-16),  enough for BMP (Unicode below 64K)
+   8 attribute bits (16-23)
+   8 color pair bits (24-31),  for 256 color pairs
 
-There are 256 color pairs (8 bits), 8 bits for modifiers, and 16 bits
-for character data. The modifiers are bold, underline, right-line,
-left-line, italic, reverse and blink, plus the alternate character set
-indicator.
+32-bit chtypes with narrow characters (CHTYPE_32 #defined,  PDC_WIDE is not):
+    +--------------------------------------------------------------------+
+    |31|30|29|28|..|22|21|20|19|18|17|16|..|12|11|10| 9| 8| 7| 6|..| 1| 0|
+    +--------------------------------------------------------------------+
+          color pair        |     modifiers               |character
+   8 character bits (0-7);  only 8-bit charsets will work
+   12 attribute bits (8-19)
+   12 color pair bits (20-31),  for 4096 pairs
 
-   By default,  a 64-bit chtype is used :
+All attribute modifier schemes include eight "basic" bits:  bold, underline,
+right-line, left-line, italic, reverse and blink attributes,  plus the
+alternate character set indicator. For default and 32-bit narrow builds,
+three more bits are used for overlined, dimmed, and strikeout attributes;
+a fourth bit is reserved.
 
--------------------------------------------------------------------------------
-|63|62|61|60|59|..|34|33|32|31|30|29|28|..|22|21|20|19|18|17|16|..| 3| 2| 1| 0|
--------------------------------------------------------------------------------
-         color number   |        modifiers      |         character eg 'a'
-
-   We take five more bits for the character (thus allowing Unicode values
-past 64K;  the full range of Unicode goes up to 0x10ffff,  requiring 21 bits
-total),  and four more bits for attributes.  Three are currently used as
-A_OVERLINE, A_DIM, and A_STRIKEOUT;  one more is reserved for future use.
-On some platforms,  bits 33-40 are used to select a color pair (can run from
-0 to 255). Bits 41 and 42 have been added to this to get 1024 color pairs.
-On some platforms (as of 2020 May 17,  WinGUI and VT),  bits 33-52 are used,
-allowing 2^20 = 1048576 color pairs.  That should be enough for anybody, and
-leaves twelve bits for other uses.
+Default chtypes have enough character bits to support the full range of
+Unicode,  all attributes,  and 2^20 = 1048576 color pairs.  Note,  though,
+that as of 2022 Jun 17,  only WinGUI,  VT,  X11,  Linux framebuffer,  and
+SDLn have COLOR_PAIRS = 1048576.  Other platforms (DOSVGA,  Plan9, WinCon)
+may join them.  Some (DOS,  OS/2) simply do not have full-color
+capability.
 
 **man-end****************************************************************/
 
@@ -490,58 +527,58 @@ leaves twelve bits for other uses.
 
 #define A_NORMAL      (chtype)0
 
-#ifdef CHTYPE_64
+#ifndef CHTYPE_32
+            /* 64-bit chtypes,  both wide- and narrow */
     # define PDC_CHARTEXT_BITS   21
-    # define A_CHARTEXT   (chtype)( ((chtype)0x1 << PDC_CHARTEXT_BITS) - 1)
-    # define A_ALTCHARSET ((chtype)0x001 << PDC_CHARTEXT_BITS)
-    # define A_RIGHT      ((chtype)0x002 << PDC_CHARTEXT_BITS)
-    # define A_LEFT       ((chtype)0x004 << PDC_CHARTEXT_BITS)
-    # define A_INVIS      ((chtype)0x008 << PDC_CHARTEXT_BITS)
-    # define A_UNDERLINE  ((chtype)0x010 << PDC_CHARTEXT_BITS)
-    # define A_REVERSE    ((chtype)0x020 << PDC_CHARTEXT_BITS)
-    # define A_BLINK      ((chtype)0x040 << PDC_CHARTEXT_BITS)
-    # define A_BOLD       ((chtype)0x080 << PDC_CHARTEXT_BITS)
-    # define A_OVERLINE   ((chtype)0x100 << PDC_CHARTEXT_BITS)
-    # define A_STRIKEOUT  ((chtype)0x200 << PDC_CHARTEXT_BITS)
-    # define A_DIM        ((chtype)0x400 << PDC_CHARTEXT_BITS)
-#if 0
-                  /* May come up with a use for this bit    */
-                  /* someday; reserved for the future: */
-    # define A_FUTURE_2   ((chtype)0x800 << PDC_CHARTEXT_BITS)
-#endif
-    # define PDC_COLOR_SHIFT (PDC_CHARTEXT_BITS + 12)
-    # define A_COLOR      ((chtype)0x7fffffff << PDC_COLOR_SHIFT)
-    # define A_ATTRIBUTES (((chtype)0xfff << PDC_CHARTEXT_BITS) | A_COLOR)
-# else         /* plain ol' 32-bit chtypes */
-    # define PDC_CHARTEXT_BITS      16
-    # define A_ALTCHARSET (chtype)0x00010000
-    # define A_RIGHT      (chtype)0x00020000
-    # define A_LEFT       (chtype)0x00040000
-    # define A_INVIS      (chtype)0x00080000
-    # define A_UNDERLINE  (chtype)0x00100000
-    # define A_REVERSE    (chtype)0x00200000
-    # define A_BLINK      (chtype)0x00400000
-    # define A_BOLD       (chtype)0x00800000
-    # define A_COLOR      (chtype)0xff000000
-    # define PDC_COLOR_SHIFT 24
+    # define PDC_ATTRIBUTE_BITS  12
+    # define PDC_COLOR_BITS      20
+# else
 #ifdef PDC_WIDE
-    # define A_CHARTEXT   (chtype)0x0000ffff
-    # define A_ATTRIBUTES (chtype)0xffff0000
-    # define A_DIM        A_NORMAL
-    # define A_OVERLINE   A_NORMAL
-    # define A_STRIKEOUT  A_NORMAL
-#else          /* with 8-bit chars,  we have bits for these attribs : */
-    # define A_CHARTEXT   (chtype)0x000000ff
-    # define A_ATTRIBUTES (chtype)0xffffe000
-    # define A_DIM        (chtype)0x00008000
-    # define A_OVERLINE   (chtype)0x00004000
-    # define A_STRIKEOUT  (chtype)0x00002000
+            /* 32-bit chtypes,  wide character */
+    # define PDC_CHARTEXT_BITS      16
+    # define PDC_ATTRIBUTE_BITS      8
+    # define PDC_COLOR_BITS          8
+#else
+            /* 32-bit chtypes,  narrow (8-bit) characters */
+    # define PDC_CHARTEXT_BITS      8
+    # define PDC_ATTRIBUTE_BITS    12
+    # define PDC_COLOR_BITS        12
 #endif
 #endif
 
+# define PDC_COLOR_SHIFT (PDC_CHARTEXT_BITS + PDC_ATTRIBUTE_BITS)
+# define A_COLOR       ((((chtype)1 << PDC_COLOR_BITS) - 1) << PDC_COLOR_SHIFT)
+# define A_ATTRIBUTES (((((chtype)1 << PDC_ATTRIBUTE_BITS) - 1) << PDC_CHARTEXT_BITS) | A_COLOR)
+# define A_CHARTEXT     (((chtype)1 << PDC_CHARTEXT_BITS) - 1)
+
+#define PDC_ATTRIBUTE_BIT( N)  ((chtype)1 << (N))
+# define A_ALTCHARSET   PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS)
+# define A_RIGHT        PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 1)
+# define A_LEFT         PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 2)
+# define A_INVIS        PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 3)
+# define A_UNDERLINE    PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 4)
+# define A_REVERSE      PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 5)
+# define A_BLINK        PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 6)
+# define A_BOLD         PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 7)
+#if PDC_COLOR_BITS >= 11
+    # define A_OVERLINE   PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 8)
+    # define A_STRIKEOUT  PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 9)
+    # define A_DIM        PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 10)
+/*  Reserved bit :        PDC_ATTRIBUTE_BIT( PDC_CHARTEXT_BITS + 11) */
+#else
+    # define A_DIM        A_NORMAL
+    # define A_OVERLINE   A_NORMAL
+    # define A_STRIKEOUT  A_NORMAL
+#endif
+
 #define A_ITALIC      A_INVIS
-#define A_PROTECT    (A_UNDERLINE | A_LEFT | A_RIGHT)
+#define A_PROTECT    (A_UNDERLINE | A_LEFT | A_RIGHT | A_OVERLINE)
 #define A_STANDOUT    (A_REVERSE | A_BOLD) /* X/Open */
+
+#define A_HORIZONTAL  A_NORMAL
+#define A_LOW         A_NORMAL
+#define A_TOP         A_NORMAL
+#define A_VERTICAL    A_NORMAL
 
 #define CHR_MSK       A_CHARTEXT           /* Obsolete */
 #define ATR_MSK       A_ATTRIBUTES         /* Obsolete */
@@ -717,7 +754,11 @@ Some won't work in non-wide X11 builds (see 'acs_defs.h' for details). */
 #define ACS_NEQUAL        PDC_ACS('%')
 #define ACS_STERLING      PDC_ACS('~')
 
-/* Box char aliases */
+/* Box char aliases.  The four characters tell you if a Single
+line points up, right, down,  and/or left from the center;
+or if it's Blank;  or if it's Thick or Double.  The Thick
+ones are an ncurses extension;  the Double and Single/Double
+ones are a PDCursesMod extension. */
 
 #define ACS_BSSB      ACS_ULCORNER
 #define ACS_SSBB      ACS_LLCORNER
@@ -823,6 +864,18 @@ Some won't work in non-wide X11 builds (see 'acs_defs.h' for details). */
 # define WACS_D_BTEE        (&(acs_map['K']))
 # define WACS_D_TTEE        (&(acs_map['L']))
 
+# define WACS_T_LRCORNER    (&(acs_map[0]))
+# define WACS_T_URCORNER    (&(acs_map[1]))
+# define WACS_T_ULCORNER    (&(acs_map[2]))
+# define WACS_T_LLCORNER    (&(acs_map[3]))
+# define WACS_T_PLUS        (&(acs_map[4]))
+# define WACS_T_LTEE        (&(acs_map[5]))
+# define WACS_T_RTEE        (&(acs_map[6]))
+# define WACS_T_BTEE        (&(acs_map[7]))
+# define WACS_T_TTEE        (&(acs_map[8]))
+# define WACS_T_HLINE       (&(acs_map[9]))
+# define WACS_T_VLINE       (&(acs_map[10]))
+
 # define WACS_DS_LRCORNER   (&(acs_map['M']))
 # define WACS_DS_URCORNER   (&(acs_map['N']))
 # define WACS_DS_ULCORNER   (&(acs_map['O']))
@@ -870,6 +923,18 @@ Some won't work in non-wide X11 builds (see 'acs_defs.h' for details). */
 # define WACS_BSBS     WACS_HLINE
 # define WACS_SBSB     WACS_VLINE
 # define WACS_SSSS     WACS_PLUS
+
+# define WACS_BTTB     WACS_T_ULCORNER
+# define WACS_TTBB     WACS_T_LLCORNER
+# define WACS_BBTT     WACS_T_URCORNER
+# define WACS_TBBT     WACS_T_LRCORNER
+# define WACS_TBTT     WACS_T_RTEE
+# define WACS_TTTB     WACS_T_LTEE
+# define WACS_TTBT     WACS_T_BTEE
+# define WACS_BTTS     WACS_T_TTEE
+# define WACS_BTBT     WACS_T_HLINE
+# define WACS_TBTB     WACS_T_VLINE
+# define WACS_TTTT     WACS_T_PLUS
 #endif
 
 /*** Color macros ***/
@@ -1075,7 +1140,8 @@ Some won't work in non-wide X11 builds (see 'acs_defs.h' for details). */
 #define ALT_DEL               (KEY_OFFSET + 0xde) /* alt-delete */
 #define ALT_INS               (KEY_OFFSET + 0xdf) /* alt-insert */
 #define CTL_UP                (KEY_OFFSET + 0xe0) /* ctl-up arrow */
-#define CTL_DOWN              (KEY_OFFSET + 0xe1) /* ctl-down arrow */
+#define CTL_DOWN              (KEY_OFFSET + 0xe1) /* ctl-down arrow: orig PDCurses def */
+#define CTL_DN                (KEY_OFFSET + 0xe1) /* ctl-down arrow: ncurses def */
 #define CTL_TAB               (KEY_OFFSET + 0xe2) /* ctl-tab */
 #define ALT_TAB               (KEY_OFFSET + 0xe3)
 #define ALT_MINUS             (KEY_OFFSET + 0xe4)
@@ -1149,117 +1215,45 @@ Some won't work in non-wide X11 builds (see 'acs_defs.h' for details). */
 #define KEY_SUP               (KEY_OFFSET + 0x123) /* Shifted up arrow */
 #define KEY_SDOWN             (KEY_OFFSET + 0x124) /* Shifted down arrow */
 
-         /* The following were added 2011 Sep 14,  and are */
-         /* not returned by most flavors of PDCurses:      */
+      /* The following are PDCursesMod extensions.  Even there,  not all
+         platforms support them. */
 
-#define CTL_SEMICOLON         (KEY_OFFSET + 0x125)
-#define CTL_EQUAL             (KEY_OFFSET + 0x126)
-#define CTL_COMMA             (KEY_OFFSET + 0x127)
-#define CTL_MINUS             (KEY_OFFSET + 0x128)
-#define CTL_STOP              (KEY_OFFSET + 0x129)
-#define CTL_FSLASH            (KEY_OFFSET + 0x12a)
-#define CTL_BQUOTE            (KEY_OFFSET + 0x12b)
+#define KEY_APPS              (KEY_OFFSET + 0x125)
 
-#define KEY_APPS              (KEY_OFFSET + 0x12c)
-#define KEY_SAPPS             (KEY_OFFSET + 0x12d)
-#define CTL_APPS              (KEY_OFFSET + 0x12e)
-#define ALT_APPS              (KEY_OFFSET + 0x12f)
+#define KEY_PAUSE             (KEY_OFFSET + 0x126)
 
-#define KEY_PAUSE             (KEY_OFFSET + 0x130)
-#define KEY_SPAUSE            (KEY_OFFSET + 0x131)
-#define CTL_PAUSE             (KEY_OFFSET + 0x132)
+#define KEY_PRINTSCREEN       (KEY_OFFSET + 0x127)
+#define KEY_SCROLLLOCK        (KEY_OFFSET + 0x128)
 
-#define KEY_PRINTSCREEN       (KEY_OFFSET + 0x133)
-#define ALT_PRINTSCREEN       (KEY_OFFSET + 0x134)
-#define KEY_SCROLLLOCK        (KEY_OFFSET + 0x135)
-#define ALT_SCROLLLOCK        (KEY_OFFSET + 0x136)
-
-#define CTL_0                 (KEY_OFFSET + 0x137)
-#define CTL_1                 (KEY_OFFSET + 0x138)
-#define CTL_2                 (KEY_OFFSET + 0x139)
-#define CTL_3                 (KEY_OFFSET + 0x13a)
-#define CTL_4                 (KEY_OFFSET + 0x13b)
-#define CTL_5                 (KEY_OFFSET + 0x13c)
-#define CTL_6                 (KEY_OFFSET + 0x13d)
-#define CTL_7                 (KEY_OFFSET + 0x13e)
-#define CTL_8                 (KEY_OFFSET + 0x13f)
-#define CTL_9                 (KEY_OFFSET + 0x140)
-
-#define KEY_BROWSER_BACK      (KEY_OFFSET + 0x141)
-#define KEY_SBROWSER_BACK     (KEY_OFFSET + 0x142)
-#define KEY_CBROWSER_BACK     (KEY_OFFSET + 0x143)
-#define KEY_ABROWSER_BACK     (KEY_OFFSET + 0x144)
-#define KEY_BROWSER_FWD       (KEY_OFFSET + 0x145)
-#define KEY_SBROWSER_FWD      (KEY_OFFSET + 0x146)
-#define KEY_CBROWSER_FWD      (KEY_OFFSET + 0x147)
-#define KEY_ABROWSER_FWD      (KEY_OFFSET + 0x148)
-#define KEY_BROWSER_REF       (KEY_OFFSET + 0x149)
-#define KEY_SBROWSER_REF      (KEY_OFFSET + 0x14A)
-#define KEY_CBROWSER_REF      (KEY_OFFSET + 0x14B)
-#define KEY_ABROWSER_REF      (KEY_OFFSET + 0x14C)
-#define KEY_BROWSER_STOP      (KEY_OFFSET + 0x14D)
-#define KEY_SBROWSER_STOP     (KEY_OFFSET + 0x14E)
-#define KEY_CBROWSER_STOP     (KEY_OFFSET + 0x14F)
-#define KEY_ABROWSER_STOP     (KEY_OFFSET + 0x150)
-#define KEY_SEARCH            (KEY_OFFSET + 0x151)
-#define KEY_SSEARCH           (KEY_OFFSET + 0x152)
-#define KEY_CSEARCH           (KEY_OFFSET + 0x153)
-#define KEY_ASEARCH           (KEY_OFFSET + 0x154)
-#define KEY_FAVORITES         (KEY_OFFSET + 0x155)
-#define KEY_SFAVORITES        (KEY_OFFSET + 0x156)
-#define KEY_CFAVORITES        (KEY_OFFSET + 0x157)
-#define KEY_AFAVORITES        (KEY_OFFSET + 0x158)
-#define KEY_BROWSER_HOME      (KEY_OFFSET + 0x159)
-#define KEY_SBROWSER_HOME     (KEY_OFFSET + 0x15A)
-#define KEY_CBROWSER_HOME     (KEY_OFFSET + 0x15B)
-#define KEY_ABROWSER_HOME     (KEY_OFFSET + 0x15C)
-#define KEY_VOLUME_MUTE       (KEY_OFFSET + 0x15D)
-#define KEY_SVOLUME_MUTE      (KEY_OFFSET + 0x15E)
-#define KEY_CVOLUME_MUTE      (KEY_OFFSET + 0x15F)
-#define KEY_AVOLUME_MUTE      (KEY_OFFSET + 0x160)
-#define KEY_VOLUME_DOWN       (KEY_OFFSET + 0x161)
-#define KEY_SVOLUME_DOWN      (KEY_OFFSET + 0x162)
-#define KEY_CVOLUME_DOWN      (KEY_OFFSET + 0x163)
-#define KEY_AVOLUME_DOWN      (KEY_OFFSET + 0x164)
-#define KEY_VOLUME_UP         (KEY_OFFSET + 0x165)
-#define KEY_SVOLUME_UP        (KEY_OFFSET + 0x166)
-#define KEY_CVOLUME_UP        (KEY_OFFSET + 0x167)
-#define KEY_AVOLUME_UP        (KEY_OFFSET + 0x168)
-#define KEY_NEXT_TRACK        (KEY_OFFSET + 0x169)
-#define KEY_SNEXT_TRACK       (KEY_OFFSET + 0x16A)
-#define KEY_CNEXT_TRACK       (KEY_OFFSET + 0x16B)
-#define KEY_ANEXT_TRACK       (KEY_OFFSET + 0x16C)
-#define KEY_PREV_TRACK        (KEY_OFFSET + 0x16D)
-#define KEY_SPREV_TRACK       (KEY_OFFSET + 0x16E)
-#define KEY_CPREV_TRACK       (KEY_OFFSET + 0x16F)
-#define KEY_APREV_TRACK       (KEY_OFFSET + 0x170)
-#define KEY_MEDIA_STOP        (KEY_OFFSET + 0x171)
-#define KEY_SMEDIA_STOP       (KEY_OFFSET + 0x172)
-#define KEY_CMEDIA_STOP       (KEY_OFFSET + 0x173)
-#define KEY_AMEDIA_STOP       (KEY_OFFSET + 0x174)
-#define KEY_PLAY_PAUSE        (KEY_OFFSET + 0x175)
-#define KEY_SPLAY_PAUSE       (KEY_OFFSET + 0x176)
-#define KEY_CPLAY_PAUSE       (KEY_OFFSET + 0x177)
-#define KEY_APLAY_PAUSE       (KEY_OFFSET + 0x178)
-#define KEY_LAUNCH_MAIL       (KEY_OFFSET + 0x179)
-#define KEY_SLAUNCH_MAIL      (KEY_OFFSET + 0x17A)
-#define KEY_CLAUNCH_MAIL      (KEY_OFFSET + 0x17B)
-#define KEY_ALAUNCH_MAIL      (KEY_OFFSET + 0x17C)
-#define KEY_MEDIA_SELECT      (KEY_OFFSET + 0x17D)
-#define KEY_SMEDIA_SELECT     (KEY_OFFSET + 0x17E)
-#define KEY_CMEDIA_SELECT     (KEY_OFFSET + 0x17F)
-#define KEY_AMEDIA_SELECT     (KEY_OFFSET + 0x180)
-#define KEY_LAUNCH_APP1       (KEY_OFFSET + 0x181)
-#define KEY_SLAUNCH_APP1      (KEY_OFFSET + 0x182)
-#define KEY_CLAUNCH_APP1      (KEY_OFFSET + 0x183)
-#define KEY_ALAUNCH_APP1      (KEY_OFFSET + 0x184)
-#define KEY_LAUNCH_APP2       (KEY_OFFSET + 0x185)
-#define KEY_SLAUNCH_APP2      (KEY_OFFSET + 0x186)
-#define KEY_CLAUNCH_APP2      (KEY_OFFSET + 0x187)
-#define KEY_ALAUNCH_APP2      (KEY_OFFSET + 0x188)
+#define KEY_BROWSER_BACK      (KEY_OFFSET + 0x129)
+#define KEY_BROWSER_FWD       (KEY_OFFSET + 0x12a)
+#define KEY_BROWSER_REF       (KEY_OFFSET + 0x12b)
+#define KEY_BROWSER_STOP      (KEY_OFFSET + 0x12c)
+#define KEY_SEARCH            (KEY_OFFSET + 0x12d)
+#define KEY_FAVORITES         (KEY_OFFSET + 0x12e)
+#define KEY_BROWSER_HOME      (KEY_OFFSET + 0x12f)
+#define KEY_VOLUME_MUTE       (KEY_OFFSET + 0x130)
+#define KEY_VOLUME_DOWN       (KEY_OFFSET + 0x131)
+#define KEY_VOLUME_UP         (KEY_OFFSET + 0x132)
+#define KEY_NEXT_TRACK        (KEY_OFFSET + 0x133)
+#define KEY_PREV_TRACK        (KEY_OFFSET + 0x134)
+#define KEY_MEDIA_STOP        (KEY_OFFSET + 0x135)
+#define KEY_PLAY_PAUSE        (KEY_OFFSET + 0x136)
+#define KEY_LAUNCH_MAIL       (KEY_OFFSET + 0x137)
+#define KEY_MEDIA_SELECT      (KEY_OFFSET + 0x138)
+#define KEY_LAUNCH_APP1       (KEY_OFFSET + 0x139)
+#define KEY_LAUNCH_APP2       (KEY_OFFSET + 0x13a)
+#define KEY_LAUNCH_APP3       (KEY_OFFSET + 0x13b)
+#define KEY_LAUNCH_APP4       (KEY_OFFSET + 0x13c)
+#define KEY_LAUNCH_APP5       (KEY_OFFSET + 0x13d)
+#define KEY_LAUNCH_APP6       (KEY_OFFSET + 0x13e)
+#define KEY_LAUNCH_APP7       (KEY_OFFSET + 0x13f)
+#define KEY_LAUNCH_APP8       (KEY_OFFSET + 0x140)
+#define KEY_LAUNCH_APP9       (KEY_OFFSET + 0x141)
+#define KEY_LAUNCH_APP10      (KEY_OFFSET + 0x142)
 
 #define KEY_MIN       KEY_BREAK         /* Minimum curses key value */
-#define KEY_MAX       KEY_ALAUNCH_APP2  /* Maximum curses key */
+#define KEY_MAX       KEY_LAUNCH_APP10  /* Maximum curses key */
 
 #define KEY_F(n)      (KEY_F0 + (n))
 
@@ -1314,6 +1308,29 @@ PDCEX  int     doupdate(void);
 PDCEX  WINDOW *dupwin(WINDOW *);
 PDCEX  int     echochar(const chtype);
 PDCEX  int     echo(void);
+
+#ifdef PDC_WIDE
+   #ifdef PDC_FORCE_UTF8
+      #ifdef CHTYPE_32
+         #define endwin endwin_u32_4302
+      #else
+         #define endwin endwin_u64_4302
+      #endif
+   #else
+      #ifdef CHTYPE_32
+         #define endwin endwin_w32_4302
+      #else
+         #define endwin endwin_w64_4302
+      #endif
+   #endif
+#else       /* 8-bit chtypes */
+   #ifdef CHTYPE_32
+      #define endwin endwin_x32_4302
+   #else
+      #define endwin endwin_x64_4302
+   #endif
+#endif
+
 PDCEX  int     endwin(void);
 PDCEX  char    erasechar(void);
 PDCEX  int     erase(void);
@@ -1341,29 +1358,6 @@ PDCEX  int     init_color(short, short, short, short);
 PDCEX  int     init_extended_color(int, int, int, int);
 PDCEX  int     init_extended_pair(int, int, int);
 PDCEX  int     init_pair(short, short, short);
-
-#ifdef PDC_WIDE
-   #ifdef PDC_FORCE_UTF8
-      #ifdef CHTYPE_32
-         #define initscr initscr_u32
-      #else
-         #define initscr initscr_u64
-      #endif
-   #else
-      #ifdef CHTYPE_32
-         #define initscr initscr_w32
-      #else
-         #define initscr initscr_w64
-      #endif
-   #endif
-#else       /* 8-bit chtypes */
-   #ifdef CHTYPE_32
-      #define initscr initscr_x32
-   #else
-      #define initscr initscr_x64
-   #endif
-#endif
-
 PDCEX  WINDOW *initscr(void);
 PDCEX  int     innstr(char *, int);
 PDCEX  int     insch(chtype);
@@ -1476,6 +1470,7 @@ PDCEX  int     slk_attr_on(const attr_t, void *);
 PDCEX  int     slk_attrset(const chtype);
 PDCEX  int     slk_attr_set(const attr_t, short, void *);
 PDCEX  int     slk_clear(void);
+PDCEX  int     extended_slk_color(int);
 PDCEX  int     slk_color(short);
 PDCEX  int     slk_init(int);
 PDCEX  char   *slk_label(int);
@@ -1679,6 +1674,8 @@ PDCEX  int     getcurx(WINDOW *);
 PDCEX  int     getcury(WINDOW *);
 PDCEX  void    traceoff(void);
 PDCEX  void    traceon(void);
+PDCEX  void    trace( const unsigned);
+PDCEX  unsigned curses_trace( const unsigned);
 PDCEX  char   *unctrl(chtype);
 
 PDCEX  int     crmode(void);
@@ -1698,12 +1695,16 @@ PDCEX  mmask_t getmouse(void);
 
 /* ncurses */
 
+PDCEX  int     alloc_pair(int, int);
 PDCEX  int     assume_default_colors(int, int);
 PDCEX  const char *curses_version(void);
+PDCEX  int     find_pair(int, int);
+PDCEX  int     free_pair( int);
 PDCEX  bool    has_key(int);
 PDCEX  bool    is_keypad(const WINDOW *);
 PDCEX  bool    is_leaveok(const WINDOW *);
 PDCEX  bool    is_pad(const WINDOW *);
+PDCEX  void    reset_color_pairs( void);
 PDCEX  int     set_tabsize(int);
 PDCEX  int     use_default_colors(void);
 PDCEX  int     wresize(WINDOW *, int, int);
@@ -1741,13 +1742,17 @@ PDCEX  char    wordchar(void);
 PDCEX  wchar_t *slk_wlabel(int);
 #endif
 
+PDCEX  bool    PDC_getcbreak(void);
+PDCEX  bool    PDC_getecho(void);
 PDCEX  void    PDC_debug(const char *, ...);
+PDCEX  void    _tracef(const char *, ...);
 PDCEX  void    PDC_get_version(PDC_VERSION *);
 PDCEX  int     PDC_ungetch(int);
 PDCEX  int     PDC_set_blink(bool);
 PDCEX  int     PDC_set_bold(bool);
 PDCEX  int     PDC_set_line_color(short);
 PDCEX  void    PDC_set_title(const char *);
+PDCEX  int     PDC_set_box_type( const int box_type);
 
 PDCEX  int     PDC_clearclipboard(void);
 PDCEX  int     PDC_freeclipboard(char *);
@@ -1760,6 +1765,7 @@ PDCEX  void    PDC_set_resize_limits( const int new_min_lines,
                                const int new_max_lines,
                                const int new_min_cols,
                                const int new_max_cols);
+PDCEX  void    PDC_free_memory_allocations( void);
 
 #define FUNCTION_KEY_SHUT_DOWN        0
 #define FUNCTION_KEY_PASTE            1
@@ -1767,13 +1773,14 @@ PDCEX  void    PDC_set_resize_limits( const int new_min_lines,
 #define FUNCTION_KEY_SHRINK_FONT      3
 #define FUNCTION_KEY_CHOOSE_FONT      4
 #define FUNCTION_KEY_ABORT            5
-#define PDC_MAX_FUNCTION_KEYS         6
+#define FUNCTION_KEY_COPY             6
+#define PDC_MAX_FUNCTION_KEYS         7
 
 PDCEX int     PDC_set_function_key( const unsigned function,
                               const int new_key);
+PDCEX int     PDC_get_function_key( const unsigned function);
 
 PDCEX int     PDC_set_preferred_fontface( const wchar_t* fontface);
-PDCEX void    PDC_set_color_intensify_enabled( bool enabled);
 PDCEX void    PDC_set_default_menu_visibility(int visible);
 PDCEX  WINDOW *Xinitscr(int, char **);
 
@@ -1824,6 +1831,11 @@ PDCEX  int     wunderscore(WINDOW *);
 #define PDC_save_key_modifiers(x)  (OK)
 #define PDC_get_input_fd()         0
 
+/* masks for PDC_set_box_type() */
+
+#define PDC_BOX_DOUBLED_V        1
+#define PDC_BOX_DOUBLED_H        2
+
 /* return codes from PDC_getclipboard() and PDC_setclipboard() calls */
 
 #define PDC_CLIP_SUCCESS         0
@@ -1838,6 +1850,30 @@ PDCEX  int     wunderscore(WINDOW *);
 #define PDC_KEY_MODIFIER_ALT     4
 #define PDC_KEY_MODIFIER_NUMLOCK 8
 #define PDC_KEY_MODIFIER_REPEAT  16
+
+/* Bitflags for trace(), curses_trace(),  for ncurses compatibility.
+Values were copied from ncurses.  Note that those involving terminfo,
+termcap,  and TTY control bits are meaningless in PDCurses and will be
+ignored.       */
+
+#define TRACE_DISABLE   0x0000   /* turn off tracing */
+#define TRACE_TIMES     0x0001   /* trace user and system times of updates */
+#define TRACE_TPUTS     0x0002   /* trace tputs calls */
+#define TRACE_UPDATE    0x0004   /* trace update actions, old & new screens */
+#define TRACE_MOVE      0x0008   /* trace cursor moves and scrolls */
+#define TRACE_CHARPUT   0x0010   /* trace all character outputs */
+#define TRACE_ORDINARY  0x001F   /* trace all update actions */
+#define TRACE_CALLS     0x0020   /* trace all curses calls */
+#define TRACE_VIRTPUT   0x0040   /* trace virtual character puts */
+#define TRACE_IEVENT    0x0080   /* trace low-level input processing */
+#define TRACE_BITS      0x0100   /* trace state of TTY control bits */
+#define TRACE_ICALLS    0x0200   /* trace internal/nested calls */
+#define TRACE_CCALLS    0x0400   /* trace per-character calls */
+#define TRACE_DATABASE  0x0800   /* trace read/write of terminfo/termcap data */
+#define TRACE_ATTRS     0x1000   /* trace attribute updates */
+
+#define TRACE_SHIFT         13   /* number of bits in the trace masks */
+#define TRACE_MAXIMUM   ((1u << TRACE_SHIFT) - 1u) /* max tracing */
 
 #ifdef __cplusplus
 # ifndef PDC_PP98
