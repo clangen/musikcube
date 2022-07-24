@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
 import androidx.core.content.ContextCompat
-import io.casey.musikcube.remote.util.getParcelableExtraCompat
+import io.casey.musikcube.remote.ui.shared.extension.getParcelableExtraCompat
 
 class MediaButtonReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {

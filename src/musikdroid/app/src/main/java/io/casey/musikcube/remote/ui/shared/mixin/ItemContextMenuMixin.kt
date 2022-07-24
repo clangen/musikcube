@@ -26,15 +26,10 @@ import io.casey.musikcube.remote.service.websocket.model.IMetadataProxy
 import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.category.constant.Category
 import io.casey.musikcube.remote.ui.navigation.Navigate
-import io.casey.musikcube.remote.ui.shared.extension.hideKeyboard
-import io.casey.musikcube.remote.ui.shared.extension.showErrorSnackbar
-import io.casey.musikcube.remote.ui.shared.extension.showKeyboard
-import io.casey.musikcube.remote.ui.shared.extension.showSnackbar
+import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.fragment.BaseDialogFragment
 import io.casey.musikcube.remote.ui.shared.fragment.BaseFragment
 import io.casey.musikcube.remote.ui.tracks.activity.EditPlaylistActivity
-import io.casey.musikcube.remote.util.getSerializableCompat
-import io.casey.musikcube.remote.util.launcher
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 import java.io.Serializable
@@ -53,7 +48,6 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
         open fun onPlaylistUpdated(id: Long, name: String) { }
     }
 
-    private var pendingCode = -1
     private var completion: ((Long, String) -> Unit)? = null
 
     init {
@@ -104,7 +98,6 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 completion?.invoke(playlistId, playlistName)
             }
         }
-        pendingCode = -1
         completion = null
     }
 
@@ -188,7 +181,6 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
 
     private fun showPlaylistChooser(callback: (Long, String) -> Unit) {
         completion = callback
-        pendingCode = REQUEST_ADD_TO_PLAYLIST
         Navigate.toPlaylistChooser(choosePlaylistLauncher, activity)
     }
 
@@ -577,10 +569,5 @@ class ItemContextMenuMixin(private val activity: AppCompatActivity,
                 dialog.show(activity.supportFragmentManager, TAG)
             }
         }
-    }
-
-    companion object {
-        private const val REQUEST_ADD_TO_PLAYLIST = 32
-        private const val REQUEST_EDIT_PLAYLIST = 33
     }
 }

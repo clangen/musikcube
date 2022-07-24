@@ -1,4 +1,4 @@
-package io.casey.musikcube.remote.util
+package io.casey.musikcube.remote.ui.shared.extension
 
 import android.content.Intent
 import android.content.pm.PackageInfo

@@ -32,10 +32,10 @@ import io.casey.musikcube.remote.service.websocket.model.ITrack
 import io.casey.musikcube.remote.ui.home.activity.MainActivity
 import io.casey.musikcube.remote.ui.settings.constants.Prefs
 import io.casey.musikcube.remote.ui.shared.extension.fallback
+import io.casey.musikcube.remote.ui.shared.extension.getParcelableExtraCompat
 import io.casey.musikcube.remote.ui.shared.util.AlbumArtLookup
 import io.casey.musikcube.remote.ui.shared.util.Size
 import io.casey.musikcube.remote.util.Debouncer
-import io.casey.musikcube.remote.util.getParcelableExtraCompat
 import androidx.core.app.NotificationCompat.Action as NotifAction
 
 const val ENABLE_LOGGING = false

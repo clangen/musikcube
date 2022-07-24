@@ -25,9 +25,6 @@ import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
 import io.casey.musikcube.remote.ui.shared.mixin.MetadataProxyMixin
 import io.casey.musikcube.remote.ui.shared.mixin.PlaybackMixin
-import io.casey.musikcube.remote.util.getParcelableCompat
-import io.casey.musikcube.remote.util.getParcelableExtraCompat
-import io.casey.musikcube.remote.util.launcher
 import java.util.*
 import javax.inject.Inject
 import io.casey.musikcube.remote.ui.settings.constants.Prefs.Default as Defaults

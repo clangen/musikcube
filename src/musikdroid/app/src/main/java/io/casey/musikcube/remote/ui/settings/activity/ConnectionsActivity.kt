@@ -22,7 +22,6 @@ import io.casey.musikcube.remote.ui.settings.model.Connection
 import io.casey.musikcube.remote.ui.settings.model.ConnectionsDb
 import io.casey.musikcube.remote.ui.shared.activity.BaseActivity
 import io.casey.musikcube.remote.ui.shared.extension.*
-import io.casey.musikcube.remote.util.getParcelableCompat
 import javax.inject.Inject
 
 private const val EXTRA_CONNECTION = "extra_connection"
