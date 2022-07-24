@@ -29,6 +29,7 @@ import io.casey.musikcube.remote.ui.tracks.activity.TrackListActivity
 import io.casey.musikcube.remote.ui.tracks.adapter.TrackListAdapter
 import io.casey.musikcube.remote.ui.tracks.constant.Track
 import io.casey.musikcube.remote.util.Debouncer
+import io.casey.musikcube.remote.util.launcher
 import io.reactivex.Observable
 import io.reactivex.rxkotlin.subscribeBy
 
@@ -52,8 +53,6 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         data = mixin(MetadataProxyMixin())
         playback = mixin(PlaybackMixin())
 
-        super.onCreate(savedInstanceState)
-
         extras.run {
             categoryType = getString(Track.Extra.CATEGORY_TYPE, "")
             categoryId = getLong(Track.Extra.SELECTED_ID, 0)
@@ -66,6 +65,8 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
         mixin(ItemContextMenuMixin(appCompatActivity, menuListener, this))
 
         queryFactory = createCategoryQueryFactory(categoryType, categoryId)
+
+        super.onCreate(savedInstanceState)
     }
 
     override fun onPause() {
@@ -118,8 +119,9 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
             tracks.setOnMetadataLoadedListener(slidingWindowListener)
         }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == Track.RequestCode.EDIT_PLAYLIST && resultCode == AppCompatActivity.RESULT_OK && data != null) {
+    private val editPlaylistLauncher = launcher { result ->
+        val data = result.data
+        if (result.resultCode == AppCompatActivity.RESULT_OK && data != null) {
             val playlistName = data.getStringExtra(EditPlaylistActivity.EXTRA_PLAYLIST_NAME) ?: ""
             val playlistId = data.getLongExtra(EditPlaylistActivity.EXTRA_PLAYLIST_ID, -1L)
 
@@ -134,7 +136,6 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
                     })
             }
         }
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override val title: String
@@ -159,12 +160,11 @@ class TrackListFragment: BaseFragment(), IFilterable, ITitleProvider, ITransport
     override fun optionsItemSelected(menuItem: MenuItem): Boolean =
         when (menuItem.itemId == R.id.action_edit) {
             true -> {
-                appCompatActivity.startActivityForResult(
+                editPlaylistLauncher.launch(
                     EditPlaylistActivity.getStartIntent(
                         appCompatActivity,
                         categoryValue,
-                        categoryId),
-                    Track.RequestCode.EDIT_PLAYLIST)
+                        categoryId))
                 true
             }
             else -> false

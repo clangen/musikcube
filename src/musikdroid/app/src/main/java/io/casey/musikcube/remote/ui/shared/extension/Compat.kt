@@ -1,14 +1,15 @@
 package io.casey.musikcube.remote.util
 
-import androidx.activity.ComponentActivity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Parcelable
+import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.fragment.app.Fragment
 import java.io.Serializable
 
 @RequiresApi(33)
@@ -42,4 +43,7 @@ inline fun <reified T: Serializable> Bundle.getSerializableCompat(name: String):
     }
 
 fun ComponentActivity.launcher(callback: ActivityResultCallback<ActivityResult>): ActivityResultLauncher<Intent> =
+    this.registerForActivityResult(ActivityResultContracts.StartActivityForResult(), callback)
+
+fun Fragment.launcher(callback: ActivityResultCallback<ActivityResult>): ActivityResultLauncher<Intent> =
     this.registerForActivityResult(ActivityResultContracts.StartActivityForResult(), callback)

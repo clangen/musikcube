@@ -1,7 +1,6 @@
 package io.casey.musikcube.remote.ui.shared.activity
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.media.AudioManager
 import android.os.Bundle
@@ -82,11 +81,6 @@ abstract class BaseActivity: AppCompatActivity(), ViewModel.Provider, Runner.Tas
     override fun onStop() {
         super.onStop()
         mixins.onStop()
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        mixins.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

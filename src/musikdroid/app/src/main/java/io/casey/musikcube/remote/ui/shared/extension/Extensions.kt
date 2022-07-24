@@ -531,16 +531,3 @@ fun fallback(input: String?, fallback: String): String =
 
 fun fallback(input: String?, fallback: Int): String =
     if (input.isNullOrEmpty()) Application.instance.getString(fallback) else input
-
-fun startActivityForResult(intent: Intent,
-                           requestCode: Int,
-                           activity: AppCompatActivity?,
-                           fragment: BaseFragment? = null) =
-    when {
-        fragment != null ->
-            fragment.startActivityForResult(intent, requestCode)
-        activity != null ->
-            activity.startActivityForResult(intent, requestCode)
-        else ->
-            throw IllegalArgumentException("")
-    }
