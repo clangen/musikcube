@@ -162,10 +162,9 @@ class TrackDownloadActivity: BaseActivity() {
         catch (ex: Exception) {
             /* move on... */
         }
-        finally {
-            synchronized (mutex) {
-                pendingCall = null
-            }
+
+        synchronized (mutex) {
+            pendingCall = null
             response.close()
         }
 
