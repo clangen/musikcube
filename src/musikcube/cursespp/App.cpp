@@ -115,6 +115,7 @@ static bool isLangUtf8() {
 #ifdef WIN32
 static void pdcWinguiResizeCallback() {
     App::Instance().NotifyResized();
+    App::Instance().Layout();
 }
 #endif
 
@@ -612,22 +613,7 @@ process:
             this->NotifyResized();
         }
 
-        this->CheckShowOverlay();
-        this->EnsureFocusIsValid();
-
-        /* we want to dispatch messages here, before we call WriteToScreen(),
-        because dispatched messages may trigger UI updates, including layouts,
-        which may lead panels to get destroyed and recreated, which can
-        cause the screen to redraw outside of do_update() calls. so we dispatch
-        messages, ensure our overlay is on top, then do a redraw. */
-        Window::MessageQueue().Dispatch();
-
-        if (this->state.overlayWindow) {
-            this->state.overlay->BringToTop(); /* active overlay is always on top... */
-        }
-
-        /* always last to avoid flicker. see above. */
-        Window::WriteToScreen(this->state.input);
+        this->Layout();
     }
 
     overlays.Clear();
@@ -641,6 +627,25 @@ void App::NotifyResized() {
         this->resizeHandler();
     }
     this->OnResized();
+}
+
+void App::Layout() {
+    this->CheckShowOverlay();
+    this->EnsureFocusIsValid();
+
+    /* we want to dispatch messages here, before we call WriteToScreen(),
+    because dispatched messages may trigger UI updates, including layouts,
+    which may lead panels to get destroyed and recreated, which can
+    cause the screen to redraw outside of do_update() calls. so we dispatch
+    messages, ensure our overlay is on top, then do a redraw. */
+    Window::MessageQueue().Dispatch();
+
+    if (this->state.overlayWindow) {
+        this->state.overlay->BringToTop(); /* active overlay is always on top... */
+    }
+
+    /* always last to avoid flicker. see above. */
+    Window::WriteToScreen(this->state.input);
 }
 
 void App::UpdateFocusedWindow(IWindowPtr window) {

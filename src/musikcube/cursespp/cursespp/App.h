@@ -70,6 +70,7 @@ namespace cursespp {
             void Minimize();
             void Restore();
             void NotifyResized();
+            void Layout();
 
 #ifdef WIN32
             static bool Running(const std::string& uniqueId, const std::string& title);
